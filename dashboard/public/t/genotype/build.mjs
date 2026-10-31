@@ -95,6 +95,18 @@ const data = {
         orthology_inferred: x.orthology_inferred, inferred_from: x.inferred_from,
         sources: (x.sources || []).map(s => ({ pmid: s.pmid, doi: s.doi, first_author: s.first_author, year: s.year, quote: s.quote })) })),
       refuted_or_unsupported: I.refuted_or_unsupported, gaps: I.gaps }; })(),
+  interventions: (() => { const p = path.join(root, 'genotype/interventions.json'); if (!fs.existsSync(p)) return null; const V = JSON.parse(fs.readFileSync(p, 'utf8'));
+    return { built: V.built, note: V.note, coverage: V.coverage, levels: V.levels, paralog_guards: V.paralog_guards,
+      parameters: V.parameters, no_sourced_genetic_route: V.no_sourced_genetic_route,
+      knobs: (V.interventions || []).filter(i => i.usable_as_a_calibrated_knob).map(i => ({ id: i.id, gene: i.gene, parameter: i.parameter, level: i.level,
+        direction: i.direction, grade: i.evidence_grade, effect_size: i.effect_size, stage: i.stage, lesion: i.lesion, side_effects: i.side_effects,
+        lethality: i.lethality, pleiotropy: i.pleiotropy, sources: (i.sources || []).slice(0, 2).map(s => ({ pmid: s.pmid, doi: s.doi, quote: s.quote })) })),
+      lethal: (V.interventions || []).filter(i => /dies|lethal/i.test(String(i.lethality || ''))).map(i => ({ id: i.id, gene: i.gene, lethality: i.lethality })) }; })(),
+  flier_genome: (() => { const p = path.join(root, 'genotype/flier-genome.json'); if (!fs.existsSync(p)) return null; const F = JSON.parse(fs.readFileSync(p, 'utf8'));
+    return { built: F.built, status: F.status, summary: F.summary, constraint: F.constraint,
+      items: (F.items || []).map(i => ({ item: i.item, requirement: i.requirement, route: i.route, verdict: i.verdict,
+        physics_numbers: i.physics_numbers, n_candidate_routes: i.n_candidate_routes, n_calibrated: i.n_calibrated,
+        largest_measured_increase: i.largest_measured_increase, what_is_missing: i.what_is_missing })) }; })(),
   not_sourced: M.not_sourced, vetting: M.vetting, slimming: { rule: M.slimming?.rule, nodes_with_omitted_expression_links: Object.keys(M.slimming?.expressed_in_links_omitted_by_node || {}).length },
   crosswalk_rule: M.crosswalk.rule,
 };
@@ -103,9 +115,12 @@ fs.writeFileSync(path.join(here, 'data.json'), JSON.stringify(data));
 const cell = layers.find(l => l.layer === 'cell'), organ = layers.find(l => l.layer === 'organ'), tissue = layers.find(l => l.layer === 'tissue'), sys = layers.find(l => l.layer === 'organ_system');
 const rejectedEnv = Object.entries(zp.rejected || {}).filter(([k]) => k.startsWith('experimental condition')).reduce((a, [, v]) => a + v, 0);
 const rejectedDom = Object.entries(zp.rejected || {}).filter(([k]) => k.startsWith('homozygous allele that also')).reduce((a, [, v]) => a + v, 0);
+const C2 = data.causal_chains, V2 = data.interventions, I2 = data.interactions, P2 = data.pathways;
 const status = {
   thread: 'genotype', title: 'Genotype-phenotype links (flying fish)', updated: new Date().toISOString(), state: 'working',
-  headline: `No flying-fish molecular data exists, so every gene link is a proxy-fish record (zebrafish via ZFIN and Bgee, medaka via Bgee), now vetted: the pectoral fin has ${pf.counts.required_for_genes} genes required for it under standard conditions, ${pf.counts.sufficient_for_genes} verified gain-of-function gene (kcnk5b) sufficient to enlarge it, and ${pf.counts.expressed_in_genes} expressed in it; only ${cell.cells_with_zfa_equivalent} of ${cell.denominator} cell types have a zebrafish-anatomy equivalent, so the cell layer (${cell.direct} with a record) is capped by the ontology crosswalk, not by the data.`,
+  headline: (V2 && C2
+    ? `Every gene link is proxy-fish data, because no flying-fish molecular data exists. Of ${V2.coverage.interventions} experimentally shown interventions on fin and body shape, only ${V2.coverage.usable_as_calibrated_knobs} carry a true effect magnitude together with the stage it was measured at, and pectoral fin LENGTH has no calibrated route at all. Of ${C2.coverage.genes_with_a_chain} gene-to-phenotype chains, ${C2.coverage.chains_whose_weakest_link_is_necessity_or_better} have a weakest link of necessity or better and ${C2.coverage.genes_with_a_link_graded_mechanism} hold at least one mechanism-grade link. The best single lever to a bigger fin, hhip loss of function at +65% area, enlarges the pectoral fin by disorganising the rest of the skeleton.`
+    : `No flying-fish molecular data exists, so every gene link is a proxy-fish record: the pectoral fin has ${pf.counts.required_for_genes} genes required for it, ${pf.counts.sufficient_for_genes} sufficient to enlarge it, and ${pf.counts.expressed_in_genes} expressed in it; only ${cell.cells_with_zfa_equivalent} of ${cell.denominator} cell types have a zebrafish-anatomy equivalent, so the cell layer is capped by the ontology crosswalk, not by the data.`),
   metrics: [
     { label: 'organ systems with a direct record (of 13)', value: sys.direct },
     { label: 'organs with a direct record (of 67)', value: organ.direct },
@@ -119,8 +134,21 @@ const status = {
     { label: 'phenotype rows dropped: condition not standard or ambiguous', value: rejectedEnv },
     { label: 'phenotype rows dropped: dominant allele, loss of function not established', value: rejectedDom },
     { label: 'Bgee genes merged onto ZFIN ids by symbol', value: S.gene_id_rules?.genes_merged_by_symbol ?? null },
+    ...(P2 ? [{ label: 'genes with a pathway or process (of ' + P2.coverage.all_genes_in_vetted_map.genes + ')', value: P2.coverage.all_genes_in_vetted_map.with_any_pathway }] : []),
+    ...(C2 ? [{ label: 'causal chains built', value: C2.coverage.genes_with_a_chain },
+              { label: 'chains whose weakest link is necessity or better', value: C2.coverage.chains_whose_weakest_link_is_necessity_or_better },
+              { label: 'publications cited across the chains', value: C2.coverage.distinct_publications }] : []),
+    ...(I2 ? [{ label: 'tissue and cell interactions', value: I2.coverage.interactions },
+              { label: 'of those, inferred by orthology rather than fish-native', value: I2.coverage.orthology_inferred },
+              { label: 'limb-biology expectations refuted or unsupported in fish', value: (I2.refuted_or_unsupported || []).length }] : []),
+    ...(V2 ? [{ label: 'interventions shown to change a parameter', value: V2.coverage.interventions },
+              { label: 'of those, calibrated (magnitude plus stage)', value: V2.coverage.usable_as_calibrated_knobs },
+              { label: 'parameter and gene-set combinations with no sourced route', value: V2.coverage.parameters_with_no_sourced_route }] : []),
+    ...(data.flier_genome ? [{ label: 'powered-flier requirements with any genetic route (of 4)', value: data.flier_genome.summary.items_with_any_route }] : []),
   ],
-  links: [{ label: 'Sub-dashboard', url: 't/genotype/index.html' }, { label: 'Vetted map (repo)', url: 'genotype/map.vetted.json' }, { label: 'Handover notes (repo)', url: 'genotype/HANDOVER.md' }],
+  links: [{ label: 'Sub-dashboard', url: 't/genotype/index.html' }, { label: 'Vetted map (repo)', url: 'genotype/map.vetted.json' },
+    { label: 'Causal chains (repo)', url: 'genotype/CAUSAL.md' }, { label: 'Interventions for the Studio (repo)', url: 'genotype/interventions.json' },
+    { label: 'Powered flier, hypothesis (repo)', url: 'genotype/flier-genome.md' }, { label: 'Handover notes (repo)', url: 'genotype/HANDOVER.md' }],
   blockers: [],
   needs: [{ from: 'hub', ask: 'commit genotype/map.vetted.json (slim) and genotype/*.py, cache/; never the 38 MB map.json' }, { from: 'viz', ask: 'render genes from genotype/map.vetted.json (vetted: true)' }],
   next: ['nanopub drafts in genotype/nanopubs/unsigned/', 'README for genotype/', 'ideas to the hub for decisions/ideas.json'],

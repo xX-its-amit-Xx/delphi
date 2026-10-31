@@ -2,7 +2,7 @@
 
 **HYPOTHESIS THROUGHOUT. Not a predicted genome, not a design, and not a claim that any of this is achievable.**
 
-Built 2026-10-31T21:04:18Z by `genotype/build_flier_genome.py` from the physics thread's `physics/flier/spec.json`, this thread's
+Built 2026-10-31T21:06:58Z by `genotype/build_flier_genome.py` from the physics thread's `physics/flier/spec.json`, this thread's
 `interventions.json` and `causal-chains.json`, and two logged literature runs. No bird data anywhere: class Aves is this
 project's held-out clade, so the usual source of flight genetics is excluded by construction.
 
@@ -52,12 +52,15 @@ Each row is a manipulation that changed the parameter named in its own row, whic
 
 **Route: not yet researched.** The literature run for this item has not finished, so no verdict is recorded. What this thread already holds is fin-muscle DEVELOPMENT genetics, not muscle-mass genetics: genes that decide whether fin muscle forms at all, not how much of it there is.
 
+**What the physics changes about this requirement** (the physics thread's modelled result, not a biological measurement): The requirement is not simply a larger muscle. The physics thread's model gives 0.009 W of aerobic flight power from a bat-sized flight-muscle fraction built out of FISH RED MUSCLE, against 1.44 W needed: short by about two orders of magnitude. So item 2 is a request for a muscle TYPE with a mass-specific aerobic power far above anything fish red muscle delivers, and no genetic route to that is the same thing as a route to more muscle.
+
 **What is missing:**
 
 - The fish muscle-mass and oxygen-delivery literature run is unfinished.
 - Every fin-muscle result this thread has is about whether muscle forms, not about its mass fraction: the pax7 quadruple mutant develops muscle-less pectoral fins, and met is necessary for the abductor.
 - A larger muscle is useless here unless it is aerobic rather than glycolytic, and fibre-type specification is a separate question from mass.
-- Nothing connects a fin-muscle mass change to a flight-capable power output; the physics requirement is a specific power, which no genetic result reports.
+- Mass-specific aerobic POWER is the quantity the physics needs, and no genetic result in this literature reports it: genetics reports fibre type, mitochondrial content or mass, never watts per kilogram.
+- Nothing connects a fin-muscle mass change to a flight-capable power output.
 
 ## 3. oxygen delivery about five times the bat range per kilogram, by haemoglobin capacity and cardiac output
 
@@ -71,6 +74,8 @@ Each row is a manipulation that changed the parameter named in its own row, whic
 ## 4. a respiratory surface that works in air, since gills do not ventilate in air
 
 **Route: not yet researched.** The air-breathing literature run has not finished, so no verdict is recorded.
+
+**What the physics confirms about this requirement** (the physics thread's modelled result, not a biological measurement): With the oxygen chain wired, the physics thread's flier climbs at 2.8 m/s to 179 m and its flight power collapses at 66 seconds when the burst store empties, while the blood oxygen store is still at 35%. The store cannot be drawn on because gills do not ventilate in air. So the air-breathing surface is not an optional refinement of this design: without it the animal is, in the physics thread's words, 'a jumper with a long ballistic-plus-burst arc'.
 
 **What is missing:**
 

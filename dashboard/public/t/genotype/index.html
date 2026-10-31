@@ -70,7 +70,7 @@ footer{padding:28px 0;color:var(--mute);font-size:.85rem}
 <body>
 <header class="top"><div class="wrap">
   <a class="brand" href="../../index.html">&larr; DELPHI mission control</a>
-  <nav><a href="#headline">Headline</a><a href="#layers">Five layers</a><a href="#fin">Pectoral fin</a><a href="#finsize">Fin size</a><a href="#pathways">Pathways</a><a href="#causal">Causal chains</a><a href="#interactions">Interactions</a><a href="#rules">Rules</a><a href="#vetting">Vetting</a><a href="#sources">Sources</a></nav>
+  <nav><a href="#headline">Headline</a><a href="#layers">Five layers</a><a href="#fin">Pectoral fin</a><a href="#finsize">Fin size</a><a href="#pathways">Pathways</a><a href="#causal">Causal chains</a><a href="#interactions">Interactions</a><a href="#studio">Interventions</a><a href="#flier">Powered flier</a><a href="#rules">Rules</a><a href="#vetting">Vetting</a><a href="#sources">Sources</a></nav>
   <button id="themeBtn" type="button" aria-label="Toggle dark mode">Theme</button>
 </div></header>
 
@@ -128,6 +128,18 @@ footer{padding:28px 0;color:var(--mute);font-size:.85rem}
   <h2>Tissue-to-tissue and cell-to-cell interactions</h2>
   <p class="lede">Directed arrows between fin tissues and cell types, for zooming into one piece of the fin. An arrow whose ligand-receptor pair comes from a human or mouse database is marked inferred by orthology.</p>
   <div id="inter"></div>
+</section>
+
+<section id="studio">
+  <h2>Interventions: what genetic change moves which parameter</h2>
+  <p class="lede">Manipulations that were shown in an experiment to change a fin or body measurement. A knob is <b>calibrated</b> only where a paper gives both a magnitude and the stage it was measured at. Most of this literature reports morphology in figure panels, so most entries carry the paper's words and no number.</p>
+  <div id="ivs"></div>
+</section>
+
+<section id="flier">
+  <h2>Could a flying fish be made a powered flier? Hypothesis only</h2>
+  <p class="lede">The physics thread specifies four changes a powered flier would need. This asks which of them has a genetic route in the literature this project fetched. It is not a predicted genome and not a design.</p>
+  <div id="flier-body"></div>
 </section>
 
 <section id="rules">
@@ -263,6 +275,37 @@ fetch('data.json').then(r => r.json()).then(D => {
       ${I.interactions.map(x => `<tr><td>${esc(x.sender_label || x.sender)}</td><td>${esc(x.receiver_label || x.receiver)}</td><td class="small">${esc([...(x.signal?.ligands || []), ...(x.signal?.receptors || []), ...(x.signal?.channels || [])].join(', '))}${x.signal?.pathway ? ` <span class="tiny">(${esc(x.signal.pathway)})</span>` : ''}</td><td class="small">${esc(x.what_is_shown || '')}${x.orthology_inferred ? ` <span class="chip warn">orthology-inferred${x.inferred_from ? ' from ' + esc(x.inferred_from) : ''}</span>` : ''}</td><td><span class="chip ${GR[x.grade] || ''}">${esc(x.grade)}</span></td><td class="tiny">${esc(x.context || '')}</td><td class="tiny">${srcList(x.sources)}</td></tr>`).join('')}</table></div>
     ${(I.refuted_or_unsupported || []).length ? `<details><summary>Proposed but not supported by the sources</summary><div class="in"><ul class="small">${I.refuted_or_unsupported.map(r => `<li><b>${esc(r.proposed)}</b>: ${esc(r.finding)}</li>`).join('')}</ul></div></details>` : ''}
     ${(I.gaps || []).length ? `<details><summary>Known in tetrapod limbs, no zebrafish pectoral-fin source found</summary><div class="in"><ul class="small">${I.gaps.map(g => `<li>${esc(g.gap || g)}</li>`).join('')}</ul></div></details>` : ''}`;
+
+  const V = D.interventions;
+  $('#ivs').innerHTML = !V ? '<p class="mute small">genotype/interventions.json not built yet.</p>' : `
+    <div class="grid g4">
+      <div class="card"><div class="kpi">${V.coverage.interventions}<small>interventions over ${V.coverage.genes} genes and ${V.coverage.parameters_covered} parameters, from ${V.coverage.distinct_publications} publications</small></div></div>
+      <div class="card"><div class="kpi" style="color:var(--ok)">${V.coverage.usable_as_calibrated_knobs}<small>carry a true effect <b>magnitude</b> together with the stage it was measured at. Only these can calibrate a knob</small></div></div>
+      <div class="card"><div class="kpi" style="color:var(--warn)">${V.coverage.with_numeric_effect_size - V.coverage.usable_as_calibrated_knobs}<small>have a number that is a drug dose, a penetrance or a count of affected animals, not a morphology magnitude</small></div></div>
+      <div class="card"><div class="kpi" style="color:var(--bad)">${V.coverage.parameters_with_no_sourced_route}<small>parameter and gene-set combinations with <b>no sourced genetic route</b> at all</small></div></div>
+    </div>
+    <div class="warnbox"><b>Pectoral fin length has no calibrated route.</b> Every connexin measurement is on the caudal fin, usually one named ray; every adult potassium-channel magnitude lives in a figure panel. The only pectoral connexin datum is a qualitative ontology term whose paper is paywalled.</div>
+    <h3>The calibrated knobs</h3>
+    <div class="scroll"><table><tr><th>gene</th><th>parameter</th><th>level</th><th>dir</th><th>grade</th><th>effect</th><th>stage</th><th>pleiotropy</th><th>source</th></tr>
+      ${V.knobs.map(k => `<tr><td><b>${esc(k.gene)}</b></td><td class="small">${esc(k.parameter)}</td><td class="tiny">${esc(k.level)}</td><td>${k.direction === 'increase' ? '&uarr;' : k.direction === 'decrease' ? '&darr;' : '&ndash;'}</td><td><span class="chip ${GR[k.grade] || ''}">${esc(k.grade)}</span></td><td class="n"><b>${esc(k.effect_size?.value)}</b> <span class="tiny">${esc(k.effect_size?.unit)}</span></td><td class="tiny">${esc((k.stage?.age || k.stage?.stage_text || '').slice(0, 40))}</td><td class="tiny">${k.pleiotropy?.blueprint_nodes_touched ? k.pleiotropy.blueprint_nodes_touched + ' nodes' : 'not computed'}</td><td class="tiny">${srcList(k.sources)}</td></tr>`).join('')}</table></div>
+    ${V.lethal.length ? `<div class="warnbox"><b>Lethal levers (${V.lethal.length}).</b> ${V.lethal.map(l => `${esc(l.gene)}: ${esc(String(l.lethality).slice(0, 90))}`).join(' · ')}</div>` : ''}
+    <details><summary>Every parameter, with how many interventions and whether the lever runs both ways</summary><div class="in"><div class="scroll"><table><tr><th>parameter</th><th class="n">n</th><th>best grade</th><th>both directions</th><th class="n">calibrated</th><th>genes</th></tr>
+      ${Object.entries(V.parameters).sort((a, b) => b[1].n_interventions - a[1].n_interventions).map(([p, v]) => `<tr><td>${esc(p)}</td><td class="n">${v.n_interventions}</td><td><span class="chip ${GR[v.best_grade] || ''}">${esc(v.best_grade)}</span></td><td>${v.bidirectional ? 'yes' : 'no'}</td><td class="n">${v.calibrated_knobs.length}</td><td class="tiny">${v.genes.slice(0, 6).map(esc).join(', ')}</td></tr>`).join('')}</table></div></div></details>
+    <details><summary>Paralog guard: why no tbx5 route is offered</summary><div class="in"><p class="small">${esc(V.paralog_guards.rule)}</p><p class="small"><b>tbx5a and tbx5b:</b> ${esc(V.paralog_guards.tbx5a_tbx5b_specifically)}</p></div></details>
+    <p class="tiny">${esc(V.note)}</p>`;
+
+  const F = D.flier_genome;
+  $('#flier-body').innerHTML = !F ? '<p class="mute small">genotype/flier-genome.json not built yet.</p>' : `
+    <div class="warnbox"><b>${esc(F.status)}</b></div>
+    <p class="small"><b>${esc(F.summary.honest_reading)}</b></p>
+    <div class="scroll"><table><tr><th class="n">#</th><th>what the flier would need</th><th>genetic route</th></tr>
+      ${F.items.map(i => `<tr><td class="n">${i.item}</td><td>${esc(i.requirement)}</td><td><span class="chip ${i.route === 'partial' ? 'warn' : /known/.test(i.route) ? 'ok' : 'bad'}">${esc(i.route)}</span></td></tr>`).join('')}</table></div>
+    ${F.items.map(i => `<details${i.item === 1 ? ' open' : ''}><summary>${i.item}. ${esc(i.requirement.slice(0, 90))} &mdash; <b>${esc(i.route)}</b></summary><div class="in">
+      <p class="small">${esc(i.verdict)}</p>
+      ${i.largest_measured_increase ? `<p class="small"><b>Largest measured increase found:</b> ${esc(i.largest_measured_increase.gene)} loss of function, ${esc(i.largest_measured_increase.value)} ${esc(i.largest_measured_increase.unit)} for ${esc(i.largest_measured_increase.parameter)}, graded ${esc(i.largest_measured_increase.grade)}, at ${esc(i.largest_measured_increase.stage)}.</p>` : ''}
+      ${(i.what_is_missing || []).length ? `<p class="small"><b>What is missing:</b></p><ul class="small">${i.what_is_missing.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+      ${i.n_candidate_routes ? `<p class="tiny">${i.n_candidate_routes} candidate routes tabulated in genotype/flier-genome.md, ${i.n_calibrated} of them with a calibrated magnitude.</p>` : ''}</div></details>`).join('')}
+    <p class="tiny">${esc(F.constraint)}</p>`;
 
   $('#rules-cards').innerHTML = [
     ['Evidence differs by layer', 'Cell: single-cell expression and Cell Ontology markers. Tissue: in situ (ZFIN) and bulk (Bgee). Organ: mutant and knockdown phenotypes. Organ system: GO developmental process, the weakest kind and labelled so. Body: axial patterning (GO) and whole-organism phenotype terms. Every link carries its layer and evidence kind.'],

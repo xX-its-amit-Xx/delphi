@@ -60,6 +60,20 @@ def routes_for(param_patterns, direction=None):
     out.sort(key=lambda r: (-int(r["calibrated"]), -RANK.get(r["evidence_grade"], 0)))
     return out
 
+# The physics thread's own simulation results, relayed through the hub on 2026-10-31. These are MODELLED outputs of
+# their simulator, not measurements and not biology this thread fetched, and they are labelled so wherever they
+# appear. They matter here because they change what items 2 and 3 are asking for: not simply a bigger muscle, but a
+# muscle type whose mass-specific aerobic power is far above anything fish red muscle delivers.
+PHYSICS = {
+ "source": "physics thread, relayed by the hub on 2026-10-31; their simulator and spec are in physics/flier/",
+ "kind": "modelled, not measured; no biological measurement by this thread",
+ "climb_with_the_oxygen_chain_wired": {"climb_rate_m_per_s": 2.8, "height_m": 179, "flight_power_collapses_at_s": 66,
+   "note": "the collapse happens when the burst store empties, with the blood oxygen store still at 35%, because gills do not ventilate in air so aerobic power in air is negligible"},
+ "aerobic_flight_power_from_fish_red_muscle": {"available_W": 0.009, "needed_W": 1.44, "shortfall": "about two orders of magnitude",
+   "assumption": "a bat-sized flight muscle fraction of 9.1% of body mass, built from fish red muscle"},
+ "physics_conclusion_in_their_words": "a jumper with a long ballistic-plus-burst arc",
+}
+
 items = []
 
 # ---- (1) lifting area 3.9x at 2.5x span -----------------------------------------------------------
@@ -102,10 +116,16 @@ items.append({
  "muscle_mass_routes_from_literature": muscle_routes[:10],
  "aerobic_capacity": (MO2 or {}).get("aerobic_capacity", [])[:8],
  "fin_muscle_chains_this_thread_has": fin_muscle_ch,
+ "physics_sharpens_the_requirement": {**PHYSICS["aerobic_flight_power_from_fish_red_muscle"], "source": PHYSICS["source"], "kind": PHYSICS["kind"],
+   "what_it_changes": ("The requirement is not simply a larger muscle. The physics thread's model gives 0.009 W of aerobic flight power from a bat-sized "
+                       "flight-muscle fraction built out of FISH RED MUSCLE, against 1.44 W needed: short by about two orders of magnitude. So item 2 is a "
+                       "request for a muscle TYPE with a mass-specific aerobic power far above anything fish red muscle delivers, and no genetic route to "
+                       "that is the same thing as a route to more muscle.")},
  "what_is_missing": ([] if MO2 else ["The fish muscle-mass and oxygen-delivery literature run is unfinished."]) + [
    "Every fin-muscle result this thread has is about whether muscle forms, not about its mass fraction: the pax7 quadruple mutant develops muscle-less pectoral fins, and met is necessary for the abductor.",
    "A larger muscle is useless here unless it is aerobic rather than glycolytic, and fibre-type specification is a separate question from mass.",
-   "Nothing connects a fin-muscle mass change to a flight-capable power output; the physics requirement is a specific power, which no genetic result reports."]})
+   "Mass-specific aerobic POWER is the quantity the physics needs, and no genetic result in this literature reports it: genetics reports fibre type, mitochondrial content or mass, never watts per kilogram.",
+   "Nothing connects a fin-muscle mass change to a flight-capable power output."]})
 
 # ---- (3) O2 delivery about 5x the bat range per kg -----------------------------------------------
 items.append({
@@ -136,6 +156,11 @@ items.append({
              "sources": [{k: s.get(k) for k in ("pmid", "doi", "first_author", "year", "quote", "read")} for s in (r.get("sources") or [])[:2]]} for r in air_routes],
  "beloniformes": (AIR or {}).get("beloniformes_and_exocoetidae"),
  "gas_bladder_lung_homology": (AIR or {}).get("gas_bladder_lung_homology"),
+ "physics_confirms_the_requirement": {**PHYSICS["climb_with_the_oxygen_chain_wired"], "source": PHYSICS["source"], "kind": PHYSICS["kind"],
+   "what_it_changes": ("With the oxygen chain wired, the physics thread's flier climbs at 2.8 m/s to 179 m and its flight power collapses at 66 seconds when "
+                       "the burst store empties, while the blood oxygen store is still at 35%. The store cannot be drawn on because gills do not ventilate in "
+                       "air. So the air-breathing surface is not an optional refinement of this design: without it the animal is, in the physics thread's "
+                       "words, 'a jumper with a long ballistic-plus-burst arc'.")},
  "what_is_missing": ([] if AIR else ["The air-breathing literature run is unfinished."]) + [
    "A gas bladder used for respiration conflicts with its use for buoyancy, which is a design cost, not a gene.",
    "Carbon dioxide excretion happens at the gills in water breathers, so an air-breathing fish still has to solve it."]})
@@ -146,6 +171,7 @@ out = {
  "status": "HYPOTHESIS THROUGHOUT. Not a predicted genome, not a design, and not a claim that any of this is achievable.",
  "built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "tool": "genotype/build_flier_genome.py",
  "constraint": (M.get("constraint") or "") + " No bird data is used anywhere: class Aves is this project's held-out clade, so bird flight-muscle and respiratory genetics are excluded by construction.",
+ "physics_simulation_results": PHYSICS,
  "physics_spec": {"file": "physics/flier/spec.json", "note": SPEC.get("note"), "parameter_diff_real_to_flier": diff,
                   "what_physics_says_it_does_not_establish": SPEC.get("what_this_does_not_establish")},
  "summary": {"items": len(items), "items_with_any_route": routed, "items_with_no_route_or_unresearched": len(items) - routed,
@@ -179,6 +205,10 @@ for i in items:
               "The pleiotropy on that lever is the catch, and it is recorded in the same entries: the gene has a direct record on 12 blueprint nodes, and",
               "the reported side effects include the anal fin skeleton being completely absent, dorsal radials increased, caudal hypurals going from two to",
               "five, increased head volume, a reduced pupil, and adult dwarfism. It enlarges the pectoral fin by disorganising the rest of the skeleton.\n"]
+    for key, head in (("physics_sharpens_the_requirement", "What the physics changes about this requirement"),
+                      ("physics_confirms_the_requirement", "What the physics confirms about this requirement")):
+        if i.get(key):
+            L += [f"**{head}** (the physics thread's modelled result, not a biological measurement): {i[key]['what_it_changes']}", ""]
     rs = i.get("candidate_routes") or []
     if rs:
         L += ["Each row is a manipulation that changed the parameter named in its own row, which is not always the parameter this item asks for.\n",
