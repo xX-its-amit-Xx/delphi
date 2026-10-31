@@ -7,11 +7,20 @@ building stops, an assessor who built nothing re-scores every supported law on t
 organisms with the same pre-registered pass and fail criteria. A law that passes there
 generalizes; one that fails did not.
 
-**Held-out clade: class Aves (birds), provisional until Amit confirms.** The hub (session
-`scienceclaw-03`) chose it on 2026-10-31 over Mammalia because birds are a clean monophyletic
-class, carry fewer domestic-breed identifier tangles than dogs, cattle and horses, and AVONET
-gives a full-coverage trait table for the exam. Mammalia stays available for building. Switching
-is one line in `make-split.mjs` (`DEFAULT_CLADE`); the Mammalia alternative is sized in `alt/`.
+**Held-out clade: class Aves (birds), confirmed by Amit on 2026-10-31** ("Sure do AVes", relayed by
+the hub). It was provisional from the first freeze at 05:52:44 UTC until the confirmation; the re-freeze
+at 14:38:42 UTC cleared the flag and wrote the decision and its cost into `split.json`, `exam.json` and
+`CHECKSUMS.json` (`decision`, `first_frozen_at`, `previous_freeze` with `roster_unchanged: true`). The hub
+(session `scienceclaw-03`) had proposed it over Mammalia because birds are a clean monophyletic class,
+carry fewer domestic-breed identifier tangles than dogs, cattle and horses, and AVONET gives a
+full-coverage trait table for the exam. **The cost, chosen knowingly:** the held-out bird counts fall
+below the builders' own minimum sample sizes (13 against 50 for Kimura heterozygosity, 8 against 15 for
+Hamilton senescence), so both examined tests read inconclusive; Mammalia would have made 1 of 2 decisive
+but would have made 3 already-built tests post hoc, including `thompson1917-ch16-13`, which is mammals-only.
+A clean blind that cannot yet decide was taken over a decisive-looking test on a contaminated design. The
+finding is about the data: the public trait and demographic tables cannot support a blind clade exam at the
+builders' own minimum n for these laws. Mammalia stays available for building; the alternative is sized in
+`alt/`, and switching would still be one line in `make-split.mjs` (`DEFAULT_CLADE`).
 
 ## Files
 
