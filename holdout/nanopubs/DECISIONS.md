@@ -54,3 +54,10 @@ the records in this folder, all open to revision by the hub or Amit before anyth
     eligibility"), which is a proposal for the hub, not something minted here.
 11. **Drafts say so.** Until the key owner decides, labels start with `Draft:` and pubinfo carries an
     `rdfs:comment` stating the files are unsigned and unpublished. `--final` removes both for a signing run.
+12. **Rulings are records too.** When another thread asks whether something is a leak, the answer is written to
+    `holdout/rulings.json` (question, who asked, ruling, reasoning, what the checker could and could not see,
+    what the ruling does not establish, notes to the builders) and the builder emits one `delphi:Assessment`
+    per ruling with `assessmentType "held-out-exam-eligibility"` and verdict `eligible`, the mirror of the
+    `burned` records; the evidence item carries the checker's numbers for the folders the ruling is about, and
+    the allowlist entries that implement the ruling cite it by id. First ruling 2026-10-31: formal statements
+    of bird-linked claims (Lean, physics) are not leaks.

@@ -48,6 +48,10 @@ const completedTests = fs.readdirSync(path.join(root, 'claim-tests'), { withFile
 // Leak check, run now so the record describes a check that ran.
 const leakRun = spawnSync(process.execPath, [path.join(root, 'holdout/check-leaks.mjs'), '--json'], { cwd: root, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
 const leaks = JSON.parse(leakRun.stdout.trim().split(/\r?\n/).pop());
+// Rulings (holdout/rulings.json) and a per-folder scan of the folders each ruling is about, so the record carries the numbers.
+const rulings = rd('holdout/rulings.json');
+const scanFolder = folder => JSON.parse(spawnSync(process.execPath, [path.join(root, 'holdout/check-leaks.mjs'), '--json', folder], { cwd: root, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 }).stdout.trim().split(/\r?\n/).pop());
+const allowlistKinds = { taxa: allowlist.filter(a => a.taxa).length, claims: allowlist.filter(a => a.claims).length, committed_before: allowlist.filter(a => a.committed_before).length, unscoped: allowlist.filter(a => !a.taxa && !a.claims && !a.committed_before).length };
 
 // ---- vocabulary ---------------------------------------------------------------------------------
 const R = 'https://w3id.org/delphi/resource/';
@@ -421,7 +425,7 @@ ${HEAD}
 sub:assertion {
   ${iri(claim)} a delphi:Claim ;
     rdfs:label ${lit(label)} ;
-    dct:description ${lit(`Status: observed at ${leaks.scanned_at}; it is a statement about the tree at that moment and is re-run before every exam. Method: holdout/check-leaks.mjs scans ${leaks.targets.join(', ')} for the scientific name, slug, NCBI taxid and GBIF key of every held-out taxon in holdout/split.json; any line outside holdout/leak-allowlist.json is a hit and exits 1. Class-level words (Aves, bird, avian, AVONET) are warnings only. Allowlist entries each carry a reason: two source and derived tables of the Kimura test that contain bird rows the analysis drops before fitting; the swarm comparison folder for the burned pigeon claim; the organism thread's exam predictions, which must name roster species; and two homonyms of Troglodytes (an angiosperm genus and the word for cave-dwellers). It does not establish that no builder saw bird data outside this tree, and it does not detect a held-out species described without its name or identifier; it establishes that the files the project holds are blind to the roster except where a stated reason says otherwise.`)} ;
+    dct:description ${lit(`Status: observed at ${leaks.scanned_at}; it is a statement about the tree at that moment and is re-run before every exam. Method: holdout/check-leaks.mjs scans ${leaks.targets.join(', ')} (every top-level folder except ${Object.entries(leaks.excluded || {}).map(([k, v]) => `${k}: ${v}`).join('; ')}) for the scientific name, slug, NCBI taxid and GBIF key of every held-out taxon in holdout/split.json and for the id of every claim whose inventory organisms are all held out (exam.json); any line outside holdout/leak-allowlist.json is a hit and exits 1. Class-level words (Aves, bird, avian, AVONET) and the ids of claims mixing held-out and training organisms are warnings only. Allowlist entries each carry a reason; entries can be scoped to named taxa or claim ids, or gated on a first git commit before the first freeze (${sums.first_frozen_at || sums.frozen_at}) for the pre-freeze claim-extraction folders. It does not establish that no builder saw bird data outside this tree, it does not match common names, and it does not detect a held-out species described without its name, identifier or claim id; it establishes that the files the project holds are blind to the roster except where a stated reason says otherwise.`)} ;
     delphi:hasEvidence ${iri(evidence)} ;
     prov:wasAttributedTo ${iri(ASSESSOR)} .
   ${iri(evidence)} a delphi:EvidenceItem ;
@@ -435,7 +439,13 @@ ${statusPv(evidence, STATUS)}${[
     ['n_hits_outside_allowlist', leaks.hits.length, 'lines naming a held-out taxon outside the allowlist (the exit code is 1 if this is not 0)'],
     ['n_class_level_warnings', leaks.warns, 'lines with class-level words only (Aves, bird, avian, AVONET), reported, not failing'],
     ['n_allowlist_entries', allowlist.length, 'entries in holdout/leak-allowlist.json, each with a reason'],
+    ['n_allowlisted_lines', leaks.allowed, 'lines naming a held-out taxon or claim id that an allowlist entry tolerates with a reason'],
+    ['n_allowlist_entries_scoped_to_taxa', allowlistKinds.taxa, 'entries that tolerate only named taxa under their path'],
+    ['n_allowlist_entries_scoped_to_claims', allowlistKinds.claims, 'entries that tolerate only named claim ids under their path'],
+    ['n_allowlist_entries_gated_on_first_commit', allowlistKinds.committed_before, 'entries that tolerate only files whose first git commit predates the first freeze'],
+    ['n_scanned_folders', leaks.targets.length, 'top-level folders (and dashboard/public/t) scanned'],
     ['n_held_out_taxa', split.summary.holdout, 'held-out taxa whose names and identifiers are searched for'],
+    ['n_holdout_claim_ids', leaks.signals.holdout_claim_ids, 'claim ids whose inventory organisms are all held out, searched for as a signal'],
   ].map(([p, v, d], i) => pv(evidence, `m${i + 1}`, p, v, d)).join('')}${frozenExam()}${agentTriples}}
 
 sub:provenance {
@@ -516,6 +526,57 @@ sub:provenance {
 
 ${pubinfo({ label, type: 'delphi:Assessment', introduces: assessment, domain: DOMAIN_METHOD, templates: [] })}`;
   emit(`burned-${b.id}`, trig, { kind: 'burned exam item', claim, introduces: assessment, verdict: 'burned' });
+}
+
+// ---- 10: rulings on questions other threads raised ---------------------------------------------------
+for (const r of rulings.rulings) {
+  const assessment = `${R}assessment/holdout-ruling-${r.id}`;
+  const evidence = `${R}evidence/holdout-ruling-${r.id}-scan-${leaks.scanned_at.replace(/[:.]/g, '-')}`;
+  const ids = r.subject.claims.map(c => c.id);
+  const folders = [...new Set(r.subject.files.map(f => f.split('/')[0]))];
+  const scans = Object.fromEntries(folders.map(f => [f, scanFolder(f)]));
+  const taxonFiles = (f, s) => (s.allowed_files || []).filter(x => x.kinds.includes('taxon')).length + s.hits.filter(h => h.kind === 'taxon' && !h.allowed).length;
+  const claimFiles = (f, s) => (s.allowed_files || []).filter(x => x.kinds.includes('claim') && x.what.some(w => ids.some(id => w.includes(id)))).length;
+  const label = `Ruling on ${ids.join(' and ')}: ${r.ruling}`;
+  const STATUS = `ruled ${r.date}; the scan numbers are from ${leaks.scanned_at}`;
+  const trig = `${PREFIXES}
+${HEAD}
+sub:assertion {
+${ids.map(id => `  ${iri(`${R}claim/${id}`)} delphi:hasAssessment ${iri(assessment)} .`).join('\n')}
+  ${iri(assessment)} a delphi:Assessment ;
+    rdfs:label ${lit(label)} ;
+${ids.map(id => `    delphi:evaluatesHypothesis ${iri(`${R}claim/${id}`)} ;`).join('\n')}
+    delphi:assessmentType "held-out-exam-eligibility" ;
+    delphi:hasVerdict "eligible" ;
+    dct:description ${lit(`Status: ruled ${r.date} by the ${r.ruled_by}, at the request of the ${r.asked_by}. Question: ${r.question} Ruling: ${r.ruling} Reasoning: ${r.reasoning.join(' ')} The checker before: ${r.checker_before} The checker after: ${r.checker_after} Does not establish: ${r.does_not_establish.join(' ')}`)} ;
+    rdfs:comment ${lit(`To the builders: ${r.to_the_builders.join(' ')}`)} ;
+    delphi:hasEvidence ${iri(evidence)} ;
+    prov:wasAttributedTo ${iri(ASSESSOR)} .
+  ${iri(evidence)} a delphi:EvidenceItem ;
+    rdfs:label ${lit(`Scan of ${folders.join(' and ')} on ${leaks.scanned_at}: no file names a held-out taxon outside a reasoned allowlist entry; the claim ids appear only where an entry citing this ruling tolerates them`)} ;
+    dct:description ${lit(`Output of node holdout/check-leaks.mjs --json over ${folders.join(', ')} after the scope was widened to .trig, .lean and the claim-id signal. Files the ruling is about: ${r.subject.files.join(', ')}.`)} ;
+    delphi:statisticalTest "Exhaustive string match of held-out names, identifiers and claim ids; no sampling" ;
+    prov:wasDerivedFrom sub:frozen-split ;
+    rdfs:seeAlso ${iri(LIVE_DATA)} .
+${statusPv(evidence, STATUS)}${folders.flatMap(f => [
+    [`n_files_scanned_${f}`, scans[f].files, `files read under ${f}/`],
+    [`n_hits_outside_allowlist_${f}`, scans[f].hits.length, `lines under ${f}/ naming a held-out taxon or claim id outside the allowlist`],
+    [`n_files_naming_a_held_out_taxon_${f}`, taxonFiles(f, scans[f]), `files under ${f}/ in which a held-out name or identifier appears (tolerated or not)`],
+    [`n_files_naming_the_ruled_claims_${f}`, claimFiles(f, scans[f]), `files under ${f}/ naming ${ids.join(' or ')}, tolerated under the entry that cites this ruling`],
+  ]).map(([p, v, d], i) => pv(evidence, `m${i + 1}`, p, v, d)).join('')}${frozenExam()}${agentTriples}}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo ${iri(ASSESSOR)} ;
+    prov:wasDerivedFrom ${iri(LIVE_DATA)} , ${iri(TREE)} , sub:frozen-split ;
+    prov:wasGeneratedBy sub:scan .
+  sub:scan a prov:Activity ;
+    rdfs:label "node holdout/check-leaks.mjs --json, after widening the scope (holdout/rulings.json, checker_after)" ;
+    prov:wasAssociatedWith ${iri(ASSESSOR)} ;
+    prov:endedAtTime ${dt(leaks.scanned_at.replace(/\.\d{3}Z$/, 'Z'))} .
+}
+
+${pubinfo({ label, type: 'delphi:Assessment', introduces: assessment, domain: DOMAIN_METHOD, templates: [] })}`;
+  emit(`ruling-${r.id}`, trig, { kind: 'ruling', claims: ids.map(id => `${R}claim/${id}`), introduces: assessment, verdict: 'eligible', ruled_on: r.date });
 }
 
 // ---- write -------------------------------------------------------------------------------------------

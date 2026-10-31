@@ -1,0 +1,45 @@
+{
+  "what": "Rulings by the holdout thread on questions other threads raised about the held-out clade. Each is a judgement, dated, with the evidence it rested on and what it does not establish. The leak checker enforces them: holdout/leak-allowlist.json entries cite a ruling by id.",
+  "rulings": [
+    {
+      "id": "formal-statements-of-bird-linked-claims",
+      "date": "2026-10-31",
+      "asked_by": "hub (session scienceclaw-03), relaying the nanopub curation pass, which flagged lean/nanopubs/unsigned/law-thompson1917-ch02-07.trig as Aves content in a builder's drafts and did not judge it",
+      "ruled_by": "holdout thread (session scienceclaw-93)",
+      "question": "Does a formal statement (Lean 4 theorem) of a claim whose inventory organisms are birds count as holdout contamination, and did the leak checker see it?",
+      "subject": {
+        "claims": [
+          { "id": "thompson1917-ch02-06", "side_in_exam": "holdout", "label": "Power needed for flight grows as length^3.5 while muscle power grows as length^3", "inventory_organisms": "class Aves, Struthio camelus and one more bird key; the claim is Thompson's general scaling argument stated for birds" },
+          { "id": "thompson1917-ch02-07", "side_in_exam": "mixed", "label": "Ostrich and moa have passed the size at which muscular flight is possible", "inventory_organisms": "Struthio camelus and Dinornithiformes (held out); the training-side match is 'a bird as large as a man', which is a hypothetical bird, not a human observation" }
+        ],
+        "files": [
+          "lean/nanopubs/unsigned/law-thompson1917-ch02-07.trig",
+          "lean/nanopubs/unsigned/scope-thompson1917-ch02-07.trig",
+          "lean/nanopubs/unsigned/law-thompson1917-ch02-06.trig",
+          "lean/Delphi/Scaling.lean",
+          "physics/tests/thompson1917-ch02-06/result.json"
+        ]
+      },
+      "ruling": "Not a leak. Not burned. Both claims stay eligible for a blind exam on the held-out birds.",
+      "reasoning": [
+        "Contamination means a bird measurement informed a law before the exam. A theorem of a model contains no measurement: exists_size_limit proves that under the cube law, the area law and the muscle-power premise there is a size above which power required exceeds power available, and supplies no value for it. The record's own scope note says nothing here places the ostrich, the moa or a man-sized bird above that size.",
+        "The only bird content in the drafts is Thompson's sentence (claim text that was in the inputs before the freeze) and the words ostrich and moa in the title copied from the claim. No scientific name, identifier, trait row or genome of a held-out taxon appears in any lean file: the widened scan of 2026-10-31 found 0 held-out names under lean/.",
+        "The physics thread's claim test of thompson1917-ch02-06 ran on flying fish and other non-bird fliers with class Aves dropped at parse time (physics/SEARCHES.md); the scan finds held-out names under physics/ only in fetched full-text articles, none in an analysis or data file.",
+        "Neither artefact can be scored on birds, so neither burns the exam: the theorem predicts no number, and the physics test's fitted quantities were never evaluated on a bird. A later blind exam of the same law on the roster (AVONET mass, wing area and flight status) would be the first contact between the law and bird data.",
+        "The rule for builders forbids claim texts that only Aves organisms support as training material. ch02-06 is listed on the holdout side because its inventory organisms are birds, but the law it states is about any flier of fixed proportions; it is Thompson's example that is avian, not the law. The ruling is that the rule applies to data and to organism-specific claims, not to a scaling law tested on non-birds or stated formally."
+      ],
+      "checker_before": "default scope was claim-tests/, organism-design/ and swarm/, and the extension list excluded .trig and .lean; lean/nanopubs/unsigned/ was not scanned, and the drafts name the birds only by common name, which no signal matched. The curator's flag was the only detection.",
+      "checker_after": "default scope is every top-level folder except holdout/, organisms/, docs/, dashboard/ (its per-thread data copies under dashboard/public/t are scanned), node_modules/, assets/ and .git, with the reason for each exclusion printed; .trig, .ttl, .nt, .nq, .lean, .jsonl and .toml are scanned; a new signal fires on the id of any claim whose inventory organisms are all held out (12 ids), and warns on the 13 mixed ones. Both ch02-07 drafts now trip the claim-id signal and are tolerated under a lean/ allowlist entry that cites this ruling.",
+      "does_not_establish": [
+        "That the theorem is a faithful rendering of Thompson's argument (the lean thread's own faithfulness assessment is 'not assessed').",
+        "Anything about the ostrich or the moa.",
+        "That no builder read bird data outside this tree."
+      ],
+      "to_the_builders": [
+        "lean thread: the record's label 'Ostrich and moa have passed the size at which muscular flight is possible (Lean 4, kernel-checked)' names the bird claim as the thing kernel-checked, while the assertion proves only that a size limit exists; a reader who stops at the label will take the bird claim as proved. Label the theorem, not the claim.",
+        "lean thread: the rdfs:comment lists Kimura, Fisher and Maynard Smith assumptions on a scaling record, and the evidence item reports '0 deliberately broken variants' as mutation evidence, which is no evidence; both read as copied boilerplate.",
+        "physics thread: the same two claim ids are tolerated under physics/ for the reason above; a future test that reads a bird row would still be a leak."
+      ]
+    }
+  ]
+}

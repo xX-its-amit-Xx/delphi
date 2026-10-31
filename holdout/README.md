@@ -100,6 +100,28 @@ the inventory links to an organism; the other 782 claims name no organism.
   key 5219200 (99879) instead of the accepted key 6164210 (124431); both now record the accepted
   key, re-queried, and keep the synonym count under its own property.
 
+## Leak check: scope and rulings (widened 2026-10-31)
+
+`node holdout/check-leaks.mjs` scans every top-level folder except the exam itself and its inputs (`holdout/`,
+`organisms/`, `docs/`, `dashboard/` other than the per-thread data copies under `dashboard/public/t`, `node_modules/`,
+`assets/`), including every thread's nanopub drafts (`.trig`), Lean modules and JSONL logs. Until 2026-10-31 it scanned
+only `claim-tests/`, `organism-design/` and `swarm/`, and skipped `.trig` and `.lean`; the hub's curation pass, not the
+checker, caught a bird-titled draft in `lean/nanopubs/`, which is what prompted the widening. Three signals: the
+scientific name, slug, NCBI taxid or GBIF key of a held-out taxon (hit); the id of a claim whose inventory organisms
+are all held out, 12 ids from `exam.json` (hit); class-level words and the 13 mixed-organism claim ids (warning).
+Common names are not matched, which is why the claim-id signal exists. Every tolerated hit is an entry in
+`leak-allowlist.json` with a reason; entries can be scoped to named taxa or claim ids, and the pre-freeze extraction
+folders (`darwin-origin/`, `thompson-growth-form/`, `truth/`) are tolerated only for files whose first git commit
+predates the first freeze, checked with `git log`.
+
+Rulings on questions other threads raise are in `rulings.json` and cited from the allowlist. The first: a Lean 4
+theorem of Thompson's flight-scaling law (`thompson1917-ch02-06`, `-07`, claims whose inventory organisms are birds)
+is not a leak and does not burn the exam, because a theorem of a model carries no measurement and predicts no number
+that bird data could score; the physics thread's test of the same law on flying fish, with Aves dropped at parse
+time, is tolerated on the same reasoning. The ruling also tells the lean thread that a label reading "Ostrich and
+moa have passed the size ... (Lean 4, kernel-checked)" names the bird claim as the thing proved, when only the
+existence of a size limit was.
+
 ## Power: which clade lets the exam reach a verdict? (added 2026-10-31)
 
 `node holdout/power-analysis.mjs` re-runs each completed claim test on a scratch copy with Aves held out and
