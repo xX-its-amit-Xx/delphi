@@ -87,12 +87,17 @@ function init(D) {
 
   // threads
   const stCls = { starting: '', working: 'ok', blocked: 'bad', done: 'viol' };
+  // A thread may write metrics either as [{value,label}] or as a plain {label: value}
+  // object. Accept both: a thread's own status file must never be able to blank this panel.
+  const normMetrics = m => Array.isArray(m) ? m
+    : (m && typeof m === 'object') ? Object.entries(m).map(([label, value]) => ({ label, value }))
+    : [];
   $('#threadGrid').innerHTML = (D.threads || []).map(t => {
     const age = t.updated ? Math.round((Date.now() - Date.parse(t.updated)) / 6e4) : null;
     const stale = age !== null && age > 90 && t.state === 'working';
     return `<div class="card"><h3>${esc(t.title || t.thread)}</h3><div class="pill-row"><span class="chip ${stCls[t.state] || ''}">${esc(t.state)}</span>${stale ? '<span class="chip warn">no update for ' + age + ' min</span>' : ''}</div>
       <p class="small">${esc(t.headline)}</p>
-      ${(t.metrics || []).map(m => `<div class="small"><b>${esc(m.value)}</b> ${esc(m.label)}</div>`).join('')}
+      ${normMetrics(t.metrics).map(m => `<div class="small"><b>${esc(m.value)}</b> ${esc(m.label)}</div>`).join('')}
       ${(t.blockers || []).length ? `<p class="small" style="color:var(--bad)"><b>Blocked:</b> ${t.blockers.map(esc).join('; ')}</p>` : ''}
       ${(t.needs || []).length ? `<p class="small"><b>Needs:</b> ${t.needs.map(n => esc(n.from) + ': ' + esc(n.ask)).join('; ')}</p>` : ''}
       ${t.hasPage ? `<a class="btn" href="t/${esc(t.dir)}/index.html" style="text-decoration:none;display:inline-block;margin-top:6px">Open sub-dashboard</a>` : '<span class="small mute">No sub-dashboard yet</span>'}</div>`;
