@@ -1,0 +1,94 @@
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix schema: <https://schema.org/> .
+@prefix spdx: <http://spdx.org/rdf/terms#> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/claim/genotype-gotcha-ubergraph-xref-literals-are-typed-strings> a delphi:Claim ;
+    rdfs:label "Ubergraph stores ontology cross-reference values as xsd:string-typed literals, so a SPARQL VALUES block of plain literals matches nothing and returns an empty result with HTTP 200: the same query for the pectoral fin's ZFA cross-reference returned 0 rows with a plain literal and 1 row with a typed literal" ;
+    dct:description "Status: serendipitous methodological finding, reproduced with two logged probe queries. While building the fin subtree, the query for Uberon terms cross-referenced to 40 ZFA terms came back with 0 rows and HTTP 200, which could have been read as \"no cross-references exist\". The earlier blueprint query had filtered on STRSTARTS(STR(?x),\"ZFA:\") and worked; the new one put the ZFA ids in a VALUES block as plain literals. Ubergraph returns oboInOwl:hasDbXref values with datatype http://www.w3.org/2001/XMLSchema#string, and in this endpoint a plain literal in VALUES does not match a typed one. Reproduced on 2026-10-31T19:20:06Z with one term: plain literal 0 bindings (88 bytes), typed literal \"ZFA:0001161\"^^xsd:string 1 binding (355 bytes), both HTTP 200. With typed literals the 40-term query returned 35 cross-references. Rule adopted: type every literal in a VALUES block against Ubergraph, and treat an empty 200 as a question, not an answer. What it does not establish: It does not establish how other SPARQL endpoints behave, nor whether Ubergraph's behaviour follows from the SPARQL specification or from its store; only what this endpoint returned to these two queries on this day. Pre-registration: none: a tooling gotcha." ;
+    delphi:context "Queries and full results in genotype/cache/ubergraph_probe_literal_typing.json; the production query in genotype/fetch_fin_subtree.py. A second, smaller gotcha found at the same time: the thread's call log keyed records by name, so the retry overwrote the log entry of the failed first attempt; the probes above were run under new names to put the failure back on record." ;
+    delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/genotype-gotcha-ubergraph-xref-literals-are-typed-strings> ;
+    prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-genotype-thread-claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/evidence/genotype-gotcha-ubergraph-xref-literals-are-typed-strings> a delphi:EvidenceItem ;
+    rdfs:label "Two Ubergraph probe queries differing only in literal typing" ;
+    dct:description "Read from genotype/cache/ubergraph_probe_literal_typing.json, written by genotype/fetch_ubergraph_probe.py." ;
+    delphi:statisticalTest "Paired probe: identical query text except the literal typing, same term, run 0.5 s apart; counts of result bindings compared. No statistical test." ;
+    prov:used <https://w3id.org/delphi/resource/dataset/ubergraph-sparql-literal-typing-probes> ;
+    prov:wasDerivedFrom sub:map ;
+    rdfs:seeAlso <https://delphi-mission-control.ashenoy000.workers.dev/t/genotype/data.json> .
+  <https://w3id.org/delphi/resource/evidence/genotype-gotcha-ubergraph-xref-literals-are-typed-strings> schema:additionalProperty sub:m0 .
+  sub:m0 a schema:PropertyValue ; schema:propertyID "status" ; schema:value "serendipitous methodological finding, reproduced with two logged probe queries" ; schema:description "status of this record in the words of AGENTS.md (supported, refuted, mixed, inconclusive, or a descriptive status)" .
+  <https://w3id.org/delphi/resource/evidence/genotype-gotcha-ubergraph-xref-literals-are-typed-strings> schema:additionalProperty sub:m1 .
+  sub:m1 a schema:PropertyValue ; schema:propertyID "bindings_plain_literal" ; schema:value "0"^^xsd:integer ; schema:description "result rows with a plain literal in VALUES" .
+  <https://w3id.org/delphi/resource/evidence/genotype-gotcha-ubergraph-xref-literals-are-typed-strings> schema:additionalProperty sub:m2 .
+  sub:m2 a schema:PropertyValue ; schema:propertyID "bindings_typed_literal" ; schema:value "1"^^xsd:integer ; schema:description "result rows with an xsd:string-typed literal in VALUES" .
+  <https://w3id.org/delphi/resource/evidence/genotype-gotcha-ubergraph-xref-literals-are-typed-strings> schema:additionalProperty sub:m3 .
+  sub:m3 a schema:PropertyValue ; schema:propertyID "http_status_plain_literal" ; schema:value "200"^^xsd:integer ; schema:description "HTTP status of the empty answer" .
+  <https://w3id.org/delphi/resource/evidence/genotype-gotcha-ubergraph-xref-literals-are-typed-strings> schema:additionalProperty sub:m4 .
+  sub:m4 a schema:PropertyValue ; schema:propertyID "n_terms_in_production_query" ; schema:value "40"^^xsd:integer ; schema:description "ZFA terms in the fin-subtree cross-reference query" .
+  <https://w3id.org/delphi/resource/evidence/genotype-gotcha-ubergraph-xref-literals-are-typed-strings> schema:additionalProperty sub:m5 .
+  sub:m5 a schema:PropertyValue ; schema:propertyID "n_xrefs_with_typed_literals" ; schema:value "35"^^xsd:integer ; schema:description "cross-references the production query returned once the literals were typed" .
+  <https://w3id.org/delphi/resource/dataset/ubergraph-sparql-literal-typing-probes> a dcat:Dataset ;
+    dct:title "Two probe queries to the Ubergraph SPARQL endpoint for Uberon hasDbXref \"ZFA:0001161\": one with a plain literal in VALUES, one with an xsd:string-typed literal" ;
+    dcat:landingPage <https://ubergraph.apps.renci.org/sparql> ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    dcat:version "as retrieved on 2026-10-31 (see each distribution's time)" ;
+    dcat:distribution sub:ubergraph_probef0, sub:ubergraph_probef1 .
+  sub:ubergraph_probef0 a dcat:Distribution, prov:Entity ;
+    dcat:downloadURL <https://ubergraph.apps.renci.org/sparql> ;
+    dcat:byteSize "88"^^xsd:nonNegativeInteger ;
+    prov:generatedAtTime "2026-10-31T19:20:06Z"^^xsd:dateTime ;
+    spdx:checksum sub:ubergraph_probef0sha .
+  sub:ubergraph_probef0sha a spdx:Checksum ; spdx:algorithm spdx:checksumAlgorithm_sha256 ; spdx:checksumValue "7e725d6e534d09aa425c5ac5a931d61c4d02455567e2a8cf1159641381a9ee27" .
+  sub:ubergraph_probef1 a dcat:Distribution, prov:Entity ;
+    dcat:downloadURL <https://ubergraph.apps.renci.org/sparql> ;
+    dcat:byteSize "355"^^xsd:nonNegativeInteger ;
+    prov:generatedAtTime "2026-10-31T19:20:06Z"^^xsd:dateTime ;
+    spdx:checksum sub:ubergraph_probef1sha .
+  sub:ubergraph_probef1sha a spdx:Checksum ; spdx:algorithm spdx:checksumAlgorithm_sha256 ; spdx:checksumValue "c349904485eb5356bd081fa5b5e230735c6794392470fc25a28e6293dedafeda" .
+  sub:map a prov:Entity ;
+    dct:title "genotype/map.vetted.json (vetted, slimmed genotype-phenotype map; built 2026-10-31T18:58:34Z by genotype/build.py)" ;
+    spdx:checksum sub:map-sha ;
+    schema:contentSize "9197138"^^xsd:integer ;
+    prov:generatedAtTime "2026-10-31T18:58:34Z"^^xsd:dateTime .
+  sub:map-sha a spdx:Checksum ; spdx:algorithm spdx:checksumAlgorithm_sha256 ; spdx:checksumValue "c177dafdfc606e821ee55e6b8ac77ee10256fde7280f2df8963f6347b3223ff2" .
+  <https://w3id.org/delphi/resource/agent/delphisci-genotype-thread-claude-fable-5-1> a prov:SoftwareAgent ;
+    rdfs:label "delphisci genotype thread (session scienceclaw-68, Claude Fable 5.1): built and vetted the genotype-phenotype map from proxy-fish records" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/model/claude-fable-5-1> a delphi:LanguageModel ; rdfs:label "Claude Fable 5.1" ; dct:identifier "claude-fable-5-1" .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-genotype-thread-claude-fable-5-1> ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/genotype/data.json> , sub:map ;
+    prov:generatedAtTime "2026-10-31T19:20:35Z"^^xsd:dateTime .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-10-31T19:20:35Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/delphisci-genotype-thread-claude-fable-5-1> ;
+    rdfs:label "Draft: Ubergraph stores ontology cross-reference values as xsd:string-typed literals, so a SPARQL VALUES block of plain literals matches nothing and returns an empty result with HTTP 200: the same query for the pectoral fin's ZFA cross-reference returned 0 rows with a plain literal and 1 row with a typed literal" ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType delphi:Claim ;
+    npx:introduces <https://w3id.org/delphi/resource/claim/genotype-gotcha-ubergraph-xref-literals-are-typed-strings> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/genotype-phenotype-mapping> ;
+    rdfs:comment "Unsigned draft, not published. Built by genotype/nanopubs/build-nanopubs.mjs from genotype/map.vetted.json, which is not yet committed; the resolvable copy of its numbers is the live sub-dashboard data file linked from the provenance. The creator is the software agent that built the map; the key holder's ORCID is added only when that person approves and signs. No assertion, provenance or pubinfo template is declared because this 2.0 record was not created from one. Publishing needs the key owner's approval: test registry first, never production without it." .
+  <https://w3id.org/delphi/resource/domain/genotype-phenotype-mapping> rdfs:label "genotype-phenotype-mapping" .
+}

@@ -263,6 +263,25 @@ records.push(record({
   evLabel: 'Pectoral fin length over standard length by group, from Daane 2021 Data S1A', evDesc: 'Computed by genotype/fin_ratios_table.py from the cached spreadsheet.',
 }));
 
+// Ubergraph typed-literal gotcha: a SPARQL VALUES block of plain literals silently matches no hasDbXref value
+const PR = rd('genotype/cache/ubergraph_probe_literal_typing.json');
+const plain = PR.ubergraph_probe_plain_literal_values, typed = PR.ubergraph_probe_typed_literal_values;
+DS.ubergraph_probe = { id: 'ubergraph-sparql-literal-typing-probes', title: 'Two probe queries to the Ubergraph SPARQL endpoint for Uberon hasDbXref "ZFA:0001161": one with a plain literal in VALUES, one with an xsd:string-typed literal', landing: 'https://ubergraph.apps.renci.org/sparql', licence: 'https://creativecommons.org/licenses/by/4.0/', calls: ['ubergraph_probe_plain_literal_values', 'ubergraph_probe_typed_literal_values'] };
+records.push(record({
+  file: 'gotcha-ubergraph-typed-literals.trig', slug: 'genotype-gotcha-ubergraph-xref-literals-are-typed-strings',
+  label: `Ubergraph stores ontology cross-reference values as xsd:string-typed literals, so a SPARQL VALUES block of plain literals matches nothing and returns an empty result with HTTP 200: the same query for the pectoral fin's ZFA cross-reference returned ${plain.bindings} rows with a plain literal and ${typed.bindings} row with a typed literal`,
+  status: 'serendipitous methodological finding, reproduced with two logged probe queries',
+  description: `While building the fin subtree, the query for Uberon terms cross-referenced to 40 ZFA terms came back with 0 rows and HTTP 200, which could have been read as "no cross-references exist". The earlier blueprint query had filtered on STRSTARTS(STR(?x),"ZFA:") and worked; the new one put the ZFA ids in a VALUES block as plain literals. Ubergraph returns oboInOwl:hasDbXref values with datatype http://www.w3.org/2001/XMLSchema#string, and in this endpoint a plain literal in VALUES does not match a typed one. Reproduced on ${plain.retrieved} with one term: plain literal ${plain.bindings} bindings (${plain.bytes} bytes), typed literal "ZFA:0001161"^^xsd:string ${typed.bindings} binding (${typed.bytes} bytes), both HTTP 200. With typed literals the 40-term query returned 35 cross-references. Rule adopted: type every literal in a VALUES block against Ubergraph, and treat an empty 200 as a question, not an answer.`,
+  context: 'Queries and full results in genotype/cache/ubergraph_probe_literal_typing.json; the production query in genotype/fetch_fin_subtree.py. A second, smaller gotcha found at the same time: the thread\'s call log keyed records by name, so the retry overwrote the log entry of the failed first attempt; the probes above were run under new names to put the failure back on record.',
+  test: 'Paired probe: identical query text except the literal typing, same term, run 0.5 s apart; counts of result bindings compared. No statistical test.',
+  metrics: [['bindings_plain_literal', plain.bindings, 'result rows with a plain literal in VALUES'], ['bindings_typed_literal', typed.bindings, 'result rows with an xsd:string-typed literal in VALUES'],
+            ['http_status_plain_literal', plain.status, 'HTTP status of the empty answer'], ['n_terms_in_production_query', 40, 'ZFA terms in the fin-subtree cross-reference query'], ['n_xrefs_with_typed_literals', 35, 'cross-references the production query returned once the literals were typed']],
+  datasets: ['ubergraph_probe'],
+  notEstablished: 'It does not establish how other SPARQL endpoints behave, nor whether Ubergraph\'s behaviour follows from the SPARQL specification or from its store; only what this endpoint returned to these two queries on this day.',
+  prereg: 'none: a tooling gotcha.',
+  evLabel: 'Two Ubergraph probe queries differing only in literal typing', evDesc: 'Read from genotype/cache/ubergraph_probe_literal_typing.json, written by genotype/fetch_ubergraph_probe.py.',
+}));
+
 fs.writeFileSync(path.join(here, 'manifest.json'), JSON.stringify({ built: NOW, map: MAP, map_sha256: mapSha, map_bytes: mapSize, unsigned: true, records }, null, 2));
 console.log(`${records.length} unsigned draft records in ${out}`);
 
