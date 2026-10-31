@@ -33,12 +33,23 @@ export function content(P_kPa, p = {}) {
   return val(p, 'cap_ml_per_ml') * saturation(P_kPa, p) + val(p, 'alpha_ml_per_ml_kPa') * Math.max(0, P_kPa);
 }
 
-// Inverse of content(): PO2 (kPa) giving content C, by bisection (content is monotonic in P).
+// Inverse of content(): PO2 (kPa) giving content C. Start from the analytic Hill inverse (ignoring dissolved O2),
+// refine with safeguarded Newton steps; content is monotonic in P.
 export function pressureFromContent(C, p = {}) {
   if (C <= 0) return 0;
-  let lo = 0, hi = 400;
-  for (let i = 0; i < 80; i++) { const mid = 0.5 * (lo + hi); if (content(mid, p) < C) lo = mid; else hi = mid; }
-  return 0.5 * (lo + hi);
+  const cap = val(p, 'cap_ml_per_ml'), alpha = val(p, 'alpha_ml_per_ml_kPa'), P50 = val(p, 'P50_kPa'), n = val(p, 'n');
+  const S0 = Math.min(0.999999, Math.max(1e-9, C / cap));
+  let P = Math.min(P50 * Math.pow(S0 / (1 - S0), 1 / n), C / alpha);
+  for (let i = 0; i < 50; i++) {
+    const x = Math.pow(P, n), y = Math.pow(P50, n);
+    const f = cap * (x / (x + y)) + alpha * P - C;
+    const df = (cap * n * x * y) / (P * (x + y) * (x + y)) + alpha;
+    let Pn = P - f / df;
+    if (!(Pn > 0)) Pn = P / 2;
+    if (Math.abs(Pn - P) < 1e-12 * Math.max(1, P)) { P = Pn; break; }
+    P = Pn;
+  }
+  return P;
 }
 
 // Bohr shift: P50 after an arterial-to-venous pH change dpH (negative = acidification -> right shift).

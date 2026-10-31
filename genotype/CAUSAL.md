@@ -1,6 +1,6 @@
 # Causal chains from gene to phenotype in the pectoral fin
 
-Built 2026-10-31T20:48:28Z by `genotype/assemble_chains.py` from 6 subagent result files.
+Built 2026-10-31T20:52:06Z by `genotype/assemble_chains.py` from 7 subagent result files.
 Every link carries its own source, organism, experiment type and evidence grade; the grades are, weakest to strongest,
 `hypothesis`, `association`, `necessity`, `sufficiency`, `mechanism`. A link with no fetched source is `missing` and is named as a gap.
 
@@ -10,13 +10,13 @@ Every link carries its own source, organism, experiment type and evidence grade;
 
 | | |
 |---|---|
-| genes with a chain | 30 |
-| chains whose **weakest** link is `necessity` or better | 20 |
-| genes with at least one link graded `necessity` or better | 30 |
-| genes with at least one link graded `mechanism` | 29 |
-| complete four-step chains | 26 |
-| distinct publications cited | 87 |
-| fetched calls by the subagents | 287 |
+| genes with a chain | 35 |
+| chains whose **weakest** link is `necessity` or better | 24 |
+| genes with at least one link graded `necessity` or better | 35 |
+| genes with at least one link graded `mechanism` | 33 |
+| complete four-step chains | 31 |
+| distinct publications cited | 101 |
+| fetched calls by the subagents | 293 |
 
 ## Strongest chain end to end: mib1
 
@@ -41,7 +41,9 @@ Ordered by **chain strength**, the weakest grade on the chain, because that is w
 | mib1 | `mechanism` | `mechanism` | ZFA:0001161+ZFA:0009025 (cell) | 1 / 1 | gene->molecular_function: the ubiquitin-ligase activity and Delta binding come from the Itoh 2003 abstract only (full text not open) and were shown in neurogenesis, not in the fin. Also the canonical  |
 | kcnk5b | `sufficiency` | `mechanism` | mesenchyme pectoral fin (part) | 3 / 1 | molecular_function->process. The step is heavily sourced but the papers disagree on sign: Perathoner 2014 shows the gain-of-function channel hyperpolarizes (oocytes), Jiang 2024 shows Kcnk5b produces  |
 | kcnh2a | `sufficiency` | `mechanism` | mesenchyme pectoral fin (part) | 1 / 3 | gene->molecular_function joined to molecular_function->process. The biophysics (Kume 2026) is measured for the zebrafish channel but in Xenopus oocytes and for a gene the same paper finds is brain-enr |
+| fgf24 | `necessity` | `mechanism` | scapulocoracoid (subpart) | 4 / 3 | gene->molecular_function: no direct Fgf24-receptor binding or activation assay in any fetched source; the ligand assignment is sequence-family (GO IBA/IEA only) plus receptor-side genetics, and the tr |
 | apc | `necessity` | `mechanism` | pectoral fin fold (part) | 3 / 2 | process->cell_or_tissue_effect in the PECTORAL fin: the apc allele itself was assayed in the median fin fold, and the pectoral fin fold result used the GSK-3beta inhibitor BIO. The apc-specific pector |
+| tbx5a | `necessity` | `mechanism` | pectoral fin lepidotrichium (subpart) | 2 / 5 | gene->molecular_function: Tbx5a's DNA binding and transcriptional activation were shown in cardiac/cell-based assays (Tong 2014) and inferred from the T-box family, never assayed in fin bud tissue; th |
 | rerea | `necessity` | `mechanism` | pectoral fin (organ) | 2 / 3 | process->cell_or_tissue_effect: the molecular mechanism (RA coactivation) is established only in mouse and in zebrafish tissues other than the fin, and the one pathway test performed on the zebrafish  |
 | hhip | `necessity` | `mechanism` | pectoral fin radial (subpart) | 2 / 2 | process->cell_or_tissue_effect is resolved only to the whole pectoral fin bud / endochondral disk; the zone of polarizing activity (ZFA:0001451) and apical ectodermal ridge (ZFA:0000085) are never ass |
 | hmcn1 | `necessity` | `mechanism` | pectoral fin fold (part) | 2 / 2 | cell_or_tissue_effect->phenotype in the PECTORAL fin: the ultrastructural mechanism (blister below the lamina densa) was established in the median fin fold; for the pectoral fin only light-microscopy  |
@@ -49,6 +51,8 @@ Ordered by **chain strength**, the weakest grade on the chain, because that is w
 | lama5 | `necessity` | `mechanism` | pectoral fin fold (part) | 2 / 1 | gene->molecular_function: the claim that the truncation removes receptor binding is inferred from the stop-codon position rather than shown by a binding assay, and Webb 2007 is closed access so only t |
 | rspo2 | `necessity` | `mechanism` | pectoral fin lepidotrichium (subpart) | 2 / 1 | molecular_function->process inside the fin: the RSPO2-LGR4-ZNRF3 mechanism is human and in vitro, and no fetched source shows reduced Wnt/beta-catenin output (reporter, axin2, lef1) in the rspo2 mutan |
 | disp1 | `necessity` | `mechanism` | pectoral fin (organ) | 1 / 5 | process->cell_or_tissue_effect: the ZPA/AER node evidence is from shh and fgf16 experiments, not from disp1 mutants, so the fin-bud step of the chain is pathway-level inference. |
+| fgf10a | `necessity` | `mechanism` | apical ectodermal ridge pectoral fin bud (part) | 1 / 5 | process->cell_or_tissue_effect: that Fgf10a is the mesenchymal signal that induces the AER is stated only as a hedged inference in the fetched sources (Leerberg: "is likely responsible"); the direct f |
+| shha | `necessity` | `mechanism` | pectoral fin actinotrichium (subpart) | 1 / 5 | gene->molecular_function: Shha-Patched binding itself is only inferred (GO IBA/ISS). The fin-stage mechanism evidence is pharmacological (cyclopamine blocks Smoothened, ptc1 read-out), so it demonstra |
 | extl3 | `necessity` | `mechanism` | pectoral fin fold (part) | 1 / 4 | process->cell_or_tissue_effect: no fetched paper shows, in extl3/boxer mutants specifically, the cell-level event in the pectoral fin bud ectoderm (AER maintenance, ectodermal expansion) that links re |
 | prdm1a | `necessity` | `mechanism` | cleithrum (subpart) | 1 / 2 | process->cell_or_tissue_effect: the cellular event in the fin (proliferation and apoptosis) did not reach significance, so 'failure of differentiation' is an inference, not a measurement |
 | fras1 | `necessity` | `mechanism` | pectoral fin fold (part) | 1 / 1 | cell_or_tissue_effect->phenotype in the PECTORAL fin: the electron microscopy that pins the blister to the sublamina densa was done on median fin blisters; for the pectoral fin only light microscopy a |
@@ -62,6 +66,7 @@ Ordered by **chain strength**, the weakest grade on the chain, because that is w
 | hdac1 | `association` | `mechanism` | pectoral fin cartilage (subpart) | 2 / 4 | molecular_function->process: the only candidate target link is whole-embryo RT-qPCR on 'potential targets', and the fin in situ shows tbx5a intensity unchanged in the bud, so no transcriptional mechan |
 | pbx4 | `hypothesis` | `necessity` | pectoral fin bud (precursor) | 4 / 3 | The whole chain: no fetched publication TEXT describes a pbx4 pectoral fin phenotype, and there is no fetched evidence of any kind connecting pbx4 to Wnt signalling. The fin link exists only as ZFIN c |
 | ptch1 | `hypothesis` | `mechanism` | pectoral fin (organ) | 2 / 1 | gene->molecular_function: graded hypothesis, since the only fetched statements about zebrafish Ptch1 binding Hh and inhibiting Smo are domain inference and received pathway topology, with no binding o |
+| tbx5b | `hypothesis` | `necessity` | pectoral fin (organ) | 2 / 1 | gene->molecular_function: nothing experimental. The Tbx5b protein has never been shown to bind DNA or activate transcription; its molecular function is pure phylogenetic inference (GO IBA only). |
 | slc43a2a | `hypothesis` | `mechanism` | pectoral fin lepidotrichium (subpart) | 1 / 3 | molecular_function->process, which is empty of experiment. The transport function is solid but entirely from mammalian orthologs read as abstracts, and nothing bridges 'moves leucine/methionine' to 'c |
 | wls | `hypothesis` | `mechanism` | pectoral fin skeleton (part) | 1 / 0 | gene->molecular_function (hypothesis): no fetched source measures Wnt ligand secretion in zebrafish, so the cargo-receptor role is imported. The downstream reporter data are strong, but the Wnt reduct |
 | ezh2 | `missing` | `mechanism` | pectoral fin (organ) | 2 / 1 | process->cell_or_tissue_effect: entirely missing. Nothing links the chromatin lesion to the fin at the cellular level, and the only bridge is that tbx genes are expressed in the fin |
@@ -126,6 +131,34 @@ Ordered by **chain strength**, the weakest grade on the chain, because that is w
 - **rerea**: Plaster 2007 is not open access; the fin-specific claim is the ZFIN annotation of that paper and could not be verified against its text.
 - **rerea**: ZFIN attributes the rerea pectoral-fin decreased-size rows to a branchial-arch screen paper whose abstract names neither rerea nor babyface.
 - **rerea**: No sufficiency evidence (rerea overexpression) for any fin structure.
+- **tbx5a**: No ChIP, EMSA or enhancer-reporter evidence in any fetched source that Tbx5a binds the zebrafish fgf24 locus; the gene->fgf24 step rests on morphant/mutant in situ epistasis.
+- **tbx5a**: ZFA:0001453 (pectoral fin field), the compartment where the tbx5a cell-tracking experiments are done, is not in NODE_IDS.json (node_not_in_subtree: true).
+- **tbx5a**: No fetched source places tbx5a or Tbx5a protein in the apical ectodermal ridge (ZFA:0000085); the ZFIN expression records localise it to fin field, fin bud mesoderm and fin mesenchyme only, so the chain cannot be drawn through the AER for tbx5a.
+- **tbx5a**: Mao 2015 (PMID 26525676), the cell-tracking paper, is not open access: Europe PMC fullTextXML returned HTTP 500 and NCBI PMC efetch returned 'The publisher of this article does not allow downloading of the full text in XML form.' It was read as abstract only (plus the passages quoted verbatim inside Boyle-Anderson 2022).
+- **tbx5a**: No flying-fish (Exocoetidae) tbx5a data of any kind; all of the above is zebrafish proxy data.
+- **tbx5b**: No experimental molecular-function evidence for Tbx5b at all (ZFIN GO: only IBA/GO_REF:0000033).
+- **tbx5b**: tbx5b expression in the pectoral fin is thinly documented: ZFIN has a single wildtype-expression record, ZFA:0001161 at Pharyngula:Prim-25 from PMID 23441045, and Pi-Roig state they had not previously detected tbx5b in developing fins ("Although we had not previously observed tbx5b expression in developing pectoral fins [ 16 ], others have recently described it in the pectoral fin bud mesenchyme of 36 hpf embryos [ 17 ]"). So the ZFA:0001000 node is association at best, and contested.
+- **tbx5b**: No tbx5b phenotype statement below organ level in ZFIN - no skeletal, mesenchymal or AER sub-phenotype.
+- **tbx5b**: Most tbx5b fin data are morpholino-based; only the shape/length phenotype has a germline allele (ch3, PMID 30532148).
+- **tbx5b**: No flying-fish tbx5b data.
+- **fgf24**: No biochemical demonstration that Fgf24 binds or activates any Fgfr; GO MF annotations for fgf24 are IBA/IEA only.
+- **fgf24**: No fetched source gives the paralog situation for fgf24 itself (no fgf24a/fgf24b, no stated tetrapod orthologue), so the paralog field rests on subfamily assignment alone.
+- **fgf24**: The mesenchyme-to-AER switch of fgf24 is documented by expression time course (Camarata 2010, Pi-Roig 2014); the causal requirement for AER-phase fgf24 specifically (as opposed to mesodermal-phase fgf24) is not separated by any conditional or stage-restricted experiment in the fetched sources.
+- **fgf24**: ZFA:0001453 (pectoral fin field), the earliest fgf24 domain, is not in NODE_IDS.json (node_not_in_subtree: true).
+- **fgf24**: Fischer 2003 (PMID 12810598), the primary fgf24 fin paper, is not open access (Europe PMC: isOpenAccess N, no PMCID) and was read as abstract only.
+- **fgf24**: No flying-fish fgf24 data.
+- **fgf10a**: ZFIN records no fgf10a phenotype statement below the organ / fin-bud level: 5 rows total, all at ZFA:0001161, ZFA:0001383 or ZFA:0000108. No skeletal, AER or cell-level fgf10a phenotype exists.
+- **fgf10a**: ZFA:0000085 is reached as the tissue EFFECT of fgf10a, not as a site of fgf10a expression or of a curated fgf10a phenotype; declaring it the deepest node with evidence depends on accepting the epistatic AER argument.
+- **fgf10a**: No evidence either way about fgf10b in the pectoral fin; its documented roles are liver/pancreas (Yan 2015) and otic/epibranchial placodes, so the fgf10a fin role must not be transferred.
+- **fgf10a**: Three of the five ZFIN fgf10a fin rows are incidental observations in papers about other organs.
+- **fgf10a**: Norton 2005 (PMID 16221725) and Nomura 2006 (PMID 16815307) are not open access and were read as abstract only.
+- **fgf10a**: No flying-fish fgf10a data.
+- **shha**: No direct binding or receptor-activation assay for zebrafish Shha protein in any fetched source; GO MF annotations for shha are IBA/ISS only.
+- **shha**: ZFA:0001456 (pectoral fin endoskeletal disc), where several of the deepest shha phenotype rows sit, is not in NODE_IDS.json (node_not_in_subtree: true).
+- **shha**: Neumann 1999 (PMID 10518498) and Grandel 2000 (PMID 10976049), the two load-bearing fin papers for shha, are not open access (Europe PMC: isOpenAccess N, no PMCID); both were read as abstract only, so the stage- and tissue-resolved detail behind "required for normal development of the apical ectodermal fold" could not be quoted from their results sections.
+- **shha**: The cyclopamine and hoxd10a-morpholino experiments perturb Hh signalling or shh timing rather than shha gene function, so the dose/timing-to-endoskeleton-size relation is one step removed from shha loss of function.
+- **shha**: Nothing about shhb in the pectoral fin, in either direction.
+- **shha**: No flying-fish shha data.
 - **extl3**: Norton 2005 (the only paper that puts extl3 on the Fgf10 pathway) is not open access; only the abstract was read, so the fin-bud stages and target genes assayed could not be recorded in the paper's own words.
 - **extl3**: No cell-type-resolved data (scRNA-seq, lineage) for extl3 in the pectoral fin bud; no evidence reaching ZFA:0000085 (apical ectodermal ridge) or ZFA:0001000 (fin mesenchyme) for extl3.
 - **extl3**: No chondroitin-sulfate-side explanation for the pectoral fin phenotype, although Holmborn 2012 shows extl3 mutants make MORE CS than controls - whether the raised CS contributes to the fin phenotype is untested.
@@ -228,4 +261,4 @@ These are the assembler's own checks on the subagents' output; they are counted 
 
 ## Interactions
 
-12 tissue-to-tissue and cell-to-cell arrows are in `genotype/interactions.json` (1 inferred by orthology from another species' ligand-receptor data). By grade: {'mechanism': 6, 'sufficiency': 1, 'necessity': 3, 'hypothesis': 2}.
+30 tissue-to-tissue and cell-to-cell arrows are in `genotype/interactions.json` (1 inferred by orthology from another species' ligand-receptor data). By grade: {'mechanism': 12, 'sufficiency': 1, 'necessity': 13, 'hypothesis': 3, 'association': 1}.

@@ -24,13 +24,27 @@ const AIR_PHASES = new Set(['taxi', 'glide', 'flight', 'air', 'airborne', 'leap'
 // Saturation vapour pressure of water (kPa), Magnus form; standard formula, not fetched.
 const pH2O = (T) => 0.61094 * Math.exp((17.625 * T) / (T + 243.04));
 
+// Air-saturated O2 solubility of (sea) water, umol/kg, at 1 standard atmosphere with saturated water vapour:
+// Garcia & Gordon (1992) fit of Benson & Krause (1984) data, coefficients as implemented in TEOS-10 GSW-C
+// gsw_o2sol_sp_pt (fetched from github.com/TEOS-10/GSW-C, 2026-10-31). Converted to mg/l with an assumed density.
+export function o2sol_umol_kg(S_psu, T_C) {
+  const pt68 = T_C * 1.00024, y = Math.log((298.15 - pt68) / (273.15 + pt68));
+  return Math.exp(5.80871 + y * (3.20291 + y * (4.17887 + y * (5.10006 + y * (-9.86643e-2 + 3.80369 * y))))
+    + S_psu * (-7.01577e-3 + y * (-7.70028e-3 + y * (-1.13864e-2 + -9.51519e-3 * y)) + -2.75915e-7 * S_psu));
+}
+export function o2sat_mg_l(S_psu, T_C, airO2_fraction = 0.20946, density_kg_l = S_psu > 0 ? 1.0234 : 1.0) {
+  return o2sol_umol_kg(S_psu, T_C) * 32e-3 * density_kg_l * (airO2_fraction / 0.20946);
+}
+// Baseline environment (conditions/baseline.json): water 25 degC, salinity 35, air O2 0.209, air-saturated water.
+export const BASELINE_ENV = { waterTemp_C: 25, salinity_psu: 35, airO2_fraction: 0.209 };
+
 export const GILL_PARAMS = {
   // trout reference used to tune the gill O2 transfer D per m^2 of gill area
   ref_Q_ml_min_kg: P(26.3, 'proxy', 'sundell2018 (O. mykiss SW, 10.5 degC) cardiac output 26.3 ml/min/kg'),
   ref_MO2_ml_h_kg: P(20.59149728 / 0.3111901235, 'secondary', 'bigman2021 dataset PairedMeanMRData.csv: O. mykiss 20.59 ml O2/h at 311 g, 12 degC (White et al. 2012 compilation) -> 66.2 ml/kg/h'),
   ref_PaO2_kPa: P(15.8, 'proxy', 'mcarley2022: resting arterial PO2 15.8 +/- 0.4 kPa in normoxic O. mykiss at ~10 degC (9.9 kPa after exhaustive exercise)'),
   ref_T_C: P(10, 'proxy', 'mcarley2022 / sundell2018 temperatures ~10 degC'),
-  ref_waterO2_mg_l: P(11.3, 'assumed', 'air-saturated fresh water at 10 degC; textbook solubility, not fetched'),
+  ref_waterO2_mg_l: P(o2sat_mg_l(0, 10), 'derived', 'air-saturated fresh water at 10 degC: Garcia & Gordon 1992 fit (TEOS-10 GSW-C gsw_o2sol_sp_pt) at S = 0, density 1.000 kg/l'),
   ref_gillArea_m2_per_kg: P(2021.8e-4 / 1.3064, 'secondary', 'bigman2021 dataset PairedRSAData.csv: O. mykiss 2021.8 cm2 at 1306 g (Niimi & Morgan 1980 via data thief) -> 0.155 m2/kg'),
   ventilation_to_perfusion: P(10, 'assumed', 'water flow / blood flow (Vw/Q); no fetched ventilation volume. Sets water capacitance rate Gw = 10 Q beta_w'),
   default_gillArea_m2_per_kg: P(210756e-6 / 0.182, 'secondary', 'bigman2021 dataset: Scomber scombrus 210756 mm2 at 182 g (Gray 1954) -> 1.16 m2/kg. Active pelagic proxy; no flying-fish gill area found'),
@@ -70,15 +84,17 @@ export function calibrateGills() {
 export function createPhysiology(spec = {}, env = {}) {
   const g = (x, d) => (x === undefined || x === null ? d : typeof x === 'object' ? x.value : x);
   const M = g(spec.mass_kg, 0.06);
-  const T = g(env.waterTemp_C, 25);
-  const airFrac = g(env.airO2_fraction, 0.2095);
-  const waterO2 = g(env.waterO2_mg_per_l, 6.8);
+  const T = g(env.waterTemp_C, BASELINE_ENV.waterTemp_C);
+  const Sal = g(env.salinity_psu, BASELINE_ENV.salinity_psu);
+  const airFrac = g(env.airO2_fraction, BASELINE_ENV.airO2_fraction);
+  const waterO2 = g(env.waterO2_mg_per_l, o2sat_mg_l(Sal, T, airFrac));
   const cal = calibrateGills();
 
   const S = {
     mass_kg: P(M, spec.mass_kg !== undefined ? 'measured' : 'assumed', 'spec.mass_kg (sim)'),
-    waterTemp_C: P(T, env.waterTemp_C !== undefined ? 'measured' : 'assumed', env.waterTemp_C !== undefined ? 'env (sim)' : 'default 25 degC, warm surface water; assumed'),
-    waterO2_mg_l: P(waterO2, env.waterO2_mg_per_l !== undefined ? 'measured' : 'assumed', env.waterO2_mg_per_l !== undefined ? 'env (sim)' : 'default 6.8 mg/l, air-saturated warm sea water; assumed, not fetched'),
+    waterTemp_C: P(T, 'assumed', env.waterTemp_C !== undefined ? 'env (sim)' : 'conditions/baseline.json: 25 degC warm surface water'),
+    waterO2_mg_l: P(waterO2, env.waterO2_mg_per_l !== undefined ? 'proxy' : 'derived', env.waterO2_mg_per_l !== undefined ? 'env (sim)' : 'air-saturated sea water at ' + T + ' degC, ' + Sal + ' psu (conditions/baseline.json): ' + o2sol_umol_kg(Sal, T).toFixed(1) + ' umol/kg, Garcia & Gordon 1992 fit via TEOS-10 GSW-C gsw_o2sol_sp_pt, x 32 ug/umol x density 1.0234 kg/l (density assumed, not fetched), scaled by airO2_fraction/0.20946'),
+    salinity_psu: P(Sal, 'assumed', 'conditions/baseline.json (open-ocean average)'),
     gillArea_m2: P(g(spec.gillArea_m2, GILL_PARAMS.default_gillArea_m2_per_kg.value * M), spec.gillArea_m2 !== undefined ? 'proxy' : 'secondary', spec.gillArea_m2 !== undefined ? 'spec.gillArea_m2 (sim)' : GILL_PARAMS.default_gillArea_m2_per_kg.source),
     D_per_m2: P(cal.D_per_m2, 'tuned', 'gill O2 transfer per m2 (ml O2 s-1 kPa-1 m-2), tuned so the trout reference (Q, MO2, Hb) gives PaO2 15.8 kPa (mcarley2022); assumes flying-fish lamellar barrier = trout'),
     hbCap: spec.hbCapacity_mlO2_per_ml !== undefined
@@ -168,6 +184,7 @@ export function createPhysiology(spec = {}, env = {}) {
     const r = availablePower({ muscleMass_kg: mm, T, VO2_supply_ml_s: o2SupplyForWork(), redFraction: S.redFraction.value, burstStoreLeft_J: burstLeft });
     let limitedBy = r.aerobicLimitedBy;
     if (!inWater && Cpool - Cfloor < 1e-4) limitedBy = 'store';
+    if (!inWater && r.aerobicLimitedBy === 'o2') limitedBy = 'store'; // gills out of water: only the blood O2 store supplies O2
     if (burstLeft <= 0 && limitedBy !== 'muscle') limitedBy = 'store';
     return { aerobic_W: r.aerobic_W, burst_W: r.burst_W, total_W: r.total_W, limitedBy, aerobicMuscleCap_W: r.aerobicMuscleCap_W, aerobicO2Cap_W: r.aerobicO2Cap_W };
   }
@@ -206,7 +223,7 @@ export function createPhysiology(spec = {}, env = {}) {
       };
     },
     describe() {
-      const unit = { mass_kg: 'kg', waterTemp_C: 'degC', waterO2_mg_l: 'mg/l', gillArea_m2: 'm2', D_per_m2: 'ml O2 s-1 kPa-1 m-2', hbCap: 'ml O2/ml', bloodVolume_ml: 'ml', axialMuscleFraction: '-', flightMuscleFraction: '-', redFraction: '-', Q_rest_ml_s: 'ml/s', Q_max_ml_s: 'ml/s', SMR_ml_s: 'ml O2/s', oxycal_J_per_mgO2: 'J/mg O2', efficiency: '-', redPmax_W_kg: 'W/kg muscle', burst_W_kg: 'W/kg muscle', burstStore_J: 'J', burstRecovery_tau_s: 's', Pv_floor_kPa: 'kPa', ventilation_to_perfusion: '-', ventilation_mode: '', gills_in_air: '' };
+      const unit = { mass_kg: 'kg', waterTemp_C: 'degC', waterO2_mg_l: 'mg/l', salinity_psu: 'psu', gillArea_m2: 'm2', D_per_m2: 'ml O2 s-1 kPa-1 m-2', hbCap: 'ml O2/ml', bloodVolume_ml: 'ml', axialMuscleFraction: '-', flightMuscleFraction: '-', redFraction: '-', Q_rest_ml_s: 'ml/s', Q_max_ml_s: 'ml/s', SMR_ml_s: 'ml O2/s', oxycal_J_per_mgO2: 'J/mg O2', efficiency: '-', redPmax_W_kg: 'W/kg muscle', burst_W_kg: 'W/kg muscle', burstStore_J: 'J', burstRecovery_tau_s: 's', Pv_floor_kPa: 'kPa', ventilation_to_perfusion: '-', ventilation_mode: '', gills_in_air: '' };
       const rows = Object.entries(S).map(([k, p]) => ({ quantity: k, value: p.value, unit: unit[k] ?? '', kind: p.kind, source: p.source }));
       rows.push({ quantity: 'Pw_in_kPa', value: Pw_in, unit: 'kPa', kind: 'derived', source: 'airO2_fraction x (101.325 - pH2O(T)), Magnus pH2O (standard formula, not fetched); assumes air-saturated water' });
       rows.push({ quantity: 'VO2max_water_ml_s', value: VO2maxWater, unit: 'ml O2/s', kind: 'derived', source: 'Q_max x (Ca at Q_max - C at Pv_floor), gill counter-current + Hill' });
