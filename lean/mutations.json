@@ -1,11 +1,11 @@
 {
  "summary": {
-  "run": "2026-10-31T13:49:55.871Z",
+  "run": "2026-10-31T15:49:26.326Z",
   "command": "lake env lean <mutant copy>",
-  "mutations": 6,
-  "rejected": 6,
-  "controlsPassed": 3,
-  "controls": 3,
+  "mutations": 9,
+  "rejected": 9,
+  "controlsPassed": 4,
+  "controls": 4,
   "allAsExpected": true
  },
  "results": [
@@ -17,7 +17,7 @@
    "outcome": "accepted",
    "asExpected": true,
    "exit": 0,
-   "seconds": 12.5,
+   "seconds": 12.3,
    "errors": 0,
    "firstError": null
   },
@@ -29,7 +29,7 @@
    "outcome": "accepted",
    "asExpected": true,
    "exit": 0,
-   "seconds": 12.1,
+   "seconds": 12,
    "errors": 0,
    "firstError": null
   },
@@ -41,7 +41,19 @@
    "outcome": "accepted",
    "asExpected": true,
    "exit": 0,
-   "seconds": 12.1,
+   "seconds": 12.3,
+   "errors": 0,
+   "firstError": null
+  },
+  {
+   "id": "control-favored",
+   "kind": "control",
+   "file": "lean/Delphi/Favored.lean",
+   "expected": "accepted",
+   "outcome": "accepted",
+   "asExpected": true,
+   "exit": 0,
+   "seconds": 12.5,
    "errors": 0,
    "firstError": null
   },
@@ -59,7 +71,7 @@
    "outcome": "rejected",
    "asExpected": true,
    "exit": 1,
-   "seconds": 12.4,
+   "seconds": 12.1,
    "errors": 2,
    "firstError": "kimura-rate-doubled.lean:386:93: error: unsolved goals"
   },
@@ -77,7 +89,7 @@
    "outcome": "rejected",
    "asExpected": true,
    "exit": 1,
-   "seconds": 12.7,
+   "seconds": 12.3,
    "errors": 2,
    "firstError": "kimura-fixation-one-wrong.lean:371:76: error: unsolved goals"
   },
@@ -95,7 +107,7 @@
    "outcome": "rejected",
    "asExpected": true,
    "exit": 1,
-   "seconds": 13,
+   "seconds": 12.2,
    "errors": 3,
    "firstError": "kimura-limit-wrong.lean:264:2: error: Type mismatch: After simplification, term"
   },
@@ -118,7 +130,7 @@
    "outcome": "rejected",
    "asExpected": true,
    "exit": 1,
-   "seconds": 12.6,
+   "seconds": 12.4,
    "errors": 1,
    "firstError": "kimura-escape-dropped.lean:156:14: error: Function expected at"
   },
@@ -154,9 +166,72 @@
    "outcome": "rejected",
    "asExpected": true,
    "exit": 1,
-   "seconds": 12.5,
+   "seconds": 12.1,
    "errors": 2,
    "firstError": "maynardsmith-threefold.lean:59:43: error: unsolved goals"
+  },
+  {
+   "id": "favored-floor-strengthened",
+   "kind": "mutation",
+   "file": "lean/Delphi/Favored.lean",
+   "theorem": "Delphi.FavoredChain.fixationProbability_ge",
+   "claim_id": "favored-fixation-lower-bound",
+   "description": "Statement changed to claim a favored lineage of i copies fixes with probability at least (i+1)/M instead of i/M. Not true (the neutral chain is favored and fixes with exactly i/M), so the proof must fail.",
+   "find": "    ((i : ℕ) : ℝ) / M ≤ C.fixationProbability i := by",
+   "replace": "    (((i : ℕ) : ℝ) + 1) / M ≤ C.fixationProbability i := by",
+   "also": [],
+   "expected": "rejected",
+   "outcome": "rejected",
+   "asExpected": true,
+   "exit": 1,
+   "seconds": 12.4,
+   "errors": 3,
+   "firstError": "favored-floor-strengthened.lean:233:2: error: linarith failed to find a contradiction"
+  },
+  {
+   "id": "favored-budget-doubled",
+   "kind": "mutation",
+   "file": "lean/Delphi/Favored.lean",
+   "theorem": "Delphi.favored_expectedSubstitutions_ge",
+   "claim_id": "favored-fixation-lower-bound",
+   "description": "Statement changed to claim the expected substitutions over T generations are at least 2 mu T instead of mu T.",
+   "find": "    μ * T ≤ expectedSubstitutions M μ (C.fixationProbability (oneCopy M hM)) T := by",
+   "replace": "    2 * μ * T ≤ expectedSubstitutions M μ (C.fixationProbability (oneCopy M hM)) T := by",
+   "also": [],
+   "expected": "rejected",
+   "outcome": "rejected",
+   "asExpected": true,
+   "exit": 1,
+   "seconds": 12.4,
+   "errors": 2,
+   "firstError": "favored-budget-doubled.lean:426:35: error: Application type mismatch: The argument"
+  },
+  {
+   "id": "favored-drift-dropped",
+   "kind": "mutation",
+   "file": "lean/Delphi/Favored.lean",
+   "theorem": "Delphi.FavoredChain.fixationProbability_ge",
+   "claim_id": "favored-fixation-lower-bound",
+   "description": "Model hypothesis removed: the chain no longer has to keep the expected copy number from falling (favored := True). Selection against the mutant is then allowed, so the lower bound i/M must fail.",
+   "find": "  favored : ∀ i : Fin (M + 1), ((i : ℕ) : ℝ) ≤ ∑ j, P i j * ((j : ℕ) : ℝ)",
+   "replace": "  favored : True",
+   "also": [
+    [
+     "  { C with favored := fun i => (C.neutral i).ge }",
+     "  { C with favored := trivial }"
+    ],
+    [
+     "  favored i := by rw [binomial_mean]; exact hfav i",
+     "  favored := trivial"
+    ]
+   ],
+   "expected": "rejected",
+   "outcome": "rejected",
+   "asExpected": true,
+   "exit": 1,
+   "seconds": 12.6,
+   "errors": 1,
+   "firstError": "favored-drift-dropped.lean:107:66: error: Function expected at"
   }
  ]
 }
