@@ -10,6 +10,7 @@ import Delphi.Favored
 import Delphi.Blueprint
 import Delphi.Thompson
 import Delphi.Certificates.AFlyingFish
+import Delphi.Constraints
 
 #print axioms Delphi.NeutralChain.fixedBy_tendsto
 #print axioms Delphi.NeutralChain.fixedBy_sub_le
@@ -42,3 +43,17 @@ import Delphi.Certificates.AFlyingFish
 #print axioms Delphi.cubeLaw_ratio
 #print axioms Delphi.cubeLaw_loglog_exponent
 #print axioms Delphi.not_cubeLaw_of_exponent_ne_three
+#print axioms Delphi.Constraints.kimura_rate_rules_out
+#print axioms Delphi.Constraints.neutral_fixation_rules_out
+#print axioms Delphi.Constraints.favored_fixation_rules_out
+#print axioms Delphi.Constraints.supply_rules_out
+#print axioms Delphi.Constraints.supply_rules_out'
+#print axioms Delphi.Constraints.fisher_rules_out
+#print axioms Delphi.Constraints.fisher_decline_rules_out
+#print axioms Delphi.Constraints.twofold_rules_out
+#print axioms Delphi.Constraints.cubeLaw_rules_out
+#print axioms Delphi.Constraints.cubeLaw_rules_out'
+#print axioms Delphi.Constraints.exponent_rules_out
+#print axioms Delphi.Constraints.kimura_rate_ratio_rules_out
+#print axioms Delphi.Constraints.fisher_zero_variance_rules_out
+#print axioms Delphi.Constraints.twofold_factor_rules_out
