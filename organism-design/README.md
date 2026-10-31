@@ -47,6 +47,11 @@ Sub-dashboard: `dashboard/public/t/organism/` (live at `/t/organism/`). Thread: 
 ## Rules followed
 
 - Every node is an existing identifier; nothing is invented. Every edge has the query that produced it.
+- The tool reads word lists, not English, so every blueprint names the words it could **not** read
+  (`reading.words_not_recognised`) and everything the per-parent limits cut (`pruning`). Structures the
+  description names are never cut, and `pruning.named_structures_cut` is the check on that. Without
+  those two reports a structure the lexicon misses is indistinguishable from one the ontology lacks:
+  "a flying-fish with enlarged pectoral fins" once built a tree with no pectoral fin and said nothing.
 - The builder is blind to the held-out clade (`holdout/exam.json`): no bird species, genomes or
   trait rows were used; `node holdout/check-leaks.mjs` shows no hit in this folder.
 - No API keys, credit links or model outputs presented as measurements. The ESMFold record says what
