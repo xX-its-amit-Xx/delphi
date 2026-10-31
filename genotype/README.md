@@ -105,3 +105,25 @@ holds paired fin and standard lengths of 109 beloniform museum specimens (Harvar
 Lengths only: no mass, fin area, aspect ratio or glide data. PMC's copy of the supplement answered with a reCAPTCHA
 page; the Perathoner 2014 and Stewart 2021 full texts hold zebrafish fin measurements only (figures), no flying-fish
 numbers. Draft record: `nanopubs/unsigned/daane-2021-fin-length-ratios.trig`.
+
+## Fin-focused subtree (`fin-subtree.json`), for the zoom from organ to cells
+
+The blueprint's pectoral fin has one tissue and no cell types beneath it, so `build_fin_subtree.py` extends the
+hierarchy from what the zebrafish anatomy ontology actually holds: the ZFA part_of closure of "pectoral fin" (35
+terms: skeleton, musculature, vasculature, fin fold, girdle bones, rays, actinotrichia, and so on) plus the
+precursor "pectoral fin bud" and its parts (5 terms, develops_from edges). 35 of the 40 terms carry a Uberon
+cross-reference (Ubergraph, typed-literal query in `fetch_fin_subtree.py`); the 5 without are flagged zebrafish-only;
+no MFO cross-reference exists for any. Cell level comes only from ZFIN's post-composed annotations (superstructure
+plus a ZFA cell term with a Cell Ontology cross-reference): 10 cell-in-structure nodes, expression only. Every ZFIN
+row is re-attached to the exact structure it names; nothing propagates up or down in this file. Bgee calls attach
+where a node's Uberon term is annotated. Output shape is the one `dashboard/build-graph.mjs` reads (`layers` with
+nodes and links: organ, part, subpart, cell, precursor, precursor part); `fin-subtree.json` is capped like the slim
+map (456 KB), `fin-subtree.full.json` holds every link (3 MB, local).
+
+**Honest depth for the three wing genes:** all evidence sits at the whole-organ level or above. kcnk5b: one
+sufficient-for link on "pectoral fin" (gain-of-function alleles, heterozygous rows, adult); its other fin rows are on
+generic "fin", "lepidotrichium" and caudal-fin terms. slc43a2a: one adult RT-PCR expression row on "pectoral fin"
+(Daane 2021) and heterozygous dmh26 phenotype rows there (fail the homozygosity rule); homozygous rows are on the
+caudal fin. kcnh2a: RT-PCR expression on generic "fin" and "regenerating fin" only, no phenotype row in any
+single-gene fish. No row for any of the three names a fin part, tissue or cell. Single-cell fin datasets are listed
+as leads from logged GEO searches (`cache/geo_fin_single_cell.json`), not integrated.
