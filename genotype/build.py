@@ -691,7 +691,7 @@ for L in LAYERS:
         keep.append(slim_link(l))
     vet_layers[L] = {"coverage": layers_out[L]["coverage"], "nodes": layers_out[L]["nodes"], "links": keep,
                      "derived_links": [], "derived_links_note": f"{len(layers_out[L]['derived_links'])} derived links are in map.json only; the per-node derived counts in `nodes` are complete."}
-vetted = {k: out[k] for k in ("title", "built", "tool", "constraint", "causation_warning", "link_types", "propagation_rules", "blueprint", "crosswalk", "summary", "focus_genes", "fin_size", "genes", "not_sourced", "vetting")}
+vetted = {k: out[k] for k in ("title", "built", "tool", "constraint", "flying_fish_genome", "causation_warning", "link_types", "propagation_rules", "blueprint", "crosswalk", "summary", "focus_genes", "fin_size", "genes", "not_sourced", "vetting")}
 vetted["vetted"] = True
 vetted["slimming"] = {"of": "genotype/map.json", "rule": f"evidence trimmed; 'expressed in' links capped at {CAP_EXPR} per node; derived links dropped (counts kept in nodes)",
                       "expressed_in_links_omitted_by_node": omitted, "full_file_sha256": sha(os.path.join(HERE, "map.json"))}

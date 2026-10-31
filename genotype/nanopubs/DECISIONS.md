@@ -37,3 +37,25 @@ expression or phenotype record, and Daane 2021's own text puts cx43 under *const
 along the flying-fish branch. The `gja5a` substitution stays in the map's `fin_size` block as the paper's own data,
 and it is kept out of any causal chain. The real connexin tie to the potassium-channel story is `gja1b` with
 Seaver 2025, which is independent of Daane.
+
+## 2026-10-31 - the flying-fish genome correction recorded as a correction, not quietly fixed
+
+The thread's constraint line said "almost no molecular data exists for flying fish" and called the available
+resource "one scaffold-level assembly". That was wrong: the same accession carries an annotated gene set of
+23,611 predicted protein-coding genes. The error was load-bearing, because the constraint was repeated on every
+number in the map, on the public dashboard, and in the brief ten subagents worked under.
+
+It could have been fixed silently by editing the wording. It is instead recorded as
+`correction-flying-fish-genome-exists.trig`, with the same three-part framing used for the gja5a withdrawal:
+what we said, what the source says, what changed. The record names the project lead as the person who caught it
+and states that the thread which published the error did not catch it. The numbers in the record are read from
+the map's `flying_fish_genome` block, which was built by fetching the paper's full text, so the record and the
+data cannot drift apart.
+
+Two things kept the correction honest rather than merely apologetic. The headline figure is caveated in the
+record itself: 99.5% "functionally annotated" means one sequence-similarity or domain hit, and the unreviewed
+TrEMBL database supplies 23,477 of them, so it measures database coverage rather than understood function. And
+the surviving negative is established by counting, not by inference: the strings "RNA-seq" and "transcriptome"
+appear zero times in that paper, so "no expression data" is a count.
+
+This is the thread's second public self-correction. Both are drafts in this folder rather than edits to history.

@@ -21,7 +21,11 @@ const rd = p => JSON.parse(fs.readFileSync(path.join(root, p), 'utf8'));
 const shaOf = p => crypto.createHash('sha256').update(fs.readFileSync(path.join(root, p))).digest('hex');
 const sizeOf = p => fs.statSync(path.join(root, p)).size;
 const M = rd('genotype/map.vetted.json');
-const calls = Object.fromEntries(rd('genotype/cache/calls.json').calls.map(c => [c.name, c]));
+// Every call log this thread keeps, merged, so a record can cite any logged call regardless of which run made it
+// (the main fetch, the pathway downloads, the per-subagent logs, and the one-off verification fetches).
+const calls = Object.fromEntries(fs.readdirSync(path.join(root, 'genotype/cache'))
+  .filter(f => /^calls.*\.json$/.test(f))
+  .flatMap(f => { try { return (rd('genotype/cache/' + f).calls || []).map(c => [c.name, c]); } catch { return []; } }));
 const pm = rd('genotype/cache/pubmed.json');
 const NOW = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
 const R = 'https://w3id.org/delphi/resource/';
@@ -418,6 +422,64 @@ records.push(record({
   prereg: 'ray and inter-ray signalling was named in the task before the search, so the null is a pre-specified outcome rather than a post-hoc observation.',
   evLabel: 'Logged search for ray-to-inter-ray signalling, and what was found instead', evDesc: 'Read from genotype/interactions.json gaps and coverage.',
 }));
+
+// ---- the self-correction: what this project said, what the source says, and what changed -----------
+// Numbers come from the map's flying_fish_genome block, which was built by reading the paper's own full text.
+const G = M.flying_fish_genome;
+if (G) {
+  const gs = G.gene_set, as = G.assembly, pa = G.paper;
+  DS.flyingfish_genome = { id: 'xu-2021-hirundichthys-speculiger-draft-genome', title: `${pa.authors} ${pa.year}, Draft genome of the mirrorwing flyingfish (Hirundichthys speculiger), ${pa.journal}`,
+    landing: `https://doi.org/${pa.doi}`, licence: 'https://creativecommons.org/licenses/by/4.0/', calls: ['epmc_fulltext_PMC8294118'] };
+  records.push(record({
+    file: 'correction-flying-fish-genome-exists.trig', slug: 'genotype-correction-annotated-flying-fish-genome-exists',
+    label: `Correction to this project's own published claim: an annotated flying-fish genome does exist, with ${gs.protein_coding_genes.toLocaleString('en-US')} predicted protein-coding genes of which ${gs.functionally_annotated.toLocaleString('en-US')} (${gs.percent}%) carry a database hit, so what flying fish lack is not genes but expression and phenotype data`,
+    status: 'correction of a claim this project published; the corrected statement is supported by the cited paper, and the superseded statement was wrong',
+    description: (
+      `WHAT WE SAID. Until 2026-10-31 this thread's files and its public dashboard stated that "almost no molecular data exists for flying fish" and described the `
+      + `available genomic resource as merely "one scaffold-level assembly (GCA_018398805.1)". That wording was carried into the map's constraint line, the thread's `
+      + `README, the brief that ten subagents worked under, and the live status headline. `
+      + `WHAT THE SOURCE SAYS. ${pa.authors} ${pa.year} (${pa.journal}, doi ${pa.doi}) assembled the mirrorwing flyingfish Hirundichthys speculiger at `
+      + `${as.size_gb} Gb in ${as.scaffolds.toLocaleString('en-US')} scaffolds (contig N50 ${as.contig_n50_kb} kb, scaffold N50 ${as.scaffold_n50_kb} kb; BUSCO `
+      + `${G.busco.genome_percent}% genome and ${G.busco.gene_set_percent}% gene set on ${G.busco.lineage}) and predicted ${gs.protein_coding_genes.toLocaleString('en-US')} `
+      + `protein-coding genes, of which ${gs.functionally_annotated.toLocaleString('en-US')} (${gs.percent}%) carry at least one hit across KEGG `
+      + `(${gs.hits_by_database.KEGG.toLocaleString('en-US')}), SwissProt (${gs.hits_by_database.SwissProt.toLocaleString('en-US')}), TrEMBL `
+      + `(${gs.hits_by_database.TrEMBL.toLocaleString('en-US')}) and InterPro (${gs.hits_by_database.InterPro.toLocaleString('en-US')}). That assembly is the very one `
+      + `this project was already citing as ${as.ncbi_accession}: we had the right genome and described it too weakly. The annotation is downloadable (${gs.annotation_download}). `
+      + `WHAT CHANGED. The constraint now says that an annotated genome exists and that the gap is expression and phenotype, not genes. The proxy-species rule is unchanged `
+      + `but its justification is corrected: zebrafish and medaka are used because ZFIN-style expression and mutant-phenotype records exist only for them, not because `
+      + `flying-fish genes are unknown. `
+      + `WHAT IS STILL ABSENT, established by counting rather than by inference: the strings "RNA-seq" and "transcriptome" appear ZERO times in that paper's full text. It `
+      + `reports no expression data, no mutant, no kinetics and no regulatory network. `
+      + `AND A CAVEAT ON THE HEADLINE FIGURE: "functionally annotated" there means at least one sequence-similarity or domain hit and nothing more. TrEMBL alone supplies `
+      + `${gs.hits_by_database.TrEMBL.toLocaleString('en-US')} of the hits and TrEMBL is automatically generated and unreviewed, so ${gs.percent}% measures database coverage, `
+      + `not understood function. This correction was caught by the project lead, not by the thread that published the error.`),
+    context: (`The error mattered because it was load-bearing: it was the first sentence of the thread's constraint, repeated on every number, and it understated what a future `
+      + `team could build on. H. speculiger is also not one of the three species in the fin measurements this thread uses (Cheilopogon furcatus, Exocoetus volitans, `
+      + `Hirundichthys rondeleti), so using its sequence beside those measurements is cross-species within Exocoetidae and is labelled as such wherever it appears. `
+      + `This is the second public self-correction by this thread; the first withdrew a proposed gja5a link to the fin-length story (see genotype/nanopubs/DECISIONS.md).`),
+    test: 'Verification against the primary source: the paper\'s full text was fetched through the thread\'s logged fetcher and every figure above was read from it, including a count of the strings "RNA-seq" and "transcriptome". No statistical test.',
+    metrics: [['predicted_protein_coding_genes', gs.protein_coding_genes, 'genes predicted in the assembly'],
+              ['functionally_annotated_genes', gs.functionally_annotated, 'genes with at least one database hit'],
+              ['percent_annotated', gs.percent, 'percentage of predicted genes with at least one hit', 'decimal'],
+              ['trembl_hits', gs.hits_by_database.TrEMBL, 'hits from TrEMBL alone, which is automatic and unreviewed and supplies almost all of the annotation'],
+              ['kegg_hits', gs.hits_by_database.KEGG, 'KEGG hits'], ['swissprot_hits', gs.hits_by_database.SwissProt, 'SwissProt hits, the only manually reviewed set'],
+              ['busco_gene_set_percent', G.busco.gene_set_percent, 'BUSCO completeness of the gene set', 'decimal'],
+              ['mentions_of_rnaseq_or_transcriptome_in_the_paper', 0, 'occurrences of "RNA-seq" or "transcriptome" in the full text, counted'],
+              ['project_files_corrected', 9, 'files whose constraint wording was rewritten: build.py, map.json, map.vetted.json, map.vetted.slim.json, fin-subtree.json, interventions.json, flier-genome.json, README.md, AGENT_BRIEF.md'],
+              ['public_self_corrections_by_this_thread', 2, 'this one and the withdrawn gja5a link']],
+    datasets: ['flyingfish_genome'], publications: [{ pmid: pa.pmid, doi: pa.doi, first_author: String(pa.authors).replace(' et al.', ''), year: String(pa.year), journal: pa.journal,
+      title: 'Draft Genome of the Mirrorwing Flyingfish (Hirundichthys speculiger)', read: 'full text',
+      quote: `We predicted ${gs.protein_coding_genes.toLocaleString('en-US')} protein-coding genes in the mirrorwing flyingfish genome` }],
+    derivedFrom: 'sub:map',
+    notEstablished: ('It does not establish that the flying fish is now a usable model: a gene list cannot say where a gene is expressed, what happens when it is lost, or at which '
+      + 'stage it acts, which is what this project\'s map is built from. It does not establish that the annotation is accurate, since almost all of it is unreviewed database '
+      + 'transfer. It does not establish that any particular gene of interest is present in that gene set: no orthologue call was made here, and that question is owned by '
+      + 'another thread. And it says nothing about the species whose fins were measured.'),
+    prereg: 'none: a correction. The error was found by the project lead reading a primary source the thread had not read, and the thread then verified it rather than accepting the relay.',
+    evLabel: 'The flying-fish draft genome paper, read in full, against the claim this project had published',
+    evDesc: 'Read from the flying_fish_genome block of genotype/map.vetted.json, which was built by reading the paper\'s own full text through the thread\'s logged fetcher.',
+  }));
+}
 
 fs.writeFileSync(path.join(here, 'manifest.json'), JSON.stringify({ built: NOW, map: MAP, map_sha256: mapSha, map_bytes: mapSize, unsigned: true, records }, null, 2));
 console.log(`${records.length} unsigned draft records in ${out}`);
