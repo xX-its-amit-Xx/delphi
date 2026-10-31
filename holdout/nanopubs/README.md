@@ -10,13 +10,11 @@ the holdout thread's records as **unsigned drafts**. Nothing here is signed or p
   signs with the operator's ORCID key and cannot be undone.
 - The hub has asked Amit who signs. Until that answer arrives these files stay unsigned, their labels start
   with `Draft:` and their pubinfo carries a comment saying so.
-- Provenance points at two copies of `holdout/`: the live sub-dashboard data file
-  `https://delphi-mission-control.ashenoy000.workers.dev/t/holdout/data.json`, and the commit-pinned tree on
-  the pushed branch (PR #36 against fractastical/delphi; `manifest.json` names the commit). That commit holds
-  the provisional freeze the exams ran against, which the exam records cite by SHA-256; the confirmed
-  re-freeze of 2026-10-31 14:38 UTC (decision recorded, roster unchanged) reaches the pinned copy at the next
-  push, after which the records are rebuilt with `--commit <sha>`. Every file the records rest on is named
-  with its SHA-256 either way. Before signing: `--final --creator <ORCID> --commit <sha>`, `check.mjs`, lint.
+- `holdout/` is not yet committed (no commit has been authorised for the tree), so provenance points at the
+  only resolvable copy of these files, the live sub-dashboard data file
+  `https://delphi-mission-control.ashenoy000.workers.dev/t/holdout/data.json`, and every file the records
+  rest on is named with its SHA-256. Before signing: commit and push, replace the live link with
+  commit-pinned blob links, rebuild with `--final`, re-check, re-lint.
 
 ## Records (one per nanopub)
 
@@ -26,7 +24,7 @@ the holdout thread's records as **unsigned drafts**. Nothing here is signed or p
 | `exam-hamilton-senescence-aves.trig` | held-out exam of the Hamilton senescence test on 8 bird species | inconclusive (underpowered: the builder's minimum is 15) |
 | `prereg-organism-design-aves.trig` | the pre-registered hypothesis and scoring rule for the organism-design exam | pre-registered (written before the prediction file existed) |
 | `exam-organism-design-aves.trig` | held-out exam of the organism-design blueprint tool on the 48-species roster | inconclusive (the panel lacks both pre-registered structures) |
-| `clade-analysis.trig` | the public tables cannot support a blind clade exam at the builders' own minimum n (13 vs 50, 8 vs 15); Aves confirmed by Amit on 2026-10-31 knowing this, over a Mammalia holdout that would make 1 of 2 exams decisive but 3 built tests post hoc | established by enumeration of project files; decision and cost recorded |
+| `clade-analysis.trig` | Aves keeps all 16 completed tests blind; Mammalia would make 3 built tests post hoc and 1 of 2 exams decisive | established by enumeration of project files |
 | `leak-check.trig` | method and result of the leak check over the builders' folders | observed at the stated time (0 hits outside the reasoned allowlist) |
 | `triage-coverage.trig` | 14 of 16 completed tests contain no bird rows | established by inspection |
 | `burned-darwin1859-ch01-10.trig` | pigeon claim retired as a blind exam item | burned |
