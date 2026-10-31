@@ -1,0 +1,211 @@
+{
+  "note": "Every parameter of the flying-fish simulator, with its source. kind = measured (from a fetched source), secondary (quoted second-hand in a fetched source), assumed (no source; the value is a modelling choice and the slider range shows how much it matters), tuned (chosen so a sourced quantity is reproduced; which one is named). Nothing here comes from a bird.",
+  "constants": {
+    "g": {
+      "value": 9.81,
+      "unit": "m/s^2",
+      "kind": "standard"
+    },
+    "rho_air": {
+      "value": 1.225,
+      "unit": "kg/m^3",
+      "kind": "standard",
+      "note": "sea level; same value as physics/analysis.py"
+    },
+    "rho_water": {
+      "value": 1025,
+      "unit": "kg/m^3",
+      "kind": "standard",
+      "note": "sea water"
+    }
+  },
+  "fish": [
+    {
+      "id": "cypselurus-hiraii-L3",
+      "label": "Darkedged-wing flying fish, Park and Choi 2010 specimen L3",
+      "hypothetical": false,
+      "mass_kg": {
+        "value": 0.06,
+        "kind": "measured",
+        "source": "park-choi-2010 Table 1 model L3"
+      },
+      "standard_length_m": {
+        "value": 0.203,
+        "kind": "measured",
+        "source": "park-choi-2010 Table 1 model L3"
+      },
+      "ref_area_m2": {
+        "value": 0.012688,
+        "kind": "measured",
+        "source": "park-choi-2010 Table 1 model L3: A1 + A2 + A3 (pectoral + pelvic + body planform), the reference area of its coefficients"
+      },
+      "span_m": {
+        "value": 0.261,
+        "kind": "measured",
+        "source": "park-choi-2010 Table 1 model L3 (full pectoral span S)"
+      },
+      "CL_max": {
+        "value": 0.78,
+        "alpha_deg": 35,
+        "kind": "measured",
+        "source": "park-choi-2010 Table 2"
+      },
+      "LD_max": {
+        "value": 4.37,
+        "alpha_deg": 0,
+        "kind": "measured",
+        "source": "park-choi-2010 Table 2"
+      },
+      "CD_min": {
+        "value": 0.055,
+        "alpha_deg": -10,
+        "kind": "measured",
+        "source": "park-choi-2010 Table 2"
+      },
+      "CL_at_zero_deg": {
+        "value": 0.4,
+        "min": 0.2,
+        "max": 0.6,
+        "kind": "assumed",
+        "source": "no value in the text (it is in Fig. 5, not read); chosen inside the plausible range; with LD_max it fixes the drag polar"
+      },
+      "CL_slope_per_deg": {
+        "value": null,
+        "kind": "derived",
+        "source": "(CL_max - CL_at_zero_deg) / 35 deg, linear up to the stall at 35 deg; shape assumed"
+      },
+      "CD_k": {
+        "value": null,
+        "kind": "derived",
+        "source": "CD = CD_min + k CL^2 with k fixed by CD(0 deg) = CL(0 deg) / LD_max; quadratic polar shape assumed"
+      },
+      "stall_alpha_deg": {
+        "value": 35,
+        "kind": "measured",
+        "source": "park-choi-2010: lift coefficient largest at 30-35 deg"
+      },
+      "glide_alpha_deg": {
+        "value": 5,
+        "min": -5,
+        "max": 30,
+        "kind": "assumed",
+        "source": "the fish's chosen angle of attack in the glide is not measured; the literature cited by Park and Choi says only that glides are nearly parallel to the surface"
+      },
+      "body_frontal_area_m2": {
+        "value": 0.0007,
+        "min": 0.0003,
+        "max": 0.0015,
+        "kind": "assumed",
+        "source": "no body depth or width in the sources; 0.0007 m^2 is a 30 mm by 30 mm ellipse-sized section for a 203 mm fish"
+      },
+      "water_drag_coefficient": {
+        "value": 0.1,
+        "min": 0.03,
+        "max": 0.3,
+        "kind": "assumed",
+        "source": "no measured value for a flying fish; frontal-area drag coefficient of a streamlined body"
+      },
+      "approach_speed_m_s": {
+        "value": 10,
+        "kind": "secondary",
+        "source": "makiguchi-2013 Discussion citing Davenport 1994: approach and leap at approximately 10 m/s (20 to 30 body lengths per second)"
+      },
+      "swim_thrust_N": {
+        "value": null,
+        "kind": "tuned",
+        "source": "set equal to the water drag at the approach speed, so the submerged fish reaches 10 m/s (the secondary field value) and no faster"
+      },
+      "taxi_thrust_N": {
+        "value": null,
+        "min_factor": 0.3,
+        "max_factor": 2.0,
+        "kind": "tuned",
+        "source": "set to the swim thrust times a factor (default 1); the lower caudal lobe sculls at up to 50 beats per second (davenport-1994) but no thrust was measured; the factor is the slider; validation target: taxi length about 9 m (deng-2019 citing its ref 11) and take-off at about 10 m/s"
+      },
+      "lobe_length_m": {
+        "value": 0.05,
+        "min": 0.02,
+        "max": 0.08,
+        "kind": "assumed",
+        "source": "length of the enlarged lower caudal lobe below the body axis; not in the sources; 0.05 m is a quarter of standard length"
+      },
+      "pitch_at_leap_deg": {
+        "value": 20,
+        "kind": "measured",
+        "source": "makiguchi-2013 Table 3: 20.0 +- 3.3 deg in captivity; field studies cited there give about 30 deg"
+      },
+      "start_depth_m": {
+        "value": -1.0,
+        "kind": "assumed",
+        "source": "where the run starts; it only sets how long the swim phase lasts"
+      },
+      "reentry_min_speed_m_s": {
+        "value": 5,
+        "min": 2,
+        "max": 9,
+        "kind": "assumed",
+        "source": "below this speed at re-entry the fish is taken to stop taxiing and submerge; not in the sources"
+      },
+      "max_glides": {
+        "value": 6,
+        "kind": "assumed",
+        "source": "stops the run; field sequences of 400 m in 30 s (park-choi-2010 introduction) imply several taxi-glide cycles"
+      },
+      "ground_effect": {
+        "kind": "measured",
+        "source": "park-choi-2010 Fig. 12 and text (physics/ground-effect.json): lift unchanged; drag times 1 for h/b >= 0.97, falling linearly to 0.86 at h/b = 0.33 over water, held at 0.86 below that (not measured lower)"
+      },
+      "taxi_pitch_deg": {
+        "value": 5,
+        "min": 0,
+        "max": 20,
+        "kind": "assumed",
+        "source": "body pitch while taxiing with the tail in the water; not measured. Added after run 1 (recorded as a deviation in physics/sim/RUNS.md): with the body held at the 20 deg leap pitch the fish lifts off at about 10.7 m/s before the tail can accelerate it, so the taxi cannot reach the 15-20 m/s field airspeed. Davenport 1994 says the fish accelerates to take-off speed by taxiing with the tail beating."
+      }
+    }
+  ],
+  "validation_targets": [
+    {
+      "quantity": "glide distance per glide",
+      "value": "up to 50 m",
+      "kind": "secondary",
+      "source": "makiguchi-2013 introduction citing Edgerton and Breder 1941 and Davenport 1990"
+    },
+    {
+      "quantity": "airspeed in free flight",
+      "value": "15 to 20 m/s",
+      "kind": "secondary",
+      "source": "makiguchi-2013 introduction; deng-2019 introduction"
+    },
+    {
+      "quantity": "maximum flight height",
+      "value": "8 m",
+      "kind": "secondary",
+      "source": "deng-2019 introduction citing its ref 6"
+    },
+    {
+      "quantity": "taxiing length",
+      "value": "9 m average",
+      "kind": "secondary",
+      "source": "deng-2019 introduction citing its ref 11"
+    },
+    {
+      "quantity": "take-off speed",
+      "value": "about 10 m/s",
+      "kind": "secondary",
+      "source": "makiguchi-2013 citing Davenport 1994"
+    },
+    {
+      "quantity": "whole sequence",
+      "value": "400 m in 30 s",
+      "kind": "secondary",
+      "source": "park-choi-2010 introduction citing Hertel 1966, Rayner 1986, Vogel 1994"
+    },
+    {
+      "quantity": "minimum lift-supported speed (constraint C9 in the Lean ledger)",
+      "value": "9.85 m/s",
+      "kind": "computed",
+      "source": "physics/results.json interpretation_B from the measured W, S, CL_max"
+    }
+  ]
+}

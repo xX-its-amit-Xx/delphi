@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flying fish simulator</title>
+<meta name="description" content="A 2D side-view physics simulation of a flying fish swimming, taxiing, taking off and gliding, integrated with RK4 from measured and labelled parameters; every number shows its source.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M6 20 Q16 6 26 20' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--accent-ink:#fff;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--soft:#eef2ef;--code:#f0f3f1;--water:#cfe6ec;--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--soft:#192b29;--code:#0f1a19;--water:#173a43;--s1:#3987e5;--s2:#d95926;--s3:#199e70}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--soft:#192b29;--code:#0f1a19;--water:#173a43;--s1:#3987e5;--s2:#d95926;--s3:#199e70}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;gap:12px;align-items:center;padding:8px 16px;white-space:nowrap;overflow-x:auto}
+.brand{font-weight:700}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px;border-radius:8px}
+button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+h1{font-size:clamp(1.3rem,3vw,1.9rem);margin:18px 0 6px} h2{font-size:1.2rem;margin:0 0 .4em} h3{font-size:1rem;margin:0 0 .4em}
+.lede{color:var(--mute);max-width:80ch}
+.grid{display:grid;gap:12px} .g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))} .g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+canvas{width:100%;height:auto;display:block;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.chip{display:inline-block;padding:0 8px;border-radius:99px;font-size:.75rem;border:1px solid var(--line);background:var(--soft);color:var(--mute);vertical-align:middle}
+.chip.m{color:var(--ok);border-color:var(--ok)} .chip.s{color:var(--s1);border-color:var(--s1)} .chip.a{color:var(--warn);border-color:var(--warn)} .chip.t{color:var(--s2);border-color:var(--s2)} .chip.h{color:var(--bad);border-color:var(--bad)}
+table{border-collapse:collapse;width:100%;font-size:.85rem} th,td{text-align:left;padding:4px 6px;border-bottom:1px solid var(--line);vertical-align:top} th{color:var(--mute);font-weight:600}
+.small{font-size:.83rem} .mute{color:var(--mute)}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em;background:var(--code);padding:0 4px;border-radius:4px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.phase{font-weight:700}
+.kpi{font-size:1.5rem;font-weight:700;line-height:1.1} .kpi small{display:block;font-size:.75rem;font-weight:400;color:var(--mute)}
+footer{padding:20px 0;color:var(--mute);font-size:.85rem}
+.eq{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a href="../index.html" style="text-decoration:none;color:var(--mute)">&larr; Physics thread</a>
+  <span class="brand">Flying fish simulator</span>
+  <span class="mute small">first version; 2D side view; RK4, fixed step</span>
+  <button id="themeBtn" style="margin-left:auto">Theme</button>
+</div></header>
+
+<main class="wrap">
+<h1>How a flying fish swims, taxis, takes off and glides, in equations</h1>
+<p class="lede">A point-mass model of one real fish, the darkedged-wing flying fish specimen whose fins Park and Choi measured in a wind tunnel, moving through five phases. Every parameter is listed below with where it came from; the ones that are <span class="chip a">assumed</span> or <span class="chip t">tuned</span> have sliders so you can see how much they matter. The sim does not know what a real glide looks like; the validation panel compares it with the published field figures, which are themselves second-hand. Nothing here uses bird data.</p>
+
+<div class="row" style="margin:10px 0">
+  <button id="runBtn" class="on">Run</button><button id="stepBtn">Step 0.1 s</button><button id="resetBtn">Reset</button>
+  <label class="small">speed <select id="speedSel"><option value="1">1x</option><option value="3" selected>3x</option><option value="10">10x</option><option value="100">as fast as possible</option></select></label>
+  <span id="phaseLine" class="small"></span>
+</div>
+
+<div class="grid g2">
+  <div class="card"><h3>Side view: height above the sea against distance</h3><canvas id="cTraj" width="900" height="300"></canvas><p class="small mute">Blue is water. The grey band above the surface is where the lower tail lobe can still touch the water (taxiing). Dashed line: 8 m, the maximum recorded flight height.</p></div>
+  <div class="card"><h3>Speed against time, with the minimum lift-supported speed</h3><canvas id="cSpeed" width="900" height="300"></canvas><p class="small mute">The dashed line is v<sub>min</sub> = &radic;(2W/(&rho;SC<sub>L,max</sub>)) for the current parameters (constraint C9 in the Lean ledger). A glide below it cannot be held up by lift.</p></div>
+  <div class="card"><h3>Energy per unit mass against time</h3><canvas id="cEnergy" width="900" height="300"></canvas><p class="small mute">Kinetic &frac12;v&sup2;, potential g&thinsp;z, and their sum. In the glide the sum can only fall (drag); in the taxi the tail adds energy.</p></div>
+  <div class="card"><h3>Validation against the published figures</h3><div id="valid"></div><p class="small mute">Field values are quoted second-hand (see the physics page). A match here means the model with these parameters is not contradicted by them; it does not make the parameters measured.</p></div>
+</div>
+
+<div class="grid g2" style="margin-top:12px">
+  <div class="card"><h3>Parameters and their sources</h3><div id="params"></div></div>
+  <div class="card"><h3>The equations the integrator solves</h3>
+<div class="eq" id="eqs">State (x, z, vx, vz); z = 0 is the sea surface; integrated with classical RK4 at dt = 1 ms.
+Gravity:        a_z += -g
+Air lift:       L = ½ ρ_air v² S C_L(α)         perpendicular to velocity  (applies when the fins are out of the water)
+Air drag:       D = ½ ρ_air v² S C_D(α) · f_ge(h/b)   opposite to velocity
+   C_L(α) = CL0 + (CLmax - CL0)·α/35°  for α ≤ 35°, then falls linearly to 0 at 60° (stall; shape assumed)
+   C_D(α) = CDmin + k·C_L²,  k from C_D(0°) = CL0 / (L/D)max
+   f_ge(r) = 1 for r ≥ 0.97; linear to 0.86 at r = 0.33; 0.86 below  (Park and Choi 2010, water surface; r = h/b, b = span/2)
+Water drag:     D_w = ½ ρ_water v² A_f C_dw   (submerged body); on the lobe only, scaled by the immersed fraction, while taxiing
+Thrust:         T along the body axis; swim: T_swim = ½ ρ_water v_approach² A_f C_dw ; taxi: T_taxi = factor · T_swim while the lobe is in the water
+Body axis:      pitched +20° while submerged (measured leap pitch); at the assumed taxi pitch while taxiing; in the glide the body sits at angle α to the velocity.
+Buoyancy:       taken equal to weight while submerged (assumed neutral).
+Phases:         swim (z + lobe &lt; 0) → taxi (lobe in water, body out) → glide (lobe clear) → taxi again on re-entry if v ≥ v_reentry, else stop.</div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:12px"><h3>Per-glide record</h3><div id="glides" class="small"></div></div>
+
+<footer class="wrap">Physics thread of DELPHI. This is a model: a simulation that runs proves the program executes and nothing more. Data files: <a href="params.json">params.json</a>, <a href="../results.json">results.json</a>, <a href="../data/ground-effect.json">ground-effect.json</a>. No bird data anywhere (class Aves is the frozen holdout).</footer>
+</main>
+
+<script>
+(function(){const root=document.documentElement,btn=document.getElementById('themeBtn');try{const s=localStorage.getItem('theme');if(s)root.setAttribute('data-theme',s);}catch(e){}btn.onclick=()=>{const cur=root.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');const nx=cur==='dark'?'light':'dark';root.setAttribute('data-theme',nx);try{localStorage.setItem('theme',nx);}catch(e){}draw();};})();
+
+let P=null, fish=null, ge=null, res=null, sim=null, running=false, speedMul=3, last=0;
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+function derive(f){
+  const d={};
+  d.m=f.mass_kg.value; d.S=f.ref_area_m2.value; d.b=f.span_m.value/2; d.CLmax=f.CL_max.value; d.LDmax=f.LD_max.value; d.CDmin=f.CD_min.value;
+  d.CL0=f.CL_at_zero_deg.value; d.stall=f.stall_alpha_deg.value; d.alpha=f.glide_alpha_deg.value;
+  d.CLslope=(d.CLmax-d.CL0)/d.stall; d.k=(d.CL0/d.LDmax-d.CDmin)/(d.CL0*d.CL0);
+  d.Af=f.body_frontal_area_m2.value; d.Cdw=f.water_drag_coefficient.value; d.vapp=f.approach_speed_m_s.value;
+  d.Tswim=0.5*P.constants.rho_water.value*d.vapp*d.vapp*d.Af*d.Cdw; d.taxiFactor=f.taxi_thrust_N.factor??1; d.Ttaxi=d.taxiFactor*d.Tswim;
+  d.lobe=f.lobe_length_m.value; d.pitch=f.pitch_at_leap_deg.value*Math.PI/180; d.tpitch=(f.taxi_pitch_deg?f.taxi_pitch_deg.value:f.pitch_at_leap_deg.value)*Math.PI/180; d.z0=f.start_depth_m.value; d.vre=f.reentry_min_speed_m_s.value; d.maxG=f.max_glides.value;
+  d.W=d.m*P.constants.g.value; d.vmin=Math.sqrt(2*d.W/(P.constants.rho_air.value*d.S*d.CLmax));
+  return d;
+}
+function CL(d,a){ if(a<=d.stall) return Math.max(-0.5,d.CL0+d.CLslope*a); const a2=Math.min(a,60); return d.CLmax*(60-a2)/25; }
+function CD(d,cl){ return d.CDmin+d.k*cl*cl; }
+function fge(r){ if(!ge) return 1; if(r>=0.97) return 1; if(r<=0.33) return 0.86; return 1-(0.97-r)/(0.97-0.33)*0.14; }
+function phaseOf(d,z){ if(z+(-d.lobe)<0 && z<0) return z< -d.lobe? 'swim':'taxi'; if(z<d.lobe) return z<0?'taxi':'taxi'; return 'glide'; }
+// phase: body centre z. swim: whole body under (z < -lobe). taxi: 0 <= z < lobe (lobe in water, body out), also -lobe <= z < 0 treated as breaching taxi. glide: z >= lobe.
+function accel(d,s,ph){
+  const g=P.constants.g.value, ra=P.constants.rho_air.value, rw=P.constants.rho_water.value;
+  const v=Math.hypot(s.vx,s.vz)||1e-9, ux=s.vx/v, uz=s.vz/v;
+  let ax=0, az=-g;
+  if(ph==='swim'){
+    az+=g; // neutral buoyancy
+    const Dw=0.5*rw*v*v*d.Af*d.Cdw; ax-=Dw/d.m*ux; az-=Dw/d.m*uz;
+    ax+=d.Tswim/d.m*Math.cos(d.pitch); az+=d.Tswim/d.m*Math.sin(d.pitch);
+  } else {
+    const alpha = ph==='taxi' ? (d.tpitch*180/Math.PI - Math.atan2(s.vz,s.vx)*180/Math.PI) : d.alpha;
+    const cl=CL(d,alpha), cd=CD(d,cl);
+    const h=Math.max(0,s.z); const q=0.5*ra*v*v*d.S;
+    const Lf=q*cl, Df=q*cd*fge(h/d.b);
+    ax+= (-Df*ux - Lf*uz)/d.m; az+= (-Df*uz + Lf*ux)/d.m;
+    if(ph==='taxi'){
+      const imm=Math.min(1,Math.max(0,(d.lobe-s.z)/d.lobe)); // immersed fraction of the lobe
+      const T=d.Ttaxi*imm; ax+=T/d.m*Math.cos(d.tpitch); az+=T/d.m*Math.sin(d.tpitch);
+      const Dl=0.5*rw*v*v*(d.Af*0.2*imm)*d.Cdw; ax-=Dl/d.m*ux; az-=Dl/d.m*uz; // lobe water drag, assumed 20% of frontal area
+      if(s.z<0){ az+=g*Math.min(1,-s.z/d.lobe); } // partial buoyancy while breaching (assumed linear)
+    }
+  }
+  return [ax,az];
+}
+function rk4(d,s,dt,ph){
+  const f=(st)=>{const a=accel(d,st,ph); return [st.vx,st.vz,a[0],a[1]];};
+  const k1=f(s); const s2={x:s.x+dt/2*k1[0],z:s.z+dt/2*k1[1],vx:s.vx+dt/2*k1[2],vz:s.vz+dt/2*k1[3]};
+  const k2=f(s2); const s3={x:s.x+dt/2*k2[0],z:s.z+dt/2*k2[1],vx:s.vx+dt/2*k2[2],vz:s.vz+dt/2*k2[3]};
+  const k3=f(s3); const s4={x:s.x+dt*k3[0],z:s.z+dt*k3[1],vx:s.vx+dt*k3[2],vz:s.vz+dt*k3[3]};
+  const k4=f(s4);
+  return {x:s.x+dt/6*(k1[0]+2*k2[0]+2*k3[0]+k4[0]), z:s.z+dt/6*(k1[1]+2*k2[1]+2*k3[1]+k4[1]), vx:s.vx+dt/6*(k1[2]+2*k2[2]+2*k3[2]+k4[2]), vz:s.vz+dt/6*(k1[3]+2*k2[3]+2*k3[3]+k4[3])};
+}
+function newSim(){
+  const d=derive(fish);
+  const s={x:0,z:d.z0,vx:0.5*Math.cos(d.pitch),vz:0.5*Math.sin(d.pitch)};
+  return {d,s,t:0,dt:0.001,phase:'swim',hist:[],glides:[],cur:null,taxiStart:null,taxiLen:[],done:false,takeoffV:null,nextSample:0};
+}
+function phaseNow(d,s){ if(s.z< -d.lobe) return 'swim'; if(s.z<d.lobe) return 'taxi'; return 'glide'; }
+function stepSim(S,T){
+  const d=S.d; let n=Math.round(T/S.dt);
+  while(n-->0 && !S.done){
+    const ph=phaseNow(d,S.s);
+    if(ph!==S.phase){
+      if(ph==='taxi'&&S.phase==='swim'){S.taxiStart=S.s.x;}
+      if(ph==='glide'&&S.phase==='taxi'){S.cur={t0:S.t,x0:S.s.x,zmax:S.s.z,vmax:0,v0:Math.hypot(S.s.vx,S.s.vz)}; if(S.taxiStart!=null){S.taxiLen.push(S.s.x-S.taxiStart);} if(S.takeoffV==null)S.takeoffV=S.cur.v0;}
+      if(ph==='taxi'&&S.phase==='glide'){ if(S.cur){S.cur.t1=S.t;S.cur.x1=S.s.x;S.cur.dist=S.cur.x1-S.cur.x0;S.cur.dur=S.cur.t1-S.cur.t0;S.glides.push(S.cur);S.cur=null;} S.taxiStart=S.s.x; const v=Math.hypot(S.s.vx,S.s.vz); if(v<d.vre||S.glides.length>=d.maxG){S.done=true;S.phase='stopped';break;} }
+      if(ph==='swim'&&S.phase==='taxi'&&S.glides.length>0){S.done=true;S.phase='stopped';break;}
+      S.phase=ph;
+    }
+    S.s=rk4(d,S.s,S.dt,S.phase); S.t+=S.dt;
+    if(S.cur){S.cur.zmax=Math.max(S.cur.zmax,S.s.z);S.cur.vmax=Math.max(S.cur.vmax,Math.hypot(S.s.vx,S.s.vz));}
+    if(S.t>=S.nextSample){S.hist.push({t:S.t,x:S.s.x,z:S.s.z,v:Math.hypot(S.s.vx,S.s.vz),ph:S.phase});S.nextSample+=0.02;}
+    if(S.t>60||S.s.x>600){S.done=true;S.phase='stopped';}
+  }
+}
+function line(ctx,pts,color,w=2,dash=null){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=w;if(dash)ctx.setLineDash(dash);ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();ctx.restore();}
+function axes(ctx,W,H,m,x0,x1,y0,y1,xl,yl,xt,yt){
+  ctx.fillStyle=css('--panel');ctx.fillRect(0,0,W,H);ctx.font='12px system-ui';ctx.fillStyle=css('--mute');ctx.strokeStyle=css('--line');
+  const X=v=>m.l+(v-x0)/(x1-x0)*(W-m.l-m.r), Y=v=>H-m.b-(v-y0)/(y1-y0)*(H-m.t-m.b);
+  xt.forEach(v=>{ctx.beginPath();ctx.moveTo(X(v),m.t);ctx.lineTo(X(v),H-m.b);ctx.stroke();ctx.textAlign='center';ctx.fillText(v,X(v),H-m.b+14);});
+  yt.forEach(v=>{ctx.beginPath();ctx.moveTo(m.l,Y(v));ctx.lineTo(W-m.r,Y(v));ctx.stroke();ctx.textAlign='right';ctx.fillText(v,m.l-6,Y(v)+4);});
+  ctx.textAlign='center';ctx.fillText(xl,(m.l+W-m.r)/2,H-4);ctx.save();ctx.translate(12,(m.t+H-m.b)/2);ctx.rotate(-Math.PI/2);ctx.fillText(yl,0,0);ctx.restore();
+  return {X,Y};
+}
+const phCol={swim:'#8a8a85',taxi:css('--s2')||'#eb6834',glide:css('--s1')||'#2a78d6',stopped:'#8a8a85'};
+function draw(){
+  if(!sim) return; const S=sim, h=S.hist; const d=S.d;
+  // trajectory
+  let c=document.getElementById('cTraj'),ctx=c.getContext('2d'); const W=c.width,H=c.height,m={l:48,r:16,t:16,b:34};
+  const xmax=Math.max(60,Math.ceil((S.s.x+10)/50)*50), zmax=Math.max(10,Math.ceil((Math.max(...h.map(p=>p.z),1)+2)/5)*5);
+  let A=axes(ctx,W,H,m,0,xmax,-2,zmax,'distance (m)','height (m)',[0,xmax/4,xmax/2,3*xmax/4,xmax].map(Math.round),[0,5,10].filter(v=>v<=zmax));
+  ctx.fillStyle=css('--water');ctx.fillRect(m.l,A.Y(0),W-m.l-m.r,A.Y(-2)-A.Y(0));
+  ctx.fillStyle='rgba(128,128,128,.12)';ctx.fillRect(m.l,A.Y(d.lobe),W-m.l-m.r,A.Y(0)-A.Y(d.lobe));
+  line(ctx,[[m.l,A.Y(8)],[W-m.r,A.Y(8)]],css('--mute'),1,[5,4]);
+  for(const ph of ['swim','taxi','glide']){ let seg=[]; h.forEach(p=>{ if(p.ph===ph) seg.push([A.X(p.x),A.Y(p.z)]); else if(seg.length){line(ctx,seg,phCol[ph],2);seg=[];} }); if(seg.length) line(ctx,seg,phCol[ph],2); }
+  ctx.fillStyle=css('--ink');ctx.beginPath();ctx.arc(A.X(S.s.x),A.Y(S.s.z),4,0,7);ctx.fill();
+  // speed
+  c=document.getElementById('cSpeed');ctx=c.getContext('2d');
+  const tmax=Math.max(5,Math.ceil((S.t+1)/5)*5), vmax=Math.max(15,Math.ceil((Math.max(...h.map(p=>p.v),1)+2)/5)*5);
+  A=axes(ctx,W,H,m,0,tmax,0,vmax,'time (s)','speed (m/s)',[0,tmax/2,tmax].map(v=>Math.round(v*10)/10),[0,5,10,15,20].filter(v=>v<=vmax));
+  line(ctx,[[m.l,A.Y(d.vmin)],[W-m.r,A.Y(d.vmin)]],css('--ink'),1.5,[6,5]); ctx.fillStyle=css('--mute');ctx.textAlign='left';ctx.fillText('v_min '+d.vmin.toFixed(2)+' m/s',m.l+6,A.Y(d.vmin)-5);
+  for(const ph of ['swim','taxi','glide']){ let seg=[]; h.forEach(p=>{ if(p.ph===ph) seg.push([A.X(p.t),A.Y(p.v)]); else if(seg.length){line(ctx,seg,phCol[ph],2);seg=[];} }); if(seg.length) line(ctx,seg,phCol[ph],2); }
+  // energy
+  c=document.getElementById('cEnergy');ctx=c.getContext('2d'); const g=P.constants.g.value;
+  const E=h.map(p=>({t:p.t,k:0.5*p.v*p.v,p:g*p.z,s:0.5*p.v*p.v+g*p.z})); const emax=Math.max(50,Math.ceil((Math.max(...E.map(e=>e.s),1)+20)/50)*50);
+  A=axes(ctx,W,H,m,0,tmax,-20,emax,'time (s)','energy per mass (J/kg)',[0,tmax/2,tmax].map(v=>Math.round(v*10)/10),[0,emax/2,emax]);
+  line(ctx,E.map(e=>[A.X(e.t),A.Y(e.k)]),css('--s1'),2); line(ctx,E.map(e=>[A.X(e.t),A.Y(e.p)]),css('--s3'),2); line(ctx,E.map(e=>[A.X(e.t),A.Y(e.s)]),css('--ink'),2,[4,3]);
+  ctx.fillStyle=css('--mute');ctx.textAlign='left';ctx.fillText('kinetic (blue), potential (green), total (dashed)',m.l+6,m.t+12);
+  // text
+  const v=Math.hypot(S.s.vx,S.s.vz);
+  document.getElementById('phaseLine').innerHTML=`t = ${S.t.toFixed(2)} s &nbsp; phase <span class="phase" style="color:${phCol[S.phase]||'inherit'}">${S.phase}</span> &nbsp; x = ${S.s.x.toFixed(1)} m &nbsp; z = ${S.s.z.toFixed(2)} m &nbsp; v = ${v.toFixed(2)} m/s &nbsp; glides ${S.glides.length}`;
+  const gl=S.glides; document.getElementById('glides').innerHTML=gl.length?'<table><tr><th>#</th><th>take-off speed m/s</th><th>distance m</th><th>duration s</th><th>max height m</th><th>peak speed m/s</th></tr>'+gl.map((q,i)=>`<tr><td>${i+1}</td><td>${q.v0.toFixed(1)}</td><td>${q.dist.toFixed(1)}</td><td>${q.dur.toFixed(2)}</td><td>${q.zmax.toFixed(2)}</td><td>${q.vmax.toFixed(1)}</td></tr>`).join('')+'</table>':'<span class="mute">no glide completed yet</span>';
+  const tot=S.s.x, chip=(ok)=>ok==null?'<span class="chip">pending</span>':(ok?'<span class="chip m">within</span>':'<span class="chip h">outside</span>');
+  const maxDist=gl.length?Math.max(...gl.map(q=>q.dist)):null, maxH=gl.length?Math.max(...gl.map(q=>q.zmax)):null, pk=gl.length?Math.max(...gl.map(q=>q.vmax)):null, taxi=S.taxiLen.length?S.taxiLen.reduce((a,b)=>a+b,0)/S.taxiLen.length:null;
+  const rows=[['glide distance per glide','up to 50 m',maxDist==null?null:maxDist.toFixed(1)+' m',maxDist==null?null:maxDist<=50&&maxDist>5],
+   ['airspeed in free flight','15 to 20 m/s',pk==null?null:pk.toFixed(1)+' m/s',pk==null?null:pk>=10&&pk<=22],
+   ['maximum flight height','8 m',maxH==null?null:maxH.toFixed(2)+' m',maxH==null?null:maxH<=8],
+   ['taxiing length','9 m average',taxi==null?null:taxi.toFixed(1)+' m',taxi==null?null:taxi>3&&taxi<18],
+   ['take-off speed','about 10 m/s',S.takeoffV==null?null:S.takeoffV.toFixed(1)+' m/s',S.takeoffV==null?null:S.takeoffV>7&&S.takeoffV<13],
+   ['whole sequence',`400 m in 30 s`,S.done?`${tot.toFixed(0)} m in ${S.t.toFixed(1)} s`:null,S.done?(tot/Math.max(S.t,1)>8&&tot/Math.max(S.t,1)<20):null],
+   ['glide speed stays above v_min','9.85 m/s',gl.length?Math.min(...h.filter(p=>p.ph==='glide').map(p=>p.v)).toFixed(1)+' m/s':null,gl.length?Math.min(...h.filter(p=>p.ph==='glide').map(p=>p.v))>=d.vmin*0.95:null]];
+  document.getElementById('valid').innerHTML='<table><tr><th>quantity</th><th>published (second-hand)</th><th>this run</th><th></th></tr>'+rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]??''}</td><td>${chip(r[3])}</td></tr>`).join('')+'</table>';
+}
+function loop(ts){ if(!running) return; const dtReal=Math.min(0.05,(ts-last)/1000||0.016); last=ts; if(speedMul>=100){stepSim(sim,2);} else stepSim(sim,dtReal*speedMul); draw(); if(sim.done){running=false;document.getElementById('runBtn').classList.remove('on');} else requestAnimationFrame(loop); }
+function renderParams(){
+  const f=fish, d=derive(f); const kindChip={measured:'m',secondary:'s',assumed:'a',tuned:'t',derived:'',standard:''};
+  let html='<table><tr><th>parameter</th><th>value</th><th>kind</th><th>source</th></tr>';
+  for(const [k,p] of Object.entries(f)){ if(typeof p!=='object'||p===null) continue;
+    let val=p.value; if(k==='CL_slope_per_deg') val=d.CLslope.toFixed(4)+' /deg'; if(k==='CD_k') val=d.k.toFixed(3); if(k==='swim_thrust_N') val=d.Tswim.toFixed(2)+' N'; if(k==='taxi_thrust_N') val=d.Ttaxi.toFixed(2)+' N (factor '+d.taxiFactor.toFixed(2)+')';
+    let slider=''; if(p.min!=null&&p.max!=null) slider=`<br><input type="range" min="${p.min}" max="${p.max}" step="${(p.max-p.min)/100}" value="${p.value}" data-k="${k}">`;
+    if(k==='taxi_thrust_N') slider=`<br><input type="range" min="${p.min_factor}" max="${p.max_factor}" step="0.01" value="${d.taxiFactor}" data-k="taxi_factor">`;
+    html+=`<tr><td>${k.replace(/_/g,' ')}${slider}</td><td>${val??''}${p.alpha_deg!=null?' at '+p.alpha_deg+'°':''}</td><td><span class="chip ${kindChip[p.kind]||''}">${p.kind}</span></td><td class="small mute">${p.source||p.note||''}</td></tr>`; }
+  html+=`<tr><td>v_min (derived)</td><td>${d.vmin.toFixed(2)} m/s</td><td><span class="chip">derived</span></td><td class="small mute">sqrt(2W/(rho S CL_max)); results.json gives ${res?res.interpretation_B.v_min_m_s.toFixed(2):'?'}</td></tr></table>`;
+  const el=document.getElementById('params'); el.innerHTML=html;
+  el.querySelectorAll('input[type=range]').forEach(inp=>inp.oninput=()=>{const k=inp.dataset.k; if(k==='taxi_factor') f.taxi_thrust_N.factor=+inp.value; else f[k].value=+inp.value; reset(); renderParams();});
+}
+function reset(){ running=false; document.getElementById('runBtn').classList.remove('on'); sim=newSim(); stepSim(sim,0.0); draw(); }
+document.getElementById('runBtn').onclick=()=>{ if(sim.done) reset(); running=!running; document.getElementById('runBtn').classList.toggle('on',running); last=performance.now(); if(running) requestAnimationFrame(loop); };
+document.getElementById('stepBtn').onclick=()=>{running=false;stepSim(sim,0.1);draw();};
+document.getElementById('resetBtn').onclick=reset;
+document.getElementById('speedSel').onchange=e=>speedMul=+e.target.value;
+Promise.all([fetch('params.json').then(r=>r.json()),fetch('../data/ground-effect.json').then(r=>r.json()),fetch('../results.json').then(r=>r.json())]).then(([p,g,r])=>{P=p;ge=g;res=r;fish=p.fish[0];fish.taxi_thrust_N.factor=1;renderParams();reset();const q=new URLSearchParams(location.search);if(q.get('autorun')){stepSim(sim,60);draw();document.body.dataset.done='1';}}).catch(e=>{document.getElementById('phaseLine').textContent='could not load params.json, ground-effect.json or results.json: '+e;});
+</script>
+</body>
+</html>
