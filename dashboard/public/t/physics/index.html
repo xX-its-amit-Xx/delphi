@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flying fish physics</title>
+<meta name="description" content="DELPHI physics thread: what flying fish measurably do in the air, and whether they sit inside D'Arcy Thompson's flight envelope. Every number read from a file.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M6 20 Q16 6 26 20' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--accent-ink:#fff;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--soft:#eef2ef;--code:#f0f3f1;--shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--soft:#192b29;--code:#0f1a19;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--soft:#192b29;--code:#0f1a19;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+h1,h2,h3{line-height:1.2;margin:0 0 .5em}
+h1{font-size:clamp(1.5rem,4vw,2.2rem)} h2{font-size:1.4rem} h3{font-size:1.05rem}
+p{margin:.4em 0 .8em}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;gap:12px;align-items:center;overflow-x:auto;padding-top:8px;padding-bottom:8px;white-space:nowrap}
+.brand{font-weight:700;margin-right:8px}
+nav a{display:inline-block;padding:4px 10px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.9rem}
+nav a:hover{background:var(--soft);color:var(--ink)}
+#themeBtn{margin-left:auto}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px;border-radius:8px}
+button:hover{border-color:var(--accent)}
+section{padding:30px 0;border-bottom:1px solid var(--line)}
+.lede{color:var(--mute);max-width:72ch;font-size:1.05rem}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.card h3{margin-top:0}
+.kpi{font-size:2rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.kpi small{display:block;font-size:.8rem;font-weight:400;color:var(--mute);margin-top:6px}
+.chip{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;border:1px solid var(--line);background:var(--soft);color:var(--mute)}
+.chip.ok{color:var(--ok);border-color:var(--ok)} .chip.bad{color:var(--bad);border-color:var(--bad)} .chip.warn{color:var(--warn);border-color:var(--warn)}
+details{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:8px 0}
+details>summary{cursor:pointer;padding:10px 14px;font-weight:600;list-style:none}
+details>summary::before{content:"\25B8";display:inline-block;margin-right:8px;transition:transform .15s;color:var(--accent)}
+details[open]>summary::before{transform:rotate(90deg)}
+details>.in{padding:2px 16px 14px}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600}
+.scroll{overflow-x:auto}
+code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em}
+pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;margin:6px 0;white-space:pre-wrap}
+.mute{color:var(--mute)} .small{font-size:.85rem}
+.quote{border-left:3px solid var(--accent);padding:2px 12px;color:var(--mute);margin:8px 0}
+.verdict{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.back{text-decoration:none;color:var(--mute);font-size:.9rem}
+.fig{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;color:var(--ink)}
+.fig svg{width:100%;height:auto;display:block}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+.steps>li{counter-increment:s;position:relative;padding:10px 14px 10px 54px;border:1px solid var(--line);background:var(--panel);border-radius:10px;margin:8px 0}
+.steps>li::before{content:counter(s);position:absolute;left:12px;top:10px;width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700}
+footer{padding:26px 0;color:var(--mute);font-size:.88rem}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="back" href="../../index.html">&larr; Mission Control</a>
+  <span class="brand">Physics thread</span>
+  <nav><a href="#result">Result</a><a href="#envelope">Envelope</a><a href="#data">Glide data</a><a href="#compare">Comparison</a><a href="#formal">For Lean</a><a href="#method">Method</a><a href="#honest">Limits</a><a href="#sources">Sources</a></nav>
+  <button id="themeBtn" title="Toggle light or dark">Theme</button>
+</div></header>
+
+<main class="wrap">
+
+<section id="result" style="padding-top:34px">
+<h1>Is a flying fish inside Thompson's flight envelope?</h1>
+<p class="lede">In 1917 D'Arcy Thompson argued that a flier of fixed proportions must move at least at a speed that grows with the square root of its size, and that the work of flight grows faster than the muscle to do it. This page checks a real flying fish against that argument using only numbers we could trace to a fetched source, and reports what the published record does and does not contain. Everything here is read from <code>results.json</code>, <code>status.json</code> and the two CSV files beside this page; nothing is typed by hand.</p>
+<div class="verdict" id="verdict"></div>
+<div class="grid g4" id="kpis" style="margin-top:12px"></div>
+<p class="small mute" id="builtLine" style="margin-top:10px"></p>
+</section>
+
+<section id="envelope"><h2>The envelope</h2>
+<p class="lede">The lift a wing makes is &frac12;&thinsp;&rho;&thinsp;v&sup2;&thinsp;S&thinsp;C<sub>L</sub>. To stay up it must equal the weight W, so the slowest possible lift-supported speed is v<sub>min</sub> = &radic;(2&thinsp;(W/S) / (&rho;&thinsp;C<sub>L,max</sub>)). That is Thompson's "must": speed grows as the square root of wing loading W/S, and under isometry as the square root of length. The dashed line below has that slope, drawn through the flying fish.</p>
+<div class="grid g2">
+  <div class="card"><h3>Reading B: the fish on its own envelope</h3><div id="readingB"></div></div>
+  <div class="card"><h3>Reading A: does speed scale as (W/S)<sup>&frac12;</sup>?</h3><div id="readingA"></div></div>
+</div>
+<div class="fig" style="margin-top:14px" id="figwrap"><div id="fig"></div>
+<p class="small mute">Airspeed against wing loading, both on log scales. Gliders in blue, powered fliers in orange, fitted separately because they are two physical regimes; the vertical bar on the flying fish is the 10 to 20 m/s field range. Birds are absent on purpose: class Aves is the frozen holdout exam and no bird value may enter any test. Hover a point for its provenance.</p></div>
+<div class="grid g2" style="margin-top:14px">
+  <div class="card"><h3>Reading C: could its muscles power level flight?</h3><div id="readingC"></div></div>
+  <div class="card"><h3>Reading D: the exponents themselves</h3><div id="readingD"></div></div>
+</div>
+</section>
+
+<section id="data"><h2>What a flying fish does in the air: the table (issue #50)</h2>
+<p class="lede">One row per value per source. <b>measured</b> means the authors measured it; <b>secondary</b> means a fetched paper quotes an older one we could not get; <b>theory</b> means a model's number, kept only to say so. Blank cells are blank: nothing is filled in.</p>
+<div class="grid g4" id="coverage"></div>
+<div class="card" style="margin-top:12px"><h3>What is missing, stated plainly</h3><ul id="missing" class="small"></ul></div>
+<details style="margin-top:12px" open><summary>The glide table</summary><div class="in scroll" id="glideTable"></div></details>
+<details><summary>Fin size and proportion: the allometry that is in the abstracts</summary><div class="in scroll" id="allom"></div></details>
+</section>
+
+<section id="compare"><h2>Comparison lineages</h2>
+<p class="lede">The cladogram on the main page compares flying fish with flies, bats, flying squirrels and colugos. Each non-bird lineage that has a fetched source with a speed is here; those with a wing loading as well enter the fit.</p>
+<div class="scroll" id="compTable"></div>
+</section>
+
+<section id="formal"><h2>What goes to the Lean thread</h2>
+<p class="lede">The exponents are consequences of definitions, not measurements, so they belong in the proof checker. Eight statements, each with symbols, units, the assumptions that are not mathematics, and a mutant that must fail to compile, are in <a href="data/FORMAL-STATEMENTS.md">FORMAL-STATEMENTS.md</a>. The one that matters most is <b>strength scaling as L&sup2;</b>: the Lean thread's open-problems ledger has 17 candidates it cannot rule on for lack of it.</p>
+<ol class="steps">
+<li><b>R1 cube law</b> W &prop; L&sup3; (already proved as thompson1917-ch03-07).</li>
+<li><b>R2 area law</b> S &prop; L&sup2;, A<sub>cs</sub> &prop; L&sup2;.</li>
+<li><b>R3</b> wing loading W/S &prop; L.</li>
+<li><b>R4 minimum speed</b> v &ge; &radic;(2W/(&rho;SC<sub>L,max</sub>)), and v<sub>min</sub> &prop; L<sup>&frac12;</sup> under isometry (thompson1917-ch02-06 first half, ch02-10).</li>
+<li><b>R5 power required</b> P<sub>req</sub> = Wv/(L/D) &prop; L<sup>3.5</sup> (ch02-06 second half).</li>
+<li><b>R6 power available</b> P<sub>avail</sub> = f&thinsp;p&thinsp;M &prop; L&sup3; <em>as a named assumption</em>; with R5 a size L* exists above which flight fails (ch02-07).</li>
+<li><b>R7 strength</b> F<sub>break</sub> = &sigma;&thinsp;A<sub>cs</sub> &prop; L&sup2;, safety factor &prop; L<sup>&minus;1</sup>. First in line.</li>
+<li><b>R8 Froude</b> v &prop; &radic;(gL) for swimming and walking (ch02-10).</li>
+</ol>
+</section>
+
+<section id="method"><h2>How this was done</h2>
+<ol class="steps">
+<li><b>Prior art first.</b> A logged search for flying-fish aerodynamics and glide performance before any model: OpenAlex via the OpenResearch CLI (rate-limited after one call), then Europe PMC, Crossref and Semantic Scholar. Every call is in <a href="data/SEARCHES.md">SEARCHES.md</a>; findings in <a href="data/PRIOR-ART.md">PRIOR-ART.md</a>. No run identifier is issued by the tool, so none is recorded. No email, name or account id went into any request.</li>
+<li><b>Pre-register, then read.</b> The test's pass and fail rules were written to <a href="data/result.json">result.json</a> at 18:21 UTC before any wing loading, lifting area or lift coefficient had been read; the file lists the few values seen in abstracts before that moment. One amendment at 18:26 UTC, requested by the hub before any fit ran, separates gliders from powered fliers and names the flying fish in the set.</li>
+<li><b>Fetch, verify, record.</b> Candidate DOIs recalled from memory were resolved in Crossref and kept only when the title matched; one guess returned 404 and is cited nowhere. Paywalled texts are cited as abstract-only. Open copies came from PubMed Central, Zenodo, Inter-Research and the Wayback Machine.</li>
+<li><b>Compute from files.</b> <code>analysis.py</code> reads the two CSVs and writes every number to <code>results.json</code>; this page reads that file. Air density 1.225 kg/m&sup3; and g = 9.81 m/s&sup2; are the only constants.</li>
+<li><b>Keep the kinds apart.</b> Measured, secondary, theory and simulation are separate labels on every row. A CFD result is a simulation and enters no verdict.</li>
+</ol>
+</section>
+
+<section id="honest"><h2>What this does not establish</h2>
+<ul>
+<li>That Thompson's scaling law holds: both fits are underpowered by the pre-registered rules. The pooled slope of 0.54 across eight points is descriptive only; it mixes gliders and powered fliers.</li>
+<li>That the flying fish's glide speeds were measured on the fish whose wing loading was measured. The speeds are family-level field figures quoted second-hand from works published between 1941 and 1994; the morphometrics are 40 to 60 g stuffed specimens of one species.</li>
+<li>Anything about muscle power: no source gives the muscle mass fraction or specific power of a flying fish.</li>
+<li>Anything about birds. Class Aves is held out; the exam on birds is for an assessor who built none of this.</li>
+<li>Any novelty. Fish 1990 and Park and Choi 2010 already compared flying-fish wings with birds and bats; what we did not find is a pre-registered test of the (W/S)<sup>&frac12;</sup> law on gliders, and Google Scholar was not searched.</li>
+<li>That the compiled bat and hoverfly values are right: the compilation's own mass and area columns disagree with its wing-loading column for insects by a factor of 5 to 8, and its primary sources were not fetched.</li>
+</ul>
+</section>
+
+<section id="sources"><h2>Sources</h2>
+<p class="lede">Each row says what was actually read. DOIs were verified by fetching Crossref metadata.</p>
+<div class="scroll" id="sourcesTable"></div>
+</section>
+
+</main>
+<footer class="wrap">Physics thread of DELPHI at the ScienceClaw hack. Nothing on this page is signed or published as a nanopublication; drafts, when written, are unsigned and say so. <a href="../../index.html">Back to Mission Control</a>.</footer>
+
+<script>
+(function(){
+  const root=document.documentElement, btn=document.getElementById('themeBtn');
+  try{const s=localStorage.getItem('theme'); if(s) root.setAttribute('data-theme',s);}catch(e){}
+  btn.onclick=()=>{const cur=root.getAttribute('data-theme')|| (matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'); const nx=cur==='dark'?'light':'dark'; root.setAttribute('data-theme',nx); try{localStorage.setItem('theme',nx);}catch(e){}};
+})();
+const fmt=(x,d=2)=> (x==null||x==='')?'':(typeof x==='number'? (Math.abs(x)>=100? x.toFixed(0): x.toFixed(d)) : x);
+function parseCSV(t){const lines=t.replace(/\r/g,'').split('\n').filter(l=>l.trim()); const h=lines[0].split(','); return lines.slice(1).map(l=>{const o={}; l.split(',').forEach((v,i)=>o[h[i]]=v); return o;});}
+function table(el,rows,cols){ if(!rows.length){el.textContent='no rows';return;} const t=document.createElement('table'); t.innerHTML='<thead><tr>'+cols.map(c=>`<th>${c.label}</th>`).join('')+'</tr></thead>'; const tb=document.createElement('tbody'); rows.forEach(r=>{const tr=document.createElement('tr'); tr.innerHTML=cols.map(c=>`<td>${c.f? c.f(r): (r[c.key]??'')}</td>`).join(''); tb.appendChild(tr);}); t.appendChild(tb); el.innerHTML=''; el.appendChild(t); }
+const chip=(v)=>{const cls=v==='inside'||v==='supports'?'ok':(v==='outside'||v==='refutes'?'bad':'warn'); return `<span class="chip ${cls}">${v}</span>`;};
+Promise.all([
+  fetch('status.json').then(r=>r.json()), fetch('results.json').then(r=>r.json()),
+  fetch('data/glide-data.csv').then(r=>r.text()), fetch('data/comparison-data.csv').then(r=>r.text()),
+  fetch('data/sources.json').then(r=>r.json()), fetch('data/allometry.json').then(r=>r.json()), fetch('envelope.svg').then(r=>r.text())
+]).then(([st,res,gcsv,ccsv,src,allo,svg])=>{
+  const g=parseCSV(gcsv), c=parseCSV(ccsv);
+  document.getElementById('verdict').innerHTML=`Overall: ${chip(res.overall.verdict)} &nbsp; reading B ${chip(res.verdicts.B)} &nbsp; reading A gliders ${chip(res.verdicts.A_gliders)} &nbsp; reading A powered ${chip(res.verdicts.A_powered)} &nbsp; reading C ${chip(res.verdicts.C)}`;
+  const B=res.interpretation_B, A=res.interpretation_A, C=res.interpretation_C;
+  const kp=[['v<sub>min</sub> of the fish',fmt(B.v_min_m_s)+' m/s','from its own W/S and C<sub>L,max</sub>'],['quoted glide speed',B.airspeed_range_m_s.join(' to ')+' m/s','field, second-hand'],['wing loading',fmt(B.W_N/B.reference_area_m2,1)+' N/m²','0.06 kg specimen L3'],['glide-table rows',g.length,res.coverage.n_species_or_groups+' species or groups'],['first-hand species',res.coverage.species_with_first_hand_measurements.length,'with measured values'],['fetched sources',src.sources.filter(s=>s.access.startsWith('full text')).length,'in full; '+src.sources.length+' cited'],['taxa in the fit',A.gliders.n+' + '+A.powered.n,'gliders + powered'],['logged calls',st.metrics.find(m=>m.label.startsWith('logged')).value,'searches and fetches']];
+  document.getElementById('kpis').innerHTML=kp.map(k=>`<div class="card"><div class="kpi">${k[1]}<small>${k[0]}<br><span class="mute">${k[2]}</span></small></div></div>`).join('');
+  document.getElementById('builtLine').textContent=`Numbers computed ${res.computed_at} by analysis.py; status ${st.updated}.`;
+  document.getElementById('readingB').innerHTML=`<p>${chip(B.verdict)} &nbsp; W = ${fmt(B.W_N,3)} N, reference area ${fmt(B.reference_area_m2,5)} m², C<sub>L,max</sub> ${B.C_Lmax}, so v<sub>min</sub> = <b>${fmt(B.v_min_m_s)} m/s</b>; inside means the quoted speeds ${B.airspeed_range_m_s.join(' to ')} m/s overlap [v<sub>min</sub>, 3v<sub>min</sub>] = [${fmt(B.v_min_m_s)}, ${fmt(B.three_v_min_m_s)}].</p><p class="small mute">${B.caveat}</p><p class="small">Second fish (descriptive only): ${B.second_specimen.specimen}: wing loading ${fmt(B.second_specimen.wing_loading_N_m2,1)} N/m², v<sub>min</sub> ${fmt(B.second_specimen.v_min_with_Park_Choi_CLmax_m_s)} m/s with the borrowed C<sub>L,max</sub>, quoted airspeed ${B.second_specimen.airspeed_quoted_for_this_species_m_s.join(' to ')} m/s.</p>`;
+  const fitTxt=(f,name)=>`<p><b>${name}</b> ${chip(f.verdict)} n = ${f.n}${f.slope!=null?`, slope ${fmt(f.slope)} (95% CI ${fmt(f.slope_ci95[0])} to ${fmt(f.slope_ci95[1])})`:''}, W/S spans ${fmt(f.decades_of_WS)} decades. <span class="mute">${f.why||''}</span></p>`;
+  document.getElementById('readingA').innerHTML=fitTxt(A.gliders,'Gliders')+fitTxt(A.powered,'Powered fliers')+`<p class="small mute">Thompson predicts slope ½. Pre-registered rule: a verdict needs n &ge; 5 taxa spanning at least one decade of W/S with a CI narrower than 1.0. Pooled across both regimes, descriptive only: slope ${fmt(A.pooled_descriptive_only.slope)} &plusmn; ${fmt(A.pooled_descriptive_only.slope_se)} (n = ${A.pooled_descriptive_only.n}, r² ${fmt(A.pooled_descriptive_only.r2)}). It decides nothing.</p>`;
+  document.getElementById('readingC').innerHTML=`<p>${chip(C.verdict)} P<sub>req</sub> = W&thinsp;v<sub>min</sub>/(L/D)<sub>max</sub> = <b>${fmt(C.P_req_W_at_v_min)} W</b> (${fmt(C.P_req_per_kg_body_W_kg,1)} W per kg of body).</p><p class="small mute">${C.why}</p><p class="small">${C.what_would_decide_it}</p>`;
+  document.getElementById('readingD').innerHTML=`<p><span class="chip ok">provable</span> ${res.interpretation_D.status}.</p><ul class="small">${res.interpretation_D.statements.map(s=>`<li>${s}</li>`).join('')}</ul>`;
+  document.getElementById('fig').innerHTML=svg;
+  const cov=res.coverage.per_column; const nice={glide_distance_m:'glide distance',glide_duration_s:'glide duration',airspeed_m_s:'airspeed',launch_speed_m_s:'launch speed',height_m:'height',body_mass_kg:'body mass',body_length_m:'body length',pectoral_fin_span_m:'pectoral span',pectoral_fin_area_m2:'pectoral area',pelvic_fin_area_m2:'pelvic area',CL_max:'C<sub>L,max</sub>',LD_max:'(L/D)<sub>max</sub>'};
+  document.getElementById('coverage').innerHTML=Object.keys(cov).map(k=>{const v=cov[k]; const kinds=Object.entries(v.by_value_kind).map(([a,b])=>`${b} ${a.split(' ')[0]}`).join(', '); return `<div class="card"><div class="kpi">${v.rows_with_value}<small>${nice[k]} rows<br><span class="mute">${v.species.length} species/groups${kinds?'; '+kinds:''}</span></small></div></div>`;}).join('');
+  document.getElementById('missing').innerHTML=res.coverage.what_is_missing.map(s=>`<li>${s}</li>`).join('');
+  table(document.getElementById('glideTable'),g,[{label:'species',key:'species'},{label:'kind',key:'row_kind'},{label:'glide m',key:'glide_distance_m'},{label:'airspeed m/s',key:'airspeed_m_s'},{label:'launch m/s',key:'launch_speed_m_s'},{label:'height m',key:'height_m'},{label:'mass kg',key:'body_mass_kg'},{label:'length m',key:'body_length_m'},{label:'span m',key:'pectoral_fin_span_m'},{label:'pectoral m²',key:'pectoral_fin_area_m2'},{label:'pelvic m²',key:'pelvic_fin_area_m2'},{label:'C<sub>L,max</sub>',key:'CL_max'},{label:'L/D',key:'LD_max'},{label:'method',key:'method'},{label:'n',key:'sample_size'},{label:'value kind',key:'value_kind'},{label:'source',f:r=>`${r.source_id}<br><span class="mute small">${r.source_locator}</span>`},{label:'notes',f:r=>`<span class="small">${r.notes}</span>`}]);
+  table(document.getElementById('allom'),allo.entries,[{label:'species',key:'species'},{label:'quantity',key:'quantity'},{label:'exponent or value',f:r=>r.exponent??r.value},{label:'source',f:r=>`${r.source_id} (${r.locator})`},{label:'note',key:'note'}]);
+  table(document.getElementById('compTable'),c,[{label:'lineage',key:'lineage'},{label:'species',f:r=>`<i>${r.species}</i><br><span class="mute small">${r.common_name}</span>`},{label:'mode',key:'mode'},{label:'mass kg',key:'body_mass_kg'},{label:'W/S N/m²',key:'wing_loading_N_m2'},{label:'speed m/s',key:'airspeed_m_s'},{label:'speed kind',key:'speed_kind'},{label:'value kind',key:'value_kind'},{label:'source',key:'source_id'},{label:'notes',f:r=>`<span class="small">${r.notes}</span>`}]);
+  table(document.getElementById('sourcesTable'),src.sources,[{label:'id',key:'id'},{label:'citation',key:'citation'},{label:'identifier',f:r=>r.doi?`<a href="https://doi.org/${r.doi}">${r.doi}</a>`:(r.url||'')},{label:'what was read',key:'access'},{label:'retrieved',key:'retrieved_at'},{label:'method',key:'method'}]);
+  const n=document.getElementById('kpis');
+}).catch(e=>{document.getElementById('verdict').innerHTML='<span class="chip bad">could not load data files</span> '+e;});
+</script>
+</body>
+</html>

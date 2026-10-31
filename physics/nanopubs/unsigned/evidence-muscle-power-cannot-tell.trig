@@ -1,0 +1,62 @@
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+@prefix schema: <https://schema.org/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/hypothesis/flying-fish-muscle-power-sufficient-for-level-flight> a delphi:Hypothesis, skos:Concept ;
+    rdfs:label "Whether a flying fish has the muscle power for level flight cannot be told from published numbers" ;
+    dct:description "The mechanical power to fly level at the minimum lift-supported speed with the best measured glide ratio is P_req = W v_min / (L/D)max = 1.33 W for the 0.06 kg specimen (22.1 W per kg of body mass). No fetched source gives the muscle mass fraction or the mass-specific muscle power of a flying fish, so the available power cannot be computed and the pre-registered verdict is cannot-tell (inconclusive, missing input)." ;
+    delphi:context "Claim under test: thompson1917-ch02-06 (D Arcy Thompson 1917, On Growth and Form, ch. II, Project Gutenberg 55264 lines 1716-1790), with thompson1917-ch02-07 and thompson1917-ch02-10. Taxon: Exocoetidae, NCBI Taxonomy 76072, GBIF 2968. Class Aves is the frozen holdout (holdout/exam.json); no bird value enters this record." ;
+    delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/physics-thompson-ch02-06-reading-C> ;
+    prov:wasDerivedFrom <https://doi.org/10.1242/jeb.046052>, <https://doi.org/10.1017/S0025315400048761> ;
+    rdfs:comment "Status: inconclusive. Does not establish: that flying fish could or could not power flight; it records a missing input. The (L/D)max of 4.37 is from a stuffed specimen in a wind tunnel. Thompson's premise that muscle power scales as body mass (P_avail proportional to L^3) is itself an assumption and is sent to the Lean thread as a named hypothesis, not a fact (physics/FORMAL-STATEMENTS.md, R6)." ;
+    rdfs:comment "Pre-registration: physics/tests/thompson1917-ch02-06/result.json, written 2026-10-31T18:21:00Z before any wing loading, lifting area or lift coefficient was read, amended 2026-10-31T18:26:00Z before any fit ran (the file lists both and the values seen before each); sha256 at build 0094c084db22278a5f98d96cc2971ccd27813b0acdc458d60cadf7c7b7bcae48. The git commit that timestamps it is pending: the physics thread does not commit; the hub does." ;
+    skos:related <https://w3id.org/delphi/resource/claim/thompson1917-ch02-07> ;
+    rdfs:seeAlso <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/>, <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/results.json> .
+  <https://w3id.org/delphi/resource/evidence/physics-thompson-ch02-06-reading-C> a delphi:EvidenceItem ;
+    rdfs:label "Power required for level flight at v_min for Cypselurus hiraii specimen L3" ;
+    dct:description "P_req = 0.5886 N x 9.85 m/s / 4.37 = 1.327 W. A sourced pectoral-plus-axial muscle mass fraction f and specific power p (W per kg muscle): INSIDE if f * p >= 22.1 W per kg body mass. Davenport 1992 (abstract) states only that flying fish possess no more red axial muscle than cruising pelagic fish such as mackerel and that take-off probably uses anaerobic white muscle." ;
+    dct:subject <https://w3id.org/delphi/resource/hypothesis/flying-fish-muscle-power-sufficient-for-level-flight> ;
+    rdfs:comment "Computed by physics/analysis.py from physics/glide-data.csv (sha256 bc24245b5163723b192e95fccf714ef6e4b3b28e71df4fef3befbaf008a00635) and physics/comparison-data.csv (sha256 e0d3d74639c1fe856fe5128c1783151596fde3acc923a2409be3d3f870cc394a); numbers in physics/results.json (sha256 63336841c0d4c9ae2760ae5c87a9251b97218e3ebfdd453cad4cffb9cdf6ba0b). Every input value carries its source, locator, retrieval time and value kind in those files." ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/results.json>, <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/data/glide-data.csv>, <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/data/comparison-data.csv> .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-physics-thread-builder> ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/data/result.json>, <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/results.json> .
+  <https://w3id.org/delphi/resource/agent/delphisci-physics-thread-builder> a prov:SoftwareAgent ;
+    rdfs:label "delphisci physics thread (Claude Fable 5.1 writing the data tables, the analysis script and this builder; a builder, not an assessor)" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/model/claude-fable-5-1> a delphi:LanguageModel ;
+    rdfs:label "Claude Fable 5.1" ;
+    dct:identifier "claude-fable-5-1" .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-10-31T18:45:54.000Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/delphisci-physics-thread-builder> ;
+    rdfs:label "Whether a flying fish has the muscle power for level flight cannot be told from published numbers" ;
+    rdfs:comment "Unsigned draft. Not a publication. The test registry comes first and production needs the ORCID key owner's explicit approval every time. Owner ORCID not set: the key owner adds it at signing time; until then no human is named in this record." ;
+    rdfs:comment "Hand-authored in Delphi ontology v2.0 terms (https://w3id.org/delphi/ontology/) by the builder, not created from a template: the published Delphi templates still use legacy probknow IRIs (team decision 2026-10-31, DECISIONS.md), so no nt:wasCreatedFromTemplate is declared and a template-conformance checker will report none." ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType <https://w3id.org/delphi/ontology/Hypothesis> ;
+    npx:introduces <https://w3id.org/delphi/resource/hypothesis/flying-fish-muscle-power-sufficient-for-level-flight> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/biomechanics-and-scaling> .
+  <https://w3id.org/delphi/resource/domain/biomechanics-and-scaling> rdfs:label "biomechanics-and-scaling" .
+}
