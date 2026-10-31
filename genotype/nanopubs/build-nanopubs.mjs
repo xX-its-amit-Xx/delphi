@@ -404,23 +404,62 @@ const slugify = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/
   }));
 });
 
-// the structural gap: no ray-to-inter-ray arrow exists in any fetched source
-const rayGap = (IX.gaps || []).find(g => /inter-?ray/i.test(g.gap || ''));
+// WITHDRAWN AND REPLACED 2026-10-31. The earlier record claimed no ray-to-interray signalling arrow could be
+// sourced in any fin of any fish. A curation pass found that false, and the three papers were then read here.
+// The narrow criterion the search actually applied does survive, so the record is narrowed rather than deleted,
+// and it now carries the withdrawal, the contradicting literature and the process cause.
+const RAY_PAPERS = [
+  { pmid: '12482711', doi: '10.1016/s0012-1606(02)00075-0', first_author: 'Murciano C', year: '2002', journal: 'Dev Biol', read: 'abstract only',
+    title: 'Ray-interray interactions during fin regeneration of Danio rerio',
+    quote: 'We present evidence suggesting that the interray blastema is necessary for a proper bifurcation of each ray during regeneration in Danio rerio' },
+  { pmid: '26253402', doi: '10.1242/dev.120212', first_author: 'Blum N', year: '2015', journal: 'Development', read: 'abstract only',
+    title: 'Retinoic acid signaling spatially restricts osteoblasts and controls ray-interray organization during zebrafish fin regeneration',
+    quote: 'we demonstrate that a retinoic acid (RA)-degrading niche is established by Cyp26a1 in the proximal basal epidermal layer that orchestrates ray-interray organization by spatially restricting osteoblasts' },
+  { pmid: '29441573', doi: '10.1098/rsos.171553', first_author: 'Cardeira J', year: '2018', journal: 'R Soc Open Sci', read: 'abstract only',
+    title: 'Widening control of fin inter-rays in zebrafish and inferences about actinopterygian fins',
+    quote: 'The present work associates the activity of the cell membrane potassium channel kcnk5b, the fibroblast growth factor receptor 1 and the sonic hedgehog pathway to the control of several cell functions involved in inter-ray wound healing or dorsoventral regeneration of the zebrafish caudal fin' },
+];
 records.push(record({
-  file: 'gap-no-ray-to-interray-signalling.trig', slug: 'genotype-gap-no-ray-to-interray-arrow-found',
-  label: 'No signalling arrow between a fin ray and the inter-ray tissue could be sourced in any fin of any fish: no fetched paper names a ligand in one compartment and a receptor in the other',
-  status: 'measured null: an absence of evidence after a logged search, not a demonstration of absence',
-  description: `The fin ray and the tissue between rays are the two compartments that set a fin's shape, so signalling between them was one of the interactions the project asked for by name. ${rayGap ? 'The subagent reported: ' + rayGap.gap : 'The subagent found no source for it.'} Of ${IX.coverage.interactions} interactions recorded in the same run, with ${IX.coverage.by_grade.mechanism || 0} graded mechanism, none runs ray to inter-ray. The arrows that do exist run epidermis to pre-osteoblast, mesenchyme to osteoblast, and blastema to osteoblast, all within or across layers rather than between the ray and inter-ray compartments. A further structural gap found in the same run: every regeneration arrow comes from the caudal fin, so the pectoral equivalents do not exist either.`,
-  context: 'Searched while building genotype/interactions.json. The project needs this arrow because a viewer zooming into a fin ray should be able to show what the ray exchanges with its neighbourhood; it currently cannot, and that is a statement about the literature.',
-  test: 'Logged literature search for a ligand in one compartment and its receptor in the other, in any fin of any fish, through genotype/agent_fetch.py. No statistical test.',
-  metrics: [['ray_to_interray_arrows_found', 0, 'arrows found between the ray and inter-ray compartments'],
-            ['interactions_found_in_the_same_run', IX.coverage.interactions, 'interactions the same run did support'],
-            ['regeneration_arrows_from_the_pectoral_fin', 0, 'regeneration arrows measured in the pectoral rather than the caudal fin'],
-            ['gaps_recorded_in_the_same_run', (IX.gaps || []).length, 'distinct gaps the run recorded']],
-  datasets: [], publications: [], derivedFrom: 'sub:interactions', also: [ixEntity],
-  notEstablished: 'It does not establish that no such signalling exists, nor that nobody has studied it: the search was bounded by what the fetcher could reach, and paywalled full texts were recorded as refusals. It establishes that the project cannot draw this arrow from a source today.',
-  prereg: 'ray and inter-ray signalling was named in the task before the search, so the null is a pre-specified outcome rather than a post-hoc observation.',
-  evLabel: 'Logged search for ray-to-inter-ray signalling, and what was found instead', evDesc: 'Read from genotype/interactions.json gaps and coverage.',
+  file: 'correction-ray-interray-null-narrowed.trig', slug: 'genotype-correction-ray-interray-null-withdrawn-and-narrowed',
+  label: 'Withdrawn and narrowed: ray-to-interray signalling IS established in the zebrafish caudal fin by grafting and niche experiments, so this thread\'s claim that no such arrow could be sourced in any fin of any fish was false; what survives is the much narrower statement that no source names a ligand in one compartment and its receptor in the other',
+  status: 'correction: the earlier universal negative is withdrawn as refuted by findable literature; the narrowed claim that replaces it is a measured null against a stated criterion',
+  description: (
+    `WHAT WE SAID. A draft record from this thread asserted: "No signalling arrow between a fin ray and the inter-ray tissue could be sourced in any fin of any fish." `
+    + `WHAT THE LITERATURE SAYS. That is false, and one query found three papers. Murciano 2002 (PMID 12482711) used single ray ablations and heterotopic graftings and `
+    + `concluded that "the interray blastema is necessary for a proper bifurcation of each ray", also showing that interray tissue and surrounding epidermis "can modulate `
+    + `the length of the ray", with msxA and msxD in ray and interray epidermis under control of the ray blastema and bmp4 named as a candidate signal. Blum 2015 `
+    + `(PMID 26253402) showed a Cyp26a1 retinoic-acid-degrading niche "orchestrates ray-interray organization by spatially restricting osteoblasts", with preosteoblasts `
+    + `invading neighbouring interrays when it is disrupted. Cardeira 2018 (PMID 29441573) associates kcnk5b, fibroblast growth factor receptor 1 and the sonic hedgehog `
+    + `pathway with inter-ray control under ray-dependent regulation. Ray-interray signalling is therefore established, by experiment, in the caudal fin. `
+    + `WHAT SURVIVES. The criterion the search actually applied was narrower than the sentence it produced: a source naming a LIGAND in one compartment and ITS RECEPTOR in `
+    + `the other. On that criterion the null holds against these three papers: bmp4 is offered explicitly as a "candidate signal" with no receptor named in the opposite `
+    + `compartment, Cyp26a1 is an enzyme establishing a diffusible-signal niche rather than a ligand-receptor pair across the boundary, and Cardeira names a receptor `
+    + `(Fgfr1) and a pathway but no ligand localised to the opposing compartment. The narrowed claim is therefore: no fetched source resolves ray-interray signalling to a `
+    + `named ligand-receptor pair across the boundary, and none of this work is in the pectoral fin. `
+    + `WHAT CHANGED. The universal sentence is withdrawn. The three papers are cited here as adjacent work the narrowed claim does not cover, and the project must say `
+    + `"not resolved to a ligand-receptor pair" rather than "no arrow exists". `
+    + `THE CAUSE, which is a process finding and not just a fact finding. The thread's own gap text recorded that one of these three papers was read "title only", and the `
+    + `thread had already cited that paper elsewhere. A title-only read was allowed to support a universal negative. A universal negative needs a stated criterion and a `
+    + `full read of anything it would contradict; the criterion existed in the gap text but was not carried into the headline, where a weaker, broader sentence took its `
+    + `place. Found by this project's own nanopub curation pass, not by the thread that wrote it.`),
+  context: (`The original record came from the interactions run, which produced ${IX.coverage.interactions} supported arrows with `
+    + `${IX.coverage.by_grade.mechanism || 0} graded mechanism, none of them ray-to-interray. That part stands: no arrow of this kind is drawn in genotype/interactions.json, `
+    + `and the three papers above would not have supplied one under its ligand-receptor criterion. All three are caudal-fin work, so the separate statement that every `
+    + `regeneration arrow in this project comes from the caudal fin and not the pectoral is unaffected.`),
+  test: ('Re-check: the three PMIDs named by the curation pass were fetched through the thread\'s logged fetcher and their abstracts read, then tested against the record\'s '
+    + 'own criterion (a named ligand in one compartment and its receptor in the other). No statistical test.'),
+  metrics: [['papers_that_contradicted_the_universal_claim', 3, 'papers found by one query that establish ray-interray signalling experimentally'],
+            ['papers_that_defeat_the_narrowed_claim', 0, 'of those three, how many name a ligand in one compartment and its receptor in the other'],
+            ['papers_already_cited_by_this_thread', 1, 'of those three, how many the thread already held and had read title-only (PMID 29441573)'],
+            ['pectoral_fin_studies_among_them', 0, 'all three are caudal-fin work'],
+            ['public_self_corrections_by_this_thread', 3, 'the gja5a withdrawal, the flying-fish genome correction, and this one']],
+  datasets: [], publications: RAY_PAPERS, derivedFrom: 'sub:interactions', also: [ixEntity],
+  notEstablished: ('The narrowed claim does not establish that no ligand-receptor pair operates across the ray-interray boundary: three abstracts are not a literature search, '
+    + 'and the original search was bounded by what the fetcher could reach. It does not establish anything about the pectoral fin, where none of this work was done. And it '
+    + 'does not rescue the withdrawn sentence: ray-interray signalling is real, demonstrated by grafting, and the project was wrong to say otherwise.'),
+  prereg: 'none for the correction. The withdrawn claim had a criterion stated in the thread\'s own gap text, which is what made the overreach detectable.',
+  evLabel: 'The three papers that refute the universal claim, tested against the record\'s own narrower criterion',
+  evDesc: 'Abstracts fetched 2026-10-31 (genotype/cache/calls_rayinterray.json) and read against the criterion recorded in genotype/interactions.json gaps.',
 }));
 
 // ---- the self-correction: what this project said, what the source says, and what changed -----------

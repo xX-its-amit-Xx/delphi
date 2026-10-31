@@ -2,7 +2,7 @@
 
 **HYPOTHESIS THROUGHOUT. Not a predicted genome, not a design, and not a claim that any of this is achievable.**
 
-Built 2026-10-31T21:55:18Z by `genotype/build_flier_genome.py` from the physics thread's `physics/flier/spec.json`, this thread's
+Built 2026-10-31T22:27:43Z by `genotype/build_flier_genome.py` from the physics thread's `physics/flier/spec.json`, this thread's
 `interventions.json` and `causal-chains.json`, and two logged literature runs. No bird data anywhere: class Aves is this
 project's held-out clade, so the usual source of flight genetics is excluded by construction.
 
@@ -36,7 +36,7 @@ Each row is a manipulation that changed the parameter named in its own row, whic
 | hhip | pectoral fin area | coding | increase | `necessity` | 65 % of wild type | yes | 12 nodes |
 | hhip | endoskeletal disc shape | coding | increase | `mechanism` | elongation of the endochondral (endoskeletal) disc | no | 12 nodes |
 | kcnh2a | other (fin regenerate outgrowth / overgr | pharmacological | decrease | `mechanism` | 'fully suppresses overgrowth' - a qualitative stat | no | 8 nodes |
-| kcnk5b | other (local fin overgrowth; the negativ | transgenic overexpression | no change | `mechanism` | zero overgrowths among 32 fish carrying DsRed-posi | no | 11 nodes |
+| kcnk5b | other (local fin overgrowth; the negativ | transgenic overexpression | no change | `mechanism` | zero overgrowths among 32 fish carrying DsRed-posi | no | 6 nodes |
 | wls | pectoral fin length | coding | decrease | `mechanism` | pectoral fin scored as smaller by Alcian blue cart | no | 12 nodes |
 | gja1b | ray segment length | pharmacological | decrease | `mechanism` | segment length; GAP27 'recapitulated the sof b123  | no | not computed |
 | gja1b (required partner) + kcna5 (Xenopus laevis transgene) | ray segment length (combination: potassi | transgenic overexpression | increase | `mechanism` | segment length: 'a significant increase in segment | no | not computed |
@@ -79,7 +79,7 @@ Each row is a manipulation that changed the parameter named in its own row, whic
 **Route: none.** NONE. Three findings, all negative for the requirement. (1) Capacity: every fetched genetic result on fish globins runs downward. Icefishes lost both haemoglobin gene clusters through transposable-element-mediated deletion; Asian noodlefishes lost myoglobin outright and let haemoglobin, haptoglobin and hemogen deteriorate; Antarctic notothenioids reduced haemoglobin multiplicity to a single adult isoform with lower oxygen affinity; the icefish candidate gene FAAP20 is associated with LOW haematocrit. The zebrafish globin loci and their LCR give a well-mapped cis-regulatory handle (two loci, two developmental switches, GATA1/NFE2 motifs, reporter-confirmed LCR), and the Root effect is a demonstrated pH-driven unloading mechanism in fish swimbladders, but no fetched source reports any manipulation that RAISES blood oxygen capacity in a fish. (2) Pump: genetic routes to a bigger fish heart do exist, which is the one real positive here. Knockdown of miR-458-3p and miR-144-5p drives cardiomyocyte proliferation and enlarged heart development through bmp2 in an Antarctic icefish, and Tg(myl7:ATF3) zebrafish develop cardiac hypertrophy with increased cardiac cell proliferation. But the icefish route is compensation for having no haemoglobin at all, the zebrafish route is pathological (fibrosis, disorganised sarcomeres, long-QT-like dysfunction), and neither reports a rise in cardiac output or oxygen delivery. (3) Magnitude: measured fish performance is not close. The highest fetched fish maximum oxygen uptake is 781.31 +/- 16.50 mg O2 kg-1 h-1 with a maximum cardiac output of 69.12 +/- 2.39 ml min-1 kg-1 in schoolmaster snapper, i.e. roughly 9 ml O2 kg-1 min-1 by this agent's arithmetic, reached by raising heart rate and tissue extraction rather than stroke volume, and the fish envelope plateaus at about 1.75-fold resting cardiac output and 2.5-fold extraction in salmon and tilapia on warming. No fish in any fetched source approaches the per-kilogram oxygen delivery the physics thread asks for. I deliberately fetched no mammalian baseline, so the exact multiple belongs to the physics thread; the point for this thread is that the shortfall is not marginal and that no genetic route in the fetched literature addresses it.
 
 **Lean's elimination.** The Lean thread eliminated sustained aerobic cruise for this flier with a certificate its own ledger reports as
-kernel-accepted (3 theorems, compiled in 12.5 s). Recomputed here from the numbers they committed rather than
+kernel-accepted (3 theorems, compiled in 14.5 s). Recomputed here from the numbers they committed rather than
 quoted: aerobic ceiling **0.035659 W** against **0.942838 W** required, short by **26.44x**.
 `ceiling = muscular efficiency x oxycaloric equivalent x cardiac output x arterial O2 content; required = weight x airspeed / lift-to-drag`. Teleost proxy values committed by the lean thread; the generous case, since in air the gills do not ventilate and arterial content only falls.
 

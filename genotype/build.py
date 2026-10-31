@@ -490,7 +490,33 @@ fin_size = {
    "finding": "A phylogenomic study of flying fishes found signatures of convergent paired-fin enlargement and, intersected with zebrafish fin-size mutants, implicated lat4a and kcnh2a.",
    "link_type": "association (comparative genomics), plus zebrafish genetics; not a measurement in a flying-fish fin",
    "citations": [cite("34534441", "we identify a surprising role for an L-type amino acid transporter, lat4a, and the potassium channel, kcnh2a, in the regulation of fin proportion")],
-   "symbol_check": "lat4a is the symbol used in the paper. ZFIN lists no alias 'lat4a' for slc43a2a (see aliases_check). The identification rests on two independent records: (1) nomenclature: human SLC43A2 is aliased LAT4, 'L-type amino acid transporter 4' (NCBI Gene 124935), and zebrafish slc43a2a is the 'a' paralog of slc43a2 (NCBI Gene 393221; genotype/cache/ncbi_gene_slc43a2.json); (2) ZFIN curated PMID 34534441 itself to slc43a2a: see zfin_rows_citing_this_paper. Settled by the Genotype session on 2026-10-31."},
+   "symbol_check": (
+     "lat4a is the paper's own symbol and is NOT a ZFIN symbol or alias; a name or alias lookup for 'lat4a' returns nothing in ZFIN, NCBI Gene or UniProt, and a "
+     "collaborator's independent check reached that same negative (their record gx-problem-lat4a-identity). The question has to be split in two, because the answer "
+     "differs. (1) WHICH ZEBRAFISH GENE CARRIES THE PAPER'S MUTANT ALLELE: slc43a2a, and this IS resolved at the paralogue level by two records that a name lookup "
+     "cannot reach. Daane 2021 states 'we mapped nr21 to chromosome 15 and identified a nonsynonymous mutation (T200K)'; zebrafish slc43a2a is on chromosome 15 and "
+     "its paralogue slc43a2b is on chromosome 10 (NCBI Gene 393221 and 494042), so the paper's own genetic mapping excludes the paralogue. Independently, ZFIN's "
+     "features-affected-genes file states that the allele dmh26, which is this paper's nr21 allele, 'is allele of' slc43a2a (ZDB-GENE-040426-964). A chromosomal "
+     "mapping and an allele-to-gene assignment both distinguish an 'a' from a 'b'; the earlier nomenclature argument (human SLC43A2 aliased LAT4) does NOT, because "
+     "it names the family and not the paralogue, and it is withdrawn as a resolving record. (2) WHICH PARALOGUE CARRIES THE FLYING-FISH SIGNAL: unresolved. Both "
+     "paralogues are reported as accelerated on the flying-fish branch in Daane's own phyloP data, and slc43a2b more strongly (p=1e-05) than slc43a2a (p=0.00837); "
+     "the relative-evolutionary-rate row for gliding is slc43a2b, though at q=0.253 it is not significant after correction. So the comparative-genomic signal cannot "
+     "be assigned to one paralogue, even though the zebrafish allele can. Note also that the two are different variants at different sites in different species: the "
+     "zebrafish allele is T200K, the convergent flying-fish substitution is F326L. Revised by the Genotype session on 2026-10-31 after the cross-check; this replaces "
+     "the earlier claim that the identity was 'settled on three records', which overstated it by conflating the two questions."),
+   "paralogue_check": {
+     "zebrafish_allele_gene": {"resolved": True, "gene": "slc43a2a", "zfin_id": "ZDB-GENE-040426-964",
+       "records_that_distinguish_the_paralogue": [
+         "Daane 2021 mapped the nr21 mutation to chromosome 15; slc43a2a is on chromosome 15 and slc43a2b on chromosome 10 (NCBI Gene 393221, 494042, fetched 2026-10-31)",
+         "ZFIN features-affected-genes: allele dmh26 (the paper's nr21) 'is allele of' slc43a2a"],
+       "records_that_do_NOT_distinguish_it": ["human SLC43A2 aliased LAT4: names the family, not the teleost paralogue",
+                                              "Ensembl display name SLC43A2 on the medaka gene: names the family, not the paralogue"]},
+     "flying_fish_signal_gene": {"resolved": False, "candidates": ["slc43a2a", "slc43a2b"],
+       "daane_phylop_on_the_flying_fish_branch": {"slc43a2b": "accelerated, p=1e-05", "slc43a2a": "accelerated, p=0.00837"},
+       "daane_rer_for_gliding": {"gene": "slc43a2b", "rho": 0.324, "p": 0.00654, "q": 0.253, "note": "not significant after correction"},
+       "note": "The convergent F326L substitution is listed on one medaka gene id which the sequences thread assigns to slc43a2a, but both paralogues carry acceleration, so the comparative signal is not paralogue-resolved."},
+     "variant_mismatch": "The zebrafish allele this project's design uses is T200K; the convergent substitution reported in flying fishes is F326L. Different sites, different species, and not the same variant.",
+     "credited_to": "raised by a collaborator's cross-check (record gx-problem-lat4a-identity) and by this project's own HANDOVER.md note, which had flagged the overstatement before it was made."}},
   {"gene": "kcnk5b", "organism": ZF["name"],
    "finding": "kcnk5b integrates calcineurin's effect on fin allometry.",
    "citations": [cite("29991812", "we identify the potassium channel kcnk5b as a key player in integrating calcineurin's growth effects")]}],
