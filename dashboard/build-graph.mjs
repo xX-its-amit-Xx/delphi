@@ -351,11 +351,14 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
     // GATE (hub, 2026-10-31): the map is drawn only when the genotype thread marks it vetted, either as a separate
     // slimmed genotype/map.vetted.json or as a top-level "vetted": true in genotype/map.json. Until then the page
     // says the file exists and why nothing is drawn. Only the per-node summary below ever reaches the browser.
-    const gmVetted = process.env.VIZ_TEST_NO_MAP === '1' ? null : J('genotype/map.vetted.json');
-    const gmFull = gmVetted || process.env.VIZ_TEST_NO_MAP === '1' ? null : J('genotype/map.json');
+    // Lookup order: the committed slim vetted map first, then the full vetted map, then map.json only if it says vetted.
+    const noMap = process.env.VIZ_TEST_NO_MAP === '1';
+    const gmSlim = noMap ? null : J('genotype/map.vetted.slim.json');
+    const gmVetted = gmSlim || noMap ? null : J('genotype/map.vetted.json');
+    const gmFull = gmSlim || gmVetted || noMap ? null : J('genotype/map.json');
     // VIZ_UNGATED_TEST=1 lets the viz thread preview the renderer locally; never deploy a build made with it.
-    const gmRaw = gmVetted || (gmFull && (gmFull.vetted === true || process.env.VIZ_UNGATED_TEST === '1') ? gmFull : null);
-    const gmSource = gmVetted ? 'genotype/map.vetted.json' : 'genotype/map.json';
+    const gmRaw = gmSlim || gmVetted || (gmFull && (gmFull.vetted === true || process.env.VIZ_UNGATED_TEST === '1') ? gmFull : null);
+    const gmSource = gmSlim ? 'genotype/map.vetted.slim.json' : gmVetted ? 'genotype/map.vetted.json' : 'genotype/map.json';
     let genotype = null;
     if (!gmRaw && gmFull) {
       genotype = { file: 'genotype/map.json', gated: true, built: gmFull.built || null,
@@ -367,7 +370,7 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
       const CAP = 40;
       const KIND_RANK = k => /single|in situ|immunost/i.test(k || '') ? 0 : /bulk|RNA Seq/i.test(k || '') ? 2 : 1;
       const short = o => /Danio/.test(o?.name || '') ? 'zebrafish' : /Oryzias/.test(o?.name || '') ? 'medaka' : (o?.name || 'unstated');
-      genotype = { file: gmSource, built: gmRaw.built || null, tool: gmRaw.tool || null, title: gmRaw.title || null, vetted: gmRaw.vetted === true, vetting: gmRaw.vetting || null, slimming: gmRaw.slimming || null,
+      genotype = { file: gmSource, built: gmRaw.built || null, tool: gmRaw.tool || null, title: gmRaw.title || null, vetted: gmRaw.vetted === true || !!gmSlim, vetted_flag_in_file: gmRaw.vetted === true, vetting: gmRaw.vetting || null, slimming: gmRaw.slimming || null,
         constraint: gmRaw.constraint || null, causation_warning: gmRaw.causation_warning || null,
         link_types: gmRaw.link_types || null, propagation_rules: gmRaw.propagation_rules || null, not_sourced: gmRaw.not_sourced || [],
         proxy_organisms: gmRaw.summary?.proxy_organisms || [], blueprint_sha256: gmRaw.blueprint?.sha256 || null, matches_blueprint_now: (gmRaw.blueprint?.sha256 || null) === sha,
@@ -410,7 +413,7 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
       const prev = J('dashboard/public/blueprint3d/data.json');
       if (prev?.genotype && !prev.genotype.gated && !prev.genotype.error && prev.genotype.nodes) {
         genotype = { ...prev.genotype, carried_from_previous_build: prev.genotype.carried_from_previous_build || prev.builtAt,
-          carried_note: `genotype/map.vetted.json is not in this checkout; the gene records shown were read from it by the build of ${prev.genotype.carried_from_previous_build || prev.builtAt} and carried forward unchanged.` };
+          carried_note: `no genotype map (map.vetted.slim.json, map.vetted.json) is in this checkout; the gene records shown were read from it by the build of ${prev.genotype.carried_from_previous_build || prev.builtAt} and carried forward unchanged.` };
       }
     } else if (gmRaw) {
       genotype = { file: gmSource, error: 'the map has no layers block; shape not understood, nothing drawn', nodes: {}, links: {}, coverage: {} };
