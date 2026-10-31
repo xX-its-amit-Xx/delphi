@@ -250,6 +250,17 @@ try {
   };
 } catch (e) { thompsonTest = { error: String(e.message) }; }
 
+// 7c. Constraints and the elimination ledger (lean/eliminate/): theorems as filters, candidates in three states.
+const constraintsFile = path.join(here, 'constraints.json'), ledgerFile = path.join(here, 'eliminate/ledger.json');
+const constraintsDoc = fs.existsSync(constraintsFile) ? JSON.parse(fs.readFileSync(constraintsFile, 'utf8')) : null;
+const ledgerDoc = fs.existsSync(ledgerFile) ? JSON.parse(fs.readFileSync(ledgerFile, 'utf8')) : null;
+const constraints = constraintsDoc ? { built: constraintsDoc.built, framing: constraintsDoc.framing, quantities: constraintsDoc.quantities, assumptions: constraintsDoc.assumptions,
+  list: constraintsDoc.constraints.map(c => ({ id: c.id, claim_id: c.claim_id, label: c.label, lemma: c.lemma, law: c.law, module: c.module, property: c.property, relation: c.relation, symbols: c.symbols, requires: c.requires, appliesWhen: c.appliesWhen, rule: c.rule, canEliminate: c.canEliminate, kernelCheckable: c.kernelCheckable, lemmaAxioms: axioms.find(a => a.theorem === c.lemma)?.axioms ?? null, lawAxioms: axioms.find(a => a.theorem === c.law)?.axioms ?? null, faithfulness: c.faithfulness, proofScope: c.proofScope })) } : null;
+const eliminations = ledgerDoc ? { summary: ledgerDoc.summary, ledger: ledgerDoc.ledger } : null;
+const opLedgerFile = path.join(here, 'eliminate/ledger.open-problems.json');
+const opDoc = fs.existsSync(opLedgerFile) ? JSON.parse(fs.readFileSync(opLedgerFile, 'utf8')) : null;
+const eliminationsOpenProblems = opDoc ? { summary: opDoc.summary, ledger: opDoc.ledger, translations: 'lean/eliminate/translations.json', formal: 'open-problems/candidates.formal.json' } : null;
+
 // 7. Flying-fish substitution budget (lean/bound/compute.mjs): applies the audited theorems to sourced parameters.
 let bound = null;
 try {
@@ -267,7 +278,7 @@ const report = {
   audit: { ok: audit.exit === 0 && axioms.length > 0 && nonStandard.length === 0, theorems: axioms, nonStandard, raw: audit.out.trim() },
   sorryTotal, modules, theorems, lemmas, formalized,
   mutations: mutations ? { summary: mutations.summary, results: mutations.results } : null,
-  nanopubs, bound, blueprintCertificates, thompsonTest,
+  nanopubs, bound, blueprintCertificates, thompsonTest, constraints, eliminations, eliminationsOpenProblems,
   summary: {
     theoremsCompiling: buildOk ? theorems.length : 0,
     lemmas: lemmas.length,
@@ -277,6 +288,8 @@ const report = {
     extensionsVerified: formalized.filter(f => f.status === 'verified' && f.derived).length,
     boundVerdict: bound && bound.verified ? bound.comparison.verdict : null,
     blueprintCertificates: blueprintCertificates.length, blueprintCertificatesVerified: blueprintCertificates.filter(c => c.verified && c.current).length,
+    openProblemCandidatesChecked: eliminationsOpenProblems ? eliminationsOpenProblems.summary.candidates : 0, openProblemCandidatesEliminated: eliminationsOpenProblems ? eliminationsOpenProblems.summary.eliminated : 0, openProblemCandidatesConsistent: eliminationsOpenProblems ? eliminationsOpenProblems.summary.consistent : 0, openProblemCandidatesCannotRule: eliminationsOpenProblems ? eliminationsOpenProblems.summary.unconstrained : 0, openProblemCandidatesNotFormalised: eliminationsOpenProblems ? eliminationsOpenProblems.summary.candidatesWithNotFormalisedClaims : 0,
+    constraints: constraints ? constraints.list.length : 0, candidatesChecked: eliminations ? eliminations.summary.candidates : 0, candidatesEliminated: eliminations ? eliminations.summary.eliminated : 0, candidatesConsistent: eliminations ? eliminations.summary.consistent : 0, candidatesUnconstrained: eliminations ? eliminations.summary.unconstrained : 0, kernelCheckedEliminations: eliminations ? eliminations.summary.kernelCheckedEliminations : 0,
     claimsAssessed: formalized.filter(f => f.assessments.length > 0).length,
     assessmentsRun: assessments.length,
     assessorProviders: [...new Set(assessments.map(a => a.assessor.provider))],
