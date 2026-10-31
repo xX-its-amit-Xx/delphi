@@ -1,0 +1,1666 @@
+{
+ "builtAt": "2026-10-31T16:14:07.146Z",
+ "note": "English explanations are the Lean author's own doc comments, extracted verbatim from the source. Nothing on this page is paraphrased by the dashboard.",
+ "counts": {
+  "formalized": 5,
+  "withDataTest": 1,
+  "testedButNotFormalized": 15,
+  "declarationsExtracted": 100
+ },
+ "claims": [
+  {
+   "claim_id": "kimura-substitution-rate",
+   "label": "Neutral substitution rate equals the mutation rate",
+   "statement": "For neutral mutations the long-run rate of molecular substitution equals the mutation rate per generation, independent of population size, which yields a molecular clock.",
+   "notation": "k = 2N\\mu \\cdot \\frac{1}{2N} = \\mu",
+   "context": "Assumptions: strictly neutral mutations, mutation rate constant per generation, steady state. Formal status: an exact consequence of the neutral fixation probability. Variation in generation time and weak selection on nearly neutral sites cause departures from strict clock-like rates.",
+   "paper": {
+    "title": "Evolutionary Rate at the Molecular Level",
+    "doi": "10.1038/217624a0",
+    "year": 1968
+   },
+   "lean": {
+    "theorem": "Delphi.neutral_substitution_rate",
+    "module": "lean/Delphi/Kimura.lean",
+    "status": "verified",
+    "header": "# Kimura (1968): the neutral substitution rate equals the mutation rate\n\nClaim `kimura-substitution-rate` in `math-bio-theorems/claims/key-claims.json`:\n\n> For neutral mutations the long-run rate of molecular substitution equals the mutation rate\n> per generation, independent of population size, which yields a molecular clock.\n> k = 2Nμ · 1/(2N) = μ.\n\nSource: Kimura, M. (1968). Evolutionary rate at the molecular level. Nature 217, 624–626.\ndoi:10.1038/217624a0.\n\n## What is proved here, and from what\n\nThe law is a corollary of the *neutral fixation probability*: a neutral mutant present in `i`\nof `M` gene copies (`M = 2N` for a diploid population of size `N`) is eventually fixed with\nprobability `i / M`, so a single new mutant fixes with probability `1 / M`. With `M μ` new\nmutants arising per generation, the substitution rate is `M μ · (1 / M) = μ`, whatever `M` is.\n\nThe fixation probability is **proved, not assumed**. `Delphi.NeutralChain` is a finite Markov\nchain on `{0, …, M}` copies with four explicit assumptions:\n\n* `rowSum`, `nonneg`: `P` is a stochastic matrix (each row is a probability distribution);\n* `neutral`: the expected number of copies in the next generation equals the current number\n  (no selection: `∑ j, P i j * j = i`);\n* `absorb_zero`, `absorb_last`: `0` and `M` copies are absorbing states (no back mutation\n  within a lineage's fate);\n* `escape`: from every intermediate state the chain can be absorbed in one step with positive\n  probability.\n\nTheorem `fixedBy_tendsto` shows that the probability of being fixed by generation `t`\nconverges to `i / M` as `t → ∞`, with the explicit bound `|fixedBy t - i/M| ≤ ρ ^ t` for some\n`ρ < 1` (`fixedBy_sub_le`). The proof is the martingale argument made elementary: the mean\ncopy number is conserved generation to generation, while the probability of still being\nunresolved decays geometrically.\n\n`Delphi.wrightFisher` instantiates the chain with the Wright–Fisher model: the next\ngeneration's copy number is Binomial(`M`, `i / M`). Its four properties are proved from the\nbinomial formula (via Mathlib's Bernstein polynomials, which are exactly the binomial\nprobabilities as polynomials in `p`).\n\n## Physical assumptions left outside the kernel\n\n* **Strict neutrality** of the mutations (encoded as `neutral`).\n* **Constant population size** `M` across generations (the chain is time-homogeneous).\n* **Wright–Fisher reproduction** (non-overlapping generations, multinomial sampling).\n* **Independent fates of mutants**: the substitution rate is *defined*, as in Kimura's paper,\n  as (number of new mutants per generation) × (fixation probability of one mutant), i.e.\n  `substitutionRate M μ u = M * μ * u`. This is where \"no interference between lineages\" and\n  \"mutation rate `μ` constant per copy per generation\" enter. The theorem shows the\n  definition evaluates to `μ` once `u` is the proved Wright–Fisher fixation probability.\n* \"Long-run / steady state\" is captured by taking the `t → ∞` limit of the fixation\n  probability.\n\nWhether real genomes satisfy these assumptions is an empirical question (see the claim's\n`proposed_test`); this file settles only that the law follows from them.\n\nNo `sorry`, no additional axioms: see `lean/Delphi/Audit.lean` and the build report.",
+    "named": {
+     "name": "neutral_substitution_rate",
+     "line": 385,
+     "english": "**Kimura (1968).** Under neutral Wright–Fisher evolution, the substitution rate equals\nthe mutation rate, for every population size `M`.",
+     "source": "theorem neutral_substitution_rate (M : ℕ) (hM : 0 < M) (μ : ℝ) :\n    substitutionRate M μ ((wrightFisher M hM).fixationProbability (oneCopy M hM)) = μ := by\n  have hMne : (M : ℝ) ≠ 0 := by exact_mod_cast hM.ne'\n  rw [substitutionRate, wrightFisher_fixation_one]\n  field_simp"
+    },
+    "supporting": [
+     {
+      "kind": "structure",
+      "name": "NeutralChain",
+      "line": 69,
+      "english": "A neutral, absorbing Markov chain on `Fin (M+1)`: the number of mutant gene copies\namong `M`. `P i j` is the probability of going from `i` copies to `j` copies in one\ngeneration.",
+      "source": "structure NeutralChain (M : ℕ) where\n  /-- One-generation transition matrix. -/\n  P : Matrix (Fin (M + 1)) (Fin (M + 1)) ℝ\n  /-- Probabilities are nonnegative. -/\n  nonneg : ∀ i j, 0 ≤ P i j\n  /-- Each row is a probability distribution. -/\n  rowSum : ∀ i, ∑ j, P i j = 1\n  /-- Neutrality: the expected copy number is conserved, `E[X_{t+1} | X_t = i] = i`. -/\n  neutral : ∀ i, ∑ j, P i j * ((j : ℕ) : ℝ) = ((i : ℕ) : ℝ)\n  /-- Loss (`0` copies) is absorbing. -/\n  absorb_zero : ∀ j, P 0 j = if j = 0 then 1 else 0\n  /-- Fixation (`M` copies) is absorbing. -/\n  absorb_last : ∀ j, P (Fin.last M) j = if j = Fin.last M then 1 else 0\n  /-- From any intermediate state, absorption in one step has positive probability. -/\n  escape : ∀ i : Fin (M + 1), i ≠ 0 → i ≠ Fin.last M → 0 < P i 0 + P i (Fin.last M)"
+     },
+     {
+      "kind": "def",
+      "name": "interior",
+      "line": 120,
+      "english": "The intermediate (transient) states: neither lost nor fixed.",
+      "source": "def interior (M : ℕ) : Finset (Fin (M + 1)) :=\n  univ.filter fun j => j ≠ 0 ∧ j ≠ Fin.last M"
+     },
+     {
+      "kind": "lemma",
+      "name": "sum_split",
+      "line": 133,
+      "english": "Splitting a sum over all states into the two absorbing states and the interior.",
+      "source": "lemma sum_split (hM : 0 < M) (f : Fin (M + 1) → ℝ) :\n    ∑ j, f j = f 0 + f (Fin.last M) + ∑ j ∈ interior M, f j := by\n  have hsplit := Finset.sum_filter_add_sum_filter_not univ (fun j : Fin (M + 1) => j ≠ 0 ∧ j ≠ Fin.last M) f\n  have hpair : univ.filter (fun j : Fin (M + 1) => ¬(j ≠ 0 ∧ j ≠ Fin.last M)) = {0, Fin.last M} := by\n    ext j; simp [or_comm]\n    tauto\n  rw [interior, ← hsplit, hpair, Finset.sum_pair (zero_ne_last hM)]\n  ring"
+     },
+     {
+      "kind": "lemma",
+      "name": "exists_contraction",
+      "line": 143,
+      "english": "Probability of leaving the interior in one step is at most `ρ < 1`, uniformly.",
+      "source": "lemma exists_contraction (hM : 0 < M) :\n    ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ k ∈ interior M, ∑ j ∈ interior M, C.P k j ≤ ρ := by\n  classical\n  by_cases h : (interior M).Nonempty\n  · refine ⟨(interior M).sup' h (fun k => ∑ j ∈ interior M, C.P k j), ?_, ?_, ?_⟩\n    · obtain ⟨k, hk⟩ := h\n      exact le_trans (Finset.sum_nonneg fun j _ => C.nonneg k j)\n        (Finset.le_sup' (fun k => ∑ j ∈ interior M, C.P k j) hk)\n    · rw [Finset.sup'_lt_iff]\n      intro k hk\n      have hk' := mem_interior.mp hk\n      have h1 := C.rowSum k\n      rw [sum_split hM] at h1\n      have := C.escape k hk'.1 hk'.2\n      linarith\n    · intro k hk\n      exact Finset.le_sup' (fun k => ∑ j ∈ interior M, C.P k j) hk\n  · refine ⟨0, le_rfl, zero_lt_one, fun k hk => (h ⟨k, hk⟩).elim⟩"
+     },
+     {
+      "kind": "def",
+      "name": "unresolved",
+      "line": 163,
+      "english": "Probability of being in the interior after `t` generations, starting from `i`.",
+      "source": "def unresolved (t : ℕ) (i : Fin (M + 1)) : ℝ := ∑ j ∈ interior M, (C.P ^ t) i j"
+     },
+     {
+      "kind": "lemma",
+      "name": "absorbing_sum_interior",
+      "line": 174,
+      "english": "Absorbing states never re-enter the interior.",
+      "source": "lemma absorbing_sum_interior (k : Fin (M + 1)) (hk : k = 0 ∨ k = Fin.last M) :\n    ∑ j ∈ interior M, C.P k j = 0 := by\n  apply Finset.sum_eq_zero\n  intro j hj\n  have hj' := mem_interior.mp hj\n  rcases hk with rfl | rfl\n  · rw [C.absorb_zero]; simp [hj'.1]\n  · rw [C.absorb_last]; simp [hj'.2]"
+     },
+     {
+      "kind": "lemma",
+      "name": "unresolved_succ_le",
+      "line": 184,
+      "english": "The unresolved probability contracts by `ρ` every generation.",
+      "source": "lemma unresolved_succ_le (hM : 0 < M) {ρ : ℝ}\n    (hρ : ∀ k ∈ interior M, ∑ j ∈ interior M, C.P k j ≤ ρ) (t : ℕ) (i : Fin (M + 1)) :\n    C.unresolved (t + 1) i ≤ ρ * C.unresolved t i := by\n  unfold unresolved\n  simp only [pow_succ, Matrix.mul_apply]\n  rw [Finset.sum_comm]\n  simp_rw [← Finset.mul_sum]\n  rw [sum_split hM (fun k => (C.P ^ t) i k * ∑ j ∈ interior M, C.P k j)]\n  simp only [C.absorbing_sum_interior 0 (Or.inl rfl),\n    C.absorbing_sum_interior (Fin.last M) (Or.inr rfl), mul_zero, add_zero, zero_add]\n  rw [Finset.mul_sum]\n  apply Finset.sum_le_sum\n  intro k hk\n  rw [mul_comm ρ]\n  exact mul_le_mul_of_nonneg_left (hρ k hk) (C.pow_nonneg t i k)"
+     },
+     {
+      "kind": "def",
+      "name": "fixedBy",
+      "line": 214,
+      "english": "Probability that a lineage starting from `i` copies is fixed (all `M` copies) by\ngeneration `t`.",
+      "source": "def fixedBy (t : ℕ) (i : Fin (M + 1)) : ℝ := (C.P ^ t) i (Fin.last M)"
+     },
+     {
+      "kind": "lemma",
+      "name": "mean_decomposition",
+      "line": 217,
+      "english": "Conservation of the mean splits as: `M · P(fixed by t) + E[copies · 1{unresolved}] = i`.",
+      "source": "lemma mean_decomposition (hM : 0 < M) (t : ℕ) (i : Fin (M + 1)) :\n    (M : ℝ) * C.fixedBy t i + ∑ j ∈ interior M, (C.P ^ t) i j * ((j : ℕ) : ℝ)\n      = ((i : ℕ) : ℝ) := by\n  have h := C.pow_neutral t i\n  rw [sum_split hM] at h\n  simp only [Fin.val_zero, Nat.cast_zero, mul_zero, zero_add, Fin.val_last] at h\n  rw [fixedBy, mul_comm]\n  exact h"
+     },
+     {
+      "kind": "lemma",
+      "name": "fixedBy_sub_le_unresolved",
+      "line": 227,
+      "english": "The error of `fixedBy` against `i / M` is at most the unresolved probability.",
+      "source": "lemma fixedBy_sub_le_unresolved (hM : 0 < M) (t : ℕ) (i : Fin (M + 1)) :\n    |C.fixedBy t i - ((i : ℕ) : ℝ) / M| ≤ C.unresolved t i := by\n  have hMpos : (0 : ℝ) < M := by exact_mod_cast hM\n  have hdec := C.mean_decomposition hM t i\n  set S := ∑ j ∈ interior M, (C.P ^ t) i j * ((j : ℕ) : ℝ) with hS\n  have hS0 : 0 ≤ S :=\n    Finset.sum_nonneg fun j _ => mul_nonneg (C.pow_nonneg t i j) (Nat.cast_nonneg _)\n  have hSM : S ≤ (M : ℝ) * C.unresolved t i := by\n    rw [unresolved, Finset.mul_sum]\n    apply Finset.sum_le_sum\n    intro j _\n    rw [mul_comm (M : ℝ)]\n    apply mul_le_mul_of_nonneg_left _ (C.pow_nonneg t i j)\n    exact_mod_cast Nat.le_of_lt_succ j.isLt\n  have : C.fixedBy t i - ((i : ℕ) : ℝ) / M = -(S / M) := by\n    field_simp\n    linarith\n  rw [this, abs_neg, abs_of_nonneg (div_nonneg hS0 hMpos.le), div_le_iff₀ hMpos]\n  linarith"
+     },
+     {
+      "kind": "theorem",
+      "name": "fixedBy_sub_le",
+      "line": 249,
+      "english": "**Neutral fixation probability (quantitative form).** For some `ρ < 1`, the probability of\nfixation by generation `t` is within `ρ ^ t` of `i / M`.",
+      "source": "theorem fixedBy_sub_le (hM : 0 < M) :\n    ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧\n      ∀ t (i : Fin (M + 1)), |C.fixedBy t i - ((i : ℕ) : ℝ) / M| ≤ ρ ^ t := by\n  obtain ⟨ρ, hρ0, hρ1, hρ⟩ := C.exists_contraction hM\n  exact ⟨ρ, hρ0, hρ1, fun t i =>\n    (C.fixedBy_sub_le_unresolved hM t i).trans (C.unresolved_le_pow hM hρ0 hρ t i)⟩"
+     },
+     {
+      "kind": "theorem",
+      "name": "fixedBy_tendsto",
+      "line": 258,
+      "english": "**Neutral fixation probability (Kimura 1962, neutral case).** A neutral lineage that\nstarts with `i` of `M` copies is eventually fixed with probability `i / M`.",
+      "source": "theorem fixedBy_tendsto (hM : 0 < M) (i : Fin (M + 1)) :\n    Tendsto (fun t => C.fixedBy t i) atTop (𝓝 (((i : ℕ) : ℝ) / M)) := by\n  obtain ⟨ρ, hρ0, hρ1, hρ⟩ := C.fixedBy_sub_le hM\n  rw [tendsto_iff_norm_sub_tendsto_zero]\n  refine squeeze_zero (fun t => norm_nonneg _) (fun t => ?_)\n    (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1)\n  simpa [Real.norm_eq_abs] using hρ t i"
+     },
+     {
+      "kind": "noncomputable def",
+      "name": "fixationProbability",
+      "line": 267,
+      "english": "The fixation probability of a lineage starting from `i` copies: the limit of `fixedBy`.",
+      "source": "noncomputable def fixationProbability (i : Fin (M + 1)) : ℝ :=\n  limUnder atTop (fun t => C.fixedBy t i)"
+     },
+     {
+      "kind": "noncomputable def",
+      "name": "wfKernel",
+      "line": 280,
+      "english": "Wright–Fisher sampling: with `i` mutant copies among `M`, the next generation has `j`\nmutant copies with probability `C(M, j) (i/M)^j (1 - i/M)^(M-j)`.",
+      "source": "noncomputable def wfKernel (M : ℕ) : Matrix (Fin (M + 1)) (Fin (M + 1)) ℝ :=\n  fun i j => (Nat.choose M j : ℝ) * (((i : ℕ) : ℝ) / M) ^ (j : ℕ) * (1 - ((i : ℕ) : ℝ) / M) ^ (M - j)"
+     }
+    ],
+    "proofScope": {
+     "kernelChecked": [
+      "A neutral absorbing chain on {0..M} copies (stochastic, mean-preserving, both ends absorbing, positive one-step escape from every interior state) fixes a mutant with probability i/M, with an explicit geometric error bound at every finite time t.",
+      "The Wright-Fisher binomial kernel is such a chain (row sums, mean preservation and absorption proved from Bernstein polynomial identities).",
+      "With u = 1/M the defined substitution rate M * mu * u equals mu, also in the diploid 2N form and as the t -> infinity limit."
+     ],
+     "assumed": [
+      "Strict neutrality of the mutations.",
+      "Constant population size and Wright-Fisher reproduction (non-overlapping generations, multinomial sampling).",
+      "Independent fates of mutants: the substitution rate is DEFINED, as in Kimura 1968, as (new mutants per generation) x (fixation probability of one mutant). Interference between lineages is excluded by that definition, not proved absent.",
+      "The mutation rate mu per copy per generation is a free parameter; nothing here measures it."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "kimura-rate-doubled",
+      "description": "Statement changed to claim the substitution rate is 2 mu instead of mu.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "kimura-fixation-one-wrong",
+      "description": "Statement changed to claim a single copy fixes with probability 1/(M+1) instead of 1/M.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "faithful-with-narrower-scope (1 provider: openai)",
+    "verdicts": [
+     {
+      "provider": "openai",
+      "model": "gpt-5-2025-08-07",
+      "verdict": "faithful-with-narrower-scope"
+     }
+    ],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "kimura-fixation-probability",
+   "label": "Kimura fixation probability of a mutant allele",
+   "statement": "The probability that a mutant allele eventually fixes in a finite population depends on its initial frequency, its selective advantage and the effective population size, and equals its initial frequency when it is neutral.",
+   "notation": "u(p) = \\frac{1-e^{-4N_e s p}}{1-e^{-4N_e s}}; neutral limit u(p) = p, so a new mutant fixes with probability 1/(2N)",
+   "context": "Assumptions: diffusion approximation to the Wright-Fisher model, genic (additive) selection with coefficient s, constant effective size N_e, no linkage to other selected sites. Formal status: proved within the diffusion limit.",
+   "paper": {
+    "title": "On the probability of fixation of mutant genes in a population",
+    "doi": "10.1093/genetics/47.6.713",
+    "year": 1962
+   },
+   "lean": {
+    "theorem": "Delphi.NeutralChain.fixedBy_tendsto",
+    "module": "lean/Delphi/Kimura.lean",
+    "status": "verified",
+    "header": "# Kimura (1968): the neutral substitution rate equals the mutation rate\n\nClaim `kimura-substitution-rate` in `math-bio-theorems/claims/key-claims.json`:\n\n> For neutral mutations the long-run rate of molecular substitution equals the mutation rate\n> per generation, independent of population size, which yields a molecular clock.\n> k = 2Nμ · 1/(2N) = μ.\n\nSource: Kimura, M. (1968). Evolutionary rate at the molecular level. Nature 217, 624–626.\ndoi:10.1038/217624a0.\n\n## What is proved here, and from what\n\nThe law is a corollary of the *neutral fixation probability*: a neutral mutant present in `i`\nof `M` gene copies (`M = 2N` for a diploid population of size `N`) is eventually fixed with\nprobability `i / M`, so a single new mutant fixes with probability `1 / M`. With `M μ` new\nmutants arising per generation, the substitution rate is `M μ · (1 / M) = μ`, whatever `M` is.\n\nThe fixation probability is **proved, not assumed**. `Delphi.NeutralChain` is a finite Markov\nchain on `{0, …, M}` copies with four explicit assumptions:\n\n* `rowSum`, `nonneg`: `P` is a stochastic matrix (each row is a probability distribution);\n* `neutral`: the expected number of copies in the next generation equals the current number\n  (no selection: `∑ j, P i j * j = i`);\n* `absorb_zero`, `absorb_last`: `0` and `M` copies are absorbing states (no back mutation\n  within a lineage's fate);\n* `escape`: from every intermediate state the chain can be absorbed in one step with positive\n  probability.\n\nTheorem `fixedBy_tendsto` shows that the probability of being fixed by generation `t`\nconverges to `i / M` as `t → ∞`, with the explicit bound `|fixedBy t - i/M| ≤ ρ ^ t` for some\n`ρ < 1` (`fixedBy_sub_le`). The proof is the martingale argument made elementary: the mean\ncopy number is conserved generation to generation, while the probability of still being\nunresolved decays geometrically.\n\n`Delphi.wrightFisher` instantiates the chain with the Wright–Fisher model: the next\ngeneration's copy number is Binomial(`M`, `i / M`). Its four properties are proved from the\nbinomial formula (via Mathlib's Bernstein polynomials, which are exactly the binomial\nprobabilities as polynomials in `p`).\n\n## Physical assumptions left outside the kernel\n\n* **Strict neutrality** of the mutations (encoded as `neutral`).\n* **Constant population size** `M` across generations (the chain is time-homogeneous).\n* **Wright–Fisher reproduction** (non-overlapping generations, multinomial sampling).\n* **Independent fates of mutants**: the substitution rate is *defined*, as in Kimura's paper,\n  as (number of new mutants per generation) × (fixation probability of one mutant), i.e.\n  `substitutionRate M μ u = M * μ * u`. This is where \"no interference between lineages\" and\n  \"mutation rate `μ` constant per copy per generation\" enter. The theorem shows the\n  definition evaluates to `μ` once `u` is the proved Wright–Fisher fixation probability.\n* \"Long-run / steady state\" is captured by taking the `t → ∞` limit of the fixation\n  probability.\n\nWhether real genomes satisfy these assumptions is an empirical question (see the claim's\n`proposed_test`); this file settles only that the law follows from them.\n\nNo `sorry`, no additional axioms: see `lean/Delphi/Audit.lean` and the build report.",
+    "named": {
+     "name": "fixedBy_tendsto",
+     "line": 258,
+     "english": "**Neutral fixation probability (Kimura 1962, neutral case).** A neutral lineage that\nstarts with `i` of `M` copies is eventually fixed with probability `i / M`.",
+     "source": "theorem fixedBy_tendsto (hM : 0 < M) (i : Fin (M + 1)) :\n    Tendsto (fun t => C.fixedBy t i) atTop (𝓝 (((i : ℕ) : ℝ) / M)) := by\n  obtain ⟨ρ, hρ0, hρ1, hρ⟩ := C.fixedBy_sub_le hM\n  rw [tendsto_iff_norm_sub_tendsto_zero]\n  refine squeeze_zero (fun t => norm_nonneg _) (fun t => ?_)\n    (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1)\n  simpa [Real.norm_eq_abs] using hρ t i"
+    },
+    "supporting": [
+     {
+      "kind": "structure",
+      "name": "NeutralChain",
+      "line": 69,
+      "english": "A neutral, absorbing Markov chain on `Fin (M+1)`: the number of mutant gene copies\namong `M`. `P i j` is the probability of going from `i` copies to `j` copies in one\ngeneration.",
+      "source": "structure NeutralChain (M : ℕ) where\n  /-- One-generation transition matrix. -/\n  P : Matrix (Fin (M + 1)) (Fin (M + 1)) ℝ\n  /-- Probabilities are nonnegative. -/\n  nonneg : ∀ i j, 0 ≤ P i j\n  /-- Each row is a probability distribution. -/\n  rowSum : ∀ i, ∑ j, P i j = 1\n  /-- Neutrality: the expected copy number is conserved, `E[X_{t+1} | X_t = i] = i`. -/\n  neutral : ∀ i, ∑ j, P i j * ((j : ℕ) : ℝ) = ((i : ℕ) : ℝ)\n  /-- Loss (`0` copies) is absorbing. -/\n  absorb_zero : ∀ j, P 0 j = if j = 0 then 1 else 0\n  /-- Fixation (`M` copies) is absorbing. -/\n  absorb_last : ∀ j, P (Fin.last M) j = if j = Fin.last M then 1 else 0\n  /-- From any intermediate state, absorption in one step has positive probability. -/\n  escape : ∀ i : Fin (M + 1), i ≠ 0 → i ≠ Fin.last M → 0 < P i 0 + P i (Fin.last M)"
+     },
+     {
+      "kind": "def",
+      "name": "interior",
+      "line": 120,
+      "english": "The intermediate (transient) states: neither lost nor fixed.",
+      "source": "def interior (M : ℕ) : Finset (Fin (M + 1)) :=\n  univ.filter fun j => j ≠ 0 ∧ j ≠ Fin.last M"
+     },
+     {
+      "kind": "lemma",
+      "name": "sum_split",
+      "line": 133,
+      "english": "Splitting a sum over all states into the two absorbing states and the interior.",
+      "source": "lemma sum_split (hM : 0 < M) (f : Fin (M + 1) → ℝ) :\n    ∑ j, f j = f 0 + f (Fin.last M) + ∑ j ∈ interior M, f j := by\n  have hsplit := Finset.sum_filter_add_sum_filter_not univ (fun j : Fin (M + 1) => j ≠ 0 ∧ j ≠ Fin.last M) f\n  have hpair : univ.filter (fun j : Fin (M + 1) => ¬(j ≠ 0 ∧ j ≠ Fin.last M)) = {0, Fin.last M} := by\n    ext j; simp [or_comm]\n    tauto\n  rw [interior, ← hsplit, hpair, Finset.sum_pair (zero_ne_last hM)]\n  ring"
+     },
+     {
+      "kind": "lemma",
+      "name": "exists_contraction",
+      "line": 143,
+      "english": "Probability of leaving the interior in one step is at most `ρ < 1`, uniformly.",
+      "source": "lemma exists_contraction (hM : 0 < M) :\n    ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧ ∀ k ∈ interior M, ∑ j ∈ interior M, C.P k j ≤ ρ := by\n  classical\n  by_cases h : (interior M).Nonempty\n  · refine ⟨(interior M).sup' h (fun k => ∑ j ∈ interior M, C.P k j), ?_, ?_, ?_⟩\n    · obtain ⟨k, hk⟩ := h\n      exact le_trans (Finset.sum_nonneg fun j _ => C.nonneg k j)\n        (Finset.le_sup' (fun k => ∑ j ∈ interior M, C.P k j) hk)\n    · rw [Finset.sup'_lt_iff]\n      intro k hk\n      have hk' := mem_interior.mp hk\n      have h1 := C.rowSum k\n      rw [sum_split hM] at h1\n      have := C.escape k hk'.1 hk'.2\n      linarith\n    · intro k hk\n      exact Finset.le_sup' (fun k => ∑ j ∈ interior M, C.P k j) hk\n  · refine ⟨0, le_rfl, zero_lt_one, fun k hk => (h ⟨k, hk⟩).elim⟩"
+     },
+     {
+      "kind": "def",
+      "name": "unresolved",
+      "line": 163,
+      "english": "Probability of being in the interior after `t` generations, starting from `i`.",
+      "source": "def unresolved (t : ℕ) (i : Fin (M + 1)) : ℝ := ∑ j ∈ interior M, (C.P ^ t) i j"
+     },
+     {
+      "kind": "lemma",
+      "name": "absorbing_sum_interior",
+      "line": 174,
+      "english": "Absorbing states never re-enter the interior.",
+      "source": "lemma absorbing_sum_interior (k : Fin (M + 1)) (hk : k = 0 ∨ k = Fin.last M) :\n    ∑ j ∈ interior M, C.P k j = 0 := by\n  apply Finset.sum_eq_zero\n  intro j hj\n  have hj' := mem_interior.mp hj\n  rcases hk with rfl | rfl\n  · rw [C.absorb_zero]; simp [hj'.1]\n  · rw [C.absorb_last]; simp [hj'.2]"
+     },
+     {
+      "kind": "lemma",
+      "name": "unresolved_succ_le",
+      "line": 184,
+      "english": "The unresolved probability contracts by `ρ` every generation.",
+      "source": "lemma unresolved_succ_le (hM : 0 < M) {ρ : ℝ}\n    (hρ : ∀ k ∈ interior M, ∑ j ∈ interior M, C.P k j ≤ ρ) (t : ℕ) (i : Fin (M + 1)) :\n    C.unresolved (t + 1) i ≤ ρ * C.unresolved t i := by\n  unfold unresolved\n  simp only [pow_succ, Matrix.mul_apply]\n  rw [Finset.sum_comm]\n  simp_rw [← Finset.mul_sum]\n  rw [sum_split hM (fun k => (C.P ^ t) i k * ∑ j ∈ interior M, C.P k j)]\n  simp only [C.absorbing_sum_interior 0 (Or.inl rfl),\n    C.absorbing_sum_interior (Fin.last M) (Or.inr rfl), mul_zero, add_zero, zero_add]\n  rw [Finset.mul_sum]\n  apply Finset.sum_le_sum\n  intro k hk\n  rw [mul_comm ρ]\n  exact mul_le_mul_of_nonneg_left (hρ k hk) (C.pow_nonneg t i k)"
+     },
+     {
+      "kind": "def",
+      "name": "fixedBy",
+      "line": 214,
+      "english": "Probability that a lineage starting from `i` copies is fixed (all `M` copies) by\ngeneration `t`.",
+      "source": "def fixedBy (t : ℕ) (i : Fin (M + 1)) : ℝ := (C.P ^ t) i (Fin.last M)"
+     },
+     {
+      "kind": "lemma",
+      "name": "mean_decomposition",
+      "line": 217,
+      "english": "Conservation of the mean splits as: `M · P(fixed by t) + E[copies · 1{unresolved}] = i`.",
+      "source": "lemma mean_decomposition (hM : 0 < M) (t : ℕ) (i : Fin (M + 1)) :\n    (M : ℝ) * C.fixedBy t i + ∑ j ∈ interior M, (C.P ^ t) i j * ((j : ℕ) : ℝ)\n      = ((i : ℕ) : ℝ) := by\n  have h := C.pow_neutral t i\n  rw [sum_split hM] at h\n  simp only [Fin.val_zero, Nat.cast_zero, mul_zero, zero_add, Fin.val_last] at h\n  rw [fixedBy, mul_comm]\n  exact h"
+     },
+     {
+      "kind": "lemma",
+      "name": "fixedBy_sub_le_unresolved",
+      "line": 227,
+      "english": "The error of `fixedBy` against `i / M` is at most the unresolved probability.",
+      "source": "lemma fixedBy_sub_le_unresolved (hM : 0 < M) (t : ℕ) (i : Fin (M + 1)) :\n    |C.fixedBy t i - ((i : ℕ) : ℝ) / M| ≤ C.unresolved t i := by\n  have hMpos : (0 : ℝ) < M := by exact_mod_cast hM\n  have hdec := C.mean_decomposition hM t i\n  set S := ∑ j ∈ interior M, (C.P ^ t) i j * ((j : ℕ) : ℝ) with hS\n  have hS0 : 0 ≤ S :=\n    Finset.sum_nonneg fun j _ => mul_nonneg (C.pow_nonneg t i j) (Nat.cast_nonneg _)\n  have hSM : S ≤ (M : ℝ) * C.unresolved t i := by\n    rw [unresolved, Finset.mul_sum]\n    apply Finset.sum_le_sum\n    intro j _\n    rw [mul_comm (M : ℝ)]\n    apply mul_le_mul_of_nonneg_left _ (C.pow_nonneg t i j)\n    exact_mod_cast Nat.le_of_lt_succ j.isLt\n  have : C.fixedBy t i - ((i : ℕ) : ℝ) / M = -(S / M) := by\n    field_simp\n    linarith\n  rw [this, abs_neg, abs_of_nonneg (div_nonneg hS0 hMpos.le), div_le_iff₀ hMpos]\n  linarith"
+     },
+     {
+      "kind": "theorem",
+      "name": "fixedBy_sub_le",
+      "line": 249,
+      "english": "**Neutral fixation probability (quantitative form).** For some `ρ < 1`, the probability of\nfixation by generation `t` is within `ρ ^ t` of `i / M`.",
+      "source": "theorem fixedBy_sub_le (hM : 0 < M) :\n    ∃ ρ : ℝ, 0 ≤ ρ ∧ ρ < 1 ∧\n      ∀ t (i : Fin (M + 1)), |C.fixedBy t i - ((i : ℕ) : ℝ) / M| ≤ ρ ^ t := by\n  obtain ⟨ρ, hρ0, hρ1, hρ⟩ := C.exists_contraction hM\n  exact ⟨ρ, hρ0, hρ1, fun t i =>\n    (C.fixedBy_sub_le_unresolved hM t i).trans (C.unresolved_le_pow hM hρ0 hρ t i)⟩"
+     },
+     {
+      "kind": "noncomputable def",
+      "name": "fixationProbability",
+      "line": 267,
+      "english": "The fixation probability of a lineage starting from `i` copies: the limit of `fixedBy`.",
+      "source": "noncomputable def fixationProbability (i : Fin (M + 1)) : ℝ :=\n  limUnder atTop (fun t => C.fixedBy t i)"
+     },
+     {
+      "kind": "noncomputable def",
+      "name": "wfKernel",
+      "line": 280,
+      "english": "Wright–Fisher sampling: with `i` mutant copies among `M`, the next generation has `j`\nmutant copies with probability `C(M, j) (i/M)^j (1 - i/M)^(M-j)`.",
+      "source": "noncomputable def wfKernel (M : ℕ) : Matrix (Fin (M + 1)) (Fin (M + 1)) ℝ :=\n  fun i j => (Nat.choose M j : ℝ) * (((i : ℕ) : ℝ) / M) ^ (j : ℕ) * (1 - ((i : ℕ) : ℝ) / M) ^ (M - j)"
+     },
+     {
+      "kind": "noncomputable def",
+      "name": "wrightFisher",
+      "line": 354,
+      "english": "The neutral Wright–Fisher chain on `M` gene copies.",
+      "source": "noncomputable def wrightFisher (M : ℕ) (hM : 0 < M) : NeutralChain M where\n  P := wfKernel M\n  nonneg i j := by\n    unfold wfKernel\n    exact mul_nonneg (mul_nonneg (Nat.cast_nonneg _) (pow_nonneg (wf_p_nonneg i) _))\n      (pow_nonneg (sub_nonneg.mpr (wf_p_le_one hM i)) _)\n  rowSum := wf_rowSum\n  neutral := wf_neutral hM\n  absorb_zero := wf_absorb_zero\n  absorb_last := wf_absorb_last hM\n  escape := wf_escape hM"
+     }
+    ],
+    "proofScope": {
+     "kernelChecked": [
+      "Fixation probability i/M for any neutral absorbing chain, hence for the exact finite Wright-Fisher chain (Delphi.NeutralChain.fixedBy_tendsto)."
+     ],
+     "assumed": [
+      "Neutral case only (s = 0). Kimura 1962 with selection in the diffusion limit is not formalised."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "kimura-limit-wrong",
+      "description": "Statement changed so the fixation probability of i copies tends to i/(M+1) instead of i/M.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "kimura-escape-dropped",
+      "description": "Model hypothesis removed: the chain no longer has to be able to leave interior states (escape := True). Fixation then need not happen, so the limit theorem must fail.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "faithful-with-narrower-scope (1 provider: openai)",
+    "verdicts": [
+     {
+      "provider": "openai",
+      "model": "gpt-5-2025-08-07",
+      "verdict": "faithful-with-narrower-scope"
+     }
+    ],
+    "assessmentComplete": false
+   },
+   "dataTests": [
+    {
+     "dir": "claim-tests/math-bio-theorems/kimura-fixation-probability",
+     "claim_id": "kimura-fixation-probability",
+     "verdict": "supports",
+     "status": "complete",
+     "hypothesis": "If a neutral allele's probability of eventual fixation equals its initial frequency, then in Buri's (1956) 107 replicate Drosophila populations, each started with the bw75 allele at frequency 0.5 in 16 flies, the lines that have reached fixation or loss by the last recorded generation should be split evenly between fixation of bw75 and loss of bw75.",
+     "pass": "Pre-registered. Data: the 'fly' matrix in the CRAN package popgenr 0.2 (CC0; Laruson and Reed 2021), a 19 x 107 matrix of the number of bw75 allele copies (out of 32) in each replicate at each generation, transcribed from Buri (1956). At the last recorded generation, a line is 'fixed' if the count is 32 and 'lost' if the count is 0; m = fixed + lost, k = fixed. SUPPORTS if m >= 20 AND the two-sided exact binomial test of k against Binomial(m, 0.5) gives p > 0.05 AND |k/m - 0.5| < 0.15. Reported but not decisive: the mean bw75 frequency across all 107 lines at the last generation (predicted 0.5 under neutrality, since the expected frequency is constant under drift) and the number of fixed-or-lost lines.",
+     "fail": "Pre-registered. REFUTES if the exact binomial test gives p < 0.01 (fixation significantly favours one allele) OR |k/m - 0.5| >= 0.25. MIXED otherwise (0.01 <= p <= 0.05, or 0.15 <= |k/m - 0.5| < 0.25). INCONCLUSIVE (underpowered) if m < 20; INCONCLUSIVE (data-unavailable) if the package source cannot be downloaded.",
+     "measured": {
+      "value": 0.4827586206896552,
+      "unit": "fraction of fixed-or-lost populations fixed for bw75 at the last recorded generation (neutral prediction 0.5)",
+      "n": "58 fixed-or-lost populations of 107 (28 fixed, 30 lost) after 19 generations",
+      "uncertainty": "exact binomial two-sided p = 0.90",
+      "extra": {
+       "mean_bw75_frequency_first_gen": 0.5,
+       "mean_bw75_frequency_last_gen": 0.47167056074766356,
+       "heterozygosity_first_last": [
+        0.5,
+        0.16159827686915884
+       ],
+       "ne_from_heterozygosity_decay": 8.240195577974482
+      }
+     },
+     "datasets": [
+      {
+       "id": "buri1956-drosophila-bw75-popgenr-fly",
+       "url": null,
+       "retrieved": null,
+       "sha256": null
+      }
+     ],
+     "caveats": [
+      "Only the neutral limit u(p) = p at p = 0.5 is tested; the selection-dependent formula is untested because s for bw75 is not independently known. The mean bw75 frequency drifted from 0.500 to 0.472 over 19 generations, a slight deficit that Buri attributed to weak selection; it is within what drift alone produces in 107 lines and does not change the fixed/lost balance.",
+      "The popgenr object is a transcription of Buri's published table; transcription accuracy was not checked against the 1956 paper (not open access).",
+      "Censoring: 49 of 107 lines were still segregating at the last generation; the test uses only lines that had resolved. Effective size from heterozygosity decay is about 8 (census 16), consistent with Buri's own estimate, so most fixations occurred before 4Ne generations had elapsed."
+     ],
+     "interpretation": "The claim's neutral limit u(p) = p is tested at p = 0.5 with 32 gene copies per line. The selection-dependent form u(p) = (1 - exp(-4*Ne*s*p)) / (1 - exp(-4*Ne*s)) is not tested, because the selection coefficient of bw75 is not measured independently of these data (Buri himself reported a small heterozygote advantage in the series). A balanced split among fixed lines is the prediction of neutrality; a strong imbalance would show selection acting, which the claim's selective form would then describe but which this test could not quantify. Lines not yet fixed at the last generation are censored and do not enter k or m.",
+     "faithfulness": null,
+     "openresearch": false
+    }
+   ]
+  },
+  {
+   "claim_id": "fisher-ftns",
+   "label": "Fisher's fundamental theorem of natural selection (partial-change form)",
+   "statement": "The rate of increase in mean fitness of a population due to natural selection equals its additive genetic variance in fitness at that time.",
+   "notation": "\\Delta_{NS}\\bar{w} = V_A(w)/\\bar{w} (discrete generations); \\left.\\frac{d\\bar{m}}{dt}\\right|_{NS} = V_A(m) for Malthusian fitness m",
+   "context": "Assumptions: the 'partial change' holds average effects of alleles and the environment fixed (Price 1972, Ewens 1989); V_A is the additive genetic variance in fitness. Formal status: proved in this partial-change reading. Read as a claim about the total change in mean fitness it is false under dominance, epistasis, frequency dependence or a changing environment.",
+   "paper": {
+    "title": "The Genetical Theory of Natural Selection",
+    "doi": null,
+    "year": 1930
+   },
+   "lean": {
+    "theorem": "Delphi.fisher_fundamental_theorem",
+    "module": "lean/Delphi/Fisher.lean",
+    "status": "verified",
+    "header": "# Fisher (1930): the fundamental theorem of natural selection, partial-change form\n\nClaim `fisher-ftns` in `math-bio-theorems/claims/key-claims.json`:\n\n> The rate of increase in mean fitness of a population due to natural selection equals its\n> additive genetic variance in fitness at that time.\n> Δ_NS w̄ = V_A(w) / w̄ (discrete generations).\n\nSource: Fisher, R. A. (1930). The Genetical Theory of Natural Selection. Clarendon Press.\nPartial-change reading: Price (1972), doi:10.1111/j.1469-1809.1972.tb00764.x; Ewens (1989),\ndoi:10.1016/0040-5809(89)90028-2.\n\n## What is proved here, and from what\n\nThe simplest population in which the theorem has content: **one locus with finitely many\nalleles (types) in a haploid or clonal population**, discrete non-overlapping generations.\n\n* `p : ι → ℝ` is the frequency of each type (`∑ p = 1`, `p ≥ 0`);\n* `w : ι → ℝ` is the (absolute) fitness of each type, `w ≥ 0`, with mean fitness\n  `w̄ = ∑ p i * w i > 0`;\n* selection sets next generation's frequencies to `p' i = p i * w i / w̄` (`Delphi.select`).\n\n**Partial change** (Price 1972, Ewens 1989) means the fitnesses `w` are held fixed while the\nfrequencies change, so no frequency dependence and no environmental change enter. With that,\n`Delphi.fisher_fundamental_theorem` proves\n\n  `meanFitness (select p w) w - meanFitness p w = variance p w / meanFitness p w`,\n\nwhere `variance p w = ∑ p i * (w i - w̄)^2` is the variance in fitness. In a haploid or clonal\npopulation every type breeds true, so the genetic variance in fitness **is** the additive\ngenetic variance `V_A`: there is no dominance or epistasis to subtract. That is why this\ninstance of the theorem is exact rather than a partial-change bookkeeping identity.\n\n`Delphi.mean_fitness_nondecreasing` is the corollary Fisher emphasised: under fixed fitnesses\nmean fitness never falls.\n\n## Physical assumptions left outside\n\n* Haploid / clonal inheritance (one locus, no segregation, no recombination). The diploid\n  theorem needs the average-effect decomposition and holds only for the additive component;\n  that version is not formalised here.\n* Fitnesses constant within a generation and across the step (partial change). The claim's\n  context says the theorem is **false** for the *total* change under dominance, epistasis,\n  frequency dependence or a changing environment, and nothing here contradicts that.\n* Infinite population (deterministic frequencies, no drift).\n\nNo `sorry`, no additional axioms: see `lean/Delphi/Audit.lean` and the build report.",
+    "named": {
+     "name": "fisher_fundamental_theorem",
+     "line": 98,
+     "english": "**Fisher's fundamental theorem of natural selection** (haploid locus, partial change).\nThe change in mean fitness over one generation of selection, with fitnesses held fixed, equals\nthe variance in fitness divided by the mean fitness.",
+     "source": "theorem fisher_fundamental_theorem {p w : ι → ℝ} (hp : IsFreq p)\n    (hmean : 0 < meanFitness p w) :\n    meanFitness (select p w) w - meanFitness p w = variance p w / meanFitness p w := by\n  have hne := hmean.ne'\n  rw [variance_eq hp]\n  have h : meanFitness (select p w) w = (∑ i, p i * w i ^ 2) / meanFitness p w := by\n    show ∑ i, (p i * w i / meanFitness p w) * w i = _\n    rw [Finset.sum_div]\n    apply Finset.sum_congr rfl; intro i _; ring\n  rw [h]\n  field_simp"
+    },
+    "supporting": [
+     {
+      "kind": "def",
+      "name": "meanFitness",
+      "line": 59,
+      "english": "Mean fitness `w̄ = ∑ p i * w i`.",
+      "source": "def meanFitness (p w : ι → ℝ) : ℝ := ∑ i, p i * w i"
+     },
+     {
+      "kind": "def",
+      "name": "variance",
+      "line": 63,
+      "english": "Variance in fitness `∑ p i * (w i - w̄)^2`. For a haploid locus this is the additive genetic\nvariance in fitness, since each type breeds true.",
+      "source": "def variance (p w : ι → ℝ) : ℝ := ∑ i, p i * (w i - meanFitness p w) ^ 2"
+     },
+     {
+      "kind": "noncomputable def",
+      "name": "select",
+      "line": 66,
+      "english": "One generation of selection with fixed fitnesses: `p' i = p i * w i / w̄`.",
+      "source": "noncomputable def select (p w : ι → ℝ) : ι → ℝ := fun i => p i * w i / meanFitness p w"
+     },
+     {
+      "kind": "structure",
+      "name": "IsFreq",
+      "line": 69,
+      "english": "A frequency vector: nonnegative and summing to one.",
+      "source": "structure IsFreq (p : ι → ℝ) : Prop where\n  nonneg : ∀ i, 0 ≤ p i\n  sum_one : ∑ i, p i = 1"
+     },
+     {
+      "kind": "theorem",
+      "name": "select_isFreq",
+      "line": 75,
+      "english": "Selection returns a frequency vector when fitnesses are nonnegative and mean fitness is\npositive.",
+      "source": "theorem select_isFreq {p w : ι → ℝ} (hp : IsFreq p) (hw : ∀ i, 0 ≤ w i)\n    (hmean : 0 < meanFitness p w) : IsFreq (select p w) where\n  nonneg i := div_nonneg (mul_nonneg (hp.nonneg i) (hw i)) hmean.le\n  sum_one := by\n    unfold select\n    rw [← Finset.sum_div, div_eq_one_iff_eq hmean.ne']\n    rfl"
+     },
+     {
+      "kind": "lemma",
+      "name": "variance_eq",
+      "line": 84,
+      "english": "The variance identity `Var = E[w²] - w̄²`, which needs `∑ p = 1`.",
+      "source": "lemma variance_eq {p w : ι → ℝ} (hp : IsFreq p) :\n    variance p w = (∑ i, p i * w i ^ 2) - meanFitness p w ^ 2 := by\n  unfold variance\n  have h1 : ∑ i, p i * (w i - meanFitness p w) ^ 2\n      = ∑ i, (p i * w i ^ 2 - 2 * meanFitness p w * (p i * w i) + meanFitness p w ^ 2 * p i) := by\n    apply Finset.sum_congr rfl; intro i _; ring\n  rw [h1, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← Finset.mul_sum, ← Finset.mul_sum,\n    hp.sum_one]\n  unfold meanFitness\n  ring"
+     },
+     {
+      "kind": "theorem",
+      "name": "fisher_fundamental_theorem'",
+      "line": 111,
+      "english": "The same statement in the form Fisher wrote it: `Δ w̄ · w̄ = V`.",
+      "source": "theorem fisher_fundamental_theorem' {p w : ι → ℝ} (hp : IsFreq p)\n    (hmean : 0 < meanFitness p w) :\n    (meanFitness (select p w) w - meanFitness p w) * meanFitness p w = variance p w := by\n  rw [fisher_fundamental_theorem hp hmean, div_mul_cancel₀ _ hmean.ne']"
+     },
+     {
+      "kind": "theorem",
+      "name": "mean_fitness_nondecreasing",
+      "line": 117,
+      "english": "Corollary: under fixed fitnesses, mean fitness never decreases.",
+      "source": "theorem mean_fitness_nondecreasing {p w : ι → ℝ} (hp : IsFreq p)\n    (hmean : 0 < meanFitness p w) :\n    meanFitness p w ≤ meanFitness (select p w) w := by\n  have hvar : 0 ≤ variance p w :=\n    Finset.sum_nonneg fun i _ => mul_nonneg (hp.nonneg i) (sq_nonneg _)\n  have := fisher_fundamental_theorem hp hmean\n  have : 0 ≤ meanFitness (select p w) w - meanFitness p w := by\n    rw [this]; exact div_nonneg hvar hmean.le\n  linarith"
+     }
+    ],
+    "proofScope": {
+     "kernelChecked": [
+      "For one locus with finitely many types, frequencies p (nonneg, summing to 1), fixed fitnesses w and mean fitness > 0: selection p_next = p w / wbar yields wbar_next - wbar = Var(w)/wbar exactly.",
+      "Corollary: mean fitness never decreases under fixed fitnesses."
+     ],
+     "assumed": [
+      "Haploid or clonal inheritance, so the variance in fitness IS the additive genetic variance; the diploid average-effect version is not formalised.",
+      "Fitnesses constant within the step (partial change): no dominance, epistasis, frequency dependence or environmental change.",
+      "Infinite population: deterministic frequencies, no drift, no mutation."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "fisher-no-division",
+      "description": "Statement changed to claim the change in mean fitness equals the variance itself, not the variance divided by mean fitness.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "faithful-with-narrower-scope (1 provider: openai)",
+    "verdicts": [
+     {
+      "provider": "openai",
+      "model": "gpt-5-2025-08-07",
+      "verdict": "faithful-with-narrower-scope"
+     }
+    ],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "maynardsmith-twofold-cost",
+   "label": "Twofold cost of sex",
+   "statement": "An asexual mutant female in a sexual population with equal sex ratio produces twice as many grandchildren as a sexual female, so sex needs a compensating advantage of up to twofold to persist.",
+   "notation": "with equal fecundity and a 1:1 sex ratio, the odds of asexual to sexual females double each generation: \\frac{q_{t+1}}{1-q_{t+1}} = 2\\frac{q_t}{1-q_t}",
+   "context": "Assumptions: anisogamy with males contributing no resources, equal fecundity and viability of sexual and asexual females, a 1:1 sex ratio. Formal status: proved as a population-dynamic identity under these assumptions. Its biological force depends on how often those assumptions hold.",
+   "paper": {
+    "title": "The Evolution of Sex",
+    "doi": null,
+    "year": 1978
+   },
+   "lean": {
+    "theorem": "Delphi.twofold_cost_of_sex",
+    "module": "lean/Delphi/MaynardSmith.lean",
+    "status": "verified",
+    "header": "# Maynard Smith (1978): the twofold cost of sex\n\nClaim `maynardsmith-twofold-cost` in `math-bio-theorems/claims/key-claims.json`:\n\n> An asexual mutant female in a sexual population with equal sex ratio produces twice as many\n> grandchildren as a sexual female, so sex needs a compensating advantage of up to twofold to\n> persist.\n> With equal fecundity and a 1:1 sex ratio, the odds of asexual to sexual females double each\n> generation: q_{t+1} / (1 - q_{t+1}) = 2 q_t / (1 - q_t).\n\nSource: Maynard Smith, J. (1978). The Evolution of Sex. Cambridge University Press.\n\n## What is proved here, and from what\n\nA population of females in which a fraction `q` are asexual (parthenogenetic) and `1 - q` are\nsexual. Every female has the same fecundity `f > 0` and the same offspring viability. An asexual\nfemale's offspring are all daughters. A sexual female's offspring are sons and daughters in the\nratio `1 : 1`, so half of her `f` offspring are daughters. Males contribute no resources\n(anisogamy), so they add nothing to the count of daughters.\n\n`Delphi.asexualNext q f` is the asexual fraction among next generation's females:\n\n  (q · f) / (q · f + (1 - q) · f / 2).\n\n`Delphi.twofold_cost_of_sex` proves the odds identity in the claim's notation, exactly:\n\n  asexualNext q f / (1 - asexualNext q f) = 2 · (q / (1 - q))     for 0 < q < 1, f > 0.\n\n`Delphi.twofold_cost_of_sex_n` iterates it: after `n` generations the odds are `2 ^ n` times the\ninitial odds, which is the \"needs a compensating advantage of up to twofold\" clause made exact:\na sexual female would need to double her daughters' number (or their viability) per generation to\nhold the odds constant. Fecundity `f` cancels, as the claim says.\n\n## Physical assumptions left outside\n\n* Anisogamy with males contributing nothing to offspring number or survival.\n* Equal fecundity and viability of sexual and asexual females, and of their daughters.\n* A primary sex ratio of exactly `1 : 1` in sexual broods.\n* Discrete, non-overlapping generations, infinite population (deterministic fractions).\n\nNo `sorry`, no additional axioms: see `lean/Delphi/Audit.lean` and the build report.",
+    "named": {
+     "name": "twofold_cost_of_sex",
+     "line": 58,
+     "english": "**Twofold cost of sex.** With equal fecundity and a `1 : 1` sex ratio, the odds of asexual to\nsexual females double every generation. Fecundity cancels.",
+     "source": "theorem twofold_cost_of_sex {q f : ℝ} (hq0 : 0 < q) (hq1 : q < 1) (hf : 0 < f) :\n    odds (asexualNext q f) = 2 * odds q := by\n  have h1q : 0 < 1 - q := by linarith\n  have hden : 0 < q * f + (1 - q) * f / 2 := by positivity\n  unfold odds asexualNext\n  have hne : 1 - q * f / (q * f + (1 - q) * f / 2) ≠ 0 := by\n    rw [sub_ne_zero]\n    intro h\n    rw [eq_div_iff hden.ne'] at h\n    have : 0 < (1 - q) * f / 2 := by positivity\n    linarith\n  rw [div_eq_iff hne]\n  field_simp\n  ring"
+    },
+    "supporting": [
+     {
+      "kind": "noncomputable def",
+      "name": "asexualNext",
+      "line": 51,
+      "english": "Fraction of asexual females in the next generation, given fraction `q` now and fecundity\n`f` for every female. Asexual females have `f` daughters; sexual females have `f / 2` daughters\nand `f / 2` sons.",
+      "source": "noncomputable def asexualNext (q f : ℝ) : ℝ := q * f / (q * f + (1 - q) * f / 2)"
+     },
+     {
+      "kind": "noncomputable def",
+      "name": "odds",
+      "line": 54,
+      "english": "Odds of a fraction `q`: `q / (1 - q)`.",
+      "source": "noncomputable def odds (q : ℝ) : ℝ := q / (1 - q)"
+     },
+     {
+      "kind": "theorem",
+      "name": "asexualNext_mem",
+      "line": 75,
+      "english": "The next-generation fraction stays strictly between `0` and `1`, so the identity can be\niterated.",
+      "source": "theorem asexualNext_mem {q f : ℝ} (hq0 : 0 < q) (hq1 : q < 1) (hf : 0 < f) :\n    0 < asexualNext q f ∧ asexualNext q f < 1 := by\n  have h1q : 0 < 1 - q := by linarith\n  have hden : 0 < q * f + (1 - q) * f / 2 := by positivity\n  unfold asexualNext\n  constructor\n  · positivity\n  · rw [div_lt_one hden]\n    have : 0 < (1 - q) * f / 2 := by positivity\n    linarith"
+     },
+     {
+      "kind": "noncomputable def",
+      "name": "asexualAfter",
+      "line": 87,
+      "english": "Fraction of asexual females after `n` generations.",
+      "source": "noncomputable def asexualAfter (q f : ℝ) : ℕ → ℝ\n  | 0 => q\n  | n + 1 => asexualNext (asexualAfter q f n) f"
+     },
+     {
+      "kind": "theorem",
+      "name": "twofold_cost_of_sex_n",
+      "line": 100,
+      "english": "After `n` generations the odds of asexual to sexual females are `2 ^ n` times the initial\nodds: an asexual lineage doubles its relative share every generation unless sex brings a\ncompensating twofold advantage.",
+      "source": "theorem twofold_cost_of_sex_n {q f : ℝ} (hq0 : 0 < q) (hq1 : q < 1) (hf : 0 < f) (n : ℕ) :\n    odds (asexualAfter q f n) = 2 ^ n * odds q := by\n  induction n with\n  | zero => simp [asexualAfter]\n  | succ n ih =>\n    have hm := asexualAfter_mem hq0 hq1 hf n\n    rw [asexualAfter, twofold_cost_of_sex hm.1 hm.2 hf, ih, pow_succ]\n    ring"
+     }
+    ],
+    "proofScope": {
+     "kernelChecked": [
+      "For 0 < q < 1 and fecundity f > 0 the odds of asexual to sexual females satisfy odds(q_next) = 2 odds(q), and f cancels.",
+      "Iterated n generations the odds are 2^n times the initial odds."
+     ],
+     "assumed": [
+      "Anisogamy: males contribute nothing to offspring number or survival.",
+      "Equal fecundity and viability of sexual and asexual females and of their daughters.",
+      "Primary sex ratio exactly 1:1 in sexual broods; discrete non-overlapping generations; infinite population (deterministic fractions)."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "maynardsmith-threefold",
+      "description": "Statement changed to claim the odds triple each generation instead of doubling.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "faithful (1 provider: openai)",
+    "verdicts": [
+     {
+      "provider": "openai",
+      "model": "gpt-5-2025-08-07",
+      "verdict": "faithful"
+     }
+    ],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "favored-fixation-lower-bound",
+   "label": "Fixation is at least i/M when selection does not oppose the mutant",
+   "statement": "In an absorbing chain on 0..M gene copies whose expected copy number never decreases (neutral, or selection for the mutant), a lineage present in i copies is eventually fixed with probability at least i/M. Wright-Fisher sampling with mutant relative fitness 1+s, s >= 0, is such a chain. Hence the expected number of substitutions over T generations is at least mu T (and at most M mu T), whatever M.",
+   "notation": "E[X_{t+1} | X_t = i] >= i  =>  u(i) >= i/M ;  mu T <= M mu u T <= M mu T",
+   "context": "Proved for the Exocoetidae substitution budget (lean/bound/). Kimura 1962 gives u ~ 2s for a selected mutant in the diffusion limit; that formula is not formalised. This is the exact, weaker statement that selection for the mutant cannot make fixation rarer than neutral drift does.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.FavoredChain.fixationProbability_ge",
+    "module": "lean/Delphi/Favored.lean",
+    "status": "verified",
+    "header": "# Fixation when selection does not oppose the mutant: a kernel-checked lower bound\n\nThis module extends `Delphi.Kimura` for the flying-fish feasibility question: how much substitution\ncould have happened in a lineage over a given number of generations. It does **not** prove Kimura's\n1962 selected-fixation formula `u ≈ 2s`; that result lives in the diffusion limit and is not\nformalised here. What it proves is weaker and exact:\n\n* `FavoredChain`: the same absorbing chain as `NeutralChain`, but with neutrality `E[X' | X = i] = i`\n  relaxed to `E[X' | X = i] ≥ i` (the mutant's expected copy number never decreases; selection, if\n  any, does not oppose it). Every neutral chain is a favored chain (`NeutralChain.toFavored`).\n* `FavoredChain.fixationProbability_ge`: such a lineage starting from `i` of `M` copies is eventually\n  fixed with probability **at least** `i / M`; `fixationProbability_le_one` gives the trivial ceiling.\n  The limit exists because `fixedBy t i` is nondecreasing in `t` (fixation is absorbing) and bounded.\n* `wrightFisherSelection M s`: Wright–Fisher sampling with relative fitness `1 + s` for the mutant,\n  i.e. next-generation copy number `Binomial(M, (1+s) i / (M + s i))`, is a favored chain for every\n  `s ≥ 0`, so a single new mutant with `s ≥ 0` fixes with probability at least `1 / M`.\n* `expectedSubstitutions M μ u T := M μ u T`, the expected number of substitutions over `T`\n  generations under Kimura's independent-fates definition (the rate `M μ u` summed over `T`\n  generations). Theorems: for the neutral Wright–Fisher chain it equals `μ T` for every `M`\n  (the molecular clock: population size cancels); for any favored chain it is at least `μ T`; and\n  for any fixation probability `u ≤ 1` it is at most `M μ T`.\n\n## What the kernel checked\n\nThe inequalities above, from the chain axioms, with no `sorry` and only the standard axioms\n(see `lean/Delphi/Audit.lean`).\n\n## What is assumed, not proved\n\n* The population-genetic model: constant `M`, non-overlapping generations, binomial (Wright–Fisher)\n  sampling, selection acting only through the sampling probability `(1+s) i / (M + s i)`, `s`\n  constant over time and over sites.\n* Independent fates of mutants: `expectedSubstitutions` is a **definition** (rate × generations), as\n  in Kimura (1968). Linkage, interference and changing population size are excluded by that\n  definition, not shown absent.\n* `μ` (per copy per generation), `T` (generations available) and `M` (gene copies) are free\n  parameters. Nothing here measures them; the record that applies this module to Exocoetidae names\n  the literature sources for each and the range they span.\n* Nothing here says which or how many substitutions a morphological change needs. The module bounds\n  supply, never demand.",
+    "named": {
+     "name": "fixationProbability_ge",
+     "line": 224,
+     "english": "**Lower bound on fixation when selection does not oppose the mutant.** A lineage starting from\n`i` of `M` copies in a favored chain is eventually fixed with probability at least `i / M`.",
+     "source": "theorem fixationProbability_ge (hM : 0 < M) (i : Fin (M + 1)) :\n    ((i : ℕ) : ℝ) / M ≤ C.fixationProbability i := by\n  obtain ⟨ρ, hρ0, hρ1, hρ⟩ := C.exists_contraction hM\n  have h1 : Tendsto (fun t => C.fixedBy t i + ρ ^ t) atTop (nhds (C.fixationProbability i + 0)) :=\n    (C.fixedBy_tendsto i).add (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1)\n  rw [add_zero] at h1\n  refine ge_of_tendsto' h1 fun t => ?_\n  have h2 := C.fixedBy_ge hM t i\n  have h3 := C.unresolved_le_pow hM hρ0 hρ t i\n  linarith"
+    },
+    "supporting": [
+     {
+      "kind": "structure",
+      "name": "FavoredChain",
+      "line": 53,
+      "english": "An absorbing chain on `Fin (M+1)` mutant copies whose expected copy number never decreases:\nneutral or favored by selection. Identical to `NeutralChain` except that `neutral` (an equality)\nis weakened to `favored` (an inequality).",
+      "source": "structure FavoredChain (M : ℕ) where\n  /-- One-generation transition matrix. -/\n  P : Matrix (Fin (M + 1)) (Fin (M + 1)) ℝ\n  /-- Probabilities are nonnegative. -/\n  nonneg : ∀ i j, 0 ≤ P i j\n  /-- Each row is a probability distribution. -/\n  rowSum : ∀ i, ∑ j, P i j = 1\n  /-- Selection does not oppose the mutant: `E[X_{t+1} | X_t = i] ≥ i`. -/\n  favored : ∀ i : Fin (M + 1), ((i : ℕ) : ℝ) ≤ ∑ j, P i j * ((j : ℕ) : ℝ)\n  /-- Loss (`0` copies) is absorbing. -/\n  absorb_zero : ∀ j, P 0 j = if j = 0 then 1 else 0\n  /-- Fixation (`M` copies) is absorbing. -/\n  absorb_last : ∀ j, P (Fin.last M) j = if j = Fin.last M then 1 else 0\n  /-- From any intermediate state, absorption in one step has positive probability. -/\n  escape : ∀ i : Fin (M + 1), i ≠ 0 → i ≠ Fin.last M → 0 < P i 0 + P i (Fin.last M)"
+     },
+     {
+      "kind": "def",
+      "name": "NeutralChain.toFavored",
+      "line": 70,
+      "english": "Every neutral chain is a favored chain (equality implies the inequality).",
+      "source": "def NeutralChain.toFavored {M : ℕ} (C : NeutralChain M) : FavoredChain M :=\n  { C with favored := fun i => (C.neutral i).ge }"
+     },
+     {
+      "kind": "lemma",
+      "name": "pow_favored",
+      "line": 97,
+      "english": "The `t`-step chain is still favored: the expected copy number after `t` generations is at\nleast the starting number.",
+      "source": "lemma pow_favored (t : ℕ) (i : Fin (M + 1)) :\n    ((i : ℕ) : ℝ) ≤ ∑ j, (C.P ^ t) i j * ((j : ℕ) : ℝ) := by\n  induction t generalizing i with\n  | zero => simp [Matrix.one_apply]\n  | succ t ih =>\n    simp only [pow_succ, Matrix.mul_apply, Finset.sum_mul]\n    rw [Finset.sum_comm]\n    simp_rw [mul_assoc, ← Finset.mul_sum]\n    calc ((i : ℕ) : ℝ) ≤ ∑ k, (C.P ^ t) i k * ((k : ℕ) : ℝ) := ih i\n      _ ≤ ∑ k, (C.P ^ t) i k * ∑ j, C.P k j * ((j : ℕ) : ℝ) :=\n          Finset.sum_le_sum fun k _ => mul_le_mul_of_nonneg_left (C.favored k) (C.pow_nonneg t i k)"
+     },
+     {
+      "kind": "def",
+      "name": "unresolved",
+      "line": 129,
+      "english": "Probability of being in the interior after `t` generations, starting from `i`.",
+      "source": "def unresolved (t : ℕ) (i : Fin (M + 1)) : ℝ := ∑ j ∈ interior M, (C.P ^ t) i j"
+     },
+     {
+      "kind": "def",
+      "name": "fixedBy",
+      "line": 172,
+      "english": "Probability that a lineage starting from `i` copies is fixed by generation `t`.",
+      "source": "def fixedBy (t : ℕ) (i : Fin (M + 1)) : ℝ := (C.P ^ t) i (Fin.last M)"
+     },
+     {
+      "kind": "lemma",
+      "name": "fixedBy_mono",
+      "line": 179,
+      "english": "Fixation is absorbing, so the probability of having fixed can only grow with `t`.",
+      "source": "lemma fixedBy_mono (i : Fin (M + 1)) : Monotone fun t => C.fixedBy t i := by\n  apply monotone_nat_of_le_succ\n  intro t\n  show (C.P ^ t) i (Fin.last M) ≤ (C.P ^ (t + 1)) i (Fin.last M)\n  rw [pow_succ, Matrix.mul_apply]\n  have h := Finset.single_le_sum (f := fun k => (C.P ^ t) i k * C.P k (Fin.last M))\n    (fun k _ => mul_nonneg (C.pow_nonneg t i k) (C.nonneg k _)) (Finset.mem_univ (Fin.last M))\n  simpa [C.absorb_last] using h"
+     },
+     {
+      "kind": "lemma",
+      "name": "mean_decomposition_ge",
+      "line": 189,
+      "english": "The favored version of conservation of the mean: `M · P(fixed by t) + E[copies · 1{unresolved}] ≥ i`.",
+      "source": "lemma mean_decomposition_ge (hM : 0 < M) (t : ℕ) (i : Fin (M + 1)) :\n    ((i : ℕ) : ℝ) ≤ (M : ℝ) * C.fixedBy t i + ∑ j ∈ interior M, (C.P ^ t) i j * ((j : ℕ) : ℝ) := by\n  have h := C.pow_favored t i\n  rw [sum_split hM] at h\n  simp only [Fin.val_zero, Nat.cast_zero, mul_zero, zero_add, Fin.val_last] at h\n  rw [fixedBy, mul_comm]\n  exact h"
+     },
+     {
+      "kind": "lemma",
+      "name": "fixedBy_ge",
+      "line": 198,
+      "english": "At every finite time, `fixedBy` is at least `i / M` minus the unresolved probability.",
+      "source": "lemma fixedBy_ge (hM : 0 < M) (t : ℕ) (i : Fin (M + 1)) :\n    ((i : ℕ) : ℝ) / M - C.unresolved t i ≤ C.fixedBy t i := by\n  have hMpos : (0 : ℝ) < M := by exact_mod_cast hM\n  have hdec := C.mean_decomposition_ge hM t i\n  have hSM : ∑ j ∈ interior M, (C.P ^ t) i j * ((j : ℕ) : ℝ) ≤ (M : ℝ) * C.unresolved t i := by\n    rw [unresolved, Finset.mul_sum]\n    apply Finset.sum_le_sum\n    intro j _\n    rw [mul_comm (M : ℝ)]\n    apply mul_le_mul_of_nonneg_left _ (C.pow_nonneg t i j)\n    exact_mod_cast Nat.le_of_lt_succ j.isLt\n  have : ((i : ℕ) : ℝ) / M ≤ C.fixedBy t i + C.unresolved t i := by\n    rw [div_le_iff₀ hMpos]\n    linarith\n  linarith"
+     },
+     {
+      "kind": "noncomputable def",
+      "name": "fixationProbability",
+      "line": 216,
+      "english": "The fixation probability: the limit of `fixedBy`, which exists as the supremum of a\nnondecreasing bounded sequence.",
+      "source": "noncomputable def fixationProbability (i : Fin (M + 1)) : ℝ := ⨆ t, C.fixedBy t i"
+     },
+     {
+      "kind": "noncomputable def",
+      "name": "binomialKernel",
+      "line": 244,
+      "english": "Binomial sampling with an arbitrary success probability `p i` in state `i`:\n`P(i → j) = C(M, j) (p i)^j (1 - p i)^(M-j)`.",
+      "source": "noncomputable def binomialKernel (M : ℕ) (p : Fin (M + 1) → ℝ) :\n    Matrix (Fin (M + 1)) (Fin (M + 1)) ℝ :=\n  fun i j => (Nat.choose M j : ℝ) * (p i) ^ (j : ℕ) * (1 - p i) ^ (M - j)"
+     },
+     {
+      "kind": "lemma",
+      "name": "binomial_mean",
+      "line": 268,
+      "english": "The mean of `Binomial(M, p i)` is `M · p i`.",
+      "source": "lemma binomial_mean (i : Fin (M + 1)) :\n    ∑ j, binomialKernel M p i j * ((j : ℕ) : ℝ) = (M : ℝ) * p i := by\n  simp_rw [binomialKernel_eq_bernstein]\n  have h := congrArg (Polynomial.eval (p i)) (bernsteinPolynomial.sum_smul ℝ M)\n  rw [Polynomial.eval_finsetSum] at h\n  simp only [nsmul_eq_mul, Polynomial.eval_mul, Polynomial.eval_natCast, Polynomial.eval_X] at h\n  rw [Fin.sum_univ_eq_sum_range (fun j => (bernsteinPolynomial ℝ M j).eval (p i) * (j : ℝ))]\n  calc ∑ j ∈ range (M + 1), (bernsteinPolynomial ℝ M j).eval (p i) * (j : ℝ)\n      = ∑ j ∈ range (M + 1), (j : ℝ) * (bernsteinPolynomial ℝ M j).eval (p i) := by\n        simp_rw [mul_comm]\n    _ = (M : ℝ) * p i := h"
+     },
+     {
+      "kind": "noncomputable def",
+      "name": "binomialChain",
+      "line": 311,
+      "english": "Any binomial sampling chain whose success probability is `0` at `0`, `1` at `M`, below `1`\nelsewhere, and satisfies `M · p i ≥ i` is a favored chain.",
+      "source": "noncomputable def binomialChain (M : ℕ) (p : Fin (M + 1) → ℝ) (h0 : ∀ i, 0 ≤ p i) (h1 : ∀ i, p i ≤ 1)\n    (hz : p 0 = 0) (hl : p (Fin.last M) = 1) (hlt : ∀ i, i ≠ Fin.last M → p i < 1)\n    (hfav : ∀ i : Fin (M + 1), ((i : ℕ) : ℝ) ≤ (M : ℝ) * p i) : FavoredChain M where\n  P := binomialKernel M p\n  nonneg := binomial_nonneg h0 h1\n  rowSum := binomial_rowSum\n  favored i := by rw [binomial_mean]; exact hfav i\n  absorb_zero := binomial_absorb_zero hz\n  absorb_last := binomial_absorb_last hl\n  escape := binomial_escape h0 h1 hlt"
+     },
+     {
+      "kind": "noncomputable def",
+      "name": "wfSelProb",
+      "line": 326,
+      "english": "Wright–Fisher with selection: a mutant of relative fitness `1 + s` among `i` of `M` copies is\ndrawn with probability `(1+s) i / ((1+s) i + (M - i)) = (1+s) i / (M + s i)`.",
+      "source": "noncomputable def wfSelProb (M : ℕ) (s : ℝ) (i : Fin (M + 1)) : ℝ :=\n  (1 + s) * ((i : ℕ) : ℝ) / ((M : ℝ) + s * ((i : ℕ) : ℝ))"
+     },
+     {
+      "kind": "lemma",
+      "name": "wfSel_favored",
+      "line": 373,
+      "english": "With `s ≥ 0` the expected mutant count never decreases: `M · p i ≥ i`.",
+      "source": "lemma wfSel_favored (hM : 0 < M) (hs : 0 ≤ s) (i : Fin (M + 1)) :\n    ((i : ℕ) : ℝ) ≤ (M : ℝ) * wfSelProb M s i := by\n  unfold wfSelProb\n  rw [mul_div_assoc', le_div_iff₀ (wfSel_denom_pos hM hs i)]\n  have hle := wfSel_i_le i\n  have h := mul_nonneg (mul_nonneg hs (Nat.cast_nonneg (i : ℕ))) (sub_nonneg.mpr hle)\n  nlinarith"
+     }
+    ],
+    "proofScope": {
+     "kernelChecked": [
+      "For any absorbing chain on {0..M} copies with E[X_{t+1} | X_t = i] >= i (stochastic, both ends absorbing, positive one-step escape from every interior state), P(fixed by t) is nondecreasing and bounded, its limit u(i) exists, and u(i) >= i/M (Delphi.FavoredChain.fixationProbability_ge); also u(i) <= 1.",
+      "Wright-Fisher sampling with success probability (1+s) i / (M + s i), s >= 0, is such a chain (Delphi.wrightFisherSelection), so a single new mutant fixes with probability at least 1/M.",
+      "The defined expected count M mu u T equals mu T for the neutral Wright-Fisher chain, is at least mu T for any favored chain, and is at most M mu T for any u <= 1."
+     ],
+     "assumed": [
+      "The expected count is a DEFINITION (rate x generations, independent fates, Kimura 1968); linkage, interference, changing M, changing s and overlapping generations are excluded by it, not shown absent.",
+      "Selection enters only through the sampling probability (1+s) i / (M + s i), constant in time and across sites.",
+      "mu, T, M are free parameters; the module measures nothing. Which mutations are favored, how many a trait needs, and in what order, are outside it."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "favored-floor-strengthened",
+      "description": "Statement changed to claim a favored lineage of i copies fixes with probability at least (i+1)/M instead of i/M. Not true (the neutral chain is favored and fixes with exactly i/M), so the proof must fail.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "favored-budget-doubled",
+      "description": "Statement changed to claim the expected substitutions over T generations are at least 2 mu T instead of mu T.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "favored-drift-dropped",
+      "description": "Model hypothesis removed: the chain no longer has to keep the expected copy number from falling (favored := True). Selection against the mutant is then allowed, so the lower bound i/M must fail.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  }
+ ],
+ "testedOnly": [
+  {
+   "claim_id": "darwin1859-ch09-03",
+   "verdict": "refutes",
+   "dir": "claim-tests/darwin-origin/darwin1859-ch09-03",
+   "measured": {
+    "value": 66,
+    "unit": "Ma, age of the top of the Maastrichtian (end of the Chalk); Darwin's figure was 306.7 million years",
+    "n": "102 ICS intervals in the response",
+    "uncertainty": "ICS boundary ages for these stages carry uncertainties of about 0.2 Ma, far below the threshold",
+    "extra": {
+     "base_of_campanian_Ma": 83.6,
+     "base_of_maastrichtian_Ma": 72.2,
+     "darwin_Myr": 306.6624,
+     "ratio_darwin_to_measured": 4.6464,
+     "threshold_Ma": 225
+    }
+   },
+   "faithfulness": {
+    "role": "A9 faithfulness assessor",
+    "question": "Does this analysis measure what the claim asserts?",
+    "claim_id": "darwin1859-ch09-03",
+    "assessedAt": "2026-10-31T14:58:41.866Z",
+    "assessor": {
+     "provider": "openai",
+     "model": "gpt-5-2025-08-07",
+     "independent_of_builder": true,
+     "blinded_to": [
+      "verdict",
+      "confidence",
+      "interpretation",
+      "caveats"
+     ]
+    },
+    "verdict": "faithful",
+    "scores": {
+     "same_quantity": 0.75,
+     "modality_fits": 1,
+     "assumptions_compatible": 1,
+     "scope_matches": 0.75
+    },
+    "reasoning": "They directly use ICS radiometric ages to measure the elapsed time since the end of the Maastrichtian, which on the global timescale is essentially the time since the youngest Upper Cretaceous chalk. That matches the quantity the claim’s consequent is about, and the modality (ICS boundary ages) is appropriate and precise. There is minor ambiguity in equating “youngest Chalk” (a lithostratigraphic notion, often regionally defined in Darwin’s context) with the global K–Pg boundary, but this difference is only a few Myr and does not alter the conclusion. The conditional (“if Darwin’s denudation argument holds”) isn’t tested per se, but the analysis faithfully measures the consequential quantity on the modern timescale.",
+    "what_would_change_it": "If “youngest Chalk” were shown to correspond to a different, region-specific horizon (e.g., the local top of the Chalk Group predating the K–Pg) and that were essential to the claim, the measurement should use that boundary’s age. Alternatively, if the study needed to test Darwin’s denudation argument itself, additional data and modeling would be required.",
+    "biggest_risk": "Misdefining “youngest Chalk” by using the global K–Pg boundary instead of the youngest preserved Chalk horizon relevant to Darwin’s regional context.",
+    "builder_verdict_for_comparison": "refutes",
+    "note": "The assessor did not see the builder verdict above; it is recorded here only so a reader can compare. A not-representative verdict means the evidence does not count, whatever the numbers said."
+   }
+  },
+  {
+   "claim_id": "darwin1859-ch11-13",
+   "verdict": "supports",
+   "dir": "claim-tests/darwin-origin/darwin1859-ch11-13",
+   "measured": {
+    "value": 0.37985390234525185,
+    "unit": "fraction of the last 2.6 Myr with benthic d18O >= 4.0 per mil (pre-registered threshold 0.20)",
+    "n": "2115 LR04 points, 5785 EDC points",
+    "uncertainty": "LR04 standard errors are 0.03-0.1 per mil per point, small relative to the 4.0 threshold",
+    "extra": {
+     "n_cold_intervals_ge_10kyr": 34,
+     "n_cold_intervals_total": 62,
+     "longest_cold_interval_kyr": 68,
+     "mean_d18O_18_26ka": 4.88,
+     "corr_antarctic_temp_vs_global_ice_lag0": 0.855605957948549,
+     "max_lagged_corr": 0.8758444437688593,
+     "best_lag_kyr": 2,
+     "criteria": {
+      "A": true,
+      "B": true,
+      "C": true
+     }
+    }
+   },
+   "faithfulness": null
+  },
+  {
+   "claim_id": "fisher-infinitesimal",
+   "verdict": "supports",
+   "dir": "claim-tests/math-bio-theorems/fisher-infinitesimal",
+   "measured": {
+    "value": 1.07764604189515,
+    "unit": "ratio of largest to smallest residual variance across mid-parent terciles (model predicts 1)",
+    "n": "934 children in 205 families (172 families with 2+ children)",
+    "uncertainty": "Levene p = 0.956",
+    "extra": {
+     "tercile_residual_variances": [
+      4.976650362537617,
+      4.858628272424429,
+      5.235881526818056
+     ],
+     "residual_skew_g1": -0.11662140711406176,
+     "residual_excess_kurtosis_g2": 0.4614836260149193,
+     "sibling_icc": 0.3941499647542556,
+     "r_po_implied": 0.35144073468707404,
+     "r_midparent": 0.4970122533648248,
+     "r_father_child": 0.40923847720950707,
+     "r_mother_child": 0.3145028832353671,
+     "r_father_mother": 0.09689933710372438,
+     "slope_child_on_midparent": 0.7125849916953034,
+     "residual_sd_inches": 2.242358043396958,
+     "criteria": {
+      "A": true,
+      "B": true,
+      "C": true
+     }
+    }
+   },
+   "faithfulness": null
+  },
+  {
+   "claim_id": "fisher-sex-ratio",
+   "verdict": "mixed",
+   "dir": "claim-tests/math-bio-theorems/fisher-sex-ratio",
+   "measured": {
+    "value": 105.2,
+    "unit": "median sex ratio at birth, males per 100 females, country-years 1950-1979 (equal numbers = 100)",
+    "n": "4222 country-years from 146 countries",
+    "uncertainty": "5th-95th percentile 102.5-107.0; SD 1.41; range 100.5-109.8",
+    "extra": {
+     "fraction_in_90_110": 1,
+     "fraction_in_95_105": 0.4689720511605874,
+     "criterion_A": false,
+     "criterion_B": true,
+     "country_means_range": [
+      101.03666666666666,
+      108
+     ],
+     "mean_srb": 105.02482235907152
+    }
+   },
+   "faithfulness": {
+    "role": "A9 faithfulness assessor",
+    "question": "Does this analysis measure what the claim asserts?",
+    "claim_id": "fisher-sex-ratio",
+    "assessedAt": "2026-10-31T14:59:08.063Z",
+    "assessor": {
+     "provider": "openai",
+     "model": "gpt-5-2025-08-07",
+     "independent_of_builder": true,
+     "blinded_to": [
+      "verdict",
+      "confidence",
+      "interpretation",
+      "caveats"
+     ]
+    },
+    "verdict": "faithful",
+    "scores": {
+     "same_quantity": 1,
+     "modality_fits": 1,
+     "assumptions_compatible": 0.75,
+     "scope_matches": 0.75
+    },
+    "reasoning": "They directly analyzed the sex ratio at birth (SRB), which is the quantity the claim is about, using UN WPP’s SRB variable for live births. The modality (cross-country demographic data) is appropriate for assessing whether SRB is near parity and shows little variation across human populations. Assumptions are broadly compatible, though WPP values for 1950–1979 are partly modeled and can reflect data-quality issues (e.g., female underregistration), and treating country-years as the unit may overweight repeated observations of the same populations over time. The scope largely matches the claim; restricting to pre–sex-selective-abortion decades is a reasonable design to target biological SRB, and the coverage is wide across countries, though excluding <1M populations and using country-years instead of per-country summaries is a mild mismatch.",
+    "what_would_change_it": "Using high-quality vital registration microdata or validated country-level SRB estimates (with birth-weighted or per-country means) and sensitivity analyses on alternative time windows and inclusion of small populations would strengthen alignment and robustness.",
+    "biggest_risk": "UN WPP SRB values for earlier decades rely on modeled estimates and potentially biased source data (e.g., underregistration of female births), so the measured SRB may not perfectly reflect true birth sex ratios in some countries.",
+    "builder_verdict_for_comparison": "mixed",
+    "note": "The assessor did not see the builder verdict above; it is recorded here only so a reader can compare. A not-representative verdict means the evidence does not count, whatever the numbers said."
+   }
+  },
+  {
+   "claim_id": "hamilton-lmc",
+   "verdict": "inconclusive",
+   "dir": "claim-tests/math-bio-theorems/hamilton-lmc",
+   "measured": {
+    "value": null,
+    "unit": "not measured",
+    "n": 0,
+    "uncertainty": null,
+    "extra": {
+     "dryad_files_listed_by_api": [
+      "dryad_file"
+     ],
+     "http_status": [
+      403
+     ]
+    }
+   },
+   "faithfulness": null
+  },
+  {
+   "claim_id": "hamilton-senescence",
+   "verdict": "mixed",
+   "dir": "claim-tests/math-bio-theorems/hamilton-senescence",
+   "measured": {
+    "value": 0.5714285714285714,
+    "unit": "fraction of qualifying non-bird species with Spearman rho(age, adult mortality) > 0",
+    "n": "35 species (classes: {'Mammalia': 20, 'Actinopterygii': 9, 'Amphibia': 2, 'Reptilia': 2, 'Bivalvia': 1, 'Gastropoda': 1})",
+    "uncertainty": "20 rising, 13 falling, 2 flat; 12 significantly rising and 6 significantly falling at p < 0.05",
+    "extra": {
+     "mean_spearman_rho": 0.14546805485036943,
+     "median_spearman_rho": 0.25,
+     "n_matrices_in_db": 3548,
+     "n_bird_species_held_out": 8
+    }
+   },
+   "faithfulness": null
+  },
+  {
+   "claim_id": "kimura-heterozygosity",
+   "verdict": "refutes",
+   "dir": "claim-tests/math-bio-theorems/kimura-heterozygosity",
+   "measured": {
+    "value": 0.10731485075894663,
+    "unit": "OLS slope of log10(pi) on log10(census N); the law with Ne proportional to N predicts about 1",
+    "n": "160 non-bird metazoan species (diversity sources: {'Leffler et al.': 90, 'Romiguier et al.': 58, 'Corbett-Detig et al.': 12})",
+    "uncertainty": "95% CI [0.078, 0.137]; SE 0.0150",
+    "extra": {
+     "spearman_rho": 0.492118832766905,
+     "spearman_p": 3.867337652899697e-11,
+     "pearson_r": 0.49493920875974984,
+     "log10_N_range": [
+      2.766308090324165,
+      15.17881504849919
+     ],
+     "log10_pi_range": [
+      -3.987162775294828,
+      -1.0785315066229717
+     ],
+     "n_bird_species_held_out": 13,
+     "classes_in_fit": {
+      "Insecta": 58,
+      "Mammalia": 40,
+      "Teleostei": 10,
+      "Bivalvia": 8,
+      "Echinoidea": 7,
+      "Branchiopoda": 6,
+      "Malacostraca": 5,
+      "Gastropoda": 5,
+      "Reptilia": 4,
+      "Ascidiacea": 3,
+      "Clitellata": 2,
+      "Anthozoa": 2,
+      "Anopla": 2,
+      "Demospongiae": 1,
+      "Chromadorea": 1,
+      "Euchelicerata": 1,
+      "Holostei": 1,
+      "Arachnida": 1,
+      "Ophiuroidea": 1,
+      "Polychaeta": 1,
+      "Cephalopoda": 1
+     },
+     "post_hoc_perturbation": {
+      "observed": {
+       "verdict": "refutes",
+       "ols_slope": 0.10731485075894663,
+       "ols_slope_ci95": [
+        0.07771085302172717,
+        0.1369188484961661
+       ],
+       "spearman_rho": 0.492118832766905,
+       "n_species": 160,
+       "residual_sd_log10_pi": 0.46392868283158084
+      },
+      "n_simulations_per_slope": 2000,
+      "simulated": {
+       "1.0": {
+        "true_slope": 1,
+        "verdict_fractions": {
+         "supports": 1
+        },
+        "mean_fitted_slope": 1.000251204461526
+       },
+       "0.75": {
+        "true_slope": 0.75,
+        "verdict_fractions": {
+         "supports": 1
+        },
+        "mean_fitted_slope": 0.7499673331755471
+       },
+       "0.5": {
+        "true_slope": 0.5,
+        "verdict_fractions": {
+         "mixed": 0.0245,
+         "supports": 0.9755
+        },
+        "mean_fitted_slope": 0.4998527027435866
+       },
+       "0.25": {
+        "true_slope": 0.25,
+        "verdict_fractions": {
+         "mixed": 0.976,
+         "refutes": 0.024
+        },
+        "mean_fitted_slope": 0.24987073006126395
+       },
+       "0.0": {
+        "true_slope": 0,
+        "verdict_fractions": {
+         "refutes": 1
+        },
+        "mean_fitted_slope": -0.00019334732212035233
+       }
+      },
+      "reading": "Under the law as operationalized (true slope 1 with the observed census sizes and scatter) the pre-registered rule returns 'supports' in the fraction shown for slope 1.0; the observed data (slope 0.107) return 'refutes'. The rule therefore discriminates the law from the observed pattern; the refutation is not a failure of test sensitivity."
+     }
+    }
+   },
+   "faithfulness": {
+    "role": "A9 faithfulness assessor",
+    "question": "Does this analysis measure what the claim asserts?",
+    "claim_id": "kimura-heterozygosity",
+    "assessedAt": "2026-10-31T14:59:36.876Z",
+    "assessor": {
+     "provider": "openai",
+     "model": "gpt-5-2025-08-07",
+     "independent_of_builder": true,
+     "blinded_to": [
+      "verdict",
+      "confidence",
+      "interpretation",
+      "caveats"
+     ]
+    },
+    "verdict": "faithful-with-narrower-scope",
+    "scores": {
+     "same_quantity": 0.75,
+     "modality_fits": 0.75,
+     "assumptions_compatible": 0.5,
+     "scope_matches": 0.75
+    },
+    "reasoning": "They analyze exactly the quantities the claim invokes: genome-wide nucleotide diversity (pi) versus census population size (N) on log scales, and compute both an OLS slope and a rank correlation across animal species. However, census sizes are proxies from a range×density model and are treated as error-free point estimates, and phylogeny and measurement error in N are ignored—both factors can attenuate the slope relative to theoretical expectations. The claim’s conditional about comparable mutation rates and Ne/N across species is not enforced; unmodeled heterogeneity could weaken the observed relationship independently of the claim. The primary analysis excludes birds, narrowing the metazoan scope stated in the claim.",
+    "what_would_change_it": "Incorporating uncertainty in census-size estimates (e.g., an error-in-variables or hierarchical/phylogenetic model) and controlling for mutation-rate variation would better align assumptions with the claim. Including birds (or reporting full-scope results) would match the stated metazoan scope.",
+    "biggest_risk": "attenuation from large uncertainty and bias in range×density census-size estimates used as N",
+    "builder_verdict_for_comparison": "refutes",
+    "note": "The assessor did not see the builder verdict above; it is recorded here only so a reader can compare. A not-representative verdict means the evidence does not count, whatever the numbers said."
+   }
+  },
+  {
+   "claim_id": "maynardsmith-hitchhiking",
+   "verdict": "supports",
+   "dir": "claim-tests/math-bio-theorems/maynardsmith-hitchhiking",
+   "measured": {
+    "value": 0.6162852097435987,
+    "unit": "Spearman rho between per-window nucleotide diversity and recombination rate (cM/Mb), chr22, 200 kb windows",
+    "n": "177 windows (of 177), 1051673 SNPs of 1103547 VCF records",
+    "uncertainty": "p = 6.8e-20; Pearson r = 0.556",
+    "extra": {
+     "median_pi": 0.0010088619215601004,
+     "median_rec_rate_cM_per_Mb": 1.6032284991092638,
+     "median_pi_by_rec_rate_quartile": {
+      "Q1 low": 0.0006548566799966859,
+      "Q2": 0.0009761150136901179,
+      "Q3": 0.0011035027173634379,
+      "Q4 high": 0.0013071151627201821
+     },
+     "map_file": "genetic_map_GRCh37_chr22.txt"
+    }
+   },
+   "faithfulness": null
+  },
+  {
+   "claim_id": "maynardsmith-war-of-attrition",
+   "verdict": "inconclusive",
+   "dir": "claim-tests/math-bio-theorems/maynardsmith-war-of-attrition",
+   "measured": {
+    "value": null,
+    "unit": "not measured",
+    "n": 0,
+    "uncertainty": null,
+    "extra": {
+     "dryad_files_listed_by_api": [
+      "fight.csv",
+      "README.md"
+     ],
+     "http_status": [
+      403,
+      403
+     ]
+    }
+   },
+   "faithfulness": null
+  },
+  {
+   "claim_id": "thompson1917-ch03-07",
+   "verdict": "supports",
+   "dir": "claim-tests/thompson-growth-form/thompson1917-ch03-07",
+   "measured": {
+    "value": 2.7420799020169984,
+    "unit": "log-log exponent of mean weight on mean height across ages 2-19, males (pre-registered band 2.5-3.5); females given in extra",
+    "n": "4905 males and 4810 females in 18 age bins each",
+    "uncertainty": "males 95% CI [2.59, 2.89]; females b = 2.86, CI [2.66, 3.06]",
+    "extra": {
+     "male_cubic_model_r2": 0.9905578803477098,
+     "female_cubic_model_r2": 0.97918410786246,
+     "female_free_exponent_b": 2.8606369468483357,
+     "male_height_range_cm": [
+      91.6548428956483,
+      175.2816641779385
+     ],
+     "female_height_range_cm": [
+      90.10482142878853,
+      162.94861252958128
+     ],
+     "cubic_k_kg_per_cm3": {
+      "male": 0.000014492782056210137,
+      "female": 0.000015046459489477242
+     },
+     "post_hoc_perturbation": {
+      "n_simulations_per_exponent": 2000,
+      "sexes": {
+       "male": {
+        "observed": {
+         "free_exponent_b": 2.7420799020169984,
+         "cubic_model_r2": 0.9905578803477098,
+         "passes": true,
+         "n_age_bins": 18,
+         "residual_sd_log_weight": 0.061401843299767125
+        },
+        "simulated": {
+         "3.0": {
+          "true_exponent": 3,
+          "pass_fraction": 1,
+          "mean_fitted_exponent": 3.0003139039424087,
+          "mean_cubic_r2": 0.982854958911395
+         },
+         "2.0": {
+          "true_exponent": 2,
+          "pass_fraction": 0,
+          "mean_fitted_exponent": 1.997920427163882,
+          "mean_cubic_r2": 0.6287244961398625
+         },
+         "2.5": {
+          "true_exponent": 2.5,
+          "pass_fraction": 0.49,
+          "mean_fitted_exponent": 2.500082955432895,
+          "mean_cubic_r2": 0.9202604912729514
+         },
+         "3.5": {
+          "true_exponent": 3.5,
+          "pass_fraction": 0.4945,
+          "mean_fitted_exponent": 3.500277739901454,
+          "mean_cubic_r2": 0.9515844795341976
+         },
+         "4.0": {
+          "true_exponent": 4,
+          "pass_fraction": 0,
+          "mean_fitted_exponent": 3.9976656315573234,
+          "mean_cubic_r2": 0.8783782613478972
+         }
+        }
+       },
+       "female": {
+        "observed": {
+         "free_exponent_b": 2.8606369468483357,
+         "cubic_model_r2": 0.97918410786246,
+         "passes": true,
+         "n_age_bins": 18,
+         "residual_sd_log_weight": 0.07671684266439144
+        },
+        "simulated": {
+         "3.0": {
+          "true_exponent": 3,
+          "pass_fraction": 0.9995,
+          "mean_fitted_exponent": 2.997924457828407,
+          "mean_cubic_r2": 0.9671462441663621
+         },
+         "2.0": {
+          "true_exponent": 2,
+          "pass_fraction": 0,
+          "mean_fitted_exponent": 2.0013906355602886,
+          "mean_cubic_r2": 0.6732374305880456
+         },
+         "2.5": {
+          "true_exponent": 2.5,
+          "pass_fraction": 0.466,
+          "mean_fitted_exponent": 2.5002502967139146,
+          "mean_cubic_r2": 0.9125358530569535
+         },
+         "3.5": {
+          "true_exponent": 3.5,
+          "pass_fraction": 0.4935,
+          "mean_fitted_exponent": 3.4997766138568487,
+          "mean_cubic_r2": 0.9441403543487251
+         },
+         "4.0": {
+          "true_exponent": 4,
+          "pass_fraction": 0,
+          "mean_fitted_exponent": 4.0003796719354066,
+          "mean_cubic_r2": 0.8836855223775872
+         }
+        }
+       }
+      },
+      "reading": "The rule passes under the cube law and under exponents inside the pre-registered band, and fails under an exponent of 2 (surface scaling) or 4 at the fractions shown, with the observed heights and the observed bin scatter. The band was pre-registered as a tolerance for Thompson's 'mainly (though not wholly)'; this check shows what it can and cannot reject."
+     },
+     "cross_check": {
+      "ours_individual_level": {
+       "ages": "2-19 completed years, standing stature, NHANES 2013-2018 (this test's sample)",
+       "pooled": {
+        "n_individuals": 9715,
+        "ols_exponent": 2.755198077482473,
+        "ci95": [
+         2.7355684426476894,
+         2.7748277123172564
+        ],
+        "r2": 0.8862795709963611,
+        "survey_weighted_exponent": 2.7611926881801017
+       },
+       "male": {
+        "n_individuals": 4905,
+        "ols_exponent": 2.716250868644738,
+        "ci95": [
+         2.6903049937293924,
+         2.7421967435600836
+        ],
+        "r2": 0.8957373344791765,
+        "survey_weighted_exponent": 2.7241728155211202
+       },
+       "female": {
+        "n_individuals": 4810,
+        "ols_exponent": 2.812436935724894,
+        "ci95": [
+         2.7827959018252395,
+         2.8420779696245484
+        ],
+        "r2": 0.8779986711816458,
+        "survey_weighted_exponent": 2.8191082022830547
+       }
+      },
+      "theirs": {
+       "source": "origin/main e6b25d4c6ab6 (c587bd47cb08dfc80be718c8d6c3583ede84c6ce 2026-10-31T04:35:02Z), claim-tests/thompson-growth-form/thompson1917-ch03-07/result.json",
+       "run": "cursor/claim-tests-thompson-efb7",
+       "verdict": "mixed",
+       "scope": "NHANES 2007-2018, ages 0 to 19.99, recumbent length under 24 months, individuals pooled",
+       "pooled_0_19_individuals": {
+        "ols_slope": 2.4076916540629516,
+        "ols_slope_ci95": [
+         2.3992683428055552,
+         2.416114965320348
+        ],
+        "ols_intercept": -3.5677394844224724,
+        "r2": 0.9302385181166233,
+        "rma_slope": 2.496339842087518,
+        "n": 23540
+       },
+       "slope_by_age_window": {
+        "0-2yr": {
+         "ols_slope": 2.0975315252406825,
+         "ols_slope_ci95": [
+          2.0751295739850537,
+          2.1199334764963114
+         ],
+         "ols_intercept": -2.946923856081076,
+         "r2": 0.8980344554712152,
+         "rma_slope": 2.213410658558297,
+         "n": 3826
+        },
+        "2-10yr": {
+         "ols_slope": 2.358272557215868,
+         "ols_slope_ci95": [
+          2.337935784384827,
+          2.378609330046909
+         ],
+         "ols_intercept": -3.5069780992661475,
+         "r2": 0.8394619638082076,
+         "rma_slope": 2.5739107619546817,
+         "n": 9881
+        },
+        "10-20yr": {
+         "ols_slope": 3.095255052906955,
+         "ols_slope_ci95": [
+          3.0372676262217726,
+          3.1532424795921377
+         ],
+         "ols_intercept": -5.060208366167421,
+         "r2": 0.5268221709129836,
+         "rma_slope": 4.264463675157318,
+         "n": 9833
+        },
+        "2-20yr": {
+         "ols_slope": 2.7364582069270176,
+         "ols_slope_ci95": [
+          2.7231001959757397,
+          2.7498162178782954
+         ],
+         "ols_intercept": -4.276832970519582,
+         "r2": 0.8910501478218595,
+         "rma_slope": 2.8989301184879293,
+         "n": 19714
+        }
+       },
+       "age_median_curve_0_19": {
+        "ols_slope": 2.457611504717952,
+        "ols_slope_ci95": [
+         2.4094881450524954,
+         2.5057348643834083
+        ],
+        "ols_intercept": -3.683371097125789,
+        "r2": 0.9767964568604828,
+        "rma_slope": 2.4866301413746332,
+        "n": 240
+       }
+      },
+      "reading": "Binning versus individuals is not the cause of the difference: on this test's own sample the individual-level exponent (2.755) is within 0.03 of the age-bin exponents. The cause is the age range. The collaborator's 2-20 year window gives 2.736, which reproduces this test, while their 0-2 year window gives 2.098 and pulls their pooled 0-19 exponent to 2.408, below the 2.5 edge of the band both tests pre-registered. The verdict is therefore conditional on the pre-registered scope (ages 2-19): including infancy makes it 'mixed'."
+     }
+    }
+   },
+   "faithfulness": {
+    "role": "A9 faithfulness assessor",
+    "question": "Does this analysis measure what the claim asserts?",
+    "claim_id": "thompson1917-ch03-07",
+    "assessedAt": "2026-10-31T15:00:05.970Z",
+    "assessor": {
+     "provider": "openai",
+     "model": "gpt-5-2025-08-07",
+     "independent_of_builder": true,
+     "blinded_to": [
+      "verdict",
+      "confidence",
+      "interpretation",
+      "caveats"
+     ]
+    },
+    "verdict": "faithful-with-narrower-scope",
+    "scores": {
+     "same_quantity": 1,
+     "modality_fits": 1,
+     "assumptions_compatible": 0.75,
+     "scope_matches": 0.75
+    },
+    "reasoning": "They directly test the stated prediction: across ages, population mean weight vs mean stature should scale with an exponent near 3, and they also assess how well a cubic height curve reproduces the weight-for-age means. Height and weight are measured directly and appropriately weighted NHANES exam data are well-suited for this. Analytical choices (log-log regression on age-bin means; OLS) are reasonable, though uncertainty in bin means and minor NHANES multi-cycle weighting nuances are not detailed. The scope is narrower than the generic claim—limited to US children/adolescents in 2013–2018—so generality to other populations is not assured.",
+    "what_would_change_it": "Replicating with longitudinal growth data and/or multiple international populations would broaden scope and reduce ecological/aggregation concerns. Sensitivity checks for binning and survey-weight handling would strengthen assumptions compatibility.",
+    "biggest_risk": "Using cross-sectional age-bin means to infer a growth-scaling relation can conflate cohort effects and pubertal timing/composition changes with an individual-level cubic law.",
+    "builder_verdict_for_comparison": "supports",
+    "note": "The assessor did not see the builder verdict above; it is recorded here only so a reader can compare. A not-representative verdict means the evidence does not count, whatever the numbers said."
+   }
+  },
+  {
+   "claim_id": "thompson1917-ch03-10",
+   "verdict": "mixed",
+   "dir": "claim-tests/thompson-growth-form/thompson1917-ch03-10",
+   "measured": {
+    "value": 0.6363636363636364,
+    "unit": "fraction of qualifying species in which the asymptotic model is favoured by dAIC > 2 (pre-registered threshold 2/3); fraction of late-age increments positive = 0.758 (threshold 0.75)",
+    "n": "11 species, 33 late-age increments, 1111408 aged fish from 986385 CA rows",
+    "uncertainty": "species-level counts: 7 of 11 favour the asymptotic model, 2 of 11 (Merlangius merlangus, Microstomus kitt) favour the reached-maximum model, 2 indeterminate (|dAIC| <= 2); 25 of 33 late increments > 0",
+    "extra": {
+     "n_species_vb_favoured": 7,
+     "n_species_plateau_favoured": 2,
+     "median_dAIC_plateau_minus_vb": 13.94,
+     "n_species_all_increments_positive": 7,
+     "median_late_increment_cm": 0.591,
+     "median_L_oldest_over_vb_Linf": 0.919,
+     "species_qualifying": [
+      "Clupea harengus",
+      "Gadus morhua",
+      "Glyptocephalus cynoglossus",
+      "Melanogrammus aeglefinus",
+      "Merlangius merlangus",
+      "Microstomus kitt",
+      "Pleuronectes platessa",
+      "Pollachius virens",
+      "Scomber scombrus",
+      "Sprattus sprattus",
+      "Trachurus trachurus"
+     ],
+     "n_species_with_any_age_data": 42,
+     "n_rows_raw": 1370199
+    }
+   },
+   "faithfulness": null
+  },
+  {
+   "claim_id": "thompson1917-ch04-13",
+   "verdict": "refutes",
+   "dir": "claim-tests/thompson-growth-form/thompson1917-ch04-13",
+   "measured": {
+    "value": 0.3426545433750786,
+    "unit": "share of plant species with haploid number n > 16 (claim: 'fewer still' than the share with n < 6, which is given in extra)",
+    "n": "69948 species with a count",
+    "uncertainty": "binomial standard error below 0.002 at this sample size",
+    "extra": {
+     "fraction_6_to_16": 0.6407045233602104,
+     "fraction_below_6": 0.016640933264710927,
+     "median_n": 13,
+     "mode_n": 9,
+     "quantiles_5_25_50_75_95": [
+      7,
+      9,
+      13,
+      19,
+      39
+     ],
+     "by_group": [
+      {
+       "group": "Angiosperms",
+       "count": 64650,
+       "median": 12,
+       "frac_6_16": 0.6523588553750966,
+       "frac_below_6": 0.017385924207269914,
+       "frac_above_16": 0.3302552204176334
+      },
+      {
+       "group": "Bryophytes",
+       "count": 2342,
+       "median": 10,
+       "frac_6_16": 0.872331340734415,
+       "frac_below_6": 0.017079419299743808,
+       "frac_above_16": 0.11058923996584116
+      },
+      {
+       "group": "Gymnosperms",
+       "count": 538,
+       "median": 12,
+       "frac_6_16": 0.9479553903345725,
+       "frac_below_6": 0,
+       "frac_above_16": 0.05204460966542751
+      },
+      {
+       "group": "Pteridophytes",
+       "count": 2418,
+       "median": 41,
+       "frac_6_16": 0.036393713813068655,
+       "frac_below_6": 0,
+       "frac_above_16": 0.9636062861869313
+      }
+     ],
+     "reference_species_check": {
+      "Arabidopsis thaliana": 5,
+      "Zea mays": 10,
+      "Triticum aestivum": 21,
+      "Oryza sativa": 12,
+      "Pinus sylvestris": 12,
+      "Abies alba": 12
+     },
+     "post_hoc_sensitivity": {
+      "min_count_per_species": {
+       "n": 69948,
+       "fraction_6_to_16": 0.6746297249385258,
+       "fraction_below_6": 0.022416652370332246,
+       "fraction_above_16": 0.302953622691142,
+       "would_refute_under_rule": true
+      },
+      "genus_level_median": {
+       "n_genera": 8414,
+       "fraction_6_to_16": 0.6684097932018065,
+       "fraction_below_6": 0.011171856429759925,
+       "fraction_above_16": 0.3204183503684336,
+       "would_refute_under_rule": true
+      },
+      "angiosperms_only_species": {
+       "fraction_above_16": 0.3302552204176334,
+       "fraction_below_6": 0.017385924207269914,
+       "would_refute_under_rule": true
+      }
+     }
+    }
+   },
+   "faithfulness": null
+  },
+  {
+   "claim_id": "thompson1917-ch10-02",
+   "verdict": "refutes",
+   "dir": "claim-tests/thompson-growth-form/thompson1917-ch10-02",
+   "measured": {
+    "value": 2.5,
+    "unit": "median ratio of observed whorl number to the maximum number of turns a conical geodesic can make (R = N_obs / N_geo); R > 1 is impossible for a geodesic",
+    "n": 34,
+    "uncertainty": "R ranges from 1.63 to 3.39 across all 34 specimens (4 species); every specimen exceeds the bound",
+    "extra": {
+     "fraction_specimens_R_gt_1": 1,
+     "fraction_specimens_R_gt_1_after_subtracting_2_whorls": 1,
+     "fraction_specimens_exceeding_apex_approaching_bound_N_geo_over_2": 1,
+     "apical_angle_deg_range": [
+      8,
+      21
+     ],
+     "whorl_number_range": [
+      8,
+      14
+     ],
+     "N_geo_total_range": [
+      2.744,
+      7.168
+     ],
+     "median_apical_angle_deg_that_would_permit_observed_whorls": 4.78,
+     "per_species_median_R": {
+      "Turritella bantamensis (BOJ3)": 2.266,
+      "Turritella javana (CJR02B)": 2.109,
+      "Turritella simplex (CLN01-A)": 3.28,
+      "Turritella sp. (MNT13)": 2.943
+     },
+     "n_rows_transcribed": 49,
+     "n_rows_passing_ratio_check": 49
+    }
+   },
+   "faithfulness": null
+  },
+  {
+   "claim_id": "thompson1917-ch11-06",
+   "verdict": "refutes",
+   "dir": "claim-tests/thompson-growth-form/thompson1917-ch11-06",
+   "measured": {
+    "value": 0.939,
+    "unit": "fraction of qualifying ammonoid series in which at least one conch shape index changes by >= 50% over post-embryonic growth (pre-registered refutes threshold 2/3); fraction gnomonic = 0.006 (supports threshold 2/3)",
+    "n": "179 series (177 species), Devonian-Jurassic",
+    "uncertainty": "168 allometric, 10 intermediate, 1 gnomonic (Eurites permutus); 93.9% of series show a monotonic trend (|Spearman rho| >= 0.7, p < 0.05) in at least one index",
+    "extra": {
+     "n_allometric": 168,
+     "n_intermediate": 10,
+     "n_gnomonic": 1,
+     "median_pct_change_over_ontogeny": {
+      "CWI": 39.9,
+      "UWI": 204.2,
+      "WER": 16.7
+     },
+     "fraction_series_index_changes_ge_50pct": {
+      "CWI": 0.324,
+      "UWI": 0.916,
+      "WER": 0.022
+     },
+     "fraction_series_index_changes_le_25pct": {
+      "CWI": 0.229,
+      "UWI": 0.011,
+      "WER": 0.804
+     },
+     "fraction_with_monotonic_trend_any_index": 0.939,
+     "by_period_fraction_allometric": {
+      "Carboniferous": 0.913,
+      "Devonian": 0.967,
+      "Jurassic": 1,
+      "Permian": 1,
+      "Triassic": 1
+     },
+     "by_period_n": {
+      "Carboniferous": 115,
+      "Devonian": 30,
+      "Jurassic": 5,
+      "Permian": 11,
+      "Triassic": 18
+     },
+     "sensitivity": {
+      "dm_min_5mm_all_indices": {
+       "n": 108,
+       "fraction_allometric": 0.843
+      },
+      "dm_min_2mm_CWI_and_WER_only": {
+       "n": 179,
+       "fraction_allometric": 0.341
+      },
+      "dm_min_5mm_CWI_and_WER_only": {
+       "n": 108,
+       "fraction_allometric": 0.269
+      }
+     }
+    }
+   },
+   "faithfulness": null
+  },
+  {
+   "claim_id": "thompson1917-ch16-13",
+   "verdict": "supports",
+   "dir": "claim-tests/thompson-growth-form/thompson1917-ch16-13",
+   "measured": {
+    "value": 1.023,
+    "unit": "withers index WI (mean of the two pinniped species); terrestrial carnivoran WI min 1.238, median 1.910",
+    "n": "45 carnivoran species (951 vertebrae) incl. 2 pinnipeds; 74 cetacean species (204 specimens, 8722 vertebrae)",
+    "uncertainty": "exact one-sided Mann-Whitney U, pinnipeds < terrestrial: W p = 0.0023, WI p = 0.0012 (n = 2 vs 40; smallest attainable p = 0.0012)",
+    "extra": {
+     "pinniped_W": {
+      "Phoca_vitulina": 2.316,
+      "Otaria_byronia": 2.674
+     },
+     "pinniped_WI": {
+      "Phoca_vitulina": 0.997,
+      "Otaria_byronia": 1.049
+     },
+     "pinniped_HI": {
+      "Phoca_vitulina": 0.87,
+      "Otaria_byronia": 0.823
+     },
+     "terrestrial_W_quantiles": {
+      "min": 2.621,
+      "q25": 3.64,
+      "median": 4.251,
+      "max": 5.346
+     },
+     "terrestrial_WI_quantiles": {
+      "min": 1.238,
+      "q25": 1.525,
+      "median": 1.91,
+      "max": 2.993
+     },
+     "terrestrial_HI_quantiles": {
+      "min": 0.528,
+      "median": 0.804,
+      "max": 1.057
+     },
+     "semi_aquatic_WI": {
+      "Mustela_vison": 1.604,
+      "Lutra_lutra": 1.62,
+      "Aonyx_cinerea": 1.709
+     },
+     "mwu_p_incl_semiaquatic_in_reference": {
+      "W": 0.002,
+      "WI": 0.0012
+     },
+     "HI_mwu_p_less": 0.7724,
+     "cetacean_WI_median": 0.57,
+     "cetacean_WI_quantiles": {
+      "min": 0.216,
+      "q25": 0.502,
+      "median": 0.57,
+      "q75": 0.681,
+      "max": 1.15
+     },
+     "cetacean_WI_max_species": "Platanista_gangetica",
+     "fraction_cetacean_species_WI_below_terrestrial_min": 1,
+     "fraction_cetacean_species_WI_ge_terrestrial_median": 0,
+     "fraction_cetacean_specimens_with_tallest_thoracic_spine_in_T1_T3": 0.034,
+     "test_A_supports": true,
+     "test_A_refutes": false,
+     "test_B_supports": true,
+     "test_B_refutes": false
+    }
+   },
+   "faithfulness": {
+    "role": "A9 faithfulness assessor",
+    "question": "Does this analysis measure what the claim asserts?",
+    "claim_id": "thompson1917-ch16-13",
+    "assessedAt": "2026-10-31T15:00:45.263Z",
+    "assessor": {
+     "provider": "openai",
+     "model": "gpt-5-2025-08-07",
+     "independent_of_builder": true,
+     "blinded_to": [
+      "verdict",
+      "confidence",
+      "interpretation",
+      "caveats"
+     ]
+    },
+    "verdict": "faithful-with-narrower-scope",
+    "scores": {
+     "same_quantity": 0.5,
+     "modality_fits": 1,
+     "assumptions_compatible": 0.5,
+     "scope_matches": 0.5
+    },
+    "reasoning": "They directly measure relative neural-spine height along the column and assess an anterior-thoracic peak via a withers index, which fits the claim’s core morphology. However, the haunch (posterior lumbar) prediction was not actually used in pass/fail, and for pinnipeds the “no peak” criterion (WI ≤ 1) was not enforced—only comparison against terrestrial carnivorans—so only part of the claim is operationalized. The terrestrial comparator is limited to carnivorans rather than all terrestrial quadrupeds, and thoracic segment choices (e.g., T10–T13) presume carnivoran numbering that may not map cleanly to pinnipeds. Coverage of pinnipeds is very sparse (n=2 species), further narrowing the scope of inference.",
+    "what_would_change_it": "Add explicit haunch tests (HI) to pass/fail for both groups, require WI ≤ 1 for pinnipeds, expand the terrestrial comparator beyond carnivorans, harmonize vertebral regionalization across taxa, and sample more pinniped species.",
+    "biggest_risk": "Mismatch in vertebral regionalization (e.g., using carnivoran T10–T13 as the posterior thoracics) across taxa, biasing WI and comparability—especially for pinnipeds with different thoracic counts.",
+    "builder_verdict_for_comparison": "supports",
+    "note": "The assessor did not see the builder verdict above; it is recorded here only so a reader can compare. A not-representative verdict means the evidence does not count, whatever the numbers said."
+   }
+  }
+ ]
+}

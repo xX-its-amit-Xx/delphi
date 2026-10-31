@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claim Book &mdash; DELPHI</title>
+<meta name="description" content="Browse every claim: what it says, what the data said, what Lean proved, the prover's own English beside each step, and what had to be broken to test it.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e7c86'/%3E%3Cpath d='M9 8h14M9 16h14M9 24h9' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--soft:#eef2ef;
+ --ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--viol:#6b4fb3;--code:#f7f8f6;--codeline:#e4e9e5;
+ --shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05)}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--soft:#192b29;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--code:#101b1a;--codeline:#1d302e;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--soft:#192b29;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--code:#101b1a;--codeline:#1d302e;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Inter Tight",system-ui,sans-serif}
+a{color:var(--accent)}
+h1,h2{font-family:"Fraunces",Georgia,serif;letter-spacing:-.02em;line-height:1.08;margin:0 0 .4em}
+h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800}
+h2{font-size:1.35rem;font-weight:700}
+h3{font-size:1rem;margin:0 0 .4em}
+.wrap{max-width:1120px;margin:0 auto;padding:0 18px}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 93%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;gap:12px;align-items:center;padding:10px 18px;flex-wrap:wrap}
+nav a{padding:4px 10px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.9rem}
+nav a:hover{background:var(--soft);color:var(--ink)}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:5px 11px;border-radius:8px}
+section{padding:26px 0;border-bottom:1px solid var(--line)}
+.lede{color:var(--mute);max-width:72ch}
+.small{font-size:.88rem}.mute{color:var(--mute)}.tiny{font-size:.79rem;color:var(--mute)}
+.chip{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;border:1px solid var(--line);background:var(--soft);color:var(--mute)}
+.chip.ok{color:var(--ok);border-color:var(--ok)}.chip.bad{color:var(--bad);border-color:var(--bad)}
+.chip.warn{color:var(--warn);border-color:var(--warn)}.chip.viol{color:var(--viol);border-color:var(--viol)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);margin:12px 0}
+.quote{border-left:3px solid var(--accent);padding:6px 14px;color:var(--ink);margin:10px 0;font-size:1.02rem}
+pre.lean{background:var(--code);border:1px solid var(--codeline);border-radius:10px;padding:12px 14px;overflow-x:auto;
+ font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:.84rem;line-height:1.5;margin:8px 0}
+pre.lean .kw{color:var(--viol);font-weight:500}
+pre.lean .nm{color:var(--accent)}
+pre.lean .cm{color:var(--mute);font-style:italic}
+.english{background:var(--soft);border-radius:10px;padding:11px 14px;margin:8px 0;font-size:.94rem}
+.english b{color:var(--ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+.two .col{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--panel)}
+.two .col h4{margin:0 0 8px;font-size:.8rem;letter-spacing:.09em;text-transform:uppercase;color:var(--mute)}
+.two .col.proved{border-color:var(--ok)} .two .col.assumed{border-color:var(--warn)}
+ul.tight{margin:.3em 0;padding-left:1.1em} ul.tight li{margin:.35em 0}
+details{border:1px solid var(--line);border-radius:10px;padding:9px 13px;margin:7px 0;background:var(--panel)}
+details summary{cursor:pointer;font-weight:600;font-size:.94rem}
+details[open] summary{margin-bottom:7px}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:6px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;font-size:.82rem}
+.tag{font-family:"JetBrains Mono",monospace;font-size:.8rem;background:var(--soft);padding:1px 6px;border-radius:5px}
+#filter{padding:7px 11px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);min-width:230px;font:inherit}
+.claimhead{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.note{background:var(--soft);border-left:3px solid var(--warn);padding:9px 13px;border-radius:0 8px 8px 0;font-size:.9rem;margin:9px 0}
+.note.ok{border-left-color:var(--ok)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <b style="font-family:Fraunces,serif">Claim Book</b>
+  <nav><a href="../start/">Start</a><a href="../">Mission Control</a><a href="../t/lean/">Lean thread</a><a href="../t/claims/">Claim tests</a><a href="../deck/">Deck</a></nav>
+  <input id="filter" placeholder="filter claims&hellip;">
+  <button id="themeBtn" style="margin-left:auto">Theme</button>
+</div></header>
+<main class="wrap">
+<section>
+  <h1>Every claim, end to end</h1>
+  <p class="lede">What the claim says, where it came from, what the data said, what a proof assistant actually checked, and the prover's own English beside each step. Nothing here is paraphrased by this page: the explanations are the doc comments written above the Lean declarations.</p>
+  <div id="counts" class="small mute"></div>
+</section>
+<section id="list"></section>
+<section id="gap"></section>
+</main>
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const tk='delphi-theme';
+if(localStorage.getItem(tk))document.documentElement.dataset.theme=localStorage.getItem(tk);
+$('#themeBtn').onclick=()=>{const c=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+  const n=c==='dark'?'light':'dark';document.documentElement.dataset.theme=n;try{localStorage.setItem(tk,n)}catch{}};
+
+// light Lean highlighting: keywords, names after a binder, comments
+const KW=/\b(theorem|lemma|def|noncomputable|structure|instance|by|have|obtain|refine|exact|simpa|simp|rw|intro|fun|let|in|if|then|else|match|with|where|calc|from|at|using)\b/g;
+function hl(src){
+  let s=esc(src);
+  s=s.replace(/(--[^\n]*)/g,'<span class="cm">$1</span>');
+  s=s.replace(KW,'<span class="kw">$1</span>');
+  s=s.replace(/(theorem|lemma|def)<\/span>\s+([A-Za-z_][\w.']*)/g,'$1</span> <span class="nm">$2</span>');
+  return s;
+}
+// the prover's markdown-ish doc comments: **bold** and `code`
+function eng(t){
+  return esc(t||'').replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>')
+    .replace(/`([^`]+)`/g,'<span class="tag">$1</span>').replace(/\n\n/g,'<br><br>').replace(/\n/g,' ');
+}
+const vchip=v=>({supports:'ok',refutes:'bad',mixed:'warn',inconclusive:'',blocked:''}[v]??'');
+
+fetch('../claimbook.json').then(r=>r.json()).then(render)
+  .catch(e=>{$('#counts').textContent='Could not load claimbook.json: '+e.message});
+
+function render(D){
+  $('#counts').innerHTML=`<b>${D.counts.formalized}</b> claims with a machine-checked proof &middot;
+    <b>${D.counts.withDataTest}</b> of those also tested against data &middot;
+    <b>${D.counts.testedButNotFormalized}</b> tested but not formalised &middot;
+    ${D.counts.declarationsExtracted} Lean declarations read from source.
+    <br><span class="tiny">${esc(D.note)}</span>`;
+
+  const html=D.claims.map(c=>{
+    const L=c.lean, t=c.dataTests[0]||null;
+    return `<article class="card claim" data-s="${esc((c.claim_id+' '+c.label+' '+c.statement).toLowerCase())}">
+      <div class="claimhead">
+        <h2 style="margin:0">${esc(c.label)}</h2>
+        <span class="chip viol">proved in Lean</span>
+        ${t?`<span class="chip ${vchip(t.verdict)}">data: ${esc(t.verdict)}</span>`:'<span class="chip">no data test</span>'}
+        <span class="tag">${esc(c.claim_id)}</span>
+      </div>
+      <div class="quote">${esc(c.statement)}</div>
+      <p class="tiny">${c.paper?`${esc(c.paper.title)} (${esc(c.paper.year)})${c.paper.doi?` &middot; <a href="https://doi.org/${esc(c.paper.doi)}" target="_blank" rel="noopener">${esc(c.paper.doi)}</a>`:''}`:''}
+        ${c.notation?` &middot; <span class="tag">${esc(c.notation)}</span>`:''}</p>
+
+      ${L.proofScope?`<div class="two">
+        <div class="col proved"><h4>Kernel-checked &mdash; the machine verified this</h4>
+          <ul class="tight small">${(L.proofScope.kernelChecked||[]).map(x=>`<li>${eng(x)}</li>`).join('')}</ul></div>
+        <div class="col assumed"><h4>Assumed &mdash; not proved, stated in the module</h4>
+          <ul class="tight small">${(L.proofScope.assumed||[]).map(x=>`<li>${eng(x)}</li>`).join('')}</ul></div>
+      </div>`:''}
+
+      ${L.named?`<h3 style="margin-top:14px">The theorem</h3>
+        <div class="english">${eng(L.named.english)}</div>
+        <pre class="lean">${hl(L.named.source)}</pre>
+        <p class="tiny"><span class="tag">${esc(L.module)}</span> line ${L.named.line} &middot; theorem <span class="tag">${esc(L.theorem)}</span></p>`
+        :`<div class="note">The proof source for <span class="tag">${esc(L.theorem)}</span> could not be extracted from ${esc(L.module)}.</div>`}
+
+      ${L.supporting.length?`<details><summary>What it is built on &mdash; ${L.supporting.length} supporting definitions and lemmas, each with the author's note</summary>
+        ${L.supporting.map(d=>`<div style="margin:12px 0 16px">
+          <p class="small" style="margin:0 0 4px"><b>${esc(d.name)}</b> <span class="chip">${esc(d.kind)}</span> <span class="tiny">line ${d.line}</span></p>
+          ${d.english?`<div class="english small">${eng(d.english)}</div>`:''}
+          <pre class="lean">${hl(d.source)}</pre></div>`).join('')}</details>`:''}
+
+      ${L.mutations.length?`<details><summary>What had to fail &mdash; ${L.mutations.filter(m=>m.outcome==='rejected').length} of ${L.mutations.length} deliberate breakages correctly rejected</summary>
+        <p class="small mute">A proof nobody tried to break is not evidence. Each row changes the <em>statement</em>, not the proof, and must stop compiling.</p>
+        <table><tr><th>what was changed</th><th>outcome</th></tr>
+        ${L.mutations.map(m=>`<tr><td class="small">${esc(m.description)}</td>
+          <td><span class="chip ${m.outcome==='rejected'?'ok':'bad'}">${esc(m.outcome)}</span></td></tr>`).join('')}</table></details>`:''}
+
+      ${L.verdicts.length?`<details><summary>Does the formal statement say what the claim says? &mdash; ${esc(L.faithfulness||'')}</summary>
+        <p class="small mute">Judged blind by a model from a different company, because the one that wrote the proof cannot grade it.</p>
+        <table><tr><th>assessor</th><th>verdict</th></tr>
+        ${L.verdicts.map(v=>`<tr><td class="small">${esc(v.provider)} / ${esc(v.model)}</td><td><span class="chip">${esc(v.verdict)}</span></td></tr>`).join('')}</table>
+        ${L.assessmentComplete===false?`<div class="note">Only one assessor provider has run. The project rule requires two before a verdict travels with a publication.</div>`:''}</details>`:''}
+
+      ${t?`<details><summary>What the data said &mdash; ${esc(t.verdict)}</summary>
+        <p class="small"><b>Pre-registered hypothesis:</b> ${esc(t.hypothesis)}</p>
+        ${t.measured?`<p class="small"><b>Measured:</b> ${esc(t.measured.value)} <span class="mute">${esc(t.measured.unit||'')}</span>${t.measured.n?` &middot; n = ${esc(t.measured.n)}`:''}</p>`:''}
+        ${t.datasets.length?`<p class="small"><b>Data:</b></p><ul class="tight small">${t.datasets.map(d=>`<li><span class="tag">${esc(d.id)}</span>${d.url?` &middot; <a href="${esc(d.url)}" target="_blank" rel="noopener">source</a>`:''}${d.retrieved?` &middot; retrieved ${esc(String(d.retrieved).slice(0,10))}`:''}${d.sha256?`<br><span class="tiny">sha256 ${esc(String(d.sha256).slice(0,40))}&hellip;</span>`:''}</li>`).join('')}</ul>`:''}
+        ${t.faithfulness?`<p class="small"><b>Independent check that the analysis measures the claim:</b> <span class="chip">${esc(t.faithfulness.verdict)}</span> <span class="tiny">${esc(t.faithfulness.assessor?.model||'')}</span></p>`:''}
+        ${t.caveats&&t.caveats.length?`<p class="small"><b>What it does not establish:</b></p><ul class="tight small">${t.caveats.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
+        <p class="tiny"><span class="tag">${esc(t.dir)}</span></p></details>`:''}
+
+      ${c.context?`<details><summary>Assumptions and formal status, as the module states them</summary><div class="small english">${eng(c.context)}</div></details>`:''}
+      ${L.header?`<details><summary>The module's own introduction</summary><pre class="lean">${esc(L.header)}</pre></details>`:''}
+    </article>`;
+  }).join('');
+  $('#list').innerHTML=html;
+
+  $('#gap').innerHTML=`<h2>Tested against data, not formalised</h2>
+    <p class="lede">These claims have a pre-registered verdict but no machine-checked statement. That gap is the honest state of the project: a data test and a proof are different kinds of evidence, and most claims have at most one.</p>
+    <table><tr><th>claim</th><th>verdict</th><th>measured</th><th>analysis checked?</th></tr>
+    ${D.testedOnly.map(t=>`<tr><td class="small"><span class="tag">${esc(t.claim_id)}</span></td>
+      <td><span class="chip ${vchip(t.verdict)}">${esc(t.verdict)}</span></td>
+      <td class="small mute">${t.measured?esc(String(t.measured.value).slice(0,16)):'&mdash;'}</td>
+      <td class="small">${t.faithfulness?`<span class="chip">${esc(t.faithfulness.verdict)}</span>`:'<span class="tiny mute">not run</span>'}</td></tr>`).join('')}</table>`;
+
+  $('#filter').addEventListener('input',e=>{
+    const q=e.target.value.trim().toLowerCase();
+    document.querySelectorAll('.claim').forEach(el=>{el.style.display=!q||el.dataset.s.includes(q)?'':'none'});
+  });
+}
+})();
+</script>
+</body>
+</html>
