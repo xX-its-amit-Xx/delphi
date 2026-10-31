@@ -68,6 +68,8 @@ const data = {
   fin_size: { why: M.fin_size.why, verified_leads: M.fin_size.verified_leads, pubmed_queries: M.fin_size.pubmed_queries,
     zfin_fin_size_genes: { definition: M.fin_size.zfin_fin_size_genes.definition, count: M.fin_size.zfin_fin_size_genes.count, top: M.fin_size.zfin_fin_size_genes.genes.slice(0, 25) },
     aliases_check: M.fin_size.aliases_check },
+  fin_ratios: (() => { const p = path.join(root, 'genotype/cache/daane2021_fin_ratios.json'); if (!fs.existsSync(p)) return null; const F = JSON.parse(fs.readFileSync(p, 'utf8'));
+    return { source: F.source, n_rows: F.n_rows, groups: F.groups, species: F.species.map(s => ({ group: s.group, species: s.species, n: s.n_specimens, SL_cm_min: s.SL_cm_min, SL_cm_max: s.SL_cm_max, median: s.pectoral_over_SL_median, min: s.pectoral_over_SL_min, max: s.pectoral_over_SL_max })) }; })(),
   not_sourced: M.not_sourced, vetting: M.vetting, slimming: { rule: M.slimming?.rule, nodes_with_omitted_expression_links: Object.keys(M.slimming?.expressed_in_links_omitted_by_node || {}).length },
   crosswalk_rule: M.crosswalk.rule,
 };

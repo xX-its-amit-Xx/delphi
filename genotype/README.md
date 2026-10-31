@@ -94,3 +94,14 @@ reach-synthesis: it has not been checked against those projects' documented infe
 
 Medaka phenotypes (no source queried); ZP identifiers (ZFIN EQ annotations stand in); GO coverage for
 musculoskeletal and integumental systems; any flying-fish data.
+
+## For the Physics thread (#50): measured flying-fish fin proportions
+
+Daane et al. 2021 Data S1A (publisher supplement, fetched from the Elsevier CDN; `cache/daane2021_data_s1_mmc2.xlsx`)
+holds paired fin and standard lengths of 109 beloniform museum specimens (Harvard MCZ). Re-tabulated by
+`fin_ratios_table.py` into `cache/daane2021_data_s1A_fin_measurements.csv` (per specimen) and
+`cache/daane2021_fin_ratios.json` (per species and group). Pectoral fin / standard length: flying fish median 0.687
+(range 0.41 to 0.82, n 49, SL 1.7 to 24 cm, three species); gliding halfbeaks 0.274; halfbeaks 0.14; needlefishes 0.088.
+Lengths only: no mass, fin area, aspect ratio or glide data. PMC's copy of the supplement answered with a reCAPTCHA
+page; the Perathoner 2014 and Stewart 2021 full texts hold zebrafish fin measurements only (figures), no flying-fish
+numbers. Draft record: `nanopubs/unsigned/daane-2021-fin-length-ratios.trig`.

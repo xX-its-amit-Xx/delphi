@@ -236,6 +236,33 @@ records.push(record({
   evLabel: 'Bgee SPARQL probe call record', evDesc: 'Read from genotype/cache/calls.json, name bgee_sparql_probe.',
 }));
 
+// Daane 2021 Data S1A: measured pectoral-fin to standard-length ratios of museum specimens, the one flying-fish
+// measurement set this thread holds; handed to the Physics thread for #50.
+const FR = rd('genotype/cache/daane2021_fin_ratios.json');
+const ff = FR.groups['flying fish'], fh = FR.groups['flying halfbeak'], hb = FR.groups['halfbeak'], nf = FR.groups['needlefish'];
+DS.daane_s1 = { id: 'daane-2021-data-s1-fin-measurements', title: 'Daane et al. 2021 Data S1 (publisher supplement mmc2.xlsx): sheet A, paired fin and standard lengths of beloniform specimens in the Harvard Museum of Comparative Zoology', landing: 'https://doi.org/10.1016/j.cub.2021.08.054', licence: 'https://www.elsevier.com/tdm/userlicense/1.0/', calls: ['elsevier_cdn_daane2021_mmc2_data_s1'] };
+records.push(record({
+  file: 'daane-2021-fin-length-ratios.trig', slug: 'genotype-daane-2021-pectoral-fin-to-standard-length-ratios',
+  label: `Measured on ${ff.n_specimens} museum flying-fish specimens (3 species, standard length ${ff.SL_cm_min} to ${ff.SL_cm_max} cm), pectoral fin length is ${ff.pectoral_over_SL_min} to ${ff.pectoral_over_SL_max} of standard length (median ${ff.pectoral_over_SL_median}), against ${hb.pectoral_over_SL_median} in halfbeaks and ${nf.pectoral_over_SL_median} in needlefishes (Daane et al. 2021, Data S1A)`,
+  status: 'supported (published measurements, re-tabulated; no new measurement)',
+  description: `Daane et al. 2021 measured paired fin and standard lengths of beloniform specimens in the Harvard Museum of Comparative Zoology (Data S1A, ${FR.n_rows} specimens in four groups). Pectoral fin length over standard length, recomputed from the length columns: flying fish (Cheilopogon furcatus, Exocoetus volitans, Hirundichthys rondeleti) median ${ff.pectoral_over_SL_median}, range ${ff.pectoral_over_SL_min} to ${ff.pectoral_over_SL_max}, n ${ff.n_specimens}; gliding halfbeaks (Euleptorhamphus velox, Oxyporhamphus micropterus) median ${fh.pectoral_over_SL_median}, n ${fh.n_specimens}; halfbeaks median ${hb.pectoral_over_SL_median}, n ${hb.n_specimens}; needlefishes median ${nf.pectoral_over_SL_median}, n ${nf.n_specimens}. The paper's own reading: "the length of flying fish pectoral fins increases rapidly" with body size, the allometry "was identical across the two- and four-wing flying fishes", and the gliding halfbeaks are "intermediate between halfbeaks and flying fishes". This is the one flying-fish measurement set the genotype thread holds; it is proportion, which is what Daane's genes (lat4a, kcnh2a) are about.`,
+  context: `Per-specimen rows in genotype/cache/daane2021_data_s1A_fin_measurements.csv; summaries in genotype/cache/daane2021_fin_ratios.json. Fetched from the publisher CDN after PMC answered the author-manuscript supplement URL with a reCAPTCHA page.`,
+  test: 'Re-tabulation: pectoral_cm / SL_cm per specimen, then min, median, mean and max per species and group. No statistical test; no allometric fit was done here.',
+  metrics: [
+    ['n_specimens_all_groups', FR.n_rows, 'rows in Data S1A'], ['n_specimens_flying_fish', ff.n_specimens, 'flying-fish specimens with both lengths'],
+    ['flying_fish_pectoral_over_SL_median', ff.pectoral_over_SL_median, 'median pectoral fin length / standard length, flying fish', 'decimal'],
+    ['flying_fish_pectoral_over_SL_min', ff.pectoral_over_SL_min, 'minimum, flying fish', 'decimal'], ['flying_fish_pectoral_over_SL_max', ff.pectoral_over_SL_max, 'maximum, flying fish', 'decimal'],
+    ['flying_fish_SL_cm_min', ff.SL_cm_min, 'smallest flying-fish standard length, cm', 'decimal'], ['flying_fish_SL_cm_max', ff.SL_cm_max, 'largest flying-fish standard length, cm', 'decimal'],
+    ['flying_halfbeak_pectoral_over_SL_median', fh.pectoral_over_SL_median, 'median, gliding halfbeaks', 'decimal'],
+    ['halfbeak_pectoral_over_SL_median', hb.pectoral_over_SL_median, 'median, non-gliding halfbeaks', 'decimal'],
+    ['needlefish_pectoral_over_SL_median', nf.pectoral_over_SL_median, 'median, needlefishes', 'decimal'],
+  ],
+  datasets: ['daane_s1'],
+  notEstablished: 'Preserved museum specimens, lengths only: no body mass, no fin area or aspect ratio, no glide speed or distance. It does not establish any scaling exponent (no fit was done here) nor that the ratio is constant with size: flying-fish specimens under 5 cm SL have a median ratio of 0.645 (n 21) against 0.70 at 5 cm and above (n 28), so small juveniles are not simply scaled adults.',
+  prereg: 'none: a published dataset re-tabulated for the Physics thread.',
+  evLabel: 'Pectoral fin length over standard length by group, from Daane 2021 Data S1A', evDesc: 'Computed by genotype/fin_ratios_table.py from the cached spreadsheet.',
+}));
+
 fs.writeFileSync(path.join(here, 'manifest.json'), JSON.stringify({ built: NOW, map: MAP, map_sha256: mapSha, map_bytes: mapSize, unsigned: true, records }, null, 2));
 console.log(`${records.length} unsigned draft records in ${out}`);
 
