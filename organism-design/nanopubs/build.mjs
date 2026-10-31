@@ -154,20 +154,12 @@ const NT = 'https://w3id.org/np/o/ntemplate/';
 const TEMPLATE_NOTE =
   'No assertion, provenance or pubinfo template is declared. The pipeline maps each Project Delphi v2.0 class to the published ProbKnow template for that class, and those published templates still use legacy probknow terms, so a v2.0 record cannot instantiate them: check-nanopub-conformance.py reports every assertion triple unmatched and the required statement missing. Migrated templates exist in the ontology source but have not been republished; see the record delphir:claim/delphi-v2-template-declarations-are-false for the counts and the options.';
 
-function emit(file, entity, agent, extra) {
+function emit(file, entity, agent) {
   const built = buildEntityNanopub({ ...entity, domain: DOMAIN, paper: null });
   const kept = reattribute(built.triples, agent).filter(
     t => !(t.predicate.startsWith(NT) && t.predicate.includes('wasCreatedFrom')),
   );
   const pubG = kept.find(t => t.graph.endsWith('/pubinfo')).graph;
-  // Sub-nodes that the builder's flat statement list cannot express, because every statement it takes
-  // has the entity as its subject. Used for one node per SPARQL query. Only the entity itself is
-  // introduced (npx:introduces); these nodes describe it and mint no new claim.
-  if (extra) {
-    const assertG = kept.find(t => t.graph.endsWith('/assertion')).graph;
-    const subject = kept.find(t => t.graph === assertG && t.predicate === `${RDF}type`).subject;
-    kept.push(...extra({ subject, assertG }));
-  }
   kept.push({ subject: built.preUri, predicate: `${RDFS}comment`, object: lit(TEMPLATE_NOTE), graph: pubG });
   if (!operator) kept.push({ subject: built.preUri, predicate: `${RDFS}comment`, object: lit(OWNER_NOTE), graph: pubG });
   const trig = triplesToTrig(kept, built.preUri);
@@ -194,47 +186,15 @@ const notEstablished = text => S(`${RDFS}comment`, `Does not establish: ${text}`
 //    example holding the queries and the identifiers behind every node.
 // ─────────────────────────────────────────────────────────────────────────────
 const exDir = path.join(root, 'organism-design/examples');
-const cacheDir = path.join(root, 'organism-design/cache');
-// blueprint.mjs caches each response at sha256("sparql:" + query text), so that hash is both the
-// cache key and the name of the file holding the bytes. Recording it and the hash of the file lets a
-// clean checkout confirm it replayed the same responses, without the record carrying the responses.
-const queryKey = text => crypto.createHash('sha256').update('sparql:' + text).digest('hex');
-
-// Motivation, recorded only where a source sentence exists in this repository. It is an analogy that
-// prompted the exercise and nothing stronger: Darwin wrote about a transition that might have
-// happened, and a blueprint of present-day anatomy says nothing about whether one did. The record
-// therefore cites the sentence with dcterms:references and states the limit in the same breath; no
-// equivalence, derivation or support relation is asserted between the two.
-const MOTIVATION = {
-  'a-flying-fish': {
-    source: 'darwin-origin/inputs/pg1228.txt#line=5639,5642',
-    work: 'Charles Darwin, On the Origin of Species by Means of Natural Selection, chapter VI; Project Gutenberg eBook 1228',
-    quote:
-      'it is conceivable that flying-fish, which now glide far through the air, slightly rising and turning by the aid of their fluttering fins, might have been modified into perfectly winged animals.',
-    note:
-      'Motivation by analogy only. Darwin names a hypothetical transition from gliding fish to winged animal; this blueprint lists the anatomy that Uberon and the Cell Ontology record for the living family, at one point in time. It is not evidence for or against the transition, it does not assert that these structures are the ones that would change, and nothing here is equivalent to or derived from the sentence. The mention is already recorded in organisms/merged/taxa.json under key gbif:2968.',
-    taxon_identifiers: ['https://www.gbif.org/species/2968', 'http://www.wikidata.org/entity/Q183686'],
-  },
-};
-
 for (const f of fs.readdirSync(exDir).filter(f => f.endsWith('.json')).sort()) {
   const b = rd(path.join(exDir, f));
   const slug = f.replace(/\.json$/, '');
-  const mot = MOTIVATION[slug] || null;
-  // Distinct ontology terms, not placements in the hierarchy: the same tissue or cell type can be part
-  // of several organs. Anything a reader sees uses these.
-  const cd = b.counts_distinct || b.counts;
   const relFile = `organism-design/examples/${f}`;
   const fileSha = sha(path.join(exDir, f));
   const t = b.reading.taxon;
   const q = Object.entries(b.queries);
   const retrieved = q.map(([, v]) => v.retrieved).sort().at(-1);
-  // Two different things, previously conflated under one name: structures the description itself
-  // named, and organ systems pulled in only because one of those structures is part of them.
-  const namedNodes = [...new Set(b.nodes.filter(n => n.named_in_description).map(n => n.label))];
-  const addedSystems = b.nodes.filter(n => n.added_because).map(n => n.label);
-  const notRead = b.reading.words_not_recognised || [];
-  const cutT = b.pruning?.totals || { organs: 0, tissues: 0, cells: 0 };
+  const named = b.nodes.filter(n => n.added_because).map(n => n.label);
   const organs = b.nodes.filter(n => n.level === 'organ');
   const tally = { stated: 0, weak: 0, none: 0 };
   for (const o of organs) {
@@ -252,8 +212,8 @@ for (const f of fs.readdirSync(exDir).filter(f => f.endsWith('.json')).sort()) {
       id: `organism-blueprint-${slug}-queries`,
       label: `Ontology queries and term identifiers behind the "${b.input.description}" blueprint`,
       description:
-        `${q.length} SPARQL queries against Ubergraph (Uberon, Cell Ontology, Protein Ontology and NCBI Taxonomy with materialised subClassOf and part_of closures). Each query is a part of this evidence item below, carrying its purpose, its full query text, the endpoint, the retrieval time, the row count, and two SHA-256 hashes: sparql-sha256 is the hash of the query text, which is also the name of the file holding the response under organism-design/cache/, and response-sha256 is the hash of that file. A clean checkout replays the same bytes offline and can confirm it did. Latest retrieval ${retrieved}. ` +
-        `The ${upper.length} body, organ-system and organ identifiers of this blueprint are referenced below; the ${cd.tissue} tissue and ${cd.cell} cell-type identifiers are listed in the cited file.`,
+        `${q.length} SPARQL queries against Ubergraph (Uberon, Cell Ontology, Protein Ontology and NCBI Taxonomy with materialised subClassOf and part_of closures), each stored in ${relFile} with its purpose, the query text, the endpoint, the retrieval time and the row count. Every response is cached under organism-design/cache/ keyed by the SHA-256 of the query text, so the blueprint rebuilds offline from the same bytes. Latest retrieval ${retrieved}. ` +
+        `The ${upper.length} body, organ-system and organ identifiers of this blueprint are referenced below; the ${b.counts.tissue} tissue and ${b.counts.cell} cell-type identifiers are listed in the cited file.`,
       statements: [
         S(`${DC}source`, relFile),
         S(`${DC}identifier`, `sha256:${fileSha}`),
@@ -262,35 +222,9 @@ for (const f of fs.readdirSync(exDir).filter(f => f.endsWith('.json')).sort()) {
         S(`${RDFS}seeAlso`, 'http://purl.obolibrary.org/obo/uberon.owl'),
         S(`${RDFS}seeAlso`, 'http://purl.obolibrary.org/obo/cl.owl'),
         ...upper.map(n => S(`${DC}references`, n.iri)),
-        // The taxon as other registries identify it, where the team's inventory records them.
-        ...(mot?.taxon_identifiers ?? []).map(i => S(`${DC}references`, i)),
-        ...q.map(([id]) => S(`${DC}hasPart`, `${DELPHIR}evidence/organism-blueprint-${slug}-queries/${id}`)),
       ],
     },
     AGENTS.blueprint,
-    ({ subject, assertG }) => {
-      const out = [];
-      for (const [id, v] of q) {
-        const node = `${subject}/${id}`;
-        const key = queryKey(v.sparql);
-        const cf = path.join(cacheDir, `${key}.json`);
-        out.push(
-          { subject: node, predicate: `${RDF}type`, object: `${PROV}Entity`, graph: assertG },
-          { subject: node, predicate: `${RDFS}label`, object: lit(`${id}: ${v.purpose}`), graph: assertG },
-          { subject: node, predicate: `${DC}isPartOf`, object: subject, graph: assertG },
-          { subject: node, predicate: `${PROV}atLocation`, object: v.endpoint, graph: assertG },
-          { subject: node, predicate: `${SCHEMA}text`, object: lit(v.sparql), graph: assertG },
-          { subject: node, predicate: `${PROV}generatedAtTime`, object: `${lit(v.retrieved)}^^<${XSD}dateTime>`, graph: assertG },
-          { subject: node, predicate: `${DC}extent`, object: lit(`${v.rows} result row${v.rows === 1 ? "" : "s"}`), graph: assertG },
-          // Two hashes: the first names the cache file, the second pins the bytes inside it.
-          { subject: node, predicate: `${DC}identifier`, object: lit(`sparql-sha256:${key}`), graph: assertG },
-          ...(fs.existsSync(cf)
-            ? [{ subject: node, predicate: `${DC}identifier`, object: lit(`response-sha256:${sha(cf)}`), graph: assertG }]
-            : [{ subject: node, predicate: `${RDFS}comment`, object: lit('The cached response for this query is not in the checkout, so its bytes are not pinned here.'), graph: assertG }]),
-        );
-      }
-      return out;
-    },
   );
 
   emit(
@@ -298,21 +232,13 @@ for (const f of fs.readdirSync(exDir).filter(f => f.endsWith('.json')).sort()) {
     {
       type: `${DELPHI}Claim`,
       id: `organism-blueprint-${slug}`,
-      label: `Proposed anatomical blueprint for "${b.input.description}": ${cd.organ_system} organ systems, ${cd.organ} organs, ${cd.tissue} tissues and ${cd.cell} cell types that Uberon and the Cell Ontology record for ${t.label}.`,
+      label: `Proposed anatomical blueprint for "${b.input.description}": ${b.counts.organ_system} organ systems, ${b.counts.organ} organs, ${b.counts.tissue} tissues and ${b.counts.cell} cell types that Uberon and the Cell Ontology record for ${t.label}.`,
       description:
         `The description "${b.input.description}" was resolved to ${t.label} (NCBITaxon:${t.taxid}), ${t.chosen_because}. ` +
-        `From that taxon the tool proposes a body > organ system > organ > tissue > cell hierarchy of existing ontology terms: ${cd.organ_system} organ systems, ${cd.organ} organs, ${cd.tissue} tissues and ${cd.cell} cell types, distinct terms counted once each. A tissue or cell type that is part of several organs is shown under each, which is why the file lists ${b.counts.tissue} tissue and ${b.counts.cell} cell placements. ` +
-        (b.reading.anatomy_words.length
-          ? `Structures read from the description and kept regardless of ranking: ${b.reading.anatomy_words.map(a => `"${a.matched}" as ${a.label || a.term}`).join(', ')}. `
-          : 'No structure word in the description was recognised, so every node below comes from the taxon alone. ') +
-        (addedSystems.length ? `Organ systems present only because such a structure is part of them: ${addedSystems.join(', ')}. ` : '') +
-        (notRead.length
-          ? `Words the lexicon does not know, so that nothing in the blueprint stands for them: ${notRead.join(', ')}. `
-          : 'Every content word of the description was recognised. ') +
+        `From that taxon the tool proposes a body > organ system > organ > tissue > cell hierarchy of existing ontology terms: ${b.counts.organ_system} organ systems, ${b.counts.organ} organs, ${b.counts.tissue} tissues and ${b.counts.cell} cell types. ` +
+        (named.length ? `Structures named in the description and therefore kept regardless of ranking: ${named.join(', ')}. ` : '') +
         `Of the ${organs.length} organs, ${tally.stated} carry a taxon basis stated by the ontology for this taxon or an ancestor, ${tally.weak} are stated only for all animals, and ${tally.none} are merely not excluded. ` +
-        `The per-parent limits cut a further ${cutT.organs} organs, ${cutT.tissues} tissues and ${cutT.cells} cell types, each listed in the cited file with the query that found it; no structure named in the description was cut. ` +
-        `The genome sketch is not a genome and is not part of this proposal: the Cell Ontology records marker gene products for ${b.genome_sketch.cells_with_markers} of the ${cd.cell} cell types and nothing for the other ${cd.cell - b.genome_sketch.cells_with_markers}. ` +
-        `What was assembled is an anatomy, not an organism. This is a proposal assembled from ontology statements: it is not an observation of any organism, and no specimen, image or measurement enters it.`,
+        `This is a proposal assembled from ontology statements. It is not an observation of any organism, and no specimen, image or measurement enters it.`,
       statements: [
         S(`${DELPHI}hypothesisType`, 'ontology-derived design proposal'),
         S(
@@ -328,18 +254,8 @@ for (const f of fs.readdirSync(exDir).filter(f => f.endsWith('.json')).sort()) {
           `Take a curated anatomical atlas for ${t.label} that was not used here, and count two things: structures the atlas lists at organ level that this blueprint omits, and organs this blueprint proposes that the atlas does not record for the taxon. A blueprint whose "stated" organs disagree with the atlas would falsify the selection rule; disagreement confined to the "not excluded" organs would instead show the ontology's taxon constraints are too sparse, which is the limit already recorded here.`,
         ),
         notEstablished(
-          `that an individual of ${t.label} has these structures, that the list is complete, or that any part of it was measured. Uberon's taxon constraints are sparse, so organs marked "not excluded" may be absent in the organism; tissues and cell types are ontology part_of statements, not counts from a specimen. Nothing here is a genome, and no function is predicted.` +
-            (mot ? ' In particular, this proposal is not evidence about the transition the motivating sentence imagines, in either direction.' : ''),
+          `that an individual of ${t.label} has these structures, that the list is complete, or that any part of it was measured. Uberon's taxon constraints are sparse, so organs marked "not excluded" may be absent in the organism; tissues and cell types are ontology part_of statements, not counts from a specimen. Nothing here is a genome, and no function is predicted.`,
         ),
-        ...(mot
-          ? [
-              S(`${DC}references`, mot.source),
-              S(
-                `${RDFS}comment`,
-                `Motivated by analogy with a sentence in ${mot.work}, at ${mot.source}: "${mot.quote}" ${mot.note}`,
-              ),
-            ]
-          : []),
         S(`${RDFS}seeAlso`, `${REPO}/blob/main/${relFile}`),
       ],
     },

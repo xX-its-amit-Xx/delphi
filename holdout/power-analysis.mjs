@@ -54,7 +54,7 @@ const out = {
   tests: results,
   inventory,
   decisive_exams_by_clade: decisive,
-  clade_currently_frozen: (() => { const s = JSON.parse(fs.readFileSync(path.join(root, 'holdout/split.json'), 'utf8')); return `${s.clade} (${s.provisional ? 'provisional' : `${s.decision?.status || 'confirmed'} ${s.decision?.decided_on || ''}`.trim()})`; })()
+  clade_currently_frozen: 'Aves (provisional)'
 };
 fs.writeFileSync(path.join(root, 'holdout/power-analysis.json'), JSON.stringify(out, null, 1) + '\n');
 console.log('decisive exams by clade:', JSON.stringify(decisive));

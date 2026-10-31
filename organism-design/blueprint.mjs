@@ -83,16 +83,6 @@ const words = text.split(' ');
 const grams = [];
 for (let n = 3; n >= 1; n--) for (let i = 0; i + n <= words.length; i++) grams.push(words.slice(i, i + n).join(' '));
 
-// Where each phrase occurs in the description, as [start, end) word positions, and which words the
-// tool managed to read. A word left uncovered is a word no list knows, and the output says so: the
-// alternative is a blueprint that quietly omits the structure the reader cared about. (The hub thread
-// found exactly that: "enlarged pectoral fins" named a structure no entry matched, and the file did
-// not mention it.)
-const occ = phrase => { const pw = phrase.split(' '); const out = []; for (let i = 0; i + pw.length <= words.length; i++) if (pw.every((w, j) => words[i + j] === w)) out.push([i, i + pw.length]); return out; };
-const covered = new Array(words.length).fill(false);
-const cover = phrase => { for (const [s, e] of occ(phrase)) for (let i = s; i < e; i++) covered[i] = true; };
-const inside = (a, b) => a[0] >= b[0] && a[1] <= b[1];
-
 const found = { taxon: [], anatomy: [], functions: [], habitat: [] };
 // 1a. taxon: the team's inventory first (common and scientific names), then the lexicon.
 const invIndex = new Map();
@@ -103,44 +93,23 @@ for (const t of inventory) {
 }
 for (const g of grams) {
   const t = invIndex.get(g);
-  if (t) { cover(g); if (!found.taxon.some(x => x.taxid === t.identifiers.ncbi_taxid)) found.taxon.push({ matched: g, taxid: t.identifiers.ncbi_taxid, name: t.accepted_name, rank: t.rank, source: { file: 'organisms/merged/taxa.json', key: t.key, gbif: t.identifiers.gbif_usage_key || null, wikidata: t.identifiers.wikidata_qid || null } }); }
-  // The entry recorded is the key that actually matched, which is not always the gram: the fallback
-  // strips a trailing plural s.
-  const key = lexicon.taxon_words[g] ? g : lexicon.taxon_words[g.replace(/s$/, '')] ? g.replace(/s$/, '') : null;
-  const lx = key && lexicon.taxon_words[key];
-  if (lx) { cover(g); if (!found.taxon.some(x => 'NCBITaxon_' + x.taxid === lx)) found.taxon.push({ matched: g, taxid: +lx.replace('NCBITaxon_', ''), source: { file: 'organism-design/lexicon.json', entry: 'taxon_words.' + key } }); }
+  if (t && !found.taxon.some(x => x.taxid === t.identifiers.ncbi_taxid)) found.taxon.push({ matched: g, taxid: t.identifiers.ncbi_taxid, name: t.accepted_name, rank: t.rank, source: { file: 'organisms/merged/taxa.json', key: t.key, gbif: t.identifiers.gbif_usage_key || null, wikidata: t.identifiers.wikidata_qid || null } });
+  const lx = lexicon.taxon_words[g] || lexicon.taxon_words[g.replace(/s$/, '')];
+  if (lx && !found.taxon.some(x => 'NCBITaxon_' + x.taxid === lx)) found.taxon.push({ matched: g, taxid: +lx.replace('NCBITaxon_', ''), source: { file: 'organism-design/lexicon.json', entry: 'taxon_words.' + g } });
 }
-// 1b. anatomy words. Grams run longest first, so a phrase is read at the most specific entry that
-// matches it: "enlarged pectoral fins" resolves to pectoral fin, and the "fins" sitting inside that
-// phrase is not added a second time as a generic fin. The less specific reading is recorded, not
-// dropped silently, and it is only suppressed when every one of its occurrences lies inside a longer
-// phrase that was matched, so "fins and pectoral fins" still yields both.
-const subsumed = [];
+// 1b. anatomy words.
 for (const g of grams) {
   const a = lexicon.anatomy_words[g];
-  if (!a || typeof a !== 'string') continue;
-  cover(g);
-  if (found.anatomy.some(x => x.term === a)) continue;
-  const longer = found.anatomy.find(x => x.matched.split(' ').length > g.split(' ').length && occ(g).every(o => occ(x.matched).some(l => inside(o, l))));
-  if (longer) { subsumed.push({ matched: g, term: a, read_instead_as: { matched: longer.matched, term: longer.term }, source: { file: 'organism-design/lexicon.json', entry: 'anatomy_words.' + g } }); continue; }
-  found.anatomy.push({ matched: g, term: a, source: { file: 'organism-design/lexicon.json', entry: 'anatomy_words.' + g } });
+  if (a && typeof a === 'string' && !found.anatomy.some(x => x.term === a)) found.anatomy.push({ matched: g, term: a, source: { file: 'organism-design/lexicon.json', entry: 'anatomy_words.' + g } });
 }
 // 1c. functions (stem match with a real inflection, so "hear" does not match "heart") and habitat.
 for (const [stem, v] of Object.entries(lexicon.function_words)) {
   if (stem.startsWith('_')) continue;
   const re = new RegExp('^' + stem.replace(/[-]/g, '\\-') + '(s|es|ed|ing|ion|ions|ation|ive|ory|al|ly|esis|tion|tive|e)?$');
-  const hitWords = stem.includes(' ') ? (text.includes(stem) ? [stem] : []) : words.filter(w => re.test(w));
-  if (!hitWords.length) continue;
-  for (const w of hitWords) cover(w);
-  if (!found.functions.some(x => x.go === v.go)) found.functions.push({ matched: stem, matched_words: [...new Set(hitWords)], go: v.go, curated_structures: v.structures, source: { file: 'organism-design/lexicon.json', entry: 'function_words.' + stem } });
+  const hit = stem.includes(' ') ? text.includes(stem) : words.some(w => re.test(w));
+  if (hit && !found.functions.some(x => x.go === v.go)) found.functions.push({ matched: stem, go: v.go, curated_structures: v.structures, source: { file: 'organism-design/lexicon.json', entry: 'function_words.' + stem } });
 }
-for (const [w, env] of Object.entries(lexicon.habitat_words)) if (!w.startsWith('_') && grams.includes(w)) { cover(w); found.habitat.push({ matched: w, term: env, source: { file: 'organism-design/lexicon.json', entry: 'habitat_words.' + w }, used_for_filtering: false }); }
-
-// Words the lexicon does not know. Function words of English are excluded so the list stays readable;
-// everything else the description says and the tool could not read is named here, because a missing
-// entry is the likeliest reason a structure is absent from the blueprint below.
-const GRAMMAR = new Set(('a an the and or but with without that which who whose this these those there here of in on at to for from by as is are was were be been being has have had its it they them their other another some any all both each every no not non more most less least very much many few one two three same such than then when while where how what why if into over under above below through across along around near between about per also only just still even own so too can could may might will would should must do does did done get gets got make makes made use uses used like called known type kind sort form large small big little long short high low new old'.split(' ')));
-const notRead = [...new Set(words.filter((w, i) => !covered[i] && w.length > 2 && !GRAMMAR.has(w) && !/^[0-9]+$/.test(w)))];
+for (const [w, env] of Object.entries(lexicon.habitat_words)) if (!w.startsWith('_') && grams.includes(w)) found.habitat.push({ matched: w, term: env, source: { file: 'organism-design/lexicon.json', entry: 'habitat_words.' + w }, used_for_filtering: false });
 
 // Pick the most specific taxon: the one that is a subclass of all the others (checked live).
 let taxon = null;
@@ -256,10 +225,6 @@ for (const s of systems) addNode({ id: short(s.iri), iri: s.iri, label: s.label,
 // the organ is, not for importance).
 const ORGAN_SUBSETS = ['major_organ', 'organ_slim', 'efo_slim', 'vertebrate_core'];
 const organs = [];
-// What the per-parent limits cut. Recorded rather than left implicit, so that a structure missing from
-// the blueprint can be told apart from a structure the ontology never offered. Raising a limit is a
-// decision for whoever reads this, not something the tool should do quietly to look complete.
-const cut = { organs: [], tissues: [], cells: [] };
 let organQuery = null;
 if (systems.length) {
   const r = await sparql('core organs in each system, with the number of cell types recorded for each', `SELECT ?sys ?o ?l (MAX(IF(?os = ${sub('major_organ')}, 1, 0)) AS ?major) (COUNT(DISTINCT ?c) AS ?ncells) WHERE { VALUES ?sys { ${systems.map(s => `<${s.iri}>`).join(' ')} } ?o obo:BFO_0000050 ?sys ; rdfs:subClassOf obo:UBERON_0000062 ; rdfs:label ?l ; oio:inSubset ?os . FILTER(?os IN (${ORGAN_SUBSETS.map(sub).join(',')})) FILTER NOT EXISTS { ?o oio:inSubset ?bad . FILTER(?bad IN (${sub('grouping_class')}, ${sub('non_informative')}, ${sub('upper_level')})) } ${isU('?o')} ${taxonFilter('?o')} OPTIONAL { ?c obo:BFO_0000050 ?o . ${isCL('?c')} } } GROUP BY ?sys ?o ?l ORDER BY ?sys DESC(?major) DESC(?ncells) ?l`);
@@ -269,7 +234,6 @@ if (systems.length) {
     const list = per[s.iri] || [];
     const named = list.filter(o => keptAnatomy.includes(o.iri) && organSystem[o.iri] === s.iri);
     const rest = list.filter(o => !named.includes(o)).slice(0, Math.max(0, LIM.organs - named.length));
-    for (const o of list) if (!named.includes(o) && !rest.includes(o)) cut.organs.push({ iri: o.iri, label: o.label, system: s.iri, system_label: s.label, major_organ: o.major, cell_types_recorded: o.ncells, reason: `ranked below the per-system organ limit of ${LIM.organs}; this system offered ${list.length} core organs for ${taxon.label}`, via: r.id });
     for (const o of [...named, ...rest]) { organs.push({ ...o, system: s.iri, named: named.includes(o) }); addNode({ id: short(o.iri), iri: o.iri, label: o.label, level: 'organ', parent: s.iri, relation: 'part_of', ontology: 'UBERON', via: r.id, major_organ: o.major, cell_types_recorded: o.ncells, named_in_description: named.includes(o), organs_available_in_system: list.length }); }
   }
   organQuery = r.id;
@@ -302,12 +266,10 @@ if (organs.length) {
   const perT = {};
   for (const row of tq.rows) (perT[row.o] ??= []).push(row);
   for (const o of organs) for (const row of (perT[o.iri] || []).slice(0, LIM.tissues)) addNode({ id: short(row.t), iri: row.t, label: row.l, level: 'tissue', parent: o.iri, relation: 'part_of', ontology: 'UBERON', via: tq.id, cell_types_recorded: +row.ncells, tissues_available_in_organ: perT[o.iri].length });
-  for (const o of organs) { const all = perT[o.iri] || []; if (all.length > LIM.tissues) cut.tissues.push({ parent: o.iri, parent_label: o.label, kept: LIM.tissues, available: all.length, omitted: all.length - LIM.tissues, omitted_labels: all.slice(LIM.tissues).map(r => r.l), via: tq.id }); }
   const cq = await sparql('cell types that are part of each organ', `SELECT ?o ?c ?l WHERE { VALUES ?o { ${V} } ?c obo:BFO_0000050 ?o ; rdfs:subClassOf obo:CL_0000000 ; rdfs:label ?l . ${isCL('?c')} ${taxonFilter('?c')} } ORDER BY ?o ?l`);
   const perC = {};
   for (const row of cq.rows) (perC[row.o] ??= []).push(row);
   for (const o of organs) for (const row of (perC[o.iri] || []).slice(0, LIM.cells)) addNode({ id: short(row.c), iri: row.c, label: row.l, level: 'cell', parent: o.iri, relation: 'part_of', ontology: 'CL', via: cq.id, cell_types_available_in_organ: perC[o.iri].length });
-  for (const o of organs) { const all = perC[o.iri] || []; if (all.length > LIM.cells) cut.cells.push({ parent: o.iri, parent_label: o.label, kept: LIM.cells, available: all.length, omitted: all.length - LIM.cells, omitted_labels: all.slice(LIM.cells).map(r => r.l), via: cq.id }); }
 }
 
 // ---------------------------------------------------------------- 4. genome sketch (labelled)
@@ -324,32 +286,15 @@ if (cellIris.length) {
 
 // ---------------------------------------------------------------- 5. write
 const levels = ['body', 'organ_system', 'organ', 'tissue', 'cell'];
-// A node is one placement in the hierarchy, not one term: the same tissue or cell type can be part of
-// several organs and then appears once per parent. Both numbers are reported, because calling the
-// placement count a count of cell types overstates it (343 placements of 257 distinct types, for the
-// flying fish). Anything written for a reader should use counts_distinct.
 const counts = Object.fromEntries(levels.map(l => [l, nodes.filter(n => n.level === l).length]));
-const countsDistinct = Object.fromEntries(levels.map(l => [l, new Set(nodes.filter(n => n.level === l).map(n => n.iri)).size]));
 const out = {
   tool: 'organism-design/blueprint.mjs',
   built: new Date().toISOString(),
   input: { description },
-  reading: { taxon, taxon_words: found.taxon, anatomy_words: found.anatomy, anatomy_words_subsumed: subsumed, function_words: found.functions, habitat_words: found.habitat, conflicts, words_not_recognised: notRead, organ_system_query: organSystemQuery, organ_query: organQuery },
+  reading: { taxon, taxon_words: found.taxon, anatomy_words: found.anatomy, function_words: found.functions, habitat_words: found.habitat, conflicts, organ_system_query: organSystemQuery, organ_query: organQuery },
   holdout,
   limits: LIM,
   counts,
-  counts_distinct: countsDistinct,
-  counts_note:
-    'counts are placements in the hierarchy: a tissue or cell type that is part of several organs is counted once per organ. counts_distinct are distinct ontology terms. Use counts_distinct when saying how many tissues or cell types a blueprint has.',
-  pruning: {
-    note: 'The per-parent limits below cap how many organs per system, tissues per organ and cell types per organ enter the blueprint; everything they cut is listed here with the query it came from, so a raised limit reproduces it from the cache. A structure named in the description is never cut: it is added before the limit applies and kept even where Uberon does not class it as an organ. So if the description names a structure and the blueprint lacks it, the limits are not the reason; look at reading.words_not_recognised and reading.conflicts.',
-    limits: LIM,
-    named_structures_cut: keptAnatomy.filter(i => !nodes.some(n => n.iri === i)).map(i => ({ iri: i, label: termLabels[i] || short(i) })),
-    organs: cut.organs,
-    tissues_per_organ: cut.tissues,
-    cells_per_organ: cut.cells,
-    totals: { organs: cut.organs.length, tissues: cut.tissues.reduce((s, x) => s + x.omitted, 0), cells: cut.cells.reduce((s, x) => s + x.omitted, 0) },
-  },
   nodes,
   genome_sketch: sketch,
   queries,
@@ -360,9 +305,6 @@ const out = {
     'Organ systems and organs are limited to terms Uberon marks in its own core subsets (uberon_slim, efo_slim, vertebrate_core, major_organ, organ_slim); structures named in the description are kept regardless.',
     'Organs are ranked major organs first, then by how many cell types the Cell Ontology records for them, which measures curation effort, not biology.',
     'Links from a function word to a structure come either from the ontology (capable_of, reported as such) or from the hand-written lexicon (reported as curated).',
-    'A description is read at the most specific lexicon entry that matches it, longest phrase first; a shorter reading wholly inside a longer one is recorded under reading.anatomy_words_subsumed instead of being added again.',
-    'Words the lexicon does not know are listed under reading.words_not_recognised. The tool reads a word list, not English: an unrecognised word means the blueprint says nothing about whatever that word named.',
-    'Everything the per-parent limits cut is listed under "pruning", and structures named in the description are never cut. A named structure absent from the blueprint was either unrecognised or taxon-excluded, and both are reported.',
     'The genome sketch is marker gene products from the Cell Ontology, not a genome.',
     'Descriptions that resolve inside the held-out clade are refused and leave no file behind; the check and its query are recorded under "holdout" for every built blueprint.'
   ]
@@ -372,4 +314,4 @@ const outPath = arg('out', path.join(here, 'examples', slug + '.json'));
 fs.mkdirSync(path.dirname(outPath), { recursive: true });
 fs.writeFileSync(outPath, JSON.stringify(out, null, 1));
 const cached = Object.values(queries).filter(q => q.cached).length;
-console.log(`${outPath}\n  taxon: ${taxon.label} (${taxon.term}); ${countsDistinct.organ_system} systems, ${countsDistinct.organ} organs, ${countsDistinct.tissue} tissues, ${countsDistinct.cell} cell types (distinct terms; ${counts.tissue} and ${counts.cell} placements); markers for ${sketch.cells_with_markers} cell types; ${Object.keys(queries).length} queries (${cached} from cache)${found.anatomy.length ? '\n  structures read from the description: ' + found.anatomy.map(a => `${a.matched} -> ${a.label || a.term}`).join(', ') : ''}${notRead.length ? '\n  words not recognised, so nothing in the blueprint stands for them: ' + notRead.join(', ') : ''}${conflicts.length ? '\n  conflicts: ' + conflicts.map(c => c.label).join(', ') : ''}\n  cut by the per-parent limits: ${out.pruning.totals.organs} organs, ${out.pruning.totals.tissues} tissues, ${out.pruning.totals.cells} cell types (all listed under "pruning")${holdout.contains ? '\n  note: the taxon contains the held-out clade ' + holdout.clade : ''}`);
+console.log(`${outPath}\n  taxon: ${taxon.label} (${taxon.term}); systems ${counts.organ_system}, organs ${counts.organ}, tissues ${counts.tissue}, cells ${counts.cell}; markers for ${sketch.cells_with_markers} cell types; ${Object.keys(queries).length} queries (${cached} from cache)${conflicts.length ? '\n  conflicts: ' + conflicts.map(c => c.label).join(', ') : ''}${holdout.contains ? '\n  note: the taxon contains the held-out clade ' + holdout.clade : ''}`);
