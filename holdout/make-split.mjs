@@ -40,32 +40,7 @@ const CLADES = {
   }
 };
 const DEFAULT_CLADE = 'Aves';
-const PROVISIONAL = false; // confirmed by Amit on 2026-10-31 (see DECISION); it was provisional from the 05:52 UTC freeze until then
-// The clade decision and its cost, recorded in split.json, exam.json and CHECKSUMS.json because the reasoning is the
-// part a reader will not be able to reconstruct later. The numbers are read from holdout/power-analysis.json and
-// holdout/exam-results/not-applicable.json at build time so that the record and the files cannot drift apart.
-const DECISION = (() => {
-  const rd = p => fs.existsSync(path.join(root, p)) ? JSON.parse(fs.readFileSync(path.join(root, p), 'utf8')) : null;
-  const power = rd('holdout/power-analysis.json'), na = rd('holdout/exam-results/not-applicable.json');
-  const tests = power ? power.tests.map(t => ({ test: t.test, clade: t.clade, held_out_n: t.held_out_n, builder_min_n: t.builder_min_n, verdict: t.held_out_verdict })) : [];
-  const mammalOnly = na ? na.tests.filter(t => /mammals only/i.test(t.why_not_applicable)).map(t => t.claim_id) : [];
-  const examined = [...new Set(tests.map(t => t.test))];
-  return {
-    clade: 'Aves', status: 'confirmed',
-    decided_by: 'Amit Shenoy, project lead, in his own words to the hub: "Sure do AVes"',
-    relayed_by: 'hub session scienceclaw-03 to the holdout thread (scienceclaw-93)',
-    decided_on: '2026-10-31',
-    provisional_from: '2026-10-31T05:52:44.982Z',
-    alternative_considered: 'Mammalia',
-    reasoning: [
-      'Aves was chosen knowing it is underpowered for the tests built so far: the held-out bird counts fall below the builders’ own pre-registered minimum sample sizes, so both examined tests read inconclusive.',
-      'Mammalia would have made 1 of 2 examined tests decisive, but the examined tests had already fitted on mammal rows, and one further completed test uses mammals only and would have been built entirely on held-out data; a switch now would have made those tests post hoc.',
-      'The choice was therefore a clean blind that cannot yet decide over a decisive-looking test on a contaminated design, and the clean blind was taken.',
-      'The finding this records is about the data, not the thread: the public trait and demographic tables cannot support a blind clade exam at the builders’ own minimum n for these laws. That is more useful to the next team than a decisive number from a compromised design.'
-    ],
-    cost: { examined_tests: examined, held_out_counts: tests, decisive_exams_by_clade: power ? power.decisive_exams_by_clade : null, tests_post_hoc_if_mammalia: [...examined, ...mammalOnly], mammal_only_tests: mammalOnly }
-  };
-})();
+const PROVISIONAL = true; // flip to false once Amit confirms the clade; the hub asked for this to be stated
 
 const cladeName = opt('--clade', DEFAULT_CLADE);
 const clade = CLADES[cladeName];
@@ -149,7 +124,6 @@ const summary = {
 
 const split = {
   clade: cladeName, label: clade.label, provisional: PROVISIONAL,
-  decision: cladeName === DEFAULT_CLADE ? DECISION : { clade: cladeName, status: 'alternative sizing only, not chosen' },
   rule: [
     `An organism is held out when the inventory's lineage puts it in class ${cladeName} (any rank: species, genus, family, order, or the class itself).`,
     `The rule is the class, not the list: a ${clade.singular} species that is not in the inventory is held out too.`,
@@ -164,7 +138,6 @@ const split = {
 
 const exam = {
   clade: cladeName, label: clade.label, provisional: PROVISIONAL,
-  decision: cladeName === DEFAULT_CLADE ? DECISION : { clade: cladeName, status: 'alternative sizing only, not chosen' },
   what_is_tested: 'Each candidate law that a builder supports on training organisms is re-scored, by an assessor who did not build it, on the held-out species below, using the same pre-registered pass and fail criteria. A law counts as generalizing only if it passes here.',
   rules_for_builders: [
     `Do not fit, tune, select or sanity-check anything on data for a ${clade.singular}: no ${cladeName} rows from trait tables, genomes, occurrence counts, fossils, or claim texts that only ${cladeName} organisms support.`,
@@ -192,11 +165,8 @@ const outputs = {
 };
 const manifest = {
   clade: cladeName, provisional: PROVISIONAL,
-  decision: cladeName === DEFAULT_CLADE ? { status: DECISION.status, decided_by: DECISION.decided_by, decided_on: DECISION.decided_on } : null,
   inputs: Object.fromEntries(INPUTS.map(p => [p, { sha256: sha256(readRaw(p)), bytes: readRaw(p).length }])),
   outputs: Object.fromEntries(Object.entries(outputs).map(([k, v]) => [k, { sha256: sha256(v), bytes: Buffer.byteLength(v) }])),
-  // The roster alone, so a re-freeze that only changes flags or the decision text can show the held-out set did not move.
-  roster_sha256: sha256(JSON.stringify({ roster: exam.roster.map(r => r.key), higher: exam.higher_taxa_also_held_out.map(r => r.key), assignments: split.taxa.map(t => [t.key, t.assignment]) })),
   generator: 'holdout/make-split.mjs'
 };
 
@@ -211,28 +181,15 @@ if (flag('--verify')) {
     if (onDisk !== v.sha256) { console.log(`CHANGED output file ${p}`); bad++; }
     if (manifest.outputs[p]?.sha256 !== v.sha256) { console.log(`RECOMPUTED differs ${p}`); bad++; }
   }
-  console.log(bad ? `FROZEN SPLIT BROKEN: ${bad} difference(s) since ${frozen.frozen_at}` : `frozen split intact (frozen ${frozen.frozen_at}, clade ${frozen.clade}${frozen.provisional ? ', provisional' : frozen.decision ? `, ${frozen.decision.status} ${frozen.decision.decided_on}` : ''}${frozen.first_frozen_at && frozen.first_frozen_at !== frozen.frozen_at ? `; roster first frozen ${frozen.first_frozen_at}` : ''})`);
+  console.log(bad ? `FROZEN SPLIT BROKEN: ${bad} difference(s) since ${frozen.frozen_at}` : `frozen split intact (frozen ${frozen.frozen_at}, clade ${frozen.clade}${frozen.provisional ? ', provisional' : ''})`);
   process.exit(bad ? 1 : 0);
 }
 
 fs.mkdirSync(outDir, { recursive: true });
+for (const [k, v] of Object.entries(outputs)) fs.writeFileSync(path.join(outDir, k), v);
 const mp = path.join(outDir, 'CHECKSUMS.json');
 const prev = fs.existsSync(mp) ? JSON.parse(fs.readFileSync(mp, 'utf8')) : null;
-// Roster hash of the freeze being replaced, computed from the files on disk before they are overwritten (older
-// manifests predate roster_sha256).
-const prevRosterSha = prev && fs.existsSync(path.join(outDir, 'exam.json')) && fs.existsSync(path.join(outDir, 'split.json')) ? (() => {
-  const oe = JSON.parse(fs.readFileSync(path.join(outDir, 'exam.json'), 'utf8')), os_ = JSON.parse(fs.readFileSync(path.join(outDir, 'split.json'), 'utf8'));
-  return sha256(JSON.stringify({ roster: oe.roster.map(r => r.key), higher: oe.higher_taxa_also_held_out.map(r => r.key), assignments: os_.taxa.map(t => [t.key, t.assignment]) }));
-})() : null;
-for (const [k, v] of Object.entries(outputs)) fs.writeFileSync(path.join(outDir, k), v);
 const unchanged = prev && JSON.stringify(prev.outputs) === JSON.stringify(manifest.outputs) && JSON.stringify(prev.inputs) === JSON.stringify(manifest.inputs);
 manifest.frozen_at = unchanged ? prev.frozen_at : new Date().toISOString();
-manifest.first_frozen_at = prev?.first_frozen_at || prev?.frozen_at || manifest.frozen_at;
-if (prev && !unchanged) {
-  // Chain of freezes: what this one replaces, and whether the held-out set itself moved. Exam results written before
-  // this freeze cite the previous exam.json SHA-256; roster_unchanged says whether they still apply.
-  manifest.previous_freeze = { frozen_at: prev.frozen_at, provisional: prev.provisional, outputs: prev.outputs, roster_sha256: prevRosterSha, roster_unchanged: prevRosterSha === manifest.roster_sha256, superseded_because: PROVISIONAL ? 'inputs or outputs changed' : 'clade confirmed; provisional flag cleared and the decision recorded', history: prev.previous_freeze ? [prev.previous_freeze, ...(prev.previous_freeze.history || [])].map(({ history, ...h }) => h) : [] };
-} else if (prev?.previous_freeze) manifest.previous_freeze = prev.previous_freeze;
 fs.writeFileSync(mp, JSON.stringify(manifest, null, 1) + '\n');
-if (manifest.previous_freeze && !unchanged) console.log(`re-frozen: replaces the ${manifest.previous_freeze.frozen_at} freeze; roster ${manifest.previous_freeze.roster_unchanged ? 'UNCHANGED' : 'CHANGED'}`);
 console.log(`${cladeName}: ${summary.holdout} held out (${summary.holdout_species} species, ${summary.holdout_species_genome_ready} genome-ready, ${summary.holdout_species_exam_ready} genome+traits), ${summary.train} train, ${summary.excluded} excluded; claims: ${JSON.stringify(claimCounts)}; frozen_at ${manifest.frozen_at}${unchanged ? ' (unchanged)' : ''}`);
