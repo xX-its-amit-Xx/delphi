@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blueprint in 3D &mdash; DELPHI</title>
+<meta name="description" content="The flying-fish blueprint as a 3D projection of its ontology hierarchy: every node with its term, the query that produced it, and the Lean certificate that covers it.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e7c86'/%3E%3Ccircle cx='16' cy='16' r='4' fill='white'/%3E%3Ccircle cx='7' cy='9' r='2.2' fill='white'/%3E%3Ccircle cx='25' cy='8' r='2.2' fill='white'/%3E%3Ccircle cx='24' cy='25' r='2.2' fill='white'/%3E%3Ccircle cx='8' cy='24' r='2.2' fill='white'/%3E%3Cpath d='M16 16L7 9M16 16L25 8M16 16L24 25M16 16L8 24' stroke='white' stroke-width='1.4'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--soft:#eef2ef;--surface:#fcfcfb;
+ --ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;
+ /* one hue, light to dark with depth: body, organ system, organ, tissue, cell type */
+ --l0:#a6dde4;--l1:#5fc3cd;--l2:#139aab;--l3:#0c6f7c;--l4:#073f47;
+ --gene:#eb6834;--edge:#9aa6a3;--edge2:#c7cfcc;--named:#14201f}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--soft:#192b29;--surface:#1a1a19;
+ --ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;
+ --l0:#0d4a52;--l1:#167886;--l2:#22a3b3;--l3:#6fcbd6;--l4:#b5e6ec;
+ --gene:#d95926;--edge:#6b7b78;--edge2:#3a4a47;--named:#e7efec}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--soft:#192b29;--surface:#1a1a19;
+ --ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;
+ --l0:#0d4a52;--l1:#167886;--l2:#22a3b3;--l3:#6fcbd6;--l4:#b5e6ec;
+ --gene:#d95926;--edge:#6b7b78;--edge2:#3a4a47;--named:#e7efec}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 "Inter Tight",system-ui,sans-serif;display:flex;flex-direction:column}
+a{color:var(--accent)}
+header{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:9px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header b{font-family:Fraunces,serif;font-size:1.1rem}
+nav a{padding:3px 9px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.86rem}
+nav a:hover{background:var(--soft);color:var(--ink)}
+.ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:.84rem;margin-left:auto}
+.ctl label{display:inline-flex;gap:4px;align-items:center;border:1px solid var(--line);border-radius:99px;padding:2px 9px;cursor:pointer;background:var(--panel)}
+.ctl input[type=checkbox]{margin:0}
+select,input[type=search],button{font:inherit;font-size:.86rem;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:4px 9px}
+button{cursor:pointer}
+main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 400px;min-height:0}
+@media (max-width:880px){main{grid-template-columns:1fr;grid-template-rows:62vh auto}}
+#stage{position:relative;min-height:0;min-width:0;overflow:hidden;background:var(--surface)}
+#c{position:absolute;inset:0;display:block;width:100%;height:100%;touch-action:none}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+#labels div{position:absolute;transform:translate(6px,-50%);font-size:11px;color:var(--ink);white-space:nowrap;text-shadow:0 0 3px var(--surface),0 0 3px var(--surface),0 0 2px var(--surface)}
+#labels div.sys{font-weight:700;font-size:12px}
+#labels div.hl{font-weight:700;color:var(--accent)}
+#tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-size:.8rem;display:none;max-width:260px;z-index:3}
+.ov{position:absolute;background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.78rem;z-index:2}
+#note{left:10px;top:10px;max-width:330px;color:var(--ink);font-size:.74rem;line-height:1.35}
+#note b.h{display:block;font-size:.78rem}
+#stats{right:10px;top:10px;color:var(--mute);padding:4px 8px}
+#legend{left:10px;bottom:10px;max-width:330px}
+#legend .row{display:flex;gap:7px;align-items:center;margin:2px 0}
+#legend .sw{display:inline-block;border-radius:50%;flex:none}
+#legend .ln{display:inline-block;width:18px;height:0;border-top:2px solid var(--edge);flex:none}
+#legend .ln.alt{border-top-style:dashed}
+#legend .gm{display:inline-block;width:10px;height:10px;transform:rotate(45deg);background:var(--gene);flex:none}
+#cert{right:10px;bottom:10px;max-width:330px}
+.card{border:1px solid var(--line);border-radius:8px;padding:6px 9px;margin:5px 0}
+.card.struct{border-color:var(--accent);border-width:2px}
+.card.bio{border-style:dashed;color:var(--mute)}
+.card b{display:block;font-size:.8rem;color:var(--ink)}
+#panel{border-left:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:16px}
+#panel h2{font-family:Fraunces,serif;font-size:1.15rem;margin:0 0 6px;line-height:1.2}
+.chip{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.75rem;border:1px solid var(--line);background:var(--soft);color:var(--mute);margin:0 4px 4px 0}
+.chip.ok{color:var(--ok);border-color:var(--ok)}.chip.warn{color:var(--warn);border-color:var(--warn)}.chip.acc{color:var(--accent);border-color:var(--accent)}
+.sec{margin:12px 0}
+.sec h4{margin:0 0 4px;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.small{font-size:.86rem}.tiny{font-size:.77rem;color:var(--mute)}
+.mono{font-family:"JetBrains Mono",monospace;font-size:.77rem;background:var(--soft);padding:1px 5px;border-radius:4px;word-break:break-all}
+pre{font-family:"JetBrains Mono",monospace;font-size:.7rem;white-space:pre-wrap;word-break:break-all;background:var(--soft);padding:8px;border-radius:6px;max-height:260px;overflow:auto;margin:4px 0}
+ul.t{margin:.2em 0;padding-left:1.1em}ul.t li{margin:.25em 0}
+details{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0}
+details summary{cursor:pointer;font-size:.86rem;font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:.8rem}td,th{text-align:left;padding:3px 5px;border-bottom:1px solid var(--line);vertical-align:top}
+a.go{cursor:pointer}
+body.embed header,body.embed #panel{display:none}
+body.embed main{grid-template-columns:1fr}
+</style>
+</head>
+<body>
+<header>
+  <b>Blueprint in 3D</b>
+  <nav><a href="../start/">Start</a><a href="../">Mission Control</a><a href="../graph/?view=flyingfish">Graph</a><a href="../t/organism/">Organism thread</a><a href="../t/lean/index.html#blueprint">Lean certificate</a></nav>
+  <div class="ctl">
+    <label><input type="checkbox" id="showTissue" checked>tissues</label>
+    <label><input type="checkbox" id="showCell" checked>cell types</label>
+    <label><input type="checkbox" id="showGenes" checked>genes</label>
+    <label><input type="checkbox" id="spin" checked>spin</label>
+    <input type="search" id="q" placeholder="find a structure&hellip;">
+    <button id="resetBtn" title="Reset the camera">Reset view</button>
+    <button id="pngBtn" title="Save the current view as a PNG">PNG</button>
+    <button id="svgBtn" title="Save the current view as an SVG (vector)">SVG</button>
+    <button id="themeBtn">Theme</button>
+  </div>
+</header>
+<main>
+  <div id="stage">
+    <canvas id="c"></canvas>
+    <div id="labels"></div>
+    <div id="tip"></div>
+    <div id="note" class="ov"></div>
+    <div id="stats" class="ov"></div>
+    <div id="legend" class="ov"></div>
+    <div id="cert" class="ov"></div>
+  </div>
+  <aside id="panel"><h2>Loading the blueprint&hellip;</h2></aside>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const params=new URLSearchParams(location.search);
+if(params.get('embed')==='1')document.body.classList.add('embed');
+const tk='delphi-theme';
+try{if(localStorage.getItem(tk))document.documentElement.dataset.theme=localStorage.getItem(tk);}catch{}
+if(params.get('theme'))document.documentElement.dataset.theme=params.get('theme');
+
+// Colours are read once into PAL and refreshed on a theme change; never per node per frame.
+let PAL={};
+function readPalette(){const cs=getComputedStyle(document.documentElement);
+  ['--l0','--l1','--l2','--l3','--l4','--gene','--edge','--edge2','--named','--surface','--accent','--ink','--mute','--panel'].forEach(k=>PAL[k]=cs.getPropertyValue(k).trim());}
+readPalette();
+const LEVELS=['body','organ_system','organ','tissue','cell'];
+const LEVEL_NAME={body:'body',organ_system:'organ system',organ:'organ',tissue:'tissue',cell:'cell type'};
+const RADIUS={body:0,organ_system:34,organ:58,tissue:78,cell:95};
+const SIZE={body:4.2,organ_system:2.5,organ:1.6,tissue:0.95,cell:0.7};
+const levelColor=l=>PAL['--l'+LEVELS.indexOf(l)];
+
+let D=null, T=new Map(), children=new Map(), pos=new Map(), genesByNode=new Map();
+if(!window.THREE){$('#panel').innerHTML='<h2>three.js did not load</h2><p class="small">The 3D library is fetched from cdnjs; without it this page cannot draw. The data is still at <a href="data.json">data.json</a>.</p>';return;}
+fetch('data.json').then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+  .then(d=>{D=d;try{build();}catch(e){$('#panel').innerHTML='<h2>The blueprint failed to draw</h2><p class="small">'+esc(e.message)+'</p>';console.error(e);}})
+  .catch(e=>{$('#panel').innerHTML='<h2>Could not load data.json</h2><p class="small">'+esc(e.message)+'</p>';});
+
+// ---------- layout: a projection of the ontology hierarchy. Not anatomy, not geometry. ----------
+// Each node gets a direction on the unit sphere and a cone half-angle; its children sit on a ring
+// inside that cone at the next level's radius. A term placed under several wholes is drawn once,
+// under the first whole the file lists; its other placements are drawn as second-placement edges.
+function layout(){
+  for(const t of D.terms){T.set(t.id,t);}
+  for(const t of D.terms){const p=t.parents[0];if(p){if(!children.has(p.id))children.set(p.id,[]);children.get(p.id).push(t.id);}}
+  const root=D.terms.find(t=>t.level==='body');
+  pos.set(root.id,{v:new THREE.Vector3(0,0,0),dir:new THREE.Vector3(0,1,0),th:Math.PI});
+  const fib=(i,n)=>{const y=1-2*(i+0.5)/n,r=Math.sqrt(1-y*y),a=i*2.399963;return new THREE.Vector3(r*Math.cos(a),y,r*Math.sin(a));};
+  const sys=(children.get(root.id)||[]).map(id=>T.get(id)).sort((a,b)=>a.label.localeCompare(b.label));
+  const thSys=0.5*Math.sqrt(4*Math.PI/Math.max(sys.length,1));
+  sys.forEach((s,i)=>{const d=fib(i,sys.length);pos.set(s.id,{v:d.clone().multiplyScalar(RADIUS.organ_system),dir:d,th:thSys});});
+  const ring=(parentId,ids,radius,phase)=>{
+    const P=pos.get(parentId); if(!P||!ids.length)return;
+    const k=ids.length, alpha=k===1?0:P.th*0.62;
+    const u=new THREE.Vector3(0,1,0); if(Math.abs(P.dir.dot(u))>0.9)u.set(1,0,0);
+    const e1=new THREE.Vector3().crossVectors(P.dir,u).normalize(), e2=new THREE.Vector3().crossVectors(P.dir,e1).normalize();
+    ids.forEach((id,i)=>{const az=phase+2*Math.PI*i/k;
+      const d=P.dir.clone().multiplyScalar(Math.cos(alpha)).addScaledVector(e1,Math.sin(alpha)*Math.cos(az)).addScaledVector(e2,Math.sin(alpha)*Math.sin(az)).normalize();
+      const th=k===1?P.th*0.8:Math.max(0.03,Math.min(P.th*0.45,Math.PI*Math.sin(alpha)/k*0.9));
+      pos.set(id,{v:d.clone().multiplyScalar(radius),dir:d,th});});
+  };
+  for(const s of sys){const org=(children.get(s.id)||[]).map(id=>T.get(id)).sort((a,b)=>(b.major_organ?1:0)-(a.major_organ?1:0)||a.label.localeCompare(b.label)).map(t=>t.id);ring(s.id,org,RADIUS.organ,0);}
+  for(const t of D.terms){if(t.level!=='organ')continue;const kids=(children.get(t.id)||[]).map(id=>T.get(id));
+    ring(t.id,kids.filter(k=>k.level==='tissue').map(k=>k.id),RADIUS.tissue,0.4);
+    ring(t.id,kids.filter(k=>k.level==='cell').map(k=>k.id),RADIUS.cell,0.1);}
+  // anything the rules above did not place (should be nothing) goes near its first parent, and is counted
+  let unplaced=0; for(const t of D.terms){if(!pos.has(t.id)){unplaced++;const p=pos.get(t.parents[0]?.id)||pos.get(root.id);pos.set(t.id,{v:p.v.clone().addScaledVector(p.dir,8),dir:p.dir,th:0.05});}}
+  return unplaced;
+}
+
+// ---------- scene ----------
+let renderer,scene,camera,inst,lines,lines2,hiLines,geneInst,geneLines,namedRings=[],ids=[],idIndex=new Map(),geneIds=[];
+let sel=null,hover=null,spin=true,userMoved=false;
+const cam={theta:0.6,phi:1.15,dist:250,target:new THREE.Vector3()};
+function build(){
+  const unplaced=layout();
+  const el=$('#c');
+  renderer=new THREE.WebGLRenderer({canvas:el,antialias:true,alpha:true,preserveDrawingBuffer:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(42,1,1,2000);
+  scene.add(new THREE.AmbientLight(0xffffff,0.75));
+  const dl=new THREE.DirectionalLight(0xffffff,0.9);dl.position.set(1,1.4,0.8);scene.add(dl);
+  const dl2=new THREE.DirectionalLight(0xffffff,0.35);dl2.position.set(-1,-0.5,-0.8);scene.add(dl2);
+
+  ids=D.terms.map(t=>t.id); ids.forEach((id,i)=>idIndex.set(id,i));
+  inst=new THREE.InstancedMesh(new THREE.SphereGeometry(1,14,10),new THREE.MeshLambertMaterial({}),ids.length);
+  inst.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  scene.add(inst);
+  // first-placement edges and second-placement edges, separately coloured
+  const e1=[],e2=[]; for(const e of D.edges){const t=T.get(e.part);const first=t.parents[0]&&t.parents[0].id===e.whole;(first?e1:e2).push(e);}
+  const mk=(arr,op)=>{const g=new THREE.BufferGeometry();const a=new Float32Array(arr.length*6);arr.forEach((e,i)=>{const p=pos.get(e.part).v,w=pos.get(e.whole).v;a.set([p.x,p.y,p.z,w.x,w.y,w.z],i*6);});
+    g.setAttribute('position',new THREE.BufferAttribute(a,3));const m=new THREE.LineBasicMaterial({transparent:true,opacity:op});const L=new THREE.LineSegments(g,m);L.userData.edges=arr;scene.add(L);return L;};
+  lines=mk(e1,0.55); lines2=mk(e2,0.35);
+  hiLines=new THREE.LineSegments(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({linewidth:2}));scene.add(hiLines);
+  // structures named in the description get a ring so a reader can find what the text asked for
+  for(const t of D.terms){if(!t.named_in_description)continue;const r=new THREE.Mesh(new THREE.TorusGeometry(SIZE[t.level]*2.2,0.22,8,40),new THREE.MeshBasicMaterial({}));r.position.copy(pos.get(t.id).v);r.userData.id=t.id;scene.add(r);namedRings.push(r);}
+  // genes, when the genotype thread has written its map
+  if(D.genotype&&D.genotype.links.length){
+    for(const l of D.genotype.links){if(!genesByNode.has(l.node))genesByNode.set(l.node,[]);genesByNode.get(l.node).push(l);}
+    const seen=new Map(); for(const [node,ls] of genesByNode){ls.forEach((l,i)=>{const key=node+'|'+(l.gene||i);if(!seen.has(key))seen.set(key,{node,gene:l.gene,i,n:ls.length});});}
+    geneIds=[...seen.values()];
+    geneInst=new THREE.InstancedMesh(new THREE.OctahedronGeometry(1,0),new THREE.MeshLambertMaterial({}),geneIds.length);
+    const ga=new Float32Array(geneIds.length*6);
+    geneIds.forEach((g,k)=>{const P=pos.get(g.node);const u=new THREE.Vector3(0,1,0);if(Math.abs(P.dir.dot(u))>0.9)u.set(1,0,0);
+      const e1v=new THREE.Vector3().crossVectors(P.dir,u).normalize(),e2v=new THREE.Vector3().crossVectors(P.dir,e1v).normalize();
+      const az=2*Math.PI*g.i/Math.max(g.n,1), rr=SIZE[T.get(g.node).level]*2.6+2;
+      const v=P.v.clone().addScaledVector(P.dir,6).addScaledVector(e1v,rr*Math.cos(az)).addScaledVector(e2v,rr*Math.sin(az));
+      g.v=v; ga.set([P.v.x,P.v.y,P.v.z,v.x,v.y,v.z],k*6);});
+    const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.BufferAttribute(ga,3));
+    geneLines=new THREE.LineSegments(gg,new THREE.LineBasicMaterial({transparent:true,opacity:0.7}));scene.add(geneLines);scene.add(geneInst);
+  }
+  placeInstances(); recolour();
+  const st=$('#stage');
+  const resize=()=>{const w=st.clientWidth,h=st.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};
+  addEventListener('resize',resize);resize();
+  controls(el); overlays(unplaced); intro();
+  if(params.get('spin')==='0'){spin=false;$('#spin').checked=false;}
+  const f=params.get('find'); if(f){const t=D.terms.find(x=>x.label.toLowerCase().includes(f.toLowerCase())||x.id===f);if(t){select(t.id);}}
+  requestAnimationFrame(frame);
+  $('#showTissue').onchange=$('#showCell').onchange=$('#showGenes').onchange=()=>{placeInstances();};
+  $('#spin').onchange=e=>{spin=e.target.checked;};
+  $('#resetBtn').onclick=()=>{cam.theta=0.6;cam.phi=1.15;cam.dist=250;cam.target.set(0,0,0);};
+  $('#pngBtn').onclick=savePNG; $('#svgBtn').onclick=saveSVG;
+  $('#themeBtn').onclick=()=>{const c=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+    const n=c==='dark'?'light':'dark';document.documentElement.dataset.theme=n;try{localStorage.setItem(tk,n)}catch{};readPalette();recolour();legend();};
+  $('#q').oninput=e=>{const q=e.target.value.trim().toLowerCase();if(q.length<3)return;const t=D.terms.find(x=>x.label.toLowerCase().includes(q)||x.id.toLowerCase()===q);if(t)select(t.id);};
+}
+const visible=t=>(t.level!=='tissue'||$('#showTissue').checked)&&(t.level!=='cell'||$('#showCell').checked);
+function placeInstances(){
+  const m=new THREE.Matrix4();
+  ids.forEach((id,i)=>{const t=T.get(id),p=pos.get(id).v;const s=visible(t)?SIZE[t.level]*(id===sel?1.8:1):0;m.makeScale(s,s,s).setPosition(p);inst.setMatrixAt(i,m);});
+  inst.instanceMatrix.needsUpdate=true;
+  const showEdge=L=>{const a=L.geometry.attributes.position.array;L.userData.edges.forEach((e,i)=>{const on=visible(T.get(e.part))&&visible(T.get(e.whole));const p=pos.get(e.part).v,w=pos.get(e.whole).v;if(on)a.set([p.x,p.y,p.z,w.x,w.y,w.z],i*6);else a.set([w.x,w.y,w.z,w.x,w.y,w.z],i*6);});L.geometry.attributes.position.needsUpdate=true;};
+  showEdge(lines);showEdge(lines2);
+  if(geneInst){const on=$('#showGenes').checked;geneIds.forEach((g,k)=>{const s=on&&visible(T.get(g.node))?0.9:0;m.makeScale(s,s,s).setPosition(g.v);geneInst.setMatrixAt(k,m);});geneInst.instanceMatrix.needsUpdate=true;geneLines.visible=on;}
+  for(const r of namedRings)r.visible=visible(T.get(r.userData.id));
+  highlight();
+}
+function recolour(){
+  const c=new THREE.Color();
+  ids.forEach((id,i)=>{c.set(levelColor(T.get(id).level));inst.setColorAt(i,c);});inst.instanceColor.needsUpdate=true;
+  lines.material.color.set(PAL['--edge']);lines2.material.color.set(PAL['--edge2']);hiLines.material.color.set(PAL['--accent']);
+  for(const r of namedRings)r.material.color.set(PAL['--named']);
+  if(geneInst){c.set(PAL['--gene']);geneIds.forEach((g,k)=>geneInst.setColorAt(k,c));geneInst.instanceColor.needsUpdate=true;geneLines.material.color.set(PAL['--gene']);}
+  renderer.setClearColor(0x000000,0);
+}
+function highlight(){
+  const arr=[]; if(sel){for(const e of D.edges){if(e.part===sel||e.whole===sel){const p=pos.get(e.part).v,w=pos.get(e.whole).v;arr.push(p.x,p.y,p.z,w.x,w.y,w.z);}}}
+  hiLines.geometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array(arr),3));hiLines.geometry.attributes.position.needsUpdate=true;
+}
+function controls(el){
+  let drag=null;
+  el.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,th:cam.theta,ph:cam.phi,moved:false,b:e.button,shift:e.shiftKey,t:cam.target.clone()};el.setPointerCapture(e.pointerId);});
+  el.addEventListener('pointermove',e=>{
+    if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>3)drag.moved=true;
+      if(drag.b===2||drag.shift){const s=cam.dist/900;const right=new THREE.Vector3().setFromMatrixColumn(camera.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrix,1);cam.target.copy(drag.t).addScaledVector(right,-dx*s).addScaledVector(up,dy*s);}
+      else{cam.theta=drag.th-dx*0.006;cam.phi=Math.min(Math.PI-0.05,Math.max(0.05,drag.ph-dy*0.006));}
+      userMoved=true;return;}
+    pick(e);
+  });
+  const end=e=>{if(drag&&!drag.moved){const h=pickAt(e);if(h)select(h);else{sel=null;placeInstances();intro();}}drag=null;};
+  el.addEventListener('pointerup',end);el.addEventListener('pointercancel',()=>{drag=null;});
+  el.addEventListener('contextmenu',e=>e.preventDefault());
+  el.addEventListener('wheel',e=>{e.preventDefault();cam.dist=Math.min(900,Math.max(40,cam.dist*(1+Math.sign(e.deltaY)*0.08)));userMoved=true;},{passive:false});
+  el.addEventListener('dblclick',()=>{cam.target.set(0,0,0);cam.dist=250;});
+}
+const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
+function pickAt(e){const r=renderer.domElement.getBoundingClientRect();mouse.x=((e.clientX-r.left)/r.width)*2-1;mouse.y=-((e.clientY-r.top)/r.height)*2+1;ray.setFromCamera(mouse,camera);
+  const hits=ray.intersectObject(inst);for(const h of hits){const id=ids[h.instanceId];if(visible(T.get(id)))return id;}
+  if(geneInst&&$('#showGenes').checked){const gh=ray.intersectObject(geneInst);if(gh.length)return geneIds[gh[0].instanceId].node;}
+  return null;}
+function pick(e){const id=pickAt(e);hover=id;const tip=$('#tip');if(!id){tip.style.display='none';renderer.domElement.style.cursor='';return;}
+  const t=T.get(id);const r=renderer.domElement.getBoundingClientRect();tip.style.display='block';tip.style.left=(e.clientX-r.left+12)+'px';tip.style.top=(e.clientY-r.top+12)+'px';
+  tip.innerHTML=`<b>${esc(t.label)}</b><br><span class="tiny">${esc(LEVEL_NAME[t.level])} &middot; ${esc(t.id)}${t.placements>1?' &middot; placed under '+t.placements+' wholes':''}${genesByNode.has(id)?' &middot; '+genesByNode.get(id).length+' gene link'+(genesByNode.get(id).length>1?'s':''):''}</span>`;
+  renderer.domElement.style.cursor='pointer';}
+
+const labelEls=new Map();
+function frame(){
+  if(spin&&!userMoved)cam.theta+=0.0022;
+  const x=cam.dist*Math.sin(cam.phi)*Math.cos(cam.theta),y=cam.dist*Math.cos(cam.phi),z=cam.dist*Math.sin(cam.phi)*Math.sin(cam.theta);
+  camera.position.set(x,y,z).add(cam.target);camera.lookAt(cam.target);
+  renderer.render(scene,camera);
+  labels();
+  requestAnimationFrame(frame);
+}
+function labels(){
+  const box=$('#labels'),w=box.clientWidth,h=box.clientHeight,v=new THREE.Vector3();
+  const want=new Set();
+  for(const t of D.terms){if(t.level==='organ_system'||t.level==='body'||(t.level==='organ'&&cam.dist<190)||t.id===sel||t.id===hover||t.named_in_description)if(visible(t))want.add(t.id);}
+  for(const [id,el] of labelEls){if(!want.has(id)){el.remove();labelEls.delete(id);}}
+  for(const id of want){let el=labelEls.get(id);const t=T.get(id);if(!el){el=document.createElement('div');el.textContent=t.label;el.className=t.level==='organ_system'?'sys':'';box.appendChild(el);labelEls.set(id,el);}
+    el.classList.toggle('hl',id===sel||id===hover||!!t.named_in_description);
+    v.copy(pos.get(id).v).project(camera);
+    if(v.z>1||v.z<-1){el.style.display='none';continue;}
+    el.style.display='';el.style.left=((v.x+1)/2*w+SIZE[t.level]*0.5)+'px';el.style.top=((1-v.y)/2*h)+'px';el.style.opacity=t.level==='organ'&&id!==sel?0.8:1;}
+}
+
+// ---------- overlays: the layout caveat, counts, legend, certificate contrast ----------
+function overlays(unplaced){
+  const c=D.counts_distinct||{},cc=D.counts_computed_here;
+  const inv2=(D.certificate&&D.certificate.kernelChecked[1])||'';
+  $('#note').innerHTML=`<b class="h">A projection of an ontology hierarchy, not anatomy or geometry.</b>
+    Body at the centre, then organ systems, organs, tissues and cell types on shells by depth, each inside its whole's cone. Distances and angles mean nothing; only the <i>part_of</i> edges do.<br>
+    <span class="tiny" title="${esc(inv2)}">Invariant 2 (the part_of closure strictly descends the levels) is proved for the closure of the ${cc.edges} <i>stated</i> part_of edges only, not for every part_of relation Uberon could hold.</span>`;
+  $('#stats').innerHTML=`${cc.distinct_terms} distinct terms &middot; ${cc.edges} part_of edges &middot; ${c.organ_system} organ systems, ${c.organ} organs, ${c.tissue} tissues, ${c.cell} cell types${unplaced?` &middot; <span style="color:var(--bad)">${unplaced} unplaced</span>`:''}`;
+  legend();
+  const C=D.certificate;
+  if(!C){$('#cert').innerHTML='<b>No Lean certificate found</b> for this blueprint in t/lean/lean.json.';return;}
+  const bio=C.biological_statements;
+  $('#cert').innerHTML=`<div class="card struct"><b>Structural certificate: every one of the ${cc.distinct_terms} nodes</b>
+      <span class="tiny">Kernel-checked in Lean (${esc(C.leanModule.split('/').pop())}): acyclic, rooted, taxon-consistent, counts per level. ${C.matches_file_now?'Hash matches this file.':'<span style="color:var(--bad)">Hash does not match this file (stale).</span>'}</span></div>
+    <div class="card bio"><b>Biological Lean statement: ${bio.nodes_mentioned_in_any_lean_statement} of ${cc.distinct_terms} nodes</b>
+      <span class="tiny">No theorem says a flying fish has any of these parts. The certificate says the emitted structure is coherent under its own rules, nothing about the fish.</span></div>`;
+}
+function legend(){
+  const sw=(l,px)=>`<span class="sw" style="width:${px}px;height:${px}px;background:${levelColor(l)}"></span>`;
+  const G=D.genotype;
+  $('#legend').innerHTML=`<details open id="legDet"><summary style="cursor:pointer;font-weight:700">Legend</summary>
+    <b>Depth</b> (one hue, darker with depth; size shrinks with depth)
+    ${LEVELS.map((l,i)=>`<div class="row">${sw(l,14-i*2)}${esc(LEVEL_NAME[l])} &middot; ${esc(String((D.counts_distinct||{})[l]??''))}</div>`).join('')}
+    <div class="row"><span class="ln"></span>part_of, first placement</div>
+    <div class="row"><span class="ln" style="border-color:var(--edge2)"></span>part_of, a term placed under more than one whole (${D.terms.filter(t=>t.placements>1).length} terms)</div>
+    <div class="row"><span class="sw" style="width:12px;height:12px;border:2px solid var(--named);background:transparent"></span>named in the description</div>
+    ${G&&G.links.length?`<div class="row"><span class="gm"></span>gene link (${G.links.length}), expression from proxy species: ${esc(G.organisms.join(', ')||'unstated')}, not flying fish</div>`:`<div class="row tiny">genes: genotype/map.json not written yet; none drawn</div>`}
+    </details>`;
+  if(innerWidth<1100)$('#legDet').open=false;
+}
+
+// ---------- panel ----------
+function intro(){
+  const c=D.counts_distinct||{},q=D.queries||{};
+  const G=D.genotype;
+  $('#panel').innerHTML=`<h2>Click any structure</h2>
+    <p class="small">The blueprint for &ldquo;${esc(D.description)}&rdquo;, read as <b>${esc(D.taxon?.label)}</b> (<span class="mono">${esc(D.taxon?.term)}</span>). Every node is an existing Uberon or Cell Ontology term, placed by a <i>part_of</i> statement Ubergraph served; nothing is invented and nothing is measured.</p>
+    <div class="sec"><h4>What each node will show</h4><ul class="t small">
+      <li>its <b>ontology term</b> and the whole it is part of,</li>
+      <li>the <b>SPARQL query</b> that produced it, with endpoint and retrieval time,</li>
+      <li>the <b>Lean certificate</b> that covers it (structure only) beside the biological statement it does <b>not</b> have,</li>
+      <li>its <b>genes</b>, once the genotype thread writes its map${G?` (${G.links.length} links now)`:' (not yet)'}.</li></ul></div>
+    <div class="sec"><h4>Read from files</h4><table>
+      <tr><td class="tiny">blueprint</td><td><span class="mono">${esc(D.source.file)}</span><br><span class="tiny">built ${esc(D.source.built)} by ${esc(D.source.tool)} &middot; sha256 ${esc(D.source.sha256.slice(0,12))}&hellip;</span></td></tr>
+      <tr><td class="tiny">counts</td><td class="small">${c.organ_system} organ systems &middot; ${c.organ} organs &middot; ${c.tissue} tissues &middot; ${c.cell} cell types (distinct terms; ${D.counts_placements?.tissue} tissue and ${D.counts_placements?.cell} cell placements)</td></tr>
+      <tr><td class="tiny">queries</td><td class="small">${Object.keys(q).length} stored SPARQL queries against <span class="mono">${esc(Object.values(q)[0]?.endpoint||'')}</span></td></tr>
+      <tr><td class="tiny">certificate</td><td class="small">${D.certificate?`<span class="mono">${esc(D.certificate.leanModule)}</span>, generated ${esc(D.certificate.generated)}, compiled in ${esc(D.certificate.compile?.seconds)} s, ${D.certificate.matches_file_now?'hash matches':'<b>hash stale</b>'}`:'none'}</td></tr></table></div>
+    ${D.reading.words_not_recognised.length?`<p class="small">Words the tool could not read: ${D.reading.words_not_recognised.map(w=>`<span class="mono">${esc(w)}</span>`).join(' ')}. The blueprint says nothing about them.</p>`:''}
+    <details><summary>What the file says about its own limits (${D.honesty.length})</summary><ul class="t small">${D.honesty.map(h=>`<li>${esc(h)}</li>`).join('')}</ul></details>
+    <details><summary>Pruning</summary><p class="small">${esc(D.pruning?.note||'')}</p><p class="tiny">Cut by the per-parent limits: ${D.pruning?.organs_cut} organs; totals offered ${esc(JSON.stringify(D.pruning?.totals||{}))}.</p></details>
+    <p class="tiny">Drag to orbit, wheel to zoom, right-drag or shift-drag to pan, double-click to recentre. PNG and SVG buttons save the current view.</p>`;
+}
+function select(id){
+  sel=id;placeInstances();const t=T.get(id);
+  const p=pos.get(id).v; // ease the camera target toward the node
+  cam.target.copy(p.clone().multiplyScalar(0.5));
+  const q=D.queries[t.via]||null, C=D.certificate, kids=children.get(id)||[], G=D.genotype, gl=genesByNode.get(id)||[];
+  const allKids=D.edges.filter(e=>e.whole===id).map(e=>e.part);
+  let h=`<h2>${esc(t.label)}</h2><div><span class="chip acc">${esc(LEVEL_NAME[t.level])}</span><span class="chip">${esc(t.ontology)}</span>
+    ${t.named_in_description?'<span class="chip ok">named in the description</span>':''}${t.major_organ?'<span class="chip">major organ (Uberon subset)</span>':''}
+    ${t.placements>1?`<span class="chip warn">placed under ${t.placements} wholes</span>`:''}</div>
+    <p class="small">Ontology term <a href="${esc(t.iri)}" target="_blank" rel="noopener"><span class="mono">${esc(t.id)}</span></a>${t.added_because?` &middot; added because: ${esc(t.added_because)}`:''}</p>`;
+  if(t.parents.length)h+=`<div class="sec"><h4>Part of</h4><ul class="t small">${t.parents.map(pp=>`<li><a class="go" data-go="${esc(pp.id)}">${esc(T.get(pp.id)?.label||pp.id)}</a> <span class="tiny">${esc(pp.relation)} &middot; via ${esc(pp.via||'')}</span></li>`).join('')}</ul></div>`;
+  if(allKids.length){const byL=allKids.reduce((a,k)=>(a[T.get(k).level]=(a[T.get(k).level]||0)+1,a),{});
+    h+=`<div class="sec"><h4>Has parts (${allKids.length})</h4><p class="small">${Object.entries(byL).map(([l,n])=>`${n} ${LEVEL_NAME[l]}${n>1?'s':''}`).join(' &middot; ')}</p><ul class="t small">${allKids.slice(0,14).map(k=>`<li><a class="go" data-go="${esc(k)}">${esc(T.get(k).label)}</a></li>`).join('')}${allKids.length>14?`<li class="tiny">and ${allKids.length-14} more</li>`:''}</ul></div>`;}
+  if(t.taxon_evidence)h+=`<div class="sec"><h4>Taxon evidence</h4><p class="small">${esc(t.taxon_evidence)}${t.stated_in_taxon?` (<span class="mono">${esc(t.stated_in_taxon.iri.split('/').pop())}</span>, depth ${esc(t.stated_in_taxon.depth)})`:''} &middot; via ${esc(t.taxon_evidence_query||'')}</p></div>`;
+  if(t.cell_types_recorded!=null)h+=`<p class="tiny">Cell Ontology records ${esc(t.cell_types_recorded)} cell types for this term (curation effort, not biology).${t.tissues_available_in_organ?` ${t.tissues_available_in_organ} tissues were available in its organ.`:''}${t.cell_types_available_in_organ?` ${t.cell_types_available_in_organ} cell types were available in its organ.`:''}${t.organs_available_in_system?` ${t.organs_available_in_system} organs were available in its system.`:''}</p>`;
+  // the query
+  if(q)h+=`<div class="sec"><h4>The query that produced it (${esc(t.via)})</h4><p class="small">${esc(q.purpose)}</p><table><tr><td class="tiny">endpoint</td><td><a href="${esc(q.endpoint)}" target="_blank" rel="noopener">${esc(q.endpoint)}</a></td></tr><tr><td class="tiny">retrieved</td><td class="small">${esc(q.retrieved)}${q.cached?' (from cache)':''}</td></tr><tr><td class="tiny">rows</td><td class="small">${esc(q.rows)}</td></tr></table><details><summary>SPARQL</summary><pre>${esc(q.sparql)}</pre></details></div>`;
+  else if(t.level==='body')h+=`<div class="sec"><h4>Origin</h4><p class="small">The root: the taxon ${esc(t.taxon_label)} (<span class="mono">${esc(t.taxon)}</span>) read from the description, verified by ${esc(D.taxon?.verified_by)}.</p></div>`;
+  // the certificate contrast
+  if(C){const bio=C.biological_statements, mentioned=bio.nodes_mentioned.includes(id);
+    h+=`<div class="sec"><h4>Lean</h4>
+      <div class="card struct"><b>Structure: covered by the kernel-checked certificate</b><span class="small">This node is one of the ${esc(C.graph?.distinctTerms)} terms and its ${t.parents.length} edge${t.parents.length===1?'':'s'} are among the ${esc(C.graph?.distinctEdges)} the certificate checks: the part_of edges descend the levels, no cycle, every node reaches the body, no pinned taxon statement excludes it, and the per-level counts are exact.</span>
+        <span class="tiny">${Object.entries(C.theorems||{}).map(([k,v])=>`<span class="mono">${esc(v.split('.').pop())}</span>`).join(' ')} &middot; axioms ${esc([...new Set(Object.values(C.audit||{}).flatMap(a=>a.axioms||[]))].join(', '))}</span></div>
+      <div class="card bio"><b>Biology: ${mentioned?'mentioned in a Lean statement':'no Lean statement'}</b><span class="small">${mentioned?'This term appears in a Lean statement; see the Lean thread.':`No theorem, lemma, formalised claim or constraint in the Lean build mentions <span class="mono">${esc(t.id)}</span> (${bio.nodes_mentioned_in_any_lean_statement} of ${esc(C.graph?.distinctTerms)} terms are mentioned anywhere). Nothing is proved about whether a flying fish has this part, or what it does.`}</span></div>
+      <details><summary>What the certificate checks and assumes</summary><ul class="t small">${C.kernelChecked.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="tiny">Assumed, not proved:</p><ul class="t small">${C.assumed.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></details></div>`;}
+  // genes
+  h+=`<div class="sec"><h4>Genes</h4>`;
+  if(gl.length){h+=`<p class="small">Expression and requirement evidence here comes from <b>proxy species</b> (${esc(G.organisms.join(', ')||'see source column')}), not from any flying fish: no flying-fish expression data exists at this level.</p><table><tr><th>gene</th><th>link</th><th>organism</th><th>source</th></tr>${gl.map(l=>`<tr><td class="mono">${esc(l.gene||'')}${l.gene_id?`<br><span class="tiny">${esc(l.gene_id)}</span>`:''}</td><td class="small">${esc(l.link||'untyped')}</td><td class="small">${esc(l.organism||'')}</td><td class="tiny">${/^https?:/.test(String(l.source))?`<a href="${esc(l.source)}" target="_blank" rel="noopener">${esc(String(l.source).slice(0,40))}</a>`:esc(l.source||'')}${l.retrieved?'<br>'+esc(l.retrieved):''}</td></tr>`).join('')}</table><p class="tiny">From <span class="mono">${esc(G.file)}</span>${G.built?', built '+esc(G.built):''}.</p>`;}
+  else if(G)h+=`<p class="small">No gene links for this node in <span class="mono">${esc(G.file)}</span> (${G.nodes_with_genes} of ${D.terms.length} nodes have any).</p>`;
+  else h+=`<p class="small">The genotype thread has not written <span class="mono">genotype/map.json</span> yet; no genes are drawn for any node.</p>`;
+  const mk=(D.genome_sketch?.markers||[]).find(m=>m.cell===id);
+  if(mk)h+=`<p class="small">Cell Ontology marker gene products for this cell type (<b>${esc(D.genome_sketch.label)}</b>, ${esc(D.genome_sketch.note)}): ${mk.gene_products.map(g=>`<a href="${esc(g.iri)}" target="_blank" rel="noopener">${esc(g.label)}</a>`).join(', ')} &middot; via ${esc(D.genome_sketch.via)}</p>`;
+  h+=`</div><div class="sec"><h4>Provenance</h4><table><tr><td class="tiny">file</td><td><span class="mono">${esc(D.source.file)}</span></td></tr><tr><td class="tiny">iri</td><td><a href="${esc(t.iri)}" target="_blank" rel="noopener">${esc(t.iri)}</a></td></tr><tr><td class="tiny">query</td><td class="small">${esc(t.via||'root')}</td></tr>${C?`<tr><td class="tiny">certificate</td><td><span class="mono">${esc(C.file)} ${esc(C.key)}</span></td></tr>`:''}</table></div>`;
+  $('#panel').innerHTML=h;
+  $$('[data-go]').forEach(a=>a.onclick=e=>{e.preventDefault();select(a.dataset.go);});
+}
+
+// ---------- export for the presentation layer ----------
+function savePNG(){renderer.render(scene,camera);const a=document.createElement('a');a.download='blueprint3d.png';a.href=renderer.domElement.toDataURL('image/png');a.click();}
+function saveSVG(){
+  const w=renderer.domElement.clientWidth,h=renderer.domElement.clientHeight,v=new THREE.Vector3();
+  const P=id=>{v.copy(pos.get(id).v).project(camera);return {x:(v.x+1)/2*w,y:(1-v.y)/2*h,z:v.z};};
+  const vis=D.terms.filter(visible);const pr=new Map(vis.map(t=>[t.id,P(t.id)]));
+  const scale=p=>Math.max(0.35,1.6-p.z*1.2);
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" font-family="Inter Tight, system-ui, sans-serif"><rect width="100%" height="100%" fill="${PAL['--surface']}"/>`;
+  for(const e of D.edges){const a=pr.get(e.part),b=pr.get(e.whole);if(!a||!b)continue;const first=T.get(e.part).parents[0].id===e.whole;s+=`<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${first?PAL['--edge']:PAL['--edge2']}" stroke-width="0.7" stroke-opacity="${first?0.6:0.4}"/>`;}
+  if(geneInst&&$('#showGenes').checked)for(const g of geneIds){const a=pr.get(g.node);if(!a)continue;v.copy(g.v).project(camera);const bx=(v.x+1)/2*w,by=(1-v.y)/2*h;s+=`<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}" stroke="${PAL['--gene']}" stroke-width="0.7"/><rect x="${(bx-2.5).toFixed(1)}" y="${(by-2.5).toFixed(1)}" width="5" height="5" transform="rotate(45 ${bx.toFixed(1)} ${by.toFixed(1)})" fill="${PAL['--gene']}"/>`;}
+  for(const t of [...vis].sort((a,b)=>pr.get(b.id).z-pr.get(a.id).z)){const p=pr.get(t.id);const r=SIZE[t.level]*2.2*scale(p);s+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r.toFixed(1)}" fill="${levelColor(t.level)}"${t.named_in_description?` stroke="${PAL['--named']}" stroke-width="1.5"`:''}><title>${esc(t.label)} (${esc(t.id)})</title></circle>`;}
+  for(const t of vis){if(t.level!=='organ_system'&&t.level!=='body'&&!t.named_in_description&&!(t.level==='organ'&&cam.dist<190))continue;const p=pr.get(t.id);s+=`<text x="${(p.x+SIZE[t.level]*2+3).toFixed(1)}" y="${(p.y+4).toFixed(1)}" font-size="${t.level==='organ_system'?12:11}" font-weight="${t.level==='organ_system'?700:400}" fill="${PAL['--ink']}">${esc(t.label)}</text>`;}
+  const c=D.counts_distinct||{};
+  s+=`<text x="12" y="${h-30}" font-size="11" fill="${PAL['--mute']}">Projection of an ontology hierarchy (Uberon / Cell Ontology part_of via Ubergraph), not anatomy. ${esc(D.description)}; ${esc(D.taxon?.label)}.</text>`;
+  s+=`<text x="12" y="${h-14}" font-size="11" fill="${PAL['--mute']}">${c.organ_system} organ systems, ${c.organ} organs, ${c.tissue} tissues, ${c.cell} cell types; ${D.edges.length} part_of edges; structure kernel-checked in Lean, biology not. Source ${esc(D.source.file)} sha256 ${esc(D.source.sha256.slice(0,12))}.</text></svg>`;
+  const a=document.createElement('a');a.download='blueprint3d.svg';a.href=URL.createObjectURL(new Blob([s],{type:'image/svg+xml'}));a.click();
+}
+})();
+</script>
+</body>
+</html>
