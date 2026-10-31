@@ -10,6 +10,7 @@ registry comes first, and production needs the ORCID key owner's explicit approv
 |---|---|---|
 | `unsigned/law-<claim_id>.trig` | The machine-checked law as a `delphi:Concept` (`delphir:math-law/<claim_id>`) under the formal-verification convention: `skos:notation`, the Lean statement as `skos:definition ^^delphi:lean4`, `delphi:leanDeclaration`, `delphi:leanTheorem` (every name taken from the `#print axioms` audit), `delphi:leanVerified true`, links to the module and the build report. The published claim gets `dct:conformsTo <law>` and `delphi:hasEvidence` to a `delphi:EvidenceItem` holding the build receipt (Lean and Mathlib versions, exit code, sorry count, axioms) and the rejected mutants. | Model assertion + build evidence |
 | `unsigned/scope-<claim_id>.trig` | Proof scope: `skos:scopeNote` statements on the law, each prefixed `Kernel-checked:` or `Assumed, not proved:`, copied from `proofScope` in `lean.json`. | Assumptions kept apart from derived claims |
+| `unsigned/bound-exocoetidae-substitution-budget.trig` | The flying-fish substitution budget as a `delphi:Hypothesis` (no source states it): plain claim with the numbers, `delphi:context` naming every parameter source, `prov:used` the three law records and the PBDB dataset record, `prov:wasDerivedFrom` the literature DOIs, `skos:scopeNote` kernel-checked vs assumed, verdict `inconclusive` in `rdfs:comment`, `skos:related` the organism thread's blueprint claim (a citation, not support), and an evidence item with the computation. Built from `lean.json`'s `bound` block and `lean/bound/links.json`. | Derived bound, with its undefined denominator stated |
 | `unsigned/rubric-lean-faithfulness-0.1.0.trig` | The faithfulness rubric as a `delphi:Concept` with four dimensions (`skos:narrower`), text from `lean/assessment/prompt.md`. | Rubric |
 | `unsigned/assessment-<claim_id>--<provider>.trig` | One blind assessment: `delphi:LLMClaimAssessment` with `delphi:hasVerdict` exactly as the assessor returned it (`faithful-with-narrower-scope` stays literal), one sub-assessment per dimension with `delphi:hasScore`, the assessor as a `prov:SoftwareAgent` that `delphi:usesModel` a named `delphi:LanguageModel`, the prompt file as the plan. Carries an `rdfs:comment` saying how many providers have run. | Assessor opinion about a translation |
 
@@ -85,20 +86,20 @@ resolves, and never delete the key files.
 ## Why the mutants change the statement, not the proof
 
 Most "formally verified" claims are tested, if at all, by breaking the proof: delete a tactic, watch
-the build fail. That shows the proof script is load-bearing, nothing more. The six mutants in
+the build fail. That shows the proof script is load-bearing, nothing more. The nine mutants in
 `lean/mutate.mjs` instead change the **statement** of the headline theorem (k = 2μ, 1/(M+1), i/(M+1),
-3× odds, no division by mean fitness) or delete a hypothesis of the model (the chain's escape
-condition). If the proof still went through, the theorem would be about the names, not the law:
+3× odds, no division by mean fitness, fixation ≥ (i+1)/M, budget ≥ 2μT) or delete a hypothesis of the model (the chain's escape
+condition; the favored chain's non-decreasing drift). If the proof still went through, the theorem would be about the names, not the law:
 either the conclusion would follow from the definitions regardless of the constant, or the deleted
 hypothesis was never used. Each mutant was rejected with a concrete unsolved goal or type mismatch
 at the line of the changed statement, and the unmodified modules passed through the same command.
 That is what the evidence item in each law record carries, and it is the part a reader who has seen
 many formalisation claims should look at first.
 
-Checks on 2026-10-31: 13 drafts parse as TriG; `np check` reports each as valid (not trusty, as
+Checks on 2026-10-31 (latest run): 16 drafts parse as TriG; `np check` reports each as valid (not trusty, as
 expected for unsigned drafts; the law and scope records have no assertion template because the
 formal-verification convention has none); the Delphi lint reports 0 findings; a dry run that sealed
-all 13 with a throwaway key in scratch space produced 13 trusty nanopubs with valid signatures. The
+all 13 of the first set with a throwaway key in scratch space produced 13 trusty nanopubs with valid signatures. The
 dry-run outputs were not kept.
 
 ## Holds
