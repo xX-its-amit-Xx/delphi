@@ -417,6 +417,76 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
       if (gmRaw.fin_size) genotype.fin_size = { why: gmRaw.fin_size.why || null,
         verified_leads: (gmRaw.fin_size.verified_leads || []).map(v => ({ gene: v.gene, organism: v.organism, finding: v.finding, link_type: v.link_type, citations: (v.citations || []).map(c => typeof c === 'string' ? c : (c.pmid ? 'PMID ' + c.pmid + (c.doi ? ' doi ' + c.doi : '') : JSON.stringify(c))) })),
         zfin_fin_size_genes: gmRaw.fin_size.zfin_fin_size_genes ? { definition: gmRaw.fin_size.zfin_fin_size_genes.definition, count: gmRaw.fin_size.zfin_fin_size_genes.count } : null };
+      // ---- for the explode view: a gene index (symbol -> the nodes it touches by STORED direct record), the breadth
+      // table (counts per layer, all direct records, full map only), Daane 2021 fin proportions, and the fin subtree.
+      // The stored rows are complete for 'required for' and 'sufficient for' links and for the focus and fin-size genes;
+      // other 'expressed in' rows live in genotype/expression_index.json.gz and are counted in breadth, not located.
+      const gidx = {};
+      const full = gmSlim ? (noMap ? null : J('genotype/map.vetted.json')) : (gmVetted || null);   // the full map's rows when present
+      const geneSrc = full || gmRaw;
+      const fullForBreadth = full || ((gmRaw.genes && typeof gmRaw.genes === 'object' && !gmRaw.genes.note) ? gmRaw : null);
+      for (const [layer, L] of Object.entries((geneSrc || gmRaw).layers)) {
+        for (const l of (L.links || [])) {
+          if (l.derived || !l.symbol) continue;
+          const id = nid(l.blueprint_node); if (!terms.has(id)) continue;
+          const g = gidx[l.symbol] || (gidx[l.symbol] = { nodes: {}, organisms: new Set(), ids: new Set() });
+          const types = g.nodes[id] || (g.nodes[id] = []);
+          const t = l.link_type === 'sufficient for' ? 'S' : l.link_type === 'required for' ? 'R' : 'E';
+          if (!types.includes(t)) types.push(t);
+          g.organisms.add(short(l.organism)); if (l.gene) g.ids.add(l.gene);
+        }
+      }
+      const breadthBySymbol = {};
+      for (const [gid, g] of Object.entries(fullForBreadth?.genes || {})) {
+        if (!g || !g.symbol || !g.breadth) continue;
+        const b = breadthBySymbol[g.symbol] || (breadthBySymbol[g.symbol] = { direct: 0, layers: {}, types: {}, ids: [] });
+        b.direct += g.breadth.blueprint_nodes_direct || 0; b.ids.push(gid);
+        for (const [k, v] of Object.entries(g.breadth.layers || {})) b.layers[k] = (b.layers[k] || 0) + v;
+        for (const k of ['expressed in', 'required for', 'sufficient for']) if (g.breadth[k]) b.types[k] = (b.types[k] || 0) + g.breadth[k];
+      }
+
+      genotype.gene_index_note = `symbol -> nodes with a stored direct record (${Object.keys(gidx).length} genes from ${full ? 'genotype/map.vetted.json' : gmSource}); complete for required-for and sufficient-for links and for the focus and fin-size genes, partial for expressed-in; breadth counts cover every direct record` + (fullForBreadth?.genes ? '' : ' (breadth table not in this checkout)');
+      genotype.breadth_available = !!fullForBreadth?.genes;
+      const mfp = (geneSrc || gmRaw).fin_size?.measured_fin_proportions || gmRaw.fin_size?.measured_fin_proportions || null;
+      genotype.fin_proportions = mfp ? { source: mfp.source || null, n_specimens: mfp.n_specimens ?? null, by_group: mfp.pectoral_over_SL_by_group || null } : null;
+      // the fin subtree (genotype/fin-subtree.json): the zebrafish pectoral fin (ZFA) and its parts below the
+      // blueprint's pectoral fin, with proxy-fish links re-attached to the exact structure each record names.
+      // Kept per node: label, level, parent (first part_of edge), counts, xrefs; links capped like the map.
+      const fsub = J('genotype/fin-subtree.json');
+      if (fsub && fsub.layers) {
+        const F = { file: 'genotype/fin-subtree.json', built: fsub.built || null, tool: fsub.tool || null, vetted: fsub.vetted === true,
+          organ: nid(fsub.blueprint_join?.pectoral_fin_uberon || 'UBERON:0000151'), zfa_root: fsub.blueprint_join?.pectoral_fin_zfa || 'ZFA:0001161',
+          join_note: fsub.blueprint_join?.note || null, constraint: fsub.constraint || null, causation_warning: fsub.causation_warning || null,
+          propagation_rules: fsub.propagation_rules || null, summary: { zfa_terms: fsub.summary?.zfa_terms ?? null, links: fsub.summary?.links ?? null, links_by_type: fsub.summary?.links_by_type || null, links_by_level: fsub.summary?.links_by_level || null, zfin_phenotype_rejected: fsub.summary?.zfin_phenotype_rows?.rejected || null },
+          coverage: {}, nodes: {}, links: {}, omitted: fsub.slimming?.links_omitted_by_node_and_type || {}, edges: [], wing_genes: null, single_cell_leads: null, sources: Object.keys(fsub.sources || {}) };
+        const parentOf = {};
+        for (const e of (fsub.edges || [])) { F.edges.push({ child: e.child, parent: e.parent, rel: e.rel }); if (e.rel === 'part_of' && !parentOf[e.child]) parentOf[e.child] = e.parent; }
+        for (const [layer, L] of Object.entries(fsub.layers)) {
+          F.coverage[layer] = L.coverage || null;
+          for (const n of (L.nodes || [])) {
+            F.nodes[n.term] = { label: n.label, level: layer, parent: n.parent || parentOf[n.term] || null, depth: n.depth_below_pectoral_fin ?? null,
+              direct: !!n.direct, expressed_in: n.direct_expressed_in_genes || 0, required_for: n.direct_required_for_genes || 0, sufficient_for: n.direct_sufficient_for_genes || 0,
+              uberon_xref: n.uberon_xref || [], cl_xref: n.cl_xref || null, in_blueprint: !!n.in_blueprint, zebrafish_only: !!n.zebrafish_only, structure: n.structure || null, cell_type: n.cell_type || null,
+              stage_range: n.stage_range ? (Array.isArray(n.stage_range.periods) ? n.stage_range.periods.join('..') : (n.stage_range.span || n.stage_range.period || null)) : null };
+          }
+          const byNode = {};
+          for (const l of (L.links || [])) { if (l.derived) continue; (byNode[l.blueprint_node] || (byNode[l.blueprint_node] = [])).push(l); }
+          for (const [id, ls] of Object.entries(byNode)) {
+            const rank = { 'sufficient for': 0, 'required for': 1, 'expressed in': 2 };
+            F.links[id] = ls.sort((a, b) => rank[a.link_type] - rank[b.link_type] || KIND_RANK(a.evidence_kind) - KIND_RANK(b.evidence_kind) || String(a.symbol).localeCompare(String(b.symbol)))
+              .map(l => ({ gene: l.gene || null, symbol: l.symbol || null, organism: short(l.organism), link: l.link_type, kind: l.evidence_kind || null, db: l.source?.database || null, url: l.source?.url || null, retrieved: l.source?.retrieved || null,
+                stage: l.stage?.period || l.stage?.span || (typeof l.stage === 'string' ? l.stage : null), finding: l.finding || null }));
+            // the fin subtree's rows also feed the gene lens, keyed by ZFA id
+            for (const l of ls) { if (!l.symbol) continue; const g = gidx[l.symbol] || (gidx[l.symbol] = { nodes: {}, organisms: new Set(), ids: new Set() });
+              const types = g.nodes[id] || (g.nodes[id] = []); const t = l.link_type === 'sufficient for' ? 'S' : l.link_type === 'required for' ? 'R' : 'E'; if (!types.includes(t)) types.push(t); g.organisms.add(short(l.organism)); if (l.gene) g.ids.add(l.gene); }
+          }
+        }
+        if (fsub.wing_genes) F.wing_genes = { honest_summary: fsub.wing_genes._honest_summary || null,
+          genes: Object.fromEntries(Object.entries(fsub.wing_genes).filter(([k]) => !k.startsWith('_')).map(([k, v]) => [k, { links_in_fin_subtree: v.links_in_fin_subtree ?? null, deepest_level_reached: v.deepest_level_reached || null, nodes: v.nodes_level_type_stage || [], zfin_rows: v.all_zfin_rows_for_this_gene ? Object.keys(v.all_zfin_rows_for_this_gene).length : null }])) };
+        if (fsub.single_cell_leads) F.single_cell_leads = { note: fsub.single_cell_leads.note || null, n_series: (fsub.single_cell_leads.series || []).length, fin_in_title: (fsub.single_cell_leads.series || []).filter(x => x.fin_in_title).length };
+        genotype.fin_subtree = F;
+      } else genotype.fin_subtree = null;
+      genotype.gene_index = Object.fromEntries(Object.entries(gidx).map(([sym, g]) => [sym, { nodes: g.nodes, organisms: [...g.organisms], ids: [...g.ids], breadth: breadthBySymbol[sym] || null }]));
       genotype.nodes_with_direct = Object.values(genotype.nodes).filter(n => n.direct).length;
       genotype.nodes_with_derived_only = Object.values(genotype.nodes).filter(n => n.derived_only).length;
       genotype.links_stored_here = Object.values(genotype.links).reduce((a, l) => a + l.length, 0);

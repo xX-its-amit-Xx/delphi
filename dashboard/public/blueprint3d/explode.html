@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Open the Fish &mdash; DELPHI</title>
+<meta name="description" content="The flying-fish blueprint opened layer by layer: body, organ systems, organs, tissues, cell types, and the proxy-fish genes recorded at each, down to the genes behind the enlarged pectoral fins.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e7c86'/%3E%3Cpath d='M5 16c5-7 14-9 22-4-3 2-6 3-8 4 2 1 5 2 8 4-8 5-17 3-22-4z' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--soft:#eef2ef;--surface:#fcfcfb;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;
+ /* link types: validated pair (dataviz slots 1 and 2); 'expressed in' is the weakest kind and stays neutral */
+ --suff:#eb6834;--req:#2a78d6;--expr:#9aa6a3;--fill:#14201f;--hollow:#fcfcfb;--outline:#8a9896;--leader:#b9c3c0}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--soft:#192b29;--surface:#1a1a19;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;
+ --suff:#d95926;--req:#3987e5;--expr:#6b7b78;--fill:#e7efec;--hollow:#1a1a19;--outline:#6f807d;--leader:#3f4f4c}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--soft:#192b29;--surface:#1a1a19;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;
+ --suff:#d95926;--req:#3987e5;--expr:#6b7b78;--fill:#e7efec;--hollow:#1a1a19;--outline:#6f807d;--leader:#3f4f4c}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 "Inter Tight",system-ui,sans-serif;display:flex;flex-direction:column}
+a{color:var(--accent)}
+header{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:9px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header b{font-family:Fraunces,serif;font-size:1.1rem}
+nav a{padding:3px 9px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.86rem}
+nav a:hover{background:var(--soft);color:var(--ink)}
+.ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.84rem;margin-left:auto}
+.ctl label{display:inline-flex;gap:6px;align-items:center}
+select,input[type=search],input[type=range],button{font:inherit;font-size:.86rem;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:4px 9px}
+input[type=range]{padding:0;width:150px;accent-color:var(--accent)}
+button{cursor:pointer}button.primary{border-color:var(--accent);color:var(--accent);font-weight:600}
+main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 420px;min-height:0}
+@media (max-width:880px){main{grid-template-columns:1fr;grid-template-rows:58vh auto}}
+#stage{position:relative;min-height:0;min-width:0;overflow:hidden;background:var(--surface)}
+#svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+#svg text{font-family:"Inter Tight",system-ui,sans-serif;fill:var(--ink);pointer-events:none}
+#svg .lab{font-size:12px}#svg .lab.sys{font-weight:700;font-size:12.5px}#svg .lab.small{font-size:10.5px}
+#svg .node{cursor:pointer}
+#svg .outline{fill:none;stroke:var(--outline);stroke-width:1.6}
+#svg .outline.lit{stroke:var(--ink);stroke-width:3}
+#svg .fin{fill:color-mix(in srgb,var(--accent) 10%,transparent);stroke:var(--outline);stroke-width:1.2}
+#svg .leader{stroke:var(--leader);stroke-width:1;fill:none}
+#svg .edge{stroke:var(--leader);stroke-width:1;fill:none}
+#svg .edge.inferred{stroke-dasharray:4 3}
+#svg .ring{fill:none;stroke:var(--ink);stroke-width:3}
+#svg .chip{font-size:10.5px}
+#svg .ghost{opacity:.1;transition:opacity .25s}
+#svg .dim{opacity:.35;transition:opacity .25s}
+.ov{position:absolute;background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.78rem;z-index:2}
+#note{left:10px;top:10px;max-width:330px;line-height:1.35}
+#note b{display:block;font-size:.8rem}
+#crumbs{right:10px;top:10px;color:var(--mute)}
+#crumbs a{cursor:pointer}
+#legend{left:10px;bottom:10px;max-width:330px}
+#legend .row{display:flex;gap:7px;align-items:center;margin:2px 0}
+#legend .sw{display:inline-block;width:12px;height:12px;border-radius:50%;flex:none;border:2px solid var(--fill)}
+#legend .sw.f{background:var(--fill)}
+#legend .ln{display:inline-block;width:18px;height:0;border-top:2px solid var(--leader);flex:none}
+#legend .ln.d{border-top-style:dashed}
+#legend .g{display:inline-block;padding:0 6px;border-radius:99px;border:1.5px solid;font-size:.72rem;line-height:1.3}
+#panel{border-left:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:16px}
+#panel h2{font-family:Fraunces,serif;font-size:1.15rem;margin:0 0 6px;line-height:1.2}
+.chip{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.75rem;border:1px solid var(--line);background:var(--soft);color:var(--mute);margin:0 4px 4px 0}
+.chip.acc{color:var(--accent);border-color:var(--accent)}.chip.warn{color:var(--warn);border-color:var(--warn)}.chip.ok{color:var(--ok);border-color:var(--ok)}
+.gene{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.78rem;border:1.5px solid var(--expr);background:var(--panel);color:var(--ink);margin:0 4px 5px 0;cursor:pointer;font-family:"JetBrains Mono",monospace}
+.gene.S{border-color:var(--suff);background:color-mix(in srgb,var(--suff) 14%,transparent)}
+.gene.R{border-color:var(--req);background:color-mix(in srgb,var(--req) 12%,transparent)}
+.gene.inf{border-style:dashed;color:var(--mute)}
+.gene.pin{box-shadow:0 0 0 2px var(--ink)}
+.gene:hover{outline:2px solid var(--accent)}
+.sec{margin:12px 0}.sec h4{margin:0 0 4px;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.small{font-size:.86rem}.tiny{font-size:.77rem;color:var(--mute)}
+.mono{font-family:"JetBrains Mono",monospace;font-size:.77rem;background:var(--soft);padding:1px 5px;border-radius:4px;word-break:break-all}
+details{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:6px 0}details summary{cursor:pointer;font-size:.86rem;font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:.8rem}td,th{text-align:left;padding:3px 5px;border-bottom:1px solid var(--line);vertical-align:top}
+ul.t{margin:.2em 0;padding-left:1.1em}ul.t li{margin:.25em 0}
+a.go{cursor:pointer}
+#tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:.78rem;display:none;max-width:300px;z-index:5}
+#inset{position:absolute;right:10px;top:52px;width:340px;display:none}
+#inset svg text{font-size:10.5px;fill:var(--ink)}
+body.embed header,body.embed #panel{display:none}body.embed main{grid-template-columns:1fr}
+</style>
+</head>
+<body>
+<header>
+  <b>Open the Fish</b>
+  <nav><a href="../start/">Start</a><a href="../">Mission Control</a><a href="index.html">Radial 3D view</a><a href="../graph/?view=flyingfish">Graph</a><a href="../t/genotype/">Genotype thread</a></nav>
+  <div class="ctl">
+    <label title="Pull the organ systems out of the body, like an exploded assembly drawing">explode <input type="range" id="t" min="0" max="100" value="0"></label>
+    <select id="organSel" title="Jump to an organ (x-ray)"><option value="">organ&hellip;</option></select>
+    <input type="search" id="geneQ" list="geneList" placeholder="gene lens: symbol&hellip;" title="Light up every node a gene touches"><datalist id="geneList"></datalist>
+    <button id="wingBtn" class="primary" title="Pectoral fin with the fin-size genes pinned">Wing genes</button>
+    <button id="resetBtn">Reset</button>
+    <button id="themeBtn">Theme</button>
+  </div>
+</header>
+<main>
+  <div id="stage">
+    <svg id="svg" viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid meet"></svg>
+    <div id="tip"></div>
+    <div id="note" class="ov"></div>
+    <div id="crumbs" class="ov"></div>
+    <div id="legend" class="ov"></div>
+    <div id="inset" class="ov"></div>
+  </div>
+  <aside id="panel"><h2>Loading&hellip;</h2></aside>
+</main>
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const NS='http://www.w3.org/2000/svg';
+const el=(tag,attrs={},parent)=>{const e=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,v);if(parent)parent.appendChild(e);return e;};
+const params=new URLSearchParams(location.search);
+if(params.get('embed')==='1')document.body.classList.add('embed');
+const tk='delphi-theme';
+try{if(localStorage.getItem(tk))document.documentElement.dataset.theme=localStorage.getItem(tk);}catch{}
+if(params.get('theme'))document.documentElement.dataset.theme=params.get('theme');
+$('#themeBtn').onclick=()=>{const c=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');const n=c==='dark'?'light':'dark';document.documentElement.dataset.theme=n;try{localStorage.setItem(tk,n)}catch{};drawInset();};
+
+const LEVEL_NAME={body:'body',organ_system:'organ system',organ:'organ',tissue:'tissue',cell:'cell type'};
+const R={body:0,organ_system:9,organ:6,tissue:4.5,cell:3.5};
+// ---- the schematic fish: drawn for this page, not traced from a specimen or an atlas ----
+// A side view, head left. Rough positions of the organ systems inside it are this page's own placement for
+// legibility; they are labelled as such on the canvas and are not measured anatomy.
+const BODY='M 118 268 C 150 215, 230 170, 340 168 C 470 165, 640 190, 760 232 L 835 212 L 905 150 L 892 262 L 905 380 L 835 316 L 760 296 C 640 338, 470 363, 340 360 C 230 358, 150 320, 118 268 Z';
+const PECTORAL='M 330 300 C 400 330, 520 400, 610 455 L 560 462 C 480 430, 400 380, 335 335 Z';
+const PELVIC='M 520 345 C 560 370, 610 400, 660 420 L 630 425 C 590 405, 545 380, 520 352 Z';
+const EYE={cx:185,cy:238,r:11};
+const CENTER={x:500,y:265};
+// anchor = schematic position inside the body; row = where it goes when exploded (dorsal row above, ventral row below)
+const SYS={
+  'UBERON_0004456':{label:'entire sense organ system',x:205,y:250,row:'top'},   // head
+  'UBERON_0001033':{label:'gustatory system',x:160,y:285,row:'bottom'},          // mouth
+  'UBERON_0001016':{label:'nervous system',x:260,y:222,row:'top'},                // brain and cord
+  'UBERON_0001004':{label:'respiratory system',x:300,y:292,row:'bottom'},         // gills
+  'UBERON_0001009':{label:'circulatory system',x:345,y:318,row:'bottom'},         // heart
+  'UBERON_0002390':{label:'hematopoietic system',x:395,y:215,row:'top'},          // head kidney
+  'UBERON_0001008':{label:'renal system',x:545,y:210,row:'top'},                  // kidney, dorsal
+  'UBERON_0001007':{label:'digestive system',x:470,y:308,row:'bottom'},           // gut
+  'UBERON_0002330':{label:'exocrine system',x:400,y:272,row:'bottom'},            // liver, pancreas
+  'UBERON_0002465':{label:'lymphoid system',x:548,y:338,row:'bottom'},            // spleen
+  'UBERON_0000990':{label:'reproductive system',x:630,y:300,row:'bottom'},        // gonad
+  'UBERON_0002204':{label:'musculoskeletal system',x:672,y:246,row:'top'},        // axial muscle and spine
+  'UBERON_0002416':{label:'integumental system',x:770,y:212,row:'top'}            // skin
+};
+const FIN_ORGAN='UBERON_0000151', FIN_POS={x:465,y:385};
+const WING_GENES=['kcnk5b','kcnh2a','slc43a2a'];
+
+let D=null,T=new Map(),children=new Map(),G=null;
+let state={t:0,system:null,organ:null,tissue:null,gene:null,preset:null};
+fetch('data.json').then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+  .then(d=>{D=d;try{init();}catch(e){$('#panel').innerHTML='<h2>The view failed to draw</h2><p class="small">'+esc(e.message)+'</p>';console.error(e);}})
+  .catch(e=>{$('#panel').innerHTML='<h2>Could not load data.json</h2><p class="small">'+esc(e.message)+'</p>';});
+
+function init(){
+  for(const t of D.terms)T.set(t.id,t);
+  for(const t of D.terms){for(const p of t.parents){if(!children.has(p.id))children.set(p.id,[]);children.get(p.id).push(t.id);}}
+  G=D.genotype&&!D.genotype.gated&&!D.genotype.error&&D.genotype.nodes?D.genotype:null;
+  // systems in the file but not in this page's schematic table get a slot in the dorsal row and a warning
+  const body=D.terms.find(t=>t.level==='body');
+  for(const id of (children.get(body.id)||[])){const t=T.get(id);if(t.level==='organ_system'&&!SYS[id]){SYS[id]={label:t.label,x:500,y:240,row:'top',unplaced:true};}}
+  for(const id of Object.keys(SYS))if(!T.has(id))delete SYS[id];
+  // controls
+  const sel=$('#organSel');
+  const organs=D.terms.filter(t=>t.level==='organ').sort((a,b)=>a.label.localeCompare(b.label));
+  for(const o of organs){const op=document.createElement('option');op.value=o.id;op.textContent=o.label+(G&&G.nodes[o.id]&&G.nodes[o.id].direct?'':' (no gene record)');sel.appendChild(op);}
+  sel.onchange=()=>{if(sel.value)goOrgan(sel.value);};
+  const dl=$('#geneList');if(G){for(const s of Object.keys(G.gene_index||{}).sort()){const op=document.createElement('option');op.value=s;dl.appendChild(op);}}
+  $('#geneQ').onchange=e=>{const q=e.target.value.trim();if(q)lens(q);};
+  $('#geneQ').onkeydown=e=>{if(e.key==='Enter'){const q=e.target.value.trim();if(q)lens(q);}};
+  $('#t').oninput=e=>{state.t=+e.target.value/100;render();};
+  $('#wingBtn').onclick=wing;
+  $('#resetBtn').onclick=()=>{state={t:0,system:null,organ:null,tissue:null,gene:null,preset:null};$('#t').value=0;$('#organSel').value='';$('#geneQ').value='';render();};
+  legend();
+  // deep links for screenshots and sharing
+  if(params.get('t')){state.t=Math.max(0,Math.min(1,+params.get('t')));$('#t').value=state.t*100;}
+  if(params.get('system')&&SYS[params.get('system')])state.system=params.get('system');
+  if(params.get('organ')&&T.has(params.get('organ')))goOrgan(params.get('organ'),true);
+  if(params.get('preset')==='wing')wing(true);
+  if(params.get('tissue')&&(T.has(params.get('tissue'))||(FS()&&FS().nodes[params.get('tissue')])))state.tissue=params.get('tissue');
+  if(params.get('gene'))lens(params.get('gene'),true);
+  render();
+  if(state.gene){}else if(state.tissue)show(state.tissue);else if(state.organ)show(state.organ);else if(state.system)show(state.system);else intro();
+}
+
+// ---- helpers over the genotype block ----
+const FS=()=>G&&G.fin_subtree&&G.fin_subtree.nodes?G.fin_subtree:null;
+const isZ=id=>String(id).startsWith('ZFA:');
+const rec=id=>{if(isZ(id)){const F=FS();return F&&F.nodes[id]||null;}return G&&G.nodes[id]||null;};
+const hasRec=id=>{const r=rec(id);return !!(r&&r.direct);};
+const links=id=>{if(isZ(id)){const F=FS();return F&&F.links[id]||[];}return G&&G.links[id]||[];};
+const omitted=id=>{if(isZ(id)){const F=FS();return F&&F.omitted[id]||{};}return (G&&G.omitted||{})[id]||{};};
+const ZLEVEL={organ:'pectoral fin (ZFA)',part:'fin part (ZFA)',subpart:'fin subpart (ZFA)',cell:'fin cell type (ZFA post-composed)',precursor:'embryonic precursor (ZFA)','precursor part':'precursor part (ZFA)'};
+// a ZFA node of the fin subtree presented like a term
+const zterm=id=>{const F=FS();const n=F&&F.nodes[id];if(!n)return null;return {id,label:n.label||id,level:n.level,zfa:true,iri:'http://purl.obolibrary.org/obo/'+id.split('+')[0].replace(':','_'),parents:n.parent?[{id:n.parent,relation:'part_of',via:'fin-subtree'}]:[],uberon_xref:n.uberon_xref,cl_xref:n.cl_xref,stage_range:n.stage_range,zebrafish_only:n.zebrafish_only,in_blueprint:n.in_blueprint,structure:n.structure,cell_type:n.cell_type};};
+const term=id=>T.get(id)||zterm(id);
+const zkids=(id,level)=>{const F=FS();if(!F)return [];return Object.entries(F.nodes).filter(([k,v])=>v.parent===id&&(!level||v.level===level)).map(([k])=>k);};
+function geneRows(id){ // ranked: sufficient > required > expressed; plus the inferred counts as one dashed chip
+  const r=rec(id);if(!r)return {rows:[],inferred:null,more:{}};
+  const rank={'sufficient for':0,'required for':1,'expressed in':2};
+  const rows=[...links(id)].sort((a,b)=>rank[a.link]-rank[b.link]||String(a.symbol).localeCompare(String(b.symbol)));
+  const om=omitted(id);
+  const listed={'sufficient for':0,'required for':0,'expressed in':0};for(const l of rows)listed[l.link]=(listed[l.link]||0)+1;
+  const more={};for(const k of Object.keys(listed)){const total={'sufficient for':r.sufficient_for,'required for':r.required_for,'expressed in':r.expressed_in}[k];if(total>listed[k])more[k]=total-listed[k];}
+  const inferred=(r.derived_expressed_in||r.derived_required_for)?{e:r.derived_expressed_in,r:r.derived_required_for}:null;
+  return {rows,inferred,more};
+}
+const finSub=()=>{const F=G&&G.fin_subtree;return F&&Array.isArray(F.tissues)&&F.tissues.length?F:null;};
+function tissuesOf(organ){ // blueprint tissues; for the fin, the ZFA-derived subtree when the Genotype thread has written it
+  const fs=finSub();if(organ===FIN_ORGAN&&fs&&fs.tissues.length)return fs.tissues.map(t=>({id:t.id,label:t.label||t.id,src:'fin-subtree',cells:t.cells||[]}));
+  return (children.get(organ)||[]).filter(id=>T.get(id).level==='tissue').map(id=>({id,label:T.get(id).label,src:'blueprint',cells:null}));
+}
+const cellsOfOrgan=organ=>(children.get(organ)||[]).filter(id=>T.get(id).level==='cell');
+
+// ---- layout ----
+function sysPos(id){
+  const s=SYS[id];const ids=Object.keys(SYS);
+  const top=ids.filter(k=>SYS[k].row==='top').sort((a,b)=>SYS[a].x-SYS[b].x), bot=ids.filter(k=>SYS[k].row==='bottom').sort((a,b)=>SYS[a].x-SYS[b].x);
+  const row=s.row==='top'?top:bot, i=row.indexOf(id), n=row.length;
+  const ex=110+(780*(i+0.5)/n), ey=(s.row==='top'?56:496)+(i%2?(s.row==='top'?30:-30):0);
+  const t=state.t;return {x:s.x+(ex-s.x)*t,y:s.y+(ey-s.y)*t,ax:s.x,ay:s.y};
+}
+function fan(cx,cy,n,radius,a0,a1){const out=[];for(let i=0;i<n;i++){const a=n===1?(a0+a1)/2:a0+(a1-a0)*i/(n-1);out.push({x:cx+radius*Math.cos(a),y:cy+radius*Math.sin(a)});}return out;}
+
+// ---- render ----
+function render(){
+  const svg=$('#svg');svg.innerHTML='';
+  const lensSet=state.gene&&G&&G.gene_index[state.gene]?G.gene_index[state.gene].nodes:null;
+  const xray=!!state.organ;
+  const body=D.terms.find(t=>t.level==='body');
+  const gBody=el('g',{},svg);
+  const bodyLit=lensSet&&lensSet[body.id];
+  el('path',{d:BODY,class:'outline'+(bodyLit?' lit':'')+(xray&&!bodyLit?' ghost':'')},gBody);
+  el('path',{d:PECTORAL,class:'fin'+(xray&&state.organ!==FIN_ORGAN?' ghost':'')},gBody);
+  el('path',{d:PELVIC,class:'fin'+(xray?' ghost':'')},gBody);
+  el('circle',{cx:EYE.cx,cy:EYE.cy,r:EYE.r,class:'outline'+(xray?' ghost':'')},gBody);
+  const tx=el('text',{x:118,y:540,class:'lab small'},gBody);tx.textContent='Schematic side view drawn for this page; outline and positions are not measured anatomy. Enlarged pectoral fin shaded.';
+  if(xray)tx.style.display='none';
+  // systems
+  const gLead=el('g',{},svg), gSys=el('g',{},svg), gOrg=el('g',{},svg), gTis=el('g',{},svg), gCell=el('g',{},svg);
+  const focusSys=state.system||(state.organ?(T.get(state.organ).parents[0]||{}).id:null);
+  const sysPositions={};
+  for(const id of Object.keys(SYS)){
+    const p=sysPos(id);sysPositions[id]=p;
+    const lit=lensSet?!!lensSet[id]:true;
+    const cls=lensSet?(lit?'':'ghost'):xray?(id===focusSys?'dim':'ghost'):(state.system&&id!==state.system?'dim':'');
+    if(state.t>0.02){el('line',{x1:p.ax,y1:p.ay,x2:p.x,y2:p.y,class:'leader'+(cls?' '+cls:'')},gLead);el('circle',{cx:p.ax,cy:p.ay,r:2.2,fill:'var(--leader)',class:cls},gLead);}
+    node(gSys,id,p.x,p.y,R.organ_system,cls,'sys',(SYS[id].unplaced?SYS[id].label+' (no schematic slot)':SYS[id].label).replace(/ system$/,''),lensSet&&lit);
+  }
+  // the pectoral fin is an organ placed directly under the body in the file; it sits on the fin
+  const finCls=lensSet?(lensSet[FIN_ORGAN]?'':'ghost'):xray?(state.organ===FIN_ORGAN?'':'ghost'):(state.system?'dim':'');
+  const finP={x:FIN_POS.x+(590-FIN_POS.x)*state.t*0.0,y:FIN_POS.y+(530-FIN_POS.y)*state.t*0.0};
+  node(gOrg,FIN_ORGAN,finP.x,finP.y,R.organ,finCls,'',T.get(FIN_ORGAN).label+' (named in the description)',lensSet&&lensSet[FIN_ORGAN]);
+  // organs of the chosen system fan out
+  const organPos={};
+  if(state.system&&SYS[state.system]){
+    const p=sysPositions[state.system];const ids=(children.get(state.system)||[]).filter(i=>T.get(i).level==='organ');
+    const up=SYS[state.system].row==='top';const pts=fan(p.x,p.y,ids.length,78,up?Math.PI*0.08:Math.PI*1.08,up?Math.PI*0.92:Math.PI*1.92);
+    ids.forEach((id,i)=>{const q=pts[i];organPos[id]=q;const cls=lensSet?(lensSet[id]?'':'ghost'):xray?(id===state.organ?'':'ghost'):'';
+      el('line',{x1:p.x,y1:p.y,x2:q.x,y2:q.y,class:'edge'+(cls?' '+cls:'')},gLead);
+      node(gOrg,id,q.x,q.y,R.organ,cls,'',T.get(id).label,lensSet&&lensSet[id]);});
+  }
+  // x-ray: tissues around the organ, cell types as a chip cluster
+  if(state.organ){
+    const o=state.organ, op=organPos[o]||(o===FIN_ORGAN?finP:null);
+    if(op&&o===FIN_ORGAN&&FS()){finXray(op,gLead,gTis,gCell);}
+    else if(op){
+      const ts=tissuesOf(o);const pts=fan(op.x,op.y,ts.length,70,Math.PI*0.55,Math.PI*1.45);
+      ts.forEach((t,i)=>{const q=pts[i];const cls=state.tissue&&state.tissue!==t.id?'dim':'';el('line',{x1:op.x,y1:op.y,x2:q.x,y2:q.y,class:'edge'},gLead);
+        node(gTis,t.id,q.x,q.y,R.tissue,cls,'small',t.label+(t.src==='fin-subtree'?' (ZFA-derived)':''),false,t,q.x<op.x-10);});
+      const selT=ts.find(t=>t.id===state.tissue);
+      let cells=[],cellSrc='';
+      if(selT&&selT.cells&&selT.cells.length){cells=selT.cells.map(c=>({id:c.id,label:c.label||c.id}));cellSrc='fin-subtree';}
+      else{cells=cellsOfOrgan(o).map(id=>({id,label:T.get(id).label}));cellSrc='blueprint';}
+      const cx=Math.min(op.x+20,760), cy=op.y+74;
+      if(cells.length){
+        const cols=3;cells.forEach((c,i)=>{const x=cx+(i%cols)*95, y=cy-((Math.ceil(cells.length/cols)-1)*16)/2+Math.floor(i/cols)*16;
+          const g=el('g',{class:'node'},gCell);g.dataset.id=c.id;const w=Math.min(90,7+c.label.length*5.6);
+          el('rect',{x:x-2,y:y-7,width:w,height:13,rx:6,fill:hasRec(c.id)?'var(--fill)':'var(--hollow)',stroke:'var(--fill)','stroke-width':1},g);
+          const t=el('text',{x:x+3,y:y+3,class:'chip'},g);t.textContent=c.label.slice(0,15)+(c.label.length>15?'…':'');t.style.fill=hasRec(c.id)?'var(--hollow)':'var(--ink)';
+          g.onclick=()=>{show(c.id);};g.onmouseenter=e=>tip(e,c.label+' · cell type'+(hasRec(c.id)?'':' · no gene record'));g.onmouseleave=untip;});
+        const lab=el('text',{x:cx-2,y:cy-((Math.ceil(cells.length/cols)-1)*16)/2-14,class:'lab small'},gCell);
+        lab.textContent=cellSrc==='blueprint'?`${cells.length} cell types the ontology places under the organ (not under one tissue)`:`${cells.length} cell types of this tissue (ZFA-derived)`;
+      }else{const lab=el('text',{x:cx-2,y:cy,class:'lab small'},gCell);lab.textContent=ts.length?'no cell types recorded under this organ in the blueprint':'no tissue/cell breakdown recorded for this organ';}
+    }
+  }
+  // gene lens: every touched node, placed near its parent system
+  if(lensSet){
+    const bySys={};
+    const zl=Object.keys(lensSet).filter(isZ);
+    if(zl.length){const zp=fan(FIN_POS.x,FIN_POS.y,zl.length,70,Math.PI*0.35,Math.PI*1.3);zl.forEach((id,i)=>{const q=zp[i];const f=rec(id);el('line',{x1:FIN_POS.x,y1:FIN_POS.y,x2:q.x,y2:q.y,class:'edge'},gLead);node(gTis,id,q.x,q.y,R.tissue,'','small',(f?f.label:id)+' (fin, ZFA)',true,{zfa:true},q.x<FIN_POS.x-10);});}
+    for(const id of Object.keys(lensSet)){if(isZ(id))continue;const t=T.get(id);if(!t||t.level==='body'||t.level==='organ_system'||id===FIN_ORGAN)continue;
+      let p=t;while(p&&p.level!=='organ_system'){const pid=(p.parents[0]||{}).id;p=pid?T.get(pid):null;}
+      const sid=p?p.id:null;if(!sid||!SYS[sid])continue;(bySys[sid]||(bySys[sid]=[])).push(id);}
+    for(const [sid,ids] of Object.entries(bySys)){const p=sysPositions[sid];const up=SYS[sid].row==='top';const pts=fan(p.x,p.y,ids.length,60,up?Math.PI*0.1:Math.PI*1.1,up?Math.PI*0.9:Math.PI*1.9);
+      ids.forEach((id,i)=>{const q=pts[i];const t=T.get(id);el('line',{x1:p.x,y1:p.y,x2:q.x,y2:q.y,class:'edge'},gLead);node(gOrg,id,q.x,q.y,R[t.level],'',t.level==='organ'?'':'small',t.label+(t.level!=='organ'?' ('+LEVEL_NAME[t.level]+')':''),true);});}
+  }
+  crumbs();drawInset();
+}
+function finXray(op,gLead,gTis,gCell){
+  const F=FS(), root=F.zfa_root;
+  const sel=state.tissue&&isZ(state.tissue)?state.tissue:null;
+  // parts of the fin fan to the left and below; the embryonic precursor branch sits above, dashed (develops_from)
+  const parts=zkids(root,'part'), pts=fan(op.x,op.y,parts.length,92,Math.PI*0.5,Math.PI*1.35);
+  const placed={};
+  parts.forEach((id,i)=>{const q=pts[i];placed[id]=q;const cls=sel&&sel!==id&&rec(sel)&&rec(sel).parent!==id?'dim':'';el('line',{x1:op.x,y1:op.y,x2:q.x,y2:q.y,class:'edge'},gLead);
+    node(gTis,id,q.x,q.y,R.tissue,cls,'small',F.nodes[id].label,false,{zfa:true},q.x<op.x-10);});
+  const pre=Object.keys(F.nodes).filter(k=>F.nodes[k].level==='precursor');
+  if(pre.length){const pid=pre[0],q={x:op.x+40,y:op.y-120};placed[pid]=q;el('line',{x1:op.x,y1:op.y,x2:q.x,y2:q.y,class:'edge inferred'},gLead);
+    const lab=el('text',{x:(op.x+q.x)/2+6,y:(op.y+q.y)/2,class:'lab small'},gLead);lab.textContent='developmental lane: develops_from, not part_of';
+    node(gTis,pid,q.x,q.y,R.tissue,'','small',F.nodes[pid].label,false,{zfa:true});
+    const pp=zkids(pid,'precursor part'), ppts=fan(q.x,q.y,pp.length,64,Math.PI*1.15,Math.PI*1.85);
+    pp.forEach((id,i)=>{const r=ppts[i];placed[id]=r;el('line',{x1:q.x,y1:q.y,x2:r.x,y2:r.y,class:'edge'},gLead);node(gTis,id,r.x,r.y,R.cell,sel&&sel!==id?'dim':'','small',F.nodes[id].label,false,{zfa:true},r.x<q.x-10);});}
+  // the selected part fans its subparts; the organ root and any selected structure show their post-composed cell types as chips
+  if(sel&&placed[sel]&&F.nodes[sel].level!=='cell'){const q=placed[sel];const subs=zkids(sel,'subpart');const spts=fan(q.x,q.y,subs.length,60,Math.PI*0.65,Math.PI*1.35);
+    subs.forEach((id,i)=>{const r=spts[i];placed[id]=r;el('line',{x1:q.x,y1:q.y,x2:r.x,y2:r.y,class:'edge'},gLead);node(gTis,id,r.x,r.y,R.cell,'','small',F.nodes[id].label,false,{zfa:true},r.x<q.x-10);});}
+  const host=sel&&F.nodes[sel]&&F.nodes[sel].level!=='cell'?sel:root; const cells=zkids(host,'cell');
+  const hx=(placed[host]||op).x+28, hy=(placed[host]||op).y+(host===root?70:46);
+  if(cells.length){const cols=2;cells.forEach((id,i)=>{const x=hx+(i%cols)*125,y=hy+Math.floor(i/cols)*16;const g=el('g',{class:'node'},gCell);g.dataset.id=id;const lab=F.nodes[id].label;const w=Math.min(120,7+lab.length*5.6);
+      el('rect',{x:x-2,y:y-7,width:w,height:13,rx:6,fill:hasRec(id)?'var(--fill)':'var(--hollow)',stroke:'var(--fill)','stroke-width':1},g);
+      const t=el('text',{x:x+3,y:y+3,class:'chip'},g);t.textContent=lab.slice(0,21)+(lab.length>21?'…':'');t.style.fill=hasRec(id)?'var(--hollow)':'var(--ink)';
+      g.onclick=()=>show(id);g.onmouseenter=e=>tip(e,lab+' · fin cell type (ZFA post-composed'+(F.nodes[id].cl_xref?', '+F.nodes[id].cl_xref:'')+')');g.onmouseleave=untip;});
+    const lab=el('text',{x:hx-2,y:hy-14,class:'lab small'},gCell);lab.textContent=`${cells.length} cell type${cells.length>1?'s':''} ZFIN records in ${F.nodes[host].label} (post-composed, ZFA)`;}
+  else{const lab=el('text',{x:hx-2,y:hy,class:'lab small'},gCell);lab.textContent=`no cell-level record in ${F.nodes[host].label}`;}
+  const cap=el('text',{x:118,y:540,class:'lab small'},gCell);cap.textContent=`Below the fin: ${Object.keys(F.nodes).length} zebrafish anatomy (ZFA) terms from the genotype thread, xref-mapped; not flying-fish anatomy.`;
+}
+function node(parent,id,x,y,r,cls,labCls,label,lit,extra,leftLabel){
+  const g=el('g',{class:'node'+(cls?' '+cls:'')},parent);g.dataset.id=id;
+  const filled=hasRec(id);
+  if(lit)el('circle',{cx:x,cy:y,r:r+4,class:'ring'},g);
+  const zo=isZ(id)&&rec(id)&&rec(id).zebrafish_only;
+  const c0=el('circle',{cx:x,cy:y,r,fill:filled?'var(--fill)':'var(--hollow)',stroke:'var(--fill)','stroke-width':1.6},g);if(zo){c0.setAttribute('stroke-dasharray','3 2');label=label+' (zebrafish-only term)';}
+  if(id===state.organ||id===state.system||id===state.tissue)el('circle',{cx:x,cy:y,r:r+3.5,fill:'none',stroke:'var(--accent)','stroke-width':2},g);
+  const t=el('text',{x:leftLabel?x-r-4:x+r+4,y:y+4,class:'lab '+(labCls||'')},g);if(leftLabel)t.setAttribute('text-anchor','end');t.textContent=label;
+  g.onclick=()=>{if(isZ(id)){const f=rec(id);if(f&&f.level!=='cell'){state.tissue=state.tissue===id?null:id;render();}show(id);return;}const term=T.get(id);if(SYS[id]){state.system=state.system===id?null:id;state.organ=null;state.tissue=null;if(state.t<0.3){state.t=1;$('#t').value=100;}render();show(id);}
+    else if(term&&term.level==='organ')goOrgan(id);
+    else if(extra||(term&&term.level==='tissue')){state.tissue=state.tissue===id?null:id;render();show(id);}
+    else show(id);};
+  g.onmouseenter=e=>{const rr=rec(id);tip(e,label+' · '+(isZ(id)?ZLEVEL[rr?rr.level:'']||'ZFA':T.get(id)?LEVEL_NAME[T.get(id).level]:'')+(rr&&rr.direct?` · ${rr.expressed_in} expressed in, ${rr.required_for} required for, ${rr.sufficient_for} sufficient for`:' · no gene record (unstudied, not gene-free)'));};
+  g.onmouseleave=untip;
+}
+function goOrgan(id,silent){const t=T.get(id);if(!t)return;state.organ=id;state.tissue=null;state.gene=null;$('#geneQ').value='';
+  const sys=(t.parents[0]||{}).id;state.system=SYS[sys]?sys:null;if(state.t<0.3){state.t=1;$('#t').value=100;}$('#organSel').value=id;if(!silent){render();show(id);}}
+function wing(silent){state.preset='wing';goOrgan(FIN_ORGAN,true);if(!silent){render();show(FIN_ORGAN);}drawInset();}
+function lens(sym,silent){if(!G||!G.gene_index[sym]){$('#geneQ').value=sym;if(!silent){render();}$('#panel').innerHTML=`<h2>${esc(sym)}</h2><p class="small">No stored record for this symbol in the gene index (${esc(G?G.gene_index_note:'genotype map not available')}).</p>`;return;}
+  state.gene=sym;state.organ=null;state.tissue=null;state.system=null;state.preset=null;$('#inset').style.display='none';if(state.t<0.3){state.t=1;$('#t').value=100;}$('#geneQ').value=sym;render();showGene(sym);}
+function tip(e,text){const t=$('#tip');const r=$('#stage').getBoundingClientRect();t.style.display='block';t.style.left=(e.clientX-r.left+12)+'px';t.style.top=(e.clientY-r.top+12)+'px';t.textContent=text;}
+function untip(){$('#tip').style.display='none';}
+function crumbs(){const parts=['<a data-c="body">fish</a>'];if(state.t>0.02)parts.push('exploded');if(state.system)parts.push(`<a data-c="sys">${esc(SYS[state.system].label)}</a>`);if(state.organ)parts.push(`<a data-c="organ">${esc(T.get(state.organ).label)}</a> (x-ray)`);if(state.tissue)parts.push(esc((term(state.tissue)||{label:state.tissue}).label));if(state.gene)parts.push(`gene lens: <span class="mono">${esc(state.gene)}</span>`);
+  $('#crumbs').innerHTML=parts.join(' &rsaquo; ');
+  $$('#crumbs a').forEach(a=>a.onclick=()=>{if(a.dataset.c==='body'){state={t:0,system:null,organ:null,tissue:null,gene:null,preset:null};$('#t').value=0;$('#inset').style.display='none';}else if(a.dataset.c==='sys'){state.organ=null;state.tissue=null;}else if(a.dataset.c==='organ'){state.tissue=null;}render();intro();});}
+
+// ---- panel ----
+function legend(){
+  $('#legend').innerHTML=`<details open id="legDet"><summary style="cursor:pointer;font-weight:700">Legend</summary>
+    <div class="row"><span class="sw f"></span>has a direct gene record (proxy fish)</div>
+    <div class="row"><span class="sw"></span>hollow: no record &mdash; unstudied, not gene-free</div>
+    <div class="row"><span class="ln"></span>part_of (blueprint) or leader back to the schematic position</div>
+    <div class="row"><span class="ln d"></span>inferred: propagated up part_of; counts only, rows not stored</div>
+    <div class="row"><span class="g" style="border-color:var(--suff)">sufficient for</span><span class="g" style="border-color:var(--req)">required for</span><span class="g" style="border-color:var(--expr)">expressed in</span></div>
+    <div class="tiny" style="margin-top:4px">Genes were measured in zebrafish and medaka, never in a flying fish. &ldquo;Expressed in&rdquo; is detection, not causation.</div></details>`;
+  if(innerWidth<1100)$('#legDet').open=false;
+  $('#note').innerHTML=`<b>A flying fish, opened layer by layer</b>Body &rarr; organ systems &rarr; organs &rarr; tissues &rarr; cell types, with the genes recorded at each level. Drag the explode slider, click a system, then an organ, then a tissue. Pick a gene to light up every node it touches.<span class="tiny"> Positions are schematic; the structure is Uberon and Cell Ontology part_of statements from the blueprint, counts from <span class="mono">${esc(D.source.file.split('/').pop())}</span>.</span>`;
+}
+function intro(){
+  const c=D.counts_distinct||{};
+  let h=`<h2>Open the fish</h2><p class="small">The blueprint for &ldquo;${esc(D.description)}&rdquo; read as <b>${esc(D.taxon?.label)}</b>: ${c.organ_system} organ systems, ${c.organ} organs, ${c.tissue} tissues, ${c.cell} cell types, every one an existing ontology term.</p>`;
+  if(G){h+=`<div class="sec"><h4>Gene records</h4><p class="small">${esc(G.constraint||'')}</p><table><tr><th>layer</th><th>direct</th><th>inferred only</th><th>none</th></tr>${['body','organ_system','organ','tissue','cell'].map(l=>{const v=G.coverage[l];return v?`<tr><td>${esc(LEVEL_NAME[l])}</td><td>${v.nodes_with_direct_record} / ${v.denominator}</td><td>${v.nodes_with_only_derived_records}</td><td>${v.nodes_with_none}</td></tr>`:''}).join('')}</table><p class="tiny">A node with no record is unstudied in these sources, not gene-free. Source ${esc(G.file)}${G.built?', built '+esc(G.built):''}${G.carried_from_previous_build?' (carried from the build of '+esc(G.carried_from_previous_build)+')':''}.</p></div>`;}
+  else h+=`<div class="sec"><h4>Gene records</h4><p class="small">${esc(D.genotype&&D.genotype.gated?D.genotype.reason:'No vetted genotype map in this build; nodes are drawn hollow and no genes are listed.')}</p></div>`;
+  h+=`<div class="sec"><h4>Known gaps, stated on purpose</h4><ul class="t small"><li>The blueprint places cell types under organs, not under single tissues, so a tissue shows the cell types of its organ.</li><li>The pectoral fin has ${tissuesOf(FIN_ORGAN).length} tissue${tissuesOf(FIN_ORGAN).length===1?'':'s'} and ${cellsOfOrgan(FIN_ORGAN).length} cell types in the blueprint${FS()?`; below it the page draws the genotype thread's zebrafish (ZFA) fin subtree instead: ${Object.keys(FS().nodes).length} terms over ${Object.keys(FS().coverage).length} levels, xref-mapped, not flying-fish anatomy`:'; the genotype thread\'s ZFA-derived fin subtree is not written yet'}.</li><li>Inferred (propagated) links are counts only; the maps do not store their rows.</li><li>The gene lens locates a gene's nodes from stored rows (${G?Object.keys(G.gene_index||{}).length:0} genes); breadth counts cover every direct record.</li></ul></div>`;
+  $('#panel').innerHTML=h;
+}
+function geneStrip(id,pins){
+  if(!G)return '';
+  const r=rec(id);if(!r||(!r.direct&&!r.derived_only))return `<p class="small">No fish record attaches to this node: unstudied in these sources, not gene-free.</p>`;
+  const {rows,inferred,more}=geneRows(id);
+  const pinned=(pins||[]).map(s=>rows.find(l=>l.symbol===s)||{symbol:s,link:null,missing:true});
+  const chip=l=>`<span class="gene ${l.link==='sufficient for'?'S':l.link==='required for'?'R':''}${pins&&pins.includes(l.symbol)?' pin':''}${l.missing?' inf':''}" data-g="${esc(l.symbol)}" title="${esc(l.missing?'not attached to this node in the map':`${l.link} · ${l.organism} · ${l.kind||''}${l.stage?' · '+l.stage:''} · ${l.db||''}${l.retrieved?' '+l.retrieved.slice(0,10):''}`)}">${esc(l.symbol)}</span>`;
+  let h=`<p class="small"><span class="chip ${r.sufficient_for?'warn':''}">${r.sufficient_for} sufficient for</span><span class="chip ${r.required_for?'acc':''}">${r.required_for} required for</span><span class="chip">${r.expressed_in} expressed in</span> <span class="tiny">direct genes, proxy fish</span></p>`;
+  if(pinned.length)h+=`<p class="small"><b>Pinned fin-size genes:</b> ${pinned.map(chip).join('')}</p>`;
+  h+=`<div>${rows.filter(l=>!pins||!pins.includes(l.symbol)).map(chip).join('')}${Object.keys(more).length?`<span class="tiny">+ ${Object.entries(more).map(([k,v])=>`${v} more ${k}`).join(', ')} not listed (the page keeps ${G.cap_per_type} per type)</span>`:''}</div>`;
+  if(inferred)h+=`<p class="small"><span class="gene inf" title="propagated upward along part_of from this node's parts; an inference, rows not stored">inferred: ${inferred.e} expressed in, ${inferred.r} required for</span></p>`;
+  h+=`<p class="tiny">Measured in ${esc((G.proxy_organisms||[]).map(o=>o.name).join(' or '))}, never in a flying fish. Expressed in is detection, not causation; required for is a loss-of-function phenotype; sufficient for is a gain-of-function result.</p>`;
+  return h;
+}
+function show(id){
+  const t=term(id);if(!t){ $('#panel').innerHTML=`<h2>${esc(id)}</h2>`;return;}
+  if(t.zfa){const F=FS();const n=F.nodes[id];
+    let h=`<h2>${esc(t.label)}</h2><div><span class="chip acc">${esc(ZLEVEL[n.level]||n.level)}</span>${n.in_blueprint?'<span class="chip ok">also in the blueprint</span>':''}${n.zebrafish_only?'<span class="chip warn">zebrafish-only term, no Uberon xref</span>':''}</div>
+      <p class="small">Term <a href="${esc(t.iri)}" target="_blank" rel="noopener"><span class="mono">${esc(id)}</span></a>${n.parent?` &middot; part of <a class="go" data-go="${esc(n.parent)}">${esc(F.nodes[n.parent]?.label||n.parent)}</a>`:''}${(n.uberon_xref||[]).length?` &middot; Uberon ${n.uberon_xref.map(x=>`<span class="mono">${esc(x.uberon||x)}</span>`).join(' ')}`:''}${n.cl_xref?` &middot; Cell Ontology <span class="mono">${esc(n.cl_xref)}</span>`:''}${n.stage_range?` &middot; stages ${esc(n.stage_range)}`:''}</p>
+      <p class="tiny">${esc(F.constraint||'')}</p>
+      ${state.preset==='wing'?(()=>{const here=WING_GENES.filter(g=>G.gene_index[g]&&G.gene_index[g].nodes[id]);return `<p class="small"><b>Wing genes at this depth:</b> ${here.length?here.map(g=>`<span class="mono">${esc(g)}</span> (${G.gene_index[g].nodes[id].map(t=>t==='S'?'sufficient for':t==='R'?'required for':'expressed in').join(', ')})`).join(', '):`no record at this depth for ${WING_GENES.join(', ')}; all three stop at the whole pectoral fin`}.</p>`;})():''}
+      <div class="sec"><h4>Genes at this node</h4>${geneStrip(id,null)}</div>
+      <p class="tiny">From <span class="mono">${esc(F.file)}</span>${F.built?', built '+esc(F.built):''}; links sit on the exact structure each record names, nothing propagated.</p>`;
+    $('#panel').innerHTML=h;
+    $$('[data-go]').forEach(a=>a.onclick=()=>{const g=a.dataset.go;if(isZ(g)&&rec(g)&&rec(g).level!=='cell'){state.tissue=g;render();}show(g);});
+    $$('[data-g]').forEach(a=>a.onclick=()=>lens(a.dataset.g));return;}
+  const pins=state.preset==='wing'&&id===FIN_ORGAN?WING_GENES:null;
+  let h=`<h2>${esc(t.label)}</h2><div><span class="chip acc">${esc(LEVEL_NAME[t.level])}</span><span class="chip">${esc(t.ontology)}</span>${t.named_in_description?'<span class="chip ok">named in the description</span>':''}</div>
+    <p class="small">Term <a href="${esc(t.iri)}" target="_blank" rel="noopener"><span class="mono">${esc(t.id)}</span></a>${t.parents.length?` &middot; part of ${t.parents.map(p=>`<a class="go" data-go="${esc(p.id)}">${esc(T.get(p.id)?.label||p.id)}</a>`).join(', ')}`:''} &middot; query ${esc(t.via||'root')}</p>`;
+  const kids=children.get(id)||[];if(kids.length){const by=kids.reduce((a,k)=>(a[T.get(k).level]=(a[T.get(k).level]||0)+1,a),{});h+=`<p class="tiny">Has parts: ${Object.entries(by).map(([l,n])=>`${n} ${LEVEL_NAME[l]}${n>1?'s':''}`).join(' · ')}</p>`;}
+  if(t.level==='organ'&&!tissuesOf(id).length&&!cellsOfOrgan(id).length)h+=`<p class="small">No tissue/cell breakdown recorded for this organ in the blueprint.</p>`;
+  h+=`<div class="sec"><h4>Genes at this node</h4>${geneStrip(id,pins)}</div>`;
+  if(pins&&FS()&&FS().wing_genes){const W=FS().wing_genes;h+=`<div class="sec"><h4>Where the wing genes sit below the fin</h4><p class="small">${esc(W.honest_summary||'')}</p><ul class="t small">${Object.entries(W.genes).map(([g,v])=>`<li><span class="mono">${esc(g)}</span>: ${v.links_in_fin_subtree} link${v.links_in_fin_subtree===1?'':'s'} in the fin subtree, deepest level ${esc(v.deepest_level_reached||'none')}${v.nodes&&v.nodes.length?` (${v.nodes.map(x=>esc(x.join(' · '))).join('; ')})`:''}</li>`).join('')}</ul></div>`;}
+  if(pins&&G&&G.fin_size){const vl=G.fin_size.verified_leads||[];h+=`<div class="sec"><h4>Fin-size leads, as the genotype thread checked them</h4><ul class="t small">${vl.map(v=>`<li><span class="mono">${esc(v.gene)}</span>${v.link_type?' &middot; '+esc(v.link_type):''}<br><span class="tiny">${esc(v.finding||'')} ${(v.citations||[]).map(esc).join('; ')}</span></li>`).join('')}</ul></div>`;}
+  h+=`<p class="tiny">Click a gene chip to light up every node it touches.</p>`;
+  $('#panel').innerHTML=h;
+  $$('[data-go]').forEach(a=>a.onclick=()=>{const g=a.dataset.go;if(SYS[g]){state.system=g;state.organ=null;render();}show(g);});
+  $$('[data-g]').forEach(a=>a.onclick=()=>lens(a.dataset.g));
+}
+function showGene(sym){
+  const g=G.gene_index[sym];const b=g.breadth;
+  const located=Object.entries(g.nodes).map(([id,types])=>({id,types,t:T.get(id)})).filter(x=>x.t);
+  const byLevel=located.reduce((a,x)=>(a[x.t.level]=(a[x.t.level]||0)+1,a),{});
+  let h=`<h2><span class="mono">${esc(sym)}</span></h2><p class="small">${esc(g.organisms.join(' and '))} &middot; gene ids ${g.ids.map(i=>`<span class="mono">${esc(i)}</span>`).join(' ')}</p>`;
+  if(b)h+=`<div class="sec"><h4>Breadth, every direct record</h4><p class="small">Touches <b>${b.direct}</b> blueprint node${b.direct===1?'':'s'} by direct record (${Object.entries(b.layers).map(([k,v])=>`${v} ${LEVEL_NAME[k]||k}`).join(', ')}; ${Object.entries(b.types).map(([k,v])=>`${v} ${k}`).join(', ')}). ${g.ids.length>1?'Counted per gene id, so zebrafish and medaka entries add up.':''} A gene in many nodes is pleiotropic, not a fin gene.</p></div>`;
+  h+=`<div class="sec"><h4>Located on the fish (${located.length} stored rows)</h4><p class="tiny">${Object.entries(byLevel).map(([k,v])=>`${v} ${LEVEL_NAME[k]}${v>1?'s':''}`).join(' · ')}${b&&b.direct>located.length?` · ${b.direct-located.length} more direct records are counted but not located here (expressed-in rows outside the stored set)`:''}</p><ul class="t small">${located.sort((a,b)=>a.types.join().localeCompare(b.types.join())).map(x=>`<li><a class="go" data-go="${esc(x.id)}">${esc(x.t.label)}</a> <span class="tiny">${esc(LEVEL_NAME[x.t.level])}</span> ${x.types.map(ty=>`<span class="gene ${ty==='S'?'S':ty==='R'?'R':''}" style="padding:0 6px;font-size:.7rem">${ty==='S'?'sufficient':ty==='R'?'required':'expressed'}</span>`).join('')}</li>`).join('')}</ul></div>
+    <p class="tiny">${esc(G.gene_index_note)}</p><p><button id="clearLens">Clear the lens</button></p>`;
+  $('#panel').innerHTML=h;
+  $('#clearLens').onclick=()=>{state.gene=null;$('#geneQ').value='';render();intro();};
+  $$('[data-go]').forEach(a=>a.onclick=()=>{const id=a.dataset.go;const t=T.get(id);if(t.level==='organ'){state.gene=null;goOrgan(id);}else{show(id);}});
+}
+// ---- the Daane 2021 inset: pectoral fin length over standard length, by group ----
+function drawInset(){
+  const box=$('#inset');const fp=G&&G.fin_proportions;
+  if(state.preset!=='wing'||!fp||!fp.by_group){box.style.display='none';return;}
+  const groups=Object.entries(fp.by_group).sort((a,b)=>(b[1].pectoral_over_SL_median||0)-(a[1].pectoral_over_SL_median||0));
+  const W=320,H=24+groups.length*22+30,L=118,Rr=12,x=v=>L+(v/1)*(W-L-Rr);
+  let s=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`;
+  s+=`<text x="0" y="12" font-weight="700">Pectoral fin length / standard length</text>`;
+  groups.forEach(([name,g],i)=>{const y=34+i*22;s+=`<text x="0" y="${y+4}">${esc(name)} <tspan fill="var(--mute)">n ${esc(g.n_specimens)}</tspan></text>`;
+    s+=`<line x1="${x(g.pectoral_over_SL_min)}" y1="${y}" x2="${x(g.pectoral_over_SL_max)}" y2="${y}" stroke="var(--expr)" stroke-width="4" stroke-linecap="round"/>`;
+    s+=`<line x1="${x(g.pectoral_over_SL_median)}" y1="${y-6}" x2="${x(g.pectoral_over_SL_median)}" y2="${y+6}" stroke="var(--ink)" stroke-width="2.5"/>`;
+    s+=`<text x="${x(g.pectoral_over_SL_max)+5}" y="${y+4}" fill="var(--mute)">${g.pectoral_over_SL_median.toFixed(2)}</text>`;});
+  const y0=34+groups.length*22;[0,0.25,0.5,0.75,1].forEach(v=>{s+=`<line x1="${x(v)}" y1="${y0}" x2="${x(v)}" y2="${y0+4}" stroke="var(--mute)"/><text x="${x(v)}" y="${y0+15}" text-anchor="middle" fill="var(--mute)">${v}</text>`;});
+  s+=`</svg><div class="tiny">Range (bar) and median (tick) of museum specimens, Daane et al. 2021 Data S1, recomputed by the genotype thread; lengths of preserved fish, no mass or fin area. n = ${esc(fp.n_specimens)}.</div>`;
+  box.innerHTML=s;box.style.display='block';
+}
+})();
+</script>
+</body>
+</html>
