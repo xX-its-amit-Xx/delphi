@@ -1,19 +1,20 @@
 {
   "thread": "viz",
   "title": "Visualisations",
-  "updated": "2026-10-31T18:20:00Z",
+  "updated": "2026-10-31T18:30:00Z",
   "state": "working",
-  "headline": "The flying-fish blueprint is drawn in 3D at /blueprint3d/: 536 distinct ontology terms (13 organ systems, 67 organs, 198 tissues, 257 cell types) and 674 part_of edges, each node showing its term, the SPARQL query that produced it, and the kernel-checked structural certificate that covers it beside the biological Lean statement it does not have (0 of 536 terms appear in any Lean statement); the canvas says the layout is a projection of the ontology hierarchy, not anatomy. /graph/ now hides its 213 datasets by default (toggle to show) and has an Ideas view: 10 ideas from decisions/ideas.json, 0 researched, 7 reach-synthesis (not yet checked against prior art), 3 serendipitous, each linked to the nodes or repo areas it affects. Genes are not drawn yet because genotype/map.json does not exist.",
+  "headline": "The flying-fish blueprint is drawn in 3D at /blueprint3d/: 536 distinct ontology terms (13 organ systems, 67 organs, 198 tissues, 257 cell types) and 674 part_of edges, each node showing its term, the SPARQL query that produced it, and the kernel-checked structural certificate that covers it beside the biological Lean statement it does not have (0 of 536 terms appear in any Lean statement); the canvas says the layout is a projection of the ontology hierarchy, not anatomy. The genes view is built but gated: genotype/map.json exists (38 MB, unvetted) and nothing is drawn until the genotype thread writes genotype/map.vetted.json or sets vetted:true; a local preview showed 79 nodes with direct proxy-fish records (zebrafish, medaka), labelled as such. /graph/ hides its 213 datasets by default and its Ideas view now reads 12 ideas: 4 researched, 5 reach-synthesis (not yet checked against prior art), 3 serendipitous.",
   "metrics": [
     { "label": "blueprint terms drawn (distinct)", "value": 536 },
     { "label": "part_of edges drawn", "value": 674 },
     { "label": "terms covered by the structural Lean certificate", "value": 536 },
     { "label": "terms mentioned in any biological Lean statement", "value": 0 },
     { "label": "certificate hash matches the blueprint file", "value": true },
-    { "label": "ideas drawn in /graph/?view=ideas", "value": 10 },
-    { "label": "ideas researched / reach-synthesis / serendipitous", "value": "0 / 7 / 3" },
-    { "label": "datasets hidden by default in /graph/", "value": 213 },
-    { "label": "gene links drawn", "value": 0 }
+    { "label": "genes drawn on the live page", "value": 0 },
+    { "label": "nodes with direct proxy-fish gene records in the unvetted map (preview only)", "value": 79 },
+    { "label": "ideas drawn in /graph/?view=ideas", "value": 12 },
+    { "label": "ideas researched / reach-synthesis / serendipitous", "value": "4 / 5 / 3" },
+    { "label": "datasets hidden by default in /graph/", "value": 213 }
   ],
   "links": [
     { "label": "Blueprint in 3D", "url": "blueprint3d/" },
@@ -24,12 +25,12 @@
   ],
   "blockers": [],
   "needs": [
-    { "from": "genotype", "ask": "genotype/map.json (blueprint node -> genes, typed expressed-in / required-for / sufficient-for, source organism); the 3D page already renders it when present after node dashboard/build-graph.mjs" },
-    { "from": "hub", "ask": "run node dashboard/build-graph.mjs before each deploy: it now writes dashboard/public/graph.json and dashboard/public/blueprint3d/data.json" }
+    { "from": "genotype", "ask": "mark the map ready: write a slimmed genotype/map.vetted.json (same layers/nodes/links shape) or set a top-level \"vetted\": true in genotype/map.json; the 3D page then draws one gene marker per node with a direct record and lists the genes, after node dashboard/build-graph.mjs" },
+    { "from": "hub", "ask": "run node dashboard/build-graph.mjs before each deploy: it writes dashboard/public/graph.json and dashboard/public/blueprint3d/data.json; never deploy a build made with VIZ_UNGATED_TEST=1" }
   ],
   "next": [
-    "Draw genes under blueprint nodes when genotype/map.json appears, labelled as proxy-species expression (medaka, zebrafish), not flying fish",
-    "Offer Kavita the embed URL and the PNG/SVG exports through the hub",
-    "Re-read decisions/ideas.json at each build as entries move to researched"
+    "Rebuild when the genotype map is marked vetted and screenshot the genes view",
+    "Re-read decisions/ideas.json at each build as entries move to researched",
+    "Render any size or crop Kavita asks for"
   ]
 }

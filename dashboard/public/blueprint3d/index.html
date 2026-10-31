@@ -195,17 +195,16 @@ function build(){
   // structures named in the description get a ring so a reader can find what the text asked for
   for(const t of D.terms){if(!t.named_in_description)continue;const r=new THREE.Mesh(new THREE.TorusGeometry(SIZE[t.level]*2.2,0.22,8,40),new THREE.MeshBasicMaterial({}));r.position.copy(pos.get(t.id).v);r.userData.id=t.id;scene.add(r);namedRings.push(r);}
   // genes, when the genotype thread has written its map
-  if(D.genotype&&D.genotype.links.length){
-    for(const l of D.genotype.links){if(!genesByNode.has(l.node))genesByNode.set(l.node,[]);genesByNode.get(l.node).push(l);}
-    const seen=new Map(); for(const [node,ls] of genesByNode){ls.forEach((l,i)=>{const key=node+'|'+(l.gene||i);if(!seen.has(key))seen.set(key,{node,gene:l.gene,i,n:ls.length});});}
-    geneIds=[...seen.values()];
+  // genes: one marker per node that has a direct fish record (proxy species), sized by how many genes; the panel lists them
+  const GN=(D.genotype&&!D.genotype.gated&&D.genotype.nodes)||{};
+  for(const [id,ls] of Object.entries((D.genotype&&D.genotype.links)||{}))genesByNode.set(id,ls);
+  geneIds=Object.entries(GN).filter(([id,n])=>n.direct&&T.has(id)).map(([id,n])=>({node:id,total:n.expressed_in+n.required_for+n.sufficient_for,strong:n.required_for+n.sufficient_for>0}));
+  if(geneIds.length){
     geneInst=new THREE.InstancedMesh(new THREE.OctahedronGeometry(1,0),new THREE.MeshLambertMaterial({}),geneIds.length);
     const ga=new Float32Array(geneIds.length*6);
-    geneIds.forEach((g,k)=>{const P=pos.get(g.node);const u=new THREE.Vector3(0,1,0);if(Math.abs(P.dir.dot(u))>0.9)u.set(1,0,0);
-      const e1v=new THREE.Vector3().crossVectors(P.dir,u).normalize(),e2v=new THREE.Vector3().crossVectors(P.dir,e1v).normalize();
-      const az=2*Math.PI*g.i/Math.max(g.n,1), rr=SIZE[T.get(g.node).level]*2.6+2;
-      const v=P.v.clone().addScaledVector(P.dir,6).addScaledVector(e1v,rr*Math.cos(az)).addScaledVector(e2v,rr*Math.sin(az));
-      g.v=v; ga.set([P.v.x,P.v.y,P.v.z,v.x,v.y,v.z],k*6);});
+    geneIds.forEach((g,k)=>{const P=pos.get(g.node);const d=P.dir.clone();if(P.v.length()<1)d.set(0,1,0);
+      g.s=0.7+0.45*Math.log10(1+g.total); g.v=P.v.clone().addScaledVector(d,SIZE[T.get(g.node).level]*2.2+g.s+1.2);
+      ga.set([P.v.x,P.v.y,P.v.z,g.v.x,g.v.y,g.v.z],k*6);});
     const gg=new THREE.BufferGeometry();gg.setAttribute('position',new THREE.BufferAttribute(ga,3));
     geneLines=new THREE.LineSegments(gg,new THREE.LineBasicMaterial({transparent:true,opacity:0.7}));scene.add(geneLines);scene.add(geneInst);
   }
@@ -232,7 +231,7 @@ function placeInstances(){
   inst.instanceMatrix.needsUpdate=true;
   const showEdge=L=>{const a=L.geometry.attributes.position.array;L.userData.edges.forEach((e,i)=>{const on=visible(T.get(e.part))&&visible(T.get(e.whole));const p=pos.get(e.part).v,w=pos.get(e.whole).v;if(on)a.set([p.x,p.y,p.z,w.x,w.y,w.z],i*6);else a.set([w.x,w.y,w.z,w.x,w.y,w.z],i*6);});L.geometry.attributes.position.needsUpdate=true;};
   showEdge(lines);showEdge(lines2);
-  if(geneInst){const on=$('#showGenes').checked;geneIds.forEach((g,k)=>{const s=on&&visible(T.get(g.node))?0.9:0;m.makeScale(s,s,s).setPosition(g.v);geneInst.setMatrixAt(k,m);});geneInst.instanceMatrix.needsUpdate=true;geneLines.visible=on;}
+  if(geneInst){const on=$('#showGenes').checked;geneIds.forEach((g,k)=>{const s=on&&visible(T.get(g.node))?g.s:0;m.makeScale(s,s,s).setPosition(g.v);geneInst.setMatrixAt(k,m);});geneInst.instanceMatrix.needsUpdate=true;geneLines.visible=on;}
   for(const r of namedRings)r.visible=visible(T.get(r.userData.id));
   highlight();
 }
@@ -271,9 +270,10 @@ function pickAt(e){const r=renderer.domElement.getBoundingClientRect();mouse.x=(
   return null;}
 function pick(e){const id=pickAt(e);hover=id;const tip=$('#tip');if(!id){tip.style.display='none';renderer.domElement.style.cursor='';return;}
   const t=T.get(id);const r=renderer.domElement.getBoundingClientRect();tip.style.display='block';tip.style.left=(e.clientX-r.left+12)+'px';tip.style.top=(e.clientY-r.top+12)+'px';
-  tip.innerHTML=`<b>${esc(t.label)}</b><br><span class="tiny">${esc(LEVEL_NAME[t.level])} &middot; ${esc(t.id)}${t.placements>1?' &middot; placed under '+t.placements+' wholes':''}${genesByNode.has(id)?' &middot; '+genesByNode.get(id).length+' gene link'+(genesByNode.get(id).length>1?'s':''):''}</span>`;
+  tip.innerHTML=`<b>${esc(t.label)}</b><br><span class="tiny">${esc(LEVEL_NAME[t.level])} &middot; ${esc(t.id)}${t.placements>1?' &middot; placed under '+t.placements+' wholes':''}${gcount(id)}</span>`;
   renderer.domElement.style.cursor='pointer';}
 
+const gcount=id=>{const n=D.genotype&&D.genotype.nodes&&D.genotype.nodes[id];if(!n||!n.direct)return '';return ` &middot; genes (proxy fish): ${n.expressed_in} expressed in, ${n.required_for} required for, ${n.sufficient_for} sufficient for`;};
 const labelEls=new Map();
 function frame(){
   if(spin&&!userMoved)cam.theta+=0.0022;
@@ -321,7 +321,7 @@ function legend(){
     <div class="row"><span class="ln"></span>part_of, first placement</div>
     <div class="row"><span class="ln" style="border-color:var(--edge2)"></span>part_of, a term placed under more than one whole (${D.terms.filter(t=>t.placements>1).length} terms)</div>
     <div class="row"><span class="sw" style="width:12px;height:12px;border:2px solid var(--named);background:transparent"></span>named in the description</div>
-    ${G&&G.links.length?`<div class="row"><span class="gm"></span>gene link (${G.links.length}), expression from proxy species: ${esc(G.organisms.join(', ')||'unstated')}, not flying fish</div>`:`<div class="row tiny">genes: genotype/map.json not written yet; none drawn</div>`}
+    ${G&&!G.gated&&!G.error?`<div class="row"><span class="gm"></span>gene records on ${geneIds.length} nodes (size grows with the number of genes); measured in proxy species, ${esc((G.proxy_organisms||[]).map(o=>o.name).join(' and ')||'unstated')}, never in flying fish</div>`:G&&G.gated?`<div class="row tiny">genes: genotype/map.json exists but is not yet vetted by the genotype thread; none drawn</div>`:G&&G.error?`<div class="row tiny">genes: ${esc(G.error)}</div>`:`<div class="row tiny">genes: genotype/map.json not written yet; none drawn</div>`}
     </details>`;
   if(innerWidth<1100)$('#legDet').open=false;
 }
@@ -336,12 +336,13 @@ function intro(){
       <li>its <b>ontology term</b> and the whole it is part of,</li>
       <li>the <b>SPARQL query</b> that produced it, with endpoint and retrieval time,</li>
       <li>the <b>Lean certificate</b> that covers it (structure only) beside the biological statement it does <b>not</b> have,</li>
-      <li>its <b>genes</b>, once the genotype thread writes its map${G?` (${G.links.length} links now)`:' (not yet)'}.</li></ul></div>
+      <li>its <b>genes</b>, from proxy fish records${G&&!G.gated&&!G.error?` (${G.nodes_with_direct} nodes have a direct record)`:G&&G.gated?' (map written, not yet vetted; nothing drawn)':' (not yet)'}.</li></ul></div>
     <div class="sec"><h4>Read from files</h4><table>
       <tr><td class="tiny">blueprint</td><td><span class="mono">${esc(D.source.file)}</span><br><span class="tiny">built ${esc(D.source.built)} by ${esc(D.source.tool)} &middot; sha256 ${esc(D.source.sha256.slice(0,12))}&hellip;</span></td></tr>
       <tr><td class="tiny">counts</td><td class="small">${c.organ_system} organ systems &middot; ${c.organ} organs &middot; ${c.tissue} tissues &middot; ${c.cell} cell types (distinct terms; ${D.counts_placements?.tissue} tissue and ${D.counts_placements?.cell} cell placements)</td></tr>
       <tr><td class="tiny">queries</td><td class="small">${Object.keys(q).length} stored SPARQL queries against <span class="mono">${esc(Object.values(q)[0]?.endpoint||'')}</span></td></tr>
       <tr><td class="tiny">certificate</td><td class="small">${D.certificate?`<span class="mono">${esc(D.certificate.leanModule)}</span>, generated ${esc(D.certificate.generated)}, compiled in ${esc(D.certificate.compile?.seconds)} s, ${D.certificate.matches_file_now?'hash matches':'<b>hash stale</b>'}`:'none'}</td></tr></table></div>
+    ${G&&!G.gated&&!G.error?`<div class="sec"><h4>Gene records by layer</h4><p class="small">${esc(G.constraint||'')}</p><table><tr><th>layer</th><th>direct</th><th>derived only</th><th>none</th></tr>${LEVELS.map(l=>{const c=G.coverage[l];return c?`<tr><td>${esc(LEVEL_NAME[l])}</td><td>${c.nodes_with_direct_record} / ${c.denominator}</td><td>${c.nodes_with_only_derived_records}</td><td>${c.nodes_with_none}</td></tr>`:''}).join('')}</table><p class="tiny">${esc((G.coverage.organ||{}).absence_note||'A node with no record is unstudied in these sources, not gene-free.')} Direct links in the map: ${esc(G.summary?.direct_links)} (${Object.entries(G.summary?.direct_links_by_type||{}).map(([k,v])=>`${v} ${k}`).join(', ')}); the page keeps at most ${G.cap_per_type} per type per node.</p></div>`:G&&G.gated?`<div class="sec"><h4>Genes</h4><p class="small">${esc(G.reason)}</p></div>`:''}
     ${D.reading.words_not_recognised.length?`<p class="small">Words the tool could not read: ${D.reading.words_not_recognised.map(w=>`<span class="mono">${esc(w)}</span>`).join(' ')}. The blueprint says nothing about them.</p>`:''}
     <details><summary>What the file says about its own limits (${D.honesty.length})</summary><ul class="t small">${D.honesty.map(h=>`<li>${esc(h)}</li>`).join('')}</ul></details>
     <details><summary>Pruning</summary><p class="small">${esc(D.pruning?.note||'')}</p><p class="tiny">Cut by the per-parent limits: ${D.pruning?.organs_cut} organs; totals offered ${esc(JSON.stringify(D.pruning?.totals||{}))}.</p></details>
@@ -374,8 +375,19 @@ function select(id){
       <details><summary>What the certificate checks and assumes</summary><ul class="t small">${C.kernelChecked.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="tiny">Assumed, not proved:</p><ul class="t small">${C.assumed.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></details></div>`;}
   // genes
   h+=`<div class="sec"><h4>Genes</h4>`;
-  if(gl.length){h+=`<p class="small">Expression and requirement evidence here comes from <b>proxy species</b> (${esc(G.organisms.join(', ')||'see source column')}), not from any flying fish: no flying-fish expression data exists at this level.</p><table><tr><th>gene</th><th>link</th><th>organism</th><th>source</th></tr>${gl.map(l=>`<tr><td class="mono">${esc(l.gene||'')}${l.gene_id?`<br><span class="tiny">${esc(l.gene_id)}</span>`:''}</td><td class="small">${esc(l.link||'untyped')}</td><td class="small">${esc(l.organism||'')}</td><td class="tiny">${/^https?:/.test(String(l.source))?`<a href="${esc(l.source)}" target="_blank" rel="noopener">${esc(String(l.source).slice(0,40))}</a>`:esc(l.source||'')}${l.retrieved?'<br>'+esc(l.retrieved):''}</td></tr>`).join('')}</table><p class="tiny">From <span class="mono">${esc(G.file)}</span>${G.built?', built '+esc(G.built):''}.</p>`;}
-  else if(G)h+=`<p class="small">No gene links for this node in <span class="mono">${esc(G.file)}</span> (${G.nodes_with_genes} of ${D.terms.length} nodes have any).</p>`;
+  const gn=G&&!G.gated&&G.nodes&&G.nodes[id];
+  if(gn&&(gn.direct||gn.derived_only)){
+    h+=`<p class="small">Every record here was measured in a <b>proxy species</b>, ${esc((G.proxy_organisms||[]).map(o=>o.name).join(' or '))}, never in a flying fish: no flying-fish expression or phenotype data exists.</p>
+      <p class="small"><span class="chip">${gn.expressed_in} expressed in</span><span class="chip ${gn.required_for?'warn':''}">${gn.required_for} required for</span><span class="chip ${gn.sufficient_for?'warn':''}">${gn.sufficient_for} sufficient for</span> <span class="tiny">direct genes${gn.derived_expressed_in||gn.derived_required_for?`; derived upward from parts: ${gn.derived_expressed_in} expressed in, ${gn.derived_required_for} required for (an inference, not an observation)`:''}</span></p>`;
+    if(gl.length){const om=(G.omitted||{})[id]||{};
+      h+=`<table><tr><th>gene</th><th>link</th><th>organism</th><th>evidence</th></tr>${gl.map(l=>`<tr><td><span class="mono">${esc(l.symbol||l.gene||'')}</span>${l.finding?`<br><span class="tiny">${esc(l.finding)}</span>`:''}</td><td class="small">${esc(l.link||'')}</td><td class="small">${esc(l.organism||'')}</td><td class="tiny">${esc(l.kind||'')}${l.stage?' &middot; '+esc(l.stage):''}<br>${l.url?`<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.db||'source')}</a>`:esc(l.db||'')}${l.retrieved?' '+esc(l.retrieved.slice(0,10)):''}</td></tr>`).join('')}</table>
+      ${Object.keys(om).length?`<p class="tiny">Not listed here: ${Object.entries(om).map(([k,v])=>`${v} more ${k}`).join(', ')} (the page keeps ${G.cap_per_type} per type per node; the map holds them all).</p>`:''}`;}
+    else h+=`<p class="tiny">The stored links for this node are expressed-in records kept in the map's expression index, not listed in full on this page.</p>`;
+    h+=`<details><summary>What a link type means</summary><p class="small">${esc(G.causation_warning||'')}</p></details><p class="tiny">From <span class="mono">${esc(G.file)}</span>${G.built?', built '+esc(G.built):''}${G.matches_blueprint_now===false?' &middot; <b>built against a different blueprint hash</b>':''}.</p>`;
+  }
+  else if(G&&!G.gated&&!G.error)h+=`<p class="small">No fish record attaches to this node in <span class="mono">${esc(G.file)}</span>: it is unstudied in these sources, not gene-free (${G.nodes_with_direct} of ${D.terms.length} nodes have a direct record).</p>`;
+  else if(G&&G.gated)h+=`<p class="small">${esc(G.reason)}</p>`;
+  else if(G&&G.error)h+=`<p class="small">${esc(G.error)}</p>`;
   else h+=`<p class="small">The genotype thread has not written <span class="mono">genotype/map.json</span> yet; no genes are drawn for any node.</p>`;
   const mk=(D.genome_sketch?.markers||[]).find(m=>m.cell===id);
   if(mk)h+=`<p class="small">Cell Ontology marker gene products for this cell type (<b>${esc(D.genome_sketch.label)}</b>, ${esc(D.genome_sketch.note)}): ${mk.gene_products.map(g=>`<a href="${esc(g.iri)}" target="_blank" rel="noopener">${esc(g.label)}</a>`).join(', ')} &middot; via ${esc(D.genome_sketch.via)}</p>`;
@@ -393,12 +405,12 @@ function saveSVG(){
   const scale=p=>Math.max(0.35,1.6-p.z*1.2);
   let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" font-family="Inter Tight, system-ui, sans-serif"><rect width="100%" height="100%" fill="${PAL['--surface']}"/>`;
   for(const e of D.edges){const a=pr.get(e.part),b=pr.get(e.whole);if(!a||!b)continue;const first=T.get(e.part).parents[0].id===e.whole;s+=`<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${first?PAL['--edge']:PAL['--edge2']}" stroke-width="0.7" stroke-opacity="${first?0.6:0.4}"/>`;}
-  if(geneInst&&$('#showGenes').checked)for(const g of geneIds){const a=pr.get(g.node);if(!a)continue;v.copy(g.v).project(camera);const bx=(v.x+1)/2*w,by=(1-v.y)/2*h;s+=`<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}" stroke="${PAL['--gene']}" stroke-width="0.7"/><rect x="${(bx-2.5).toFixed(1)}" y="${(by-2.5).toFixed(1)}" width="5" height="5" transform="rotate(45 ${bx.toFixed(1)} ${by.toFixed(1)})" fill="${PAL['--gene']}"/>`;}
+  if(geneInst&&$('#showGenes').checked)for(const g of geneIds){const a=pr.get(g.node);if(!a)continue;v.copy(g.v).project(camera);const bx=(v.x+1)/2*w,by=(1-v.y)/2*h,r=g.s*2.2*scale({z:v.z});s+=`<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}" stroke="${PAL['--gene']}" stroke-width="0.7"/><rect x="${(bx-r).toFixed(1)}" y="${(by-r).toFixed(1)}" width="${(2*r).toFixed(1)}" height="${(2*r).toFixed(1)}" transform="rotate(45 ${bx.toFixed(1)} ${by.toFixed(1)})" fill="${PAL['--gene']}"><title>${esc(T.get(g.node).label)}: ${g.total} genes with a direct proxy-fish record</title></rect>`;}
   for(const t of [...vis].sort((a,b)=>pr.get(b.id).z-pr.get(a.id).z)){const p=pr.get(t.id);const r=SIZE[t.level]*2.2*scale(p);s+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r.toFixed(1)}" fill="${levelColor(t.level)}"${t.named_in_description?` stroke="${PAL['--named']}" stroke-width="1.5"`:''}><title>${esc(t.label)} (${esc(t.id)})</title></circle>`;}
   for(const t of vis){if(t.level!=='organ_system'&&t.level!=='body'&&!t.named_in_description&&!(t.level==='organ'&&cam.dist<190))continue;const p=pr.get(t.id);s+=`<text x="${(p.x+SIZE[t.level]*2+3).toFixed(1)}" y="${(p.y+4).toFixed(1)}" font-size="${t.level==='organ_system'?12:11}" font-weight="${t.level==='organ_system'?700:400}" fill="${PAL['--ink']}">${esc(t.label)}</text>`;}
   const c=D.counts_distinct||{};
   s+=`<text x="12" y="${h-30}" font-size="11" fill="${PAL['--mute']}">Projection of an ontology hierarchy (Uberon / Cell Ontology part_of via Ubergraph), not anatomy. ${esc(D.description)}; ${esc(D.taxon?.label)}.</text>`;
-  s+=`<text x="12" y="${h-14}" font-size="11" fill="${PAL['--mute']}">${c.organ_system} organ systems, ${c.organ} organs, ${c.tissue} tissues, ${c.cell} cell types; ${D.edges.length} part_of edges; structure kernel-checked in Lean, biology not. Source ${esc(D.source.file)} sha256 ${esc(D.source.sha256.slice(0,12))}.</text></svg>`;
+  s+=`<text x="12" y="${h-14}" font-size="11" fill="${PAL['--mute']}">${c.organ_system} organ systems, ${c.organ} organs, ${c.tissue} tissues, ${c.cell} cell types; ${D.edges.length} part_of edges; structure kernel-checked in Lean, biology not${geneInst&&$('#showGenes').checked?`; gene records from proxy fish on ${geneIds.length} nodes, none from flying fish`:''}. Source ${esc(D.source.file)} sha256 ${esc(D.source.sha256.slice(0,12))}.</text></svg>`;
   const a=document.createElement('a');a.download='blueprint3d.svg';a.href=URL.createObjectURL(new Blob([s],{type:'image/svg+xml'}));a.click();
 }
 })();

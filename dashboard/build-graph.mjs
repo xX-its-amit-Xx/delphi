@@ -344,28 +344,68 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
     const leanText = JSON.stringify([lean?.theorems, lean?.lemmas, lean?.formalized, lean?.constraints]);
     const bioMentioned = [...terms.keys()].filter(id => /^(UBERON|CL)_\d+$/.test(id) && leanText.includes(id));
 
-    // genotype map: optional, written by the genotype thread. Tolerant of a few plausible shapes;
-    // links whose node is not a term of this blueprint are dropped and counted.
-    const gmRaw = J('genotype/map.json');
+    // genotype map, written by the genotype thread (genotype/map.json, organised by layer). Term ids there
+    // use 'UBERON:0000151'; the blueprint uses 'UBERON_0000151'. Per node we keep the counts of direct and
+    // derived genes by link type, and a capped list of the stored direct links (required/sufficient first).
+    // Every gene link was measured in a proxy species (zebrafish, medaka); none is flying-fish data.
+    // GATE (hub, 2026-10-31): the map is drawn only when the genotype thread marks it vetted, either as a separate
+    // slimmed genotype/map.vetted.json or as a top-level "vetted": true in genotype/map.json. Until then the page
+    // says the file exists and why nothing is drawn. Only the per-node summary below ever reaches the browser.
+    const gmVetted = J('genotype/map.vetted.json');
+    const gmFull = gmVetted ? null : J('genotype/map.json');
+    // VIZ_UNGATED_TEST=1 lets the viz thread preview the renderer locally; never deploy a build made with it.
+    const gmRaw = gmVetted || (gmFull && (gmFull.vetted === true || process.env.VIZ_UNGATED_TEST === '1') ? gmFull : null);
+    const gmSource = gmVetted ? 'genotype/map.vetted.json' : 'genotype/map.json';
     let genotype = null;
-    if (gmRaw) {
-      genotype = { file: 'genotype/map.json', raw_keys: Array.isArray(gmRaw) ? ['<array>'] : Object.keys(gmRaw), note: gmRaw.note || gmRaw.caveat || gmRaw.honesty || null, built: gmRaw.built || gmRaw.generated || null, links: [], dropped_unknown_node: 0 };
-      const arr = Array.isArray(gmRaw) ? gmRaw : (gmRaw.links || gmRaw.map || gmRaw.edges || gmRaw.nodes || []);
-      const rows = Array.isArray(arr) ? arr : Object.entries(arr).flatMap(([node, v]) => (Array.isArray(v) ? v : (v.genes || [])).map(g => ({ node, ...(typeof g === 'string' ? { gene: g } : g) })));
-      for (const r of rows) {
-        const node = iriId(r.node || r.blueprint_node || r.term || r.iri || r.uberon || r.cl || '');
-        const gs = Array.isArray(r.genes) ? r.genes : [r];
-        for (const g of gs) {
-          const L = { node, gene: g.gene || g.symbol || g.name || g.id || null, gene_id: g.gene_id || g.ensembl || g.zfin || g.ncbi_gene || null,
-            link: g.link || g.type || g.relation || r.link || r.type || r.relation || null,
-            organism: g.organism || g.source_organism || g.species || r.organism || r.source_organism || r.species || null,
-            source: g.source || g.evidence || r.source || null, retrieved: g.retrieved || r.retrieved || null };
-          if (terms.has(node)) genotype.links.push(L); else genotype.dropped_unknown_node++;
+    if (!gmRaw && gmFull) {
+      genotype = { file: 'genotype/map.json', gated: true, built: gmFull.built || null,
+        reason: 'genotype/map.json exists but is not marked vetted (no top-level "vetted": true and no genotype/map.vetted.json). It is the background agent\'s unvetted output, so no gene is drawn until the Genotype session marks it ready.',
+        nodes: {}, links: {}, coverage: {} };
+    }
+    if (gmRaw && gmRaw.layers) {
+      const nid = s => String(s || '').replace(':', '_');
+      const CAP = 40;
+      const KIND_RANK = k => /single|in situ|immunost/i.test(k || '') ? 0 : /bulk|RNA Seq/i.test(k || '') ? 2 : 1;
+      const short = o => /Danio/.test(o?.name || '') ? 'zebrafish' : /Oryzias/.test(o?.name || '') ? 'medaka' : (o?.name || 'unstated');
+      genotype = { file: gmSource, built: gmRaw.built || null, tool: gmRaw.tool || null, title: gmRaw.title || null,
+        constraint: gmRaw.constraint || null, causation_warning: gmRaw.causation_warning || null,
+        link_types: gmRaw.link_types || null, propagation_rules: gmRaw.propagation_rules || null, not_sourced: gmRaw.not_sourced || [],
+        proxy_organisms: gmRaw.summary?.proxy_organisms || [], blueprint_sha256: gmRaw.blueprint?.sha256 || null, matches_blueprint_now: (gmRaw.blueprint?.sha256 || null) === sha,
+        summary: { direct_links: gmRaw.summary?.direct_links ?? null, direct_links_by_type: gmRaw.summary?.direct_links_by_type || null, genes_by_organism: gmRaw.summary?.genes_by_organism || null, derived_links_stored: gmRaw.summary?.derived_links_stored ?? null, storage: gmRaw.summary?.storage || null },
+        coverage: {}, nodes: {}, links: {}, omitted: {}, fin_size: null, cap_per_type: CAP };
+      for (const [layer, L] of Object.entries(gmRaw.layers)) {
+        genotype.coverage[layer] = L.coverage || null;
+        for (const n of (L.nodes || [])) {
+          const id = nid(n.term); if (!terms.has(id)) continue;
+          genotype.nodes[id] = { direct: !!n.direct, derived_only: !!n.derived_only,
+            expressed_in: n.direct_expressed_in_genes || 0, required_for: n.direct_required_for_genes || 0, sufficient_for: n.direct_sufficient_for_genes || 0,
+            derived_expressed_in: n.derived_expressed_in_genes || 0, derived_required_for: n.derived_required_for_genes || 0 };
+        }
+        const byNode = new Map();
+        for (const l of (L.links || [])) { if (l.derived) continue; const id = nid(l.blueprint_node); if (!terms.has(id)) continue; if (!byNode.has(id)) byNode.set(id, []); byNode.get(id).push(l); }
+        for (const [id, ls] of byNode) {
+          const out = [], om = {};
+          for (const type of ['sufficient for', 'required for', 'expressed in']) {
+            const grp = ls.filter(l => l.link_type === type).sort((a, b) => KIND_RANK(a.evidence_kind) - KIND_RANK(b.evidence_kind) || String(a.symbol).localeCompare(String(b.symbol)));
+            // one row per gene symbol + organism + kind, so the same gene from two databases is not two rows
+            const seen = new Set(), rows = [];
+            for (const l of grp) { const k = `${l.symbol}|${short(l.organism)}|${l.evidence_kind}`; if (seen.has(k)) continue; seen.add(k); rows.push(l); }
+            if (rows.length > CAP) om[type] = rows.length - CAP;
+            for (const l of rows.slice(0, CAP)) out.push({ gene: l.gene || null, symbol: l.symbol || null, organism: short(l.organism), taxon: l.organism?.taxon || null, link: l.link_type, kind: l.evidence_kind || null,
+              db: l.source?.database || null, url: l.source?.url || null, retrieved: l.source?.retrieved || null, stage: l.stage?.period || l.stage?.bgee || null,
+              finding: l.finding || l.evidence?.finding || null });
+          }
+          genotype.links[id] = out; if (Object.keys(om).length) genotype.omitted[id] = om;
         }
       }
-      genotype.nodes_with_genes = new Set(genotype.links.map(l => l.node)).size;
-      genotype.organisms = [...new Set(genotype.links.map(l => l.organism).filter(Boolean))];
-      genotype.link_types = genotype.links.reduce((a, l) => (a[l.link || 'untyped'] = (a[l.link || 'untyped'] || 0) + 1, a), {});
+      if (gmRaw.fin_size) genotype.fin_size = { why: gmRaw.fin_size.why || null,
+        verified_leads: (gmRaw.fin_size.verified_leads || []).map(v => ({ gene: v.gene, organism: v.organism, finding: v.finding, link_type: v.link_type, citations: (v.citations || []).map(c => typeof c === 'string' ? c : (c.pmid ? 'PMID ' + c.pmid + (c.doi ? ' doi ' + c.doi : '') : JSON.stringify(c))) })),
+        zfin_fin_size_genes: gmRaw.fin_size.zfin_fin_size_genes ? { definition: gmRaw.fin_size.zfin_fin_size_genes.definition, count: gmRaw.fin_size.zfin_fin_size_genes.count } : null };
+      genotype.nodes_with_direct = Object.values(genotype.nodes).filter(n => n.direct).length;
+      genotype.nodes_with_derived_only = Object.values(genotype.nodes).filter(n => n.derived_only).length;
+      genotype.links_stored_here = Object.values(genotype.links).reduce((a, l) => a + l.length, 0);
+    } else if (gmRaw) {
+      genotype = { file: gmSource, error: 'the map has no layers block; shape not understood, nothing drawn', nodes: {}, links: {}, coverage: {} };
     }
     const out3d = {
       builtAt: new Date().toISOString(),
@@ -398,6 +438,6 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
     };
     const dir = path.join(here, 'public/blueprint3d'); fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'data.json'), JSON.stringify(out3d));
-    console.log(`blueprint3d/data.json: ${terms.size} distinct terms, ${edges.length} edges, byLevel ${JSON.stringify(byLevel)}; certificate ${cert ? (out3d.certificate.matches_file_now ? 'matches the file' : 'STALE: hash differs') : 'missing'}; lean statements mentioning a term: ${bioMentioned.length}; genotype ${genotype ? genotype.links.length + ' links' : 'map.json not present'}`);
+    console.log(`blueprint3d/data.json: ${terms.size} distinct terms, ${edges.length} edges, byLevel ${JSON.stringify(byLevel)}; certificate ${cert ? (out3d.certificate.matches_file_now ? 'matches the file' : 'STALE: hash differs') : 'missing'}; lean statements mentioning a term: ${bioMentioned.length}; genotype ${genotype ? (genotype.gated ? 'present but NOT vetted: gated, nothing drawn' : genotype.error || `${genotype.nodes_with_direct} nodes with direct records, ${genotype.links_stored_here} links kept`) : 'map.json not present'}`);
   } else console.log('blueprint3d: organism-design/examples/a-flying-fish.json not found; nothing written');
 }
