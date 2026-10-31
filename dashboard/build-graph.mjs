@@ -501,8 +501,49 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
     } else if (gmRaw) {
       genotype = { file: gmSource, error: 'the map has no layers block; shape not understood, nothing drawn', nodes: {}, links: {}, coverage: {} };
     }
+    // ---- provenance index for the 3D fish (viz thread): everything a node's panel can trace, read from files ----
+    // constraints that apply: C6 (the blueprint certificate) to every node; the strength, v_min and bending
+    // constraints to skeleton and fin parts, as the hub specified. Each carries its proofScope so the page can say
+    // what is about the model and what is about the fish (nothing here is about the fish).
+    const consList = (constraints && (constraints.constraints || constraints)) || [];
+    const pick = ids => consList.filter(c => ids.includes(c.id)).map(c => ({ id: c.id, property: c.property || null, label: c.label || null, lemma: c.lemma || null, theorem: c.theorem || null, module: c.module || null, claim_id: c.claim_id || null,
+      status: c.status || null, faithfulness: c.faithfulness || null, relation: c.relation || null, requires: c.requires || null, appliesWhen: c.appliesWhen || null, assumptionsText: c.assumptionsText || null,
+      proofScope: c.proofScope || null, openProblemRulings: c.openProblemRulings || null, whyNoCandidate: c.whyNoCandidate || null }));
+    const provConstraints = { all: pick(['C6']), skeleton_fin: pick(['C8', 'C8c', 'C9', 'C12']) };
+    // nanopub drafts: which terms, constraints and claim ids each unsigned draft mentions (unsigned drafts, nothing published)
+    const npRe = /(UBERON[_:]\d{7}|CL[_:]\d{7}|ZFA[_:]\d{7}|NCBITaxon[_:]\d+)/g;
+    const claimIds = new Set([...claimById.keys(), ...consList.map(c => c.claim_id).filter(Boolean)]);
+    const nanopubs = [];
+    for (const dir of ['lean', 'genotype', 'physics', 'organism-design', 'holdout']) {
+      const d = path.join(root, dir, 'nanopubs', 'unsigned'); if (!fs.existsSync(d)) continue;
+      for (const f of fs.readdirSync(d).filter(x => x.endsWith('.trig'))) {
+        const t = fs.readFileSync(path.join(d, f), 'utf8');
+        const title = (t.match(/(?:dct:title|rdfs:label)\s+"((?:[^"\\]|\\.)*)"/) || [])[1] || f;
+        const terms = [...new Set([...t.matchAll(npRe)].map(m => m[1].replace(':', '_')))];
+        const cons = [...new Set([...t.matchAll(/\b(C\d{1,2}[bc]?)\b/g)].map(m => m[1]))].filter(k => consList.some(c => c.id === k));
+        const claims = [...claimIds].filter(id => t.includes(id));
+        const np = `${dir}/nanopubs/unsigned/${f}`;
+        if (terms.length || cons.length || claims.length || dir === 'physics') nanopubs.push({ file: np, dir, title: title.replace(/\\"/g, '"').slice(0, 160), terms, constraints: cons, claims });
+      }
+    }
+    // physics: figures and verdicts for the pectoral fin
+    const phys = J('physics/results.json'), physStatus = J('dashboard/public/t/physics/status.json');
+    const physFigs = ['vmin-band.svg', 'bridge.svg', 'envelope.svg'].filter(f => fs.existsSync(path.join(here, 'public/t/physics', f))).map(f => ({ file: 't/physics/' + f, name: f.replace('.svg', '') }));
+    const physics = phys ? { file: 'physics/results.json', computed_at: phys.computed_at || null, overall: phys.overall || null, verdicts: phys.verdicts || null, headline: physStatus?.headline || null, status_file: 'dashboard/public/t/physics/status.json', page: 't/physics/', figures: physFigs } : null;
+    // explicit graph links into blueprint (morph) nodes: never text-matched
+    const graphLinks = {};
+    for (const l of links) {
+      const a = l.source, b = l.target; const m = a.startsWith('morph:') ? a : b.startsWith('morph:') ? b : null; if (!m) continue;
+      const o = m === a ? b : a; if (o.startsWith('morph:')) continue;
+      const on = nodes.get(o); const key = m.replace('morph:', ''); if (!on) continue;
+      (graphLinks[key] || (graphLinks[key] = [])).push({ id: o, label: on.label, type: on.type, rel: l.rel, out: m === a, browse: 'graph/?view=flyingfish' });
+    }
+    const provenance = { constraints: provConstraints, nanopubs, physics, graph_links: graphLinks,
+      note: 'Constraints apply by level as stated in constraints.applies; every proofScope is about the stated model, not about any fish. Nanopub drafts are unsigned and unpublished. Graph links are the explicit edges of dashboard/public/graph.json, never text matches.',
+      applies: { all: provConstraints.all.map(c => c.id), skeleton_fin: provConstraints.skeleton_fin.map(c => c.id) } };
     const out3d = {
       builtAt: new Date().toISOString(),
+      provenance,
       source: { file: bpPath, built: bp.built, tool: bp.tool, sha256: sha },
       description: bp.input?.description || null,
       taxon: bp.reading?.taxon || null,
