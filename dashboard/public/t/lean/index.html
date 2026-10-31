@@ -68,7 +68,7 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
 <header class="top"><div class="wrap">
   <a class="back" href="../../index.html">&larr; Mission Control</a>
   <span class="brand">Lean thread</span>
-  <nav><a href="#result">Result</a><a href="#proved">What is proved</a><a href="#flyingfish">Flying fish</a><a href="#blueprint">Blueprint certificate</a><a href="#thompson">Cube law</a><a href="#eliminate">Eliminate</a><a href="#theorems">Theorems</a><a href="#faith">Faithfulness</a><a href="#audit">Audit</a><a href="#mutants">Break it</a><a href="#records">Records</a><a href="#watch">Watch it converge</a><a href="#repro">Reproduce</a><a href="#honest">Limits</a></nav>
+  <nav><a href="#result">Result</a><a href="#proved">What is proved</a><a href="#theorems">Theorems</a><a href="#faith">Faithfulness</a><a href="#audit">Audit</a><a href="#mutants">Break it</a><a href="#records">Records</a><a href="#watch">Watch it converge</a><a href="#repro">Reproduce</a><a href="#honest">Limits</a></nav>
   <button id="themeBtn" title="Toggle light or dark">Theme</button>
 </div></header>
 
@@ -106,40 +106,6 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
  <li><b>Count next generation's daughters.</b> The asexual share becomes q&middot;f / (q&middot;f + (1&minus;q)&middot;f/2). This is <code>asexualNext</code>.</li>
  <li><b>The odds double.</b> <code>twofold_cost_of_sex</code> proves that the odds of asexual to sexual females next generation are exactly twice this generation's, and the fecundity f cancels. Iterated, <code>twofold_cost_of_sex_n</code> gives 2<sup>n</sup> after n generations. That factor of two is the advantage sex must buy back to persist.</li>
 </ol></div>
-</section>
-
-<section id="flyingfish"><h2>Did evolution have time? The flying-fish budget</h2>
-<p class="small">Darwin (1859, ch. VI) wrote that flying-fish "might have been modified into perfectly winged animals". The fixation theorems above, extended to selection that does not oppose a mutant, bound how much substitution the Exocoetidae lineage has had since its oldest fossil. Every number below is computed by <code>lean/bound/compute.mjs</code> from <code>lean/bound/parameters.json</code>, where each value names its source.</p>
-<div class="verdict" id="ffVerdict"></div>
-<div class="grid g2" id="ffScope"></div>
-<div class="card"><h3>Parameters and where each came from</h3><div class="scroll"><table id="ffParams"></table></div></div>
-<div class="grid g2">
- <div class="card"><h3>What the lineage had (expected substitutions)</h3><div class="scroll"><table id="ffBudget"></table></div><p class="small mute" id="ffBudgetNote"></p></div>
- <div class="card"><h3>Ceiling as a function of N (vacuous by construction)</h3><div class="scroll"><table id="ffCeiling"></table></div><p class="small mute" id="ffCeilingNote"></p></div>
-</div>
-<div class="card"><h3>Why the verdict is inconclusive, and what this does not establish</h3><ul class="small" id="ffUndefined"></ul><p class="small" id="ffReason"></p></div>
-</section>
-
-<section id="blueprint"><h2>Is the generated fish well-formed? A kernel-checked certificate</h2>
-<p class="small">The organism thread's tool emits a graph of ontology terms: body, organ systems, organs, tissues, cell types, each placed under a whole by a <code>part_of</code> statement Ubergraph served. <code>lean/Delphi/Blueprint.lean</code> proves, for any such graph, that a decidable checker implies acyclicity of <code>part_of</code>, transitivity of its closure, that every node reaches the body root, and that the pinned taxon statements exclude nothing. <code>lean/blueprint/certify.mjs</code> turns one emitted blueprint into Lean literals and lets the kernel evaluate the checker. Regenerate it whenever the blueprint is rebuilt.</p>
-<div class="verdict" id="bpVerdict"></div>
-<div class="grid g2" id="bpScope"></div>
-<div id="bpCards"></div>
-</section>
-
-<section id="thompson"><h2>A morphological law with a formal statement and a data test</h2>
-<p class="small">Thompson (1917): weight tends to vary as the cube of a linear dimension. <code>lean/Delphi/Thompson.lean</code> proves that an exact cube law has log-log exponent exactly 3, and that a measured exponent other than 3 refutes the exact law on that interval. The exponents below were measured by the claims thread; they are pointed to, not derived.</p>
-<div class="verdict" id="thVerdict"></div>
-<div class="grid g2" id="thScope"></div>
-<div class="card"><h3>Measured log-log exponents of weight on stature (NHANES)</h3><div class="scroll"><table id="thTable"></table></div><p class="small mute" id="thNote"></p></div>
-</section>
-
-<section id="eliminate"><h2>What the theorems can rule out: constraints and a candidate ledger</h2>
-<p class="small" id="elFraming"></p>
-<div class="verdict" id="elVerdict"></div>
-<div class="card"><h3>The theorems as constraints (<code>lean/constraints.json</code>)</h3><div class="scroll"><table id="elConstraints"></table></div></div>
-<div class="card"><h3>The open-problems candidates (<code>open-problems/candidates.formal.json</code> → <code>lean/eliminate/ledger.open-problems.json</code>)</h3><p class="small" id="opNote"></p><div class="verdict" id="opVerdict"></div><div class="scroll"><table id="opLedger"></table></div></div>
-<div class="card"><h3>Illustrative candidate ledger (<code>lean/eliminate/ledger.json</code>)</h3><p class="small mute" id="elLedgerNote"></p><div class="scroll"><table id="elLedger"></table></div></div>
 </section>
 
 <section id="theorems"><h2>The theorems the compiler accepted</h2>
@@ -235,7 +201,7 @@ function init(R) {
     <span class="chip ${verified ? 'ok' : 'warn'}">${verified ? 'kernel-checked' : 'not verified'}</span>
     ${(R.summary.assessmentsRun ?? 0) ? Object.entries(R.summary.verdictCounts || {}).map(([v, n]) => `<span class="chip ${fcls(v)}">${n} ${esc(v)} (${esc((R.summary.assessorModels || []).join('; '))})</span>`).join('') : '<span class="chip">faithfulness not yet assessed</span>'}`;
   const S = R.summary;
-  const kp = [[S.theoremsCompiling, 'theorems compiling'], [S.lemmas, 'supporting lemmas'], [sorry, 'sorry in code'], [R.audit.nonStandard.length, 'non-standard axioms'], [S.claimsVerified, 'claims machine-checked'], [S.extensionsVerified ?? 0, 'extensions machine-checked'], [S.sourceLines, 'lines of Lean'], [R.build.seconds + ' s', 'last build time']];
+  const kp = [[S.theoremsCompiling, 'theorems compiling'], [S.lemmas, 'supporting lemmas'], [sorry, 'sorry in code'], [R.audit.nonStandard.length, 'non-standard axioms'], [S.claimsVerified, 'claims machine-checked'], [S.sourceLines, 'lines of Lean'], [R.build.seconds + ' s', 'last build time']];
   $('#kpis').innerHTML = kp.map(([v, l]) => `<div class="card"><div class="kpi">${esc(v)}<small>${esc(l)}</small></div></div>`).join('');
   $('#builtLine').textContent = `Report built ${R.built} from repo commit ${(R.versions.repoCommit || '').slice(0, 10) || 'unknown'}; ${R.versions.lean}.`;
 
@@ -247,81 +213,7 @@ function init(R) {
     <p class="small mute">${esc(f.context)}</p>
     ${f.note ? `<p class="small"><b>Scope here:</b> ${esc(f.note)}</p>` : ''}
     ${f.proofScope ? `<div class="grid g2" style="margin:8px 0"><div><p class="small"><b>Kernel-checked (proved in Lean):</b></p><ul class="small">${f.proofScope.kernelChecked.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div><div><p class="small"><b>Assumed, not proved (stated in the module header):</b></p><ul class="small">${f.proofScope.assumed.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></div>` : ''}
-    <p class="small">Theorem <code>${esc(f.theorem)}</code> in <code>${esc(f.module)}</code>. ${f.paper ? `Source: ${esc(f.paper.title)} (${esc(f.paper.year)})${f.paper.doi ? `, <a href="https://doi.org/${esc(f.paper.doi)}">doi:${esc(f.paper.doi)}</a>` : ''}.` : 'Not a paper\'s claim: proved in this project as an extension for the flying-fish budget, so it has no faithfulness assessment to run against a source.'}</p></div>`).join('');
-
-  // blueprint certificates
-  const BC = R.blueprintCertificates || [];
-  const bpScope = (R.formalized.find(f => f.claim_id === 'blueprint-well-formedness') || {}).proofScope;
-  $('#bpVerdict').innerHTML = BC.length ? BC.map(c => `<span class="chip ${c.verified && c.current ? 'ok' : 'bad'}">${esc(c.name)}: ${c.verified ? 'kernel-checked' : 'NOT VERIFIED'}${c.current ? '' : ' (blueprint file changed since: regenerate)'}</span>`).join('') + `<span class="chip">${BC.length} certificate${BC.length === 1 ? '' : 's'}</span>` : '<span class="chip warn">no certificate generated</span>';
-  $('#bpScope').innerHTML = bpScope ? `<div class="card"><h3>Kernel-checked (proved in Lean)</h3><ul class="small">${bpScope.kernelChecked.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div><div class="card"><h3>Assumed, not proved</h3><ul class="small">${bpScope.assumed.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : '';
-  $('#bpCards').innerHTML = BC.map(c => { const g = c.graph, t = c.taxonData; return `<div class="card" style="margin:10px 0"><h3>${esc(c.blueprint.description)} (${esc(c.blueprint.taxon.label)}, ${esc(c.blueprint.taxon.term)})</h3>
-    <div class="verdict">${Object.entries(c.theorems).map(([k, n]) => `<span class="chip ${c.audit[k] && c.audit[k].axioms.every(x => ['propext', 'Classical.choice', 'Quot.sound'].includes(x)) ? 'ok' : 'bad'}">${esc(k)}: <code>${esc(n.split('.').pop())}</code></span>`).join('')}<span class="chip">compiled in ${esc(c.compile.seconds)} s</span></div>
-    <div class="grid g2"><div><p class="small"><b>Graph as certified</b></p><table><tr><th>Distinct terms</th><td>${g.distinctTerms}</td></tr><tr><th>Distinct part_of edges</th><td>${g.distinctEdges}</td></tr><tr><th>Placements in the file</th><td>${g.placementsInFile}</td></tr><tr><th>Terms placed under more than one whole</th><td>${g.multiPlacedTerms}</td></tr>${Object.keys(g.countsByLevelDistinct).map(k => `<tr><th>${esc(k)}: distinct / placements</th><td>${g.countsByLevelDistinct[k]} / ${g.countsByLevelPlacements[k]}</td></tr>`).join('')}</table></div>
-    <div><p class="small"><b>Taxon statements pinned from Ubergraph</b></p><table><tr><th>Taxa containing ${esc(c.blueprint.taxon.label)}</th><td>${t.rows.ancestors}</td></tr><tr><th>never_in_taxon rows reachable from kept terms</th><td>${t.rows.neverIn} (none names a containing taxon)</td></tr><tr><th>in_taxon rows on kept terms</th><td>${t.rows.inTaxon} (all name containing taxa)</td></tr><tr><th>stated_in_taxon rows in the file</th><td>${t.rows.stated}</td></tr><tr><th>Queries</th><td>${t.queries}, ${esc(t.retrieved.first.slice(0, 16))} to ${esc(t.retrieved.last.slice(11, 16))} UTC</td></tr></table></div></div>
-    <p class="small mute">Blueprint file <code>${esc(c.blueprint.file)}</code> sha256 <code>${esc(c.blueprint.sha256.slice(0, 16))}…</code> (built ${esc(c.blueprint.built)}); taxon data sha256 <code>${esc(t.sha256.slice(0, 16))}…</code>; certificate <code>${esc(c.leanModule)}</code>, generated ${esc(c.generated)}. Acyclicity is proved from the level function alone, so the ${g.multiPlacedTerms} terms placed under more than one whole (converging paths, such as the liver under two organ systems) are never mistaken for cycles, as a naive walk-up would. Edge counts here are distinct (term, whole) pairs; the file's own counts (${Object.entries(g.fileCounts).map(([k, v]) => `${k} ${v}`).join(', ')}) are placements.</p></div>`; }).join('');
-
-  // Thompson cube law
-  const TT = R.thompsonTest, thScope = (R.formalized.find(f => f.claim_id === 'thompson1917-ch03-07') || {}).proofScope;
-  if (TT && !TT.error) {
-    $('#thVerdict').innerHTML = `<span class="chip ok">exact cube law: exponent = 3 (proved)</span><span class="chip ${TT.verdict === 'supports' ? 'ok' : 'warn'}">claim test verdict: ${esc(TT.verdict)} (band 2.5-3.5, claims thread)</span><span class="chip warn">every measured exponent differs from 3: the exact law is refuted on each window; the approximate law is what the test scores</span>`;
-    $('#thScope').innerHTML = thScope ? `<div class="card"><h3>Kernel-checked (proved in Lean)</h3><ul class="small">${thScope.kernelChecked.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div><div class="card"><h3>Assumed, not proved</h3><ul class="small">${thScope.assumed.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : '';
-    $('#thTable').innerHTML = '<tr><th>Sample</th><th>Exponent b</th><th>95% CI</th><th>n</th><th>vs exact 3</th></tr>' + TT.exponents.map(e => `<tr><td class="small">${esc(e.label)}</td><td><b>${Number(e.b).toFixed(2)}</b></td><td class="small">${e.ci95 ? `[${Number(e.ci95[0]).toFixed(2)}, ${Number(e.ci95[1]).toFixed(2)}]` : ''}</td><td>${esc(e.n)}</td><td class="small">${e.ci95 && e.ci95[0] <= 3 && 3 <= e.ci95[1] ? 'CI includes 3' : 'CI excludes 3: not an exact cube law on this window (not_cubeLaw_of_exponent_ne_three)'}</td></tr>`).join('');
-    $('#thNote').textContent = `Source: ${TT.source}. Cycles ${(TT.cycles || []).join(', ')}. The theorem is about the exact law; the claim test scores Thompson's "mainly (though not wholly)" with a pre-registered band, which is a decision rule outside Lean. First caveat from the test: ${(TT.caveats || [])[0] || ''}`;
-  } else { $('#thVerdict').innerHTML = `<span class="chip warn">claim test results not loaded${TT && TT.error ? ': ' + esc(TT.error) : ''}</span>`; }
-
-  // constraints and eliminations
-  const CO = R.constraints, EL = R.eliminations;
-  if (CO) {
-    $('#elFraming').textContent = CO.framing;
-    const es = EL ? EL.summary : null;
-    $('#elVerdict').innerHTML = `<span class="chip">${CO.list.length} constraints from ${new Set(CO.list.map(c => c.claim_id)).size} theorems</span>` + (es ? `${es.illustrative ? '<span class="chip warn">ILLUSTRATIVE candidates: constructed to exercise the checker, not a finding</span>' : ''}<span class="chip">${es.candidates} ${es.illustrative ? 'illustrative ' : ''}candidates checked</span><span class="chip bad">${es.eliminated} ${es.illustrative ? 'illustrative ' : ''}eliminated</span><span class="chip">${es.consistent} consistent (not ruled out)</span><span class="chip warn">${es.unconstrained} unconstrained</span><span class="chip ${es.compile && es.compile.ok ? 'ok' : 'bad'}">${es.kernelCheckedEliminations} of ${es.eliminations} eliminations kernel-checked (${es.compile ? es.compile.seconds + ' s' : 'no certificate'})</span>` : '<span class="chip warn">no ledger</span>');
-    $('#elConstraints').innerHTML = '<tr><th>Id</th><th>Constrains</th><th>Relation</th><th>Candidate must supply</th><th>Only under</th><th>Can eliminate</th><th>Kernel</th><th>Faithfulness</th></tr>' + CO.list.map(c => `<tr><td><code>${esc(c.id)}</code><div class="small mute"><code>${esc(c.lemma.split('.').pop())}</code> on <code>${esc(c.law.split('.').pop())}</code></div></td><td class="small">${esc(c.property)}</td><td class="small"><code>${esc(c.relation)}</code></td><td class="small">${c.requires.map(q => `<code>${esc(q)}</code>`).join(' ')}<div class="mute">missing: cannot rule</div></td><td class="small">${c.appliesWhen.map(a => `<code>${esc(a)}</code>`).join(' ') || 'no model assumption (structural)'}</td><td class="small">${esc(c.canEliminate)}</td><td class="small"><span class="chip ${c.kernelCheckable === true ? 'ok' : 'warn'}">${c.kernelCheckable === true ? 'norm_num certificate' : esc(String(c.kernelCheckable))}</span><div class="mute">${esc((c.lemmaAxioms || []).join(', ') || 'no axioms')}</div></td><td class="small">${esc(c.faithfulness)}</td></tr>`).join('');
-    if (EL) {
-      $('#elLedgerNote').textContent = `${EL.summary.label}. Input ${EL.summary.input} (sha256 ${EL.summary.inputSha256.slice(0, 12)}…), run ${EL.summary.run}. "Consistent" means not ruled out by these theorems; it never means feasible. "Cannot rule" names the missing input or the model assumption the candidate did not commit to. Every elimination names the violated relation with the numbers and the certificate theorem the kernel accepted.`;
-      $('#elLedger').innerHTML = '<tr><th>Candidate</th><th>Verdict</th><th>Eliminated by</th><th>Consistent with</th><th>Cannot rule</th></tr>' + EL.ledger.map(l => { const el = l.results.filter(x => x.state === 'eliminated'), co = l.results.filter(x => x.state === 'consistent'), cr = l.results.filter(x => x.state === 'cannot-rule'); return `<tr><td class="small"><b>${esc(l.id)}</b><div>${esc(l.description || '')}</div><div class="mute">${esc(l.problem || '')}${l.source ? ' · ' + esc(l.source) : ''}</div></td><td><span class="chip ${l.verdict === 'eliminated' ? 'bad' : l.verdict.startsWith('consistent') ? 'ok' : 'warn'}">${esc(l.verdict.split(' (')[0])}</span></td><td class="small">${el.map(x => `<div><code>${esc(x.constraint)}</code> <b>${esc(x.violated || '')}</b><div class="mute">${esc(x.reason)}; under ${x.under.map(esc).join(', ') || 'no model assumption'}; <code>${esc((x.certificateTheorem || '').split('.').pop())}</code> <span class="chip ${x.kernelChecked ? 'ok' : 'warn'}">${x.kernelChecked ? 'kernel-checked' : 'plain computation'}</span></div></div>`).join('')}</td><td class="small">${co.map(x => `<div><code>${esc(x.constraint)}</code> ${esc(x.reason)}${x.certificateTheorem ? ` <code>${esc(x.certificateTheorem.split('.').pop())}</code>` : ''}</div>`).join('') || '<span class="mute">none</span>'}</td><td class="small">${cr.length}${cr.length ? `<div class="mute">${esc(cr[0].reason)}${cr.length > 1 ? ` (+${cr.length - 1} more)` : ''}</div>` : ''}</td></tr>`; }).join('');
-    }
-  } else { $('#elVerdict').innerHTML = '<span class="chip warn">constraints.json not built</span>'; }
-
-  // the enumerator's candidates
-  const OP = R.eliminationsOpenProblems;
-  if (OP) {
-    const os = OP.summary;
-    $('#opNote').textContent = `Candidates enumerated by another agent from named sources (Wikipedia's list of unsolved problems, Science 2005, literature abstracts) and translated into the checker schema by this thread (${OP.translations}; every row keeps the original English beside the formal commitment and a one-sentence reading; nothing numeric was invented). Rank nothing by elimination count: a problem with more eliminated candidates is not more solved. An elimination of a proposed-here candidate eliminates the enumerator's own construction, not a published hypothesis.`;
-    $('#opVerdict').innerHTML = `<span class="chip">${os.candidates} candidates</span><span class="chip bad">${os.eliminated} eliminated (${os.eliminatedOfIllustrativeOrProposed} of them proposed-here or illustrative)</span><span class="chip">${os.consistent} consistent (not ruled out)</span><span class="chip warn">${os.unconstrained} cannot rule (${os.untranslatable} untranslatable)</span><span class="chip warn">${os.candidatesWithNotFormalisedClaims} with a claim resting on something not formalised (mostly strength ∝ L²)</span><span class="chip ${os.compile && os.compile.ok ? 'ok' : 'bad'}">${os.kernelCheckedEliminations} of ${os.eliminations} eliminations kernel-checked</span>`;
-    $('#opLedger').innerHTML = '<tr><th>Problem</th><th>Candidate (original English → reading)</th><th>Formal commitment</th><th>Verdict</th><th>Detail</th></tr>' + OP.ledger.map(l => { const m = l.meta || {}; const el = l.results.filter(x => x.state === 'eliminated'), co = l.results.filter(x => x.state === 'consistent'), cr = l.results.filter(x => x.state === 'cannot-rule'); const prov = `${esc(l.provenance || '')}${l.uses_illustrative_values ? ' · uses illustrative values' : ''}`; return `<tr><td class="small"><b>${esc(m.problem_id || '')}</b> ${esc(l.problem || '')}<div class="mute">${esc(m.problem_source?.name || '')}</div></td><td class="small"><b>${esc(l.id)}</b> <span class="mute">${prov}</span><div>${esc(l.description || '')}</div><div class="mute">Original commitments: ${esc((m.original_commits || []).map(c => `${c.quantity}: ${c.value}`).join('; ') || 'none')}</div><div><i>${esc(m.reading || (l.untranslatable ? 'untranslatable: ' + l.untranslatable : ''))}</i></div></td><td class="small">${Object.keys(l.commits || {}).length ? `<code>${esc(JSON.stringify(l.commits))}</code>` : '<span class="mute">none</span>'}${(l.accepts || []).length ? `<div class="mute">accepts ${l.accepts.map(esc).join(', ')}</div>` : ''}</td><td><span class="chip ${l.verdict === 'eliminated' ? 'bad' : l.verdict.startsWith('consistent') ? 'ok' : 'warn'}">${esc(l.verdict.split(' (')[0])}</span>${l.eliminationCaveat ? `<div class="small"><b>${esc(l.eliminationCaveat)}</b></div>` : ''}</td><td class="small">${el.map(x => `<div><code>${esc(x.constraint)}</code> <b>${esc(x.violated || '')}</b><div class="mute">${esc(x.reason)}; under ${x.under.map(esc).join(', ')}; faithfulness of the statement: ${esc(x.faithfulness)}; <code>${esc((x.certificateTheorem || '').split('.').pop())}</code> <span class="chip ${x.kernelChecked ? 'ok' : 'warn'}">${x.kernelChecked ? 'kernel-checked' : 'plain computation'}</span></div></div>`).join('')}${co.map(x => `<div><code>${esc(x.constraint)}</code> consistent: ${esc(x.reason)}</div>`).join('')}${l.notFormalised.length ? `<div class="mute">Not formalised: ${l.notFormalised.map(esc).join('; ')}</div>` : ''}${cr.length ? `<div class="mute">cannot rule ×${cr.length}${!el.length && !co.length ? ': ' + esc(cr[0].reason) : ''}</div>` : ''}</td></tr>`; }).join('');
-  }
-
-  // flying-fish budget
-  const FB = R.bound;
-  if (FB && FB.verified) {
-    const e2 = x => Number(x).toExponential(2), f3 = x => Number(x).toFixed(3);
-    $('#ffVerdict').innerHTML = `<span class="chip warn">verdict: ${esc(FB.comparison.verdict)}</span><span class="chip ok">${Object.keys(FB.theorems).length} theorems used, all standard axioms</span><span class="chip">neutral budget independent of N</span><span class="chip">required substitutions: undefined</span><span class="chip">computed ${esc(FB.computed)}</span>`;
-    $('#ffScope').innerHTML = `<div class="card"><h3>Kernel-checked (proved in Lean)</h3><ul class="small">${FB.kernelChecked.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div><div class="card"><h3>Assumed, not proved (arithmetic and parameters layered on top)</h3><ul class="small">${FB.assumed.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`;
-    const I = FB.inputs;
-    $('#ffParams').innerHTML = '<tr><th>Parameter</th><th>Value used</th><th>Source</th></tr>' + [
-      ['Time since oldest fossil (Ma)', `${I.durationMa.low} to ${I.durationMa.high}`, `${esc(I.durationMa.source)} <a href="${esc(I.durationMa.url)}">PBDB query</a>`, true],
-      ['Generation time (years)', `${I.generationTimeYears.low} to ${I.generationTimeYears.high} (sensitivity ${I.generationTimeYears.sensitivityHigh})`, I.generationTimeYears.sources.join(' ')],
-      ['Mutation rate per site per generation', `${e2(I.mutationRatePerSitePerGeneration.low)} to ${e2(I.mutationRatePerSitePerGeneration.high)}`, I.mutationRatePerSitePerGeneration.sources.join(' ')],
-      ['Sites per genome', e2(I.genomeSites.value), I.genomeSites.source],
-      ['Population size N', `table values ${I.populationSize.tableValues.map(e2).join(', ')}`, `Only published estimate: ${I.populationSize.pointEstimates.join('; ')}`],
-      ['Selection coefficient s', 'undefined', I.undefined.selectionCoefficient],
-      ['Fraction of mutations favored', 'undefined', I.undefined.fractionOfMutationsFavored],
-      ['Substitutions a wing requires', 'undefined', I.undefined.requiredSubstitutions]
-    ].map(([k, v, src, html]) => `<tr><th class="small">${esc(k)}</th><td class="small"><b>${esc(v)}</b></td><td class="small">${html ? src : esc(src)}</td></tr>`).join('');
-    $('#ffBudget').innerHTML = '<tr><th>Quantity</th><th>Low</th><th>High</th><th>Theorem</th></tr>' + [
-      ['Generations available T', e2(FB.generations.low), e2(FB.generations.high), 'duration / generation time'],
-      ['Neutral substitutions per site, mu T', f3(FB.neutralPerSite.low), f3(FB.neutralPerSite.high), FB.theorems.neutral.name],
-      ['Neutral substitutions genome-wide', e2(FB.neutralPerGenome.low), e2(FB.neutralPerGenome.high), FB.theorems.neutral.name],
-      ['Same, 2-year generation time (low end)', f3(FB.neutralPerSite.sensitivity2y) + ' per site', e2(FB.neutralPerGenome.sensitivity2y) + ' genome-wide', 'sensitivity'],
-      ...(FB.neutralPerSite.sensitivityAltFossil != null ? [[`Same, next-oldest fossil record instead (${FB.inputs.durationMa.alternativeFirstAppearance.low} Ma; the Ypresian date rests on two records from one paper)`, f3(FB.neutralPerSite.sensitivityAltFossil) + ' per site', e2(FB.neutralPerGenome.sensitivityAltFossil) + ' genome-wide', 'sensitivity']] : []),
-      ['Floor on adaptive substitutions per site', 'mu_f T, mu_f undefined', 'equals mu T at mu_f = mu', FB.theorems.floor.name]
-    ].map(r => `<tr><th class="small">${esc(r[0])}</th><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td class="small"><code>${esc(r[3])}</code></td></tr>`).join('');
-    $('#ffBudgetNote').textContent = FB.floor.statement + ' None of these numbers depends on N: that is the content of the theorem, and it is why the poorly constrained population size does not matter for the floor.';
-    $('#ffCeiling').innerHTML = '<tr><th>N</th><th>2 N mu T per site, low</th><th>high</th></tr>' + FB.ceiling.perSiteByN.map(r => `<tr><td>${esc(e2(r.N))}</td><td>${esc(e2(r.low))}</td><td>${esc(e2(r.high))}</td></tr>`).join('');
-    $('#ffCeilingNote').textContent = FB.ceiling.statement + ` Theorem ${FB.theorems.ceiling.name}.`;
-    $('#ffUndefined').innerHTML = Object.entries(I.undefined).map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('') + FB.assumed.slice(1).map(x => `<li>${esc(x)}</li>`).join('');
-    $('#ffReason').textContent = FB.comparison.reason;
-  } else { $('#ffVerdict').innerHTML = `<span class="chip warn">budget not computed${FB && FB.error ? ': ' + esc(FB.error) : ''}</span>`; }
+    <p class="small">Theorem <code>${esc(f.theorem)}</code> in <code>${esc(f.module)}</code>. Source: ${esc(f.paper?.title)} (${esc(f.paper?.year)})${f.paper?.doi ? `, <a href="https://doi.org/${esc(f.paper.doi)}">doi:${esc(f.paper.doi)}</a>` : ''}.</p></div>`).join('');
 
   // faithfulness assessments by other providers
   $('#faithCards').innerHTML = R.formalized.map(f => `<div class="card"><h3>${esc(f.label)}</h3>
