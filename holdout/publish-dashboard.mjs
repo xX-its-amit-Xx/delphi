@@ -62,6 +62,8 @@ const nanopubs = fs.existsSync(npP) ? (() => { const m = JSON.parse(fs.readFileS
 const out = {
   built: new Date().toISOString(),
   clade: split.clade, label: split.label, provisional: split.provisional,
+  decision: split.decision || null, first_frozen_at: sums.first_frozen_at || sums.frozen_at,
+  previous_freeze: sums.previous_freeze ? { frozen_at: sums.previous_freeze.frozen_at, provisional: sums.previous_freeze.provisional, exam_json_sha256: sums.previous_freeze.outputs?.['exam.json']?.sha256, roster_unchanged: sums.previous_freeze.roster_unchanged, superseded_because: sums.previous_freeze.superseded_because } : null,
   rule: split.rule, rules_for_builders: exam.rules_for_builders, what_is_tested: exam.what_is_tested,
   frozen_at: sums.frozen_at, checksums: sums,
   summary: split.summary,
