@@ -57,6 +57,11 @@ const glideField = rows.filter(r => r.row_kind === 'field summary' && r.glide_di
 const heightMax = +rows.find(r => r.row_kind === 'field summary' && r.height_m).height_m;
 const LDtheory = +rows.find(r => r.row_kind === 'theory' && r.LD_max).LD_max;
 const glideBound = (LD, d) => heightMax * LD / (1 - d);
+// Physiology chain proxies (lean/eliminate/physiology-candidates.json, from physiology/ at commit a1ca4f00).
+const PC = JSON.parse(rd('lean/eliminate/physiology-candidates.json')).chain_inputs;
+const chainQ = +PC.cardiac_output_ml_per_s.value, chainCa = +PC.arterial_O2_content_ml_per_ml.value, chainEta = +PC.muscular_efficiency.value, chainE = +PC.oxycaloric_J_per_ml_O2.value;
+const aerobicCeiling = chainEta * chainE * chainQ * chainCa;
+const preqField = W * 10 / +L3.LD_max;
 
 const SRC = {
   glide: 'physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994)',
@@ -87,7 +92,10 @@ const F = {
   glideField: { name: 'field glide distances', value: glideField.join(' and ') + ' m', status: 'secondary (field summaries)', source: SRC.glide },
   heightMax: { name: 'maximum recorded flight height', value: heightMax, unit: 'm', status: 'secondary (Deng 2019 citing its ref 6)', source: SRC.glide },
   LDtheory: { name: 'theoretical (L/D)max, Cheilopogon heterurus', value: LDtheory, status: 'theory-secondary (Kawachi et al. 1993 via Deng 2019)', source: SRC.glide },
-  ge: { name: 'largest measured ground-effect drag reduction', value: geMax, status: 'measured (Park and Choi 2010, model L3 over water at h/b = 0.33; lift unaffected)', source: 'physics/ground-effect.json' }
+  ge: { name: 'largest measured ground-effect drag reduction', value: geMax, status: 'measured (Park and Choi 2010, model L3 over water at h/b = 0.33; lift unaffected)', source: 'physics/ground-effect.json' },
+  chain: { name: 'physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2', value: `Q ${chainQ.toFixed(5)} ml/s (cardiac.js state(1), snapper), Ca ${chainCa.toFixed(4)} ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η ${chainEta} (muscle.js, salmon ventricle), E ${chainE.toFixed(2)} J/ml (gerry2014)`, status: 'proxy (no Exocoetidae physiology exists; every value is from another teleost or tuned)', source: 'physiology/ at commit a1ca4f00, via lean/eliminate/physiology-candidates.json' },
+  ceiling: { name: 'aerobic mechanical ceiling η E Q Ca for the 0.06 kg fish', value: +aerobicCeiling.toFixed(4), unit: 'W', status: 'computed from the chain proxies (sustained_le)', source: 'lean/eliminate/ledger.physiology.json' },
+  preqField: { name: 'power for level flight at 10 m/s with (L/D)max 4.37', value: +preqField.toFixed(3), unit: 'W', status: 'computed from measured W and L/D (the most generous, lowest, value)', source: SRC.glide }
 };
 const missing = (name, note) => ({ name, status: 'missing', note });
 
@@ -142,7 +150,7 @@ const JUDGE = {
   'Delphi.aerobic_le_Ca': { applies: 'yes-under-named-hypotheses: Fick, oxycaloric conversion, aerobic power', inputs: [missing('cardiac output Q, arterial O2 content Ca, oxycaloric equivalent E and efficiency η for Exocoetidae', 'the physics thread\'s simulator is to source these')], verdict: 'cannot-evaluate', why: 'no physiological inputs for the family' },
   'Delphi.aerobic_le_metabolic': { applies: 'as aerobic_le_Ca', inputs: [missing('Q, Ca, E, η', '')], verdict: 'cannot-evaluate', why: 'as above' },
   'Delphi.sustained_le': { applies: 'as aerobic_le_Ca', inputs: [missing('Q, Ca, E, η', '')], verdict: 'cannot-evaluate', why: 'as above' },
-  'Delphi.sustained_flight_requires': { applies: 'yes-under-named-hypotheses: for sustained POWERED flight; a glider does not sustain flight by muscle power, so for the real fish this bounds taxiing and launch, and for a designed powered variant it is the central check', inputs: [missing('Q, Ca, E, η', ''), F.LD, F.vmin], verdict: 'cannot-evaluate', qualifier: `P_req at v_min for specimen L3 is W v_min/(L/D) = ${(W * vmin / +L3.LD_max).toFixed(2)} W with the measured L/D ${L3.LD_max}; the oxygen side is missing`, why: 'no physiological inputs' },
+  'Delphi.sustained_flight_requires': { applies: 'yes-under-named-hypotheses: sustained POWERED flight with an aerobic supply (Fick); instantiated with the physiology chain\'s proxies for a 0.06 kg fish', inputs: [F.chain, F.ceiling, F.preqField, F.LD, F.vmin], verdict: 'violated', qualifier: `with the chain\'s proxies the aerobic ceiling η E Q Ca is ${aerobicCeiling.toFixed(4)} W against ${preqField.toFixed(3)} W for level flight at 10 m/s (${(W * vmin / +L3.LD_max).toFixed(3)} W at v_min), a shortfall of ${(preqField / aerobicCeiling).toFixed(0)}x even at the most generous L/D: sustained aerobic flight is ruled out for the real fish under those proxies (kernel-accepted certificate in lean/Delphi/Certificates/EliminationsPhysiology.lean). The hypotheses that could be wrong are the proxies: Q and Ca from snapper and trout, η from salmon heart muscle. What the fish does instead is glide, and burst-power on white-muscle stores, which the theorem does not bound`, why: 'instantiated with proxies; violated by a large factor' },
   'Delphi.climb_le_aerobic': { applies: 'as sustained_flight_requires', inputs: [missing('Q, Ca, E, η', '')], verdict: 'cannot-evaluate', why: 'as above' },
   'Delphi.powerLaw_crossover': { applies: 'yes-under-named-hypotheses: demand and supply as power laws in size; with R5 the demand exponent is 7/2', inputs: [missing('the supply exponent (how Q Ca scales with size in Exocoetidae)', 'physiology not sourced')], verdict: 'cannot-evaluate', qualifier: 'replaces the muscle premise: any supply exponent below 7/2 gives a size limit; whether 0.5 m flying fish are below it needs the constants', why: 'supply exponent missing' },
   // Scaling: area and wing loading
@@ -221,7 +229,7 @@ const CONSTR = {
   'Delphi.Constraints.bending_exponent_sheet_rules_out': ['filter', 'yes-under-named-hypotheses (R9b, the natural reading for a fin under aerodynamic load)', [missing('bending-stress exponent of fin rays', '')], 'cannot-evaluate', 'no data'],
   'Delphi.Constraints.froude_rules_out': ['filter', 'yes-under-named-hypotheses (swimming phase)', [missing('speed ratio at two sizes', '')], 'cannot-evaluate', 'one size class'],
   'Delphi.Constraints.allometry_consistency_rules_out': ['filter', 'yes: a candidate committing the three Davenport exponents', [F.bMass, F.bArea, F.bWS], 'cannot-evaluate', `as points the triple (${bMass.exponent}, ${bArea.exponent}, ${bWS.exponent}) is inconsistent by ${(bWS.exponent - (bMass.exponent - bArea.exponent)).toFixed(3)}, but the three are separate fits without confidence intervals, so no honest interval commitment exists and the lemma must not be fired on points (missing: CIs)`],
-  'Delphi.Constraints.aerobic_flight_rules_out': ['filter', 'yes-under-named-hypotheses (Fick, aerobic)', [missing('Q, Ca, E, η', '')], 'cannot-evaluate', 'no physiology for the family'],
+  'Delphi.Constraints.aerobic_flight_rules_out': ['filter', 'yes-under-named-hypotheses (Fick, aerobic), instantiated with the physiology chain\'s proxies', [F.chain, F.ceiling, F.preqField], 'violated', `fires: ${aerobicCeiling.toFixed(4)} W < ${preqField.toFixed(3)} W for the real fish at 10 m/s and for the hypothetical flier at 7 m/s (lean/eliminate/ledger.physiology.json); the proxies, not the fish, are what the elimination rests on`],
   'Delphi.Constraints.glide_range_rules_out': ['filter', 'yes: the pure-glide reading of the field distances', [F.heightMax, F.LD, F.glideField, F.ge], 'violated', `fires: one unpowered glide of 50 m from ${heightMax} m needs (L/D)max ≥ ${(50 / heightMax).toFixed(2)} (or ${(50 / heightMax * (1 - geMax)).toFixed(2)} with the measured ground effect); the stuffed-model 4.37 fails, the theoretical 15.7 passes (lean/eliminate/examples.json)`],
   'Delphi.Constraints.climb_rules_out': ['filter', 'yes-under-named-hypotheses (powered flight)', [missing('P_avail, P_req, climb rate', '')], 'cannot-evaluate', 'no powered-flight data for a glider']
 };

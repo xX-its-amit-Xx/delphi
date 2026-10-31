@@ -330,6 +330,8 @@ const eliminations = ledgerDoc ? { summary: ledgerDoc.summary, ledger: ledgerDoc
 const opLedgerFile = path.join(here, 'eliminate/ledger.open-problems.json');
 const opDoc = fs.existsSync(opLedgerFile) ? JSON.parse(fs.readFileSync(opLedgerFile, 'utf8')) : null;
 const eliminationsOpenProblems = opDoc ? { summary: opDoc.summary, ledger: opDoc.ledger, translations: 'lean/eliminate/translations.json', formal: 'open-problems/candidates.formal.json' } : null;
+const extraLedgers = [['flier', 'lean/eliminate/ledger.flier.json', 'physics/flier/lean-candidate.json (the physics thread\'s hypothetical flier F1 and the real fish, C9)'], ['physiology', 'lean/eliminate/ledger.physiology.json', 'lean/eliminate/physiology-candidates.json (C14 with the physiology chain\'s own proxies: the question of physics test 4)']]
+  .filter(([, f]) => fs.existsSync(path.join(root, f))).map(([name, f, about]) => { const doc = JSON.parse(fs.readFileSync(path.join(root, f), 'utf8')); return { name, file: f, about, summary: doc.summary, ledger: doc.ledger }; });
 
 // 7d. Flying-fish audit (lean/flying-fish/audit.mjs): every theorem against Exocoetidae, and the morphology grounding.
 const ffAuditFile = path.join(here, 'flying-fish-audit.json'), ffGroundFile = path.join(here, 'morphology-grounding.json');
@@ -354,7 +356,7 @@ const report = {
   audit: { ok: audit.exit === 0 && axioms.length > 0 && nonStandard.length === 0, theorems: axioms, nonStandard, raw: audit.out.trim() },
   sorryTotal, modules, theorems, lemmas, formalized,
   mutations: mutations ? { summary: mutations.summary, results: mutations.results } : null,
-  nanopubs, bound, blueprintCertificates, thompsonTest, constraints, eliminations, eliminationsOpenProblems, flyingFishAudit,
+  nanopubs, bound, blueprintCertificates, thompsonTest, constraints, eliminations, eliminationsOpenProblems, extraLedgers, flyingFishAudit,
   summary: {
     theoremsCompiling: buildOk ? theorems.length : 0,
     lemmas: lemmas.length,

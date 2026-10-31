@@ -127,12 +127,33 @@
     "unit": null,
     "status": "measured (Park and Choi 2010, model L3 over water at h/b = 0.33; lift unaffected)",
     "source": "physics/ground-effect.json"
+   },
+   {
+    "name": "physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2",
+    "value": "Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)",
+    "unit": null,
+    "status": "proxy (no Exocoetidae physiology exists; every value is from another teleost or tuned)",
+    "source": "physiology/ at commit a1ca4f00, via lean/eliminate/physiology-candidates.json"
+   },
+   {
+    "name": "aerobic mechanical ceiling η E Q Ca for the 0.06 kg fish",
+    "value": 0.0357,
+    "unit": "W",
+    "status": "computed from the chain proxies (sustained_le)",
+    "source": "lean/eliminate/ledger.physiology.json"
+   },
+   {
+    "name": "power for level flight at 10 m/s with (L/D)max 4.37",
+    "value": 1.346,
+    "unit": "W",
+    "status": "computed from measured W and L/D (the most generous, lowest, value)",
+    "source": "physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994)"
    }
   ],
   "verdicts": {
    "holds": 22,
-   "cannot-evaluate": 80,
-   "violated": 9
+   "cannot-evaluate": 78,
+   "violated": 11
   },
   "applies": {
    "yes": 25,
@@ -140,13 +161,13 @@
    "no": 6
   },
   "inputs": {
-   "missing inputs only": 53,
+   "missing inputs only": 52,
    "no inputs needed": 10,
    "proxy only": 13,
-   "computed from measured and proxy": 7,
+   "computed from measured and proxy": 8,
    "has measured inputs": 28
   },
-  "headline": "Of 111 theorems, 22 hold when instantiated on the flying fish (the blueprint certificate's 11 structural theorems, the exact minimum-speed bound on the Park and Choi specimen, the cube law approximately on Davenport's exponent, and 6 bookkeeping lemmas), 9 have their isometry hypotheses violated by Davenport's within-species exponents (fin area 1.834 vs 2, wing loading 1.236 vs 1), and 80 cannot be evaluated because an input is missing: a neutral substitution rate or fixation probability for the family, fitness variance at any locus, an asexual lineage (none known), material strength and section data for fin rays and bone, muscle fraction and power, and v_min or L/D at a second body size.",
+  "headline": "Of 111 theorems, 22 hold when instantiated on the flying fish (the blueprint certificate's 11 structural theorems, the exact minimum-speed bound on the Park and Choi specimen, the cube law approximately on Davenport's exponent, and 6 bookkeeping lemmas), 11 have their isometry hypotheses violated by Davenport's within-species exponents (fin area 1.834 vs 2, wing loading 1.236 vs 1), and 78 cannot be evaluated because an input is missing: a neutral substitution rate or fixation probability for the family, fitness variance at any locus, an asexual lineage (none known), material strength and section data for fin rays and bone, muscle fraction and power, and v_min or L/D at a second body size.",
   "notMeasuredForExocoetidae": [
    "mutation rate (proxy from herring and stickleback)",
    "effective population size for the family (one mitochondrial Ne for E. volitans)",
@@ -157,9 +178,9 @@
    "v_min, L/D or C_L,max at more than one body size",
    "confidence intervals on the Davenport 1992 exponents (abstract only)"
   ],
-  "generated": "2026-10-31T20:46:38.067Z",
+  "generated": "2026-10-31T21:05:54.198Z",
   "tool": "lean/flying-fish/audit.mjs",
-  "leanReport": "2026-10-31T20:46:12.815Z"
+  "leanReport": "2026-10-31T21:01:44.908Z"
  },
  "theorems": [
   {
@@ -1200,18 +1221,33 @@
     "Quot.sound"
    ],
    "kind": "filter",
-   "appliesToExocoetidae": "yes-under-named-hypotheses (Fick, aerobic)",
+   "appliesToExocoetidae": "yes-under-named-hypotheses (Fick, aerobic), instantiated with the physiology chain's proxies",
    "appliesClass": "yes-under-named-hypotheses",
    "inputs": [
     {
-     "name": "Q, Ca, E, η",
-     "status": "missing",
-     "note": ""
+     "name": "physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2",
+     "value": "Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)",
+     "status": "proxy (no Exocoetidae physiology exists; every value is from another teleost or tuned)",
+     "source": "physiology/ at commit a1ca4f00, via lean/eliminate/physiology-candidates.json"
+    },
+    {
+     "name": "aerobic mechanical ceiling η E Q Ca for the 0.06 kg fish",
+     "value": 0.0357,
+     "unit": "W",
+     "status": "computed from the chain proxies (sustained_le)",
+     "source": "lean/eliminate/ledger.physiology.json"
+    },
+    {
+     "name": "power for level flight at 10 m/s with (L/D)max 4.37",
+     "value": 1.346,
+     "unit": "W",
+     "status": "computed from measured W and L/D (the most generous, lowest, value)",
+     "source": "physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994)"
     }
    ],
-   "verdict": "cannot-evaluate",
+   "verdict": "violated",
    "qualifier": null,
-   "why": "no physiology for the family"
+   "why": "fires: 0.0357 W < 1.346 W for the real fish at 10 m/s and for the hypothetical flier at 7 m/s (lean/eliminate/ledger.physiology.json); the proxies, not the fish, are what the elimination rests on"
   },
   {
    "theorem": "Delphi.Constraints.glide_range_rules_out",
@@ -2056,13 +2092,28 @@
     "Quot.sound"
    ],
    "kind": "law",
-   "appliesToExocoetidae": "yes-under-named-hypotheses: for sustained POWERED flight; a glider does not sustain flight by muscle power, so for the real fish this bounds taxiing and launch, and for a designed powered variant it is the central check",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: sustained POWERED flight with an aerobic supply (Fick); instantiated with the physiology chain's proxies for a 0.06 kg fish",
    "appliesClass": "yes-under-named-hypotheses",
    "inputs": [
     {
-     "name": "Q, Ca, E, η",
-     "status": "missing",
-     "note": ""
+     "name": "physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2",
+     "value": "Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)",
+     "status": "proxy (no Exocoetidae physiology exists; every value is from another teleost or tuned)",
+     "source": "physiology/ at commit a1ca4f00, via lean/eliminate/physiology-candidates.json"
+    },
+    {
+     "name": "aerobic mechanical ceiling η E Q Ca for the 0.06 kg fish",
+     "value": 0.0357,
+     "unit": "W",
+     "status": "computed from the chain proxies (sustained_le)",
+     "source": "lean/eliminate/ledger.physiology.json"
+    },
+    {
+     "name": "power for level flight at 10 m/s with (L/D)max 4.37",
+     "value": 1.346,
+     "unit": "W",
+     "status": "computed from measured W and L/D (the most generous, lowest, value)",
+     "source": "physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994)"
     },
     {
      "name": "L/D max for specimen L3",
@@ -2079,9 +2130,9 @@
      "source": "physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994)"
     }
    ],
-   "verdict": "cannot-evaluate",
-   "qualifier": "P_req at v_min for specimen L3 is W v_min/(L/D) = 1.33 W with the measured L/D 4.37; the oxygen side is missing",
-   "why": "no physiological inputs"
+   "verdict": "violated",
+   "qualifier": "with the chain's proxies the aerobic ceiling η E Q Ca is 0.0357 W against 1.346 W for level flight at 10 m/s (1.327 W at v_min), a shortfall of 38x even at the most generous L/D: sustained aerobic flight is ruled out for the real fish under those proxies (kernel-accepted certificate in lean/Delphi/Certificates/EliminationsPhysiology.lean). The hypotheses that could be wrong are the proxies: Q and Ca from snapper and trout, η from salmon heart muscle. What the fish does instead is glide, and burst-power on white-muscle stores, which the theorem does not bound",
+   "why": "instantiated with proxies; violated by a large factor"
   },
   {
    "theorem": "Delphi.climb_le_aerobic",
