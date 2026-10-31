@@ -69,8 +69,15 @@ for path in chain_files:
         g["best_grade"] = max(grades, key=lambda x: RANK[x]) if grades else None
         g["weakest_grade"] = min(grades, key=lambda x: RANK[x]) if grades else None
         g["chain_complete"] = len(steps) >= 4 and all(st["evidence_grade"] not in ("missing",) for st in steps)
+        # A chain is only as strong as its weakest link: chain_strength is the weakest grade on the whole chain.
+        # best_grade is the strongest single link, which is NOT the chain's strength and must not be read as it.
+        g["chain_strength"] = g["weakest_grade"]
         g["reaches_necessity_or_better"] = bool(grades) and RANK[g["best_grade"]] >= RANK["necessity"]
-        g["n_sources"] = len({(s.get("pmid") or s.get("doi")) for st in steps for s in st["sources"]})
+        g["chain_strength_necessity_or_better"] = bool(grades) and RANK[g["weakest_grade"]] >= RANK["necessity"]
+        srcs = [s for st in steps for s in st["sources"]]
+        g["n_sources"] = len({(s.get("pmid") or s.get("doi")) for s in srcs} - {None})
+        g["n_full_text_sources"] = len({(s.get("pmid") or s.get("doi")) for s in srcs if s.get("read") != "abstract only"} - {None})
+        g["n_abstract_only_sources"] = len({(s.get("pmid") or s.get("doi")) for s in srcs if s.get("read") == "abstract only"} - {None})
         for nid in (g.get("fin_subtree_nodes") or []): check_node(nid)
         genes.append(g)
     for c in (d.get("cross_gene") or []):
@@ -107,9 +114,14 @@ for p in sorted(glob.glob(os.path.join(HERE, "cache", "calls_agent_*.json"))):
     calls[os.path.basename(p)] = {"calls": len(cs), "non_200": sum(1 for c in cs if c.get("status") != 200), "hosts": sorted({re.sub(r"^https?://([^/]+).*", r"\1", c["url"]) for c in cs})}
 
 by_grade = collections.Counter(st["evidence_grade"] for g in genes for st in (g.get("chain") or []))
-cov = {"genes_with_a_chain": len(genes), "genes_reaching_necessity_or_better": sum(1 for g in genes if g.get("reaches_necessity_or_better")),
-       "genes_reaching_mechanism": sum(1 for g in genes if g.get("best_grade") == "mechanism"), "genes_with_a_complete_four_step_chain": sum(1 for g in genes if g.get("chain_complete")),
-       "best_grade_distribution": dict(collections.Counter(g.get("best_grade") for g in genes)), "deepest_level_distribution": dict(collections.Counter(g.get("deepest_level") for g in genes)),
+cov = {"genes_with_a_chain": len(genes),
+       "metric_note": ("chain_strength is the WEAKEST grade on a chain and is the honest measure of it: a chain is only as strong as its weakest link. "
+                       "genes_with_a_link_graded_X counts genes with at least one such link anywhere on the chain, which is a much weaker statement."),
+       "chain_strength_distribution": dict(collections.Counter(g.get("chain_strength") for g in genes)),
+       "chains_whose_weakest_link_is_necessity_or_better": sum(1 for g in genes if g.get("chain_strength_necessity_or_better")),
+       "genes_with_a_link_graded_necessity_or_better": sum(1 for g in genes if g.get("reaches_necessity_or_better")),
+       "genes_with_a_link_graded_mechanism": sum(1 for g in genes if g.get("best_grade") == "mechanism"), "genes_with_a_complete_four_step_chain": sum(1 for g in genes if g.get("chain_complete")),
+       "best_single_link_grade_distribution": dict(collections.Counter(g.get("best_grade") for g in genes)), "deepest_level_distribution": dict(collections.Counter(g.get("deepest_level") for g in genes)),
        "steps_by_grade": dict(by_grade), "distinct_publications": len({(s.get("pmid") or s.get("doi")) for g in genes for st in (g.get("chain") or []) for s in st["sources"]} - {None})}
 
 NOTE = ("Every link was produced by a subagent working under genotype/AGENT_BRIEF.md: nothing from memory, every statement from a document fetched in that "
@@ -150,7 +162,10 @@ def steps_md(g):
         node = f' at {st["to_node_label"]} (`{st["to_node"]}`)' if st.get("to_node") else ""
         out.append(f'   - `{st.get("evidence_grade")}` {st.get("from") or ""} -> {st.get("to") or st.get("phenotype") or ""}{node}. {st.get("experiment_type") or ""}, {st.get("organism") or ""}, stage {st.get("stage") or "not stated"}. {srcs}')
     return "\n".join(out)
-ranked = sorted(genes, key=lambda g: (-RANK.get(g.get("best_grade") or "missing", 0), -g.get("n_sources", 0), str(g.get("symbol"))))
+# Ranked by chain strength (the weakest link), then by how much of it was read in full text rather than in an
+# abstract, then by the number of distinct publications. The full-text count is the tiebreak because two chains
+# can carry the same grades while one of them rests on sentences from abstracts of papers that could not be fetched.
+ranked = sorted(genes, key=lambda g: (-RANK.get(g.get("chain_strength") or "missing", 0), -g.get("n_full_text_sources", 0), -g.get("n_sources", 0), str(g.get("symbol"))))
 md = [f"# Causal chains from gene to phenotype in the pectoral fin\n",
       f"Built {chains_out['built']} by `genotype/assemble_chains.py` from {len(chain_files)} subagent result files.",
       f"Every link carries its own source, organism, experiment type and evidence grade; the grades are, weakest to strongest,",
@@ -159,20 +174,28 @@ md = [f"# Causal chains from gene to phenotype in the pectoral fin\n",
       f"## Coverage\n",
       f"| | |\n|---|---|",
       f"| genes with a chain | {cov['genes_with_a_chain']} |",
-      f"| reaching `necessity` or better | {cov['genes_reaching_necessity_or_better']} |",
-      f"| reaching `mechanism` | {cov['genes_reaching_mechanism']} |",
+      f"| chains whose **weakest** link is `necessity` or better | {cov['chains_whose_weakest_link_is_necessity_or_better']} |",
+      f"| genes with at least one link graded `necessity` or better | {cov['genes_with_a_link_graded_necessity_or_better']} |",
+      f"| genes with at least one link graded `mechanism` | {cov['genes_with_a_link_graded_mechanism']} |",
       f"| complete four-step chains | {cov['genes_with_a_complete_four_step_chain']} |",
       f"| distinct publications cited | {cov['distinct_publications']} |",
       f"| fetched calls by the subagents | {sum(c['calls'] for c in calls.values())} |\n"]
 if ranked:
     g = ranked[0]
-    md += [f"## Strongest chain end to end: {g.get('symbol')}\n", f"Best grade on any link: `{g.get('best_grade')}`; weakest link on the chain: `{g.get('weakest_grade')}`. "
+    tied = [x.get("symbol") for x in ranked[1:] if x.get("chain_strength") == g.get("chain_strength")]
+    md += [f"## Strongest chain end to end: {g.get('symbol')}\n",
+           (f"**Tied on grades with {', '.join(tied)}**; ranked first because {g.get('n_full_text_sources')} of its cited papers were read in full text against "
+            f"{g.get('n_abstract_only_sources')} read as abstracts only. Grades alone do not separate them, and the 'where it breaks' lines below say how they differ.\n" if tied else ""),
+           f"Chain strength, meaning its weakest link: `{g.get('chain_strength')}`; strongest single link: `{g.get('best_grade')}`. "
            f"Deepest node with evidence: {node_label(g.get('deepest_node_with_evidence')) or g.get('deepest_node_with_evidence')} ({g.get('deepest_level')}).\n", steps_md(g), ""]
     if g.get("weakest_link"): md += [f"**Where it breaks:** {g['weakest_link']}\n"]
     if g.get("gaps"): md += ["**Gaps:** " + "; ".join(g["gaps"]) + "\n"]
-md += ["## Every chain, strongest first\n", "| gene | best grade | weakest link on the chain | deepest node | publications | where it breaks |", "|---|---|---|---|---|---|"]
+md += ["## Every chain, strongest first\n",
+       "Ordered by **chain strength**, the weakest grade on the chain, because that is what a chain actually supports. The strongest single link is shown beside it: "
+       "a chain can hold one `mechanism` link and still be worth little if another link is `missing`.\n",
+       "| gene | chain strength (weakest link) | strongest single link | deepest node | publications (full text / abstract only) | where it breaks |", "|---|---|---|---|---|---|"]
 for g in ranked:
-    md.append(f'| {g.get("symbol")} | `{g.get("best_grade")}` | `{g.get("weakest_grade")}` | {node_label(g.get("deepest_node_with_evidence")) or g.get("deepest_node_with_evidence") or "none"} ({g.get("deepest_level") or "-"}) | {g.get("n_sources", 0)} | {(g.get("weakest_link") or "not stated")[:160]} |')
+    md.append(f'| {g.get("symbol")} | `{g.get("chain_strength")}` | `{g.get("best_grade")}` | {node_label(g.get("deepest_node_with_evidence")) or g.get("deepest_node_with_evidence") or "none"} ({g.get("deepest_level") or "-"}) | {g.get("n_full_text_sources", 0)} / {g.get("n_abstract_only_sources", 0)} | {(g.get("weakest_link") or "not stated")[:200]} |')
 if cross:
     md += ["\n## Claims spanning several genes\n"] + [f'- `{c.get("evidence_grade")}` {c.get("claim")} ({"; ".join(cite(s) for s in c["sources"]) or "no source"})' for c in cross]
 gaps_all = [(g.get("symbol"), x) for g in genes for x in (g.get("gaps") or [])]

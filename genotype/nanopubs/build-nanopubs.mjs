@@ -79,10 +79,14 @@ function pv(ev, i, id, value, desc, type = 'integer') {
   return `  <${ev}> schema:additionalProperty sub:m${i} .\n  sub:m${i} a schema:PropertyValue ; schema:propertyID "${id}" ; schema:value ${v} ; schema:description "${esc(desc)}" .\n`;
 }
 
-function record({ file, slug, label, status, description, context, test, metrics, datasets, notEstablished, prereg, evLabel, evDesc, also = [] }) {
+function record({ file, slug, label, status, description, context, test, metrics, datasets, notEstablished, prereg, evLabel, evDesc, also = [], publications = [], derivedFrom = "sub:map" }) {
   const claim = `${R}claim/${slug}`, ev = `${R}evidence/${slug}`;
   let a = `sub:assertion {\n  <${claim}> a delphi:Claim ;\n    rdfs:label "${esc(label)}" ;\n    dct:description "${esc(`Status: ${status}. ${description} What it does not establish: ${notEstablished} Pre-registration: ${prereg}`)}" ;\n    delphi:context "${esc(context)}" ;\n    delphi:hasEvidence <${ev}> ;\n    prov:wasAttributedTo <${AGENT}> .\n`;
-  a += `  <${ev}> a delphi:EvidenceItem ;\n    rdfs:label "${esc(evLabel)}" ;\n    dct:description "${esc(evDesc)}" ;\n    delphi:statisticalTest "${esc(test)}" ;\n    prov:used ${datasets.map(d => `<${R}dataset/${DS[d].id}>`).join(', ')} ;\n    prov:wasDerivedFrom sub:map ;\n    rdfs:seeAlso <${LIVE}data.json> .\n`;
+  a += `  <${ev}> a delphi:EvidenceItem ;\n    rdfs:label "${esc(evLabel)}" ;\n    dct:description "${esc(evDesc)}" ;\n    delphi:statisticalTest "${esc(test)}" ;\n${datasets.length ? `    prov:used ${datasets.map(d => `<${R}dataset/${DS[d].id}>`).join(", ")} ;\n` : ""}${publications.length ? `    dct:source ${publications.map(p => `<https://pubmed.ncbi.nlm.nih.gov/${p.pmid}/>`).join(", ")} ;\n` : ""}    prov:wasDerivedFrom ${derivedFrom} ;\n    rdfs:seeAlso <${LIVE}data.json> .\n`;
+  // Each cited publication as its own entity, carrying the verbatim sentence the grade rests on and whether the
+  // full text or only the abstract was read. A record never cites a paper the subagents did not fetch.
+  for (const p of publications)
+    a += `  <https://pubmed.ncbi.nlm.nih.gov/${p.pmid}/> a prov:Entity ;\n    dct:title "${esc(p.title || "")}" ;\n    dct:bibliographicCitation "${esc(`${p.first_author || ""} ${p.year || ""} ${p.journal || ""}`.trim())}" ;\n    dct:identifier "PMID ${p.pmid}"${p.doi ? ` , "doi:${p.doi}"` : ""} ;\n    delphi:context "${esc(p.read === "abstract only" ? "abstract only: the full text could not be fetched" : "full text read")}" ;\n    rdfs:comment "${esc(p.quote || "")}" .\n`;
   a += pv(ev, 0, 'status', status, 'status of this record in the words of AGENTS.md (supported, refuted, mixed, inconclusive, or a descriptive status)', 'string');
   metrics.forEach((m, i) => { a += pv(ev, i + 1, m[0], m[1], m[2], m[3] || 'integer'); });
   for (const d of datasets) a += dataset(d);
@@ -280,6 +284,90 @@ records.push(record({
   notEstablished: 'It does not establish how other SPARQL endpoints behave, nor whether Ubergraph\'s behaviour follows from the SPARQL specification or from its store; only what this endpoint returned to these two queries on this day.',
   prereg: 'none: a tooling gotcha.',
   evLabel: 'Two Ubergraph probe queries differing only in literal typing', evDesc: 'Read from genotype/cache/ubergraph_probe_literal_typing.json, written by genotype/fetch_ubergraph_probe.py.',
+}));
+
+// ---- the four headline causal-chain results ------------------------------------------------------
+// Numbers, grades and quotes are read from genotype/causal-chains.json, which the subagents produced under
+// genotype/AGENT_BRIEF.md and genotype/assemble_chains.py validated. Nothing here is typed in by hand.
+const CH = rd('genotype/causal-chains.json');
+const chSha = shaOf('genotype/causal-chains.json'), chSize = sizeOf('genotype/causal-chains.json');
+const byGene = Object.fromEntries((CH.genes || []).map(g => [g.symbol, g]));
+const chainsEntity = `  sub:chains a prov:Entity ;\n    dct:title "genotype/causal-chains.json (causal chains with a source and an evidence grade on every link; built ${esc(CH.built)})" ;\n    spdx:checksum sub:chains-sha ;\n    schema:contentSize "${chSize}"^^xsd:integer ;\n    prov:generatedAtTime "${esc(CH.built)}"^^xsd:dateTime ;\n    rdfs:comment "${esc(CH.note)}" .\n  sub:chains-sha a spdx:Checksum ; spdx:algorithm spdx:checksumAlgorithm_sha256 ; spdx:checksumValue "${chSha}" .\n`;
+const pubsOf = (sym, pred = () => true) => {
+  const seen = new Map();
+  for (const st of (byGene[sym]?.chain || [])) for (const s of (st.sources || [])) if (s.pmid && pred(s, st) && !seen.has(s.pmid)) seen.set(s.pmid, s);
+  return [...seen.values()];
+};
+const stepOf = (sym, name) => (byGene[sym]?.chain || []).find(s => (s.step || '').startsWith(name)) || {};
+const gradesOf = sym => (byGene[sym]?.chain || []).map(s => `${s.step}: ${s.evidence_grade}`).join('; ');
+
+const k5 = byGene['kcnk5b'], kh = byGene['kcnh2a'], sl = byGene['slc43a2a'];
+if (k5) records.push(record({
+  file: 'chain-kcnk5b-fin-size.trig', slug: 'genotype-chain-kcnk5b-bioelectric-fin-size',
+  label: `The best-supported gene-to-phenotype chain for fin size runs from the potassium channel kcnk5b to increased zebrafish fin length, but its middle link is contradicted: three papers disagree on whether the growth-driving membrane-potential change is a hyperpolarization or a depolarization, and no recording has ever been made from a fin cell`,
+  status: 'mixed within one reading: the chain is supported end to end at sufficiency, while the direction of its bioelectric step is inconclusive (see genotype/nanopubs/DECISIONS.md for why this is one record and not two)',
+  description: `Chain strength, meaning the weakest grade on the chain, is ${k5.chain_strength}; the strongest single link is ${k5.best_grade}. Steps and grades: ${gradesOf('kcnk5b')}. Supported component: gain-of-function alleles of kcnk5b raise potassium conductance in oocytes ("oocytes injected with either of both mutant cRNAs show an almost two-fold increase in K+ conductance over that of oocytes injected with wild type", Perathoner 2014); overexpression in intra-ray mesenchyme fibroblasts is sufficient for outgrowth ("kcnk5b overexpression within fibroblasts of the mesenchyme is sufficient to induce fin outgrowth", same paper); and the phenotype is proportionally enlarged fins with longer lepidotrichial segments and an unchanged segment number. Unsupported component: the sign of the bioelectric step. Perathoner 2014 reports that the gain-of-function channel hyperpolarizes the cell, Jiang 2024 reports that "Kcnk5b enhanced depolarization in fin bud cells via Na+ channels and that this enhanced depolarization was required for Kcnk5b-enhanced" growth, and Daane 2018 obtains the same overgrowth from a decreased-conductance I290A channel. Deepest node with evidence: ${k5.deepest_node_with_evidence} (${k5.deepest_level}).`,
+  context: `All zebrafish. Every channel measurement is from Xenopus oocytes or HEK293 cells; no electrophysiological recording exists from a zebrafish fin or fin-bud cell. The clonal sufficiency experiments were scored in caudal and dorsal fins and barbels, not in the pectoral fin, and the pectoral-specific ZFIN row traces to van Eeden 1996, read as an abstract only.`,
+  test: 'Literature chain construction under genotype/AGENT_BRIEF.md: each link graded association, necessity, sufficiency, mechanism or hypothesis from a fetched source with a verbatim quote; merged and validated by genotype/assemble_chains.py, which upgrades nothing. No new experiment and no statistical test.',
+  metrics: [['chain_steps', (k5.chain || []).length, 'links on the chain'], ['steps_graded_mechanism', (k5.chain || []).filter(s => s.evidence_grade === 'mechanism').length, 'links graded mechanism'],
+            ['steps_graded_sufficiency', (k5.chain || []).filter(s => s.evidence_grade === 'sufficiency').length, 'links graded sufficiency'],
+            ['publications_full_text', k5.n_full_text_sources, 'cited publications read in full text'], ['publications_abstract_only', k5.n_abstract_only_sources, 'cited publications read as abstracts only'],
+            ['papers_disagreeing_on_the_sign', 3, 'publications that disagree on the direction of the membrane-potential change (Perathoner 2014, Jiang 2024, Daane 2018)'],
+            ['recordings_from_a_fin_cell', 0, 'electrophysiological recordings from a zebrafish fin or fin-bud cell in any fetched source']],
+  datasets: [], publications: pubsOf('kcnk5b'), derivedFrom: 'sub:chains', also: [chainsEntity],
+  notEstablished: 'It does not establish the direction of the bioelectric change, nor any step in a flying fish: no kcnk5b measurement exists in any flying fish, and Daane 2021 did not implicate kcnk5b in the flying-fish comparative signal. It does not resolve a cell type: the papers name fibroblast-like cells of the intra-ray mesenchyme, and the chain stops at the mesenchyme node.',
+  prereg: 'none in the sense of a hypothesis. The grading vocabulary and the rule that nothing may be asserted without a fetched source were fixed in genotype/AGENT_BRIEF.md before the ten subagents ran.',
+  evLabel: 'Graded causal chain for kcnk5b, with the contradiction among its sources', evDesc: `Read from genotype/causal-chains.json, gene kcnk5b, built by the wing subagent from ${k5.n_full_text_sources + k5.n_abstract_only_sources} publications.`,
+}));
+
+if (k5 && kh) records.push(record({
+  file: 'finding-segmentation-favours-kcnh2a-mechanism.trig', slug: 'genotype-flying-fish-segmentation-favours-kcnh2a-not-kcnk5b',
+  label: 'The one flying-fish trait that can be compared with the two zebrafish fin-overgrowth mutants argues against kcnk5b as the flying-fish mechanism: flying fishes and the longfin (kcnh2a) mutant keep regular fin-ray segmentation, whereas the kcnk5b mutant has irregular segmentation',
+  status: 'supported, at the weakest useful grade (association): a morphological comparison, not a manipulation in a flying fish',
+  description: `Daane 2021 states that "lof mutants maintain elongate but regular segmented lepidotrichia (Figures S2A and S2B), in contrast to the kcnk5balf fin overgrowth mutant having irregular segmentation". Perathoner 2014 independently describes the kcnk5b allele as having, on average, increased segment length with "structures appearing as very short segments" occasionally present, and an unchanged segment number. Since flying-fish fins are elongated with regular segmentation, the kcnh2a-like mechanism matches the flying-fish fin and the kcnk5b-like mechanism does not. This is the only point in this project where a flying-fish observation discriminates between two candidate mechanisms, and it discriminates against the better-supported one.`,
+  context: 'Graded association in genotype/causal-chains.json (cross_gene). The comparison is between published descriptions of fin-ray segmentation, not a measurement made by this thread. The two zebrafish mutants are kcnk5b (alf, gain of function) and the longfin regulatory allele that overexpresses kcnh2a.',
+  test: 'Comparison of published morphological descriptions of lepidotrichial segmentation in two zebrafish fin-overgrowth mutants and in flying fishes. No statistical test; no measurement by this thread.',
+  metrics: [['candidate_mechanisms_compared', 2, 'kcnk5b and kcnh2a'], ['discriminating_traits_found', 1, 'regularity of lepidotrichial segmentation'],
+            ['flying_fish_manipulations', 0, 'experiments in any flying fish supporting either mechanism']],
+  datasets: [], publications: pubsOf('kcnk5b').filter(p => ['34534441', '24453984'].includes(p.pmid)).concat(pubsOf('kcnh2a').filter(p => p.pmid === '34534441')).filter((p, i, a) => a.findIndex(x => x.pmid === p.pmid) === i),
+  derivedFrom: 'sub:chains', also: [chainsEntity],
+  notEstablished: 'It does not establish that kcnh2a is the flying-fish mechanism: the flying-fish evidence for that locus is comparative-genomic only, and the sufficiency experiment behind it used human KCNH2, not zebrafish kcnh2a. It does not exclude kcnk5b from contributing, and segmentation regularity was not quantified in flying fishes by this thread or, as far as the fetched sources show, by anyone.',
+  prereg: 'none: a comparison noticed while grading the chains. It was recorded because it tells against the project\'s own best-supported chain, which is the kind of result a thread is most tempted to leave out.',
+  evLabel: 'Published descriptions of fin-ray segmentation in kcnk5b and kcnh2a mutants and in flying fishes', evDesc: 'Read from genotype/causal-chains.json, cross_gene claims, with verbatim quotes from the two papers.',
+}));
+
+if (sl) records.push(record({
+  file: 'chain-slc43a2a-breaks-at-hypothesis.trig', slug: 'genotype-chain-slc43a2a-lat4a-breaks-at-hypothesis',
+  label: `The flying-fish candidate gene lat4a (ZFIN slc43a2a) has the weakest causal chain of the three fin-size genes: nothing experimental connects its amino-acid transport function to fin ray length, so that link is graded hypothesis, and every fin phenotype for the gene comes from a single publication`,
+  status: 'inconclusive',
+  description: `Chain strength is ${sl.chain_strength}, the weakest of the three fin-size genes; steps and grades: ${gradesOf('slc43a2a')}. The transport function is well supported but entirely from mammalian orthologs read as abstracts: LAT4 "mediates system L activity when expressed in Xenopus laevis oocytes" (Bodoy 2005) and functions as "a symmetrical low affinity uniporter" (Guetg 2015). Zebrafish Lat4a transport activity has never been measured. The step from that function to a growth process is empty of experiment: Daane 2021 only orders the gene, stating that "the mechanism of fin-specific suppression of lof by lat4a mutations is occurring downstream of bioelectric signaling signals". There is no mTOR readout, no amino-acid measurement in fin tissue, no substrate rescue and no transcriptional target. The phenotype end is real and quantified in that paper (shorter lepidotrichial segments; fin-type-specific suppression of the kcnh2a overgrowth), but all six ZFIN rows for this gene trace to the same publication, so the gene has no independent replication.`,
+  context: `This is the gene the flying-fish paper implicates by convergent sequence evolution (F326L, present in both gliding halfbeaks and at least 7 of 9 flying-fish species), which makes the gap between its molecular function and its fin phenotype the most consequential gap in the project. The gain-of-function allele T200K was never assayed for transport, so even the direction of its effect on amino-acid movement is unknown.`,
+  test: 'Literature chain construction and grading under genotype/AGENT_BRIEF.md; merged and validated by genotype/assemble_chains.py. No new experiment.',
+  metrics: [['chain_steps', (sl.chain || []).length, 'links on the chain'], ['steps_without_experimental_support', (sl.chain || []).filter(s => s.evidence_grade === 'hypothesis' || s.evidence_grade === 'missing').length, 'links graded hypothesis or missing'],
+            ['publications_behind_every_fin_phenotype', 1, 'distinct publications supplying the fin phenotypes and all ZFIN rows (PMID 34534441)'],
+            ['zfin_rows_for_this_gene', 6, 'ZFIN phenotype rows, all from that one publication'],
+            ['transport_assays_in_zebrafish', 0, 'measurements of zebrafish Lat4a transport activity in any fetched source'],
+            ['publications_full_text', sl.n_full_text_sources, 'cited publications read in full text'], ['publications_abstract_only', sl.n_abstract_only_sources, 'cited publications read as abstracts only']],
+  datasets: [], publications: pubsOf('slc43a2a'), derivedFrom: 'sub:chains', also: [chainsEntity],
+  notEstablished: 'It does not refute a role for lat4a in fin size: the genetic interaction with kcnh2a is real and quantified. It establishes only that the mechanism between transport and ray length is unmeasured, and that the evidence rests on one laboratory and one paper.',
+  prereg: 'none: a gap found while grading. The grading vocabulary was fixed in genotype/AGENT_BRIEF.md before the subagents ran.',
+  evLabel: 'Graded causal chain for slc43a2a (lat4a) and the publications behind each link', evDesc: 'Read from genotype/causal-chains.json, gene slc43a2a.',
+}));
+
+if (kh) records.push(record({
+  file: 'gotcha-kcnh2a-zfin-filing-and-human-transgene.trig', slug: 'genotype-gotcha-kcnh2a-filed-against-feature-not-gene',
+  label: 'ZFIN holds zero phenotype rows for kcnh2a because the longfin phenotypes are filed against the chromosomal feature rather than against the gene, so a gene-keyed pipeline silently misses the best-known fin-overgrowth mutant; and the clone-autonomy experiment behind its sufficiency grade used human KCNH2, not the zebrafish gene',
+  status: 'serendipitous methodological finding, established by inspection of the ZFIN files and the cited papers',
+  description: `The vetted genotype map never attached kcnh2a to any blueprint node, and the reason is a filing convention, not an absence of biology: in ZFIN the longfin phenotypes belong to the lof feature, while the gene kcnh2a has no phenotype row at all. Its only ZFIN gene-level records are wild-type expression rows on the generic terms fin and regenerating fin. Any pipeline that joins phenotypes to genes by gene identifier, as this thread's does, therefore misses the classic fin-overgrowth mutant entirely, and would report kcnh2a as unstudied in the fin. Second caveat on the same gene: the sufficiency grade on its chain rests partly on an experiment that overexpressed HUMAN KCNH2 in zebrafish fin mesenchyme ("Upregulation of human KCNH2 in fin mesenchyme during development (ubi:hKCNH2;ubi:GFP) was sufficient to cause localized overgrowth of rays", Daane 2021), so the sufficiency shown is of the human channel in a zebrafish fin, not of the zebrafish gene. Third: the full text of Stewart 2021, which carries the process step, could not be fetched (Europe PMC returned HTTP 500 for PMC8217709 and NCBI PMC reported that the publisher does not allow it), so every statement from it is abstract-only.`,
+  context: 'Found while building the causal chains: the wing subagent could not locate a single ZFIN phenotype row for a gene with a famous fin phenotype. Chain grades for the gene: ' + gradesOf('kcnh2a') + '.',
+  test: 'Inspection: a search of ZFIN phenoGeneCleanData_fish.txt for the gene symbol and identifier, and of wildtype-expression_fish.txt for its expression rows; plus the fetched text of the two papers behind the chain. No statistical test.',
+  metrics: [['zfin_phenotype_rows_for_kcnh2a', 0, 'phenotype rows keyed to the gene in ZFIN'], ['zfin_wildtype_expression_rows', 2, 'gene-level ZFIN records, both on generic fin terms'],
+            ['sufficiency_experiments_using_the_zebrafish_gene', 0, 'clone-autonomy overexpression experiments using zebrafish kcnh2a rather than human KCNH2 in the fetched sources'],
+            ['publications_abstract_only', kh.n_abstract_only_sources, 'cited publications whose full text could not be fetched']],
+  datasets: ['zfin'], publications: pubsOf('kcnh2a'), derivedFrom: 'sub:chains', also: [chainsEntity],
+  notEstablished: 'It does not establish that ZFIN is wrong: filing a phenotype against the feature is correct when the allele is a chromosomal rearrangement whose gene assignment came later. It does not show how many other genes are affected by the same convention; that was not counted. It does not weaken the longfin biology itself, only the chain of evidence tying it to the zebrafish gene.',
+  prereg: 'none: a gotcha.',
+  evLabel: 'ZFIN row counts for kcnh2a and the provenance of its sufficiency grade', evDesc: 'Read from genotype/causal-chains.json, gene kcnh2a, and from the ZFIN bulk files in the thread\'s raw set.',
 }));
 
 fs.writeFileSync(path.join(here, 'manifest.json'), JSON.stringify({ built: NOW, map: MAP, map_sha256: mapSha, map_bytes: mapSize, unsigned: true, records }, null, 2));
