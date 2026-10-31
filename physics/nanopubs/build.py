@@ -177,5 +177,48 @@ man.append(record('finding-wind-tunnel-specimens-proportioned-like-flying-fish.t
     scopes=["Measured: Daane et al. 2021 lengths (109 specimens) and Park and Choi 2010 spans. Derived: the upper bound, an inequality that needs only body width >= 0.", "Say fin enlargement for gliding, never fin-to-wing: the wing is an enlarged pectoral fin."],
     related='https://w3id.org/delphi/resource/claim/darwin1859-ch06-05',
     counts={'n_specimens': br['source']['rows_read']}))
+
+# 6. Simulator result (exploratory)
+man.append(record('finding-simulator-taxi-glide-sequence-posthoc.trig', 'Hypothesis',
+    'https://w3id.org/delphi/resource/hypothesis/flying-fish-simulator-reproduces-taxi-glide-sequence',
+    'A point-mass model with measured fin aerodynamics reproduces a flying fish taxi-and-glide sequence, but only after post-hoc changes',
+    "A 2D side-view model (RK4, 1 ms) of the Park and Choi 2010 specimen L3, with its measured mass, areas, lift and drag coefficients and ground effect, swims to 10 m/s, taxis with the tail in the water, lifts off at 16.5 m/s, glides 36 m in 3.1 s to 3.1 m, and repeats: six glides, 288 m in 23 s, against field figures of up to 50 m per glide at 15 to 20 m/s and 400 m in 30 s. The validation was pre-registered before the first run; the model was then changed after seeing results (taxi trim law, approach angle, breach rule, taxi thrust factor), so tests 1 to 3 are exploratory and the status of this record is inconclusive. The single glide exceeds the pure-glide bound h_max (L/D)max = 35 m by the kinetic energy gained in the taxi, which shows why long field flights need repeated taxis.",
+    'inconclusive',
+    'https://w3id.org/delphi/resource/evidence/physics-simulator-run-6',
+    'Run 6 of the simulator, headless, with the run log',
+    "Pre-registration physics/sim/PREREG.md (sha256 in PREREG.sha256, written 2026-10-31T20:34Z before run 1). Run log physics/sim/RUNS.md: six runs and two sweeps, every change with its reason; four deviations listed. Parameters and kinds in dashboard/public/t/physics/sim/params.json: measured (Park and Choi 2010), secondary (field figures), assumed (control law, breach rule, lobe geometry, water drag) and tuned (swim thrust to 10 m/s, taxi thrust factor 0.7 to the taxi length). Test 4, that the real fish cannot power-fly, is untouched and not run (physiology chain pending).",
+    [doi('park-choi-2010'), doi('makiguchi-2013'), doi('deng-2019'), doi('davenport-1994')],
+    "Does not establish: that the parameters are right (several are assumed or tuned to the very figures used as targets); that the field figures, all second-hand, are accurate; that the model generalises beyond one 60 g specimen; anything about powered flight; anything about birds. A simulation that runs proves the program executes and nothing more.",
+    scopes=["Simulated: every number in the evidence item. Measured: the fin polar and morphometrics. Secondary: the field targets. The record is exploratory by the hub's ruling of 2026-10-31."],
+    related=CLAIM))
+# 7. Design study
+spec = json.load(open(os.path.join(PHYS, 'flier', 'spec.json'), encoding='utf-8')); pb = spec['power_budget']; dg = spec['design']
+man.append(record('hypothesis-truly-flying-fish-design-requirements.trig', 'Hypothesis',
+    'https://w3id.org/delphi/resource/hypothesis/truly-flying-fish-requirements-sixty-gram',
+    "HYPOTHETICAL: a 60 g flying fish that climbs under its own power would need four times the fin area, sixteen percent flight muscle and about five times a bat's oxygen supply per kilogram",
+    f"Design study, not an organism. Keeping the real specimen's mass (0.06 kg), fin section (C_Lmax 0.78, L/D max 4.37, Park and Choi 2010) and the simulator's equations, and changing only morphology and physiology: wing loading 12 N/m2 (inside the bat range 6.5 to 14.25) needs lifting area {dg['lifting_area_m2']['value']:.4f} m2, 3.9 times the real reference area, span {dg['span_m']['value']:.2f} m at aspect ratio 9. Level flight at the best speed costs {pb['P_req_min_level_W']:.2f} W mechanical including 0.48 W of flapping inertia; a 1 m/s climb {pb['P_req_min_climb_1_m_s_W']:.2f} W. At a muscle specific power of 202 W/kg derived from a bat (Pipistrellus nathusii: 0.140 W maximum mechanical power from 0.69 g of flight muscle), the bat mean muscle fraction (9.13 percent) gives 1.1 W, not enough for level flight; 16 percent gives 1.94 W and covers the climb. At 10 percent conversion efficiency (bat-measured 7.0 to 10.4) the climb needs {pb['metabolic_power_W_for_climb']:.1f} W metabolic, {pb['metabolic_W_per_kg_body']:.0f} W per kg body, about {pb['O2_demand_ml_per_min_per_kg']:.0f} ml O2 per minute per kg, while airborne, where gills do not ventilate: an air-breathing respiratory surface is therefore a design requirement, not an option. Status: untested hypothesis (design study); the oxygen side awaits the physiology chain and the Lean O2-to-power bound, and the simulated climb is power-limited only.",
+    'inconclusive',
+    'https://w3id.org/delphi/resource/evidence/physics-flier-design-budget',
+    'Power and oxygen budget of the designed flier from sourced non-bird values',
+    "Inputs (physics/flier/spec.json, sources block): bat flight muscle fraction mean 9.13 percent, minimum 7.8 (10.1038/s42003-024-06032-9 citing Bullen and McKenzie 2004); P. nathusii mechanical power 0.046 to 0.140 W for 7.6 g and conversion efficiency 7.0 to 10.4 percent (10.1098/rspb.2023.0045); inertial power 8 W/kg (10.1098/rsif.2022.0315); bat wing loadings 6.5 to 14.25 N/m2 (compilation); pterosaur hatchling wing loading 15.8 to 17.9 N/m2 and aspect ratio 6.1 to 6.5 (10.1038/s41598-021-92499-z); bumblebee hovering 559 W/kg, efficiency 7.3 to 14.7 percent (10.1098/rsbl.2025.0325); oxycaloric equivalent 20.1 J per ml O2. No bird value: class Aves is the frozen holdout. Computed by physics/flier/design.py. In the simulator the flier lifts off at 11.6 m/s and climbs to 42 m in 40 s with the real fish's equations, on muscle power alone with no oxygen limit applied.",
+    ['<https://doi.org/10.1038/s42003-024-06032-9>', '<https://doi.org/10.1098/rspb.2023.0045>', '<https://doi.org/10.1098/rsif.2022.0315>', '<https://doi.org/10.1038/s41598-021-92499-z>', '<https://doi.org/10.1098/rsbl.2025.0325>', doi('park-choi-2010')],
+    "Does not establish: that such a fish could develop (development is not simulated); that fins of four times the area keep the measured polar; that any respiratory surface can deliver the oxygen in air; that the derived muscle specific power applies to fish muscle; anything about birds. It is a statement of requirements under the stated equations, not a prediction that the organism is possible.",
+    scopes=["Hypothetical throughout; every input is a bat, insect or pterosaur value or a measured flying-fish value; the muscle specific power is derived from two sourced bat numbers."],
+    related='https://w3id.org/delphi/resource/claim/darwin1859-ch06-05'))
+# 8. FishBase coverage
+import csv as _csv
+lw = list(_csv.DictReader(open(os.path.join(PHYS, 'length-weight.csv'), encoding='utf-8')))
+fitted = [r for r in lw if r['note'].startswith('fitted')]
+man.append(record('finding-fishbase-length-weight-coverage.trig', 'Hypothesis',
+    'https://w3id.org/delphi/resource/hypothesis/fishbase-length-weight-exocoetidae-coverage',
+    'FishBase lists length-weight parameters for nineteen flying-fish species, but only seven rows look like fitted field studies',
+    f"Of 27 Exocoetidae species summary pages fetched from FishBase on 2026-10-31, 19 have a length-weight page, giving {len(lw)} rows of W = a L^b. {len(fitted)} rows carry a locality and a sample size (Kuroshio off Taiwan 2008 to 2017 for Cheilopogon atrisignis, C. unicolor, Cypselurus poecilopterus and Hirundichthys oxycephalus; Caicara do Norte 2011 to 2012 for H. affinis by sex); the remaining {len(lw)-len(fitted)} rows have b exactly 3.000, a sample size of two to six and no locality, and look like FishBase-derived estimates rather than measurements; the list page shows no reference for any row. No study is listed for Cypselurus hiraii, the only species with measured wing aerodynamics. Status: supported, as a statement about FishBase as served on 2026-10-31.",
+    'supported',
+    'https://w3id.org/delphi/resource/evidence/physics-fishbase-length-weight-table',
+    'physics/length-weight.csv built from the fetched FishBase pages',
+    "Each row: species, a, b, sex, length range and type, r2, n, locality, FishBase row count on the page, retrieval time, and a note saying whether it looks fitted or estimated. Fetches logged in physics/SEARCHES.md (tags fb-summary-*, fb-lw-*).",
+    ['<https://www.fishbase.se/>'],
+    "Does not establish: the references behind the rows (not shown on the list page and not fetched); that the b = 3.000 rows are wrong, only that they are unverified; anything about species with no page.",
+    counts={'n_rows': len(lw), 'n_species': 19}))
 json.dump({'built': NOW, 'signed': 0, 'published': 0, 'hashes': H, 'records': man}, open(os.path.join(HERE, 'manifest.json'), 'w', encoding='utf-8'), indent=2)
 print(json.dumps(man, indent=1))
