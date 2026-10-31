@@ -60,6 +60,7 @@ table{border-collapse:collapse;width:100%;font-size:.8rem}td,th{text-align:left;
   <div class="ctl">
     <select id="view" title="Which nodes to draw">
       <option value="core">Evidenced core</option>
+      <option value="theorems">Theorems &rarr; claims &rarr; open problems</option>
       <option value="ledger">Open problems &rarr; candidates &rarr; theorems</option>
       <option value="flyingfish">The flying fish chain</option>
       <option value="all">Everything (880 claims)</option>
@@ -133,7 +134,9 @@ function subset(){
   const view=$('#view').value;
   const doms=new Set($$('[data-d]').filter(i=>i.checked).map(i=>i.dataset.d));
   let keep;
-  if(view==='ledger'){
+  if(view==='theorems'){
+    keep=new Set(D.nodes.filter(n=>n.formal).map(n=>n.id));
+  }else if(view==='ledger'){
     keep=new Set(D.nodes.filter(n=>n.ledger).map(n=>n.id));
   }else if(view==='flyingfish'){
     const seed=new Set(['source:darwin-flying-fish','taxon:exocoetidae','bound:exocoetidae']);
@@ -155,6 +158,7 @@ function init(){
     .nodeId('id')
     .nodeLabel(n=>esc(n.label))
     .linkColor(l=>l.rel==='eliminated by'?css('--bad'):css('--edge'))
+    .linkLineDash(l=>l.rel==='tagged relevant (no ruling)'?[2,2]:null)
     .linkWidth(l=>sel&&(l.source.id===sel||l.target.id===sel)?2:0.7)
     .linkDirectionalArrowLength(2.5).linkDirectionalArrowRelPos(1)
     .nodeCanvasObject((n,ctx,s)=>{
@@ -169,7 +173,8 @@ function init(){
       ctx.stroke();ctx.setLineDash([]);
       if(n.type==='theorem'){shape(ctx,n,n.x,n.y,r+2.2);ctx.lineWidth=0.8/Math.sqrt(s);ctx.strokeStyle=css('--accent');ctx.stroke();}
       if((n.type==='test'||n.type==='candidate')&&VG[n.verdict]){ctx.fillStyle=n.type==='candidate'?(n.verdict==='eliminated'?css('--bad'):css('--mute')):fill(n);ctx.font=`${r*1.5}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(VG[n.verdict],n.x,n.y+0.3);}
-      if((s>2.2&&n.type!=='dataset')||n.id===sel||n.type==='source'||n.type==='theorem'){
+      const always=n.type==='theorem'||n.type==='source'||(n.type==='claim'&&n.formal);
+      if(n.id===sel||always||(s>5&&n.type!=='dataset')){
         ctx.font=`${11/s}px Inter Tight, sans-serif`;ctx.fillStyle=css('--ink');ctx.textAlign='left';ctx.textBaseline='middle';
         const lab=String(n.label);ctx.fillText((n.type==='theorem'&&s<3&&n.id!==sel)?lab.split(':')[0].slice(0,24):lab.slice(0,46),n.x+r+3,n.y);
       }
@@ -179,6 +184,7 @@ function init(){
     .cooldownTicks(160);
   const st=$('#stage');const resize=()=>G.width(st.clientWidth).height(st.clientHeight);
   addEventListener('resize',resize);resize();
+  const qv=new URLSearchParams(location.search).get('view');if(qv&&[...$('#view').options].some(o=>o.value===qv))$('#view').value=qv;
   legend();load();
   $('#view').onchange=load; $$('[data-d]').forEach(i=>i.onchange=load);
   $('#q').oninput=e=>{const q=e.target.value.trim().toLowerCase();if(q.length<3)return;
