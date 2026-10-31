@@ -124,3 +124,33 @@ thrust model (assumed), or the chain's burst store (mahi-mahi proxy), in that or
 
 Flier with the chain on is unchanged from the v1 readout (burst of about a minute, 179 m); it was not re-run under v2's
 launch since its design question is powered flight after take-off, which v2 cannot reach for the real body.
+
+## v3 (drag or power?), pre-registered in `PREREG-v3.md` (sha256 b2a21d85..., written 21:12 UTC before any v3 run)
+
+Hypothesis H3: the v2 non-reachability is caused by the assumed drag, not the chain's power. No fetched source gives a drag
+coefficient or submerged fraction (searches `epmc-v2-fish-drag`, `epmc-v3-hydrofoil-drag`, `epmc-v3-taxi-posture`), so the
+"sourced drag" arm is untestable and no value was picked; the zero-drag bound was run instead. The bioRxiv preprint
+10.1101/765560 (Deng, Wang, Zhang, Mao 2019; **preprint, not peer reviewed**, no published version via Crossref relation) gives
+CFD powers for a 0.191 kg fish (36 W to taxi at 10 m/s, 350 W to swim at 10 m/s, 16.5 m/s at 350 W) and is cited as context only.
+
+| arm | flags | airborne? | lift-off | glides | stores at end | TEST 4 v2 row (sustained aerobic) | outcome |
+|---|---|---|---|---|---|---|---|
+| A, zero-drag bound | v2=1, fmf=0, taxidrag=0, cdw=0.0001 | **yes** | 13.9 then 16.5 m/s | six of 36.0 m, 3.1 s, 3.05 m; 354 m in 28 s | burst 69 %, blood O2 64 % | within (no flight muscle) | **H3 survives**: with the assumed drag removed, the chain's power alone reproduces the run-6 sequence |
+| C, aerobic flight at the bound | v2=1, fmf=0.0913, flapsrc=aerobic, taxidrag=0, cdw=0.0001 | yes (same launch) | same | same | same | aerobic-only gain held 0.0 s; aerobic flight power 0.009 W vs 1.44 W required: **within, PASS** | sustained aerobic flight does not occur even where the body can fly |
+| B, thrust-side calculation | none (PREREG-v3) | | | | | | 30 strokes at 50 Hz over 9 m needs at least 7.8 W net of drag (4.7 J in 0.6 s); the chain's 8.75 W is marginally enough with no drag, not with the assumed lobe drag (about 16 W) |
+
+**Reading.** v2 failed on drag, not power: the chain's 8.75 W axial burst power is enough to launch the real body when nothing
+is charged for water drag, and not enough with the assumed body and lobe drag. Which drag is right is unknown: no fetched
+source gives it. So the launch model's status is: the chain's power is sufficient for the observed sequence only if the real
+hydrodynamic losses during the approach and taxi are far below the assumed ones. That is a sourcing task, not a tuning task.
+
+**Note on the v1-style row** ("max net gain" since first airborne): it reads 78 J/kg in both arms. That row compares the
+current mechanical energy with the lowest seen since the first lift-off, across six taxi-glide cycles, so it counts the energy
+the tail adds in the water between glides. It is not evidence of airborne power; the pre-registered v2 row (aerobic-only gain
+held 10 s) is the one that decides, and it reads 0.0 s. In arm C the "burst bouts" column lists windows where total flight
+power exceeded 0.5 W (availability), while the thrust applied was aerobic only; no burst thrust was used in C.
+
+**Lean, independently:** sustained aerobic flight is eliminated with kernel-accepted certificates
+(`lean/Delphi/Certificates/EliminationsPhysiology.lean`, constraint C14) for the real fish at 10 m/s, at v_min and for the
+flier at 7 m/s, from the chain's own numbers: aerobic ceiling eta E Q C_a = 0.0357 W against 1.35, 1.33 and 0.94 W required,
+short by 38, 37 and 26 times. The certificates do not bound burst flight or gliding. The sim's arm C and the certificate agree.

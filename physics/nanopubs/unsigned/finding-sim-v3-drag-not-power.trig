@@ -1,0 +1,63 @@
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+@prefix schema: <https://schema.org/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/hypothesis/coupled-model-v2-failure-caused-by-assumed-drag-not-power> a delphi:Hypothesis, skos:Concept ;
+    rdfs:label "The coupled model failed to launch the real flying fish because of its assumed water drag, not its modelled muscle power; sustained aerobic flight is absent either way, and the Lean certificate agrees" ;
+    dct:description "Simulator version 3, pre-registered before any run (physics/sim/PREREG-v3.md, sha256 b2a21d850e61af1ffb5a4833a7aed8e397623b8178875e65fd4182b6fb632ab7) to test H3: that the v2 non-reachability was caused by the assumed drag areas and coefficients rather than the physiology chain's power. No fetched source gives a drag coefficient or submerged fraction for a flying fish body or caudal lobe (three logged searches), so the sourced-drag arm was declared untestable and no value was picked; the zero-drag bound was run instead. Result: with the assumed drag removed, the chain's axial power alone (8.75 W burst) launches the real 60 g fish into the observed sequence: lift-off at 13.9 then 16.5 m/s, six glides of 36.0 m in 3.1 s to 3.05 m, 354 m in 28 s, with 69 percent of the burst store and 64 percent of the blood O2 store left. H3 survives: v2 failed on drag, which remains unquantified. In the same configuration with a bat-sized flight muscle flapping on aerobic power only, sustained aerobic flight (net gain held 10 s) never occurs: 0.009 W available against 1.44 W required. The thrust-side calculation (30 strokes at 50 Hz over 9 m) needs at least 7.8 W net of drag, marginally within the chain's 8.75 W. Status: supported, as a statement about the model. Independently, the Lean thread eliminated sustained aerobic flight with kernel-accepted certificates (constraint C14, lean/Delphi/Certificates/EliminationsPhysiology.lean) from the chain's own numbers: aerobic ceiling 0.0357 W against 1.35, 1.33 and 0.94 W required for the real fish at 10 m/s, at v_min, and the flier at 7 m/s, short by 38, 37 and 26 times; burst flight and gliding are not bounded by it." ;
+    delphi:context "Claim under test: thompson1917-ch02-06 (D Arcy Thompson 1917, On Growth and Form, ch. II, Project Gutenberg 55264 lines 1716-1790), with thompson1917-ch02-07 and thompson1917-ch02-10. Taxon: Exocoetidae, NCBI Taxonomy 76072, GBIF 2968. Class Aves is the frozen holdout (holdout/exam.json); no bird value enters this record." ;
+    delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/physics-simulator-v3-runs> ;
+    prov:wasDerivedFrom <https://doi.org/10.1242/jeb.046052>, <https://doi.org/10.1101/765560>, <https://doi.org/10.1038/s42003-024-06032-9> ;
+    skos:scopeNote "Simulated throughout; the pre-registration fixed the hypothesis, its refuting outcome, the untestability of the drag arm, and both arms before any run." ;
+    rdfs:comment "Status: supported. Does not establish: which drag coefficient is right, or that the real fish's hydrodynamic losses are small (only that the chain's power suffices if they are); anything about burst-powered flight beyond v1's post-hoc finding; anything about birds. Tests 1 to 3 remain post-hoc; the preprint's numbers are labelled preprint and used for nothing." ;
+    rdfs:comment "Pre-registration: physics/tests/thompson1917-ch02-06/result.json, written 2026-10-31T18:21:00Z before any wing loading, lifting area or lift coefficient was read, amended 2026-10-31T18:26:00Z before any fit ran (the file lists both and the values seen before each); sha256 at build 0094c084db22278a5f98d96cc2971ccd27813b0acdc458d60cadf7c7b7bcae48. The git commit that timestamps it is pending: the physics thread does not commit; the hub does." ;
+    skos:related <https://w3id.org/delphi/resource/claim/thompson1917-ch02-06> ;
+    rdfs:seeAlso <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/>, <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/results.json> .
+  <https://w3id.org/delphi/resource/evidence/physics-simulator-v3-runs> a delphi:EvidenceItem ;
+    rdfs:label "Version-3 arms A and C, 90 s each, headless, with the thrust-side calculation" ;
+    dct:description "physics/sim/RUNS.md, v3 section. Arm A flags v2=1 fmf=0 taxidrag=0 cdw=0.0001: airborne, lift-off 13.9 then 16.5 m/s, six 36.0 m glides, burst 69 percent, blood O2 64 percent, pre-registered sustained-flight row 0.0 s. Arm C adds fmf=0.0913 flapsrc=aerobic: aerobic flight power 0.009 W, no aerobic-only gain held. The v1-style energy row reads 78 J/kg across six taxi-glide cycles because it counts energy the tail adds in the water between glides; it is not airborne power and is explained in RUNS.md. Context only, not a parameter: bioRxiv 10.1101/765560 (preprint, not peer reviewed; no published version found via Crossref relation) gives CFD taxi power 36 W at 10 m/s for a 0.191 kg fish. Physiology copy sha256-identical to the committed physiology/." ;
+    dct:subject <https://w3id.org/delphi/resource/hypothesis/coupled-model-v2-failure-caused-by-assumed-drag-not-power> ;
+    rdfs:comment "Computed by physics/analysis.py from physics/glide-data.csv (sha256 bc24245b5163723b192e95fccf714ef6e4b3b28e71df4fef3befbaf008a00635) and physics/comparison-data.csv (sha256 e0d3d74639c1fe856fe5128c1783151596fde3acc923a2409be3d3f870cc394a); numbers in physics/results.json (sha256 63336841c0d4c9ae2760ae5c87a9251b97218e3ebfdd453cad4cffb9cdf6ba0b). Every input value carries its source, locator, retrieval time and value kind in those files." ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/results.json>, <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/data/glide-data.csv>, <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/data/comparison-data.csv> .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-physics-thread-builder> ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/data/result.json>, <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/results.json> .
+  <https://w3id.org/delphi/resource/agent/delphisci-physics-thread-builder> a prov:SoftwareAgent ;
+    rdfs:label "delphisci physics thread (Claude Fable 5.1 writing the data tables, the analysis script and this builder; a builder, not an assessor)" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/model/claude-fable-5-1> a delphi:LanguageModel ;
+    rdfs:label "Claude Fable 5.1" ;
+    dct:identifier "claude-fable-5-1" .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-10-31T21:11:32.000Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/delphisci-physics-thread-builder> ;
+    rdfs:label "The coupled model failed to launch the real flying fish because of its assumed water drag, not its modelled muscle power; sustained aerobic flight is absent either way, and the Lean certificate agrees" ;
+    rdfs:comment "Unsigned draft. Not a publication. The test registry comes first and production needs the ORCID key owner's explicit approval every time. Owner ORCID not set: the key owner adds it at signing time; until then no human is named in this record." ;
+    rdfs:comment "Hand-authored in Delphi ontology v2.0 terms (https://w3id.org/delphi/ontology/) by the builder, not created from a template: the published Delphi templates still use legacy probknow IRIs (team decision 2026-10-31, DECISIONS.md), so no nt:wasCreatedFromTemplate is declared and a template-conformance checker will report none." ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType <https://w3id.org/delphi/ontology/Hypothesis> ;
+    npx:introduces <https://w3id.org/delphi/resource/hypothesis/coupled-model-v2-failure-caused-by-assumed-drag-not-power> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/biomechanics-and-scaling> .
+  <https://w3id.org/delphi/resource/domain/biomechanics-and-scaling> rdfs:label "biomechanics-and-scaling" .
+}

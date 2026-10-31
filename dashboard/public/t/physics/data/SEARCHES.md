@@ -175,5 +175,7 @@ All times UTC. Raw outputs are under `prior-art/raw/`; the machine log this tabl
 | 157 | 2026-10-31T20:43:18Z | pmc-C-onychonycteris | `GET https://pmc.ncbi.nlm.nih.gov/articles/PMC10966098/` | http=200 bytes=254380 | raw/pmc-C-onychonycteris.html |
 | 158 | 2026-10-31T20:43:18Z | pmc-C-pterosaur-hatchling | `GET https://pmc.ncbi.nlm.nih.gov/articles/PMC8298463/` | http=200 bytes=251317 | raw/pmc-C-pterosaur-hatchling.html |
 | 159 | 2026-10-31T20:43:19Z | pmc-C-bat-thermo-pnas | `GET https://pmc.ncbi.nlm.nih.gov/articles/PMC9169619/` | http=200 bytes=198336 | raw/pmc-C-bat-thermo-pnas.html |
+| 160 | 2026-10-31T21:02:27Z | epmc-v2-fish-drag | `GET https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&pageSize=20&resultType=lite&query=%28fish%20OR%20teleost%29%20AND%20%22drag%20coefficient%22%20...` | http=200 bytes=17470 | raw/epmc-v2-fish-drag.json |
+| 161 | 2026-10-31T21:02:28Z | epmc-v2-caudal-thrust | `GET https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&pageSize=20&resultType=lite&query=%28%22flying%20fish%22%20OR%20Exocoetidae%20OR%20halfbeak%29%...` | http=200 bytes=15744 | raw/epmc-v2-caudal-thrust.json |
 
-Total logged calls: 159.
+Total logged calls: 161.
