@@ -1,0 +1,58 @@
+[
+ {
+  "claim_id": "kimura-substitution-rate",
+  "label": "Neutral substitution rate equals the mutation rate",
+  "statement": "For neutral mutations the long-run rate of molecular substitution equals the mutation rate per generation, independent of population size, which yields a molecular clock.",
+  "notation": "k = 2N\\mu \\cdot \\frac{1}{2N} = \\mu",
+  "context": "Assumptions: strictly neutral mutations, mutation rate constant per generation, steady state. Formal status: an exact consequence of the neutral fixation probability. Variation in generation time and weak selection on nearly neutral sites cause departures from strict clock-like rates.",
+  "paper_title": "Evolutionary Rate at the Molecular Level",
+  "paper_year": 1968,
+  "paper_doi": ", doi:10.1038/217624a0",
+  "theorem": "Delphi.neutral_substitution_rate",
+  "module": "lean/Delphi/Kimura.lean",
+  "lean_docstring_and_statement": "/-- **Kimura (1968).** Under neutral Wright–Fisher evolution, the substitution rate equals\nthe mutation rate, for every population size `M`. -/\ntheorem neutral_substitution_rate (M : ℕ) (hM : 0 < M) (μ : ℝ) :\n    substitutionRate M μ ((wrightFisher M hM).fixationProbability (oneCopy M hM)) = μ",
+  "lean_definitions": "/-- A neutral, absorbing Markov chain on `Fin (M+1)`: the number of mutant gene copies\namong `M`. `P i j` is the probability of going from `i` copies to `j` copies in one\ngeneration. -/\nstructure NeutralChain (M : ℕ) where\n  /-- One-generation transition matrix. -/\n  P : Matrix (Fin (M + 1)) (Fin (M + 1)) ℝ\n  /-- Probabilities are nonnegative. -/\n  nonneg : ∀ i j, 0 ≤ P i j\n  /-- Each row is a probability distribution. -/\n  rowSum : ∀ i, ∑ j, P i j = 1\n  /-- Neutrality: the expected copy number is conserved, `E[X_{t+1} | X_t = i] = i`. -/\n  neutral : ∀ i, ∑ j, P i j * ((j : ℕ) : ℝ) = ((i : ℕ) : ℝ)\n  /-- Loss (`0` copies) is absorbing. -/\n  absorb_zero : ∀ j, P 0 j = if j = 0 then 1 else 0\n  /-- Fixation (`M` copies) is absorbing. -/\n  absorb_last : ∀ j, P (Fin.last M) j = if j = Fin.last M then 1 else 0\n  /-- From any intermediate state, absorption in one step has positive probability. -/\n  escape : ∀ i : Fin (M + 1), i ≠ 0 → i ≠ Fin.last M → 0 < P i 0 + P i (Fin.last M)\n\n/-- Probability that a lineage starting from `i` copies is fixed (all `M` copies) by\ngeneration `t`. -/\ndef fixedBy (t : ℕ) (i : Fin (M + 1)) : ℝ := (C.P ^ t) i (Fin.last M)\n\n/-- The fixation probability of a lineage starting from `i` copies: the limit of `fixedBy`. -/\nnoncomputable def fixationProbability (i : Fin (M + 1)) : ℝ :=\n  limUnder atTop (fun t => C.fixedBy t i)\n\n/-- Wright–Fisher sampling: with `i` mutant copies among `M`, the next generation has `j`\nmutant copies with probability `C(M, j) (i/M)^j (1 - i/M)^(M-j)`. -/\nnoncomputable def wfKernel (M : ℕ) : Matrix (Fin (M + 1)) (Fin (M + 1)) ℝ :=\n  fun i j => (Nat.choose M j : ℝ) * (((i : ℕ) : ℝ) / M) ^ (j : ℕ) * (1 - ((i : ℕ) : ℝ) / M) ^ (M - j)\n\n/-- The neutral Wright–Fisher chain on `M` gene copies. -/\nnoncomputable def wrightFisher (M : ℕ) (hM : 0 < M) : NeutralChain M where\n  P := wfKernel M\n  -- remaining fields: the proofs that wfKernel satisfies the NeutralChain axioms (omitted)\n\n/-- A single new mutant: one copy among `M`. -/\ndef oneCopy (M : ℕ) (hM : 0 < M) : Fin (M + 1) := ⟨1, by omega⟩\n\n/-- Kimura's substitution rate: `M μ` new mutants arise per generation (mutation rate `μ`\nper copy), and each is fixed with probability `u`. The rate of substitution is their product.\nThis is the definition in Kimura (1968), eq. for `k`; it assumes mutants' fates are\nindependent. -/\ndef substitutionRate (M : ℕ) (μ u : ℝ) : ℝ := (M : ℝ) * μ * u"
+ },
+ {
+  "claim_id": "kimura-fixation-probability",
+  "label": "Kimura fixation probability of a mutant allele",
+  "statement": "The probability that a mutant allele eventually fixes in a finite population depends on its initial frequency, its selective advantage and the effective population size, and equals its initial frequency when it is neutral.",
+  "notation": "u(p) = \\frac{1-e^{-4N_e s p}}{1-e^{-4N_e s}}; neutral limit u(p) = p, so a new mutant fixes with probability 1/(2N)",
+  "context": "Assumptions: diffusion approximation to the Wright-Fisher model, genic (additive) selection with coefficient s, constant effective size N_e, no linkage to other selected sites. Formal status: proved within the diffusion limit.",
+  "paper_title": "On the probability of fixation of mutant genes in a population",
+  "paper_year": 1962,
+  "paper_doi": ", doi:10.1093/genetics/47.6.713",
+  "theorem": "Delphi.NeutralChain.fixedBy_tendsto",
+  "module": "lean/Delphi/Kimura.lean",
+  "lean_docstring_and_statement": "/-- **Neutral fixation probability (Kimura 1962, neutral case).** A neutral lineage that\nstarts with `i` of `M` copies is eventually fixed with probability `i / M`. -/\ntheorem fixedBy_tendsto (hM : 0 < M) (i : Fin (M + 1)) :\n    Tendsto (fun t => C.fixedBy t i) atTop (𝓝 (((i : ℕ) : ℝ) / M))",
+  "lean_definitions": "/-- A neutral, absorbing Markov chain on `Fin (M+1)`: the number of mutant gene copies\namong `M`. `P i j` is the probability of going from `i` copies to `j` copies in one\ngeneration. -/\nstructure NeutralChain (M : ℕ) where\n  /-- One-generation transition matrix. -/\n  P : Matrix (Fin (M + 1)) (Fin (M + 1)) ℝ\n  /-- Probabilities are nonnegative. -/\n  nonneg : ∀ i j, 0 ≤ P i j\n  /-- Each row is a probability distribution. -/\n  rowSum : ∀ i, ∑ j, P i j = 1\n  /-- Neutrality: the expected copy number is conserved, `E[X_{t+1} | X_t = i] = i`. -/\n  neutral : ∀ i, ∑ j, P i j * ((j : ℕ) : ℝ) = ((i : ℕ) : ℝ)\n  /-- Loss (`0` copies) is absorbing. -/\n  absorb_zero : ∀ j, P 0 j = if j = 0 then 1 else 0\n  /-- Fixation (`M` copies) is absorbing. -/\n  absorb_last : ∀ j, P (Fin.last M) j = if j = Fin.last M then 1 else 0\n  /-- From any intermediate state, absorption in one step has positive probability. -/\n  escape : ∀ i : Fin (M + 1), i ≠ 0 → i ≠ Fin.last M → 0 < P i 0 + P i (Fin.last M)\n\n/-- Probability that a lineage starting from `i` copies is fixed (all `M` copies) by\ngeneration `t`. -/\ndef fixedBy (t : ℕ) (i : Fin (M + 1)) : ℝ := (C.P ^ t) i (Fin.last M)"
+ },
+ {
+  "claim_id": "fisher-ftns",
+  "label": "Fisher's fundamental theorem of natural selection (partial-change form)",
+  "statement": "The rate of increase in mean fitness of a population due to natural selection equals its additive genetic variance in fitness at that time.",
+  "notation": "\\Delta_{NS}\\bar{w} = V_A(w)/\\bar{w} (discrete generations); \\left.\\frac{d\\bar{m}}{dt}\\right|_{NS} = V_A(m) for Malthusian fitness m",
+  "context": "Assumptions: the 'partial change' holds average effects of alleles and the environment fixed (Price 1972, Ewens 1989); V_A is the additive genetic variance in fitness. Formal status: proved in this partial-change reading. Read as a claim about the total change in mean fitness it is false under dominance, epistasis, frequency dependence or a changing environment.",
+  "paper_title": "The Genetical Theory of Natural Selection",
+  "paper_year": 1930,
+  "paper_doi": "",
+  "theorem": "Delphi.fisher_fundamental_theorem",
+  "module": "lean/Delphi/Fisher.lean",
+  "lean_docstring_and_statement": "/-- **Fisher's fundamental theorem of natural selection** (haploid locus, partial change).\nThe change in mean fitness over one generation of selection, with fitnesses held fixed, equals\nthe variance in fitness divided by the mean fitness. -/\ntheorem fisher_fundamental_theorem {p w : ι → ℝ} (hp : IsFreq p)\n    (hmean : 0 < meanFitness p w) :\n    meanFitness (select p w) w - meanFitness p w = variance p w / meanFitness p w",
+  "lean_definitions": "/-- Mean fitness `w̄ = ∑ p i * w i`. -/\ndef meanFitness (p w : ι → ℝ) : ℝ := ∑ i, p i * w i\n\n/-- Variance in fitness `∑ p i * (w i - w̄)^2`. For a haploid locus this is the additive genetic\nvariance in fitness, since each type breeds true. -/\ndef variance (p w : ι → ℝ) : ℝ := ∑ i, p i * (w i - meanFitness p w) ^ 2\n\n/-- One generation of selection with fixed fitnesses: `p' i = p i * w i / w̄`. -/\nnoncomputable def select (p w : ι → ℝ) : ι → ℝ := fun i => p i * w i / meanFitness p w\n\n/-- A frequency vector: nonnegative and summing to one. -/\nstructure IsFreq (p : ι → ℝ) : Prop where\n  nonneg : ∀ i, 0 ≤ p i\n  sum_one : ∑ i, p i = 1"
+ },
+ {
+  "claim_id": "maynardsmith-twofold-cost",
+  "label": "Twofold cost of sex",
+  "statement": "An asexual mutant female in a sexual population with equal sex ratio produces twice as many grandchildren as a sexual female, so sex needs a compensating advantage of up to twofold to persist.",
+  "notation": "with equal fecundity and a 1:1 sex ratio, the odds of asexual to sexual females double each generation: \\frac{q_{t+1}}{1-q_{t+1}} = 2\\frac{q_t}{1-q_t}",
+  "context": "Assumptions: anisogamy with males contributing no resources, equal fecundity and viability of sexual and asexual females, a 1:1 sex ratio. Formal status: proved as a population-dynamic identity under these assumptions. Its biological force depends on how often those assumptions hold.",
+  "paper_title": "The Evolution of Sex",
+  "paper_year": 1978,
+  "paper_doi": "",
+  "theorem": "Delphi.twofold_cost_of_sex",
+  "module": "lean/Delphi/MaynardSmith.lean",
+  "lean_docstring_and_statement": "/-- **Twofold cost of sex.** With equal fecundity and a `1 : 1` sex ratio, the odds of asexual to\nsexual females double every generation. Fecundity cancels. -/\ntheorem twofold_cost_of_sex {q f : ℝ} (hq0 : 0 < q) (hq1 : q < 1) (hf : 0 < f) :\n    odds (asexualNext q f) = 2 * odds q",
+  "lean_definitions": "/-- Fraction of asexual females in the next generation, given fraction `q` now and fecundity\n`f` for every female. Asexual females have `f` daughters; sexual females have `f / 2` daughters\nand `f / 2` sons. -/\nnoncomputable def asexualNext (q f : ℝ) : ℝ := q * f / (q * f + (1 - q) * f / 2)\n\n/-- Odds of a fraction `q`: `q / (1 - q)`. -/\nnoncomputable def odds (q : ℝ) : ℝ := q / (1 - q)"
+ }
+]

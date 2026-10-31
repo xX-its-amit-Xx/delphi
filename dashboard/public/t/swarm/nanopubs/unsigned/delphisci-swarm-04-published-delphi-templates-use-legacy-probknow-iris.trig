@@ -1,0 +1,62 @@
+@prefix this: <http://purl.org/nanopub/temp/np7/> .
+@prefix sub: <http://purl.org/nanopub/temp/np7/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix nt: <https://w3id.org/np/o/ntemplate/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <https://schema.org/> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/claim/delphisci-swarm-04-published-delphi-templates-use-legacy-probknow-iris> a delphi:Claim ;
+    rdfs:label "The published \"Project Delphi claim\" and \"Project Delphi evidence item\" templates (2026-10-23) state their statements with legacy probknow (pk:) IRIs, while the delphi skill requires Delphi ontology v2.0 terms and says probknow IRIs are never used in new records, so a record written to the skill fails template conformance." ;
+    dct:description "Template https://w3id.org/np/RAI0QFH7bCNJIeKxwG3EbX5QKyoOjlaESiJkVZKs8iUc8 (\"Project Delphi claim\", created 2026-10-23T13:08:44Z, creator https://orcid.org/0000-0002-1267-0234) declares @prefix pk: <https://w3id.org/probknow/ontology/> and uses pk: terms 11 times (Claim, context, derivedFromPaper, hasAssessment, weightOfEvidence); it uses no https://w3id.org/delphi/ontology/ IRI. Template https://w3id.org/np/RAG7UB06LpEpmDKX8VFoIbeTwyRg5m9vnadwKwTuahwes (\"Project Delphi evidence item\", created 2026-10-23T13:08:44Z, creator https://orcid.org/0000-0002-1267-0234) uses pk: terms 13 times (EvidenceItem, derivedFromPaper, pValue, statisticalTest, vovkSellkeMaxPRatio, weightOfEvidence), again with no delphi: IRI. Both were fetched from w3id.org with Accept: application/trig on 2026-10-31 and are kept verbatim under swarm/nanopubs/evidence. The delphi skill (https://github.com/knowledgepixels/project-delphi-nanopubs/blob/6c543f4698ca1275247e370cc4c51cb9e09eab12/skills/delphi/SKILL.md, line 26) says: \"The legacy `https://w3id.org/probknow/...` IRIs are never used in new records.\" and that terms come from Delphi ontology v2.0 with prefix delphi: = https://w3id.org/delphi/ontology/. The nanopub skill's check-nanopub-conformance.py therefore reports every delphi: triple as unmatched and the template's required statement st01 (rdf:type pk:Claim or pk:EvidenceItem) as not instantiated, for this repository's records and for its earlier math-bio-theorems drafts alike." ;
+    delphi:context "Checked while drafting Delphi records for the swarm comparison on 2026-10-31, with nanopub-java 1.95.0 and the nanopub skill's conformance script. The skill revision read is commit 6c543f46 of knowledgepixels/project-delphi-nanopubs (2026-10-26)." ;
+    skos:note "Status: supported (direct observation of the served templates and the skill text on 2026-10-31). Decision taken by the DELPHI hub on 2026-10-31 and recorded in swarm/nanopubs/DECISIONS.md: follow the skill, write delphi: v2.0 terms, and do not declare nt:wasCreatedFromTemplate for a template whose placeholders the record cannot fill (that triple would assert a false provenance); instead name the template that would otherwise apply, its pk: count and the date checked in an rdfs:comment. Reported so other teams do not lose time rediscovering it." ;
+    skos:scopeNote "What this does not establish. (1) It does not say which side should change: the ontology's own crosswalk maps the probknow terms to delphi: terms, so the templates may be updated or the skill relaxed. (2) Only these two templates were checked; the other Project Delphi templates of the same date (assessments, rubric, testable hypothesis) were not inspected. (3) Templates are versioned (dct:isVersionOf …/claimKind and …/evidenceKind); a later governed version may already resolve this by the time anyone reads this record. (4) The counts are occurrences of pk: tokens in the TriG serialization as served on 2026-10-31, not a semantic count." ;
+    delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/delphisci-swarm-04-published-delphi-templates-use-legacy-probknow-iris> .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-swarm-thread-claude-fable-5-1> ;
+    prov:wasDerivedFrom <https://w3id.org/np/RAI0QFH7bCNJIeKxwG3EbX5QKyoOjlaESiJkVZKs8iUc8> , <https://w3id.org/np/RAG7UB06LpEpmDKX8VFoIbeTwyRg5m9vnadwKwTuahwes> , <https://github.com/knowledgepixels/project-delphi-nanopubs/blob/6c543f4698ca1275247e370cc4c51cb9e09eab12/skills/delphi/SKILL.md> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/nanopubs/evidence/template-RAI0QFH7-project-delphi-claim.trig> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/nanopubs/evidence/template-RAG7UB06-project-delphi-evidence-item.trig> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/nanopubs/evidence/delphi-skill-SKILL.md> ;
+    prov:wasGeneratedBy sub:activity .
+  sub:activity a prov:Activity ;
+    rdfs:label "Inspection of the served Project Delphi templates and the delphi skill, 2026-10-31" ;
+    prov:wasAssociatedWith <https://w3id.org/delphi/resource/agent/delphisci-swarm-thread-claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/agent/delphisci-swarm-thread-claude-fable-5-1> a prov:SoftwareAgent ;
+    rdfs:label "DELPHI swarm thread (Claude Fable 5.1 in Claude Code) that designed, ran and scored the comparison and wrote these records" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-fable-5-1> ;
+    prov:actedOnBehalfOf sub:owner .
+  <https://w3id.org/delphi/resource/model/claude-fable-5-1> a delphi:LanguageModel ;
+    rdfs:label "Claude Fable 5.1" ;
+    dct:identifier "claude-fable-5-1" .
+  sub:owner a prov:Person ;
+    rdfs:label "PLACEHOLDER: the human owner of this agent (ORCID), to be set when the key owner approves these records. Not a real identity." .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-10-31T14:05:36.023Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/delphisci-swarm-thread-claude-fable-5-1> ;
+    rdfs:label "The published \"Project Delphi claim\" and \"Project Delphi evidence item\" templates (2026-10-23) state their statements with legacy probknow (pk:) IRIs, while the delphi skill requires Delphi ontology v2.0 terms and says probknow IRIs are never used in new records, so a record written to the skill fails template conformance." ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType <https://w3id.org/delphi/ontology/Claim> ;
+    npx:introduces <https://w3id.org/delphi/resource/claim/delphisci-swarm-04-published-delphi-templates-use-legacy-probknow-iris> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/delphisci-swarm-methods> ;
+    rdfs:comment "UNSIGNED DRAFT. Not signed, not published to any registry (test or production). The key owner decides who signs and under which identity; the human owner below is a placeholder until then; the commit hash of swarm/PREREG.md must be added to the evidence before signing. Remove this statement when signing." , "Template note: this record is hand-authored in Delphi ontology v2.0 terms (delphi:) as the delphi skill requires, and declares no assertion template. The template that would otherwise apply, https://w3id.org/np/RAI0QFH7bCNJIeKxwG3EbX5QKyoOjlaESiJkVZKs8iUc8 (\"Project Delphi claim\", 2026-10-23, checked 2026-10-31), states its statements with legacy probknow (pk:) IRIs (11 pk: term uses, 0 delphi: IRIs), so this record cannot have been created from it and does not say it was. The label/domain publication-info template https://w3id.org/np/RAtKj9bCnB4gUe0E9k-WhffQFSEWd9Ve2hrVllYoLuOB0 is not declared either (2 pk: uses; its domain field is a probknow resource prefix). Decision recorded in swarm/nanopubs/DECISIONS.md, 2026-10-31; see record delphisci-swarm-04." ;
+    nt:wasCreatedFromProvenanceTemplate <https://w3id.org/np/RAaYeFYF-Cz2bM5S1wPQsnvs5X6BBxsphL03UkbVZ1lcA> ;
+    nt:wasCreatedFromPubinfoTemplate <https://w3id.org/np/RAukAcWHRDlkqxk7H2XNSegc1WnHI569INvNr-xdptDGI> , <https://w3id.org/np/RACJ58Gvyn91LqCKIO9zu1eijDQIeEff28iyDrJgjSJF8> .
+  <https://w3id.org/delphi/resource/domain/delphisci-swarm-methods> rdfs:label "delphisci-swarm-methods" .
+}

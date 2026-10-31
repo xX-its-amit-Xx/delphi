@@ -1,0 +1,74 @@
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix nt: <https://w3id.org/np/o/ntemplate/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <https://schema.org/> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/claim/delphisci-swarm-01-led-swarm-beats-single-agent> a delphi:Claim ;
+    rdfs:label "A centrally led swarm of language-model agents produced more verified-dataset test plans than one agent on the same 20 claims, with zero fabricated identifiers, in two pre-registered experiments (19 vs 13, then 18 vs 12)." ;
+    dct:description "Verified datasets of 20, primary runs: experiment 1 single 13, isolated 17, centralized 19, decentralized 18 (1 fabricated identifier); experiment 2 single 12, isolated 16, centralized 18, decentralized 17. Fabricated identifiers in the centralized and single arms: 0 in both experiments. Experiment 1 replicates (one per arm): single 15, isolated 15, centralized 19, decentralized 18, all with 0 fabricated identifiers. The centralized arm met the pre-registered rule against the single agent in both experiments (margin 6 and 6, rule needs 2) and against the isolated workers in both. Cost at list price, centralized vs single: $2.98 vs $0.57 (experiment 1), $5.61 vs $0.52 (experiment 2). Wall time per arm 1.8 to 3.7 minutes. Prediction for experiment 2 (written before the run): centralized 18, decentralized 17, isolated 15, single 14; outcome 18, 17, 16, 12." ;
+    delphi:context "Task: for each of 20 claims from Darwin (1859) and Thompson (1917), write a pre-registered test plan naming one real public dataset (landing URL, DOI if any) or an honest null. Arms: single agent (one call, all 20 claims), isolated workers (20 parallel, no feedback), centralized swarm (emperor sets concurrency, king assigns by domain, retries with verifier feedback, escalation), decentralized board (queens pull tickets from a shared board, no planner). Same model (claude-sonnet-5-5), same tools (WebFetch, WebSearch), same prompt and schema, run from an empty directory with no file access. Experiment 1 (2026-10-31T05:57Z): plans could be written from memory; budget $3 soft cap per arm; \"verified\" = the named landing page returns HTTP 200 and contains a distinctive token of the dataset or publisher name. Experiment 2 (2026-10-31T06:28Z): 20 new claims with no bird claims; the agent had to fetch the landing page itself (checked in the CLI event log) and report a title that agrees with the checker's; hard $8 cap that cannot overshoot. Pre-registered decision rule: an arm beats another only with zero fabricated identifiers and at least two more verified datasets; the earliest full run per arm is primary. Fabricated = URL or DOI that returns 404/410, DNS failure or \"DOI not found\"; blocked (403, 429, 5xx, timeout) is not fabricated." ;
+    skos:note "Status: supported. The pre-registered rule (zero fabricated identifiers and at least two more verified datasets, earliest full run per arm decides) was met by the centralized arm against the single agent in experiment 1 and again in experiment 2, and the experiment-1 replicate agrees. Pre-registration timing, stated here because the header of swarm/PREREG.md is wrong: the header says \"Written 2026-10-31 06:25 UTC\", which would be after the experiment-1 runs. The session transcript shows the file written at 2026-10-31T05:52:04Z, before the first primary run started at 2026-10-31T05:57:46.622Z; the experiment-2 section was appended at 2026-10-31T06:27:23Z, before the first experiment-2 run at 2026-10-31T06:28:12.756Z. The file was not edited because it states it is never changed after runs start; the correction is in DEVIATIONS.md and here. No git commit of the file exists yet (the hub holds all commits for this branch); the commit hash is to be added to this record before signing." ;
+    skos:scopeNote "What this does not establish. (1) It is a result about language-model agents with a context limit, run through one CLI with one model; A sister project (delphi-evolve, github.com/kganjam/delphi-evolve) ran the same four-arm design on an enzyme benchmark with deterministic specialists and found no collective advantage (sharing 78/100, isolated 77/100, single planner 78/100, single planner without its model prior 96/100; zero false certificates); those numbers are quoted from the hub and were not re-verified by this thread. The single agent's shortfall here was mostly blank plans (see the companion record delphisci-swarm-02), so the gain is expected where the bottleneck is attention and not where it is not. (2) Twenty claims and one primary run per arm (plus one replicate in experiment 1, none in experiment 2) is a pre-registered minimum difference, not a significance test. (3) \"Verified\" means the landing page resolves and names the dataset (and in experiment 2 that the agent fetched it); it does not mean the dataset can decide the claim. (4) The swarm costs 5 to 11 times more at list price. (5) The decentralized arm is not covered by this claim: it verified more than the single agent in both experiments but had one fabricated identifier in experiment 1. (6) Two experiment-1 claims touch class Aves, the project's held-out clade, so the comparison is not blind to birds. (7) DEVIATIONS.md records where this thread's own experiment-2 prediction was wrong: the single agent was predicted at 14 and scored 12; costs were predicted near the $8 cap and came in at $0.52 to $6.37; runs took 2 to 4 minutes, not 5 to 12." ;
+    delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/delphisci-swarm-01-led-swarm-beats-single-agent> .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-swarm-thread-claude-fable-5-1> ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/results.json> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/results2.json> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/runs/single/summary.json> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/runs/isolated/summary.json> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/runs/centralized/summary.json> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/runs/decentralized/summary.json> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/runs2/single/summary.json> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/runs2/isolated/summary.json> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/runs2/centralized/summary.json> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/runs2/decentralized/summary.json> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/PREREG.md> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/DEVIATIONS.md> ;
+    prov:wasGeneratedBy sub:comparison .
+  sub:comparison a prov:Activity ;
+    rdfs:label "Pre-registered four-arm comparison (single, isolated, centralized, decentralized), experiments 1 and 2, 2026-10-31" ;
+    prov:startedAtTime "2026-10-31T05:57:46.622Z"^^xsd:dateTime ;
+    prov:endedAtTime "2026-10-31T06:38:41.329Z"^^xsd:dateTime ;
+    prov:wasAssociatedWith <https://w3id.org/delphi/resource/agent/delphisci-swarm-thread-claude-fable-5-1> , <https://w3id.org/delphi/resource/agent/delphisci-swarm-compare-arms-claude-sonnet-5-5> ;
+    prov:qualifiedAssociation sub:plan .
+  sub:plan prov:hadPlan <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/PREREG.md> ;
+    rdfs:comment "Pre-registration timing, stated here because the header of swarm/PREREG.md is wrong: the header says \"Written 2026-10-31 06:25 UTC\", which would be after the experiment-1 runs. The session transcript shows the file written at 2026-10-31T05:52:04Z, before the first primary run started at 2026-10-31T05:57:46.622Z; the experiment-2 section was appended at 2026-10-31T06:27:23Z, before the first experiment-2 run at 2026-10-31T06:28:12.756Z. The file was not edited because it states it is never changed after runs start; the correction is in DEVIATIONS.md and here. No git commit of the file exists yet (the hub holds all commits for this branch); the commit hash is to be added to this record before signing." .
+  <https://w3id.org/delphi/resource/agent/delphisci-swarm-thread-claude-fable-5-1> a prov:SoftwareAgent ;
+    rdfs:label "DELPHI swarm thread (Claude Fable 5.1 in Claude Code) that designed, ran and scored the comparison and wrote these records" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-fable-5-1> ;
+    prov:actedOnBehalfOf sub:owner .
+  <https://w3id.org/delphi/resource/model/claude-fable-5-1> a delphi:LanguageModel ;
+    rdfs:label "Claude Fable 5.1" ;
+    dct:identifier "claude-fable-5-1" .
+  sub:owner a prov:Person ;
+    rdfs:label "PLACEHOLDER: the human owner of this agent (ORCID), to be set when the key owner approves these records. Not a real identity." .
+  <https://w3id.org/delphi/resource/agent/delphisci-swarm-compare-arms-claude-sonnet-5-5> a prov:SoftwareAgent ;
+    rdfs:label "The compared arms: headless Claude Code CLI agents running Claude Sonnet 5.5 with WebFetch and WebSearch only" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-sonnet-5-5> ;
+    prov:actedOnBehalfOf sub:owner .
+  <https://w3id.org/delphi/resource/model/claude-sonnet-5-5> a delphi:LanguageModel ;
+    rdfs:label "Claude Sonnet 5.5" ;
+    dct:identifier "claude-sonnet-5-5" .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-10-31T14:05:36.023Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/delphisci-swarm-thread-claude-fable-5-1> ;
+    rdfs:label "A centrally led swarm of language-model agents produced more verified-dataset test plans than one agent on the same 20 claims, with zero fabricated identifiers, in two pre-registered experiments (19 vs 13, then 18 vs 12)." ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType <https://w3id.org/delphi/ontology/Claim> ;
+    npx:introduces <https://w3id.org/delphi/resource/claim/delphisci-swarm-01-led-swarm-beats-single-agent> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/delphisci-swarm-methods> ;
+    rdfs:comment "UNSIGNED DRAFT. Not signed, not published to any registry (test or production). The key owner decides who signs and under which identity; the human owner below is a placeholder until then; the commit hash of swarm/PREREG.md must be added to the evidence before signing. Remove this statement when signing." , "Template note: this record is hand-authored in Delphi ontology v2.0 terms (delphi:) as the delphi skill requires, and declares no assertion template. The template that would otherwise apply, https://w3id.org/np/RAI0QFH7bCNJIeKxwG3EbX5QKyoOjlaESiJkVZKs8iUc8 (\"Project Delphi claim\", 2026-10-23, checked 2026-10-31), states its statements with legacy probknow (pk:) IRIs (11 pk: term uses, 0 delphi: IRIs), so this record cannot have been created from it and does not say it was. The label/domain publication-info template https://w3id.org/np/RAtKj9bCnB4gUe0E9k-WhffQFSEWd9Ve2hrVllYoLuOB0 is not declared either (2 pk: uses; its domain field is a probknow resource prefix). Decision recorded in swarm/nanopubs/DECISIONS.md, 2026-10-31; see record delphisci-swarm-04." ;
+    nt:wasCreatedFromProvenanceTemplate <https://w3id.org/np/RAaYeFYF-Cz2bM5S1wPQsnvs5X6BBxsphL03UkbVZ1lcA> ;
+    nt:wasCreatedFromPubinfoTemplate <https://w3id.org/np/RAukAcWHRDlkqxk7H2XNSegc1WnHI569INvNr-xdptDGI> , <https://w3id.org/np/RACJ58Gvyn91LqCKIO9zu1eijDQIeEff28iyDrJgjSJF8> .
+  <https://w3id.org/delphi/resource/domain/delphisci-swarm-methods> rdfs:label "delphisci-swarm-methods" .
+}

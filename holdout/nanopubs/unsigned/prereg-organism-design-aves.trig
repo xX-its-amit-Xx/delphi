@@ -1,0 +1,55 @@
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix nt: <https://w3id.org/np/o/ntemplate/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix schema: <https://schema.org/> .
+@prefix spdx: <http://spdx.org/rdf/terms#> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/hypothesis/organism-design-blueprint-predicts-aves-anatomy> a delphi:TestableHypothesis ;
+    rdfs:label "Pre-registered: the organism-design blueprint tool predicts sternal keel and foot webbing correctly on unseen bird species" ;
+    dct:description "From identifiers and ontology reasoning alone, the organism-design text-to-blueprint tool predicts, for each of the 48 held-out bird species, whether the sternal keel (carina) is present (absent in palaeognath ratites, present otherwise) and whether the foot is webbed (present for AVONET Primary.Lifestyle = Aquatic, absent for Terrestrial, Insessorial or Aerial), and its blueprints carry no internal conflicts." ;
+    delphi:hypothesisType "pre-registered-blind-exam" ;
+    delphi:context "Held-out clade Aves (frozen 2026-10-31T05:52:44Z). Ground truth read only at scoring time: NCBI Taxonomy lineage for ratite orders; AVONET supplementary dataset 1 (figshare DOI 10.6084/m9.figshare.16586228) for Primary.Lifestyle. Species whose prediction lacks the structure are not scored and their count is reported." ;
+    delphi:proposedTest "Pass: accuracy >= 0.80 on each of tests A (keel) and B (webbing) with at least 10 scored species, and conflict-free blueprints for at least 40 of 48 species. Fail: accuracy < 0.60 on A or B with at least 10 scored species. Inconclusive (underpowered): fewer than 10 scored species on A or B. Between 0.60 and 0.80: mixed. Written in holdout/exam-results/organism-design/PREREG.md on 2026-10-31 before the prediction file existed and before any bird trait row was opened by the assessor." ;
+    prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-holdout-assessor-claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/agent/delphisci-holdout-assessor-claude-fable-5-1> a prov:SoftwareAgent ;
+    rdfs:label "delphisci holdout thread (session scienceclaw-93, Claude Fable 5.1): froze the held-out exam and runs it; built none of the work it examines" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/model/claude-fable-5-1> a delphi:LanguageModel ;
+    rdfs:label "Claude Fable 5.1" ;
+    dct:identifier "claude-fable-5-1" .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-holdout-assessor-claude-fable-5-1> ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/holdout/data.json> , <https://doi.org/10.6084/m9.figshare.16586228> .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-10-31T14:13:27Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/delphisci-holdout-assessor-claude-fable-5-1> ;
+    rdfs:label "Draft: Pre-registered: the organism-design blueprint tool predicts sternal keel and foot webbing correctly on unseen bird species" ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType delphi:TestableHypothesis ;
+    npx:introduces <https://w3id.org/delphi/resource/hypothesis/organism-design-blueprint-predicts-aves-anatomy> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/held-out-clade-exam> ;
+    rdfs:comment "Unsigned draft, not published. Built by holdout/nanopubs/build-nanopubs.mjs from files under holdout/ that are not yet committed; the resolvable copy of those files is the live sub-dashboard data file linked from the provenance. The creator is the software agent that ran the exam; the key holder's ORCID is added only when that person approves and signs. No assertion template is declared because the published Delphi templates still carry the legacy probknow namespace and this 2.0 record was not created from one. Publishing needs the key owner's approval: test registry first." ;
+    nt:wasCreatedFromProvenanceTemplate <https://w3id.org/np/RA7lSq6MuK_TIC6JMSHvLtee3lpLoZDOqLJCLXevnrPoU> ;
+    nt:wasCreatedFromPubinfoTemplate <https://w3id.org/np/RAukAcWHRDlkqxk7H2XNSegc1WnHI569INvNr-xdptDGI>, <https://w3id.org/np/RACJ58Gvyn91LqCKIO9zu1eijDQIeEff28iyDrJgjSJF8> .
+  <https://w3id.org/delphi/resource/domain/held-out-clade-exam> rdfs:label "held-out-clade-exam" .
+}

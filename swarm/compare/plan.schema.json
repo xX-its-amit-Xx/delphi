@@ -1,0 +1,33 @@
+{
+ "type": "object",
+ "additionalProperties": false,
+ "required": ["claim_id", "hypothesis", "pass_criterion", "fail_criterion", "interpretation", "dataset", "identifiers"],
+ "properties": {
+  "claim_id": { "type": "string" },
+  "hypothesis": { "type": "string", "description": "One sentence: what must be true of the data if the claim holds." },
+  "pass_criterion": { "type": "string", "description": "Pre-registered measured value and threshold that confirms the claim." },
+  "fail_criterion": { "type": "string", "description": "Pre-registered measured result that refutes it." },
+  "interpretation": { "type": "string", "description": "How the author's terms map to measurable quantities; note any modern reinterpretation." },
+  "dataset": {
+   "anyOf": [
+    { "type": "null" },
+    {
+     "type": "object",
+     "additionalProperties": false,
+     "required": ["id", "name", "publisher", "landing_url", "doi", "access", "why_it_fits"],
+     "properties": {
+      "id": { "type": "string", "description": "kebab-case slug you assign, e.g. gbif-occurrence-amphibia" },
+      "name": { "type": "string", "description": "The dataset's actual title as its publisher gives it." },
+      "publisher": { "type": "string" },
+      "landing_url": { "type": "string", "description": "A real https URL of the dataset's landing page. Must resolve." },
+      "doi": { "type": ["string", "null"], "description": "The dataset's DOI as 10.xxxx/..., or null if it has none. Never guess." },
+      "access": { "type": "string", "enum": ["open-download", "open-api", "registration-required", "unknown"] },
+      "why_it_fits": { "type": "string" }
+     }
+    }
+   ]
+  },
+  "no_dataset_reason": { "type": ["string", "null"], "description": "If dataset is null: why no suitable public dataset exists." },
+  "identifiers": { "type": "array", "items": { "type": "string" }, "description": "Every URL and DOI that appears anywhere in this plan, including landing_url and doi." }
+ }
+}

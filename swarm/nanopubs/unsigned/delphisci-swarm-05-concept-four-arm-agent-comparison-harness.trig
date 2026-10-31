@@ -1,0 +1,92 @@
+@prefix this: <http://purl.org/nanopub/temp/np9/> .
+@prefix sub: <http://purl.org/nanopub/temp/np9/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix nt: <https://w3id.org/np/o/ntemplate/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <https://schema.org/> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/concept/four-arm-agent-comparison-harness> a delphi:Concept , skos:Concept ;
+    skos:prefLabel "Four-arm comparison harness for agent swarms: pre-registered task, mechanical verifier, hard cost cap" ;
+    rdfs:label "Four-arm comparison harness for agent swarms: pre-registered task, mechanical verifier, hard cost cap" ;
+    skos:definition "A method for measuring whether a swarm of language-model agents beats one agent on a unit of scientific work, built so that the result cannot be argued with afterwards. (1) Fix the task, the item set (here 20 claims), the output schema and the prompt, and write the scoring rule and a prediction into a pre-registration file before any run. (2) Run four arms with the same model, tools and budget: single agent (one call, all items); isolated workers (one item each, no feedback); centralized swarm (a planner assigns items by domain, reviews failures, retries with verifier feedback, escalates); decentralized board (workers pull tickets from a shared board and post results, gaps and tips; no planner). (3) Score every output with a mechanical verifier that fetches each URL and DOI and classes it resolves / fabricated (404, 410, DNS failure, DOI not found) / blocked (403, 429, 5xx, timeout) / malformed, and marks a dataset verified only if its landing page resolves and names it; in a second experiment also require evidence in the agent's own event log that it fetched the page, and that the page title it reports agrees with the verifier's. (4) Enforce a hard cost cap by launching a call only if spent + (in-flight + 1) * per-call cap <= budget, so no arm can overshoot. (5) Decide by a pre-registered rule (here: zero fabricated identifiers and at least two more verified items), take the earliest full run per arm as primary, report replicates beside it, and publish every plan, verifier record and event log with a per-item table. (6) Log every change after the pre-registration, and every wrong prediction, in a deviations file with a time." ;
+    dct:description "Implemented for the ScienceClaw hack (2026-10-31) as Node scripts: swarm/compare/run.mjs (orchestrator and the four arms, spawning the headless Claude Code CLI with --json-schema, --max-budget-usd and stream-json output from an empty directory so agents cannot read the repository), swarm/compare/verify.mjs (verifier, cached), swarm/compare/metrics.mjs (aggregation into results.json and per-queen metrics), swarm/emperor.mjs (structure controller that consumes the measured metrics). Used twice on 2026-10-31; outcomes in records delphisci-swarm-01 to 03. A sister project (delphi-evolve) applied the same four-arm design to an enzyme benchmark with deterministic specialists." ;
+    skos:note "Kind: method (a reusable procedure), not an empirical finding. Its results are separate claim records (delphisci-swarm-01 to 03)." ;
+    skos:scopeNote "Limits. The runner is specific to the Claude Code CLI; the arms and verifier are general. The verifier checks that an identifier resolves and names the dataset, not that the dataset answers the question. Twenty items per experiment give a pre-registered minimum difference, not a significance test. Cost accounting is at list price from the CLI's usage report. The code is uncommitted at the time of this draft; the repository URL below is where it will live and the live copies are what this record points to." ;
+    dct:subject sub:code1 , sub:code2 , sub:code3 , sub:code4 ;
+    skos:related <https://w3id.org/delphi/resource/claim/delphisci-swarm-01-led-swarm-beats-single-agent> , <https://w3id.org/delphi/resource/claim/delphisci-swarm-02-single-agent-shortfall-is-mostly-blank-plans> , <https://w3id.org/delphi/resource/claim/delphisci-swarm-03-led-swarm-advantage-is-spread-over-distinct-claims> .
+  sub:code1 a schema:SoftwareSourceCode ;
+    rdfs:label "swarm/compare/run.mjs" ;
+    dct:description "orchestrator and the four arms" ;
+    schema:codeRepository <https://github.com/fractastical/delphisci> ;
+    schema:programmingLanguage "JavaScript (Node 20+)" ;
+    schema:version "uncommitted draft, 2026-10-31; commit hash pending" ;
+    dct:source <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/code/run.mjs> .
+  sub:code2 a schema:SoftwareSourceCode ;
+    rdfs:label "swarm/compare/verify.mjs" ;
+    dct:description "mechanical verifier for URLs and DOIs" ;
+    schema:codeRepository <https://github.com/fractastical/delphisci> ;
+    schema:programmingLanguage "JavaScript (Node 20+)" ;
+    schema:version "uncommitted draft, 2026-10-31; commit hash pending" ;
+    dct:source <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/code/verify.mjs> .
+  sub:code3 a schema:SoftwareSourceCode ;
+    rdfs:label "swarm/compare/metrics.mjs" ;
+    dct:description "aggregation and per-queen metrics" ;
+    schema:codeRepository <https://github.com/fractastical/delphisci> ;
+    schema:programmingLanguage "JavaScript (Node 20+)" ;
+    schema:version "uncommitted draft, 2026-10-31; commit hash pending" ;
+    dct:source <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/code/metrics.mjs> .
+  sub:code4 a schema:SoftwareSourceCode ;
+    rdfs:label "swarm/emperor.mjs" ;
+    dct:description "swarm structure controller" ;
+    schema:codeRepository <https://github.com/fractastical/delphisci> ;
+    schema:programmingLanguage "JavaScript (Node 20+)" ;
+    schema:version "uncommitted draft, 2026-10-31; commit hash pending" ;
+    dct:source <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/code/emperor.mjs> .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-swarm-thread-claude-fable-5-1> ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/PREREG.md> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/README.md> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/code/run.mjs> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/code/verify.mjs> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/code/metrics.mjs> , <https://delphi-mission-control.ashenoy000.workers.dev/t/swarm/code/emperor.mjs> ;
+    prov:wasGeneratedBy sub:activity .
+  sub:activity a prov:Activity ;
+    rdfs:label "Design and implementation of the comparison harness by the swarm thread, 2026-10-31" ;
+    prov:wasAssociatedWith <https://w3id.org/delphi/resource/agent/delphisci-swarm-thread-claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/agent/delphisci-swarm-thread-claude-fable-5-1> a prov:SoftwareAgent ;
+    rdfs:label "DELPHI swarm thread (Claude Fable 5.1 in Claude Code) that designed, ran and scored the comparison and wrote these records" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-fable-5-1> ;
+    prov:actedOnBehalfOf sub:owner .
+  <https://w3id.org/delphi/resource/model/claude-fable-5-1> a delphi:LanguageModel ;
+    rdfs:label "Claude Fable 5.1" ;
+    dct:identifier "claude-fable-5-1" .
+  sub:owner a prov:Person ;
+    rdfs:label "PLACEHOLDER: the human owner of this agent (ORCID), to be set when the key owner approves these records. Not a real identity." .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-10-31T14:05:36.023Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/delphisci-swarm-thread-claude-fable-5-1> ;
+    rdfs:label "Four-arm comparison harness for agent swarms: pre-registered task, mechanical verifier, hard cost cap" ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType <https://w3id.org/delphi/ontology/Concept> ;
+    npx:introduces <https://w3id.org/delphi/resource/concept/four-arm-agent-comparison-harness> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/delphisci-swarm-methods> ;
+    rdfs:comment "UNSIGNED DRAFT. Not signed, not published to any registry (test or production). The key owner decides who signs and under which identity; the human owner below is a placeholder until then; the commit hash of swarm/PREREG.md must be added to the evidence before signing. Remove this statement when signing." , "Template note: no Project Delphi template exists for a delphi:Concept record (checked 2026-10-31); this record is hand-authored with Delphi ontology v2.0 and SKOS terms and declares no assertion template. The label/domain publication-info template https://w3id.org/np/RAtKj9bCnB4gUe0E9k-WhffQFSEWd9Ve2hrVllYoLuOB0 is not declared either (2 pk: uses; its domain field is a probknow resource prefix). Decision recorded in swarm/nanopubs/DECISIONS.md, 2026-10-31; see record delphisci-swarm-04." ;
+    nt:wasCreatedFromProvenanceTemplate <https://w3id.org/np/RAaYeFYF-Cz2bM5S1wPQsnvs5X6BBxsphL03UkbVZ1lcA> ;
+    nt:wasCreatedFromPubinfoTemplate <https://w3id.org/np/RAukAcWHRDlkqxk7H2XNSegc1WnHI569INvNr-xdptDGI> , <https://w3id.org/np/RACJ58Gvyn91LqCKIO9zu1eijDQIeEff28iyDrJgjSJF8> .
+  <https://w3id.org/delphi/resource/domain/delphisci-swarm-methods> rdfs:label "delphisci-swarm-methods" .
+}

@@ -39,7 +39,9 @@ Before building, publishing, or querying nanopubs, read [BEST_PRACTICES.md](BEST
 
 A nanopublication bundles a single assertion with its provenance and publication info as RDF named graphs. The following resources cover how to find and query them.
 
-To query this project's claims, their math and their assessment rankings, use the `delphisci` MCP server or its CLI in [`mcp/`](mcp/README.md). Agents should start with [AGENTS.md](AGENTS.md).
+To query this project's claims, their math and their assessment rankings, use the `delphisci` MCP server or its CLI in [`mcp/`](mcp/README.md). Agents should start with [AGENTS.md](AGENTS.md), which defines the specialist roles of the claim
+pipeline (A1-A13), the inter-agent communication rules, and the shared source of truth. Live team
+dashboard: https://delphi-mission-control.ashenoy000.workers.dev/start/
 
 ### Web interfaces
 

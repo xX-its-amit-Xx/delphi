@@ -1,0 +1,112 @@
+{
+ "claim_id": "hamilton-senescence",
+ "builder_result": "claim-tests/math-bio-theorems/hamilton-senescence/result.json",
+ "builder_verdict": "mixed",
+ "builder_measured": {
+  "value": 0.5714285714285714,
+  "unit": "fraction of qualifying non-bird species with Spearman rho(age, adult mortality) > 0",
+  "n": "35 species (classes: {'Mammalia': 20, 'Actinopterygii': 9, 'Amphibia': 2, 'Reptilia': 2, 'Bivalvia': 1, 'Gastropoda': 1})",
+  "uncertainty": "20 rising, 13 falling, 2 flat; 12 significantly rising and 6 significantly falling at p < 0.05",
+  "extra": {
+   "mean_spearman_rho": 0.14546805485036943,
+   "median_spearman_rho": 0.25,
+   "n_matrices_in_db": 3548,
+   "n_bird_species_held_out": 8
+  }
+ },
+ "exam_clade": "Aves",
+ "exam_roster_sha256": "06b797929a27fad5b7173dbaa0c2d9d297deea478a64b7a7935f85caec430360",
+ "preconditions": {
+  "split_verified": true,
+  "leak_check_exit": 0,
+  "builder_status": "complete",
+  "analysis_sha256": "7ae4746c2005fa086d022adce877569269eeff42062ef8dcb83c8f58bd03ef60",
+  "data_manifest": {
+   "comadre": {
+    "download_url": "https://compadre-db.org/Data/ComadreDownload",
+    "served_filename": "COMADRE_v.4.26.4.0.RData",
+    "retrieved_at": "2026-10-31T05:57:53Z",
+    "byte_size": 907304,
+    "sha256": "490666bacce563c2f8ed43467634b6a60c4fee2d1389900d22b087fe665d313f"
+   }
+  }
+ },
+ "command": "py analysis.py --exam  (run in a scratch copy of claim-tests/math-bio-theorems/hamilton-senescence; 1.5 s)",
+ "exam_measured": {
+  "value": 0.625,
+  "unit": "fraction of held-out bird species with Spearman rho(age, adult mortality) > 0",
+  "n": 8,
+  "extra": {
+   "rising": 5,
+   "falling": 2,
+   "flat": 1,
+   "mean_spearman_rho": 0.08174827223593134
+  }
+ },
+ "pass_criterion": "Pre-registered. Data: COMADRE Animal Matrix Database v4.26.4.0 (RData file served at compadre-db.org/Data/ComadreDownload; data user agreement and citation guidelines accepted). Matrix selection: MatrixCriteriaAge == 'Yes' (age-classified), MatrixSplit == 'Divided' (U and F submatrices available), MatrixComposite in {'Individual', 'Mean'}, MatrixTreatment == 'Unmanipulated', MatrixCaptivity == 'W' (wild), matrix dimension >= 5, no missing entries in U or F. For each qualifying matrix, survival of age class a is the column sum of U for class a; the last class is dropped from the trend if U has a non-zero diagonal entry there (an open-ended plus group whose survival mixes ages). Mature classes are those whose F column sum is > 0. For each species, qualifying matrices of the same dimension are averaged element-wise (so each species contributes once); species with fewer than 4 mature age classes after dropping the plus group are excluded. Rising adult mortality = Spearman rho between age-class index and mortality (1 - survival) over the mature classes is > 0. SUPPORTS if at least 80% of qualifying species show rising adult mortality AND the mean rho across species is > 0.3. AMENDMENT (2026-10-31, before any data were downloaded, at the request of the holdout thread): species of class Aves are excluded from the primary analysis and from all criteria above; bird species are held out and only reported separately, unfitted, as a holdout check. Class is taken from COMADRE's 'Class' metadata column.",
+ "fail_criterion": "Pre-registered. REFUTES if fewer than 50% of qualifying species show rising adult mortality. MIXED otherwise (50% to 80%, or >= 80% with mean rho <= 0.3). INCONCLUSIVE (underpowered) if fewer than 15 species qualify; INCONCLUSIVE (data-unavailable) if the file cannot be downloaded or read.",
+ "exam_verdict": "inconclusive",
+ "exam_verdict_reason": "underpowered: 8 bird species, the pre-registered rule needs 15",
+ "agrees_with_builder": null,
+ "bird_rows": [
+  {
+   "species": "Bostrychia hagedash",
+   "rho": 0,
+   "p": 1,
+   "n_mature_classes": 4
+  },
+  {
+   "species": "Certhia americana",
+   "rho": 0.7745966692414834,
+   "p": 0.22540333075851665,
+   "n_mature_classes": 4
+  },
+  {
+   "species": "Haliaeetus albicilla",
+   "rho": 0.29923034286725064,
+   "p": 0.09070750391444427,
+   "n_mature_classes": 33
+  },
+  {
+   "species": "Lagopus muta",
+   "rho": 0.7,
+   "p": 0.1881204043741873,
+   "n_mature_classes": 5
+  },
+  {
+   "species": "Milvus migrans",
+   "rho": -0.5409704038267177,
+   "p": 0.08572135891473512,
+   "n_mature_classes": 11
+  },
+  {
+   "species": "Sternula antillarum browni",
+   "rho": 0.24912434056698887,
+   "p": 0.43490222874732265,
+   "n_mature_classes": 12
+  },
+  {
+   "species": "Sterna hirundo",
+   "rho": 0.1720052290384454,
+   "p": 0.5565381001284009,
+   "n_mature_classes": 14
+  },
+  {
+   "species": "Phalacrocorax carbo",
+   "rho": -1,
+   "p": 0,
+   "n_mature_classes": 6
+  }
+ ],
+ "caveats": [
+  "The builder disclosed that the first, pre-gate run of analysis.py printed one aggregate bird number; no model or threshold was changed afterwards (see the builder’s result.json caveats).",
+  "The held-out class is small in these public tables, so the builder’s own minimum sample size makes the exam underpowered; the measured values are reported for the record, not as a verdict."
+ ],
+ "assessor": {
+  "kind": "session",
+  "id": "scienceclaw-93",
+  "model": "claude-fable-5-1",
+  "date": "2026-10-31",
+  "scratch_copy_deleted": true
+ }
+}

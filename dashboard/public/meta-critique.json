@@ -1,0 +1,143 @@
+{
+ "critiquedAt": "2026-10-31T14:25:00Z",
+ "scope": "development process, not scientific content",
+ "findings": [
+  {
+   "id": "output-exists-only-in-one-working-tree",
+   "severity": "high",
+   "claim": "Four of the five threads' entire output, and the whole dashboard build, is untracked in git and has never been committed, let alone pushed.",
+   "evidence": "git status --porcelain: 31 '??' entries including holdout/, lean/, organism-design/, swarm/, dashboard/build.mjs, dashboard/public/t/{holdout,lean,organism,swarm}/. git rev-list main..origin/main = 346; origin/main..main = 17.",
+   "soWhat": "AGENTS.md's own channel table says files are 'durable? yes, versioned'. For 4 of 5 threads that is false: a judge cloning github.com/fractastical/delphisci sees none of lean/, swarm/, holdout/ or organism-design/, and one bad git clean erases about 8 hours x 5 sessions.",
+   "action": "STOP all new artifact production for 30 minutes and commit the four untracked thread folders plus dashboard/ now, before any further work. Then merge the 346 upstream commits while there is still time to fix conflicts."
+  },
+  {
+   "id": "push-blocked-on-one-person-for-five-hours",
+   "severity": "high",
+   "claim": "The only path from this box to the collaborators has been blocked on a single unanswered human ask since 09:24 EDT, and no thread changed plan because of it.",
+   "evidence": "dashboard/public/t/claims/status.json needs[2]: 'Approve one branch for the whole tree so the local commits on main can be pushed; nothing is pushed until then, per the hub.' Commit 26e1560c (09:24:34 -0400) subject: 'push ask redirected to Amit'.",
+   "soWhat": "Five sessions kept generating files for about five hours into a tree that cannot leave the machine. The crosscheck against the collaborator's 129 tests is one-directional: we read their work, they cannot read ours.",
+   "action": "START treating the push as the deadline-critical blocker it is: get the branch decision in the next hour, or push to a side branch (scienceclaw-hub) without asking, which needs no approval and destroys nothing."
+  },
+  {
+   "id": "openresearch-gate-zero-percent",
+   "severity": "high",
+   "claim": "AGENTS.md calls an NVIDIA OpenResearch literature run a 'release requirement, not an optional enrichment' for every claim before A7; it was run zero times.",
+   "evidence": "grep -ril 'openresearch|alphaxiv' (excl .git/node_modules) matches only AGENTS.md, dashboard/issues.cache.json, dashboard/public/{data.json,index.html}, swarm/compare/verify-cache.json. No run id, query or prior-work record for any of the 16 tests or 4 Lean laws.",
+   "soWhat": "AGENTS.md names its own biggest credibility risk as 'restating a historical claim as though nobody has studied it since'. That risk is unmitigated for 100% of the tests, and the issue that would fix it ('Use OpenResearch (orx) as the research-agent harness') is still open.",
+   "action": "CHANGE the wording today: either run it for the 4-6 headline tests, or rewrite A2 to say 'required, not yet run, 0/16' and put that number on the dashboard. Do not leave a mandatory gate in the document at 0% compliance."
+  },
+  {
+   "id": "roles-with-no-output-file",
+   "severity": "high",
+   "claim": "Of the 13 roles specified in AGENTS.md today, the contract output files of A7, A9 and A12 do not exist anywhere in the repo, and A13 says in its own text that it does not exist.",
+   "evidence": "find claim-tests -name model.md: 0. find . -name faithfulness.json: 0. ls debates: no such directory. find . -name verify.json: 1 hit, dashboard/public/evolve/verify.json, which checks the sibling project, not any claim test of ours.",
+   "soWhat": "A9 is the role with 'power to stop the chain' on whether the model measures what the claim is about; it ran on zero of 16 data tests. The 491-line role document reads as a specification of a pipeline that was not executed, which one find command exposes.",
+   "action": "STOP adding roles. START a compliance table in AGENTS.md: role, required file, files that exist, count. Mark A7/A9/A12/A13 'not run' explicitly rather than leaving the reader to assume they were."
+  },
+  {
+   "id": "eighty-five-unsignable-nanopub-drafts",
+   "severity": "high",
+   "claim": "The largest single block of today's effort produced 85 nanopub drafts, none of which can be signed because there is no key on the machine, and zero are published.",
+   "evidence": "find */nanopubs -name '*.trig': claim-tests 15, lean 13, holdout 9, organism-design 33, swarm 15 = 85, all unsigned. organism-design/nanopubs/DECISIONS.md: 'There is no key on this machine (~/.nanopub does not exist), and no key was created.' Builders: 1,346 lines across 3 scripts.",
+   "soWhat": "1,346 lines of bespoke builder code and 295 lines of DECISIONS.md across 4 files, to produce artifacts whose entire value is in being citable on a network they will not reach before the deadline. 33 of the 85 describe design proposals containing no measurement.",
+   "action": "STOP building nanopub records today. Freeze the 85 as-is, write one page saying what they are and what signing them needs, and move the hours to the crosscheck and the push."
+  },
+  {
+   "id": "same-template-check-done-three-times",
+   "severity": "high",
+   "claim": "Three threads independently fetched and counted namespace tokens in the same two published Delphi templates, got different numbers for the same quantity, and wrote it up four times.",
+   "evidence": "swarm/nanopubs/DECISIONS.md: claim template 11 pk: uses; organism-design/nanopubs/DECISIONS.md: 13; swarm's own text admits 'The lean thread's count for the claim template was 13; the difference is counting method'. 295 lines over 4 DECISIONS.md files.",
+   "soWhat": "This is exactly the duplication AGENTS.md rule 7 says issue-claiming exists to prevent. Worse, 57 existing .trig files keep the triple, including live production records, and swarm's DECISIONS.md explicitly leaves them ('the key owner's call, not ours').",
+   "action": "STOP: declare the template question closed with one owner's number and delete the other three write-ups down to a one-line pointer. START opening an issue before any cross-thread investigation, which is the rule already written down."
+  },
+  {
+   "id": "prereg-integrity-is-self-witnessed",
+   "severity": "high",
+   "claim": "The pre-registration margins are real but 31 to 56 seconds wide and witnessed only by the author's own commit order, with the data deliberately kept out of the repo.",
+   "evidence": "Prereg 9b731287 05:55:32Z; first download (maynardsmith-hitchhiking) retrieved_at 05:56:03Z = 31 s. Prereg 2a9d8d16 06:13:26Z; four downloads 06:14:01-06:14:22Z; results committed 06:17:28Z. Each prereg commit also added a .gitignore so data never enters the tree.",
+   "soWhat": "A hostile reviewer reads a 31-second gap as prereg-and-run in one breath, not as blindness, and nothing outside this actor's own repo can refute that. AGENTS.md itself calls pre-registration 'the one item that cannot be reconstructed afterwards'. Commit 6f5de706 (05:57:42Z) also says 'before any data download' while hitchhiking data had been downloading since 05:56:03Z.",
+   "action": "START timestamping the prereg set externally for the remaining work (an OSF registration, a signed git tag pushed to origin, or an email to the organisers with the hashes) and say on the dashboard that the existing 16 margins are self-attested."
+  },
+  {
+   "id": "crosscheck-counts-but-does-not-resolve",
+   "severity": "medium",
+   "claim": "The independent 129-test replication was reduced to a tally; both disagreements are cases where our verdict is the more favourable one, and neither is diagnosed.",
+   "evidence": "dashboard/public/crosscheck.json: ourTests 16, theirTests 129, overlapping 8, agreements 6, disagreements 2. darwin1859-ch11-13 ours 'supports' vs theirs 'mixed'; thompson1917-ch03-07 ours 'supports' vs theirs 'mixed'. No notes field, no follow-up.",
+   "soWhat": "The most valuable asset in the repo is an outside swarm that tested the same claims and twice came out more conservative than we did. Left as a counter it reads as a scoreboard; worked through it is the strongest honesty signal available.",
+   "action": "START today: read both pairs of pass criteria, state in crosscheck.json why the verdicts differ and which rule is stricter, and extend the comparison past the 8 overlaps to every claim both sides touched."
+  },
+  {
+   "id": "interpretations-rule-broken-same-morning",
+   "severity": "medium",
+   "claim": "A7 says new tests must enumerate interpretations as a list; all 16 result.json files, including the 12 pre-registered after that rule was written, carry a single free-text string.",
+   "evidence": "AGENTS.md A7: 'The current result.json files carry a single free-text interpretation field; new tests use the list form.' grep -rl '\"interpretations\"' claim-tests/ : no match. All 16 result.json key sets contain 'interpretation', none 'interpretations'.",
+   "soWhat": "A rule written and broken on the same day by the same team is not a process, it is a wish. A8's gate ('the interpretations are enumerated rather than asserted') therefore passed on zero tests.",
+   "action": "CHANGE one of the two: convert the 5 headline tests to the list form, or delete the sentence from A7. Keeping an unfollowed rule in the document costs more credibility than not having written it."
+  },
+  {
+   "id": "status-surface-unvalidated",
+   "severity": "medium",
+   "claim": "The dashboard's 'what is true right now' surface carries a hand-typed future timestamp on one thread and a leftover placeholder metrics object on another, with no schema check in the build.",
+   "evidence": "t/claims/status.json updated '2026-10-31T15:40:00Z', 91 min after the commit that wrote it (b7bdba4b, 14:09:02Z); peers are machine stamps (holdout 14:04:46.988Z, swarm 13:56:18.552Z). t/organism/status.json metrics = {'label':'value','nanopub_records_unsigned':33}.",
+   "soWhat": "Rule 1 is 'never write a number you did not compute' and this is the one number on the page that was typed. build.mjs:69 catches only JSON parse errors, so the organism thread's 33 records render with no metrics at all: the thread with the most artifacts shows the fewest numbers.",
+   "action": "START generating 'updated' from the writer script and add a ten-line schema check to dashboard/build.mjs that fails the build on a non-array metrics or an updated timestamp in the future."
+  },
+  {
+   "id": "swarm-headline-exceeds-its-own-beat-rule",
+   "severity": "medium",
+   "claim": "The swarm thread's headline presents a four-way ordering as the finding, but under its own pre-registered decision rule only the swarm-versus-single gap qualifies as a win.",
+   "evidence": "swarm/compare/results.json rule: 'A beats B if A has 0 fabricated identifiers and at least 2 more verified datasets than B.' Scores 19/18/17/13 on n=20, one primary run per arm: centralized-vs-decentralized = 1, decentralized-vs-isolated = 1. Neither clears the rule.",
+   "soWhat": "The one number that survives the thread's own rule is 'any multi-agent arm beats a single agent by at least 4 of 20'. The published ordering invites a reviewer to apply the pre-registered rule and find it unmet, from the thread whose main virtue is pre-registration.",
+   "action": "CHANGE the headline to the gap the rule licenses and say plainly that the three swarm arms are indistinguishable at n=20. Also front the DEVIATIONS.md disclosure that all arms made 0 web calls, so the arms compare recall from model memory, not research."
+  },
+  {
+   "id": "holdout-role-cannot-report-failure",
+   "severity": "medium",
+   "claim": "A whole thread spent the day on an exam that its own power analysis shows cannot reach a verdict for either candidate clade, under a rule that defines that outcome as success.",
+   "evidence": "holdout/power-analysis.json, kimura-heterozygosity: Aves held_out_n 13 vs builder_min_n 50, clears_minimum false, decisive false; Mammalia 40 vs 50, also false. t/holdout/status.json at 14:04:46Z still reads 'Clade decision open'. A11 calls inconclusive 'a successful outcome of this role'.",
+   "soWhat": "Output after about eight hours is 3 inconclusive exams and 9 nanopub records largely about the thread's own process; no claim test's verdict changed. A role whose null is defined as success has no way to tell the team it is not worth continuing.",
+   "action": "STOP the clade deliberation and publish the power table as the finding: 'the public tables cannot support a blind clade exam at the builders' own minimum n'. That is a real, citable methodological result and it is already computed."
+  },
+  {
+   "id": "reversal-that-should-have-been-deferred",
+   "severity": "medium",
+   "claim": "The nt:wasCreatedFromTemplate decision was made, reversed the same day, and a third revision is already queued, over a triple in records that cannot be signed.",
+   "evidence": "swarm/nanopubs/DECISIONS.md: 'The first version of this decision kept the declaration with a caveat in pubinfo; the hub superseded that after the organism thread pointed out...' and 'Re-check before publishing... in which case the comments come out and conformance is re-run.'",
+   "soWhat": "The reversal was evidence-driven (the conformance checker's own output), which is right, but it was also fully deferrable: with no key on the machine and nothing publishable, the triple had zero consequence before the deadline, and it propagated rework to three threads' builders.",
+   "action": "CHANGE the default: when a decision only binds artifacts that cannot ship before the deadline, record the open question and defer it. Freeze the nanopub record shape now and spend no further thread-hours on pubinfo provenance."
+  },
+  {
+   "id": "issue-claiming-rule-never-used",
+   "severity": "medium",
+   "claim": "The rule AGENTS.md names as the fix for the costliest parallel-run failure was used zero times today, and that failure then happened.",
+   "evidence": "AGENTS.md rule 7: issues 'stop two agents independently building the same thing, the failure mode that wastes the most time in a parallel run'. dashboard/issues.cache.json holds 19 issues, all pre-existing sponsor-integration and architecture items; none opened today to claim thread work.",
+   "soWhat": "The remedy was written down, skipped, and the predicted harm occurred as the triplicated template investigation. The written process and the enacted process diverge at the exact point the document says matters most.",
+   "action": "Either START using it for the remaining work (one issue per unit, linked commit) or CHANGE rule 7 to describe what actually coordinated the day, THREADS.md one-writer-per-path, which did hold, and stop crediting a mechanism nobody used."
+  }
+ ],
+ "stopDoing": [
+  "Stop producing nanopub drafts. 85 exist across five folders, none can be signed (no ~/.nanopub key on this machine) and none will be published before the deadline. Freeze the set and write one page describing it.",
+  "Stop re-litigating nt:wasCreatedFromTemplate and template conformance. Three threads measured the same two templates and got 11 versus 13 for one quantity; 57 existing .trig files keep the defect regardless.",
+  "Stop adding rules to AGENTS.md. It grew 491 uncommitted lines today specifying roles (A7 model.md, A9 faithfulness.json, A12 verify.json, A13 debates/) whose output files do not exist.",
+  "Stop hand-typing status.json fields. t/claims/status.json 'updated' is 91 minutes in the future of the commit that wrote it; generate it or delete the field.",
+  "Stop post-hoc robustness passes on verdicts that do not move. Commits 6f99bc46 and 00ba7c56 both end 'verdicts unchanged'; that work is defensible but it is not what the next 28 hours are short of.",
+  "Stop duplicating files into dashboard/public. swarm/nanopubs/DECISIONS.md and dashboard/public/t/swarm/nanopubs/DECISIONS.md are byte-identical (md5 64dc81f5a3b412dfde823206757963ad); the second copy will drift.",
+  "Stop opening new claim tests from the swarm's verified drafts (t/claims/status.json next[1]). 129 upstream tests already exist and 121 of them have never been compared to ours."
+ ],
+ "keepDoing": [
+  "Pre-registration with margins reported rather than smoothed. claim-tests/nanopubs/DECISIONS.md states the 31 s gap between prereg commit 9b73128 and the first download verbatim, 'as measured, not smoothed'. That sentence is worth more than a wider margin would have been.",
+  "Deviation logs that disclose against interest. swarm/compare/DEVIATIONS.md reports the $3.28-versus-$3.00 budget overshoot, excludes a zero-token run as an infrastructure failure, records that all four arms made 0 web searches and 0 fetches, and takes the stricter of two fabrication counts so the arm fails its own hard constraint.",
+  "Publishing the nulls. 5 of 16 verdicts are refutes and 3 mixed, and the mixed ones are mixed by rule against stated thresholds (thompson1917-ch03-10: 7/11 = 0.636 against a required two thirds) rather than rounded up.",
+  "Blind cross-provider assessment where it was possible. lean/assessment/results/*.openai.json: gpt-5-2025-08-07, blind true, rubric-scored, 3 faithful-with-narrower-scope and 1 faithful; lean/mutations.json: 6 mutants tried, 6 rejected, 3 controls accepted. A proof nobody tried to break would not have shown that.",
+  "Turning a simulation into a measurement and labelling it. swarm/state.json now reads mode 'measured', measured_from 'centralized-2026-10-31T05-59-47', and 'queens that never ran are not shown and not simulated'.",
+  "Refusing to name a human on 85 drafts. Four DECISIONS.md files repeat 'consistency with past records is not consent for new ones', attribute to software agents, and leave the ORCID to the key owner. That is the right call even though it cost the records their publishability.",
+  "Building the crosscheck at all. dashboard/public/crosscheck.json compares 16 of our tests against a collaborator's 129 at origin/main without merging or editing a file: the one artifact here that a hostile reviewer would find reassuring.",
+  "One writer per path. THREADS.md assigns each thread one repo folder and one sub-dashboard; five threads worked the same tree all day with no cross-thread conflict in git status."
+ ],
+ "weakestPoint": {
+  "what": "AGENTS.md is a 491-line, uncommitted specification of a 13-role pipeline that was not run as written. The gate the document itself calls the project's biggest credibility risk, A2's mandatory OpenResearch literature grounding, has zero runs for 16 of 16 tests; A9 faithfulness, which holds the power to stop the chain, has no file anywhere; A7's model.md does not exist; A13 admits in its own text that it does not exist; and A7's interpretations-list rule was broken by the 12 tests pre-registered hours after it was written.",
+  "whyItMatters": "The claim tests themselves are good: detailed pre-registered criteria, checksummed public data, refutations published, verdicts that survived a readings check and a perturbation check. A judge who reads AGENTS.md first will not evaluate them on their merits; they will run one find command, see four missing contract files and one zero-percent release requirement, and conclude the harness is a document rather than a pipeline. The document actively damages the work it describes.",
+  "fixCost": "2 to 3 hours, and no new science. One hour: add a compliance table to AGENTS.md (role, required file, files found, count) marking A7/A9/A12/A13 'not run' and A2 '0 of 16', and demote 'release requirement' to 'required, not yet run'. One hour: run the A9 faithfulness check with the non-Anthropic assessor already wired up in lean/assessment/run.mjs against the five headline data tests and write real faithfulness.json files. Thirty minutes: commit and push the four untracked thread folders so the document and the artifacts live in the same place."
+ },
+ "verdictOnProcess": "The science is better than the process around it: 16 pre-registered tests with real pass and fail criteria, 5 refutations published rather than buried, checksummed public data, a blind non-Anthropic assessor on the Lean work, mutation testing, and deviation logs that disclose against interest. The process around that science is partly theater. A 491-line role document written today specifies four output files that do not exist and one mandatory literature gate with 0 of 16 runs; the rule meant to prevent duplicated work was used zero times and the duplication it predicted happened three ways on the same template question; 85 nanopub drafts were built against a key that is not on the machine; and the single most consequential fact about the day is that four of the five threads' output has never been committed to git while the collaborators' branch moved 346 commits ahead. The team is good at the parts that have a checker (Lean, np check, pre-registration commit order) and performative about the parts that only have a document. With roughly 28 hours left, the highest-value hour is git add and git push, and the second is resolving the two crosscheck disagreements where the outside swarm was more conservative than we were."
+}

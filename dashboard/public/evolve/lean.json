@@ -1,0 +1,99 @@
+{
+  "checkedAt": "2026-10-31T13:25:42Z",
+  "toolchain": "leanprover/lean4:v4.35.0 (pre-installed via elan 4.2.4 at C:\\Temp\\elan); no Mathlib, lake-manifest lists zero external packages, so nothing was downloaded",
+  "build": {
+    "command": "lake build  (run in C:\\Temp\\lean-audit, a byte-copy of delphi-evolve/lean; built on C: so .lake artifacts stay off the nearly-full D: drive)",
+    "exit": 0,
+    "seconds": 6.78
+  },
+  "axioms": {
+    "claimed": ["Classical.choice", "Quot.sound", "propext"],
+    "observed": ["Classical.choice", "Quot.sound", "propext"],
+    "sorryAxPresent": false,
+    "verdict": "confirmed",
+    "detail": "I ran #print axioms myself from a scratch file in my own copy (lake env lean MyAudit.lean), then re-ran their whole 32-theorem DarwinBridge/Audit.lean. Per-theorem the real numbers are tighter than the claim: routeCert_sound depends on [propext] ALONE; blockedCert_sound on [propext, Quot.sound]. Classical.choice appears for exactly one theorem in the whole development, Distinction.true_route_exists_despite_adm_cut (a simp-generated counterexample lemma), not for either headline theorem. Several theorems depend on no axioms at all (closed_no_reach, contains_satisfiable, adjB_sound). So the claimed set of three is the correct union over the full audit, and it is a conservative over-statement for the two theorems the dashboard cares about. No sorryAx anywhere, and no Lean.ofReduceBool (the axiom native_decide would have introduced), which is the signature one would see if a compiled binary were being trusted instead of the kernel."
+  },
+  "sourceScan": [
+    { "pattern": "sorry", "hits": "none in code; the only textual match is prose inside a doc comment, lean/DarwinBridge/Core.lean:4 (\"No Mathlib, no `sorry`, no `native_decide`, no extra axioms.\")" },
+    { "pattern": "admit", "hits": "none" },
+    { "pattern": "native_decide", "hits": "none in code; only the same doc-comment prose at lean/DarwinBridge/Core.lean:4" },
+    { "pattern": "@[implemented_by]", "hits": "none" },
+    { "pattern": "axiom", "hits": "none - no `axiom` declaration in any of the 12 .lean files" },
+    { "pattern": "unsafe / partial def / @[extern] / opaque / Lean.ofReduceBool", "hits": "none" }
+  ],
+  "mutations": [
+    {
+      "what": "lean/DarwinBridge/Core.lean domB: reversed the admissibility inequality, `decide (ha <= lb)` -> `decide (lb <= ha)` (i.e. 'hi u <= lo v' became 'lo v <= hi u', which admits overlapping intervals)",
+      "expected": "build fails",
+      "exit": 1,
+      "verdict": "rejected as it should be",
+      "firstError": "Core.lean:96:43 Application type mismatch (domB_sound no longer provable)"
+    },
+    {
+      "what": "lean/DarwinBridge/Core.lean cutB: weakened the cut so any exit edge is allowed, `decide (b in S) || downB B a b` -> `decide (b in S) || true`",
+      "expected": "build fails",
+      "exit": 1,
+      "verdict": "rejected as it should be",
+      "firstError": "Core.lean:257:62 Application type mismatch (blocked_cut_sound no longer provable)"
+    },
+    {
+      "what": "lean/DarwinBridge/Core.lean routeB: dropped the interval check from the route checker, `adjB a b && domB B a b && routeB ...` -> `adjB a b && routeB ...` (so a route needs only to be a graph path, with no fitness condition)",
+      "expected": "build fails",
+      "exit": 1,
+      "verdict": "rejected as it should be",
+      "firstError": "Core.lean:143:12 Tactic `cases` failed (route_sound and routeB_admReach both break)"
+    },
+    {
+      "what": "lean/DarwinBridge/Core.lean blockedB: removed the 'target is outside the cut' requirement, `decide (s in S) && !(decide (t in S)) && cutB ...` -> `decide (s in S) && true && cutB ...`",
+      "expected": "build fails",
+      "exit": 1,
+      "verdict": "rejected as it should be",
+      "firstError": "Core.lean:248:25 Type mismatch after simplification (t not-in-S hypothesis gone)"
+    },
+    {
+      "what": "lean/DarwinBridge/Core.lean downB: turned the strict descent test non-strict, `decide (hb < la)` -> `decide (not (la < hb))` (so an edge with merely touching intervals counts as certifiably descending)",
+      "expected": "build fails",
+      "exit": 1,
+      "verdict": "rejected as it should be",
+      "firstError": "Core.lean:107:43 Application type mismatch (downB_sound cannot yield a strict f b < f a)"
+    },
+    {
+      "what": "lean/DarwinBridge/Certs/CoreKappa2AdmCutHtgrGtvn.lean data perturbation: raised the HHGR row from (438, 12140) to (20000, 21000), lifting lo(HHGR) above hi(HTGR)=13317 so the neighbour HHGR becomes a certified escape edge out of the single-member cut {HTGR}",
+      "expected": "build fails",
+      "exit": 1,
+      "verdict": "rejected as it should be",
+      "firstError": "CoreKappa2AdmCutHtgrGtvn.lean:182:73 'Tactic `decide` proved that the proposition ... is false' - the strongest form of rejection: the kernel actually evaluated the raw table and found the certificate false, so the instance theorem genuinely depends on the measured numbers rather than being a syntactic shell"
+    },
+    {
+      "what": "lean/DarwinBridge/Geno.lean nbrs: made the neighbour enumerator incomplete at the 4th site, `(List.range 20).filter (. != g.d)` -> `(List.range 19).filter (. != g.d)` (omits residue 19/Y), which is exactly the 'silently drop an escape edge' attack a cut certificate must be immune to",
+      "expected": "build fails",
+      "exit": 1,
+      "verdict": "rejected as it should be",
+      "firstError": "Geno.lean:64:23 Application type mismatch and Geno.lean:79:2 'omega could not prove the goal' - both nbrs_complete and nbrs_length = 76 break"
+    }
+  ],
+  "correspondence": {
+    "routeCert": "Quoted from lean/DarwinBridge/Checker.lean:69-73 -- `theorem routeCert_sound {i : Int -> a} (ha : OrderLaws a) (hi : Embedding i) {d : Int} {tbl : Table} {route : List Geno} {s t : Geno} (h : routeCertB d tbl route s t = true) {f : Geno -> a} (hf : SensitivityAssumption i d tbl f) : NDRoute Adj f route /\\ NDReach Adj f s t /\\ f s <= f t /\\ (forall x, x in route -> f s <= f x)`. Plain words: IF the Boolean checker accepts the route (every consecutive pair is a real single-substitution edge of the 20^4 graph, and at every step the whole interval of the current genotype sits at or below the whole interval of the next, hi u <= lo v), THEN for EVERY assignment of true fitness values that lies inside the declared intervals, fitness never decreases along the route, the target is reachable by non-decreasing steps, the target is at least the start, and no genotype on the route dips below the start. That is exactly the claimed reading 'if every step's interval condition holds then the route is non-decreasing' - and it delivers a little more (the endpoint and floor clauses). The step condition is defined in Core.lean:76-79 as `domB`, which also REQUIRES both endpoints to have a declared interval; an unmeasured genotype can never sit on an accepted route.",
+    "blockedCert": "Quoted from lean/DarwinBridge/Checker.lean:87-90 -- `theorem blockedCert_sound {i : Int -> a} (ha : OrderLaws a) (hi : Embedding i) {d : Int} {tbl : Table} {S : List Geno} {s t : Geno} (h : blockedCertB d tbl S s t = true) {f : Geno -> a} (hf : SensitivityAssumption i d tbl f) : not (NDReach Adj f s t)`. Plain words: IF the checker accepts the finite set S (start in S, target NOT in S, and every one of the 76 single-substitution neighbours of every member is either itself in S or is certifiably strictly lower, hi v < lo u, with both intervals declared), THEN for EVERY true-value assignment inside the intervals there is NO non-decreasing path at all from start to target. That matches the claimed reading 'if the closure is closed and omits the target then no admissible route exists', and is in fact stronger than 'no admissible route': it denies every true non-decreasing path, not merely every certifiable one. The closure property is discharged against a neighbour enumerator proved COMPLETE in Lean (Geno.lean:48 nbrs_complete), which is what stops a cut from quietly omitting an escape edge - my 7th mutation confirms that guard is load-bearing.",
+    "generic": true,
+    "notes": "GENERIC, not an arithmetic identity about constants - this part of their claim holds up. Core.lean is quantified over an arbitrary vertex type V, an arbitrary graph relation Adj : V -> V -> Prop, an arbitrary value type a carrying only five minimal order laws (OrderLaws, instantiated for Int but satisfiable by Rat/Real), and an arbitrary monotone embedding i : b -> a of the scaled-integer endpoints. Checker.lean then fixes only the graph (the four-site 20^4 = 160000-vertex single-substitution library) while leaving delta, the table, the route, the cut set S, the start/target, the value type a and the embedding i all universally quantified. The per-dataset files in Certs/ are applications: each proves `cert_ok : ...CertB delta tbl ... = true := by decide +kernel` on its own data and then instantiates the generic theorem. So the mathematical content is proved once, generically, and the kernel separately evaluates the finite data - the right architecture, and the opposite of a constants-only identity. TWO GAPS FOUND. (1) The 'kappa=2 VFVS->AIKG route is Lean-checked' claim does not line up with the repo. The only kappa=2 Lean certificate present is lean/DarwinBridge/Certs/CoreKappa2AdmCutHtgrGtvn.lean, and it is a DIFFERENT KIND of statement about a DIFFERENT PAIR: an adm_blocked (no-certifiable-route) cut for HTGR->GTVN, not a route for VFVS->AIKG. Meanwhile artifacts/integration/core_kappa2_route_lean.json reports `lean_original_build_exit: 0`, `lean_mutant_swap_build_exit: 1` and `recompute_exact_matches: 7` and attributes them to `lean_module: DarwinBridge.Certs.CoreKappa2RouteVfvsaikg` - a module that DOES NOT EXIST anywhere in lean/ (that string occurs nowhere in the repo except inside that one JSON file). I could not reproduce or refute those three numbers, because there is no Lean file to build. (2) A VFVS->AIKG route IS genuinely Lean-checked, but it is a different route under a different label: lean/DarwinBridge/Certs/TrpbRouteDelta0.lean, label trpb_route_delta0, delta=0, scale 10^23, start <17,4,17,15> = VFVS, target <0,7,8,5> = AIKG, route VFVS -> VFMS -> VFMG -> VIMG -> VIKG -> AIKG = 6 nodes. The kappa=2 core certificate's route is the 7-node VFVS -> VFMS -> SFMS -> SIMS -> SIMG -> SIKG -> AIKG. So '7/7 intervals recomputed' belongs to the 7-node kappa=2 route whose Lean module is missing, not to the 6-node route that Lean actually checks. Anyone repeating 'the kappa=2 VFVS->AIKG route is Lean-checked' should instead say 'a VFVS->AIKG route is Lean-checked at delta=0 from the TrpB data'. Separately, their own CORRESPONDENCE.md is unusually candid and accurate about scope: it states plainly that adm_cut ('no certifiable route') must never be read as 'no true route', that delta is an ASSUMED sensitivity bound with no confidence level (two replicates cannot support one), that CSV parsing, JSON->Lean rendering and route search are untrusted Python, and that interval containment is an assumption about the assay rather than a theorem. I found no overclaiming in that document; the Lean matches it."
+  },
+  "theirChecker": {
+    "ran": true,
+    "exit": 1,
+    "note": "Ran as C:\\Temp\\evolve-venv\\Scripts\\python.exe scripts/check_proofs.py (the venv another agent built already existed; I did not create a second one). It needed no network and got 13.2s in. Its exit 1 is caused by TWO WINDOWS ARTIFACTS, not by any proof failure. (a) Check `lean_files_match_certificate_json` FAILED for all 5 generated files - this is purely CRLF. The files on disk are CRLF (git checkout on Windows) while evolve.proof.render_lean emits LF. I tested this directly: raw byte equality is False for all 5, but newline-normalised equality is True for all 5, so the generated Lean has NOT drifted from its certificate JSON. (b) The script then crashed with UnicodeEncodeError: 'charmap' codec can't encode character '\\u27e8' - Path.write_text() called without encoding='utf-8' on a cp1252 default locale, while writing a mutant file containing Lean's angle brackets. This aborted the instance-mutant stage before it ran. Both are one-line portability bugs in the harness (pass encoding='utf-8'; compare newline-normalised text), not evidence against the proofs. Everything it did reach PASSED, and its results agree with my independent run: `fresh_lake_build_original 7.6s; ok`, `axiom_audit 32/32 theorems; axioms used: ['Classical.choice', 'Quot.sound', 'propext']`, `no_sorry_admit_native_decide_axiom_unsafe`, `certificate_tied_to_source_csv sha256 a631d8cf6c5b188a..., 302 rows re-read`, and `python_mirror_accepts_certificates` for all 5. Because the crash came before the mutant stage, their claimed '42 instance mutants' and the Python-mirror agreement on them are NOT things I observed; my own 7 mutations are the independent evidence instead."
+  },
+  "verdict": "A machine really did check this, and it checked something worth checking. I rebuilt their Lean 4.35.0 development from scratch on my own copy and it compiled clean in 6.78 seconds with no errors, no `sorry` or other unfinished-proof marker, no `native_decide` (so nothing is trusting a compiled binary instead of the kernel), and no axioms beyond the three ordinary foundations of Lean's logic - in fact the two headline theorems use fewer than claimed, with no Classical.choice at all. The theorems are genuinely general mathematics, not arithmetic about this one dataset: they are proved for an arbitrary graph and an arbitrary ordered notion of fitness, and the dataset enters only as finite numbers the kernel evaluates separately. I then tried to break it seven different ways - reversing the uphill test, weakening the cut, deleting the interval check, dropping the 'target is outside the cut' condition, loosening strict descent, nudging one measured number, and hiding one neighbour so an escape route could slip through - and all seven were rejected, the data-nudge with the kernel explicitly computing the certificate to be false. What this does NOT establish: the theorems are conditional, and their key premise is an assumption about the assay, that each genotype's true fitness lies inside the interval drawn from its two replicates widened by an assumed tolerance delta. That tolerance carries no confidence level, two replicates cannot supply one, and Lean never checks it. 'No route' also means 'no route in this 160,000-genotype four-site graph', never 'no evolutionary route'. Finally, one specific dashboard claim does not survive: the kappa=2 VFVS->AIKG route is NOT Lean-checked - the Lean module their own integration file credits for it does not exist in the repository, and the kappa=2 certificate that IS in Lean is a different kind of statement about a different pair of genotypes.",
+  "limits": [
+    "Build and all mutations were run on C:\\Temp\\lean-audit and C:\\Temp\\mut-* , byte-copies of delphi-evolve/lean, because .lake artifacts would otherwise land on the nearly-full D: drive. I ran no git command in delphi-evolve, modified nothing tracked there, and verified afterwards that every file under lean/ still carries its original 2026-10-31 08:53:48 mtime. Their checker wrote only into a tempdir before crashing.",
+    "The repo contains 12 .lean files, not the 20 stated in my brief. All 12 are in the build (13 lake jobs) and all 12 were scanned.",
+    "THE CENTRAL UNVERIFIABLE CLAIM: artifacts/integration/core_kappa2_route_lean.json reports lean_original_build_exit 0, lean_mutant_swap_build_exit 1 and recompute_exact_matches 7/7 for `DarwinBridge.Certs.CoreKappa2RouteVfvsaikg`, but no such module exists in lean/. I could neither reproduce nor refute those numbers. Do not restate them as Lean-checked.",
+    "I did not verify the 'intervals recomputed from the raw CSV 7/7' step myself. Their own CSV tie-back check did pass in my run (302 rows re-read against sha256 a631d8cf6c5b188a...), but that is their Python, not Lean, and it covers the TrpB source rather than the missing kappa=2 route module.",
+    "Their claimed '42 instance mutants rejected' and the Python-mirror/Lean agreement on them are NOT independently confirmed: their script crashed on a Windows encoding bug before reaching that stage. My 7 mutations stand in for it, which is fewer and of my own choosing.",
+    "My first attempt at a data mutation (raising the HHGR row's UPPER bound 12140 -> 99999) still built, exit 0 - but that was my error, not a soundness problem: the cut condition reads lo(HHGR) = min(r1,r2) - delta, which that edit left unchanged, so the mutation was a semantic no-op. Corrected by raising the LOWER bound instead, which was then rejected. Worth knowing for anyone repeating this: only a perturbation that moves the specific bound the rule reads will bite.",
+    "Two further first-attempt mutations were rejected for the WRONG REASON and so are not counted above: reversing downB to `hb <= la` failed on a typeclass-synthesis error (no LE instance in scope) and commenting out a neighbour block failed on a dangling `++` syntax error. Both were replaced with semantically equivalent, syntactically valid versions (listed as mutations 5 and 7) that fail on the proof itself. Their own harness guards against exactly this confusion with a `rejected_by_decision` flag, which is good practice.",
+    "The letter-to-index alphabet map (ACDEFGHIKLMNPQRSTVWY, so VFVS = <17,4,17,15>) is the Python tooling's convention, asserted in comments. The theorems are invariant under relabelling, so Lean neither needs nor checks it; I verified the mapping by hand for the start and target genotypes only.",
+    "Not formalised anywhere, and correctly flagged as such in their own CORRESPONDENCE.md: that growth-rate fitness corresponds to enzyme function, that replicate envelopes contain the true value, and any connection between the Lean Int table and real numbers (the generic embedding permits a real-number instance but none is constructed).",
+    "Timings are from this box only (Windows Server 2022, cold lake clean rebuild): 6.78s for my clean build, 7.6s for the one their script ran, 13.2s to their script's crash."
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "verifiedAt": "2026-10-31T13:17:51Z",
+  "verifier": "independent recount from raw artifacts, not the project's own summaries",
+  "checks": [
+    {
+      "id": "episodes",
+      "claim": "2,500 replay episodes (1,100 core + 300 LazySP + 1,100 prior)",
+      "verdict": "confirmed",
+      "computed": "core 1100 rows (11 policies x 100; 220 family A + 880 family B), LazySP 300 raw shard files = 300 rows (3 variants x 100), prior 1100 JSONL rows (11 policy x prior_tag arms x 100). Total 2500. All keys distinct.",
+      "how": "artifacts/core/replay/episodes.csv (keyed family,seed,start,target,policy); 300 files in artifacts/lazysp/panel/shards/*.json.gz (each one episode, field 'row'); artifacts/scale/replay_rows.jsonl.gz (keyed policy,prior_tag,family,seed,start,target)"
+    },
+    {
+      "id": "cert_rates",
+      "claim": "certification at budget 1000, family all: q2c 78/100, q2c_nomodel 96/100, collective_shared 78/100, collective_isolated 77/100, greedy 8/100",
+      "verdict": "confirmed",
+      "computed": "q2c 78/100, q2c_nomodel 96/100, collective_shared 78/100, collective_isolated 77/100, greedy 8/100. All 11 policies matched: random 21, uncertainty 13, directed 32, collective_shared_rr 78, collective_shared_c 96, collective_isolated_c 65.",
+      "how": "artifacts/core/replay/episodes.csv: counted rows per 'policy' where certificate in {open,blocked} AND float(assays)<=1000 AND censored=='False'; denominator = row count per policy. Compared with artifacts/core/replay/table_primary.csv columns certified/episodes at family=all, budget=1000: zero mismatches."
+    },
+    {
+      "id": "false_certificates",
+      "claim": "zero false certificates in every arm",
+      "verdict": "confirmed",
+      "computed": "Certificates issued: core 642, LazySP 241, prior 861 = 1744. Rows with a certificate and correct != True: 0 in all three. Same 0 using verified_by_full_data. Unresolved rows (458/59/239) issue no certificate and leave correct blank.",
+      "how": "Correctness is encoded in the 'correct' column (certificate truth vs full-data ground truth), with 'verified_by_full_data' as a second independent flag; 'certificate' holds open/blocked when issued and is empty/null otherwise. Files: artifacts/core/replay/episodes.csv, artifacts/lazysp/panel/shards/*.json.gz, artifacts/scale/replay_rows.jsonl.gz"
+    },
+    {
+      "id": "lazysp_96",
+      "claim": "LazySP certifies 96/100 at budget 1000, and the gain over q2c is concentrated in one endpoint pair",
+      "verdict": "confirmed",
+      "computed": "alternate 96/100, forward 96/100, reverse 49/100. Both 96-arms resolve 20/20 on each of VFVS->AIKG/ALKG/CLKG/VLKG and 16/20 on the family-A pairs. q2c: ALKG 3/20, AIKG 19/20, CLKG 20/20, VLKG 20/20, family-A 16/20. 18 episodes resolved by LazySP but not q2c: 17 VFVS->ALKG, 1 VFVS->AIKG.",
+      "how": "Recomputed from the 300 raw per-episode shards artifacts/lazysp/panel/shards/*.json.gz ('row' object: certificate, assays, censored, start, target, policy); same rule as check 2. Shards agree row-for-row with artifacts/lazysp/results/episodes.csv (0/300 differences) and with resolved@1000 in artifacts/lazysp/results/table_primary.csv. q2c per-pair counts from artifacts/core/replay/episodes.csv, matched episode-wise on (family,seed,start,target). Matches docs/lazysp.md lines 154-155."
+    },
+    {
+      "id": "trpb_counts",
+      "claim": "193,170 source rows, 159,129 measured non-stop genotypes, 871 imputed-only, zero overlap",
+      "verdict": "could-not-check",
+      "computed": "Raw CSVs absent, so counts not recomputed from source. Internal consistency of the stated counts holds exactly: 34,041 + 159,129 = 193,170; 159,129 + 871 = 160,000 = 20^4; 160,000 - 159,129 = 871 = imputed rows; overlap field = 0. artifacts/core/audit.json carries the identical seven counts.",
+      "how": "data/ holds only manifest.json; data/raw/ does not exist (gitignored, fetched by scripts/fetch_data.py line 28 RAW = ROOT/'data'/'raw'); no simplified_AA.csv / summary_AA.csv / KNN_imputed_TrpB.csv anywhere in the checkout. Arithmetic checked over artifacts/demo.json source.counts, cross-read against artifacts/core/audit.json counts."
+    }
+  ],
+  "notes": [
+    "Nothing was downloaded. The three TrpB source CSVs named in data/manifest.json are absent from the checkout, and a filesystem-wide search of this machine for simplified_AA.csv returned no match, so check 5 verifies arithmetic consistency only, not the counts themselves.",
+    "artifacts/core/replay/shards/ is gitignored and absent, so for the core arm the per-episode episodes.csv is the lowest-level file available; LazySP was recomputed from its 300 genuinely raw per-episode shards, which match its episodes.csv exactly.",
+    "Each core/prior episode row is a single run at bmax=1000; budget-100/250/500/1000 columns are cuts on the 'assays' column of the same row, not separate runs.",
+    "The 1,100 prior-follow-up episodes include two 'none'-prior control arms (200 episodes) whose recomputed counts are identical to the core q2c (78/100) and collective_shared (78/100) arms, so they are re-runs of core configurations rather than new problems.",
+    "The 2,500 episodes cover only 24 distinct endpoint pairs (20 family-A pairs x 1 seed-set, plus 4 family-B pairs x 20 seeds per policy). The project states this itself; it is not 2,500 independent biological problems.",
+    "The LazySP advantage is not broad: on the 20 family-A pairs LazySP and q2c resolve the same 16 and abstain on the same 4, and 17 of the 18 LazySP-only resolutions are the single pair VFVS->ALKG.",
+    "Zero false certificates is a check against the project's own full-data ground truth recorded in the episode rows ('correct', 'verified_by_full_data'); it was not re-derived from the source landscape, which is absent."
+  ]
+}

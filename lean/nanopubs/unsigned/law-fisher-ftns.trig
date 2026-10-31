@@ -1,0 +1,71 @@
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <https://schema.org/> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/math-law/fisher-ftns> a delphi:Concept, skos:Concept ;
+    rdfs:label "Fisher's fundamental theorem of natural selection (partial-change form) (Lean 4, kernel-checked)" ;
+    dct:description "For one haploid or clonal locus with fixed fitnesses, one round of selection raises mean fitness by exactly the variance in fitness divided by the mean fitness." ;
+    dct:source "The Genetical Theory of Natural Selection (1930)" ;
+    skos:notation "\\Delta_{NS}\\bar{w} = V_A(w)/\\bar{w} (discrete generations); \\left.\\frac{d\\bar{m}}{dt}\\right|_{NS} = V_A(m) for Malthusian fitness m" ;
+    skos:definition """/-- **Fisher's fundamental theorem of natural selection** (haploid locus, partial change). The change in mean fitness over one generation of selection, with fitnesses held fixed, equals the variance in fitness divided by the mean fitness. -/
+theorem fisher_fundamental_theorem {p w : ι → ℝ} (hp : IsFreq p)
+    (hmean : 0 < meanFitness p w) :
+    meanFitness (select p w) w - meanFitness p w = variance p w / meanFitness p w"""^^delphi:lean4 ;
+    schema:programmingLanguage "Lean 4" ;
+    delphi:leanDeclaration "Delphi.meanFitness" ;
+    delphi:leanTheorem "Delphi.fisher_fundamental_theorem", "Delphi.fisher_fundamental_theorem'", "Delphi.mean_fitness_nondecreasing" ;
+    delphi:leanVerified "true"^^xsd:boolean ;
+    skos:scopeNote "One haploid or clonal locus with finitely many types, fitnesses held fixed (partial change). In that population the variance in fitness is the additive genetic variance. The diploid average-effect version is not formalised." ;
+    rdfs:comment "Status: kernel-checked (Lean 4 accepted the module with zero sorry and standard axioms only). Not expert-validated. Does not establish: anything about organisms. The theorem is exact inside the stated model and silent outside it; strict neutrality, constant population size, Wright-Fisher reproduction and independent mutant fates (Kimura), fixed fitnesses and haploid inheritance (Fisher), equal fecundity and a 1:1 sex ratio (Maynard Smith) are assumptions written in the module header, not conclusions. Kernel-checked is not expert-validated: no human expert has validated these statements. Whether the Lean statement faithfully renders the paper is a separate assessment record, and so far only one assessor provider has run." ;
+    rdfs:seeAlso <https://github.com/fractastical/delphisci/blob/main/lean/Delphi/Fisher.lean>, <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/lean.json>, <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/> .
+  <https://w3id.org/delphi/resource/claim/fisher-ftns> dct:conformsTo <https://w3id.org/delphi/resource/math-law/fisher-ftns> ;
+    delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/lean-kernel-check-fisher-ftns> .
+  <https://w3id.org/delphi/resource/evidence/lean-kernel-check-fisher-ftns> a delphi:EvidenceItem ;
+    rdfs:label "Lean 4 kernel accepted Delphi.fisher_fundamental_theorem with zero sorry and standard axioms, and rejected 1 deliberately broken variant(s)" ;
+    dct:description "Build receipt. Lean (version 4.35.0, x86_64-w64-windows-gnu, commit eb6cafb7290e8bd5f2937522d8d804f58f02bafc, Release); toolchain leanprover/lean4:v4.35.0; Mathlib v4.35.0 (56a005855ea17e0b0958f73ec801ae140b0a1679). lake build exit 0 in 5.6 s with 0 errors; 0 sorry in lean/Delphi/Fisher.lean (128 lines). #print axioms for Delphi.fisher_fundamental_theorem, Delphi.fisher_fundamental_theorem', Delphi.mean_fitness_nondecreasing: Classical.choice, Quot.sound, propext only (Lean's standard axioms; no sorryAx). Mutation evidence (lean/mutate.mjs, 2026-10-31T13:49:55.871Z): 1 deliberate change(s) to the statement or the model were each rejected by the compiler: [fisher-no-division] Statement changed to claim the change in mean fitness equals the variance itself, not the variance divided by mean fitness. Rejected with 3 error(s): fisher-no-division.lean:100:67: error: unsolved goals Controls: 3 of 3 unmodified modules accepted by the same command." ;
+    dct:subject <https://w3id.org/delphi/resource/math-law/fisher-ftns> ;
+    rdfs:comment "This evidence item establishes that the stated theorem follows from the stated model. Does not establish: anything about organisms. The theorem is exact inside the stated model and silent outside it; strict neutrality, constant population size, Wright-Fisher reproduction and independent mutant fates (Kimura), fixed fitnesses and haploid inheritance (Fisher), equal fecundity and a 1:1 sex ratio (Maynard Smith) are assumptions written in the module header, not conclusions. Kernel-checked is not expert-validated: no human expert has validated these statements. Whether the Lean statement faithfully renders the paper is a separate assessment record, and so far only one assessor provider has run." ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/lean.json>, <https://github.com/fractastical/delphisci/blob/main/lean/mutations.json>, <https://github.com/fractastical/delphisci/blob/main/lean/Delphi/Audit.lean> .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> ;
+    prov:wasDerivedFrom <https://github.com/fractastical/delphisci/blob/main/lean/Delphi/Fisher.lean> , <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/lean.json> , <https://github.com/fractastical/delphisci/blob/main/lean/mutations.json> .
+  <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> a prov:SoftwareAgent ;
+    rdfs:label "delphisci lean thread (Claude Fable 5.1 writing the Lean modules and this builder; the Lean kernel, not the model, checked the proofs)" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/model/claude-fable-5-1> a delphi:LanguageModel ;
+    rdfs:label "Claude Fable 5.1" ;
+    dct:identifier "claude-fable-5-1" .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-10-31T14:02:17.431Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> ;
+    rdfs:comment "Owner ORCID not yet set: the key owner passes --owner <orcid> to lean/nanopubs/build.mjs at signing time; until then no human is named in this record." ;
+    rdfs:label "Fisher's fundamental theorem of natural selection (partial-change form): machine-checked in Lean 4" ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType <https://w3id.org/delphi/ontology/Concept> ;
+    rdfs:comment "Hand-authored in Delphi ontology v2.0 terms (https://w3id.org/delphi/ontology/) by the builder, not created from a template. The template that would otherwise apply as Provenance template is <https://w3id.org/np/RAaYeFYF-Cz2bM5S1wPQsnvs5X6BBxsphL03UkbVZ1lcA>. Its published copy carries no legacy probknow IRI (checked 2026-10-31); it was consulted but not instantiated, so no template is declared. A template-conformance checker will therefore report no template declared." ;
+    rdfs:comment "Hand-authored in Delphi ontology v2.0 terms (https://w3id.org/delphi/ontology/) by the builder, not created from a template. The template that would otherwise apply as Pubinfo template is <https://w3id.org/np/RAtKj9bCnB4gUe0E9k-WhffQFSEWd9Ve2hrVllYoLuOB0>. Its published copy still uses legacy w3id.org/probknow IRIs (2 occurrences when checked on 2026-10-31), and its required statements cannot be instantiated from v2.0 terms, so it was not used and no template is declared. A template-conformance checker will therefore report no template declared." ;
+    npx:introduces <https://w3id.org/delphi/resource/math-law/fisher-ftns> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/math-population-genetics-and-evolutionary-theory> .
+  <https://w3id.org/delphi/resource/domain/math-population-genetics-and-evolutionary-theory> rdfs:label "math-population-genetics-and-evolutionary-theory" .
+}

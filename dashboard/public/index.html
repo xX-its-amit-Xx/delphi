@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DELPHI Mission Control</title>
+<meta name="description" content="Centralized intelligence dashboard for DELPHI at the ScienceClaw hackathon: candidate laws of biology, the evidence, the agent swarm, and the plan.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M16 6v20M6 16h20' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--accent-ink:#fff;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--viol:#6b4fb3;--soft:#eef2ef;--shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+h1,h2,h3{line-height:1.2;margin:0 0 .5em}
+h1{font-size:clamp(1.6rem,4vw,2.4rem)} h2{font-size:1.5rem} h3{font-size:1.1rem}
+p{margin:.4em 0 .8em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;gap:12px;align-items:center;overflow-x:auto;padding-top:8px;padding-bottom:8px;white-space:nowrap}
+.brand{font-weight:700;margin-right:8px}
+nav a{display:inline-block;padding:4px 10px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.9rem}
+nav a:hover,nav a.on{background:var(--soft);color:var(--ink)}
+#themeBtn{margin-left:auto}
+button,.btn{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px;border-radius:8px}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+section{padding:36px 0;border-bottom:1px solid var(--line)}
+.lede{color:var(--mute);max-width:70ch;font-size:1.05rem}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.card h3{margin-top:0}
+.kpi{font-size:2rem;font-weight:700;line-height:1}
+.kpi small{display:block;font-size:.8rem;font-weight:400;color:var(--mute);margin-top:6px}
+.chip{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;border:1px solid var(--line);background:var(--soft);color:var(--mute)}
+.chip.ok{color:var(--ok);border-color:var(--ok)} .chip.bad{color:var(--bad);border-color:var(--bad)} .chip.warn{color:var(--warn);border-color:var(--warn)} .chip.viol{color:var(--viol);border-color:var(--viol)}
+details{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:8px 0;padding:0}
+details>summary{cursor:pointer;padding:10px 14px;font-weight:600;list-style:none}
+details>summary::before{content:"\25B8";display:inline-block;margin-right:8px;transition:transform .15s;color:var(--accent)}
+details[open]>summary::before{transform:rotate(90deg)}
+details>.in{padding:2px 16px 14px}
+.term{border-bottom:1.5px dotted var(--accent);cursor:help;color:inherit}
+.term:hover{background:var(--soft)}
+#drawer{position:fixed;right:0;top:0;bottom:0;width:min(420px,100vw);background:var(--panel);border-left:1px solid var(--line);box-shadow:var(--shadow);transform:translateX(105%);transition:transform .2s;z-index:40;overflow:auto;padding:18px}
+#drawer.open{transform:none}
+#drawer .x{float:right}
+.tip{position:fixed;z-index:50;max-width:300px;background:var(--ink);color:var(--bg);padding:8px 10px;border-radius:8px;font-size:.85rem;pointer-events:none;display:none}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600}
+.scroll{overflow-x:auto}
+.bar{height:10px;border-radius:5px;background:var(--soft);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent)}
+label.row{display:flex;gap:10px;align-items:center;margin:6px 0;font-size:.92rem}
+label.row span.n{min-width:130px}
+input[type=range]{flex:1;accent-color:var(--accent)}
+input[type=text],input[type=search],select,input[type=number]{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
+canvas{max-width:100%;border:1px solid var(--line);border-radius:8px;background:#000;image-rendering:pixelated}
+svg text{fill:var(--ink);font-family:inherit}
+.mute{color:var(--mute)} .small{font-size:.85rem}
+.pill-row{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.toggle button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+.steps>li{counter-increment:s;position:relative;padding:10px 14px 10px 54px;border:1px solid var(--line);background:var(--panel);border-radius:10px;margin:8px 0}
+.steps>li::before{content:counter(s);position:absolute;left:12px;top:10px;width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700}
+.quote{border-left:3px solid var(--accent);padding:2px 12px;color:var(--mute);margin:8px 0}
+.hero{padding:40px 0 24px}
+.cd{font-variant-numeric:tabular-nums;font-size:1.6rem;font-weight:700}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.82rem;color:var(--mute)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}
+footer{padding:30px 0;color:var(--mute);font-size:.88rem}
+@media (max-width:640px){label.row{flex-wrap:wrap}label.row span.n{min-width:100%}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <span class="brand">DELPHI &middot; Mission Control</span>
+  <nav id="nav">
+    <a href="start/">Start here</a><a href="deck/">Deck</a><a href="#threads">Threads</a><a href="evolve/">Enzymes</a><a href="#story">Story</a><a href="#plan">Plan</a><a href="#claims">Claims</a><a href="#evidence">Evidence</a><a href="#labs">Labs</a><a href="#swarm">Swarm</a><a href="#hack">Hackathon</a><a href="#team">Team</a><a href="#organism">Text-to-organism</a><a href="#species">Species</a><a href="#holdout">Holdout</a><a href="#risks">Risks</a><a href="#analogies">Analogies</a><a href="#recs">Recommendations</a><a href="#sources">Sources</a>
+  </nav>
+  <button id="themeBtn" title="Toggle light or dark">Theme</button>
+</div></header>
+
+<main class="wrap">
+
+<div class="hero">
+  <h1>Can we find the laws of biology, and prove them?</h1>
+  <p class="lede">DELPHI reads the great thinkers who tried to put mathematics into biology, turns each of their claims into a small public record, checks what real data says, and keeps the survivors. This page is the shared map of that effort, built for the ScienceClaw hackathon at MIT. Dotted words are clickable.</p>
+  <div class="grid g4" id="kpis"></div>
+  <div class="card" style="margin-top:14px">
+    <div class="small mute">Time left until the stated end of hacking (Sunday Nov 1, 1:00 PM; the event site gives no time zone, this assumes Boston time)</div>
+    <div class="cd" id="countdown">&hellip;</div>
+    <div class="small mute" id="statusline"></div>
+  </div>
+</div>
+
+<section id="threads"><h2>Threads: who is working on what</h2>
+<p class="lede">Each thread is its own Claude session with its own sub-dashboard. This panel reads the status file each one writes. Stale or missing updates show up here, which is the point.</p>
+<div id="threadGrid" class="grid g3"></div></section>
+
+<section id="story"><h2>The story in six beats</h2>
+<p class="lede">Read this section and you can explain the whole project at a dinner table. Open any drop-down to go deeper.</p>
+<ol class="steps prose">
+ <li><b>Biology has no Newton.</b> Physics has a short list of laws. Biology has enormous amounts of data and few statements that are both general and exact. A <i>fundamental theorem of biology</i> would be a statement that holds across organisms, scales and systems, written precisely enough to be tested.
+  <details><summary>Why is that hard?</summary><div class="in">Living things are historical accidents, so a rule that holds in one lineage can fail in another. Many "laws" are true only under assumptions the original author never wrote down. Fisher's fundamental theorem is the standing example: it is a theorem under a narrow reading and false under a broad one, and it was argued over for decades. The repo records both readings.</div></details></li>
+ <li><b>The old masters already tried.</b> Darwin (1859), D'Arcy Thompson (1917), Fisher, Turing (1952), Kimura, Hamilton, Maynard Smith, and Wolfram (2002) each made claims that could in principle be checked. We extracted <span id="nClaims">880</span> of them, each with a verbatim quote and page citation, so nothing is paraphrased from memory.</li>
+ <li><b>Every claim becomes a <span class="term" data-t="nanopublication">nanopublication</span>.</b> A nanopublication is a tiny, signed, citable record of one assertion, its provenance, and its publication info. That makes a claim queryable by machines and challengeable by anyone.</li>
+ <li><b>Then we ask: can data settle it?</b> Two AI assessors from different companies score each claim for <span class="term" data-t="dataset-resolvability">dataset resolvability</span>. Claims that can be tested get a <span class="term" data-t="pre-registration">pre-registered</span> test against public data. So far four have been run: two refuted, one supported, one mixed. The honest headline is that 876 claims have had no data test yet.</li>
+ <li><b>Survivors are formalized.</b> A claim that holds is written as a theorem in <span class="term" data-t="Lean 4">Lean 4</span>, a proof checker. A proof shows the conclusion follows from the assumptions. It does not show living things obey the assumptions, so evidence and proof are kept separate on purpose.</li>
+ <li><b>Finally, use the laws.</b> Theorems that survive become the rules of a simulator that explores new evolutionary pathways and, as a stretch goal, a <span class="term" data-t="text-to-organism">text-to-organism</span> tool: describe an organism or function, get a multi-scale blueprint and a genetic sketch.</li>
+</ol>
+<div class="card" style="margin-top:12px"><b>Where the project is today (from the repo, not from hope):</b> <span id="whereNow"></span></div>
+</section>
+
+<section id="plan"><h2>The plan: seven steps, forward and backward</h2>
+<p class="lede">The team's plan runs from reading to simulating. Because a model is only as honest as its test, we also run it backward: decide the held-out data first, then work toward the claims it can judge.</p>
+<div class="pill-row toggle" id="dirToggle"><button class="on" data-d="f">Forward (1 &rarr; 7)</button><button data-d="b">Backward (7 &rarr; 1)</button></div>
+<ol class="steps prose" id="planSteps"></ol>
+<details><summary>Step 3 has a hard problem: one claim, many meanings</summary><div class="in prose">
+<p>Your proposal is to enumerate every plausible interpretation of a claim and test the most likely first. The repo already contains the pattern. For Fisher's fundamental theorem the key-claims file records an interpretation that is a theorem and one that is false:</p>
+<table><tr><th>Reading</th><th>Status</th><th>Why</th></tr>
+<tr><td>Partial change: effects of alleles and environment held fixed (Price 1972, Ewens 1989)</td><td><span class="chip ok">proved</span></td><td>Follows from the algebra of average effects.</td></tr>
+<tr><td>Total change in mean fitness</td><td><span class="chip bad">false in general</span></td><td>Fails under dominance, epistasis, frequency dependence, or a changing environment.</td></tr></table>
+<p class="small mute">Proposed schema for any claim: <code>interpretations: [{id, reading, prior, operationalization, dataset, status}]</code>, ordered by prior, with the posterior updated by each test. This is a proposal, not yet in the ontology.</p></div></details>
+</section>
+
+<section id="claims"><h2>The claim map</h2>
+<p class="lede">All <span class="n880"></span> extracted claims. Every number below is computed from the claim graph the collaborators' server publishes. Hover a dot to read the claim, click to pin it.</p>
+<div class="grid g2">
+ <div class="card"><h3>Who said it</h3><div id="chThinker"></div></div>
+ <div class="card"><h3>What has been done to them</h3><div id="chStatus"></div>
+  <p class="small mute">"Untested" means no data test has been run. "Proved" marks claims that are mathematical theorems under stated assumptions, per the key-claims file. That is a statement about logic, not about organisms, and only the ones the Lean thread lists have been machine-checked.</p></div>
+</div>
+<div class="card" style="margin-top:14px"><h3>Truth score vs. testability</h3>
+ <p class="small mute">Each dot is a claim. Vertical: the average probability an AI assessor assigned to it being true. Horizontal: how testable the assessors thought it is with existing data. The left column holds claims with no testability score, which includes all 321 Wolfram claims. Truth scores are model opinions, not evidence.</p>
+ <div class="pill-row toggle" id="scatterBy"><button class="on" data-k="thinker">Color by thinker</button><button data-k="status">by status</button><button data-k="kind">by kind</button></div>
+ <svg id="scatter" viewBox="0 0 760 360" style="width:100%;height:auto"></svg>
+ <div id="scatterLegend" class="legend"></div>
+ <div id="scatterPin" class="small" style="margin-top:8px"></div></div>
+<div class="card" style="margin-top:14px"><h3>The ideas on a timeline</h3><svg id="timeline" viewBox="0 0 760 150" style="width:100%;height:auto"></svg><p class="small mute">Year of each source work, sized by number of extracted claims. Hover a dot for details; colors match the thinker legend above.</p></div>
+<div class="card" style="margin-top:14px"><h3>Browse and search claims</h3>
+ <div class="pill-row"><input type="search" id="q" placeholder="Search text, e.g. fixation, spiral, rule 110" style="flex:1;min-width:200px"><select id="fThinker"></select><select id="fStatus"></select><select id="fKind"></select><select id="fSort"><option value="truth">Highest truth score</option><option value="testability">Most testable</option><option value="year">Oldest first</option></select></div>
+ <div class="small mute" id="qcount"></div><div id="claimList"></div>
+ <button id="moreBtn" style="margin-top:8px">Show more</button></div>
+</section>
+
+<section id="evidence"><h2>Evidence: what real data has said so far</h2>
+<p class="lede">Each test was pre-registered, then run on public data. Compare the verdict with what the AI assessors expected: that gap is the project's first calibration check. With four tests it proves nothing statistically, but it shows the method works.</p>
+<div id="testCards" class="grid g2"></div>
+<p id="calib" class="card small"></p>
+<details><summary>Why "refuted" is good news</summary><div class="in prose">A pipeline that can only confirm is advertising. Two of four Thompson tests came back against him, with the pass and fail thresholds written down before looking. That is what makes the supported claim believable. Claims are tested as the author stated them, and any modern reinterpretation is recorded in the result.</div></details>
+</section>
+
+<section id="labs"><h2>Labs: play with the ideas</h2>
+<p class="lede">Five of the theorists' core ideas, running live in your browser. Move the sliders and watch what changes.</p>
+<div class="grid g2">
+ <div class="card"><h3>1. Turing's pattern engine</h3>
+  <p class="small prose">Two <span class="term" data-t="reaction-diffusion">chemicals that react and spread</span> can turn a smooth blob into spots, stripes or mazes. This is the Gray-Scott model. Click the canvas to drop a seed.</p>
+  <canvas id="gsCanvas" width="160" height="160" style="width:100%;max-width:420px;aspect-ratio:1"></canvas>
+  <div class="pill-row" id="gsPresets"></div>
+  <label class="row"><span class="n">Feed rate F: <b id="gsFv"></b></span><input type="range" id="gsF" min="0.01" max="0.09" step="0.0005"></label>
+  <label class="row"><span class="n">Kill rate k: <b id="gsKv"></b></span><input type="range" id="gsK" min="0.04" max="0.075" step="0.0005"></label>
+  <button id="gsReset">Reset</button></div>
+ <div class="card"><h3>2. Wolfram's one-line universes</h3>
+  <p class="small prose">A <span class="term" data-t="cellular automaton">cellular automaton</span> updates each cell from its two neighbors by a lookup rule. 256 rules exist. Rule 30 looks random, rule 90 draws triangles, rule 110 is <span class="term" data-t="Rule 110">computationally universal</span>.</p>
+  <canvas id="caCanvas" width="241" height="160" style="width:100%;aspect-ratio:241/160"></canvas>
+  <div class="pill-row" id="caPresets"></div>
+  <label class="row"><span class="n">Rule number</span><input type="number" id="caRule" min="0" max="255" value="30" style="width:90px"></label>
+  <label class="row"><span class="n">Start</span><select id="caStart"><option value="one">One black cell</option><option value="rand">Random row</option></select></label></div>
+ <div class="card"><h3>3. Drift vs. selection (Kimura)</h3>
+  <p class="small prose">A variant starts at 10% of the population. Will it take over? <span class="term" data-t="genetic drift">Chance</span> dominates in small populations and <span class="term" data-t="selection coefficient">selection</span> in large ones. Thin lines are simulated populations.</p>
+  <svg id="wfSvg" viewBox="0 0 400 220" style="width:100%;height:auto;background:var(--soft);border-radius:8px"></svg>
+  <label class="row"><span class="n">Population N: <b id="wfNv"></b></span><input type="range" id="wfN" min="10" max="400" step="10" value="100"></label>
+  <label class="row"><span class="n">Advantage s: <b id="wfSv"></b></span><input type="range" id="wfS" min="0" max="0.1" step="0.005" value="0"></label>
+  <button class="primary" id="wfRun">Run 40 populations</button> <div class="small" id="wfOut" style="margin-top:6px"></div></div>
+ <div class="card"><h3>4. Thompson's shell, in 3D</h3>
+  <p class="small prose">A shell grows by <span class="term" data-t="gnomon">adding a shape similar to itself</span> along a <span class="term" data-t="logarithmic spiral">logarithmic spiral</span>. Three numbers describe it (Raup's model). Drag to rotate.</p>
+  <div id="shell3d" style="width:100%;aspect-ratio:4/3;background:#10201f;border-radius:8px;overflow:hidden;touch-action:none"></div>
+  <label class="row"><span class="n">Expansion W: <b id="shWv"></b></span><input type="range" id="shW" min="1.2" max="6" step="0.05" value="2.5"></label>
+  <label class="row"><span class="n">Axis offset D: <b id="shDv"></b></span><input type="range" id="shD" min="1.1" max="4" step="0.05" value="1.6"></label>
+  <label class="row"><span class="n">Translation T: <b id="shTv"></b></span><input type="range" id="shT" min="0" max="5" step="0.1" value="2"></label>
+  <p class="small mute prose">In this model the shape never changes as it grows. The real-data test on 179 ammonoid series found shape indices changed by 50% or more in 94% of them, so the strict version of Thompson's claim was <b>refuted</b>.</p></div>
+ <div class="card"><h3>5. Hamilton's rule</h3>
+  <p class="small prose"><span class="term" data-t="Hamilton's rule">Helping a relative pays</span> when relatedness times benefit exceeds cost.</p>
+  <label class="row"><span class="n">Relatedness r: <b id="haRv"></b></span><input type="range" id="haR" min="0" max="1" step="0.0625" value="0.5"></label>
+  <label class="row"><span class="n">Benefit B: <b id="haBv"></b></span><input type="range" id="haB" min="0" max="10" step="0.5" value="4"></label>
+  <label class="row"><span class="n">Cost C: <b id="haCv"></b></span><input type="range" id="haC" min="0" max="10" step="0.5" value="1"></label>
+  <div id="haOut" style="margin:10px 0;font-size:1.15rem;font-weight:700"></div>
+  <div class="pill-row" id="haPresets"></div>
+  <p class="small mute">The repo marks the related haplodiploidy hypothesis for the origin of eusociality as refuted, even though the rule itself is proved.</p></div>
+</div>
+</section>
+
+<section id="swarm"><h2>The swarm: emperor, king, queens, workers</h2>
+<p class="lede">The hackathon scores <b>decentralized agency</b> (20%) and <b>collective capability</b> (25%). A swarm that is only a hierarchy of prompts scores poorly on the first. So the design below makes the top layers control <i>structure</i>, not content, and lets queens act on their own.</p>
+<div class="grid g2">
+ <div class="card"><h3>Roles</h3><table class="prose">
+  <tr><th>Emperor</th><td>Decides the swarm's shape: how many kings, how many queens per king, who may talk directly, and each agent's context budget. Never reads science content.</td></tr>
+  <tr><th>King</th><td>Manages content across domains. When a queen stagnates, forces a <b>serendipity</b> prompt (analogy to law, art, music, healthcare&hellip;) or a switch to a new field.</td></tr>
+  <tr><th>Queen</th><td>Owns one sub-domain and explores it with real specifics. Spawns workers.</td></tr>
+  <tr><th>Worker</th><td>Does one verifiable unit: extract, assess, test, formalize, lint, publish, write a dashboard panel.</td></tr></table>
+  <p class="small mute" id="swarmNote"></p></div>
+ <div class="card"><h3>Serendipity roulette</h3><p class="small">The king's anti-stagnation tool. Spin to get a random outside field and a forced analogy question.</p><button class="primary" id="spin">Spin</button><div id="spinOut" style="margin-top:10px"></div></div>
+</div>
+<div class="card" style="margin-top:14px"><h3>Watch the emperor and king work</h3>
+ <label class="row"><span class="n">Tick: <b id="tickV"></b></span><input type="range" id="tick" min="0" max="12" value="0"></label>
+ <svg id="orgSvg" viewBox="0 0 760 330" style="width:100%;height:auto"></svg>
+ <div class="legend"><span><i style="background:var(--ok)"></i>exploring</span><span><i style="background:var(--warn)"></i>slowing</span><span><i style="background:var(--bad)"></i>stagnant</span><span>Dashed line: peer link granted by emperor</span></div>
+ <div id="feed" class="small" style="margin-top:8px;max-height:220px;overflow:auto"></div></div>
+<div class="card" id="armsCard" style="margin-top:14px;display:none"><h3>Measured: single agent vs. isolated vs. centralized vs. decentralized</h3>
+ <p class="small mute" id="armsNote"></p><div class="scroll"><table id="armsTable"></table></div><div id="armsVerdicts" class="small" style="margin-top:8px"></div>
+ <img src="t/swarm/figure-verified.svg" alt="Verified datasets out of 20 for each of four arms, primary run and replicate side by side" style="width:100%;height:auto;margin-top:10px;border-radius:8px;background:#fff">
+ <p class="small mute">One run per arm so far, 20 claims, so small differences are not evidence. Full caveats, replicates and the pre-registration are on <a href="t/swarm/index.html">the swarm sub-dashboard</a>.</p></div>
+<div class="card" id="enzymeCross" style="margin-top:14px"><h3>The same question, answered the other way, on an enzyme</h3>
+ <p class="small">We ran this comparison twice, in two different worlds, and got opposite answers. Our claim swarm found that a group beats one agent. The sister project on <a href="evolve/">enzyme evolution</a> ran five specialists against one planner on a measured protein landscape and found <b>no collective advantage at all</b>: sharing evidence scored 78 of 100 episodes, isolating the same five scored 77, and a single planner also scored 78. The best arm in that benchmark is one planner with its model prior switched off, at 96.</p>
+ <p class="small">The difference is what each experiment varied. Their specialists are deterministic code that cannot forget or fabricate, so sharing adds nothing &mdash; every member computes the same thing. Ours are language models with a context limit, and the single agent lost mainly by running out of room and leaving answers blank. Collaboration paid where the bottleneck was attention, and paid nothing where it was not. A team claiming collective capability should say which of the two it is in.</p>
+ <p class="small mute">Their benchmark is the better-controlled of the two: deterministic arms, 100 episodes, and every decision re-checked against the full data. Our own recount of it is on <a href="evolve/#verify">the enzyme page</a>, including the finding that 17 of the 18 episodes their strong baseline wins are a single endpoint pair.</p>
+ <p class="small"><a href="evolve/" class="chip">Enzyme evolution: routes, certificates and two negative results &rarr;</a></p></div>
+<details><summary>How the swarm will prove "collective capability"</summary><div class="in prose">
+<p>The rubric asks for a simple comparison: multi-agent vs. single-agent, collaborative vs. isolated, or decentralized vs. centralized. Plan: fix one task, for example "take 20 claims and produce a pre-registered test plan with a verified dataset for each". Run it once with one agent and once with the swarm. Score both on verified-dataset rate, fabricated-identifier rate (must be zero), and time. If the swarm does not win, report that honestly; the judges ask for evidence, not for a particular result.</p></div></details>
+</section>
+
+<section id="hack"><h2>Hackathon intelligence</h2>
+<p class="lede">ScienceClaw: Internet of Agents, MIT Media Lab, Oct 30 to Nov 1, 2026. Everything here is from the organizers' site and resource PDF, read today.</p>
+<div class="grid g2">
+ <div class="card"><h3>Score yourself against the rubric</h3>
+  <p class="small mute">Weights are the organizers'. The 0 to 10 sliders are your own guess; the organizers publish no scale.</p><div id="rubric"></div><div class="kpi" id="rubricTotal" style="margin-top:10px"></div></div>
+ <div class="card"><h3>Prizes</h3><ul>
+  <li><b>E14 Fund Prize:</b> $50K SAFE, no cap, no discount, on incorporating an E14-backable startup.</li>
+  <li><b>Three NVIDIA DGX Sparks</b></li><li><b>Formlabs Form Studio 1</b> printer</li><li><b>alphaXiv:</b> $500 of OpenResearch GPU credits</li><li>More to be announced.</li></ul>
+  <p class="small mute">Not published: how prizes map to criteria, how many winners, and what artifacts to submit beyond final slides.</p>
+  <h3>Judges</h3><p class="small">Avijit Ghosh (Hugging Face), Desiree Plata (MIT), Yilun Du (Harvard), Riken Shah (xAI), Ian Ferguson (Formlabs), Nikita Fedik (NVIDIA).</p></div>
+</div>
+<div class="card" style="margin-top:14px"><h3>Compute and credits available to teams</h3><div class="scroll"><table>
+<tr><th>Resource</th><th>What the organizers' PDF says</th></tr>
+<tr><td>NVIDIA Brev</td><td>$150 credit per member (a team of 3 to 5 pools $450 to $750). GPUs from L4 to H200. One one-time coupon per registered email.</td></tr>
+<tr><td>Dell Pro Max GB10 ("DGX Spark")</td><td>Five on site, 128 GB GPU memory. Ask in the NVIDIA Discord channel and explain why it fits.</td></tr>
+<tr><td>NVIDIA frameworks</td><td>ALCHEMI (chemistry and materials), BioNeMo (life science), NeMo (training agents and models), Nemotron.</td></tr>
+<tr><td>Claude API</td><td>$100 per participant in the Claude Console. Not usable on claude.ai or a Pro/Max plan.</td></tr>
+<tr><td>Nebius Scientific AI Platform</td><td>One login per team. Closed beta, 65 models used as skills, including AlphaFold3 and Boltz-2, plus OpenMM and AMBER. 10 GB bucket and an MCP endpoint for your agents.</td></tr>
+<tr><td>Nebius shared H100s</td><td>16 H100s shared by all teams. Jobs queue up to 30 minutes then fail. 1 to 8 GPUs per job, but one GPU per team is requested.</td></tr>
+<tr><td>Google AI Studio and Cloud</td><td>Tier 1 Gemini key, 32 vCPUs and 500 GB SSD per account, Cloud Run for demos. At most 2 accounts per team or the team loses prize eligibility. Accounts auto-delete Sunday night.</td></tr>
+<tr><td>OpenAI</td><td>$50 API credit per participant.</td></tr></table></div>
+<p class="small mute">Redemption links are deliberately not shown here. The PDF says anyone sharing them outside the event is disqualified, and this page is public.</p></div>
+<div class="card" style="margin-top:14px"><h3>Schedule</h3><div class="scroll"><table>
+<tr><th>When</th><th>What</th></tr>
+<tr><td>Fri 6:30 PM</td><td>NVIDIA: Agentic Methods for ALCHEMI and BioNeMo</td></tr>
+<tr><td>Sat 10:00 AM</td><td>Formlabs PreForm API demo</td></tr>
+<tr><td>Sat 2:00 to 6:00 PM</td><td>Mentor sessions with Reactorfield</td></tr>
+<tr><td><b>Sun 1:00 PM</b></td><td><b>End of hacking, final slides due</b></td></tr>
+<tr><td>Sun 2:30 PM</td><td>Presentations and judging</td></tr>
+<tr><td>Sun 4:30 PM</td><td>Awards and closing</td></tr></table></div>
+<p class="small mute">Teams are 2 to 5 people, all in person. The organizers allow +10 bonus points for capabilities that materially strengthen other teams, for example a tool or dataset another team reuses. Our public MCP server and this dashboard are candidates.</p></div>
+</section>
+
+<section id="team"><h2>Team and anecdotal evidence</h2>
+<p class="lede">Evidence is graded on this page. <span class="chip">anecdote</span> means what a person on the team said. <span class="chip ok">repo</span> means a file or commit you can open. <span class="chip viol">proposal</span> means an idea not yet built.</p>
+<div class="grid g3">
+ <div class="card"><b>Joel Dietz</b><br><span class="small mute">Runs agent swarms for claim extraction via Cursor. 32 of the repo's 43 commits are under this name; the other 11 are from Cursor Agent.</span></div>
+ <div class="card"><b>Kavita Kulkarni</b><br><span class="small mute">Team lead. Principal scientist at the Chan Zuckerberg Biohub, working on Virtual Cell efforts.</span></div>
+ <div class="card"><b>Amit Shenoy</b><br><span class="small mute">Evolutionary biology design; rare disease mechanism prediction with agents at the Broad Institute. Set this project&rsquo;s direction and holds the publishing and commit decisions.</span></div>
+ <div class="card"><b>Ashley</b><br><span class="small mute">Software engineer at Knowledge Pixels, the nanopublication company. Software side.</span></div>
+ <div class="card"><b>Chris</b><br><span class="small mute">Allen Institute, 25 years of experience at Microsoft. More theoretical.</span></div>
+</div>
+<div class="card" style="margin-top:14px"><h3>What the team has said and done</h3><div class="scroll"><table>
+<tr><th>Evidence</th><th>Grade</th><th>Source</th></tr>
+<tr><td>Two threads map onto the team&rsquo;s own working domains rather than being chosen arbitrarily: the virtual-cell and multi-scale framing behind text-to-organism, and the agent-driven mechanism prediction behind the claim-test pipeline.</td><td><span class="chip">anecdote</span></td><td>Team roles, Oct 31</td></tr>
+<tr><td>"We're interested in text-to-organism creation": describe an organism or function, get a topological representation at body, organ system, organ, tissue and cell scales, and a predicted genetic makeup.</td><td><span class="chip">anecdote</span></td><td>Team description, Oct 31</td></tr>
+<tr><td>A species inventory was discussed internally. The knowledge base is Knowledge Pixels nanopublications.</td><td><span class="chip">anecdote</span></td><td>Team description, Oct 31</td></tr>
+<tr><td>Six-step plan: extract claims, assess resolvability, resolve, record in Lean, promote to theorems, simulate. Step 7: curate held-out phylogenetic or deep mutational scanning data.</td><td><span class="chip">anecdote</span></td><td>Team description, Oct 31</td></tr>
+<tr><td>Five agents proposed in team chat: extraction, theorem formulation, dataset collection, publishing, simulation with BioNeMo. A repo issue argues the harness assignments are partly backwards and that an independent assessor stage is missing.</td><td><span class="chip viol">proposal</span></td><td>Issue #17 (team chat, Oct 30, 11:12 PM)</td></tr>
+<tr><td>A self-bot posting to Discord was auto-banned after one message. Use an official bot.</td><td><span class="chip">anecdote</span> <span class="chip ok">repo</span></td><td>Issue #15</td></tr>
+<tr><td>880 claims extracted; 16 proved, 2 refuted, 1 partial; 4 claim tests run.</td><td><span class="chip ok">repo</span></td><td>Claim graph built 2026-10-31 03:41</td></tr></table></div>
+<p class="small mute">Still to collect from people: Kavita&rsquo;s prior Virtual Cell results and whether any are reusable here, what Chris considers the strongest theoretical claim, Ashley&rsquo;s view on registry limits, and whether any real genome data for the organism inventory exists. These are questions only the team can answer.</p></div>
+<div class="card" style="margin-top:14px"><h3>Issues in the collaborators' repo</h3><div id="issueList" class="small"></div></div>
+</section>
+
+<section id="organism"><h2>Text-to-organism: what is realistic</h2>
+<p class="lede">The idea: type "a small freshwater animal that regenerates its limbs" and get a nested blueprint from whole body down to cell types, plus a guess at its genome. Here is what that would take and how to make it testable.</p>
+<div class="grid g2">
+ <div class="card"><h3>The five scales</h3>
+  <svg viewBox="0 0 400 230" style="width:100%;height:auto" id="scalesSvg"></svg>
+  <p class="small mute">Click a level. Each row is a graph node type; the edges (part-of, develops-from, expresses) are what a nanopub knowledge base can hold.</p><div id="scaleInfo" class="small"></div></div>
+ <div class="card"><h3>Honest feasibility</h3><ul class="prose">
+  <li><b>Doable in 24 hours:</b> a text-to-blueprint tool that returns a tissue and cell-type hierarchy from an existing ontology, with every node linked to a source.</li>
+  <li><b>Doable as a test:</b> predict which gene families a <i>held-out species</i> has from its described traits, scored by leaving out whole clades.</li>
+  <li><b>Not credible in 24 hours:</b> designing a viable full genome. Treat any such output as a sketch, labeled as such.</li>
+  <li><b>Chimera idea:</b> fusing a fly and a fish is plausible at the level of shared modules, not whole genomes. Mouse <i>Pax6</i> can trigger eye development in fruit flies (Halder, Callaerts and Gehring, 1995), which is why module-level swaps are a real research direction.</li></ul></div>
+</div>
+<div class="card" style="margin-top:14px"><h3>BioNeMo models the team's own issue lists</h3><div class="scroll"><table>
+<tr><th>Task</th><th>Models named in issue #14</th></tr>
+<tr><td>Structure prediction</td><td>OpenFold3, Boltz-2, OpenFold2, AlphaFold2 and Multimer, ESMFold</td></tr>
+<tr><td>Protein design</td><td>RFdiffusion, RFD4-Proteina, ProteinMPNN</td></tr>
+<tr><td>Embeddings</td><td>ESM2-650M</td></tr>
+<tr><td>Genomics</td><td>Evo 2 (40B, 7B)</td></tr>
+<tr><td>Small molecules</td><td>GenMol, MolMIM, DiffDock</td></tr></table></div>
+<p class="small mute">Per issue #14, ESM2 and ESMFold have free hosted endpoints; the rest need a GPU. Not yet smoke-tested by anyone in this session.</p></div>
+<details><summary>Species inventory and LeanBio</summary><div class="in prose">
+<p><b>Species inventory.</b> The repo's organism agents have resolved every animal Darwin and Thompson mention to a taxon identifier and public datasets, merged into one inventory. The <a href="#species">Species</a> section lets you browse it, see which taxa have genomes, and pick a clade to hold out.</p>
+<p><b>LeanBio.</b> A probabilistic Lean would state claims such as "mutant fixation probability equals 1/(2N)" with explicit assumptions and distributions, so a proof records what is assumed about the population. Lean's math library has probability-mass-function support to start from. The team's own rule applies: a Lean file that proves generic arithmetic instead of the stated law is a stub and must not be published.</p></div></details>
+</section>
+
+<section id="species"><h2>Species inventory</h2>
+<p class="lede">Every animal that Darwin and Thompson name, resolved to a real taxon, linked to the claims that mention it and to the genome data that exists for it. It is the seed of the text-to-organism evaluation set: you can only score a genome prediction for a species whose genome you hold out.</p>
+<div class="grid g3" id="invKpis"></div>
+<p class="small mute" id="invMeta"></p>
+<div class="grid g2" style="margin-top:14px">
+ <div class="card"><h3>Where the taxa sit</h3><p class="small mute">Click a class to filter the table below.</p><div id="invClass"></div></div>
+ <div class="card"><h3>A genome-ready holdout, by clade</h3><p class="small prose">Hold out a whole class, train on the rest, and score <span class="term" data-t="text-to-organism">text-to-organism</span> predictions against genomes the model never saw. These classes have species with a NCBI-designated reference genome:</p><div id="invEval"></div></div>
+</div>
+<div class="card" style="margin-top:14px"><h3>Browse the inventory</h3>
+ <div class="pill-row"><input type="search" id="iq" placeholder="Search a name, family or order" style="flex:1;min-width:180px"><select id="iClass"></select><select id="iRank"></select><select id="iProj"><option value="">Both books or either</option><option value="both">In both books</option><option value="darwin-origin">Darwin only</option><option value="thompson-growth-form">Thompson only</option></select><select id="iGen"><option value="">Any genome status</option><option value="ref">Has reference genome</option><option value="any">Has any assembly</option><option value="none">No assembly</option></select></div>
+ <div class="small mute" id="iCount"></div><div id="iList"></div>
+ <div class="pill-row"><button id="iMore">Show more</button><a class="btn" href="species-inventory.csv" download style="text-decoration:none">Download CSV</a></div></div>
+<div class="card" style="margin-top:14px"><h3>What this inventory is not</h3><ul id="invGaps" class="small"></ul></div>
+</section>
+
+<section id="holdout"><h2>Working backward: the holdout comes first</h2>
+<p class="lede">If we invent a law and then pick the data that agrees with it, we have learned nothing. So step 7 goes first: freeze data that no agent will see while building.</p>
+<ol class="steps prose">
+ <li><b>Freeze the exam.</b> Choose held-out sets before any simulator exists. Record download URL, retrieval time, size and SHA-256, as the repo's claim-test rules already require.
+  <details><summary>Candidate sources (to be verified before use)</summary><div class="in small">Protein mutation effects: deep mutational scanning collections such as ProteinGym and MaveDB. Species relationships: the Open Tree of Life and TimeTree. Occurrence and taxonomy: GBIF and NCBI Taxonomy. Reference genomes: Ensembl and NCBI Datasets. These are well-known public resources, but this session has not downloaded or checked any of them, and the repo's rules forbid citing a dataset that was not verified.</div></details></li>
+ <li><b>Split by lineage, not at random.</b> Leave out whole clades, so a model cannot succeed by finding a close cousin in training. This is the biological version of the blind-target idea behind the CASP protein-structure competition.</li>
+ <li><b>Write the prediction before the answer.</b> Each theorem must state what it forbids on the held-out set, and the pass and fail thresholds go in a committed file first.</li>
+ <li><b>Score against a dumb baseline.</b> A law that cannot beat "predict the mean" or "copy the nearest relative" has not earned the word.</li>
+ <li><b>Then relax:</b> test the same law on a second organism's own data, never borrowed from another species, as the project README demands.</li></ol>
+</section>
+
+<section id="risks"><h2>Failure modes, anticipated</h2>
+<div class="grid g2" id="riskGrid"></div>
+</section>
+
+<section id="analogies"><h2>Other fields faced this problem</h2>
+<p class="lede">Each row is a challenge DELPHI faces and how another field solved it. The king's serendipity prompts draw on the same well.</p>
+<div id="analogyList"></div>
+</section>
+
+<section id="recs"><h2>Recommendations for the next hours</h2>
+<p class="lede">Ranked by how much each moves the judging rubric per hour of effort. Each has the part that makes it fun.</p>
+<div id="recList"></div>
+</section>
+
+<section id="sources"><h2>Sources and what is verified</h2>
+<p class="lede">Nothing on this page is presented as more certain than it is.</p>
+<div class="card"><div class="scroll"><table id="srcTable">
+<tr><th>Fact</th><th>Source</th><th>Status</th></tr>
+</table></div></div>
+<div class="card" style="margin-top:14px"><h3>Known gaps</h3><ul>
+<li>The Drive PDF's image-only pages (3, 7, 10, 12, 14) were not readable as text. Anything only shown as a graphic there is missing.</li>
+<li>The swarm panel is a simulation of the control logic. No LLM agents have produced its metrics yet.</li>
+<li>The claim graph's registry field is empty for the 321 Wolfram claims even though commits say they were published to the test registry; the graph may lag.</li>
+<li>Nothing here is a literature survey of mathematical biology beyond the eight thinkers in the repo.</li></ul></div>
+<div class="card" style="margin-top:14px"><h3>Ask the claims directly</h3>
+<p class="small">The collaborator's server is live (tested today, version 0.2.0). Streamable HTTP, no auth, 120 requests per minute per IP.</p>
+<pre style="overflow:auto;background:var(--soft);padding:10px;border-radius:8px;font-size:.85rem">claude mcp add --transport http delphisci https://delphisci-mcp.fly.dev/mcp</pre></div>
+</section>
+</main>
+
+<footer><div class="wrap">Built <span id="builtAt"></span> from <a href="https://github.com/fractastical/delphi">fractastical/delphi</a>. Page data refreshes only when the dashboard is rebuilt and redeployed.</div></footer>
+
+<aside id="drawer" aria-live="polite"></aside>
+<div class="tip" id="tip"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="glossary.js"></script>
+<script src="content.js"></script>
+<script src="app.js"></script>
+<script src="labs.js"></script>
+<script src="inventory.js"></script>
+</body>
+</html>

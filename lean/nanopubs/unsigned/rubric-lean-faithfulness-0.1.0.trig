@@ -1,0 +1,69 @@
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <https://schema.org/> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/concept/lean-faithfulness-0.1.0> a delphi:Concept, skos:Concept ;
+    rdfs:label "Faithfulness of a Lean 4 statement to a stated law of biology, v0.1.0 (lean-faithfulness/0.1.0)" ;
+    dct:description "Scores whether a Lean 4 theorem STATEMENT (hypotheses and conclusion, never the proof) faithfully formalises a law as its source states it. The assessor sees only the claim text, the theorem's docstring and statement, and the definitions it uses; not the proof, not the module header, not the builder's notes. Each dimension is a graded judgement in {0, 0.25, 0.5, 0.75, 1} (delphi:hasScore), never a probability; there is no weighted overall score. Verdicts: faithful = the statement is the law; faithful-with-narrower-scope = a correct but narrower instance of the law, with the narrowing stated; unfaithful = different quantities, hidden assumptions, or trivial content. The project requires assessments from two providers other than the builder's before a verdict travels with a published claim." ;
+    rdfs:seeAlso <https://github.com/fractastical/delphisci/blob/main/lean/assessment/prompt.md> ;
+    skos:narrower <https://w3id.org/delphi/resource/concept/lean-faithfulness-0.1.0-same-quantities>, <https://w3id.org/delphi/resource/concept/lean-faithfulness-0.1.0-assumptions-match>, <https://w3id.org/delphi/resource/concept/lean-faithfulness-0.1.0-scope-stated>, <https://w3id.org/delphi/resource/concept/lean-faithfulness-0.1.0-not-trivial> .
+  <https://w3id.org/delphi/resource/concept/lean-faithfulness-0.1.0-same-quantities> a delphi:Concept, skos:Concept ;
+    rdfs:label "Same quantities (lean-faithfulness 0.1.0)" ;
+    dct:description "Do the Lean quantities (the definitions shown) correspond to the quantities named in the law? 1 = each named quantity has a matching definition with the same meaning; 0 = the theorem is about different quantities." ;
+    skos:broader <https://w3id.org/delphi/resource/concept/lean-faithfulness-0.1.0> .
+  <https://w3id.org/delphi/resource/concept/lean-faithfulness-0.1.0-assumptions-match> a delphi:Concept, skos:Concept ;
+    rdfs:label "Assumptions match (lean-faithfulness 0.1.0)" ;
+    dct:description "Are the hypotheses of the Lean theorem the law's stated assumptions, no more and no less? Score down for hidden extra assumptions that make the theorem easier, or for missing assumptions that the law needs." ;
+    skos:broader <https://w3id.org/delphi/resource/concept/lean-faithfulness-0.1.0> .
+  <https://w3id.org/delphi/resource/concept/lean-faithfulness-0.1.0-scope-stated> a delphi:Concept, skos:Concept ;
+    rdfs:label "Scope stated (lean-faithfulness 0.1.0)" ;
+    dct:description "If the Lean theorem covers a special case (e.g. neutral only, haploid only), is that narrowing explicit in the docstring, and is it the case the law actually needs?" ;
+    skos:broader <https://w3id.org/delphi/resource/concept/lean-faithfulness-0.1.0> .
+  <https://w3id.org/delphi/resource/concept/lean-faithfulness-0.1.0-not-trivial> a delphi:Concept, skos:Concept ;
+    rdfs:label "Not trivial (lean-faithfulness 0.1.0)" ;
+    dct:description "Is the theorem's content the law, rather than generic arithmetic dressed in the law's names? A theorem whose hypotheses already contain the conclusion, or whose conclusion follows by rearranging a definition, scores 0." ;
+    skos:broader <https://w3id.org/delphi/resource/concept/lean-faithfulness-0.1.0> .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> ;
+    prov:wasDerivedFrom <https://github.com/fractastical/delphisci/blob/main/lean/assessment/prompt.md> .
+  <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> a prov:SoftwareAgent ;
+    rdfs:label "delphisci lean thread (Claude Fable 5.1 writing the Lean modules and this builder; the Lean kernel, not the model, checked the proofs)" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/model/claude-fable-5-1> a delphi:LanguageModel ;
+    rdfs:label "Claude Fable 5.1" ;
+    dct:identifier "claude-fable-5-1" .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-10-31T14:02:17.431Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> ;
+    rdfs:comment "Owner ORCID not yet set: the key owner passes --owner <orcid> to lean/nanopubs/build.mjs at signing time; until then no human is named in this record." ;
+    rdfs:label "Rubric lean-faithfulness/0.1.0" ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType <https://w3id.org/delphi/ontology/Concept> ;
+    rdfs:comment "Hand-authored in Delphi ontology v2.0 terms (https://w3id.org/delphi/ontology/) by the builder, not created from a template. The template that would otherwise apply as assertion template is <https://w3id.org/np/RAbjeus1yO4SqlPLnpIWNLS6nvW0DGF3879tVduuE0y00>. Its published copy still uses legacy w3id.org/probknow IRIs (10 occurrences when checked on 2026-10-31), and its required statements cannot be instantiated from v2.0 terms, so it was not used and no template is declared. A template-conformance checker will therefore report no template declared." ;
+    rdfs:comment "Hand-authored in Delphi ontology v2.0 terms (https://w3id.org/delphi/ontology/) by the builder, not created from a template. The template that would otherwise apply as Provenance template is <https://w3id.org/np/RAaYeFYF-Cz2bM5S1wPQsnvs5X6BBxsphL03UkbVZ1lcA>. Its published copy carries no legacy probknow IRI (checked 2026-10-31); it was consulted but not instantiated, so no template is declared. A template-conformance checker will therefore report no template declared." ;
+    rdfs:comment "Hand-authored in Delphi ontology v2.0 terms (https://w3id.org/delphi/ontology/) by the builder, not created from a template. The template that would otherwise apply as Pubinfo template is <https://w3id.org/np/RAtKj9bCnB4gUe0E9k-WhffQFSEWd9Ve2hrVllYoLuOB0>. Its published copy still uses legacy w3id.org/probknow IRIs (2 occurrences when checked on 2026-10-31), and its required statements cannot be instantiated from v2.0 terms, so it was not used and no template is declared. A template-conformance checker will therefore report no template declared." ;
+    npx:introduces <https://w3id.org/delphi/resource/concept/lean-faithfulness-0.1.0> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/math-population-genetics-and-evolutionary-theory> .
+  <https://w3id.org/delphi/resource/domain/math-population-genetics-and-evolutionary-theory> rdfs:label "math-population-genetics-and-evolutionary-theory" .
+}

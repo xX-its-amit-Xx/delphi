@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swarm vs single agent</title>
+<meta name="description" content="A pre-registered, measured comparison: the same 20 claims and the same budget given to one agent, to isolated parallel workers, to an emperor/king/queen hierarchy, and to a decentralized shared board. Every number is read from a file.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M16 6v20M6 16h20' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--accent-ink:#fff;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--viol:#6b4fb3;--soft:#eef2ef;--shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+h1,h2,h3{line-height:1.2;margin:0 0 .5em}
+h1{font-size:clamp(1.6rem,4vw,2.4rem)} h2{font-size:1.5rem} h3{font-size:1.1rem}
+p{margin:.4em 0 .8em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;gap:12px;align-items:center;overflow-x:auto;padding-top:8px;padding-bottom:8px;white-space:nowrap}
+.brand{font-weight:700;margin-right:8px;text-decoration:none;color:var(--ink)}
+nav a{display:inline-block;padding:4px 10px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.9rem}
+nav a:hover{background:var(--soft);color:var(--ink)}
+#themeBtn{margin-left:auto}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px;border-radius:8px}
+button:hover{border-color:var(--accent)}
+section{padding:36px 0;border-bottom:1px solid var(--line)}
+.lede{color:var(--mute);max-width:70ch;font-size:1.05rem}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.card h3{margin-top:0}
+.kpi{font-size:2rem;font-weight:700;line-height:1}
+.kpi small{display:block;font-size:.8rem;font-weight:400;color:var(--mute);margin-top:6px}
+.chip{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;border:1px solid var(--line);background:var(--soft);color:var(--mute);vertical-align:middle}
+.chip.ok{color:var(--ok);border-color:var(--ok)} .chip.bad{color:var(--bad);border-color:var(--bad)} .chip.warn{color:var(--warn);border-color:var(--warn)} .chip.viol{color:var(--viol);border-color:var(--viol)} .chip.acc{color:var(--accent);border-color:var(--accent)}
+.mute{color:var(--mute)} .small{font-size:.88rem}
+details{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:8px 0;padding:0}
+details>summary{cursor:pointer;padding:10px 14px;font-weight:600;list-style:none}
+details>summary::before{content:"\25B8";display:inline-block;margin-right:8px;transition:transform .15s;color:var(--accent)}
+details[open]>summary::before{transform:rotate(90deg)}
+details>.in{padding:2px 16px 14px}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+.bars{display:grid;grid-template-columns:max-content 1fr max-content;gap:6px 10px;align-items:center}
+.bars .lab{font-size:.9rem}
+.bars .val{font-size:.9rem;font-variant-numeric:tabular-nums;color:var(--ink)}
+.bar{height:14px;border-radius:0 4px 4px 0;background:var(--soft);overflow:hidden;position:relative}
+.bar>i{display:block;height:100%;background:var(--accent);border-radius:0 4px 4px 0}
+.bar.faint>i{opacity:.35}
+.cell{display:inline-block;min-width:98px;padding:2px 8px;border-radius:8px;font-size:.78rem;border:1px solid var(--line);cursor:pointer;background:var(--panel);color:var(--ink);white-space:nowrap}
+.cell.v{border-color:var(--ok);color:var(--ok)} .cell.r{border-color:var(--warn);color:var(--warn)} .cell.u{border-color:var(--bad);color:var(--bad)} .cell.f{background:var(--bad);color:#fff;border-color:var(--bad)} .cell.e{color:var(--mute);border-style:dashed;cursor:default}
+.cell:hover{box-shadow:var(--shadow)}
+#drawer{position:fixed;right:0;top:0;bottom:0;width:min(520px,100vw);background:var(--panel);border-left:1px solid var(--line);box-shadow:var(--shadow);transform:translateX(105%);transition:transform .2s;z-index:40;overflow:auto;padding:18px}
+#drawer.open{transform:none}
+#drawer .x{float:right}
+#drawer dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;font-size:.9rem}
+#drawer dt{color:var(--mute)} #drawer dd{margin:0;overflow-wrap:anywhere}
+.feed{max-height:420px;overflow:auto;font-size:.86rem}
+.feed>div{padding:4px 0;border-bottom:1px solid var(--line)}
+.feed time{color:var(--mute);font-variant-numeric:tabular-nums;margin-right:6px}
+pre{white-space:pre-wrap;font-size:.84rem;background:var(--soft);padding:10px;border-radius:8px;overflow:auto}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.verdict{font-size:1.05rem}
+@media (max-width:640px){.bars{grid-template-columns:max-content 1fr}.bars .val{grid-column:2;justify-self:end}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+<a class="brand" href="../../index.html">&larr; DELPHI Mission Control</a>
+<nav><a href="#verdict">Verdict</a><a href="#score">Scoreboard</a><a href="#exp2">Experiment 2</a><a href="#matrix">Claim by claim</a><a href="#swarm">Inside the swarm</a><a href="#method">Method and caveats</a><a href="#when">When it helps</a></nav>
+<button id="themeBtn" aria-label="Toggle theme">Theme</button>
+</div></header>
+
+<main class="wrap">
+<section id="verdict">
+<h1>Does a swarm beat one agent?</h1>
+<p class="lede">The same 20 historical claims from Darwin and Thompson were given to four set-ups with the same model, tools, instructions and budget. Each had to write a pre-registered test plan per claim that names <b>one real public dataset</b>. A script then checked every URL and DOI they wrote. Nothing here was typed by hand: every number is read from <a href="results.json">results.json</a>.</p>
+<p id="status"><span class="chip">loading</span></p>
+<div class="grid g2" id="verdicts"></div>
+</section>
+
+<section id="score">
+<h2>Scoreboard</h2>
+<p class="lede">"Verified" means the dataset's landing page answered with HTTP 200 <i>and</i> mentions the dataset's name or publisher. "Fabricated" means a URL or DOI that does not exist (404, or a DOI the DOI system has never heard of). The rule was fixed before the runs: an arm beats another only with zero fabricated identifiers and at least 2 more verified datasets.</p>
+<div class="grid g2">
+<div class="card"><h3>Verified datasets, out of 20</h3><div class="bars" id="barsV"></div></div>
+<div class="card"><h3>Wall-clock minutes</h3><div class="bars" id="barsM"></div><p class="small mute">First worker launched to last worker finished. Agent-minutes (all calls added up) are in the table.</p></div>
+</div>
+<div class="card scroll" style="margin-top:14px"><table id="scoreTable"></table></div>
+</section>
+
+<section id="exp2">
+<h2>Experiment 2: the same four arms, web fetch required</h2>
+<p class="lede">Experiment 1's biggest caveat was that no arm used the web tools, so it measured feedback loops over memory. Experiment 2 reran the four arms on 20 new claims (no bird claims) with the rule that an agent must fetch the dataset's landing page before naming it. "Verified" here needs three things: the checker verifies the page, the run log shows the agent fetched that URL, and the page title the agent reports matches what the checker saw. Hard cost cap, no overshoot possible. Prediction and rules were written first: <a href="PREREG.md">PREREG.md</a>, section "Experiment 2".</p>
+<p id="status2"><span class="chip">loading</span></p>
+<div class="grid g2" id="verdicts2"></div>
+<div class="grid g2" style="margin-top:14px">
+<div class="card"><h3>Verified datasets, out of 20 (fetch required)</h3><div class="bars" id="barsV2"></div></div>
+<div class="card scroll"><table id="scoreTable2"></table></div>
+</div>
+<div class="legend" style="margin-top:14px"><span class="cell v">verified</span><span class="cell r">page ok, no fetch evidence</span><span class="cell u">unverified</span><span class="cell f">fabricated id</span><span class="cell e">no dataset / untouched</span></div>
+<div class="card scroll"><table id="matrixTable2"></table></div>
+</section>
+
+<section id="matrix">
+<h2>Claim by claim (experiment 1)</h2>
+<p class="lede">One row per claim, one column per arm. Click a cell to read the plan that arm wrote and what the verifier found.</p>
+<div class="legend"><span class="cell v">verified</span><span class="cell r">URL ok, name not on page</span><span class="cell u">unverified</span><span class="cell f">fabricated id</span><span class="cell e">no dataset / untouched</span></div>
+<div class="card scroll"><table id="matrixTable"></table></div>
+</section>
+
+<section id="swarm">
+<h2>Inside the swarm</h2>
+<div class="grid g2">
+<div class="card"><h3>Queens, as measured</h3><p id="queensNote" class="small mute"></p><div class="scroll"><table id="queensTable"></table></div></div>
+<div class="card"><h3>What the emperor sees</h3><p id="emperorNote" class="small"></p></div>
+</div>
+<div class="grid g2" style="margin-top:14px">
+<div class="card"><h3>Centralized: king and emperor events</h3><div class="feed" id="feedC"></div></div>
+<div class="card"><h3>Decentralized: the shared board</h3><div class="feed" id="feedD"></div></div>
+</div>
+</section>
+
+<section id="method">
+<h2>Method and caveats</h2>
+<div class="grid g2">
+<div class="card"><h3>The four arms</h3>
+<table>
+<tr><th>arm</th><th>who decides</th><th>what it knows</th><th>feedback</th></tr>
+<tr><td><b>single</b></td><td>one agent, one call, all 20 claims</td><td>all three portal briefs</td><td>none from us</td></tr>
+<tr><td><b>isolated</b></td><td>20 workers in parallel, one claim each</td><td>the brief of its domain only</td><td>none: no board, no messages, no retries</td></tr>
+<tr><td><b>centralized</b></td><td>emperor sets structure, king assigns claims to queens, reviews failures, retries, escalates to a curator queen</td><td>the queen's brief only</td><td>yes, through the king</td></tr>
+<tr><td><b>decentralized</b></td><td>no planner: queens pull tickets from a shared board, post results, gaps and tips</td><td>the queen's brief plus the board</td><td>yes, through the board</td></tr>
+</table>
+<p class="small mute" style="margin-top:8px">Model <code id="modelName"></code>, tools WebFetch and WebSearch only, no file access, run from an empty directory. Budget per arm: $3.00 at list price and 45 minutes. Queen briefs: <a href="briefs.json">briefs.json</a>. Claims: <a href="claims.json">claims.json</a>.</p>
+</div>
+<div class="card"><h3>Read before quoting a number</h3>
+<ul class="small">
+<li><b>Twenty claims is small.</b> A 2-claim margin is the pre-registered minimum difference, not a significance test. One run per arm is the primary result; replicates, if any, are listed in the table.</li>
+<li><b>Verified is not "can decide the claim".</b> It means the URL resolves to a page about that dataset. Whether the dataset fits the test is a separate judgement by an assessor from another provider, not done here.</li>
+<li><b>Blocked is not fabricated.</b> Some portals (GBIF's web pages, for one) refuse every non-browser client with HTTP 403. Those count as unverified, never as fabricated.</li>
+<li><b>Not blind to birds.</b> Class Aves is the project's held-out clade. Two claims here touch birds (darwin1859-ch01-10, thompson1917-ch15-01); the agents saw them, so they cannot be blind exam items. No organism data was downloaded by any arm.</li>
+<li><b>The queens are coroutines in one Node process</b> that only interact through the board file, not separate machines.</li>
+</ul>
+<p class="small"><a href="PREREG.md">Pre-registration</a> &middot; <a href="DEVIATIONS.md">Deviations and disclosures</a> &middot; <a href="nanopubs/README.md">nanopub drafts (unsigned, 3 claims + 3 evidence items)</a> &middot; <a href="metrics.json">metrics.json</a> &middot; <a href="state.json">emperor state</a></p>
+</div>
+</div>
+<div class="card" id="when" style="margin-top:14px"><h3>When does a swarm help? A sister result says: not always</h3>
+<p class="small">A sister project, <a href="https://github.com/kganjam/delphi-evolve">delphi-evolve</a> (page: <a href="/evolve/">/evolve/</a>), ran the same four-arm design on an enzyme benchmark at an equal 1,000-assay budget over 100 episodes, with zero false certificates in every arm. Their result: five specialists sharing evidence 78/100, the same five isolated 77/100, a single planner 78/100, and a single planner with its model prior switched off 96/100. Sharing beat isolation by one episode, tied the single planner, and the best arm was one agent with less machinery. That is the opposite of the result on this page (centralized 19 and 18 against single 13 and 12).</p>
+<p class="small">Both can be right, and the difference says when to expect a gain. Their specialists are deterministic code in one process: every member computes the same thing, so sharing adds nothing. Our members are language models with a context limit, and our per-claim table shows what the single agent actually lost. In experiment 2 all 8 of its losses were blank plans (honest nulls after 13 fetches for 20 claims in one context); it named no dataset that failed verification. In experiment 1 the split was 3 blanks and 4 named datasets that did not check out. So the single agent lost mostly by running out of room, and partly (experiment 1 only) by naming worse datasets. Collaboration paid where the bottleneck was attention and paid nothing where it was not.</p>
+<p class="small">Breadth of the win, checked per item rather than by totals: the centralized arm's verified-but-single-missed claims are 6 distinct claims in experiment 1 and 7 in experiment 2 (single won back 1), not one repeated item. Their benchmark is better controlled than ours on two counts, deterministic arms and every decision re-checked against full data; ours is closer to the agents anyone actually deploys. Both belong in the comparison.</p>
+</div>
+</section>
+<p class="small mute" style="padding:18px 0">Swarm thread of the DELPHI team, ScienceClaw hack, 2026-10-31. Built from files in <code>swarm/compare/</code>; rebuild with <code>node swarm/compare/metrics.mjs &amp;&amp; node swarm/compare/publish.mjs</code>.</p>
+</main>
+
+<aside id="drawer" aria-live="polite"><button class="x" onclick="document.getElementById('drawer').classList.remove('open')">close</button><div id="drawerIn"></div></aside>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ARMS=['single','isolated','centralized','decentralized'];
+const NICE={single:'single agent',isolated:'isolated workers',centralized:'centralized swarm',decentralized:'decentralized swarm'};
+// theme
+const root=document.documentElement; let saved=null; try{saved=localStorage.getItem('theme')}catch(e){}
+if(saved) root.setAttribute('data-theme',saved);
+$('#themeBtn').onclick=()=>{const cur=root.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');const nx=cur==='dark'?'light':'dark';root.setAttribute('data-theme',nx);try{localStorage.setItem('theme',nx)}catch(e){}};
+const j=async(u)=>{try{const r=await fetch(u,{cache:'no-store'});if(!r.ok)return null;return await r.json()}catch(e){return null}};
+const t=async(u)=>{try{const r=await fetch(u,{cache:'no-store'});if(!r.ok)return null;return await r.text()}catch(e){return null}};
+const fmt=n=>n==null?'–':(Math.round(n*100)/100).toLocaleString();
+const tok=n=>n==null?'–':n>=1e6?(n/1e6).toFixed(2)+' M':n>=1e3?(n/1e3).toFixed(1)+' k':String(n);
+
+async function main(){
+ const [R,M,ST,C]=await Promise.all([j('results.json'),j('metrics.json'),j('state.json'),j('claims.json')]);
+ const claims=C?.claims||[];
+ if(!R){$('#status').innerHTML='<span class="chip warn">no results yet</span> No arm has finished. The pre-registration is in <a href="PREREG.md">PREREG.md</a>.';return;}
+ const arms=R.arms||{}; const ran=ARMS.filter(a=>arms[a]);
+ $('#modelName').textContent=ran.length?arms[ran[0]].primary.model:'(none yet)';
+ $('#status').innerHTML=`<span class="chip ${ran.length===4?'ok':'warn'}">${ran.length} of 4 arms run</span> <span class="mute small">results built ${esc(R.built.replace('T',' ').slice(0,16))} UTC` + (R.infra_failures_excluded?.length?`; ${R.infra_failures_excluded.length} run(s) excluded as infrastructure failures (no model call), see DEVIATIONS.md`:'')+`</span>`;
+ // verdict cards
+ const P=a=>arms[a]?.primary;
+ const cards=[];
+ const main1=(R.comparisons||[]).find(c=>c.a==='centralized'&&c.b==='single');
+ const sentence=c=>{ if(!arms[c.a]||!arms[c.b]) return `<span class="chip">not run yet</span> ${NICE[c.a]} vs ${NICE[c.b]}: waiting for both arms.`;
+  const A=P(c.a),B=P(c.b); const fabA=A.fabricated_identifiers,fabB=B.fabricated_identifiers;
+  let s=`<b>${NICE[c.a]}</b> verified <b>${A.verified}</b> of ${A.claims}; <b>${NICE[c.b]}</b> verified <b>${B.verified}</b>. `;
+  if(c.verdict.startsWith(c.a+' beats')) s+=`<span class="chip ok">${esc(NICE[c.a])} wins</span> by the pre-registered rule.`;
+  else if(c.verdict.startsWith(c.b+' beats')) s+=`<span class="chip bad">${esc(NICE[c.b])} wins</span> by the pre-registered rule.`;
+  else if(/fails the hard constraint/.test(c.verdict)) s+=`<span class="chip bad">no win</span> ${esc(c.verdict.split(' verified more')[0]==c.a?NICE[c.a]:NICE[c.b])} verified more but wrote a fabricated identifier, which the rule does not forgive.`;
+  else s+=`<span class="chip warn">no difference</span> (under the 2-claim margin).`;
+  if(fabA||fabB) s+=` <span class="chip bad">fabricated identifiers: ${NICE[c.a]} ${fabA}, ${NICE[c.b]} ${fabB}</span> an arm with any fails the hard constraint.`;
+  s+=` Minutes: ${fmt(A.minutes_wall)} vs ${fmt(B.minutes_wall)}. Cost: $${fmt(A.cost_usd_list)} vs $${fmt(B.cost_usd_list)}.`;
+  return s;};
+ for(const c of (R.comparisons||[])) cards.push(`<div class="card ${c===main1?'':''}"><h3>${esc(NICE[c.a])} vs ${esc(NICE[c.b])}${c===main1?' <span class="chip acc">the question asked</span>':''}</h3><p class="verdict">${sentence(c)}</p></div>`);
+ $('#verdicts').innerHTML=cards.join('');
+ // bars
+ const bar=(id,key,max,faintKey)=>{$('#'+id).innerHTML=ARMS.map(a=>{const p=P(a); if(!p) return `<div class="lab">${esc(NICE[a])}</div><div class="bar faint"><i style="width:0"></i></div><div class="val mute">not run</div>`; const v=p[key]; return `<div class="lab">${esc(NICE[a])}</div><div class="bar" title="${esc(NICE[a])}: ${fmt(v)}"><i style="width:${Math.max(1,100*v/max)}%"></i></div><div class="val">${fmt(v)}${key==='verified'?` <span class="mute">/ ${p.claims}</span>`:''}${p.fabricated_identifiers?` <span class="chip bad">${p.fabricated_identifiers} fabricated</span>`:''}</div>`}).join('')};
+ bar('barsV','verified',20);
+ bar('barsM','minutes_wall',Math.max(1,...ran.map(a=>P(a).minutes_wall)));
+ // score table
+ const rows=[['verified datasets (of 20)',p=>p.verified],['URL resolves, any match',p=>p.resolves_only],['datasets named',p=>p.dataset_named],['fabricated identifiers, any attempt (decides)',p=>p.fabricated_identifiers?`<span class="chip bad">${p.fabricated_identifiers}</span>`:'0'],['fabricated identifiers, final plans only',p=>p.fabricated_identifiers_final_plans==null?'–':p.fabricated_identifiers_final_plans?`<span class="chip bad">${p.fabricated_identifiers_final_plans}</span>`:'0'],['claims untouched',p=>p.untouched],['duplicated work (calls)',p=>p.duplicated_work],['worker calls',p=>p.calls],['attempts (plans written)',p=>p.attempts_total],['wall-clock minutes',p=>fmt(p.minutes_wall)],['agent-minutes',p=>fmt(p.minutes_agent)],['web searches / fetches by agents',p=>`${p.web_requests?.search??0} / ${p.web_requests?.fetch??0}`],['tokens in / out',p=>`${tok(p.tokens?.input)} / ${tok(p.tokens?.output)}`],['tokens cache read / written',p=>`${tok(p.tokens?.cache_read)} / ${tok(p.tokens?.cache_creation)}`],['cost at list price',p=>'$'+fmt(p.cost_usd_list)],['stopped by',p=>p.stopped_by||'finished'],['replicate runs: verified / fabricated / minutes',p=>{const r=arms[p.arm]?.replicates||[]; return r.length?r.map(x=>`${x.verified} / ${x.fabricated_identifiers?`<span class="chip bad">${x.fabricated_identifiers}</span>`:'0'} / ${fmt(x.minutes_wall)}`).join('<br>'):'<span class="mute">none yet</span>'}],['started (UTC)',p=>p.started.replace('T',' ').slice(0,19)]];
+ $('#scoreTable').innerHTML=`<tr><th></th>${ARMS.map(a=>`<th class="n">${esc(NICE[a])}</th>`).join('')}</tr>`+rows.map(([l,f])=>`<tr><td>${l}</td>${ARMS.map(a=>`<td class="n">${P(a)?f(P(a)):'<span class="mute">–</span>'}</td>`).join('')}</tr>`).join('');
+ // matrix
+ const idx={}; await Promise.all(ran.map(async a=>{idx[a]=await j(`runs/${a}/index.json`)||{}}));
+ const cls=pc=>!pc||pc.attempts===0?['e','untouched']:pc.verified?['v','verified']:pc.fabricated?.length?['f','fabricated id']:pc.resolves?['r','URL ok, name not on page']:pc.dataset_named?['u','unverified']:['e','no dataset named'];
+ const byArm={}; for(const a of ran) byArm[a]=Object.fromEntries(P(a).per_claim.map(p=>[p.claim_id,p]));
+ $('#matrixTable').innerHTML=`<tr><th>claim</th>${ARMS.map(a=>`<th>${esc(NICE[a])}</th>`).join('')}</tr>`+claims.map(c=>`<tr><td><b>${esc(c.id)}</b><br><span class="small mute">${esc(c.label)}</span></td>${ARMS.map(a=>{const pc=byArm[a]?.[c.id]; if(!arms[a]) return '<td><span class="cell e">not run</span></td>'; const [k,lab]=cls(pc); const ds=pc?.dataset; return `<td><span class="cell ${k}" data-arm="${a}" data-claim="${c.id}" title="${esc(ds?ds.publisher+': '+ds.name:lab)}">${lab}${pc&&pc.attempts>1?` ×${pc.attempts}`:''}</span>${ds?`<br><span class="small mute">${esc(ds.publisher)}</span>`:''}</td>`}).join('')}</tr>`).join('');
+ document.querySelectorAll('#matrixTable .cell[data-arm]').forEach(el=>el.onclick=()=>openPlan(el.dataset.arm,el.dataset.claim,'runs',idx,byArm,claims));
+ async function openPlan(a,cid,base,idxMap,byArmMap,claimList){
+  const atts=idxMap[a]?.[cid]||[]; const c=claimList.find(x=>x.id===cid); const pc=byArmMap[a]?.[cid];
+  let h=`<h3>${esc(NICE[a])} · ${esc(cid)}</h3><p class="small mute">${esc(c?.label||'')}</p>`;
+  if(!atts.length){h+=`<p>No plan was written for this claim by this arm${pc?.attempts===0?' (untouched)':''}.</p>`}
+  for(const at of atts){const [pl,v]=await Promise.all([j(`${base}/${a}/plans/${cid}.${at}.json`),j(`${base}/${a}/verify/${cid}.${at}.json`)]); if(!pl) continue;
+   const af=v?.agent_fetch;
+   h+=`<details ${at===atts[atts.length-1]?'open':''}><summary>attempt ${esc(at.replace('a',''))} ${v?.dataset_verified?'<span class="chip ok">verified</span>':v?.fabricated?.length?'<span class="chip bad">fabricated id</span>':'<span class="chip warn">unverified</span>'}</summary><div class="in"><dl>
+   <dt>hypothesis</dt><dd>${esc(pl.hypothesis)}</dd><dt>pass if</dt><dd>${esc(pl.pass_criterion)}</dd><dt>fail if</dt><dd>${esc(pl.fail_criterion)}</dd><dt>interpretation</dt><dd>${esc(pl.interpretation)}</dd>
+   <dt>dataset</dt><dd>${pl.dataset?`<b>${esc(pl.dataset.name)}</b> (${esc(pl.dataset.publisher)})<br><a href="${esc(pl.dataset.landing_url)}" rel="noopener" target="_blank">${esc(pl.dataset.landing_url)}</a>${pl.dataset.doi?`<br>DOI ${esc(pl.dataset.doi)}`:''}<br><span class="small mute">${esc(pl.dataset.why_it_fits)}</span>`:`<i>none</i> — ${esc(pl.no_dataset_reason||'no reason given')}`}</dd>
+   ${af?`<dt>agent's fetch</dt><dd class="small">${af.fetched_urls.length?af.fetched_urls.map(u=>`<div>${esc(u)}</div>`).join(''):'<i>no WebFetch call in this attempt</i>'}${af.reported?`<div class="mute">reported title: "${esc(af.reported.page_title)}" (status ${esc(af.reported.http_status)})</div>`:''}${af.checker_title?`<div class="mute">checker saw: "${esc(af.checker_title)}"</div>`:''}<div><span class="chip ${af.fetched_target?'ok':'bad'}">${af.fetched_target?'fetched the landing page':'did not fetch the landing page'}</span> <span class="chip ${af.title_agrees?'ok':'bad'}">${af.title_agrees?'title agrees':'title disagrees'}</span></div></dd>`:''}
+   <dt>verifier</dt><dd>${v?(v.identifiers||[]).map(i=>`<div class="small"><span class="chip ${i.class==='resolves'?'ok':i.class==='fabricated'?'bad':'warn'}">${esc(i.class)} ${i.status??''}</span> ${esc(i.url)}${i.title?` <span class="mute">· ${esc(i.title)}</span>`:''}</div>`).join('')+(v.matched_tokens?.length?`<div class="small mute">name match on: ${esc(v.matched_tokens.join(', '))}</div>`:''):'no verifier record'}</dd></dl></div></details>`;}
+  $('#drawerIn').innerHTML=h; $('#drawer').classList.add('open');
+ }
+ // ---- experiment 2: same arms, web fetch required ----
+ const [R2,C2]=await Promise.all([j('results2.json'),j('claims2.json')]);
+ const claims2=C2?.claims||[];
+ if(!R2||!Object.keys(R2.arms||{}).length){$('#status2').innerHTML='<span class="chip warn">not run yet</span> Pre-registered with a prediction in <a href="PREREG.md">PREREG.md</a> (section "Experiment 2"); no arm has finished.';}
+ else{
+  const arms2=R2.arms, ran2=ARMS.filter(a=>arms2[a]), P2=a=>arms2[a]?.primary;
+  $('#status2').innerHTML=`<span class="chip ${ran2.length===4?'ok':'warn'}">${ran2.length} of 4 arms run</span> <span class="mute small">results built ${esc(R2.built.replace('T',' ').slice(0,16))} UTC. Prediction written beforehand: centralized 18, decentralized 17, isolated 15, single 14; zero fabricated identifiers everywhere.</span>`;
+  const sent2=c=>{ if(!arms2[c.a]||!arms2[c.b]) return `<span class="chip">not run yet</span> ${NICE[c.a]} vs ${NICE[c.b]}: waiting for both arms.`;
+   const A=P2(c.a),B=P2(c.b); let s=`<b>${NICE[c.a]}</b> verified <b>${A.verified}</b> of ${A.claims} (checker-only ${A.verified_checker_only}); <b>${NICE[c.b]}</b> verified <b>${B.verified}</b> (checker-only ${B.verified_checker_only}). `;
+   if(c.verdict.startsWith(c.a+' beats')) s+=`<span class="chip ok">${esc(NICE[c.a])} wins</span>`; else if(c.verdict.startsWith(c.b+' beats')) s+=`<span class="chip bad">${esc(NICE[c.b])} wins</span>`; else if(/fails the hard constraint/.test(c.verdict)) s+=`<span class="chip bad">no win</span> a fabricated identifier blocks the win`; else s+=`<span class="chip warn">no difference</span> (under the 2-claim margin)`;
+   if(A.fabricated_identifiers||B.fabricated_identifiers) s+=` <span class="chip bad">fabricated: ${NICE[c.a]} ${A.fabricated_identifiers}, ${NICE[c.b]} ${B.fabricated_identifiers}</span>`;
+   return s+`. Minutes ${fmt(A.minutes_wall)} vs ${fmt(B.minutes_wall)}; cost $${fmt(A.cost_usd_list)} vs $${fmt(B.cost_usd_list)}.`;};
+  $('#verdicts2').innerHTML=(R2.comparisons||[]).map(c=>`<div class="card"><h3>${esc(NICE[c.a])} vs ${esc(NICE[c.b])}</h3><p class="verdict">${sent2(c)}</p></div>`).join('');
+  $('#barsV2').innerHTML=ARMS.map(a=>{const p=P2(a); if(!p) return `<div class="lab">${esc(NICE[a])}</div><div class="bar faint"><i style="width:0"></i></div><div class="val mute">not run</div>`; return `<div class="lab">${esc(NICE[a])}</div><div class="bar" title="${esc(NICE[a])}: ${p.verified}"><i style="width:${Math.max(1,100*p.verified/20)}%"></i></div><div class="val">${p.verified} <span class="mute">/ ${p.claims}</span>${p.fabricated_identifiers?` <span class="chip bad">${p.fabricated_identifiers} fabricated</span>`:''}</div>`}).join('');
+  const rows2=[['verified: checker + agent fetched + title agrees (decides)',p=>p.verified],['verified by checker only (experiment-1 rule)',p=>p.verified_checker_only],['claims where the agent fetched anything',p=>p.claims_with_agent_fetch],['datasets named',p=>p.dataset_named],['fabricated identifiers, any attempt',p=>p.fabricated_identifiers?`<span class="chip bad">${p.fabricated_identifiers}</span>`:'0'],['claims untouched',p=>p.untouched],['duplicated work (calls)',p=>p.duplicated_work],['worker calls',p=>p.calls],['web searches / fetches by agents',p=>`${p.web_requests?.search??0} / ${p.web_requests?.fetch??0}`],['wall-clock minutes',p=>fmt(p.minutes_wall)],['agent-minutes',p=>fmt(p.minutes_agent)],['tokens in / out',p=>`${tok(p.tokens?.input)} / ${tok(p.tokens?.output)}`],['cost at list price (hard cap $'+(P2(ran2[0])?.budget_usd??8)+')',p=>'$'+fmt(p.cost_usd_list)],['stopped by',p=>p.stopped_by||'finished'],['started (UTC)',p=>p.started.replace('T',' ').slice(0,19)]];
+  $('#scoreTable2').innerHTML=`<tr><th></th>${ARMS.map(a=>`<th class="n">${esc(NICE[a])}</th>`).join('')}</tr>`+rows2.map(([l,f])=>`<tr><td>${l}</td>${ARMS.map(a=>`<td class="n">${P2(a)?f(P2(a)):'<span class="mute">–</span>'}</td>`).join('')}</tr>`).join('');
+  const idx2={}; await Promise.all(ran2.map(async a=>{idx2[a]=await j(`runs2/${a}/index.json`)||{}}));
+  const byArm2={}; for(const a of ran2) byArm2[a]=Object.fromEntries(P2(a).per_claim.map(p=>[p.claim_id,p]));
+  const cls2=pc=>!pc||pc.attempts===0?['e','untouched']:pc.verified?['v','verified']:pc.fabricated?.length?['f','fabricated id']:pc.checker_verified?['r','page ok, no fetch evidence']:pc.resolves?['r','URL ok, name not on page']:pc.dataset_named?['u','unverified']:['e','no dataset named'];
+  $('#matrixTable2').innerHTML=`<tr><th>claim</th>${ARMS.map(a=>`<th>${esc(NICE[a])}</th>`).join('')}</tr>`+claims2.map(c=>`<tr><td><b>${esc(c.id)}</b><br><span class="small mute">${esc(c.label)}</span></td>${ARMS.map(a=>{const pc=byArm2[a]?.[c.id]; if(!arms2[a]) return '<td><span class="cell e">not run</span></td>'; const [k,lab]=cls2(pc); const ds=pc?.dataset; return `<td><span class="cell ${k}" data-arm="${a}" data-claim="${c.id}" title="${esc(ds?ds.publisher+': '+ds.name:lab)}">${lab}${pc&&pc.attempts>1?` ×${pc.attempts}`:''}</span>${ds?`<br><span class="small mute">${esc(ds.publisher)}</span>`:''}</td>`}).join('')}</tr>`).join('');
+  document.querySelectorAll('#matrixTable2 .cell[data-arm]').forEach(el=>el.onclick=()=>openPlan(el.dataset.arm,el.dataset.claim,'runs2',idx2,byArm2,claims2));
+ }
+ // queens
+ if(M&&M.queens?.length){$('#queensNote').textContent=`Measured from run ${M.measured_from}. Novelty = verified-dataset rate per worker attempt. Topic = share of a queen's verified datasets by data type.`;
+  $('#queensTable').innerHTML=`<tr><th>queen</th><th class="n">attempts</th><th class="n">verified</th><th class="n">novelty</th><th class="n">tokens</th></tr>`+M.queens.map(q=>`<tr><td>${esc(q.id)}</td><td class="n">${q.attempts}</td><td class="n">${q.verified}</td><td class="n">${q.novelty}</td><td class="n">${tok(q.tokens)}</td></tr>`).join('')+(M.unmeasured_queens?.length?`<tr><td colspan="5" class="small mute">Never ran, not simulated: ${esc(M.unmeasured_queens.join(', '))}</td></tr>`:'');
+ } else {$('#queensNote').innerHTML='<span class="chip warn">not measured yet</span> The centralized arm has not finished, so no queen has a measured novelty. The emperor still runs on simulated numbers and says so.';}
+ $('#emperorNote').innerHTML=ST?`<span class="chip ${ST.mode==='measured'?'ok':'warn'}">${esc(ST.mode)}</span> ${esc(ST.note)}${ST.arms?`<br><span class="small mute">state.json carries the four-arm scores under "arms".</span>`:''}`:'<span class="mute">state.json not published.</span>';
+ // feeds
+ const feed=async(a,sel,filter)=>{const txt=await t(`runs/${a}/log.jsonl`); if(!txt){$(sel).innerHTML='<span class="mute">Not run yet.</span>';return;} const ev=txt.trim().split('\n').map(l=>{try{return JSON.parse(l)}catch(e){return null}}).filter(Boolean).filter(filter);
+  $(sel).innerHTML=ev.map(e=>`<div><time>${esc(e.t.slice(11,19))}</time><span class="chip ${e.actor==='emperor'?'viol':e.actor?.startsWith('king')?'warn':e.actor==='orchestrator'||e.actor==='board'?'':'acc'}">${esc(e.actor)}</span> <b>${esc(e.action)}</b> ${esc(e.target||'')} <span class="mute">${esc(e.note||'')}</span></div>`).join('')||'<span class="mute">No events.</span>'};
+ feed('centralized','#feedC',e=>e.actor!=='orchestrator'||['stop','done'].includes(e.action));
+ feed('decentralized','#feedD',e=>['pull','pull-gap','idle','final','verified','unverified','stop','done','worker-failed'].includes(e.action));
+}
+main();
+})();
+</script>
+</body>
+</html>

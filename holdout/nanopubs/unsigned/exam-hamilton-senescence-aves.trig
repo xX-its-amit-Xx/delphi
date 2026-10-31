@@ -1,0 +1,137 @@
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix nt: <https://w3id.org/np/o/ntemplate/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix schema: <https://schema.org/> .
+@prefix spdx: <http://spdx.org/rdf/terms#> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/claim/hamilton-senescence> delphi:hasAssessment <https://w3id.org/delphi/resource/assessment/holdout-exam-hamilton-senescence-aves> ;
+    delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/holdout-exam-hamilton-senescence-aves> .
+  <https://w3id.org/delphi/resource/assessment/holdout-exam-hamilton-senescence-aves> a delphi:Assessment ;
+    rdfs:label "Held-out exam (Aves) of hamilton-senescence: inconclusive, underpowered" ;
+    delphi:evaluatesHypothesis <https://w3id.org/delphi/resource/claim/hamilton-senescence> ;
+    delphi:assessmentType "held-out-clade-exam" ;
+    delphi:hasVerdict "inconclusive" ;
+    dct:description "Status: inconclusive (underpowered). Held out on 8 bird species, the exam could not distinguish rising from flat adult mortality under Hamilton's declining force of selection: the builder's pre-registered rule needs a minimum sample of 15. The exam applied the builder's own pre-registered decision rule, including its minimum sample size, to the held-out bird rows alone, after the builder reported status complete; the assessor did not build the test. Builder's verdict on the training species: mixed. It does not establish whether adult mortality rises with age in birds: eight species cannot meet a rule written for fifteen, and the fraction is reported for the record only. It does not alter the builder's mixed verdict on the training species. It does not test the force of selection itself, only its predicted demographic signature." ;
+    delphi:evidenceAgainst "Underpowered by the builder's own rule: underpowered: 8 bird species, the pre-registered rule needs 15." ;
+    delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/holdout-exam-hamilton-senescence-aves> ;
+    prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-holdout-assessor-claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/evidence/holdout-exam-hamilton-senescence-aves> a delphi:EvidenceItem ;
+    rdfs:label "hamilton-senescence: fraction of held-out bird species with Spearman rho(age, adult mortality) > 0 = 0.6250 (n = 8; inconclusive, below the pre-registered minimum)" ;
+    dct:description "Measured on the frozen held-out roster (class Aves, frozen 2026-10-31T05:52:44.982Z, exam.json SHA-256 06b797929a27fad5b7173dbaa0c2d9d297deea478a64b7a7935f85caec430360) by running the builder's analysis.py --exam on a scratch copy of claim-tests/math-bio-theorems/hamilton-senescence (analysis.py SHA-256 7ae4746c2005fa086d022adce877569269eeff42062ef8dcb83c8f58bd03ef60; leak check exit 0; split verified). Pre-registration: the builder's pass and fail criteria were committed before download (local commit 9b73128, 2026-10-31 05:55 UTC) and amended to exclude class Aves at the holdout thread's request before any data were downloaded (local commit 6f5de70, 2026-10-31 05:57:42 UTC), after the exam was frozen at 2026-10-31T05:52:44.982Z. The criteria are quoted verbatim on the pre-registration node this item derives from." ;
+    delphi:statisticalTest "Fraction of held-out bird species whose Spearman rank correlation between age class and adult mortality is positive, from age-classified COMADRE matrices (the builder's own analysis.py --exam, unchanged)" ;
+    prov:wasDerivedFrom <https://doi.org/10.1111/1365-2656.12482> , <https://compadre-db.org/Data/Comadre> , sub:frozen-exam , sub:preregistration ;
+    rdfs:seeAlso <https://delphi-mission-control.ashenoy000.workers.dev/t/holdout/data.json> .
+  <https://w3id.org/delphi/resource/evidence/holdout-exam-hamilton-senescence-aves> schema:additionalProperty sub:status .
+  sub:status a schema:PropertyValue ;
+    schema:propertyID "status" ;
+    schema:value "inconclusive" ;
+    schema:description "Status of this evidence item in the words of holdout/EXAM.md and AGENTS.md A10" .
+  sub:preregistration a prov:Entity, prov:Plan ;
+    dct:title "Builder's pre-registered decision rule for hamilton-senescence (claim-tests/math-bio-theorems/hamilton-senescence/result.json, fields pass_criterion and fail_criterion)" ;
+    prov:generatedAtTime "2026-10-31T05:57:42Z"^^xsd:dateTime ;
+    prov:value "PASS: Pre-registered. Data: COMADRE Animal Matrix Database v4.26.4.0 (RData file served at compadre-db.org/Data/ComadreDownload; data user agreement and citation guidelines accepted). Matrix selection: MatrixCriteriaAge == 'Yes' (age-classified), MatrixSplit == 'Divided' (U and F submatrices available), MatrixComposite in {'Individual', 'Mean'}, MatrixTreatment == 'Unmanipulated', MatrixCaptivity == 'W' (wild), matrix dimension >= 5, no missing entries in U or F. For each qualifying matrix, survival of age class a is the column sum of U for class a; the last class is dropped from the trend if U has a non-zero diagonal entry there (an open-ended plus group whose survival mixes ages). Mature classes are those whose F column sum is > 0. For each species, qualifying matrices of the same dimension are averaged element-wise (so each species contributes once); species with fewer than 4 mature age classes after dropping the plus group are excluded. Rising adult mortality = Spearman rho between age-class index and mortality (1 - survival) over the mature classes is > 0. SUPPORTS if at least 80% of qualifying species show rising adult mortality AND the mean rho across species is > 0.3. AMENDMENT (2026-10-31, before any data were downloaded, at the request of the holdout thread): species of class Aves are excluded from the primary analysis and from all criteria above; bird species are held out and only reported separately, unfitted, as a holdout check. Class is taken from COMADRE's 'Class' metadata column. FAIL: Pre-registered. REFUTES if fewer than 50% of qualifying species show rising adult mortality. MIXED otherwise (50% to 80%, or >= 80% with mean rho <= 0.3). INCONCLUSIVE (underpowered) if fewer than 15 species qualify; INCONCLUSIVE (data-unavailable) if the file cannot be downloaded or read." .
+  <https://w3id.org/delphi/resource/evidence/holdout-exam-hamilton-senescence-aves> schema:additionalProperty sub:m1 .
+  sub:m1 a schema:PropertyValue ;
+    schema:propertyID "n_species" ;
+    schema:value "8"^^xsd:integer ;
+    schema:description "held-out bird species with qualifying age-classified matrices (the sample this evidence item rests on)" .
+  <https://w3id.org/delphi/resource/evidence/holdout-exam-hamilton-senescence-aves> schema:additionalProperty sub:m2 .
+  sub:m2 a schema:PropertyValue ;
+    schema:propertyID "builder_minimum_n" ;
+    schema:value "15"^^xsd:integer ;
+    schema:description "minimum species count the builder pre-registered for a verdict (INCONCLUSIVE below it)" .
+  <https://w3id.org/delphi/resource/evidence/holdout-exam-hamilton-senescence-aves> schema:additionalProperty sub:m3 .
+  sub:m3 a schema:PropertyValue ;
+    schema:propertyID "n_training_species" ;
+    schema:value "35"^^xsd:integer ;
+    schema:description "non-bird species the builder scored; the builder's verdict (mixed) rests on these" .
+  <https://w3id.org/delphi/resource/evidence/holdout-exam-hamilton-senescence-aves> schema:additionalProperty sub:m4 .
+  sub:m4 a schema:PropertyValue ;
+    schema:propertyID "n_bird_species_rising" ;
+    schema:value "5"^^xsd:integer ;
+    schema:description "held-out bird species with rising adult mortality (rho > 0)" .
+  <https://w3id.org/delphi/resource/evidence/holdout-exam-hamilton-senescence-aves> schema:additionalProperty sub:m5 .
+  sub:m5 a schema:PropertyValue ;
+    schema:propertyID "n_bird_species_falling" ;
+    schema:value "2"^^xsd:integer ;
+    schema:description "held-out bird species with falling adult mortality" .
+  <https://w3id.org/delphi/resource/evidence/holdout-exam-hamilton-senescence-aves> schema:additionalProperty sub:m6 .
+  sub:m6 a schema:PropertyValue ;
+    schema:propertyID "n_mammal_species_if_mammalia_held_out" ;
+    schema:value "20"^^xsd:integer ;
+    schema:description "power analysis: species that would be held out had Mammalia been the clade (clears the minimum of 15; that exam would have read mixed)" .
+  <https://w3id.org/delphi/resource/evidence/holdout-exam-hamilton-senescence-aves> schema:additionalProperty sub:m7 .
+  sub:m7 a schema:PropertyValue ;
+    schema:propertyID "fraction_birds_rising" ;
+    schema:value "0.625"^^xsd:double ;
+    schema:description "fraction of held-out bird species with rising adult mortality" .
+  <https://w3id.org/delphi/resource/evidence/holdout-exam-hamilton-senescence-aves> schema:additionalProperty sub:m8 .
+  sub:m8 a schema:PropertyValue ;
+    schema:propertyID "mean_spearman_rho_birds" ;
+    schema:value "0.08174827223593134"^^xsd:double ;
+    schema:description "mean Spearman rho(age class, adult mortality) across held-out bird species" .
+  sub:frozen-exam a prov:Entity ;
+    dct:title "holdout/exam.json (frozen roster and rules of the held-out exam)" ;
+    spdx:checksum sub:frozen-exam-sha ;
+    schema:contentSize "33717"^^xsd:integer ;
+    prov:generatedAtTime "2026-10-31T05:52:44Z"^^xsd:dateTime .
+  sub:frozen-exam-sha a spdx:Checksum ;
+    spdx:algorithm spdx:checksumAlgorithm_sha256 ;
+    spdx:checksumValue "06b797929a27fad5b7173dbaa0c2d9d297deea478a64b7a7935f85caec430360" .
+  sub:frozen-split a prov:Entity ;
+    dct:title "holdout/split.json (assignment of every inventory taxon to holdout, train or excluded)" ;
+    spdx:checksum sub:frozen-split-sha ;
+    schema:contentSize "279981"^^xsd:integer ;
+    prov:generatedAtTime "2026-10-31T05:52:44Z"^^xsd:dateTime .
+  sub:frozen-split-sha a spdx:Checksum ;
+    spdx:algorithm spdx:checksumAlgorithm_sha256 ;
+    spdx:checksumValue "1e57dabb9cb49dbf6dee0f007421d1d095cec86e4d1fe879e1ebde1166dea94a" .
+  <https://w3id.org/delphi/resource/agent/delphisci-holdout-assessor-claude-fable-5-1> a prov:SoftwareAgent ;
+    rdfs:label "delphisci holdout thread (session scienceclaw-93, Claude Fable 5.1): froze the held-out exam and runs it; built none of the work it examines" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/model/claude-fable-5-1> a delphi:LanguageModel ;
+    rdfs:label "Claude Fable 5.1" ;
+    dct:identifier "claude-fable-5-1" .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-holdout-assessor-claude-fable-5-1> ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/holdout/data.json> , <https://w3id.org/np/RAz7luS9K5ZqKG1eNjle3YDeV8d9pzghACXDtandgAaXE> ;
+    prov:wasGeneratedBy sub:exam .
+  sub:exam a prov:Activity ;
+    rdfs:label "node holdout/exam-results/run-claim-exam.mjs claim-tests/math-bio-theorems/hamilton-senescence (protocol: holdout/EXAM.md; rule encoded in holdout/exam-results/rules.mjs from the builder's result.json prose)" ;
+    prov:wasAssociatedWith <https://w3id.org/delphi/resource/agent/delphisci-holdout-assessor-claude-fable-5-1> ;
+    prov:used sub:frozen-exam ;
+    prov:endedAtTime "2026-10-31T00:00:00Z"^^xsd:dateTime .
+  <https://w3id.org/np/RAz7luS9K5ZqKG1eNjle3YDeV8d9pzghACXDtandgAaXE> rdfs:label "published claim nanopub for hamilton-senescence (production, 2026-10-31T00:09:56.621Z)" .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-10-31T14:13:27Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/delphisci-holdout-assessor-claude-fable-5-1> ;
+    rdfs:label "Draft: Held-out exam (Aves) of hamilton-senescence: inconclusive, underpowered" ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType delphi:Assessment ;
+    npx:introduces <https://w3id.org/delphi/resource/assessment/holdout-exam-hamilton-senescence-aves> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/math-population-genetics-and-evolutionary-theory> ;
+    rdfs:comment "Unsigned draft, not published. Built by holdout/nanopubs/build-nanopubs.mjs from files under holdout/ that are not yet committed; the resolvable copy of those files is the live sub-dashboard data file linked from the provenance. The creator is the software agent that ran the exam; the key holder's ORCID is added only when that person approves and signs. No assertion template is declared because the published Delphi templates still carry the legacy probknow namespace and this 2.0 record was not created from one. Publishing needs the key owner's approval: test registry first." ;
+    nt:wasCreatedFromProvenanceTemplate <https://w3id.org/np/RA7lSq6MuK_TIC6JMSHvLtee3lpLoZDOqLJCLXevnrPoU> ;
+    nt:wasCreatedFromPubinfoTemplate <https://w3id.org/np/RAukAcWHRDlkqxk7H2XNSegc1WnHI569INvNr-xdptDGI>, <https://w3id.org/np/RACJ58Gvyn91LqCKIO9zu1eijDQIeEff28iyDrJgjSJF8> .
+  <https://w3id.org/delphi/resource/domain/math-population-genetics-and-evolutionary-theory> rdfs:label "math-population-genetics-and-evolutionary-theory" .
+}

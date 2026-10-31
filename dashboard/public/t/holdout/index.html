@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Holdout Exam</title>
+<meta name="description" content="DELPHI holdout thread: the clade set aside before building, the rule that produced it, and the frozen exam roster.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M9 16l5 5 9-10' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--accent-ink:#fff;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--soft:#eef2ef;--shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05);
+--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--seq1:#86b6ef;--seq2:#2a78d6;--seq3:#184f95}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3);
+--s1:#3987e5;--s2:#d95926;--s3:#199e70;--seq1:#184f95;--seq2:#3987e5;--seq3:#86b6ef}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3);
+--s1:#3987e5;--s2:#d95926;--s3:#199e70;--seq1:#184f95;--seq2:#3987e5;--seq3:#86b6ef}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+h1,h2,h3{line-height:1.2;margin:0 0 .5em}
+h1{font-size:clamp(1.6rem,4vw,2.3rem)} h2{font-size:1.4rem} h3{font-size:1.05rem}
+p{margin:.4em 0 .8em}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;gap:12px;align-items:center;padding:10px 16px;flex-wrap:wrap}
+.brand{font-weight:700}
+.crumb{color:var(--mute);font-size:.9rem}
+#themeBtn{margin-left:auto}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px;border-radius:8px}
+section{padding:30px 0;border-bottom:1px solid var(--line)}
+.lede{color:var(--mute);max-width:72ch;font-size:1.05rem}
+.grid{display:grid;gap:14px}
+.g3{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.card h3{margin-top:0}
+.kpi{font-size:2rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.kpi small{display:block;font-size:.8rem;font-weight:400;color:var(--mute);margin-top:6px;line-height:1.3}
+.chip{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;border:1px solid var(--line);background:var(--soft);color:var(--mute);vertical-align:middle}
+.chip.ok{color:var(--ok);border-color:var(--ok)} .chip.bad{color:var(--bad);border-color:var(--bad)} .chip.warn{color:var(--warn);border-color:var(--warn)}
+.note{border-left:3px solid var(--warn);padding:8px 12px;background:var(--soft);border-radius:0 8px 8px 0;margin:10px 0}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;position:sticky;top:0;background:var(--panel)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.scroll{overflow:auto;max-height:520px;border:1px solid var(--line);border-radius:10px}
+ol,ul{padding-left:1.3em} li{margin:.3em 0}
+code{font-size:.9em;background:var(--soft);padding:1px 5px;border-radius:4px}
+pre{background:var(--soft);padding:10px 12px;border-radius:8px;overflow:auto;font-size:.88rem}
+/* bars */
+.stack{display:flex;height:22px;border-radius:5px;overflow:hidden;gap:2px;background:transparent;margin:8px 0 4px}
+.stack i{display:block;height:100%;border-radius:3px;min-width:2px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--mute);margin:6px 0}
+.legend b{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+.hbar{display:grid;grid-template-columns:minmax(120px,32%) 1fr 48px;gap:8px;align-items:center;font-size:.9rem;margin:4px 0}
+.hbar .t{height:12px;border-radius:0 4px 4px 0;background:var(--s1)}
+.hbar .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--mute)}
+.rows{display:grid;gap:4px}
+.row{display:grid;grid-template-columns:minmax(150px,30%) 1fr 90px;gap:8px;align-items:center;font-size:.88rem}
+.row .seg{display:flex;height:12px;gap:2px}
+.row .seg i{display:block;height:100%;border-radius:3px}
+.row .v{color:var(--mute);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tip{position:fixed;z-index:50;max-width:280px;background:var(--ink);color:var(--bg);padding:7px 10px;border-radius:8px;font-size:.84rem;pointer-events:none;display:none}
+.tbl-toggle{font-size:.85rem;margin-left:8px}
+@media (max-width:600px){.row,.hbar{grid-template-columns:1fr}.row .v,.hbar .v{text-align:left}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="../../index.html">DELPHI Mission Control</a>
+  <span class="crumb">/ Holdout exam</span>
+  <span id="stateChip" class="chip">loading</span>
+  <button id="themeBtn" type="button" aria-label="Toggle dark mode">Theme</button>
+</div></header>
+
+<section><div class="wrap">
+  <h1>The exam nobody studied for</h1>
+  <p class="lede">DELPHI wants laws that hold across organisms, not laws fitted to the organisms they were built on. So before anything was built, one whole clade was set aside. Builders work on the rest. When building stops, an assessor who built nothing re-scores every supported law on the held-out organisms with the same pre-registered pass and fail criteria.</p>
+  <p id="headline" class="lede"></p>
+  <div id="provisional" class="note" hidden></div>
+  <div class="grid g3" id="kpis"></div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>What is held out</h2>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Every organism in the inventory, by side</h3>
+      <div id="assignStack"></div>
+      <p class="crumb" id="assignText"></p>
+    </div>
+    <div class="card">
+      <h3>The rule</h3>
+      <ol id="rule"></ol>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h3>By class <span class="crumb">(held out, available for building, excluded)</span></h3>
+    <div class="legend" id="classLegend"></div>
+    <div class="rows" id="classRows"></div>
+  </div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>The exam roster</h2>
+  <p class="lede">Species-rank held-out organisms. Genome-ready means the best NCBI assembly is chromosome-level or a complete genome; NCBI's reference flag alone also marks scaffold and contig assemblies, so it is not used. Trait columns say which public tables cover the species; the values themselves are not shown here and must not be used while building.</p>
+  <div class="grid g2">
+    <div class="card"><h3>Best assembly level across the roster</h3><div id="levels"></div></div>
+    <div class="card"><h3>Trait tables covering the roster</h3><div id="traits"></div></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h3>Roster <span class="crumb" id="rosterCount"></span></h3>
+    <div class="scroll"><table id="roster"><thead><tr><th>Species</th><th>Order</th><th>NCBI taxid</th><th>Best assembly</th><th>Level</th><th>Genome-ready</th><th>AVONET</th><th>Amniote</th><th>AnAge</th><th>Elton</th><th class="n">Mentions</th><th class="n">Claims</th></tr></thead><tbody></tbody></table></div>
+  </div>
+  <details class="card" style="margin-top:14px"><summary style="cursor:pointer;font-weight:600">Higher taxa also held out (families, orders, genera, the class)</summary><p id="higher" class="crumb"></p></details>
+  <details class="card" style="margin-top:10px"><summary style="cursor:pointer;font-weight:600">Excluded from both sides</summary><ul id="excluded"></ul></details>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Claims whose organisms are birds</h2>
+  <p class="lede">These claims, from the books, name held-out organisms. A builder may not use them as evidence; an assessor can use them as exam questions.</p>
+  <div id="burned"></div>
+  <div class="scroll" style="max-height:420px"><table id="claims"><thead><tr><th>Claim</th><th>Side</th><th>Kind</th><th>Held-out organisms</th></tr></thead><tbody></tbody></table></div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Exam results so far</h2>
+  <p class="lede">Each completed claim test is re-run by this thread (which built none of them) with its bird rows as the evaluation set only, and the builder's own pre-registered rule is applied to birds alone, including the builder's minimum sample size. Protocol: <code>holdout/EXAM.md</code>.</p>
+  <div id="examResults"></div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Which clade gives the exam enough power?</h2>
+  <p class="lede">The hub asked for the clade choice to be settled with data. Each completed claim test was re-run on a scratch copy with birds held out and then with mammals held out, and the builder's own rule, including its minimum sample size, was applied to the held-out species alone. The frozen Aves split did not move; the Mammalia column is a what-if.</p>
+  <div id="power"></div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Nanopublication records</h2>
+  <p class="lede">Every finding of this thread, the inconclusive ones first, is written as a Project Delphi nanopublication: the claim in one sentence, its status in words, the evidence item with the frozen exam's checksum and the numbers as structured counts, the pre-registration, and what it does not establish. They are built from files by <code>holdout/nanopubs/build-nanopubs.mjs</code>, checked with <code>np check</code> and the Delphi lint, and stay <b>unsigned drafts</b> until the key owner decides; the test registry comes first, production only with explicit approval.</p>
+  <div id="nanopubs"></div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Rules for builders</h2>
+  <ul id="builderRules"></ul>
+  <h3>Who has touched a held-out organism? <span class="crumb">(leak check)</span></h3>
+  <p class="crumb">At each publish, <code>holdout/check-leaks.mjs</code> scans the builders' folders for the scientific names, slugs and identifiers of held-out taxa. A hit is a question, not a verdict: the file may filter the clade out or be exam material.</p>
+  <div id="leaks"></div>
+  <h3>Is the roster still frozen?</h3>
+  <p>Anyone can check from a clean checkout:</p>
+  <pre>node holdout/make-split.mjs --verify</pre>
+  <div id="checksums" class="scroll" style="max-height:300px"></div>
+</div></section>
+
+<section><div class="wrap">
+  <h2>Thread status</h2>
+  <div id="status"></div>
+  <p class="crumb">Status file: <a href="status.json">status.json</a>. Data: <a href="data.json">data.json</a>, built from <code>holdout/split.json</code>, <code>holdout/exam.json</code> and <code>holdout/CHECKSUMS.json</code>. <a href="../../index.html">Back to Mission Control</a>.</p>
+</div></section>
+<div class="tip" id="tip"></div>
+
+<script>
+(function theme(){const b=document.getElementById('themeBtn');const r=document.documentElement;let t=null;try{t=localStorage.getItem('theme')}catch(e){}if(t)r.setAttribute('data-theme',t);b.onclick=()=>{const cur=r.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');const n=cur==='dark'?'light':'dark';r.setAttribute('data-theme',n);try{localStorage.setItem('theme',n)}catch(e){}}})();
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=n=>typeof n==='number'?n.toLocaleString('en-US'):esc(n);
+const tip=$('#tip');
+function hover(el,text){el.addEventListener('mousemove',e=>{tip.textContent=text;tip.style.display='block';tip.style.left=Math.min(e.clientX+12,innerWidth-300)+'px';tip.style.top=(e.clientY+14)+'px'});el.addEventListener('mouseleave',()=>tip.style.display='none');}
+const SIDES=[['holdout','Held out','var(--s1)'],['train','Available for building','var(--s2)'],['excluded','Excluded (contains both)','var(--s3)']];
+
+Promise.all([fetch('data.json').then(r=>r.json()),fetch('status.json').then(r=>r.json()).catch(()=>null)]).then(([d,st])=>{
+  const s=d.summary;
+  $('#headline').textContent=`Held out: class ${d.clade} (${d.label}). ${fmt(s.holdout)} of ${fmt(s.taxa)} inventory taxa, ${fmt(s.holdout_species)} of them species. Frozen ${new Date(d.frozen_at).toUTCString()}.`;
+  if(d.provisional){const p=$('#provisional');p.hidden=false;p.textContent=`Provisional: the hub picked ${d.label} over mammals on 2026-10-31 and the choice stands until Amit confirms it. Switching is one line in holdout/make-split.mjs; the mammal alternative is sized in holdout/alt/.`;}
+  const kp=[
+    [s.holdout_species,'held-out species on the exam roster'],
+    [s.holdout_species_genome_ready,'roster species genome-ready (chromosome-level or complete assembly)'],
+    [s.holdout_species_with_trait_table,'roster species covered by at least one trait table'],
+    [s.holdout_species_exam_ready,'roster species with both a ready genome and a trait table'],
+    [s.claims.holdout||0,'claims whose only organisms are held out'],
+    [s.claims.mixed||0,'claims mixing held-out and building organisms'],
+  ];
+  if(d.alt){kp.push([d.alt.summary.holdout_species,`species in the alternative clade (${d.alt.clade}), ${fmt(d.alt.summary.holdout_species_exam_ready)} genome-ready with traits`]);}
+  $('#kpis').innerHTML=kp.map(([v,l])=>`<div class="card"><div class="kpi">${fmt(v)}<small>${esc(l)}</small></div></div>`).join('');
+
+  // assignment stack
+  const tot=s.taxa;
+  $('#assignStack').innerHTML=`<div class="stack">${SIDES.map(([k,l,c])=>`<i data-k="${k}" style="width:${100*s[k]/tot}%;background:${c}"></i>`).join('')}</div><div class="legend">${SIDES.map(([k,l,c])=>`<span><b style="background:${c}"></b>${l}: ${fmt(s[k])}</span>`).join('')}</div>`;
+  document.querySelectorAll('#assignStack i').forEach(el=>{const k=el.dataset.k;hover(el,`${SIDES.find(x=>x[0]===k)[1]}: ${s[k]} taxa (${(100*s[k]/tot).toFixed(1)}%)`)});
+  $('#assignText').textContent=`${fmt(s.holdout_higher_taxa)} of the held-out taxa are above species rank (genera, families, orders, the class). ${fmt(s.holdout_mentions)} mentions in the two books point at held-out organisms.`;
+  $('#rule').innerHTML=d.rule.map(r=>`<li>${esc(r)}</li>`).join('');
+
+  // by class
+  $('#classLegend').innerHTML=SIDES.map(([k,l,c])=>`<span><b style="background:${c}"></b>${l}</span>`).join('');
+  const classes=Object.entries(d.byClass).map(([k,v])=>[k,v,v.holdout+v.train+v.excluded]).sort((a,b)=>b[2]-a[2]);
+  const max=classes[0][2];
+  $('#classRows').innerHTML=classes.map(([k,v,n])=>`<div class="row"><span>${esc(k)}</span><span class="seg" style="width:${100*n/max}%">${SIDES.map(([kk,l,c])=>v[kk]?`<i style="flex:${v[kk]};background:${c}" data-t="${esc(k)}: ${v[kk]} ${l.toLowerCase()}"></i>`:'').join('')}</span><span class="v">${n} taxa</span></div>`).join('');
+  document.querySelectorAll('#classRows i').forEach(el=>hover(el,el.dataset.t));
+
+  // levels
+  const lv=Object.entries(d.levels).sort((a,b)=>b[1]-a[1]);const lmax=lv[0][1];
+  $('#levels').innerHTML=lv.map(([k,v])=>`<div class="hbar"><span>${esc(k)} ${(k==='Chromosome'||k==='Complete Genome')?'<span class="chip ok">ready</span>':'<span class="chip warn">not ready</span>'}</span><span><span class="t" style="display:block;width:${100*v/lmax}%"></span></span><span class="v">${v}</span></div>`).join('')+`<p class="crumb">${fmt(s.holdout_species_reference_flag_but_not_ready)} roster species carry NCBI's reference flag but have no chromosome-level assembly.</p>`;
+  const ts=Object.entries(s.trait_sources).sort((a,b)=>b[1]-a[1]);const names={avonet:'AVONET (bird morphology)',amniote:'Amniote life-history database',anage:'AnAge (longevity)',eltontraits:'EltonTraits (diet, foraging)',pantheria:'PanTHERIA (mammal traits)'};
+  $('#traits').innerHTML=ts.map(([k,v])=>`<div class="hbar"><span>${esc(names[k]||k)}</span><span><span class="t" style="display:block;width:${100*v/s.holdout_species}%"></span></span><span class="v">${v}/${s.holdout_species}</span></div>`).join('')+`<p class="crumb">Coverage counts come from the inventory's dataset records, which were built per chapter; a table may cover more roster species than the inventory recorded.</p>`;
+
+  // roster
+  const yes=b=>b?'<span class="chip ok">yes</span>':'<span class="chip">no</span>';
+  $('#rosterCount').textContent=`(${d.roster.length} species and subspecies)`;
+  $('#roster tbody').innerHTML=d.roster.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(r=>`<tr><td><i>${esc(r.name)}</i>${r.rank==='subspecies'?' <span class="chip">subsp.</span>':''}</td><td>${esc(r.order||'')}</td><td>${r.ids.ncbi?`<a href="https://www.ncbi.nlm.nih.gov/datasets/taxonomy/${r.ids.ncbi}/">${r.ids.ncbi}</a>`:''}</td><td>${r.genome&&r.genome.best_accession?`<a href="https://www.ncbi.nlm.nih.gov/datasets/genome/${esc(r.genome.best_accession)}/">${esc(r.genome.best_accession)}</a>`:'<span class="crumb">none</span>'}</td><td>${esc(r.genome?.best_level||'')}</td><td>${r.genome?.ready?'<span class="chip ok">ready</span>':'<span class="chip warn">not ready</span>'}</td><td>${yes(r.traits.avonet)}</td><td>${yes(r.traits.amniote)}</td><td>${yes(r.traits.anage)}</td><td>${yes(r.traits.eltontraits)}</td><td class="n">${r.mentions}</td><td class="n">${r.claims}</td></tr>`).join('');
+  $('#higher').textContent=d.higher.map(h=>`${h.name} (${h.rank})`).join(' · ');
+  $('#excluded').innerHTML=d.excluded.map(e=>`<li><b>${esc(e.name)}</b> (${esc(e.rank)}): ${esc(e.reason)}</li>`).join('');
+
+  // claims
+  $('#burned').innerHTML=d.burned&&d.burned.length?`<div class="note"><b>${d.burned.length} claim(s) burned as exam items:</b> ${d.burned.map(b=>`<code>${esc(b.id)}</code> (${esc(b.label)}) — ${esc(b.why)} Disclosed by ${esc(b.disclosed_by)}.`).join(' ')}</div>`:'';
+  $('#claims tbody').innerHTML=d.claims.map(c=>`<tr><td><code>${esc(c.id)}</code><br>${esc(c.label)}</td><td>${c.side==='holdout'?'<span class="chip ok">held out only</span>':'<span class="chip warn">mixed</span>'}${(d.burned||[]).some(b=>b.id===c.id)?' <span class="chip bad">burned</span>':''}</td><td>${esc(c.kind)}</td><td class="crumb">${c.holdout_taxa.map(k=>{const r=d.roster.find(x=>x.key===k)||d.higher.find(x=>x.key===k);return r?r.name:k}).join(', ')}</td></tr>`).join('');
+
+  const fmtv=v=>v==null?'—':typeof v==='number'?(Math.abs(v)<1?v.toFixed(3):v.toLocaleString('en-US')):esc(v);
+  const chipV=v=>`<span class="chip ${v==='supports'?'ok':v==='refutes'?'bad':v==='inconclusive'?'':'warn'}">${esc(v)}</span>`;
+  $('#examResults').innerHTML=(d.examResults&&d.examResults.length)?`<div class="scroll"><table><thead><tr><th>claim test</th><th>builder's verdict (training organisms)</th><th>exam on birds</th><th>measured, training</th><th>measured, birds</th><th>why</th></tr></thead><tbody>${d.examResults.map(r=>`<tr><td><code>${esc(r.claim_id)}</code><br><span class="crumb">${esc(r.date||'')}</span></td><td>${chipV(r.builder_verdict)}</td><td>${chipV(r.exam_verdict)}${r.agrees===true?' <span class="chip ok">agrees</span>':r.agrees===false?' <span class="chip bad">disagrees</span>':''}</td><td>${r.builder_measured?`<b>${fmtv(r.builder_measured.value)}</b> <span class="crumb">n = ${esc(String(r.builder_measured.n).slice(0,40))}</span><br><span class="crumb">${esc(String(r.builder_measured.unit).slice(0,120))}</span>`:'—'}</td><td>${r.exam_measured?`<b>${fmtv(r.exam_measured.value)}</b> <span class="crumb">n = ${esc(r.exam_measured.n)}</span><br><span class="crumb">${esc(String(r.exam_measured.unit).slice(0,120))}</span>`:'—'}</td><td class="crumb">${esc(r.reason||'')}</td></tr>`).join('')}</tbody></table></div><p class="crumb">A verdict of inconclusive here is the builder's own underpowered rule applied honestly to a small bird set; the bird numbers are shown for the record. Full files: <code>holdout/exam-results/</code>.</p>`:'<p class="crumb">No completed claim test has been examined yet.</p>';
+  if(d.notApplicable&&d.notApplicable.length) $('#examResults').insertAdjacentHTML('beforeend',`<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:600;padding:8px 12px">${d.notApplicable.length} completed test(s) where no exam applies: their data hold no animal organism rows</summary><div class="in"><table><thead><tr><th>claim test</th><th>builder's verdict</th><th>why no exam</th></tr></thead><tbody>${d.notApplicable.map(t=>`<tr><td><code>${esc(t.claim_id)}</code></td><td>${chipV(t.builder_verdict)}</td><td class="crumb">${esc(t.why_not_applicable)}</td></tr>`).join('')}</tbody></table></div></details>`);
+  const P=d.power;
+  if(P){const inv=P.inventory;const tests=[...new Set(P.tests.map(t=>t.test))];
+    $('#power').innerHTML=`<div class="scroll"><table><thead><tr><th>claim test</th><th>hold out</th><th class="n">held-out species with usable values</th><th class="n">builder's minimum</th><th>exam verdict on held-out species</th><th>measured on held-out species</th><th>training set left</th></tr></thead><tbody>${P.tests.map(t=>`<tr><td><code>${esc(t.test)}</code></td><td>${esc(t.clade)}${t.clade===P.clade_currently_frozen.split(' ')[0]?' <span class="chip">frozen</span>':' <span class="chip">what-if</span>'}</td><td class="n">${t.held_out_n}</td><td class="n">${t.builder_min_n}</td><td>${chipV(t.held_out_verdict)}${t.decisive?' <span class="chip ok">decisive</span>':''}</td><td><b>${fmtv(t.held_out_measured.value)}</b> <span class="crumb">${esc(String(t.held_out_measured.unit).slice(0,90))}</span></td><td class="crumb">n = ${t.training_n}, verdict ${esc(t.training_verdict)}</td></tr>`).join('')}</tbody></table></div>
+    <div class="grid g2" style="margin-top:12px">${Object.entries(inv).map(([c,v])=>`<div class="card"><h3>${esc(c)} ${c==='Aves'?'<span class="chip">frozen, provisional</span>':'<span class="chip">alternative</span>'}</h3><table><tbody><tr><td>decisive exams out of ${tests.length}</td><td class="n"><b>${P.decisive_exams_by_clade[c]}</b></td></tr><tr><td>inventory taxa held out</td><td class="n">${v.taxa}</td></tr><tr><td>roster species</td><td class="n">${v.roster_species}</td></tr><tr><td>roster genome-ready</td><td class="n">${v.genome_ready}</td></tr><tr><td>roster with a trait table</td><td class="n">${v.with_trait_table}</td></tr><tr><td>claims whose organisms are only in the clade (lost to building)</td><td class="n">${v.claims_only_in_clade}</td></tr></tbody></table></div>`).join('')}</div>
+    <p class="crumb">Generated ${esc(new Date(P.generated_at).toUTCString())} by <code>holdout/power-analysis.mjs</code>. Caveat: the ${tests.length} examined tests were built with mammal rows in their training sets${(()=>{const mo=(d.notApplicable||[]).filter(t=>/mammals only/i.test(t.why_not_applicable));return mo.length?`, and ${mo.length} further completed test(s) (${mo.map(t=>'<code>'+esc(t.claim_id)+'</code>').join(', ')}) use mammals only`:'';})()}, so a switch to Mammalia now would be post hoc for ${tests.length+(d.notApplicable||[]).filter(t=>/mammals only/i.test(t.why_not_applicable)).length} already-built tests; only tests started after a switch would be blind to mammals.</p>`;}
+  else $('#power').innerHTML='<p class="crumb">Not run yet.</p>';
+  const NP=d.nanopubs;
+  if(NP&&NP.records&&NP.records.length){const drafts=NP.records.filter(r=>!r.trustyUri).length;
+    $('#nanopubs').innerHTML=`<div class="grid g3"><div class="card"><div class="kpi">${NP.records.length}<small>records, one per nanopub</small></div></div><div class="card"><div class="kpi">${drafts}<small>unsigned drafts (nothing published)</small></div></div><div class="card"><div class="kpi">${NP.records.filter(r=>r.verdict==='inconclusive').length}<small>state their status as inconclusive</small></div></div></div>
+    <div class="scroll" style="margin-top:12px;max-height:none"><table><thead><tr><th>record</th><th>what it introduces</th><th>status it states</th><th>registry</th><th class="n">bytes</th></tr></thead><tbody>${NP.records.map(r=>`<tr><td><code>${esc(r.file.replace('holdout/nanopubs/unsigned/',''))}</code><br><span class="crumb">${esc(r.kind)}</span></td><td class="crumb"><code>${esc(String(r.introduces||'').replace('https://w3id.org/delphi/resource/',''))}</code></td><td>${r.verdict?chipV(r.verdict):'<span class="chip">stated in the record</span>'}</td><td>${r.trustyUri?`<a href="${esc(r.trustyUri)}">${esc(r.registry)}</a>`:'<span class="chip">draft, unpublished</span>'}</td><td class="n">${fmt(r.bytes)}</td></tr>`).join('')}</tbody></table></div>
+    <p class="crumb">${esc(NP.status)}. Built ${esc(new Date(NP.built).toUTCString())}; ${esc(NP.ontology)}. Delphi lint clean with ${NP.lint_exemptions} recorded exemption(s) (claims about this project's own files cite no dataset). ${esc(NP.note)} Choices not settled by the Delphi skill are listed in <code>holdout/nanopubs/DECISIONS.md</code>.</p>`;}
+  else $('#nanopubs').innerHTML='<p class="crumb">No records built yet.</p>';
+  $('#builderRules').innerHTML=d.rules_for_builders.map(r=>`<li>${esc(r)}</li>`).join('');
+  const cs=d.checksums;
+  $('#checksums').innerHTML=`<table><thead><tr><th>file</th><th>role</th><th class="n">bytes</th><th>SHA-256</th></tr></thead><tbody>${Object.entries(cs.inputs).map(([k,v])=>`<tr><td><code>${esc(k)}</code></td><td>input</td><td class="n">${fmt(v.bytes)}</td><td><code>${v.sha256.slice(0,16)}…</code></td></tr>`).join('')}${Object.entries(cs.outputs).map(([k,v])=>`<tr><td><code>holdout/${esc(k)}</code></td><td>output</td><td class="n">${fmt(v.bytes)}</td><td><code>${v.sha256.slice(0,16)}…</code></td></tr>`).join('')}</tbody></table>`;
+
+  const L=d.leaks;
+  $('#leaks').innerHTML=!L||L.error?`<p class="note">Leak check did not run: ${esc(L&&L.error||'no data')}</p>`:
+    (L.files.length?`<p><span class="chip warn">${L.files.length} file(s)</span> under ${L.targets.map(esc).join(', ')} name a held-out organism (${fmt(L.files.reduce((a,f)=>a+f.n,0))} lines in ${fmt(L.files_scanned||L.files_total||L.files)} files scanned, ${esc(new Date(L.scanned_at).toUTCString())}).</p><div class="scroll" style="max-height:260px"><table><thead><tr><th>file</th><th class="n">lines</th><th>what it names</th></tr></thead><tbody>${L.files.map(f=>`<tr><td><code>${esc(f.file)}</code></td><td class="n">${f.n}</td><td class="crumb">${f.what.map(esc).join(', ')}</td></tr>`).join('')}</tbody></table></div>`
+    :`<p><span class="chip ok">clean</span> No builder file names a held-out organism (${fmt(L.files)} files scanned under ${L.targets.map(esc).join(', ')}, ${esc(new Date(L.scanned_at).toUTCString())}).</p>`);
+  if(st){const chip=$('#stateChip');chip.textContent=st.state;chip.className='chip '+(st.state==='done'?'ok':st.state==='blocked'?'bad':'warn');
+    $('#status').innerHTML=`<div class="card"><p><b>${esc(st.headline)}</b></p><p class="crumb">Updated ${esc(st.updated)}</p>${st.blockers&&st.blockers.length?`<p><b>Blockers:</b> ${st.blockers.map(esc).join('; ')}</p>`:''}${st.needs&&st.needs.length?`<p><b>Needs:</b> ${st.needs.map(n=>`from ${esc(n.from)}: ${esc(n.ask)}`).join('; ')}</p>`:''}${st.next&&st.next.length?`<p><b>Next:</b></p><ul>${st.next.map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`:''}</div>`;}
+}).catch(e=>{$('#headline').textContent='Could not load data.json: '+e.message;$('#stateChip').textContent='error';});
+</script>
+</body>
+</html>

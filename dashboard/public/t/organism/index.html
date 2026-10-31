@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text-to-organism</title>
+<meta name="description" content="DELPHI organism thread: a text-to-blueprint tool built on Uberon and the Cell Ontology, a blind holdout prediction file, and an ESMFold smoke test, with every number computed from repo files.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M16 6v20M6 16h20' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--accent-ink:#fff;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--viol:#6b4fb3;--soft:#eef2ef;--s1:#9fd3d8;--s2:#4fa7b0;--s3:#0e7c86;--shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--s1:#1f5b61;--s2:#2d8f99;--s3:#38b6c1;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--s1:#1f5b61;--s2:#2d8f99;--s3:#38b6c1;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+h1,h2,h3{line-height:1.2;margin:0 0 .5em}
+h1{font-size:clamp(1.6rem,4vw,2.4rem)} h2{font-size:1.5rem} h3{font-size:1.1rem}
+p{margin:.4em 0 .8em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;gap:12px;align-items:center;overflow-x:auto;padding-top:8px;padding-bottom:8px;white-space:nowrap}
+.brand{font-weight:700;margin-right:8px}
+nav a{display:inline-block;padding:4px 10px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.9rem}
+nav a:hover{background:var(--soft);color:var(--ink)}
+#themeBtn{margin-left:auto}
+button,.btn{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px;border-radius:8px}
+button:hover{border-color:var(--accent)}
+button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+section{padding:36px 0;border-bottom:1px solid var(--line)}
+.lede{color:var(--mute);max-width:70ch;font-size:1.05rem}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.card h3{margin-top:0}
+.kpi{font-size:2rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.kpi small{display:block;font-size:.8rem;font-weight:400;color:var(--mute);margin-top:6px}
+.chip{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;border:1px solid var(--line);background:var(--soft);color:var(--mute)}
+.chip.ok{color:var(--ok);border-color:var(--ok)} .chip.bad{color:var(--bad);border-color:var(--bad)} .chip.warn{color:var(--warn);border-color:var(--warn)} .chip.viol{color:var(--viol);border-color:var(--viol)}
+details{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:8px 0;padding:0}
+details>summary{cursor:pointer;padding:10px 14px;font-weight:600;list-style:none}
+details>summary::before{content:"\25B8";display:inline-block;margin-right:8px;transition:transform .15s;color:var(--accent)}
+details[open]>summary::before{transform:rotate(90deg)}
+details>.in{padding:2px 16px 14px}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600}
+.scroll{overflow-x:auto}
+.mute{color:var(--mute)} .small{font-size:.85rem}
+.pill-row{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+.steps>li{counter-increment:s;position:relative;padding:10px 14px 10px 54px;border:1px solid var(--line);background:var(--panel);border-radius:10px;margin:8px 0}
+.steps>li::before{content:counter(s);position:absolute;left:12px;top:10px;width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700}
+.quote{border-left:3px solid var(--accent);padding:2px 12px;color:var(--mute);margin:8px 0}
+pre{background:var(--soft);padding:10px;border-radius:8px;overflow:auto;font-size:.8rem;white-space:pre-wrap;word-break:break-word}
+code{font-size:.9em}
+/* tree */
+.tree ul{list-style:none;margin:0;padding-left:18px;border-left:1px dashed var(--line)}
+.tree>ul{padding-left:0;border:0}
+.tree li{margin:3px 0}
+.tree details{border:0;background:transparent;margin:0}
+.tree details>summary{padding:3px 6px;font-weight:500;border-radius:6px}
+.tree details>summary:hover{background:var(--soft)}
+.tree .lvl{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mute);margin-right:6px}
+.tree a{text-decoration:none;border-bottom:1px dotted var(--accent)}
+.tree .leaf{padding:2px 6px 2px 26px}
+.badge{display:inline-block;font-size:.72rem;padding:0 6px;border-radius:99px;border:1px solid var(--line);color:var(--mute);margin-left:6px;vertical-align:middle}
+.badge.named{border-color:var(--accent);color:var(--accent)}
+.badge.stated{border-color:var(--ok);color:var(--ok)}
+.badge.weak{border-color:var(--warn);color:var(--warn)}
+.badge.none{border-color:var(--line);color:var(--mute)}
+.bar{display:flex;height:12px;border-radius:4px;overflow:hidden;background:var(--soft);min-width:160px}
+.bar i{display:block;height:100%}
+.bar i+i{margin-left:2px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.82rem;color:var(--mute)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
+svg text{fill:var(--ink);font-family:inherit}
+.tip{position:fixed;z-index:50;max-width:300px;background:var(--ink);color:var(--bg);padding:8px 10px;border-radius:8px;font-size:.85rem;pointer-events:none;display:none}
+footer{padding:30px 0;color:var(--mute);font-size:.88rem}
+.sketch{border:2px dashed var(--warn)}
+.sketch h3::after{content:"SKETCH";font-size:.7rem;background:var(--warn);color:#fff;padding:1px 7px;border-radius:99px;margin-left:8px;vertical-align:middle}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a href="../../index.html" class="btn" style="text-decoration:none">&larr; Mission Control</a>
+  <span class="brand">Text-to-organism</span>
+  <nav><a href="#try">Blueprints</a><a href="#method">Method</a><a href="#exam">Holdout exam</a><a href="#esmfold">ESMFold</a><a href="#records">Records</a><a href="#honesty">What is not here</a><a href="#sources">Sources</a></nav>
+  <button id="themeBtn" title="Toggle light or dark">Theme</button>
+</div></header>
+
+<main class="wrap">
+<div style="padding:40px 0 24px">
+  <h1>Describe an organism, get its blueprint. From ontologies, not imagination.</h1>
+  <p class="lede">The team's stretch goal is "type a description, get a body plan down to cells plus a genome". This thread built the part that can be honest today: a tool that turns a description into a <b>body &rsaquo; organ system &rsaquo; organ &rsaquo; tissue &rsaquo; cell</b> tree where every node is a term in <a href="http://obofoundry.org/ontology/uberon.html">Uberon</a> or the <a href="http://obofoundry.org/ontology/cl.html">Cell Ontology</a>, filtered by what those ontologies state about the taxon, with every query saved. Anything about genomes is labelled a sketch.</p>
+  <div class="grid g4" id="kpis"></div>
+  <p class="small mute" id="builtLine" style="margin-top:10px"></p>
+</div>
+
+<section id="try"><h2>Worked blueprints</h2>
+<p class="lede">Pick a description. The tree is what the ontologies say for that taxon; click any node to open its official record. A badge on each organ says whether Uberon <i>states</i> the organ for an ancestor of the taxon or merely does not rule it out.</p>
+<div class="pill-row" id="exPills"></div>
+<div class="grid g2" style="margin-top:10px">
+  <div class="card"><h3>How the description was read</h3><div id="reading" class="small"></div></div>
+  <div class="card"><h3>Counts for this blueprint</h3><div id="exCounts"></div>
+   <div class="legend" style="margin-top:8px"><span><span class="badge named">named</span> in the description</span><span><span class="badge stated">stated</span> Uberon places it in an ancestor taxon</span><span><span class="badge weak">weak</span> stated only for all animals</span><span><span class="badge none">none</span> not excluded, not stated</span></div></div>
+</div>
+<div class="card tree" style="margin-top:14px" id="treeCard"><h3>The blueprint</h3><div class="pill-row"><button id="expandAll">Expand organs</button><button id="collapseAll">Collapse</button></div><div id="tree"></div></div>
+<div class="card sketch" style="margin-top:14px"><h3>Genome sketch</h3><p class="small mute">Marker gene products that the Cell Ontology records as expressed by cell types in this blueprint. Most cell types carry no such annotation, so this is a hint of where a genome link would start, not a genome.</p><div id="sketch" class="small"></div></div>
+<details style="margin-top:14px"><summary>Every query behind this blueprint</summary><div class="in" id="queries"></div></details>
+</section>
+
+<section id="method"><h2>How it works, step by step</h2>
+<ol class="steps">
+ <li><b>Read the description.</b> Taxon words are looked up in the team's species inventory (common and scientific names of <span id="nInv">the</span> taxa Darwin and Thompson mention) and then in a small hand-written lexicon (<span id="lexSizes"></span>). The most specific taxon wins, checked live against NCBI Taxonomy.</li>
+ <li><b>Refuse the held-out clade.</b> If the taxon is inside the clade frozen in <code>holdout/exam.json</code>, the tool refuses, writes nothing, and removes any cached query from the attempt, so no held-out organism leaves a trace in the folder.</li>
+ <li><b>Filter by taxon.</b> A structure is dropped when Uberon says it never occurs in a taxon that contains ours (on the term, a superclass, or a whole it is part of), or only occurs in an unrelated taxon. Non-vertebrates also lose Uberon's vertebrate-only terms. A structure that is not dropped is <i>not thereby present</i>: the badge says what the ontology actually states.</li>
+ <li><b>Build the tree.</b> Organ systems and organs come from Uberon's own core subsets, ranked major organs first and then by how many cell types the Cell Ontology records for them (a measure of curation, not importance). Tissues and cells are the ontology's <i>part of</i> statements. Structures named in the description are always kept.</li>
+ <li><b>Store the evidence.</b> Every SPARQL query, its row count and retrieval time sit in the output; every response is cached by hash so a clean checkout rebuilds the same file offline.</li>
+</ol>
+</section>
+
+<section id="exam"><h2>Blind predictions for the holdout exam</h2>
+<p class="lede">The holdout thread froze class Aves (all birds) as the exam before anything was built, provisionally until the team lead confirms. This thread did not open any bird trait table. Instead it emitted, for every roster species and every Uberon core term that carries a taxon constraint, a present-or-absent prediction derived only from the ontology. The holdout thread commits its scoring rule before reading the file, so neither side can tune to the other.</p>
+<div id="examBox"></div>
+</section>
+
+<section id="esmfold"><h2>Smoke test of a hosted structure model: ESMFold</h2>
+<p class="lede">The recommendation on the main page was to call one hosted structure model on one real sequence and file the result against a claim with provenance. Two routes are wired. The <b>BioNeMo NIM</b> route (NVIDIA) needs a valid API key; the latest attempt and the server's answer are in the runs table. Its input is bovine serum albumin, the calcium-carrying protein behind Thompson's "albuminous solution" claim. The <b>ESM Atlas</b> route (Meta's public ESMFold service, no key) ran now on cytochrome c from cattle, tuna and yeast, the protein on which the molecular clock was first read, and the three predictions were superposed and filed against Kimura's substitution-rate claim.</p>
+<div id="esmBox"></div>
+</section>
+
+<section id="records"><h2>Every record as a nanopublication, drafted</h2>
+<p class="lede">The standing order for this project is that each micro-discovery becomes a nanopublication with its evidence attached. This thread's output is a design rather than a measurement, so the records say so in their own terms: a blueprint is typed as a proposal whose evidence item is the ontology queries behind it, a predicted structure is typed as a model output, the comparison over three predictions is a derived claim, a documented refusal from a hosted service is a method observation, and another thread's scoring of the blind predictions stays a separate record attributed to that thread. Every number carries the file and the checksum it was read from, and every record states what it does not establish. <b>Nothing is signed, nothing is published, and no person is named:</b> there is no key on this machine, no ORCID appears in any draft, and the test registry, let alone production, is the key owner's decision. Drafting the records also turned up a defect in the shared tooling, which is itself filed as a record below.</p>
+<div id="recBox"></div>
+</section>
+
+<section id="honesty"><h2>What is here and what is not</h2>
+<div class="grid g2">
+ <div class="card"><h3>Here, and checkable</h3><ul class="small">
+  <li>A runnable tool whose every output node is an existing ontology identifier and whose every edge has the query that produced it.</li>
+  <li>Taxon filtering that uses the ontology's constraints and reports when a named structure conflicts with the taxon.</li>
+  <li>A holdout guard and a blind prediction file, produced without reading bird data.</li>
+  <li>A smoke-test script for hosted ESMFold services that records exactly what happened, including when nothing ran; three real predictions, superposed, filed against Kimura's clock claim.</li></ul></div>
+ <div class="card"><h3>Not here, on purpose</h3><ul class="small">
+  <li><b>No genome design.</b> The "genome sketch" is a list of marker gene products from the Cell Ontology, nothing more.</li>
+  <li><b>No language model in the loop.</b> Description reading is word lists plus ontology lookups, so it is reproducible and sometimes misses phrasing. A model could parse better, at the cost of reproducibility.</li>
+  <li><b>No claim is tested.</b> A predicted protein structure does not test a solubility claim; the attachment says so.</li>
+  <li><b>No nanopub was published.</b> Attachments carry the provenance a nanopub would need and would go to the test registry first.</li>
+  <li><b>Nothing here is measured, and no function is predicted.</b> A blueprint names the structures an ontology records for a taxon; it does not say what they do, how they develop, or how well they work. The team's <a href="../../evolve/">enzyme route page</a> is the measured counterpart at the smallest scale: four amino-acid positions with real assay values. Its authors state that organism and tissue predictions remain absent, and the span between their scale and this one is open, not bridged by either page.</li>
+  <li><b>Uberon is incomplete for invertebrates.</b> For taxa far from vertebrates the tree can include structures the organism lacks; the badge makes that visible instead of hiding it.</li>
+  <li><b>No measured bridge from molecule to organism.</b> Every edge here is an ontology assertion, not a measurement. The closest measured step on this project is the collaborator's enzyme work at <a href="../../evolve/">/evolve/</a>: sequence to cell
+</div>
+</section>
+
+<section id="sources"><h2>Sources</h2>
+<div class="scroll"><table><tr><th>What</th><th>Where</th><th>Status</th></tr>
+<tr><td>Uberon, Cell Ontology, Gene Ontology, NCBI Taxonomy with inferred closures</td><td><a href="https://ubergraph.apps.renci.org/sparql">Ubergraph SPARQL endpoint</a></td><td>queried live during the hack; each response cached with its retrieval time</td></tr>
+<tr><td>Term labels for the lexicon</td><td>same endpoint; each lexicon identifier was resolved to a label before use</td><td>verified</td></tr>
+<tr><td>Species inventory used for common names</td><td><code>organisms/merged/taxa.json</code></td><td>read from the repo</td></tr>
+<tr><td>Held-out clade and roster</td><td><code>holdout/exam.json</code>, checksum in <code>holdout/CHECKSUMS.json</code></td><td>identifiers only; checksum recomputed and compared</td></tr>
+<tr><td>Bovine serum albumin record</td><td><a href="https://www.uniprot.org/uniprotkb/P02769">UniProt P02769</a></td><td>downloaded, SHA-256 recorded</td></tr>
+<tr><td>ESMFold hosted endpoint and request format</td><td><a href="https://build.nvidia.com/meta/esmfold">build.nvidia.com model card</a></td><td>read today; response format not documented there, handled defensively</td></tr>
+<tr><td>ESM Atlas fold API (Meta's public ESMFold service)</td><td><a href="https://esmatlas.com/about#api">esmatlas.com API page</a>, endpoint <code>api.esmatlas.com/foldSequence/v1/pdb/</code></td><td>called today on three sequences; the returned PDB names "ESMFOLD V1" in its TITLE record</td></tr>
+<tr><td>Cytochrome c records for cattle, tuna and yeast</td><td><a href="https://www.uniprot.org/uniprotkb/P62894">P62894</a>, <a href="https://www.uniprot.org/uniprotkb/P81459">P81459</a>, <a href="https://www.uniprot.org/uniprotkb/P00044">P00044</a></td><td>downloaded, SHA-256 recorded; the molecular-clock history (Margoliash 1963, Zuckerkandl and Pauling 1965, Fitch and Margoliash 1967) is background knowledge, not re-verified this session</td></tr>
+<tr><td>Holdout verdict on the prediction file</td><td><code>holdout/exam-results/organism-design/result.run2.json</code></td><td>read from the repo at build time; linked, not copied</td></tr>
+<tr><td>Claim text for thompson1917-ch09-06 and kimura-substitution-rate</td><td><code>docs/claims.json</code></td><td>read from the repo</td></tr>
+</table></div>
+</section>
+</main>
+<footer class="wrap">Organism thread of the DELPHI team, ScienceClaw hack. Every number on this page is computed by <code>organism-design/build.mjs</code> from files in <code>organism-design/</code>. Nothing here was typed in by hand except the words.</footer>
+<div class="tip" id="tip"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = n => n == null ? '–' : Number(n).toLocaleString('en-US');
+const obo = iri => iri.replace('http://purl.obolibrary.org/obo/', '').replace('_', ':');
+const themeBtn = $('#themeBtn');
+const applyTheme = t => { if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme; };
+try { applyTheme(localStorage.getItem('theme')); } catch {}
+themeBtn.onclick = () => { const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light'); const next = cur === 'dark' ? 'light' : 'dark'; applyTheme(next); try { localStorage.setItem('theme', next); } catch {} };
+
+let D = null, EX = {};
+fetch('data/index.json').then(r => r.json()).then(async d => {
+  D = d;
+  renderKpis(); renderExam(); renderEsm(); renderRecords();
+  $('#nInv').textContent = fmt(d.inventory_taxa);
+  $('#lexSizes').textContent = `${d.lexicon.taxon_words} taxon words, ${d.lexicon.anatomy_words} anatomy words, ${d.lexicon.function_words} function stems, ${d.lexicon.habitat_words} habitat words`;
+  $('#builtLine').textContent = `Data built ${new Date(d.built).toUTCString()}. ${d.cache.files} cached query responses (${(d.cache.bytes / 1024 / 1024).toFixed(1)} MB) make every example reproducible offline.`;
+  const pills = $('#exPills');
+  d.examples.forEach((e, i) => { const b = document.createElement('button'); b.textContent = e.description; if (e.refused) b.title = 'refused: held out'; b.onclick = () => showExample(i); pills.appendChild(b); });
+  const first = d.examples.findIndex(e => !e.refused);
+  if (first >= 0) showExample(first);
+}).catch(e => { $('#kpis').innerHTML = `<div class="card"><b>No data yet.</b> Run <code>node organism-design/build.mjs</code>. (${esc(e.message)})</div>`; });
+
+function renderKpis() {
+  const ex = D.examples, built = ex.filter(e => !e.refused);
+  const nodes = built.reduce((s, e) => s + Object.values(e.counts || {}).reduce((a, b) => a + b, 0), 0);
+  const items = [
+    [built.length, 'blueprints built from descriptions'],
+    [nodes, 'ontology nodes across the built blueprints, none invented'],
+    [D.exam ? D.exam.tally.absent + D.exam.tally.present_stated + D.exam.tally.present_default : 0, D.exam ? `blind holdout predictions (${D.exam.panel_size} structures × ${D.exam.species_predicted} species)` : 'holdout predictions (not yet produced)'],
+    [D.esmfold.runs.filter(r => r.run.status === 'ok').length, `hosted ESMFold predictions completed; the BioNeMo NIM run is ${D.esmfold.runs.find(r => r.model.host_key === 'nvidia')?.run.status || 'absent'}`]
+  ];
+  $('#kpis').innerHTML = items.map(([v, l]) => `<div class="card"><div class="kpi">${fmt(v)}<small>${esc(l)}</small></div></div>`).join('');
+}
+
+async function showExample(i) {
+  const e = D.examples[i];
+  [...$('#exPills').children].forEach((b, j) => b.classList.toggle('on', j === i));
+  if (!EX[e.file]) EX[e.file] = await fetch(e.file).then(r => r.json());
+  const b = EX[e.file];
+  if (b.refused) {
+    $('#reading').innerHTML = `<p><span class="chip bad">refused</span> ${esc(b.reason)}</p><p class="mute">Taxon words found: ${b.reading.taxon_words.map(t => `${esc(t.matched)} → ${esc(t.label || t.name || t.taxid)}`).join('; ')}</p>`;
+    $('#exCounts').innerHTML = '<p class="mute small">Nothing was built. The refusal and its holdout check are recorded in the file.</p>';
+    $('#tree').innerHTML = ''; $('#sketch').innerHTML = ''; renderQueries(b); return;
+  }
+  const r = b.reading;
+  const tw = r.taxon_words.map(t => `<li>“${esc(t.matched)}” → <b>${esc(t.label || t.name)}</b> <span class="mute">(${esc(t.source.file.split('/').pop())}${t.source.key ? ', ' + esc(t.source.key) : ''})</span></li>`).join('');
+  const aw = r.anatomy_words.map(a => `<li>“${esc(a.matched)}” → <a href="${esc(OBO(a.term))}">${esc(a.label)}</a></li>`).join('');
+  const fw = r.function_words.map(f => `<li>“${esc(f.matched)}” → <a href="${esc(OBO(f.go))}">${esc(f.label)}</a> <span class="mute">${f.ontology_structures.length ? `ontology links it to: ${f.ontology_structures.slice(0, 5).map(s => esc(s.label)).join(', ')}` : 'no structure link in the ontology'}${f.curated_structures.length ? `; curated link: ${f.curated_structures.map(s => esc(s)).join(', ')}` : ''}</span></li>`).join('');
+  const hw = r.habitat_words.map(h => `<li>“${esc(h.matched)}” → ${esc(h.label)} <span class="mute">(recorded, not used for filtering)</span></li>`).join('');
+  $('#reading').innerHTML = `<p><b>Taxon:</b> <a href="${esc(r.taxon.iri)}">${esc(r.taxon.label)}</a> <span class="mute">— ${esc(r.taxon.chosen_because)}</span>${b.holdout?.checked ? ` <span class="chip ${b.holdout.inside ? 'bad' : b.holdout.contains ? 'warn' : 'ok'}">holdout check: ${b.holdout.inside ? 'inside ' + esc(b.holdout.clade) : b.holdout.contains ? 'contains ' + esc(b.holdout.clade) : 'outside ' + esc(b.holdout.clade)}</span>` : ''}</p>
+    ${tw ? `<b>Taxon words</b><ul>${tw}</ul>` : '<p class="mute">No taxon word recognised; all animals assumed.</p>'}${aw ? `<b>Anatomy words</b><ul>${aw}</ul>` : ''}${fw ? `<b>Function words</b><ul>${fw}</ul>` : ''}${hw ? `<b>Habitat words</b><ul>${hw}</ul>` : ''}
+    ${r.conflicts.length ? `<p><span class="chip warn">conflicts</span> ${r.conflicts.map(c => esc(c.note)).join(' ')}</p>` : ''}`;
+  const c = b.counts, organs = b.nodes.filter(n => n.level === 'organ');
+  const ev = k => organs.filter(n => (n.taxon_evidence || '').startsWith(k)).length;
+  $('#exCounts').innerHTML = `<div class="grid g3"><div><div class="kpi">${c.organ_system}<small>organ systems</small></div></div><div><div class="kpi">${c.organ}<small>organs and named structures</small></div></div><div><div class="kpi">${c.tissue}<small>tissues</small></div></div><div><div class="kpi">${c.cell}<small>cell types</small></div></div><div><div class="kpi">${Object.keys(b.queries).length}<small>queries, all stored</small></div></div></div>
+    <p class="small" style="margin-top:10px"><b>Organ evidence:</b> ${ev('stated')} stated for an ancestor taxon, ${ev('weak')} stated only for all animals, ${ev('none')} merely not excluded. Limits used: ${b.limits.organs} organs per system, ${b.limits.tissues} tissues and ${b.limits.cells} cells per organ.</p>`;
+  renderTree(b); renderSketch(b); renderQueries(b);
+}
+const OBO = t => 'http://purl.obolibrary.org/obo/' + t;
+function renderTree(b) {
+  const kids = {};
+  for (const n of b.nodes) if (n.parent) (kids[n.parent] ??= []).push(n);
+  const body = b.nodes.find(n => n.level === 'body');
+  const node = (n, open) => {
+    const ch = kids[n.iri] || [];
+    const badge = n.named_in_description ? '<span class="badge named">named</span>' : '';
+    const evc = n.level === 'organ' && n.taxon_evidence ? (n.taxon_evidence.startsWith('stated') ? 'stated' : n.taxon_evidence.split(':')[0]) : null;
+    const evb = evc ? `<span class="badge ${evc}" title="${esc(n.taxon_evidence)}">${evc === 'stated' ? 'stated: ' + esc((n.stated_in_taxon?.label || '').replace(/ <[^>]+>/, '')) : esc(evc)}</span>` : '';
+    const major = n.major_organ ? '<span class="badge">major organ</span>' : '';
+    const extra = n.level === 'organ' && n.cell_types_available_in_organ == null && n.cell_types_recorded != null ? `<span class="mute small"> · ${n.cell_types_recorded} cell types recorded</span>` : '';
+    const more = n.level === 'organ' ? (() => { const t = ch.filter(x => x.level === 'tissue'), cc = ch.filter(x => x.level === 'cell'); const ta = t[0]?.tissues_available_in_organ, ca = cc[0]?.cell_types_available_in_organ; return (ta > t.length || ca > cc.length) ? `<span class="mute small"> · showing ${t.length}${ta ? ' of ' + ta : ''} tissues, ${cc.length}${ca ? ' of ' + ca : ''} cells</span>` : ''; })() : '';
+    const label = `<span class="lvl">${esc(n.level.replace('_', ' '))}</span><a href="${esc(n.iri)}" target="_blank" rel="noopener">${esc(n.label)}</a> <span class="mute small">${esc(obo(n.iri))}</span>${badge}${major}${evb}${extra}${more}${n.note ? `<div class="mute small">${esc(n.note)}</div>` : ''}`;
+    if (!ch.length) return `<li><div class="leaf">${label}</div></li>`;
+    return `<li><details${open ? ' open' : ''}><summary>${label}</summary><ul>${ch.map(k => node(k, false)).join('')}</ul></details></li>`;
+  };
+  $('#tree').innerHTML = `<ul>${node(body, true)}</ul>`;
+  const sys = $('#tree').querySelectorAll('details');
+  $('#expandAll').onclick = () => sys.forEach(d => { if (d.querySelector(':scope>summary .lvl').textContent !== 'organ') d.open = true; });
+  $('#collapseAll').onclick = () => sys.forEach((d, i) => d.open = i === 0);
+  sys.forEach(d => { if (d.querySelector(':scope>summary .lvl').textContent === 'organ system') d.open = true; });
+}
+function renderSketch(b) {
+  const s = b.genome_sketch;
+  if (!s.markers.length) { $('#sketch').innerHTML = `<p>None of the ${s.cells_total} cell types in this blueprint carries an expression annotation in the Cell Ontology. That is a gap in the ontology, not a statement about the organism.</p>`; return; }
+  $('#sketch').innerHTML = `<p>${s.cells_with_markers} of ${s.cells_total} cell types carry expression annotations.</p><div class="scroll"><table><tr><th>Cell type</th><th>Gene products recorded as expressed (most specific terms)</th></tr>${s.markers.map(m => `<tr><td><a href="${esc(m.cell)}">${esc(m.cell_label)}</a></td><td>${m.gene_products.map(g => `<a href="${esc(g.iri)}">${esc(g.label)}</a>`).join(', ')}${m.total > m.gene_products.length ? ` <span class="mute">and ${m.total - m.gene_products.length} more</span>` : ''}</td></tr>`).join('')}</table></div>`;
+}
+function renderQueries(b) {
+  $('#queries').innerHTML = Object.entries(b.queries).map(([id, q]) => `<details><summary>${id}: ${esc(q.purpose)} <span class="mute small">(${q.rows} rows${q.ms != null ? ', ' + q.ms + ' ms' : ''}${q.cached ? ', from cache' : ''})</span></summary><div class="in"><pre>${esc(q.sparql || q.url)}</pre><div class="small mute">Endpoint ${esc(q.endpoint)} · retrieved ${esc(q.retrieved)}</div></div></details>`).join('');
+}
+
+function renderExam() {
+  const x = D.exam, box = $('#examBox');
+  if (!x) { box.innerHTML = '<div class="card"><p>Not produced yet. <code>node organism-design/exam/predict.mjs</code> writes it.</p></div>'; return; }
+  const tot = x.tally.absent + x.tally.present_stated + x.tally.present_default;
+  const rows = x.by_structure.map(s => { const n = s.absent + s.present_stated + s.present_default; const w = v => (100 * v / n).toFixed(1) + '%'; return `<tr><td><a href="${esc(s.iri)}">${esc(s.label)}</a></td><td><div class="bar" title="absent ${s.absent}, present (stated) ${s.present_stated}, present (default) ${s.present_default}">${s.absent ? `<i style="width:${w(s.absent)};background:var(--s3)"></i>` : ''}${s.present_stated ? `<i style="width:${w(s.present_stated)};background:var(--s2)"></i>` : ''}${s.present_default ? `<i style="width:${w(s.present_default)};background:var(--s1)"></i>` : ''}</div></td><td>${s.absent}</td><td>${s.present_stated}</td><td>${s.present_default}</td></tr>`; }).join('');
+  box.innerHTML = `<div class="grid g4">
+    <div class="card"><div class="kpi">${x.species_predicted}<small>held-out species predicted (roster ${x.roster_size})</small></div></div>
+    <div class="card"><div class="kpi">${x.panel_size}<small>structures in the panel, chosen by Uberon's constraints, not by us</small></div></div>
+    <div class="card"><div class="kpi">${fmt(x.tally.absent)}<small>predicted absent (${(100 * x.tally.absent / tot).toFixed(0)}%)</small></div></div>
+    <div class="card"><div class="kpi">${fmt(x.tally.present_stated)}<small>predicted present with a stated basis; ${fmt(x.tally.present_default)} present by default</small></div></div></div>
+   <div class="card" style="margin-top:14px"><h3>Per structure, across the ${x.species_predicted} species</h3>
+    <p class="small mute"><b>Panel rule:</b> ${esc(x.panel_rule)}. Because predictions come only from taxon constraints, species inside the same constrained clade get the same answer; the file cannot tell a duck from a hummingbird unless Uberon does.</p>
+    ${(() => { const n = x.species_predicted; const g = { absent_all: x.by_structure.filter(s => s.absent === n), present_stated_all: x.by_structure.filter(s => s.present_stated === n), present_default_all: x.by_structure.filter(s => s.present_default === n) }; const mixed = x.by_structure.filter(s => !g.absent_all.includes(s) && !g.present_stated_all.includes(s) && !g.present_default_all.includes(s)); const sample = l => l.slice(0, 8).map(s => `<a href="${esc(s.iri)}">${esc(s.label)}</a>`).join(', ') + (l.length > 8 ? ` <span class="mute">and ${l.length - 8} more</span>` : ''); return `<div class="grid g3"><div><div class="kpi">${g.absent_all.length}<small>structures predicted absent for every species</small></div><p class="small">${sample(g.absent_all)}</p></div><div><div class="kpi">${g.present_stated_all.length}<small>present for every species, with a stated basis</small></div><p class="small">${sample(g.present_stated_all)}</p></div><div><div class="kpi">${g.present_default_all.length}<small>present for every species by default only</small></div><p class="small">${sample(g.present_default_all)}</p></div></div>${mixed.length ? `<p class="small"><b>Structures where species differ (${mixed.length}):</b> ${mixed.map(s => `<a href="${esc(s.iri)}">${esc(s.label)}</a> (absent ${s.absent}, present ${s.present_stated + s.present_default})`).join('; ')}</p>` : ''}`; })()}
+    <details><summary>All ${x.panel_size} structures, one row each</summary><div class="in">
+    <div class="legend"><span><i style="background:var(--s3)"></i>absent</span><span><i style="background:var(--s2)"></i>present, stated by Uberon for an ancestor</span><span><i style="background:var(--s1)"></i>present by default (not excluded)</span></div>
+    <div class="scroll" style="margin-top:8px"><table><tr><th>Structure</th><th>Share of species</th><th>absent</th><th>present (stated)</th><th>present (default)</th></tr>${rows}</table></div></div></details>
+    ${x.scored ? `<div class="card" style="margin:10px 0;background:var(--soft)"><b>Scored by the holdout thread, under a rule it committed before opening the file:</b> ${Object.entries(x.scored.verdicts).map(([k, v]) => `<span class="chip ${v === 'pass' ? 'ok' : v === 'fail' ? 'bad' : 'warn'}">${esc(k)}: ${esc(v)}</span>`).join(' ')}<div class="small mute" style="margin-top:6px">Inconclusive means the rule's structures (a sternal keel, foot webbing) are not in Uberon's constrained panel, so no species could be scored, and the file reports no conflicts to check. That is the rule meeting the panel, not a pass or a fail. Leak check exit code ${x.scored.leak_check_exit}. Result file: <a href="https://github.com/fractastical/delphi/blob/main/${esc(x.scored.file)}">${esc(x.scored.file)}</a>; rule: <a href="https://github.com/fractastical/delphi/blob/main/${esc(x.scored.prereg)}">${esc(x.scored.prereg)}</a>.</div></div>` : ''}
+    <p class="small mute">Exam roster checksum recomputed: <span class="chip ${x.sha_matches ? 'ok' : 'bad'}">${x.sha_matches ? 'matches holdout/CHECKSUMS.json' : 'DOES NOT MATCH'}</span>. Clade ${esc(x.clade)}${x.provisional ? ' (provisional)' : ''}. Not read: ${x.inputs_not_read.map(esc).join(', ')}. Full file: <a href="${esc(x.file)}">aves-predictions.json</a>.</p></div>`;
+}
+
+function renderRecords() {
+  const N = D.nanopubs, box = $('#recBox');
+  if (!N) { box.innerHTML = '<div class="card"><p>No records drafted yet.</p></div>'; return; }
+  const kind = k => k.replace('delphi:', '');
+  const group = (title, note, rows) => rows.length ? `<div class="card" style="margin-top:14px"><h3>${title} <span class="mute small">(${rows.length})</span></h3><p class="small mute">${note}</p><div class="scroll"><table><tr><th>Type</th><th>The record in one sentence</th><th>Produced by</th></tr>${rows.map(r => `<tr><td><span class="chip">${esc(kind(r.kind))}</span></td><td>${esc(r.label)}<br><span class="mute small">${esc(r.introduces.replace('https://w3id.org/delphi/resource/', 'delphir:'))}</span></td><td class="small">${esc(r.agent.replace('https://w3id.org/delphi/resource/agent/', ''))}</td></tr>`).join('')}</table></div></div>` : '';
+  const L = N.list, pick = re => L.filter(r => re.test(r.introduces));
+  box.innerHTML = `<div class="grid g3">
+    <div class="card"><div class="kpi">${N.records}<small>records drafted, one per nanopub</small></div></div>
+    <div class="card"><div class="kpi">${L.filter(r => r.kind.includes('Claim')).length} / ${L.filter(r => r.kind.includes('Evidence')).length}<small>claims and proposals / evidence items</small></div></div>
+    <div class="card"><div class="kpi">0<small>signed, published, or naming any person</small></div></div>
+   </div>
+   ${group('Blueprint proposals, and the queries behind each', 'A proposal, never an observation: the evidence item holds the SPARQL queries, the retrieval time and the body, organ-system and organ identifiers, with the tissue and cell identifiers in the cited file.', pick(/organism-blueprint-/))}
+   ${group('The blind holdout prediction set, and how it scored', 'The prediction set, the frozen exam it cites by checksum, and the holdout thread\u2019s scoring kept as its own record, attributed to that thread\u2019s script.', pick(/organism-aves-/))}
+   ${group('Hosted model: outputs, a refusal, and one derived claim', 'Each predicted structure is a model output with its input and output checksums. The comparison over the three is a separate derived claim. The authentication refusal is recorded rather than discarded.', pick(/organism-esmfold-|organism-cytochrome-c-/))}
+   ${group('A defect in the shared tooling, found while drafting the rest', 'Every Delphi v2.0 record in this project had been declaring a template it cannot instantiate. The counts behind that are the evidence item; the remediation paths are written as options for the key owner.', pick(/delphi-v2-template/))}
+   <div class="card" style="margin-top:14px"><h3>Checks that ran, and what they caught</h3><p class="small">Three checks, all repeatable. <b>A checker of this thread's own</b> reports all ${N.records} records valid but not trusty, with only the issues every unsigned record on the temporary base reports. It does not read the validator's exit code, because the validator exits successfully even when a file fails to parse, which two other threads found and this one reproduced. It reads the transcript structurally rather than searching it, because a record that quotes an error string in its own text is otherwise indistinguishable from a real error, and it runs three fixtures before reporting on anything: a truncated record must be rejected, a record quoting those error strings must be accepted, and a record carrying a forged list of validator issues inside its own description must be accepted with only the genuine issues counted. All three caught real mistakes in earlier versions of the checker, the last one a way for planted text to hide genuine issues. <b>check-nanopub-conformance.py</b> caught a real fault: the pipeline maps every Delphi v2.0 class to the published ProbKnow template for that class, and those published templates still fix legacy types on legacy subjects, so a v2.0 record cannot instantiate them. Declaring one put a false statement in the publication info of every such record across this project. The declaration is dropped here and each record says why. <b>Namespace counts</b> against the ontology source then showed the cause is not a regression: the claim, evidence-item and rubric-assessment templates are already migrated in the source and were never republished, while two others are still legacy in the source itself. The lean thread found the source-versus-published gap; it was re-measured here and the claim template added to it.</p><p class="small mute">Choices, the counts table and all three check transcripts: <a href="https://github.com/fractastical/delphi/blob/main/organism-design/nanopubs/DECISIONS.md">organism-design/nanopubs/DECISIONS.md</a>. What to send upstream, including two assessment templates proposed by the holdout thread and carried unminted: <a href="https://github.com/fractastical/delphi/blob/main/organism-design/nanopubs/UPSTREAM-ASK.md">UPSTREAM-ASK.md</a>. Records and their checksums: <a href="https://github.com/fractastical/delphi/blob/main/organism-design/nanopubs/manifest.json">manifest.json</a>.</p></div>`;
+}
+function renderEsm() {
+  const E = D.esmfold, box = $('#esmBox');
+  if (!E || !E.runs.length) { box.innerHTML = '<div class="card"><p>No run recorded yet.</p></div>'; return; }
+  const stc = { ok: 'ok', 'not-run': 'warn', refused: 'bad', error: 'bad', 'unexpected-response': 'bad' };
+  const runRows = E.runs.map(r => `<tr><td><span class="chip ${stc[r.run.status] || ''}">${esc(r.run.status)}</span></td><td>${esc(r.model.host)}</td><td>${esc(r.input.protein)}<br><span class="mute small"><i>${esc(r.input.organism)}</i> · <a href="https://www.uniprot.org/uniprotkb/${esc(r.input.uniprot_accession)}">${esc(r.input.uniprot_accession)}</a> ${esc(r.input.residue_range)} (${r.input.length} aa)</span></td><td>${r.output ? r.output.plddt_mean : '–'}</td><td>${r.output ? (100 * r.output.fraction_plddt_ge_70).toFixed(0) + '%' : '–'}</td><td class="small">${r.run.seconds ? r.run.seconds + ' s ' : ''}${r.run.note ? esc(r.run.note) : ''}${r.pdb_file ? ` <a href="${esc(r.pdb_file)}">PDB</a>` : ''}</td></tr>`).join('');
+  const cmp = E.compare;
+  const cmpRows = cmp ? cmp.pairs.map(p => `<tr><td>${esc(p.organisms[0])} vs ${esc(p.organisms[1])}<br><span class="mute small">${esc(p.a)} vs ${esc(p.b)}</span></td><td>${p.aligned_positions}</td><td>${p.substitutions} (${(100 * (1 - p.identity)).toFixed(1)}%)</td><td>${p.ca_rmsd_angstrom} Å</td></tr>`).join('') : '';
+  const att = E.attachments.map(a => `<details><summary>${esc(a.claim.id)} <span class="chip">${esc(a.claim.status)}</span> <span class="chip">${esc(a.claim.registry)} registry</span> <span class="mute small">${a.runs ? a.runs.length + ' runs attached' : a.run ? 'run status: ' + esc(a.run.status) : ''}</span></summary><div class="in small"><p>${esc(a.claim.statement)}</p>${a.claim.quote ? `<div class="quote">${esc(a.claim.quote)}</div>` : ''}<p><b>Why this protein:</b> ${esc(a.why_this_protein)}</p>${a.protein?.uniprot_function_annotation ? `<p><b>UniProt says:</b> ${esc(a.protein.uniprot_function_annotation)}</p>` : ''}<ul>${a.what_this_does_and_does_not_show.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p class="mute">Provenance a future nanopub would carry: ${esc(JSON.stringify(a.provenance_for_a_future_nanopub))}</p></div></details>`).join('');
+  const okRuns = E.runs.filter(r => r.output);
+  const plots = okRuns.map((r, k) => {
+    const p = r.output.plddt_per_residue, W = 360, H = 150, L = 34, R = 8, T = 10, B = 26, n = p.length;
+    const x = i => L + (W - L - R) * i / (n - 1), y = v => T + (H - T - B) * (1 - v / 100);
+    const d = p.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
+    return `<div><div class="small"><b>${esc(r.input.organism)}</b> · ${esc(r.input.protein)} · mean ${r.output.plddt_mean}</div><svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto" data-k="${k}"><g stroke="var(--line)" stroke-width="1">${[0, 50, 70, 90, 100].map(v => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/>`).join('')}</g>${[0, 50, 70, 90, 100].map(v => `<text x="${L - 5}" y="${y(v) + 4}" text-anchor="end" font-size="10">${v}</text>`).join('')}<path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2"/><text x="${L}" y="${H - 6}" font-size="10" fill="var(--mute)">residue 1</text><text x="${W - R}" y="${H - 6}" font-size="10" text-anchor="end" fill="var(--mute)">${n}</text><rect class="plHit" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent"/><line class="plX" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--ink)" stroke-dasharray="3 3" style="display:none"/></svg></div>`;
+  }).join('');
+  box.innerHTML = `<div class="card"><h3>Runs</h3><div class="scroll"><table><tr><th>Status</th><th>Service</th><th>Input</th><th>Mean pLDDT</th><th>≥ 70</th><th>Notes</th></tr>${runRows}</table></div><p class="small mute">pLDDT is the model's own per-residue confidence on a 0 to 100 scale; it is not accuracy. Inputs are checksummed UniProt records; keys are read from the environment only.</p></div>
+   ${cmp ? `<div class="card" style="margin-top:14px"><h3>Three cytochrome c orthologs, folded by the same model and superposed</h3><div class="scroll"><table><tr><th>Pair</th><th>Aligned positions</th><th>Substitutions</th><th>CA RMSD after superposition</th></tr>${cmpRows}</table></div><p class="small mute">${esc(cmp.method.alignment)}; ${esc(cmp.method.superposition)}. ${esc(cmp.method.note)}</p></div>` : ''}
+   ${plots ? `<div class="card" style="margin-top:14px"><h3>Per-residue confidence (pLDDT), one panel per prediction</h3><p class="small mute">70 and 90 are the usual "confident" and "very confident" lines. Hover for values.</p><div class="grid g3">${plots}</div></div>` : ''}
+   <div class="card" style="margin-top:14px"><h3>Filed against claims</h3><p class="small mute">Plain JSON records with the provenance a nanopub would need. Nothing is published; the claims' statuses are unchanged.</p>${att || '<p class="small mute">No attachment yet.</p>'}</div>`;
+  const tip = $('#tip');
+  box.querySelectorAll('svg[data-k]').forEach(svg => {
+    const r = okRuns[+svg.dataset.k], p = r.output.plddt_per_residue, hit = svg.querySelector('.plHit'), xl = svg.querySelector('.plX');
+    hit.addEventListener('mousemove', ev => { const b = svg.getBoundingClientRect(); const fx = (ev.clientX - b.left) / b.width * 360; const i = Math.max(0, Math.min(p.length - 1, Math.round((fx - 34) / 318 * (p.length - 1)))); const x = 34 + 318 * i / (p.length - 1); xl.setAttribute('x1', x); xl.setAttribute('x2', x); xl.style.display = ''; tip.style.display = 'block'; tip.textContent = `${r.input.organism}, residue ${i + 1}: pLDDT ${p[i]}`; tip.style.left = (ev.clientX + 12) + 'px'; tip.style.top = (ev.clientY + 12) + 'px'; });
+    hit.addEventListener('mouseleave', () => { xl.style.display = 'none'; tip.style.display = 'none'; });
+  });
+}
+</script>
+</body>
+</html>

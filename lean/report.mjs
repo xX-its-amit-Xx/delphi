@@ -1,0 +1,192 @@
+#!/usr/bin/env node
+// Builds the Lean project and writes a machine-readable report for the lean sub-dashboard:
+//   node lean/report.mjs            -> dashboard/public/t/lean/lean.json
+// Every number on dashboard/public/t/lean/index.html comes from this file, which comes from
+// running the Lean compiler. Nothing is typed by hand.
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(here, '..');
+const outDir = path.join(root, 'dashboard/public/t/lean');
+fs.mkdirSync(outDir, { recursive: true });
+
+// Find elan/lake. Prefer PATH, then the standard elan home, then the hack box's C:\Temp install.
+const candidates = [process.env.ELAN_HOME, path.join(process.env.USERPROFILE || process.env.HOME || '', '.elan'), 'C:/Temp/elan'].filter(Boolean);
+let bin = '';
+for (const c of candidates) { const d = path.join(c, 'bin'); if (fs.existsSync(path.join(d, process.platform === 'win32' ? 'lake.exe' : 'lake'))) { bin = d; break; } }
+const env = { ...process.env, PATH: (bin ? bin + path.delimiter : '') + process.env.PATH };
+if (bin && !process.env.ELAN_HOME) env.ELAN_HOME = path.dirname(bin);
+const run = (cmd, args) => {
+  const t0 = Date.now();
+  const r = spawnSync(cmd, args, { cwd: here, env, encoding: 'utf8', shell: process.platform === 'win32', maxBuffer: 64 * 1024 * 1024 });
+  return { cmd: [cmd, ...args].join(' '), exit: r.status, seconds: +((Date.now() - t0) / 1000).toFixed(1), out: (r.stdout || '') + (r.stderr || '') };
+};
+
+const versions = {
+  lean: run('lean', ['--version']).out.trim(),
+  toolchain: fs.readFileSync(path.join(here, 'lean-toolchain'), 'utf8').trim(),
+  mathlib: (() => { try { const m = JSON.parse(fs.readFileSync(path.join(here, 'lake-manifest.json'), 'utf8')); const p = m.packages.find(p => p.name === 'mathlib'); return { rev: p.rev, inputRev: p.inputRev }; } catch { return null; } })(),
+  repoCommit: (() => { const r = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }); return r.status === 0 ? r.stdout.trim() : null; })()
+};
+
+// 1. Build.
+const build = run('lake', ['build']);
+const buildOk = build.exit === 0;
+const warnings = (build.out.match(/warning:/g) || []).length;
+const errors = (build.out.match(/error:/g) || []).length;
+
+// 2. Axiom audit: which axioms each headline theorem depends on. `sorryAx` would mean a sorry.
+const audit = run('lake', ['env', 'lean', 'Delphi/Audit.lean']);
+const axioms = [];
+for (const m of audit.out.matchAll(/'(.+?)' depends on axioms: \[([^\]]*)\]/g)) axioms.push({ theorem: m[1], axioms: m[2].split(',').map(s => s.trim()).filter(Boolean) });
+const standard = new Set(['propext', 'Classical.choice', 'Quot.sound']);
+const nonStandard = axioms.flatMap(a => a.axioms.filter(x => !standard.has(x)).map(x => ({ theorem: a.theorem, axiom: x })));
+
+// 3. Source scan: declarations, docstrings, sorry count, per module.
+const srcDir = path.join(here, 'Delphi');
+const modules = [];
+let sorryTotal = 0;
+for (const f of fs.readdirSync(srcDir).filter(f => f.endsWith('.lean')).sort()) {
+  const text = fs.readFileSync(path.join(srcDir, f), 'utf8');
+  const lines = text.split(/\r?\n/);
+  // count `sorry` in code only: strip block comments and line comments first
+  const code = text.replace(/\/-[\s\S]*?-\//g, '').replace(/--.*$/gm, '');
+  const sorries = (code.match(/\bsorry\b/g) || []).length;
+  sorryTotal += sorries;
+  const header = (text.match(/^\/-\n([\s\S]*?)\n-\/\n/) || [])[1] || '';
+  const decls = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^(?:noncomputable )?(theorem|lemma|def|structure) ([A-Za-z0-9_.']+)/);
+    if (!m) continue;
+    // docstring directly above
+    let doc = '';
+    if (i > 0 && lines[i - 1].trim().endsWith('-/')) {
+      let j = i - 1; const buf = [];
+      while (j >= 0) { buf.unshift(lines[j]); if (lines[j].includes('/--')) break; j--; }
+      doc = buf.join('\n').replace(/^\s*\/--\s*/, '').replace(/\s*-\/\s*$/, '').replace(/\s+/g, ' ').trim();
+    }
+    // statement: from the declaration line to the first line ending in ':=' / ':= by' / 'where'
+    const stmt = [];
+    for (let k = i; k < lines.length && k < i + 12; k++) { stmt.push(lines[k]); if (/(:=\s*(by)?\s*$|\bwhere\s*$|:=\s*$)/.test(lines[k])) break; }
+    decls.push({ kind: m[1], name: m[2], line: i + 1, doc, statement: stmt.join('\n').replace(/\s*:=\s*(by)?\s*$/, '').replace(/\s+where\s*$/, '') });
+  }
+  modules.push({ file: 'lean/Delphi/' + f, lines: lines.length, sorries, header, decls });
+}
+
+const theorems = modules.flatMap(m => m.decls.filter(d => d.kind === 'theorem').map(d => ({ ...d, file: m.file })));
+const lemmas = modules.flatMap(m => m.decls.filter(d => d.kind === 'lemma').map(d => ({ ...d, file: m.file })));
+
+// 4. Claims these modules formalize, read from the repo's key-claims file so names and DOIs are never retyped.
+const key = JSON.parse(fs.readFileSync(path.join(root, 'math-bio-theorems/claims/key-claims.json'), 'utf8')).claims;
+const formalized = [
+  { claim_id: 'kimura-substitution-rate', theorem: 'Delphi.neutral_substitution_rate', module: 'lean/Delphi/Kimura.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified' },
+  { claim_id: 'kimura-fixation-probability', theorem: 'Delphi.NeutralChain.fixedBy_tendsto', module: 'lean/Delphi/Kimura.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified', note: 'Neutral case only (s = 0), exact Wright-Fisher chain rather than the diffusion approximation.' },
+  { claim_id: 'fisher-ftns', theorem: 'Delphi.fisher_fundamental_theorem', module: 'lean/Delphi/Fisher.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified', note: 'One haploid or clonal locus with finitely many types, fitnesses held fixed (partial change). In that population the variance in fitness is the additive genetic variance. The diploid average-effect version is not formalised.' },
+  { claim_id: 'maynardsmith-twofold-cost', theorem: 'Delphi.twofold_cost_of_sex', module: 'lean/Delphi/MaynardSmith.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified', note: 'Deterministic odds identity under equal fecundity, 1:1 sex ratio and males contributing nothing; iterated form gives odds x 2^n after n generations.' }
+].map(f => { const c = key.find(k => k.id === f.claim_id) || {}; return { ...f, label: c.label, statement: c.statement, notation: c.notation, context: c.context, paper: c.paper }; });
+// 4b. Proof scope: which decisions the Lean kernel checked, and which are assumptions stated in the
+// module header and never proved. Mirrors the module headers; kept here so the page can show both halves.
+const proofScope = {
+  'kimura-substitution-rate': {
+    kernelChecked: [
+      'A neutral absorbing chain on {0..M} copies (stochastic, mean-preserving, both ends absorbing, positive one-step escape from every interior state) fixes a mutant with probability i/M, with an explicit geometric error bound at every finite time t.',
+      'The Wright-Fisher binomial kernel is such a chain (row sums, mean preservation and absorption proved from Bernstein polynomial identities).',
+      'With u = 1/M the defined substitution rate M * mu * u equals mu, also in the diploid 2N form and as the t -> infinity limit.'
+    ],
+    assumed: [
+      'Strict neutrality of the mutations.',
+      'Constant population size and Wright-Fisher reproduction (non-overlapping generations, multinomial sampling).',
+      'Independent fates of mutants: the substitution rate is DEFINED, as in Kimura 1968, as (new mutants per generation) x (fixation probability of one mutant). Interference between lineages is excluded by that definition, not proved absent.',
+      'The mutation rate mu per copy per generation is a free parameter; nothing here measures it.'
+    ]
+  },
+  'kimura-fixation-probability': {
+    kernelChecked: ['Fixation probability i/M for any neutral absorbing chain, hence for the exact finite Wright-Fisher chain (Delphi.NeutralChain.fixedBy_tendsto).'],
+    assumed: ['Neutral case only (s = 0). Kimura 1962 with selection in the diffusion limit is not formalised.']
+  },
+  'fisher-ftns': {
+    kernelChecked: [
+      'For one locus with finitely many types, frequencies p (nonneg, summing to 1), fixed fitnesses w and mean fitness > 0: selection p_next = p w / wbar yields wbar_next - wbar = Var(w)/wbar exactly.',
+      'Corollary: mean fitness never decreases under fixed fitnesses.'
+    ],
+    assumed: [
+      'Haploid or clonal inheritance, so the variance in fitness IS the additive genetic variance; the diploid average-effect version is not formalised.',
+      'Fitnesses constant within the step (partial change): no dominance, epistasis, frequency dependence or environmental change.',
+      'Infinite population: deterministic frequencies, no drift, no mutation.'
+    ]
+  },
+  'maynardsmith-twofold-cost': {
+    kernelChecked: [
+      'For 0 < q < 1 and fecundity f > 0 the odds of asexual to sexual females satisfy odds(q_next) = 2 odds(q), and f cancels.',
+      'Iterated n generations the odds are 2^n times the initial odds.'
+    ],
+    assumed: [
+      'Anisogamy: males contribute nothing to offspring number or survival.',
+      'Equal fecundity and viability of sexual and asexual females and of their daughters.',
+      'Primary sex ratio exactly 1:1 in sexual broods; discrete non-overlapping generations; infinite population (deterministic fractions).'
+    ]
+  }
+};
+for (const f of formalized) f.proofScope = proofScope[f.claim_id] || null;
+
+
+// 5. Faithfulness assessments by non-Anthropic models (lean/assessment/results/*.json), if any.
+const resDir = path.join(here, 'assessment/results');
+const assessments = fs.existsSync(resDir) ? fs.readdirSync(resDir).filter(f => f.endsWith('.json')).map(f => JSON.parse(fs.readFileSync(path.join(resDir, f), 'utf8'))) : [];
+for (const f of formalized) {
+  f.assessments = assessments.filter(a => a.claim_id === f.claim_id).map(a => ({ provider: a.assessor.provider, model: a.assessor.model, date: a.assessor.date, scores: a.scores, verdict: a.verdict, rationale: a.rationale }));
+  f.providers = [...new Set(f.assessments.map(a => a.provider))];
+  // The literal verdicts, as the assessors wrote them. The summary label is the weakest verdict across
+  // assessors (unfaithful > faithful-with-narrower-scope > faithful), never rounded up; the provider
+  // count is appended because the project needs two providers before a nanopub can carry it.
+  const rank = v => v === 'unfaithful' ? 2 : v === 'faithful' ? 0 : 1;
+  const worst = f.assessments.length ? f.assessments.map(a => a.verdict).sort((a, b) => rank(b) - rank(a))[0] : null;
+  f.verdicts = f.assessments.map(a => ({ provider: a.provider, model: a.model, verdict: a.verdict }));
+  f.faithfulness = worst === null ? 'not assessed' : `${worst} (${f.providers.length} provider${f.providers.length === 1 ? '' : 's'}: ${f.providers.join(', ')})`;
+  f.assessmentComplete = f.providers.length >= 2 && worst !== 'unfaithful';
+}
+
+// 6. Mutation evidence (lean/mutate.mjs -> lean/mutations.json) and nanopub draft status (lean/nanopubs/manifest.json), if present.
+const mutFile = path.join(here, 'mutations.json');
+const mutations = fs.existsSync(mutFile) ? JSON.parse(fs.readFileSync(mutFile, 'utf8')) : null;
+for (const f of formalized) f.mutations = mutations ? mutations.results.filter(r => r.kind === 'mutation' && r.claim_id === f.claim_id).map(r => ({ id: r.id, theorem: r.theorem, description: r.description, outcome: r.outcome, errors: r.errors, firstError: r.firstError, seconds: r.seconds })) : [];
+const npFile = path.join(here, 'nanopubs/manifest.json');
+const npManifest = fs.existsSync(npFile) ? JSON.parse(fs.readFileSync(npFile, 'utf8')) : null;
+const chkFile = path.join(here, 'nanopubs/check.json');
+const npCheck = fs.existsSync(chkFile) ? JSON.parse(fs.readFileSync(chkFile, 'utf8')) : null;
+const nanopubs = npManifest ? { built: npManifest.built, check: npCheck ? { ...npCheck.summary, perFile: npCheck.results.map(r => ({ file: r.file, parsed: r.parsed, npValid: r.ok, notes: r.npCheck.issues.length })) } : null, templateConformance: npManifest.templateConformance || null, commitPinned: npManifest.commitPinned, status: npManifest.publishing.status, policy: npManifest.publishing.policy, drafts: npManifest.nanopubs.length, byKind: Object.fromEntries([...new Set(npManifest.nanopubs.map(n => n.kind))].map(k => [k, npManifest.nanopubs.filter(n => n.kind === k).length])), signed: npManifest.nanopubs.filter(n => n.trustyUri).length, published: npManifest.nanopubs.filter(n => n.registry).length, files: npManifest.nanopubs.map(n => ({ file: n.file, kind: n.kind, status: n.status, publishable: n.publishable || null })) } : null;
+
+const report = {
+  built: new Date().toISOString(),
+  versions,
+  build: { ok: buildOk, exit: build.exit, seconds: build.seconds, warnings, errors, tail: build.out.trim().split(/\r?\n/).slice(-6) },
+  audit: { ok: audit.exit === 0 && axioms.length > 0 && nonStandard.length === 0, theorems: axioms, nonStandard, raw: audit.out.trim() },
+  sorryTotal, modules, theorems, lemmas, formalized,
+  mutations: mutations ? { summary: mutations.summary, results: mutations.results } : null,
+  nanopubs,
+  summary: {
+    theoremsCompiling: buildOk ? theorems.length : 0,
+    lemmas: lemmas.length,
+    modules: modules.length,
+    sourceLines: modules.reduce((s, m) => s + m.lines, 0),
+    claimsVerified: formalized.filter(f => f.status === 'verified').length,
+    claimsAssessed: formalized.filter(f => f.assessments.length > 0).length,
+    assessmentsRun: assessments.length,
+    assessorProviders: [...new Set(assessments.map(a => a.assessor.provider))],
+    assessorModels: [...new Set(assessments.map(a => a.assessor.provider + ' / ' + a.assessor.model))],
+    verdictCounts: Object.fromEntries([...new Set(assessments.map(a => a.verdict))].map(v => [v, assessments.filter(a => a.verdict === v).length])),
+    claimsWithTwoProviders: formalized.filter(f => f.providers.length >= 2).length,
+    mutantsTried: mutations ? mutations.summary.mutations : 0,
+    mutantsRejected: mutations ? mutations.summary.rejected : 0,
+    mutationControlsPassed: mutations ? `${mutations.summary.controlsPassed}/${mutations.summary.controls}` : null,
+    nanopubDrafts: nanopubs ? nanopubs.drafts : 0,
+    nanopubsSigned: nanopubs ? nanopubs.signed : 0,
+    nanopubsPublished: nanopubs ? nanopubs.published : 0
+  }
+};
+fs.writeFileSync(path.join(outDir, 'lean.json'), JSON.stringify(report, null, 1));
+console.log(`lean.json: build ${buildOk ? 'ok' : 'FAILED'} in ${build.seconds}s, ${theorems.length} theorems, ${lemmas.length} lemmas, ${sorryTotal} sorry, axioms ${report.audit.ok ? 'standard only' : 'NON-STANDARD: ' + JSON.stringify(nonStandard)}`);
+if (!buildOk || !report.audit.ok) process.exitCode = 1;

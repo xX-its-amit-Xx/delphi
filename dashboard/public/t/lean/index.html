@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DELPHI Lean thread</title>
+<meta name="description" content="Machine-checked theorems of biology in Lean 4 for DELPHI: what is proved, from which assumptions, and the compiler's own audit.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M9 16l5 5 9-10' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--accent-ink:#fff;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--viol:#6b4fb3;--soft:#eef2ef;--code:#f0f3f1;--shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--code:#0f1a19;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--code:#0f1a19;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+h1,h2,h3{line-height:1.2;margin:0 0 .5em}
+h1{font-size:clamp(1.5rem,4vw,2.2rem)} h2{font-size:1.4rem} h3{font-size:1.05rem}
+p{margin:.4em 0 .8em}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;gap:12px;align-items:center;overflow-x:auto;padding-top:8px;padding-bottom:8px;white-space:nowrap}
+.brand{font-weight:700;margin-right:8px}
+nav a{display:inline-block;padding:4px 10px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.9rem}
+nav a:hover{background:var(--soft);color:var(--ink)}
+#themeBtn{margin-left:auto}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px;border-radius:8px}
+button:hover{border-color:var(--accent)}
+section{padding:30px 0;border-bottom:1px solid var(--line)}
+.lede{color:var(--mute);max-width:72ch;font-size:1.05rem}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.g5{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.card h3{margin-top:0}
+.kpi{font-size:2rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.kpi small{display:block;font-size:.8rem;font-weight:400;color:var(--mute);margin-top:6px}
+.chip{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;border:1px solid var(--line);background:var(--soft);color:var(--mute)}
+.chip.ok{color:var(--ok);border-color:var(--ok)} .chip.bad{color:var(--bad);border-color:var(--bad)} .chip.warn{color:var(--warn);border-color:var(--warn)} .chip.viol{color:var(--viol);border-color:var(--viol)}
+details{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:8px 0}
+details>summary{cursor:pointer;padding:10px 14px;font-weight:600;list-style:none}
+details>summary::before{content:"\25B8";display:inline-block;margin-right:8px;transition:transform .15s;color:var(--accent)}
+details[open]>summary::before{transform:rotate(90deg)}
+details>.in{padding:2px 16px 14px}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600}
+.scroll{overflow-x:auto}
+code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em}
+pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;margin:6px 0;white-space:pre}
+.mute{color:var(--mute)} .small{font-size:.85rem}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+.steps>li{counter-increment:s;position:relative;padding:10px 14px 10px 54px;border:1px solid var(--line);background:var(--panel);border-radius:10px;margin:8px 0}
+.steps>li::before{content:counter(s);position:absolute;left:12px;top:10px;width:30px;height:30px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700}
+.quote{border-left:3px solid var(--accent);padding:2px 12px;color:var(--mute);margin:8px 0}
+svg text{fill:var(--ink);font-family:inherit}
+.tip{position:fixed;z-index:50;max-width:280px;background:var(--ink);color:var(--bg);padding:8px 10px;border-radius:8px;font-size:.85rem;pointer-events:none;display:none}
+label.row{display:flex;gap:10px;align-items:center;margin:6px 0;font-size:.92rem}
+label.row span.n{min-width:170px}
+input[type=range]{flex:1;accent-color:var(--accent)}
+footer{padding:26px 0;color:var(--mute);font-size:.88rem}
+.verdict{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.back{text-decoration:none;color:var(--mute);font-size:.9rem}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a class="back" href="../../index.html">&larr; Mission Control</a>
+  <span class="brand">Lean thread</span>
+  <nav><a href="#result">Result</a><a href="#proved">What is proved</a><a href="#theorems">Theorems</a><a href="#faith">Faithfulness</a><a href="#audit">Audit</a><a href="#mutants">Break it</a><a href="#records">Records</a><a href="#watch">Watch it converge</a><a href="#repro">Reproduce</a><a href="#honest">Limits</a></nav>
+  <button id="themeBtn" title="Toggle light or dark">Theme</button>
+</div></header>
+
+<main class="wrap">
+
+<section id="result" style="padding-top:34px">
+<h1>Can a law of biology be checked by a computer? One can.</h1>
+<p class="lede">This page reports on <code>lean/</code>, where DELPHI writes the mathematical laws it has extracted as theorems in <b>Lean 4</b>, a proof checker, and asks the checker whether each proof is complete. Every number here is read from <code>lean.json</code>, which <code>lean/report.mjs</code> writes after running the compiler. Nothing is typed by hand.</p>
+<div class="verdict" id="verdict"></div>
+<div class="grid g5" id="kpis"></div>
+<p class="small mute" id="builtLine" style="margin-top:10px"></p>
+</section>
+
+<section id="proved"><h2>What is proved, from what</h2>
+<div class="grid g2" id="claimCards"></div>
+<div class="card" style="margin-top:14px"><h3>The argument, in plain words</h3>
+<ol class="steps">
+ <li><b>Set up a population of M gene copies</b> (M = 2N for N diploid individuals). A new mutation is present in 1 of them. Each generation, the next M copies are drawn at random from the current ones. That is the Wright&ndash;Fisher model, and in Lean it is literally the binomial formula <code>C(M, j) (i/M)^j (1 - i/M)^(M-j)</code>.</li>
+ <li><b>Neutral means the average does not drift.</b> If i copies are mutant now, the expected number next generation is exactly i. The Lean structure <code>NeutralChain</code> takes this as a hypothesis, and the Wright&ndash;Fisher instance <i>proves</i> it from the binomial formula (via Mathlib's Bernstein polynomials).</li>
+ <li><b>Sooner or later the lineage is lost or fixed.</b> From any in-between state there is a positive chance of finishing in one step, so the chance of still being undecided after t generations shrinks like &rho;<sup>t</sup> for some &rho; below 1. This is <code>unresolved_le_pow</code>.</li>
+ <li><b>Conservation of the mean does the rest.</b> i = M &times; P(fixed by t) + (undecided mass), and the undecided mass vanishes, so P(eventual fixation) = i/M. For a single new mutant, 1/M. This is <code>fixedBy_tendsto</code>, with the explicit error bound in <code>fixedBy_sub_le</code>.</li>
+ <li><b>Kimura's step.</b> Mutations arrive at M&mu; per generation; each fixes with probability 1/M; so substitutions happen at M&mu; &times; 1/M = &mu; per generation, whatever M is. That is <code>neutral_substitution_rate</code>. The population size cancels, which is why a molecular clock can exist.</li>
+</ol>
+<p class="small mute">A proof shows the conclusion follows from the assumptions. It says nothing about whether real genomes satisfy them. That is the job of the claim tests, and the gap is deliberate.</p></div>
+<div class="card" style="margin-top:14px"><h3>Second theorem, in plain words: Fisher's fundamental theorem</h3>
+<ol class="steps">
+ <li><b>Types and fitnesses.</b> A population has finitely many types (alleles at one locus in a haploid or clonal organism), each with a frequency p and a fitness w. Mean fitness w&#772; is the frequency-weighted average of w. This is <code>meanFitness</code>.</li>
+ <li><b>One generation of selection.</b> Each type's share next generation is p &times; w / w&#772;. The Lean theorem <code>select_isFreq</code> checks that this is again a set of frequencies summing to one.</li>
+ <li><b>Hold the fitnesses fixed and measure the change.</b> That is the "partial change" of Price and Ewens: no frequency dependence, no changing environment. Then the new mean fitness minus the old equals the variance in fitness divided by the old mean. This is <code>fisher_fundamental_theorem</code>. Because every type breeds true in a haploid population, that variance is the additive genetic variance the claim names.</li>
+ <li><b>Corollary.</b> A variance is never negative, so mean fitness never falls under fixed fitnesses: <code>mean_fitness_nondecreasing</code>. The claim's own context says the total change can fall when fitnesses are not fixed, and nothing here says otherwise.</li>
+</ol></div>
+<div class="card" style="margin-top:14px"><h3>Third theorem, in plain words: the twofold cost of sex</h3>
+<ol class="steps">
+ <li><b>Two kinds of mothers.</b> A fraction q of females reproduce without sex and have only daughters; the rest reproduce sexually and, with a 1:1 sex ratio, half their offspring are sons. Every mother has the same number of offspring. Males contribute nothing to the count.</li>
+ <li><b>Count next generation's daughters.</b> The asexual share becomes q&middot;f / (q&middot;f + (1&minus;q)&middot;f/2). This is <code>asexualNext</code>.</li>
+ <li><b>The odds double.</b> <code>twofold_cost_of_sex</code> proves that the odds of asexual to sexual females next generation are exactly twice this generation's, and the fecundity f cancels. Iterated, <code>twofold_cost_of_sex_n</code> gives 2<sup>n</sup> after n generations. That factor of two is the advantage sex must buy back to persist.</li>
+</ol></div>
+</section>
+
+<section id="theorems"><h2>The theorems the compiler accepted</h2>
+<p class="lede">Each row is a <code>theorem</code> declaration in the source, with its docstring and the statement exactly as Lean read it. Lemmas (the scaffolding) are listed below.</p>
+<div id="thmList"></div>
+<details><summary id="lemSummary">Supporting lemmas</summary><div class="in scroll"><table id="lemTable"></table></div></details>
+<div id="headers"></div>
+</section>
+
+<section id="faith"><h2>Is the Lean statement the law? Ask a different model</h2>
+<p class="lede">The compiler checks the proof, not the translation. The project rule is that whether a Lean statement faithfully renders the paper's law is judged by an assessor from a <b>different provider</b> than the one that wrote it, blind to the proof. These modules were written by Claude, so Claude does not score them. Each assessor saw only the claim text, the theorem statement and its definitions.</p>
+<div id="faithCards" class="grid g2"></div>
+<p class="small mute" id="faithNote"></p>
+</section>
+
+<section id="audit"><h2>The compiler's own audit</h2>
+<p class="lede">Two things make a Lean proof trustworthy: it compiled, and <code>#print axioms</code> lists only Lean's three standard axioms. A <code>sorry</code> (a hole in a proof) would show up as <code>sorryAx</code>. This table is parsed from the compiler's output.</p>
+<div class="scroll"><table id="axTable"></table></div>
+<details><summary>Build log tail and raw audit output</summary><div class="in"><pre id="buildTail"></pre><pre id="auditRaw"></pre></div></details>
+</section>
+
+<section id="watch"><h2>Watch it converge</h2>
+<p class="lede">A numerical illustration, computed in your browser by iterating the same matrix the theorem is about. It is not part of the proof. Pick M and see the probability that a single new mutant is fixed by generation t approach the proved limit 1/M.</p>
+<div class="card">
+ <label class="row"><span class="n">Gene copies M: <b id="mV"></b></span><input type="range" id="mRange" min="2" max="60" step="1" value="20"></label>
+ <label class="row"><span class="n">Generations shown: <b id="tV"></b></span><input type="range" id="tRange" min="20" max="600" step="10" value="200"></label>
+ <svg id="conv" viewBox="0 0 760 300" style="width:100%;height:auto" role="img" aria-label="Probability of fixation by generation t, converging to 1 over M"></svg>
+ <div class="small mute" id="convNote"></div>
+ <details><summary>Table view</summary><div class="in scroll"><table id="convTable"></table></div></details>
+</div>
+</section>
+
+<section id="repro"><h2>Reproduce it from a clean checkout</h2>
+<div class="grid g2">
+ <div class="card"><h3>Versions pinned in the repo</h3><table id="versions"></table></div>
+ <div class="card"><h3>Commands</h3>
+<pre>cd lean
+lake exe cache get      # Mathlib, prebuilt
+lake build              # compiles every module
+lake env lean Delphi/Audit.lean   # prints axioms
+cd .. &amp;&amp; node lean/report.mjs    # writes t/lean/lean.json</pre>
+<p class="small mute">Needs elan (the Lean toolchain manager) and about 8 GB of disk for Mathlib. The exact Mathlib commit is in <code>lean/lake-manifest.json</code>; the toolchain is in <code>lean/lean-toolchain</code>.</p></div>
+</div>
+</section>
+
+<section id="mutants"><h2>Try to break it: mutation evidence</h2>
+<p class="lede">A proof nobody tried to break is not evidence. <code>lean/mutate.mjs</code> changes the <b>statement</b> of each headline theorem (or deletes a hypothesis of the model) in a copy of the module and asks the compiler to check the copy. Every mutant must be rejected; the unmodified modules must pass through the same command.</p>
+<div class="verdict" id="mutVerdict"></div>
+<div class="scroll"><table id="mutTable"></table></div>
+<p class="small mute" id="mutNote"></p>
+</section>
+
+<section id="records"><h2>Nanopublication records</h2>
+<p class="lede">One record per nanopub, Delphi ontology v2.0: each law as a <code>delphi:Concept</code> carrying the Lean statement and an evidence item (build receipt and rejected mutants) linked from the published claim; the proof scope (kernel-checked vs assumed) as its own record; the faithfulness rubric; and one assessment record per claim per assessor with the verdict kept literal. Built by <code>lean/nanopubs/build.mjs</code> from the files on this page.</p>
+<div class="verdict" id="npVerdict"></div>
+<div class="scroll"><table id="npTable"></table></div>
+<p class="small mute" id="npNote"></p>
+</section>
+
+<section id="honest"><h2>What this does not show</h2>
+<div class="grid g2">
+ <div class="card"><h3>Not shown: that organisms obey the model</h3><p class="small">Strict neutrality, constant population size, non-overlapping generations and independent fates of mutants are assumptions. The theorem is exact inside the model and silent outside it. The claim's proposed empirical test compares synonymous-site substitution rates with pedigree-measured mutation rates; that is a claim-test job, not a Lean job.</p></div>
+ <div class="card"><h3>Not shown: that the Lean statement is a faithful translation</h3><p class="small">The project rule is that whether a Lean statement renders the paper's law faithfully is judged by an assessor from a different model provider than the one that wrote it. These modules were written by Claude (Anthropic). <span id="honestFaith"></span></p></div>
+ <div class="card"><h3>Not shown: a published nanopub</h3><p class="small">Nothing here has been signed or published. The plan is a <code>delphi:Concept</code> nanopub per law carrying the Lean source and a commit-pinned link, on the test registry first, with <code>leanVerified true</code> only because the audit above says zero sorry and standard axioms.</p></div>
+ <div class="card"><h3>Scope of the fixation theorem</h3><p class="small">Kimura's 1962 formula covers selection (s &ne; 0) in the diffusion limit. The Lean theorem covers the neutral case only, for the exact finite Wright&ndash;Fisher chain rather than the diffusion approximation. That is the part the substitution-rate law actually needs.</p></div>
+</div>
+</section>
+
+</main>
+<footer class="wrap">Lean thread of DELPHI at ScienceClaw, MIT, Oct 30 to Nov 1, 2026. <a href="../../index.html">Back to Mission Control</a>.</footer>
+<div class="tip" id="tip"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+try { const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+$('#themeBtn').onclick = () => {
+  const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem('theme', next); } catch (e) {}
+};
+
+fetch('lean.json').then(r => r.json()).then(init).catch(err => { $('#verdict').innerHTML = '<span class="chip bad">Could not load lean.json: ' + esc(err.message) + '</span>'; });
+
+function init(R) {
+  const ok = R.build.ok, audOk = R.audit.ok, sorry = R.sorryTotal;
+  const verified = ok && audOk && sorry === 0;
+  const fcls = s => s.startsWith('unfaithful') ? 'bad' : s.startsWith('faithful-with-narrower-scope') ? 'warn' : s.startsWith('faithful') ? 'ok' : '';
+  $('#verdict').innerHTML = `<span class="chip ${ok ? 'ok' : 'bad'}">build ${ok ? 'passed' : 'FAILED'}</span>
+    <span class="chip ${sorry === 0 ? 'ok' : 'bad'}">${sorry} sorry</span>
+    <span class="chip ${audOk ? 'ok' : 'bad'}">${audOk ? 'standard axioms only' : 'NON-STANDARD AXIOMS: ' + esc(R.audit.nonStandard.map(x => x.axiom).join(', '))}</span>
+    <span class="chip ${verified ? 'ok' : 'warn'}">${verified ? 'kernel-checked' : 'not verified'}</span>
+    ${(R.summary.assessmentsRun ?? 0) ? Object.entries(R.summary.verdictCounts || {}).map(([v, n]) => `<span class="chip ${fcls(v)}">${n} ${esc(v)} (${esc((R.summary.assessorModels || []).join('; '))})</span>`).join('') : '<span class="chip">faithfulness not yet assessed</span>'}`;
+  const S = R.summary;
+  const kp = [[S.theoremsCompiling, 'theorems compiling'], [S.lemmas, 'supporting lemmas'], [sorry, 'sorry in code'], [R.audit.nonStandard.length, 'non-standard axioms'], [S.claimsVerified, 'claims machine-checked'], [S.sourceLines, 'lines of Lean'], [R.build.seconds + ' s', 'last build time']];
+  $('#kpis').innerHTML = kp.map(([v, l]) => `<div class="card"><div class="kpi">${esc(v)}<small>${esc(l)}</small></div></div>`).join('');
+  $('#builtLine').textContent = `Report built ${R.built} from repo commit ${(R.versions.repoCommit || '').slice(0, 10) || 'unknown'}; ${R.versions.lean}.`;
+
+  // claims
+  $('#claimCards').innerHTML = R.formalized.map(f => `<div class="card"><h3>${esc(f.label)}</h3>
+    <div class="verdict"><span class="chip ${f.status === 'verified' ? 'ok' : 'bad'}">${esc(f.status)}</span><span class="chip">claim ${esc(f.claim_id)}</span></div>
+    <p class="small">${esc(f.statement)}</p>
+    <div class="quote small">${esc(f.notation)}</div>
+    <p class="small mute">${esc(f.context)}</p>
+    ${f.note ? `<p class="small"><b>Scope here:</b> ${esc(f.note)}</p>` : ''}
+    ${f.proofScope ? `<div class="grid g2" style="margin:8px 0"><div><p class="small"><b>Kernel-checked (proved in Lean):</b></p><ul class="small">${f.proofScope.kernelChecked.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div><div><p class="small"><b>Assumed, not proved (stated in the module header):</b></p><ul class="small">${f.proofScope.assumed.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></div>` : ''}
+    <p class="small">Theorem <code>${esc(f.theorem)}</code> in <code>${esc(f.module)}</code>. Source: ${esc(f.paper?.title)} (${esc(f.paper?.year)})${f.paper?.doi ? `, <a href="https://doi.org/${esc(f.paper.doi)}">doi:${esc(f.paper.doi)}</a>` : ''}.</p></div>`).join('');
+
+  // faithfulness assessments by other providers
+  $('#faithCards').innerHTML = R.formalized.map(f => `<div class="card"><h3>${esc(f.label)}</h3>
+    <div class="verdict"><span class="chip ${fcls(f.faithfulness || 'not assessed')}">${esc(f.faithfulness || 'not assessed')}</span><span class="chip">${(f.assessments || []).length} assessment${(f.assessments || []).length === 1 ? '' : 's'}</span>${(f.verdicts || []).map(v => `<span class="chip">${esc(v.provider)} / ${esc(v.model)}: ${esc(v.verdict)}</span>`).join('')}</div>
+    ${(f.assessments || []).length ? `<div class="scroll"><table><tr><th>Assessor</th><th>Verdict</th><th>Quantities</th><th>Assumptions</th><th>Scope</th><th>Not trivial</th></tr>${f.assessments.map(a => `<tr><td class="small">${esc(a.provider)} / ${esc(a.model)}</td><td><b>${esc(a.verdict)}</b></td><td>${esc(a.scores?.same_quantities)}</td><td>${esc(a.scores?.assumptions_match)}</td><td>${esc(a.scores?.scope_stated)}</td><td>${esc(a.scores?.not_trivial)}</td></tr>`).join('')}</table></div>
+    ${f.assessments.map(a => `<div class="quote small"><b>${esc(a.provider)} / ${esc(a.model)}, ${esc(String(a.date).slice(0, 10))}:</b> ${esc(a.rationale)}</div>`).join('')}` : '<p class="small mute">No non-Anthropic assessment recorded yet.</p>'}</div>`).join('');
+  const vc = S.verdictCounts || {};
+  $('#faithNote').textContent = `${S.assessmentsRun ?? 0} assessments by ${(S.assessorModels || []).length ? S.assessorModels.join('; ') : 'no model yet'}. Literal verdicts: ${Object.keys(vc).length ? Object.entries(vc).map(([v, n]) => `${v} x${n}`).join(', ') : 'none'}. Rubric lean-faithfulness/0.1.0; scores are in [0, 1]; "faithful-with-narrower-scope" means the Lean theorem is a correct but narrower instance of the claim and is reported as such, not as "faithful". The project requires two providers before a law's nanopub can carry a faithfulness assessment; ${S.claimsWithTwoProviders ?? 0} of ${R.formalized.length} claims have two. These are model opinions about a translation, not evidence about organisms.`;
+  $('#honestFaith').innerHTML = (S.assessmentsRun ?? 0) === 0
+    ? 'No such assessment exists yet, so the honest label is <span class="chip ok">kernel-checked</span>, not <span class="chip">expert-validated</span>.'
+    : `So far ${esc(String(S.assessmentsRun))} blind assessment${S.assessmentsRun === 1 ? '' : 's'} by ${esc(S.assessorModels.join('; '))}: ${esc(Object.entries(vc).map(([v, n]) => `${n} ${v}`).join(', '))}. That is ${(S.assessorProviders || []).length} provider${(S.assessorProviders || []).length === 1 ? '' : 's'}; the project rule needs two before the verdict can travel with a nanopub, and no human expert has validated any statement. The honest label stays <span class="chip ok">kernel-checked</span> plus the literal assessor verdicts, not <span class="chip">expert-validated</span>.`;
+
+  // mutation evidence
+  const MU = R.mutations;
+  if (MU) {
+    const ms = MU.results.filter(r => r.kind === 'mutation'), cs = MU.results.filter(r => r.kind === 'control');
+    $('#mutVerdict').innerHTML = `<span class="chip ${MU.summary.allAsExpected ? 'ok' : 'bad'}">${MU.summary.rejected} of ${MU.summary.mutations} mutants rejected</span><span class="chip ${MU.summary.controlsPassed === MU.summary.controls ? 'ok' : 'bad'}">${MU.summary.controlsPassed} of ${MU.summary.controls} controls accepted</span><span class="chip">run ${esc(MU.summary.run)}</span>`;
+    $('#mutTable').innerHTML = '<tr><th>Mutant</th><th>Theorem</th><th>What was changed</th><th>Compiler</th><th>First error</th></tr>' + ms.map(m => `<tr><td><code>${esc(m.id)}</code></td><td class="small"><code>${esc(m.theorem)}</code></td><td class="small">${esc(m.description)}<div class="mute"><code>${esc(m.find)}</code> &rarr; <code>${esc(m.replace)}</code></div></td><td><span class="chip ${m.outcome === 'rejected' ? 'ok' : 'bad'}">${esc(m.outcome)}</span><div class="small mute">${m.errors} error(s), ${m.seconds} s</div></td><td class="small"><code>${esc(m.firstError || '')}</code></td></tr>`).join('') + cs.map(c => `<tr><td><code>${esc(c.id)}</code></td><td class="small">(unmodified)</td><td class="small">Control: the module as it is, through the same command.</td><td><span class="chip ${c.asExpected ? 'ok' : 'bad'}">${esc(c.outcome)}</span><div class="small mute">${c.seconds} s</div></td><td></td></tr>`).join('');
+    $('#mutNote').textContent = `Command: ${MU.summary.command}. Mutants are written to scratch space and deleted; lean/Delphi is never modified. A rejected mutant shows the proof depends on the exact statement; it does not show the statement is the law (see Faithfulness).`;
+  } else { $('#mutVerdict').innerHTML = '<span class="chip warn">mutation run not recorded</span>'; }
+
+  // nanopub records
+  const NP = R.nanopubs;
+  if (NP) {
+    $('#npVerdict').innerHTML = `<span class="chip">${NP.drafts} unsigned drafts</span>${NP.check ? `<span class="chip ${NP.check.allOk ? 'ok' : 'bad'}">np check: ${NP.check.npValid} of ${NP.check.files} valid, ${NP.check.parsed} of ${NP.check.files} parse</span>` : '<span class="chip warn">np check not recorded</span>'}<span class="chip ${NP.signed ? 'ok' : ''}">${NP.signed} signed</span><span class="chip ${NP.published ? 'ok' : ''}">${NP.published} published</span><span class="chip ${NP.commitPinned ? 'ok' : 'warn'}">${NP.commitPinned ? 'commit-pinned' : 'links not yet commit-pinned'}</span>`;
+    const chk = Object.fromEntries(((NP.check || {}).perFile || []).map(c => [c.file, c]));
+    $('#npTable').innerHTML = '<tr><th>File</th><th>Kind</th><th>Status</th><th>Checks</th><th>Publishable?</th></tr>' + NP.files.map(f => { const c = chk[f.file]; return `<tr><td class="small"><code>${esc(f.file)}</code></td><td>${esc(f.kind)}</td><td class="small">${esc(f.status)}</td><td class="small">${c ? `<span class="chip ${c.parsed && c.npValid ? 'ok' : 'bad'}">${c.parsed ? 'parses' : 'PARSE FAIL'}, np check ${c.npValid ? 'valid' : 'FAIL'}</span> <span class="mute">${c.notes} expected note(s)</span>` : '<span class="chip warn">not checked</span>'}</td><td class="small">${esc(f.publishable || (f.kind === 'assessment' ? '' : 'after signing by the key owner, test registry first'))}</td></tr>`; }).join('');
+    $('#npNote').textContent = `${NP.status}. ${NP.check ? `Checked ${NP.check.run} with ${NP.check.tool}; the checker's exit code is ignored because nanopub-java returns 0 even on a parse failure, so validity is read from its text. ` : ''}${NP.templateConformance ? `Templates: ${NP.templateConformance.rule} (checked ${NP.templateConformance.checkedOn}). ` : ''}Policy: ${NP.policy}. Assessment records are held while only one provider has run (claims with two providers: ${S.claimsWithTwoProviders ?? 0} of ${R.formalized.length}).`;
+  } else { $('#npVerdict').innerHTML = '<span class="chip warn">no nanopub drafts built</span>'; }
+
+  // theorems
+  $('#thmList').innerHTML = R.theorems.map(t => `<div class="card" style="margin:10px 0"><h3><code>${esc(t.name)}</code> <span class="small mute">${esc(t.file)}:${t.line}</span></h3>
+    ${t.doc ? `<p class="small">${esc(t.doc)}</p>` : ''}<pre>${esc(t.statement)}</pre></div>`).join('');
+  $('#lemSummary').textContent = `Supporting lemmas (${R.lemmas.length})`;
+  $('#lemTable').innerHTML = '<tr><th>Lemma</th><th>Line</th><th>What it says</th></tr>' + R.lemmas.map(l => `<tr><td><code>${esc(l.name)}</code></td><td>${l.line}</td><td class="small">${esc(l.doc || '')}</td></tr>`).join('');
+  $('#headers').innerHTML = R.modules.filter(m => m.header).map(m => `<details><summary>Module header of <code>${esc(m.file)}</code>: the full statement of assumptions (${m.lines} lines, ${m.sorries} sorry)</summary><div class="in"><pre>${esc(m.header)}</pre></div></details>`).join('');
+
+  // audit
+  $('#axTable').innerHTML = '<tr><th>Theorem</th><th>Axioms it depends on</th><th></th></tr>' + R.audit.theorems.map(a => {
+    const bad = a.axioms.filter(x => !['propext', 'Classical.choice', 'Quot.sound'].includes(x));
+    return `<tr><td><code>${esc(a.theorem)}</code></td><td><code>${esc(a.axioms.join(', '))}</code></td><td><span class="chip ${bad.length ? 'bad' : 'ok'}">${bad.length ? 'non-standard' : 'standard'}</span></td></tr>`;
+  }).join('');
+  $('#buildTail').textContent = (R.build.tail || []).join('\n');
+  $('#auditRaw').textContent = R.audit.raw;
+
+  // versions
+  const V = R.versions;
+  $('#versions').innerHTML = [['Lean toolchain', V.toolchain], ['Lean binary', V.lean], ['Mathlib', V.mathlib ? `${V.mathlib.inputRev} (${V.mathlib.rev.slice(0, 12)})` : 'unknown'], ['Repo commit at report time', V.repoCommit || 'unknown']].map(([k, v]) => `<tr><th>${esc(k)}</th><td class="small"><code>${esc(v)}</code></td></tr>`).join('');
+
+  // convergence chart
+  const draw = () => {
+    const M = +$('#mRange').value, T = +$('#tRange').value;
+    $('#mV').textContent = M; $('#tV').textContent = T;
+    // Wright-Fisher kernel, exactly as in Delphi.wfKernel
+    const choose = (n, k) => { let r = 1; for (let i = 1; i <= k; i++) r = r * (n - k + i) / i; return r; };
+    const P = Array.from({ length: M + 1 }, (_, i) => { const p = i / M; return Array.from({ length: M + 1 }, (_, j) => choose(M, j) * Math.pow(p, j) * Math.pow(1 - p, M - j)); });
+    let v = Array(M + 1).fill(0); v[1] = 1; // one copy
+    const fixed = [0], unres = [1];
+    for (let t = 1; t <= T; t++) { const nv = Array(M + 1).fill(0); for (let i = 0; i <= M; i++) if (v[i]) for (let j = 0; j <= M; j++) nv[j] += v[i] * P[i][j]; v = nv; fixed.push(v[M]); let u = 0; for (let j = 1; j < M; j++) u += v[j]; unres.push(u); }
+    const lim = 1 / M, W = 760, H = 300, L = 56, Rr = 20, Tp = 24, B = 40;
+    const ymax = Math.max(lim * 1.4, ...fixed) * 1.05;
+    const x = t => L + (t / T) * (W - L - Rr), y = p => Tp + (1 - p / ymax) * (H - Tp - B);
+    const ticks = 4; let g = '';
+    for (let k = 0; k <= ticks; k++) { const p = ymax * k / ticks; g += `<line x1="${L}" x2="${W - Rr}" y1="${y(p)}" y2="${y(p)}" stroke="var(--line)" stroke-width="1"/><text x="${L - 8}" y="${y(p) + 4}" text-anchor="end" font-size="11" fill="var(--mute)">${p.toFixed(3)}</text>`; }
+    for (let k = 0; k <= 4; k++) { const t = Math.round(T * k / 4); g += `<text x="${x(t)}" y="${H - B + 18}" text-anchor="middle" font-size="11" fill="var(--mute)">${t}</text>`; }
+    const path = fixed.map((p, t) => (t ? 'L' : 'M') + x(t).toFixed(1) + ' ' + y(p).toFixed(1)).join(' ');
+    const last = fixed[T];
+    $('#conv').innerHTML = g +
+      `<text x="${L - 8}" y="${Tp - 8}" text-anchor="end" font-size="11" fill="var(--mute)">P(fixed)</text><text x="${W - Rr}" y="${H - 4}" text-anchor="end" font-size="11" fill="var(--mute)">generation t</text>` +
+      `<line x1="${L}" x2="${W - Rr}" y1="${y(lim)}" y2="${y(lim)}" stroke="var(--mute)" stroke-width="1.5" stroke-dasharray="6 4"/><text x="${W - Rr - 4}" y="${y(lim) - 6}" text-anchor="end" font-size="12" fill="var(--mute)">proved limit 1/M = ${lim.toFixed(4)}</text>` +
+      `<path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>` +
+      `<circle cx="${x(T)}" cy="${y(last)}" r="5" fill="var(--accent)" stroke="var(--panel)" stroke-width="2"/><text x="${x(T) - 8}" y="${y(last) + (last < lim ? 16 : -10)}" text-anchor="end" font-size="12">${last.toFixed(4)} at t = ${T}</text>` +
+      `<rect id="hit" x="${L}" y="${Tp}" width="${W - L - Rr}" height="${H - Tp - B}" fill="transparent"/><line id="xh" x1="0" x2="0" y1="${Tp}" y2="${H - B}" stroke="var(--mute)" stroke-width="1" style="display:none"/><circle id="xc" r="5" fill="var(--accent)" stroke="var(--panel)" stroke-width="2" style="display:none"/>`;
+    $('#convNote').textContent = `Computed now in your browser: ${T} matrix iterations for M = ${M}. After ${T} generations P(fixed) = ${last.toFixed(5)}, P(lost) = ${v[0].toFixed(5)}, still undecided = ${unres[T].toExponential(2)}. The proved limit is 1/M = ${lim.toFixed(5)}; the gap is bounded by the undecided mass.`;
+    const rows = [0, 1, 2, 5, 10, 20, 50, 100, 200, 400, 600].filter(t => t <= T);
+    $('#convTable').innerHTML = '<tr><th>t</th><th>P(fixed by t)</th><th>P(lost by t)</th><th>undecided</th></tr>' + rows.map(t => `<tr><td>${t}</td><td>${fixed[t].toFixed(5)}</td><td>${(1 - fixed[t] - unres[t]).toFixed(5)}</td><td>${unres[t].toExponential(2)}</td></tr>`).join('');
+    const svg = $('#conv'), tip = $('#tip'), hit = $('#hit');
+    hit.onmousemove = e => {
+      const r = svg.getBoundingClientRect(), sx = (e.clientX - r.left) * (W / r.width);
+      const t = Math.max(0, Math.min(T, Math.round((sx - L) / (W - L - Rr) * T)));
+      $('#xh').style.display = ''; $('#xh').setAttribute('x1', x(t)); $('#xh').setAttribute('x2', x(t));
+      $('#xc').style.display = ''; $('#xc').setAttribute('cx', x(t)); $('#xc').setAttribute('cy', y(fixed[t]));
+      tip.style.display = 'block'; tip.style.left = (e.clientX + 14) + 'px'; tip.style.top = (e.clientY + 14) + 'px';
+      tip.innerHTML = `<b>t = ${t}</b><br>P(fixed) = ${fixed[t].toFixed(5)}<br>undecided = ${unres[t].toExponential(2)}`;
+    };
+    hit.onmouseleave = () => { tip.style.display = 'none'; $('#xh').style.display = 'none'; $('#xc').style.display = 'none'; };
+  };
+  $('#mRange').oninput = draw; $('#tRange').oninput = draw; draw();
+}
+</script>
+</body>
+</html>
