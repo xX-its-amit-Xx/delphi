@@ -87,6 +87,14 @@ const formalized = [
   { claim_id: 'fisher-ftns', theorem: 'Delphi.fisher_fundamental_theorem', module: 'lean/Delphi/Fisher.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified', note: 'One haploid or clonal locus with finitely many types, fitnesses held fixed (partial change). In that population the variance in fitness is the additive genetic variance. The diploid average-effect version is not formalised.' },
   { claim_id: 'maynardsmith-twofold-cost', theorem: 'Delphi.twofold_cost_of_sex', module: 'lean/Delphi/MaynardSmith.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified', note: 'Deterministic odds identity under equal fecundity, 1:1 sex ratio and males contributing nothing; iterated form gives odds x 2^n after n generations.' }
 ].map(f => { const c = key.find(k => k.id === f.claim_id) || {}; return { ...f, label: c.label, statement: c.statement, notation: c.notation, context: c.context, paper: c.paper }; });
+// Not a key claim: an extension proved for the flying-fish feasibility question (lean/bound/). Its text lives
+// here because no paper states it in this form; it is the neutral case of Kimura 1962 relaxed to an inequality.
+formalized.push({ claim_id: 'favored-fixation-lower-bound', theorem: 'Delphi.FavoredChain.fixationProbability_ge', module: 'lean/Delphi/Favored.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified',
+  derived: true, label: 'Fixation is at least i/M when selection does not oppose the mutant',
+  statement: 'In an absorbing chain on 0..M gene copies whose expected copy number never decreases (neutral, or selection for the mutant), a lineage present in i copies is eventually fixed with probability at least i/M. Wright-Fisher sampling with mutant relative fitness 1+s, s >= 0, is such a chain. Hence the expected number of substitutions over T generations is at least mu T (and at most M mu T), whatever M.',
+  notation: 'E[X_{t+1} | X_t = i] >= i  =>  u(i) >= i/M ;  mu T <= M mu u T <= M mu T',
+  context: 'Proved for the Exocoetidae substitution budget (lean/bound/). Kimura 1962 gives u ~ 2s for a selected mutant in the diffusion limit; that formula is not formalised. This is the exact, weaker statement that selection for the mutant cannot make fixation rarer than neutral drift does.',
+  note: 'A lower bound only. Neutral chains are favored chains, and for them the bound is attained, so no upper bound in terms of s follows from this module.', paper: null });
 // 4b. Proof scope: which decisions the Lean kernel checked, and which are assumptions stated in the
 // module header and never proved. Mirrors the module headers; kept here so the page can show both halves.
 const proofScope = {
@@ -116,6 +124,18 @@ const proofScope = {
       'Haploid or clonal inheritance, so the variance in fitness IS the additive genetic variance; the diploid average-effect version is not formalised.',
       'Fitnesses constant within the step (partial change): no dominance, epistasis, frequency dependence or environmental change.',
       'Infinite population: deterministic frequencies, no drift, no mutation.'
+    ]
+  },
+  'favored-fixation-lower-bound': {
+    kernelChecked: [
+      'For any absorbing chain on {0..M} copies with E[X_{t+1} | X_t = i] >= i (stochastic, both ends absorbing, positive one-step escape from every interior state), P(fixed by t) is nondecreasing and bounded, its limit u(i) exists, and u(i) >= i/M (Delphi.FavoredChain.fixationProbability_ge); also u(i) <= 1.',
+      'Wright-Fisher sampling with success probability (1+s) i / (M + s i), s >= 0, is such a chain (Delphi.wrightFisherSelection), so a single new mutant fixes with probability at least 1/M.',
+      'The defined expected count M mu u T equals mu T for the neutral Wright-Fisher chain, is at least mu T for any favored chain, and is at most M mu T for any u <= 1.'
+    ],
+    assumed: [
+      'The expected count is a DEFINITION (rate x generations, independent fates, Kimura 1968); linkage, interference, changing M, changing s and overlapping generations are excluded by it, not shown absent.',
+      'Selection enters only through the sampling probability (1+s) i / (M + s i), constant in time and across sites.',
+      'mu, T, M are free parameters; the module measures nothing. Which mutations are favored, how many a trait needs, and in what order, are outside it.'
     ]
   },
   'maynardsmith-twofold-cost': {
@@ -159,6 +179,16 @@ const chkFile = path.join(here, 'nanopubs/check.json');
 const npCheck = fs.existsSync(chkFile) ? JSON.parse(fs.readFileSync(chkFile, 'utf8')) : null;
 const nanopubs = npManifest ? { built: npManifest.built, check: npCheck ? { ...npCheck.summary, perFile: npCheck.results.map(r => ({ file: r.file, parsed: r.parsed, npValid: r.ok, notes: r.npCheck.issues.length })) } : null, templateConformance: npManifest.templateConformance || null, commitPinned: npManifest.commitPinned, status: npManifest.publishing.status, policy: npManifest.publishing.policy, drafts: npManifest.nanopubs.length, byKind: Object.fromEntries([...new Set(npManifest.nanopubs.map(n => n.kind))].map(k => [k, npManifest.nanopubs.filter(n => n.kind === k).length])), signed: npManifest.nanopubs.filter(n => n.trustyUri).length, published: npManifest.nanopubs.filter(n => n.registry).length, files: npManifest.nanopubs.map(n => ({ file: n.file, kind: n.kind, status: n.status, publishable: n.publishable || null })) } : null;
 
+// 7. Flying-fish substitution budget (lean/bound/compute.mjs): applies the audited theorems to sourced parameters.
+let bound = null;
+try {
+  const { computeBound } = await import('./bound/compute.mjs');
+  const P = JSON.parse(fs.readFileSync(path.join(here, 'bound/parameters.json'), 'utf8'));
+  const partial = { built: null, build: { ok: buildOk }, sorryTotal, audit: { theorems: axioms } };
+  bound = computeBound(partial, P);
+  fs.writeFileSync(path.join(here, 'bound/result.json'), JSON.stringify(bound, null, 1));
+} catch (e) { bound = { verified: false, error: String(e.message) }; }
+
 const report = {
   built: new Date().toISOString(),
   versions,
@@ -166,13 +196,15 @@ const report = {
   audit: { ok: audit.exit === 0 && axioms.length > 0 && nonStandard.length === 0, theorems: axioms, nonStandard, raw: audit.out.trim() },
   sorryTotal, modules, theorems, lemmas, formalized,
   mutations: mutations ? { summary: mutations.summary, results: mutations.results } : null,
-  nanopubs,
+  nanopubs, bound,
   summary: {
     theoremsCompiling: buildOk ? theorems.length : 0,
     lemmas: lemmas.length,
     modules: modules.length,
     sourceLines: modules.reduce((s, m) => s + m.lines, 0),
-    claimsVerified: formalized.filter(f => f.status === 'verified').length,
+    claimsVerified: formalized.filter(f => f.status === 'verified' && !f.derived).length,
+    extensionsVerified: formalized.filter(f => f.status === 'verified' && f.derived).length,
+    boundVerdict: bound && bound.verified ? bound.comparison.verdict : null,
     claimsAssessed: formalized.filter(f => f.assessments.length > 0).length,
     assessmentsRun: assessments.length,
     assessorProviders: [...new Set(assessments.map(a => a.assessor.provider))],
