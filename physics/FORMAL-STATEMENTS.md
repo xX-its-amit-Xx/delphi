@@ -130,3 +130,49 @@ each carrying (L, M, S, A_cs, …) and isometry is the hypothesis that these thr
 3. Keep "constant C_L,max", "constant (L/D)", "constant p" and "constant σ" as **named hypotheses** so the scope notes can say
    "Assumed, not proved" exactly as the existing records do.
 4. No number from `physics/results.json` belongs in a theorem statement; the numbers are for the checker's candidate inputs.
+
+---
+
+## Status after the Lean thread's reply (2026-10-31, ~19:40 UTC)
+
+R2 to R8 are in `lean/Delphi/Scaling.lean` as named hypotheses (`AreaLaw`, `MusclePowerLaw`, constants σ, ρ, C_L,max, L/D, Fr)
+and theorems (`areaLaw_ratio`, `wingLoading_ratio`, `breakLoad_ratio`, `safetyFactor_eq`, `stress_ratio`, `cannot_carry`,
+`vmin_le`, `vmin_ratio`, `powerRequired_ratio` with exponent 7/2, `powerAvailable_ratio`, `exists_size_limit`, `froude_ratio`).
+Checked by the physics thread against the Lean thread's build report `dashboard/public/t/lean/lean.json` (built 2026-10-31T19:00Z):
+the Scaling theorems are listed with standard axioms only and the module's sorry count is zero. The proofs themselves were not
+re-run here. R-numbering and hypotheses are preserved one-to-one. `vmin_le` is the exact bound with no isometry; the √L form needs
+R1 and R2. R6 is never asserted. No number from `physics/results.json` is in any theorem; one illustrative elimination in the
+ledger uses the L3 specimen with values chosen by the Lean thread (a claimed 5 m/s glide against v_min 9.85 m/s).
+
+Ledger effect reported by Lean: the 13 square-cube candidates moved from `cannot-rule` to `consistent` (they restate the law, so
+nothing is eliminated). The one strength row left open is **WP-077/C1, petiole bending**, which needs a section-modulus statement.
+That is R9 below.
+
+## R9 — Bending strength of an isometric member (section modulus; the one WP-077/C1 needs)
+
+- **Symbols:** ℓ lever arm (m); F transverse load (N); M_b = F ℓ bending moment (N m) for a point load at the free end of a
+  cantilever (a uniformly distributed load gives M_b = ½ q ℓ² = ½ F ℓ: same L-dependence, different constant); d a linear
+  dimension of the cross-section (m); Z section modulus (m³), Z = k_Z d³ for geometrically similar sections (for a solid circle
+  Z = π d³/32); σ_b = M_b / Z maximum bending stress (N m⁻²); σ_max bending strength of the material (N m⁻²).
+- **Definition (Euler–Bernoulli beam, linear elastic, slender):** σ_b = M_b / Z.
+- **Hypotheses (R9a, "body-like load", the WP-077/C1 case):** isometry of the loaded body with constant density so F = k_F L³
+  (R1 applied to the load); lever arm ℓ = k_ℓ L; geometrically similar sections d = k_d L so Z = k_Z k_d³ L³ (R2 extended from area
+  to section modulus); σ_max the same for every member.
+- **Conclusion 1:** σ_b(L₂)/σ_b(L₁) = L₂/L₁; d log σ_b / d log L = 1. (M_b ∝ L⁴, Z ∝ L³.)
+- **Conclusion 2:** the bending safety factor σ_max/σ_b = σ_max k_Z k_d³ / (k_F k_ℓ L) ∝ L⁻¹, so there is L_max,b = σ_max k_Z k_d³ /
+  (k_F k_ℓ n) above which the member cannot carry n times its load in bending. Same form as R7's `cannot_carry`, with k_Z k_d³ in
+  place of k₃ and the lever-arm constant k_ℓ added.
+- **Hypotheses (R9b, "sheet-like load"):** the load is a lamina of constant thickness t, so F = k_F' L² (mass ∝ area × t);
+  everything else as R9a.
+- **Conclusion (R9b):** σ_b(L₂)/σ_b(L₁) = 1: bending stress is independent of size and **no size limit follows**. This is the
+  reading WP-077/C1 rejects by committing to "thickness scales too"; the checker should ask a leaf candidate which of R9a or R9b it
+  commits to, because the two give opposite answers on whether a limit exists.
+- **Not mathematics:** slender linear-elastic beam theory; geometrically similar sections (real supports change section shape with
+  size; the elastic-similarity alternative d ∝ ℓ^{3/2} is a different hypothesis family and is not formalised or searched here);
+  constant σ_max; the load scaling (R9a vs R9b is the empirical fork); no dynamic loads (wind on a leaf is a load the model does not
+  carry, which is why WP-077/C2's boundary-layer argument is outside R9 entirely).
+- **Mutants that must fail:** Z ∝ d² (then σ_b ∝ L² in R9a); load ∝ L² while claiming Conclusion 1; dropping "σ_max constant" while
+  keeping Conclusion 2.
+- **How the ledger uses it:** WP-077/C1 commits to σ_b ∝ k with blade mass ∝ k³ and section ∝ k² (so d ∝ k and Z ∝ k³): under R9a
+  that is exactly Conclusion 1, so the candidate is `consistent`, not eliminated, like the other square-cube restatements. A
+  candidate that commits to a constant-thickness blade and still claims a bending limit would be eliminated by R9b.
