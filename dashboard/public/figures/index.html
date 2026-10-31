@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Figures &mdash; DELPHI</title>
+<meta name="description" content="Every figure in the project, each with what it shows, the data it was made from, and its SHA-256.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e7c86'/%3E%3Cpath d='M8 23V14M14 23V9M20 23V17M26 23V12' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,800&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--soft:#eef2ef;--shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05)}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Inter Tight",system-ui,sans-serif}
+a{color:var(--accent)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px}
+header{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 93%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;gap:12px;align-items:center;padding:10px 18px;flex-wrap:wrap}
+header b{font-family:Fraunces,serif}
+nav a{padding:3px 9px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.88rem}
+nav a:hover{background:var(--soft);color:var(--ink)}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:5px 11px;border-radius:8px;margin-left:auto}
+h1{font-family:Fraunces,serif;font-size:clamp(1.8rem,4vw,2.6rem);letter-spacing:-.02em;margin:26px 0 6px}
+h2{font-family:Fraunces,serif;font-size:1.25rem;margin:30px 0 10px;padding-top:14px;border-top:1px solid var(--line)}
+.lede{color:var(--mute);max-width:72ch;margin:0 0 10px}
+figure{margin:14px 0 22px;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+figure .img{background:#fcfcfb}
+figure img{display:block;width:100%;height:auto}
+figcaption{padding:12px 16px;font-size:.92rem;border-top:1px solid var(--line)}
+figcaption b{display:block;margin-bottom:4px}
+.prov{color:var(--mute);font-size:.84rem}
+.mono{font-family:"JetBrains Mono",monospace;font-size:.76rem;background:var(--soft);padding:1px 5px;border-radius:4px;word-break:break-all}
+.chip{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.76rem;border:1px solid var(--line);background:var(--soft);color:var(--mute);margin-right:4px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <b>Figures</b>
+  <nav><a href="../start/">Start</a><a href="../">Mission Control</a><a href="../graph/">Graph</a><a href="../proofs/">Claim Book</a><a href="../deck/">Deck</a></nav>
+  <button id="themeBtn">Theme</button>
+</div></header>
+<main class="wrap">
+  <h1>Every figure, with where it came from</h1>
+  <p class="lede">Each figure below is read from <span class="mono">deck/fig/manifest.json</span>: what it shows, the data it was made from, and the SHA-256 of the image file. Nothing here was drawn by hand, and figures that rest on data we did not collect say whose it is.</p>
+  <div id="g"></div>
+</main>
+<script>
+(function(){
+'use strict';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const tk='delphi-theme';
+if(localStorage.getItem(tk))document.documentElement.dataset.theme=localStorage.getItem(tk);
+document.getElementById('themeBtn').onclick=()=>{const c=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
+  const n=c==='dark'?'light':'dark';document.documentElement.dataset.theme=n;try{localStorage.setItem(tk,n)}catch{}};
+// group by subject so the trees sit together
+const GROUPS=[
+  ['Flight across the tree of life', f=>/flight_/.test(f.file), 'flight'],
+  ['What our claim tests found', f=>/lewontin|thompson/.test(f.file), 'claims'],
+  ['Swarm experiments', f=>/swarm/.test(f.file), 'swarm'],
+  ['The enzyme side project', f=>/cert_vs|outcomes|ablation|lazysp/.test(f.file), 'enzyme']
+];
+fetch('../deck/fig/manifest.json').then(r=>r.json()).then(M=>{
+  const used=new Set(); let h='';
+  for(const [title,test,id] of GROUPS){
+    const fs=M.filter(f=>test(f)&&!used.has(f.file)); if(!fs.length)continue;
+    fs.forEach(f=>used.add(f.file));
+    h+=`<h2 id="${id}">${esc(title)}</h2>`+fs.map(card).join('');
+  }
+  const rest=M.filter(f=>!used.has(f.file));
+  if(rest.length)h+='<h2 id="other">Other</h2>'+rest.map(card).join('');
+  document.getElementById('g').innerHTML=h;
+  if(location.hash){const el=document.querySelector(location.hash);if(el)el.scrollIntoView();}
+}).catch(e=>{document.getElementById('g').textContent='Could not load the figure manifest: '+e.message});
+function card(f){
+  return `<figure id="${esc(f.file.replace(/^fig\//,'').replace(/\.\w+$/,''))}">
+    <div class="img"><a href="../deck/${esc(f.file)}" target="_blank" rel="noopener"><img src="../deck/${esc(f.file)}" alt="${esc(f.shows)}" loading="lazy"></a></div>
+    <figcaption><b>${esc(f.shows)}</b>
+      <div class="prov">${esc(f.provenance)}</div>
+      <div style="margin-top:6px">${f.kind?`<span class="chip">${esc(f.kind)}</span>`:''}
+      ${f.sha256?`<span class="mono">sha256 ${esc(f.sha256)}</span>`:''}</div>
+    </figcaption></figure>`;
+}
+})();
+</script>
+</body>
+</html>
