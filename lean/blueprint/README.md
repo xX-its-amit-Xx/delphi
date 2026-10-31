@@ -50,15 +50,6 @@ is what catches that class of error. 32 taxa containing Exocoetidae; 1390 `never
 reachable from kept terms, none naming a containing taxon; 5435 `in_taxon` and 64 `stated_in_taxon`
 statements, all naming containing taxa. Kernel time about 85 s.
 
-## Diamonds are not cycles
-
-114 of the 536 terms sit under more than one whole (the liver is an organ of both the digestive and the
-exocrine system), so paths converge. A naive walk that treats a re-visited ancestor as a back-edge reports
-such terms as "on a cycle"; the organism thread's first independent check did exactly that (106 false
-positives) before redoing it with a proper depth-first search and finding zero. The certificate cannot make
-that mistake: acyclicity is proved from the level function alone (every edge strictly decreases the level,
-so no path returns to its start), and converging paths never enter into it.
-
 ## Why the mutants sabotage the data, not the proof
 
 Two of the mutants in `lean/mutate.mjs` edit the certificate's literals: one adds an upward edge that

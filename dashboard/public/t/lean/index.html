@@ -68,7 +68,7 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
 <header class="top"><div class="wrap">
   <a class="back" href="../../index.html">&larr; Mission Control</a>
   <span class="brand">Lean thread</span>
-  <nav><a href="#result">Result</a><a href="#proved">What is proved</a><a href="#flyingfish">Flying fish</a><a href="#theorems">Theorems</a><a href="#faith">Faithfulness</a><a href="#audit">Audit</a><a href="#mutants">Break it</a><a href="#records">Records</a><a href="#watch">Watch it converge</a><a href="#repro">Reproduce</a><a href="#honest">Limits</a></nav>
+  <nav><a href="#result">Result</a><a href="#proved">What is proved</a><a href="#flyingfish">Flying fish</a><a href="#blueprint">Blueprint certificate</a><a href="#thompson">Cube law</a><a href="#theorems">Theorems</a><a href="#faith">Faithfulness</a><a href="#audit">Audit</a><a href="#mutants">Break it</a><a href="#records">Records</a><a href="#watch">Watch it converge</a><a href="#repro">Reproduce</a><a href="#honest">Limits</a></nav>
   <button id="themeBtn" title="Toggle light or dark">Theme</button>
 </div></header>
 
@@ -118,6 +118,20 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
  <div class="card"><h3>Ceiling as a function of N (vacuous by construction)</h3><div class="scroll"><table id="ffCeiling"></table></div><p class="small mute" id="ffCeilingNote"></p></div>
 </div>
 <div class="card"><h3>Why the verdict is inconclusive, and what this does not establish</h3><ul class="small" id="ffUndefined"></ul><p class="small" id="ffReason"></p></div>
+</section>
+
+<section id="blueprint"><h2>Is the generated fish well-formed? A kernel-checked certificate</h2>
+<p class="small">The organism thread's tool emits a graph of ontology terms: body, organ systems, organs, tissues, cell types, each placed under a whole by a <code>part_of</code> statement Ubergraph served. <code>lean/Delphi/Blueprint.lean</code> proves, for any such graph, that a decidable checker implies acyclicity of <code>part_of</code>, transitivity of its closure, that every node reaches the body root, and that the pinned taxon statements exclude nothing. <code>lean/blueprint/certify.mjs</code> turns one emitted blueprint into Lean literals and lets the kernel evaluate the checker. Regenerate it whenever the blueprint is rebuilt.</p>
+<div class="verdict" id="bpVerdict"></div>
+<div class="grid g2" id="bpScope"></div>
+<div id="bpCards"></div>
+</section>
+
+<section id="thompson"><h2>A morphological law with a formal statement and a data test</h2>
+<p class="small">Thompson (1917): weight tends to vary as the cube of a linear dimension. <code>lean/Delphi/Thompson.lean</code> proves that an exact cube law has log-log exponent exactly 3, and that a measured exponent other than 3 refutes the exact law on that interval. The exponents below were measured by the claims thread; they are pointed to, not derived.</p>
+<div class="verdict" id="thVerdict"></div>
+<div class="grid g2" id="thScope"></div>
+<div class="card"><h3>Measured log-log exponents of weight on stature (NHANES)</h3><div class="scroll"><table id="thTable"></table></div><p class="small mute" id="thNote"></p></div>
 </section>
 
 <section id="theorems"><h2>The theorems the compiler accepted</h2>
@@ -226,6 +240,26 @@ function init(R) {
     ${f.note ? `<p class="small"><b>Scope here:</b> ${esc(f.note)}</p>` : ''}
     ${f.proofScope ? `<div class="grid g2" style="margin:8px 0"><div><p class="small"><b>Kernel-checked (proved in Lean):</b></p><ul class="small">${f.proofScope.kernelChecked.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div><div><p class="small"><b>Assumed, not proved (stated in the module header):</b></p><ul class="small">${f.proofScope.assumed.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></div>` : ''}
     <p class="small">Theorem <code>${esc(f.theorem)}</code> in <code>${esc(f.module)}</code>. ${f.paper ? `Source: ${esc(f.paper.title)} (${esc(f.paper.year)})${f.paper.doi ? `, <a href="https://doi.org/${esc(f.paper.doi)}">doi:${esc(f.paper.doi)}</a>` : ''}.` : 'Not a paper\'s claim: proved in this project as an extension for the flying-fish budget, so it has no faithfulness assessment to run against a source.'}</p></div>`).join('');
+
+  // blueprint certificates
+  const BC = R.blueprintCertificates || [];
+  const bpScope = (R.formalized.find(f => f.claim_id === 'blueprint-well-formedness') || {}).proofScope;
+  $('#bpVerdict').innerHTML = BC.length ? BC.map(c => `<span class="chip ${c.verified && c.current ? 'ok' : 'bad'}">${esc(c.name)}: ${c.verified ? 'kernel-checked' : 'NOT VERIFIED'}${c.current ? '' : ' (blueprint file changed since: regenerate)'}</span>`).join('') + `<span class="chip">${BC.length} certificate${BC.length === 1 ? '' : 's'}</span>` : '<span class="chip warn">no certificate generated</span>';
+  $('#bpScope').innerHTML = bpScope ? `<div class="card"><h3>Kernel-checked (proved in Lean)</h3><ul class="small">${bpScope.kernelChecked.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div><div class="card"><h3>Assumed, not proved</h3><ul class="small">${bpScope.assumed.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : '';
+  $('#bpCards').innerHTML = BC.map(c => { const g = c.graph, t = c.taxonData; return `<div class="card" style="margin:10px 0"><h3>${esc(c.blueprint.description)} (${esc(c.blueprint.taxon.label)}, ${esc(c.blueprint.taxon.term)})</h3>
+    <div class="verdict">${Object.entries(c.theorems).map(([k, n]) => `<span class="chip ${c.audit[k] && c.audit[k].axioms.every(x => ['propext', 'Classical.choice', 'Quot.sound'].includes(x)) ? 'ok' : 'bad'}">${esc(k)}: <code>${esc(n.split('.').pop())}</code></span>`).join('')}<span class="chip">compiled in ${esc(c.compile.seconds)} s</span></div>
+    <div class="grid g2"><div><p class="small"><b>Graph as certified</b></p><table><tr><th>Distinct terms</th><td>${g.distinctTerms}</td></tr><tr><th>Distinct part_of edges</th><td>${g.distinctEdges}</td></tr><tr><th>Placements in the file</th><td>${g.placementsInFile}</td></tr><tr><th>Terms placed under more than one whole</th><td>${g.multiPlacedTerms}</td></tr>${Object.keys(g.countsByLevelDistinct).map(k => `<tr><th>${esc(k)}: distinct / placements</th><td>${g.countsByLevelDistinct[k]} / ${g.countsByLevelPlacements[k]}</td></tr>`).join('')}</table></div>
+    <div><p class="small"><b>Taxon statements pinned from Ubergraph</b></p><table><tr><th>Taxa containing ${esc(c.blueprint.taxon.label)}</th><td>${t.rows.ancestors}</td></tr><tr><th>never_in_taxon rows reachable from kept terms</th><td>${t.rows.neverIn} (none names a containing taxon)</td></tr><tr><th>in_taxon rows on kept terms</th><td>${t.rows.inTaxon} (all name containing taxa)</td></tr><tr><th>stated_in_taxon rows in the file</th><td>${t.rows.stated}</td></tr><tr><th>Queries</th><td>${t.queries}, ${esc(t.retrieved.first.slice(0, 16))} to ${esc(t.retrieved.last.slice(11, 16))} UTC</td></tr></table></div></div>
+    <p class="small mute">Blueprint file <code>${esc(c.blueprint.file)}</code> sha256 <code>${esc(c.blueprint.sha256.slice(0, 16))}…</code> (built ${esc(c.blueprint.built)}); taxon data sha256 <code>${esc(t.sha256.slice(0, 16))}…</code>; certificate <code>${esc(c.leanModule)}</code>, generated ${esc(c.generated)}. Edge counts here are distinct (term, whole) pairs; the file's own counts (${Object.entries(g.fileCounts).map(([k, v]) => `${k} ${v}`).join(', ')}) are placements.</p></div>`; }).join('');
+
+  // Thompson cube law
+  const TT = R.thompsonTest, thScope = (R.formalized.find(f => f.claim_id === 'thompson1917-ch03-07') || {}).proofScope;
+  if (TT && !TT.error) {
+    $('#thVerdict').innerHTML = `<span class="chip ok">exact cube law: exponent = 3 (proved)</span><span class="chip ${TT.verdict === 'supports' ? 'ok' : 'warn'}">claim test verdict: ${esc(TT.verdict)} (band 2.5-3.5, claims thread)</span><span class="chip warn">every measured exponent differs from 3: the exact law is refuted on each window; the approximate law is what the test scores</span>`;
+    $('#thScope').innerHTML = thScope ? `<div class="card"><h3>Kernel-checked (proved in Lean)</h3><ul class="small">${thScope.kernelChecked.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div><div class="card"><h3>Assumed, not proved</h3><ul class="small">${thScope.assumed.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : '';
+    $('#thTable').innerHTML = '<tr><th>Sample</th><th>Exponent b</th><th>95% CI</th><th>n</th><th>vs exact 3</th></tr>' + TT.exponents.map(e => `<tr><td class="small">${esc(e.label)}</td><td><b>${Number(e.b).toFixed(2)}</b></td><td class="small">${e.ci95 ? `[${Number(e.ci95[0]).toFixed(2)}, ${Number(e.ci95[1]).toFixed(2)}]` : ''}</td><td>${esc(e.n)}</td><td class="small">${e.ci95 && e.ci95[0] <= 3 && 3 <= e.ci95[1] ? 'CI includes 3' : 'CI excludes 3: not an exact cube law on this window (not_cubeLaw_of_exponent_ne_three)'}</td></tr>`).join('');
+    $('#thNote').textContent = `Source: ${TT.source}. Cycles ${(TT.cycles || []).join(', ')}. The theorem is about the exact law; the claim test scores Thompson's "mainly (though not wholly)" with a pre-registered band, which is a decision rule outside Lean. First caveat from the test: ${(TT.caveats || [])[0] || ''}`;
+  } else { $('#thVerdict').innerHTML = `<span class="chip warn">claim test results not loaded${TT && TT.error ? ': ' + esc(TT.error) : ''}</span>`; }
 
   // flying-fish budget
   const FB = R.bound;
