@@ -30,18 +30,17 @@ export function computeBound(R, P) {
 
   const d = P.durationMa, g = P.generationTimeYears, mu = P.mutationRatePerSitePerGeneration, G = P.genomeSites.value;
   // Generations available: duration / generation time. Low uses the youngest age and the longest generation.
-  const alt = d.alternativeFirstAppearance || null;
-  const T = { low: d.low * 1e6 / g.high, high: d.high * 1e6 / g.low, sensitivity2y: d.low * 1e6 / g.sensitivityHigh, sensitivityAltFossil: alt ? alt.low * 1e6 / g.high : null };
+  const T = { low: d.low * 1e6 / g.high, high: d.high * 1e6 / g.low, sensitivity2y: d.low * 1e6 / g.sensitivityHigh };
   // Neutral budget per site: mu * T (theorem `neutral`); independent of M, so of N.
-  const neutralPerSite = { low: mu.low * T.low, high: mu.high * T.high, sensitivity2y: mu.low * T.sensitivity2y, sensitivityAltFossil: alt ? mu.low * T.sensitivityAltFossil : null };
-  const neutralPerGenome = { low: neutralPerSite.low * G, high: neutralPerSite.high * G, sensitivity2y: neutralPerSite.sensitivity2y * G, sensitivityAltFossil: alt ? neutralPerSite.sensitivityAltFossil * G : null };
+  const neutralPerSite = { low: mu.low * T.low, high: mu.high * T.high, sensitivity2y: mu.low * T.sensitivity2y };
+  const neutralPerGenome = { low: neutralPerSite.low * G, high: neutralPerSite.high * G, sensitivity2y: neutralPerSite.sensitivity2y * G };
   // Ceiling per site as a function of N (M = 2N): 2 N mu T (theorem `ceiling`). Grows without bound in N.
   const ceilingPerSiteByN = P.populationSize.tableValues.map(N => ({ N, low: 2 * N * mu.low * T.low, high: 2 * N * mu.high * T.high }));
   return {
     verified, computed: new Date().toISOString(), leanReportBuilt: R.built,
     theorems: Object.fromEntries(Object.entries(THEOREMS).map(([k, t]) => [k, { ...t, axioms: audit[k].axioms }])),
     inputs: {
-      durationMa: { low: d.low, high: d.high, source: d.source.label, url: d.source.url, records: d.source.records || null, verified: d.source.verified || null, alternativeFirstAppearance: alt },
+      durationMa: { low: d.low, high: d.high, source: d.source.label, url: d.source.url },
       generationTimeYears: { low: g.low, high: g.high, sensitivityHigh: g.sensitivityHigh, sources: g.sources.map(s => s.label) },
       mutationRatePerSitePerGeneration: { low: mu.low, high: mu.high, sources: mu.sources.map(s => s.label) },
       genomeSites: { value: G, source: P.genomeSites.source.label },
@@ -64,7 +63,7 @@ export function computeBound(R, P) {
     ],
     assumed: [
       'The expected count M mu u T is a definition (Kimura 1968: new mutants per generation times fixation probability, summed over generations). Independent fates, no linkage or interference, constant M, constant mu, constant s and non-overlapping generations enter through that definition and are not proved.',
-      'The numbers for T, mu, G and N come from the literature sources named in lean/bound/parameters.json, none of which measures Exocoetidae for mu or generation time; the fossil first appearance is a minimum age, and it rests on two PBDB occurrence records from one publication (Bannikov 2014, Monte Bolca); the next-oldest record (David 1946) is 37.71 to 33.9 Ma and is carried as a sensitivity case.',
+      'The numbers for T, mu, G and N come from the literature sources named in lean/bound/parameters.json, none of which measures Exocoetidae for mu or generation time; the fossil first appearance is a minimum age.',
       'The selection coefficient, the fraction of mutations selection favours, and the number of substitutions a wing requires are undefined; the result is a one-sided budget with nothing to compare it to.',
       'Nothing here is about which substitutions, in which genes, or whether they are reachable in sequence; a count of fixations is not a path to a wing.'
     ]
