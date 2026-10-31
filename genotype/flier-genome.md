@@ -2,11 +2,11 @@
 
 **HYPOTHESIS THROUGHOUT. Not a predicted genome, not a design, and not a claim that any of this is achievable.**
 
-Built 2026-10-31T21:10:29Z by `genotype/build_flier_genome.py` from the physics thread's `physics/flier/spec.json`, this thread's
+Built 2026-10-31T21:11:35Z by `genotype/build_flier_genome.py` from the physics thread's `physics/flier/spec.json`, this thread's
 `interventions.json` and `causal-chains.json`, and two logged literature runs. No bird data anywhere: class Aves is this
 project's held-out clade, so the usual source of flight genetics is excluded by construction.
 
-> Of the four required changes, only fin proportion has genetic routes in this literature, and even there no route reaches the required magnitude or addresses span and aspect ratio. The remaining three are where the biology is missing, which is the useful result of this exercise.
+> No requirement has a route that reaches it. Three of the four are 'partial', and in each case the partial route answers a different question from the one asked: for the fin, a 1.65-fold area increase against the 3.9-fold required, with span and aspect ratio never measured at all; for the muscle, an increment on existing trunk muscle rather than an allocation to the pectoral fin, which no manipulation has ever been shown to enlarge; for air breathing, an anatomy that living fishes have evolved at least nine times over but whose construction genetics is mostly correlative and entirely absent for the flying fish's own order. Oxygen delivery is a flat 'none', and the Lean thread's kernel-checked elimination puts the shortfall at about 26-fold on a product of three physiological quantities that genetics does not report. The useful result of this exercise is the map of where the biology is missing, not a buildable design.
 
 ## The four required changes
 
@@ -53,6 +53,19 @@ Each row is a manipulation that changed the parameter named in its own row, whic
 **Route: partial.** PARTIAL for 'more muscle', NONE for 'a pectoral muscle at 16% of body mass'. Myostatin loss of function is a real, repeated, quantified genetic route to extra skeletal muscle in teleosts: 16% more skeletal muscle in a CRISPR mstn-knockout red sea bream breed, 21% higher body weight in TALEN mstnb-/- zebrafish, 29.7% higher body weight with more muscle cells in CRISPR MSTN channel catfish, 41% more back muscle in male CRISPR MSTN olive flounder, and significant gains in medaka, common carp and antisense-knockdown Nile tilapia. Four reasons it does not reach the requirement. (i) Every one of these is an INCREMENT on existing muscle, not an allocation: the red sea bream '16%' is a 16% increase in total skeletal muscle, which is not the same quantity as a muscle equal to 16% of body mass, and no fetched source reports pectoral fin muscle as a fraction of body mass in any fish. (ii) Every one of these is axial/trunk muscle. No fetched source reports mstn loss, or any other manipulation, enlarging the pectoral fin musculature; the only fin-muscle genetics found (met, six1a/b, six4a/b, tbx5, lbx1) is loss-of-function reducing fin muscle, with no gain-of-function in the other direction. (iii) The mstn effect in fish is predominantly hyperplastic and the link from fibre number to mass is not reliable: transgenic dominant-negative MSTN medaka doubled muscle fibre number with gross muscle mass unaltered, and the authors state MSTN loss of function failed to induce double-muscling in medaka. (iv) The side effects are concentrated exactly where a flight muscle needs support: short body and small centrum in red sea bream, fewer and shorter vertebrae in yellow catfish mstnb knockouts, and fat accumulating inside the muscle in zebrafish and tilapia. For scale, the most aerobically specialised teleost measured here, juvenile Pacific bluefin tuna, carries only 3.77-10.69% of body mass as red muscle in total, over the whole body.
 
 **What the physics changes about this requirement** (the physics thread's modelled result, not a biological measurement): The requirement is not simply a larger muscle. The physics thread's model gives 0.009 W of aerobic flight power from a bat-sized flight-muscle fraction built out of FISH RED MUSCLE, against 1.44 W needed: short by about two orders of magnitude. So item 2 is a request for a muscle TYPE with a mass-specific aerobic power far above anything fish red muscle delivers, and no genetic route to that is the same thing as a route to more muscle.
+
+**A coincidence to guard against.** The best muscle-mass route reports '16% MORE skeletal muscle' in a myostatin-knockout red sea bream. The requirement is a flight muscle at '16% OF BODY MASS'. The coincidence of the figure 16 is meaningless: the first is a relative gain on whatever muscle the fish already had, the second is an absolute fraction of the whole animal, and no fetched source reports a pectoral muscle fraction for any fish at all. Nothing in this file licenses the inference that one delivers the other.
+
+| gene | species | manipulation | effect | hyperplasia or hypertrophy | fibre type assayed |
+|---|---|---|---|---|---|
+| mstn (Pm-mstn) | Pagrus major (red sea bream) | coding | 16 % muscle mass | not reported in the abstract (paper not open | not reported |
+| mstnb | Danio rerio (zebrafish) | coding | 21 % body weight | hyperplasia, explicitly not hypertrophy: mor | not reported; fibre-type composition w |
+| MSTN | Ictalurus punctatus (channel catfish) | coding | 29.7 % body weight | hyperplasia implied: 'more muscle cells'; fi | not reported |
+| MSTN | Paralichthys olivaceus (olive flounder) | coding | 41.24 % muscle growth | not reported | not reported |
+| mstn (C315Y) | Oryzias latipes (medaka) | coding | 'a significant increase in body weight from  | both, sequentially: hyperplastic growth from | not reported |
+| mstn (dominant-negative C315Y transgene) | Oryzias latipes (medaka) | transgenic | 2 fold | hyperplasia at adult stage; embryonic ectopi | not reported |
+| mstn | Oreochromis niloticus (Nile tilapia) | cis-regulatory or expres | 'body weight and body length were significan | hyperplasia, explicitly not hypertrophy ('my | not reported as fibre type, but the me |
+| mstnba | Cyprinus carpio (common carp) | coding | 'mstnba mutated fish have grown significantl | hyperplasia implied (more muscle cells); fib | not reported |
 
 **What is missing:**
 

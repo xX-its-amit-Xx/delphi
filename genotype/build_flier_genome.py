@@ -146,6 +146,10 @@ items.append({
  "muscle_mass_routes_from_literature": muscle_routes[:10],
  "aerobic_capacity": (MO2 or {}).get("aerobic_capacity", [])[:8],
  "fin_muscle_chains_this_thread_has": fin_muscle_ch,
+ "do_not_confuse_these_two_numbers": ("The best muscle-mass route reports '16% MORE skeletal muscle' in a myostatin-knockout red sea bream. The requirement is a flight "
+                                      "muscle at '16% OF BODY MASS'. The coincidence of the figure 16 is meaningless: the first is a relative gain on whatever muscle the "
+                                      "fish already had, the second is an absolute fraction of the whole animal, and no fetched source reports a pectoral muscle fraction "
+                                      "for any fish at all. Nothing in this file licenses the inference that one delivers the other."),
  "physics_sharpens_the_requirement": {**PHYSICS["aerobic_flight_power_from_fish_red_muscle"], "source": PHYSICS["source"], "kind": PHYSICS["kind"],
    "what_it_changes": ("The requirement is not simply a larger muscle. The physics thread's model gives 0.009 W of aerobic flight power from a bat-sized "
                        "flight-muscle fraction built out of FISH RED MUSCLE, against 1.44 W needed: short by about two orders of magnitude. So item 2 is a "
@@ -216,9 +220,15 @@ out = {
  "physics_spec": {"file": "physics/flier/spec.json", "note": SPEC.get("note"), "parameter_diff_real_to_flier": diff,
                   "what_physics_says_it_does_not_establish": SPEC.get("what_this_does_not_establish")},
  "summary": {"items": len(items), "items_with_any_route": routed, "items_with_no_route_or_unresearched": len(items) - routed,
-             "honest_reading": ("Of the four required changes, only fin proportion has genetic routes in this literature, and even there no route reaches the "
-                                "required magnitude or addresses span and aspect ratio. The remaining three are where the biology is missing, which is the "
-                                "useful result of this exercise.")},
+             "route_by_item": {i["item"]: i["route"] for i in items},
+             "honest_reading": ("No requirement has a route that reaches it. Three of the four are 'partial', and in each case the partial route answers a "
+                                "different question from the one asked: for the fin, a 1.65-fold area increase against the 3.9-fold required, with span and "
+                                "aspect ratio never measured at all; for the muscle, an increment on existing trunk muscle rather than an allocation to the "
+                                "pectoral fin, which no manipulation has ever been shown to enlarge; for air breathing, an anatomy that living fishes have "
+                                "evolved at least nine times over but whose construction genetics is mostly correlative and entirely absent for the flying "
+                                "fish's own order. Oxygen delivery is a flat 'none', and the Lean thread's kernel-checked elimination puts the shortfall at "
+                                "about 26-fold on a product of three physiological quantities that genetics does not report. The useful result of this "
+                                "exercise is the map of where the biology is missing, not a buildable design.")},
  "items": items,
  "how_to_read_this": ["A route is listed because an experiment changed the parameter, never because a gene sounds relevant.",
                       "Evidence grades are the project's five: association, necessity, sufficiency, mechanism, hypothesis.",
@@ -250,6 +260,16 @@ for i in items:
                       ("physics_confirms_the_requirement", "What the physics confirms about this requirement")):
         if i.get(key):
             L += [f"**{head}** (the physics thread's modelled result, not a biological measurement): {i[key]['what_it_changes']}", ""]
+    if i.get("do_not_confuse_these_two_numbers"):
+        L += [f"**A coincidence to guard against.** {i['do_not_confuse_these_two_numbers']}", ""]
+    if i.get("muscle_mass_routes_from_literature"):
+        L += ["| gene | species | manipulation | effect | hyperplasia or hypertrophy | fibre type assayed |", "|---|---|---|---|---|---|"]
+        for r in i["muscle_mass_routes_from_literature"][:8]:
+            es = r.get("effect_size") or {}
+            val = f"{es.get('value')} {es.get('unit')}" if es.get("value") not in (None, "") else str(es.get("measured_as") or "no number given")[:44]
+            L.append(f"| {r.get('gene')} | {r.get('species')} | {str(r.get('level') or '')[:24]} | {val} | "
+                     f"{str(r.get('hyperplasia_or_hypertrophy') or 'not reported')[:44]} | {str(r.get('aerobic_or_glycolytic') or 'not reported')[:38]} |")
+        L.append("")
     if i.get("lean_elimination"):
         le = i["lean_elimination"]; r = le["recomputed_here"]
         L += [f"**Lean's elimination.** The Lean thread eliminated sustained aerobic cruise for this flier with a certificate its own ledger reports as",
