@@ -550,11 +550,10 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
     // genotype/interactions.json -> dashboard/public/blueprint3d/interactions.json. Nothing is written back to those folders.
     const copied = { physiology: [], interactions: null };
     const physDir = path.join(here, 'public/blueprint3d/physiology'); fs.mkdirSync(physDir, { recursive: true });
-    for (const f of ['circulation.json', 'gills.json', 'countercurrent.js', 'cardiac.js']) {
-      const src = path.join(root, 'physiology', f);
-      if (fs.existsSync(src)) { fs.copyFileSync(src, path.join(physDir, f)); copied.physiology.push({ file: 'physiology/' + f, bytes: fs.statSync(src).size, mtime: fs.statSync(src).mtime.toISOString() }); }
-      else if (fs.existsSync(path.join(physDir, f))) fs.unlinkSync(path.join(physDir, f));
-    }
+    const physSrcDir = path.join(root, 'physiology');
+    const physFiles = fs.existsSync(physSrcDir) ? fs.readdirSync(physSrcDir).filter(f => /\.(js|mjs|json)$/.test(f) && !/^test/.test(f)) : [];
+    for (const f of fs.readdirSync(physDir)) if (f !== 'status.json' && !physFiles.includes(f)) fs.unlinkSync(path.join(physDir, f));
+    for (const f of physFiles) { const src = path.join(physSrcDir, f); fs.copyFileSync(src, path.join(physDir, f)); copied.physiology.push({ file: 'physiology/' + f, bytes: fs.statSync(src).size, mtime: fs.statSync(src).mtime.toISOString() }); }
     fs.writeFileSync(path.join(physDir, 'status.json'), JSON.stringify({ builtAt: new Date().toISOString(), present: copied.physiology.map(x => x.file.split('/').pop()), files: copied.physiology, note: copied.physiology.length ? 'copied from physiology/ by dashboard/build-graph.mjs' : 'physiology/ has not been written yet; the page uses labelled stand-ins' }));
     const intSrc = path.join(root, 'genotype', 'interactions.json'), intDst = path.join(here, 'public/blueprint3d/interactions.json');
     if (fs.existsSync(intSrc)) { fs.copyFileSync(intSrc, intDst); copied.interactions = { file: 'genotype/interactions.json', bytes: fs.statSync(intSrc).size, mtime: fs.statSync(intSrc).mtime.toISOString() }; }
@@ -591,6 +590,6 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
     };
     const dir = path.join(here, 'public/blueprint3d'); fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'data.json'), JSON.stringify(out3d));
-    console.log(`blueprint3d/data.json: ${terms.size} distinct terms, ${edges.length} edges, byLevel ${JSON.stringify(byLevel)}; certificate ${cert ? (out3d.certificate.matches_file_now ? 'matches the file' : 'STALE: hash differs') : 'missing'}; physiology files ${copied.physiology.length}/4, interactions ${copied.interactions ? 'present' : 'absent'}; lean statements mentioning a term: ${bioMentioned.length}; genotype ${genotype ? (genotype.carried_from_previous_build ? `CARRIED from the build of ${genotype.carried_from_previous_build} (no map in this checkout)` : genotype.gated ? 'present but NOT vetted: gated, nothing drawn' : genotype.error || `${genotype.nodes_with_direct} nodes with direct records, ${genotype.links_stored_here} links kept`) : 'map.json not present'}`);
+    console.log(`blueprint3d/data.json: ${terms.size} distinct terms, ${edges.length} edges, byLevel ${JSON.stringify(byLevel)}; certificate ${cert ? (out3d.certificate.matches_file_now ? 'matches the file' : 'STALE: hash differs') : 'missing'}; physiology files ${copied.physiology.length} (${copied.physiology.map(x => x.file.split('/').pop()).join(', ') || 'none'}), interactions ${copied.interactions ? 'present' : 'absent'}; lean statements mentioning a term: ${bioMentioned.length}; genotype ${genotype ? (genotype.carried_from_previous_build ? `CARRIED from the build of ${genotype.carried_from_previous_build} (no map in this checkout)` : genotype.gated ? 'present but NOT vetted: gated, nothing drawn' : genotype.error || `${genotype.nodes_with_direct} nodes with direct records, ${genotype.links_stored_here} links kept`) : 'map.json not present'}`);
   } else console.log('blueprint3d: organism-design/examples/a-flying-fish.json not found; nothing written');
 }

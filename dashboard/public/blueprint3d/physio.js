@@ -125,13 +125,26 @@ export function solveExchange(p, counter) {
   return { Pw, Pb, Pb_out, Pw_out, extraction, bloodGain };
 }
 
+// Adapter for physiology/countercurrent.js solve(params, counter): it returns segment means `water`/`blood` (length N),
+// `waterOut`/`bloodOut`, `extraction` (exchanger effectiveness) and `utilisation` (fraction of inspired O2 removed).
+// The panel labels "O2 extracted from water" as the utilisation; effectiveness is reported beside it.
+export function adaptSolver(ext) {
+  return (p, counter) => {
+    const r = ext({ Pw_in: p.Pw_in, Pb_in: p.Pb_in, k: p.k, ratio: p.ratio, N: p.n, physical: p.physical || null }, counter);
+    const N = r.water.length; const Pw = new Array(N + 1), Pb = new Array(N + 1);
+    Pw[0] = p.Pw_in; for (let i = 0; i < N; i++) Pw[i + 1] = i < N - 1 ? (r.water[i] + r.water[i + 1]) / 2 : r.waterOut;
+    if (counter) { Pb[N] = p.Pb_in; for (let i = N - 1; i >= 0; i--) Pb[i] = i > 0 ? (r.blood[i] + r.blood[i - 1]) / 2 : r.bloodOut; }
+    else { Pb[0] = p.Pb_in; for (let i = 0; i < N; i++) Pb[i + 1] = i < N - 1 ? (r.blood[i] + r.blood[i + 1]) / 2 : r.bloodOut; }
+    return { Pw, Pb, Pb_out: r.bloodOut, Pw_out: r.waterOut, extraction: r.utilisation, effectiveness: r.extraction, bloodGain: (r.bloodOut - p.Pb_in) / (p.Pw_in - p.Pb_in), converged: r.converged, iterations: r.iterations, external: true };
+  };
+}
 // draws the lamella panel into a 2D canvas; `solver` may be the physiology thread's function when it lands
 export class GillPanel {
   constructor(canvas, pal, params, solver) { this.c = canvas; this.ctx = canvas.getContext('2d'); this.pal = pal; this.p = params || GILL_STANDIN; this.solver = solver || solveExchange; this.counter = true; this.t = 0; this.playing = true; }
   draw(dt) {
     if (this.playing) this.t += dt;
     const ctx = this.ctx, W = this.c.width, H = this.c.height; ctx.clearRect(0, 0, W, H);
-    const res = this.solver(this.p, this.counter); const n = this.p.n;
+    const res = this.solver(this.p, this.counter); const n = res.Pw.length - 1;
     const L = 60, R = W - 24, top = 18, chH = Math.min(70, H * 0.17), gap = 18;
     const wy = top, by = top + chH + gap, px0 = by + chH + 44, pH = H - px0 - 34;
     const X = i => L + (R - L) * i / n;
@@ -158,7 +171,7 @@ export class GillPanel {
     ctx.fillStyle = this.pal.oxy; ctx.fillText('water', R - 36, Y(res.Pw[n]) - 6); ctx.fillStyle = this.pal.deoxy; ctx.fillText('blood', L + 4, Y(res.Pb[0]) - 6);
     // readout
     ctx.fillStyle = this.pal.ink; ctx.font = '600 12px Inter Tight, system-ui, sans-serif';
-    ctx.fillText((this.counter ? 'counter-current' : 'co-current') + ': O₂ extracted from water ' + (res.extraction * 100).toFixed(0) + ' %  ·  blood leaves at ' + res.Pb_out.toFixed(0) + ' mmHg' + (this.counter ? ' (above the water outlet: only counter-current can do this)' : ' (cannot exceed the water outlet)'), L, H - 8);
+    ctx.fillText((this.counter ? 'counter-current' : 'co-current') + ': O₂ extracted from water ' + (res.extraction * 100).toFixed(0) + ' %' + (res.effectiveness != null ? ' (effectiveness ' + (res.effectiveness * 100).toFixed(0) + ' %)' : '') + '  ·  blood leaves at ' + res.Pb_out.toFixed(0) + ' mmHg' + (this.counter ? ' (above the water outlet: only counter-current can do this)' : ' (cannot exceed the water outlet)'), L, H - 8);
     return res;
   }
 }

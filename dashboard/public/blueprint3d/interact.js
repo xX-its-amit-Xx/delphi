@@ -26,7 +26,7 @@ export function normaliseInteractions(raw) {
   }).filter(r => r.from && r.to);
   const isCell = r => /cell/.test(String(r.from.level || '')) || /cell/.test(String(r.to.level || '')) || /\+/.test(String(r.from.id)) || /\+/.test(String(r.to.id));
   return { source: 'genotype/interactions.json', built: raw.built || raw.generated || null, note: raw.note || raw.constraint || raw.caveat || null, organism_note: raw.organism_note || raw.proxy || null,
-    validator: raw.validator || raw.validation || null, all: list, tissue: list.filter(r => !isCell(r)), cell: list.filter(isCell),
+    validator: raw.validator || raw.validation || null, validation_flags: raw.validation_flags || null, unknown_node_ids: raw.unknown_node_ids || null, refuted: raw.refuted_or_unsupported || [], gaps: raw.gaps || [], coverage: raw.coverage || null, vetted: raw.vetted === true, all: list, tissue: list.filter(r => !isCell(r)), cell: list.filter(isCell),
     contexts: [...new Set(list.map(r => r.context))], flagged: list.filter(r => r.flags.length).length, orthology: list.filter(r => r.orthology).length };
 }
 export const PENDING = { source: 'pending', note: 'genotype/interactions.json has not been written yet by the Genotype thread; the tissues and cell types shown are the ones already in the files, and no interaction is drawn, because none is sourced', all: [], tissue: [], cell: [], contexts: [], flagged: 0, orthology: 0 };
