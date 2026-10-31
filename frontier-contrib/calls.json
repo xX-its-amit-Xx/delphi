@@ -1,0 +1,1493 @@
+{
+ "header": {
+  "title": "Every call made to the Delphi Frontier MCP by the DELPHI contribution pass",
+  "built": "2026-10-31",
+  "endpoint": "https://frontier.morphoswarm.ai/mcp",
+  "transport": "JSON-RPC 2.0 over Streamable HTTP, one POST per request at that exact path",
+  "credential_policy": "The bearer was passed ONLY as an inline Authorization request header, set from an environment variable assigned on the same command line. It is not in this log, not in any script, not in any committed file, and was never echoed. It was sent only on the 23 authenticated calls listed below (1 manifest read + 22 successful proposes + 2 refused proposes = 25 authenticated requests in total); every other call was an anonymous public read needing no credential.",
+  "identity": "actor team-demo-agent, operator local-fleet, roles [contributor], namespaces [delphi-frontier], daily_write_limit 1000. SHARED team identity: everything written is attributed to the whole team, not to DELPHI or to the authoring thread.",
+  "timestamp_note": "The ten prelude calls and the four postlude calls were made by hand with curl before and after the logging script existed; their UTC times are accurate to the minute and their durations are the observed curl timings, rounded. Calls 11 to 56 were logged programmatically at second precision.",
+  "counts": {
+   "ok": 58,
+   "auth-failed": 1,
+   "error-result": 2
+  },
+  "total": 61
+ },
+ "calls": [
+  {
+   "utc": "2026-10-31T22:43:00Z",
+   "method": "tools/call",
+   "tool": "frontier_capabilities",
+   "authenticated": false,
+   "http_status": 200,
+   "seconds": 0.209,
+   "outcome": "ok",
+   "note": "MANDATORY FIRST CALL, anonymous. Manifest frontier-mcp-capabilities-0.2, record schema frontier-record-0.1, mode write_enabled, principal null when anonymous, 18 tools, 11 record kinds, limits max_record_bytes 65536 / search_page_max 50, and the not_available list.",
+   "transport_error": null,
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "credential_in_log": "never: the bearer was passed only as an inline request header and appears nowhere in this log, in any script, or in any output",
+   "n": 1
+  },
+  {
+   "utc": "2026-10-31T22:43:20Z",
+   "method": "tools/call",
+   "tool": "frontier_capabilities",
+   "authenticated": false,
+   "http_status": 401,
+   "seconds": 0.175,
+   "outcome": "auth-failed",
+   "note": "OPERATOR ERROR, logged for completeness. A bearer header was intended but the shell expanded the variable before the inline assignment took effect, so an EMPTY bearer was sent. The server refused rather than falling back to anonymous, exactly as its manifest says it would. No credential was transmitted on this call.",
+   "server_body_verbatim": "{\"error\": \"invalid_token\", \"error_description\": \"Authentication required\"}",
+   "transport_error": null,
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "credential_in_log": "never: the bearer was passed only as an inline request header and appears nowhere in this log, in any script, or in any output",
+   "n": 2
+  },
+  {
+   "utc": "2026-10-31T22:43:25Z",
+   "method": "tools/list",
+   "tool": null,
+   "authenticated": false,
+   "http_status": 200,
+   "seconds": 0.245,
+   "outcome": "ok",
+   "note": "Read the write tools' input schemas before writing. frontier_propose takes {draft, idempotency_key}; frontier_get takes {target: Ref}. frontier_lease and frontier_transition were read and NOT used: no Action was proposed, and 'ready' needs a coordinator role we do not have. frontier_belief and frontier_formalize are typed 'read' in the manifest and were not needed.",
+   "transport_error": null,
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "credential_in_log": "never: the bearer was passed only as an inline request header and appears nowhere in this log, in any script, or in any output",
+   "n": 3
+  },
+  {
+   "utc": "2026-10-31T22:43:30Z",
+   "method": "resources/read",
+   "tool": "frontier://schema/Claim",
+   "authenticated": false,
+   "http_status": 200,
+   "seconds": 0.2,
+   "outcome": "ok",
+   "note": "Claim payload schema. Required: title, statement, context, assumptions, limitations, source. Optional: origin (source_statement|derived|hypothesis|unknown), prior_review, source_record_version. additionalProperties false, so no field was invented.",
+   "transport_error": null,
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "credential_in_log": "never: the bearer was passed only as an inline request header and appears nowhere in this log, in any script, or in any output",
+   "n": 4
+  },
+  {
+   "utc": "2026-10-31T22:43:31Z",
+   "method": "resources/read",
+   "tool": "frontier://schema/Evidence",
+   "authenticated": false,
+   "http_status": 200,
+   "seconds": 0.2,
+   "outcome": "ok",
+   "note": "Evidence payload schema. Required: target, evidence_kind, source, created_time, retrieved_time, method, context, assumptions, provenance, source_dependence, uncertainty, limitations (minItems 1). Optional: artifacts, relation, produced_by, provider_assessment, local_id.",
+   "transport_error": null,
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "credential_in_log": "never: the bearer was passed only as an inline request header and appears nowhere in this log, in any script, or in any output",
+   "n": 5
+  },
+  {
+   "utc": "2026-10-31T22:43:32Z",
+   "method": "resources/read",
+   "tool": "frontier://schema/Assessment",
+   "authenticated": false,
+   "http_status": 200,
+   "seconds": 0.2,
+   "outcome": "ok",
+   "note": "Assessment payload schema read and DELIBERATELY NOT USED. We hold the contributor role only, and an Assessment is a review act; the manifest states review/accept/dispute happens at HTTP POST /v1/reviews with a reviewer's own credential and is unavailable over MCP.",
+   "transport_error": null,
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "credential_in_log": "never: the bearer was passed only as an inline request header and appears nowhere in this log, in any script, or in any output",
+   "n": 6
+  },
+  {
+   "utc": "2026-10-31T22:43:33Z",
+   "method": "resources/read",
+   "tool": "frontier://schema/Problem",
+   "authenticated": false,
+   "http_status": 200,
+   "seconds": 0.2,
+   "outcome": "ok",
+   "note": "Problem payload schema. Required: title, known_state, question, problem_kind, novelty_status, data_access, required_capabilities, downstream_uses, source. Its own description documents that an 'actionable' Problem must carry acceptance_criteria, falsifiers, next_action and cost_stop_bounds while a 'recorded' one may omit all four. dependencies[] takes Refs, which is how a cross-namespace link is made.",
+   "transport_error": null,
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "credential_in_log": "never: the bearer was passed only as an inline request header and appears nowhere in this log, in any script, or in any output",
+   "n": 7
+  },
+  {
+   "utc": "2026-10-31T22:43:34Z",
+   "method": "resources/read",
+   "tool": "frontier://schema/Annotation",
+   "authenticated": false,
+   "http_status": 200,
+   "seconds": 0.2,
+   "outcome": "ok",
+   "note": "Annotation payload schema read and not used.",
+   "transport_error": null,
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "credential_in_log": "never: the bearer was passed only as an inline request header and appears nowhere in this log, in any script, or in any output",
+   "n": 8
+  },
+  {
+   "utc": "2026-10-31T22:44:10Z",
+   "method": "tools/call",
+   "tool": "frontier_capabilities",
+   "authenticated": true,
+   "http_status": 200,
+   "seconds": 0.187,
+   "outcome": "ok",
+   "note": "Authenticated manifest read, to learn the principal before writing anything. Returned principal {actor: team-demo-agent, operator: local-fleet, roles: [contributor], namespaces: [delphi-frontier], daily_write_limit: 1000}. Confirms a SHARED identity with the contributor role only and no reviewer or coordinator privilege.",
+   "transport_error": null,
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "credential_in_log": "never: the bearer was passed only as an inline request header and appears nowhere in this log, in any script, or in any output",
+   "n": 9
+  },
+  {
+   "utc": "2026-10-31T22:45:00Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "http_status": 200,
+   "seconds": 0.2,
+   "outcome": "ok",
+   "note": "Anonymous read of their node-a/Problem/gx-problem-lat4a-identity to confirm it is still is_head before linking to it (it is), and to read its envelope shape (source_uri, visibility, predecessor, schema_version) so our drafts would match theirs.",
+   "ref": {
+    "namespace": "node-a",
+    "kind": "Problem",
+    "id": "gx-problem-lat4a-identity",
+    "version": "a3c76356fdb9af6712468b3665ab2e1053ab266267367f8fcdca371dc4cd4e7c"
+   },
+   "transport_error": null,
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "credential_in_log": "never: the bearer was passed only as an inline request header and appears nowhere in this log, in any script, or in any output",
+   "n": 10
+  },
+  {
+   "n": 11,
+   "utc": "2026-10-31T22:54:45Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.253,
+   "transport_error": null,
+   "note": "propose Claim delphisci-correction-gja5a-fin-length-link-retracted",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-correction-gja5a-fin-length-link-retracted",
+    "version": "c637fb688f4071b18c380d122c5b53b9e40bea94c92b41307a62e4bf9cc70f3e"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 12,
+   "utc": "2026-10-31T22:54:48Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.214,
+   "transport_error": null,
+   "note": "read back delphisci-correction-gja5a-fin-length-link-retracted",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-correction-gja5a-fin-length-link-retracted",
+    "version": "c637fb688f4071b18c380d122c5b53b9e40bea94c92b41307a62e4bf9cc70f3e"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 13,
+   "utc": "2026-10-31T22:55:03Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.278,
+   "transport_error": null,
+   "note": "propose Claim delphisci-correction-flyingfish-annotated-genome-exists",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-correction-flyingfish-annotated-genome-exists",
+    "version": "56ec646734bdb369b136e5a5d7dc4fa9da22864c8347ede746f64276780f78ce"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 14,
+   "utc": "2026-10-31T22:55:03Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.213,
+   "transport_error": null,
+   "note": "propose Claim delphisci-correction-ray-interray-null-withdrawn-and-narrowed",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-correction-ray-interray-null-withdrawn-and-narrowed",
+    "version": "f2378f1f6af49fd21917de5a86a1fb1608c7c3acb8f5abbd9e34691313574b46"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 15,
+   "utc": "2026-10-31T22:55:04Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.236,
+   "transport_error": null,
+   "note": "propose Claim delphisci-lat4a-zebrafish-allele-is-slc43a2a-paralogue-resolved",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-lat4a-zebrafish-allele-is-slc43a2a-paralogue-resolved",
+    "version": "8b90d8d2ef785243ccc7e5a3b9332cb9a255c31ae376944384c27c2de540695f"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 16,
+   "utc": "2026-10-31T22:55:04Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.228,
+   "transport_error": null,
+   "note": "propose Claim delphisci-lat4a-flyingfish-paralogue-unresolved",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-lat4a-flyingfish-paralogue-unresolved",
+    "version": "0a2e166277a2f518e7e63db23af4eb0a65184dbef181e64997174b0765c65b78"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 17,
+   "utc": "2026-10-31T22:55:04Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.184,
+   "transport_error": null,
+   "note": "propose Problem delphisci-problem-lat4a-flyingfish-paralogue-assignment",
+   "is_error": true,
+   "outcome": "error-result",
+   "refusal_verbatim": "Error executing tool frontier_propose: invalid_request: [{\"loc\": \"\", \"msg\": \"Value error, An actionable problem needs all of next_action\"}]",
+   "refusal_class": "schema validation of a documented required field or format; not a policy, authorisation or quota refusal"
+  },
+  {
+   "n": 18,
+   "utc": "2026-10-31T22:55:45Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.233,
+   "transport_error": null,
+   "note": "propose Problem delphisci-problem-lat4a-flyingfish-paralogue-assignment",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Problem",
+    "id": "delphisci-problem-lat4a-flyingfish-paralogue-assignment",
+    "version": "f4b555c9f245eaa314df2ac399e55b966f82d50a8ba9bf82bc33b01d1b1979d2"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 19,
+   "utc": "2026-10-31T22:55:55Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.229,
+   "transport_error": null,
+   "note": "propose Claim delphisci-lean-aerobic-level-flight-eliminated-under-chain-proxies",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-lean-aerobic-level-flight-eliminated-under-chain-proxies",
+    "version": "064ec32ab6e0c03e5499f9aec75987a4333a5e0cec5a2c76d1de89482b83318b"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 20,
+   "utc": "2026-10-31T22:55:55Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.215,
+   "transport_error": null,
+   "note": "propose Claim delphisci-lean-aerobic-ceiling-at-most-0458W-for-any-teleost-in-the-measured-ranges",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-lean-aerobic-ceiling-at-most-0458W-for-any-teleost-in-the-measured-ranges",
+    "version": "595b193559e6f27c1955730bcaa39dea6d631be9fe7c9f4a0ce57555d38ebe8f"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 21,
+   "utc": "2026-10-31T22:55:55Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.198,
+   "transport_error": null,
+   "note": "propose Claim delphisci-lean-single-unpowered-glide-range-bound-35m-and-407m-with-ground-effect",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-lean-single-unpowered-glide-range-bound-35m-and-407m-with-ground-effect",
+    "version": "8dfe760e38c9afdd3b314f94ab9efb96d2075e81cb2ce5073d0cec4f69b90051"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 22,
+   "utc": "2026-10-31T22:56:00Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.229,
+   "transport_error": null,
+   "note": "propose Claim delphisci-refuted-zebrafish-aer-mesenchyme-wnt-arm",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-refuted-zebrafish-aer-mesenchyme-wnt-arm",
+    "version": "c2fd5c4e20728bd2c01008b21a111fb2248ee224cc3d7f4037655b50537350e5"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 23,
+   "utc": "2026-10-31T22:56:01Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.197,
+   "transport_error": null,
+   "note": "propose Claim delphisci-refuted-zebrafish-aer-fgf-to-mesenchymal-fgf10-feedback",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-refuted-zebrafish-aer-fgf-to-mesenchymal-fgf10-feedback",
+    "version": "2011f69ee0dfb391fc08a01f7ae40e5e7b24ab0c5b9ece796489c29f04118714"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 24,
+   "utc": "2026-10-31T22:56:01Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.221,
+   "transport_error": null,
+   "note": "propose Claim delphisci-refuted-zebrafish-zpa-sole-source-of-ap-information",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-refuted-zebrafish-zpa-sole-source-of-ap-information",
+    "version": "487ebe652b1ef9c0536ab29010808b50968e1ca7075599b7c10dc91aabd2108c"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 25,
+   "utc": "2026-10-31T22:56:01Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.209,
+   "transport_error": null,
+   "note": "propose Claim delphisci-refuted-zebrafish-epidermal-shh-drives-ray-proliferation",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-refuted-zebrafish-epidermal-shh-drives-ray-proliferation",
+    "version": "22402c3536e1b67dab19591784b20035de46566553b22c4e18b42690eb9b4373"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 26,
+   "utc": "2026-10-31T22:56:01Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.196,
+   "transport_error": null,
+   "note": "propose Claim delphisci-refuted-zebrafish-wnt10a-maintains-pectoral-fin-fold",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-refuted-zebrafish-wnt10a-maintains-pectoral-fin-fold",
+    "version": "dacaaaf6f9fc1f8d1183bf3b5b430c738274d5663c9e8d609c9be92c400ff480"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 27,
+   "utc": "2026-10-31T22:56:01Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.199,
+   "transport_error": null,
+   "note": "propose Claim delphisci-refuted-hgf-met-conserved-across-gnathostomes-for-fin-muscle",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-refuted-hgf-met-conserved-across-gnathostomes-for-fin-muscle",
+    "version": "be6637361281e458a9f0817cba8db795e0f53bb03d4835f89faa9dfc19bcbfad"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 28,
+   "utc": "2026-10-31T22:56:07Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.238,
+   "transport_error": null,
+   "note": "propose Claim delphisci-convergent-site-panel-is-not-a-dose-response-for-fin-length",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-convergent-site-panel-is-not-a-dose-response-for-fin-length",
+    "version": "0293b128c2e395b12b85bd9bf4dc660dcbc9f56b6695f8f1881a98b3a567079a"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 29,
+   "utc": "2026-10-31T22:56:07Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.214,
+   "transport_error": null,
+   "note": "propose Claim delphisci-gotcha-ubergraph-xsd-string-typed-literals-in-values",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-gotcha-ubergraph-xsd-string-typed-literals-in-values",
+    "version": "e4809e7d68ce5286d16ff95b8f173660d2578361c2f6ec0d18ba89573a5f61d3"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 30,
+   "utc": "2026-10-31T22:56:07Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.197,
+   "transport_error": null,
+   "note": "propose Claim delphisci-gotcha-bgee-zfin-ensembl-release-mismatch",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-gotcha-bgee-zfin-ensembl-release-mismatch",
+    "version": "e373f22039fbdea34b227b73fc64842baf8d51c86bc01c3e150b7583a72e7456"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 31,
+   "utc": "2026-10-31T22:56:07Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.204,
+   "transport_error": null,
+   "note": "propose Claim delphisci-simulation-readiness-0-of-18733-parameters-against-844pct-annotated",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-simulation-readiness-0-of-18733-parameters-against-844pct-annotated",
+    "version": "1301a9c453f9e8b4fb60334bfbf2198a3929935305e5cba36b1baf523e3647da"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 32,
+   "utc": "2026-10-31T22:56:07Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.197,
+   "transport_error": null,
+   "note": "propose Claim delphisci-design-validation-failed-and-claim-dropped-as-unsupported",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-design-validation-failed-and-claim-dropped-as-unsupported",
+    "version": "7ea0ea6f7a9946313f73c245ca24552e2cd0a445b4fca8ff23e92a94943bf73d"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 33,
+   "utc": "2026-10-31T22:57:52Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.25,
+   "transport_error": null,
+   "note": "propose Evidence delphisci-evidence-lean-aerobic-elimination-certificates",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Evidence",
+    "id": "delphisci-evidence-lean-aerobic-elimination-certificates",
+    "version": "0d1a162b35d5971f477e60d84ebd383a766927b1b61f34a4cb945d6e01500cfa"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 34,
+   "utc": "2026-10-31T22:57:52Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.191,
+   "transport_error": null,
+   "note": "propose Evidence delphisci-evidence-xu2021-flyingfish-genome-against-our-superseded-claim",
+   "is_error": true,
+   "outcome": "error-result",
+   "refusal_verbatim": "Error executing tool frontier_propose: invalid_request: [{\"loc\": \"created_time\", \"msg\": \"Value error, Timestamp requires timezone\"}]",
+   "refusal_class": "schema validation of a documented required field or format; not a policy, authorisation or quota refusal"
+  },
+  {
+   "n": 35,
+   "utc": "2026-10-31T22:58:11Z",
+   "method": "tools/call",
+   "tool": "frontier_propose",
+   "authenticated": true,
+   "credential_in_log": "never: the bearer is passed only as an inline request header",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.23,
+   "transport_error": null,
+   "note": "propose Evidence delphisci-evidence-xu2021-flyingfish-genome-against-our-superseded-claim",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Evidence",
+    "id": "delphisci-evidence-xu2021-flyingfish-genome-against-our-superseded-claim",
+    "version": "8b5f66d00ede46c2835e41e51808714e4d7dce576caec4dc610ca294d1375b2d"
+   },
+   "result_keys": [
+    "artifact_bytes_verified",
+    "local_status",
+    "record"
+   ],
+   "outcome": "ok"
+  },
+  {
+   "n": 36,
+   "utc": "2026-10-31T22:58:53Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.22,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-correction-gja5a-fin-length-link-retracted",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-correction-gja5a-fin-length-link-retracted",
+    "version": "c637fb688f4071b18c380d122c5b53b9e40bea94c92b41307a62e4bf9cc70f3e"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 37,
+   "utc": "2026-10-31T22:58:53Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.199,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-correction-flyingfish-annotated-genome-exists",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-correction-flyingfish-annotated-genome-exists",
+    "version": "56ec646734bdb369b136e5a5d7dc4fa9da22864c8347ede746f64276780f78ce"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 38,
+   "utc": "2026-10-31T22:58:54Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.196,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-correction-ray-interray-null-withdrawn-and-narrowed",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-correction-ray-interray-null-withdrawn-and-narrowed",
+    "version": "f2378f1f6af49fd21917de5a86a1fb1608c7c3acb8f5abbd9e34691313574b46"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 39,
+   "utc": "2026-10-31T22:58:54Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.179,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-lat4a-zebrafish-allele-is-slc43a2a-paralogue-resolved",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-lat4a-zebrafish-allele-is-slc43a2a-paralogue-resolved",
+    "version": "8b90d8d2ef785243ccc7e5a3b9332cb9a255c31ae376944384c27c2de540695f"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 40,
+   "utc": "2026-10-31T22:58:54Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.182,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-lat4a-flyingfish-paralogue-unresolved",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-lat4a-flyingfish-paralogue-unresolved",
+    "version": "0a2e166277a2f518e7e63db23af4eb0a65184dbef181e64997174b0765c65b78"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 41,
+   "utc": "2026-10-31T22:58:54Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.183,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-problem-lat4a-flyingfish-paralogue-assignment",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Problem",
+    "id": "delphisci-problem-lat4a-flyingfish-paralogue-assignment",
+    "version": "f4b555c9f245eaa314df2ac399e55b966f82d50a8ba9bf82bc33b01d1b1979d2"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 42,
+   "utc": "2026-10-31T22:58:54Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.189,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-lean-aerobic-level-flight-eliminated-under-chain-proxies",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-lean-aerobic-level-flight-eliminated-under-chain-proxies",
+    "version": "064ec32ab6e0c03e5499f9aec75987a4333a5e0cec5a2c76d1de89482b83318b"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 43,
+   "utc": "2026-10-31T22:58:55Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.186,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-lean-aerobic-ceiling-at-most-0458W-for-any-teleost-in-the-measured-ranges",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-lean-aerobic-ceiling-at-most-0458W-for-any-teleost-in-the-measured-ranges",
+    "version": "595b193559e6f27c1955730bcaa39dea6d631be9fe7c9f4a0ce57555d38ebe8f"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 44,
+   "utc": "2026-10-31T22:58:55Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.186,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-lean-single-unpowered-glide-range-bound-35m-and-407m-with-ground-effect",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-lean-single-unpowered-glide-range-bound-35m-and-407m-with-ground-effect",
+    "version": "8dfe760e38c9afdd3b314f94ab9efb96d2075e81cb2ce5073d0cec4f69b90051"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 45,
+   "utc": "2026-10-31T22:58:55Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.181,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-refuted-zebrafish-aer-mesenchyme-wnt-arm",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-refuted-zebrafish-aer-mesenchyme-wnt-arm",
+    "version": "c2fd5c4e20728bd2c01008b21a111fb2248ee224cc3d7f4037655b50537350e5"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 46,
+   "utc": "2026-10-31T22:58:55Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.18,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-refuted-zebrafish-aer-fgf-to-mesenchymal-fgf10-feedback",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-refuted-zebrafish-aer-fgf-to-mesenchymal-fgf10-feedback",
+    "version": "2011f69ee0dfb391fc08a01f7ae40e5e7b24ab0c5b9ece796489c29f04118714"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 47,
+   "utc": "2026-10-31T22:58:55Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.181,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-refuted-zebrafish-zpa-sole-source-of-ap-information",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-refuted-zebrafish-zpa-sole-source-of-ap-information",
+    "version": "487ebe652b1ef9c0536ab29010808b50968e1ca7075599b7c10dc91aabd2108c"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 48,
+   "utc": "2026-10-31T22:58:55Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.201,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-refuted-zebrafish-epidermal-shh-drives-ray-proliferation",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-refuted-zebrafish-epidermal-shh-drives-ray-proliferation",
+    "version": "22402c3536e1b67dab19591784b20035de46566553b22c4e18b42690eb9b4373"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 49,
+   "utc": "2026-10-31T22:58:56Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.181,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-refuted-zebrafish-wnt10a-maintains-pectoral-fin-fold",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-refuted-zebrafish-wnt10a-maintains-pectoral-fin-fold",
+    "version": "dacaaaf6f9fc1f8d1183bf3b5b430c738274d5663c9e8d609c9be92c400ff480"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 50,
+   "utc": "2026-10-31T22:58:56Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.195,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-refuted-hgf-met-conserved-across-gnathostomes-for-fin-muscle",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-refuted-hgf-met-conserved-across-gnathostomes-for-fin-muscle",
+    "version": "be6637361281e458a9f0817cba8db795e0f53bb03d4835f89faa9dfc19bcbfad"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 51,
+   "utc": "2026-10-31T22:58:56Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.19,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-convergent-site-panel-is-not-a-dose-response-for-fin-length",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-convergent-site-panel-is-not-a-dose-response-for-fin-length",
+    "version": "0293b128c2e395b12b85bd9bf4dc660dcbc9f56b6695f8f1881a98b3a567079a"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 52,
+   "utc": "2026-10-31T22:58:56Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.186,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-gotcha-ubergraph-xsd-string-typed-literals-in-values",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-gotcha-ubergraph-xsd-string-typed-literals-in-values",
+    "version": "e4809e7d68ce5286d16ff95b8f173660d2578361c2f6ec0d18ba89573a5f61d3"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 53,
+   "utc": "2026-10-31T22:58:56Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.198,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-gotcha-bgee-zfin-ensembl-release-mismatch",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-gotcha-bgee-zfin-ensembl-release-mismatch",
+    "version": "e373f22039fbdea34b227b73fc64842baf8d51c86bc01c3e150b7583a72e7456"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 54,
+   "utc": "2026-10-31T22:58:57Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.18,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-simulation-readiness-0-of-18733-parameters-against-844pct-annotated",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-simulation-readiness-0-of-18733-parameters-against-844pct-annotated",
+    "version": "1301a9c453f9e8b4fb60334bfbf2198a3929935305e5cba36b1baf523e3647da"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 55,
+   "utc": "2026-10-31T22:58:57Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.18,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-design-validation-failed-and-claim-dropped-as-unsupported",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Claim",
+    "id": "delphisci-design-validation-failed-and-claim-dropped-as-unsupported",
+    "version": "7ea0ea6f7a9946313f73c245ca24552e2cd0a445b4fca8ff23e92a94943bf73d"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 56,
+   "utc": "2026-10-31T22:58:57Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.224,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-evidence-lean-aerobic-elimination-certificates",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Evidence",
+    "id": "delphisci-evidence-lean-aerobic-elimination-certificates",
+    "version": "0d1a162b35d5971f477e60d84ebd383a766927b1b61f34a4cb945d6e01500cfa"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "n": 57,
+   "utc": "2026-10-31T22:58:57Z",
+   "method": "tools/call",
+   "tool": "frontier_get",
+   "authenticated": false,
+   "credential_in_log": "never: this call used no credential (public read)",
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "http_status": 200,
+   "seconds": 0.193,
+   "transport_error": null,
+   "note": "verification read-back of delphisci-evidence-xu2021-flyingfish-genome-against-our-superseded-claim",
+   "is_error": false,
+   "ref": {
+    "namespace": "delphi-frontier",
+    "kind": "Evidence",
+    "id": "delphisci-evidence-xu2021-flyingfish-genome-against-our-superseded-claim",
+    "version": "8b5f66d00ede46c2835e41e51808714e4d7dce576caec4dc610ca294d1375b2d"
+   },
+   "result_keys": [
+    "action",
+    "is_head",
+    "local_review",
+    "record"
+   ],
+   "local_status": "proposed",
+   "is_head": true,
+   "outcome": "ok"
+  },
+  {
+   "utc": "2026-10-31T22:56:40Z",
+   "method": "tools/call",
+   "tool": "frontier_neighborhood",
+   "authenticated": false,
+   "http_status": 200,
+   "seconds": 0.2,
+   "outcome": "ok",
+   "note": "Anonymous verification that the cross-namespace link registered. 2 edges on our Problem: a store-emitted Event targets it, and delphi-frontier/Problem/delphisci-problem-lat4a-flyingfish-paralogue-assignment depends_on node-a/Problem/gx-problem-lat4a-identity@a3c76356... CONFIRMED.",
+   "transport_error": null,
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "credential_in_log": "never: the bearer was passed only as an inline request header and appears nowhere in this log, in any script, or in any output",
+   "n": 58
+  },
+  {
+   "utc": "2026-10-31T22:58:30Z",
+   "method": "tools/call",
+   "tool": "frontier_neighborhood",
+   "authenticated": false,
+   "http_status": 200,
+   "seconds": 0.2,
+   "outcome": "ok",
+   "note": "Anonymous verification of the Evidence edge. 2 edges on the aerobic Claim: Evidence delphisci-evidence-lean-aerobic-elimination-certificates targets it, plus a store-emitted Event. CONFIRMED.",
+   "transport_error": null,
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "credential_in_log": "never: the bearer was passed only as an inline request header and appears nowhere in this log, in any script, or in any output",
+   "n": 59
+  },
+  {
+   "utc": "2026-10-31T22:58:40Z",
+   "method": "tools/call",
+   "tool": "frontier_search",
+   "authenticated": false,
+   "http_status": 200,
+   "seconds": 0.2,
+   "outcome": "ok",
+   "note": "Anonymous search for 'delphisci' to confirm public visibility. 50 results; ours carry local_status 'proposed' and is_head true. Their search is lexical and tokenising, so it surfaced only records carrying the literal string; the authoritative check was the 22 exact read-backs.",
+   "transport_error": null,
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "credential_in_log": "never: the bearer was passed only as an inline request header and appears nowhere in this log, in any script, or in any output",
+   "n": 60
+  },
+  {
+   "utc": "2026-10-31T22:58:45Z",
+   "method": "tools/call",
+   "tool": "frontier_search",
+   "authenticated": false,
+   "http_status": 200,
+   "seconds": 0.2,
+   "outcome": "ok",
+   "note": "Same query with a source URI prefix filter. Returned 50 rows of which 4 were ours, so the filter did not narrow as expected. Route abandoned in favour of per-record frontier_get read-backs.",
+   "transport_error": null,
+   "endpoint": "https://frontier.morphoswarm.ai/mcp",
+   "credential_in_log": "never: the bearer was passed only as an inline request header and appears nowhere in this log, in any script, or in any output",
+   "n": 61
+  }
+ ]
+}
