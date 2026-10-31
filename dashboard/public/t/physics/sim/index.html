@@ -21,7 +21,7 @@ button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(-
 button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 h1{font-size:clamp(1.3rem,3vw,1.9rem);margin:18px 0 6px} h2{font-size:1.2rem;margin:0 0 .4em} h3{font-size:1rem;margin:0 0 .4em}
 .lede{color:var(--mute);max-width:80ch}
-.grid{display:grid;gap:12px} .g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))} .g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.grid{display:grid;gap:12px} .g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr))} .g3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 canvas{width:100%;height:auto;display:block;background:var(--panel);border:1px solid var(--line);border-radius:10px}
 .chip{display:inline-block;padding:0 8px;border-radius:99px;font-size:.75rem;border:1px solid var(--line);background:var(--soft);color:var(--mute);vertical-align:middle}
@@ -30,6 +30,9 @@ table{border-collapse:collapse;width:100%;font-size:.85rem} th,td{text-align:lef
 .small{font-size:.83rem} .mute{color:var(--mute)}
 code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em;background:var(--code);padding:0 4px;border-radius:4px}
 input[type=range]{width:100%;accent-color:var(--accent)}
+select{font:inherit;max-width:min(100%,320px);border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:4px 6px}
+label.small{display:inline-flex;align-items:center;gap:5px;max-width:100%}
+code{overflow-wrap:anywhere}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .phase{font-weight:700}
 .kpi{font-size:1.5rem;font-weight:700;line-height:1.1} .kpi small{display:block;font-size:.75rem;font-weight:400;color:var(--mute)}
@@ -48,7 +51,7 @@ footer{padding:20px 0;color:var(--mute);font-size:.85rem}
 .pk{display:inline-flex;gap:5px;align-items:center;white-space:nowrap;font-size:.78rem;color:var(--mute)}
 .pk b{color:var(--ink)}
 .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
-.k-measured{background:var(--ok)} .k-secondary{background:var(--s1)} .k-derived{background:#8a8a85} .k-standard{background:#8a8a85} .k-assumed{background:var(--warn)} .k-tuned{background:var(--s2)} .k-hypothetical{background:var(--bad)} .k-other{background:var(--mute)}
+.k-measured{background:var(--ok)} .k-secondary{background:var(--s1)} .k-derived{background:#8a8a85} .k-standard{background:#8a8a85} .k-assumed{background:var(--warn)} .k-tuned{background:var(--s2)} .k-hypothetical{background:var(--bad)} .k-other{background:var(--bad);opacity:.75}
 .evid{border-left:5px solid var(--line)}
 .evid-measured{border-left-color:var(--ok)} .evid-mixed{border-left-color:var(--s1)} .evid-assumed{border-left-color:var(--warn)} .evid-hypothetical{border-left-color:var(--bad)}
 .nt{border-left:3px solid var(--mute);padding:4px 0 4px 10px;margin:8px 0;font-size:.85rem}
@@ -56,6 +59,7 @@ footer{padding:20px 0;color:var(--mute);font-size:.85rem}
 .nt b{display:block}
 .srcbox{max-height:none}
 .vmin-lab{font-weight:600}
+@media (min-width:561px){ #designCard td.lead{min-width:180px} #designCard td.lead code{white-space:nowrap} }
 @media (max-width:700px){
   header.top .wrap{flex-wrap:wrap;white-space:normal;overflow:visible;row-gap:4px}
   header.top .wrap .hstat{flex-basis:100%;order:3}
@@ -63,6 +67,7 @@ footer{padding:20px 0;color:var(--mute);font-size:.85rem}
 }
 @media (max-width:560px){
   .wrap{padding:0 12px}
+  select{max-width:64vw}
   .card{padding:10px 11px}
   table{font-size:.8rem} th,td{padding:3px 4px}
   table.stack thead{display:none}
@@ -118,7 +123,7 @@ footer{padding:20px 0;color:var(--mute);font-size:.85rem}
   <div class="card"><h3>Validation against the published figures</h3><div id="validMode" class="small" style="margin-bottom:6px"></div><div id="valid" class="scroll"></div><p class="small mute">Field values are quoted second-hand (see the physics page). A match here means the model with these parameters is not contradicted by them; it does not make the parameters measured, and it is not a test unless the parameters are the pre-registered ones.</p></div>
 </div>
 
-<div class="grid g2" style="margin-top:12px">
+<div class="grid" style="margin-top:12px">
   <div class="card evid" id="paramCard"><h3>Parameters and their sources</h3>
     <div id="prov"></div>
     <div id="params" class="scroll"></div></div>
@@ -143,7 +148,7 @@ Phases:         swim (z + lobe &lt; 0) → taxi (lobe in water, body out) → gl
 <div class="card" style="margin-top:12px" id="physCard"><h3>Physiology chain (chemistry, organ, tissue levels)</h3><p class="small mute" id="physNote">Off. When the chain is wired (checkbox above), the swim and taxi thrust are capped by the axial muscle's available power and the flier's flapping by the flight muscle's, both limited by O<sub>2</sub> delivery from the gill, haemoglobin and heart modules in water and by the blood O<sub>2</sub> store and burst store once airborne (gills do not ventilate in air). Every module parameter with its kind and source is listed here when on. Source of truth: <code>physiology/</code> in the repository, written by the physiology agent; this page imports a published copy.</p><div id="physRows" class="scroll"></div></div>
 <div class="card" style="margin-top:12px"><h3>Per-glide record</h3><div id="glides" class="small"></div></div>
 
-<footer class="wrap">Physics thread of DELPHI. This is a model: a simulation that runs proves the program executes and nothing more. Data files: <a href="params.json">params.json</a>, <a href="../results.json">results.json</a>, <a href="../data/ground-effect.json">ground-effect.json</a>. No bird data anywhere (class Aves is the frozen holdout).</footer>
+<footer class="wrap">Physics thread of DELPHI. This is a model: a simulation that runs proves the program executes and nothing more. Driving this page from another page (the 3D viewer, or anything else): <a href="EMBED.md">EMBED.md</a> is the contract, <a href="presets.json">presets.json</a> the preset parameters, and <a href="NOTES-FOR-HUB.md">NOTES-FOR-HUB.md</a> lists what this thread thinks is wrong and did not change. Data files: <a href="params.json">params.json</a>, <a href="../results.json">results.json</a>, <a href="../data/ground-effect.json">ground-effect.json</a>. No bird data anywhere (class Aves is the frozen holdout).</footer>
 </main>
 
 <script>
@@ -153,7 +158,7 @@ function setTheme(t){const root=document.documentElement;if(t!=='dark'&&t!=='lig
   btn.onclick=()=>{const cur=root.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');const nx=cur==='dark'?'light':'dark';root.setAttribute('data-theme',nx);try{localStorage.setItem('theme',nx);}catch(e){}draw();};})();
 
 let FLAGS=new URLSearchParams(location.search), PHYS=null, physOn=false, physMod=null, physInfo='', BASE=null, P=null, fish=null, ge=null, res=null, sim=null, running=false, speedMul=3, last=0;
-let PRESETS=null, COMMITTED=null, BASEIDX=0, DESIGN=null, PRESETID='', SUPPLIED={}, SCHEMAROWS=[], MOVED=new Set(), EMBEDDED=false, PARENTSEEN=false, lastEmit=0;
+let PRESETS=null, COMMITTED=null, BASEIDX=0, DESIGN=null, PRESETID='', SUPPLIED={}, MAPPED=new Set(), MOVED=new Set(), EMBEDDED=false, PARENTSEEN=false, lastEmit=0;
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
@@ -248,35 +253,62 @@ function axes(ctx,W,H,m,x0,x1,y0,y1,xl,yl,xt,yt){
   ctx.textAlign='center';ctx.fillText(xl,(m.l+W-m.r)/2,H-4);ctx.save();ctx.translate(12,(m.t+H-m.b)/2);ctx.rotate(-Math.PI/2);ctx.fillText(yl,0,0);ctx.restore();
   return {X,Y};
 }
-const phCol={swim:'#8a8a85',taxi:css('--s2')||'#eb6834',glide:css('--s1')||'#2a78d6',stopped:'#8a8a85'};
+const phaseColors=()=>({swim:'#8a8a85',taxi:css('--s2')||'#eb6834',glide:css('--s1')||'#2a78d6',stopped:'#8a8a85'});
+function fit(c,hcss){
+  const ctx=c.getContext('2d'); const r=c.getBoundingClientRect();
+  const cssW=Math.max(240,Math.round(r.width||c.clientWidth||900)); const dpr=Math.min(2,window.devicePixelRatio||1);
+  const pw=Math.round(cssW*dpr), ph=Math.round(hcss*dpr);
+  if(c.width!==pw||c.height!==ph){ c.width=pw; c.height=ph; }
+  c.style.height=hcss+'px'; ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,cssW,hcss);
+  return {ctx:ctx,W:cssW,H:hcss,narrow:cssW<470,m:{l:cssW<470?40:48,r:cssW<470?10:16,t:14,b:cssW<470?28:34}};
+}
+function chipText(ctx,txt,x,y,color){
+  ctx.save(); ctx.font='600 12px system-ui'; const w=ctx.measureText(txt).width;
+  ctx.fillStyle=css('--panel'); ctx.fillRect(x-3,y-11,w+6,14);
+  ctx.fillStyle=color; ctx.textAlign='left'; ctx.fillText(txt,x,y); ctx.restore();
+}
+function ticks(max,n){const out=[];for(let i=0;i<=n;i++)out.push(max*i/n);return out;}
+function legendsHtml(d,S){
+  const pc=phaseColors(), cur=S?S.phase:'';
+  const ph=['swim','taxi','glide','stopped'].map(p=>`<span class="key" style="color:${pc[p]}">${p===cur?'<b style="color:'+pc[p]+'">':''}<i class="sw" style="background:${pc[p]}"></i>${p}${p===cur?' (now)</b>':''}</span>`).join('');
+  document.getElementById('legTraj').innerHTML=ph
+    +`<span class="key"><i class="sw water"></i>water</span><span class="key"><i class="sw band"></i>tail can still reach the water (lobe ${d.lobe.toFixed(3)} m)</span><span class="key" style="color:var(--mute)"><i class="sw dash"></i>8 m, highest recorded flight</span>`;
+  document.getElementById('legSpeed').innerHTML=ph
+    +`<span class="key" style="color:var(--ink)"><i class="sw dash"></i><b>v_min = ${d.vmin.toFixed(2)} m/s</b></span><span class="key"><i class="sw band"></i>below v_min: lift cannot hold the fish up</span>`;
+  document.getElementById('legEnergy').innerHTML=`<span class="key" style="color:var(--s1)"><i class="sw" style="background:var(--s1)"></i>kinetic &frac12;v&sup2;</span><span class="key" style="color:var(--s3)"><i class="sw" style="background:var(--s3)"></i>potential g z</span><span class="key" style="color:var(--ink)"><i class="sw dash"></i>total</span>`;
+}
 function draw(){
-  if(!sim) return; const S=sim, h=S.hist; const d=S.d;
+  if(!sim) return; const S=sim, h=S.hist; const d=S.d; const phCol=phaseColors();
+  const short=window.innerWidth<560;
   // trajectory
-  let c=document.getElementById('cTraj'),ctx=c.getContext('2d'); const W=c.width,H=c.height,m={l:48,r:16,t:16,b:34};
+  let c=document.getElementById('cTraj'), F=fit(c,short?215:300), ctx=F.ctx, W=F.W, H=F.H, m=F.m;
   const xmax=Math.max(60,Math.ceil((S.s.x+10)/50)*50), zmax=Math.max(10,Math.ceil((Math.max(...h.map(p=>p.z),1)+2)/5)*5);
-  let A=axes(ctx,W,H,m,0,xmax,-2,zmax,'distance (m)','height (m)',[0,xmax/4,xmax/2,3*xmax/4,xmax].map(Math.round),[0,5,10].filter(v=>v<=zmax));
+  let A=axes(ctx,W,H,m,0,xmax,-2,zmax,'distance (m)','height (m)',(F.narrow?ticks(xmax,2):ticks(xmax,4)).map(Math.round),ticks(zmax,zmax>20?4:Math.max(2,Math.round(zmax/5))).map(v=>Math.round(v)));
   ctx.fillStyle=css('--water');ctx.fillRect(m.l,A.Y(0),W-m.l-m.r,A.Y(-2)-A.Y(0));
-  ctx.fillStyle='rgba(128,128,128,.12)';ctx.fillRect(m.l,A.Y(d.lobe),W-m.l-m.r,A.Y(0)-A.Y(d.lobe));
-  line(ctx,[[m.l,A.Y(8)],[W-m.r,A.Y(8)]],css('--mute'),1,[5,4]);
-  for(const ph of ['swim','taxi','glide']){ let seg=[]; h.forEach(p=>{ if(p.ph===ph) seg.push([A.X(p.x),A.Y(p.z)]); else if(seg.length){line(ctx,seg,phCol[ph],2);seg=[];} }); if(seg.length) line(ctx,seg,phCol[ph],2); }
+  ctx.fillStyle='rgba(128,128,128,.18)';ctx.fillRect(m.l,A.Y(d.lobe),W-m.l-m.r,A.Y(0)-A.Y(d.lobe));
+  if(8<=zmax){ line(ctx,[[m.l,A.Y(8)],[W-m.r,A.Y(8)]],css('--mute'),1,[5,4]); chipText(ctx,'8 m',W-m.r-26,A.Y(8)-4,css('--mute')); }
+  for(const ph of ['swim','taxi','glide']){ let seg=[]; h.forEach(p=>{ if(p.ph===ph) seg.push([A.X(p.x),A.Y(p.z)]); else if(seg.length){line(ctx,seg,phCol[ph],2.2);seg=[];} }); if(seg.length) line(ctx,seg,phCol[ph],2.2); }
   ctx.fillStyle=css('--ink');ctx.beginPath();ctx.arc(A.X(S.s.x),A.Y(S.s.z),4,0,7);ctx.fill();
   // speed
-  c=document.getElementById('cSpeed');ctx=c.getContext('2d');
-  const tmax=Math.max(5,Math.ceil((S.t+1)/5)*5), vmax=Math.max(15,Math.ceil((Math.max(...h.map(p=>p.v),1)+2)/5)*5);
-  A=axes(ctx,W,H,m,0,tmax,0,vmax,'time (s)','speed (m/s)',[0,tmax/2,tmax].map(v=>Math.round(v*10)/10),[0,5,10,15,20].filter(v=>v<=vmax));
-  line(ctx,[[m.l,A.Y(d.vmin)],[W-m.r,A.Y(d.vmin)]],css('--ink'),1.5,[6,5]); ctx.fillStyle=css('--mute');ctx.textAlign='left';ctx.fillText('v_min '+d.vmin.toFixed(2)+' m/s',m.l+6,A.Y(d.vmin)-5);
-  for(const ph of ['swim','taxi','glide']){ let seg=[]; h.forEach(p=>{ if(p.ph===ph) seg.push([A.X(p.t),A.Y(p.v)]); else if(seg.length){line(ctx,seg,phCol[ph],2);seg=[];} }); if(seg.length) line(ctx,seg,phCol[ph],2); }
+  c=document.getElementById('cSpeed'); F=fit(c,short?215:300); ctx=F.ctx; W=F.W; H=F.H; m=F.m;
+  const tmax=Math.max(5,Math.ceil((S.t+1)/5)*5), vpeak=Math.max(Math.max(...h.map(p=>p.v),1),d.vmin);
+  const vmax=Math.max(15,Math.ceil((vpeak+2)/5)*5);
+  A=axes(ctx,W,H,m,0,tmax,0,vmax,'time (s)','speed (m/s)',ticks(tmax,F.narrow?2:4).map(v=>Math.round(v*10)/10),ticks(vmax,vmax>30?3:Math.max(3,Math.round(vmax/5))).map(v=>Math.round(v)));
+  ctx.fillStyle='rgba(128,128,128,.14)';ctx.fillRect(m.l,A.Y(d.vmin),W-m.l-m.r,A.Y(0)-A.Y(d.vmin));
+  line(ctx,[[m.l,A.Y(d.vmin)],[W-m.r,A.Y(d.vmin)]],css('--ink'),1.6,[6,5]);
+  for(const ph of ['swim','taxi','glide']){ let seg=[]; h.forEach(p=>{ if(p.ph===ph) seg.push([A.X(p.t),A.Y(p.v)]); else if(seg.length){line(ctx,seg,phCol[ph],2.2);seg=[];} }); if(seg.length) line(ctx,seg,phCol[ph],2.2); }
+  chipText(ctx,'v_min '+d.vmin.toFixed(2)+' m/s',m.l+6,A.Y(d.vmin)-5>m.t+10?A.Y(d.vmin)-5:A.Y(d.vmin)+13,css('--ink'));
   // energy
-  c=document.getElementById('cEnergy');ctx=c.getContext('2d'); const g=P.constants.g.value;
+  c=document.getElementById('cEnergy'); F=fit(c,short?215:300); ctx=F.ctx; W=F.W; H=F.H; m=F.m; const g=P.constants.g.value;
   const E=h.map(p=>({t:p.t,k:0.5*p.v*p.v,p:g*p.z,s:0.5*p.v*p.v+g*p.z})); const emax=Math.max(50,Math.ceil((Math.max(...E.map(e=>e.s),1)+20)/50)*50);
-  A=axes(ctx,W,H,m,0,tmax,-20,emax,'time (s)','energy per mass (J/kg)',[0,tmax/2,tmax].map(v=>Math.round(v*10)/10),[0,emax/2,emax]);
+  A=axes(ctx,W,H,m,0,tmax,-20,emax,'time (s)','energy per mass (J/kg)',ticks(tmax,F.narrow?2:4).map(v=>Math.round(v*10)/10),ticks(emax,F.narrow?2:4).map(v=>Math.round(v)));
   line(ctx,E.map(e=>[A.X(e.t),A.Y(e.k)]),css('--s1'),2); line(ctx,E.map(e=>[A.X(e.t),A.Y(e.p)]),css('--s3'),2); line(ctx,E.map(e=>[A.X(e.t),A.Y(e.s)]),css('--ink'),2,[4,3]);
-  ctx.fillStyle=css('--mute');ctx.textAlign='left';ctx.fillText('kinetic (blue), potential (green), total (dashed)',m.l+6,m.t+12);
+  legendsHtml(d,S);
   // text
   const v=Math.hypot(S.s.vx,S.s.vz);
   if(S.phys&&S.physLast){ const o=S.physLast.o2, a=S.physLast.axial, f=S.physLast.flight; document.getElementById('physState').textContent=`wired: blood O2 store ${(o.storeFraction*100).toFixed(0)}%, burst store ${(o.burstStoreFraction*100).toFixed(0)}%, axial ${a.total_W.toFixed(2)} W (${a.limitedBy}), flight ${f.total_W.toFixed(2)} W (${f.limitedBy})`; } else document.getElementById('physState').textContent=physOn?(physInfo||'wired, waiting'):'off (stub: 0 W)';
   document.getElementById('phaseLine').innerHTML=`t = ${S.t.toFixed(2)} s &nbsp; phase <span class="phase" style="color:${phCol[S.phase]||'inherit'}">${S.phase}</span> &nbsp; x = ${S.s.x.toFixed(1)} m &nbsp; z = ${S.s.z.toFixed(2)} m &nbsp; v = ${v.toFixed(2)} m/s &nbsp; glides ${S.glides.length}`;
-  const gl=S.glides; document.getElementById('glides').innerHTML=gl.length?'<table><tr><th>#</th><th>take-off speed m/s</th><th>distance m</th><th>duration s</th><th>max height m</th><th>peak speed m/s</th></tr>'+gl.map((q,i)=>`<tr><td>${i+1}</td><td>${q.v0.toFixed(1)}</td><td>${q.dist.toFixed(1)}</td><td>${q.dur.toFixed(2)}</td><td>${q.zmax.toFixed(2)}</td><td>${q.vmax.toFixed(1)}</td></tr>`).join('')+'</table>':'<span class="mute">no glide completed yet</span>';
+  const gl=S.glides; document.getElementById('glides').innerHTML=gl.length?'<div class="scroll"><table class="stack"><thead><tr><th>#</th><th>take-off speed m/s</th><th>distance m</th><th>duration s</th><th>max height m</th><th>peak speed m/s</th></tr></thead><tbody>'+gl.map((q,i)=>`<tr><td class="lead" data-l="glide">glide ${i+1}</td><td data-l="take-off speed m/s">${q.v0.toFixed(1)}</td><td data-l="distance m">${q.dist.toFixed(1)}</td><td data-l="duration s">${q.dur.toFixed(2)}</td><td data-l="max height m">${q.zmax.toFixed(2)}</td><td data-l="peak speed m/s">${q.vmax.toFixed(1)}</td></tr>`).join('')+'</tbody></table></div>':'<span class="mute">no glide completed yet</span>';
   const tot=S.s.x, chip=(ok)=>ok==null?'<span class="chip">pending</span>':(ok?'<span class="chip m">within</span>':'<span class="chip h">outside</span>');
   const maxDist=gl.length?Math.max(...gl.map(q=>q.dist)):null, maxH=gl.length?Math.max(...gl.map(q=>q.zmax)):null, pk=gl.length?Math.max(...gl.map(q=>q.vmax)):null, taxi=S.taxiLen.length?S.taxiLen.reduce((a,b)=>a+b,0)/S.taxiLen.length:null;
   const rows=[['glide distance per glide','up to 50 m',maxDist==null?null:maxDist.toFixed(1)+' m',maxDist==null?null:maxDist<=50&&maxDist>5],
@@ -290,34 +322,382 @@ function draw(){
    ...((S.phys&&!d.powered)?[['TEST 4: real fish cannot gain net mechanical energy airborne (confirmatory; physiology chain)','no net gain; P_avail(flight) < P_req at every speed',`max net gain ${S.test4.maxGain.toFixed(1)} J/kg; max P_avail(flight) ${S.test4.PavailMax.toFixed(2)} W vs P_req(level) min ${(()=>{let m=Infinity;for(let vv=d.vmin;vv<=25;vv+=0.5){const q=0.5*P.constants.rho_air.value*vv*vv*d.S;const cl=d.W/q;if(cl>d.CLmax)continue;const cd=d.CDmin+d.k*cl*cl;m=Math.min(m,q*cd*vv);}return m;})().toFixed(2)} W`,(S.test4.maxGain<=0.5)&&(S.test4.PavailMax<(()=>{let m=Infinity;for(let vv=d.vmin;vv<=25;vv+=0.5){const q=0.5*P.constants.rho_air.value*vv*vv*d.S;const cl=d.W/q;if(cl>d.CLmax)continue;const cd=d.CDmin+d.k*cl*cl;m=Math.min(m,q*cd*vv);}return m;})())]]:[]),
    ['no climb below 0.95 v_min (test 1)','v_min '+d.vmin.toFixed(2)+' m/s',(()=>{let bad=0,run=0;for(let i=1;i<h.length;i++){const p=h[i];if(p.ph==='glide'&&p.v<0.95*d.vmin&&p.z>h[i-1].z){run+=0.02;bad=Math.max(bad,run);}else run=0;}return bad.toFixed(2)+' s of climbing below it';})(),gl.length?(()=>{let bad=0,run=0;for(let i=1;i<h.length;i++){const p=h[i];if(p.ph==='glide'&&p.v<0.95*d.vmin&&p.z>h[i-1].z){run+=0.02;bad=Math.max(bad,run);}else run=0;}return bad<=0.2;})():null]];
   const climb=d.powered?`<p><b>Design-study readout (HYPOTHETICAL fish; ${S.phys?'physiology chain ON: flapping power comes from the flight muscle as limited by O2 delivery and the blood and burst stores':(d.alt?'aerobic capacity from the co-design map (eta E Q C_a), scaled by C_a at the current altitude; air-breathing assumed':'power-limited only, O2 supply not yet applied')}; the field targets below are the real fish's and do not apply):</b> altitude now ${S.s.z.toFixed(1)} m, highest ${(S.zmax||0).toFixed(1)} m at t = ${(S.zmaxT||0).toFixed(1)} s,${S.climbEnd?` flight power fell below 0.5 W at t = ${S.climbEnd.t.toFixed(1)} s (z ${S.climbEnd.z.toFixed(1)} m, limited by ${S.climbEnd.limitedBy}; blood O2 store ${(S.climbEnd.o2*100).toFixed(0)} %, burst store ${(S.climbEnd.burst*100).toFixed(0)} %),`:''}${S.physLast?` blood O2 store ${(S.physLast.o2.storeFraction*100).toFixed(0)} %, burst store ${(S.physLast.o2.burstStoreFraction*100).toFixed(0)} %, flight power ${S.physLast.flight.total_W.toFixed(2)} W (${S.physLast.flight.limitedBy}),`:''} ${d.alt?`air density ${atmo(S.s.z).rho.toFixed(3)} kg/m³ and PO₂ ${atmo(S.s.z).PO2.toFixed(1)} kPa at this altitude, aerobic capacity now ${(d.A0*satHb(atmo(S.s.z).PO2,d.P50,d.nH)/satHb(atmo(0).PO2,d.P50,d.nH)).toFixed(2)} W (map ceiling ${(window.TFFCEIL||0).toFixed(0)} m),`:''} mean climb rate since take-off ${(()=>{const a=h.find(p=>p.ph==='glide');return a?((S.s.z-a.z)/Math.max(S.t-a.t,1e-6)).toFixed(2):'0';})()} m/s, P_avail ${d.Pavail.toFixed(2)} W, v_min ${d.vmin.toFixed(2)} m/s.</p>`:'';
-  document.getElementById('valid').innerHTML=climb+'<table><tr><th>quantity</th><th>published (second-hand)</th><th>this run</th><th></th></tr>'+rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]??''}</td><td>${chip(r[3])}</td></tr>`).join('')+'</table>';
+  LASTROWS=rows;
+  document.getElementById('valid').innerHTML=climb+'<table class="stack"><thead><tr><th>quantity</th><th>published (second-hand)</th><th>this run</th><th></th></tr></thead><tbody>'+rows.map(r=>`<tr><td class="lead" data-l="quantity">${r[0]}</td><td data-l="published, second-hand">${r[1]}</td><td data-l="this run">${r[2]??''}</td><td data-l="">${chip(r[3])}</td></tr>`).join('')+'</tbody></table>';
+  const now=performance.now(); if(EMBEDDED&&(now-lastEmit>250||S.done)){ lastEmit=now; emit('state',{t_s:S.t,phase:S.phase,x_m:S.s.x,z_m:S.s.z,speed_m_s:v,glides:S.glides.length,running:running,done:!!S.done}); }
 }
-function loop(ts){ if(!running) return; const dtReal=Math.min(0.05,(ts-last)/1000||0.016); last=ts; if(speedMul>=100){stepSim(sim,2);} else stepSim(sim,dtReal*speedMul); draw(); if(sim.done){running=false;document.getElementById('runBtn').classList.remove('on');} else requestAnimationFrame(loop); }
+function loop(ts){ if(!running) return; const dtReal=Math.min(0.05,(ts-last)/1000||0.016); last=ts; if(speedMul>=100){stepSim(sim,2);} else stepSim(sim,dtReal*speedMul); draw(); if(sim.done){running=false;document.getElementById('runBtn').classList.remove('on');emit('results',resultsPayload());} else requestAnimationFrame(loop); }
+/* ===================== PARAMETER INTAKE =====================================================
+   Names are the parametric schema's (anatomy-model/parametric/design-schema.json). The contract
+   for a parent frame is written out in sim/EMBED.md; this code is its implementation.          */
+const SCHEMA_NAMES=['standard_length_m','body_mass_kg','pectoral_area_over_SL2','pectoral_span_over_SL','flight_muscle_fraction'];
+const DERIVED_NAMES=['lifting_area_m2','wing_loading_N_m2','pectoral_aspect_ratio'];
+const DEF_LIFT_RATIO=1.9896503057863417, LOBE_RULE=0.2463, FRONTAL_RULE=0.016985;
+let SCH=null, LASTROWS=[], LASTDERIVED=null;
+const liftRatio=()=>(PRESETS&&PRESETS.lifting_area_transfer&&+PRESETS.lifting_area_transfer.ratio)||DEF_LIFT_RATIO;
+const KINDRANK={measured:0,standard:1,observed:1,secondary:2,derived:2,locked:1,proxy:3,assumed:3,tuned:4,hypothetical:5,supplied:5,unknown:5};
+function bucket(kind){const k=String(kind||'unknown').toLowerCase();
+  if(k.startsWith('measured'))return 'measured'; if(k.startsWith('secondary'))return 'secondary';
+  if(k.startsWith('derived')||k.startsWith('standard')||k.startsWith('observed')||k.startsWith('locked'))return 'derived';
+  if(k.startsWith('assumed')||k.startsWith('proxy'))return 'assumed'; if(k.startsWith('tuned'))return 'tuned';
+  if(k.startsWith('hypothetical'))return 'hypothetical'; return 'other';}
+const chipOf=k=>({measured:'m',secondary:'s',derived:'',assumed:'a',tuned:'t',hypothetical:'h',other:'h'})[bucket(k)]||'';
+function worstKind(list){let w='measured',r=-1;for(const k of list){const kk=String(k||'unknown').toLowerCase().split(' ')[0];const v=KINDRANK[kk]==null?5:KINDRANK[kk];if(v>r){r=v;w=k;}}return w;}
+function srcOf(p){return p?(p.source||p.note||''):''}
+function setP(f,key,value,kind,source){f[key]=Object.assign({},f[key]||{},{value:value,kind:kind,source:source});if(f[key].note&&f[key].source)delete f[key].note;return f[key];}
+function baseSchemaOf(f){
+  const SL=f.standard_length_m.value, S=f.ref_area_m2.value;
+  return {
+    standard_length_m:{value:SL,kind:f.standard_length_m.kind,source:srcOf(f.standard_length_m)||'sim/params.json'},
+    body_mass_kg:{value:f.mass_kg.value,kind:f.mass_kg.kind,source:srcOf(f.mass_kg)||'sim/params.json mass_kg'},
+    pectoral_area_over_SL2:{value:(S/liftRatio())/(SL*SL),kind:worstKind([f.ref_area_m2.kind,'assumed']),source:'back-derived from params.json ref_area_m2 = '+S+' m2 through the lifting-area ratio '+liftRatio().toFixed(5)+' (assumed): the schema carries the PECTORAL area, the simulator the TOTAL lifting area'},
+    pectoral_span_over_SL:{value:f.span_m.value/SL,kind:f.span_m.kind,source:(srcOf(f.span_m)||'params.json span_m = '+f.span_m.value+' m')+' / standard_length_m'},
+    flight_muscle_fraction:{value:(f.flight_muscle_fraction&&f.flight_muscle_fraction.value)||0,kind:(f.flight_muscle_fraction&&f.flight_muscle_fraction.kind)||'unknown',source:(f.flight_muscle_fraction&&srcOf(f.flight_muscle_fraction))||'not given in params.json for this entry; taken as 0'}
+  };
+}
+function derivedSchema(){
+  if(!SCH||!fish) return null;
+  const SL=SCH.standard_length_m.value, m=SCH.body_mass_kg.value, aoS2=SCH.pectoral_area_over_SL2.value, soSL=SCH.pectoral_span_over_SL.value;
+  const pect=aoS2*SL*SL, lift=fish.ref_area_m2.value, g=(P&&P.constants.g.value)||9.81;
+  return {
+    pectoral_area_both_m2:{value:pect,kind:SCH.pectoral_area_over_SL2.kind,source:'pectoral_area_over_SL2 x standard_length_m^2'},
+    lifting_area_m2:{value:lift,kind:fish.ref_area_m2.kind,source:srcOf(fish.ref_area_m2)},
+    wing_loading_N_m2:{value:m*g/lift,kind:worstKind([SCH.body_mass_kg.kind,fish.ref_area_m2.kind]),source:'body_mass_kg x g / lifting_area_m2 (the schema says this must never be set by hand)'},
+    pectoral_aspect_ratio:{value:(soSL*soSL)/aoS2,kind:worstKind([SCH.pectoral_span_over_SL.kind,SCH.pectoral_area_over_SL2.kind]),source:'pectoral_span^2 / pectoral area of both fins, as the mesh builder computes it (anatomy-model/parametric/build.py). The mesh of a reference organism does not meet its own span and area parameters, so a manifest value can differ: see parameter_vs_mesh_check.'},
+    span_m:{value:soSL*SL,kind:fish.span_m.kind,source:'pectoral_span_over_SL x standard_length_m'},
+    v_min_m_s:{value:(sim&&sim.d)?sim.d.vmin:null,kind:'derived',source:'sqrt(2W/(rho S CL_max)); constraint C9'}
+  };
+}
+function applyDesign(design,requestId){
+  if(!COMMITTED){ emit('error',{requestId:requestId,message:'the simulator has not finished loading'}); return; }
+  const d=design||{};
+  let bi=BASEIDX;
+  if(d.base){ const i=COMMITTED.findIndex(f=>f.id===d.base); if(i<0){ emit('error',{requestId:requestId,message:'unknown base entry "'+d.base+'"; known: '+COMMITTED.map(f=>f.id).join(', ')}); return; } bi=i; }
+  const f=JSON.parse(JSON.stringify(COMMITTED[bi])); if(f.taxi_thrust_N.factor==null) f.taxi_thrust_N.factor=0.7;
+  const bs=baseSchemaOf(f), sch={}, supplied={}, ignored=(d.ignored||[]).slice();
+  const pin=d.parameters||{};
+  for(const k of Object.keys(pin)) if(SCHEMA_NAMES.indexOf(k)<0) ignored.push(k);
+  for(const k of SCHEMA_NAMES){
+    const raw=pin[k];
+    const v=(raw&&typeof raw==='object')?+raw.value:+raw;
+    if(raw==null||!isFinite(v)){ if(raw!=null) ignored.push(k+' (not a finite number)'); sch[k]=Object.assign({from:'base',applied:true},bs[k]); continue; }
+    const apply=!(raw&&typeof raw==='object'&&raw.apply===false);
+    sch[k]={value:v,from:'design',applied:apply,
+      kind:(raw&&typeof raw==='object'&&raw.kind)||'supplied',
+      source:(raw&&typeof raw==='object'&&(raw.source||raw.reason))||('supplied at run time by '+(d.origin||'the embedder')+'; no kind or source was given with it'),
+      not_applied_reason:(raw&&typeof raw==='object'&&raw.not_applied_reason)||'',
+      base:bs[k]};
+    if(apply) supplied[k]=sch[k];
+  }
+  const eff=k=>sch[k].applied?sch[k].value:bs[k].value;
+  const SL=eff('standard_length_m'), mass=eff('body_mass_kg'), aoS2=eff('pectoral_area_over_SL2'), soSL=eff('pectoral_span_over_SL'), fmf=eff('flight_muscle_fraction');
+  const tag=k=>sch[k].applied&&sch[k].from==='design'?('design "'+(d.id||'custom')+'": '+sch[k].source):sch[k].source;
+  setP(f,'standard_length_m',SL,sch.standard_length_m.applied?sch.standard_length_m.kind:bs.standard_length_m.kind,tag('standard_length_m'));
+  setP(f,'mass_kg',mass,sch.body_mass_kg.applied?sch.body_mass_kg.kind:bs.body_mass_kg.kind,tag('body_mass_kg')+' [schema body_mass_kg]');
+  setP(f,'span_m',soSL*SL,sch.pectoral_span_over_SL.applied?sch.pectoral_span_over_SL.kind:bs.pectoral_span_over_SL.kind,tag('pectoral_span_over_SL')+' [schema pectoral_span_over_SL x standard_length_m]');
+  let lift, lk, ls; const dv=d.derived&&d.derived.lifting_area_m2;
+  if(dv!=null&&isFinite((typeof dv==='object')?+dv.value:+dv)){
+    lift=(typeof dv==='object')?+dv.value:+dv; lk=(typeof dv==='object'&&dv.kind)||'supplied';
+    ls=((typeof dv==='object'&&dv.source)||'supplied with the design as derived.lifting_area_m2')+' [schema lifting_area_m2, used directly as the simulator reference area]';
+  } else {
+    lift=aoS2*SL*SL*liftRatio(); lk=worstKind([sch.pectoral_area_over_SL2.applied?sch.pectoral_area_over_SL2.kind:bs.pectoral_area_over_SL2.kind,'assumed']);
+    ls='[schema lifting_area_m2] pectoral_area_over_SL2 x standard_length_m^2 x '+liftRatio().toFixed(6)+', the Park and Choi L3 total-lifting-over-pectoral area ratio: an ASSUMED transfer. From '+tag('pectoral_area_over_SL2');
+  }
+  setP(f,'ref_area_m2',lift,lk,ls);
+  if(sch.flight_muscle_fraction.applied||(f.flight_muscle_fraction&&f.flight_muscle_fraction.value!=null))
+    setP(f,'flight_muscle_fraction',fmf,sch.flight_muscle_fraction.applied?sch.flight_muscle_fraction.kind:bs.flight_muscle_fraction.kind,tag('flight_muscle_fraction'));
+  if(Math.abs(SL-bs.standard_length_m.value)>1e-12){
+    setP(f,'lobe_length_m',LOBE_RULE*SL,'assumed','scaled with standard_length_m at '+LOBE_RULE+' x SL, the ratio the committed params.json entries already use (0.05 m at SL 0.203 m; 0.0074 m at SL 0.03 m). No lobe length has been measured on this body.');
+    setP(f,'body_frontal_area_m2',FRONTAL_RULE*SL*SL,'assumed','scaled with standard_length_m^2 at '+FRONTAL_RULE+' x SL^2, the ratio the committed params.json entries already use. No frontal area has been measured on any of these fish.');
+  }
+  if(d.powered!=null) setP(f,'powered',!!d.powered,'hypothetical','set with the design "'+(d.id||'custom')+'"');
+  MAPPED=new Set();
+  if(sch.standard_length_m.from==='design'&&sch.standard_length_m.applied) MAPPED.add('standard_length_m');
+  if(sch.body_mass_kg.from==='design'&&sch.body_mass_kg.applied) MAPPED.add('mass_kg');
+  if(sch.pectoral_span_over_SL.from==='design'&&sch.pectoral_span_over_SL.applied) MAPPED.add('span_m');
+  if((sch.pectoral_area_over_SL2.from==='design'&&sch.pectoral_area_over_SL2.applied)||dv!=null) MAPPED.add('ref_area_m2');
+  if(sch.flight_muscle_fraction.from==='design'&&sch.flight_muscle_fraction.applied) MAPPED.add('flight_muscle_fraction');
+  if(Math.abs(SL-bs.standard_length_m.value)>1e-12){ MAPPED.add('lobe_length_m'); MAPPED.add('body_frontal_area_m2'); }
+  if(d.powered!=null) MAPPED.add('powered');
+  BASEIDX=bi; const fs=document.getElementById('fishSel'); if(fs) fs.value=String(bi);
+  fish=f; SCH=sch; MOVED=new Set(); SUPPLIED=supplied;
+  DESIGN=Object.assign({},d,{ignored:ignored,baseId:COMMITTED[bi].id,baseHypothetical:!!COMMITTED[bi].hypothetical});
+  showHypo(f,(d.hypothetical!=null)?!!d.hypothetical:!!f.hypothetical);
+  const ps=document.getElementById('presetSel'); if(ps) ps.value=PRESETID||'';
+  renderDesignCard(); renderParams(); reset();
+  emit('accepted',Object.assign({requestId:requestId,ignored:ignored},summary()));
+  return true;
+}
+function loadPreset(id,requestId){
+  if(!PRESETS){ emit('error',{requestId:requestId,message:'presets.json has not loaded'}); return; }
+  const p=PRESETS.presets.filter(x=>x.id===id)[0];
+  if(!p){ emit('error',{requestId:requestId,message:'unknown preset "'+id+'"; known: '+PRESETS.presets.map(x=>x.id).join(', ')}); return; }
+  PRESETID=id;
+  return applyDesign({id:p.id,name:p.label,hypothetical:p.hypothetical,base:p.base,parameters:p.parameters,derived:p.derived,notes:p.notes,rests_on:p.rests_on,rests_on_text:p.rests_on_text,source:p.source,organism:p.organism,origin:'preset'},requestId);
+}
+function queryDesign(){
+  const q=new URLSearchParams(location.search); const params={}, derived={}; let any=false;
+  for(const k of SCHEMA_NAMES){ if(q.get(k)!=null&&isFinite(+q.get(k))){ params[k]={value:+q.get(k),kind:q.get('kind.'+k)||'supplied',source:q.get('source.'+k)||''}; any=true; } }
+  for(const k of DERIVED_NAMES){ if(q.get(k)!=null&&isFinite(+q.get(k))){ derived[k]={value:+q.get(k),kind:q.get('kind.'+k)||'supplied',source:q.get('source.'+k)||''}; any=true; } }
+  if(q.get('design')){ try{ const j=JSON.parse(q.get('design')); if(j&&typeof j==='object'){ Object.assign(params,j.parameters||{}); Object.assign(derived,j.derived||{}); return Object.assign({},j,{parameters:params,derived:derived,origin:'the URL (design=)'}); } }catch(e){ emit('error',{message:'design= is not valid JSON: '+e.message}); } }
+  if(!any) return null;
+  return {id:q.get('id')||'url',name:q.get('name')||'parameters from the URL',hypothetical:q.get('hypothetical')==='1'||q.get('hypothetical')==='true',base:q.get('base')||undefined,powered:q.get('powered')!=null?(q.get('powered')==='1'||q.get('powered')==='true'):undefined,parameters:params,derived:derived,origin:'the URL query'};
+}
+/* ---- what differs from the committed entry ---- */
+const VALUE_FLAGS=['v2','cdw','taxi','fmf','lobecd','taxidrag','launchcap','flap','flapsrc'];
+function diffs(){
+  if(!COMMITTED||!fish) return [];
+  const c=COMMITTED[BASEIDX], out=[];
+  for(const k of Object.keys(fish)){
+    const p=fish[k]; if(typeof p!=='object'||p===null) continue;
+    const cp=c[k];
+    if(k==='taxi_thrust_N'){ const fa=p.factor==null?0.7:p.factor, fb=(cp&&cp.factor!=null)?cp.factor:0.7; if(Math.abs(fa-fb)>1e-9) out.push({k:'taxi thrust factor',from:fb,to:fa}); continue; }
+    const a=p.value, b=cp?cp.value:undefined;
+    if(cp===undefined){ if(a!=null&&a!==false) out.push({k:k,from:'not in the committed entry',to:a}); continue; }
+    if(typeof a==='number'&&typeof b==='number'){ const rel=Math.abs(a-b)/Math.max(Math.abs(b),1e-12); if(rel>0) out.push({k:k,from:b,to:a,rel:rel,tiny:rel<=1e-4}); }
+    else if(a!==b&&!(a==null&&b==null)) out.push({k:k,from:String(b),to:String(a)});
+  }
+  return out;
+}
+function flagDiffs(){ return VALUE_FLAGS.filter(k=>FLAGS.get(k)!=null).map(k=>k+'='+FLAGS.get(k)); }
+function runMode(){
+  const ds=diffs(), hard=ds.filter(d=>!d.tiny), fl=flagDiffs();
+  if(!DESIGN&&!hard.length&&!fl.length&&!MOVED.size) return 'committed';
+  if(!hard.length&&!fl.length&&!MOVED.size) return 'reproduced';
+  return 'exploratory';
+}
+function renderStatus(){
+  const el=document.getElementById('exploBanner'), vm=document.getElementById('validMode');
+  if(!COMMITTED||!fish) return 'committed';
+  const mode=runMode(), ds=diffs(), fl=flagDiffs();
+  const nm=(DESIGN&&(DESIGN.name||DESIGN.id))||'';
+  const list=ds.map(d=>`<li><code>${esc(d.k)}</code> ${esc(fmt(d.from))} &rarr; <b>${esc(fmt(d.to))}</b>${d.tiny?' <span class="mute">(same to within 1e-4 relative: rounded ratios)</span>':''}</li>`).join('');
+  if(mode==='committed'){
+    el.style.display='none';
+    vm.innerHTML='<span class="chip m">pre-registered parameters</span> the committed <code>params.json</code> values for <b>'+esc(COMMITTED[BASEIDX].id)+'</b>, unmodified. The rows below are the pre-registered comparisons as logged in RUNS.md.';
+  } else if(mode==='reproduced'){
+    el.style.display='block'; el.style.borderColor='var(--accent)';
+    el.innerHTML='<b>Parameters supplied through the design intake</b> <span class="chip s">reproduces the committed set</span> &nbsp;from '+(DESIGN.origin==='preset'?'preset':'design')+' <b>'+esc(nm)+'</b>'+(DESIGN.source?' ('+esc(DESIGN.source)+')':'')+'. Every value the integrator uses matches the committed <code>params.json</code> entry <b>'+esc(COMMITTED[BASEIDX].id)+'</b>'+(ds.length?' (to within 1e-4 relative, the preset\'s ratios being rounded: '+ds.map(d=>esc(d.k)).join(', ')+')':' exactly')+', so this run is that configuration and the pre-registration statement below applies to it unchanged.';
+    vm.innerHTML='<span class="chip m">pre-registered parameters, supplied through the intake</span> values identical to the committed <b>'+esc(COMMITTED[BASEIDX].id)+'</b> entry.';
+  } else {
+    el.style.display='block'; el.style.borderColor='var(--bad)';
+    el.innerHTML='<b>EXPLORATORY RUN.</b> <span class="chip h">not pre-registered</span> '
+      +'The parameters of this run were supplied at run time'+(nm?' (from '+(DESIGN.origin==='preset'?'preset':'design')+' <b>'+esc(nm)+'</b>)':'')+', so it is exploratory by definition: <b>a pre-registered test applies to the pre-registered parameters, not to these.</b> '
+      +'Nothing below is a pre-registered test result; the comparison table is a comparison with second-hand field figures and nothing more, and this run is not in <a href="../data/sim/RUNS.md">RUNS.md</a>. '
+      +'The pre-registration statement in the next panel is kept word for word because it is the record of the pre-registered runs; it does not cover this one.'
+      +(list?'<div class="small" style="margin-top:6px">What differs from the committed <code>params.json</code> entry <b>'+esc(COMMITTED[BASEIDX].id)+'</b>:<ul style="margin:4px 0 0 18px">'+list+'</ul></div>':'')
+      +(fl.length?'<div class="small" style="margin-top:6px">URL flags in force: <code>'+fl.map(esc).join('</code> <code>')+'</code>. Some flag sets are themselves pre-registered arms (PREREG-v2 &sect;"Fixed now"; PREREG-v3 arms A and C); this page does not try to recognise them, so it calls <i>any</i> run-time change exploratory. Those arms\' own results are in RUNS.md.</div>':'')
+      +(MOVED.size?'<div class="small" style="margin-top:6px">Sliders moved in this session: <code>'+[...MOVED].map(esc).join('</code> <code>')+'</code>.</div>':'')
+      +((DESIGN&&(DESIGN.hypothetical||DESIGN.baseHypothetical))?'<div class="small" style="margin-top:6px">The selected organism is <b>hypothetical</b>: its run is a design-study readout, never a test (see RUNS.md, "design-study readouts, not tests").</div>':'');
+    vm.innerHTML='<span class="chip h">exploratory run</span> these parameters are not the pre-registered ones, so the rows below are comparisons, not test results.';
+  }
+  const notReal=(COMMITTED[BASEIDX].id!=='cypselurus-hiraii-L3')||(DESIGN&&DESIGN.id&&DESIGN.id!=='flying-fish');
+  if(notReal) vm.innerHTML+=' <b>The published column is the real flying fish\'s field range</b>, which does not describe this organism; it is left in place so the two can be compared.';
+  return mode;
+}
+function fmt(v){ if(typeof v!=='number') return String(v); const a=Math.abs(v); if(v===0) return '0'; if(a<1e-3||a>=1e5) return v.toExponential(3); return String(Math.round(v*1e6)/1e6); }
+/* ---- provenance mix: how much of this run rests on assumptions ---- */
+const BUCKETS=[['measured','measured'],['secondary','secondary (another study, second-hand)'],['derived','derived, standard or observed'],['assumed','assumed or proxy'],['tuned','tuned to the targets'],['hypothetical','hypothetical'],['other','supplied with no kind, or unknown']];
+function provenance(){
+  const counts={}, rows=[]; BUCKETS.forEach(b=>counts[b[0]]=0);
+  for(const k of Object.keys(fish||{})){ const p=fish[k]; if(typeof p!=='object'||p===null) continue;
+    const b=bucket(p.kind); counts[b]++; rows.push({parameter:k,kind:p.kind,bucket:b}); }
+  const total=rows.length||1;
+  const weak=counts.assumed+counts.tuned+counts.hypothetical+counts.other;
+  const verdict = (counts.hypothetical+counts.other)/total>=0.2 ? 'hypothetical'
+                : weak/total>=0.5 ? 'assumed'
+                : counts.measured/total>=0.5 ? 'measured' : 'mixed';
+  const text = verdict==='hypothetical' ? 'Mostly hypothetical or unlabelled: this run describes a design, not an animal.'
+             : verdict==='assumed' ? 'Mostly assumed or tuned: half or more of what the integrator reads is not a measurement.'
+             : verdict==='measured' ? 'Mostly measured: most of what the integrator reads was measured, though the launch is still tuned.'
+             : 'Mixed: measured aerodynamics with assumed and tuned hydrodynamics.';
+  return {counts:counts,total:rows.length,rows:rows,verdict:verdict,text:text,weak_share:weak/total};
+}
+function renderProv(){
+  const pv=provenance(), el=document.getElementById('prov'), card=document.getElementById('paramCard');
+  card.className='card evid evid-'+pv.verdict;
+  const seg=BUCKETS.filter(b=>pv.counts[b[0]]>0).map(b=>`<i class="k-${b[0]}" style="width:${(100*pv.counts[b[0]]/pv.total).toFixed(2)}%" title="${esc(b[1])}: ${pv.counts[b[0]]}"></i>`).join('');
+  const keys=BUCKETS.filter(b=>pv.counts[b[0]]>0).map(b=>`<span class="pk"><i class="dot k-${b[0]}"></i><b>${pv.counts[b[0]]}</b> ${esc(b[1])}</span>`).join(' ');
+  el.innerHTML=`<div class="small"><b>What this run rests on:</b> ${esc(pv.text)}</div><div class="pbar">${seg}</div><div class="row" style="gap:10px">${keys}</div>`
+   +`<div class="small mute" style="margin:4px 0 8px">${pv.total} parameters are read by the integrator; each row below carries its own kind and source. ${(100*pv.weak_share).toFixed(0)} % of them are assumed, tuned, hypothetical or unlabelled.</div>`;
+}
+function renderDesignCard(){
+  const el=document.getElementById('designCard');
+  if(!DESIGN||!SCH){ el.style.display='none'; return; }
+  const d=DESIGN, dv=derivedSchema(); LASTDERIVED=dv;
+  const restChip=d.hypothetical?'<span class="chip h">hypothetical</span>':(d.rests_on==='measured'?'<span class="chip m">measured</span>':(d.rests_on==='assumed'?'<span class="chip a">rests on assumptions</span>':'<span class="chip">supplied</span>'));
+  let rows=SCHEMA_NAMES.map(k=>{const s=SCH[k];const chipk=chipOf(s.kind);
+    return `<tr><td class="lead" data-l="parameter"><code>${k}</code> ${s.from==='design'?'<span class="chip s">from design</span>':'<span class="chip">from base entry</span>'}${s.applied?'':' <span class="chip h">not applied</span>'}</td><td data-l="value">${fmt(s.value)}</td><td data-l="kind"><span class="chip ${chipk}">${esc(s.kind)}</span></td><td class="small mute" data-l="source">${esc(s.source)}${s.applied?'':' <b>Not applied to the run:</b> '+esc(s.not_applied_reason||'the committed entry is used instead.')}${s.from==='design'&&s.base?' <span class="mute">(base entry: '+fmt(s.base.value)+', '+esc(s.base.kind)+')</span>':''}</td></tr>`;}).join('');
+  let drows=['lifting_area_m2','wing_loading_N_m2','pectoral_aspect_ratio'].map(k=>`<tr><td class="lead" data-l="derived"><code>${k}</code> <span class="chip">derived, never set by hand</span></td><td data-l="value">${fmt(dv[k].value)}</td><td data-l="kind"><span class="chip">${esc(dv[k].kind)}</span></td><td class="small mute" data-l="how">${esc(dv[k].source)}</td></tr>`).join('');
+  const notes=(d.notes||[]).map(n=>`<div class="nt ${esc(n.severity||'note')}"><b>${esc((n.severity==='fatal'?'MISMATCH, fatal to the design: ':n.severity==='mismatch'?'Known spec mismatch: ':'')+(n.title||''))}</b>${esc(n.text||'')}${n.source?' <span class="mute">['+esc(n.source)+']</span>':''}</div>`).join('');
+  el.className='card evid evid-'+(d.hypothetical?'hypothetical':(d.rests_on==='measured'?'measured':'assumed'));
+  el.style.display='block';
+  el.innerHTML=`<h3 style="margin-bottom:2px">Loaded design: ${esc(d.name||d.id)} ${restChip}</h3>`
+   +`<p class="small mute" style="margin:2px 0 8px">${esc(d.rests_on_text||'Parameters supplied through the intake; see sim/EMBED.md for the contract.')} ${d.source?'Source: <code>'+esc(d.source)+'</code>.':''} Base entry for everything the parametric schema does not carry (the fin polar, the trim law, the re-entry rule): <code>params.json:${esc(d.baseId||'')}</code>${d.baseHypothetical?' <span class="chip h">that entry is itself hypothetical</span>':''}.</p>`
+   +`<div class="scroll"><table class="stack"><thead><tr><th>parametric parameter</th><th>value</th><th>kind</th><th>where it comes from</th></tr></thead><tbody>${rows}${drows}</tbody></table></div>`
+   +(d.ignored&&d.ignored.length?`<p class="small" style="color:var(--warn)">Ignored (not in the schema, or not a number): <code>${d.ignored.map(esc).join('</code> <code>')}</code></p>`:'')
+   +notes
+   +`<p class="small mute">The simulator's own parameters below show how each of these was mapped. Contract: <a href="EMBED.md">EMBED.md</a>.</p>`;
+}
+/* ===================== EMBEDDING: messages out and in ====================================== */
+const WIRE={delphi:'physics-sim',v:1};
+function emit(type,payload){
+  const msg=Object.assign({},WIRE,{type:type},payload||{});
+  try{ if(window.parent&&window.parent!==window) window.parent.postMessage(msg,'*'); }catch(e){}
+  try{ if(window.opener) window.opener.postMessage(msg,'*'); }catch(e){}
+  window.LAST_EMIT=msg; (window.EMITS=window.EMITS||[]).push(msg); if(window.EMITS.length>60) window.EMITS.shift();
+  return msg;
+}
+function summary(){
+  const dv=derivedSchema(), pv=provenance(), mode=renderStatus();
+  const sc={}; if(SCH) for(const k of SCHEMA_NAMES) sc[k]={value:SCH[k].value,kind:SCH[k].kind,source:SCH[k].source,from:SCH[k].from,applied:SCH[k].applied};
+  return {design:DESIGN?{id:DESIGN.id,name:DESIGN.name,hypothetical:!!DESIGN.hypothetical,base:DESIGN.baseId,origin:DESIGN.origin,notes:DESIGN.notes||[]}:{id:COMMITTED?COMMITTED[BASEIDX].id:null,name:COMMITTED?COMMITTED[BASEIDX].label:null,hypothetical:COMMITTED?!!COMMITTED[BASEIDX].hypothetical:false,origin:'params.json'},
+    parameters:sc,
+    derived:dv?{lifting_area_m2:dv.lifting_area_m2.value,wing_loading_N_m2:dv.wing_loading_N_m2.value,pectoral_aspect_ratio:dv.pectoral_aspect_ratio.value,pectoral_area_both_m2:dv.pectoral_area_both_m2.value,span_m:dv.span_m.value,v_min_m_s:sim&&sim.d?sim.d.vmin:null}:null,
+    validation:{mode:mode,
+      pre_registered:mode!=='exploratory',
+      statement:mode==='exploratory'?'EXPLORATORY: these parameters were supplied at run time. A pre-registered test applies to the pre-registered parameters, not to these; the comparison rows are comparisons with second-hand field figures, not test results.':'The committed params.json parameters for '+(COMMITTED?COMMITTED[BASEIDX].id:'')+'; the pre-registration statement on the page applies (PREREG.md, run 6; tests 1 to 3 post-hoc; test 4 as recorded in RUNS.md).',
+      differs_from_committed:diffs().map(d=>({parameter:d.k,committed:d.from,now:d.to,negligible:!!d.tiny})),
+      url_flags:flagDiffs(), sliders_moved:[...MOVED],
+      prereg:'../data/sim/PREREG.md', runs:'../data/sim/RUNS.md'},
+    provenance:{counts:pv.counts,total:pv.total,verdict:pv.verdict,text:pv.text,weak_share:pv.weak_share,per_parameter:pv.rows},
+    physiology_chain:physOn?'on':'off'};
+}
+function resultsPayload(requestId){
+  const S=sim, gl=(S&&S.glides)||[];
+  return Object.assign({requestId:requestId},summary(),{run:{
+      t_s:S?S.t:0, done:!!(S&&S.done), phase:S?S.phase:null, distance_m:S?S.s.x:0, height_m:S?S.s.z:0,
+      speed_m_s:S?Math.hypot(S.s.vx,S.s.vz):0, glides:gl.length, takeoff_speed_m_s:S?S.takeoffV:null,
+      max_height_m:S?(S.zmax||0):0, mean_taxi_m:(S&&S.taxiLen.length)?S.taxiLen.reduce((a,b)=>a+b,0)/S.taxiLen.length:null,
+      per_glide:gl.map(q=>({takeoff_speed_m_s:q.v0,distance_m:q.dist,duration_s:q.dur,max_height_m:q.zmax,peak_speed_m_s:q.vmax})),
+      physiology:(S&&S.physLast)?{blood_O2_store:S.physLast.o2.storeFraction,burst_store:S.physLast.o2.burstStoreFraction,axial_W:S.physLast.axial.total_W,flight_W:S.physLast.flight.total_W}:null},
+    comparison_rows:LASTROWS.map(r=>({quantity:r[0],published_second_hand:r[1],this_run:r[2],status:r[3]==null?'pending':(r[3]?'within':'outside')})),
+    comparison_caveat:'Field values are second-hand. "within" means the model with these parameters is not contradicted by them; it is only a test result when the parameters are the pre-registered ones.'});
+}
+function sendReady(){
+  emit('ready',{presets:(PRESETS?PRESETS.presets:[]).map(p=>({id:p.id,label:p.label,hypothetical:!!p.hypothetical,rests_on:p.rests_on,base:p.base,organism:p.organism})),
+    base_entries:(COMMITTED||[]).map(f=>({id:f.id,label:f.label,hypothetical:!!f.hypothetical})),
+    accepts:{parameters:SCHEMA_NAMES,derived_in:['lifting_area_m2'],derived_out:DERIVED_NAMES},
+    contract:'sim/EMBED.md'});
+}
+function maybeAutorun(a){ if(!a) return; const tm=(typeof a==='object'&&a.tmax)||+FLAGS.get('tmax')||60; running=false; document.getElementById('runBtn').classList.remove('on'); stepSim(sim,tm); draw(); document.body.dataset.done='1'; emit('results',resultsPayload()); }
+function control(d){
+  switch(d.action){
+    case 'run': if(sim&&sim.done) reset(); running=true; document.getElementById('runBtn').classList.add('on'); last=performance.now(); requestAnimationFrame(loop); break;
+    case 'pause': running=false; document.getElementById('runBtn').classList.remove('on'); break;
+    case 'reset': reset(); break;
+    case 'step': running=false; stepSim(sim,d.seconds||0.1); draw(); break;
+    case 'autorun': maybeAutorun({tmax:d.tmax||60}); break;
+    case 'results': emit('results',resultsPayload(d.requestId)); break;
+    case 'speed': if(isFinite(+d.speed)){ speedMul=+d.speed; document.getElementById('speedSel').value=String(d.speed); } break;
+    case 'physiology': document.getElementById('physChk').checked=!!d.on; setPhys(!!d.on); break;
+    default: emit('error',{requestId:d.requestId,message:'unknown control action: '+d.action});
+  }
+}
+addEventListener('message',function(ev){
+  const d=ev.data; if(!d||typeof d!=='object'||d.delphi!=='physics-sim') return;
+  if(d.type==='ready'||d.type==='state'||d.type==='results'||d.type==='accepted'||d.type==='error') return; // our own echo
+  PARENTSEEN=true; embedChip();
+  try{
+    switch(d.type){
+      case 'hello': sendReady(); break;
+      case 'design': applyDesign(Object.assign({origin:'the parent frame'},d.design||{}),d.requestId); maybeAutorun((d.design&&d.design.autorun)||d.autorun); break;
+      case 'preset': if(loadPreset(d.preset,d.requestId)) maybeAutorun(d.autorun); break;
+      case 'control': control(d); break;
+      case 'theme': setTheme(d.theme); break;
+      case 'get-results': emit('results',resultsPayload(d.requestId)); break;
+      default: emit('error',{requestId:d.requestId,message:'unknown message type: '+String(d.type)});
+    }
+  }catch(e){ emit('error',{requestId:d.requestId,message:String((e&&e.message)||e)}); console.error(e); }
+});
+function embedChip(){ const el=document.getElementById('embedChip'); if(!el) return;
+  el.innerHTML=EMBEDDED?('<span class="chip '+(PARENTSEEN?'m':'')+'">'+(PARENTSEEN?'embedded: parent connected':'embedded: sending results to the parent frame')+'</span>'):''; }
+function buildLink(){
+  const u=new URL(location.href); const q=new URLSearchParams();
+  if(FLAGS.get('theme'))q.set('theme',FLAGS.get('theme'));
+  for(const k of VALUE_FLAGS) if(FLAGS.get(k)!=null) q.set(k,FLAGS.get(k));
+  if(physOn)q.set('phys','1');
+  if(PRESETID&&!MOVED.size) q.set('preset',PRESETID);
+  else { q.set('base',COMMITTED[BASEIDX].id); const dv=derivedSchema();
+    for(const k of SCHEMA_NAMES) q.set(k,String(SCH?SCH[k].value:'')); q.set('lifting_area_m2',String(dv.lifting_area_m2.value));
+    q.set('id',(DESIGN&&DESIGN.id)||COMMITTED[BASEIDX].id); }
+  u.search='?'+q.toString(); return u.toString();
+}
 function renderParams(){
-  const f=fish, d=derive(f); const kindChip={measured:'m',secondary:'s',assumed:'a',tuned:'t',derived:'',standard:''};
-  let html='<table><tr><th>parameter</th><th>value</th><th>kind</th><th>source</th></tr>';
-  if(BASE){for(const k of ['water_temperature_C','water_O2','salinity_psu','air_density_kg_m3','air_O2_fraction','wind_waves','nutrition','activity_rest_sleep','clearance']){const c=BASE.conditions[k]; if(c) html+=`<tr><td>${k.replace(/_/g,' ')} <span class="chip">locked</span></td><td>${c.value}</td><td><span class="chip">${c.kind}</span></td><td class="small mute">conditions/baseline.json (project rule 2026-10-31: held at average levels in every simulation): ${c.note}</td></tr>`;}}
+  const f=fish, d=derive(f);
+  renderProv();
+  let html='<table class="stack"><thead><tr><th>parameter</th><th>value</th><th>kind</th><th>source</th></tr></thead><tbody>';
+  if(BASE){for(const k of ['water_temperature_C','water_O2','salinity_psu','air_density_kg_m3','air_O2_fraction','wind_waves','nutrition','activity_rest_sleep','clearance']){const c=BASE.conditions[k]; if(c) html+=`<tr><td class="lead" data-l="parameter">${k.replace(/_/g,' ')} <span class="chip">locked</span></td><td data-l="value">${c.value}</td><td data-l="kind"><span class="chip">${c.kind}</span></td><td class="small mute" data-l="source">conditions/baseline.json (project rule 2026-10-31: held at average levels in every simulation): ${c.note}</td></tr>`;}}
   for(const [k,p] of Object.entries(f)){ if(typeof p!=='object'||p===null) continue;
-    let val=p.value; if(k==='CL_slope_per_deg') val=d.CLslope.toFixed(4)+' /deg'; if(k==='CD_k') val=d.k.toFixed(3); if(k==='swim_thrust_N') val=d.Tswim.toFixed(2)+' N'; if(k==='taxi_thrust_N') val=d.Ttaxi.toFixed(2)+' N (factor '+d.taxiFactor.toFixed(2)+')';
-    let slider=''; if(p.min!=null&&p.max!=null) slider=`<br><input type="range" min="${p.min}" max="${p.max}" step="${(p.max-p.min)/100}" value="${p.value}" data-k="${k}">`;
+    let val=(typeof p.value==='number')?fmt(p.value):p.value; if(k==='CL_slope_per_deg') val=d.CLslope.toFixed(4)+' /deg'; if(k==='CD_k') val=d.k.toFixed(3); if(k==='swim_thrust_N') val=d.Tswim.toFixed(2)+' N'; if(k==='taxi_thrust_N') val=d.Ttaxi.toFixed(2)+' N (factor '+d.taxiFactor.toFixed(2)+')';
+    let slider='';
+    if(p.min!=null&&p.max!=null){const lo=Math.min(p.min,p.value),hi=Math.max(p.max,p.value); slider=`<br><input type="range" min="${lo}" max="${hi}" step="${(hi-lo)/100}" value="${p.value}" data-k="${k}">`;}
     if(p.value===null||typeof p.value==='boolean'){val=String(p.value);}
     if(k==='taxi_thrust_N') slider=`<br><input type="range" min="${p.min_factor}" max="${p.max_factor}" step="0.01" value="${d.taxiFactor}" data-k="taxi_factor">`;
-    html+=`<tr><td>${k.replace(/_/g,' ')}${slider}</td><td>${val??''}${p.alpha_deg!=null?' at '+p.alpha_deg+'°':''}</td><td><span class="chip ${kindChip[p.kind]||''}">${p.kind}</span></td><td class="small mute">${p.source||p.note||''}</td></tr>`; }
-  if(d.powered) html+=`<tr><td>P_avail for flapping (derived)</td><td>${d.Pavail.toFixed(2)} W</td><td><span class="chip h">hypothetical</span></td><td class="small mute">f_muscle x m x p_muscle - inertial; physics/flier/spec.json power budget</td></tr>`;
-  html+=`<tr><td>v_min (derived)</td><td>${d.vmin.toFixed(2)} m/s</td><td><span class="chip">derived</span></td><td class="small mute">sqrt(2W/(rho S CL_max)); results.json gives ${res?res.interpretation_B.v_min_m_s.toFixed(2):'?'}</td></tr></table>`;
+    const from=MAPPED.has(k)?' <span class="chip s">from design</span>':''; const mv=MOVED.has(k)?' <span class="chip t">moved here</span>':'';
+    html+=`<tr><td class="lead" data-l="parameter">${k.replace(/_/g,' ')}${from}${mv}${slider}</td><td data-l="value">${val??''}${p.alpha_deg!=null?' at '+p.alpha_deg+'°':''}</td><td data-l="kind"><span class="chip ${chipOf(p.kind)}">${esc(p.kind)}</span></td><td class="small mute" data-l="source">${esc(srcOf(p))}</td></tr>`; }
+  if(d.powered) html+=`<tr><td class="lead" data-l="parameter">P_avail for flapping (derived)</td><td data-l="value">${d.Pavail.toFixed(2)} W</td><td data-l="kind"><span class="chip h">hypothetical</span></td><td class="small mute" data-l="source">f_muscle x m x p_muscle - inertial; physics/flier/spec.json power budget</td></tr>`;
+  if(SCH){const dv=derivedSchema();
+    for(const k of ['lifting_area_m2','wing_loading_N_m2','pectoral_aspect_ratio'])
+      html+=`<tr><td class="lead" data-l="parameter">${k} <span class="chip">schema, derived</span></td><td data-l="value">${fmt(dv[k].value)}</td><td data-l="kind"><span class="chip ${chipOf(dv[k].kind)}">${esc(dv[k].kind)}</span></td><td class="small mute" data-l="source">${esc(dv[k].source)}</td></tr>`;}
+  html+=`<tr><td class="lead" data-l="parameter">v_min (derived)</td><td data-l="value">${d.vmin.toFixed(2)} m/s</td><td data-l="kind"><span class="chip">derived</span></td><td class="small mute" data-l="source">sqrt(2W/(rho S CL_max)); results.json gives ${res?res.interpretation_B.v_min_m_s.toFixed(2):'?'} for the measured fish</td></tr></tbody></table>`;
   const el=document.getElementById('params'); el.innerHTML=html;
-  el.querySelectorAll('input[type=range]').forEach(inp=>inp.oninput=()=>{const k=inp.dataset.k; if(k==='taxi_factor') f.taxi_thrust_N.factor=+inp.value; else f[k].value=+inp.value; reset(); renderParams();});
+  el.querySelectorAll('input[type=range]').forEach(inp=>inp.oninput=()=>{const k=inp.dataset.k; MOVED.add(k==='taxi_factor'?'taxi_thrust_N':k); if(k==='taxi_factor') f.taxi_thrust_N.factor=+inp.value; else f[k].value=+inp.value; reset(); renderParams();});
+  renderStatus();
 }
 function renderPhys(){ const el=document.getElementById('physRows'); if(!sim||!sim.phys){ el.innerHTML=''; return; } const rows=sim.phys.describe(); el.innerHTML='<table><tr><th>quantity</th><th>value</th><th>unit</th><th>kind</th><th>source</th></tr>'+rows.map(r=>`<tr><td>${r.quantity}</td><td>${typeof r.value==='number'?(Math.abs(r.value)<0.01||Math.abs(r.value)>=1e4?r.value.toExponential(3):r.value.toFixed(4)):r.value}</td><td>${r.unit}</td><td><span class="chip">${r.kind}</span></td><td class="small mute">${r.source}</td></tr>`).join('')+'</table>'; }
-function reset(){ running=false; document.getElementById('runBtn').classList.remove('on'); sim=newSim(); stepSim(sim,0.0); draw(); renderPhys(); }
+function reset(){ running=false; document.getElementById('runBtn').classList.remove('on'); sim=newSim(); stepSim(sim,0.0); draw(); renderPhys(); renderStatus(); }
 document.getElementById('runBtn').onclick=()=>{ if(sim.done) reset(); running=!running; document.getElementById('runBtn').classList.toggle('on',running); last=performance.now(); if(running) requestAnimationFrame(loop); };
 document.getElementById('stepBtn').onclick=()=>{running=false;stepSim(sim,0.1);draw();};
 document.getElementById('resetBtn').onclick=reset;
 document.getElementById('speedSel').onchange=e=>speedMul=+e.target.value;
 async function setPhys(on){ physOn=on; if(on&&!physMod){ try{ physMod=await import('./physiology/index.js'); physInfo='wired'; }catch(e){ physMod=null; physInfo='physiology modules not published beside this page yet (physiology/ is wired only after the physiology agent reports done)'; physOn=false; document.getElementById('physChk').checked=false; } } reset(); }
 document.getElementById('physChk').onchange=e=>setPhys(e.target.checked);
-function selectFish(i){fish=P.fish[i];if(fish.taxi_thrust_N.factor==null)fish.taxi_thrust_N.factor=0.7;document.getElementById('hypoBanner').style.display=fish.hypothetical?'block':'none';renderParams();reset();}
-Promise.all([fetch('params.json').then(r=>r.json()),fetch('../data/ground-effect.json').then(r=>r.json()),fetch('../results.json').then(r=>r.json()),fetch('../data/baseline.json').then(r=>r.json())]).then(async ([p,g,r,bl])=>{P=p;ge=g;res=r;BASE=bl;try{const j=await (await fetch('../data/flier/tff/tff.json')).json(); window.TFFCEIL=j.tff.ceiling_m.value;}catch(e){}P.constants.rho_air.value=bl.conditions.air_density_kg_m3.value;P.constants.rho_air.kind='locked';P.constants.rho_air.note='conditions/baseline.json';const sel=document.getElementById('fishSel');p.fish.forEach((f,i)=>{const o=document.createElement('option');o.value=i;o.textContent=f.id==='tff-v2-hypothetical'?'HYPOTHETICAL TFF v2 (altitude)':f.id==='zebrafish-winged-hypothetical'?'HYPOTHETICAL winged zebrafish':f.hypothetical?'HYPOTHETICAL flier F1':'real fish (Park and Choi L3)';sel.appendChild(o);});sel.onchange=e=>selectFish(+e.target.value);const q0=new URLSearchParams(location.search);if(q0.get('fish'))sel.value=q0.get('fish');fish=p.fish[+sel.value||0];fish.taxi_thrust_N.factor=fish.taxi_thrust_N.factor??0.7;renderParams();reset();document.getElementById('hypoBanner').style.display=fish.hypothetical?'block':'none';const q=new URLSearchParams(location.search);if(q.get('phys')){document.getElementById('physChk').checked=true;await setPhys(true);}if(q.get('taxi')){fish.taxi_thrust_N.factor=+q.get('taxi');renderParams();reset();}if(q.get('autorun')){stepSim(sim,+q.get('tmax')||60);draw();document.body.dataset.done='1';}}).catch(e=>{document.getElementById('phaseLine').textContent='could not load params.json, ground-effect.json or results.json: '+e;});
+const HYPO_FULL=document.getElementById('hypoBanner').innerHTML;
+function showHypo(f,hyp){
+  const el=document.getElementById('hypoBanner');
+  if(!hyp){ el.style.display='none'; return; }
+  el.style.display='block';
+  el.innerHTML=(f.powered&&f.powered.value)?HYPO_FULL
+    :'<b>HYPOTHETICAL.</b> The selected entry is a design, not an organism: no such animal has been described, dissected or measured, and its fins are a delta applied to a real fish rather than a measurement of anything. The panel below says what every number in it rests on. It does not flap, so its run is a glide from whatever launch the model gives it, and it is a design-study readout, never a test.';
+}
+function mkBaseSch(f){const bs=baseSchemaOf(f),o={};for(const k of SCHEMA_NAMES)o[k]=Object.assign({from:'base',applied:true},bs[k]);return o;}
+function selectFish(i,quiet){
+  BASEIDX=i; DESIGN=null; PRESETID=''; MAPPED=new Set(); MOVED=new Set(); SUPPLIED={};
+  fish=JSON.parse(JSON.stringify(COMMITTED[i])); if(fish.taxi_thrust_N.factor==null)fish.taxi_thrust_N.factor=0.7;
+  SCH=mkBaseSch(fish);
+  document.getElementById('designCard').style.display='none';
+  showHypo(fish,!!fish.hypothetical);
+  const ps=document.getElementById('presetSel'); if(ps)ps.value='';
+  renderParams(); reset(); if(!quiet) emit('accepted',summary());
+}
+document.getElementById('linkBtn').onclick=()=>{const u=buildLink();const o=document.getElementById('linkOut');o.style.display='block';o.innerHTML='A URL that launches this run: <code>'+esc(u)+'</code>';try{navigator.clipboard.writeText(u);o.innerHTML+=' <span class="chip m">copied</span>';}catch(e){}};
+EMBEDDED=(function(){try{return !!(window.parent&&window.parent!==window);}catch(e){return true;}})();
+addEventListener('resize',()=>{try{if(sim)draw();}catch(e){}});
+Promise.all([fetch('params.json').then(r=>r.json()),fetch('../data/ground-effect.json').then(r=>r.json()),fetch('../results.json').then(r=>r.json()),fetch('../data/baseline.json').then(r=>r.json()),fetch('presets.json').then(r=>r.json()).catch(e=>null)]).then(async ([p,g,r,bl,pre])=>{
+  P=p;ge=g;res=r;BASE=bl;PRESETS=pre;
+  try{const j=await (await fetch('../data/flier/tff/tff.json')).json(); window.TFFCEIL=j.tff.ceiling_m.value;}catch(e){}
+  P.constants.rho_air.value=bl.conditions.air_density_kg_m3.value;P.constants.rho_air.kind='locked';P.constants.rho_air.note='conditions/baseline.json';
+  COMMITTED=JSON.parse(JSON.stringify(p.fish));
+  const sel=document.getElementById('fishSel');
+  p.fish.forEach((f,i)=>{const o=document.createElement('option');o.value=i;o.textContent=f.id==='tff-v2-hypothetical'?'HYPOTHETICAL TFF v2 (altitude)':f.id==='zebrafish-winged-hypothetical'?'HYPOTHETICAL winged zebrafish':f.hypothetical?'HYPOTHETICAL flier F1':'real fish (Park and Choi L3)';sel.appendChild(o);});
+  sel.onchange=e=>selectFish(+e.target.value);
+  const ps=document.getElementById('presetSel');
+  const o0=document.createElement('option');o0.value='';o0.textContent='(none: the committed params.json entry)';ps.appendChild(o0);
+  (PRESETS&&PRESETS.presets||[]).forEach(pp=>{const o=document.createElement('option');o.value=pp.id;o.textContent=pp.label+' — '+pp.rests_on;ps.appendChild(o);});
+  ps.onchange=e=>{ if(!e.target.value) selectFish(BASEIDX); else loadPreset(e.target.value); };
+  const q=new URLSearchParams(location.search);
+  let bi=0; if(q.get('fish')!=null&&isFinite(+q.get('fish'))) bi=Math.max(0,Math.min(p.fish.length-1,+q.get('fish')));
+  sel.value=String(bi); selectFish(bi,true); embedChip();
+  const qd=queryDesign();
+  if(q.get('preset')){ ps.value=q.get('preset'); loadPreset(q.get('preset')); }
+  else if(qd){ applyDesign(qd); }
+  if(q.get('phys')){document.getElementById('physChk').checked=true;await setPhys(true);}
+  if(q.get('taxi')){MOVED.add('taxi_thrust_N');fish.taxi_thrust_N.factor=+q.get('taxi');renderParams();reset();}
+  sendReady();
+  if(q.get('autorun')){stepSim(sim,+q.get('tmax')||60);draw();document.body.dataset.done='1';emit('results',resultsPayload());}
+}).catch(e=>{document.getElementById('phaseLine').textContent='could not load params.json, presets.json, ground-effect.json, baseline.json or results.json: '+e;console.error(e);});
+
 </script>
 </body>
 </html>
