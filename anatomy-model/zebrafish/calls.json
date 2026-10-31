@@ -1,0 +1,2184 @@
+{
+ "title": "External calls behind the zebrafish anatomy models: Ubergraph SPARQL for ZFA ids and Uberon xrefs, and literature fetches",
+ "endpoint": "https://ubergraph.apps.renci.org/sparql",
+ "method": "HTTP POST (application/x-www-form-urlencoded), Accept: application/sparql-results+json",
+ "gotcha": "literals in VALUES are typed as xsd:string; plain literals silently return no rows",
+ "rule": "every ZFA id in the manifests was found by an exact rdfs:label or oboInOwl:hasExactSynonym match in Ubergraph (no id was typed from memory); uberon_id is the Uberon class whose oboInOwl:hasDbXref carries that ZFA id",
+ "sparql_calls": [
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "ZFA class lookup by exact rdfs:label or exact synonym (batch 1)",
+   "sparql": "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX oio: <http://www.geneontology.org/formats/oboInOwl#> SELECT DISTINCT ?l ?c ?how WHERE { VALUES ?l { \"skin\"^^<http://www.w3.org/2001/XMLSchema#string> \"integument\"^^<http://www.w3.org/2001/XMLSchema#string> \"eye\"^^<http://www.w3.org/2001/XMLSchema#string> \"lens\"^^<http://www.w3.org/2001/XMLSchema#string> \"retina\"^^<http://www.w3.org/2001/XMLSchema#string> \"pectoral fin\"^^<http://www.w3.org/2001/XMLSchema#string> \"pelvic fin\"^^<http://www.w3.org/2001/XMLSchema#string> \"dorsal fin\"^^<http://www.w3.org/2001/XMLSchema#string> \"anal fin\"^^<http://www.w3.org/2001/XMLSchema#string> \"caudal fin\"^^<http://www.w3.org/2001/XMLSchema#string> \"median fin fold\"^^<http://www.w3.org/2001/XMLSchema#string> \"pectoral fin bud\"^^<http://www.w3.org/2001/XMLSchema#string> \"pectoral fin lepidotrichium\"^^<http://www.w3.org/2001/XMLSchema#string> \"pelvic fin lepidotrichium\"^^<http://www.w3.org/2001/XMLSchema#string> \"dorsal fin lepidotrichium\"^^<http://www.w3.org/2001/XMLSchema#string> \"anal fin lepidotrichium\"^^<http://www.w3.org/2001/XMLSchema#string> \"caudal fin lepidotrichium\"^^<http://www.w3.org/2001/XMLSchema#string> \"myotome\"^^<http://www.w3.org/2001/XMLSchema#string> \"myomere\"^^<http://www.w3.org/2001/XMLSchema#string> \"somite\"^^<http://www.w3.org/2001/XMLSchema#string> \"muscle\"^^<http://www.w3.org/2001/XMLSchema#string> \"vertebra\"^^<http://www.w3.org/2001/XMLSchema#string> \"vertebral column\"^^<http://www.w3.org/2001/XMLSchema#string> \"Weberian apparatus\"^^<http://www.w3.org/2001/XMLSchema#string> \"Weberian vertebra\"^^<http://www.w3.org/2001/XMLSchema#string> \"Weberian ossicle\"^^<http://www.w3.org/2001/XMLSchema#string> \"rib\"^^<http://www.w3.org/2001/XMLSchema#string> \"pleural rib\"^^<http://www.w3.org/2001/XMLSchema#string> \"skull\"^^<http://www.w3.org/2001/XMLSchema#string> \"cranium\"^^<http://www.w3.org/2001/XMLSchema#string> \"neurocranium\"^^<http://www.w3.org/2001/XMLSchema#string> \"dermatocranium\"^^<http://www.w3.org/2001/XMLSchema#string> \"cleithrum\"^^<http://www.w3.org/2001/XMLSchema#string> \"scapula\"^^<http://www.w3.org/2001/XMLSchema#string> \"coracoid\"^^<http://www.w3.org/2001/XMLSchema#string> \"pectoral girdle\"^^<http://www.w3.org/2001/XMLSchema#string> \"opercle\"^^<http://www.w3.org/2001/XMLSchema#string> \"operculum\"^^<http://www.w3.org/2001/XMLSchema#string> \"brain\"^^<http://www.w3.org/2001/XMLSchema#string> \"telencephalon\"^^<http://www.w3.org/2001/XMLSchema#string> \"optic tectum\"^^<http://www.w3.org/2001/XMLSchema#string> \"cerebellum\"^^<http://www.w3.org/2001/XMLSchema#string> \"medulla oblongata\"^^<http://www.w3.org/2001/XMLSchema#string> \"spinal cord\"^^<http://www.w3.org/2001/XMLSchema#string> \"gill\"^^<http://www.w3.org/2001/XMLSchema#string> \"pharyngeal arch\"^^<http://www.w3.org/2001/XMLSchema#string> \"gill filament\"^^<http://www.w3.org/2001/XMLSchema#string> \"heart\"^^<http://www.w3.org/2001/XMLSchema#string> \"heart tube\"^^<http://www.w3.org/2001/XMLSchema#string> \"atrium\"^^<http://www.w3.org/2001/XMLSchema#string> \"cardiac atrium\"^^<http://www.w3.org/2001/XMLSchema#string> \"ventricle\"^^<http://www.w3.org/2001/XMLSchema#string> \"cardiac ventricle\"^^<http://www.w3.org/2001/XMLSchema#string> \"heart ventricle\"^^<http://www.w3.org/2001/XMLSchema#string> \"bulbus arteriosus\"^^<http://www.w3.org/2001/XMLSchema#string> \"liver\"^^<http://www.w3.org/2001/XMLSchema#string> \"intestine\"^^<http://www.w3.org/2001/XMLSchema#string> \"intestinal bulb\"^^<http://www.w3.org/2001/XMLSchema#string> \"gut\"^^<http://www.w3.org/2001/XMLSchema#string> \"gut tube\"^^<http://www.w3.org/2001/XMLSchema#string> \"esophagus\"^^<http://www.w3.org/2001/XMLSchema#string> \"swim bladder\"^^<http://www.w3.org/2001/XMLSchema#string> \"anterior chamber swim bladder\"^^<http://www.w3.org/2001/XMLSchema#string> \"posterior chamber swim bladder\"^^<http://www.w3.org/2001/XMLSchema#string> \"swim bladder bud\"^^<http://www.w3.org/2001/XMLSchema#string> \"kidney\"^^<http://www.w3.org/2001/XMLSchema#string> \"pronephros\"^^<http://www.w3.org/2001/XMLSchema#string> \"mesonephros\"^^<http://www.w3.org/2001/XMLSchema#string> \"head kidney\"^^<http://www.w3.org/2001/XMLSchema#string> \"gonad\"^^<http://www.w3.org/2001/XMLSchema#string> \"ovary\"^^<http://www.w3.org/2001/XMLSchema#string> \"testis\"^^<http://www.w3.org/2001/XMLSchema#string> \"spleen\"^^<http://www.w3.org/2001/XMLSchema#string> \"pancreas\"^^<http://www.w3.org/2001/XMLSchema#string> \"notochord\"^^<http://www.w3.org/2001/XMLSchema#string> \"yolk\"^^<http://www.w3.org/2001/XMLSchema#string> \"yolk syncytial layer\"^^<http://www.w3.org/2001/XMLSchema#string> \"yolk extension\"^^<http://www.w3.org/2001/XMLSchema#string> \"otic vesicle\"^^<http://www.w3.org/2001/XMLSchema#string> \"ear\"^^<http://www.w3.org/2001/XMLSchema#string> \"otolith\"^^<http://www.w3.org/2001/XMLSchema#string> \"olfactory pit\"^^<http://www.w3.org/2001/XMLSchema#string> \"olfactory epithelium\"^^<http://www.w3.org/2001/XMLSchema#string> \"mouth\"^^<http://www.w3.org/2001/XMLSchema#string> \"jaw\"^^<http://www.w3.org/2001/XMLSchema#string> \"lower jaw\"^^<http://www.w3.org/2001/XMLSchema#string> \"upper jaw\"^^<http://www.w3.org/2001/XMLSchema#string> \"scale\"^^<http://www.w3.org/2001/XMLSchema#string> \"lateral line\"^^<http://www.w3.org/2001/XMLSchema#string> \"posterior lateral line\"^^<http://www.w3.org/2001/XMLSchema#string> \"horizontal myoseptum\"^^<http://www.w3.org/2001/XMLSchema#string> \"caudal peduncle\"^^<http://www.w3.org/2001/XMLSchema#string> \"hypural\"^^<http://www.w3.org/2001/XMLSchema#string> \"anus\"^^<http://www.w3.org/2001/XMLSchema#string> \"gall bladder\"^^<http://www.w3.org/2001/XMLSchema#string> \"urinary bladder\"^^<http://www.w3.org/2001/XMLSchema#string> \"melanophore stripe\"^^<http://www.w3.org/2001/XMLSchema#string> \"stripe\"^^<http://www.w3.org/2001/XMLSchema#string> \"interstripe\"^^<http://www.w3.org/2001/XMLSchema#string> \"pharynx\"^^<http://www.w3.org/2001/XMLSchema#string> \"head\"^^<http://www.w3.org/2001/XMLSchema#string> \"trunk\"^^<http://www.w3.org/2001/XMLSchema#string> \"tail\"^^<http://www.w3.org/2001/XMLSchema#string> \"whole organism\"^^<http://www.w3.org/2001/XMLSchema#string> \"fin fold\"^^<http://www.w3.org/2001/XMLSchema#string> \"apical fold\"^^<http://www.w3.org/2001/XMLSchema#string> \"pectoral fin endoskeletal disc\"^^<http://www.w3.org/2001/XMLSchema#string> \"neural tube\"^^<http://www.w3.org/2001/XMLSchema#string> } { ?c rdfs:label ?l . BIND(\"label\" AS ?how) } UNION { ?c oio:hasExactSynonym ?l . BIND(\"exact_synonym\" AS ?how) } FILTER(STRSTARTS(STR(?c), \"http://purl.obolibrary.org/obo/ZFA_\")) }",
+   "retrieved": "2026-10-31T21:11:23Z",
+   "n_rows": 98
+  },
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "ZFA class lookup by exact rdfs:label or exact synonym (batch 2)",
+   "sparql": "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX oio: <http://www.geneontology.org/formats/oboInOwl#> SELECT DISTINCT ?l ?c ?how WHERE { VALUES ?l { \"barbel\"^^<http://www.w3.org/2001/XMLSchema#string> \"maxillary barbel\"^^<http://www.w3.org/2001/XMLSchema#string> \"nasal barbel\"^^<http://www.w3.org/2001/XMLSchema#string> \"olfactory bulb\"^^<http://www.w3.org/2001/XMLSchema#string> \"diencephalon\"^^<http://www.w3.org/2001/XMLSchema#string> \"hypothalamus\"^^<http://www.w3.org/2001/XMLSchema#string> \"sinus venosus\"^^<http://www.w3.org/2001/XMLSchema#string> \"pericardium\"^^<http://www.w3.org/2001/XMLSchema#string> \"posterior intestine\"^^<http://www.w3.org/2001/XMLSchema#string> \"mid intestine\"^^<http://www.w3.org/2001/XMLSchema#string> \"anterior intestine\"^^<http://www.w3.org/2001/XMLSchema#string> \"exocrine pancreas\"^^<http://www.w3.org/2001/XMLSchema#string> \"principal islet\"^^<http://www.w3.org/2001/XMLSchema#string> \"pneumatic duct\"^^<http://www.w3.org/2001/XMLSchema#string> \"pelvic girdle\"^^<http://www.w3.org/2001/XMLSchema#string> \"basipterygium\"^^<http://www.w3.org/2001/XMLSchema#string> \"neural arch\"^^<http://www.w3.org/2001/XMLSchema#string> \"hemal arch\"^^<http://www.w3.org/2001/XMLSchema#string> \"haemal arch\"^^<http://www.w3.org/2001/XMLSchema#string> \"neural spine\"^^<http://www.w3.org/2001/XMLSchema#string> \"hemal spine\"^^<http://www.w3.org/2001/XMLSchema#string> \"pronephric duct\"^^<http://www.w3.org/2001/XMLSchema#string> \"dorsal aorta\"^^<http://www.w3.org/2001/XMLSchema#string> \"posterior cardinal vein\"^^<http://www.w3.org/2001/XMLSchema#string> \"hatching gland\"^^<http://www.w3.org/2001/XMLSchema#string> \"neuromast\"^^<http://www.w3.org/2001/XMLSchema#string> \"actinotrichium\"^^<http://www.w3.org/2001/XMLSchema#string> \"pectoral fin actinotrichium\"^^<http://www.w3.org/2001/XMLSchema#string> \"ceratobranchial 5 bone\"^^<http://www.w3.org/2001/XMLSchema#string> \"pharyngeal tooth\"^^<http://www.w3.org/2001/XMLSchema#string> \"iris\"^^<http://www.w3.org/2001/XMLSchema#string> \"choroid plexus\"^^<http://www.w3.org/2001/XMLSchema#string> \"semicircular canal\"^^<http://www.w3.org/2001/XMLSchema#string> \"inner ear\"^^<http://www.w3.org/2001/XMLSchema#string> \"operculum\"^^<http://www.w3.org/2001/XMLSchema#string> \"Weberian vertebra 1\"^^<http://www.w3.org/2001/XMLSchema#string> \"fin\"^^<http://www.w3.org/2001/XMLSchema#string> \"paired fin\"^^<http://www.w3.org/2001/XMLSchema#string> \"median fin\"^^<http://www.w3.org/2001/XMLSchema#string> \"dorsal fin fold\"^^<http://www.w3.org/2001/XMLSchema#string> \"ventral fin fold\"^^<http://www.w3.org/2001/XMLSchema#string> \"yolk sac\"^^<http://www.w3.org/2001/XMLSchema#string> \"cloaca\"^^<http://www.w3.org/2001/XMLSchema#string> \"vent\"^^<http://www.w3.org/2001/XMLSchema#string> \"urogenital papilla\"^^<http://www.w3.org/2001/XMLSchema#string> \"anal opening\"^^<http://www.w3.org/2001/XMLSchema#string> \"interstripe region\"^^<http://www.w3.org/2001/XMLSchema#string> \"iridophore stripe\"^^<http://www.w3.org/2001/XMLSchema#string> \"xanthophore stripe\"^^<http://www.w3.org/2001/XMLSchema#string> \"dark stripe\"^^<http://www.w3.org/2001/XMLSchema#string> \"light stripe\"^^<http://www.w3.org/2001/XMLSchema#string> \"caudal fin ray\"^^<http://www.w3.org/2001/XMLSchema#string> \"lepidotrichium\"^^<http://www.w3.org/2001/XMLSchema#string> \"otic capsule\"^^<http://www.w3.org/2001/XMLSchema#string> \"epidermis\"^^<http://www.w3.org/2001/XMLSchema#string> \"dermis\"^^<http://www.w3.org/2001/XMLSchema#string> \"musculature system\"^^<http://www.w3.org/2001/XMLSchema#string> \"skeletal muscle\"^^<http://www.w3.org/2001/XMLSchema#string> \"fast muscle cell\"^^<http://www.w3.org/2001/XMLSchema#string> } { ?c rdfs:label ?l . BIND(\"label\" AS ?how) } UNION { ?c oio:hasExactSynonym ?l . BIND(\"exact_synonym\" AS ?how) } FILTER(STRSTARTS(STR(?c), \"http://purl.obolibrary.org/obo/ZFA_\")) }",
+   "retrieved": "2026-10-31T21:11:42Z",
+   "n_rows": 50
+  },
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "labels and deprecation status of the ZFA ids used",
+   "sparql": "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX owl: <http://www.w3.org/2002/07/owl#> SELECT ?c ?l ?dep WHERE { VALUES ?c { <http://purl.obolibrary.org/obo/ZFA_0000008> <http://purl.obolibrary.org/obo/ZFA_0000009> <http://purl.obolibrary.org/obo/ZFA_0000014> <http://purl.obolibrary.org/obo/ZFA_0000026> <http://purl.obolibrary.org/obo/ZFA_0000032> <http://purl.obolibrary.org/obo/ZFA_0000035> <http://purl.obolibrary.org/obo/ZFA_0000040> <http://purl.obolibrary.org/obo/ZFA_0000051> <http://purl.obolibrary.org/obo/ZFA_0000054> <http://purl.obolibrary.org/obo/ZFA_0000056> <http://purl.obolibrary.org/obo/ZFA_0000075> <http://purl.obolibrary.org/obo/ZFA_0000076> <http://purl.obolibrary.org/obo/ZFA_0000079> <http://purl.obolibrary.org/obo/ZFA_0000084> <http://purl.obolibrary.org/obo/ZFA_0000088> <http://purl.obolibrary.org/obo/ZFA_0000100> <http://purl.obolibrary.org/obo/ZFA_0000101> <http://purl.obolibrary.org/obo/ZFA_0000102> <http://purl.obolibrary.org/obo/ZFA_0000105> <http://purl.obolibrary.org/obo/ZFA_0000106> <http://purl.obolibrary.org/obo/ZFA_0000107> <http://purl.obolibrary.org/obo/ZFA_0000108> <http://purl.obolibrary.org/obo/ZFA_0000112> <http://purl.obolibrary.org/obo/ZFA_0000114> <http://purl.obolibrary.org/obo/ZFA_0000123> <http://purl.obolibrary.org/obo/ZFA_0000130> <http://purl.obolibrary.org/obo/ZFA_0000135> <http://purl.obolibrary.org/obo/ZFA_0000140> <http://purl.obolibrary.org/obo/ZFA_0000141> <http://purl.obolibrary.org/obo/ZFA_0000150> <http://purl.obolibrary.org/obo/ZFA_0000151> <http://purl.obolibrary.org/obo/ZFA_0000152> <http://purl.obolibrary.org/obo/ZFA_0000154> <http://purl.obolibrary.org/obo/ZFA_0000155> <http://purl.obolibrary.org/obo/ZFA_0000173> <http://purl.obolibrary.org/obo/ZFA_0000178> <http://purl.obolibrary.org/obo/ZFA_0000184> <http://purl.obolibrary.org/obo/ZFA_0000204> <http://purl.obolibrary.org/obo/ZFA_0000208> <http://purl.obolibrary.org/obo/ZFA_0000217> <http://purl.obolibrary.org/obo/ZFA_0000243> <http://purl.obolibrary.org/obo/ZFA_0000250> <http://purl.obolibrary.org/obo/ZFA_0000277> <http://purl.obolibrary.org/obo/ZFA_0000298> <http://purl.obolibrary.org/obo/ZFA_0000332> <http://purl.obolibrary.org/obo/ZFA_0000354> <http://purl.obolibrary.org/obo/ZFA_0000360> <http://purl.obolibrary.org/obo/ZFA_0000364> <http://purl.obolibrary.org/obo/ZFA_0000368> <http://purl.obolibrary.org/obo/ZFA_0000402> <http://purl.obolibrary.org/obo/ZFA_0000403> <http://purl.obolibrary.org/obo/ZFA_0000407> <http://purl.obolibrary.org/obo/ZFA_0000413> <http://purl.obolibrary.org/obo/ZFA_0000431> <http://purl.obolibrary.org/obo/ZFA_0000436> <http://purl.obolibrary.org/obo/ZFA_0000445> <http://purl.obolibrary.org/obo/ZFA_0000461> <http://purl.obolibrary.org/obo/ZFA_0000471> <http://purl.obolibrary.org/obo/ZFA_0000477> <http://purl.obolibrary.org/obo/ZFA_0000519> <http://purl.obolibrary.org/obo/ZFA_0000529> <http://purl.obolibrary.org/obo/ZFA_0000538> <http://purl.obolibrary.org/obo/ZFA_0000545> <http://purl.obolibrary.org/obo/ZFA_0000547> <http://purl.obolibrary.org/obo/ZFA_0000548> <http://purl.obolibrary.org/obo/ZFA_0000554> <http://purl.obolibrary.org/obo/ZFA_0000555> <http://purl.obolibrary.org/obo/ZFA_0000565> <http://purl.obolibrary.org/obo/ZFA_0000583> <http://purl.obolibrary.org/obo/ZFA_0000598> <http://purl.obolibrary.org/obo/ZFA_0000622> <http://purl.obolibrary.org/obo/ZFA_0000623> <http://purl.obolibrary.org/obo/ZFA_0000667> <http://purl.obolibrary.org/obo/ZFA_0000669> <http://purl.obolibrary.org/obo/ZFA_0000671> <http://purl.obolibrary.org/obo/ZFA_0000694> <http://purl.obolibrary.org/obo/ZFA_0000706> <http://purl.obolibrary.org/obo/ZFA_0000737> <http://purl.obolibrary.org/obo/ZFA_0000863> <http://purl.obolibrary.org/obo/ZFA_0000944> <http://purl.obolibrary.org/obo/ZFA_0001056> <http://purl.obolibrary.org/obo/ZFA_0001058> <http://purl.obolibrary.org/obo/ZFA_0001066> <http://purl.obolibrary.org/obo/ZFA_0001069> <http://purl.obolibrary.org/obo/ZFA_0001076> <http://purl.obolibrary.org/obo/ZFA_0001094> <http://purl.obolibrary.org/obo/ZFA_0001114> <http://purl.obolibrary.org/obo/ZFA_0001115> <http://purl.obolibrary.org/obo/ZFA_0001118> <http://purl.obolibrary.org/obo/ZFA_0001119> <http://purl.obolibrary.org/obo/ZFA_0001135> <http://purl.obolibrary.org/obo/ZFA_0001161> <http://purl.obolibrary.org/obo/ZFA_0001162> <http://purl.obolibrary.org/obo/ZFA_0001173> <http://purl.obolibrary.org/obo/ZFA_0001184> <http://purl.obolibrary.org/obo/ZFA_0001188> <http://purl.obolibrary.org/obo/ZFA_0001189> <http://purl.obolibrary.org/obo/ZFA_0001190> <http://purl.obolibrary.org/obo/ZFA_0001227> <http://purl.obolibrary.org/obo/ZFA_0001238> <http://purl.obolibrary.org/obo/ZFA_0001239> <http://purl.obolibrary.org/obo/ZFA_0001249> <http://purl.obolibrary.org/obo/ZFA_0001272> <http://purl.obolibrary.org/obo/ZFA_0001273> <http://purl.obolibrary.org/obo/ZFA_0001277> <http://purl.obolibrary.org/obo/ZFA_0001278> <http://purl.obolibrary.org/obo/ZFA_0001306> <http://purl.obolibrary.org/obo/ZFA_0001323> <http://purl.obolibrary.org/obo/ZFA_0001336> <http://purl.obolibrary.org/obo/ZFA_0001338> <http://purl.obolibrary.org/obo/ZFA_0001364> <http://purl.obolibrary.org/obo/ZFA_0001418> <http://purl.obolibrary.org/obo/ZFA_0001421> <http://purl.obolibrary.org/obo/ZFA_0001430> <http://purl.obolibrary.org/obo/ZFA_0001443> <http://purl.obolibrary.org/obo/ZFA_0001456> <http://purl.obolibrary.org/obo/ZFA_0001463> <http://purl.obolibrary.org/obo/ZFA_0001469> <http://purl.obolibrary.org/obo/ZFA_0001500> <http://purl.obolibrary.org/obo/ZFA_0001550> <http://purl.obolibrary.org/obo/ZFA_0001551> <http://purl.obolibrary.org/obo/ZFA_0001552> <http://purl.obolibrary.org/obo/ZFA_0001554> <http://purl.obolibrary.org/obo/ZFA_0001559> <http://purl.obolibrary.org/obo/ZFA_0001580> <http://purl.obolibrary.org/obo/ZFA_0001617> <http://purl.obolibrary.org/obo/ZFA_0005145> <http://purl.obolibrary.org/obo/ZFA_0005277> <http://purl.obolibrary.org/obo/ZFA_0005335> <http://purl.obolibrary.org/obo/ZFA_0005408> <http://purl.obolibrary.org/obo/ZFA_0005435> <http://purl.obolibrary.org/obo/ZFA_0005545> <http://purl.obolibrary.org/obo/ZFA_0005596> <http://purl.obolibrary.org/obo/ZFA_0005597> <http://purl.obolibrary.org/obo/ZFA_0005754> <http://purl.obolibrary.org/obo/ZFA_0005781> <http://purl.obolibrary.org/obo/ZFA_0009117> } ?c rdfs:label ?l . OPTIONAL { ?c owl:deprecated ?dep } }",
+   "retrieved": "2026-10-31T21:11:52Z",
+   "n_rows": 137
+  },
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "Uberon classes that carry a ZFA database cross-reference (oboInOwl:hasDbXref), for the ZFA ids used",
+   "sparql": "PREFIX oio: <http://www.geneontology.org/formats/oboInOwl#> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> SELECT DISTINCT ?u ?ul ?x WHERE { VALUES ?x { \"ZFA:0000008\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000009\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000014\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000026\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000032\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000035\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000040\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000051\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000054\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000056\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000075\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000076\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000079\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000084\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000088\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000100\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000101\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000102\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000105\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000106\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000107\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000108\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000112\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000114\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000123\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000130\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000135\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000140\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000141\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000150\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000151\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000152\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000154\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000155\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000173\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000178\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000184\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000204\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000208\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000217\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000243\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000250\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000277\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000298\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000332\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000354\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000360\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000364\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000368\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000402\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000403\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000407\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000413\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000431\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000436\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000445\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000461\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000471\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000477\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000519\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000529\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000538\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000545\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000547\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000548\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000554\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000555\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000565\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000583\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000598\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000622\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000623\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000667\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000669\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000671\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000694\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000706\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000737\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000863\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000944\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001056\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001058\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001066\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001069\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001076\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001094\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001114\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001115\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001118\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001119\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001135\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001161\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001162\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001173\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001184\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001188\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001189\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001190\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001227\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001238\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001239\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001249\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001272\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001273\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001277\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001278\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001306\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001323\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001336\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001338\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001364\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001418\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001421\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001430\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001443\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001456\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001463\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001469\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001500\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001550\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001551\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001552\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001554\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001559\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001580\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001617\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005145\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005277\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005335\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005408\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005435\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005545\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005596\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005597\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005754\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005781\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0009117\"^^<http://www.w3.org/2001/XMLSchema#string> } ?u oio:hasDbXref ?x . ?u rdfs:label ?ul . FILTER(STRSTARTS(STR(?u), \"http://purl.obolibrary.org/obo/UBERON_\")) }",
+   "retrieved": "2026-10-31T21:11:53Z",
+   "n_rows": 135
+  },
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "ZFA class lookup by exact rdfs:label or exact synonym (batch 3 organ systems)",
+   "sparql": "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX oio: <http://www.geneontology.org/formats/oboInOwl#> SELECT DISTINCT ?l ?c ?how WHERE { VALUES ?l { \"nervous system\"^^<http://www.w3.org/2001/XMLSchema#string> \"central nervous system\"^^<http://www.w3.org/2001/XMLSchema#string> \"cardiovascular system\"^^<http://www.w3.org/2001/XMLSchema#string> \"circulatory system\"^^<http://www.w3.org/2001/XMLSchema#string> \"digestive system\"^^<http://www.w3.org/2001/XMLSchema#string> \"alimentary system\"^^<http://www.w3.org/2001/XMLSchema#string> \"respiratory system\"^^<http://www.w3.org/2001/XMLSchema#string> \"renal system\"^^<http://www.w3.org/2001/XMLSchema#string> \"excretory system\"^^<http://www.w3.org/2001/XMLSchema#string> \"reproductive system\"^^<http://www.w3.org/2001/XMLSchema#string> \"hematopoietic system\"^^<http://www.w3.org/2001/XMLSchema#string> \"immune system\"^^<http://www.w3.org/2001/XMLSchema#string> \"skeletal system\"^^<http://www.w3.org/2001/XMLSchema#string> \"musculoskeletal system\"^^<http://www.w3.org/2001/XMLSchema#string> \"sensory system\"^^<http://www.w3.org/2001/XMLSchema#string> \"integumentary system\"^^<http://www.w3.org/2001/XMLSchema#string> \"endocrine system\"^^<http://www.w3.org/2001/XMLSchema#string> \"liver and biliary system\"^^<http://www.w3.org/2001/XMLSchema#string> \"visual system\"^^<http://www.w3.org/2001/XMLSchema#string> \"pigmentation\"^^<http://www.w3.org/2001/XMLSchema#string> \"iridophore\"^^<http://www.w3.org/2001/XMLSchema#string> \"melanophore\"^^<http://www.w3.org/2001/XMLSchema#string> \"pectoral fin radial\"^^<http://www.w3.org/2001/XMLSchema#string> \"pectoral fin skeleton\"^^<http://www.w3.org/2001/XMLSchema#string> \"caudal fin skeleton\"^^<http://www.w3.org/2001/XMLSchema#string> \"dorsal fin skeleton\"^^<http://www.w3.org/2001/XMLSchema#string> \"anal fin skeleton\"^^<http://www.w3.org/2001/XMLSchema#string> \"pelvic fin skeleton\"^^<http://www.w3.org/2001/XMLSchema#string> \"interstripe\"^^<http://www.w3.org/2001/XMLSchema#string> \"light stripe\"^^<http://www.w3.org/2001/XMLSchema#string> \"melanophore stripe 1D\"^^<http://www.w3.org/2001/XMLSchema#string> \"lateral line scale\"^^<http://www.w3.org/2001/XMLSchema#string> \"chordate pharynx\"^^<http://www.w3.org/2001/XMLSchema#string> } { ?c rdfs:label ?l . BIND(\"label\" AS ?how) } UNION { ?c oio:hasExactSynonym ?l . BIND(\"exact_synonym\" AS ?how) } FILTER(STRSTARTS(STR(?c), \"http://purl.obolibrary.org/obo/ZFA_\")) }",
+   "retrieved": "2026-10-31T21:12:02Z",
+   "n_rows": 23
+  },
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "ZFA classes whose label contains \"stripe\" (skin pattern pieces)",
+   "sparql": "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> SELECT ?c ?l WHERE { ?c rdfs:label ?l . FILTER(STRSTARTS(STR(?c), \"http://purl.obolibrary.org/obo/ZFA_\")) FILTER(CONTAINS(STR(?l), \"stripe\")) }",
+   "retrieved": "2026-10-31T21:13:05Z",
+   "n_rows": 6
+  },
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "labels and deprecation status of the ZFA ids used",
+   "sparql": "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX owl: <http://www.w3.org/2002/07/owl#> SELECT ?c ?l ?dep WHERE { VALUES ?c { <http://purl.obolibrary.org/obo/ZFA_0000010> <http://purl.obolibrary.org/obo/ZFA_0000012> <http://purl.obolibrary.org/obo/ZFA_0000036> <http://purl.obolibrary.org/obo/ZFA_0000163> <http://purl.obolibrary.org/obo/ZFA_0000167> <http://purl.obolibrary.org/obo/ZFA_0000272> <http://purl.obolibrary.org/obo/ZFA_0000282> <http://purl.obolibrary.org/obo/ZFA_0000339> <http://purl.obolibrary.org/obo/ZFA_0000396> <http://purl.obolibrary.org/obo/ZFA_0000434> <http://purl.obolibrary.org/obo/ZFA_0000632> <http://purl.obolibrary.org/obo/ZFA_0000862> <http://purl.obolibrary.org/obo/ZFA_0000943> <http://purl.obolibrary.org/obo/ZFA_0001124> <http://purl.obolibrary.org/obo/ZFA_0001127> <http://purl.obolibrary.org/obo/ZFA_0001158> <http://purl.obolibrary.org/obo/ZFA_0001159> <http://purl.obolibrary.org/obo/ZFA_0001387> <http://purl.obolibrary.org/obo/ZFA_0001586> <http://purl.obolibrary.org/obo/ZFA_0005023> <http://purl.obolibrary.org/obo/ZFA_0005530> <http://purl.obolibrary.org/obo/ZFA_0009091> <http://purl.obolibrary.org/obo/ZFA_0009199> } ?c rdfs:label ?l . OPTIONAL { ?c owl:deprecated ?dep } }",
+   "retrieved": "2026-10-31T21:13:06Z",
+   "n_rows": 23
+  },
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "Uberon classes that carry a ZFA database cross-reference (oboInOwl:hasDbXref), for the ZFA ids used",
+   "sparql": "PREFIX oio: <http://www.geneontology.org/formats/oboInOwl#> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> SELECT DISTINCT ?u ?ul ?x WHERE { VALUES ?x { \"ZFA:0000010\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000012\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000036\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000163\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000167\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000272\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000282\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000339\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000396\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000434\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000632\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000862\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000943\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001124\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001127\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001158\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001159\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001387\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001586\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005023\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005530\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0009091\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0009199\"^^<http://www.w3.org/2001/XMLSchema#string> } ?u oio:hasDbXref ?x . ?u rdfs:label ?ul . FILTER(STRSTARTS(STR(?u), \"http://purl.obolibrary.org/obo/UBERON_\")) }",
+   "retrieved": "2026-10-31T21:13:06Z",
+   "n_rows": 21
+  },
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "part_of (BFO:0000050, inferred closure) between modelled ZFA structures and ZFA organ-system terms",
+   "sparql": "SELECT ?c ?s WHERE { VALUES ?c { <http://purl.obolibrary.org/obo/ZFA_0000076> <http://purl.obolibrary.org/obo/ZFA_0000669> <http://purl.obolibrary.org/obo/ZFA_0000436> <http://purl.obolibrary.org/obo/ZFA_0000140> <http://purl.obolibrary.org/obo/ZFA_0000354> <http://purl.obolibrary.org/obo/ZFA_0000114> <http://purl.obolibrary.org/obo/ZFA_0000107> <http://purl.obolibrary.org/obo/ZFA_0000051> <http://purl.obolibrary.org/obo/ZFA_0000135> <http://purl.obolibrary.org/obo/ZFA_0000084> <http://purl.obolibrary.org/obo/ZFA_0000155> <http://purl.obolibrary.org/obo/ZFA_0001056> <http://purl.obolibrary.org/obo/ZFA_0000040> <http://purl.obolibrary.org/obo/ZFA_0001161> <http://purl.obolibrary.org/obo/ZFA_0000529> <http://purl.obolibrary.org/obo/ZFA_0000151> <http://purl.obolibrary.org/obo/ZFA_0000413> <http://purl.obolibrary.org/obo/ZFA_0000123> <http://purl.obolibrary.org/obo/ZFA_0000622> <http://purl.obolibrary.org/obo/ZFA_0001469> } VALUES ?s { <http://purl.obolibrary.org/obo/ZFA_0000010> <http://purl.obolibrary.org/obo/ZFA_0000012> <http://purl.obolibrary.org/obo/ZFA_0000036> <http://purl.obolibrary.org/obo/ZFA_0000163> <http://purl.obolibrary.org/obo/ZFA_0000272> <http://purl.obolibrary.org/obo/ZFA_0000282> <http://purl.obolibrary.org/obo/ZFA_0000339> <http://purl.obolibrary.org/obo/ZFA_0000396> <http://purl.obolibrary.org/obo/ZFA_0000434> <http://purl.obolibrary.org/obo/ZFA_0000632> <http://purl.obolibrary.org/obo/ZFA_0001127> <http://purl.obolibrary.org/obo/ZFA_0001158> <http://purl.obolibrary.org/obo/ZFA_0001159> <http://purl.obolibrary.org/obo/ZFA_0005023> <http://purl.obolibrary.org/obo/ZFA_0000548> <http://purl.obolibrary.org/obo/ZFA_0000368> } ?c <http://purl.obolibrary.org/obo/BFO_0000050> ?s }",
+   "retrieved": "2026-10-31T21:13:16Z",
+   "n_rows": 23
+  },
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "ZFA class lookup by exact rdfs:label or exact synonym (batch 4)",
+   "sparql": "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX oio: <http://www.geneontology.org/formats/oboInOwl#> SELECT DISTINCT ?l ?c ?how WHERE { VALUES ?l { \"rostral barbel\"^^<http://www.w3.org/2001/XMLSchema#string> \"naris\"^^<http://www.w3.org/2001/XMLSchema#string> \"nostril\"^^<http://www.w3.org/2001/XMLSchema#string> \"Meckel's cartilage\"^^<http://www.w3.org/2001/XMLSchema#string> \"ceratohyal cartilage\"^^<http://www.w3.org/2001/XMLSchema#string> \"ethmoid plate\"^^<http://www.w3.org/2001/XMLSchema#string> \"parachordal cartilage\"^^<http://www.w3.org/2001/XMLSchema#string> \"pharyngeal arch cartilage\"^^<http://www.w3.org/2001/XMLSchema#string> \"head skeleton\"^^<http://www.w3.org/2001/XMLSchema#string> \"principal islet\"^^<http://www.w3.org/2001/XMLSchema#string> \"slow muscle cell\"^^<http://www.w3.org/2001/XMLSchema#string> \"tripus\"^^<http://www.w3.org/2001/XMLSchema#string> \"scaphium\"^^<http://www.w3.org/2001/XMLSchema#string> \"intercalarium\"^^<http://www.w3.org/2001/XMLSchema#string> \"claustrum bone\"^^<http://www.w3.org/2001/XMLSchema#string> \"pectoral fin fold\"^^<http://www.w3.org/2001/XMLSchema#string> \"apical fold\"^^<http://www.w3.org/2001/XMLSchema#string> \"utricle\"^^<http://www.w3.org/2001/XMLSchema#string> \"saccule\"^^<http://www.w3.org/2001/XMLSchema#string> \"lagena\"^^<http://www.w3.org/2001/XMLSchema#string> \"macula\"^^<http://www.w3.org/2001/XMLSchema#string> \"scale\"^^<http://www.w3.org/2001/XMLSchema#string> \"primary islet\"^^<http://www.w3.org/2001/XMLSchema#string> \"splanchnocranium\"^^<http://www.w3.org/2001/XMLSchema#string> \"lower jaw\"^^<http://www.w3.org/2001/XMLSchema#string> \"fin fold pectoral fin bud\"^^<http://www.w3.org/2001/XMLSchema#string> \"pharyngeal arch 3-7 skeleton\"^^<http://www.w3.org/2001/XMLSchema#string> } { ?c rdfs:label ?l . BIND(\"label\" AS ?how) } UNION { ?c oio:hasExactSynonym ?l . BIND(\"exact_synonym\" AS ?how) } FILTER(STRSTARTS(STR(?c), \"http://purl.obolibrary.org/obo/ZFA_\")) }",
+   "retrieved": "2026-10-31T21:14:37Z",
+   "n_rows": 24
+  },
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "labels and deprecation status of the ZFA ids used",
+   "sparql": "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX owl: <http://www.w3.org/2002/07/owl#> SELECT ?c ?l ?dep WHERE { VALUES ?c { <http://purl.obolibrary.org/obo/ZFA_0000095> <http://purl.obolibrary.org/obo/ZFA_0000277> <http://purl.obolibrary.org/obo/ZFA_0000374> <http://purl.obolibrary.org/obo/ZFA_0000386> <http://purl.obolibrary.org/obo/ZFA_0000428> <http://purl.obolibrary.org/obo/ZFA_0000429> <http://purl.obolibrary.org/obo/ZFA_0000525> <http://purl.obolibrary.org/obo/ZFA_0000550> <http://purl.obolibrary.org/obo/ZFA_0000698> <http://purl.obolibrary.org/obo/ZFA_0000700> <http://purl.obolibrary.org/obo/ZFA_0001205> <http://purl.obolibrary.org/obo/ZFA_0001216> <http://purl.obolibrary.org/obo/ZFA_0001273> <http://purl.obolibrary.org/obo/ZFA_0001400> <http://purl.obolibrary.org/obo/ZFA_0001405> <http://purl.obolibrary.org/obo/ZFA_0001423> <http://purl.obolibrary.org/obo/ZFA_0001460> <http://purl.obolibrary.org/obo/ZFA_0001592> <http://purl.obolibrary.org/obo/ZFA_0005316> <http://purl.obolibrary.org/obo/ZFA_0005317> <http://purl.obolibrary.org/obo/ZFA_0005754> <http://purl.obolibrary.org/obo/ZFA_0009116> } ?c rdfs:label ?l . OPTIONAL { ?c owl:deprecated ?dep } }",
+   "retrieved": "2026-10-31T21:14:37Z",
+   "n_rows": 22
+  },
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "Uberon classes that carry a ZFA database cross-reference (oboInOwl:hasDbXref), for the ZFA ids used",
+   "sparql": "PREFIX oio: <http://www.geneontology.org/formats/oboInOwl#> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> SELECT DISTINCT ?u ?ul ?x WHERE { VALUES ?x { \"ZFA:0000095\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000277\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000374\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000386\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000428\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000429\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000525\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000550\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000698\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000700\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001205\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001216\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001273\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001400\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001405\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001423\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001460\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001592\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005316\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005317\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005754\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0009116\"^^<http://www.w3.org/2001/XMLSchema#string> } ?u oio:hasDbXref ?x . ?u rdfs:label ?ul . FILTER(STRSTARTS(STR(?u), \"http://purl.obolibrary.org/obo/UBERON_\")) }",
+   "retrieved": "2026-10-31T21:14:37Z",
+   "n_rows": 20
+  },
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "ZFA class lookup by exact rdfs:label or exact synonym (batch 5)",
+   "sparql": "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX oio: <http://www.geneontology.org/formats/oboInOwl#> SELECT DISTINCT ?l ?c ?how WHERE { VALUES ?l { \"premaxilla\"^^<http://www.w3.org/2001/XMLSchema#string> \"maxilla\"^^<http://www.w3.org/2001/XMLSchema#string> \"dentary\"^^<http://www.w3.org/2001/XMLSchema#string> \"dorsal fin proximal radial\"^^<http://www.w3.org/2001/XMLSchema#string> \"anal fin proximal radial\"^^<http://www.w3.org/2001/XMLSchema#string> \"dorsal fin radial\"^^<http://www.w3.org/2001/XMLSchema#string> \"anal fin radial\"^^<http://www.w3.org/2001/XMLSchema#string> \"parhypural\"^^<http://www.w3.org/2001/XMLSchema#string> \"pectoral fin proximal radial\"^^<http://www.w3.org/2001/XMLSchema#string> \"ceratobranchial bone\"^^<http://www.w3.org/2001/XMLSchema#string> \"branchiostegal ray\"^^<http://www.w3.org/2001/XMLSchema#string> \"lapillus\"^^<http://www.w3.org/2001/XMLSchema#string> \"sagitta\"^^<http://www.w3.org/2001/XMLSchema#string> \"asteriscus\"^^<http://www.w3.org/2001/XMLSchema#string> \"posterior lateral line neuromast\"^^<http://www.w3.org/2001/XMLSchema#string> \"epaxial musculature\"^^<http://www.w3.org/2001/XMLSchema#string> \"hypaxial musculature\"^^<http://www.w3.org/2001/XMLSchema#string> \"notochord sheath\"^^<http://www.w3.org/2001/XMLSchema#string> \"pelvic fin bud\"^^<http://www.w3.org/2001/XMLSchema#string> \"fin fold\"^^<http://www.w3.org/2001/XMLSchema#string> \"retinal pigmented epithelium\"^^<http://www.w3.org/2001/XMLSchema#string> \"pectoral fin musculature\"^^<http://www.w3.org/2001/XMLSchema#string> \"head muscle\"^^<http://www.w3.org/2001/XMLSchema#string> \"adductor mandibulae\"^^<http://www.w3.org/2001/XMLSchema#string> \"gut epithelium\"^^<http://www.w3.org/2001/XMLSchema#string> } { ?c rdfs:label ?l . BIND(\"label\" AS ?how) } UNION { ?c oio:hasExactSynonym ?l . BIND(\"exact_synonym\" AS ?how) } FILTER(STRSTARTS(STR(?c), \"http://purl.obolibrary.org/obo/ZFA_\")) }",
+   "retrieved": "2026-10-31T21:15:41Z",
+   "n_rows": 21
+  },
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "ZFA classes whose label contains \"barbel\"",
+   "sparql": "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> SELECT ?c ?l WHERE { ?c rdfs:label ?l . FILTER(STRSTARTS(STR(?c), \"http://purl.obolibrary.org/obo/ZFA_\")) FILTER(CONTAINS(STR(?l), \"barbel\")) }",
+   "retrieved": "2026-10-31T21:16:31Z",
+   "n_rows": 11
+  },
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "labels and deprecation status of the ZFA ids used",
+   "sparql": "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX owl: <http://www.w3.org/2002/07/owl#> SELECT ?c ?l ?dep WHERE { VALUES ?c { <http://purl.obolibrary.org/obo/ZFA_0000144> <http://purl.obolibrary.org/obo/ZFA_0000191> <http://purl.obolibrary.org/obo/ZFA_0000268> <http://purl.obolibrary.org/obo/ZFA_0000270> <http://purl.obolibrary.org/obo/ZFA_0000315> <http://purl.obolibrary.org/obo/ZFA_0000438> <http://purl.obolibrary.org/obo/ZFA_0000476> <http://purl.obolibrary.org/obo/ZFA_0000488> <http://purl.obolibrary.org/obo/ZFA_0000530> <http://purl.obolibrary.org/obo/ZFA_0000563> <http://purl.obolibrary.org/obo/ZFA_0000567> <http://purl.obolibrary.org/obo/ZFA_0000676> <http://purl.obolibrary.org/obo/ZFA_0000940> <http://purl.obolibrary.org/obo/ZFA_0000947> <http://purl.obolibrary.org/obo/ZFA_0001384> <http://purl.obolibrary.org/obo/ZFA_0001587> <http://purl.obolibrary.org/obo/ZFA_0001646> <http://purl.obolibrary.org/obo/ZFA_0001647> <http://purl.obolibrary.org/obo/ZFA_0001652> <http://purl.obolibrary.org/obo/ZFA_0005123> <http://purl.obolibrary.org/obo/ZFA_0005220> <http://purl.obolibrary.org/obo/ZFA_0005221> <http://purl.obolibrary.org/obo/ZFA_0005222> <http://purl.obolibrary.org/obo/ZFA_0005223> <http://purl.obolibrary.org/obo/ZFA_0005224> <http://purl.obolibrary.org/obo/ZFA_0005407> <http://purl.obolibrary.org/obo/ZFA_0007049> } ?c rdfs:label ?l . OPTIONAL { ?c owl:deprecated ?dep } }",
+   "retrieved": "2026-10-31T21:22:36Z",
+   "n_rows": 27
+  },
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "Uberon classes that carry a ZFA database cross-reference (oboInOwl:hasDbXref), for the ZFA ids used",
+   "sparql": "PREFIX oio: <http://www.geneontology.org/formats/oboInOwl#> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> SELECT DISTINCT ?u ?ul ?x WHERE { VALUES ?x { \"ZFA:0000144\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000191\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000268\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000270\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000315\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000438\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000476\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000488\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000530\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000563\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000567\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000676\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000940\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000947\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001384\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001587\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001646\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001647\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001652\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005123\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005220\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005221\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005222\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005223\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005224\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005407\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0007049\"^^<http://www.w3.org/2001/XMLSchema#string> } ?u oio:hasDbXref ?x . ?u rdfs:label ?ul . FILTER(STRSTARTS(STR(?u), \"http://purl.obolibrary.org/obo/UBERON_\")) }",
+   "retrieved": "2026-10-31T21:22:37Z",
+   "n_rows": 27
+  },
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "final verification: labels and deprecation of every ZFA id used in manifest-adult.json and manifest-larva.json",
+   "sparql": "PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX owl: <http://www.w3.org/2002/07/owl#> SELECT ?c ?l ?dep WHERE { VALUES ?c { <http://purl.obolibrary.org/obo/ZFA_0000009> <http://purl.obolibrary.org/obo/ZFA_0000010> <http://purl.obolibrary.org/obo/ZFA_0000014> <http://purl.obolibrary.org/obo/ZFA_0000032> <http://purl.obolibrary.org/obo/ZFA_0000035> <http://purl.obolibrary.org/obo/ZFA_0000036> <http://purl.obolibrary.org/obo/ZFA_0000040> <http://purl.obolibrary.org/obo/ZFA_0000051> <http://purl.obolibrary.org/obo/ZFA_0000075> <http://purl.obolibrary.org/obo/ZFA_0000079> <http://purl.obolibrary.org/obo/ZFA_0000084> <http://purl.obolibrary.org/obo/ZFA_0000100> <http://purl.obolibrary.org/obo/ZFA_0000106> <http://purl.obolibrary.org/obo/ZFA_0000107> <http://purl.obolibrary.org/obo/ZFA_0000123> <http://purl.obolibrary.org/obo/ZFA_0000135> <http://purl.obolibrary.org/obo/ZFA_0000140> <http://purl.obolibrary.org/obo/ZFA_0000150> <http://purl.obolibrary.org/obo/ZFA_0000151> <http://purl.obolibrary.org/obo/ZFA_0000154> <http://purl.obolibrary.org/obo/ZFA_0000163> <http://purl.obolibrary.org/obo/ZFA_0000173> <http://purl.obolibrary.org/obo/ZFA_0000184> <http://purl.obolibrary.org/obo/ZFA_0000191> <http://purl.obolibrary.org/obo/ZFA_0000204> <http://purl.obolibrary.org/obo/ZFA_0000208> <http://purl.obolibrary.org/obo/ZFA_0000217> <http://purl.obolibrary.org/obo/ZFA_0000250> <http://purl.obolibrary.org/obo/ZFA_0000268> <http://purl.obolibrary.org/obo/ZFA_0000270> <http://purl.obolibrary.org/obo/ZFA_0000272> <http://purl.obolibrary.org/obo/ZFA_0000282> <http://purl.obolibrary.org/obo/ZFA_0000332> <http://purl.obolibrary.org/obo/ZFA_0000339> <http://purl.obolibrary.org/obo/ZFA_0000354> <http://purl.obolibrary.org/obo/ZFA_0000364> <http://purl.obolibrary.org/obo/ZFA_0000368> <http://purl.obolibrary.org/obo/ZFA_0000396> <http://purl.obolibrary.org/obo/ZFA_0000402> <http://purl.obolibrary.org/obo/ZFA_0000413> <http://purl.obolibrary.org/obo/ZFA_0000434> <http://purl.obolibrary.org/obo/ZFA_0000436> <http://purl.obolibrary.org/obo/ZFA_0000438> <http://purl.obolibrary.org/obo/ZFA_0000445> <http://purl.obolibrary.org/obo/ZFA_0000461> <http://purl.obolibrary.org/obo/ZFA_0000471> <http://purl.obolibrary.org/obo/ZFA_0000477> <http://purl.obolibrary.org/obo/ZFA_0000529> <http://purl.obolibrary.org/obo/ZFA_0000538> <http://purl.obolibrary.org/obo/ZFA_0000545> <http://purl.obolibrary.org/obo/ZFA_0000548> <http://purl.obolibrary.org/obo/ZFA_0000563> <http://purl.obolibrary.org/obo/ZFA_0000567> <http://purl.obolibrary.org/obo/ZFA_0000583> <http://purl.obolibrary.org/obo/ZFA_0000623> <http://purl.obolibrary.org/obo/ZFA_0000632> <http://purl.obolibrary.org/obo/ZFA_0000669> <http://purl.obolibrary.org/obo/ZFA_0000706> <http://purl.obolibrary.org/obo/ZFA_0000940> <http://purl.obolibrary.org/obo/ZFA_0000944> <http://purl.obolibrary.org/obo/ZFA_0000947> <http://purl.obolibrary.org/obo/ZFA_0001056> <http://purl.obolibrary.org/obo/ZFA_0001058> <http://purl.obolibrary.org/obo/ZFA_0001076> <http://purl.obolibrary.org/obo/ZFA_0001161> <http://purl.obolibrary.org/obo/ZFA_0001162> <http://purl.obolibrary.org/obo/ZFA_0001173> <http://purl.obolibrary.org/obo/ZFA_0001184> <http://purl.obolibrary.org/obo/ZFA_0001189> <http://purl.obolibrary.org/obo/ZFA_0001190> <http://purl.obolibrary.org/obo/ZFA_0001205> <http://purl.obolibrary.org/obo/ZFA_0001239> <http://purl.obolibrary.org/obo/ZFA_0001277> <http://purl.obolibrary.org/obo/ZFA_0001278> <http://purl.obolibrary.org/obo/ZFA_0001323> <http://purl.obolibrary.org/obo/ZFA_0001338> <http://purl.obolibrary.org/obo/ZFA_0001400> <http://purl.obolibrary.org/obo/ZFA_0001418> <http://purl.obolibrary.org/obo/ZFA_0001421> <http://purl.obolibrary.org/obo/ZFA_0001430> <http://purl.obolibrary.org/obo/ZFA_0001456> <http://purl.obolibrary.org/obo/ZFA_0001460> <http://purl.obolibrary.org/obo/ZFA_0001550> <http://purl.obolibrary.org/obo/ZFA_0001551> <http://purl.obolibrary.org/obo/ZFA_0001552> <http://purl.obolibrary.org/obo/ZFA_0001580> <http://purl.obolibrary.org/obo/ZFA_0001587> <http://purl.obolibrary.org/obo/ZFA_0001617> <http://purl.obolibrary.org/obo/ZFA_0005023> <http://purl.obolibrary.org/obo/ZFA_0005221> <http://purl.obolibrary.org/obo/ZFA_0005222> <http://purl.obolibrary.org/obo/ZFA_0005223> <http://purl.obolibrary.org/obo/ZFA_0005224> <http://purl.obolibrary.org/obo/ZFA_0005317> <http://purl.obolibrary.org/obo/ZFA_0005407> <http://purl.obolibrary.org/obo/ZFA_0005408> <http://purl.obolibrary.org/obo/ZFA_0005435> <http://purl.obolibrary.org/obo/ZFA_0005545> } ?c rdfs:label ?l . OPTIONAL { ?c owl:deprecated ?dep } }",
+   "retrieved": "2026-10-31T21:37:04Z",
+   "n_rows": 98
+  },
+  {
+   "endpoint": "https://ubergraph.apps.renci.org/sparql",
+   "method": "POST",
+   "purpose": "final verification: Uberon xrefs of every ZFA id used in the manifests",
+   "sparql": "PREFIX oio: <http://www.geneontology.org/formats/oboInOwl#> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> SELECT DISTINCT ?u ?ul ?x WHERE { VALUES ?x { \"ZFA:0000009\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000010\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000014\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000032\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000035\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000036\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000040\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000051\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000075\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000079\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000084\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000100\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000106\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000107\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000123\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000135\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000140\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000150\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000151\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000154\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000163\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000173\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000184\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000191\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000204\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000208\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000217\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000250\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000268\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000270\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000272\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000282\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000332\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000339\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000354\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000364\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000368\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000396\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000402\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000413\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000434\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000436\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000438\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000445\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000461\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000471\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000477\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000529\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000538\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000545\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000548\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000563\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000567\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000583\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000623\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000632\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000669\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000706\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000940\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000944\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0000947\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001056\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001058\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001076\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001161\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001162\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001173\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001184\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001189\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001190\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001205\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001239\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001277\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001278\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001323\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001338\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001400\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001418\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001421\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001430\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001456\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001460\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001550\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001551\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001552\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001580\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001587\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0001617\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005023\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005221\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005222\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005223\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005224\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005317\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005407\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005408\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005435\"^^<http://www.w3.org/2001/XMLSchema#string> \"ZFA:0005545\"^^<http://www.w3.org/2001/XMLSchema#string> } ?u oio:hasDbXref ?x . ?u rdfs:label ?ul . FILTER(STRSTARTS(STR(?u), \"http://purl.obolibrary.org/obo/UBERON_\")) }",
+   "retrieved": "2026-10-31T21:37:04Z",
+   "n_rows": 98
+  }
+ ],
+ "part_of_checks": {
+  "note": "BFO:0000050 (part of, inferred closure) between modelled structures and ZFA organ-system terms; absent keys had no part_of link to any listed system",
+  "result": {
+   "ZFA_0000107": [
+    "ZFA_0000282",
+    "ZFA_0000396",
+    "ZFA_0001127"
+   ],
+   "ZFA_0000114": [
+    "ZFA_0000010"
+   ],
+   "ZFA_0000123": [
+    "ZFA_0000036",
+    "ZFA_0000339"
+   ],
+   "ZFA_0000140": [
+    "ZFA_0000339",
+    "ZFA_0001158"
+   ],
+   "ZFA_0000151": [
+    "ZFA_0000163"
+   ],
+   "ZFA_0000354": [
+    "ZFA_0000272"
+   ],
+   "ZFA_0000413": [
+    "ZFA_0000632"
+   ],
+   "ZFA_0000436": [
+    "ZFA_0001159",
+    "ZFA_0005023"
+   ],
+   "ZFA_0000529": [
+    "ZFA_0000163",
+    "ZFA_0001159"
+   ],
+   "ZFA_0000622": [
+    "ZFA_0000368"
+   ],
+   "ZFA_0000669": [
+    "ZFA_0000163",
+    "ZFA_0001158",
+    "ZFA_0001159",
+    "ZFA_0005023"
+   ],
+   "ZFA_0001056": [
+    "ZFA_0000548"
+   ],
+   "ZFA_0001469": [
+    "ZFA_0000282",
+    "ZFA_0000396"
+   ]
+  }
+ },
+ "verification": {
+  "run": "2026-10-31T21:37:04Z",
+  "ids_checked": 98,
+  "problems": []
+ },
+ "used_ids": [
+  "ZFA:0000009",
+  "ZFA:0000010",
+  "ZFA:0000014",
+  "ZFA:0000032",
+  "ZFA:0000035",
+  "ZFA:0000036",
+  "ZFA:0000040",
+  "ZFA:0000051",
+  "ZFA:0000075",
+  "ZFA:0000079",
+  "ZFA:0000084",
+  "ZFA:0000100",
+  "ZFA:0000106",
+  "ZFA:0000107",
+  "ZFA:0000123",
+  "ZFA:0000135",
+  "ZFA:0000140",
+  "ZFA:0000150",
+  "ZFA:0000151",
+  "ZFA:0000154",
+  "ZFA:0000163",
+  "ZFA:0000173",
+  "ZFA:0000184",
+  "ZFA:0000191",
+  "ZFA:0000204",
+  "ZFA:0000208",
+  "ZFA:0000217",
+  "ZFA:0000250",
+  "ZFA:0000268",
+  "ZFA:0000270",
+  "ZFA:0000272",
+  "ZFA:0000282",
+  "ZFA:0000332",
+  "ZFA:0000339",
+  "ZFA:0000354",
+  "ZFA:0000364",
+  "ZFA:0000368",
+  "ZFA:0000396",
+  "ZFA:0000402",
+  "ZFA:0000413",
+  "ZFA:0000434",
+  "ZFA:0000436",
+  "ZFA:0000438",
+  "ZFA:0000445",
+  "ZFA:0000461",
+  "ZFA:0000471",
+  "ZFA:0000477",
+  "ZFA:0000529",
+  "ZFA:0000538",
+  "ZFA:0000545",
+  "ZFA:0000548",
+  "ZFA:0000563",
+  "ZFA:0000567",
+  "ZFA:0000583",
+  "ZFA:0000623",
+  "ZFA:0000632",
+  "ZFA:0000669",
+  "ZFA:0000706",
+  "ZFA:0000940",
+  "ZFA:0000944",
+  "ZFA:0000947",
+  "ZFA:0001056",
+  "ZFA:0001058",
+  "ZFA:0001076",
+  "ZFA:0001161",
+  "ZFA:0001162",
+  "ZFA:0001173",
+  "ZFA:0001184",
+  "ZFA:0001189",
+  "ZFA:0001190",
+  "ZFA:0001205",
+  "ZFA:0001239",
+  "ZFA:0001277",
+  "ZFA:0001278",
+  "ZFA:0001323",
+  "ZFA:0001338",
+  "ZFA:0001400",
+  "ZFA:0001418",
+  "ZFA:0001421",
+  "ZFA:0001430",
+  "ZFA:0001456",
+  "ZFA:0001460",
+  "ZFA:0001550",
+  "ZFA:0001551",
+  "ZFA:0001552",
+  "ZFA:0001580",
+  "ZFA:0001587",
+  "ZFA:0001617",
+  "ZFA:0005023",
+  "ZFA:0005221",
+  "ZFA:0005222",
+  "ZFA:0005223",
+  "ZFA:0005224",
+  "ZFA:0005317",
+  "ZFA:0005407",
+  "ZFA:0005408",
+  "ZFA:0005435",
+  "ZFA:0005545"
+ ],
+ "zfa_table": {
+  "ZFA:0000008": {
+   "label": "brain",
+   "uberon": [
+    {
+     "id": "UBERON_0000955",
+     "label": "brain"
+    }
+   ]
+  },
+  "ZFA:0000009": {
+   "label": "cardiac ventricle",
+   "uberon": [
+    {
+     "id": "UBERON_0002082",
+     "label": "cardiac ventricle"
+    }
+   ]
+  },
+  "ZFA:0000014": {
+   "label": "dorsal aorta",
+   "uberon": [
+    {
+     "id": "UBERON_0005805",
+     "label": "dorsal aorta"
+    }
+   ]
+  },
+  "ZFA:0000026": {
+   "label": "hatching gland",
+   "uberon": [
+    {
+     "id": "UBERON_0002538",
+     "label": "hatching gland"
+    }
+   ]
+  },
+  "ZFA:0000032": {
+   "label": "hypothalamus",
+   "uberon": [
+    {
+     "id": "UBERON_0001898",
+     "label": "hypothalamus"
+    }
+   ]
+  },
+  "ZFA:0000035": {
+   "label": "lens",
+   "uberon": [
+    {
+     "id": "UBERON_0000965",
+     "label": "lens of camera-type eye"
+    }
+   ]
+  },
+  "ZFA:0000040": {
+   "label": "median fin fold",
+   "uberon": [
+    {
+     "id": "UBERON_2000040",
+     "label": "median fin fold"
+    }
+   ]
+  },
+  "ZFA:0000051": {
+   "label": "otic vesicle",
+   "uberon": [
+    {
+     "id": "UBERON_0003051",
+     "label": "ear vesicle"
+    }
+   ]
+  },
+  "ZFA:0000054": {
+   "label": "pericardium",
+   "uberon": [
+    {
+     "id": "UBERON_0002407",
+     "label": "pericardium"
+    }
+   ]
+  },
+  "ZFA:0000056": {
+   "label": "pharynx",
+   "uberon": [
+    {
+     "id": "UBERON_0001042",
+     "label": "chordate pharynx"
+    }
+   ]
+  },
+  "ZFA:0000075": {
+   "label": "spinal cord",
+   "uberon": [
+    {
+     "id": "UBERON_0002240",
+     "label": "spinal cord"
+    }
+   ]
+  },
+  "ZFA:0000076": {
+   "label": "swim bladder",
+   "uberon": [
+    {
+     "id": "UBERON_0006860",
+     "label": "swim bladder"
+    }
+   ]
+  },
+  "ZFA:0000079": {
+   "label": "telencephalon",
+   "uberon": [
+    {
+     "id": "UBERON_0001893",
+     "label": "telencephalon"
+    }
+   ]
+  },
+  "ZFA:0000084": {
+   "label": "yolk",
+   "uberon": [
+    {
+     "id": "UBERON_2000084",
+     "label": "yolk"
+    }
+   ]
+  },
+  "ZFA:0000088": {
+   "label": "yolk syncytial layer",
+   "uberon": [
+    {
+     "id": "UBERON_2000088",
+     "label": "yolk syncytial layer"
+    }
+   ]
+  },
+  "ZFA:0000100": {
+   "label": "cerebellum",
+   "uberon": [
+    {
+     "id": "UBERON_0002037",
+     "label": "cerebellum"
+    }
+   ]
+  },
+  "ZFA:0000101": {
+   "label": "diencephalon",
+   "uberon": [
+    {
+     "id": "UBERON_0001894",
+     "label": "diencephalon"
+    }
+   ]
+  },
+  "ZFA:0000102": {
+   "label": "dorsal fin fold",
+   "uberon": [
+    {
+     "id": "UBERON_2000102",
+     "label": "dorsal fin fold"
+    }
+   ]
+  },
+  "ZFA:0000105": {
+   "label": "epidermis",
+   "uberon": [
+    {
+     "id": "UBERON_0001003",
+     "label": "skin epidermis"
+    }
+   ]
+  },
+  "ZFA:0000106": {
+   "label": "extension",
+   "uberon": [
+    {
+     "id": "UBERON_2000106",
+     "label": "extension"
+    }
+   ]
+  },
+  "ZFA:0000107": {
+   "label": "eye",
+   "uberon": [
+    {
+     "id": "UBERON_0000019",
+     "label": "camera-type eye"
+    }
+   ]
+  },
+  "ZFA:0000108": {
+   "label": "fin",
+   "uberon": [
+    {
+     "id": "UBERON_0008897",
+     "label": "fin"
+    }
+   ]
+  },
+  "ZFA:0000112": {
+   "label": "gut",
+   "uberon": [
+    {
+     "id": "UBERON_0001555",
+     "label": "digestive tract"
+    }
+   ]
+  },
+  "ZFA:0000114": {
+   "label": "heart",
+   "uberon": [
+    {
+     "id": "UBERON_0000948",
+     "label": "heart"
+    }
+   ]
+  },
+  "ZFA:0000123": {
+   "label": "liver",
+   "uberon": [
+    {
+     "id": "UBERON_0002107",
+     "label": "liver"
+    }
+   ]
+  },
+  "ZFA:0000130": {
+   "label": "olfactory pit",
+   "uberon": [
+    {
+     "id": "UBERON_0001707",
+     "label": "nasal cavity"
+    }
+   ]
+  },
+  "ZFA:0000135": {
+   "label": "notochord",
+   "uberon": [
+    {
+     "id": "UBERON_0002328",
+     "label": "notochord"
+    }
+   ]
+  },
+  "ZFA:0000140": {
+   "label": "pancreas",
+   "uberon": [
+    {
+     "id": "UBERON_0001264",
+     "label": "pancreas"
+    }
+   ]
+  },
+  "ZFA:0000141": {
+   "label": "pectoral fin bud",
+   "uberon": [
+    {
+     "id": "UBERON_0005419",
+     "label": "pectoral appendage bud"
+    }
+   ]
+  },
+  "ZFA:0000150": {
+   "label": "pronephric duct",
+   "uberon": [
+    {
+     "id": "UBERON_0003060",
+     "label": "pronephric duct"
+    }
+   ]
+  },
+  "ZFA:0000151": {
+   "label": "pronephros",
+   "uberon": [
+    {
+     "id": "UBERON_0002120",
+     "label": "pronephros"
+    }
+   ]
+  },
+  "ZFA:0000152": {
+   "label": "retina",
+   "uberon": [
+    {
+     "id": "UBERON_0000966",
+     "label": "retina"
+    }
+   ]
+  },
+  "ZFA:0000154": {
+   "label": "sinus venosus",
+   "uberon": [
+    {
+     "id": "UBERON_0002063",
+     "label": "sinus venosus"
+    }
+   ]
+  },
+  "ZFA:0000155": {
+   "label": "somite",
+   "uberon": [
+    {
+     "id": "UBERON_0002329",
+     "label": "somite"
+    }
+   ]
+  },
+  "ZFA:0000173": {
+   "label": "bulbus arteriosus",
+   "uberon": [
+    {
+     "id": "UBERON_0004152",
+     "label": "bulbus arteriosus"
+    }
+   ]
+  },
+  "ZFA:0000178": {
+   "label": "caudal peduncle",
+   "uberon": [
+    {
+     "id": "UBERON_2000178",
+     "label": "caudal peduncle"
+    }
+   ]
+  },
+  "ZFA:0000184": {
+   "label": "cleithrum",
+   "uberon": [
+    {
+     "id": "UBERON_0004741",
+     "label": "cleithrum"
+    }
+   ]
+  },
+  "ZFA:0000204": {
+   "label": "esophagus",
+   "uberon": [
+    {
+     "id": "UBERON_0001043",
+     "label": "esophagus"
+    }
+   ]
+  },
+  "ZFA:0000208": {
+   "label": "gall bladder",
+   "uberon": [
+    {
+     "id": "UBERON_0002110",
+     "label": "gallbladder"
+    }
+   ]
+  },
+  "ZFA:0000217": {
+   "label": "inner ear",
+   "uberon": [
+    {
+     "id": "UBERON_0001846",
+     "label": "internal ear"
+    }
+   ]
+  },
+  "ZFA:0000243": {
+   "label": "neuromast",
+   "uberon": [
+    {
+     "id": "UBERON_0008904",
+     "label": "neuromast"
+    }
+   ]
+  },
+  "ZFA:0000250": {
+   "label": "opercle",
+   "uberon": [
+    {
+     "id": "UBERON_2000250",
+     "label": "opercle"
+    }
+   ]
+  },
+  "ZFA:0000277": {
+   "label": "scale",
+   "uberon": [
+    {
+     "id": "UBERON_0007380",
+     "label": "dermal scale"
+    }
+   ]
+  },
+  "ZFA:0000298": {
+   "label": "vent",
+   "uberon": [
+    {
+     "id": "UBERON_2000298",
+     "label": "vent"
+    }
+   ]
+  },
+  "ZFA:0000332": {
+   "label": "coracoid",
+   "uberon": [
+    {
+     "id": "UBERON_0004743",
+     "label": "coracoid bone"
+    }
+   ]
+  },
+  "ZFA:0000354": {
+   "label": "gill",
+   "uberon": [
+    {
+     "id": "UBERON_0011150",
+     "label": "pharyngeal arch derived gill"
+    }
+   ]
+  },
+  "ZFA:0000360": {
+   "label": "heart tube",
+   "uberon": [
+    {
+     "id": "UBERON_0004141",
+     "label": "heart tube"
+    }
+   ]
+  },
+  "ZFA:0000364": {
+   "label": "hypural",
+   "uberon": [
+    {
+     "id": "UBERON_2000364",
+     "label": "hypural"
+    }
+   ]
+  },
+  "ZFA:0000368": {
+   "label": "integument",
+   "uberon": [
+    {
+     "id": "UBERON_0002199",
+     "label": "integument"
+    }
+   ]
+  },
+  "ZFA:0000402": {
+   "label": "olfactory bulb",
+   "uberon": [
+    {
+     "id": "UBERON_0002264",
+     "label": "olfactory bulb"
+    }
+   ]
+  },
+  "ZFA:0000403": {
+   "label": "ovary",
+   "uberon": [
+    {
+     "id": "UBERON_0000992",
+     "label": "ovary"
+    }
+   ]
+  },
+  "ZFA:0000407": {
+   "label": "pectoral girdle",
+   "uberon": [
+    {
+     "id": "UBERON_0007831",
+     "label": "pectoral girdle skeleton"
+    }
+   ]
+  },
+  "ZFA:0000413": {
+   "label": "gonad",
+   "uberon": [
+    {
+     "id": "UBERON_0000991",
+     "label": "gonad"
+    }
+   ]
+  },
+  "ZFA:0000431": {
+   "label": "semicircular canal",
+   "uberon": [
+    {
+     "id": "UBERON_0001840",
+     "label": "semicircular canal"
+    }
+   ]
+  },
+  "ZFA:0000436": {
+   "label": "spleen",
+   "uberon": [
+    {
+     "id": "UBERON_0002106",
+     "label": "spleen"
+    }
+   ]
+  },
+  "ZFA:0000445": {
+   "label": "optic tectum",
+   "uberon": [
+    {
+     "id": "UBERON_0001945",
+     "label": "superior colliculus"
+    }
+   ]
+  },
+  "ZFA:0000461": {
+   "label": "Weberian ossicle",
+   "uberon": [
+    {
+     "id": "UBERON_2000461",
+     "label": "Weberian ossicle"
+    }
+   ]
+  },
+  "ZFA:0000471": {
+   "label": "atrium",
+   "uberon": [
+    {
+     "id": "UBERON_0002081",
+     "label": "cardiac atrium"
+    }
+   ]
+  },
+  "ZFA:0000477": {
+   "label": "posterior cardinal vein",
+   "uberon": [
+    {
+     "id": "UBERON_0002065",
+     "label": "posterior cardinal vein"
+    }
+   ]
+  },
+  "ZFA:0000519": {
+   "label": "hemal arch",
+   "uberon": [
+    {
+     "id": "UBERON_0006065",
+     "label": "hemal arch"
+    }
+   ]
+  },
+  "ZFA:0000529": {
+   "label": "kidney",
+   "uberon": [
+    {
+     "id": "UBERON_0000080",
+     "label": "mesonephros"
+    }
+   ]
+  },
+  "ZFA:0000538": {
+   "label": "rib",
+   "uberon": [
+    {
+     "id": "UBERON_0002228",
+     "label": "rib"
+    }
+   ]
+  },
+  "ZFA:0000545": {
+   "label": "medulla oblongata",
+   "uberon": [
+    {
+     "id": "UBERON_0001896",
+     "label": "medulla oblongata"
+    }
+   ]
+  },
+  "ZFA:0000547": {
+   "label": "mouth",
+   "uberon": [
+    {
+     "id": "UBERON_0000165",
+     "label": "mouth"
+    }
+   ]
+  },
+  "ZFA:0000548": {
+   "label": "musculature system",
+   "uberon": [
+    {
+     "id": "UBERON_0001015",
+     "label": "musculature"
+    }
+   ]
+  },
+  "ZFA:0000554": {
+   "label": "olfactory epithelium",
+   "uberon": [
+    {
+     "id": "UBERON_0001997",
+     "label": "olfactory epithelium"
+    }
+   ]
+  },
+  "ZFA:0000555": {
+   "label": "opercular flap",
+   "uberon": [
+    {
+     "id": "UBERON_2000555",
+     "label": "opercular flap"
+    }
+   ]
+  },
+  "ZFA:0000565": {
+   "label": "pelvic girdle",
+   "uberon": [
+    {
+     "id": "UBERON_0007832",
+     "label": "pelvic girdle skeleton"
+    }
+   ]
+  },
+  "ZFA:0000583": {
+   "label": "scapula",
+   "uberon": [
+    {
+     "id": "UBERON_0006849",
+     "label": "scapula"
+    }
+   ]
+  },
+  "ZFA:0000598": {
+   "label": "testis",
+   "uberon": [
+    {
+     "id": "UBERON_0000473",
+     "label": "testis"
+    }
+   ]
+  },
+  "ZFA:0000622": {
+   "label": "barbel",
+   "uberon": [
+    {
+     "id": "UBERON_2000622",
+     "label": "barbel"
+    }
+   ]
+  },
+  "ZFA:0000623": {
+   "label": "basipterygium",
+   "uberon": [
+    {
+     "id": "UBERON_2000623",
+     "label": "basipterygium bone"
+    }
+   ]
+  },
+  "ZFA:0000667": {
+   "label": "gill filament",
+   "uberon": [
+    {
+     "id": "UBERON_0009120",
+     "label": "gill filament"
+    }
+   ]
+  },
+  "ZFA:0000669": {
+   "label": "head kidney",
+   "uberon": [
+    {
+     "id": "UBERON_0007132",
+     "label": "head kidney"
+    }
+   ]
+  },
+  "ZFA:0000671": {
+   "label": "horizontal myoseptum",
+   "uberon": [
+    {
+     "id": "UBERON_0003901",
+     "label": "horizontal septum"
+    }
+   ]
+  },
+  "ZFA:0000694": {
+   "label": "ceratobranchial 5 tooth",
+   "uberon": [
+    {
+     "id": "UBERON_2000694",
+     "label": "ceratobranchial 5 tooth"
+    }
+   ]
+  },
+  "ZFA:0000706": {
+   "label": "posterior intestine",
+   "uberon": [
+    {
+     "id": "UBERON_0001155",
+     "label": "colon"
+    }
+   ]
+  },
+  "ZFA:0000737": {
+   "label": "cranium",
+   "uberon": [
+    {
+     "id": "UBERON_0010323",
+     "label": "cranial skeletal system"
+    }
+   ]
+  },
+  "ZFA:0000863": {
+   "label": "dermatocranium",
+   "uberon": [
+    {
+     "id": "UBERON_0003113",
+     "label": "dermatocranium"
+    }
+   ]
+  },
+  "ZFA:0000944": {
+   "label": "posterior lateral line",
+   "uberon": [
+    {
+     "id": "UBERON_0006334",
+     "label": "posterior lateral line"
+    }
+   ]
+  },
+  "ZFA:0001056": {
+   "label": "myotome",
+   "uberon": [
+    {
+     "id": "UBERON_0003082",
+     "label": "myotome"
+    }
+   ]
+  },
+  "ZFA:0001058": {
+   "label": "caudal fin",
+   "uberon": [
+    {
+     "id": "UBERON_4000164",
+     "label": "caudal fin"
+    }
+   ]
+  },
+  "ZFA:0001066": {
+   "label": "neural arch",
+   "uberon": [
+    {
+     "id": "UBERON_0003861",
+     "label": "neural arch"
+    }
+   ]
+  },
+  "ZFA:0001069": {
+   "label": "ventral fin fold",
+   "uberon": [
+    {
+     "id": "UBERON_2001069",
+     "label": "ventral fin fold"
+    }
+   ]
+  },
+  "ZFA:0001076": {
+   "label": "intestinal bulb",
+   "uberon": [
+    {
+     "id": "UBERON_2001076",
+     "label": "intestinal bulb"
+    }
+   ]
+  },
+  "ZFA:0001094": {
+   "label": "whole organism",
+   "uberon": [
+    {
+     "id": "UBERON_0000468",
+     "label": "multicellular organism"
+    }
+   ]
+  },
+  "ZFA:0001114": {
+   "label": "head",
+   "uberon": [
+    {
+     "id": "UBERON_0007811",
+     "label": "craniocervical region"
+    }
+   ]
+  },
+  "ZFA:0001115": {
+   "label": "trunk",
+   "uberon": [
+    {
+     "id": "UBERON_0002100",
+     "label": "trunk"
+    }
+   ]
+  },
+  "ZFA:0001118": {
+   "label": "urogenital papilla",
+   "uberon": [
+    {
+     "id": "UBERON_2001118",
+     "label": "urogenital papilla"
+    }
+   ]
+  },
+  "ZFA:0001119": {
+   "label": "dermis",
+   "uberon": [
+    {
+     "id": "UBERON_0002067",
+     "label": "dermis"
+    }
+   ]
+  },
+  "ZFA:0001135": {
+   "label": "neural tube",
+   "uberon": [
+    {
+     "id": "UBERON_0001049",
+     "label": "neural tube"
+    }
+   ]
+  },
+  "ZFA:0001161": {
+   "label": "pectoral fin",
+   "uberon": [
+    {
+     "id": "UBERON_0000151",
+     "label": "pectoral fin"
+    }
+   ]
+  },
+  "ZFA:0001162": {
+   "label": "anal fin",
+   "uberon": [
+    {
+     "id": "UBERON_4000163",
+     "label": "anal fin"
+    }
+   ]
+  },
+  "ZFA:0001173": {
+   "label": "dorsal fin",
+   "uberon": [
+    {
+     "id": "UBERON_0003097",
+     "label": "dorsal fin"
+    }
+   ]
+  },
+  "ZFA:0001184": {
+   "label": "pelvic fin",
+   "uberon": [
+    {
+     "id": "UBERON_0000152",
+     "label": "pelvic fin"
+    }
+   ]
+  },
+  "ZFA:0001188": {
+   "label": "Weberian apparatus",
+   "uberon": [
+    {
+     "id": "UBERON_2001188",
+     "label": "Weberian apparatus"
+    }
+   ]
+  },
+  "ZFA:0001189": {
+   "label": "vertebra",
+   "uberon": [
+    {
+     "id": "UBERON_0002412",
+     "label": "vertebra"
+    }
+   ]
+  },
+  "ZFA:0001190": {
+   "label": "Weberian vertebra",
+   "uberon": [
+    {
+     "id": "UBERON_2001190",
+     "label": "Weberian vertebra"
+    }
+   ]
+  },
+  "ZFA:0001227": {
+   "label": "mandibular arch skeleton",
+   "uberon": [
+    {
+     "id": "UBERON_0001708",
+     "label": "jaw skeleton"
+    }
+   ]
+  },
+  "ZFA:0001238": {
+   "label": "iris",
+   "uberon": [
+    {
+     "id": "UBERON_0001769",
+     "label": "iris"
+    }
+   ]
+  },
+  "ZFA:0001239": {
+   "label": "ceratobranchial 5 bone",
+   "uberon": [
+    {
+     "id": "UBERON_2001239",
+     "label": "ceratobranchial 5 bone"
+    }
+   ]
+  },
+  "ZFA:0001249": {
+   "label": "exocrine pancreas",
+   "uberon": [
+    {
+     "id": "UBERON_0000017",
+     "label": "exocrine pancreas"
+    }
+   ]
+  },
+  "ZFA:0001272": {
+   "label": "palatoquadrate arch",
+   "uberon": [
+    {
+     "id": "UBERON_0011085",
+     "label": "palatoquadrate arch"
+    }
+   ]
+  },
+  "ZFA:0001273": {
+   "label": "ventral mandibular arch",
+   "uberon": [
+    {
+     "id": "UBERON_0003278",
+     "label": "skeleton of lower jaw"
+    }
+   ]
+  },
+  "ZFA:0001277": {
+   "label": "anterior chamber swim bladder",
+   "uberon": [
+    {
+     "id": "UBERON_2001277",
+     "label": "anterior chamber swim bladder"
+    }
+   ]
+  },
+  "ZFA:0001278": {
+   "label": "posterior chamber swim bladder",
+   "uberon": [
+    {
+     "id": "UBERON_2001278",
+     "label": "posterior chamber swim bladder"
+    }
+   ]
+  },
+  "ZFA:0001306": {
+   "label": "pharyngeal arch",
+   "uberon": [
+    {
+     "id": "UBERON_0002539",
+     "label": "pharyngeal arch"
+    }
+   ]
+  },
+  "ZFA:0001323": {
+   "label": "mid intestine",
+   "uberon": [
+    {
+     "id": "UBERON_0002108",
+     "label": "small intestine"
+    }
+   ]
+  },
+  "ZFA:0001336": {
+   "label": "neural spine",
+   "uberon": [
+    {
+     "id": "UBERON_0001076",
+     "label": "neural spine"
+    }
+   ]
+  },
+  "ZFA:0001338": {
+   "label": "intestine",
+   "uberon": [
+    {
+     "id": "UBERON_0000160",
+     "label": "intestine"
+    }
+   ]
+  },
+  "ZFA:0001364": {
+   "label": "hemal spine",
+   "uberon": [
+    {
+     "id": "UBERON_2001364",
+     "label": "hemal spine"
+    }
+   ]
+  },
+  "ZFA:0001418": {
+   "label": "dorsal fin lepidotrichium",
+   "uberon": [
+    {
+     "id": "UBERON_4000177",
+     "label": "dorsal fin lepidotrichium"
+    }
+   ]
+  },
+  "ZFA:0001421": {
+   "label": "anal fin lepidotrichium",
+   "uberon": [
+    {
+     "id": "UBERON_4000176",
+     "label": "anal fin lepidotrichium"
+    }
+   ]
+  },
+  "ZFA:0001430": {
+   "label": "pneumatic duct",
+   "uberon": [
+    {
+     "id": "UBERON_2001430",
+     "label": "pneumatic duct"
+    }
+   ]
+  },
+  "ZFA:0001443": {
+   "label": "choroid plexus",
+   "uberon": [
+    {
+     "id": "UBERON_0001886",
+     "label": "choroid plexus"
+    }
+   ]
+  },
+  "ZFA:0001456": {
+   "label": "pectoral fin endoskeletal disc",
+   "uberon": [
+    {
+     "id": "UBERON_2001456",
+     "label": "pectoral fin endoskeletal disc"
+    }
+   ]
+  },
+  "ZFA:0001463": {
+   "label": "melanophore stripe",
+   "uberon": [
+    {
+     "id": "UBERON_2001463",
+     "label": "melanophore stripe"
+    }
+   ]
+  },
+  "ZFA:0001469": {
+   "label": "lateral line",
+   "uberon": [
+    {
+     "id": "UBERON_0010202",
+     "label": "lateral line"
+    }
+   ]
+  },
+  "ZFA:0001500": {
+   "label": "auditory capsule",
+   "uberon": [
+    {
+     "id": "UBERON_0005410",
+     "label": "cartilaginous otic capsule"
+    }
+   ]
+  },
+  "ZFA:0001550": {
+   "label": "caudal fin lepidotrichium",
+   "uberon": [
+    {
+     "id": "UBERON_4000174",
+     "label": "caudal fin lepidotrichium"
+    }
+   ]
+  },
+  "ZFA:0001551": {
+   "label": "pectoral fin lepidotrichium",
+   "uberon": [
+    {
+     "id": "UBERON_4000175",
+     "label": "pectoral fin lepidotrichium"
+    }
+   ]
+  },
+  "ZFA:0001552": {
+   "label": "pelvic fin lepidotrichium",
+   "uberon": [
+    {
+     "id": "UBERON_4000173",
+     "label": "pelvic fin lepidotrichium"
+    }
+   ]
+  },
+  "ZFA:0001554": {
+   "label": "lepidotrichium",
+   "uberon": [
+    {
+     "id": "UBERON_4000172",
+     "label": "lepidotrichium"
+    }
+   ]
+  },
+  "ZFA:0001559": {
+   "label": "vertebral column",
+   "uberon": [
+    {
+     "id": "UBERON_0001130",
+     "label": "vertebral column"
+    }
+   ]
+  },
+  "ZFA:0001580": {
+   "label": "neurocranium",
+   "uberon": [
+    {
+     "id": "UBERON_0001703",
+     "label": "neurocranium"
+    }
+   ]
+  },
+  "ZFA:0001617": {
+   "label": "otolith",
+   "uberon": [
+    {
+     "id": "UBERON_0002280",
+     "label": "otolith"
+    }
+   ]
+  },
+  "ZFA:0005145": {
+   "label": "muscle",
+   "uberon": [
+    {
+     "id": "UBERON_0001630",
+     "label": "muscle organ"
+    }
+   ]
+  },
+  "ZFA:0005277": {
+   "label": "skeletal muscle",
+   "uberon": [
+    {
+     "id": "UBERON_0014892",
+     "label": "skeletal muscle organ, vertebrate"
+    }
+   ]
+  },
+  "ZFA:0005335": {
+   "label": "swim bladder bud",
+   "uberon": [
+    {
+     "id": "UBERON_0006859",
+     "label": "swim bladder bud"
+    }
+   ]
+  },
+  "ZFA:0005408": {
+   "label": "maxillary barbel",
+   "uberon": [
+    {
+     "id": "UBERON_2001938",
+     "label": "maxillary barbel"
+    }
+   ]
+  },
+  "ZFA:0005435": {
+   "label": "actinotrichium",
+   "uberon": [
+    {
+     "id": "UBERON_2000089",
+     "label": "actinotrichium"
+    }
+   ]
+  },
+  "ZFA:0005545": {
+   "label": "pectoral fin actinotrichium",
+   "uberon": [
+    {
+     "id": "UBERON_2000544",
+     "label": "pectoral fin actinotrichium"
+    }
+   ]
+  },
+  "ZFA:0005596": {
+   "label": "paired fin",
+   "uberon": [
+    {
+     "id": "UBERON_0002534",
+     "label": "paired fin"
+    }
+   ]
+  },
+  "ZFA:0005597": {
+   "label": "median fin",
+   "uberon": [
+    {
+     "id": "UBERON_4000162",
+     "label": "median fin"
+    }
+   ]
+  },
+  "ZFA:0005754": {
+   "label": "primary islet",
+   "uberon": []
+  },
+  "ZFA:0005781": {
+   "label": "cloaca",
+   "uberon": [
+    {
+     "id": "UBERON_0000162",
+     "label": "cloaca"
+    }
+   ]
+  },
+  "ZFA:0009117": {
+   "label": "fast muscle cell",
+   "uberon": []
+  },
+  "ZFA:0000010": {
+   "label": "cardiovascular system",
+   "uberon": [
+    {
+     "id": "UBERON_0004535",
+     "label": "cardiovascular system"
+    }
+   ]
+  },
+  "ZFA:0000012": {
+   "label": "central nervous system",
+   "uberon": [
+    {
+     "id": "UBERON_0001017",
+     "label": "central nervous system"
+    }
+   ]
+  },
+  "ZFA:0000036": {
+   "label": "liver and biliary system",
+   "uberon": [
+    {
+     "id": "UBERON_0002423",
+     "label": "hepatobiliary system"
+    }
+   ]
+  },
+  "ZFA:0000163": {
+   "label": "renal system",
+   "uberon": [
+    {
+     "id": "UBERON_0001008",
+     "label": "renal system"
+    }
+   ]
+  },
+  "ZFA:0000167": {
+   "label": "anal fin skeleton",
+   "uberon": [
+    {
+     "id": "UBERON_4000166",
+     "label": "anal fin skeleton"
+    }
+   ]
+  },
+  "ZFA:0000272": {
+   "label": "respiratory system",
+   "uberon": [
+    {
+     "id": "UBERON_0001004",
+     "label": "respiratory system"
+    }
+   ]
+  },
+  "ZFA:0000282": {
+   "label": "sensory system",
+   "uberon": [
+    {
+     "id": "UBERON_0001032",
+     "label": "sensory system"
+    }
+   ]
+  },
+  "ZFA:0000339": {
+   "label": "digestive system",
+   "uberon": [
+    {
+     "id": "UBERON_0001007",
+     "label": "digestive system"
+    }
+   ]
+  },
+  "ZFA:0000396": {
+   "label": "nervous system",
+   "uberon": [
+    {
+     "id": "UBERON_0001016",
+     "label": "nervous system"
+    }
+   ]
+  },
+  "ZFA:0000434": {
+   "label": "skeletal system",
+   "uberon": [
+    {
+     "id": "UBERON_0001434",
+     "label": "skeletal system"
+    }
+   ]
+  },
+  "ZFA:0000632": {
+   "label": "reproductive system",
+   "uberon": [
+    {
+     "id": "UBERON_0000990",
+     "label": "reproductive system"
+    }
+   ]
+  },
+  "ZFA:0000862": {
+   "label": "caudal fin skeleton",
+   "uberon": [
+    {
+     "id": "UBERON_4000167",
+     "label": "caudal fin skeleton"
+    }
+   ]
+  },
+  "ZFA:0000943": {
+   "label": "pectoral fin skeleton",
+   "uberon": [
+    {
+     "id": "UBERON_0010710",
+     "label": "pectoral fin skeleton"
+    }
+   ]
+  },
+  "ZFA:0001124": {
+   "label": "dorsal fin skeleton",
+   "uberon": [
+    {
+     "id": "UBERON_4000168",
+     "label": "dorsal fin skeleton"
+    }
+   ]
+  },
+  "ZFA:0001127": {
+   "label": "visual system",
+   "uberon": [
+    {
+     "id": "UBERON_0002104",
+     "label": "visual system"
+    }
+   ]
+  },
+  "ZFA:0001158": {
+   "label": "endocrine system",
+   "uberon": [
+    {
+     "id": "UBERON_0000949",
+     "label": "endocrine system"
+    }
+   ]
+  },
+  "ZFA:0001159": {
+   "label": "immune system",
+   "uberon": [
+    {
+     "id": "UBERON_0002405",
+     "label": "immune system"
+    }
+   ]
+  },
+  "ZFA:0001387": {
+   "label": "pelvic fin skeleton",
+   "uberon": [
+    {
+     "id": "UBERON_0010711",
+     "label": "pelvic fin skeleton"
+    }
+   ]
+  },
+  "ZFA:0001586": {
+   "label": "pectoral fin radial",
+   "uberon": [
+    {
+     "id": "UBERON_2001586",
+     "label": "pectoral fin radial bone"
+    }
+   ]
+  },
+  "ZFA:0005023": {
+   "label": "hematopoietic system",
+   "uberon": [
+    {
+     "id": "UBERON_0002390",
+     "label": "hematopoietic system"
+    }
+   ]
+  },
+  "ZFA:0005530": {
+   "label": "lateral line scale",
+   "uberon": [
+    {
+     "id": "UBERON_2001824",
+     "label": "lateral line scale"
+    }
+   ]
+  },
+  "ZFA:0009091": {
+   "label": "melanocyte",
+   "uberon": []
+  },
+  "ZFA:0009199": {
+   "label": "iridophore",
+   "uberon": []
+  },
+  "ZFA:0000095": {
+   "label": "pharyngeal arch 3-7 skeleton",
+   "uberon": [
+    {
+     "id": "UBERON_0005886",
+     "label": "post-hyoid pharyngeal arch skeleton"
+    }
+   ]
+  },
+  "ZFA:0000374": {
+   "label": "lagena",
+   "uberon": [
+    {
+     "id": "UBERON_0001844",
+     "label": "cochlea"
+    }
+   ]
+  },
+  "ZFA:0000386": {
+   "label": "macula",
+   "uberon": [
+    {
+     "id": "UBERON_0000054",
+     "label": "macula"
+    }
+   ]
+  },
+  "ZFA:0000428": {
+   "label": "saccule",
+   "uberon": [
+    {
+     "id": "UBERON_0001854",
+     "label": "saccule of membranous labyrinth"
+    }
+   ]
+  },
+  "ZFA:0000429": {
+   "label": "scaphium",
+   "uberon": [
+    {
+     "id": "UBERON_2000429",
+     "label": "scaphium"
+    }
+   ]
+  },
+  "ZFA:0000525": {
+   "label": "intercalarium",
+   "uberon": [
+    {
+     "id": "UBERON_2000525",
+     "label": "intercalarium"
+    }
+   ]
+  },
+  "ZFA:0000550": {
+   "label": "naris",
+   "uberon": [
+    {
+     "id": "UBERON_0005928",
+     "label": "external naris"
+    }
+   ]
+  },
+  "ZFA:0000698": {
+   "label": "tripus",
+   "uberon": [
+    {
+     "id": "UBERON_2000698",
+     "label": "tripus"
+    }
+   ]
+  },
+  "ZFA:0000700": {
+   "label": "utricle",
+   "uberon": [
+    {
+     "id": "UBERON_0001853",
+     "label": "utricle of membranous labyrinth"
+    }
+   ]
+  },
+  "ZFA:0001205": {
+   "label": "Meckel's cartilage",
+   "uberon": [
+    {
+     "id": "UBERON_0003107",
+     "label": "Meckel's cartilage"
+    }
+   ]
+  },
+  "ZFA:0001216": {
+   "label": "splanchnocranium",
+   "uberon": [
+    {
+     "id": "UBERON_0008895",
+     "label": "splanchnocranium"
+    }
+   ]
+  },
+  "ZFA:0001400": {
+   "label": "ceratohyal cartilage",
+   "uberon": [
+    {
+     "id": "UBERON_0011610",
+     "label": "ceratohyal cartilage"
+    }
+   ]
+  },
+  "ZFA:0001405": {
+   "label": "ethmoid cartilage",
+   "uberon": [
+    {
+     "id": "UBERON_0011242",
+     "label": "ethmoid cartilage"
+    }
+   ]
+  },
+  "ZFA:0001423": {
+   "label": "parachordal cartilage",
+   "uberon": [
+    {
+     "id": "UBERON_0009635",
+     "label": "parachordal cartilage"
+    }
+   ]
+  },
+  "ZFA:0001460": {
+   "label": "pharyngeal arch cartilage",
+   "uberon": [
+    {
+     "id": "UBERON_0011004",
+     "label": "pharyngeal arch cartilage"
+    }
+   ]
+  },
+  "ZFA:0001592": {
+   "label": "claustrum bone",
+   "uberon": [
+    {
+     "id": "UBERON_2001592",
+     "label": "claustrum bone"
+    }
+   ]
+  },
+  "ZFA:0005316": {
+   "label": "fin fold pectoral fin bud",
+   "uberon": [
+    {
+     "id": "UBERON_2005316",
+     "label": "fin fold pectoral fin bud"
+    }
+   ]
+  },
+  "ZFA:0005317": {
+   "label": "pectoral fin fold",
+   "uberon": [
+    {
+     "id": "UBERON_2005317",
+     "label": "pectoral fin fold"
+    }
+   ]
+  },
+  "ZFA:0009116": {
+   "label": "slow muscle cell",
+   "uberon": []
+  },
+  "ZFA:0000144": {
+   "label": "retinal pigmented epithelium",
+   "uberon": [
+    {
+     "id": "UBERON_0001782",
+     "label": "pigmented layer of retina"
+    }
+   ]
+  },
+  "ZFA:0000191": {
+   "label": "dentary",
+   "uberon": [
+    {
+     "id": "UBERON_0004742",
+     "label": "dentary"
+    }
+   ]
+  },
+  "ZFA:0000268": {
+   "label": "anal fin proximal radial",
+   "uberon": [
+    {
+     "id": "UBERON_2000268",
+     "label": "anal fin proximal radial bone"
+    }
+   ]
+  },
+  "ZFA:0000270": {
+   "label": "maxilla",
+   "uberon": [
+    {
+     "id": "UBERON_0002397",
+     "label": "maxilla"
+    }
+   ]
+  },
+  "ZFA:0000315": {
+   "label": "asteriscus",
+   "uberon": [
+    {
+     "id": "UBERON_2000315",
+     "label": "asteriscus"
+    }
+   ]
+  },
+  "ZFA:0000438": {
+   "label": "parhypural",
+   "uberon": [
+    {
+     "id": "UBERON_2000438",
+     "label": "parhypural"
+    }
+   ]
+  },
+  "ZFA:0000476": {
+   "label": "branchiostegal ray",
+   "uberon": [
+    {
+     "id": "UBERON_2000476",
+     "label": "branchiostegal ray"
+    }
+   ]
+  },
+  "ZFA:0000488": {
+   "label": "ceratobranchial bone",
+   "uberon": [
+    {
+     "id": "UBERON_2000488",
+     "label": "ceratobranchial bone"
+    }
+   ]
+  },
+  "ZFA:0000530": {
+   "label": "lapillus",
+   "uberon": [
+    {
+     "id": "UBERON_2000530",
+     "label": "lapillus"
+    }
+   ]
+  },
+  "ZFA:0000563": {
+   "label": "pectoral fin musculature",
+   "uberon": [
+    {
+     "id": "UBERON_0007269",
+     "label": "pectoral appendage musculature"
+    }
+   ]
+  },
+  "ZFA:0000567": {
+   "label": "premaxilla",
+   "uberon": [
+    {
+     "id": "UBERON_0002244",
+     "label": "premaxilla"
+    }
+   ]
+  },
+  "ZFA:0000676": {
+   "label": "sagitta",
+   "uberon": [
+    {
+     "id": "UBERON_2000676",
+     "label": "sagitta"
+    }
+   ]
+  },
+  "ZFA:0000940": {
+   "label": "posterior lateral line neuromast",
+   "uberon": [
+    {
+     "id": "UBERON_2000940",
+     "label": "posterior lateral line neuromast"
+    }
+   ]
+  },
+  "ZFA:0000947": {
+   "label": "dorsal fin proximal radial",
+   "uberon": [
+    {
+     "id": "UBERON_2000947",
+     "label": "dorsal fin proximal radial bone"
+    }
+   ]
+  },
+  "ZFA:0001384": {
+   "label": "pelvic fin bud",
+   "uberon": [
+    {
+     "id": "UBERON_0005420",
+     "label": "pelvic appendage bud"
+    }
+   ]
+  },
+  "ZFA:0001587": {
+   "label": "pectoral fin proximal radial",
+   "uberon": [
+    {
+     "id": "UBERON_2001587",
+     "label": "pectoral fin proximal radial bone"
+    }
+   ]
+  },
+  "ZFA:0001646": {
+   "label": "anal fin radial",
+   "uberon": [
+    {
+     "id": "UBERON_2001671",
+     "label": "anal fin radial bone"
+    }
+   ]
+  },
+  "ZFA:0001647": {
+   "label": "dorsal fin radial",
+   "uberon": [
+    {
+     "id": "UBERON_2001672",
+     "label": "dorsal fin radial bone"
+    }
+   ]
+  },
+  "ZFA:0001652": {
+   "label": "head muscle",
+   "uberon": [
+    {
+     "id": "UBERON_0002376",
+     "label": "cranial muscle"
+    }
+   ]
+  },
+  "ZFA:0005123": {
+   "label": "gut epithelium",
+   "uberon": [
+    {
+     "id": "UBERON_0003929",
+     "label": "digestive tract epithelium"
+    }
+   ]
+  },
+  "ZFA:0005220": {
+   "label": "larval melanophore stripe",
+   "uberon": [
+    {
+     "id": "UBERON_2005220",
+     "label": "larval melanophore stripe"
+    }
+   ]
+  },
+  "ZFA:0005221": {
+   "label": "dorsal larval melanophore stripe",
+   "uberon": [
+    {
+     "id": "UBERON_2005221",
+     "label": "dorsal larval melanophore stripe"
+    }
+   ]
+  },
+  "ZFA:0005222": {
+   "label": "ventral larval melanophore stripe",
+   "uberon": [
+    {
+     "id": "UBERON_2005222",
+     "label": "ventral larval melanophore stripe"
+    }
+   ]
+  },
+  "ZFA:0005223": {
+   "label": "lateral larval melanophore stripe",
+   "uberon": [
+    {
+     "id": "UBERON_2005223",
+     "label": "lateral larval melanophore stripe"
+    }
+   ]
+  },
+  "ZFA:0005224": {
+   "label": "yolk larval melanophore stripe",
+   "uberon": [
+    {
+     "id": "UBERON_2005224",
+     "label": "yolk larval melanophore stripe"
+    }
+   ]
+  },
+  "ZFA:0005407": {
+   "label": "anterior nasal barbel",
+   "uberon": [
+    {
+     "id": "UBERON_2001937",
+     "label": "anterior nasal barbel"
+    }
+   ]
+  },
+  "ZFA:0007049": {
+   "label": "adductor mandibulae",
+   "uberon": [
+    {
+     "id": "UBERON_0011683",
+     "label": "adductor mandibulae"
+    }
+   ]
+  }
+ },
+ "literature_calls": [
+  {
+   "purpose": "find PMCID of the hhip paper (Koudijs 2005)",
+   "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.1371/journal.pgen.0010019&format=json&resultType=lite"
+  },
+  {
+   "purpose": "find the post-embryonic normal table (Parichy 2009)",
+   "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=(TITLE:\"normal table of postembryonic zebrafish development\")&format=json&resultType=lite"
+  },
+  {
+   "purpose": "find Kimmel 1995 (no open full text in Europe PMC)",
+   "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=(TITLE:\"Stages of embryonic development of the zebrafish\")&format=json&resultType=lite"
+  },
+  {
+   "purpose": "full text, Koudijs 2005",
+   "url": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC1189072/fullTextXML"
+  },
+  {
+   "purpose": "full text, Parichy 2009 (Europe PMC returned HTTP 500; NCBI used)",
+   "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=3030279&rettype=xml"
+  },
+  {
+   "purpose": "full texts of the morphometric / meristic sources (Europe PMC fullTextXML)",
+   "pmcids": [
+    "PMC5606849",
+    "PMC13276645",
+    "PMC9836392",
+    "PMC10669475",
+    "PMC12956070",
+    "PMC11194558",
+    "PMC12396763",
+    "PMC12755749",
+    "PMC13503560",
+    "PMC13066282"
+   ]
+  },
+  {
+   "purpose": "Kimmel 1995 stage text as reprinted by ZFIN",
+   "url": "https://zfin.org/zf_info/zfbook/stages/ (hatch_stgs.html, hatch.html, seg_stgs.html, phar_stgs.html, figs/fig16.html)"
+  }
+ ]
+}
