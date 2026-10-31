@@ -561,6 +561,31 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
     const intSrc = path.join(root, 'genotype', 'interactions.json'), intDst = path.join(here, 'public/blueprint3d/interactions.json');
     if (fs.existsSync(intSrc)) { fs.copyFileSync(intSrc, intDst); copied.interactions = { file: 'genotype/interactions.json', bytes: fs.statSync(intSrc).size, mtime: fs.statSync(intSrc).mtime.toISOString() }; }
     else if (fs.existsSync(intDst)) fs.unlinkSync(intDst);
+    // Design Studio inputs from the Lean, conditions, physics, genotype and development threads, copied verbatim so the page can
+    // import them: lean/eliminate/browser-check.mjs (dependency-free ES module), conditions/baseline.json, physics/flier/spec.json,
+    // genotype/interventions.json, and development/ (trajectory.mjs and its data) when that folder exists. A missing source
+    // removes the stale copy, and the page says the input is absent.
+    copied.studio = [];
+    for (const [src, dst] of [['lean/eliminate/browser-check.mjs', 'browser-check.mjs'], ['conditions/baseline.json', 'conditions-baseline.json'], ['physics/flier/spec.json', 'flier-spec.json'], ['genotype/interventions.json', 'interventions.json'], ['genotype/compare-2x2.json', 'compare-2x2.json'], ['physics/flier/tff/tff.json', 'tff.json']]) {
+      const s = path.join(root, src), d = path.join(here, 'public/blueprint3d', dst);
+      if (fs.existsSync(s)) { fs.copyFileSync(s, d); copied.studio.push({ file: src, as: 'blueprint3d/' + dst, bytes: fs.statSync(s).size, mtime: fs.statSync(s).mtime.toISOString() }); }
+      else if (fs.existsSync(d)) fs.unlinkSync(d);
+    }
+    // development/ (and its species subfolders, e.g. development/zebrafish/, whose trajectory.mjs imports ../trajectory.mjs): .mjs/.js/.json, no tests
+    { const copyDev = (src, dst, rel) => { if (!fs.existsSync(src)) { if (fs.existsSync(dst)) fs.rmSync(dst, { recursive: true, force: true }); return; } fs.mkdirSync(dst, { recursive: true });
+        for (const f of fs.readdirSync(dst)) { const fp = path.join(dst, f); if (fs.statSync(fp).isFile() && (/^test|\.test\./.test(f) || !fs.existsSync(path.join(src, f)))) fs.unlinkSync(fp); }
+        for (const f of fs.readdirSync(src)) { const sp = path.join(src, f); if (fs.statSync(sp).isDirectory()) { copyDev(sp, path.join(dst, f), rel + f + '/'); continue; }
+          if (/\.(mjs|js|json)$/.test(f) && !/^test|\.test\./.test(f)) { fs.copyFileSync(sp, path.join(dst, f)); copied.studio.push({ file: 'development/' + rel + f, as: 'blueprint3d/development/' + rel + f }); } } };
+      copyDev(path.join(root, 'development'), path.join(here, 'public/blueprint3d/development'), ''); }
+    // sequences/ (Sequences view): genes.json, genome-regions.json, engineered-diff.json and alignments/*.json, plus a
+    // status.json listing what is present (the page cannot list a folder). calls.json (the fetch log) is not copied.
+    { const sqSrc = path.join(root, 'sequences'), sqDst = path.join(here, 'public/blueprint3d/sequences');
+      if (fs.existsSync(sqDst)) fs.rmSync(sqDst, { recursive: true, force: true }); fs.mkdirSync(path.join(sqDst, 'alignments'), { recursive: true });
+      const present = [], alignments = [];
+      for (const f of ['genes.json', 'genome-regions.json', 'engineered-diff.json']) { const s = path.join(sqSrc, f); if (fs.existsSync(s)) { fs.copyFileSync(s, path.join(sqDst, f)); present.push(f); copied.studio.push({ file: 'sequences/' + f, as: 'blueprint3d/sequences/' + f }); } }
+      const aSrc = path.join(sqSrc, 'alignments'); if (fs.existsSync(aSrc)) for (const f of fs.readdirSync(aSrc).filter(f => /\.json$/.test(f))) { fs.copyFileSync(path.join(aSrc, f), path.join(sqDst, 'alignments', f)); alignments.push(f); }
+      if (alignments.length) present.push('alignments/');
+      fs.writeFileSync(path.join(sqDst, 'status.json'), JSON.stringify({ builtAt: new Date().toISOString(), present, alignments, note: present.length ? 'copied from sequences/ by dashboard/build-graph.mjs' : 'sequences/ has no genes.json, alignments or regions yet; the page draws a labelled stand-in layout' })); }
     const out3d = {
       builtAt: new Date().toISOString(),
       provenance, inputs: copied,

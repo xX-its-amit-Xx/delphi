@@ -47,17 +47,50 @@ export function standinCirculation(manifest) {
   return { source: 'stand-in', note: 'single circuit, teleost textbook topology; positions are manifest organ centres and vessel proxies; branch shares are illustrative', nodes, edges, basis: BASIS_STANDIN };
 }
 
-// accept the physiology thread's circulation.json in a few plausible shapes
+// physiology/circulation.json (physiology thread): nodes {id, label, object (manifest object or null), o2, term_id,
+// position_hint}, edges {from, to, share (fraction of cardiac output at rest; null = not sourced), source}, basis
+// {flying_fish[], proxy[], assumed[]}. Nodes with object null are vessels the model has no piece for; their position is
+// a proxy built here from the named neighbours (said so per node). Nodes sharing one object (four heart chambers, the
+// three gill stations per side) are spread a little along the body axis so particles visibly pass through each.
+const VESSEL_PROXY = {
+  ventral_aorta: ['between the heart and the gill arches', C => mix(C.heart, mid(C.gills_L, C.gills_R), 0.5)],
+  dorsal_aorta: ['along the vertebral column, below it', C => off(C._vert || [0.2, 0.014, 0], 0, -0.008, 0)],
+  coeliacomesenteric_artery: ['from the dorsal aorta toward liver and gut', C => mix(off(C._vert || [0.2, 0.014, 0], 0, -0.008, 0), mid(C.liver, C.intestine), 0.5)],
+  stomach: ['no stomach object: between oesophagus and intestine', C => mid(C.oesophagus || C.liver, C.intestine)],
+  hepatic_portal_vein: ['from gut and spleen to the liver', C => mix(mid(C.intestine, C.spleen), C.liver, 0.5)],
+  hepatic_vein: ['from the liver to the sinus venosus', C => mix(C.liver, C.heart, 0.5)],
+  renal_portal: ['from the trunk musculature to the kidney', C => mix(mid(C.muscle_L, C.muscle_R), C.kidney, 0.6)],
+  caudal_cardinal: ['from the kidney toward the duct of Cuvier', C => off(mix(C.kidney, C.heart, 0.55), 0, 0.006, 0)],
+  anterior_cardinal: ['from the head toward the duct of Cuvier', C => off(mix(C.brain, C.heart, 0.4), 0, 0.004, 0)],
+  duct_of_cuvier: ['into the sinus venosus, just dorsal to the heart', C => off(C.heart, -0.012, 0.018, 0)]
+};
+const mid = (a, b) => (a && b ? [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2] : a || b || null);
+const mix = (a, b, t) => (a && b ? [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t] : a || b || null);
+const off = (a, x, y, z) => (a ? [a[0] + x, a[1] + y, a[2] + z] : null);
+const listText = v => Array.isArray(v) ? (v.length ? v.join('; ') : 'none') : v;
 export function normaliseCirculation(raw, manifest) {
   if (!raw) return null;
   const C = {}; for (const o of manifest.objects) C[o.object] = o.centre_gltf;
+  const verts = manifest.objects.filter(o => /^vertebra_/.test(o.object)).map(o => o.centre_gltf); if (verts.length) C._vert = verts.reduce((a, v) => [a[0] + v[0] / verts.length, a[1] + v[1] / verts.length, a[2] + v[2] / verts.length], [0, 0, 0]);
   const nodesIn = raw.nodes || raw.vessels || raw.compartments || []; const edgesIn = raw.edges || raw.flows || raw.links || [];
-  const nodes = nodesIn.map(x => ({ id: x.id || x.name, label: x.label || x.name || x.id, pos: x.position || x.pos || x.centre || (x.object && C[x.object]) || (x.model_object && C[x.model_object]) || null,
-    o2: x.o2 || x.oxygenation || x.state || 'unknown', basis: x.basis || x.source || (x.object ? 'manifest centre of ' + x.object : 'position from circulation.json') })).filter(x => x.id && x.pos);
-  const ids = new Set(nodes.map(x => x.id));
-  const edges = edgesIn.map(x => ({ from: x.from || x.source, to: x.to || x.target, o2: x.o2 || x.oxygenation || 'unknown', share: +(x.share || x.fraction || x.flow_fraction || 1) })).filter(x => ids.has(x.from) && ids.has(x.to));
+  const seen = {};
+  const nodes = nodesIn.map(x => { const id = x.id || x.name; const obj = x.object || x.model_object || null; let pos = x.position || x.pos || x.centre || (obj && C[obj]) || null; let basis;
+    if (pos && obj) { const k = (seen[obj] = (seen[obj] || 0) + 1) - 1; if (k) pos = off(pos, 0.006 * k, 0, 0); basis = 'manifest centre of ' + obj + (k ? ' (station ' + (k + 1) + ', spread along the body axis)' : ''); }
+    else if (!pos && VESSEL_PROXY[id]) { pos = VESSEL_PROXY[id][1](C); basis = 'no model piece: proxy position, ' + VESSEL_PROXY[id][0] + (x.position_hint ? ' (file: ' + x.position_hint + ')' : ''); }
+    else basis = x.position_hint || 'position from circulation.json';
+    return { id, label: x.label || x.name || id, pos, o2: x.o2 || x.oxygenation || x.state || 'unknown', term_id: x.term_id || null, basis }; }).filter(x => x.id && x.pos);
+  const byId = Object.fromEntries(nodes.map(n => [n.id, n]));
+  // shares: a null share is "not sourced"; it takes an equal part of what the sourced siblings leave (at least 1 %)
+  const outs = {}; for (const x of edgesIn) (outs[x.from || x.source] || (outs[x.from || x.source] = [])).push(x);
+  const shareOf = x => { const v = x.share ?? x.fraction ?? x.flow_fraction; if (typeof v === 'number') return v; const sib = outs[x.from || x.source] || []; const known = sib.reduce((a, s) => a + (typeof s.share === 'number' ? s.share : 0), 0); const nNull = sib.filter(s => typeof s.share !== 'number').length || 1; return Math.max(0.01, (1 - known) / nNull); };
+  const edges = edgesIn.map(x => { const from = x.from || x.source, to = x.to || x.target; const fo = byId[from] && byId[from].o2;
+    return { from, to, o2: x.o2 || x.oxygenation || (fo === 'oxygenating' ? 'oxygenated' : fo) || 'unknown', share: shareOf(x), shareSourced: typeof (x.share ?? x.fraction) === 'number', source: x.source || null }; }).filter(x => byId[x.from] && byId[x.to]);
   if (!nodes.length || !edges.length) return null;
-  return { source: 'physiology/circulation.json', note: raw.note || raw.description || null, nodes, edges, basis: raw.basis || { flying_fish_data: raw.flying_fish_data || 'see file', proxy_teleost: raw.proxy || 'see file', assumed: raw.assumed || 'see file' }, cardiac: raw.cardiac || null };
+  const B = raw.basis || {};
+  return { source: 'physiology/circulation.json', title: raw.title || null, note: raw.note || raw.description || null, nodes, edges, nodesInFile: nodesIn.length, edgesInFile: edgesIn.length,
+    proxyNodes: nodes.filter(n => /^no model piece/.test(n.basis)).length, unsourcedShares: edges.filter(e => !e.shareSourced).length,
+    basis: { flying_fish_data: B.flying_fish_data || listText(B.flying_fish) || 'see file', proxy_teleost: B.proxy_teleost || listText(B.proxy) || 'see file', assumed: B.assumed && typeof B.assumed === 'string' ? B.assumed : listText(B.assumed) || 'see file' },
+    cardiac_output: raw.cardiac_output_ml_min_kg || null, venous_PO2: raw.venous_PO2_kPa || null, cardiac: raw.cardiac || null };
 }
 
 // ---------- particles along the circulation graph ----------
@@ -107,7 +140,7 @@ export class Circulation {
 // ---------- gill lamella: counter-current vs co-current exchange ----------
 // Stand-in model: water and blood as two 1-D streams exchanging O2 across the lamella with a transfer
 // coefficient; PO2 in mmHg. Water PO2 in 150 (air-saturated), venous blood 30, both assumed. Solved on a grid.
-export const GILL_STANDIN = { Pw_in: 150, Pb_in: 30, k: 2.4, ratio: 1.0, n: 60,
+export const GILL_STANDIN = { Pw_in: 150, Pb_in: 30, k: 2.4, ratio: 1.0, n: 60, units: 'mmHg',
   note: 'illustrative: Pw_in 150 mmHg (air-saturated water), Pb_in 30 mmHg (venous), dimensionless transfer k 2.4, water:blood capacitance ratio 1; none is a flying-fish measurement' };
 export function solveExchange(p, counter) {
   const n = p.n, k = p.k / n, r = p.ratio; const Pw = new Array(n + 1).fill(p.Pw_in), Pb = new Array(n + 1).fill(p.Pb_in);
@@ -150,8 +183,8 @@ export class GillPanel {
     const X = i => L + (R - L) * i / n;
     // channels
     ctx.font = '12px Inter Tight, system-ui, sans-serif'; ctx.fillStyle = this.pal.ink;
-    ctx.fillText('water  (PO₂ ' + this.p.Pw_in + ' → ' + res.Pw_out.toFixed(0) + ' mmHg)', L, wy - 5);
-    ctx.fillText('blood  (PO₂ ' + this.p.Pb_in + ' → ' + res.Pb_out.toFixed(0) + ' mmHg)', L, by + chH + 14);
+    ctx.fillText('water  (PO₂ ' + this.p.Pw_in + ' → ' + res.Pw_out.toFixed(this.p.units === 'kPa' ? 1 : 0) + ' ' + (this.p.units || 'mmHg') + ')', L, wy - 5);
+    ctx.fillText('blood  (PO₂ ' + this.p.Pb_in + ' → ' + res.Pb_out.toFixed(this.p.units === 'kPa' ? 1 : 0) + ' ' + (this.p.units || 'mmHg') + ')', L, by + chH + 14);
     ctx.fillStyle = this.pal.soft; ctx.fillRect(L, wy, R - L, chH); ctx.fillRect(L, by, R - L, chH);
     ctx.fillStyle = this.pal.line; ctx.fillRect(L, wy + chH, R - L, gap); // the lamella wall
     ctx.fillStyle = this.pal.mute; ctx.font = '10.5px Inter Tight, system-ui, sans-serif'; ctx.fillText('lamella (epithelium + pillar cells): O₂ diffuses down the PO₂ difference at every point', L + 6, wy + chH + 12);
@@ -165,13 +198,13 @@ export class GillPanel {
     ctx.strokeStyle = this.pal.ink; ctx.lineWidth = 1.5; arrow(ctx, L + 10, wy + chH / 2, L + 40, wy + chH / 2); if (this.counter) arrow(ctx, R - 10, by + chH / 2, R - 40, by + chH / 2); else arrow(ctx, L + 10, by + chH / 2, L + 40, by + chH / 2);
     // PO2 profiles
     ctx.strokeStyle = this.pal.line; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(L, px0); ctx.lineTo(L, px0 + pH); ctx.lineTo(R, px0 + pH); ctx.stroke();
-    ctx.fillStyle = this.pal.mute; ctx.fillText('PO₂ along the lamella (mmHg)', L, px0 - 4); ctx.fillText('water in →', L, px0 + pH + 13); ctx.textAlign = 'right'; ctx.fillText(this.counter ? '← blood in' : 'blood in → (same end)', R, px0 + pH + 13); ctx.textAlign = 'left';
+    ctx.fillStyle = this.pal.mute; ctx.fillText('PO₂ along the lamella (' + (this.p.units || 'mmHg') + ')', L, px0 - 4); ctx.fillText('water in →', L, px0 + pH + 13); ctx.textAlign = 'right'; ctx.fillText(this.counter ? '← blood in' : 'blood in → (same end)', R, px0 + pH + 13); ctx.textAlign = 'left';
     const Y = v => px0 + pH - pH * (v / this.p.Pw_in);
     for (const [arr, col] of [[res.Pw, this.pal.oxy], [res.Pb, this.pal.deoxy]]) { ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); for (let i = 0; i <= n; i++) { const x = X(i), y = Y(arr[i]); if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); } ctx.stroke(); }
     ctx.fillStyle = this.pal.oxy; ctx.fillText('water', R - 36, Y(res.Pw[n]) - 6); ctx.fillStyle = this.pal.deoxy; ctx.fillText('blood', L + 4, Y(res.Pb[0]) - 6);
     // readout
     ctx.fillStyle = this.pal.ink; ctx.font = '600 12px Inter Tight, system-ui, sans-serif';
-    ctx.fillText((this.counter ? 'counter-current' : 'co-current') + ': O₂ extracted from water ' + (res.extraction * 100).toFixed(0) + ' %' + (res.effectiveness != null ? ' (effectiveness ' + (res.effectiveness * 100).toFixed(0) + ' %)' : '') + '  ·  blood leaves at ' + res.Pb_out.toFixed(0) + ' mmHg' + (this.counter ? ' (above the water outlet: only counter-current can do this)' : ' (cannot exceed the water outlet)'), L, H - 8);
+    ctx.fillText((this.counter ? 'counter-current' : 'co-current') + ': O₂ extracted from water ' + (res.extraction * 100).toFixed(0) + ' %' + (res.effectiveness != null ? ' (effectiveness ' + (res.effectiveness * 100).toFixed(0) + ' %)' : '') + '  ·  blood leaves at ' + res.Pb_out.toFixed(this.p.units === 'kPa' ? 1 : 0) + ' ' + (this.p.units || 'mmHg') + (this.counter ? ' (above the water outlet: only counter-current can do this)' : ' (cannot exceed the water outlet)'), L, H - 8);
     return res;
   }
 }

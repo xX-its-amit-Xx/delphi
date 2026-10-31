@@ -1,0 +1,245 @@
+{
+ "title": "Zebrafish (Danio rerio) length-at-age, laboratory standard, for side-by-side comparison with the flying fish",
+ "built": "2026-10-31T21:17:20Z",
+ "not_a_mechanistic_model": "Data-driven: staging tables, measured growth rates and a published von Bertalanffy fit. Nothing simulates development.",
+ "conditions": "Every zebrafish source here was reared at lab temperatures (28.5 C Parichy 2009; 28 C Lalonde 2018; 27.1 +/- 2.0 C Beaudouin 2015; 28.5 C implied by the ZFIN/Kimmel hpf series). This differs from the project baseline of 25 C (conditions/baseline.json). Per the project rule it is recorded as metadata and NOT corrected for. Parichy 2009 shows temperature changes growth rate (24 C: 0.45, 33 C: 0.54 mm SL/day) but leaves size-at-stage almost unchanged.",
+ "age_axis": "days post-fertilisation (dpf) inside this file; trajectory.mjs also exposes days post-hatching to match the flying fish",
+ "segments": [
+  {
+   "range": "0-2 dpf (embryo)",
+   "relation": "no SL; stage from hpf (ZFIN stage ontology = Kimmel 1995 series)",
+   "kind": "measured (staging table)",
+   "source": "zfin-stages"
+  },
+  {
+   "range": "hatching",
+   "value": {
+    "value": 3.1,
+    "unit": "mm (length at birth)",
+    "kind": "secondary",
+    "source": "fishbase-zf",
+    "locator": "Larvae page, \"Length at birth (mm) 3.1\", Ref 58952; Main Ref Kimmel et al. 1995; \"Hatching occurs 48 h after fertilization\""
+   },
+   "cross_check": {
+    "value": "3.1-3.5 mm at 48-72 hpf",
+    "unit": "mm",
+    "kind": "secondary",
+    "source": "hale-2014",
+    "locator": "\"hatching most commonly occurs between 48 and 72 h post-fertilization, when fish are about 3.1–3.5 mm in length (Kimmel et al. 1995)\""
+   }
+  },
+  {
+   "range": "Pec-fin stage onset (60 hpf)",
+   "value": {
+    "value": 3.4,
+    "unit": "mm SL",
+    "kind": "measured",
+    "source": "parichy-2009",
+    "locator": "\"Pec-fin stage (3.4 mm SL onset)\", Fig. 32; \"begins ~60 hpf at 28.5 °C\""
+   }
+  },
+  {
+   "range": "2.5 dpf to juvenile (11.0 mm SL)",
+   "relation": "SL_mm = 3.4 + 0.32 * (dpf - 2.5)",
+   "rate": {
+    "value": 0.32,
+    "unit": "mm SL per day (mean +/- SE 0.32 +/- 0.004)",
+    "kind": "measured",
+    "source": "parichy-2009",
+    "locator": "\"individually reared larvae that were repeatedly anesthetized grew slowly (SL mm per day mean±SE: 0.32±0.004; Fig. 3)\""
+   },
+   "other_rates": [
+    {
+     "value": 0.45,
+     "unit": "mm SL/day (24 C, groups)",
+     "kind": "measured",
+     "source": "parichy-2009",
+     "locator": "mean±SE 0.45±0.009"
+    },
+    {
+     "value": 0.54,
+     "unit": "mm SL/day (33 C, groups)",
+     "kind": "measured",
+     "source": "parichy-2009",
+     "locator": "0.54±0.011"
+    },
+    {
+     "value": 0.48,
+     "unit": "mm SL/day (high density)",
+     "kind": "measured",
+     "source": "parichy-2009",
+     "locator": "0.48±0.006"
+    },
+    {
+     "value": 0.55,
+     "unit": "mm SL/day (low density)",
+     "kind": "measured",
+     "source": "parichy-2009",
+     "locator": "0.55±0.006"
+    }
+   ],
+   "why_0.32": "it is the only rate measured on the same individuals followed through all milestones (longitudinal dataset), and it reproduces Parichy's statement that \"the juvenile period lasts from ~4 weeks post-fertilization\": 3.4 mm at 2.5 dpf + 0.32 mm/d reaches 11.0 mm (stage J) at 26.3 dpf. The group rates (0.45-0.55) would put J at 16-19 dpf.",
+   "kind": "measured rate; linear form assumed (Parichy reports a mean rate, not a curve)"
+  },
+  {
+   "range": "after juvenile (> 11.0 mm SL)",
+   "relation": "SL_mm = 45.1 * (1 - exp(-3.97/365 * (dpf - t0_d))), t0_d chosen so that SL = 11.0 mm at 26.3 dpf (continuity)",
+   "Linf": {
+    "value": 45.1,
+    "unit": "mm SL",
+    "kind": "secondary",
+    "source": "fishbase-zf",
+    "locator": "growth detail autoctr 4255: \"L infinity (cm) : 4.51 SL\", Locality \"Laboratory (aquaria with unlimited food - Paramecium)\", Main Ref 312 = Pauly 1978 (compilation), Data Ref 879; non-linear regression; captive; temperature not given"
+   },
+   "K": {
+    "value": 3.97,
+    "unit": "1/yr",
+    "kind": "secondary",
+    "source": "fishbase-zf",
+    "locator": "autoctr 4255"
+   },
+   "t0": {
+    "value": "derived ~0.5",
+    "unit": "dpf",
+    "kind": "assumed",
+    "source": "continuity",
+    "locator": "no t0 given on FishBase; set so the curve passes through stage J"
+   },
+   "note": "At the join the VB slope is 3.97/365 x (45.1 - 11.0) = 0.37 mm/day, close to the 0.32 mm/day larval rate, so the two pieces meet smoothly."
+  }
+ ],
+ "checks": [
+  {
+   "what": "age at maturity",
+   "sourced": {
+    "value": 0.2,
+    "unit": "yr (73 d), domesticated population",
+    "kind": "secondary",
+    "source": "fishbase-zf",
+    "locator": "Maturity list: Lm 2.3 cm SL male, 2.5 cm SL female, tm 0.20 yr, \"domesticated population\""
+   },
+   "curve_gives": "computed in trajectory.test.mjs (about 24-25 mm SL at 73 dpf)"
+  },
+  {
+   "what": "juvenile onset",
+   "sourced": {
+    "value": "~4 weeks post-fertilization",
+    "unit": "",
+    "kind": "measured",
+    "source": "parichy-2009",
+    "locator": "definitions: \"the juvenile period lasts from ~4 weeks post-fertilization to 6–12 weeks post-fertilization depending on strain and rearing conditions\""
+   },
+   "curve_gives": "26.3 dpf"
+  }
+ ],
+ "alternatives": [
+  {
+   "what": "wild growth, Bangladesh lake (water 25.0 C)",
+   "Linf": {
+    "value": 3.7,
+    "unit": "cm TL",
+    "kind": "secondary",
+    "source": "fishbase-zf",
+    "locator": "autoctr 9324, length-frequency (ELEFAN I), Main Ref 58913 = Spence et al. 2007 J Fish Biol 71:304"
+   },
+   "K": {
+    "value": 1.2,
+    "unit": "1/yr",
+    "kind": "secondary",
+    "source": "fishbase-zf",
+    "locator": "autoctr 9324"
+   },
+   "water_temperature_C_metadata": 25.0
+  },
+  {
+   "what": "wild growth, Ganges delta",
+   "Linf": {
+    "value": 3.7,
+    "unit": "cm TL",
+    "kind": "secondary",
+    "source": "fishbase-zf",
+    "locator": "autoctr 9494, Main Ref 72224"
+   },
+   "K": {
+    "value": 1.2,
+    "unit": "1/yr",
+    "kind": "secondary",
+    "source": "fishbase-zf",
+    "locator": "autoctr 9494"
+   },
+   "t0": {
+    "value": -0.01,
+    "unit": "yr",
+    "kind": "secondary",
+    "source": "fishbase-zf",
+    "locator": "autoctr 9494"
+   }
+  }
+ ],
+ "size_and_age_facts": {
+  "max_length_wild": {
+   "value": 3.8,
+   "unit": "cm SL",
+   "kind": "secondary",
+   "source": "fishbase-zf",
+   "locator": "summary: \"Max length : 3.8 cm SL male/unsexed; (Ref. 137577)\""
+  },
+  "lab_adult_females_used": {
+   "value": "35-43",
+   "unit": "mm SL",
+   "kind": "measured",
+   "source": "beaudouin-2015",
+   "locator": "\"Two groups of eight females of similar length (from 35 to 43 mm in standard length)\""
+  },
+  "lifespan_domesticated": {
+   "value": "mean 3.5 yr, max 5.5 yr",
+   "unit": "yr",
+   "kind": "secondary",
+   "source": "fishbase-zf",
+   "locator": "summary, Ref. 58923"
+  },
+  "Lm": {
+   "value": {
+    "male": 2.3,
+    "female": 2.5
+   },
+   "unit": "cm SL",
+   "kind": "secondary",
+   "source": "fishbase-zf",
+   "locator": "Maturity list, domesticated population"
+  },
+  "tm": {
+   "value": 0.2,
+   "unit": "yr",
+   "kind": "secondary",
+   "source": "fishbase-zf",
+   "locator": "Maturity list, domesticated population"
+  }
+ },
+ "rearing_temperatures_C_metadata": {
+  "parichy-2009": 28.5,
+  "lalonde-2018": 28,
+  "beaudouin-2015": "27.1 +/- 2.0",
+  "zfin/kimmel hpf": 28.5,
+  "fishbase lab VB (Pauly 1978)": "not given",
+  "spence-2007 wild": 25.0,
+  "project_baseline": 25
+ },
+ "length_conversion": {
+  "value": {
+   "TL_per_SL": [
+    1.165,
+    1.229,
+    1.268
+   ],
+   "TL_per_FL": [
+    1.08,
+    1.098
+   ]
+  },
+  "unit": "ratios (a = 0)",
+  "kind": "secondary",
+  "source": "fishbase-zf",
+  "locator": "Length-length page, 5 rows, no reference/n shown: unverified"
+ }
+}
