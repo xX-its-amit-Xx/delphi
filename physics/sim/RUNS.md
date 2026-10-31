@@ -154,3 +154,23 @@ power exceeded 0.5 W (availability), while the thrust applied was aerobic only; 
 (`lean/Delphi/Certificates/EliminationsPhysiology.lean`, constraint C14) for the real fish at 10 m/s, at v_min and for the
 flier at 7 m/s, from the chain's own numbers: aerobic ceiling eta E Q C_a = 0.0357 W against 1.35, 1.33 and 0.94 W required,
 short by 38, 37 and 26 times. The certificates do not bound burst flight or gliding. The sim's arm C and the certificate agree.
+
+### Derived bound (not a test): how much drag the chain's power can carry to lift-off
+
+Sweep at the hub's request (2026-10-31 ~21:25 UTC), v2 launch, real fish, fmf 0, 40 s, body water drag coefficient `cdw` on the
+assumed 7 cm² frontal area and a separate lobe coefficient `lobecd` on 20 % of that area times the immersed fraction; nothing
+else moved. "Airborne" is the sim's definition (tail clear of the water, glide phase entered).
+
+| body C_d | lobe C_d | airborne | max speed m/s |
+|---|---|---|---|
+| 0.003 | 0.03 / 0.1 / 0.3 | yes / yes / no | 13.7 / 12.7 / 12.7 |
+| 0.01 | 0.03 / 0.1 / 0.15 / 0.2 / 0.3 | yes / yes / no / no / no | 13.7 / 11.5 / 11.5 / 11.5 / 11.5 |
+| 0.015 | 0.1 | no | 10.8 |
+| 0.02 | 0.1 | no | 10.1 |
+| 0.03 | 0.03 / 0.1 / 0.3 | no / no / no | 13.7 / 10.0 / 9.2 |
+
+**Launch is reachable on chain power (8.75 W axial burst) if body C_d ≤ 0.01 and lobe C_d ≤ 0.1**, on these areas; it fails
+at body 0.015 or lobe 0.15. As drag areas: body C_d·A ≤ 7 × 10⁻⁶ m², lobe C_d·A ≤ 1.4 × 10⁻⁵ m² (times immersion). The v1
+assumption (C_d 0.1 on the body) is ten times the body threshold. Any future fetched drag value decides H3 directly against
+this bound. Even where airborne, the maximum speed reached is 11.5 to 13.7 m/s, below the field 15 to 20 m/s, so the chain's
+power reproduces lift-off but not the field airspeed at any drag in the sweep.
