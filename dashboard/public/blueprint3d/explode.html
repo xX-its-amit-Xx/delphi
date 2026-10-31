@@ -252,7 +252,7 @@ function build(sc){
   const b2=new THREE.Box3().setFromObject(sc);sc.updateMatrixWorld(true);
   const hinge=new THREE.Vector3(0,b2.min.y,0);   // ventral midline: opened outward, both cut faces turn up toward the camera
   pivots={L:new THREE.Group(),R:new THREE.Group()};for(const k of ['L','R']){pivots[k].name='pivot_'+k;pivots[k].position.copy(sc.worldToLocal(hinge.clone()));sc.add(pivots[k]);}
-  for(const ch of [...sc.children]){if(ch===pivots.L||ch===pivots.R)continue;const m=manifestFor(ch.name);const side=m?.side||(/_L(_\d+)?$/.test(ch.name)?'L':/_R(_\d+)?$/.test(ch.name)?'R':null);if(side)pivots[side].attach(ch);}
+  for(const ch of [...sc.children]){if(ch===pivots.L||ch===pivots.R)continue;const m=manifestFor(ch.name);const side=m?.side||(/_L(_\d+)?$/.test(ch.name)?'L':/_R(_\d+)?$/.test(ch.name)?'R':null);if(side&&(m?.layer||'outer')!=='organ')pivots[side].attach(ch);}
   sc.updateMatrixWorld(true);
   for(const ch of [...sc.children,...pivots.L.children,...pivots.R.children]){if(ch===pivots.L||ch===pivots.R)continue;registerObject(ch);}
   const st=$('#stage');const resize=()=>{const w=st.clientWidth,h=st.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};addEventListener('resize',resize);resize();
@@ -339,7 +339,10 @@ function fitView(animate){if(!renderer)return;scene.updateMatrixWorld(true);cons
   for(const o of objs){if(!o.mesh.visible)continue;let op=1;o.mesh.traverse(c=>{if(c.isMesh&&c.material.opacity<op)op=c.material.opacity;});if(op<0.2)continue;box.expandByObject(o.mesh);any=true;}
   if(!any)return;const c=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());
   const r=Math.max(sz.x,sz.y,sz.z)*0.5;const fov=camera.fov*Math.PI/180;const fitH=r/Math.sin(fov/2),fitW=r/Math.sin(Math.atan(Math.tan(fov/2)*camera.aspect));
-  const d=Math.max(fitH,fitW)*((state.obj||state.organ)&&!state.gene?1.9:0.95);if(animate)flyTarget={p:c,d};else{cam.target.copy(c);cam.dist=d;flyTarget=null;}}
+  const d=Math.max(fitH,fitW)*((state.obj||state.organ)&&!state.gene?1.9:1.0);
+  // shift the target down a little so the content sits above the stage-button bar
+  const up=new THREE.Vector3().setFromMatrixColumn(camera.matrix,1).normalize();const h2=d*Math.tan(fov/2);c.addScaledVector(up,-h2*0.09);
+  if(animate)flyTarget={p:c,d};else{cam.target.copy(c);cam.dist=d;flyTarget=null;}}
 function setStage(n){const m=[[0,0],[1,0],[1,1],[1,2],[1,3]][n];state.split=m[0];state.peel=m[1];$('#split').value=m[0]*100;$('#peel').value=m[1];if(!userMoved)cam.phi=state.split>0.3?0.95:1.25;applyState();fitView(true);}
 function reset(){state={split:0,peel:0,obj:null,organ:null,tissue:null,gene:null,preset:null};$('#split').value=0;$('#peel').value=0;$('#organSel').value='';$('#geneQ').value='';cam.theta=-0.9;cam.phi=1.25;cam.dist=1.9;cam.target.set(0,0,0);userMoved=false;flyTarget=null;applyState();fitView(false);intro();}
 function crumbs(){const parts=['<a data-c="body">fish</a>'];if(state.split>0.02)parts.push('split');if(state.peel>0)parts.push(['','skin off','muscle off','skeleton off'][state.peel]);
