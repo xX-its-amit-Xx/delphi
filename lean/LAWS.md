@@ -1,6 +1,6 @@
 # Laws the Design Studio can check, and the ones it cannot
 
-Generated 2026-10-31T22:10:02.294Z by `lean/laws/build-laws.mjs` from `lean.json` (built 2026-10-31T22:10:02.190Z) and `lean/constraints.json`. Coverage is explicit: "proved" entries come from the compiler's report and the constraints file; "stated-not-proved" entries are hypotheses the modules carry by name; "not formalised" entries are gaps the Studio must not treat as checked. "All the biological laws" is not a closed set; this file is what the project has, and every law not here is unchecked.
+Generated 2026-10-31T22:58:17.754Z by `lean/laws/build-laws.mjs` from `lean.json` (built 2026-10-31T22:58:17.622Z) and `lean/constraints.json`. Coverage is explicit: "proved" entries come from the compiler's report and the constraints file; "stated-not-proved" entries are hypotheses the modules carry by name; "not formalised" entries are gaps the Studio must not treat as checked. "All the biological laws" is not a closed set; this file is what the project has, and every law not here is unchecked.
 
 | Status | Laws |
 |---|---|

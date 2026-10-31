@@ -6,6 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { compareVersions } from './provenance.mjs';
 import { fileURLToPath } from 'node:url';
 import crypto from 'node:crypto';
 
@@ -412,7 +413,7 @@ const npFile = path.join(here, 'nanopubs/manifest.json');
 const npManifest = fs.existsSync(npFile) ? JSON.parse(fs.readFileSync(npFile, 'utf8')) : null;
 const chkFile = path.join(here, 'nanopubs/check.json');
 const npCheck = fs.existsSync(chkFile) ? JSON.parse(fs.readFileSync(chkFile, 'utf8')) : null;
-const nanopubs = npManifest ? { built: npManifest.built, check: npCheck ? { ...npCheck.summary, perFile: npCheck.results.map(r => ({ file: r.file, parsed: r.parsed, npValid: r.ok, notes: r.npCheck.issues.length })) } : null, templateConformance: npManifest.templateConformance || null, commitPinned: npManifest.commitPinned, status: npManifest.publishing.status, policy: npManifest.publishing.policy, drafts: npManifest.nanopubs.length, byKind: Object.fromEntries([...new Set(npManifest.nanopubs.map(n => n.kind))].map(k => [k, npManifest.nanopubs.filter(n => n.kind === k).length])), signed: npManifest.nanopubs.filter(n => n.trustyUri).length, published: npManifest.nanopubs.filter(n => n.registry).length, files: npManifest.nanopubs.map(n => ({ file: n.file, kind: n.kind, status: n.status, publishable: n.publishable || null })) } : null;
+const nanopubs = npManifest ? { built: npManifest.built, check: npCheck ? { ...npCheck.summary, perFile: npCheck.results.map(r => ({ file: r.file, parsed: r.parsed, npValid: r.ok, notes: r.npCheck.issues.length })) } : null, templateConformance: npManifest.templateConformance || null, commitPinned: npManifest.commitPinned, urlCheck: npManifest.urlCheck || null, draftsStale: null, repository: npManifest.repository || null, status: npManifest.publishing.status, policy: npManifest.publishing.policy, drafts: npManifest.nanopubs.length, byKind: Object.fromEntries([...new Set(npManifest.nanopubs.map(n => n.kind))].map(k => [k, npManifest.nanopubs.filter(n => n.kind === k).length])), signed: npManifest.nanopubs.filter(n => n.trustyUri).length, published: npManifest.nanopubs.filter(n => n.registry).length, files: npManifest.nanopubs.map(n => ({ file: n.file, kind: n.kind, status: n.status, publishable: n.publishable || null })) } : null;
 
 // 7a. Blueprint certificates (lean/blueprint/certify.mjs): one per emitted blueprint, with the audit of its theorems.
 const certDir = path.join(here, 'blueprint/certificates');
@@ -483,6 +484,8 @@ const empirical = fs.existsSync(empFile) ? (() => {
     noAxiomDeclared: !/^axiom /m.test(fs.readFileSync(path.join(root, 'lean/Delphi/Empirical.lean'), 'utf8')) };
 })() : null;
 
+
+
 // 7. Flying-fish substitution budget (lean/bound/compute.mjs): applies the audited theorems to sourced parameters.
 let bound = null;
 try {
@@ -493,6 +496,40 @@ try {
   fs.writeFileSync(path.join(here, 'bound/result.json'), JSON.stringify(bound, null, 1));
 } catch (e) { bound = { verified: false, error: String(e.message) }; }
 
+// Runs LAST on purpose: this same script rewrites some of the files the drafts cite (lean/bound/result.json
+// gets a fresh timestamp at the bound step), so checking earlier would compare a file that is about to change
+// and report nothing. Position is part of the check.
+// 6c. Are the nanopub drafts still true about their own sources? Each draft asserts that the file it cites
+// holds the content the draft was built from. Any cited artefact that is REGENERATED (mutations.json, the
+// bound result, the ledgers) can break that claim silently afterwards, so every cited path is re-hashed here
+// and the drafts are reported STALE if one has changed. Detected, not remembered.
+const draftStaleness = (() => {
+  if (!npManifest || !npManifest.urlCheck || !Array.isArray(npManifest.urlCheck.paths)) return null;
+  const hash = p => { const x = spawnSync('git', ['hash-object', p], { cwd: root, encoding: 'utf8' }); return x.status === 0 ? String(x.stdout).trim() : null; };
+  const show = (rev, p) => { const x = spawnSync('git', ['show', `${rev}:${p}`], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }); return x.status === 0 ? String(x.stdout) : null; };
+  const rows = npManifest.urlCheck.paths.filter(p => p.buildBlob).map(p => {
+    const now = fs.existsSync(path.join(root, p.path)) ? hash(p.path) : null;
+    const changedBytes = !!now && now !== p.buildBlob;
+    // A regenerated artefact whose only change is its own build timestamp is not drift a reader would see.
+    let kind = changedBytes ? 'unknown' : 'none', fields = [];
+    if (changedBytes) {
+      const pinnedText = show(npManifest.urlCheck.ref, p.path);
+      let nowText = null; try { nowText = fs.readFileSync(path.join(root, p.path), 'utf8'); } catch (e) {}
+      const cmp = pinnedText !== null && nowText !== null ? compareVersions(pinnedText, nowText) : null;
+      if (cmp) { kind = cmp.identical ? 'none' : cmp.onlyTimestamps ? 'timestamp-only' : 'substantive'; fields = cmp.fields; }
+    }
+    return { path: p.path, builtFrom: p.buildBlob, nowInWorkingTree: now, changedBytes, driftKind: kind, driftFields: fields, missingNow: !now };
+  });
+  const changed = rows.filter(x => x.missingNow || (x.changedBytes && x.driftKind !== 'timestamp-only' && x.driftKind !== 'none'));
+  const timestampOnly = rows.filter(x => x.driftKind === 'timestamp-only');
+  return { checkedAt: new Date().toISOString(), paths: rows.length, stale: changed.length > 0, changed, timestampOnly,
+    note: changed.length
+      ? 'A cited file has changed since the drafts were built, so their content claim is out of date: rebuild them (node lean/nanopubs/build.mjs --commit <hash>) before anything is signed.'
+      : timestampOnly.length ? `Every cited file still holds the substantive content the drafts were built from; ${timestampOnly.length} regenerated file(s) differ only in a build timestamp (${timestampOnly.map(x => x.path).join(', ')}), which the records state.` : 'Every cited file still holds the content the drafts were built from.' };
+})();
+
+if (nanopubs) nanopubs.draftsStale = draftStaleness;
+
 const report = {
   built: new Date().toISOString(),
   versions,
@@ -500,6 +537,7 @@ const report = {
   audit: { ok: audit.exit === 0 && axioms.length > 0 && nonStandard.length === 0, theorems: axioms, nonStandard, raw: audit.out.trim() },
   sorryTotal, modules, theorems, lemmas, formalized,
   mutations: mutations ? { summary: mutations.summary, results: mutations.results } : null,
+
   nanopubs, bound, blueprintCertificates, thompsonTest, constraints, eliminations, eliminationsOpenProblems, extraLedgers, flyingFishAudit, genotype, empirical,
   summary: {
     theoremsCompiling: buildOk ? theorems.length : 0,
