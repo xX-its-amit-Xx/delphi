@@ -160,5 +160,22 @@ man.append(record('finding-flying-fish-glide-data-coverage.trig', 'Hypothesis',
     "Does not establish: that the measurements do not exist; Davenport 1992 and Fish 1990 almost certainly contain wing loadings for several species behind a paywall, and Hertel 1966, Edgerton and Breder 1941 and Davenport 1990 hold the primary field speeds. Google Scholar and museum collections were not searched. This is a finding about access, written so the next team does not repeat the search.",
     related='https://w3id.org/delphi/resource/claim/darwin1859-ch06-05',
     counts={'n_rows': cov['rows'], 'n_species': cov['n_species_or_groups'], 'n_sources': len(cov['sources'])}))
+
+# 5. Bridge: fin proportion of the wind-tunnel specimens against measured flying fish
+br = json.load(open(os.path.join(PHYS, 'bridge.json'), encoding='utf-8'))
+ffg = br['groups']['flying fish']; pcb = br['park_choi_specimens_upper_bound']
+man.append(record('finding-wind-tunnel-specimens-proportioned-like-flying-fish.trig', 'Hypothesis',
+    'https://w3id.org/delphi/resource/hypothesis/park-choi-specimens-fin-proportion-within-flying-fish-range',
+    'The wind-tunnel fish whose wing loading sets the envelope have fin proportions like real flying fish',
+    f"Daane et al. 2021 measured pectoral fin length and standard length on 109 preserved beloniform specimens (Harvard MCZ). Recounted from the Genotype thread's per-specimen file: flying fish median pectoral length over standard length {ffg['median']:.3f} (range {ffg['min']:.3f} to {ffg['max']:.3f}, n {ffg['n']}), gliding halfbeaks {br['groups']['flying halfbeak']['median']:.3f}, halfbeaks {br['groups']['halfbeak']['median']:.3f}, needlefishes {br['groups']['needlefish']['median']:.3f}. The five specimens of Park and Choi (2010) report only tip-to-tip span and dihedral, so fin length over standard length is bounded above by half span over cos(dihedral) over standard length: " + ", ".join(f"{q['model']} at most {q['pectoral_over_SL_upper_bound']:.3f}" for q in pcb) + ". These bounds lie inside the flying-fish range and at or below its median, and far above every halfbeak and needlefish. Status: supported, as a consistency statement.",
+    'supported',
+    'https://w3id.org/delphi/resource/evidence/physics-bridge-fin-proportion',
+    'Recount of Daane et al. 2021 Data S1A ratios and upper bounds for the Park and Choi specimens',
+    "Recount agrees with the Genotype thread's summary for all four groups (n and median identical). Bounds use the dihedral angles stated by Park and Choi (22, 12, 7 deg for L1, L2, L3); model M's angle is not legible, so the largest stated angle is used, giving the loosest bound. Body width is not reported, so the true ratio is lower by half the body width over (cos(dihedral) times standard length). Computed by physics/bridge.py into physics/bridge.json.",
+    [doi('park-choi-2010'), '<https://doi.org/10.1016/j.cub.2021.08.054>'],
+    "Does not establish: fin area, mass or glide performance for any Daane specimen (lengths only, preserved); that Cypselurus hiraii is in the Daane table (it is not; no synonymy with Cheilopogon is claimed); any length-to-area conversion (none is made, no sourced shape factor exists); anything about the genes beyond the citation: Daane et al. 2021 report that lat4a with kcnh2a reproduces the flying-fish fin proportion in zebrafish, which the Genotype thread records separately.",
+    scopes=["Measured: Daane et al. 2021 lengths (109 specimens) and Park and Choi 2010 spans. Derived: the upper bound, an inequality that needs only body width >= 0.", "Say fin enlargement for gliding, never fin-to-wing: the wing is an enlarged pectoral fin."],
+    related='https://w3id.org/delphi/resource/claim/darwin1859-ch06-05',
+    counts={'n_specimens': br['source']['rows_read']}))
 json.dump({'built': NOW, 'signed': 0, 'published': 0, 'hashes': H, 'records': man}, open(os.path.join(HERE, 'manifest.json'), 'w', encoding='utf-8'), indent=2)
 print(json.dumps(man, indent=1))

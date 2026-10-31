@@ -65,7 +65,7 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
 <header class="top"><div class="wrap">
   <a class="back" href="../../index.html">&larr; Mission Control</a>
   <span class="brand">Physics thread</span>
-  <nav><a href="#result">Result</a><a href="#envelope">Envelope</a><a href="#data">Glide data</a><a href="#compare">Comparison</a><a href="#formal">For Lean</a><a href="#method">Method</a><a href="#honest">Limits</a><a href="#sources">Sources</a></nav>
+  <nav><a href="#result">Result</a><a href="#envelope">Envelope</a><a href="#bridge">Bridge</a><a href="#data">Glide data</a><a href="#compare">Comparison</a><a href="#formal">For Lean</a><a href="#method">Method</a><a href="#honest">Limits</a><a href="#sources">Sources</a></nav>
   <button id="themeBtn" title="Toggle light or dark">Theme</button>
 </div></header>
 
@@ -92,6 +92,16 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
 <div class="grid g2" style="margin-top:14px">
   <div class="card"><h3>Reading C: could its muscles power level flight?</h3><div id="readingC"></div></div>
   <div class="card"><h3>Reading D: the exponents themselves</h3><div id="readingD"></div></div>
+</div>
+</section>
+
+<section id="bridge"><h2>The bridge: fin proportion from real specimens, under the envelope</h2>
+<p class="lede">The Genotype thread extracted Daane et al. 2021's measurements of 109 preserved beloniform specimens (Harvard MCZ): standard length and pectoral fin length, from needlefish through halfbeaks and gliding halfbeaks to flying fish. The same paper names the genes (lat4a with kcnh2a) that reproduce the flying-fish fin proportion in zebrafish. Here the five wind-tunnel specimens whose wing loading set v<sub>min</sub> are placed on that series. Their fin length is not reported, only the tip-to-tip span and the dihedral angle, so each is an <b>upper bound</b>: fin length &le; half span / cos(dihedral), because body width is at least zero. No length is converted to an area: there is no sourced shape factor, so none is assumed.</p>
+<div class="fig" id="bridgewrap"><div id="figBridge"></div>
+<p class="small mute" id="bridgeCaption"></p></div>
+<div class="grid g2" style="margin-top:14px">
+  <div class="card"><h3>Recount against the Genotype thread</h3><div id="recount" class="small"></div></div>
+  <div class="card"><h3>What this does and does not establish</h3><div id="bridgeNote" class="small"></div></div>
 </div>
 </section>
 
@@ -164,9 +174,14 @@ const chip=(v)=>{const cls=v==='inside'||v==='supports'?'ok':(v==='outside'||v==
 Promise.all([
   fetch('status.json').then(r=>r.json()), fetch('results.json').then(r=>r.json()),
   fetch('data/glide-data.csv').then(r=>r.text()), fetch('data/comparison-data.csv').then(r=>r.text()),
-  fetch('data/sources.json').then(r=>r.json()), fetch('data/allometry.json').then(r=>r.json()), fetch('envelope.svg').then(r=>r.text()), fetch('vmin-band.svg').then(r=>r.text())
-]).then(([st,res,gcsv,ccsv,src,allo,svg,svg2])=>{
+  fetch('data/sources.json').then(r=>r.json()), fetch('data/allometry.json').then(r=>r.json()), fetch('envelope.svg').then(r=>r.text()), fetch('vmin-band.svg').then(r=>r.text()), fetch('bridge.svg').then(r=>r.text()), fetch('bridge.json').then(r=>r.json())
+]).then(([st,res,gcsv,ccsv,src,allo,svg,svg2,svg3,br])=>{
   document.getElementById('figVmin').innerHTML=svg2;
+  document.getElementById('figBridge').innerHTML=svg3;
+  const ffs=br.groups['flying fish'];
+  document.getElementById('bridgeCaption').innerHTML=`Pectoral fin length over standard length against standard length, ${br.source.rows_read} specimens, four groups. Flying fish: n ${ffs.n}, median ${ffs.median.toFixed(3)}, range ${ffs.min.toFixed(3)} to ${ffs.max.toFixed(3)}; under 5 cm ${br.flying_fish_by_size.under_5cm.median.toFixed(3)} (n ${br.flying_fish_by_size.under_5cm.n}), 5 cm and over ${br.flying_fish_by_size.at_or_over_5cm.median.toFixed(3)} (n ${br.flying_fish_by_size.at_or_over_5cm.n}). Hollow diamonds: Park and Choi specimens as upper bounds (${br.park_choi_specimens_upper_bound.map(p=>p.model+' &le; '+p.pectoral_over_SL_upper_bound.toFixed(3)).join(', ')}). Hover any point for its specimen and catalogue number.`;
+  document.getElementById('recount').innerHTML='<table><tr><th>group</th><th>Genotype n / median</th><th>our n / median</th><th>agree</th></tr>'+Object.entries(br.recount_vs_genotype_thread).map(([g,v])=>`<tr><td>${g}</td><td>${v.genotype_n} / ${v.genotype_median}</td><td>${v.our_n} / ${v.our_median}</td><td>${v.agree?'<span class="chip ok">yes</span>':'<span class="chip bad">no</span>'}</td></tr>`).join('')+'</table><p class="mute">Recounted from the per-specimen CSV, not copied from the summary file.</p>';
+  document.getElementById('bridgeNote').innerHTML=`<p>${br.what_this_establishes}</p><p class="mute">${br.note_on_species} Model M's dihedral angle is not legible in the paper's table, so the largest stated angle (22°) is used for it, which is the loosest bound.</p>`;
   const g=parseCSV(gcsv), c=parseCSV(ccsv);
   document.getElementById('verdict').innerHTML=`Overall: ${chip(res.overall.verdict)} &nbsp; reading B ${chip(res.verdicts.B)} &nbsp; reading A gliders ${chip(res.verdicts.A_gliders)} &nbsp; reading A powered ${chip(res.verdicts.A_powered)} &nbsp; reading C ${chip(res.verdicts.C)}`;
   const B=res.interpretation_B, A=res.interpretation_A, C=res.interpretation_C;
