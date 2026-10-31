@@ -124,3 +124,19 @@ refutes the exact law on that interval (`not_cubeLaw_of_exponent_ne_three`). The
 found 2.10 at 0-2 years, 3.10 at 10-20 years and 2.41 pooled 0-19; `report.mjs` reads those from
 `claim-tests/thompson-growth-form/thompson1917-ch03-07` and the page shows them against 3. Thompson's
 "mainly (though not wholly)" and the test's tolerance band are outside the theorem.
+
+## Constraints and the candidate ledger: what the theorems can rule out
+
+A theorem does not settle an open problem; it eliminates **candidates**, proposed answers or designs that
+commit to quantities the theorem forbids. `lean/eliminate/build-constraints.mjs` writes
+`lean/constraints.json`: ten constraints from the seven formalised entries, each with the theorem, the
+lemma that performs the elimination (`Delphi/Constraints.lean`), its axioms, the property constrained, the
+relation with every symbol named and its unit, the inputs a candidate must commit to, the model assumptions
+it must accept, the two-column proof scope and the assessor's faithfulness verdict. `lean/eliminate/eliminate.mjs
+<candidates.json>` checks candidates with exact rational arithmetic and returns, per constraint, **eliminated**
+(the violated relation with the numbers), **consistent** (not ruled out; never "feasible") or **cannot rule**
+(the missing input or assumption). For every elimination it generates a theorem in
+`Delphi/Certificates/Eliminations.lean` instantiating the lemma with the candidate's numbers and discharging the
+arithmetic by `norm_num`, compiles it, and records whether the kernel accepted it. See `lean/eliminate/README.md`
+for the schema and the limits (Galileo's square-cube argument is covered on the mass side only; strength scaling
+as `L^2` is not formalised).
