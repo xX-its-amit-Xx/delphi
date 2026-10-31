@@ -40,6 +40,9 @@ main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 430px;min-height:0}
 .ov{position:absolute;background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.78rem;z-index:2}
 #note{left:10px;top:10px;max-width:330px;line-height:1.35}
 #note b{display:block;font-size:.8rem}
+#note.chip{max-width:none;padding:4px 10px;cursor:pointer}#note.chip b{display:inline;font-size:.78rem}#note.chip .body{display:none}#note.chip b::after{content:' \25B8';color:var(--mute)}
+#note:not(.chip) b{cursor:pointer}#note:not(.chip) b::after{content:' \25BE';color:var(--mute)}
+#leaders{position:absolute;inset:0;pointer-events:none;width:100%;height:100%}#leaders line{stroke:var(--mute);stroke-width:1;opacity:.7}
 #crumbs{right:10px;top:10px;color:var(--mute);max-width:46%}
 #crumbs a{cursor:pointer}
 #legend{left:10px;bottom:10px;max-width:330px}
@@ -92,6 +95,7 @@ body.embed header,body.embed #panel{display:none}body.embed main{grid-template-c
 <main>
   <div id="stage">
     <canvas id="c"></canvas>
+    <svg id="leaders"></svg>
     <div id="labels"></div>
     <div id="tip"></div>
     <div id="note" class="ov"></div>
@@ -123,7 +127,7 @@ const FIN_ORGAN='UBERON_0000151';
 const WING_GENES=['kcnk5b','kcnh2a','slc43a2a'];
 const MODEL='model/flying-fish.glb', MANIFEST='model/manifest.json';
 let D=null,T=new Map(),children=new Map(),G=null,MF=null,modelInfo={source:'none'};
-let state={split:0,peel:0,obj:null,organ:null,tissue:null,gene:null,preset:null};
+let state={split:0,peel:0,obj:null,organ:null,tissue:null,gene:null,preset:null};let hovered=null,noteCollapsed=false,noteTimer=null;
 
 // ---------- data access (blueprint terms and the ZFA fin subtree answer alike) ----------
 const FS=()=>G&&G.fin_subtree&&G.fin_subtree.nodes?G.fin_subtree:null;
@@ -218,7 +222,7 @@ function standinScene(){ // a few primitives with the manifest's names; not a fi
   return g;}
 
 // ---------- scene ----------
-let renderer,scene,camera,root,objs=[],cam={theta:-0.9,phi:1.25,dist:1.9,target:new THREE.Vector3(0,0,0)},spin=true,userMoved=false,flyTarget=null;
+let renderer,scene,camera,root,pivots=null,objs=[],cam={theta:-0.9,phi:1.25,dist:1.9,target:new THREE.Vector3(0,0,0)},spin=true,userMoved=false,flyTarget=null;
 const GROUP=name=>name.replace(/_(L|R)_\d+$/,'').replace(/_\d+$/,'').replace(/_(L|R)$/,'');
 function normEntry(o){if(!o)return null;const raw=o.ontology_id||null,zfa=o.zfa_id||null;
   // the node the drill panel opens: the manifest's Uberon id when it is in the blueprint, else its ZFA id when it is in the fin subtree
@@ -243,7 +247,14 @@ function build(sc){
   root=new THREE.Group();scene.add(root);root.add(sc);
   // normalise: about 1 unit long, centred
   const box=new THREE.Box3().setFromObject(sc);const size=box.getSize(new THREE.Vector3());const s=size.x>0?1/size.x:1;sc.scale.setScalar(s);const c=box.getCenter(new THREE.Vector3()).multiplyScalar(s);sc.position.sub(c);
-  for(const ch of [...sc.children])registerObject(ch);
+  // book hinge: a pivot per side on the dorsal midline (top of the model's bounding box, x and z at 0); side pieces are
+  // re-parented to their pivot with their world transform kept, so rotating the pivot swings the half open about that line
+  const b2=new THREE.Box3().setFromObject(sc);sc.updateMatrixWorld(true);
+  const hinge=new THREE.Vector3(0,b2.min.y,0);   // ventral midline: opened outward, both cut faces turn up toward the camera
+  pivots={L:new THREE.Group(),R:new THREE.Group()};for(const k of ['L','R']){pivots[k].name='pivot_'+k;pivots[k].position.copy(sc.worldToLocal(hinge.clone()));sc.add(pivots[k]);}
+  for(const ch of [...sc.children]){if(ch===pivots.L||ch===pivots.R)continue;const m=manifestFor(ch.name);const side=m?.side||(/_L(_\d+)?$/.test(ch.name)?'L':/_R(_\d+)?$/.test(ch.name)?'R':null);if(side)pivots[side].attach(ch);}
+  sc.updateMatrixWorld(true);
+  for(const ch of [...sc.children,...pivots.L.children,...pivots.R.children]){if(ch===pivots.L||ch===pivots.R)continue;registerObject(ch);}
   const st=$('#stage');const resize=()=>{const w=st.clientWidth,h=st.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};addEventListener('resize',resize);resize();
   $('#stage').dataset.objs=objs.map(o=>o.name).join(',');controls(el);applyState();requestAnimationFrame(frame);}
 function lensSetNow(){return state.gene&&G&&G.gene_index[state.gene]?G.gene_index[state.gene].nodes:null;}
@@ -252,10 +263,11 @@ function objTouched(o,lensSet){if(!lensSet)return false;const id=o.m.ontology_id
   if(o.m.system&&(id===o.m.system||/^(skin|muscle|myomeres)/.test(o.name))){for(const k of Object.keys(lensSet))if(systemOf(k)===o.m.system)return true;}return false;}
 function applyState(){
   const s=state.split,p=state.peel,lensSet=lensSetNow();
+  // open like a book: the left half (at -Z) turns about the dorsal hinge so its cut face faces up, the right half the other way
+  if(pivots){const th=1.15*s;pivots.L.rotation.x=-th;pivots.R.rotation.x=th;pivots.L.position.z=-0.03*s;pivots.R.position.z=0.03*s;}
   const selObj=state.obj;const selId=state.organ?nid(state.organ):null;
   for(const o of objs){
-    const m=o.mesh;m.position.copy(o.basePos);m.rotation.copy(o.baseRot);
-    if(o.side==='L'){m.position.z-=0.17*s;m.rotation.x-=0.55*s;}else if(o.side==='R'){m.position.z+=0.17*s;m.rotation.x+=0.55*s;}
+    const m=o.mesh;
     const peelLevel=LAYER_PEEL[o.m.layer]||1;
     const selO=selObj&&objs.find(x=>x.name===selObj);const isSel=o.name===selObj||(selO&&o.group===selO.group&&selO.m.ontology_id&&o.m.ontology_id===selO.m.ontology_id)||(selId&&o.m.ontology_id===selId);
     const keep=isSel||(state.preset==='wing'&&/^pectoral_fin/.test(o.name));
@@ -265,7 +277,7 @@ function applyState(){
       if(mat.emissive){if(lensSet&&objTouched(o,lensSet)){mat.emissive.set(PAL['--suff']||'#eb6834');mat.emissiveIntensity=0.6;}else if(isSel){mat.emissive.set(PAL['--accent']||'#0e7c86');mat.emissiveIntensity=0.4;}else{mat.emissive.setHex(b.em);mat.emissiveIntensity=1;}}});}
   crumbs();drawInset();}
 function controls(el){let drag=null;
-  el.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,th:cam.theta,ph:cam.phi,moved:false,b:e.button,shift:e.shiftKey,t:cam.target.clone()};el.setPointerCapture(e.pointerId);});
+  el.addEventListener('pointerdown',e=>{collapseNote();drag={x:e.clientX,y:e.clientY,th:cam.theta,ph:cam.phi,moved:false,b:e.button,shift:e.shiftKey,t:cam.target.clone()};el.setPointerCapture(e.pointerId);});
   el.addEventListener('pointermove',e=>{if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>3)drag.moved=true;
       if(drag.b===2||drag.shift){const k=cam.dist/900;const right=new THREE.Vector3().setFromMatrixColumn(camera.matrix,0),up=new THREE.Vector3().setFromMatrixColumn(camera.matrix,1);cam.target.copy(drag.t).addScaledVector(right,-dx*k).addScaledVector(up,dy*k);}
       else{cam.theta=drag.th-dx*0.006;cam.phi=Math.min(Math.PI-0.05,Math.max(0.05,drag.ph-dy*0.006));}userMoved=true;return;}pick(e);});
@@ -277,44 +289,67 @@ const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
 function pickAt(e){const r=renderer.domElement.getBoundingClientRect();mouse.x=((e.clientX-r.left)/r.width)*2-1;mouse.y=-((e.clientY-r.top)/r.height)*2+1;ray.setFromCamera(mouse,camera);
   const meshes=[];for(const o of objs)if(o.mesh.visible)o.mesh.traverse(c=>{if(c.isMesh&&c.material.opacity>0.2)meshes.push(c);});
   const hits=ray.intersectObjects(meshes,false);if(!hits.length)return null;return {name:hits[0].object.userData.obj,point:hits[0].point};}
-function pick(e){const h=pickAt(e);const tip=$('#tip');if(!h){tip.style.display='none';renderer.domElement.style.cursor='';return;}const o=objs.find(x=>x.name===h.name);const r=renderer.domElement.getBoundingClientRect();tip.style.display='block';tip.style.left=(e.clientX-r.left+12)+'px';tip.style.top=(e.clientY-r.top+12)+'px';
+function pick(e){const h=pickAt(e);const tip=$('#tip');hovered=h?h.name:null;if(!h){tip.style.display='none';renderer.domElement.style.cursor='';return;}const o=objs.find(x=>x.name===h.name);const r=renderer.domElement.getBoundingClientRect();tip.style.display='block';tip.style.left=(e.clientX-r.left+12)+'px';tip.style.top=(e.clientY-r.top+12)+'px';
   const id=o.m.ontology_id?nid(o.m.ontology_id):null;const t=id&&term(id);tip.innerHTML=`<b>${esc(o.m.label||o.name)}</b><br><span class="tiny">${t?esc(t.label)+' · '+esc(id):o.m.ancestor?'no node in the files; nearest ancestor '+esc(o.m.ancestor):'no node in the files; drawn for orientation'}${o.m.system_label?' · '+esc(o.m.system_label):o.m.system&&SYS_LABEL[o.m.system]?' · '+esc(SYS_LABEL[o.m.system])+' system':''}</span>`;renderer.domElement.style.cursor='pointer';}
 function frame(){if(spin&&!userMoved)cam.theta+=0.0018;
   if(flyTarget){cam.target.lerp(flyTarget.p,0.08);cam.dist+=(flyTarget.d-cam.dist)*0.08;if(cam.target.distanceTo(flyTarget.p)<0.005&&Math.abs(cam.dist-flyTarget.d)<0.005)flyTarget=null;}
   const x=cam.dist*Math.sin(cam.phi)*Math.cos(cam.theta),y=cam.dist*Math.cos(cam.phi),z=cam.dist*Math.sin(cam.phi)*Math.sin(cam.theta);
-  camera.position.set(x,y,z).add(cam.target);camera.lookAt(cam.target);renderer.render(scene,camera);labels();requestAnimationFrame(frame);}
+  camera.position.set(x,y,z).add(cam.target);camera.lookAt(cam.target);renderer.render(scene,camera);labels();$('#stage').dataset.cam=`${cam.target.x.toFixed(3)},${cam.target.y.toFixed(3)},${cam.target.z.toFixed(3)} d=${cam.dist.toFixed(3)} fly=${!!flyTarget}`;requestAnimationFrame(frame);}
 const labelEls=new Map();
 const GROUP_LABEL={pectoral_fin_ray:'pectoral fin rays',vertebra:'vertebral column',ribs:'ribs',pelvic_fin_rays:'pelvic fin rays',dorsal_fin_rays:'dorsal fin rays',anal_fin_rays:'anal fin rays',caudal_fin_rays:'caudal fin rays',gills:'gills',gonad:'gonads',skull:'skull',muscle:'muscle (myomeres)',skin:'skin and scales',eye:'eyes',scapula:'scapula',coracoid:'coracoid',cleithrum:'cleithrum'};
 function labels(){const box=$('#labels'),w=box.clientWidth,h=box.clientHeight,v=new THREE.Vector3();
   const groups=new Map();const selO=state.obj&&objs.find(x=>x.name===state.obj);
   for(const o of objs){if(!o.mesh.visible)continue;let mat=null;o.mesh.traverse(c=>{if(c.isMesh&&!mat)mat=c.material;});if(mat&&mat.opacity<0.2)continue;
-    const g=groups.get(o.group)||{n:0,c:new THREE.Vector3(),o,sel:false};v.copy(o.centre);o.mesh.parent.localToWorld(v);if(o.side)v.z+=(o.side==='R'?1:-1)*0.17*state.split*0.6;g.c.add(v);g.n++;if(selO&&selO.group===o.group)g.sel=true;groups.set(o.group,g);}
+    // once split, a L/R pair is labelled on the member nearer the camera instead of at the midpoint between the halves
+    if(o.side&&state.split>0.3){const twin=objs.find(x=>x.group===o.group&&x.side&&x.side!==o.side&&x.mesh.visible);if(twin){const a=new THREE.Vector3(),bb=new THREE.Vector3();a.copy(o.centre);o.mesh.parent.localToWorld(a);bb.copy(twin.centre);twin.mesh.parent.localToWorld(bb);if(a.distanceTo(camera.position)>bb.distanceTo(camera.position)&&!(selO&&selO.name===o.name))continue;}}
+    const g=groups.get(o.group)||{n:0,c:new THREE.Vector3(),o,sel:false};v.copy(o.centre);o.mesh.parent.localToWorld(v);g.c.add(v);g.n++;if(selO&&selO.group===o.group)g.sel=true;groups.set(o.group,g);}
   const outermost=state.peel===0?'outer':state.peel===1?'muscle':state.peel===2?'skeleton':'organ';
-  for(const [key,el] of labelEls){if(!groups.has(key))el.style.display='none';}
-  for(const [key,g] of groups){const o=g.o;const layer=o.m.layer;
-    const show=g.sel||(state.split>0.02||state.peel>0?(layer===outermost||layer==='organ'&&state.peel>=2||/^pectoral_fin$|^caudal_fin$/.test(key)):(layer==='outer'&&!/rays?$/.test(key)));
-    let el=labelEls.get(key);if(!show){if(el)el.style.display='none';continue;}
-    if(!el){el=document.createElement('div');el.className=o.m.ontology_id?'':'sm';box.appendChild(el);labelEls.set(key,el);}
-    el.textContent=g.n>1&&!g.sel?(GROUP_LABEL[key]||key.replace(/_/g,' ')):(g.sel&&selO?selO.m.label:(GROUP_LABEL[key]||o.m.label||key.replace(/_/g,' ')));
-    el.classList.toggle('hl',g.sel);
-    v.copy(g.c).multiplyScalar(1/g.n).project(camera);if(v.z>1){el.style.display='none';continue;}el.style.display='';el.style.left=((v.x+1)/2*w)+'px';el.style.top=((1-v.y)/2*h)+'px';}}
+  const hovG=hovered?GROUP(hovered):null;
+  // candidates in priority order: selected, hovered, mapped pieces of the outermost layer, then organs (capped), then minor pieces
+  const cands=[];
+  for(const [key,g] of groups){const o=g.o;const layer=o.m.layer;const hov=key===hovG;
+    const show=g.sel||hov||(state.split>0.02||state.peel>0?(layer===outermost||layer==='organ'&&state.peel>=2||/^pectoral_fin$|^caudal_fin$/.test(key)):(layer==='outer'&&!/rays?$/.test(key)));
+    if(!show)continue;
+    const text=g.n>1&&!g.sel?(GROUP_LABEL[key]||key.replace(/_/g,' ')):(g.sel&&selO?selO.m.label:(GROUP_LABEL[key]||o.m.label||key.replace(/_/g,' ')));
+    v.copy(g.c).multiplyScalar(1/g.n).project(camera);if(v.z>1)continue;
+    const pri=g.sel?0:hov?1:(o.m.ontology_id?2:3)+(layer==='organ'?0.5:0)+g.n*0.001;
+    cands.push({key,g,text,x:(v.x+1)/2*w,y:(1-v.y)/2*h,pri,minor:!o.m.ontology_id});}
+  cands.sort((a,b)=>a.pri-b.pri);
+  const placed=[];const maxLabels=state.peel>=2?10:8;const shown=new Set();const leaders=[];
+  for(const c of cands){if(placed.length>=maxLabels&&c.pri>=2)break;
+    const wd=c.text.length*6.4+12,ht=15;let ok=false,dy=0;
+    for(const off of [0,-18,18,-36,36,-54,54]){const y=c.y+off;const rect={x:c.x+8,y:y-ht/2,w:wd,h:ht};
+      if(!placed.some(r=>rect.x<r.x+r.w&&rect.x+rect.w>r.x&&rect.y<r.y+r.h&&rect.y+rect.h>r.y)){ok=true;dy=off;placed.push(rect);break;}}
+    if(!ok)continue;
+    let el=labelEls.get(c.key);if(!el){el=document.createElement('div');box.appendChild(el);labelEls.set(c.key,el);}
+    el.className=c.minor?'sm':'';el.classList.toggle('hl',c.g.sel||c.key===hovG);el.textContent=c.text;el.style.display='';el.style.left=c.x+'px';el.style.top=(c.y+dy)+'px';shown.add(c.key);
+    if(dy)leaders.push([c.x,c.y,c.x+6,c.y+dy]);}
+  for(const [key,el] of labelEls){if(!shown.has(key))el.style.display='none';}
+  const svg=$('#leaders');svg.setAttribute('viewBox',`0 0 ${w} ${h}`);svg.innerHTML=leaders.map(l=>`<line x1="${l[0].toFixed(1)}" y1="${l[1].toFixed(1)}" x2="${l[2].toFixed(1)}" y2="${l[3].toFixed(1)}"/>`).join('');}
 
 // ---------- selection and navigation ----------
-function selectObj(name){const o=objs.find(x=>x.name===name);if(!o)return;state.obj=name;const id=o.m.ontology_id?nid(o.m.ontology_id):null;
+function selectObj(name){const o=objs.find(x=>x.name===name);if(!o)return;state.obj=name;collapseNote();const id=o.m.ontology_id?nid(o.m.ontology_id):null;
   if(id&&term(id)){state.organ=id;state.tissue=null;$('#organSel').value=T.has(id)?id:'';applyState();show(id,o);}else{state.organ=null;state.tissue=null;applyState();showObj(o);}}
 function goOrgan(id,silent){const t=term(id);if(!t)return;state.organ=id;state.tissue=null;state.gene=null;$('#geneQ').value='';
   const o=objs.find(x=>x.m.ontology_id&&nid(x.m.ontology_id)===id);state.obj=o?o.name:null;$('#organSel').value=T.has(id)?id:'';if(!silent){applyState();show(id,o);}}
 function wing(silent){state.preset='wing';goOrgan(FIN_ORGAN,true);if(state.split<0.3){state.split=1;$('#split').value=100;}if(!silent){applyState();show(FIN_ORGAN);}}
 function lens(sym,silent){if(!G||!G.gene_index[sym]){$('#geneQ').value=sym;$('#panel').innerHTML=`<h2>${esc(sym)}</h2><p class="small">No stored record for this symbol in the gene index (${esc(G?G.gene_index_note:'genotype map not available')}).</p>`;return;}
   state.gene=sym;state.organ=null;state.tissue=null;state.obj=null;state.preset=null;$('#geneQ').value=sym;if(state.split<0.3){state.split=1;$('#split').value=100;}if(state.peel<2){state.peel=2;$('#peel').value=2;}applyState();showGene(sym);}
-function setStage(n){const m=[[0,0],[1,0],[1,1],[1,2],[1,3]][n];state.split=m[0];state.peel=m[1];$('#split').value=m[0]*100;$('#peel').value=m[1];applyState();}
-function reset(){state={split:0,peel:0,obj:null,organ:null,tissue:null,gene:null,preset:null};$('#split').value=0;$('#peel').value=0;$('#organSel').value='';$('#geneQ').value='';cam.theta=-0.9;cam.phi=1.25;cam.dist=1.9;cam.target.set(0,0,0);userMoved=false;flyTarget=null;applyState();intro();}
+function fitView(animate){if(!renderer)return;scene.updateMatrixWorld(true);const box=new THREE.Box3();let any=false;
+  for(const o of objs){if(!o.mesh.visible)continue;let op=1;o.mesh.traverse(c=>{if(c.isMesh&&c.material.opacity<op)op=c.material.opacity;});if(op<0.2)continue;box.expandByObject(o.mesh);any=true;}
+  if(!any)return;const c=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());
+  const r=Math.max(sz.x,sz.y,sz.z)*0.5;const fov=camera.fov*Math.PI/180;const fitH=r/Math.sin(fov/2),fitW=r/Math.sin(Math.atan(Math.tan(fov/2)*camera.aspect));
+  const d=Math.max(fitH,fitW)*((state.obj||state.organ)&&!state.gene?1.9:0.95);if(animate)flyTarget={p:c,d};else{cam.target.copy(c);cam.dist=d;flyTarget=null;}}
+function setStage(n){const m=[[0,0],[1,0],[1,1],[1,2],[1,3]][n];state.split=m[0];state.peel=m[1];$('#split').value=m[0]*100;$('#peel').value=m[1];if(!userMoved)cam.phi=state.split>0.3?0.95:1.25;applyState();fitView(true);}
+function reset(){state={split:0,peel:0,obj:null,organ:null,tissue:null,gene:null,preset:null};$('#split').value=0;$('#peel').value=0;$('#organSel').value='';$('#geneQ').value='';cam.theta=-0.9;cam.phi=1.25;cam.dist=1.9;cam.target.set(0,0,0);userMoved=false;flyTarget=null;applyState();fitView(false);intro();}
 function crumbs(){const parts=['<a data-c="body">fish</a>'];if(state.split>0.02)parts.push('split');if(state.peel>0)parts.push(['','skin off','muscle off','skeleton off'][state.peel]);
   const o=state.obj&&objs.find(x=>x.name===state.obj);if(o)parts.push(esc(o.m.label||o.name));if(state.organ&&!(o&&o.m.ontology_id&&nid(o.m.ontology_id)===state.organ))parts.push(esc(term(state.organ)?.label||state.organ));if(state.tissue)parts.push(esc(term(state.tissue)?.label||state.tissue));if(state.gene)parts.push(`gene lens: <span class="mono">${esc(state.gene)}</span>`);
   $('#crumbs').innerHTML=parts.join(' &rsaquo; ');$$('#stages button').forEach(b=>{const n=+b.dataset.s;b.classList.toggle('on',(n===0&&state.split<0.02&&state.peel===0)||(n===1&&state.split>=0.3&&state.peel===0)||(n>=2&&state.peel===n-1));});
   $$('#crumbs a').forEach(a=>a.onclick=reset);}
 
 // ---------- panel ----------
+function collapseNote(){if(noteCollapsed)return;noteCollapsed=true;$('#note').classList.add('chip');}
+function expandNote(){noteCollapsed=false;$('#note').classList.remove('chip');}
 function legend(){
   $('#legend').innerHTML=`<details id="legDet"><summary style="cursor:pointer;font-weight:700">Legend</summary>
     <div class="row"><span class="sw" style="background:#5b7fae"></span>outside (skin, fins) &middot; <span class="sw" style="background:#b8605a"></span>muscle &middot; <span class="sw" style="background:#e9e4d2"></span>skeleton</div>
@@ -323,7 +358,9 @@ function legend(){
     <div class="row"><span class="g" style="border-color:var(--suff)">sufficient for</span><span class="g" style="border-color:var(--req)">required for</span><span class="g" style="border-color:var(--expr)">expressed in</span></div>
     <div class="tiny" style="margin-top:4px">Genes were measured in zebrafish and medaka, never in a flying fish. Expressed in is detection, not causation.</div></details>`;
   const src=modelInfo.source==='glb'?`Model: <span class="mono">${esc(modelInfo.file)}</span>, ${modelInfo.objects} named pieces${MF.built_with?', '+esc(MF.built_with):''}. ${MF.schematic?'Schematic: '+esc(MF.schematic)+'.':''}`:`<b style="color:var(--warn)">Stand-in: a few primitives with the model's names, drawn by this page while the segmented model is built${modelInfo.reason?' ('+esc(modelInfo.reason)+')':''}.</b>`;
-  $('#note').innerHTML=`<b>Schematic geometry; not measured anatomy.</b>Orbit the fish, split it along the midline, peel skin, muscle and skeleton to the organs, click any part. Each part names its ontology node or says it has none; organ positions are approximate. ${src}<span class="tiny"> ${MF&&MF.evidence_backed?`Evidence-backed: pectoral fin length ${esc(MF.evidence_backed.pectoral_fin_length_over_SL)} of standard length (n = ${esc(MF.evidence_backed.n_specimens)}, ${esc(MF.evidence_backed.source||'')}); ${esc(MF.evidence_backed.caveat||'')}.`:'The pectoral fin\'s length (0.69 of standard length, Daane 2021 median) is the one evidence-backed proportion.'} Behind the parts: the blueprint's Uberon and Cell Ontology part_of statements and the zebrafish fin subtree.</span>`;}
+  $('#note').innerHTML=`<b>Schematic geometry; not measured anatomy.</b><span class="body">Orbit the fish, split it along the midline, peel skin, muscle and skeleton to the organs, click any part. Each part names its ontology node or says it has none; organ positions are approximate. ${src}<span class="tiny"> ${MF&&MF.evidence_backed?`Evidence-backed: pectoral fin length ${esc(MF.evidence_backed.pectoral_fin_length_over_SL)} of standard length (n = ${esc(MF.evidence_backed.n_specimens)}, ${esc(MF.evidence_backed.source||'')}); ${esc(MF.evidence_backed.caveat||'')}.`:'The pectoral fin\'s length (0.69 of standard length, Daane 2021 median) is the one evidence-backed proportion.'} Behind the parts: the blueprint's Uberon and Cell Ontology part_of statements and the zebrafish fin subtree.</span></span>`;
+  $('#note').onclick=()=>{if(noteCollapsed)expandNote();else collapseNote();};
+  clearTimeout(noteTimer);noteTimer=setTimeout(collapseNote,6000);}
 function provenance(id){const P=D.provenance;if(!P)return '';const norm=s=>String(s).replace(':','_');const t=term(id);
   let h=`<div class="sec"><h4>Trace it</h4>`;
   if(t&&t.iri)h+=`<div class="prov"><b>Ontology term</b><a href="${esc(t.iri)}" target="_blank" rel="noopener"><span class="mono">${esc(id)}</span></a> ${esc(t.label)}${t.via?` &middot; query <span class="mono">${esc(t.via)}</span>${D.queries&&D.queries[t.via]?` (${esc(D.queries[t.via].purpose)}, retrieved ${esc(D.queries[t.via].retrieved)})`:''}`:t.zfa?' &middot; from genotype/fin-subtree.json (ZFA, xref-mapped)':''}</div>`;
@@ -401,8 +438,8 @@ function init(sc){
   sel.onchange=()=>{if(sel.value)goOrgan(sel.value);};
   const dl=$('#geneList');if(G){for(const s of Object.keys(G.gene_index||{}).sort()){const op=document.createElement('option');op.value=s;dl.appendChild(op);}}
   $('#geneQ').onchange=e=>{const q=e.target.value.trim();if(q)lens(q);};$('#geneQ').onkeydown=e=>{if(e.key==='Enter'){const q=e.target.value.trim();if(q)lens(q);}};
-  $('#split').oninput=e=>{state.split=+e.target.value/100;applyState();};$('#peel').oninput=e=>{state.peel=+e.target.value;applyState();};
-  $$('#stages button').forEach(b=>b.onclick=()=>setStage(+b.dataset.s));$('#wingBtn').onclick=()=>wing();$('#resetBtn').onclick=reset;
+  $('#split').oninput=e=>{state.split=+e.target.value/100;applyState();};$('#peel').oninput=e=>{state.peel=+e.target.value;applyState();};$('#split').onchange=$('#peel').onchange=()=>fitView(true);
+  $$('#stages button').forEach(b=>b.onclick=()=>{collapseNote();setStage(+b.dataset.s);});$('#wingBtn').onclick=()=>wing();$('#resetBtn').onclick=reset;
   build(sc);legend();
   if(params.get('split')){state.split=Math.max(0,Math.min(1,+params.get('split')));$('#split').value=state.split*100;}
   if(params.get('peel')){state.peel=Math.max(0,Math.min(3,+params.get('peel')));$('#peel').value=state.peel;}
@@ -412,7 +449,8 @@ function init(sc){
   if(params.get('organ')&&term(params.get('organ')))goOrgan(params.get('organ'),true);
   if(params.get('preset')==='wing')wing(true);
   if(params.get('tissue')&&term(params.get('tissue')))state.tissue=params.get('tissue');
-  applyState();
+  if(['stage','organ','part','preset','gene','split','peel','tissue'].some(k=>params.get(k)))collapseNote();
+  applyState();if(!userMoved&&state.split>0.3)cam.phi=0.95;fitView(false);
   if(params.get('gene'))lens(params.get('gene'),true);
   else if(state.tissue)show(state.tissue);else if(state.organ)show(state.organ);else if(state.obj)selectObj(state.obj);else intro();
 }
