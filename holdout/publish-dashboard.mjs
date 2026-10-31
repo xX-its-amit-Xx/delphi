@@ -82,6 +82,9 @@ const out = {
 };
 const dir = path.join(root, 'dashboard/public/t/holdout');
 fs.mkdirSync(dir, { recursive: true });
+// The standalone power finding travels with the page so a reader can take it without the repository.
+const powerMd = path.join(root, 'holdout/POWER.md');
+if (fs.existsSync(powerMd)) { fs.copyFileSync(powerMd, path.join(dir, 'POWER.md')); out.power_finding = 'POWER.md'; }
 fs.writeFileSync(path.join(dir, 'data.json'), JSON.stringify(out));
 console.log(`leak check: ${leaks?.files ? leaks.files.length + ' file(s) name a held-out organism' : 'failed'}`);
 console.log(`t/holdout/data.json: ${out.roster.length} roster species, ${Object.keys(byClass).length} classes, frozen ${out.frozen_at}`);
