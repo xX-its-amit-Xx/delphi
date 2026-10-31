@@ -109,6 +109,10 @@ does not move. First run: Kimura heterozygosity is underpowered for either clade
 against a minimum of 50); Hamilton senescence is underpowered for birds (8 against 15) and decisive for mammals
 (20 against 15). A switch to Mammalia now would be post hoc for tests already built with mammal rows.
 
+The power table as a standalone finding, written for the next team so the attempt is not repeated, is
+`holdout/POWER.md` (generated from the same files by `node holdout/power-finding.mjs`; a copy ships with the
+sub-dashboard at `/t/holdout/POWER.md`).
+
 Triage of all 16 completed claim tests (2026-10-31, 13:30 UTC): 2 were examined on birds (Kimura heterozygosity,
 Hamilton senescence; both inconclusive under the builders' own minimum n), and 14 contain no bird rows at all, so no
 exam applies; they are listed with reasons in `holdout/exam-results/not-applicable.json`. One of those 14 matters

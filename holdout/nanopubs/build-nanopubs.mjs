@@ -12,7 +12,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
+import { spawnSync, execSync } from 'node:child_process';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '../..');
@@ -62,8 +62,15 @@ const LIVE_DATA = `${LIVE}data.json`;
 // xX-its-amit-Xx/delphi, public). Pass --commit <sha> when a newer push lands; files changed after this commit (the confirmed
 // re-freeze of CHECKSUMS.json, exam.json, split.json) are only in the live copy until then, and the manifest says so.
 const commitArg = process.argv.indexOf('--commit');
-const COMMIT = commitArg >= 0 ? process.argv[commitArg + 1] : 'df9b6bdc80036785aec106cd59595cbcc67bc288';
+const COMMIT = commitArg >= 0 ? process.argv[commitArg + 1] : 'da7e271b7015bb60d2d4759c21001895e09852b7'; // "holdout: confirm Aves as the held-out clade and re-freeze"
 const TREE = `https://github.com/xX-its-amit-Xx/delphi/tree/${COMMIT}/holdout`;
+// What that commit actually holds is checked against the local git object, not asserted: the manifest sentence about it
+// went stale once before (it said "provisional freeze" after the confirmed one had been pushed).
+const commitSums = (() => { try { return JSON.parse(execSync(`git -C "${root}" show ${COMMIT}:holdout/CHECKSUMS.json`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })); } catch { return null; } })();
+const sumsNow = JSON.parse(fs.readFileSync(path.join(root, 'holdout/CHECKSUMS.json'), 'utf8'));
+const commitHolds = !commitSums ? `a freeze this build could not read (commit ${COMMIT.slice(0, 8)} is not in the local repository)`
+  : commitSums.outputs['exam.json'].sha256 === sumsNow.outputs['exam.json'].sha256 ? `the current freeze (${commitSums.frozen_at}${commitSums.provisional ? ', provisional' : ', confirmed'}), the same exam.json SHA-256 as on disk`
+  : `an earlier freeze (${commitSums.frozen_at}${commitSums.provisional ? ', provisional' : ''}; exam.json SHA-256 ${commitSums.outputs['exam.json'].sha256}), not the current one on disk`;
 const TEMPLATE = { // published Project Delphi assertion templates (project-delphi-ontology pipeline, commit 6ba5f9a)
   evidence: 'https://w3id.org/np/RAk4kcX4zA_touv8CeKku9tTUnbR5xiTLSLwFbrKSl3BE/template',
   claim: 'https://w3id.org/np/RApE-nGpCMigXqZjeHuYuMJEVTGmTlNTlZl7IcHi_fhdQ/template',
@@ -374,6 +381,7 @@ sub:assertion {
     rdfs:label ${lit(`Power analysis: held-out n and the builders' minimum n for each examined test under Aves and Mammalia`)} ;
     dct:description ${lit(power.method)} ;
     delphi:statisticalTest "Each completed claim test re-run with --exam on a scratch copy with the class filter swapped; the builder's own decision rule including its minimum n applied to the held-out species alone" ;
+    rdfs:seeAlso ${iri(`${LIVE}POWER.md`)} ;
     prov:wasDerivedFrom sub:frozen-split ;
     rdfs:seeAlso ${iri(LIVE_DATA)} .
 ${statusPv(evidence, STATUS)}${[
@@ -526,7 +534,8 @@ const manifest = {
   commit_tree: TREE,
   clade_decision: split.decision ? { status: split.decision.status, decided_on: split.decision.decided_on, decided_by: split.decision.decided_by } : null,
   freeze: { frozen_at: sums.frozen_at, first_frozen_at: sums.first_frozen_at || sums.frozen_at, exam_json_sha256: sums.outputs['exam.json'].sha256, previous_exam_json_sha256: sums.previous_freeze?.outputs?.['exam.json']?.sha256 || null, roster_unchanged_at_refreeze: sums.previous_freeze?.roster_unchanged ?? null },
-  note: `Provenance points at the live sub-dashboard copy and at the commit-pinned holdout/ tree (${COMMIT}). That commit holds the provisional freeze the exams ran against; the confirmed re-freeze (${sums.frozen_at}: decision recorded, roster unchanged) is only in the live copy until the next push, after which rebuild with --commit <sha>. Before signing: --final with --creator <ORCID>, np check (check.mjs), lint, then test registry.`,
+  commit_holds: commitHolds,
+  note: `Provenance points at the live sub-dashboard copy and at the commit-pinned holdout/ tree (${COMMIT}). Checked at build time against the local git object: that commit holds ${commitHolds}. The claim-exam and organism-exam records cite the earlier provisional freeze (exam.json ${sums.previous_freeze?.outputs?.['exam.json']?.sha256 || 'n/a'}) they ran against, with a node saying the confirmed freeze superseded it and the roster did not move. Before signing: --final with --creator <ORCID> and --commit <sha>, node holdout/nanopubs/check.mjs, lint, then test registry.`,
   lint_exemptions: Object.fromEntries(out.filter(o => ['clade-analysis', 'leak-check', 'triage-coverage'].includes(o.name)).map(o => [o.meta.introduces,
     'No empirical dataset: the claim is about files of this project (frozen split, triage record, leak-check run), all carried in the record with SHA-256 or counts. Exempted from CLAIM-NO-DATASET with this reason.'])),
   nanopubs: out.map(o => ({ file: `holdout/nanopubs/unsigned/${o.name}.trig`, ...o.meta, registry: null, trustyUri: null, signedFile: null, publishedAt: null })),
