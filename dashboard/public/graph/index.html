@@ -188,7 +188,7 @@ function init(){
       const always=n.type==='theorem'||n.type==='source'||(n.type==='claim'&&n.formal)||n.type==='idea'||n.type==='area';
       if(n.id===sel||always||(s>5&&n.type!=='dataset')){
         ctx.font=`${11/s}px Inter Tight, sans-serif`;ctx.fillStyle=css('--ink');ctx.textAlign='left';ctx.textBaseline='middle';
-        const lab=n.type==='idea'?`${ON[n.origin]||n.origin}: ${n.label}`:String(n.label);ctx.fillText((n.type==='theorem'&&s<3&&n.id!==sel)?lab.split(':')[0].slice(0,24):lab.slice(0,n.type==='idea'?70:46),n.x+r+3,n.y);
+        const lab=n.type==='idea'?`${ON[n.origin]||n.origin}: ${n.label}`:String(n.label);ctx.fillText((n.type==='theorem'&&s<3&&n.id!==sel)?lab.split(':')[0].slice(0,24):lab.slice(0,n.type==='idea'?(s>2.5||n.id===sel?90:48):46),n.x+r+3,n.y);
       }
     })
     .nodePointerAreaPaint((n,c,ctx)=>{ctx.fillStyle=c;ctx.beginPath();ctx.arc(n.x,n.y,(R[n.type]||3)+3,0,2*Math.PI);ctx.fill();})
@@ -208,7 +208,7 @@ function init(){
 function load(){
   const g=subset();const ideasView=$('#view').value==='ideas';
   // the ideas view is small (tens of nodes): longer links keep its shapes at a readable zoom
-  G.d3Force('link').distance(ideasView?120:30);G.d3Force('charge').strength(ideasView?-200:-30);G.graphData(g);sel=null;
+  G.d3Force('link').distance(ideasView?150:30);G.d3Force('charge').strength(ideasView?-300:-30);G.graphData(g);sel=null;
   const by=g.nodes.reduce((a,n)=>(a[n.type]=(a[n.type]||0)+1,a),{});
   $('#stats').textContent=`${g.nodes.length} nodes · ${g.links.length} links · `+Object.entries(by).map(([k,v])=>`${v} ${k}`).join(', ');
   if($('#view').value==='ideas'){const o=D.counts.ideasByOrigin||{},tot=Object.values(o).reduce((a,b)=>a+b,0);
