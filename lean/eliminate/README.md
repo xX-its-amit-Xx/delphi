@@ -74,11 +74,23 @@ carrying provenance (published, proposed-here, illustrative values) and, on an e
 proposed-here candidate's elimination eliminates the enumerator's construction, not a published hypothesis.
 Rank nothing by elimination count.
 
-## The most valuable next constraint
+## Strength is now formalised (R7), and what it changed
 
-Galileo's argument becomes an elimination only when strength scaling as `L^2` (cross-section) is formalised
-beside mass scaling as `L^3`: then "a giant of unchanged proportions can stand up" is ruled out, not merely
-unconstrained. Nothing in the repository proves that yet, and the ledger must not be read as if it did.
+With `lean/Delphi/Scaling.lean` (2026-10-31, from the physics thread's R2-R8) the constraints grew from 13 to 25:
+area exponent and ratio (C2a, C2b), axial strength (C8), breaking-load ratio (C8b), **Galileo's giant** (C8c:
+reference safety factor divided by the length ratio against the claimed load), stress ratio and exponent (C8d,
+C8e), the exact minimum-speed bound (C9), minimum-speed ratio and exponent (C9b, C9c), the power-required
+exponent (C10) and Froude (C11). Rerunning the open-problems ledger moved all 13 translatable square-cube rows
+from cannot-rule to **consistent**: they assert the exponents R2 and R7 give, so nothing was eliminated, and
+the only strength claim still marked not formalised is petiole **bending** (WP-077), which R7's axial case does
+not cover. The illustrative giant claimed to stand (reference safety factor 10, illustrative) is eliminated by
+C8c, and a glider below its own minimum speed by C9. Power available is not a constraint: its `L^3` rests on
+Thompson's muscle premise, carried as a named hypothesis.
+
+## The most valuable next constraints
+
+Bending (section modulus), elastic similarity, the walking (pendulum) route, and any quantitative muscle-power
+law; without the last, "a bird as large as a man could not fly" has an existence proof and no number.
 
 ## Mutants
 

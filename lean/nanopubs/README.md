@@ -87,7 +87,7 @@ resolves, and never delete the key files.
 ## Why the mutants change the statement, not the proof
 
 Most "formally verified" claims are tested, if at all, by breaking the proof: delete a tactic, watch
-the build fail. That shows the proof script is load-bearing, nothing more. The thirteen mutants in
+the build fail. That shows the proof script is load-bearing, nothing more. The twenty-six mutants in
 `lean/mutate.mjs` instead change the **statement** of the headline theorem (k = 2μ, 1/(M+1), i/(M+1),
 3× odds, no division by mean fitness, fixation ≥ (i+1)/M, budget ≥ 2μT, cube-law exponent 2, closure level inequality flipped) or sabotage the certified data (an upward edge through the body root; a never_in_taxon row for Vertebrata) or delete a hypothesis of the model (the chain's escape
 condition; the favored chain's non-decreasing drift). If the proof still went through, the theorem would be about the names, not the law:

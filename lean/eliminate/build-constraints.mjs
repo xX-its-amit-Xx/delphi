@@ -39,7 +39,26 @@ export const QUANTITIES = {
   mutation_rate_ratio: { unit: 'ratio of the mutation rates of two neutral lineages (lineage 2 over lineage 1)', kind: 'point' },
   neutral_substitution_rate_ratio: { unit: 'ratio of the neutral substitution rates of the same two lineages', kind: 'point' },
   mean_fitness_change_sign: { unit: 'sign of the change in mean fitness over one round of selection: positive, zero or negative', kind: 'sign' },
-  asexual_odds_growth_factor: { unit: 'factor by which the odds of asexual females grow per generation', kind: 'point' }
+  asexual_odds_growth_factor: { unit: 'factor by which the odds of asexual females grow per generation', kind: 'point' },
+  area_ratio: { unit: 'S(L2)/S(L1) or A(L2)/A(L1), an area of the same body family', kind: 'point' },
+  area_loglog_exponent: { unit: 'd log(area) / d log L between the two sizes', kind: 'interval' },
+  stress_ratio: { unit: '(W/A)(L2)/(W/A)(L1): stress on a load-bearing section, or wing loading W/S', kind: 'point' },
+  stress_loglog_exponent: { unit: 'd log(W/A) / d log L (stress or wing loading)', kind: 'interval' },
+  breaking_load_ratio: { unit: 'F_break(L2)/F_break(L1), axial, same material', kind: 'point' },
+  breaking_stress_Pa: { unit: 'σ, breaking stress of the material, N m^-2', kind: 'point' },
+  cross_section_m2: { unit: 'A, load-bearing cross-sectional area, m^2', kind: 'point' },
+  weight_N: { unit: 'W, body weight, N', kind: 'point' },
+  load_in_body_weights: { unit: 'n, the load the member is claimed to carry, in body weights', kind: 'point' },
+  reference_safety_factor: { unit: 'n0 = F_break/W of the reference (unscaled) body', kind: 'point' },
+  claimed_safety_factor: { unit: 'n, the body weights the scaled body is claimed to carry (1 = it can stand)', kind: 'point' },
+  airspeed_m_s: { unit: 'v, airspeed relative to the air, m s^-1', kind: 'point' },
+  lifting_area_m2: { unit: 'S, lifting planform area, m^2', kind: 'point' },
+  air_density_kg_m3: { unit: 'ρ, air density, kg m^-3', kind: 'point' },
+  max_lift_coefficient: { unit: 'C_L,max, dimensionless', kind: 'point' },
+  vmin_ratio: { unit: 'v_min(L2)/v_min(L1)', kind: 'point' },
+  vmin_loglog_exponent: { unit: 'd log v_min / d log L', kind: 'interval' },
+  power_required_loglog_exponent: { unit: 'd log P_req / d log L at v_min', kind: 'interval' },
+  froude_speed_ratio: { unit: 'v(L2)/v(L1) at equal Froude number', kind: 'point' }
 };
 // Assumption flags: a candidate must accept the model before a theorem about the model can rule on it.
 export const ASSUMPTIONS = {
@@ -48,7 +67,15 @@ export const ASSUMPTIONS = {
   independent_fates_definition: 'the expected count is Kimura\'s definition rate x generations: independent fates, constant M, mu and s, no linkage (lean/Delphi/Favored.lean header)',
   fixed_fitnesses_one_locus: 'one haploid or clonal locus, fixed fitnesses within the step, infinite population, no mutation (lean/Delphi/Fisher.lean header)',
   equal_fecundity_1to1: 'equal fecundity of sexual and asexual females, a 1:1 sex ratio, males contributing nothing, discrete generations (lean/Delphi/MaynardSmith.lean header)',
-  isometric_constant_density: 'the same body family scaled without change of shape or density, so W = k L^3 (lean/Delphi/Thompson.lean header)'
+  isometric_constant_density: 'the same body family scaled without change of shape or density, so W = k L^3 (lean/Delphi/Thompson.lean header)',
+  isometric_areas: 'the area in question (lifting area, load-bearing cross-section, exchange surface) scales as k L^2 across the family (AreaLaw, lean/Delphi/Scaling.lean)',
+  same_material: 'the breaking stress σ is the same for every member of the family (R7)',
+  axial_loading: 'the member fails under axial load σ A; bending is not formalised',
+  lift_supported_flight: 'steady flight with lift ½ ρ v² S C_L equal to weight and 0 < C_L ≤ C_L,max (R4)',
+  constant_lift_coefficient_max_and_density: 'C_L,max and ρ the same for every member of the family (R4 scaling)',
+  constant_lift_to_drag: 'L/D the same for every member and flight at v_min (R5)',
+  muscle_power_premise: 'Thompson\'s premise, contested: muscle mass a constant fraction f of body mass and mass-specific power p constant (R6, MusclePowerLaw)',
+  equal_froude_number: 'the compared animals move at equal Froude number v²/(g L) (R8)'
 };
 
 const spec = [
@@ -124,6 +151,58 @@ const spec = [
     requires: ['length_ratio', 'weight_ratio'], appliesWhen: ['isometric_constant_density'],
     rule: 'eliminated when the committed weight-ratio interval is disjoint from the cube of the length-ratio interval',
     canEliminate: 'the mass side of Galileo\'s square-cube argument only: a giant with unchanged proportions and density must weigh (L2/L1)^3 times more. Strength scaling as L^2 is NOT formalised, so a candidate claiming the giant can support itself is not ruled out by this theorem', kernelCheckable: true },
+  { id: 'C2a', claim_id: 'scaling-area-law', lemma: 'Delphi.Constraints.area_exponent_rules_out', law: 'Delphi.areaLaw_log', module: 'lean/Delphi/Scaling.lean',
+    property: 'how an area (lifting surface, cross-section, exchange surface) scales with the linear dimension under isometry',
+    relation: 'd log(area) / d log L = 2', symbols: { 'd log(area)/d log L': 'area_loglog_exponent' },
+    requires: ['area_loglog_exponent'], appliesWhen: ['isometric_areas'], rule: 'eliminated when the committed exponent interval excludes 2',
+    canEliminate: 'a candidate that asserts isometry of the area and an area exponent other than 2; an exponent of 2 is the hypothesis restated and is consistent', kernelCheckable: true },
+  { id: 'C2b', claim_id: 'scaling-area-law', lemma: 'Delphi.Constraints.area_ratio_rules_out', law: 'Delphi.areaLaw_ratio', module: 'lean/Delphi/Scaling.lean',
+    property: 'the ratio of an area between two sizes under isometry', relation: 'area ratio = (L2/L1)^2', symbols: { 'area ratio': 'area_ratio', 'L2/L1': 'length_ratio' },
+    requires: ['length_ratio', 'area_ratio'], appliesWhen: ['isometric_areas'], rule: 'point commitments: eliminated when area_ratio ≠ length_ratio^2',
+    canEliminate: 'a candidate committing an area ratio inconsistent with the square of its length ratio', kernelCheckable: true },
+  { id: 'C8', claim_id: 'scaling-strength-law', lemma: 'Delphi.Constraints.axial_strength_rules_out', law: 'Delphi.breakLoad_ratio', module: 'lean/Delphi/Scaling.lean',
+    property: 'whether a member of stated cross-section and material can carry a stated load (dimensional, no scaling needed)',
+    relation: 'n W ≤ σ A', symbols: { σ: 'breaking_stress_Pa', A: 'cross_section_m2', W: 'weight_N', n: 'load_in_body_weights' },
+    requires: ['breaking_stress_Pa', 'cross_section_m2', 'weight_N', 'load_in_body_weights'], appliesWhen: ['axial_loading'], rule: 'eliminated when σ A < n W',
+    canEliminate: 'a design that commits to σ, A, W and the load it carries, with σ A < n W', kernelCheckable: true },
+  { id: 'C8b', claim_id: 'scaling-strength-law', lemma: 'Delphi.Constraints.strength_ratio_rules_out', law: 'Delphi.breakLoad_ratio', module: 'lean/Delphi/Scaling.lean',
+    property: 'how breaking load scales with size under isometric sections and the same material', relation: 'F_break ratio = (L2/L1)^2', symbols: { 'F_break ratio': 'breaking_load_ratio', 'L2/L1': 'length_ratio' },
+    requires: ['length_ratio', 'breaking_load_ratio'], appliesWhen: ['isometric_areas', 'same_material', 'axial_loading'], rule: 'point commitments: eliminated when the ratio ≠ length_ratio^2',
+    canEliminate: 'a candidate committing to a breaking-load ratio other than the square of its length ratio', kernelCheckable: true },
+  { id: 'C8c', claim_id: 'scaling-strength-law', lemma: 'Delphi.Constraints.giant_rules_out', law: 'Delphi.safetyFactor_scaled', module: 'lean/Delphi/Scaling.lean',
+    property: 'whether a body scaled up with unchanged proportions and material can still carry itself (Galileo\'s giant)',
+    relation: 'n ≤ n0 / (L2/L1)', symbols: { n0: 'reference_safety_factor', n: 'claimed_safety_factor', 'L2/L1': 'length_ratio' },
+    requires: ['length_ratio', 'reference_safety_factor', 'claimed_safety_factor'], appliesWhen: ['isometric_constant_density', 'isometric_areas', 'same_material', 'axial_loading'], rule: 'eliminated when n0 < n × length_ratio',
+    canEliminate: 'a giant of unchanged proportions and material claimed to carry n body weights when the reference body\'s safety factor divided by the length ratio is below n; a candidate that does not commit to a reference safety factor stays cannot-rule', kernelCheckable: true },
+  { id: 'C8d', claim_id: 'scaling-strength-law', lemma: 'Delphi.Constraints.stress_ratio_rules_out', law: 'Delphi.stress_ratio', module: 'lean/Delphi/Scaling.lean',
+    property: 'how stress on a load-bearing section (or wing loading) scales with size', relation: 'stress ratio = L2/L1', symbols: { 'stress ratio': 'stress_ratio', 'L2/L1': 'length_ratio' },
+    requires: ['length_ratio', 'stress_ratio'], appliesWhen: ['isometric_constant_density', 'isometric_areas'], rule: 'point commitments: eliminated when stress_ratio ≠ length_ratio',
+    canEliminate: 'a candidate committing a stress or wing-loading ratio other than its length ratio', kernelCheckable: true },
+  { id: 'C8e', claim_id: 'scaling-strength-law', lemma: 'Delphi.Constraints.stress_exponent_rules_out', law: 'Delphi.wingLoading_log', module: 'lean/Delphi/Scaling.lean',
+    property: 'the log-log exponent of stress (or wing loading) on the linear dimension', relation: 'd log(W/A) / d log L = 1', symbols: { 'd log(W/A)/d log L': 'stress_loglog_exponent' },
+    requires: ['stress_loglog_exponent'], appliesWhen: ['isometric_constant_density', 'isometric_areas'], rule: 'eliminated when the committed exponent interval excludes 1',
+    canEliminate: 'a candidate asserting isometry and a stress or wing-loading exponent other than 1', kernelCheckable: true },
+  { id: 'C9', claim_id: 'thompson1917-ch02-06', lemma: 'Delphi.Constraints.vmin_rules_out', law: 'Delphi.vmin_le', module: 'lean/Delphi/Scaling.lean',
+    property: 'whether a stated airspeed can sustain lift-supported flight for a stated weight, lifting area, air density and maximal lift coefficient (dimensional, exact)',
+    relation: 'v ≥ sqrt(2 W / (ρ S C_L,max)), checked as v^2 ≥ 2W/(ρ S C_L,max)', symbols: { v: 'airspeed_m_s', W: 'weight_N', S: 'lifting_area_m2', ρ: 'air_density_kg_m3', 'C_L,max': 'max_lift_coefficient' },
+    requires: ['airspeed_m_s', 'weight_N', 'lifting_area_m2', 'air_density_kg_m3', 'max_lift_coefficient'], appliesWhen: ['lift_supported_flight'], rule: 'eliminated when v^2 < 2W/(ρ S C_L,max)',
+    canEliminate: 'a design or claim of steady lift-supported flight below its own minimum speed', kernelCheckable: true },
+  { id: 'C9b', claim_id: 'thompson1917-ch02-10', lemma: 'Delphi.Constraints.vmin_scaling_rules_out', law: 'Delphi.vmin_ratio', module: 'lean/Delphi/Scaling.lean',
+    property: 'how minimum flight speed scales with size', relation: 'v_min ratio = sqrt(L2/L1), checked as ratio^2 = L2/L1', symbols: { 'v_min ratio': 'vmin_ratio', 'L2/L1': 'length_ratio' },
+    requires: ['length_ratio', 'vmin_ratio'], appliesWhen: ['isometric_constant_density', 'isometric_areas', 'constant_lift_coefficient_max_and_density'], rule: 'point commitments: eliminated when vmin_ratio^2 ≠ length_ratio',
+    canEliminate: 'a candidate committing a minimum-speed ratio other than the square root of its length ratio', kernelCheckable: true },
+  { id: 'C9c', claim_id: 'thompson1917-ch02-10', lemma: 'Delphi.Constraints.vmin_exponent_rules_out', law: 'Delphi.vmin_log', module: 'lean/Delphi/Scaling.lean',
+    property: 'the log-log exponent of minimum flight speed on the linear dimension', relation: 'd log v_min / d log L = 1/2', symbols: { 'd log v_min/d log L': 'vmin_loglog_exponent' },
+    requires: ['vmin_loglog_exponent'], appliesWhen: ['isometric_constant_density', 'isometric_areas', 'constant_lift_coefficient_max_and_density'], rule: 'eliminated when the committed exponent interval excludes 1/2',
+    canEliminate: 'a candidate asserting isometry and constant aerodynamics with a minimum-speed exponent other than 1/2', kernelCheckable: true },
+  { id: 'C10', claim_id: 'thompson1917-ch02-06', lemma: 'Delphi.Constraints.powerRequired_exponent_rules_out', law: 'Delphi.powerRequired_log', module: 'lean/Delphi/Scaling.lean',
+    property: 'the log-log exponent of the power required for flight at minimum speed', relation: 'd log P_req / d log L = 7/2', symbols: { 'd log P_req/d log L': 'power_required_loglog_exponent' },
+    requires: ['power_required_loglog_exponent'], appliesWhen: ['isometric_constant_density', 'isometric_areas', 'constant_lift_coefficient_max_and_density', 'constant_lift_to_drag'], rule: 'eliminated when the committed exponent interval excludes 7/2',
+    canEliminate: 'a candidate asserting the full set of hypotheses with a power-required exponent other than 3.5 (note: power AVAILABLE is not constrained; its L^3 rests on the contested muscle premise)', kernelCheckable: true },
+  { id: 'C11', claim_id: 'thompson1917-ch02-10', lemma: 'Delphi.Constraints.froude_rules_out', law: 'Delphi.froude_ratio', module: 'lean/Delphi/Scaling.lean',
+    property: 'how speed scales with size at equal Froude number', relation: 'speed ratio = sqrt(L2/L1), checked as ratio^2 = L2/L1', symbols: { 'speed ratio': 'froude_speed_ratio', 'L2/L1': 'length_ratio' },
+    requires: ['length_ratio', 'froude_speed_ratio'], appliesWhen: ['equal_froude_number'], rule: 'point commitments: eliminated when ratio^2 ≠ length_ratio',
+    canEliminate: 'a candidate committing to equal Froude number and a speed ratio other than the square root of its length ratio', kernelCheckable: true },
   { id: 'C7b', claim_id: 'thompson1917-ch03-07', lemma: 'Delphi.Constraints.exponent_rules_out', law: 'Delphi.cubeLaw_loglog_exponent', module: 'lean/Delphi/Thompson.lean',
     property: 'the log-log exponent of weight on a linear dimension under isometric scaling',
     relation: 'b = 3', symbols: { b: 'loglog_exponent' },
@@ -132,16 +211,39 @@ const spec = [
     canEliminate: 'a candidate that asserts isometry and a measured exponent whose interval excludes 3 (for example every NHANES window in the claims thread\'s test, if read as isometric)', kernelCheckable: true }
 ];
 
+// Rulings per constraint from the open-problems ledger (if it exists), and a stated reason where no enumerated
+// candidate reaches a constraint, so a constraint with no ruling is not mistaken for a dead one.
+const ledgerFile = path.join(root, 'lean/eliminate/ledger.open-problems.json');
+const ledger = fs.existsSync(ledgerFile) ? JSON.parse(fs.readFileSync(ledgerFile, 'utf8')) : null;
+const rulingsOf = id => { if (!ledger) return null; const rows = ledger.ledger.flatMap(l => l.results.filter(r => r.constraint === id)); const c = s => rows.filter(r => r.state === s).length; return { eliminated: c('eliminated'), consistent: c('consistent'), cannotRule: c('cannot-rule'), reached: rows.filter(r => r.state !== 'cannot-rule').length }; };
+const WHY_NO_CANDIDATE = {
+  C8: 'no enumerated candidate commits a breaking stress, a cross-section and a load in body weights; the dimensional strength check is exercised only by the illustrative examples',
+  C8b: 'no enumerated candidate commits a breaking-load ratio; the square-cube rows commit stress and area exponents (C8e, C2a) instead',
+  C8c: 'no enumerated candidate commits a reference safety factor, which the Galileo giant lemma needs; the illustrative giant-insect-stands does and is eliminated',
+  C8d: 'reached only by the two square-cube rows that commit numeric stress ratios (SCI100-48, ORX-18/C2)',
+  C9: 'no enumerated candidate commits an airspeed with W, S, ρ and C_L,max; the specimen of the physics thread enters only through the illustrative glider-below-minimum-speed example',
+  C9b: 'no enumerated candidate commits a minimum-speed ratio; ORX-10/C2 commits the exponent instead (C9c)',
+  C10: 'no enumerated candidate commits a power-required exponent; the flight rows of the enumerator are about wing loading and minimum speed, and power available is not a constraint (muscle premise)',
+  C11: 'no enumerated candidate commits to Froude scaling; the rows of the enumerator are flight and support, not swimming or walking',
+  C2: 'the five fixation-probability rows adopt u = i/M as their premise and give no M or probability a value (untranslatable)',
+  C4b: 'the two Fisher rows commit zero variance with a sign of the change (C4c); neither commits an interval for the change in mean fitness',
+  C3: 'no enumerated candidate commits a numeric fixation probability with s ≥ 0; the three that mention the favored floor adopt it as a premise (untranslatable)',
+  C3b: 'no enumerated candidate commits an expected substitution count with M, mu and T together; the Cambrian and human-chimp rows give mu and T but no M or site count',
+  C4: 'no enumerated candidate commits exact values of all three Fisher quantities; the two Fisher rows commit zero variance (C4c)',
+  C5: 'no enumerated candidate commits q0, n and q_n; the twofold rows commit the per-generation factor (C5b) or reject the premise',
+  C6: 'the seven blueprint rows state homology or part-of claims in words; none emitted a graph, so C6 cannot rule (no-graph)',
+  C2b: 'reached only by the two square-cube rows that commit numeric area ratios (SCI100-48, ORX-18/C2)'
+};
 const out = {
-  built: new Date().toISOString(), tool: 'lean/eliminate/build-constraints.mjs', leanReport: R.built, lemmaModule: 'lean/Delphi/Constraints.lean',
+  built: new Date().toISOString(), tool: 'lean/eliminate/build-constraints.mjs', rulingsFrom: ledger ? `lean/eliminate/ledger.open-problems.json (run ${ledger.summary.run})` : null, leanReport: R.built, lemmaModule: 'lean/Delphi/Constraints.lean',
   framing: 'A theorem eliminates candidates, not open problems: a candidate is a proposed answer or design that commits to quantities the theorem forbids. Three states: eliminated (the violated relation with the numbers, kernel-checked where marked), consistent (not ruled out by these theorems; never "feasible"), cannot-rule (a required input or assumption is missing). An elimination holds only under the law\'s own assumptions, listed per constraint; three of the four original statements were judged narrower in scope than their claims by the assessor, and a candidate eliminated by a narrower statement is eliminated only under that statement\'s assumptions.',
-  nextConstraint: 'Strength scaling as L^2 (cross-section), which with the cube law would turn Galileo\'s square-cube argument into an elimination; not formalised.',
+  nextConstraint: 'Strength scaling as L^2 is now formalised (R7, C8-C8e). Not yet formalised: bending (section modulus), elastic similarity, the walking (pendulum) route of thompson1917-ch02-10, and any quantitative muscle-power law (R6 is carried only as a named hypothesis).',
   quantities: QUANTITIES, assumptions: ASSUMPTIONS,
   constraints: spec.map(c => {
     const f = claim(c.claim_id) || {};
     return { ...c, label: f.label || null, lawAxioms: audit(c.law)?.axioms ?? null, lemmaAxioms: audit(c.lemma)?.axioms ?? null, status: f.status || null,
       proofScope: f.proofScope || null, faithfulness: f.faithfulness || 'not assessed (no paper states this form)', verdicts: f.verdicts || [],
-      assumptionsText: c.appliesWhen.map(a => ASSUMPTIONS[a]) };
+      assumptionsText: c.appliesWhen.map(a => ASSUMPTIONS[a]), openProblemRulings: rulingsOf(c.id), whyNoCandidate: (rulingsOf(c.id) && rulingsOf(c.id).reached === 0) ? (WHY_NO_CANDIDATE[c.id] || 'no enumerated candidate commits the inputs this constraint needs') : (WHY_NO_CANDIDATE[c.id] || null) };
   })
 };
 fs.writeFileSync(path.join(root, 'lean/constraints.json'), JSON.stringify(out, null, 1));

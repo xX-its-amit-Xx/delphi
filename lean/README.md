@@ -140,3 +140,24 @@ it must accept, the two-column proof scope and the assessor's faithfulness verdi
 arithmetic by `norm_num`, compiles it, and records whether the kernel accepted it. See `lean/eliminate/README.md`
 for the schema and the limits (Galileo's square-cube argument is covered on the mass side only; strength scaling
 as `L^2` is not formalised).
+
+## Scaling laws from the physics thread (R2-R8): strength, flight, Froude
+
+`Delphi/Scaling.lean` formalises the statements in `physics/FORMAL-STATEMENTS.md`, every law a **named
+hypothesis** on functions of one linear dimension (`CubeLaw` for mass and weight, `AreaLaw` for lifting area
+and load-bearing section, `MusclePowerLaw` for Thompson's muscle premise) and `σ`, `ρ`, `C_L,max`, `L/D`, `Fr`
+as constants "the same for every member of the family". Proved: the area law and wing loading `∝ L` (R2, R3);
+**strength `∝ L^2`** with `F_break = σ A`, the safety factor `F_break/W = σ k3/(k1 L)` and the size `L_max =
+σ k3/(k1 n)` above which a member cannot carry `n` body weights (R7: the missing half of Galileo's square-cube
+argument, now an elimination lemma C8c); the exact minimum-speed bound `v ≥ sqrt(2W/(ρ S C_L,max))` for
+lift-supported flight and its `√L` scaling (R4); power required at `v_min ∝ L^3.5` (R5); power available
+`∝ L^3` **only under** the muscle premise, which is carried as a hypothesis and never asserted (R6); the
+existence of a size above which power required exceeds power available, with no value supplied (Thompson
+ch. II, "a bird as large as a man could not fly"); and Froude's `√L` (R8). Nine statement mutants (exponents
+changed, the `C_L ≤ C_L,max` hypothesis dropped, the safety factor made constant) must all be rejected.
+
+Honesty notes, stated in each record: isometry is measured to fail within one flying-fish species (Davenport
+1992); `C_L,max`, `L/D` and `p` are assumed constant; the physics thread found one specimen inside its own
+`v_min` envelope but could not test the `√(W/S)` scaling, so these are statements about the model, not
+confirmed facts; no number from `physics/results.json` appears in any theorem. The walking (pendulum) route
+of `thompson1917-ch02-10`, bending (section modulus) and elastic similarity are not formalised.

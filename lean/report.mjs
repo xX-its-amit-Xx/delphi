@@ -113,6 +113,23 @@ try {
     note: 'Exact form only: W = k L^3 (isometric growth at constant density) gives a log-log exponent of exactly 3 and weight ratio (L2/L1)^3; a measured exponent other than 3 refutes the exact law on that interval. Thompson\'s "mainly (though not wholly)" and the claim test\'s tolerance band are outside the theorem.',
     paper: { title: 'On Growth and Form', year: 1917, doi: null, author: "D'Arcy Wentworth Thompson" } });
 } catch (e) { console.error('thompson claim not loaded: ' + e.message); }
+// Scaling laws handed over by the physics thread (physics/FORMAL-STATEMENTS.md, R2-R8): lean/Delphi/Scaling.lean.
+formalized.push({ claim_id: 'scaling-area-law', theorem: 'Delphi.areaLaw_ratio', module: 'lean/Delphi/Scaling.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified', derived: true,
+  label: 'Area law and wing loading under isometry (R2, R3)', statement: 'In an isometric family an area scales as the square of the linear dimension, S(L2)/S(L1) = (L2/L1)^2, and with the cube law the weight per unit area (wing loading, or stress W/A) scales as L2/L1.',
+  notation: 'S ∝ L^2 ; W/S ∝ L', context: 'physics/FORMAL-STATEMENTS.md R2 and R3; Thompson ch. II. Davenport 1992 measured fin area ∝ L^1.834 and wing loading ∝ L^1.236 within one flying-fish species, so isometry is an idealisation there.',
+  note: 'Isometry of the area is a named hypothesis (AreaLaw); the theorem says nothing about any family being isometric.', paper: null });
+formalized.push({ claim_id: 'scaling-strength-law', theorem: 'Delphi.breakLoad_ratio', module: 'lean/Delphi/Scaling.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified', derived: true,
+  label: 'Strength scales as L^2: the missing half of Galileo\'s square-cube argument (R7)', statement: 'A member of cross-section A made of material with breaking stress σ fails under axial load σ A. With isometric sections and the same material the breaking load scales as (L2/L1)^2, the static safety factor F_break/W equals σ k3/(k1 L) and falls as 1/L, stress W/A grows as L, and above L_max = σ k3/(k1 n) the member cannot carry n body weights.',
+  notation: 'F_break = σ A ∝ L^2 ; F_break/W ∝ 1/L ; L_max = σ k3/(k1 n)', context: 'physics/FORMAL-STATEMENTS.md R7 (Galileo 1638, Two New Sciences). With R1 this lets the checker rule on "a giant of unchanged proportions and material can stand".',
+  note: 'Axial loading, isometric sections and constant σ are named hypotheses; real animals thicken bones with size (elastic similarity gives A ∝ L^2.5 under a different hypothesis).', paper: null });
+try {
+  const tc = JSON.parse(fs.readFileSync(path.join(root, 'thompson-growth-form/claims.json'), 'utf8'));
+  const tl = id => (Array.isArray(tc) ? tc : tc.claims).find(c => c.id === id);
+  const mk = (id, theorem, note) => { const c = tl(id); return { claim_id: id, theorem, module: 'lean/Delphi/Scaling.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified', label: c.label, statement: c.claim, notation: c.notation, context: `${c.quote} (On Growth and Form, ch. ${c.chapter}, "${c.section}", lines ${c.lineStart}-${c.lineEnd})`, note, paper: { title: 'On Growth and Form', year: 1917, doi: null, author: "D'Arcy Wentworth Thompson" } }; };
+  formalized.push(mk('thompson1917-ch02-06', 'Delphi.powerRequired_log', 'Exact part: lift-supported flight with C_L ≤ C_L,max needs v ≥ v_min = sqrt(2W/(ρ S C_L,max)) (R4, no isometry). Scaling part: under R1, R2, constant ρ, C_L,max and L/D, v_min ∝ L^(1/2) and the power required at v_min ∝ L^(7/2); the power available ∝ L^3 ONLY under Thompson\'s muscle premise (constant muscle fraction and mass-specific power), carried as a named hypothesis MusclePowerLaw and never asserted. Thompson\'s momentum-flux derivation is not formalised; the lift equation stands in for it.'));
+  formalized.push(mk('thompson1917-ch02-07', 'Delphi.exists_size_limit', 'Only the existence of a size above which power required exceeds power available is proved, under R1, R2, constant ρ, C_L,max, L/D and the muscle premise. Its value needs f, p, L/D, ρ and C_L,max, which no proof supplies, so nothing here says the ostrich, the moa or a man-sized bird is past it.'));
+  formalized.push(mk('thompson1917-ch02-10', 'Delphi.vmin_ratio', 'Two of Thompson\'s three routes: flight (v_min ∝ L^(1/2) under R1, R2, constant ρ and C_L,max) and swimming (Froude: v ∝ (g L)^(1/2) at equal Froude number). The walking (pendulum) route is not formalised.'));
+} catch (e) { console.error('thompson flight claims not loaded: ' + e.message); }
 // 4b. Proof scope: which decisions the Lean kernel checked, and which are assumptions stated in the
 // module header and never proved. Mirrors the module headers; kept here so the page can show both halves.
 const proofScope = {
@@ -179,6 +196,26 @@ const proofScope = {
       `Thompson's "mainly (though not wholly)" is not formalised: the theorem is exact, the law is approximate, and the tolerance band [2.5, 3.5] the claim test uses is a decision rule outside the module.`,
       `No data enters the module; the measured exponents are read from the claims thread's result files and pointed to.`
     ]
+  },
+  'scaling-area-law': {
+    kernelChecked: ['If S L = k L^2 for all L > 0 (AreaLaw) then S(L2)/S(L1) = (L2/L1)^2 and log S(L2)/S(L1) = 2 log(L2/L1) (areaLaw_ratio, areaLaw_log).', 'With CubeLaw W: (W/S)(L2)/(W/S)(L1) = L2/L1, exponent 1 (wingLoading_ratio, wingLoading_log).'],
+    assumed: ['Isometry of the area and of the mass (constant density): named hypotheses, measured to fail within one flying-fish species (Davenport 1992).', 'Nothing about which family is isometric; the theorems bound only families that are.']
+  },
+  'scaling-strength-law': {
+    kernelChecked: ['F_break = σ A: with AreaLaw A and σ > 0, F_break(L2)/F_break(L1) = (L2/L1)^2 (breakLoad_ratio).', 'With CubeLaw W: F_break/W = σ k3/(k1 L) (safetyFactor_eq); the safety factor of the scaled body is the reference one divided by the length ratio (safetyFactor_scaled); stress W/A scales as L2/L1 (stress_ratio).', 'Above L_max = σ k3/(k1 n) the member cannot carry n body weights (cannot_carry).'],
+    assumed: ['Axial loading (bending has the same L^2 dependence with a different constant; not formalised).', 'Isometric load-bearing sections and the same material (constant σ): real animals thicken bones with size.', 'Nothing about any real giant: the checker rules only on a candidate that commits to isometry, the same material and a safety factor.']
+  },
+  'thompson1917-ch02-06': {
+    kernelChecked: ['Exact: lift = ½ ρ v² S C_L equal to weight with 0 < C_L ≤ C_L,max implies v ≥ sqrt(2W/(ρ S C_L,max)) (vmin_le).', 'Under R1, R2, constant ρ and C_L,max: v_min(L2)/v_min(L1) = sqrt(L2/L1), log exponent 1/2 (vmin_ratio, vmin_log).', 'With constant L/D, power required at v_min: ratio (L2/L1)^3 sqrt(L2/L1), log exponent 7/2 (powerRequired_ratio, powerRequired_log).', 'Under MusclePowerLaw (named hypothesis) and R1: power available ratio (L2/L1)^3 (powerAvailable_ratio); P_req/P_avail = c sqrt(L) with an explicit c (powerRatio_eq).'],
+    assumed: ['Constant C_L,max across sizes (Reynolds effects change it), constant ρ, constant L/D, and flight at v_min rather than a faster, more efficient speed.', 'The muscle premise of Thompson (muscle fraction f and mass-specific power p constant) is contested: contraction frequency falls with size, so the modern expectation is an exponent below 3. It is carried as a hypothesis, never proved or asserted.', 'The physics thread found one Cypselurus hiraii specimen inside its v_min envelope (v_min 9.85 m/s against field speeds 10-20 m/s) but could not test the sqrt(W/S) scaling with its data; the theorems are statements about the model, not confirmed facts.']
+  },
+  'thompson1917-ch02-07': {
+    kernelChecked: ['Under R1, R2, constant ρ, C_L,max, L/D and MusclePowerLaw there is a size L* > 0 such that for every L > L*, P_avail(L) < P_req(L) at v_min (exists_size_limit, with L* = 1/c² for the explicit c of powerRatio_eq).'],
+    assumed: ['Everything in thompson1917-ch02-06, and that the family extends to the size in question with unchanged proportions.', 'The value of L* needs f, p, L/D, ρ and C_L,max; the proof supplies none, so nothing here places the ostrich, the moa or a man-sized bird above it.']
+  },
+  'thompson1917-ch02-10': {
+    kernelChecked: ['Flight: v_min(L2)/v_min(L1) = sqrt(L2/L1) under R1, R2, constant ρ and C_L,max (vmin_ratio).', 'Swimming: at equal Froude number v = sqrt(Fr g L), so v(L2)/v(L1) = sqrt(L2/L1) (froude_ratio).'],
+    assumed: ['That the compared animals move at equal Froude number, or fly at v_min with the same ρ and C_L,max.', 'The walking route (the leg as a pendulum) is not formalised.']
   },
   'maynardsmith-twofold-cost': {
     kernelChecked: [

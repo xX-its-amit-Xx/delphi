@@ -1,10 +1,11 @@
 {
- "built": "2026-10-31T17:06:28.822Z",
+ "built": "2026-10-31T19:02:07.937Z",
  "tool": "lean/eliminate/build-constraints.mjs",
- "leanReport": "2026-10-31T17:06:28.759Z",
+ "rulingsFrom": "lean/eliminate/ledger.open-problems.json (run 2026-10-31T18:59:16.071Z)",
+ "leanReport": "2026-10-31T19:00:29.315Z",
  "lemmaModule": "lean/Delphi/Constraints.lean",
  "framing": "A theorem eliminates candidates, not open problems: a candidate is a proposed answer or design that commits to quantities the theorem forbids. Three states: eliminated (the violated relation with the numbers, kernel-checked where marked), consistent (not ruled out by these theorems; never \"feasible\"), cannot-rule (a required input or assumption is missing). An elimination holds only under the law's own assumptions, listed per constraint; three of the four original statements were judged narrower in scope than their claims by the assessor, and a candidate eliminated by a narrower statement is eliminated only under that statement's assumptions.",
- "nextConstraint": "Strength scaling as L^2 (cross-section), which with the cube law would turn Galileo's square-cube argument into an elimination; not formalised.",
+ "nextConstraint": "Strength scaling as L^2 is now formalised (R7, C8-C8e). Not yet formalised: bending (section modulus), elastic similarity, the walking (pendulum) route of thompson1917-ch02-10, and any quantitative muscle-power law (R6 is carried only as a named hypothesis).",
  "quantities": {
   "mutation_rate": {
    "unit": "mutations per site per generation",
@@ -93,6 +94,82 @@
   "asexual_odds_growth_factor": {
    "unit": "factor by which the odds of asexual females grow per generation",
    "kind": "point"
+  },
+  "area_ratio": {
+   "unit": "S(L2)/S(L1) or A(L2)/A(L1), an area of the same body family",
+   "kind": "point"
+  },
+  "area_loglog_exponent": {
+   "unit": "d log(area) / d log L between the two sizes",
+   "kind": "interval"
+  },
+  "stress_ratio": {
+   "unit": "(W/A)(L2)/(W/A)(L1): stress on a load-bearing section, or wing loading W/S",
+   "kind": "point"
+  },
+  "stress_loglog_exponent": {
+   "unit": "d log(W/A) / d log L (stress or wing loading)",
+   "kind": "interval"
+  },
+  "breaking_load_ratio": {
+   "unit": "F_break(L2)/F_break(L1), axial, same material",
+   "kind": "point"
+  },
+  "breaking_stress_Pa": {
+   "unit": "σ, breaking stress of the material, N m^-2",
+   "kind": "point"
+  },
+  "cross_section_m2": {
+   "unit": "A, load-bearing cross-sectional area, m^2",
+   "kind": "point"
+  },
+  "weight_N": {
+   "unit": "W, body weight, N",
+   "kind": "point"
+  },
+  "load_in_body_weights": {
+   "unit": "n, the load the member is claimed to carry, in body weights",
+   "kind": "point"
+  },
+  "reference_safety_factor": {
+   "unit": "n0 = F_break/W of the reference (unscaled) body",
+   "kind": "point"
+  },
+  "claimed_safety_factor": {
+   "unit": "n, the body weights the scaled body is claimed to carry (1 = it can stand)",
+   "kind": "point"
+  },
+  "airspeed_m_s": {
+   "unit": "v, airspeed relative to the air, m s^-1",
+   "kind": "point"
+  },
+  "lifting_area_m2": {
+   "unit": "S, lifting planform area, m^2",
+   "kind": "point"
+  },
+  "air_density_kg_m3": {
+   "unit": "ρ, air density, kg m^-3",
+   "kind": "point"
+  },
+  "max_lift_coefficient": {
+   "unit": "C_L,max, dimensionless",
+   "kind": "point"
+  },
+  "vmin_ratio": {
+   "unit": "v_min(L2)/v_min(L1)",
+   "kind": "point"
+  },
+  "vmin_loglog_exponent": {
+   "unit": "d log v_min / d log L",
+   "kind": "interval"
+  },
+  "power_required_loglog_exponent": {
+   "unit": "d log P_req / d log L at v_min",
+   "kind": "interval"
+  },
+  "froude_speed_ratio": {
+   "unit": "v(L2)/v(L1) at equal Froude number",
+   "kind": "point"
   }
  },
  "assumptions": {
@@ -101,7 +178,15 @@
   "independent_fates_definition": "the expected count is Kimura's definition rate x generations: independent fates, constant M, mu and s, no linkage (lean/Delphi/Favored.lean header)",
   "fixed_fitnesses_one_locus": "one haploid or clonal locus, fixed fitnesses within the step, infinite population, no mutation (lean/Delphi/Fisher.lean header)",
   "equal_fecundity_1to1": "equal fecundity of sexual and asexual females, a 1:1 sex ratio, males contributing nothing, discrete generations (lean/Delphi/MaynardSmith.lean header)",
-  "isometric_constant_density": "the same body family scaled without change of shape or density, so W = k L^3 (lean/Delphi/Thompson.lean header)"
+  "isometric_constant_density": "the same body family scaled without change of shape or density, so W = k L^3 (lean/Delphi/Thompson.lean header)",
+  "isometric_areas": "the area in question (lifting area, load-bearing cross-section, exchange surface) scales as k L^2 across the family (AreaLaw, lean/Delphi/Scaling.lean)",
+  "same_material": "the breaking stress σ is the same for every member of the family (R7)",
+  "axial_loading": "the member fails under axial load σ A; bending is not formalised",
+  "lift_supported_flight": "steady flight with lift ½ ρ v² S C_L equal to weight and 0 < C_L ≤ C_L,max (R4)",
+  "constant_lift_coefficient_max_and_density": "C_L,max and ρ the same for every member of the family (R4 scaling)",
+  "constant_lift_to_drag": "L/D the same for every member and flight at v_min (R5)",
+  "muscle_power_premise": "Thompson's premise, contested: muscle mass a constant fraction f of body mass and mass-specific power p constant (R6, MusclePowerLaw)",
+  "equal_froude_number": "the compared animals move at equal Froude number v²/(g L) (R8)"
  },
  "constraints": [
   {
@@ -161,7 +246,14 @@
    ],
    "assumptionsText": [
     "strictly neutral mutations, constant population size, Wright-Fisher reproduction, independent mutant fates (lean/Delphi/Kimura.lean header)"
-   ]
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 3,
+    "cannotRule": 41,
+    "reached": 3
+   },
+   "whyNoCandidate": null
   },
   {
    "id": "C1b",
@@ -220,7 +312,14 @@
    ],
    "assumptionsText": [
     "strictly neutral mutations, constant population size, Wright-Fisher reproduction, independent mutant fates (lean/Delphi/Kimura.lean header)"
-   ]
+   ],
+   "openProblemRulings": {
+    "eliminated": 1,
+    "consistent": 0,
+    "cannotRule": 43,
+    "reached": 1
+   },
+   "whyNoCandidate": null
   },
   {
    "id": "C2",
@@ -274,7 +373,14 @@
    ],
    "assumptionsText": [
     "strictly neutral mutations, constant population size, Wright-Fisher reproduction, independent mutant fates (lean/Delphi/Kimura.lean header)"
-   ]
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "the five fixation-probability rows adopt u = i/M as their premise and give no M or probability a value (untranslatable)"
   },
   {
    "id": "C3",
@@ -327,7 +433,14 @@
    "verdicts": [],
    "assumptionsText": [
     "Wright-Fisher sampling with relative fitness 1+s for the mutant, s constant (lean/Delphi/Favored.lean header)"
-   ]
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated candidate commits a numeric fixation probability with s ≥ 0; the three that mention the favored floor adopt it as a premise (untranslatable)"
   },
   {
    "id": "C3b",
@@ -385,7 +498,14 @@
    "verdicts": [],
    "assumptionsText": [
     "the expected count is Kimura's definition rate x generations: independent fates, constant M, mu and s, no linkage (lean/Delphi/Favored.lean header)"
-   ]
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated candidate commits an expected substitution count with M, mu and T together; the Cambrian and human-chimp rows give mu and T but no M or site count"
   },
   {
    "id": "C4",
@@ -444,7 +564,14 @@
    ],
    "assumptionsText": [
     "one haploid or clonal locus, fixed fitnesses within the step, infinite population, no mutation (lean/Delphi/Fisher.lean header)"
-   ]
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated candidate commits exact values of all three Fisher quantities; the two Fisher rows commit zero variance (C4c)"
   },
   {
    "id": "C4b",
@@ -499,7 +626,14 @@
    ],
    "assumptionsText": [
     "one haploid or clonal locus, fixed fitnesses within the step, infinite population, no mutation (lean/Delphi/Fisher.lean header)"
-   ]
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "the two Fisher rows commit zero variance with a sign of the change (C4c); neither commits an interval for the change in mean fitness"
   },
   {
    "id": "C4c",
@@ -556,7 +690,14 @@
    ],
    "assumptionsText": [
     "one haploid or clonal locus, fixed fitnesses within the step, infinite population, no mutation (lean/Delphi/Fisher.lean header)"
-   ]
+   ],
+   "openProblemRulings": {
+    "eliminated": 1,
+    "consistent": 1,
+    "cannotRule": 42,
+    "reached": 2
+   },
+   "whyNoCandidate": null
   },
   {
    "id": "C5",
@@ -615,7 +756,14 @@
    ],
    "assumptionsText": [
     "equal fecundity of sexual and asexual females, a 1:1 sex ratio, males contributing nothing, discrete generations (lean/Delphi/MaynardSmith.lean header)"
-   ]
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated candidate commits q0, n and q_n; the twofold rows commit the per-generation factor (C5b) or reject the premise"
   },
   {
    "id": "C5b",
@@ -670,7 +818,14 @@
    ],
    "assumptionsText": [
     "equal fecundity of sexual and asexual females, a 1:1 sex ratio, males contributing nothing, discrete generations (lean/Delphi/MaynardSmith.lean header)"
-   ]
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 2,
+    "cannotRule": 42,
+    "reached": 2
+   },
+   "whyNoCandidate": null
   },
   {
    "id": "C6",
@@ -718,7 +873,14 @@
    },
    "faithfulness": "not assessed",
    "verdicts": [],
-   "assumptionsText": []
+   "assumptionsText": [],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "the seven blueprint rows state homology or part-of claims in words; none emitted a graph, so C6 cannot rule (no-graph)"
   },
   {
    "id": "C7",
@@ -769,7 +931,746 @@
    "verdicts": [],
    "assumptionsText": [
     "the same body family scaled without change of shape or density, so W = k L^3 (lean/Delphi/Thompson.lean header)"
-   ]
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 3,
+    "cannotRule": 41,
+    "reached": 3
+   },
+   "whyNoCandidate": null
+  },
+  {
+   "id": "C2a",
+   "claim_id": "scaling-area-law",
+   "lemma": "Delphi.Constraints.area_exponent_rules_out",
+   "law": "Delphi.areaLaw_log",
+   "module": "lean/Delphi/Scaling.lean",
+   "property": "how an area (lifting surface, cross-section, exchange surface) scales with the linear dimension under isometry",
+   "relation": "d log(area) / d log L = 2",
+   "symbols": {
+    "d log(area)/d log L": "area_loglog_exponent"
+   },
+   "requires": [
+    "area_loglog_exponent"
+   ],
+   "appliesWhen": [
+    "isometric_areas"
+   ],
+   "rule": "eliminated when the committed exponent interval excludes 2",
+   "canEliminate": "a candidate that asserts isometry of the area and an area exponent other than 2; an exponent of 2 is the hypothesis restated and is consistent",
+   "kernelCheckable": true,
+   "label": "Area law and wing loading under isometry (R2, R3)",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "If S L = k L^2 for all L > 0 (AreaLaw) then S(L2)/S(L1) = (L2/L1)^2 and log S(L2)/S(L1) = 2 log(L2/L1) (areaLaw_ratio, areaLaw_log).",
+     "With CubeLaw W: (W/S)(L2)/(W/S)(L1) = L2/L1, exponent 1 (wingLoading_ratio, wingLoading_log)."
+    ],
+    "assumed": [
+     "Isometry of the area and of the mass (constant density): named hypotheses, measured to fail within one flying-fish species (Davenport 1992).",
+     "Nothing about which family is isometric; the theorems bound only families that are."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "the area in question (lifting area, load-bearing cross-section, exchange surface) scales as k L^2 across the family (AreaLaw, lean/Delphi/Scaling.lean)"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 11,
+    "cannotRule": 33,
+    "reached": 11
+   },
+   "whyNoCandidate": null
+  },
+  {
+   "id": "C2b",
+   "claim_id": "scaling-area-law",
+   "lemma": "Delphi.Constraints.area_ratio_rules_out",
+   "law": "Delphi.areaLaw_ratio",
+   "module": "lean/Delphi/Scaling.lean",
+   "property": "the ratio of an area between two sizes under isometry",
+   "relation": "area ratio = (L2/L1)^2",
+   "symbols": {
+    "area ratio": "area_ratio",
+    "L2/L1": "length_ratio"
+   },
+   "requires": [
+    "length_ratio",
+    "area_ratio"
+   ],
+   "appliesWhen": [
+    "isometric_areas"
+   ],
+   "rule": "point commitments: eliminated when area_ratio ≠ length_ratio^2",
+   "canEliminate": "a candidate committing an area ratio inconsistent with the square of its length ratio",
+   "kernelCheckable": true,
+   "label": "Area law and wing loading under isometry (R2, R3)",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "If S L = k L^2 for all L > 0 (AreaLaw) then S(L2)/S(L1) = (L2/L1)^2 and log S(L2)/S(L1) = 2 log(L2/L1) (areaLaw_ratio, areaLaw_log).",
+     "With CubeLaw W: (W/S)(L2)/(W/S)(L1) = L2/L1, exponent 1 (wingLoading_ratio, wingLoading_log)."
+    ],
+    "assumed": [
+     "Isometry of the area and of the mass (constant density): named hypotheses, measured to fail within one flying-fish species (Davenport 1992).",
+     "Nothing about which family is isometric; the theorems bound only families that are."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "the area in question (lifting area, load-bearing cross-section, exchange surface) scales as k L^2 across the family (AreaLaw, lean/Delphi/Scaling.lean)"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 2,
+    "cannotRule": 42,
+    "reached": 2
+   },
+   "whyNoCandidate": "reached only by the two square-cube rows that commit numeric area ratios (SCI100-48, ORX-18/C2)"
+  },
+  {
+   "id": "C8",
+   "claim_id": "scaling-strength-law",
+   "lemma": "Delphi.Constraints.axial_strength_rules_out",
+   "law": "Delphi.breakLoad_ratio",
+   "module": "lean/Delphi/Scaling.lean",
+   "property": "whether a member of stated cross-section and material can carry a stated load (dimensional, no scaling needed)",
+   "relation": "n W ≤ σ A",
+   "symbols": {
+    "σ": "breaking_stress_Pa",
+    "A": "cross_section_m2",
+    "W": "weight_N",
+    "n": "load_in_body_weights"
+   },
+   "requires": [
+    "breaking_stress_Pa",
+    "cross_section_m2",
+    "weight_N",
+    "load_in_body_weights"
+   ],
+   "appliesWhen": [
+    "axial_loading"
+   ],
+   "rule": "eliminated when σ A < n W",
+   "canEliminate": "a design that commits to σ, A, W and the load it carries, with σ A < n W",
+   "kernelCheckable": true,
+   "label": "Strength scales as L^2: the missing half of Galileo's square-cube argument (R7)",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "F_break = σ A: with AreaLaw A and σ > 0, F_break(L2)/F_break(L1) = (L2/L1)^2 (breakLoad_ratio).",
+     "With CubeLaw W: F_break/W = σ k3/(k1 L) (safetyFactor_eq); the safety factor of the scaled body is the reference one divided by the length ratio (safetyFactor_scaled); stress W/A scales as L2/L1 (stress_ratio).",
+     "Above L_max = σ k3/(k1 n) the member cannot carry n body weights (cannot_carry)."
+    ],
+    "assumed": [
+     "Axial loading (bending has the same L^2 dependence with a different constant; not formalised).",
+     "Isometric load-bearing sections and the same material (constant σ): real animals thicken bones with size.",
+     "Nothing about any real giant: the checker rules only on a candidate that commits to isometry, the same material and a safety factor."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "the member fails under axial load σ A; bending is not formalised"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated candidate commits a breaking stress, a cross-section and a load in body weights; the dimensional strength check is exercised only by the illustrative examples"
+  },
+  {
+   "id": "C8b",
+   "claim_id": "scaling-strength-law",
+   "lemma": "Delphi.Constraints.strength_ratio_rules_out",
+   "law": "Delphi.breakLoad_ratio",
+   "module": "lean/Delphi/Scaling.lean",
+   "property": "how breaking load scales with size under isometric sections and the same material",
+   "relation": "F_break ratio = (L2/L1)^2",
+   "symbols": {
+    "F_break ratio": "breaking_load_ratio",
+    "L2/L1": "length_ratio"
+   },
+   "requires": [
+    "length_ratio",
+    "breaking_load_ratio"
+   ],
+   "appliesWhen": [
+    "isometric_areas",
+    "same_material",
+    "axial_loading"
+   ],
+   "rule": "point commitments: eliminated when the ratio ≠ length_ratio^2",
+   "canEliminate": "a candidate committing to a breaking-load ratio other than the square of its length ratio",
+   "kernelCheckable": true,
+   "label": "Strength scales as L^2: the missing half of Galileo's square-cube argument (R7)",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "F_break = σ A: with AreaLaw A and σ > 0, F_break(L2)/F_break(L1) = (L2/L1)^2 (breakLoad_ratio).",
+     "With CubeLaw W: F_break/W = σ k3/(k1 L) (safetyFactor_eq); the safety factor of the scaled body is the reference one divided by the length ratio (safetyFactor_scaled); stress W/A scales as L2/L1 (stress_ratio).",
+     "Above L_max = σ k3/(k1 n) the member cannot carry n body weights (cannot_carry)."
+    ],
+    "assumed": [
+     "Axial loading (bending has the same L^2 dependence with a different constant; not formalised).",
+     "Isometric load-bearing sections and the same material (constant σ): real animals thicken bones with size.",
+     "Nothing about any real giant: the checker rules only on a candidate that commits to isometry, the same material and a safety factor."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "the area in question (lifting area, load-bearing cross-section, exchange surface) scales as k L^2 across the family (AreaLaw, lean/Delphi/Scaling.lean)",
+    "the breaking stress σ is the same for every member of the family (R7)",
+    "the member fails under axial load σ A; bending is not formalised"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated candidate commits a breaking-load ratio; the square-cube rows commit stress and area exponents (C8e, C2a) instead"
+  },
+  {
+   "id": "C8c",
+   "claim_id": "scaling-strength-law",
+   "lemma": "Delphi.Constraints.giant_rules_out",
+   "law": "Delphi.safetyFactor_scaled",
+   "module": "lean/Delphi/Scaling.lean",
+   "property": "whether a body scaled up with unchanged proportions and material can still carry itself (Galileo's giant)",
+   "relation": "n ≤ n0 / (L2/L1)",
+   "symbols": {
+    "n0": "reference_safety_factor",
+    "n": "claimed_safety_factor",
+    "L2/L1": "length_ratio"
+   },
+   "requires": [
+    "length_ratio",
+    "reference_safety_factor",
+    "claimed_safety_factor"
+   ],
+   "appliesWhen": [
+    "isometric_constant_density",
+    "isometric_areas",
+    "same_material",
+    "axial_loading"
+   ],
+   "rule": "eliminated when n0 < n × length_ratio",
+   "canEliminate": "a giant of unchanged proportions and material claimed to carry n body weights when the reference body's safety factor divided by the length ratio is below n; a candidate that does not commit to a reference safety factor stays cannot-rule",
+   "kernelCheckable": true,
+   "label": "Strength scales as L^2: the missing half of Galileo's square-cube argument (R7)",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "F_break = σ A: with AreaLaw A and σ > 0, F_break(L2)/F_break(L1) = (L2/L1)^2 (breakLoad_ratio).",
+     "With CubeLaw W: F_break/W = σ k3/(k1 L) (safetyFactor_eq); the safety factor of the scaled body is the reference one divided by the length ratio (safetyFactor_scaled); stress W/A scales as L2/L1 (stress_ratio).",
+     "Above L_max = σ k3/(k1 n) the member cannot carry n body weights (cannot_carry)."
+    ],
+    "assumed": [
+     "Axial loading (bending has the same L^2 dependence with a different constant; not formalised).",
+     "Isometric load-bearing sections and the same material (constant σ): real animals thicken bones with size.",
+     "Nothing about any real giant: the checker rules only on a candidate that commits to isometry, the same material and a safety factor."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "the same body family scaled without change of shape or density, so W = k L^3 (lean/Delphi/Thompson.lean header)",
+    "the area in question (lifting area, load-bearing cross-section, exchange surface) scales as k L^2 across the family (AreaLaw, lean/Delphi/Scaling.lean)",
+    "the breaking stress σ is the same for every member of the family (R7)",
+    "the member fails under axial load σ A; bending is not formalised"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated candidate commits a reference safety factor, which the Galileo giant lemma needs; the illustrative giant-insect-stands does and is eliminated"
+  },
+  {
+   "id": "C8d",
+   "claim_id": "scaling-strength-law",
+   "lemma": "Delphi.Constraints.stress_ratio_rules_out",
+   "law": "Delphi.stress_ratio",
+   "module": "lean/Delphi/Scaling.lean",
+   "property": "how stress on a load-bearing section (or wing loading) scales with size",
+   "relation": "stress ratio = L2/L1",
+   "symbols": {
+    "stress ratio": "stress_ratio",
+    "L2/L1": "length_ratio"
+   },
+   "requires": [
+    "length_ratio",
+    "stress_ratio"
+   ],
+   "appliesWhen": [
+    "isometric_constant_density",
+    "isometric_areas"
+   ],
+   "rule": "point commitments: eliminated when stress_ratio ≠ length_ratio",
+   "canEliminate": "a candidate committing a stress or wing-loading ratio other than its length ratio",
+   "kernelCheckable": true,
+   "label": "Strength scales as L^2: the missing half of Galileo's square-cube argument (R7)",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "F_break = σ A: with AreaLaw A and σ > 0, F_break(L2)/F_break(L1) = (L2/L1)^2 (breakLoad_ratio).",
+     "With CubeLaw W: F_break/W = σ k3/(k1 L) (safetyFactor_eq); the safety factor of the scaled body is the reference one divided by the length ratio (safetyFactor_scaled); stress W/A scales as L2/L1 (stress_ratio).",
+     "Above L_max = σ k3/(k1 n) the member cannot carry n body weights (cannot_carry)."
+    ],
+    "assumed": [
+     "Axial loading (bending has the same L^2 dependence with a different constant; not formalised).",
+     "Isometric load-bearing sections and the same material (constant σ): real animals thicken bones with size.",
+     "Nothing about any real giant: the checker rules only on a candidate that commits to isometry, the same material and a safety factor."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "the same body family scaled without change of shape or density, so W = k L^3 (lean/Delphi/Thompson.lean header)",
+    "the area in question (lifting area, load-bearing cross-section, exchange surface) scales as k L^2 across the family (AreaLaw, lean/Delphi/Scaling.lean)"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 2,
+    "cannotRule": 42,
+    "reached": 2
+   },
+   "whyNoCandidate": "reached only by the two square-cube rows that commit numeric stress ratios (SCI100-48, ORX-18/C2)"
+  },
+  {
+   "id": "C8e",
+   "claim_id": "scaling-strength-law",
+   "lemma": "Delphi.Constraints.stress_exponent_rules_out",
+   "law": "Delphi.wingLoading_log",
+   "module": "lean/Delphi/Scaling.lean",
+   "property": "the log-log exponent of stress (or wing loading) on the linear dimension",
+   "relation": "d log(W/A) / d log L = 1",
+   "symbols": {
+    "d log(W/A)/d log L": "stress_loglog_exponent"
+   },
+   "requires": [
+    "stress_loglog_exponent"
+   ],
+   "appliesWhen": [
+    "isometric_constant_density",
+    "isometric_areas"
+   ],
+   "rule": "eliminated when the committed exponent interval excludes 1",
+   "canEliminate": "a candidate asserting isometry and a stress or wing-loading exponent other than 1",
+   "kernelCheckable": true,
+   "label": "Strength scales as L^2: the missing half of Galileo's square-cube argument (R7)",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "F_break = σ A: with AreaLaw A and σ > 0, F_break(L2)/F_break(L1) = (L2/L1)^2 (breakLoad_ratio).",
+     "With CubeLaw W: F_break/W = σ k3/(k1 L) (safetyFactor_eq); the safety factor of the scaled body is the reference one divided by the length ratio (safetyFactor_scaled); stress W/A scales as L2/L1 (stress_ratio).",
+     "Above L_max = σ k3/(k1 n) the member cannot carry n body weights (cannot_carry)."
+    ],
+    "assumed": [
+     "Axial loading (bending has the same L^2 dependence with a different constant; not formalised).",
+     "Isometric load-bearing sections and the same material (constant σ): real animals thicken bones with size.",
+     "Nothing about any real giant: the checker rules only on a candidate that commits to isometry, the same material and a safety factor."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "the same body family scaled without change of shape or density, so W = k L^3 (lean/Delphi/Thompson.lean header)",
+    "the area in question (lifting area, load-bearing cross-section, exchange surface) scales as k L^2 across the family (AreaLaw, lean/Delphi/Scaling.lean)"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 5,
+    "cannotRule": 39,
+    "reached": 5
+   },
+   "whyNoCandidate": null
+  },
+  {
+   "id": "C9",
+   "claim_id": "thompson1917-ch02-06",
+   "lemma": "Delphi.Constraints.vmin_rules_out",
+   "law": "Delphi.vmin_le",
+   "module": "lean/Delphi/Scaling.lean",
+   "property": "whether a stated airspeed can sustain lift-supported flight for a stated weight, lifting area, air density and maximal lift coefficient (dimensional, exact)",
+   "relation": "v ≥ sqrt(2 W / (ρ S C_L,max)), checked as v^2 ≥ 2W/(ρ S C_L,max)",
+   "symbols": {
+    "v": "airspeed_m_s",
+    "W": "weight_N",
+    "S": "lifting_area_m2",
+    "ρ": "air_density_kg_m3",
+    "C_L,max": "max_lift_coefficient"
+   },
+   "requires": [
+    "airspeed_m_s",
+    "weight_N",
+    "lifting_area_m2",
+    "air_density_kg_m3",
+    "max_lift_coefficient"
+   ],
+   "appliesWhen": [
+    "lift_supported_flight"
+   ],
+   "rule": "eliminated when v^2 < 2W/(ρ S C_L,max)",
+   "canEliminate": "a design or claim of steady lift-supported flight below its own minimum speed",
+   "kernelCheckable": true,
+   "label": "Power needed for flight grows as length^3.5 while muscle power grows as length^3",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "Exact: lift = ½ ρ v² S C_L equal to weight with 0 < C_L ≤ C_L,max implies v ≥ sqrt(2W/(ρ S C_L,max)) (vmin_le).",
+     "Under R1, R2, constant ρ and C_L,max: v_min(L2)/v_min(L1) = sqrt(L2/L1), log exponent 1/2 (vmin_ratio, vmin_log).",
+     "With constant L/D, power required at v_min: ratio (L2/L1)^3 sqrt(L2/L1), log exponent 7/2 (powerRequired_ratio, powerRequired_log).",
+     "Under MusclePowerLaw (named hypothesis) and R1: power available ratio (L2/L1)^3 (powerAvailable_ratio); P_req/P_avail = c sqrt(L) with an explicit c (powerRatio_eq)."
+    ],
+    "assumed": [
+     "Constant C_L,max across sizes (Reynolds effects change it), constant ρ, constant L/D, and flight at v_min rather than a faster, more efficient speed.",
+     "The muscle premise of Thompson (muscle fraction f and mass-specific power p constant) is contested: contraction frequency falls with size, so the modern expectation is an exponent below 3. It is carried as a hypothesis, never proved or asserted.",
+     "The physics thread found one Cypselurus hiraii specimen inside its v_min envelope (v_min 9.85 m/s against field speeds 10-20 m/s) but could not test the sqrt(W/S) scaling with its data; the theorems are statements about the model, not confirmed facts."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "steady flight with lift ½ ρ v² S C_L equal to weight and 0 < C_L ≤ C_L,max (R4)"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated candidate commits an airspeed with W, S, ρ and C_L,max; the specimen of the physics thread enters only through the illustrative glider-below-minimum-speed example"
+  },
+  {
+   "id": "C9b",
+   "claim_id": "thompson1917-ch02-10",
+   "lemma": "Delphi.Constraints.vmin_scaling_rules_out",
+   "law": "Delphi.vmin_ratio",
+   "module": "lean/Delphi/Scaling.lean",
+   "property": "how minimum flight speed scales with size",
+   "relation": "v_min ratio = sqrt(L2/L1), checked as ratio^2 = L2/L1",
+   "symbols": {
+    "v_min ratio": "vmin_ratio",
+    "L2/L1": "length_ratio"
+   },
+   "requires": [
+    "length_ratio",
+    "vmin_ratio"
+   ],
+   "appliesWhen": [
+    "isometric_constant_density",
+    "isometric_areas",
+    "constant_lift_coefficient_max_and_density"
+   ],
+   "rule": "point commitments: eliminated when vmin_ratio^2 ≠ length_ratio",
+   "canEliminate": "a candidate committing a minimum-speed ratio other than the square root of its length ratio",
+   "kernelCheckable": true,
+   "label": "Speed varies as the square root of linear size in swimming, flight and walking",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "Flight: v_min(L2)/v_min(L1) = sqrt(L2/L1) under R1, R2, constant ρ and C_L,max (vmin_ratio).",
+     "Swimming: at equal Froude number v = sqrt(Fr g L), so v(L2)/v(L1) = sqrt(L2/L1) (froude_ratio)."
+    ],
+    "assumed": [
+     "That the compared animals move at equal Froude number, or fly at v_min with the same ρ and C_L,max.",
+     "The walking route (the leg as a pendulum) is not formalised."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "the same body family scaled without change of shape or density, so W = k L^3 (lean/Delphi/Thompson.lean header)",
+    "the area in question (lifting area, load-bearing cross-section, exchange surface) scales as k L^2 across the family (AreaLaw, lean/Delphi/Scaling.lean)",
+    "C_L,max and ρ the same for every member of the family (R4 scaling)"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated candidate commits a minimum-speed ratio; ORX-10/C2 commits the exponent instead (C9c)"
+  },
+  {
+   "id": "C9c",
+   "claim_id": "thompson1917-ch02-10",
+   "lemma": "Delphi.Constraints.vmin_exponent_rules_out",
+   "law": "Delphi.vmin_log",
+   "module": "lean/Delphi/Scaling.lean",
+   "property": "the log-log exponent of minimum flight speed on the linear dimension",
+   "relation": "d log v_min / d log L = 1/2",
+   "symbols": {
+    "d log v_min/d log L": "vmin_loglog_exponent"
+   },
+   "requires": [
+    "vmin_loglog_exponent"
+   ],
+   "appliesWhen": [
+    "isometric_constant_density",
+    "isometric_areas",
+    "constant_lift_coefficient_max_and_density"
+   ],
+   "rule": "eliminated when the committed exponent interval excludes 1/2",
+   "canEliminate": "a candidate asserting isometry and constant aerodynamics with a minimum-speed exponent other than 1/2",
+   "kernelCheckable": true,
+   "label": "Speed varies as the square root of linear size in swimming, flight and walking",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "Flight: v_min(L2)/v_min(L1) = sqrt(L2/L1) under R1, R2, constant ρ and C_L,max (vmin_ratio).",
+     "Swimming: at equal Froude number v = sqrt(Fr g L), so v(L2)/v(L1) = sqrt(L2/L1) (froude_ratio)."
+    ],
+    "assumed": [
+     "That the compared animals move at equal Froude number, or fly at v_min with the same ρ and C_L,max.",
+     "The walking route (the leg as a pendulum) is not formalised."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "the same body family scaled without change of shape or density, so W = k L^3 (lean/Delphi/Thompson.lean header)",
+    "the area in question (lifting area, load-bearing cross-section, exchange surface) scales as k L^2 across the family (AreaLaw, lean/Delphi/Scaling.lean)",
+    "C_L,max and ρ the same for every member of the family (R4 scaling)"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 1,
+    "cannotRule": 43,
+    "reached": 1
+   },
+   "whyNoCandidate": null
+  },
+  {
+   "id": "C10",
+   "claim_id": "thompson1917-ch02-06",
+   "lemma": "Delphi.Constraints.powerRequired_exponent_rules_out",
+   "law": "Delphi.powerRequired_log",
+   "module": "lean/Delphi/Scaling.lean",
+   "property": "the log-log exponent of the power required for flight at minimum speed",
+   "relation": "d log P_req / d log L = 7/2",
+   "symbols": {
+    "d log P_req/d log L": "power_required_loglog_exponent"
+   },
+   "requires": [
+    "power_required_loglog_exponent"
+   ],
+   "appliesWhen": [
+    "isometric_constant_density",
+    "isometric_areas",
+    "constant_lift_coefficient_max_and_density",
+    "constant_lift_to_drag"
+   ],
+   "rule": "eliminated when the committed exponent interval excludes 7/2",
+   "canEliminate": "a candidate asserting the full set of hypotheses with a power-required exponent other than 3.5 (note: power AVAILABLE is not constrained; its L^3 rests on the contested muscle premise)",
+   "kernelCheckable": true,
+   "label": "Power needed for flight grows as length^3.5 while muscle power grows as length^3",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "Exact: lift = ½ ρ v² S C_L equal to weight with 0 < C_L ≤ C_L,max implies v ≥ sqrt(2W/(ρ S C_L,max)) (vmin_le).",
+     "Under R1, R2, constant ρ and C_L,max: v_min(L2)/v_min(L1) = sqrt(L2/L1), log exponent 1/2 (vmin_ratio, vmin_log).",
+     "With constant L/D, power required at v_min: ratio (L2/L1)^3 sqrt(L2/L1), log exponent 7/2 (powerRequired_ratio, powerRequired_log).",
+     "Under MusclePowerLaw (named hypothesis) and R1: power available ratio (L2/L1)^3 (powerAvailable_ratio); P_req/P_avail = c sqrt(L) with an explicit c (powerRatio_eq)."
+    ],
+    "assumed": [
+     "Constant C_L,max across sizes (Reynolds effects change it), constant ρ, constant L/D, and flight at v_min rather than a faster, more efficient speed.",
+     "The muscle premise of Thompson (muscle fraction f and mass-specific power p constant) is contested: contraction frequency falls with size, so the modern expectation is an exponent below 3. It is carried as a hypothesis, never proved or asserted.",
+     "The physics thread found one Cypselurus hiraii specimen inside its v_min envelope (v_min 9.85 m/s against field speeds 10-20 m/s) but could not test the sqrt(W/S) scaling with its data; the theorems are statements about the model, not confirmed facts."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "the same body family scaled without change of shape or density, so W = k L^3 (lean/Delphi/Thompson.lean header)",
+    "the area in question (lifting area, load-bearing cross-section, exchange surface) scales as k L^2 across the family (AreaLaw, lean/Delphi/Scaling.lean)",
+    "C_L,max and ρ the same for every member of the family (R4 scaling)",
+    "L/D the same for every member and flight at v_min (R5)"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated candidate commits a power-required exponent; the flight rows of the enumerator are about wing loading and minimum speed, and power available is not a constraint (muscle premise)"
+  },
+  {
+   "id": "C11",
+   "claim_id": "thompson1917-ch02-10",
+   "lemma": "Delphi.Constraints.froude_rules_out",
+   "law": "Delphi.froude_ratio",
+   "module": "lean/Delphi/Scaling.lean",
+   "property": "how speed scales with size at equal Froude number",
+   "relation": "speed ratio = sqrt(L2/L1), checked as ratio^2 = L2/L1",
+   "symbols": {
+    "speed ratio": "froude_speed_ratio",
+    "L2/L1": "length_ratio"
+   },
+   "requires": [
+    "length_ratio",
+    "froude_speed_ratio"
+   ],
+   "appliesWhen": [
+    "equal_froude_number"
+   ],
+   "rule": "point commitments: eliminated when ratio^2 ≠ length_ratio",
+   "canEliminate": "a candidate committing to equal Froude number and a speed ratio other than the square root of its length ratio",
+   "kernelCheckable": true,
+   "label": "Speed varies as the square root of linear size in swimming, flight and walking",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "Flight: v_min(L2)/v_min(L1) = sqrt(L2/L1) under R1, R2, constant ρ and C_L,max (vmin_ratio).",
+     "Swimming: at equal Froude number v = sqrt(Fr g L), so v(L2)/v(L1) = sqrt(L2/L1) (froude_ratio)."
+    ],
+    "assumed": [
+     "That the compared animals move at equal Froude number, or fly at v_min with the same ρ and C_L,max.",
+     "The walking route (the leg as a pendulum) is not formalised."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "the compared animals move at equal Froude number v²/(g L) (R8)"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated candidate commits to Froude scaling; the rows of the enumerator are flight and support, not swimming or walking"
   },
   {
    "id": "C7b",
@@ -818,7 +1719,14 @@
    "verdicts": [],
    "assumptionsText": [
     "the same body family scaled without change of shape or density, so W = k L^3 (lean/Delphi/Thompson.lean header)"
-   ]
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 12,
+    "cannotRule": 32,
+    "reached": 12
+   },
+   "whyNoCandidate": null
   }
  ]
 }

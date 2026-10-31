@@ -1,29 +1,205 @@
 {
  "note": "Illustrative candidates written by the lean thread to exercise the three states of lean/eliminate/eliminate.mjs. They are not the open-problems enumerator's candidates (open-problems/candidates.json) and no number here is a measurement; each is a commitment a candidate might make, chosen to show what the formalised theorems can and cannot rule on.",
  "candidates": [
-  { "id": "giant-insect-mass", "problem": "Could an insect of unchanged proportions be 100 times longer?", "description": "A giant insect with the body plan of a 2 cm ant scaled to 2 m, same shape and density, claimed to weigh only 100 times as much.", "source": "Galileo's square-cube argument (Two New Sciences, 1638), mass side; lean thread illustration",
-    "accepts": ["isometric_constant_density"], "commits": { "length_ratio": 100, "weight_ratio": 100 } },
-  { "id": "giant-insect-strength", "problem": "Could an insect of unchanged proportions be 100 times longer?", "description": "The same giant, correctly weighing 10^6 times as much, claimed to support itself because its legs are also 100 times longer.", "source": "Galileo's square-cube argument, strength side (strength scales as L^2); lean thread illustration",
-    "accepts": ["isometric_constant_density"], "commits": { "length_ratio": 100, "weight_ratio": 1000000 } },
-  { "id": "neutral-clock-scales-with-N", "problem": "Does the neutral molecular clock depend on population size?", "description": "A model in which neutral substitutions accumulate at N mu per generation, with N = 1000, so that larger populations evolve faster at neutral sites.", "source": "lean thread illustration",
-    "accepts": ["neutral_wright_fisher"], "commits": { "mutation_rate": "1e-9", "neutral_substitution_rate": "1e-6" } },
-  { "id": "neutral-mutant-fixes-one-percent", "problem": "How often does a new neutral mutation fix?", "description": "A claim that a single new neutral mutant among 2000 gene copies fixes about one time in a hundred.", "source": "lean thread illustration",
-    "accepts": ["neutral_wright_fisher"], "commits": { "gene_copies_M": 2000, "fixation_probability": { "low": "0.005", "high": "0.02" } } },
-  { "id": "beneficial-fixes-rarer-than-drift", "problem": "Can selection for a trait make its mutations fix less often than neutral drift?", "description": "A proposed mechanism in which a mutation with a nonnegative selection coefficient, among 10^6 gene copies, fixes with probability at most 10^-9.", "source": "lean thread illustration",
-    "accepts": ["wright_fisher_selection"], "commits": { "gene_copies_M": 1000000, "selection_coefficient_nonnegative": true, "fixation_probability": { "low": 0, "high": "1e-9" } } },
-  { "id": "wing-needs-more-than-supply", "problem": "Could a gliding fin become a wing in 10^4 generations?", "description": "A design that commits to 10^15 expected substitutions across a 10^9-site genome in 10^4 generations, in a population of 2 x 10^9 gene copies with mutation rate 5 x 10^-9.", "source": "lean thread illustration (the quantity 'substitutions a wing requires' is otherwise undefined; this candidate commits to one)",
-    "accepts": ["independent_fates_definition"], "commits": { "expected_substitutions_total": "1e15", "sites_G": "1e9", "gene_copies_M": 2000000000, "mutation_rate": { "low": "1e-9", "high": "5e-9" }, "generations_T": 10000 } },
-  { "id": "mean-fitness-declines-under-constant-selection", "problem": "Can mean fitness fall under constant selection at one locus?", "description": "A model of one haploid locus with fixed fitnesses in which mean fitness drops by between 5 and 10 percent of a unit in one generation of selection alone.", "source": "lean thread illustration",
-    "accepts": ["fixed_fitnesses_one_locus"], "commits": { "mean_fitness_change": { "low": "-0.10", "high": "-0.05" } } },
-  { "id": "asexual-sweeps-in-two-generations", "problem": "How fast can an asexual mutant spread under the twofold cost?", "description": "An asexual lineage at 1 percent of females claimed to reach 50 percent two generations later, with equal fecundity and a 1:1 sex ratio.", "source": "lean thread illustration",
-    "accepts": ["equal_fecundity_1to1"], "commits": { "asexual_fraction_initial": "1/100", "generations_n": 2, "asexual_fraction_after": "1/2" } },
-  { "id": "asexual-doubles-odds-exactly", "problem": "How fast can an asexual mutant spread under the twofold cost?", "description": "The same lineage claimed to reach 4/103 of females after two generations, which is exactly the fourfold odds the theorem gives.", "source": "lean thread illustration",
-    "accepts": ["equal_fecundity_1to1"], "commits": { "asexual_fraction_initial": "1/100", "generations_n": 2, "asexual_fraction_after": "4/103" } },
-  { "id": "flying-fish-blueprint-as-emitted", "problem": "Is the generated flying-fish anatomy internally coherent?", "description": "The organism thread's emitted blueprint for a flying fish, as a design.", "source": "organism-design/examples/a-flying-fish.json",
-    "accepts": [], "commits": { "blueprint_file": "organism-design/examples/a-flying-fish.json" } },
-  { "id": "human-growth-as-isometric", "problem": "Is human growth isometric?", "description": "A reading of the claims thread's NHANES result (males, age-bin means 2-19 y, exponent 2.74, CI 2.59 to 2.89) that asserts isometric growth at constant density.", "source": "claim-tests/thompson-growth-form/thompson1917-ch03-07/derived/summary.json (exponent and CI); the isometry assertion is the candidate's, not the test's",
-    "accepts": ["isometric_constant_density"], "commits": { "loglog_exponent": { "low": "2.59", "high": "2.89" } } },
-  { "id": "winged-flying-fish-no-commitments", "problem": "Could flying fish become perfectly winged animals?", "description": "Darwin's conjecture (Origin, ch. VI) as a candidate with no committed quantities.", "source": "organisms/darwin-origin/ch05-06/mentions.json",
-    "accepts": [], "commits": {} }
+  {
+   "id": "giant-insect-mass",
+   "problem": "Could an insect of unchanged proportions be 100 times longer?",
+   "description": "A giant insect with the body plan of a 2 cm ant scaled to 2 m, same shape and density, claimed to weigh only 100 times as much.",
+   "source": "Galileo's square-cube argument (Two New Sciences, 1638), mass side; lean thread illustration",
+   "accepts": [
+    "isometric_constant_density"
+   ],
+   "commits": {
+    "length_ratio": 100,
+    "weight_ratio": 100
+   }
+  },
+  {
+   "id": "giant-insect-strength",
+   "problem": "Could an insect of unchanged proportions be 100 times longer?",
+   "description": "The same giant, correctly weighing 10^6 times as much, claimed to support itself because its legs are also 100 times longer.",
+   "source": "Galileo's square-cube argument, strength side (strength scales as L^2); lean thread illustration",
+   "accepts": [
+    "isometric_constant_density"
+   ],
+   "commits": {
+    "length_ratio": 100,
+    "weight_ratio": 1000000
+   }
+  },
+  {
+   "id": "giant-insect-stands",
+   "problem": "Could an insect of unchanged proportions be 100 times longer?",
+   "description": "The same giant, 100 times longer with unchanged proportions and material, claimed able to stand (carry one body weight), given a reference ant whose legs carry 10 body weights (illustrative figure).",
+   "source": "Galileo's square-cube argument, strength side, now formalised as R7; lean thread illustration (the safety factor 10 is illustrative, not a measurement)",
+   "accepts": [
+    "isometric_constant_density",
+    "isometric_areas",
+    "same_material",
+    "axial_loading"
+   ],
+   "commits": {
+    "length_ratio": 100,
+    "reference_safety_factor": 10,
+    "claimed_safety_factor": 1
+   }
+  },
+  {
+   "id": "neutral-clock-scales-with-N",
+   "problem": "Does the neutral molecular clock depend on population size?",
+   "description": "A model in which neutral substitutions accumulate at N mu per generation, with N = 1000, so that larger populations evolve faster at neutral sites.",
+   "source": "lean thread illustration",
+   "accepts": [
+    "neutral_wright_fisher"
+   ],
+   "commits": {
+    "mutation_rate": "1e-9",
+    "neutral_substitution_rate": "1e-6"
+   }
+  },
+  {
+   "id": "neutral-mutant-fixes-one-percent",
+   "problem": "How often does a new neutral mutation fix?",
+   "description": "A claim that a single new neutral mutant among 2000 gene copies fixes about one time in a hundred.",
+   "source": "lean thread illustration",
+   "accepts": [
+    "neutral_wright_fisher"
+   ],
+   "commits": {
+    "gene_copies_M": 2000,
+    "fixation_probability": {
+     "low": "0.005",
+     "high": "0.02"
+    }
+   }
+  },
+  {
+   "id": "beneficial-fixes-rarer-than-drift",
+   "problem": "Can selection for a trait make its mutations fix less often than neutral drift?",
+   "description": "A proposed mechanism in which a mutation with a nonnegative selection coefficient, among 10^6 gene copies, fixes with probability at most 10^-9.",
+   "source": "lean thread illustration",
+   "accepts": [
+    "wright_fisher_selection"
+   ],
+   "commits": {
+    "gene_copies_M": 1000000,
+    "selection_coefficient_nonnegative": true,
+    "fixation_probability": {
+     "low": 0,
+     "high": "1e-9"
+    }
+   }
+  },
+  {
+   "id": "wing-needs-more-than-supply",
+   "problem": "Could a gliding fin become a wing in 10^4 generations?",
+   "description": "A design that commits to 10^15 expected substitutions across a 10^9-site genome in 10^4 generations, in a population of 2 x 10^9 gene copies with mutation rate 5 x 10^-9.",
+   "source": "lean thread illustration (the quantity 'substitutions a wing requires' is otherwise undefined; this candidate commits to one)",
+   "accepts": [
+    "independent_fates_definition"
+   ],
+   "commits": {
+    "expected_substitutions_total": "1e15",
+    "sites_G": "1e9",
+    "gene_copies_M": 2000000000,
+    "mutation_rate": {
+     "low": "1e-9",
+     "high": "5e-9"
+    },
+    "generations_T": 10000
+   }
+  },
+  {
+   "id": "mean-fitness-declines-under-constant-selection",
+   "problem": "Can mean fitness fall under constant selection at one locus?",
+   "description": "A model of one haploid locus with fixed fitnesses in which mean fitness drops by between 5 and 10 percent of a unit in one generation of selection alone.",
+   "source": "lean thread illustration",
+   "accepts": [
+    "fixed_fitnesses_one_locus"
+   ],
+   "commits": {
+    "mean_fitness_change": {
+     "low": "-0.10",
+     "high": "-0.05"
+    }
+   }
+  },
+  {
+   "id": "asexual-sweeps-in-two-generations",
+   "problem": "How fast can an asexual mutant spread under the twofold cost?",
+   "description": "An asexual lineage at 1 percent of females claimed to reach 50 percent two generations later, with equal fecundity and a 1:1 sex ratio.",
+   "source": "lean thread illustration",
+   "accepts": [
+    "equal_fecundity_1to1"
+   ],
+   "commits": {
+    "asexual_fraction_initial": "1/100",
+    "generations_n": 2,
+    "asexual_fraction_after": "1/2"
+   }
+  },
+  {
+   "id": "asexual-doubles-odds-exactly",
+   "problem": "How fast can an asexual mutant spread under the twofold cost?",
+   "description": "The same lineage claimed to reach 4/103 of females after two generations, which is exactly the fourfold odds the theorem gives.",
+   "source": "lean thread illustration",
+   "accepts": [
+    "equal_fecundity_1to1"
+   ],
+   "commits": {
+    "asexual_fraction_initial": "1/100",
+    "generations_n": 2,
+    "asexual_fraction_after": "4/103"
+   }
+  },
+  {
+   "id": "flying-fish-blueprint-as-emitted",
+   "problem": "Is the generated flying-fish anatomy internally coherent?",
+   "description": "The organism thread's emitted blueprint for a flying fish, as a design.",
+   "source": "organism-design/examples/a-flying-fish.json",
+   "accepts": [],
+   "commits": {
+    "blueprint_file": "organism-design/examples/a-flying-fish.json"
+   }
+  },
+  {
+   "id": "human-growth-as-isometric",
+   "problem": "Is human growth isometric?",
+   "description": "A reading of the claims thread's NHANES result (males, age-bin means 2-19 y, exponent 2.74, CI 2.59 to 2.89) that asserts isometric growth at constant density.",
+   "source": "claim-tests/thompson-growth-form/thompson1917-ch03-07/derived/summary.json (exponent and CI); the isometry assertion is the candidate's, not the test's",
+   "accepts": [
+    "isometric_constant_density"
+   ],
+   "commits": {
+    "loglog_exponent": {
+     "low": "2.59",
+     "high": "2.89"
+    }
+   }
+  },
+  {
+   "id": "winged-flying-fish-no-commitments",
+   "problem": "Could flying fish become perfectly winged animals?",
+   "description": "Darwin's conjecture (Origin, ch. VI) as a candidate with no committed quantities.",
+   "source": "organisms/darwin-origin/ch05-06/mentions.json",
+   "accepts": [],
+   "commits": {}
+  },
+  {
+   "id": "glider-below-minimum-speed",
+   "problem": "Can a 0.06 kg flying fish glide at 5 m/s?",
+   "description": "A claim of steady lift-supported flight at 5 m/s for the physics thread's Cypselurus hiraii specimen L3 (W = 0.5886 N, S = 0.012688 m^2, C_L,max = 0.78, Park and Choi 2010), in air of density 1.225 kg/m^3.",
+   "source": "physics/results.json interpretation_B for W, S, C_L,max (Park and Choi 2010 Table 1 model L3); the airspeed 5 m/s and the density 1.225 kg/m^3 are the candidate's commitments, chosen by the lean thread to illustrate C9 (the specimen's v_min is 9.85 m/s)",
+   "accepts": [
+    "lift_supported_flight"
+   ],
+   "commits": {
+    "airspeed_m_s": 5,
+    "weight_N": "0.5886",
+    "lifting_area_m2": "0.012688",
+    "air_density_kg_m3": "1.225",
+    "max_lift_coefficient": "0.78"
+   }
+  }
  ]
 }

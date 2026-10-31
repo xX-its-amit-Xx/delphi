@@ -10,6 +10,7 @@ import Delphi.Favored
 import Delphi.Blueprint
 import Delphi.Thompson
 import Delphi.Certificates.AFlyingFish
+import Delphi.Scaling
 import Delphi.Constraints
 
 #print axioms Delphi.NeutralChain.fixedBy_tendsto
@@ -57,3 +58,33 @@ import Delphi.Constraints
 #print axioms Delphi.Constraints.kimura_rate_ratio_rules_out
 #print axioms Delphi.Constraints.fisher_zero_variance_rules_out
 #print axioms Delphi.Constraints.twofold_factor_rules_out
+#print axioms Delphi.areaLaw_ratio
+#print axioms Delphi.areaLaw_log
+#print axioms Delphi.wingLoading_ratio
+#print axioms Delphi.wingLoading_log
+#print axioms Delphi.breakLoad_ratio
+#print axioms Delphi.safetyFactor_eq
+#print axioms Delphi.stress_ratio
+#print axioms Delphi.safetyFactor_scaled
+#print axioms Delphi.cannot_carry
+#print axioms Delphi.vmin_le
+#print axioms Delphi.vmin_ratio
+#print axioms Delphi.vmin_log
+#print axioms Delphi.powerRequired_ratio
+#print axioms Delphi.powerRequired_log
+#print axioms Delphi.powerAvailable_ratio
+#print axioms Delphi.powerRatio_eq
+#print axioms Delphi.exists_size_limit
+#print axioms Delphi.froude_ratio
+#print axioms Delphi.Constraints.axial_strength_rules_out
+#print axioms Delphi.Constraints.strength_ratio_rules_out
+#print axioms Delphi.Constraints.giant_rules_out
+#print axioms Delphi.Constraints.stress_ratio_rules_out
+#print axioms Delphi.Constraints.area_ratio_rules_out
+#print axioms Delphi.Constraints.area_exponent_rules_out
+#print axioms Delphi.Constraints.stress_exponent_rules_out
+#print axioms Delphi.Constraints.vmin_exponent_rules_out
+#print axioms Delphi.Constraints.vmin_rules_out
+#print axioms Delphi.Constraints.vmin_scaling_rules_out
+#print axioms Delphi.Constraints.powerRequired_exponent_rules_out
+#print axioms Delphi.Constraints.froude_rules_out

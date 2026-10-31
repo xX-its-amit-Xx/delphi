@@ -233,6 +233,16 @@ for (const [k, c] of cons) {
   nodes.get(clid).formal = true;
   link(kid, clid, 'constraint from');
 }
+// rulings per constraint from lean/constraints.json: how many open-problem candidates each theorem reached,
+// and, where it reached none, the Lean thread's stated reason (shown as "unreached: <reason>" on the node)
+for (const [k, c] of cons) {
+  const n = nodes.get('constraint:' + k); if (!n) continue;
+  const r = c.openProblemRulings || null;
+  n.info.rulings = r;
+  n.info.whyNoCandidate = c.whyNoCandidate || null;
+  n.unreached = !!(r && r.reached === 0);
+  if (n.unreached) n.unreachedWhy = c.whyNoCandidate || 'no candidate reached this constraint (no reason given in the file)';
+}
 for (const n of nodes.values()) if (n.type === 'theorem') n.formal = true;
 for (const l of links) {
   const a = nodes.get(l.source), b = nodes.get(l.target);

@@ -53,7 +53,66 @@ const natural = v => { const q = parseQ(v); if (q.d !== 1n || q.n < 0n) throw ne
 // ---- per-constraint rules; each returns {state, reason, numbers?, violated?, cert?} ----
 const need = (c, cand, qs) => { for (const q of qs) if (!(q in cand.commits)) return `cannot rule: missing input ${q} (${CONSTRAINTS.quantities[q]?.unit || ''})`; return null; };
 const accepts = (c, cand) => { for (const a of c.appliesWhen) if (!(cand.accepts || []).includes(a)) return `cannot rule: the candidate does not commit to the model assumption ${a} (${CONSTRAINTS.assumptions[a]})`; return null; };
+const expRule = (c, cand, tn, qty, target, targetStr, build) => {
+  const b = interval(cand.commits[qty]); const numbers = { exponent: [str(b.low), str(b.high)] };
+  if (cmp(b.high, target) < 0 || cmp(target, b.low) < 0) return { state: 'eliminated', reason: `under the stated hypotheses the exponent is exactly ${targetStr}`, violated: cmp(b.high, target) < 0 ? `b ≤ ${str(b.high)} < ${targetStr}` : `${targetStr} < ${str(b.low)} ≤ b`, numbers, cert: build(b) };
+  return { state: 'consistent', reason: `the committed exponent interval contains ${targetStr}`, numbers };
+};
+const ptRatio = (c, cand, tn, qty, pow, build, lenCheck) => {
+  if (!isPoint(cand.commits[qty]) || !isPoint(cand.commits.length_ratio)) return { state: 'cannot-rule', reason: `cannot rule: ${c.id} needs exact (point) values for length_ratio and ${qty}` };
+  const r = parseQ(cand.commits[qty]), l = parseQ(cand.commits.length_ratio);
+  if (cmp(l, Q(0n)) <= 0) return { state: 'cannot-rule', reason: 'cannot rule: length_ratio must be positive' };
+  const target = powQ(l, pow); const numbers = { [qty]: str(r), length_ratio: str(l), [`length_ratio^${pow}`]: str(target) };
+  if (cmp(r, target) === 0) return { state: 'consistent', reason: `the committed ratio equals length_ratio^${pow}, as the theorem gives`, numbers };
+  return { state: 'eliminated', reason: `under the stated hypotheses the ratio is exactly length_ratio^${pow}`, violated: `${qty} = ${str(r)} ≠ ${str(target)} = length_ratio^${pow}`, numbers, cert: build(r, l) };
+};
+const sqRatio = (c, cand, tn, qty, build) => {
+  if (!isPoint(cand.commits[qty]) || !isPoint(cand.commits.length_ratio)) return { state: 'cannot-rule', reason: `cannot rule: ${c.id} needs exact (point) values for length_ratio and ${qty}` };
+  const r = parseQ(cand.commits[qty]), l = parseQ(cand.commits.length_ratio);
+  if (cmp(l, Q(0n)) <= 0 || cmp(r, Q(0n)) < 0) return { state: 'cannot-rule', reason: 'cannot rule: length_ratio must be positive and the speed ratio nonnegative' };
+  const r2 = powQ(r, 2); const numbers = { [qty]: str(r), [`${qty}^2`]: str(r2), length_ratio: str(l) };
+  if (cmp(r2, l) === 0) return { state: 'consistent', reason: 'the committed ratio is the square root of the length ratio, as the theorem gives', numbers };
+  return { state: 'eliminated', reason: 'under the stated hypotheses the ratio is exactly sqrt(length_ratio)', violated: `${qty}^2 = ${str(r2)} ≠ ${str(l)} = length_ratio`, numbers, cert: build(r, l) };
+};
 const rules = {
+  C2a: (c, cand, tn) => expRule(c, cand, tn, 'area_loglog_exponent', Q(2n), '2', b => `theorem ${tn} : ∀ (S : ℝ → ℝ) (k L₁ L₂ b : ℝ), Delphi.AreaLaw S k → 0 < L₁ → 0 < L₂ → L₁ ≠ L₂ →\n    Real.log (S L₂ / S L₁) = b * Real.log (L₂ / L₁) → (${lean(b.low)} ≤ b ∧ b ≤ ${lean(b.high)}) → False :=\n  fun S k L₁ L₂ b hS h₁ h₂ hne hb hr => Delphi.Constraints.area_exponent_rules_out hS h₁ h₂ hne hb (fun h => by linarith [hr.1, hr.2])`),
+  C2b: (c, cand, tn) => ptRatio(c, cand, tn, 'area_ratio', 2, (r, l) => `theorem ${tn} : ∀ (S : ℝ → ℝ) (k L₁ L₂ : ℝ), Delphi.AreaLaw S k → 0 < L₁ → 0 < L₂ →\n    S L₂ / S L₁ = ${lean(r)} → L₂ / L₁ = ${lean(l)} → False :=\n  fun S k L₁ L₂ hS h₁ h₂ hr hℓ => Delphi.Constraints.area_ratio_rules_out hS h₁ h₂ hr hℓ (by norm_num)`),
+  C8(c, cand, tn) {
+    const q = ['breaking_stress_Pa', 'cross_section_m2', 'weight_N', 'load_in_body_weights'];
+    if (!q.every(x => isPoint(cand.commits[x]))) return { state: 'cannot-rule', reason: 'cannot rule: C8 needs exact (point) values' };
+    const [sg, A, W, n] = q.map(x => parseQ(cand.commits[x])); const F = mul(sg, A), nW = mul(n, W);
+    const numbers = { 'σ': str(sg), A: str(A), W: str(W), n: str(n), 'σA': str(F), 'nW': str(nW) };
+    if (cmp(F, nW) < 0) return { state: 'eliminated', reason: 'the member breaks under axial load σ A, which is below the claimed load n W', violated: `σ A = ${str(F)} < n W = ${str(nW)}`, numbers,
+      cert: `theorem ${tn} : ∀ F : ℝ, F = ${lean(sg)} * ${lean(A)} → ${lean(n)} * ${lean(W)} ≤ F → False :=\n  fun F hF hclaim => Delphi.Constraints.axial_strength_rules_out hF hclaim (by norm_num)` };
+    return { state: 'consistent', reason: 'σ A ≥ n W: the stated member can carry the stated load (nothing about bending, fatigue or buckling)', numbers };
+  },
+  C8b: (c, cand, tn) => ptRatio(c, cand, tn, 'breaking_load_ratio', 2, (r, l) => `theorem ${tn} : ∀ (A : ℝ → ℝ) (k₃ σ L₁ L₂ : ℝ), Delphi.AreaLaw A k₃ → 0 < σ → 0 < L₁ → 0 < L₂ →\n    Delphi.breakLoad σ A L₂ / Delphi.breakLoad σ A L₁ = ${lean(r)} → L₂ / L₁ = ${lean(l)} → False :=\n  fun A k₃ σ L₁ L₂ hA hσ h₁ h₂ hr hℓ => Delphi.Constraints.strength_ratio_rules_out hA hσ h₁ h₂ hr hℓ (by norm_num)`),
+  C8c(c, cand, tn) {
+    const q = ['length_ratio', 'reference_safety_factor', 'claimed_safety_factor'];
+    if (!q.every(x => isPoint(cand.commits[x]))) return { state: 'cannot-rule', reason: 'cannot rule: C8c needs exact (point) values' };
+    const [l, n0, n] = q.map(x => parseQ(cand.commits[x])); const nl = mul(n, l);
+    const numbers = { length_ratio: str(l), n0: str(n0), n: str(n), 'n × length_ratio': str(nl) };
+    if (cmp(n0, nl) < 0) return { state: 'eliminated', reason: 'the scaled body\'s safety factor is the reference one divided by the length ratio, below the claimed load', violated: `n0 = ${str(n0)} < n × ℓ = ${str(nl)}`, numbers,
+      cert: `theorem ${tn} : ∀ (W A : ℝ → ℝ) (k₁ k₃ σ L₁ L₂ : ℝ), Delphi.CubeLaw W k₁ → Delphi.AreaLaw A k₃ → 0 < L₁ → 0 < L₂ → L₂ / L₁ = ${lean(l)} →\n    Delphi.breakLoad σ A L₁ / W L₁ = ${lean(n0)} → ${lean(n)} * W L₂ ≤ Delphi.breakLoad σ A L₂ → False :=\n  fun W A k₁ k₃ σ L₁ L₂ hW hA h₁ h₂ hℓ hn₀ hclaim => Delphi.Constraints.giant_rules_out hW hA h₁ h₂ hℓ hn₀ hclaim (by norm_num)` };
+    return { state: 'consistent', reason: 'the reference safety factor divided by the length ratio still covers the claimed load', numbers };
+  },
+  C8d: (c, cand, tn) => ptRatio(c, cand, tn, 'stress_ratio', 1, (r, l) => `theorem ${tn} : ∀ (W A : ℝ → ℝ) (k₁ k₃ L₁ L₂ : ℝ), Delphi.CubeLaw W k₁ → Delphi.AreaLaw A k₃ → 0 < L₁ → 0 < L₂ →\n    (W L₂ / A L₂) / (W L₁ / A L₁) = ${lean(r)} → L₂ / L₁ = ${lean(l)} → False :=\n  fun W A k₁ k₃ L₁ L₂ hW hA h₁ h₂ hr hℓ => Delphi.Constraints.stress_ratio_rules_out hW hA h₁ h₂ hr hℓ (by norm_num)`),
+  C8e: (c, cand, tn) => expRule(c, cand, tn, 'stress_loglog_exponent', Q(1n), '1', b => `theorem ${tn} : ∀ (W A : ℝ → ℝ) (k₁ k₃ L₁ L₂ b : ℝ), Delphi.CubeLaw W k₁ → Delphi.AreaLaw A k₃ → 0 < L₁ → 0 < L₂ → L₁ ≠ L₂ →\n    Real.log ((W L₂ / A L₂) / (W L₁ / A L₁)) = b * Real.log (L₂ / L₁) → (${lean(b.low)} ≤ b ∧ b ≤ ${lean(b.high)}) → False :=\n  fun W A k₁ k₃ L₁ L₂ b hW hA h₁ h₂ hne hb hr => Delphi.Constraints.stress_exponent_rules_out hW hA h₁ h₂ hne hb (fun h => by linarith [hr.1, hr.2])`),
+  C9(c, cand, tn) {
+    const q = ['airspeed_m_s', 'weight_N', 'lifting_area_m2', 'air_density_kg_m3', 'max_lift_coefficient'];
+    if (!q.every(x => isPoint(cand.commits[x]))) return { state: 'cannot-rule', reason: 'cannot rule: C9 needs exact (point) values' };
+    const [v, W, S, rho, Cm] = q.map(x => parseQ(cand.commits[x]));
+    if (cmp(v, Q(0n)) < 0 || cmp(S, Q(0n)) <= 0 || cmp(rho, Q(0n)) <= 0 || cmp(Cm, Q(0n)) <= 0) return { state: 'cannot-rule', reason: 'cannot rule: v ≥ 0 and S, ρ, C_L,max > 0 are needed' };
+    const lhs = powQ(v, 2), rhs = div(mul(Q(2n), W), mul(mul(rho, S), Cm));
+    const numbers = { v: str(v), 'v^2': str(lhs), '2W/(ρ S C_L,max)': str(rhs) };
+    if (cmp(lhs, rhs) < 0) return { state: 'eliminated', reason: 'lift at this airspeed cannot reach the weight even at C_L,max: v is below v_min', violated: `v^2 = ${str(lhs)} < 2W/(ρ S C_L,max) = ${str(rhs)}`, numbers,
+      cert: `theorem ${tn} : ∀ C : ℝ, 0 < C → C ≤ ${lean(Cm)} → Delphi.lift ${lean(rho)} ${lean(v)} ${lean(S)} C = ${lean(W)} → False :=\n  fun C hC hCm hlift => Delphi.Constraints.vmin_rules_out (by norm_num) (by norm_num) hC hCm (by norm_num) hlift (by norm_num)` };
+    return { state: 'consistent', reason: 'v ≥ v_min: the stated airspeed can carry the stated weight at some C_L ≤ C_L,max (nothing about drag, power or stability)', numbers };
+  },
+  C9b: (c, cand, tn) => sqRatio(c, cand, tn, 'vmin_ratio', (r, l) => `theorem ${tn} : ∀ (W S : ℝ → ℝ) (k₁ k₂ ρ Cmax L₁ L₂ : ℝ), Delphi.CubeLaw W k₁ → Delphi.AreaLaw S k₂ → 0 < ρ → 0 < Cmax → 0 < L₁ → 0 < L₂ →\n    Delphi.vmin ρ Cmax (W L₂) (S L₂) / Delphi.vmin ρ Cmax (W L₁) (S L₁) = ${lean(r)} → L₂ / L₁ = ${lean(l)} → False :=\n  fun W S k₁ k₂ ρ Cmax L₁ L₂ hW hS hρ hC h₁ h₂ hr hℓ => Delphi.Constraints.vmin_scaling_rules_out hW hS hρ hC h₁ h₂ hr hℓ (by norm_num) (by norm_num)`),
+  C9c: (c, cand, tn) => expRule(c, cand, tn, 'vmin_loglog_exponent', Q(1n, 2n), '1/2', b => `theorem ${tn} : ∀ (W S : ℝ → ℝ) (k₁ k₂ ρ Cmax L₁ L₂ b : ℝ), Delphi.CubeLaw W k₁ → Delphi.AreaLaw S k₂ → 0 < ρ → 0 < Cmax → 0 < L₁ → 0 < L₂ → L₁ ≠ L₂ →\n    Real.log (Delphi.vmin ρ Cmax (W L₂) (S L₂) / Delphi.vmin ρ Cmax (W L₁) (S L₁)) = b * Real.log (L₂ / L₁) → (${lean(b.low)} ≤ b ∧ b ≤ ${lean(b.high)}) → False :=\n  fun W S k₁ k₂ ρ Cmax L₁ L₂ b hW hS hρ hC h₁ h₂ hne hb hr => Delphi.Constraints.vmin_exponent_rules_out hW hS hρ hC h₁ h₂ hne hb (fun h => by linarith [hr.1, hr.2])`),
+  C10: (c, cand, tn) => expRule(c, cand, tn, 'power_required_loglog_exponent', Q(7n, 2n), '7/2', b => `theorem ${tn} : ∀ (W S : ℝ → ℝ) (k₁ k₂ ρ Cmax LD L₁ L₂ b : ℝ), Delphi.CubeLaw W k₁ → Delphi.AreaLaw S k₂ → 0 < ρ → 0 < Cmax → 0 < LD → 0 < L₁ → 0 < L₂ → L₁ ≠ L₂ →\n    Real.log (Delphi.powerRequired (W L₂) (Delphi.vmin ρ Cmax (W L₂) (S L₂)) LD / Delphi.powerRequired (W L₁) (Delphi.vmin ρ Cmax (W L₁) (S L₁)) LD) = b * Real.log (L₂ / L₁) → (${lean(b.low)} ≤ b ∧ b ≤ ${lean(b.high)}) → False :=\n  fun W S k₁ k₂ ρ Cmax LD L₁ L₂ b hW hS hρ hC hLD h₁ h₂ hne hb hr => Delphi.Constraints.powerRequired_exponent_rules_out hW hS hρ hC hLD h₁ h₂ hne hb (fun h => by linarith [hr.1, hr.2])`),
+  C11: (c, cand, tn) => sqRatio(c, cand, tn, 'froude_speed_ratio', (r, l) => `theorem ${tn} : ∀ (Fr g L₁ L₂ : ℝ), 0 < Fr → 0 < g → 0 < L₁ → 0 < L₂ →\n    Delphi.froudeSpeed Fr g L₂ / Delphi.froudeSpeed Fr g L₁ = ${lean(r)} → L₂ / L₁ = ${lean(l)} → False :=\n  fun Fr g L₁ L₂ hFr hg h₁ h₂ hr hℓ => Delphi.Constraints.froude_rules_out hFr hg h₁ h₂ hr hℓ (by norm_num) (by norm_num)`),
   C1b(c, cand, tn) {
     if (!isPoint(cand.commits.mutation_rate_ratio) || !isPoint(cand.commits.neutral_substitution_rate_ratio)) return { state: 'cannot-rule', reason: 'cannot rule: C1b needs exact (point) ratios' };
     const mr = parseQ(cand.commits.mutation_rate_ratio), kr = parseQ(cand.commits.neutral_substitution_rate_ratio);
@@ -199,7 +258,7 @@ for (const cand of CAND.candidates) {
 // Generate and compile the certificate file.
 let compile = null;
 if (certs.length) {
-  const text = `import Delphi.Constraints\nimport Delphi.Blueprint\n/-!\nGENERATED by lean/eliminate/eliminate.mjs from ${path.relative(root, path.resolve(file)).replace(/\\/g, '/')} (${new Date().toISOString()}).\nOne theorem per elimination: the matching lemma of lean/Delphi/Constraints.lean instantiated with the candidate's\ncommitted numbers, the arithmetic discharged by norm_num. Do not edit; regenerate.\n-/\n\nnamespace Delphi.Constraints.Eliminations\n\n${certs.map(c => `/-- Candidate \`${c.candidate}\`, constraint ${c.constraint}. -/\n${c.text}`).join('\n\n')}\n\nend Delphi.Constraints.Eliminations\n`;
+  const text = `import Delphi.Constraints\nimport Delphi.Blueprint\nimport Delphi.Scaling\n/-!\nGENERATED by lean/eliminate/eliminate.mjs from ${path.relative(root, path.resolve(file)).replace(/\\/g, '/')} (${new Date().toISOString()}).\nOne theorem per elimination: the matching lemma of lean/Delphi/Constraints.lean instantiated with the candidate's\ncommitted numbers, the arithmetic discharged by norm_num. Do not edit; regenerate.\n-/\n\nnamespace Delphi.Constraints.Eliminations\n\n${certs.map(c => `/-- Candidate \`${c.candidate}\`, constraint ${c.constraint}. -/\n${c.text}`).join('\n\n')}\n\nend Delphi.Constraints.Eliminations\n`;
   fs.mkdirSync(path.dirname(path.join(leanDir, leanRel)), { recursive: true });
   fs.writeFileSync(path.join(leanDir, leanRel), text);
   const candidates = [process.env.ELAN_HOME, path.join(process.env.USERPROFILE || process.env.HOME || '', '.elan'), 'C:/Temp/elan'].filter(Boolean);
