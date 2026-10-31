@@ -31,6 +31,7 @@ section{padding:36px 0;border-bottom:1px solid var(--line)}
 .grid{display:grid;gap:14px}
 .g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
 .g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
 .g5{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
 .card h3{margin-top:0}
@@ -105,6 +106,8 @@ footer{padding:28px 0;color:var(--mute);font-size:.85rem}
   <h2>Fin size and proportion: where the flying fish is specific</h2>
   <p class="lede" id="finwhy"></p>
   <div id="leads"></div>
+  <h3 style="margin-top:18px">Measured flying-fish fin proportions (the one flying-fish measurement set here)</h3>
+  <div id="finratios"></div>
   <details><summary>Zebrafish genes with any fin size or length phenotype in ZFIN</summary><div class="in" id="finsizegenes"></div></details>
   <details><summary>Focus gene families from the OrthoDB figure (Tbx5, Fgf10, Shh, Hoxd13): paralogs kept apart, breadth shown</summary><div class="in" id="focus"></div></details>
 </section>
@@ -183,8 +186,14 @@ fetch('data.json').then(r => r.json()).then(D => {
     ${(v.citations || []).map(c => `<p class="quote small">"${esc(c.quote_from_abstract)}" — ${esc(c.first_author)} ${c.year}, <i>${esc(c.journal)}</i>, <a href="https://doi.org/${c.doi}">${c.doi}</a>, PMID <a href="https://pubmed.ncbi.nlm.nih.gov/${c.pmid}/">${c.pmid}</a></p>`).join('')}
     ${v.zfin_alleles ? `<p class="small">ZFIN alleles: ${v.zfin_alleles.map(esc).join('; ')}</p>` : ''}
     ${v.symbol_check ? `<p class="small"><b>Symbol check:</b> ${esc(v.symbol_check)}</p>` : ''}
+    ${v.convergent_substitution_in_the_papers_own_data ? `<p class="small"><b>The paper's own data:</b> ${esc(v.convergent_substitution_in_the_papers_own_data.reading)}</p>` : ''}
     ${v.zfin_rows_citing_this_paper ? `<p class="small"><b>ZFIN rows citing this paper</b> (${esc(v.zfin_rows_citing_this_paper.zfin_pub)}, PMID ${v.zfin_rows_citing_this_paper.pmid}): genes ${v.zfin_rows_citing_this_paper.genes.map(esc).join(', ')}. ${v.zfin_rows_citing_this_paper.rows.map(r => `${esc(r.fish_name)}: ${esc(r.structure)} ${esc(r.quality)}`).join('; ')}.</p>` : ''}</div>`).join('') +
     `<p class="tiny">PubMed searches run (logged in genotype/cache/pubmed.json): ${D.fin_size.pubmed_queries.map(q => `"${esc(q.term)}" (${q.count})`).join(', ')}.</p>`;
+  const FR = D.fin_ratios;
+  $('#finratios').innerHTML = FR ? `<p class="small">${esc(FR.source.what_was_measured)} Source: ${esc(FR.source.paper)}, Data S1 sheet A, ${FR.n_rows} specimens; re-tabulated by <code>genotype/fin_ratios_table.py</code>. Pectoral fin length divided by standard length:</p>
+    <div class="grid g4">${Object.entries(FR.groups).map(([g, s]) => `<div class="card"><div class="kpi">${s.pectoral_over_SL_median}<small><b>${esc(g)}</b>: median pectoral fin / SL, n ${s.n_specimens}, range ${s.pectoral_over_SL_min} to ${s.pectoral_over_SL_max}, SL ${s.SL_cm_min} to ${s.SL_cm_max} cm</small></div></div>`).join('')}</div>
+    <div class="scroll"><table><tr><th>group</th><th>species</th><th class="n">n</th><th>SL (cm)</th><th class="n">median</th><th>range</th></tr>${FR.species.map(s => `<tr><td>${esc(s.group)}</td><td><i>${esc(s.species)}</i></td><td class="n">${s.n}</td><td>${s.SL_cm_min} to ${s.SL_cm_max}</td><td class="n">${s.median}</td><td>${s.min} to ${s.max}</td></tr>`).join('')}</table></div>
+    <p class="tiny">Caveats: ${FR.source.caveats.map(esc).join(' · ')}</p>` : '<p class="mute small">not available (genotype/cache/daane2021_fin_ratios.json missing)</p>';
   const fz = D.fin_size.zfin_fin_size_genes;
   $('#finsizegenes').innerHTML = `<p class="small">${esc(fz.definition)} <b>${fz.count} genes.</b> Top 25 by rows:</p><div class="scroll"><table><tr><th>gene</th><th class="n">rows</th><th>most frequent phenotypes</th><th>zygosity of rows</th></tr>${fz.top.map(g => `<tr><td><b>${esc(g.symbol)}</b> <span class="tiny">${g.zfin}</span></td><td class="n">${g.rows}</td><td>${Object.entries(g.qualities).map(([k, v]) => `${esc(k)} (${v})`).join('; ')}</td><td>${Object.entries(g.zygosity_of_rows).map(([k, v]) => `${k} ${v}`).join(', ')}</td></tr>`).join('')}</table></div>`;
   $('#focus').innerHTML = `<div class="scroll"><table><tr><th>family</th><th>gene</th><th>organism</th><th class="n">blueprint nodes touched</th><th>layers</th><th class="n">pectoral-fin links</th></tr>${D.focus_genes.map(g => `<tr><td>${esc(g.family)}</td><td><b>${esc(g.symbol)}</b> <span class="tiny">${esc(g.gene)}</span></td><td>${esc(g.organism)}</td><td class="n">${g.breadth.blueprint_nodes_direct}</td><td>${Object.entries(g.breadth.layers || {}).map(([k, v]) => `${LN[k]} ${v}`).join(', ')}</td><td class="n">${g.pectoral_fin_links.length}</td></tr>`).join('')}</table></div>

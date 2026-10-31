@@ -75,6 +75,12 @@ for pmid, label in PAPERS.items():
                            "is_xlsx": b[:2] == b"PK", "licence_note": "publisher supplementary data file of doi 10.1016/j.cub.2021.08.054; Crossref lists the Elsevier TDM user licence for the article; used for research, numbers quoted with attribution"}
         if not info["data_s1"]["is_xlsx"] and os.path.exists(dest): os.remove(dest); info["data_s1"]["note"] = "body was not a spreadsheet; file removed"
     out["papers"][pmid] = info
+# Data S1 sheet G lists lat4a under a medaka Ensembl id; look the id up at Ensembl so the symbol is checked, not assumed
+rec, b = call("ensembl_lookup_ENSORLG00000009715", "https://rest.ensembl.org/lookup/id/ENSORLG00000009715?content-type=application/json")
+try:
+    g = json.loads(b); out["ensembl_lookup_ENSORLG00000009715"] = {k: g.get(k) for k in ("id", "display_name", "description", "species", "biotype", "assembly_name", "version")} | {"retrieved": rec["retrieved"]}
+except Exception as e:
+    out["ensembl_lookup_ENSORLG00000009715"] = {"error": repr(e)[:200], "status": rec["status"], "retrieved": rec["retrieved"]}
 json.dump(out, open(os.path.join(CACHE, "fin_ratios.json"), "w"), indent=1)
 log["calls"] = calls; json.dump(log, open(LOG, "w"), indent=1)
 for pmid, i in out["papers"].items():

@@ -513,6 +513,20 @@ fin_size["verified_leads"][2]["zfin_rows_citing_this_paper"] = {
     "genes": sorted({f"{r[1]} ({r[2]})" for r in daane_rows}),
     "rows": [{"gene": r[1], "fish_name": r[19].replace("<sup>", "").replace("</sup>", ""), "structure": f"{r[3]} {r[4]}", "quality": f"{r[9]} {r[10]}", "tag": r[11]} for r in daane_rows],
     "note": "ZFIN's curators attached this paper's fin-length phenotypes to slc43a2a (allele dmh26), which is how ZFIN records the paper's lat4a. The homozygous dmh26 rows enter the map as 'required for' links only if they pass the same rules as every other row."}
+# The paper's own supplementary data (Data S1, sheet G) as a further confirmation of the lat4a identity, and its
+# measured fin proportions (Data S1, sheet A). Both read from genotype/cache/daane2021_fin_ratios.json and
+# genotype/cache/fin_ratios.json, written by genotype/fetch_fin_ratios.py and genotype/fin_ratios_table.py.
+fr = json.load(open(os.path.join(CACHE, "daane2021_fin_ratios.json"), encoding="utf8"))
+frx = json.load(open(os.path.join(CACHE, "fin_ratios.json"), encoding="utf8"))
+G = fr["sheet_G_convergent_substitutions"]
+fin_size["verified_leads"][2]["convergent_substitution_in_the_papers_own_data"] = {
+    "source": "Daane 2021 Data S1, sheet 'G - conv. aa subst.' (publisher supplement mmc2.xlsx, sha256 " + fr["source"]["sha256"] + "); the paper's own data, not a new result",
+    "column_key": G["header"], "footnotes": [r["A"] for r in G["rows"] if len(r) == 1],
+    "lat4a_rows": [r for r in G["rows"] if r.get("B") == "lat4a"],
+    "ensembl_lookup": frx.get("ensembl_lookup_ENSORLG00000009715"),
+    "reading": "The paper's convergence table lists lat4a under medaka Ensembl id ENSORLG00000009715 with a convergent amino-acid substitution F326L present in the gliding halfbeaks E. viridis and O. micropterus and in at least 7 of 9 sequenced flying-fish species, and flags it in the fin screens. Ensembl names ENSORLG00000009715 SLC43A2 (solute carrier family 43 member 2). So the paper's lat4a is the medaka SLC43A2 gene, which is the human LAT4 ortholog family and ZFIN's slc43a2a: a second confirmation of the identity beside ZFIN's curation of the paper."}
+fin_size["measured_fin_proportions"] = {"source": fr["source"], "n_specimens": fr["n_rows"], "pectoral_over_SL_by_group": fr["groups"],
+                                        "note": "Pectoral fin length / standard length of beloniform museum specimens (Daane 2021 Data S1A), the only flying-fish measurement in this thread. Lengths of preserved specimens only: no mass, fin area, aspect ratio or glide data. Per-specimen rows: genotype/cache/daane2021_data_s1A_fin_measurements.csv."}
 
 # ------------------------------------------------------------------ what gets stored
 PFSUB = {PF} | DESC[PF]

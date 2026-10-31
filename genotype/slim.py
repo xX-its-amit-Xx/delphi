@@ -65,7 +65,8 @@ out["fin_size"] = {"why": fs["why"],
                    "pubmed_queries": [{"term": q["term"], "count": q["count"], "retrieved": q["retrieved"]} for q in fs["pubmed_queries"]],
                    "zfin_fin_size_genes": {"definition": fs["zfin_fin_size_genes"]["definition"], "count": fs["zfin_fin_size_genes"]["count"],
                                            "top_10_by_rows": [{"symbol": g["symbol"], "zfin": g["zfin"], "rows": g["rows"]} for g in fs["zfin_fin_size_genes"]["genes"][:10]]},
-                   "aliases_check": fs["aliases_check"]}
+                   "aliases_check": fs["aliases_check"],
+                   **({"measured_fin_proportions": fs["measured_fin_proportions"]} if "measured_fin_proportions" in fs else {})}
 out["genes"] = {"note": "The per-gene breadth table is in map.vetted.json (not in this slim file)."}
 out["not_sourced"] = M["not_sourced"]; out["vetting"] = M["vetting"]; out["vetted"] = True
 out["slimming"] = {"of": "genotype/map.vetted.json", "full_file_sha256": hashlib.sha256(open(SRC, "rb").read()).hexdigest(),
