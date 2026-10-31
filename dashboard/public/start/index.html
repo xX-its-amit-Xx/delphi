@@ -11,14 +11,14 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}}
 :root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}
 *{box-sizing:border-box}
-html{scroll-behavior:smooth;scroll-padding-top:64px}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--dsh-h,0px) + 64px)}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 a{color:var(--accent)}
 h1,h2,h3{line-height:1.2;margin:0 0 .5em}
 h1{font-size:clamp(1.7rem,4.5vw,2.6rem)} h2{font-size:1.4rem} h3{font-size:1.05rem}
 p{margin:.4em 0 .8em}
 .wrap{max-width:1180px;margin:0 auto;padding:0 16px}
-header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top{position:sticky;top:var(--dsh-h,0px);z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 header.top .wrap{display:flex;gap:12px;align-items:center;padding:8px 16px;flex-wrap:wrap}
 .brand{font-weight:700}
 nav a{display:inline-block;padding:4px 10px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.9rem}
@@ -69,9 +69,8 @@ footer{padding:26px 0;color:var(--mute);font-size:.9rem}
 <span id="dsh-content"></span>
 <!-- delphi-shell:end -->
 <header class="top"><div class="wrap">
-  <span class="brand">DELPHI &mdash; Start Here</span>
+  <span class="brand">Start here</span>
   <nav><a href="#dash">Dashboards</a><a href="#state">Where we stand</a><a href="#open">Open decisions</a><a href="#read">What to read first</a><a href="#build">Build on this</a></nav>
-  <button id="themeBtn">Theme</button>
 </div></header>
 
 <main class="wrap">
@@ -127,7 +126,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const n0 = v => (typeof v === 'number' ? v.toLocaleString('en-US') : '—');
 
 const tkey = 'delphi-theme';
-if (localStorage.getItem(tkey)) document.documentElement.dataset.theme = localStorage.getItem(tkey);
+try { const s = localStorage.getItem(tkey); if (s) document.documentElement.dataset.theme = s; } catch {}
 $('#themeBtn').onclick = () => {
   const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
   const next = cur === 'dark' ? 'light' : 'dark';

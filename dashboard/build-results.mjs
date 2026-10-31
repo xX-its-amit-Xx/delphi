@@ -421,13 +421,13 @@ function gateFigure() {
   const legend = states.map(s => `<span class="lg"><span class="sw ${s.cls}${s.k === 'violated' ? ' hatched' : ''}"></span><b>${s.glyph}</b> ${esc(s.label)}</span>`).join('');
   return `<figure class="figwrap">
   <figcaption class="fcap">Of the ${rows} constraint rows, how many each arm actually decides. Longer grey means the gate said nothing.</figcaption>
-  <svg class="fig" viewBox="0 0 ${W} ${H}" role="img" aria-label="Stacked bars of holds, violated and cannot-evaluate counts across ${rows} constraint rows for three arms">
+  <div class="scroll figscroll gate"><svg class="fig" viewBox="0 0 ${W} ${H}" role="img" aria-label="Stacked bars of holds, violated and cannot-evaluate counts across ${rows} constraint rows for three arms">
    <defs><pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
      <line x1="0" y1="0" x2="0" y2="7" stroke="var(--panel)" stroke-width="2.4" stroke-opacity=".55"/></pattern></defs>
    <text x="0" y="20" class="ftitle">Three of ${rows} rows carry the whole verdict</text>
    <text x="0" y="38" class="axl sub">one bar per arm · ${rows} rows = full width</text>
    ${g}
-  </svg>
+  </svg></div>
   <div class="legend">${legend}</div>
   ${src(SRC.scorecard + ' (part3_lean_gate.tallies, .verdicts)')}
  </figure>`;
@@ -511,6 +511,9 @@ ul.tight{margin:.3em 0 .6em;padding-left:1.2em} ul.tight li{margin:.25em 0}
 .figwrap{margin:14px 0;padding:0}
 .fcap{font-size:.88rem;color:var(--mute);margin-bottom:8px}
 svg.fig{display:block;width:100%;height:auto;max-width:100%;color:var(--ink)}
+.figscroll{padding-bottom:4px}
+.figscroll.gate svg{min-width:620px}
+.figscroll.cov svg{min-width:780px}
 svg.fig .ftitle{fill:var(--ink);font-size:15px;font-weight:700}
 svg.fig .axl{fill:var(--ink);font-size:12.5px}
 svg.fig .axl.sub{fill:var(--mute);font-size:11px}
@@ -730,7 +733,7 @@ ${src(SRC.readiness + ' (items, checklist)')}</div>
 
 ${coverageSvg ? `<div class="card" style="margin-top:14px">
  <h3>The figure the readiness thread drew</h3>
- <figure class="figwrap">${coverageSvg}</figure>
+ <figure class="figwrap"><div class="scroll figscroll cov">${coverageSvg}</div></figure>
  ${src(SRC.coverageSvg + ' (embedded as built, not redrawn)')}
 </div>` : `<p class="na-block">${NA} &mdash; <code>${esc(SRC.coverageSvg)}</code> could not be read.</p>`}
 

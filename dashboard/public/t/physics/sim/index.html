@@ -147,9 +147,14 @@ Phases:         swim (z + lobe &lt; 0) → taxi (lobe in water, body out) → gl
 </main>
 
 <script>
-(function(){const root=document.documentElement,btn=document.getElementById('themeBtn');try{const s=localStorage.getItem('theme');if(s)root.setAttribute('data-theme',s);}catch(e){}btn.onclick=()=>{const cur=root.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');const nx=cur==='dark'?'light':'dark';root.setAttribute('data-theme',nx);try{localStorage.setItem('theme',nx);}catch(e){}draw();};})();
+function setTheme(t){const root=document.documentElement;if(t!=='dark'&&t!=='light')return;root.setAttribute('data-theme',t);try{if(sim)draw();}catch(e){}}
+(function(){const root=document.documentElement,btn=document.getElementById('themeBtn');const q=new URLSearchParams(location.search).get('theme');
+  if(q==='dark'||q==='light'){root.setAttribute('data-theme',q);} else {try{const s=localStorage.getItem('theme');if(s)root.setAttribute('data-theme',s);}catch(e){}}
+  btn.onclick=()=>{const cur=root.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');const nx=cur==='dark'?'light':'dark';root.setAttribute('data-theme',nx);try{localStorage.setItem('theme',nx);}catch(e){}draw();};})();
 
 let FLAGS=new URLSearchParams(location.search), PHYS=null, physOn=false, physMod=null, physInfo='', BASE=null, P=null, fish=null, ge=null, res=null, sim=null, running=false, speedMul=3, last=0;
+let PRESETS=null, COMMITTED=null, BASEIDX=0, DESIGN=null, PRESETID='', SUPPLIED={}, SCHEMAROWS=[], MOVED=new Set(), EMBEDDED=false, PARENTSEEN=false, lastEmit=0;
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
 function derive(f){

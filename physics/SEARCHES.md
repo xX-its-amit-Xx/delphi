@@ -177,5 +177,20 @@ All times UTC. Raw outputs are under `prior-art/raw/`; the machine log this tabl
 | 159 | 2026-10-31T20:43:19Z | pmc-C-bat-thermo-pnas | `GET https://pmc.ncbi.nlm.nih.gov/articles/PMC9169619/` | http=200 bytes=198336 | raw/pmc-C-bat-thermo-pnas.html |
 | 160 | 2026-10-31T21:02:27Z | epmc-v2-fish-drag | `GET https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&pageSize=20&resultType=lite&query=%28fish%20OR%20teleost%29%20AND%20%22drag%20coefficient%22%20...` | http=200 bytes=17470 | raw/epmc-v2-fish-drag.json |
 | 161 | 2026-10-31T21:02:28Z | epmc-v2-caudal-thrust | `GET https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&pageSize=20&resultType=lite&query=%28%22flying%20fish%22%20OR%20Exocoetidae%20OR%20halfbeak%29%...` | http=200 bytes=15744 | raw/epmc-v2-caudal-thrust.json |
+| 162 | 2026-10-31T21:06:33Z | epmc-v3-taxi-posture | `GET https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&pageSize=20&resultType=lite&query=%28%22flying%20fish%22%20OR%20Exocoetidae%29%20AND%20%28taxii...` | http=200 bytes=6196 | raw/epmc-v3-taxi-posture.json |
+| 163 | 2026-10-31T21:06:34Z | epmc-v3-hydrofoil-drag | `GET https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&pageSize=20&resultType=lite&query=%28hydrofoil%20OR%20%22surface-piercing%22%20OR%20planing%29%...` | http=200 bytes=16998 | raw/epmc-v3-hydrofoil-drag.json |
+| 164 | 2026-10-31T21:06:57Z | cr-taxi-preprint | `GET https://api.crossref.org/works/10.1101/765560` | http=200 bytes=10258 | raw/cr-taxi-preprint.json |
+| 165 | 2026-10-31T21:06:57Z | epmc-taxi-preprint-full | `GET https://www.ebi.ac.uk/europepmc/webservices/rest/PPR91964/fullTextXML` | http=500 bytes=148 | raw/epmc-taxi-preprint-full.xml |
+| 166 | 2026-10-31T21:06:58Z | biorxiv-taxi-preprint | `GET https://www.biorxiv.org/content/10.1101/765560v1.full` | http=429 bytes=17 | raw/biorxiv-taxi-preprint.html |
+| 167 | 2026-10-31T21:07:25Z | wb-taxi-preprint | `GET https://web.archive.org/web/2021id_/https://www.biorxiv.org/content/10.1101/765560v1.full.pdf` | http=200 bytes=31840385 | raw/wb-taxi-preprint.pdf |
+| 168 | 2026-10-31T21:07:32Z | s2-taxi-preprint | `GET https://api.semanticscholar.org/graph/v1/paper/DOI:10.1101/765560?fields=title,openAccessPdf,isOpenAccess` | http=200 bytes=324 | raw/s2-taxi-preprint.json |
+| 169 | 2026-10-31T21:07:52Z | biorxiv-taxi-pdf | `GET https://www.biorxiv.org/content/biorxiv/early/2019/09/11/765560.full.pdf` | http=429 bytes=17 | raw/biorxiv-taxi-pdf.pdf |
+| 170 | 2026-10-31T21:13:00Z | nasa-atmosphere-model | `GET https://www.grc.nasa.gov/www/k-12/airplane/atmosmet.html` | http=200 bytes=14691 | raw/nasa-atmosphere-model.html |
+| 171 | 2026-10-31T21:13:01Z | fb-summary-danio-rerio | `GET https://www.fishbase.se/summary/Danio-rerio.html` | http=200 bytes=57724 | raw/fb-summary-danio-rerio.html |
+| 172 | 2026-10-31T21:13:01Z | epmc-coevo-bats-altitude | `GET https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&pageSize=20&resultType=lite&query=%28Chiroptera%20OR%20bats%29%20AND%20%28altitude%20OR%20%22hi...` | http=200 bytes=17555 | raw/epmc-coevo-bats-altitude.json |
+| 173 | 2026-10-31T21:13:02Z | epmc-coevo-insects-altitude | `GET https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&pageSize=20&resultType=lite&query=%28insect%20OR%20Drosophila%20OR%20bumblebee%20OR%20Bombus%29...` | http=200 bytes=17731 | raw/epmc-coevo-insects-altitude.json |
+| 174 | 2026-10-31T21:13:03Z | epmc-coevo-hb-altitude | `GET https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&pageSize=20&resultType=lite&query=%28%22high-altitude%22%20OR%20%22high%20altitude%22%29%20AND%...` | http=200 bytes=18475 | raw/epmc-coevo-hb-altitude.json |
+| 175 | 2026-10-31T21:13:03Z | epmc-lung-diffusing | `GET https://www.ebi.ac.uk/europepmc/webservices/rest/search?format=json&pageSize=20&resultType=lite&query=%28%22diffusing%20capacity%22%20OR%20%22oxygen%20diffusing%20...` | http=200 bytes=18650 | raw/epmc-lung-diffusing.json |
+| 176 | 2026-10-31T21:14:25Z | fb-lw-danio-rerio | `GET https://www.fishbase.se/popdyn/LWRelationshipList.php?ID=4653&GenusName=Danio&SpeciesName=rerio&fc=749` | http=200 bytes=17997 | raw/fb-lw-danio-rerio.html |
 
-Total logged calls: 161.
+Total logged calls: 176.

@@ -99,6 +99,7 @@ const pubinfo = (label, type, introduces, templates = []) => `sub:pubinfo {
 ${owner ? '' : '    rdfs:comment "Owner ORCID not yet set: the key owner passes --owner <orcid> to lean/nanopubs/build.mjs at signing time; until then no human is named in this record." ;\n'}    rdfs:label ${lit(label)} ;
     dct:license <https://creativecommons.org/licenses/by/4.0/> ;
     npx:hasNanopubType <${type}> ;
+    rdfs:comment ${lit(urlNote)} ;
 ${templateNotes(templates)}${introduces ? `    npx:introduces <${introduces}> ;\n` : ''}    delphi:domain <${DOMAIN}> .
   <${DOMAIN}> rdfs:label "math-population-genetics-and-evolutionary-theory" .
 }`;
@@ -137,7 +138,53 @@ const plain = { "genotype-genetic-code": "In the standard genetic code, turning 
   'thompson1917-ch02-10': 'Minimum flight speed under isometry and speed at equal Froude number both scale as the square root of the linear dimension.',
   'favored-fixation-lower-bound': 'In an absorbing chain on 0..M gene copies whose expected copy number never decreases (neutral, or selection for the mutant), including Wright-Fisher sampling with relative fitness 1+s for any s >= 0, a lineage of i copies is eventually fixed with probability at least i/M; so the expected number of substitutions over T generations is at least mu T and at most M mu T.'
 };
-const notEstablished = 'Does not establish: anything about organisms. The theorem is exact inside the stated model and silent outside it; strict neutrality, constant population size, Wright-Fisher reproduction and independent mutant fates (Kimura), fixed fitnesses and haploid inheritance (Fisher), equal fecundity and a 1:1 sex ratio (Maynard Smith) are assumptions written in the module header, not conclusions. Kernel-checked is not expert-validated: no human expert has validated these statements. Whether the Lean statement faithfully renders the paper is a separate assessment record, and so far only one assessor provider has run.';
+// What the kernel checked, NEVER the source's claim. The old label appended "(Lean 4, kernel-checked)" to
+// the claim as the paper states it, so a record about Thompson's model read as a checked fact about ostriches
+// and moa. For a claim with a paper the label now states the theorem; the paper's claim is kept beside it in
+// skos:note, marked as not what was checked.
+const firstSentence = x => { const m = String(x || '').match(/^([\s\S]*?[.])(\s|$)/); return (m ? m[1] : String(x || '')).trim(); };
+const provedLabel = f => f.paper
+  ? `Kernel-checked Lean 4 statement about a model: ${firstSentence(plain[f.claim_id])}`
+  : `${f.label} (Lean 4, kernel-checked)`;
+const sourceClaimNote = f => f.paper
+  ? `The claim as the source states it, which is NOT what the kernel checked: "${f.label}" (${f.paper.title}, ${f.paper.year}). What was checked is the statement in dct:description, which is about a model.`
+  : null;
+// The assumptions of THIS claim, from its own proof scope, instead of one shared list copied everywhere.
+const notEstablished = f => 'Does not establish: anything about organisms. The theorem is exact inside the stated model and silent outside it. The assumptions it rests on, written in the module header and never proved, are: '
+  + f.proofScope.assumed.map(a => String(a).replace(/\s+$/, '').replace(/[.]$/, '')).join('; ')
+  + '. Kernel-checked is not expert-validated: no human expert has validated these statements. Whether the Lean statement faithfully renders the source is a separate assessment record, and so far only one assessor provider has run.';
+
+// Every source URL pins a commit. If that commit is not on the public remote, the URLs are correct
+// identifiers but nothing can fetch them, so each record says so rather than implying a reader can follow
+// them. Skip with --no-url-check (the records then say the check was not run).
+const checkUrls = !process.argv.includes('--no-url-check');
+const urlStatus = new Map();
+async function probe(u) {
+  if (urlStatus.has(u)) return urlStatus.get(u);
+  let st = null;
+  try {
+    const c = new AbortController(); const t = setTimeout(() => c.abort(), 8000);
+    let r = await fetch(u, { method: 'HEAD', signal: c.signal, redirect: 'follow' });
+    if (r.status === 405 || r.status === 501) r = await fetch(u, { method: 'GET', signal: c.signal, redirect: 'follow' });
+    clearTimeout(t); st = r.status;
+  } catch (e) { st = 'unreachable: ' + e.message; }
+  urlStatus.set(u, st);
+  return st;
+}
+const urlReport = { checked: checkUrls, at: null, commit: commit || null, ref, repository: REPO, results: [], resolving: 0, failing: 0, note: null };
+if (checkUrls) {
+  const probes = [blob('lean/Delphi/Scaling.lean'), blob('lean/mutations.json'), blob('lean/Delphi/Audit.lean'), `${SITE}/lean.json`, `${SITE}/`, REPO];
+  for (const u of probes) urlReport.results.push({ url: u, status: await probe(u) });
+  urlReport.at = new Date().toISOString();
+  urlReport.resolving = urlReport.results.filter(r => r.status === 200).length;
+  urlReport.failing = urlReport.results.filter(r => r.status !== 200).length;
+}
+const blobsResolve = checkUrls && urlReport.results.filter(r => r.url.startsWith(REPO + '/blob')).every(r => r.status === 200);
+const urlNote = !checkUrls
+  ? `Source URLs were not checked in this build (--no-url-check), so whether they resolve is unknown.`
+  : blobsResolve
+    ? `Every source URL in this record resolved when it was built (checked ${urlReport.at}).`
+    : `The source URLs pin commit ${ref} of ${REPO}, which is NOT on that repository's public remote when checked ${urlReport.at} (the blob URLs return ${[...new Set(urlReport.results.filter(r => r.url.startsWith(REPO + '/blob')).map(r => String(r.status)))].join(', ')}). They identify the right file and revision but nothing can fetch them until that commit is pushed, which must happen before this record is signed. The dashboard URLs in the same record do resolve.`;
 
 for (const f of R.formalized) {
   const id = f.claim_id, law = `${DELPHIR}math-law/${id}`, claim = `${DELPHIR}claim/${id}`, ev = `${DELPHIR}evidence/lean-kernel-check-${id}`;
@@ -148,10 +195,10 @@ for (const f of R.formalized) {
   const leanSrc = (main.decl?.doc ? `/-- ${main.decl.doc} -/\n` : '') + (main.decl?.statement || '');
   const muts = M.results.filter(r => r.kind === 'mutation' && r.claim_id === id);
   const axioms = [...new Set(thms.flatMap(t => t.audit.axioms))].sort();
-  const receipt = `Build receipt. ${R.versions.lean}; toolchain ${R.versions.toolchain}; Mathlib ${R.versions.mathlib.inputRev} (${R.versions.mathlib.rev}). lake build exit ${R.build.exit} in ${R.build.seconds} s with ${R.build.errors} errors; ${mod.sorries} sorry in ${f.module} (${mod.lines} lines). #print axioms for ${thms.map(t => t.name).join(', ')}: ${axioms.join(', ')} only (Lean's standard axioms; no sorryAx). Mutation evidence (lean/mutate.mjs, ${M.summary.run}): ${muts.length} deliberate change(s) to the statement or the model were each rejected by the compiler: ${muts.map(m => `[${m.id}] ${m.description} Rejected with ${m.errors} error(s): ${m.firstError}`).join(' ')} Controls: ${M.summary.controlsPassed} of ${M.summary.controls} unmodified modules accepted by the same command.`;
+  const receipt = `Build receipt. ${R.versions.lean}; toolchain ${R.versions.toolchain}; Mathlib ${R.versions.mathlib.inputRev} (${R.versions.mathlib.rev}). lake build exit ${R.build.exit} in ${R.build.seconds} s with ${R.build.errors} errors; ${mod.sorries} sorry in ${f.module} (${mod.lines} lines). #print axioms for ${thms.map(t => t.name).join(', ')}: ${axioms.join(', ')} only (Lean's standard axioms; no sorryAx). Mutation evidence (lean/mutate.mjs, ${M.summary.run}): ${muts.length ? `${muts.length} deliberate change(s) to this statement or its model were each rejected by the compiler: ${muts.map(m => `[${m.id}] ${m.description} Rejected with ${m.errors} error(s): ${m.firstError}`).join(' ')}` : `NONE. The suite's ${M.summary.mutations} mutants target other theorems, so for this statement mutation evidence is ABSENT, which is not the same as negative: nobody has tried to break this statement and failed.`} Controls: ${M.summary.controlsPassed} of ${M.summary.controls} unmodified modules accepted by the same command.`;
   const assertion = `sub:assertion {
   <${law}> a delphi:Concept, skos:Concept ;
-    rdfs:label ${lit(`${f.label} (Lean 4, kernel-checked)`)} ;
+    rdfs:label ${lit(provedLabel(f))} ;
     dct:description ${lit(plain[id])} ;
 ${f.paper ? `    dct:source ${lit(`${f.paper.title} (${f.paper.year})`)} ;\n` : `    dct:source ${lit(f.claim_id === 'blueprint-well-formedness' ? 'Proved in this project (lean/Delphi/Blueprint.lean) for the organism thread\'s text-to-blueprint tool; structural well-formedness, no paper states it.' : f.claim_id.startsWith('flight-') || f.claim_id === 'aerobic-power-bound' ? 'Proved in this project (lean/Delphi/Flight.lean) for the flying-fish audit and the physics thread\'s coupled simulator (hub items 3 and 4, 2026-10-31); hypotheses named, no paper states it in this form.' : f.claim_id.startsWith('scaling-') ? 'Proved in this project (lean/Delphi/Scaling.lean) from the physics thread\'s formal statements (physics/FORMAL-STATEMENTS.md, 2026-10-31; Galileo 1638 and Thompson 1917 ch. II for the idea); hypotheses named, no paper states it in this form.' : 'Proved in this project (lean/Delphi/Favored.lean) as an extension of the neutral case of Kimura (1962) to non-opposing selection; no paper states it in this form.')} ;\n`}${f.paper?.doi ? `    prov:wasDerivedFrom <https://doi.org/${f.paper.doi}> ;\n` : ''}    skos:notation ${lit(f.notation)} ;
     skos:definition ${longlit(leanSrc)}^^delphi:lean4 ;
@@ -160,30 +207,31 @@ ${f.paper ? `    dct:source ${lit(`${f.paper.title} (${f.paper.year})`)} ;\n` : 
     delphi:leanTheorem ${thms.map(t => lit(t.name)).join(', ')} ;
     delphi:leanVerified "true"^^xsd:boolean ;
     skos:scopeNote ${lit(f.note || 'As stated in the module header.')} ;
-    rdfs:comment ${lit('Status: kernel-checked (Lean 4 accepted the module with zero sorry and standard axioms only). Not expert-validated. ' + notEstablished)} ;
+${sourceClaimNote(f) ? `    skos:note ${lit(sourceClaimNote(f))} ;\n` : ''}
+    rdfs:comment ${lit('Status: kernel-checked (Lean 4 accepted the module with zero sorry and standard axioms only). Not expert-validated. ' + notEstablished(f))} ;
     rdfs:seeAlso <${blob(f.module)}>, <${SITE}/lean.json>, <${SITE}/> .
   <${claim}> dct:conformsTo <${law}> ;
     delphi:hasEvidence <${ev}> .
   <${ev}> a delphi:EvidenceItem ;
-    rdfs:label ${lit(`Lean 4 kernel accepted ${main.name} with zero sorry and standard axioms, and rejected ${muts.length} deliberately broken variant(s)`)} ;
+    rdfs:label ${lit(`Lean 4 kernel accepted ${main.name} with zero sorry and standard axioms; ${muts.length ? `it also rejected ${muts.length} deliberately broken variant(s) of this statement or its model` : 'NO mutant in the suite targets this statement, so it has no mutation evidence'}`)} ;
     dct:description ${lit(receipt)} ;
     dct:subject <${law}> ;
-    rdfs:comment ${lit('This evidence item establishes that the stated theorem follows from the stated model. ' + notEstablished)} ;
+    rdfs:comment ${lit('This evidence item establishes that the stated theorem follows from the stated model. ' + notEstablished(f))} ;
     prov:wasDerivedFrom <${SITE}/lean.json>, <${blob('lean/mutations.json')}>, <${blob('lean/Delphi/Audit.lean')}> .
 }`;
-  write(`law-${id}.trig`, trig(assertion, builderProv([blob(f.module), `${SITE}/lean.json`, blob('lean/mutations.json')]), pubinfo(`${f.label}: machine-checked in Lean 4`, `${DELPHI}Concept`, law, [['wasCreatedFromProvenanceTemplate', TEMPLATES.provenance], ['wasCreatedFromPubinfoTemplate', TEMPLATES.pubinfoDomain]])),
+  write(`law-${id}.trig`, trig(assertion, builderProv([blob(f.module), `${SITE}/lean.json`, blob('lean/mutations.json')]), pubinfo(provedLabel(f), `${DELPHI}Concept`, law, [['wasCreatedFromProvenanceTemplate', TEMPLATES.provenance], ['wasCreatedFromPubinfoTemplate', TEMPLATES.pubinfoDomain]])),
     { kind: 'law', claim, law, evidence: ev, theorems: thms.map(t => t.name), axioms, mutantsRejected: muts.length });
 
   // Proof scope: kernel-checked vs assumed, as separate statements on the law.
   const ps = f.proofScope;
   const scope = `sub:assertion {
-  <${law}> dct:description ${lit(`Proof scope of ${f.label}: ${ps.kernelChecked.length} statement(s) the Lean kernel checked and ${ps.assumed.length} assumption(s) stated in the module header and not proved.`)} ;
+  <${law}> dct:description ${lit(`Proof scope of the kernel-checked statement recorded as ${id}: ${ps.kernelChecked.length} statement(s) the Lean kernel checked and ${ps.assumed.length} assumption(s) stated in the module header and not proved.${f.paper ? ` The source's claim ("${f.label}", ${f.paper.title} ${f.paper.year}) is what the statement was written FROM, not what was checked.` : ''}`)} ;
 ${ps.kernelChecked.map(x => `    skos:scopeNote ${lit('Kernel-checked: ' + x)} ;`).join('\n')}
 ${ps.assumed.map(x => `    skos:scopeNote ${lit('Assumed, not proved: ' + x)} ;`).join('\n')}
-    rdfs:comment ${lit('The kernel-checked statements are theorems of the model; the assumptions are the model. ' + notEstablished)} ;
+    rdfs:comment ${lit('The kernel-checked statements are theorems of the model; the assumptions are the model. ' + notEstablished(f))} ;
     rdfs:seeAlso <${blob(f.module)}> .
 }`;
-  write(`scope-${id}.trig`, trig(scope, builderProv([blob(f.module), `${SITE}/lean.json`]), pubinfo(`Proof scope of ${f.label}`, `${DELPHI}Concept`, null, [['wasCreatedFromProvenanceTemplate', TEMPLATES.provenance], ['wasCreatedFromPubinfoTemplate', TEMPLATES.pubinfoDomain]])),
+  write(`scope-${id}.trig`, trig(scope, builderProv([blob(f.module), `${SITE}/lean.json`]), pubinfo(`Proof scope of the kernel-checked statement ${id}`, `${DELPHI}Concept`, null, [['wasCreatedFromProvenanceTemplate', TEMPLATES.provenance], ['wasCreatedFromPubinfoTemplate', TEMPLATES.pubinfoDomain]])),
     { kind: 'proof-scope', law, kernelChecked: ps.kernelChecked.length, assumed: ps.assumed.length });
 }
 
@@ -331,7 +379,7 @@ ${onBehalf}    delphi:usesModel <${MODEL}> .
 }
 
 fs.writeFileSync(path.join(here, 'manifest.json'), JSON.stringify({
-  built: now, commit, commitPinned: !!commit, repository: REPO,
+  built: now, commit, commitPinned: !!commit, repository: REPO, urlCheck: urlReport,
   owner: owner, ownerSet: !!owner, ownerNote: owner ? null : 'No human named. The key owner sets --owner <orcid IRI> at signing time; that single value populates prov:actedOnBehalfOf on both agents.',
   creator: BUILDER_AGENT, signerIdentity: 'to be decided by the key owner: a bot identity with its own key pair and introduction nanopub is the intended shape (nanopub skill); never a human ORCID as signer without that person\'s approval',
   note: commit ? null : 'Links point at the branch; rerun with --commit <hash> once lean/ is committed and before signing.',

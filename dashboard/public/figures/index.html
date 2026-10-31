@@ -17,7 +17,7 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Inter Tight",system-ui,sans-serif}
 a{color:var(--accent)}
 .wrap{max-width:1180px;margin:0 auto;padding:0 18px}
-header{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 93%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header{position:sticky;top:var(--dsh-h,0px);z-index:10;background:color-mix(in srgb,var(--bg) 93%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 header .wrap{display:flex;gap:12px;align-items:center;padding:10px 18px;flex-wrap:wrap}
 header b{font-family:Fraunces,serif}
 nav a{padding:3px 9px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.88rem}
@@ -51,8 +51,6 @@ figcaption b{display:block;margin-bottom:4px}
 <!-- delphi-shell:end -->
 <header><div class="wrap">
   <b>Figures</b>
-  <nav><a href="../start/">Start</a><a href="../">Mission Control</a><a href="../graph/">Graph</a><a href="../proofs/">Claim Book</a><a href="../deck/">Deck</a></nav>
-  <button id="themeBtn">Theme</button>
 </div></header>
 <main class="wrap">
   <h1>Every figure, with where it came from</h1>
@@ -64,7 +62,7 @@ figcaption b{display:block;margin-bottom:4px}
 'use strict';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const tk='delphi-theme';
-if(localStorage.getItem(tk))document.documentElement.dataset.theme=localStorage.getItem(tk);
+try{const s=localStorage.getItem(tk);if(s)document.documentElement.dataset.theme=s;}catch{}
 document.getElementById('themeBtn').onclick=()=>{const c=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
   const n=c==='dark'?'light':'dark';document.documentElement.dataset.theme=n;try{localStorage.setItem(tk,n)}catch{}};
 // group by subject so the trees sit together

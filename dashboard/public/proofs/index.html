@@ -23,7 +23,7 @@ h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800}
 h2{font-size:1.35rem;font-weight:700}
 h3{font-size:1rem;margin:0 0 .4em}
 .wrap{max-width:1120px;margin:0 auto;padding:0 18px}
-header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 93%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top{position:sticky;top:var(--dsh-h,0px);z-index:20;background:color-mix(in srgb,var(--bg) 93%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 header.top .wrap{display:flex;gap:12px;align-items:center;padding:10px 18px;flex-wrap:wrap}
 nav a{padding:4px 10px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.9rem}
 nav a:hover{background:var(--soft);color:var(--ink)}
@@ -77,9 +77,7 @@ th{color:var(--mute);font-weight:600;font-size:.82rem}
 <!-- delphi-shell:end -->
 <header class="top"><div class="wrap">
   <b style="font-family:Fraunces,serif">Claim Book</b>
-  <nav><a href="../start/">Start</a><a href="../">Mission Control</a><a href="../t/lean/">Lean thread</a><a href="../t/claims/">Claim tests</a><a href="../deck/">Deck</a></nav>
-  <input id="filter" placeholder="filter claims&hellip;">
-  <button id="themeBtn" style="margin-left:auto">Theme</button>
+  <input id="filter" placeholder="filter claims&hellip;" style="margin-left:auto">
 </div></header>
 <main class="wrap">
 <section>
@@ -96,7 +94,7 @@ th{color:var(--mute);font-weight:600;font-size:.82rem}
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const tk='delphi-theme';
-if(localStorage.getItem(tk))document.documentElement.dataset.theme=localStorage.getItem(tk);
+try{const s=localStorage.getItem(tk);if(s)document.documentElement.dataset.theme=s;}catch{}
 $('#themeBtn').onclick=()=>{const c=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
   const n=c==='dark'?'light':'dark';document.documentElement.dataset.theme=n;try{localStorage.setItem(tk,n)}catch{}};
 

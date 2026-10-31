@@ -21,7 +21,7 @@
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--ink);font:15px/1.5 "Inter Tight",system-ui,sans-serif;display:flex;flex-direction:column}
 a{color:var(--accent)}
-header{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:9px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header{position:sticky;top:var(--dsh-h,0px);z-index:20;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:9px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
 header b{font-family:Fraunces,serif;font-size:1.1rem}
 nav a{padding:3px 9px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.86rem}
 nav a:hover{background:var(--soft);color:var(--ink)}
@@ -68,7 +68,6 @@ table{border-collapse:collapse;width:100%;font-size:.8rem}td,th{text-align:left;
 <!-- delphi-shell:end -->
 <header>
   <b>Knowledge Graph</b>
-  <nav><a href="../start/">Start</a><a href="../">Mission Control</a><a href="../proofs/">Claim Book</a><a href="../deck/">Deck</a></nav>
   <div class="ctl">
     <select id="view" title="Which nodes to draw">
       <option value="core">Evidenced core</option>
@@ -84,7 +83,6 @@ table{border-collapse:collapse;width:100%;font-size:.8rem}td,th{text-align:left;
     <label><input type="checkbox" data-d="wolfram" checked>Wolfram</label>
     <label><input type="checkbox" data-d="mathbio" checked>Math. biology</label>
     <input type="search" id="q" placeholder="find a node&hellip;">
-    <button id="themeBtn">Theme</button>
   </div>
 </header>
 <main>
@@ -116,7 +114,7 @@ function readPalette(){const cs=getComputedStyle(document.documentElement);
 readPalette();
 const css=v=>PAL[v]!==undefined?PAL[v]:getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const tk='delphi-theme';
-if(localStorage.getItem(tk))document.documentElement.dataset.theme=localStorage.getItem(tk);
+try{const s=localStorage.getItem(tk);if(s)document.documentElement.dataset.theme=s;}catch{}
 $('#themeBtn').onclick=()=>{const c=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
   const n=c==='dark'?'light':'dark';document.documentElement.dataset.theme=n;try{localStorage.setItem(tk,n)}catch{}; readPalette(); legend&&D&&legend(); G&&G.refresh&&G.refresh();};
 
