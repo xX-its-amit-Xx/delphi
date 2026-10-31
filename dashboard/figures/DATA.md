@@ -93,7 +93,7 @@ is a useful cross-check on the repo's existing inventory.
 The Exocoetidae value, 56–48.07 Ma from 7 occurrences, matches `lean/bound/parameters.json`
 exactly — an independent confirmation of the number that thread's bound rests on.
 
-### Combined table, as NCBI and PBDB report it
+### Combined table as drawn
 
 | taxon | NCBI taxid | assemblies | reference_only | oldest fossil, Ma | PBDB occurrences |
 | --- | --- | --- | --- | --- | --- |
@@ -110,9 +110,6 @@ exactly — an independent confirmation of the number that thread's bound rests 
 | Cynocephalidae (colugos) | 30657 | 6 | 2 | 15.98–13.82 | 7 |
 | Hominidae (great apes) | 9604 | 2,660 | 7 | 23.04–15.98 | 619 |
 
-The Diptera, Crocodylia and Sciurini rows above are PBDB's reported values. The figure
-shows three of them corrected and one flagged; see the correction sections below.
-
 ### What figure 1 does not claim
 
 * No divergence dates. A PBDB first appearance is the age of the oldest *fossil occurrence*
@@ -120,145 +117,6 @@ shows three of them corrected and one flagged; see the correction sections below
 * No count of evolutionary origins of flight. The figure states that flight and gliding appear
   on six separate branches of the drawn nesting and that each has a non-flying sister group
   here, which is a description of the picture, not an ancestral-state reconstruction.
-
-### Data correction: Diptera first appearance
-
-**The correction is ours. PBDB still returns 390.5 Ma** for Diptera from
-`taxa/single.json?name=Diptera&show=app` (re-checked 2026-10-31T16:38Z). The figure shows
-247–245.19 Ma, marked †, with PBDB's 390.5–387.95 printed beside it and struck through.
-
-What sets PBDB's 390.5 Ma, and why we do not use it:
-
-* **The record:** `occ:1656545`, entered as *"Schizophora blankenheimensis"*, Late Eifelian
-  (Middle Devonian), 390.5–387.95 Ma, in collection `col:235174`, Germany. PBDB resolves it to
-  `txn:255565` Schizophora, which it classifies under Insecta › Diptera (396 occurrences).
-* **The reference:** `ref:88595` — B. R. Schöne, M. Basse and A. May (1999), *Korrelationen des
-  Eifelium/Givetium-Grenzbereichs im Rheinischen Schiefergebirge*, Senckenbergiana lethaea
-  77(1):233–242, doi:10.1007/BF03043742. A Devonian stratigraphy paper.
-* **The rest of the collection:** `col:235174` holds 5 occurrences — 2 Trilobita, 1 Conodonta,
-  1 Rhynchonellata (a brachiopod) and this one "insect". A marine assemblage.
-* **The two empty intervals:** PBDB holds **0** Diptera occurrences in the **Carboniferous** and
-  **0** in the **Permian**, against **1** in the Devonian and **75** in the Triassic. The
-  Devonian record is isolated by about 143 million years from the next Diptera record.
-* **The next-oldest record**, used on the figure: `occ:964190`, *Louisa nova*, Aegean (Middle
-  Triassic), **247–245.19 Ma**, reference `ref:36813` — W. Krzemiński and E. Krzemińska (2003),
-  *Triassic Diptera: descriptions, revisions and phylogenetic relations*, Acta Zoologica
-  Cracoviensia 46(Suppl):153–184. At least three more Diptera from the same reference share that age.
-
-Our reading is that a genus name in a Devonian marine paper has been resolved onto the
-dipteran section Schizophora — a **probable genus-name homonym**. "Probable" is deliberate: we
-have not seen the 1999 paper's text, only PBDB's record of it, its collection-mates and its
-title. The coordinator flagged this first; every fact above was re-fetched by this thread
-rather than taken from that message.
-
-Endpoints, all HTTP 200, retrieved 2026-10-31T16:38:05Z – 16:38:37Z (per-call times in
-`cache/pbdb_oldest.json`):
-
-```
-https://paleobiodb.org/data1.2/occs/list.json?base_name=Diptera&max_ma=391.5&min_ma=330.5&timerule=overlap&show=ref
-https://paleobiodb.org/data1.2/occs/list.json?base_name=Diptera&interval=Devonian&show=ref       -> 1
-https://paleobiodb.org/data1.2/occs/list.json?base_name=Diptera&interval=Carboniferous&show=ref  -> 0
-https://paleobiodb.org/data1.2/occs/list.json?base_name=Diptera&interval=Permian&show=ref        -> 0
-https://paleobiodb.org/data1.2/occs/list.json?base_name=Diptera&interval=Triassic&show=ref       -> 75
-https://paleobiodb.org/data1.2/taxa/single.json?name=Schizophora&show=class,app
-https://paleobiodb.org/data1.2/refs/single.json?id=88595
-https://paleobiodb.org/data1.2/occs/single.json?id=1656545&show=ref,class,loc
-https://paleobiodb.org/data1.2/occs/single.json?id=964190&show=ref,class,loc
-https://paleobiodb.org/data1.2/occs/list.json?coll_id=235174&show=class
-```
-
-`occs/list.json?...&order=max_ma.desc` — a value PBDB's own error message lists as valid —
-returned **HTTP 400** ("Bad value for parameter 'order' (was 'max_ma')"), so oldest-first
-ordering is done client-side on `eag` instead.
-
-### Sanity check of the other eleven PBDB first appearances
-
-Same method for every taxon: all occurrences overlapping a 60-Myr window starting at PBDB's
-reported first appearance, sorted by early age, to see what record sets the date and how far
-behind the next one is. Endpoint
-`https://paleobiodb.org/data1.2/occs/list.json?base_name=<taxon>&max_ma=<fea+1>&min_ma=<fea-60>&timerule=overlap&show=ref`,
-12 calls, all HTTP 200, retrieved 2026-10-31T16:38Z.
-
-| taxon | PBDB first app. | set by | next older age | verdict |
-| --- | --- | --- | --- | --- |
-| Diptera | 390.5 | 1 record, occ:1656545 | 247 (next query) | **error, corrected †** (above) |
-| Arachnida | 438.6 | 2 records, 2 references (*Palaeophonus*) | 432.9 | consistent |
-| Exocoetidae | 56 | 2 records, **1 reference** (Bannikov 2014; *Rhamphexocoetus volans* and "*Engraulis*" *evolans*, Italy) | 37.71 | consistent, but single-source |
-| Belonidae | 37.71 | 2 records, 2 references | 23.04 | consistent |
-| Aves | 161.5 | 4 records, 4 references; the oldest is *Praeornis sharovi* (occ:1448725), the others a footprint taxon and two "Aves indet." dated only to 161.5–100.5 | 154.8 (Archaeopterygiformes) | consistent within PBDB's broad Aves; not marked |
-| Crocodylia | 237 | occ:621595 "*Walteria*", then footprint and bite-trace taxa | 201.4 (first body fossil) | **error plus definition, corrected †** (below) |
-| Chiroptera | 56 | 62 records, 34 references | 51.1 | robust |
-| Felidae | 33.9 | 1 record, *Proailurus* sp. | 31.8 | consistent |
-| Pteromyini | 23.04 | 3 records, 2 references, all "Pteromyini indet." | 5.09 | consistent but thin (4 occurrences in all) |
-| Sciurini | 41.03 | 1 record, occ:1349001 *Plesiarctomys spectabilis* | 37 | **classification error, corrected †** (below) |
-| Cynocephalidae | 15.98 | 1 record, occ:227167 | 5.333 | **doubtful, flagged ‡** (below) |
-| Hominidae | 23.04 | 2 records, 2 references | 20.45 | consistent |
-
-**Exocoetidae is unchanged**, and it is the value `lean/bound/parameters.json` uses. It is worth
-the lean thread knowing that the 56–48.07 Ma bound rests on two occurrences from a single
-reference (A. F. Bannikov 2014), with the next Exocoetidae record at 37.71 Ma.
-
-### Data correction: Crocodylia first appearance
-
-**The correction is ours. PBDB still returns 237 Ma.** The figure shows 201.4–192.9 Ma, marked
-†, with 237–227.3 struck through. Two separate things are going on, and the figure names both.
-
-1. **A probable error.** The 237 Ma date is set by `occ:621595`, "*Walteria* sp.", Carnian,
-   Slovenia, from Turnšek, Buser and Ogorelec (1987), *Upper Carnian reef limestone in clastic
-   beds at Perbla near Tolmin*. PBDB files *Walteria* under Reptilia › Crocodylia, "replaced by"
-   *Mehliella* (2 occurrences in all). The other 20 occurrences in that collection (`col:66930`)
-   are 8 Cnidaria (all Anthozoa), 8 Porifera, 4 Foraminifera — a sponge–coral reef. The same
-   pattern as Diptera: a name in a marine-carbonate paper resolved onto a vertebrate.
-2. **Then trace fossils.** The next two records are ichnotaxa — *Dijaquesopus obliquus*
-   (occ:1484801, Carnian, Lesotho; an *-opus* footprint name, from Ellenberger 1970) and *Nihilichnus nihilicus* (occ:1211201,
-   bite traces, Norian, Poland, from a paper on bite traces on dicynodont bones). A trace cannot
-   be assigned to a crown group, so the figure uses the oldest body fossil.
-3. **The age shown:** `occ:699894`, "Crocodylia indet.", Hettangian, South Africa,
-   **201.4–192.9 Ma** — Kitching and Raath (1984), Elliot and Clarens Formations.
-4. **And a definitional difference that remains.** Even 201.4 Ma is PBDB's broad use of
-   Crocodylia; it is not the crown group. We did not fetch a crown-group age from any source, so
-   none is drawn; the figure says "a definitional difference, not a data error" for this part.
-
-### Data correction: Sciurini first appearance
-
-**The correction is ours. PBDB still returns 41.03 Ma.** The record setting it is
-`occ:1349001`, entered as *Plesiarctomys spectabilis*, Bartonian, Switzerland (Costeur and
-Schneider 2011, a type catalogue of Eocene mammals at the Natural History Museum Basel). PBDB's
-accepted name for it is *Sciurus spectabilis*, which places it in Sciurini — but PBDB's own
-taxon record for the genus *Plesiarctomys* (`txn:41409`) sits in **Ischyromyidae**, not
-Sciuridae. PBDB disagrees with itself, so the figure uses the next record: `occ:2064049`,
-*Protosciurus* cf. *mengi*, Chadronian, **37–33.9 Ma** (Korth 2017). Note that Korth's fauna is
-described as a mixed Eocene–Oligocene assemblage. The shift is 4 Myr and changes nothing about
-the figure's argument; it is corrected because it is the same kind of name-resolution error.
-
-### Flag: Cynocephalidae first appearance (not corrected)
-
-The 15.98–13.82 Ma value is shown as PBDB gives it, marked ‡ as doubtful. All **7** PBDB
-occurrences under Cynocephalidae are "Galeopithecidae indet." from Kenya, Ethiopia, Tanzania and
-South Africa, taken from papers on primates (Pickford 1982), antelopes (Vrba and Gatesy 1994),
-Omo cercopithecids (Eck 1977), Omo hominids (Howell and Coppens 1973), Miocene vertebrates
-(Hendey 1978), a paper by Kalb et al., and palynology (Bonnefille 1976). None is a named
-colugo. PBDB classifies Galeopithecidae as Dermoptera, so the records count as colugos. There is
-no better PBDB record to substitute, so the value stays, with the doubt stated on the figure.
-What these records actually are we cannot say from PBDB alone.
-
-Endpoints for the three sections above, all HTTP 200, 2026-10-31T16:38Z:
-
-```
-https://paleobiodb.org/data1.2/taxa/list.json?name=Walteria&show=class,app,attr
-https://paleobiodb.org/data1.2/taxa/list.json?name=Mehliella&show=class,app,attr
-https://paleobiodb.org/data1.2/taxa/list.json?name=Plesiarctomys&show=class,app,attr
-https://paleobiodb.org/data1.2/taxa/list.json?name=Galeopithecidae&show=class,app,attr
-https://paleobiodb.org/data1.2/taxa/list.json?name=Praeornis&show=class,app,attr
-https://paleobiodb.org/data1.2/occs/list.json?base_name=Cynocephalidae&show=loc,ref
-https://paleobiodb.org/data1.2/occs/list.json?coll_id=66930&show=class
-https://paleobiodb.org/data1.2/occs/single.json?id=<n>&show=ref,class,loc   for occ 621595, 1484801,
-    1211201, 699894, 1349001, 2064049, 227167, 1364420, 1364422
-```
-
-The corrected ages on the figure are read by `fossil_cell()` in `make_flight_figures.py` from
-those fetched occurrence records, not typed in.
-
 
 ---
 
@@ -449,7 +307,6 @@ lookup; `fetch_sources.py` sleeps between calls and never hit it.
 | `dashboard/figures/cache/ncbi_lineage_names.json` | names and ranks for all 80 lineage taxids |
 | `dashboard/figures/cache/ncbi_genomes.json` | assembly and reference counts, example assemblies |
 | `dashboard/figures/cache/pbdb_appearances.json` | PBDB first/last appearance and occurrence counts |
-| `dashboard/figures/cache/pbdb_oldest.json` | occurrence-level checks behind the PBDB corrections |
 | `dashboard/figures/cache/uniprot_presence.json` | all 64 gene x species queries and their results |
 | `dashboard/figures/cache/orthodb_groups.json` | orthogroup per seed, group metadata, per-species genes |
 | `dashboard/figures/cache/orthodb_coverage.json` | the 77 clade-coverage probes |
