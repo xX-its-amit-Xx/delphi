@@ -17,7 +17,7 @@ from pptx.chart.data import CategoryChartData
 from pptx.dml.color import RGBColor
 from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
 from pptx.enum.shapes import MSO_SHAPE
-from pptx.enum.text import PP_ALIGN
+from pptx.enum.text import MSO_AUTO_SIZE, PP_ALIGN
 from pptx.util import Emu, Inches, Pt
 
 ROOT = Path(__file__).resolve().parent
@@ -394,6 +394,8 @@ def note(s, y, text, col=GHOST, w=None):
     box.line.color.rgb = col
     box.shadow.inherit = False
     box.text_frame.word_wrap = True
+    # the box is created a sliver tall and grows to its text, so the border hugs the note
+    box.text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
     p = box.text_frame.paragraphs[0]
     r = p.add_run()
     r.text = text
@@ -520,33 +522,53 @@ PH = N.get("physiology")
 if PH:
     s = new("Sustained powered flight is eliminated,\nwith a certificate.", STATE["flight"]["state"])
     ld = next((c for c in PH["cases"] if c["speed"] == 10), PH["cases"][0])
-    hero(s, [(f"{PH['ceilingW']} W", "aerobic mechanical ceiling the oxygen budget can pay for", S3),
+    EV = PH.get("envelope")
+    hero(s, [(f"{PH['ceilingW']} W", "aerobic ceiling on the proxy values we commit to", S3),
              (f"{ld['requiredW']} W", f"needed for level flight at {ld['speed']} m/s at the measured L/D of {ld['ld']}", S2),
-             (f"{ld['shortBy']}x", "short — and the gap is checked by the Lean kernel, not by us", SERIOUS)],
-         y=Inches(2.3))
-    y = Inches(4.3)
+             (f"{ld['shortBy']}x" + (f"  /  {EV['shortBy']}x" if EV else ""),
+              "short on those proxies, and on the widest combination the measured record allows — both checked by the Lean "
+              "kernel" if EV else "short — and the gap is checked by the Lean kernel, not by us", SERIOUS)],
+         y=Inches(2.25))
+    y = Inches(4.15)
     for c in PH["cases"]:
         tag = "  [illustrative numbers]" if c["illustrative"] else ""
         tbox(s, M, y, Inches(7.4), Inches(0.3), f"{c['what']}, {c['speed']} m/s{tag}", 11, False, INK)
         tbox(s, W - M - Inches(4.2), y, Inches(4.2), Inches(0.3),
              f"{c['requiredW']} W needed  ·  {c['shortBy']}x short", 11, True, SERIOUS, align=PP_ALIGN.RIGHT)
         y += Inches(0.34)
-    FL = N.get("flier")
-    if FL and FL.get("musclePctThatFits"):
-        note(s, Inches(5.55),
-             f"WHAT A FISH THAT REALLY FLEW WOULD NEED, AND NO ANIMAL HAS: a flight muscle that does not fit in the animal. At "
-             f"{FL['muscleFraction'] * 100:.0f}% of a 60 g body and ordinary muscle density that is {FL['muscleVolumeM3']} m³ of "
-             f"muscle, and only {FL['musclePctThatFits']}% of it fits inside the body at the pectoral girdle — a geometric "
-             f"consequence of the specification, not an opinion. Beside it: a cardiac output of "
-             f"{FL['needs'][0]['value']:,.0f} {FL['needs'][0]['unit']}, {FL['cardiacVerdict'].split(':')[0]}. Building the design "
-             "as real geometry was itself a test, and it caught something three rounds of equations did not. The flier is "
-             "hypothetical throughout and now carries a requirement nothing can satisfy; it is not a validated design.", SERIOUS)
-    caption(s, "What it rests on: Fick's principle, aerobic power rather than burst power, and teleost proxy values for cardiac "
-               "output, arterial oxygen and efficiency — no flying-fish physiology exists, so the proxies are what the elimination "
-               "rests on. What it does NOT bound: gliding (a flying fish is a glider), and short burst flight. "
-               f"{PH['kernelChecked']} of {PH['candidates']} candidates eliminated, each by a theorem the compiler accepted; on the "
-               f"same candidates {PH['cannotRule']} other constraints could not be fired at all for want of an input. This is a "
-               "proof about a model instantiated with proxy numbers and it carries that scope — it is not a fact about a fish.")
+    if EV:
+        b = EV["bounds"]
+        note(s, Inches(5.3),
+             f"TWO CEILINGS, AND THE SMALLER MULTIPLIER IS THE STRONGER CLAIM. {PH['ceilingW']} W is the product of the four "
+             f"proxy values this candidate commits to, so {ld['shortBy']}x rules flight out for THAT ONE PARAMETERISATION. "
+             f"{EV['ceilingW']} W instead takes the MAXIMUM of each measured teleost range (eta <= {b['eta']}, "
+             f"E <= {b['oxycaloric_J_per_ml']} J/ml, Q <= {b['cardiacOutput_ml_per_s']} ml/s, Ca <= {b['arterialO2_ml_per_ml']} "
+             f"ml/ml), so it is necessarily the larger ceiling and the smaller multiplier — and {EV['shortBy']}x rules it out for "
+             "EVERY animal the measured record allows. Neither supersedes the other: different quantities, both kernel-checked. "
+             + EV["rejectable"], ACCENT)
+    caption(s, "What it rests on: Fick's principle, aerobic power rather than burst power, and teleost proxy values — no "
+               "flying-fish physiology exists, so the proxies are what the elimination rests on. What it does NOT bound: gliding "
+               f"(a flying fish is a glider), and short burst flight. {PH['kernelChecked']} of {PH['candidates']} candidates "
+               f"eliminated by theorems the compiler accepted; {PH['cannotRule']} other constraints on the same candidates could "
+               "not be fired at all, for want of an input. A proof about a model, not a fact about a fish.")
+
+# ----------------------------------------------------------------- the requirement that does not fit
+# Its own slide here, where the HTML deck can afford to set it beside the certificates.
+FL = N.get("flier")
+if FL and FL.get("musclePctThatFits"):
+    s = new("What a fish that really flew would need,\nand no animal has.", STATE["flight"]["state"])
+    hero(s, [(f"{FL['musclePctThatFits']}%", "of the required flight muscle actually fits inside the body at the pectoral "
+                                             "girdle, in the geometry the specification itself implies", SERIOUS),
+             (f"{FL['needs'][0]['value']:,.0f}", f"{FL['needs'][0]['unit']} of cardiac output — "
+                                                 f"{FL['cardiacVerdict'].split(':')[0]}", SERIOUS)],
+         y=Inches(2.4))
+    note(s, Inches(4.6),
+         f"A flight muscle that does not fit in the animal. At {FL['muscleFraction'] * 100:.0f}% of a 60 g body and ordinary "
+         f"muscle density that is {FL['muscleVolumeM3']} m³ of muscle, and only {FL['musclePctThatFits']}% of it fits inside the "
+         "body at the pectoral girdle. That is a geometric consequence of the specification, not an opinion — and building the "
+         "design as real geometry was itself a test, which caught something three rounds of equations did not.", SERIOUS)
+    caption(s, "The flier is hypothetical throughout and now carries a requirement nothing can satisfy. It is not a validated "
+               "design, and nothing in this deck presents it as one.")
 
 # ----------------------------------------------------------------- one glide is not enough
 GL = N.get("glide")

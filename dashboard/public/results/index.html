@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DELPHI results</title>
+<meta name="description" content="Today's DELPHI findings in one page: four corrections, a pre-registered design test that failed, how far a simulation is from runnable, what held up, an independent cross-check, and the unsigned corpus. Every number is read from a committed file at build time.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M9 16l5 5 9-10' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--accent-ink:#fff;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--viol:#6b4fb3;--soft:#eef2ef;--code:#f0f3f1;--un:#8a948f;--shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--code:#0f1a19;--un:#7d8b87;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--code:#0f1a19;--un:#7d8b87;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-wrap:break-word}
+a{color:var(--accent)}
+h1,h2,h3,h4{line-height:1.2;margin:0 0 .5em;overflow-wrap:break-word}
+h1{font-size:clamp(1.45rem,4vw,2.2rem)} h2{font-size:clamp(1.2rem,3vw,1.5rem)} h3{font-size:1.05rem} h4{font-size:.95rem}
+p{margin:.4em 0 .8em}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;gap:10px;align-items:center;overflow-x:auto;padding:8px 16px;white-space:nowrap}
+.brand{font-weight:700;margin-right:4px}
+nav a{display:inline-block;padding:4px 10px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.88rem}
+nav a:hover{background:var(--soft);color:var(--ink)}
+#themeBtn{margin-left:auto;flex:0 0 auto}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px;border-radius:8px}
+button:hover{border-color:var(--accent)}
+section{padding:30px 0;border-bottom:1px solid var(--line)}
+section>h3{margin-top:26px}
+section>h4{margin-top:20px}
+.sec-n{display:inline-block;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);border:1px solid var(--line);background:var(--soft);border-radius:99px;padding:2px 10px;margin-bottom:10px}
+.lede{color:var(--mute);max-width:74ch;font-size:1.04rem}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(165px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.card h3{margin-top:0}
+.kpi{font-size:clamp(1.5rem,5vw,2rem);font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.kpi small{display:block;font-size:.8rem;font-weight:400;color:var(--mute);margin-top:6px;line-height:1.4}
+.n{font-variant-numeric:tabular-nums;font-weight:600}
+.chip{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;border:1px solid var(--line);background:var(--soft);color:var(--mute);white-space:nowrap}
+.chip.ok{color:var(--ok);border-color:var(--ok)} .chip.bad{color:var(--bad);border-color:var(--bad)} .chip.warn{color:var(--warn);border-color:var(--warn)} .chip.viol{color:var(--viol);border-color:var(--viol)} .chip.un{color:var(--un);border-color:var(--un)}
+.verdict{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.src{margin:10px 0 0;font-size:.8rem;color:var(--mute);line-height:1.7}
+.src code,.src-i code{background:var(--code);border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-size:.92em;overflow-wrap:anywhere}
+.src .sep{opacity:.5}
+.src-i{font-size:.8rem;color:var(--mute)}
+code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em}
+pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;margin:6px 0}
+.mute{color:var(--mute)} .small{font-size:.86rem} .tiny{font-size:.78rem}
+.na{color:var(--un);font-style:italic;border-bottom:1px dotted var(--un)}
+.na-block{color:var(--un);font-style:italic}
+.unev{color:var(--un)}
+tr.unev td{color:var(--un)}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:0}
+th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;white-space:nowrap}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.model-note{border-left:3px solid var(--warn);background:var(--soft);padding:8px 12px;border-radius:0 8px 8px 0;margin:10px 0;font-size:.88rem}
+.quote{border-left:3px solid var(--accent);padding:2px 12px;color:var(--mute);margin:10px 0}
+.lead-stat{border:1px solid var(--line);background:var(--soft);border-radius:12px;padding:14px 16px;margin:12px 0}
+details{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin:8px 0}
+details>summary{cursor:pointer;padding:10px 14px;font-weight:600;list-style:none}
+details>summary::before{content:"\25B8";display:inline-block;margin-right:8px;transition:transform .15s;color:var(--accent)}
+details[open]>summary::before{transform:rotate(90deg)}
+details>.in{padding:2px 14px 14px;min-width:0}
+ul.tight{margin:.3em 0 .6em;padding-left:1.2em} ul.tight li{margin:.25em 0}
+.figwrap{margin:14px 0;padding:0}
+.fcap{font-size:.88rem;color:var(--mute);margin-bottom:8px}
+svg.fig{display:block;width:100%;height:auto;max-width:100%;color:var(--ink)}
+svg.fig .ftitle{fill:var(--ink);font-size:15px;font-weight:700}
+svg.fig .axl{fill:var(--ink);font-size:12.5px}
+svg.fig .axl.sub{fill:var(--mute);font-size:11px}
+svg.fig .inlbl{fill:#fff;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+svg.fig .outlbl{fill:var(--ink);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+svg.fig .leader{stroke:var(--mute);stroke-width:1}
+svg.fig .st-ok{fill:var(--ok)} svg.fig .st-bad{fill:var(--bad)} svg.fig .st-un{fill:var(--un)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.84rem;color:var(--mute);margin-top:4px}
+.legend .lg{display:inline-flex;gap:6px;align-items:center}
+.legend .sw{width:14px;height:14px;border-radius:4px;display:inline-block}
+.legend .sw.st-ok{background:var(--ok)} .legend .sw.st-bad{background:var(--bad)} .legend .sw.st-un{background:var(--un)}
+.legend .sw.hatched{background-image:repeating-linear-gradient(45deg,transparent 0 2px,rgba(255,255,255,.65) 2px 4px)}
+.legend b{color:var(--ink)}
+footer{padding:26px 0;color:var(--mute);font-size:.86rem}
+.back{text-decoration:none;color:var(--mute);font-size:.9rem;flex:0 0 auto}
+@media (max-width:520px){
+ th,td{padding:6px 7px;font-size:.86rem}
+ .card{padding:13px}
+ nav a{padding:4px 8px;font-size:.84rem}
+}</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+ <a class="back" href="../index.html">&larr; Mission Control</a>
+ <span class="brand">Results</span>
+ <nav><a href="#corrected">Corrected</a><a href="#design">Design test</a><a href="#simulation">Simulation</a><a href="#held">Held up</a><a href="#crosscheck">Cross-check</a><a href="#corpus">Corpus</a><a href="#open">Still open</a></nav>
+ <button id="themeBtn" title="Toggle light or dark">Theme</button>
+</div></header>
+
+<main class="wrap">
+<section id="top" style="padding-top:30px">
+<h1>What we found, strongest first</h1>
+<p class="lede">Seven sections, ordered by what is most solid and least flattering rather than by what is most exciting. It opens with four things we got wrong and corrected, then a pre-registered test of our own central claim that failed, then the measurement of how far a whole-organism simulation actually is.</p>
+<div class="card">
+ <p class="small" style="margin-top:0"><b>Every number on this page is read from a committed file when the page is built.</b> Nothing is typed in by hand, so a figure here cannot drift from its source. Each result prints the path it came from. Where a source carries no value, the page says so instead of guessing.</p>
+ <pre>node dashboard/build-results.mjs</pre>
+ <p class="small mute" style="margin-bottom:0">Page built 2026-10-31T22:49:47.503Z. Source files as last built:</p>
+ <div class="scroll"><table><thead><tr><th>thread</th><th>built</th><th>file</th></tr></thead><tbody>
+  <tr><td>design-validation</td><td class="small">2026-10-31T22:09:19.414Z</td><td><code>design-validation/scorecard.json</code></td></tr><tr><td>simulation-readiness</td><td class="small">2026-10-31</td><td><code>simulation-readiness/readiness.json</code></td></tr><tr><td>crosscheck-frontier</td><td class="small">2026-10-31T22:11:42.044975Z</td><td><code>crosscheck-frontier/crosscheck.json</code></td></tr><tr><td>nanopubs-index</td><td class="small">2026-10-31T22:12:39Z</td><td><code>nanopubs-index/index.json</code></td></tr><tr><td>lean eliminate (physiology)</td><td class="small">2026-10-31T22:09:34.604Z</td><td><code>lean/eliminate/ledger.physiology.json</code></td></tr><tr><td>lean laws</td><td class="small">2026-10-31T22:10:02.294Z</td><td><code>lean/laws.json</code></td></tr><tr><td>lean mutation testing</td><td class="small">2026-10-31T21:58:20.213Z</td><td><code>lean/mutations.json</code></td></tr><tr><td>genotype map (vetted)</td><td class="small">2026-10-31T22:27:24Z</td><td><code>genotype/map.vetted.slim.json</code></td></tr>
+ </tbody></table></div>
+ 
+ <p class="tiny mute" style="margin-bottom:0">No bird data appears anywhere on this page: class Aves is this project's frozen holdout, and the drafts covering it are indexed but deliberately not grounded.</p>
+</div>
+</section>
+
+<section id="corrected">
+<span class="sec-n">1 of 7</span>
+<h2>What we corrected</h2>
+<p class="lede">Four claims this project had published were wrong or overstated, and all four were corrected on the same day. Three were caught by our own checks; one was caught by a collaborator's independent graph. None was quietly edited: each is a record that states what we said, what the source says, and what changed.</p>
+<div class="grid g2"><div class="card">
+  <div class="verdict"><span class="chip bad">✕ RETRACTED</span></div>
+  <h3>A proposed gja5a link to fin length</h3>
+  <p class="small"><b>Found by:</b> our own check (the cell-cell subagent)</p>
+  <p class="small">An earlier note from this thread offered Daane 2021's `gja5a` convergent substitution as a second link between the flying-fish genomics and the bioelectric fin-size story. The cell-cell subagent checked it and the link does not hold: the fin-length connexin in zebrafish is `gja1b` (cx43, the `short fin` locus), `gja5a` has no ZFIN fin expression or phenotype record, and Daane 2021's own text puts cx43 under *constrained*, not accelerated, evolution along the flying-fish branch. The `gja5a` substitution stays in the map's `fin_size` block as the paper's own data, and it is kept out of any causal chain. The real connexin tie to the potassium-channel story is `gja1b` with Seaver 2025, which is independent of Daane.</p>
+  
+  
+  <div class="scroll"><table><tbody><tr><td>records in the collaborator's graph that assert the link we retracted</td><td class="num"><span class="n">0</span></td></tr></tbody></table></div>
+  <p class="src"><code>genotype/nanopubs/DECISIONS.md</code> <span class="sep">·</span> <code>crosscheck-frontier/crosscheck.json (row G4)</code></p>
+ </div><div class="card">
+  <div class="verdict"><span class="chip bad">✕ CORRECTED</span></div>
+  <h3>&quot;Almost no molecular data exists for flying fish&quot;</h3>
+  <p class="small"><b>Found by:</b> the project lead, reading a primary source the thread had not read</p>
+  <p class="small">An annotated genome does exist: Xu et al. 2021 assembled 23,611 predicted protein-coding genes for <i>Hirundichthys speculiger (mirrorwing flyingfish)</i>, of which 23,492 (99.5%) carry at least one database hit. What flying fish lack is expression and phenotype data, not genes.</p>
+  <p class="small mute"><b>And the caveat that keeps it honest:</b> at least one sequence-similarity or domain hit in one of four databases, and nothing more. TrEMBL alone accounts for 23,477 of the hits, and TrEMBL is automatically generated and unreviewed, so 99.5% is a measure of database coverage rather than of understood function.</p>
+  
+  <div class="scroll"><table><tbody><tr><td>predicted protein-coding genes</td><td class="num"><span class="n">23,611</span></td></tr><tr><td>with at least one database hit</td><td class="num"><span class="n">23,492</span></td></tr><tr><td>of those, hits from TrEMBL alone (unreviewed, automatic)</td><td class="num"><span class="n">23,477</span></td></tr><tr><td>hits from SwissProt, the only manually reviewed set</td><td class="num"><span class="n">21,453</span></td></tr><tr><td>occurrences of &quot;RNA-seq&quot; or &quot;transcriptome&quot; in that paper, counted</td><td class="num"><span class="n">0</span></td></tr><tr><td>project files whose constraint wording was rewritten</td><td class="num"><span class="n">9</span></td></tr></tbody></table></div>
+  <p class="src"><code>genotype/map.vetted.slim.json (flying_fish_genome)</code> <span class="sep">·</span> <code>genotype/nanopubs/unsigned/correction-flying-fish-genome-exists.trig</code></p>
+ </div><div class="card">
+  <div class="verdict"><span class="chip bad">✕ WITHDRAWN, then narrowed</span></div>
+  <h3>&quot;No ray-to-inter-ray signalling arrow could be sourced in any fin of any fish&quot;</h3>
+  <p class="small"><b>Found by:</b> our own nanopublication curation pass, not the thread that wrote it</p>
+  <p class="small">Ray-to-inter-ray signalling is established in the zebrafish caudal fin by grafting and niche experiments. One query returned three papers that contradict the universal sentence. What survives is the far narrower claim that no fetched source names a ligand in one compartment and its receptor in the other.</p>
+  <p class="small mute"><b>And the caveat that keeps it honest:</b> The cause is a process failure, not only a fact error: a title-only read was allowed to support a universal negative, and one of the three papers was already cited by the same thread.</p>
+  
+  <div class="scroll"><table><tbody><tr><td>papers that contradict the universal claim</td><td class="num"><span class="n">3</span></td></tr><tr><td>of those, papers that defeat the narrowed claim</td><td class="num"><span class="n">0</span></td></tr><tr><td>of those, papers this thread already held and had read title-only</td><td class="num"><span class="n">1</span></td></tr><tr><td>of those, studies in the pectoral fin (all three are caudal-fin work)</td><td class="num"><span class="n">0</span></td></tr></tbody></table></div>
+  <p class="src"><code>genotype/nanopubs/unsigned/correction-ray-interray-null-narrowed.trig</code> <span class="sep">·</span> <code>nanopubs-index/README.md (finding 1)</code></p>
+ </div></div>
+<div class="grid" style="margin-top:14px"><div class="card">
+  <div class="verdict"><span class="chip warn">! SPLIT: half resolved, half open</span></div>
+  <h3>&quot;lat4a = ZFIN slc43a2a, settled&quot;</h3>
+  <p class="small"><b>Found by:</b> a collaborator's independent graph (record gx-problem-lat4a-identity), concurring with our own HANDOVER.md note</p>
+  <p class="small">The question had to be split, because the answer differs for its two halves.</p>
+  
+  
+   <div class="grid g2" style="margin:10px 0">
+    <div class="lead-stat"><span class="chip ok">✓ RESOLVED</span>
+     <h4 style="margin:8px 0 4px">Which zebrafish gene carries the paper's mutant allele</h4>
+     <p class="small" style="margin:0"><b>slc43a2a</b>, on two records a name lookup cannot reach:</p>
+     <ul class="tight small"><li>Daane 2021 mapped the nr21 mutation to chromosome 15; slc43a2a is on chromosome 15 and slc43a2b on chromosome 10 (NCBI Gene 393221, 494042, fetched 2026-10-31)</li><li>ZFIN features-affected-genes: allele dmh26 (the paper's nr21) 'is allele of' slc43a2a</li></ul>
+     <p class="tiny mute" style="margin:0">Withdrawn as a resolving record, because it names the family and not the paralogue: human SLC43A2 aliased LAT4: names the family, not the teleost paralogue; Ensembl display name SLC43A2 on the medaka gene: names the family, not the paralogue.</p>
+    </div>
+    <div class="lead-stat"><span class="chip un">– UNRESOLVED</span>
+     <h4 style="margin:8px 0 4px">Which paralogue carries the flying-fish signal</h4>
+     <p class="small" style="margin:0">Candidates: <code>slc43a2a</code> or <code>slc43a2b</code>.</p>
+     <ul class="tight small">
+      <li>phyloP on the flying-fish branch, <code>slc43a2b</code>: accelerated, p=1e-05</li><li>phyloP on the flying-fish branch, <code>slc43a2a</code>: accelerated, p=0.00837</li>
+      <li>relative evolutionary rate for gliding sits on <code>slc43a2b</code> (rho 0.324, p 0.00654, q 0.253) &mdash; not significant after correction</li>
+     </ul>
+     <p class="tiny mute" style="margin:0">The convergent F326L substitution is listed on one medaka gene id which the sequences thread assigns to slc43a2a, but both paralogues carry acceleration, so the comparative signal is not paralogue-resolved.</p>
+    </div>
+   </div>
+   <div class="model-note"><b>Not the same variant.</b> The zebrafish allele this project's design uses is T200K; the convergent substitution reported in flying fishes is F326L. Different sites, different species, and not the same variant.</div>
+  
+  <div class="scroll"><table><tbody><tr><td>rows of the cross-check that DISAGREE with us (this is the only one)</td><td class="num"><span class="n">1</span></td></tr></tbody></table></div>
+  <p class="src"><code>genotype/map.vetted.slim.json (fin_size.verified_leads[].paralogue_check)</code> <span class="sep">·</span> <code>crosscheck-frontier/crosscheck.json (row G5)</code></p>
+ </div></div>
+</section>
+<section id="design">
+<span class="sec-n">2 of 7</span>
+<h2>The design test failed, and the claim is dropped as unsupported</h2>
+<p class="lede">Validation of the DESIGNED organism (the &quot;winged zebrafish&quot;) against the REAL flying fish (Exocoetidae), genetically and phenotypically.</p>
+
+<div class="lead-stat">
+ <p class="small" style="margin:0 0 6px"><b>Pre-registered and hash-verified.</b> <code>design-validation/PREREG.md</code> was hashed to sha256 <code>ea6f99eb25b48cdb…</code> at 2026-10-31T22:00:34Z, hashed before the first number was produced.
+  The hash in <code>PREREG.sha256</code> matches the one the scorecard records, checked in this build.</p>
+ <p class="small" style="margin:6px 0 0"><b>The one honest sentence, from the report:</b> On the axis the whole design is about we cannot say how close it is, because the measurement exists only inside a figure we refused to digitise; the one morphological axis that can be scored puts the design exactly on the zebrafish and none of the way to the flying fish; and genetically the design reproduces 1 of the 74 loci known to differ in flying fishes (1.4 %), that one being a real convergent hit on `lat4a`/`slc43a2a` while the other half of the design is a gene with no flying-fish evidence at all.</p>
+ <p class="small" style="margin:6px 0 0"><b>And:</b> the design is not ours.</p>
+ <p class="src"><code>design-validation/scorecard.json</code> <span class="sep">·</span> <code>design-validation/PREREG.md</code> <span class="sep">·</span> <code>design-validation/PREREG.sha256</code> <span class="sep">·</span> <code>design-validation/REPORT.md</code> <span class="sep">·</span> <code>design-validation/RUNS.md</code></p>
+</div>
+
+<div class="model-note"><b>These are numbers about a model, not measurements of a fish.</b> "The design" is a specified genotype plus the zebrafish body it is specified against. Where a row below gives the design a value, that value is a specification statement unless it says otherwise. The only measured animal in this section is the real flying fish.</div>
+
+<h3>Part 1 &mdash; the per-axis table: <span class="n">1</span> of <span class="n">10</span> axes scorable</h3>
+<p class="small">f = (design &minus; zebrafish) / (flying fish &minus; zebrafish): 0 means the design has moved none of the way from the baseline to the target, 1 means all of it. Greyed rows could not be scored at all.</p>
+<div class="card"><div class="scroll"><table>
+ <thead><tr><th class="num">#</th><th>axis</th><th class="num">zebrafish</th><th class="num">flying fish</th><th class="num">design (model)</th><th class="num">f</th><th>verdict</th></tr></thead>
+ <tbody><tr class="unev">
+   <td class="num">1</td>
+   <td>pectoral fin length / SL</td>
+   <td class="num"><span class="na" title="no fetched source reports pectoral fin length / SL for a wild-type adult zebrafish; development/zebrafish/trajectory.mjs returns finLength_SL: null with the note &quot;no numeric wild-type pectoral fin length/SL found (Daane 2018 plots it only)&quot;">NO VALUE</span></td>
+   <td class="num"><span class="n">0.687</span></td>
+   <td class="num"><span class="na" title="figure-only: Daane 2021 Figure 4B plots pectoral fin length; no numeric value in the text, the legends or Data S1. Not digitised.">NO VALUE</span></td>
+   <td class="num"><span class="na" title="no value in the source file">&mdash;</span></td>
+   <td><span class="chip un">– CANNOT SCORE</span></td>
+  </tr><tr class="unev">
+   <td class="num">2</td>
+   <td>caudal fin length / SL</td>
+   <td class="num"><span class="na" title="not measured on this axis">NO VALUE</span></td>
+   <td class="num"><span class="na" title="Daane 2021 Data S1A sheet A measures pectoral and pelvic fins only; there is no caudal column, and no other fetched source gives flying-fish caudal fin length / SL">NO VALUE</span></td>
+   <td class="num"><span class="na" title="figure-only: Daane 2021 Figure 4C">NO VALUE</span></td>
+   <td class="num"><span class="na" title="no value in the source file">&mdash;</span></td>
+   <td><span class="chip un">– CANNOT SCORE</span></td>
+  </tr><tr class="unev">
+   <td class="num">3</td>
+   <td>median (dorsal and anal) fin length / SL</td>
+   <td class="num"><span class="na" title="ray counts only (dorsal about 10, anal about 15); no length / SL">NO VALUE</span></td>
+   <td class="num"><span class="na" title="not in Data S1A nor any fetched source">NO VALUE</span></td>
+   <td class="num"><span class="na" title="the authors say the medial fins are &quot;wild-type-sized&quot;; there is no number">QUALITATIVE ONLY</span></td>
+   <td class="num"><span class="na" title="no value in the source file">&mdash;</span></td>
+   <td><span class="chip un">– CANNOT SCORE</span></td>
+  </tr><tr class="unev">
+   <td class="num">4</td>
+   <td>lower caudal lobe / SL (hypocercality)</td>
+   <td class="num"><span class="na" title="not measured">NO VALUE</span></td>
+   <td class="num"><span class="na" title="no flying-fish lower-lobe / SL in any fetched source; browser-check accepts lower_lobe_over_SL as an input but no theorem constrains it and no reference value exists">NO VALUE</span></td>
+   <td class="num"><span class="na" title="the authors say the caudal fin is &quot;generally wild type in size but hypocercal, with an elongated ventral lobe&quot;; there is no number">QUALITATIVE ONLY</span></td>
+   <td class="num"><span class="na" title="no value in the source file">&mdash;</span></td>
+   <td><span class="chip un">– CANNOT SCORE</span></td>
+  </tr><tr class="unev">
+   <td class="num">5</td>
+   <td>lepidotrichial segment length</td>
+   <td class="num"><span class="n">290.7</span> micrometres</td>
+   <td class="num"><span class="na" title="no flying-fish lepidotrichial segment measurement in any fetched source">NO VALUE</span></td>
+   <td class="num"><span class="na" title="figure-only: Daane 2021 Figures S2A and S2B">NO VALUE</span></td>
+   <td class="num"><span class="na" title="no value in the source file">&mdash;</span></td>
+   <td><span class="chip un">– CANNOT SCORE</span></td>
+  </tr><tr class="unev">
+   <td class="num">6</td>
+   <td>pectoral fin ray count</td>
+   <td class="num"><span class="n">10</span></td>
+   <td class="num"><span class="na" title="no flying-fish pectoral ray count in any fetched source">NO VALUE</span></td>
+   <td class="num"><span class="na" title="not stated in the design specification or in the paper">NO VALUE</span></td>
+   <td class="num"><span class="na" title="no value in the source file">&mdash;</span></td>
+   <td><span class="chip un">– CANNOT SCORE</span></td>
+  </tr><tr class="">
+   <td class="num">7</td>
+   <td>body mass vs standard length exponent b</td>
+   <td class="num"><span class="n">3.22</span></td>
+   <td class="num"><span class="n">2.981</span></td>
+   <td class="num"><span class="n">3.22</span></td>
+   <td class="num"><span class="n">0.00</span></td>
+   <td><span class="chip bad">✕ FAIL</span></td>
+  </tr><tr class="unev">
+   <td class="num">8</td>
+   <td>lateral fin area vs SL exponent</td>
+   <td class="num"><span class="na" title="no zebrafish fin-area allometric exponent in any fetched source">NO VALUE</span></td>
+   <td class="num"><span class="n">1.834</span></td>
+   <td class="num"><span class="na" title="not measured; the fin area of the double heterozygote is figure-only at best">NO VALUE</span></td>
+   <td class="num"><span class="na" title="no value in the source file">&mdash;</span></td>
+   <td><span class="chip un">– CANNOT SCORE</span></td>
+  </tr><tr class="unev">
+   <td class="num">9</td>
+   <td>wing loading vs SL exponent</td>
+   <td class="num"><span class="na" title="no zebrafish wing-loading exponent exists; a zebrafish does not glide">NO VALUE</span></td>
+   <td class="num"><span class="n">1.236</span></td>
+   <td class="num"><span class="na" title="not measured">NO VALUE</span></td>
+   <td class="num"><span class="na" title="no value in the source file">&mdash;</span></td>
+   <td><span class="chip un">– CANNOT SCORE</span></td>
+  </tr><tr class="unev">
+   <td class="num">10</td>
+   <td>maximum body depth / SL</td>
+   <td class="num"><span class="n">0.2865</span></td>
+   <td class="num"><span class="na" title="no flying-fish body depth / SL in any fetched source">NO VALUE</span></td>
+   <td class="num"><span class="n">0.2865</span></td>
+   <td class="num"><span class="na" title="no value in the source file">&mdash;</span></td>
+   <td><span class="chip un">– CANNOT SCORE</span></td>
+  </tr></tbody>
+</table></div>
+<details><summary>Why nine axes cannot be scored (an axis can carry more than one reason)</summary><div class="in"><div class="scroll"><table><tbody><tr><td>design value exists only in a figure (not digitised)</td><td class="num"><span class="n">3</span></td></tr><tr><td>design value is qualitative only (a word, not a number)</td><td class="num"><span class="n">2</span></td></tr><tr><td>no reference (flying-fish) value in any fetched source</td><td class="num"><span class="n">6</span></td></tr><tr><td>no baseline (zebrafish) value in any fetched source</td><td class="num"><span class="n">5</span></td></tr></tbody></table></div><p class="tiny mute">an axis can carry more than one reason, so these do not sum to 9</p></div></details>
+<p class="small"><b>Verdict:</b> NOT CLOSE, and largely UNSHOWN. 9 of 10 axes cannot be scored. The single scoreable axis scores FAIL at f = 0.00. The axis the entire design claim rests on (pectoral fin length / SL) cannot be scored, and for two independent reasons at once.</p>
+<p class="small mute"><b>Pre-registration deviation, logged:</b> See RUNS.md deviation 1. The letter of the pre-registered rule would award &quot;close&quot; by default here, because none of the three FAIL triggers can fire at n_scored = 1. That reading is refused: the only scored axis is a FAIL, and the result is reported as NOT CLOSE.</p>
+<p class="src"><code>design-validation/scorecard.json (part1_phenotypic)</code></p></div>
+
+<h3>Part 2 &mdash; the four genetic counts</h3>
+<div class="grid g4">
+ <div class="card"><div class="kpi"><span class="n">74</span><small>A: loci known to differ in flying fishes (sheet G &cup; sheet I of Daane 2021 Data S1)</small></div></div>
+ <div class="card"><div class="kpi"><span class="n">1</span><small>B: design changes that are among them &mdash; <code>lat4a</code>/<code>slc43a2a</code></small></div></div>
+ <div class="card"><div class="kpi">1 / 74 = 0.0135<small>C = B/A. Band: TOKEN (0.01 &lt;= C &lt; 0.10)</small></div></div>
+ <div class="card"><div class="kpi"><span class="n">1</span><small>D: design changes with no flying-fish evidence at all &mdash; kcnh2a (the longfin dt2 cis-regulatory inversion)</small></div></div>
+</div>
+<div class="card" style="margin-top:14px">
+ <p class="small"><b>Reading:</b> the design reproduces 1.4 % of the loci known to differ in flying fishes: a real, named hit on one convergent locus, and negligible as a fraction.</p>
+ <p class="small"><b>Context:</b> 74 loci against the 23,611 predicted protein-coding genes of the Hirundichthys speculiger assembly (Xu et al. 2021, fetched in this thread) = 0.31 % of the gene set. The 74 is what is KNOWN to differ, not what differs.</p>
+ <p class="small mute"><b>Half of the design has no flying-fish evidence:</b> half of the design is a locus with no flying-fish evidence at all. It was chosen because it overgrows fins in zebrafish, not because flying fishes changed it.</p>
+ <p class="small mute"><b>POST-HOC (exploratory); not pre-registered, and not in the headline:</b> with the phyloP sheet added to the denominator, A = <span class="n">131</span> and C = 0.00763. adding the phyloP sheet to the denominator moves C below 0.01, into the pre-registered &quot;negligible&quot; band. The pre-registered answer stands; this is reported because the choice of denominator changes the band, and a reader is entitled to know that.</p>
+ <p class="src"><code>design-validation/scorecard.json (part2_genetic)</code></p>
+</div>
+
+<h3>Part 3 &mdash; the Lean gate, for both arms</h3>
+<p class="small">PASSES = no violated and no cannot-evaluate; FAILS = any violated; UNDECIDED = no violated but some cannot-evaluate. UNDECIDED IS NOT A PASS.</p>
+<div class="verdict"><span class="chip bad">✕ The real flying fish: FAILS</span><span class="chip bad">✕ The design (the model): FAILS</span><span class="chip un">– The real fish, design inputs only: UNDECIDED</span></div>
+<div class="card"><figure class="figwrap">
+  <figcaption class="fcap">Of the 21 constraint rows, how many each arm actually decides. Longer grey means the gate said nothing.</figcaption>
+  <svg class="fig" viewBox="0 0 780 282" role="img" aria-label="Stacked bars of holds, violated and cannot-evaluate counts across 21 constraint rows for three arms">
+   <defs><pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+     <line x1="0" y1="0" x2="0" y2="7" stroke="var(--panel)" stroke-width="2.4" stroke-opacity=".55"/></pattern></defs>
+   <text x="0" y="20" class="ftitle">Three of 21 rows carry the whole verdict</text>
+   <text x="0" y="38" class="axl sub">one bar per arm · 21 rows = full width</text>
+   <text x="224" y="80" text-anchor="end" class="axl">The real flying fish</text><text x="224" y="94" text-anchor="end" class="axl sub">FAILS</text><rect x="236.0" y="62" width="45.6" height="34" rx="4" class="st-ok"/><text x="258.8" y="83" text-anchor="middle" class="inlbl">2</text><rect x="283.6" y="62" width="21.8" height="34" rx="4" class="st-bad"/><rect x="283.6" y="62" width="21.8" height="34" rx="4" fill="url(#hatch)"/><line x1="294.5" y1="59" x2="294.5" y2="53" class="leader"/><text x="294.5" y="50" text-anchor="middle" class="outlbl">1</text><rect x="307.4" y="62" width="426.6" height="34" rx="4" class="st-un"/><text x="520.7" y="83" text-anchor="middle" class="inlbl">18</text><text x="224" y="148" text-anchor="end" class="axl">The design (the model)</text><text x="224" y="162" text-anchor="end" class="axl sub">FAILS</text><rect x="236.0" y="130" width="21.8" height="34" rx="4" class="st-ok"/><line x1="246.9" y1="127" x2="246.9" y2="121" class="leader"/><text x="246.9" y="118" text-anchor="middle" class="outlbl">1</text><rect x="259.8" y="130" width="45.6" height="34" rx="4" class="st-bad"/><rect x="259.8" y="130" width="45.6" height="34" rx="4" fill="url(#hatch)"/><text x="282.6" y="151" text-anchor="middle" class="inlbl">2</text><rect x="307.4" y="130" width="426.6" height="34" rx="4" class="st-un"/><text x="520.7" y="151" text-anchor="middle" class="inlbl">18</text><text x="224" y="216" text-anchor="end" class="axl">The real fish, design inputs only</text><text x="224" y="230" text-anchor="end" class="axl sub">UNDECIDED</text><rect x="236.0" y="198" width="21.8" height="34" rx="4" class="st-ok"/><line x1="246.9" y1="195" x2="246.9" y2="189" class="leader"/><text x="246.9" y="186" text-anchor="middle" class="outlbl">1</text><rect x="259.8" y="198" width="474.2" height="34" rx="4" class="st-un"/><text x="496.9" y="219" text-anchor="middle" class="inlbl">20</text>
+  </svg>
+  <div class="legend"><span class="lg"><span class="sw st-ok"></span><b>✓</b> holds</span><span class="lg"><span class="sw st-bad hatched"></span><b>✕</b> violated</span><span class="lg"><span class="sw st-un"></span><b>–</b> cannot evaluate (no input)</span></div>
+  <p class="src"><code>design-validation/scorecard.json (part3_lean_gate.tallies, .verdicts)</code></p>
+ </figure></div>
+<div class="grid g2" style="margin-top:14px">
+ <div class="card"><h3>The real flying fish also fails</h3>
+  <p class="small"><b>E3</b> (empirical, <code>Delphi.Empirical.no_aerobic_flight_above_ceiling</code>): level flight at 10 m/s needs 1.34645 W against an aerobic ceiling of 0.0458 W &mdash; short by a factor of <span class="n">29.4</span>. the REAL flying fish fails this row: level flight at 10 m/s needs 29 times its aerobic ceiling. This is the known and expected result (flying fishes glide, they do not fly), and it is exactly why a design that &quot;passes&quot; a row the real animal fails must be treated as suspicious rather than as better.</p>
+  <p class="small"><b>So failing does not separate the design from its target.</b> the real flying fish ALSO FAILS the gate (E3, by a factor of 29), so &quot;FAILS&quot; does not separate the design from the target</p>
+ </div>
+ <div class="card"><h3>And the gate is weak: <span class="n">3</span> of <span class="n">21</span> rows are decided</h3>
+  <p class="small">THE GATE IS WEAK. All 3 supplied inputs move a verdict, but only 3 of 21 rows are decided, and the two body inputs move the same single pair of rows (C7b and E2 are one fact). Lean is testing the design on body size, and on whether one amino-acid change is reachable in one nucleotide substitution. It is testing nothing aerodynamic, nothing developmental and nothing about the fins, which is the entire point of the design.</p>
+  <div class="scroll"><table><thead><tr><th>input dropped</th><th>rows whose verdict changed</th></tr></thead><tbody><tr><td><code>SL_m</code></td><td><code>C7b</code> <code>E2</code></td></tr><tr><td><code>mass_kg</code></td><td><code>C7b</code> <code>E2</code></td></tr><tr><td><code>genotype_edits</code></td><td><code>G1</code></td></tr></tbody></table></div>
+ </div>
+</div>
+<details><summary>The design's 2 violations, with the qualification each carries</summary><div class="in"><p class="small"><b>C7b</b> (proved, <code>Delphi.Constraints.exponent_rules_out</code>, design-only). Needed: an implied mass exponent within 3 +/- 0.1 against the reference specimen. Available: 2.651.<br><span class="mute">the REAL fish is cannot-evaluate on this row only because it IS the reference specimen (lengthRatio = 1), so the row cannot test the animal it is calibrated on. The violation is real, but its content is a BODY-SIZE mismatch: a 4.4 cm, 1.06 g zebrafish against a 20.3 cm, 60 g flying fish.</span></p><p class="small"><b>E2</b> (empirical, <code>Delphi.Empirical.weight_ratio_rules_out</code>, design-only). Needed: {&quot;exponent_between&quot;:[2.9,3.02]}. Available: {&quot;exponent&quot;:2.65111}.<br><span class="mute">the same single underlying fact as C7b, not a second independent failure. Empirical band: a reader may reject the observation it rests on.</span></p></div></details>
+<p class="src"><code>design-validation/scorecard.json (part3_lean_gate)</code> <span class="sep">·</span> <code>lean/eliminate/browser-check.mjs</code></p>
+
+<h3>Part 4 &mdash; the design is not ours, and the locus it "reproduces" is a different residue</h3>
+<div class="card">
+ <p class="small"><b>YES, ENTIRELY. The design IS Daanes double heterozygote. Every phenotypic claim the design makes is a claim about an animal that Daane et al. already built, scored and published in 2021, and the authors had already stated that it phenocopies the flying-fish bauplan. That is a result about their experiment, not about us. Our contribution here is the validation arithmetic, not the organism.</b></p>
+ <p class="small">YES: Daane et al. 2021 built exactly this double heterozygote and state it phenocopies flying-fish fin proportions. Its measurements are figure-only.</p>
+ <ul class="tight small"><li>the numbers are FIGURE-ONLY: Figure 4B pectoral fin length, Figure 4C caudal fin length, Figures S2A and S2B lepidotrichial segments. No numeric value appears in the text, the legends, or the fourteen sheets of Data S1.</li><li>segmentation is regular, unlike the kcnk5b overgrowth mutant: a quality claim, not a measurement</li><li>the overlap with flying fishes is at lat4a only, and the convergent flying-fish substitution is F326L while the zebrafish allele is T200K: a DIFFERENT residue in the same gene</li><li>the glider RER signal and the strongest phyloP acceleration are on slc43a2b, the paralogue, not on the slc43a2a the allele sits in</li></ul>
+ <details><summary>What the authors actually wrote (4 quotations)</summary><div class="in"><p class="small"><b>fin-type specificity, the actual result</b><span class="quote">Interestingly, double mutants between kcnh2alof/+ and lat4anr21/+ are viable and show specific, non-additive variation in proportion among fins: while all fins of kcnh2alof/+ are overgrown and all fins of lat4anr21/+ are shortened, the lat4anr21/+;kcnh2alof/+ fish show wild-type-sized medial fins, while the paired fins are overgrown (Figure 4).</span><span class="tiny mute">PMID 34534441</span></p><p class="small"><b>the caudal fin</b><span class="quote">Surprisingly, the caudal fin of kcnh2alof/+;lat4anr21/+, while generally wild type in size, is hypocercal, with an elongated ventral lobe.</span><span class="tiny mute">PMID 34534441</span></p><p class="small"><b>body size is not reduced</b><span class="quote">The nr21 mutant, however, does not have a statistically decreased body size (Figure 3B).</span><span class="tiny mute">PMID 34534441</span></p><p class="small"><b>the authors own flying-fish claim</b><span class="quote">The overall fin phenotype of the kcnh2alof;lat4anr21 fish is thus remarkably similar to that of flying fishes, suggesting the interaction between these two genes is sufficient to phenocopy this key innovation and organismal bauplan of flying fishes (Figure 4).</span><span class="tiny mute">PMID 34534441</span></p></div></details>
+ <p class="src"><code>design-validation/scorecard.json (part4_the_real_experiment)</code> <span class="sep">·</span> <code>genotype/compare-2x2.json</code></p>
+</div>
+
+<h3>The joint result</h3>
+<div class="card">
+ <div class="verdict"><span class="chip bad">✕ NOT CLOSE (and 9 of 10 axes unshown)</span><span class="chip bad">✕ FAILS</span></div>
+ <p class="small"><b>Read as:</b> far AND fails. PREREG rule 1: far AND fails means drop the claim outright.</p>
+ <p class="small"><b>But read it with these qualifications, which the pre-registration required:</b></p><ul class="tight small"><li>the two design violations are one fact (body size against a single reference specimen), and the real animal is untestable on those rows by construction</li><li>the real flying fish ALSO FAILS the gate (E3, by a factor of 29), so &quot;FAILS&quot; does not separate the design from the target</li><li>18 of 21 rows are cannot-evaluate on the design, so the gate is weak and its FAILS verdict carries little information either way</li><li>Part 1 is better described as UNSHOWN than as far: the measurement that would settle it sits in a figure we refused to digitise</li></ul>
+ <p class="small"><b>What actually follows:</b> The claim that we can DESIGN an organism is not supported by this validation, and the reason is not that the design scored badly: it is that the design is not measurable on the axes that define it, and the one genetic number that can be computed (1/74) says the design reproduces a single convergent locus out of everything known to differ. Dropping the claim outright under rule 1 overstates what this gate can tell us; the honest position is PREREG rule 2, drop the claim as UNSUPPORTED.</p>
+ <p class="src"><code>design-validation/scorecard.json (joint_result)</code></p>
+</div>
+</section>
+<section id="simulation">
+<span class="sec-n">3 of 7</span>
+<h2>What a simulation would actually need</h2>
+<p class="lede">How far the 4,571-gene functional-annotation map is from a parameter set a whole-organism developmental simulation could run on</p>
+
+<div class="grid g3">
+ <div class="card"><div class="kpi">0 / 18,733 = 0.000000%<small>of the numbers a minimal dynamical model of these <span class="n">4,571</span> genes would need, we hold this many</small></div></div>
+ <div class="card"><div class="kpi"><span class="n">18,733</span><small>= <span class="n">18,284</span> gene parameters (4 each) + <span class="n">449</span> edge strengths</small></div></div>
+ <div class="card"><div class="kpi">84.4%<small>of the same genes carry a functional annotation (<span class="n">3,857</span> of <span class="n">4,571</span>). Annotation is nearly complete; the parameters are absent.</small></div></div>
+</div>
+
+<div class="card" style="margin-top:14px">
+ <p class="small"><b>In one sentence:</b> Of the 18,733 numbers a minimal dynamical model of these 4,571 genes would need, we hold 0, because the eight parameter classes a simulation runs on are not what any of the queried databases stores for zebrafish.</p>
+ <p class="small"><b>The most generous reading we could defend:</b> 2972 / 18,733 = 15.8651% &mdash; and all 2972 of those are PaxDb ppm values, a share of total protein mass in a whole organism or a dissected organ, not a count per cell in a named cell type at a named stage</p>
+ <div class="model-note"><b>This is a measurement of databases, not of fish.</b> Zebrafish (Danio rerio) is the proxy. No flying-fish molecular data exists. No bird data was used or fetched: Aves is this project's frozen holdout.</div>
+ <p class="src"><code>simulation-readiness/readiness.json (ratio, headline)</code></p>
+</div>
+
+<h3>Item by item</h3>
+<div class="card"><div class="scroll"><table>
+ <thead><tr><th class="num">item</th><th>what a simulation needs</th><th class="num">genes we hold it for</th><th>state</th><th>the source's own verdict</th></tr></thead>
+ <tbody><tr class="unev">
+   <td class="num"><b>(a)</b></td>
+   <td>absolute expression level in a defined cell type and stage, in molecules per cell or a calibrated concentration</td>
+   <td class="num"><span class="n">0</span></td>
+   <td><span class="chip un">– none held</span></td>
+   <td class="small">No fetched source gives any of our genes an absolute abundance in molecules per cell, or a calibrated concentration, in a defined cell type at a defined stage.</td>
+  </tr><tr class="unev">
+   <td class="num"><b>(b)</b></td>
+   <td>protein half-life or degradation rate</td>
+   <td class="num"><span class="n">0</span></td>
+   <td><span class="chip un">– none held</span></td>
+   <td class="small">No fetched database gives this quantity for any of our 4,571 genes.</td>
+  </tr><tr class="unev">
+   <td class="num"><b>(c)</b></td>
+   <td>mRNA half-life</td>
+   <td class="num"><span class="n">0</span></td>
+   <td><span class="chip un">– none held</span></td>
+   <td class="small">No fetched database gives this quantity for any of our 4,571 genes.</td>
+  </tr><tr class="unev">
+   <td class="num"><b>(d)</b></td>
+   <td>transcription rate or promoter strength</td>
+   <td class="num"><span class="n">0</span></td>
+   <td><span class="chip un">– none held</span></td>
+   <td class="small">No fetched database gives this quantity for any of our 4,571 genes.</td>
+  </tr><tr class="unev">
+   <td class="num"><b>(e)</b></td>
+   <td>binding affinity (Kd) for named partners, or Km/kcat if an enzyme</td>
+   <td class="num"><span class="n">0</span></td>
+   <td><span class="chip un">– none held</span></td>
+   <td class="small">0 of 4571 genes (0.00%) have any kinetic constant in SABIO-RK, the one open kinetics database that answered. BRENDA's open endpoint holds no kinetic values at all.</td>
+  </tr><tr class="">
+   <td class="num"><b>(f)</b></td>
+   <td>diffusion coefficient, for anything secreted</td>
+   <td class="num"><span class="n">4</span></td>
+   <td><span class="chip warn">! partial</span></td>
+   <td class="small">Diffusion coefficients exist for 4 secreted zebrafish molecules (Fgf8a, Lefty2, Squint, Cyclops), all measured in the GASTRULA, 2 read in a primary source and the rest quoted second-hand. Shh in the fin bud, which is what the first validation target needs, is an explicit placeholder.</td>
+  </tr><tr class="unev">
+   <td class="num"><b>(g)</b></td>
+   <td>Hill coefficient or equivalent cooperativity for regulatory inputs</td>
+   <td class="num"><span class="n">0</span></td>
+   <td><span class="chip un">– none held</span></td>
+   <td class="small">No fetched database gives this quantity for any of our 4,571 genes.</td>
+  </tr><tr class="">
+   <td class="num"><b>(h)</b></td>
+   <td>signed, directed, experimentally supported edge list between our genes, with strengths</td>
+   <td class="num"><span class="n">5</span></td>
+   <td><span class="chip warn">! partial</span></td>
+   <td class="small">449 of the 10,444,735 unordered gene pairs (0.00430%) have any direct experimental support in a fetched source (STRING experiments channel plus IntAct, both undirected and unsigned). Signed, directed, experimentally supported gene-gene edges with a named experiment: 5. With a strength: 0.</td>
+  </tr></tbody>
+</table></div>
+<p class="small mute">Item (h) is a network, so its denominator is gene pairs, not genes: <span class="n">449</span> of <span class="n">10,444,735</span> unordered pairs (0.00430%) have any direct experimental support, and none of it is signed, directed and quantified.</p>
+<p class="src"><code>simulation-readiness/readiness.json (items, checklist)</code></p></div>
+
+<div class="card" style="margin-top:14px">
+ <h3>The figure the readiness thread drew</h3>
+ <figure class="figwrap"><svg class="fig" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 656" role="img" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-size="12.5">
+<title>Coverage of each simulation parameter across the 4,571 genes of the DELPHI genotype map</title>
+<desc>Horizontal bars. Functional annotation covers 3,857 of 4,571 genes. Items (a) to (g) of the simulation-parameter checklist cover 0, 0, 0, 0, 0, 4 and 0 genes respectively; 2,972 genes have a PaxDb ppm value as a substitute for item (a). The regulatory network is reported separately because its denominator is gene pairs.</desc>
+<style>
+ .viz{--s1:#2a78d6;--s2:#eb6834;--ref:#8a8a85;--ring:#fcfcfb}
+ @media (prefers-color-scheme: dark){:root:where(:not([data-theme="light"])) .viz{
+   --s1:#3987e5;--s2:#d95926;--ref:#9a9a95;--ring:#1a1a19}}
+ :root[data-theme="dark"] .viz{--s1:#3987e5;--s2:#d95926;--ref:#9a9a95;--ring:#1a1a19}
+ .viz text{fill:currentColor}
+ .grid{stroke:currentColor;stroke-opacity:.12}
+ .ax{stroke:currentColor;stroke-opacity:.35}
+ .mut{opacity:.62}
+ .s1{fill:var(--s1)}.s2{fill:var(--s2)}.ref{fill:var(--ref)}
+ .tick1{stroke:var(--s1);stroke-width:3;stroke-linecap:round}
+ .tick2{stroke:var(--s2);stroke-width:3;stroke-linecap:round}
+</style>
+<g class="viz">
+<text x="24" y="32" font-size="17" font-weight="700">Functional annotation is nearly complete. The quantities a simulation runs on are not there.</text>
+<text x="24" y="54" class="mut">For each of the 4,571 genes in genotype/map.vetted.json, how many have the quantity in a source fetched on 2026-10-31. Hover any mark for the query.</text>
+<text x="24" y="72" class="mut">Checklist items (a) to (g) are per gene. Item (h), the regulatory network, is below on its own scale: its denominator is gene pairs, not genes.</text>
+<text x="24" y="90" class="mut">Proxy species: zebrafish (Danio rerio). No flying-fish molecular data exists. No bird data: Aves is the frozen holdout.</text>
+<rect x="24" y="103" width="11" height="11" rx="2.5" class="s1"/>
+<text x="41" y="112" class="mut">the quantity a simulation needs, as the checklist defines it</text>
+<rect x="24" y="119" width="11" height="11" rx="2.5" class="s2"/>
+<text x="41" y="128" class="mut">the nearest substitute in a fetched source: wrong unit, wrong scale, or not measured</text>
+<rect x="24" y="135" width="11" height="11" rx="2.5" class="ref"/>
+<text x="41" y="144" class="mut">functional annotation, shown for contrast (a label, not a quantity)</text>
+<line class="grid" x1="392.0" y1="146" x2="392.0" y2="436"/>
+<text x="392.0" y="454" text-anchor="middle" class="mut">0</text>
+<line class="grid" x1="482.1" y1="146" x2="482.1" y2="436"/>
+<text x="482.1" y="454" text-anchor="middle" class="mut">1,000</text>
+<line class="grid" x1="572.3" y1="146" x2="572.3" y2="436"/>
+<text x="572.3" y="454" text-anchor="middle" class="mut">2,000</text>
+<line class="grid" x1="662.4" y1="146" x2="662.4" y2="436"/>
+<text x="662.4" y="454" text-anchor="middle" class="mut">3,000</text>
+<line class="grid" x1="752.5" y1="146" x2="752.5" y2="436"/>
+<text x="752.5" y="454" text-anchor="middle" class="mut">4,000</text>
+<line class="grid" x1="804.0" y1="146" x2="804.0" y2="436"/>
+<text x="804.0" y="454" text-anchor="middle" class="mut">4,571</text>
+<line class="ax" x1="392.0" y1="436" x2="804.0" y2="436"/>
+<text x="598.0" y="474" text-anchor="middle" class="mut">genes with the quantity (of 4,571)</text>
+<text x="330" y="169.0" text-anchor="end">Functional annotation (GO, Reactome, KEGG)</text>
+<text x="378" y="169.0" text-anchor="end" font-weight="700">3,857</text>
+<rect x="392.0" y="158.0" width="347.6" height="13" rx="4" class="ref"><title>Functional annotation (GO, Reactome, KEGG): 3,857 of 4,571 genes. genotype/pathways.slim.json, built from the ZFIN GO association file, Reactome v98 (every zebrafish row inferred by orthology from human) and KEGG dre, retrieved 2026-10-31. This is the premise under test, not a simulation parameter: a pathway name is a categorical label.</title></rect>
+<text x="330" y="203.0" text-anchor="end">(a) absolute abundance, molecules per cell</text>
+<text x="378" y="203.0" text-anchor="end" font-weight="700">0</text>
+<line class="tick1" x1="393.5" y1="193.0" x2="393.5" y2="204.0"><title>(a) absolute abundance, molecules per cell: 0 of 4,571 genes. Strict: no fetched source gives any of these genes a count per cell or a calibrated concentration in a named cell type at a named stage. Substitute: PaxDb v6.1 Danio rerio, pax-db.org/downloads/latest/datasets/7955/ (35 datasets offered), retrieved 2026-10-31. Its unit is ppm, a share of total protein mass in a whole organism or a dissected organ. Expression Atlas holds 25 zebrafish experiments, all in TPM or FPKM, which the checklist excludes.</title></line>
+<rect x="397.0" y="192.0" width="267.9" height="13" rx="4" class="s2" stroke="var(--ring)" stroke-width="2"><title>(a) absolute abundance, molecules per cell, substitute (have a PaxDb ppm value instead): 2,972 of 4,571 genes. Strict: no fetched source gives any of these genes a count per cell or a calibrated concentration in a named cell type at a named stage. Substitute: PaxDb v6.1 Danio rerio, pax-db.org/downloads/latest/datasets/7955/ (35 datasets offered), retrieved 2026-10-31. Its unit is ppm, a share of total protein mass in a whole organism or a dissected organ. Expression Atlas holds 25 zebrafish experiments, all in TPM or FPKM, which the checklist excludes.</title></rect>
+<text x="673.9" y="203.0" class="mut">2,972 have a PaxDb ppm value instead</text>
+<text x="330" y="237.0" text-anchor="end">(b) protein half-life or degradation rate</text>
+<text x="378" y="237.0" text-anchor="end" font-weight="700">0</text>
+<line class="tick1" x1="393.5" y1="227.0" x2="393.5" y2="238.0"><title>(b) protein half-life or degradation rate: 0 of 4,571 genes. BioNumbers census (every zebrafish entry in the database, 19 of them, all result pages followed): not one is a protein half-life. PaxDb offers no zebrafish turnover dataset among its 35. Europe PMC returns 2,228 papers on the subject, so the measurement exists in prose and figures, not in a table a simulation could read.</title></line>
+<text x="330" y="271.0" text-anchor="end">(c) mRNA half-life</text>
+<text x="378" y="271.0" text-anchor="end" font-weight="700">0</text>
+<line class="tick1" x1="393.5" y1="261.0" x2="393.5" y2="272.0"><title>(c) mRNA half-life: 0 of 4,571 genes. BioNumbers census: no zebrafish mRNA half-life. Europe PMC returns 820 papers. No queried database holds it per gene.</title></line>
+<text x="330" y="305.0" text-anchor="end">(d) transcription rate or promoter strength</text>
+<text x="378" y="305.0" text-anchor="end" font-weight="700">0</text>
+<line class="tick1" x1="393.5" y1="295.0" x2="393.5" y2="306.0"><title>(d) transcription rate or promoter strength: 0 of 4,571 genes. BioNumbers census: no zebrafish transcription rate or promoter strength. Europe PMC returns 451 papers.</title></line>
+<text x="330" y="339.0" text-anchor="end">(e) Kd, or Km and kcat if an enzyme</text>
+<text x="378" y="339.0" text-anchor="end" font-weight="700">0</text>
+<line class="tick1" x1="393.5" y1="329.0" x2="393.5" y2="340.0"><title>(e) Kd, or Km and kcat if an enzyme: 0 of 4,571 genes. SABIO-RK holds 77,042 kinetic-law entries over 7,130 UniProt accessions. 5 of those accessions are zebrafish (48 entries for Danio rerio in all), and not one of the five genes behind them (adh8a, adh8b, grk1a, grk7a, ido1) is in this map. BRENDA's only open programmatic endpoint, the DSMZ SPARQL prototype, has no Km, kcat, Ki or Kd class or predicate anywhere in its 10,987,199 triples, and its website search for 'Danio rerio' returned no results. Queried 2026-10-31.</title></line>
+<text x="330" y="373.0" text-anchor="end">(f) diffusion coefficient, if secreted</text>
+<text x="378" y="373.0" text-anchor="end" font-weight="700">4</text>
+<line class="tick1" x1="393.5" y1="363.0" x2="393.5" y2="374.0"><title>(f) diffusion coefficient, if secreted: 4 of 4,571 genes - too few to draw at this scale, shown as a tick. Four secreted molecules have a fetched coefficient: Fgf8a, Lefty2, Squint and Cyclops (sim-engine/params/zebrafish-morphogens.json, fetched 2026-10-31), every one measured in the GASTRULA, two read in a primary source and the rest quoted second-hand. The fifth, Shh in the pectoral fin bud, which is what the first validation target needs, is an explicit placeholder with no value. Counted as molecules, not genes.</title></line>
+<line class="tick2" x1="399.0" y1="363.0" x2="399.0" y2="374.0"><title>(f) diffusion coefficient, if secreted, substitute (more: a placeholder with no value): 1 of 4,571 genes - too few to draw at this scale. Four secreted molecules have a fetched coefficient: Fgf8a, Lefty2, Squint and Cyclops (sim-engine/params/zebrafish-morphogens.json, fetched 2026-10-31), every one measured in the GASTRULA, two read in a primary source and the rest quoted second-hand. The fifth, Shh in the pectoral fin bud, which is what the first validation target needs, is an explicit placeholder with no value. Counted as molecules, not genes.</title></line>
+<text x="410.0" y="373.0" class="mut">1 more: a placeholder with no value</text>
+<text x="330" y="407.0" text-anchor="end">(g) Hill coefficient or cooperativity</text>
+<text x="378" y="407.0" text-anchor="end" font-weight="700">0</text>
+<line class="tick1" x1="393.5" y1="397.0" x2="393.5" y2="408.0"><title>(g) Hill coefficient or cooperativity: 0 of 4,571 genes. SABIO-RK does carry 'Hill coefficient' among its 39 parameter types, so the gap is zebrafish coverage, not schema. BioNumbers census: no zebrafish Hill coefficient. Europe PMC returns 507 papers.</title></line>
+<line class="grid" x1="24" y1="496" x2="976" y2="496"/>
+<text x="24" y="516" font-weight="700">(h) the regulatory network, on its own scale: 10,444,735 unordered pairs among the 4,571 genes</text>
+<g><title>STRING v12 zebrafish, experiments channel only (transferred evidence excluded), union with IntAct curated pairs between two of these genes (80). Undirected and unsigned, with a confidence score rather than a strength. Across the WHOLE zebrafish proteome STRING holds only 3,873 such edges, touching 612 proteins, against 4,070,667 edges whose experimental evidence is transferred from another species. Retrieved 2026-10-31.</title>
+<rect x="24.0" y="530" width="4" height="62" rx="2" class="s1"/>
+<text x="38.0" y="554" font-size="25" font-weight="700">449</text>
+<text x="38.0" y="572">pairs with direct</text>
+<text x="38.0" y="587">experimental support</text>
+<text x="38.0" y="602" class="mut">0.0043% of all pairs</text>
+</g>
+<g><title>genotype/causal-chains.json cross_gene: epistasis and pathway-order statements, each with a verbatim quote from a fetched paper. None carries a rate constant.</title>
+<rect x="262.0" y="530" width="4" height="62" rx="2" class="s1"/>
+<text x="276.0" y="554" font-size="25" font-weight="700">5</text>
+<text x="276.0" y="572">signed, directed edges</text>
+<text x="276.0" y="587">with an experiment</text>
+<text x="276.0" y="602" class="mut">kcnh2a, lat4a, kcnk5b, calcineurin</text>
+</g>
+<g><title>No fetched source gives a strength, weight or rate constant for any edge between two of these genes.</title>
+<rect x="500.0" y="530" width="4" height="62" rx="2" class="s1"/>
+<text x="514.0" y="554" font-size="25" font-weight="700">0</text>
+<text x="514.0" y="572">edges with a measured</text>
+<text x="514.0" y="587">strength</text>
+<text x="514.0" y="602" class="mut">in any fetched source</text>
+</g>
+<g><title>OmniPath serves taxa 9606;10090;10116 and refuses 7955, so CollecTRI's 64,516 human signed TF-target edges can reach these genes only through ZFIN orthology, most of it protein BLAST. A hypothesis list, not zebrafish data, and one human edge can map to several zebrafish pairs. Retrieved 2026-10-31.</title>
+<rect x="738.0" y="530" width="4" height="62" rx="2" class="s2"/>
+<text x="752.0" y="554" font-size="25" font-weight="700">17,804</text>
+<text x="752.0" y="572">edges only by</text>
+<text x="752.0" y="587">orthology transfer</text>
+<text x="752.0" y="602" class="mut">human CollecTRI via ZFIN orthologs</text>
+</g>
+<text x="24" y="622" class="mut">Headline: 0 of the 18,733 numbers a minimal model needs are held - 4 per gene for (a) to (d), plus one strength per edge of the 449-edge list.</text>
+<text x="24" y="638" class="mut">Relaxing item (a) to accept a PaxDb ppm value raises that to 2,972 of 18,733, or 15.9%. Every query is logged in simulation-readiness/calls.json.</text>
+</g></svg></figure>
+ <p class="src"><code>simulation-readiness/coverage.svg (embedded as built, not redrawn)</code></p>
+</div>
+
+<div class="grid g2" style="margin-top:14px">
+ <div class="card"><h3>The worked example: one genome says it in one sentence</h3>
+  <p class="small">One species states the annotation-versus-parameter gap better than any aggregate: a genome with essentially complete functional annotation and, in the paper that reports it, none of the eight parameters.</p>
+  <p class="small"><i>Hirundichthys speculiger, the mirrorwing flyingfish</i>: <span class="n">23,611</span> predicted protein-coding genes, <span class="n">23,492</span> (99.5%) annotated. Read: full text and both supplementary archives, fetched and parsed by this script.</p>
+  <p class="small"><b>And in that same paper, counted term by term:</b> all 25 parameter-bearing terms occur <span class="n">0</span> times in the full text &mdash; <code>rna-seq</code>, <code>half-life</code>, <code>kcat</code>, <code>diffusion</code>, <code>hill coefficient</code>, <code>molecules per cell</code> and the rest. The verification is a count, not an inference.</p>
+  <p class="tiny mute">'Functionally annotated' here means at least one hit in at least one of four databases. TrEMBL alone supplies 23,477 of the 23,492, and a TrEMBL hit is a sequence-similarity match to an unreviewed entry, not a measured function. Annotation by homology is the weakest sense of the word.</p>
+  <p class="src"><code>simulation-readiness/readiness.json (worked_example)</code></p>
+ </div>
+ <div class="card"><h3>The precedent, to size the task</h3>
+  <p class="small">The closest thing that exists to what is being asked: a model that predicts phenotype from genotype for every annotated gene of an organism.</p>
+  <ul class="tight small">
+   <li><b><span class="n">525</span></b> genes, in <b><span class="n">28</span></b> sub-models &mdash; the life cycle of a SINGLE CELL; no anatomy, no tissues, no development</li>
+   <li>built from <b>over 900</b> primary sources and <b>more than 1,900</b> experimentally observed parameters</li>
+   <li>that is <b>3.62</b> parameters and <b>1.71</b> publications per gene</li>
+  </ul>
+  <p class="tiny mute">Not a prediction, just the same parameter density applied to a larger gene set, to size the task. Development would need more, not fewer, parameters per gene: a zygote-to-adult model adds cell states, positions, divisions and movements that a single bacterial cell does not have.</p>
+  <p class="src"><code>simulation-readiness/readiness.json (precedent_m_genitalium)</code></p>
+ </div>
+</div>
+
+<details><summary>What <i>is</i> simulatable today, and at what coarseness</summary><div class="in">
+ <ul class="tight small"><li><b>A reaction-diffusion model of one morphogen gradient over a continuum, not over genes</b> &mdash; with the 4 fetched zebrafish diffusion coefficients plus the Fgf8 residence time and gradient length in sim-engine/params/zebrafish-morphogens.json. <span class="mute">Coarseness: concentration in arbitrary units, one tissue, gastrula parameters carried to whatever stage is being modelled, which the file itself flags as an assumption</span></li><li><b>A 2-node Boolean or qualitative model of the fin-size switch</b> &mdash; with the 5 signed directed gene-gene edges in genotype/causal-chains.json cross_gene (kcnh2a, lat4a, kcnk5b, calcineurin) and the 12 calibrated interventions. <span class="mute">Coarseness: signs and orderings, no rates; outcomes as larger / smaller / unchanged</span></li><li><b>A growth and allometry trajectory for the whole animal</b> &mdash; with development/ (staging, growth, allometry) and physiology/ (25 fetched sources). <span class="mute">Coarseness: whole-organism, no genes in the loop; the genotype enters only through the 12 calibrated knobs on 19 morphology parameters</span></li><li><b>A curated small network over a handful of cell states: the project's own estimate of its ceiling</b> &mdash; with the 42 causal chains, the 30 tissue-to-tissue and cell-to-cell interactions, and the 449 experimentally supported STRING edges as a candidate topology. <span class="mute">Coarseness: topology and sign where known; every rate constant would be a free parameter fitted or assumed, so the model would be a hypothesis generator, not a prediction</span></li></ul>
+ <p class="small"><b>And what is not:</b></p>
+ <ul class="tight small"><li class="unev">A zygote-to-adult simulation in which the 4,571 genes are dynamical variables.</li><li class="unev">Any model whose output depends on absolute concentrations, since not one gene has one, and ppm cannot be converted without a total protein count per zebrafish cell that no fetched source gives.</li><li class="unev">Any model whose output depends on timescales, since no gene has an mRNA or protein half-life and no gene has a transcription rate: every timescale would be invented.</li><li class="unev">A genome-scale regulatory network: 0.004% of gene pairs have direct experimental support, none of it signed, directed and quantified. The only genome-scale option is orthology transfer from human CollecTRI (17,804 transferable edges), which is a hypothesis list, not zebrafish data.</li><li class="unev">Anything at all in a flying fish: see the worked example.</li></ul>
+ <p class="src"><code>simulation-readiness/readiness.json (simulatable_today)</code></p>
+</div></details>
+</section>
+<section id="held">
+<span class="sec-n">4 of 7</span>
+<h2>What held up</h2>
+<p class="lede">Results that survived their own checks today. Each carries the scope it holds in, and what it does <i>not</i> bound.</p>
+
+<div class="card">
+ <h3>Aerobic flight is eliminated for the real flying fish &mdash; under named proxies</h3>
+ <div class="verdict">
+  <span class="chip bad">✕ <span class="n">3</span> of <span class="n">3</span> candidates eliminated</span>
+  <span class="chip ok">✓ <span class="n">3</span> kernel-checked</span>
+  <span class="chip ok">✓ compile exit 0, 14.5 s, <span class="n">3</span> theorems</span>
+ </div>
+ <p class="small">the physiology chain’s own proxy numbers put to the aerobic bound. The three candidates:</p>
+ <div class="scroll"><table><thead><tr><th>candidate</th><th>verdict</th><th>eliminated on</th></tr></thead><tbody>
+  <tr><td><code>real-fish-sustained-aerobic-flight</code><div class="tiny mute">Could the real flying fish sustain level flight on aerobic power (the question of physics test 4)?</div></td><td><span class="chip bad">✕ eliminated</span></td><td><code>C14</code><div class="tiny mute">accepts <code>fick_aerobic_supply</code></div></td></tr><tr><td><code>flier-F1-sustained-aerobic-cruise</code><div class="tiny mute">Could the HYPOTHETICAL flier F1 sustain powered level flight at 7 m/s on aerobic power?</div></td><td><span class="chip bad">✕ eliminated</span></td><td><code>C14</code><div class="tiny mute">accepts <code>fick_aerobic_supply</code></div></td></tr><tr><td><code>real-fish-aerobic-flight-at-vmin</code><div class="tiny mute">The same question at the minimum speed itself</div></td><td><span class="chip bad">✕ eliminated</span></td><td><code>C14</code><div class="tiny mute">accepts <code>fick_aerobic_supply</code></div></td></tr>
+ </tbody></table></div>
+ <p class="small"><b>The scope it holds in.</b> eliminates the quantitative form given here to a source hypothesis, under the committed inputs (proxies where so labelled), not the source itself Every physiological input is a proxy from another teleost: cardiac output from snapper, arterial oxygen content from a trout curve, efficiency from salmon ventricle.</p>
+ <p class="small"><b>What it does NOT bound.</b> The hypotheses that could be wrong are the proxies, and the theorem does not bound burst power on white-muscle stores, which is what the fish actually uses. It also cannot rule on <span class="n">123</span> constraint evaluations across the three candidates, every one of them for a missing input.</p>
+ <p class="small mute">Rank nothing by elimination count: a problem with more eliminated candidates is not more solved; it only had more candidates these theorems happen to touch.</p>
+ <p class="src"><code>lean/eliminate/ledger.physiology.json</code> <span class="sep">·</span> <code>lean/AUDIT-FLYING-FISH.md</code></p>
+</div>
+
+<div class="card" style="margin-top:14px">
+ <h3>The single-glide bound</h3>
+ <div class="verdict"><span class="chip warn">! violated</span></div>
+  <p class="small">the single-glide model's hypotheses fail for the field figures: from 8 m with the stuffed-model (L/D)max 4.37 the bound is 35.0 m, below the 400 and 50 m reported; with the theoretical (L/D)max 15.7 it is 126 m, which covers 50 m but not 400 m. The theorem is untouched; what fails is the reading that a field flight is one unpowered glide (taxiing thrust from the tail, repeated touch-and-go and wind are outside the model)</p>
+  <p class="small"><b>What that means:</b> the pure-glide reading of the field distances is ruled out with the measured L/D.</p>
+ <p class="small"><b>And the minimum-speed bound holds on the measured specimen:</b> The exact minimum-speed bound HOLDS on the Park and Choi specimen: v_min = 9.85 m/s for specimen L3 (W 0.5886 N, reference area 0.012688 m2, C_Lmax 0.78, rho assumed 1.225) is below the quoted field airspeeds of 10 to 20 m/s, so the real fish is inside its own lift envelope; the illustrative claim of 5 m/s is ruled out.</p>
+ <p class="src"><code>lean/AUDIT-FLYING-FISH.md (glide_range_le, vmin_le)</code> <span class="sep">·</span> <code>physics/glide-data.csv</code></p>
+</div>
+
+<div class="card" style="margin-top:14px">
+ <h3>Every theorem put against the real flying fish</h3>
+ <div class="verdict">
+  <span class="chip un">– cannot-evaluate: <span class="n">103</span></span><span class="chip bad">✕ violated: <span class="n">14</span></span><span class="chip ok">✓ holds: <span class="n">35</span></span>
+ </div>
+ <p class="small">Applicability, as the audit records it: yes-under-named-hypotheses <span class="n">99</span> &middot; yes <span class="n">38</span> &middot; no <span class="n">15</span>. A theorem is never falsified by data; its hypotheses are.</p>
+ <p class="small"><b>And the statements are not vacuous:</b> <span class="n">45</span> mutants of the Lean statements and data were generated and <span class="n">45</span> were rejected, with <span class="n">16</span> of <span class="n">16</span> controls passing, in 262.4 s wall clock (3.95&times; speedup over summed compile time).</p>
+ <p class="small"><b>The law catalogue:</b> <span class="n">41</span> laws, of which <span class="n">23</span> proved, <span class="n">1</span> proved from a named hypothesis, <span class="n">2</span> stated-not-proved (a named hypothesis), <span class="n">7</span> not formalised, <span class="n">6</span> empirical observation, <span class="n">1</span> project convention, <span class="n">1</span> proved (listed with the observations). Coverage is explicit: &quot;proved&quot; entries come from the compiler's report and the constraints file; &quot;stated-not-proved&quot; entries are hypotheses the modules carry by name; &quot;not formalised&quot; entries are gaps the Studio must not treat as checked. &quot;All the biological laws&quot; is not a closed set; this file is what the project has, and every law not here is unchecked.</p>
+ <p class="src"><code>lean/AUDIT-FLYING-FISH.md</code> <span class="sep">·</span> <code>lean/mutations.json</code> <span class="sep">·</span> <code>lean/laws.json</code></p>
+</div>
+
+<div class="card" style="margin-top:14px">
+ <h3>Six things the literature does not support in zebrafish</h3>
+ <p class="small">Each was proposed from tetrapod limb biology or assumed across fishes, and each was checked against the zebrafish evidence.</p>
+ <div class="scroll"><table><thead><tr><th>the assumption</th><th>status</th><th>what the evidence says</th></tr></thead><tbody>
+  <tr><td>The tetrapod AER/mesenchyme feedback loop runs on Fgf AND Wnt signals in both directions in the zebrafish pectoral fin.</td><td><span class="chip bad">✕ not-established</span></td><td class="small">The Fgf arms are supported in zebrafish, but the Wnt arm is explicitly NOT established there. Leerberg 2019 states that the Wnt-mediated induction of AER Fgfs known from chick and mouse 'has yet to be established in zebrafish'.</td></tr><tr><td>AER Fgf8/Fgf24 signal back to the mesenchyme to maintain mesenchymal fgf10 expression, as in mouse and chick.</td><td><span class="chip bad">✕ refuted</span></td><td class="small">This specific leg is a hypothesis in zebrafish and is contradicted by the one zebrafish experiment that separates the two. Leerberg 2019 writes that it is only 'likely' by analogy to chick and mouse.</td></tr><tr><td>The ZPA is the source of anteroposterior positional information in the zebrafish pectoral fin bud, as Shh is in the tetrapod limb.</td><td><span class="chip bad">✕ not-established</span></td><td class="small">Only partly. In shh-null sonic you mutants some aspects of anteroposterior polarity are set up WITHOUT Shh and only later depend on it for maintenance, so the zebrafish ZPA is not the sole source of anteroposterior information. Separately, the Shh/ZPA module does not account for ray branching:</td></tr><tr><td>Shh from the fin basal epidermis drives proliferation of the underlying skeletal progenitors during ray growth and regeneration.</td><td><span class="chip bad">✕ refuted</span></td><td class="small">Refuted for proliferation. Braunstein 2021 found no change in EdU+ intra-ray cells under Smoothened inhibition and states that earlier pro-proliferative conclusions may have been cyclopamine off-target effects;</td></tr><tr><td>wnt10a signalling maintains the pectoral fin fold (ZFA:0005317).</td><td><span class="chip bad">✕ refuted</span></td><td class="small">Shown for the MEDIAN fin fold, not the pectoral fin fold. wnt10a mutants collapse the median fin fold and fail adult unpaired fin metamorphosis; the abstract reports no pectoral fin fold phenotype, and the mechanism is loss of distal character (dlx2a, then col1a1a and other ECM genes) and actinotrichia positioning, not a named ligand acting on a receptor in…</td></tr><tr><td>HGF/MET is the conserved signal that pulls muscle precursors into the paired fin, so it can be assumed for any fish fin.</td><td><span class="chip bad">✕ refuted</span></td><td class="small">It holds in zebrafish (met CRISPR null loses pectoral abductor muscle) but not across gnathostomes: in shark, Hgf and Met are not expressed at the right time or place for fin muscle precursor delamination and migration.</td></tr>
+ </tbody></table></div>
+ <p class="src"><code>genotype/nanopubs/unsigned/refutation-1…6-*.trig</code> <span class="sep">·</span> <code>nanopubs-index/index.json</code></p>
+</div>
+
+<div class="card" style="margin-top:14px">
+ <h3>Two data pitfalls with no prior published report</h3>
+ <ul class="tight small"><li><b>Ubergraph stores ontology cross-reference values as xsd:string-typed literals, so a SPARQL VALUES block of plain literals matches nothing and returns an empty result with HTTP 200: the same query for the pectoral fin's ZFA cross-reference returned 0 rows with a plain literal and 1 row with a typed literal</b><div class="tiny mute"><code>genotype/nanopubs/unsigned/gotcha-ubergraph-typed-literals.trig</code></div></li><li><b>Bgee 15.2 and ZFIN's Ensembl 1:1 table use different Ensembl releases, so 1614 zebrafish genes (fgf10a and shha among them) appeared twice under different ids until merged on exact symbol</b><div class="tiny mute"><code>genotype/nanopubs/unsigned/gotcha-bgee-zfin-ensembl-release-mismatch.trig</code></div></li></ul>
+ <p class="small"><b>No prior published report of either pitfall was found.</b> The grounding searches returned only the databases' own resource papers and unrelated ontology work, so these appear to be new contributions. Both records should cite the resource papers they are about, and currently cite none of them.</p>
+ <p class="src"><code>nanopubs-index/README.md (literature grounding)</code> <span class="sep">·</span> <code>nanopubs-index/index.json</code></p>
+</div>
+
+<div class="card" style="margin-top:14px">
+ <h3>The sequence results</h3>
+ <p class="small"><b>Gliders do not converge at these genes.</b> Across the nine fin genes, 11 alignment columns show a residue shared by gliders of two or more lineages and absent from their non-gliding relatives, against 17 columns for the role-swapped baseline. At the lat4a site where flying fishes and gliding halfbeaks carry L, every other glider and flier with data carries F: the fish convergence does not extend to mammals. Gliders do not resemble each other more than they resemble other lineages' non-gliders (see mean_identity_cross_lineage): identity follows ancestry, not gliding. Most of the few 'convergent' columns pair colugos with bats, two lineages whose control is the same human sequence, so a human-specific residue alone produces them; they are not evidence of shared glider biology.</p>
+ <div class="grid g3">
+  <div class="card"><div class="kpi"><span class="n">11</span><small>alignment columns with a residue shared by gliders of two or more lineages and absent from their non-gliding relatives</small></div></div>
+  <div class="card"><div class="kpi"><span class="n">17</span><small>columns for the role-swapped baseline &mdash; <b>more</b> than the glider count</small></div></div>
+  <div class="card"><div class="kpi">16 of 17<small>species at the <code>lat4a</code> site 326 carrying F. Only the flying fish carries L: the fish convergence does not extend to mammals.</small></div></div>
+ </div>
+ <p class="small mute">The nine genes were chosen from zebrafish fin biology, not from glider biology, so absence of convergence here says nothing about the rest of the genome. Birds (class Aves) are excluded until the project holdout exam runs.</p>
+
+ <h4 style="margin-top:16px">The derived-site panel is not a dose-response</h4>
+ <div class="scroll"><table><thead><tr><th>group</th><th class="num">species sequenced</th><th class="num">pectoral fin / SL, group median</th><th class="num">mean derived states of 38 sites</th></tr></thead><tbody>
+  <tr><td>needlefish or saury (non-gliding)</td><td class="num"><span class="n">12</span></td><td class="num"><span class="n">0.088</span></td><td class="num"><span class="n">0</span><div class="tiny mute">range [0,0]</div></td></tr><tr><td>halfbeak (non-gliding)</td><td class="num"><span class="n">12</span></td><td class="num"><span class="n">0.14</span></td><td class="num"><span class="n">0</span><div class="tiny mute">range [0,0]</div></td></tr><tr><td>flying (gliding) halfbeak</td><td class="num"><span class="n">2</span></td><td class="num"><span class="n">0.274</span></td><td class="num"><span class="n">24</span><div class="tiny mute">range [23,25]</div></td></tr><tr><td>flying fish (Exocoetidae)</td><td class="num"><span class="n">9</span></td><td class="num"><span class="n">0.687</span></td><td class="num"><span class="n">21.4</span><div class="tiny mute">range [17,24]</div></td></tr>
+ </tbody></table></div>
+ <p class="small"><b>Slightly inverted, and not a test.</b> Gliding halfbeaks, at a fin ratio of 0.274, carry 24 of the 38 derived states; flying fishes, at 0.687 &mdash; roughly 2.5&times; the fin ratio &mdash; carry 21.4. The count goes slightly <b>down</b> as the fin gets longer, so derived-state count does not scale with fin length.</p>
+ <ul class="tight small"><li>A LADDER TO READ, NOT A TEST. Four groups (needlefish/saury, halfbeak, gliding halfbeak, flying fish) is far too few for any statistical claim.</li><li>THE NON-GLIDERS SCORE ZERO BY CONSTRUCTION. Sheet G lists only substitutions shared by gliders and ABSENT from outgroups, so non-gliding species carry the ancestral residue at these sites by definition; the zero is circular and is not a finding.</li><li>TRACKING IS NOT CAUSING. A residue that changes along with fin length across the series is consistent with involvement and is not evidence of causation.</li></ul>
+
+ <h4 style="margin-top:16px">And the scale of the edit, against natural divergence</h4>
+ <p class="small">The winged zebrafish differs from its reference by 2 edited loci and 1 amino acid. In just the 37 causal-chain proteins with medaka orthologues, zebrafish and medaka (same class, different orders) differ by 7300 amino-acid substitutions (16054 positions counting indels) (median identity 79.2%); zebrafish and a bat (Myotis) by 10205 substitutions in 33 proteins (median 74.0%); zebrafish and human by 10765 substitutions in 37 proteins. A handful of edits against thousands of differences in a few dozen proteins, and these are only the coding differences in a tiny gene sample: the genome-wide difference, coding and non-coding, was not measured here and is necessarily larger.</p>
+ <div class="model-note"><b>About the model.</b> The "winged zebrafish" is <span class="n">2</span> edited loci and <span class="n">1</span> changed amino acid against the zebrafish reference protein set. That is a statement about a specified genotype, not a measurement of any animal that was built and weighed here.</div>
+ <p class="src"><code>sequences/gliders.json</code> <span class="sep">·</span> <code>sequences/progression.json</code> <span class="sep">·</span> <code>sequences/engineered-diff.json</code> <span class="sep">·</span> <code>sequences/README.md</code></p>
+</div>
+</section>
+<section id="crosscheck">
+<span class="sec-n">5 of 7</span>
+<h2>Independent cross-check against a collaborator's graph</h2>
+<p class="lede">DELPHI headline findings cross-checked against the collaborator's Delphi Frontier knowledge graph. One row per compared claim. Read-only: no write tool was called against their server and no credential was used or requested. Every statement about their graph comes from a call logged in calls.json.</p>
+
+<div class="grid g4">
+ <div class="card"><div class="kpi"><span class="n">6</span><small><span class="chip ok">✓ AGREE</span></small></div></div><div class="card"><div class="kpi"><span class="n">4</span><small><span class="chip warn">! PARTIAL</span></small></div></div><div class="card"><div class="kpi"><span class="n">1</span><small><span class="chip bad">✕ DISAGREE</span></small></div></div><div class="card"><div class="kpi"><span class="n">15</span><small><span class="chip un">– WE-HAVE-THEY-DON'T</span></small></div></div><div class="card"><div class="kpi"><span class="n">7</span><small><span class="chip un">– THEY-HAVE-WE-DON'T</span></small></div></div>
+ <div class="card"><div class="kpi"><span class="n">33</span><small>compared claims in all, one row each</small></div></div>
+</div>
+
+<div class="grid g2" style="margin-top:14px">
+ <div class="card"><h3>The strongest corroboration</h3>
+  <p class="small"><b>Our most load-bearing caveat holds from outside.</b> Transfer of the lat4a x kcnh2a result to flying fishes is HYPOTHESIS ONLY: no flying-fish gene has ever been manipulated, the two conceivable routes (reverting lat4a F326L; reverting the kcnh2a regulatory state) are untested in any organism, and the one double mutant that changes fin proportion redistributes size between fins rather than scaling one fin up.</p>
+   <p class="small">This is the strongest independent corroboration in the whole cross-check. Four separate records, from two different issuers and three different retrieval routes (Europe PMC abstract, NOAA full-text PDF, a local repository source register), all keep the transfer at hypothesis level; one of them types it that way in the schema itself (payload.origin = 'hypothesis'), and the Daane documentary registration calls it in terms 'an unestablished transfer hypothesis'. We searched their graph for any record asserting the transfer as established and found none. Their Problem also names the specific untried next step we do not have: search the 53 exocoetid SRA records for paired-fin lat4a/kcnh2a expression.</p>
+   <div class="verdict"><span class="chip ok">✓ AGREE</span></div>
+  <p class="src"><code>crosscheck-frontier/crosscheck.json (row G3)</code> <span class="sep">·</span> <code>crosscheck-frontier/REPORT.md (section 1.1)</code></p>
+ </div>
+ <div class="card"><h3>The one disagreement</h3>
+  <p class="small"><b>internally inconsistent: map.json says settled, HANDOVER says unproven.</b> A genuine conflict on the same question from overlapping sources, and they are probably right. Both sides consulted ZFIN and NCBI Gene; they report 'lat4a' as neither a ZFIN symbol nor an alias, with 0 hits in NCBI Gene and UniProt, and they name slc43a2b as a second candidate our map never considers. Our 'settled' rests on an indirect chain (a human alias plus a ZFIN curator's attachment of the paper's phenotypes to slc43a2a), which is an inference, not an identity. Our own HANDOVER.md already flags the overstatement, so the real disagreement is between two of our files, with the collaborator on the side of our HANDOVER. Recommended change: downgrade map.json's symbol_check to 'candidate:</p>
+   <div class="verdict"><span class="chip bad">✕ DISAGREE</span></div>
+   <p class="tiny mute">Our files: <code>genotype/map.json; genotype/README.md; genotype/HANDOVER.md</code></p>
+  <p class="src"><code>crosscheck-frontier/crosscheck.json (row G5)</code> <span class="sep">·</span> <code>crosscheck-frontier/REPORT.md (section 2.1)</code></p>
+ </div>
+</div>
+
+<h3>Two traps a reader must know about before counting any of this as agreement</h3>
+<div class="grid g2">
+ <div class="card"><div class="verdict"><span class="chip warn">! not independent</span></div>
+  <h3>Their Lean check shares our Mathlib pin</h3>
+  <p class="small">Our <code>lean/lake-manifest.json</code> pins mathlib at <code>56a005855ea17e0b…</code>. Their receipt declares <code>56a005855ea17e0b…</code>. <b>These are the same revision, compared in this build.</b> So two apparently independent Lean checks share a trusted base.</p>
+  <p class="small">Worse, their receipt bytes cannot be retrieved: their catalogue reports <span class="n">0</span> artifacts declared downloadable, <span class="n">0</span> hosted and byte-checked, and <span class="n">0</span> formal receipt contents read. If their check is cited anywhere, it must be cited as a declaration we could not verify.</p>
+  <p class="src"><code>lean/lake-manifest.json</code> <span class="sep">·</span> <code>crosscheck-frontier/crosscheck.json (row L2)</code> <span class="sep">·</span> <code>crosscheck-frontier/REPORT.md (section 2.3)</code></p>
+ </div>
+ <div class="card"><div class="verdict"><span class="chip warn">! our own work reflected back</span></div>
+  <h3>Much of their store is a bulk import of our registry</h3>
+  <p class="small">A large part of namespace node-a is a bulk import of DELPHI's OWN nanopublication registry: claim ids thompson1917-*, darwin1859-*, wolfram2002-*, levin-*, hamilton-*, and Evidence ids delphi-claim-test--*. They carry our claim IRIs under w3id.org/delphi/resource/claim/, our nanopub paths, our extractor agent id, our 'verification: lean' flags, and sources at github.com/fractastical/delphisci read 'through the keyless delphisci MCP'. A match on any of those ids is our own work reflected back and is never independent corroboration.</p>
+  <p class="small">Of <span class="n">1,287</span> claim versions in their store, <span class="n">1,248</span> are in the <code>node-a</code> namespace and <span class="n">39</span> in <code>delphi-frontier</code>; <span class="n">1,214</span> declare no origin. Nothing in their store is accepted: every record examined carries <code>imported_unreviewed</code> or <code>proposed</code>.</p>
+  <p class="src"><code>crosscheck-frontier/crosscheck.json (reading_rules, their_store_as_measured)</code></p>
+ </div>
+</div>
+<p class="small mute">No bird data was requested or reported anywhere in this cross-check: Aves is this project's frozen holdout.</p>
+</section>
+<section id="corpus">
+<span class="sec-n">6 of 7</span>
+<h2>The corpus: <span class="n">157</span> unsigned drafts, and nothing published</h2>
+<p class="lede">Indexed: every unsigned nanopublication draft in the repo, plus the signed darwin-origin corpus counted separately. Snapshot 2026-10-31T22:12:39Z.</p>
+
+<div class="grid g2">
+ <div class="card"><h3>Drafts by thread</h3>
+  <div class="scroll"><table><thead><tr><th>thread</th><th class="num">drafts</th></tr></thead><tbody>
+   <tr><td><code>lean</code></td><td class="num"><span class="n">55</span></td></tr><tr><td><code>organism-design</code></td><td class="num"><span class="n">35</span></td></tr><tr><td><code>genotype</code></td><td class="num"><span class="n">21</span></td></tr><tr><td><code>claim-tests</code></td><td class="num"><span class="n">15</span></td></tr><tr><td><code>physics</code></td><td class="num"><span class="n">13</span></td></tr><tr><td><code>holdout</code></td><td class="num"><span class="n">9</span></td></tr><tr><td><code>swarm</code></td><td class="num"><span class="n">9</span></td></tr>
+   <tr><td><b>total</b></td><td class="num"><b><span class="n">157</span></b></td></tr>
+  </tbody></table></div>
+  
+  <p class="src"><code>nanopubs-index/index.json</code></p>
+ </div>
+ <div class="card"><h3>Validation result</h3>
+  <div class="verdict">
+   <span class="chip ok">✓ <span class="n">157</span> of <span class="n">157</span> pass <code>np check</code></span>
+   <span class="chip ok">✓ <span class="n">0</span> RDF parse errors</span>
+   <span class="chip un">– <span class="n">157</span> report "Valid (but not trusty)"</span>
+  </div>
+  <p class="small">Checker: <code>nanopub-java 1.95.0</code>, one run per file. The project's recorded trap is real and was handled: <code>np check</code> exits 0 on an RDF parse error, so the verdict is parsed out of the transcript rather than taken from the exit code.</p>
+  <div class="scroll"><table><thead><tr><th>issue reported on every record</th><th class="num">records</th></tr></thead><tbody><tr class="unev"><td>Nanopub has no assertion template.</td><td class="num"><span class="n">157</span></td></tr><tr class="unev"><td>Nanopub has no signature element.</td><td class="num"><span class="n">157</span></td></tr><tr class="unev"><td>Unexpected graph uri: http://purl.org/nanopub/temp/np1/Head</td><td class="num"><span class="n">149</span></td></tr><tr class="unev"><td>Unexpected graph uri: http://purl.org/nanopub/temp/np1/pubinfo</td><td class="num"><span class="n">149</span></td></tr></tbody></table></div><p class="tiny mute">Each of those is expected and by recorded decision: the records are unsigned drafts using <code>purl.org/nanopub/temp/</code> placeholders, which are replaced by trusty URIs at signing.</p>
+  <p class="src"><code>nanopubs-index/index.json (drafts[].validation)</code> <span class="sep">·</span> <code>nanopubs-index/README.md (Validation)</code></p>
+ </div>
+</div>
+
+<div class="card" style="margin-top:14px">
+ <h3>Plainly: nothing is signed and nothing is published</h3>
+ <p><b>Nothing here is signed or published. Signing is the ORCID key owner's decision and is still open.</b></p>
+ <ul class="tight small">
+  <li><span class="n">157</span> of <span class="n">157</span> drafts carry no signature element, by design.</li>
+  <li><span class="n">157</span> of <span class="n">157</span> use no human ORCID for attribution: the creator is the software agent until the key owner approves and signs.</li>
+  <li>A separate, older corpus of <span class="n">247</span> records in <code>darwin-origin/nanopubs/signed/</code> <i>is</i> signed and published, and is counted separately everywhere: SIGNED and published (trusty URIs, npx:hasSignature present). They are irreversible: corrections need a supersede, withdrawals a retract, both signed by the same identity. Nothing in this index touches them.</li>
+ </ul>
+ <p class="small"><b>The decision that is pending is who holds the signing key.</b> Publishing needs the key owner's explicit approval, test registry before production, and production never without it.</p>
+ <p class="src"><code>nanopubs-index/index.json (note, signed_corpus)</code> <span class="sep">·</span> <code>genotype/nanopubs/DECISIONS.md</code></p>
+</div>
+</section>
+<section id="open">
+<span class="sec-n">7 of 7</span>
+<h2>What is still open</h2>
+<p class="lede">Read out of the "what should change", gap and limits sections the source files already carry. Nothing on this list was invented for the page.</p>
+<div class="grid g2">
+ <div class="card"><h3>What the cross-check says should change in what we claim</h3>
+  
+  <ul class="tight small"><li>Fix `genotype/map.json:1604`.</li><li>State the shared Lean toolchain if their check is ever cited.</li><li>Never count the `thompson1917-*` / `darwin1859-*` / `wolfram2002-*` / `levin-*` / `delphi-claim-test--*` records as external agreement.</li><li>Nothing in the cross-check weakens the lat4a x kcnh2a caveat, the gja5a retraction, the aerobic-power elimination or any of the six refutations.</li><li>Two optional strengthenings, if the lead follows them up:</li><li>Add the Saro-Cortes stability-lift trade-off to the flier constraints</li></ul>
+  <p class="src"><code>crosscheck-frontier/REPORT.md (section 5)</code></p></div>
+ <div class="card"><h3>Findings that exist only as prose, with no record</h3>
+  <p class="small mute">List A: dashboard claims no nanopublication draft records. List B: drafts citing no external source.</p>
+  <ul class="tight small"><li>A1. Two whole threads have zero records</li><li>A2. The sim-engine pre-registered test that FAILED</li><li>A3. Genotype headline numbers with no record</li><li>A4. Lean results with no record</li><li>A5. Two of sixteen claim tests have no evidence record</li><li>A6. Counting mismatches a reader will trip on</li><li>B. Drafts with no external source — 15 of 157 drafts</li></ul>
+  <p class="src"><code>nanopubs-index/gaps.md</code></p></div>
+ <div class="card"><h3>Limits of the simulation-readiness measurement</h3>
+  
+  <ul class="tight small"><li>It measures databases, not the literature.</li><li>SIGNOR was unreachable, not empty.</li><li>PaxDb was sampled, not exhausted.</li><li>BRENDA's licensed bulk data was not obtained.</li><li>The 4-per-gene convention is a choice.</li><li>None of this is flying-fish data</li></ul>
+  <p class="src"><code>simulation-readiness/README.md (Honest limits of this measurement)</code></p></div>
+ <div class="card"><h3>Four mismatches found by building the TFF spec as a mesh</h3>
+  <p class="small mute">Found by building the spec as a mesh, and logged rather than fixed. Among them: only 29.5% of the required flight muscle fits inside the body. That is a property of the specification, not of an animal.</p>
+  <ul class="tight small"><li>Two aspect ratios share one name (the substantive one)</li><li>Rounding</li><li>Two incompatible readings; no mesh satisfies both</li><li>The flight muscle does not fit</li></ul>
+  <p class="src"><code>physics/flier/tff/SPEC-MISMATCHES.md</code></p></div>
+ <div class="card"><h3>Deliberately not done in the design validation</h3>
+  
+  <ul class="tight small"><li>Nothing was digitised from a figure.</li><li>No zebrafish pectoral fin ratio was invented</li><li>No bird data.</li><li>No `measured` value in any source file was altered</li><li>No personal identifier</li></ul>
+  <p class="src"><code>design-validation/RUNS.md (Things that were deliberately not done)</code></p></div>
+ <div class="card"><h3>Ideas not yet checked against prior art</h3>
+  <p class="small">Every idea or choice adopted in this project, with its origin. researched = survived a logged prior-art search; reach-synthesis = synthesised from other sources, not yet checked against prior art; serendipitous = arose by accident. Seeded 2026-10-31 by the hub; most entries are reach-synthesis because the research rule was adopted after they were made. See AGENTS.md, 'Standing order: every new idea is researched'.</p>
+  <div class="scroll"><table><thead><tr><th>origin</th><th class="num">ideas</th></tr></thead><tbody>
+   <tr class="unev"><td>reach-synthesis</td><td class="num"><span class="n">29</span></td></tr><tr class="unev"><td>serendipitous</td><td class="num"><span class="n">7</span></td></tr><tr class=""><td>researched</td><td class="num"><span class="n">5</span></td></tr>
+  </tbody></table></div>
+  <p class="small"><b>36 of 41</b> adopted ideas have not survived a logged prior-art search.</p>
+  <p class="src"><code>decisions/ideas.json</code></p>
+ </div>
+</div>
+</section>
+
+<footer>
+ <p>Built by <code>dashboard/build-results.mjs</code> from the files cited beside each result. Machine-readable copy of every number on this page: <code>dashboard/public/results/results.json</code>.</p>
+ <p>A proof shows a conclusion follows from its assumptions; it says nothing about whether real genomes or real fish satisfy them. A number about "the design" is a number about a specified model, not a measurement of an animal.</p>
+</footer>
+</main>
+<script>
+(function(){
+ var b=document.getElementById('themeBtn');
+ function cur(){var a=document.documentElement.getAttribute('data-theme');if(a)return a;
+  return window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';}
+ try{var s=localStorage.getItem('delphi-theme');if(s)document.documentElement.setAttribute('data-theme',s);}catch(e){}
+ if(b)b.addEventListener('click',function(){var n=cur()==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',n);try{localStorage.setItem('delphi-theme',n);}catch(e){}});
+})();</script>
+</body>
+</html>

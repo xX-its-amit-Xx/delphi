@@ -454,48 +454,57 @@ function build(D) {
 
   // ---- the physiology elimination, with its scope attached ----
   SL.flight = () => {
-    const P = N.physiology, F = N.flier;
+    const P = N.physiology, F = N.flier, E = P && P.envelope;
     if (!P) return `${ghost('flight')}`;
     const lead = P.cases.find(c => c.speed === 10) || P.cases[0];
     return `${ribbon(st('flight'))}${rub('impact')}
       <h2>Sustained powered flight is eliminated, with a certificate.</h2>
       <div class="heroes">
-        <div class="hero s3"><div class="n">${P.ceilingW}<span style="font-size:.4em"> W</span></div><div class="l">aerobic mechanical ceiling the oxygen budget can pay for</div></div>
+        <div class="hero s3"><div class="n">${P.ceilingW}<span style="font-size:.4em"> W</span></div><div class="l">aerobic ceiling on the proxy values we commit to</div></div>
         <div class="hero s2"><div class="n">${lead.requiredW}<span style="font-size:.4em"> W</span></div><div class="l">needed for level flight at ${lead.speed}&thinsp;m/s at the measured L/D of ${lead.ld}</div></div>
-        <div class="hero"><div class="n" style="color:var(--serious)">${lead.shortBy}&times;</div><div class="l">short &mdash; and the gap is checked by the Lean kernel, not by us</div></div>
+        <div class="hero"><div class="n" style="color:var(--serious)">${lead.shortBy}&times;${E ? ` <span style="font-size:.62em">/ ${E.shortBy}&times;</span>` : ''}</div>
+          <div class="l" style="max-width:32ch">short on those proxies${E ? ', and on the widest combination the measured record allows' : ''} &mdash; both checked by the Lean kernel</div></div>
       </div>
-      <div class="split" style="margin-top:16px">
-        <div class="rows">
-          ${P.cases.map(c => `<div class="rrow"><span>${esc(c.what)}, ${c.speed}&thinsp;m/s
-            ${c.illustrative ? '<span class="tag grey">illustrative numbers</span>' : ''}
-            <small>${esc(c.theorem)}</small></span>
-            <span class="v no">${c.requiredW}&thinsp;W needed &middot; ${c.shortBy}&times; short</span></div>`).join('')}
+      <div class="split" style="margin-top:14px">
+        <div>
+          <div class="rows">
+            ${P.cases.map(c => `<div class="rrow"><span>${esc(c.what)}, ${c.speed}&thinsp;m/s
+              ${c.illustrative ? '<span class="tag grey">illustrative numbers</span>' : ''}
+              <small>${esc(c.theorem)}</small></span>
+              <span class="v no">${c.requiredW}&thinsp;W needed &middot; ${c.shortBy}&times; short</span></div>`).join('')}
+          </div>
+          ${F ? `<div class="scope warn" style="margin-top:12px"><h4>What a fish that really flew would need, and no animal has</h4>
+            <b>A flight muscle that does not fit in the animal.</b> At ${(F.muscleFraction * 100).toFixed(0)}% of a 60&thinsp;g body
+            and ordinary muscle density that is
+            ${esc(String(F.muscleVolumeM3).replace(/e-(\d+)$/, ' × 10⁻⁶'))}&thinsp;m&sup3; of muscle, and only
+            <b>${F.musclePctThatFits}%</b> of it fits inside the body at the pectoral girdle &mdash; a geometric consequence of the
+            specification, not an opinion. Beside it, a cardiac output of ${n0(Math.round(F.needs[0].value))}&thinsp;${esc(F.needs[0].unit)},
+            <b>${esc((F.cardiacVerdict || '').split(':')[0])}</b>.
+            ${F.foundByBuilding ? '<b>Building the design as real geometry was itself a test, and it caught something three rounds of equations did not.</b>' : ''}
+            The flier is hypothetical throughout and now carries a requirement nothing can satisfy; it is not a validated design.</div>` : ''}
         </div>
         <div>
           <div class="scope"><h4>What the bound rests on</h4><ul>
             <li>Fick&rsquo;s principle: supply is cardiac output times arterial oxygen content times efficiency.</li>
             <li><b>Aerobic power, not burst power.</b></li>
-            <li><b>Teleost proxy values</b> for cardiac output, arterial O<sub>2</sub> and efficiency &mdash; no flying-fish
-              physiology exists. The proxies, not the fish, are what the elimination rests on.</li></ul></div>
+            <li><b>Teleost proxy values</b> &mdash; no flying-fish physiology exists, so the proxies, not the fish, are what the
+              elimination rests on.</li></ul></div>
+          ${E ? `<div class="scope"><h4>Two ceilings; the smaller multiplier is the stronger claim</h4>
+            <b>${P.ceilingW}&thinsp;W</b> is the product of the four proxy values this candidate commits to, so
+            <b>${lead.shortBy}&times;</b> rules flight out for <em>that one parameterisation</em>.
+            <b>${E.ceilingW}&thinsp;W</b> takes the <em>maximum</em> of each measured teleost range
+            (&eta;&nbsp;&le;&nbsp;${E.bounds.eta}, E&nbsp;&le;&nbsp;${E.bounds.oxycaloric_J_per_ml}, Q&nbsp;&le;&nbsp;${E.bounds.cardiacOutput_ml_per_s},
+            C<sub>a</sub>&nbsp;&le;&nbsp;${E.bounds.arterialO2_ml_per_ml}), so it is necessarily the larger ceiling and the smaller
+            multiplier &mdash; and <b>${E.shortBy}&times; rules it out for every animal the measured record allows</b>. Neither
+            supersedes the other: different quantities, both kernel-checked. ${esc(E.rejectable)}</div>` : ''}
           <div class="scope warn"><h4>What it does not bound</h4><ul>
             <li><b>Gliding.</b> Nothing here says a flying fish cannot glide; it is a glider.</li>
             <li><b>Short burst flight.</b> The certificates bound sustained aerobic power only.</li></ul></div>
         </div>
       </div>
-      ${F ? `<div class="scope warn" style="max-width:none;margin-top:14px">
-        <h4>What a fish that really flew would need, and no animal has</h4>
-        <b>A flight muscle that does not fit in the animal.</b> At ${(F.muscleFraction * 100).toFixed(0)}% of a 60&thinsp;g body and
-        ordinary muscle density that is ${esc(String(F.muscleVolumeM3).replace(/e-(\d+)$/, ' × 10⁻⁶'))}&thinsp;m&sup3; of muscle, and only <b>${F.musclePctThatFits}%</b> of it fits
-        inside the body at the pectoral girdle. That is a geometric consequence of the specification, not an opinion
-        &mdash; and it sits beside a cardiac output of ${n0(Math.round(F.needs[0].value))}&thinsp;${esc(F.needs[0].unit)},
-        <b>${esc((F.cardiacVerdict || '').split(':')[0])}</b>.
-        ${F.foundByBuilding ? '<b>Building the design as real geometry was itself a test, and it caught something three rounds of equations did not.</b>' : ''}
-        The flier is hypothetical throughout and now carries a requirement nothing can satisfy; it is not a validated design.</div>` : ''}
-      <p class="caption" style="max-width:118ch">${P.kernelChecked} of ${P.candidates} candidates eliminated, each by a theorem
-        the compiler accepted. <b>The honest proportion:</b> on the same candidates ${P.cannotRule} other constraints could not be
-        fired at all, for want of an input. <b>This is a proof about a model instantiated with proxy numbers, and it carries that
-        scope wherever it goes &mdash; it is not a fact about a fish.</b>${N.designval ? ` A second, independent instantiation of the
-        same chain gives ${N.designval.realShortfall}&times;; both are far below what level flight needs.` : ''}</p>
+      <p class="caption" style="max-width:124ch">${P.kernelChecked} of ${P.candidates} candidates eliminated by theorems the compiler
+        accepted; ${P.cannotRule} other constraints on the same candidates could not be fired at all, for want of an input.
+        <b>A proof about a model, not a fact about a fish &mdash; and it carries that scope wherever it goes.</b></p>
       ${srcs(P.sources)}`;
   };
 

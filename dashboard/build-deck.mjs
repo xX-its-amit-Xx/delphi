@@ -240,11 +240,30 @@ if (physLedger?.ledger?.length && physLedger.summary?.compile?.ok) {
         what: /flier/.test(e.id) ? 'the hypothetical flier' : /vmin/.test(e.id) ? 'the measured specimen at its minimum flying speed' : 'the measured specimen at the low end of the field speeds'
       };
     }),
+    // The SECOND, stronger ceiling. 0.0357 W is the product of the four proxy values this candidate
+    // commits to; observation E3 instead takes the MAXIMUM of each measured teleost range, so its
+    // ceiling is necessarily the larger of the two and rules out every animal the record allows,
+    // not just one parameterisation. Both are kernel-checked; neither supersedes the other.
+    envelope: (() => {
+      const E = ((rj('lean/empirical.json') || {}).entries || []).find(o => o && o.id === 'E3');
+      if (!E?.value?.ceiling_W) return null;
+      const req = frac(physLedger.ledger[0].results.find(x => x.constraint === 'C14').numbers['P_req = W v/(L/D)']);
+      return {
+        ceilingW: E.value.ceiling_W,
+        shortBy: Math.round(req / E.value.ceiling_W),
+        bounds: E.value.bounds,
+        theorems: E.lean.theorems,
+        title: E.title,
+        why: E.observation,
+        scope: E.scope,
+        rejectable: E.rejectable
+      };
+    })(),
     // the proxies the bound rests on: no flying-fish physiology exists
     proxies: Object.entries(physLedger.ledger[0].commits)
       .filter(([k]) => /efficiency|oxycaloric|cardiac|arterial/.test(k))
       .map(([k, v]) => ({ k, v: r2(+v, 5) })),
-    sources: ['lean/eliminate/ledger.physiology.json', 'lean/Delphi/Certificates/EliminationsPhysiology.lean', 'lean/AUDIT-FLYING-FISH.md']
+    sources: ['lean/eliminate/ledger.physiology.json', 'lean/Delphi/Certificates/EliminationsPhysiology.lean', 'lean/empirical.json (E3)', 'lean/AUDIT-FLYING-FISH.md']
   };
 }
 

@@ -11,6 +11,9 @@
 import * as THREE from 'three';
 
 const REF_FIN = 0.687; // flying-fish median pectoral fin length / SL (Daane 2021), the model as built
+// which parametric design each panel draws, when host.designs carries it. The design's own manifest supplies the number
+// shown and the evidence grade behind it; the geometry is drawn as built and never rescaled by a fin ratio here.
+export const PANEL_DESIGN = { B: 'winged-zebrafish', D: 'wingless-flying-fish', E: 'tff' };
 export const PANELS = [
   { key: 'A', cell: 'a', species: 'zebrafish', fins: 'ordinary fins', title: 'zebrafish, wild type', label: 'baseline, never measured on this axis', tone: 'mute', icon: '○' },
   { key: 'B', cell: 'b', species: 'zebrafish', fins: 'enlarged paired fins', title: '"winged zebrafish" (kcnh2a lof/+ ; lat4a nr21/+)', label: 'real germline experiment; magnitude in figure panels only', tone: 'ok', icon: '◐' },
@@ -46,7 +49,18 @@ export class Compare {
   }
   makeScene(p) {
     const s = new THREE.Scene(); s.add(new THREE.HemisphereLight(0xffffff, 0x6a7a80, 0.95)); const dl = new THREE.DirectionalLight(0xffffff, 1.0); dl.position.set(2, 3, 2); s.add(dl);
+    const D = this.h.designs && this.h.designs[p.key];
     const Z = this.h.zf;
+    if (D) {
+      // the design is an adult shape. Panel B also keeps the plain larva, because the design has no larval stage.
+      const forms = {};
+      const add = (name, src) => { const g = src.group.clone(true); g.visible = false; s.add(g);
+        const fins = []; g.traverse(o => { if (o.isMesh && /^(pectoral_fin|pelvic_fin)/.test(o.name)) { o.material = o.material.clone(); fins.push(o); } });
+        forms[name] = { group: g, fins }; };
+      add('design', D);
+      if (p.species === 'zebrafish' && Z && Z.larva) add('larva', Z.larva);
+      return { scene: s, design: forms, fins: [], info: {} };
+    }
     if (p.species === 'zebrafish' && Z && Z.larva && Z.adult) {
       // both zebrafish models live in the panel; the stage decides which one is visible
       const forms = {};
@@ -103,7 +117,22 @@ export class Compare {
       const egg = !!st.egg; const k = egg ? 0.08 : Math.max(0.08, st.SL / st.SLmax);
       ks.push(k);
       let panelFins;
-      if (S.zf) {
+      if (S.design) {
+        const useLarva = p.species === 'zebrafish' && (egg || this.zfForm(st) === 'larva') && S.design.larva;
+        const form = useLarva ? 'larva' : 'design'; st.designForm = form;
+        for (const key of Object.keys(S.design)) S.design[key].group.visible = (key === form);
+        S.design[form].group.scale.setScalar(k);
+        panelFins = S.design[form].fins;
+        const D = this.h.designs[p.key] || {}; const man = D.manifest || {};
+        st.designId = D.id || null;
+        st.drawnFin = man.parameters ? man.parameters.pectoral_len_over_SL : null;
+        const pv = (man.provenance_per_parameter || {}).pectoral_len_over_SL || null;
+        st.drawnKind = pv ? pv.kind : null;
+        st.drawnReason = pv && pv.delta ? pv.delta.reason : null;
+        st.formNote = useLarva
+          ? 'the plain larva model: this design exists only as an adult shape (below milestone J, SL 11.0 mm)'
+          : (D.file || D.id || 'design') + ' as built, no fin ratio applied here';
+      } else if (S.zf) {
         // the real zebrafish models: swap larva for adult at the stage boundary, scale to this age's SL, and leave every
         // piece exactly as built. Nothing here scales a fin, because there is no sourced ratio to scale it by.
         const form = egg ? 'larva' : this.zfForm(st); st.zfForm = form;
@@ -132,8 +161,12 @@ export class Compare {
         const ceil = T && T.ceiling_m ? T.ceiling_m.value : null, target = T && T.target_altitude_m ? T.target_altitude_m.value : null;
         const near = atm ? Object.keys(atm).map(Number).sort((a, b) => Math.abs(a - this.alt) - Math.abs(b - this.alt))[0] : null;
         extra = `<br>altitude <b>${this.alt} m</b>${target ? ` · target ${target} m` : ''}${ceil ? ` · derived ceiling ${Math.round(ceil)} m (upper bound: PaO₂ = PiO₂ assumed)` : ''}${this.alt > (ceil || Infinity) ? ' · <b style="color:var(--bad)">✕ above the derived ceiling</b>' : ceil ? ' · ✓ below the derived ceiling' : ''}${near != null && atm ? `<br><span class="tiny">air at ${near} m (NASA troposphere fit): ρ ${atm[near].rho.toFixed(3)} kg/m³, PO₂ ${atm[near].PO2_kPa.toFixed(1)} kPa; C9 above uses sea-level ρ (conditions locked)</span>` : ''}${c16 ? `<br><span class="tiny">C16 ${c16.verdict}: ${esc(c16.text)}</span>` : ''}${c14 ? `<br><span class="tiny">C14 ${c14.verdict}: ${esc(c14.text)}</span>` : ''}`; }
+      if (st.drawnFin != null && st.designForm === 'design') {
+        const kind = st.drawnKind === 'hypothetical' ? '<b>assumed delta, not a measured value</b>' : esc(st.drawnKind || 'unstated');
+        st.finBasis = `drawn at pectoral/SL <b>${(+st.drawnFin).toFixed(3)}</b> (${kind})` + (st.drawnReason ? '; ' + esc(String(st.drawnReason).slice(0, 190)) : '') + (st.outline ? '; <b>no sourced wild-type zebrafish pectoral/SL exists</b>, so no measured ratio is asserted' : '');
+      }
       const r = this.el.querySelector(`[data-r="${p.key}"]`);
-      r.innerHTML = `${egg ? 'embryo · ' + esc(st.stage || '') : `SL ${(st.SL * 100).toFixed(st.SL < 0.05 ? 2 : 1)} cm · fin/SL ${st.outline ? '<b>no sourced value</b>' : (st.finLen || REF_FIN).toFixed(2)} · ${esc(st.stage || '')}`}${st.zAge != null && Math.abs(st.zAge - d) > 0.5 ? ` · zebrafish age ${st.zAge.toFixed(1)} d` : ''} · <span style="color:${v && v.verdict === 'violated' ? 'var(--bad)' : v && v.verdict === 'holds' ? 'var(--ok)' : 'var(--mute)'}">${vtxt}</span><br><span class="tiny">${st.finBasis}; growth: ${esc(st.growthBasis)}${st.formNote ? '; geometry: ' + esc(st.formNote) : p.species === 'zebrafish' ? '; geometry: the flying-fish body (no zebrafish model passed in)' : ''}</span>${extra}`;
+      r.innerHTML = `${egg ? 'embryo · ' + esc(st.stage || '') : `SL ${(st.SL * 100).toFixed(st.SL < 0.05 ? 2 : 1)} cm · fin/SL ${st.drawnFin != null && st.designForm === 'design' ? `<b>${(+st.drawnFin).toFixed(2)}</b> <span class="tiny">drawn, ${esc(st.drawnKind || '')}</span>` : st.outline ? '<b>no sourced value</b>' : (st.finLen || REF_FIN).toFixed(2)} · ${esc(st.stage || '')}`}${st.zAge != null && Math.abs(st.zAge - d) > 0.5 ? ` · zebrafish age ${st.zAge.toFixed(1)} d` : ''} · <span style="color:${v && v.verdict === 'violated' ? 'var(--bad)' : v && v.verdict === 'holds' ? 'var(--ok)' : 'var(--mute)'}">${vtxt}</span><br><span class="tiny">${st.finBasis}; growth: ${esc(st.growthBasis)}${st.formNote ? '; geometry: ' + esc(st.formNote) : p.species === 'zebrafish' ? '; geometry: the flying-fish body (no zebrafish model passed in)' : ''}</span>${extra}`;
       read.push(`${p.key} ${egg ? 'embryo' : (st.SL * 100).toFixed(1) + ' cm'}`);
     }
     // every panel keeps its own scale (each is sized against its own adult), but the shared camera pulls in so the

@@ -1,0 +1,168 @@
+{
+ "note": "Presets for the organisms and designs DELPHI actually holds, expressed in the parametric schema's own names (anatomy-model/parametric/design-schema.json). Each preset names a BASE entry in params.json, which supplies the aerodynamic polar, the control law and everything the parametric schema does not carry; the parameters below are then applied on top through the same intake a parent frame uses (sim/EMBED.md). Values are copied from anatomy-model/parametric/resolved/*.json; nothing here is a new measurement.",
+ "schema_version": 1,
+ "lifting_area_transfer": {
+  "ratio": 1.9896503057863417,
+  "formula": "lifting_area_m2 = pectoral_area_over_SL2 * standard_length_m^2 * ratio",
+  "ratio_from": "Park and Choi 2010 specimen L3: aerodynamic reference (total lifting) area 0.012688 m2 over pectoral area 0.006377 m2",
+  "kind": "assumed",
+  "caveat": "The parametric schema carries the PECTORAL area only; the simulator's reference area is the TOTAL lifting area (pectoral + pelvic + caudal). This one ratio, measured on one flying fish, is the only bridge between them. Applying it to a zebrafish body is an assumed transfer. A design that knows its own lifting area should send it (derived.lifting_area_m2) and this ratio is then not used."
+ },
+ "scaling_rules_when_standard_length_changes": {
+  "lobe_length_m": {
+   "formula": "0.2463 * standard_length_m",
+   "kind": "assumed",
+   "source": "the ratio the committed params.json entries already use (0.05 m at SL 0.203 m; 0.0074 m at SL 0.03 m)"
+  },
+  "body_frontal_area_m2": {
+   "formula": "0.016985 * standard_length_m^2",
+   "kind": "assumed",
+   "source": "the ratio the committed params.json entries already use (7.0e-4 m2 at SL 0.203 m; 1.53e-5 m2 at SL 0.03 m); no frontal area has been measured on any of these fish"
+  }
+ },
+ "presets": [
+  {
+   "id": "flying-fish",
+   "label": "Flying fish (real, measured)",
+   "organism": "flying-fish",
+   "base": "cypselurus-hiraii-L3",
+   "hypothetical": false,
+   "rests_on": "measured",
+   "rests_on_text": "Measured morphology of one 60 g specimen and its measured wind-tunnel fin polar (Park and Choi 2010, specimen L3). The flight-muscle fraction is a placeholder, and the thrust and water drag in the launch are tuned or assumed.",
+   "source": "anatomy-model/parametric/resolved/flying-fish.json",
+   "parameters": {
+    "standard_length_m": {"value": 0.203, "kind": "measured", "source": "Park and Choi 2010, Cypselurus hiraii model L3 (physics/allometry.json; physics/flier/design.py src.real_fish)"},
+    "body_mass_kg": {"value": 0.06, "kind": "measured", "source": "Park and Choi 2010, specimen L3"},
+    "pectoral_area_over_SL2": {"value": 0.15475, "kind": "measured", "source": "Park and Choi 2010: pectoral area 0.006377 m2 / (0.203 m)^2"},
+    "pectoral_span_over_SL": {"value": 1.2857, "kind": "measured", "source": "Park and Choi 2010: pectoral span 0.261 m / 0.203 m"},
+    "flight_muscle_fraction": {"value": 0.04, "kind": "assumed", "source": "NO measured pectoral-muscle mass fraction exists for any flying fish in the fetched sources (physics/flier/tff/tff.json: 'no fish value exists'). 0.04 is a placeholder so the parameter has a baseline; it is the weakest number in this set. The real fish does not flap, so it does not enter the run unless the physiology chain is on."}
+   },
+   "derived": {
+    "lifting_area_m2": {"value": 0.012688, "kind": "measured", "source": "Park and Choi 2010 aerodynamic reference area; identical to params.json ref_area_m2 for this fish, so this preset reproduces the committed run-6 geometry exactly"}
+   },
+   "notes": []
+  },
+  {
+   "id": "tff",
+   "label": "HYPOTHETICAL TFF v2 (truly flying fish)",
+   "organism": "tff",
+   "base": "tff-v2-hypothetical",
+   "hypothetical": true,
+   "rests_on": "hypothetical",
+   "rests_on_text": "A specification, not an animal. No such fish has been described, dissected or measured; every morphological number below is a delta applied to the flying fish to hit a target wing loading of 12 N/m2. Four known mismatches came out of building it as a mesh, and the first one is fatal to the design as written.",
+   "source": "anatomy-model/parametric/resolved/tff.json; physics/flier/tff/tff.json (v2); physics/flier/tff/SPEC-MISMATCHES.md",
+   "parameters": {
+    "standard_length_m": {"value": 0.203, "kind": "measured", "source": "100% flying-fish (unchanged by the design)"},
+    "body_mass_kg": {"value": 0.06, "kind": "measured", "source": "100% flying-fish (unchanged by the design)"},
+    "pectoral_area_over_SL2": {"value": 0.5982414486128625, "kind": "hypothetical", "source": "delta x3.865857 on the flying fish: lifting area 0.04905 m2 at wing loading 12 N/m2 over the real reference area 0.012688 m2, applied to EVERY lifting surface so the total hits the spec"},
+    "pectoral_span_over_SL": {"value": 3.2729685593869733, "kind": "hypothetical", "source": "delta x2.545670 on the flying fish: TFF span 0.66442 m = sqrt(9 W / 12) (physics/flier/design.py) over the measured 0.261 m; SL unchanged, so the span ratio carries the whole change"},
+    "flight_muscle_fraction": {"value": 0.16, "kind": "hypothetical", "source": "physics/flier/tff/tff.json tff.muscle.fraction = 0.16, aerobic (red) flight muscle. Above the bat mean 0.0913 (PMC10966098); no fish value exists"}
+   },
+   "derived": {
+    "lifting_area_m2": {"value": 0.04905, "kind": "hypothetical", "source": "the spec itself: 0.06 kg x 9.81 / 12 N/m2 (physics/flier/tff/tff.json); identical to params.json ref_area_m2 for this entry"}
+   },
+   "notes": [
+    {
+     "severity": "fatal",
+     "title": "The flight muscle does not fit inside the animal",
+     "text": "At 0.16 of 0.060 kg and a muscle density of 1060 kg/m3 the flight muscle is 9.06e-6 m3, and only 29.5% of it fits inside the body at the pectoral girdle (tff-manifest.json flight_muscle_fit_fraction = 0.2953). The simulator still charges the full 16% to the power budget, so every powered number for this design assumes a muscle the body cannot hold.",
+     "source": "physics/flier/tff/SPEC-MISMATCHES.md item 4; anatomy-model/parametric built tff.glb"
+    },
+    {
+     "severity": "mismatch",
+     "title": "Two aspect ratios share one name",
+     "text": "The spec keeps 'the fish's own aspect ratio' at 9.0 to 10.7, which is span^2 / PECTORAL area (0.261^2 / 0.006377 = 10.68), then applies 9.0 to the TOTAL LIFTING area to get the span. On the real fish's own numbers span^2 / total lifting area is 5.37, not 10.7. Read this way the TFF's pectoral-only aspect ratio is 17.9, more slender than any measured flying fish (Fish 1990 reports 3.0 to 16.9 across 199 specimens, second-hand from a collaborator's graph and unverified here).",
+     "source": "physics/flier/tff/SPEC-MISMATCHES.md item 1"
+    },
+    {
+     "severity": "mismatch",
+     "title": "Rounding: the stated multipliers do not give the stated outcomes",
+     "text": "The stated x3.9 area and x2.5 span give wing loading 11.90 N/m2 and aspect ratio 8.60, not 12.0 and 9.0. The exact multipliers are 3.865857 and 2.545674, which are the ones used here. State the exact ratios or the rounded outcomes, not both.",
+     "source": "physics/flier/tff/SPEC-MISMATCHES.md item 2"
+    },
+    {
+     "severity": "mismatch",
+     "title": "Two incompatible readings; no mesh satisfies both",
+     "text": "Spreading the area multiplier over all lifting surfaces gives wing loading exactly 12.0 (this is what shipped, and what is loaded here). Putting all the extra area in the pectorals gives pectoral aspect ratio exactly 9.0, matching Park and Choi, but wing loading falls to 10.63.",
+     "source": "physics/flier/tff/SPEC-MISMATCHES.md item 3"
+    },
+    {
+     "severity": "note",
+     "title": "Not a test",
+     "text": "The TFF run is a design-study readout, recorded as such in RUNS.md. Its flapping power comes from the co-design aerobic capacity (1.31 W at sea level) with air breathing assumed; the physiology chain has no air-breathing path, and in air a fish's gills do not ventilate.",
+     "source": "physics/sim/RUNS.md, section 'TFF v2 and the winged zebrafish (design-study readouts, not tests)'"
+    }
+   ]
+  },
+  {
+   "id": "winged-zebrafish",
+   "label": "HYPOTHETICAL winged zebrafish",
+   "organism": "winged-zebrafish",
+   "base": "zebrafish-winged-hypothetical",
+   "hypothetical": true,
+   "rests_on": "hypothetical",
+   "rests_on_text": "A zebrafish body with its pectoral fin proportion moved toward the flying fish. The fin number is a CHOSEN point, not a measurement: the closest real experiment's fin measurements exist only in figure panels and are not digitised anywhere here.",
+   "source": "anatomy-model/parametric/resolved/winged-zebrafish.json; anatomy-model/parametric/designs/winged-zebrafish.json",
+   "parameters": {
+    "standard_length_m": {"value": 0.0388, "kind": "measured", "source": "100% zebrafish-adult: development/zebrafish/trajectory.mjs at(180 d), von Bertalanffy fit (Parichy 2009 + FishBase)"},
+    "body_mass_kg": {"value": 0.0006943, "kind": "derived", "source": "100% zebrafish-adult: Beaudouin 2015 ln W(mg) = -5.24 + 3.22 ln SL(mm), extrapolated above 15 mm"},
+    "pectoral_area_over_SL2": {"value": 0.07126436858246527, "kind": "hypothetical", "source": "delta x4.454 on the zebrafish: area follows fin length^1.834 (Davenport 1992 exponent, development/trajectory.mjs P.area.exp); an assumed transfer from flying fish to zebrafish, on top of a zebrafish fin area that is itself a schematic placeholder"},
+    "pectoral_span_over_SL": {"value": 0.9483870967741934, "kind": "hypothetical", "source": "delta x2.258 on the zebrafish: span follows the fin length"},
+    "flight_muscle_fraction": {"value": 0.012, "kind": "assumed", "source": "100% zebrafish-adult: no zebrafish pectoral-muscle mass fraction was fetched; a small placeholder for an ordinary-finned teleost"}
+   },
+   "derived": {},
+   "notes": [
+    {
+     "severity": "mismatch",
+     "title": "The fin value is an assumed delta, not the paper's number",
+     "text": "pectoral_len_over_SL = 0.35 is a chosen point between the zebrafish placeholder (0.155) and the flying-fish measured median (0.687), near the flying-halfbeak median 0.274 to 0.388. The closest real counterpart is the germline lat4a nr21/+ ; kcnh2a lof/+ double heterozygote (genotype/compare-2x2.json panel B), whose paired-fin measurements appear ONLY in figure panels (Fig. 4B pectoral fin length): no numeric value is in the text, the legends or Data S1, and nothing is digitised here. So 0.35 is NOT that experiment's number. The real fish's fins are described as 'overgrown', with medial fins wild-type-sized and the caudal hypocercal.",
+     "source": "anatomy-model/parametric/designs/winged-zebrafish.json real_experimental_counterpart.caveat"
+    },
+    {
+     "severity": "warning",
+     "title": "The fin polar is another animal's",
+     "text": "C_L,max, (L/D)max, C_D,min and the stall angle are the flying fish's measured wind-tunnel values applied to this body. Measured, but on a different animal at a different Reynolds number: an assumed transfer.",
+     "source": "params.json (the kinds are shown per parameter below)"
+    },
+    {
+     "severity": "note",
+     "title": "Not the same numbers as the committed params.json entry",
+     "text": "params.json's winged-zebrafish entry is a 3.0 cm, 0.51 g body with the flying fish's fin proportions scaled isometrically (the configuration RUNS.md reports). This preset is the parametric design instead: 3.88 cm, 0.69 g, with the fin moved only part of the way. Both are hypothetical; they are different hypotheses, so their numbers differ.",
+     "source": "physics/sim/RUNS.md; anatomy-model/parametric/resolved/winged-zebrafish.json"
+    }
+   ]
+  },
+  {
+   "id": "zebrafish",
+   "label": "Zebrafish (reference organism, ordinary fins)",
+   "organism": "zebrafish-adult",
+   "base": "zebrafish-winged-hypothetical",
+   "hypothetical": false,
+   "rests_on": "assumed",
+   "rests_on_text": "A real animal whose body size is measured, but whose fins in this schema are schematic placeholders for an ordinary teleost, and whose aerodynamics are borrowed wholesale from the flying fish. It is here as the control: an ordinary fish in the same model.",
+   "source": "anatomy-model/parametric/resolved/zebrafish-adult.json",
+   "parameters": {
+    "standard_length_m": {"value": 0.0388, "kind": "measured", "source": "development/zebrafish/trajectory.mjs at(180 d); von Bertalanffy fit, Parichy 2009 + FishBase"},
+    "body_mass_kg": {"value": 0.0006943, "kind": "derived", "source": "Beaudouin 2015 ln W(mg) = -5.24 + 3.22 ln SL(mm), extrapolated above 15 mm"},
+    "pectoral_area_over_SL2": {"value": 0.016, "kind": "assumed", "source": "schematic (textbook-generic teleost); not a flying-fish or zebrafish measurement; follows the assumed fin length"},
+    "pectoral_span_over_SL": {"value": 0.42, "kind": "assumed", "source": "schematic (textbook-generic teleost); not a flying-fish or zebrafish measurement; follows the assumed fin length"},
+    "flight_muscle_fraction": {"value": 0.012, "kind": "assumed", "source": "no zebrafish pectoral-muscle mass fraction fetched; a small placeholder for an ordinary-finned teleost"}
+   },
+   "derived": {},
+   "notes": [
+    {
+     "severity": "warning",
+     "title": "The fin polar is another animal's",
+     "text": "C_L,max, (L/D)max, C_D,min and the stall angle are the flying fish's measured wind-tunnel values applied to a zebrafish. An assumed transfer, and a large one: nothing about a zebrafish pectoral fin has been measured in a wind tunnel here.",
+     "source": "params.json (the kinds are shown per parameter below)"
+    },
+    {
+     "severity": "note",
+     "title": "Base entry",
+     "text": "The sim settings that the parametric schema does not carry (re-entry speed, take-off speed target, the trim law) come from the winged-zebrafish entry in params.json, the only committed small-body set. Only the fins and the body differ.",
+     "source": "sim/params.json"
+    }
+   ]
+  }
+ ]
+}

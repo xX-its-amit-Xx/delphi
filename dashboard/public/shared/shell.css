@@ -1,0 +1,113 @@
+/* DELPHI shared shell — one header for every page.
+   Tokens are namespaced (--dsh-*) so the shell renders identically whatever
+   palette the page itself defines, and so loading this file before a page's
+   own <style> can never change that page's colours.
+   Typography, spacing and the dark-mode guard are taken from
+   dashboard/public/t/lean/index.html and dashboard/public/blueprint3d/explode.html. */
+
+:root{
+  --dsh-bg:#f6f7f4; --dsh-panel:#fff; --dsh-ink:#14201f; --dsh-mute:#5a6b69;
+  --dsh-line:#d9dfdb; --dsh-accent:#0e7c86; --dsh-accent-ink:#fff; --dsh-soft:#eef2ef;
+  --dsh-h:74px;          /* the shell's own height; shell.js keeps it exact */
+  --dsh-font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --dsh-bg:#0d1514; --dsh-panel:#142120; --dsh-ink:#e7efec; --dsh-mute:#93a6a2;
+  --dsh-line:#27403d; --dsh-accent:#38b6c1; --dsh-accent-ink:#06201f; --dsh-soft:#192b29;
+}}
+:root[data-theme="dark"]{
+  --dsh-bg:#0d1514; --dsh-panel:#142120; --dsh-ink:#e7efec; --dsh-mute:#93a6a2;
+  --dsh-line:#27403d; --dsh-accent:#38b6c1; --dsh-accent-ink:#06201f; --dsh-soft:#192b29;
+}
+
+/* an explicit page background, so a page that sets none still renders right */
+body{background:var(--dsh-bg);color:var(--dsh-ink)}
+
+.dsh,.dsh *{box-sizing:border-box}
+.dsh{
+  position:sticky;top:0;z-index:60;
+  font-family:var(--dsh-font);
+  background:var(--dsh-bg);
+  border-bottom:1px solid var(--dsh-line);
+}
+@supports (backdrop-filter:blur(8px)){
+  .dsh{background:color-mix(in srgb,var(--dsh-bg) 92%,transparent);backdrop-filter:blur(8px)}
+}
+
+/* ---- row 1: project name, the grouped primary navigation, theme ---- */
+.dsh-bar{display:flex;align-items:center;gap:10px;padding:6px 14px;min-width:0}
+.dsh-brand{
+  flex:none;display:inline-flex;align-items:center;gap:7px;
+  text-decoration:none;color:var(--dsh-ink);font-weight:700;letter-spacing:.01em;font-size:.98rem;
+}
+.dsh-brand svg{display:block;width:19px;height:19px;flex:none}
+.dsh-brand:hover{color:var(--dsh-accent)}
+.dsh-brand .sub{font-weight:400;color:var(--dsh-mute);font-size:.82rem}
+
+.dsh-nav{
+  flex:1 1 auto;min-width:0;
+  display:flex;align-items:center;gap:2px;
+  overflow-x:auto;overflow-y:hidden;white-space:nowrap;
+  scrollbar-width:thin;
+  padding:2px 0;
+  -webkit-mask-image:linear-gradient(to right,transparent 0,#000 10px,#000 calc(100% - 14px),transparent 100%);
+  mask-image:linear-gradient(to right,transparent 0,#000 10px,#000 calc(100% - 14px),transparent 100%);
+}
+.dsh-nav::-webkit-scrollbar{height:5px}
+.dsh-nav::-webkit-scrollbar-thumb{background:var(--dsh-line);border-radius:9px}
+.dsh-grp{display:flex;align-items:center;gap:2px;flex:none;padding-left:9px;margin-left:5px;border-left:1px solid var(--dsh-line)}
+.dsh-grp:first-child{border-left:0;padding-left:4px;margin-left:0}
+.dsh-lab{
+  font-size:.64rem;letter-spacing:.13em;text-transform:uppercase;font-weight:700;
+  color:var(--dsh-mute);margin-right:4px;flex:none;
+}
+.dsh-grp[data-cur] .dsh-lab{color:var(--dsh-accent)}
+
+.dsh a.dsh-link{
+  flex:none;display:inline-block;padding:4px 10px;border-radius:99px;
+  text-decoration:none;color:var(--dsh-mute);font-size:.86rem;line-height:1.3;
+}
+.dsh a.dsh-link:hover,.dsh a.dsh-link:focus-visible{background:var(--dsh-soft);color:var(--dsh-ink)}
+.dsh a.dsh-link[aria-current="page"]{background:var(--dsh-accent);color:var(--dsh-accent-ink);font-weight:600}
+.dsh a.dsh-link[aria-current="page"]:hover{color:var(--dsh-accent-ink)}
+
+.dsh-theme{
+  flex:none;font:inherit;font-size:.82rem;cursor:pointer;
+  border:1px solid var(--dsh-line);background:var(--dsh-panel);color:var(--dsh-ink);
+  padding:4px 11px;border-radius:8px;
+}
+.dsh-theme:hover{border-color:var(--dsh-accent);color:var(--dsh-accent)}
+
+/* ---- row 2: the 3D organism viewer's nine modes, as direct links ---- */
+.dsh-modes{
+  display:flex;align-items:center;gap:2px;
+  padding:0 14px 6px;min-width:0;
+  overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:thin;
+  -webkit-mask-image:linear-gradient(to right,transparent 0,#000 10px,#000 calc(100% - 14px),transparent 100%);
+  mask-image:linear-gradient(to right,transparent 0,#000 10px,#000 calc(100% - 14px),transparent 100%);
+}
+.dsh-modes::-webkit-scrollbar{height:5px}
+.dsh-modes::-webkit-scrollbar-thumb{background:var(--dsh-line);border-radius:9px}
+.dsh-modes .dsh-lab{margin-right:5px}
+.dsh-modes a.dsh-link{font-size:.82rem;padding:3px 9px;border:1px solid transparent}
+.dsh-modes a.dsh-link:hover{border-color:var(--dsh-line)}
+
+.dsh-skip{
+  position:absolute;left:-9999px;top:0;z-index:70;
+  background:var(--dsh-accent);color:var(--dsh-accent-ink);
+  padding:7px 12px;border-radius:0 0 8px 0;font:600 .86rem var(--dsh-font);text-decoration:none;
+}
+.dsh-skip:focus{left:0}
+
+/* ---- narrow screens: the shell stops being sticky so a page's own bar can
+       take the top slot, and both rows stay scrollable rather than wrapping ---- */
+@media (max-width:720px){
+  :root{--dsh-h:0px}
+  .dsh{position:static}
+  .dsh-bar{padding:6px 10px;gap:8px}
+  .dsh-modes{padding:0 10px 6px}
+  .dsh-brand{font-size:.92rem}
+  .dsh-brand .sub{display:none}
+  .dsh-theme{padding:3px 9px;font-size:.78rem}
+  .dsh a.dsh-link{font-size:.82rem;padding:3px 9px}
+}

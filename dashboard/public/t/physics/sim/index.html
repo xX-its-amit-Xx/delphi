@@ -34,40 +34,94 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .phase{font-weight:700}
 .kpi{font-size:1.5rem;font-weight:700;line-height:1.1} .kpi small{display:block;font-size:.75rem;font-weight:400;color:var(--mute)}
 footer{padding:20px 0;color:var(--mute);font-size:.85rem}
-.eq{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;white-space:pre-wrap}
+.eq{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;white-space:pre-wrap;overflow-x:auto}
+.scroll{overflow-x:auto}
+.legend{display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:.8rem;color:var(--mute);margin:6px 0 0}
+.legend b{color:var(--ink);font-weight:600}
+.key{display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.sw{width:16px;height:4px;border-radius:2px;display:inline-block;flex:0 0 16px}
+.sw.dash{height:0;border-top:3px dashed currentColor;background:none!important;border-radius:0}
+.sw.band{height:10px;background:rgba(128,128,128,.25)}
+.sw.water{height:10px;background:var(--water)}
+.pbar{display:flex;height:14px;border-radius:99px;overflow:hidden;border:1px solid var(--line);background:var(--soft);margin:4px 0}
+.pbar i{display:block;min-width:2px}
+.pk{display:inline-flex;gap:5px;align-items:center;white-space:nowrap;font-size:.78rem;color:var(--mute)}
+.pk b{color:var(--ink)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.k-measured{background:var(--ok)} .k-secondary{background:var(--s1)} .k-derived{background:#8a8a85} .k-standard{background:#8a8a85} .k-assumed{background:var(--warn)} .k-tuned{background:var(--s2)} .k-hypothetical{background:var(--bad)} .k-other{background:var(--mute)}
+.evid{border-left:5px solid var(--line)}
+.evid-measured{border-left-color:var(--ok)} .evid-mixed{border-left-color:var(--s1)} .evid-assumed{border-left-color:var(--warn)} .evid-hypothetical{border-left-color:var(--bad)}
+.nt{border-left:3px solid var(--mute);padding:4px 0 4px 10px;margin:8px 0;font-size:.85rem}
+.nt.fatal,.nt.mismatch{border-left-color:var(--bad)} .nt.warning{border-left-color:var(--warn)}
+.nt b{display:block}
+.srcbox{max-height:none}
+.vmin-lab{font-weight:600}
+@media (max-width:700px){
+  header.top .wrap{flex-wrap:wrap;white-space:normal;overflow:visible;row-gap:4px}
+  header.top .wrap .hstat{flex-basis:100%;order:3}
+  #themeBtn{margin-left:auto}
+}
+@media (max-width:560px){
+  .wrap{padding:0 12px}
+  .card{padding:10px 11px}
+  table{font-size:.8rem} th,td{padding:3px 4px}
+  table.stack thead{display:none}
+  table.stack tr{display:block;padding:7px 0;border-bottom:1px solid var(--line)}
+  table.stack td{display:block;border:0;padding:1px 0}
+  table.stack td:empty{display:none}
+  table.stack td::before{content:attr(data-l) " ";color:var(--mute);font-size:.75rem;text-transform:lowercase}
+  table.stack td.lead{font-weight:600;font-size:.88rem}
+  table.stack td.lead::before{content:""}
+  .eq{font-size:.76rem}
+  .kpi{font-size:1.2rem}
+}
 </style>
 </head>
 <body>
 <header class="top"><div class="wrap">
   <a href="../index.html" style="text-decoration:none;color:var(--mute)">&larr; Physics thread</a>
   <span class="brand">Flying fish simulator</span>
-  <span class="mute small">version 1, run 6 parameters; tests 1-3 post-hoc; test 4 v1: pass at own muscle, FAIL at the upper bound; v2: not reachable on assumed drag; v3: airborne at zero drag, no sustained aerobic flight (Lean C14 agrees)</span>
+  <span class="mute small hstat">version 1, run 6 parameters; tests 1-3 post-hoc; test 4 v1: pass at own muscle, FAIL at the upper bound; v2: not reachable on assumed drag; v3: airborne at zero drag, no sustained aerobic flight (Lean C14 agrees)</span>
   <button id="themeBtn" style="margin-left:auto">Theme</button>
 </div></header>
 
 <main class="wrap">
+<div class="card" id="exploBanner" style="display:none;border-color:var(--bad);border-left-width:5px;margin:12px 0 4px;padding:10px 14px"></div>
 <div class="card" id="statusBanner" style="border-color:var(--warn);margin:12px 0 4px;padding:10px 14px"><b>Validation status:</b> <span class="chip a">not a validated result</span> &nbsp;Pre-registered 2026-10-31 20:34 UTC before the first run (<a href="../data/sim/PREREG.md">PREREG.md</a>, hash in <a href="../data/sim/PREREG.sha256">PREREG.sha256</a>). Parameters shown are those of <b>run 6</b>; <b>tests 1 to 3 are post-hoc</b> (exploratory: the model was changed after run 1's result, every change is in <a href="../data/sim/RUNS.md">RUNS.md</a>); <b>test 4 has run</b> (2026-10-31 22:45 UTC, physiology chain wired): under the real fish's own muscle it passes; under the pre-registered non-bird upper bound (a bat's 9.1 % flight muscle, launch uncapped, flapping allowed) it <b>FAILS</b>: the model lets that fish gain net energy for 26 s bouts on its burst store. With the chain capping the launch the real fish cannot even lift off, which shows the tuned launch thrust to be unphysical. Both outcomes are in RUNS.md; nothing was retuned. A match in the table below means "not contradicted by the second-hand field figures with these parameters", nothing more.</div>
 <div class="card" id="hypoBanner" style="display:none;border-color:var(--bad);margin:12px 0 4px;padding:10px 14px"><b>HYPOTHETICAL.</b> The selected fish is a design study (physics/flier/spec.json), not an organism: the real fish's equations and measured fin polar with four times the lifting area, 16 % flight muscle and a flapping power derived from a bat. It exists to show what a truly flying fish would need. Nothing about it is measured. <b>Its climb is power-limited only: the oxygen supply is not yet applied</b> (the physiology chain is not wired; in air, gills do not ventilate, so the design needs an air-breathing respiratory surface); expect the result to change when the chain is wired.</div>
+<div class="card" id="designCard" style="display:none;margin:12px 0 4px"></div>
 <h1>How a flying fish swims, taxis, takes off and glides, in equations</h1>
 <p class="lede">A point-mass model of one real fish, the darkedged-wing flying fish specimen whose fins Park and Choi measured in a wind tunnel, moving through five phases. Every parameter is listed below with where it came from; the ones that are <span class="chip a">assumed</span> or <span class="chip t">tuned</span> have sliders so you can see how much they matter. The sim does not know what a real glide looks like; the validation panel compares it with the published field figures, which are themselves second-hand. Nothing here uses bird data (class Aves is the frozen holdout). <b>Scope:</b> this is the organism level of a chain whose chemistry (gill exchange, haemoglobin), organ (cardiac output) and tissue (muscle power) levels are being written as separate sourced modules; until they land the power interface is a stub that returns zero and says so. Development (genome to morphology) and molecular dynamics are not simulated. Flying fish are not isometric within a species (Davenport 1992: fin area &prop; L<sup>1.83</sup>, wing loading &prop; L<sup>1.24</sup>), so this one 60 g specimen does not stand for the family; the designed flier, when it comes, changes parameters only, never these equations.</p>
 
 <div class="row" style="margin:10px 0">
   <button id="runBtn" class="on">Run</button><button id="stepBtn">Step 0.1 s</button><button id="resetBtn">Reset</button>
-  <label class="small">fish <select id="fishSel"></select></label>
+  <label class="small">organism / design <select id="presetSel"></select></label>
+  <label class="small">base entry <select id="fishSel"></select></label>
   <label class="small"><input type="checkbox" id="physChk"> physiology chain <span id="physState" class="chip">not wired</span></label>
   <label class="small">speed <select id="speedSel"><option value="1">1x</option><option value="3" selected>3x</option><option value="10">10x</option><option value="100">as fast as possible</option></select></label>
-  <span id="phaseLine" class="small"></span>
+  <button id="linkBtn" class="small" title="A URL that launches this simulator with the parameters now loaded">Link to this run</button>
+  <span id="embedChip"></span>
 </div>
+<div class="small mute" id="linkOut" style="display:none;word-break:break-all;margin:-4px 0 8px"></div>
+<div class="small" id="phaseLine" style="margin:0 0 8px"></div>
 
 <div class="grid g2">
-  <div class="card"><h3>Side view: height above the sea against distance</h3><canvas id="cTraj" width="900" height="300"></canvas><p class="small mute">Blue is water. The grey band above the surface is where the lower tail lobe can still touch the water (taxiing). Dashed line: 8 m, the maximum recorded flight height.</p></div>
-  <div class="card"><h3>Speed against time, with the minimum lift-supported speed</h3><canvas id="cSpeed" width="900" height="300"></canvas><p class="small mute">The dashed line is v<sub>min</sub> = &radic;(2W/(&rho;SC<sub>L,max</sub>)) for the current parameters (constraint C9 in the Lean ledger). A glide below it cannot be held up by lift.</p></div>
-  <div class="card"><h3>Energy per unit mass against time</h3><canvas id="cEnergy" width="900" height="300"></canvas><p class="small mute">Kinetic &frac12;v&sup2;, potential g&thinsp;z, and their sum. In the glide the sum can only fall (drag); in the taxi the tail adds energy.</p></div>
-  <div class="card"><h3>Validation against the published figures</h3><div id="valid"></div><p class="small mute">Field values are quoted second-hand (see the physics page). A match here means the model with these parameters is not contradicted by them; it does not make the parameters measured.</p></div>
+  <div class="card"><h3>Side view: height above the sea against distance</h3><canvas id="cTraj" width="900" height="300"></canvas>
+    <div class="legend" id="legTraj"></div>
+    <p class="small mute">The five phases are coloured. Blue is water; the grey band just above the surface is where the lower tail lobe can still touch it (taxiing). The dashed line is 8 m, the maximum recorded flight height.</p></div>
+  <div class="card"><h3>Speed against time, with the minimum lift-supported speed</h3><canvas id="cSpeed" width="900" height="300"></canvas>
+    <div class="legend" id="legSpeed"></div>
+    <p class="small mute">v<sub>min</sub> = &radic;(2W/(&rho;SC<sub>L,max</sub>)) for the current parameters (constraint C9 in the Lean ledger) is the dashed line; the shaded strip below it is where lift cannot hold the fish up in a glide.</p></div>
+  <div class="card"><h3>Energy per unit mass against time</h3><canvas id="cEnergy" width="900" height="300"></canvas>
+    <div class="legend" id="legEnergy"></div>
+    <p class="small mute">Kinetic &frac12;v&sup2;, potential g&thinsp;z, and their sum. In the glide the sum can only fall (drag); in the taxi the tail adds energy.</p></div>
+  <div class="card"><h3>Validation against the published figures</h3><div id="validMode" class="small" style="margin-bottom:6px"></div><div id="valid" class="scroll"></div><p class="small mute">Field values are quoted second-hand (see the physics page). A match here means the model with these parameters is not contradicted by them; it does not make the parameters measured, and it is not a test unless the parameters are the pre-registered ones.</p></div>
 </div>
 
 <div class="grid g2" style="margin-top:12px">
-  <div class="card"><h3>Parameters and their sources</h3><div id="params"></div></div>
+  <div class="card evid" id="paramCard"><h3>Parameters and their sources</h3>
+    <div id="prov"></div>
+    <div id="params" class="scroll"></div></div>
   <div class="card"><h3>The equations the integrator solves</h3>
 <div class="eq" id="eqs">State (x, z, vx, vz); z = 0 is the sea surface; integrated with classical RK4 at dt = 1 ms.
 Gravity:        a_z += -g
