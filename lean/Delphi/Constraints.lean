@@ -274,6 +274,33 @@ theorem powerRequired_exponent_rules_out {W S : ℝ → ℝ} {k₁ k₂ ρ Cmax 
   have hl : Real.log (L₂ / L₁) ≠ 0 := Real.log_ne_zero_of_pos_of_ne_one hq hq1
   exact h (mul_right_cancel₀ hl hlog)
 
+/-- **C12, bending exponent, body-like load.** Under R9a the exponent of bending stress on `L` is `1`. -/
+theorem bending_exponent_rules_out {F ℓ Z : ℝ → ℝ} {kF kℓ kZ : ℝ} (hF : CubeLaw F kF) (hℓ : LeverLaw ℓ kℓ)
+    (hZ : SectionModulusLaw Z kZ) {L₁ L₂ b : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) (hne : L₁ ≠ L₂)
+    (hb : Real.log (bendingStress F ℓ Z L₂ / bendingStress F ℓ Z L₁) = b * Real.log (L₂ / L₁)) (h : b ≠ 1) :
+    False := by
+  have := bendingStress_log_body hF hℓ hZ h₁ h₂
+  rw [hb] at this
+  exact h (mul_right_cancel₀ (log_ratio_ne_zero h₁ h₂ hne) this)
+
+/-- **C12b, bending ratio, body-like load.** A committed bending-stress ratio `r ≠ ℓ` is ruled out. -/
+theorem bending_ratio_rules_out {F ℓ Z : ℝ → ℝ} {kF kℓ kZ : ℝ} (hF : CubeLaw F kF) (hℓ : LeverLaw ℓ kℓ)
+    (hZ : SectionModulusLaw Z kZ) {L₁ L₂ r q : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂)
+    (hr : bendingStress F ℓ Z L₂ / bendingStress F ℓ Z L₁ = r) (hq : L₂ / L₁ = q) (hne : r ≠ q) : False := by
+  have := bendingStress_ratio_body hF hℓ hZ h₁ h₂
+  rw [hr, hq] at this
+  exact hne this
+
+/-- **C12c, bending exponent, sheet-like load.** Under R9b the exponent is `0`: a candidate with a constant-thickness
+lamina that still commits to bending stress rising (or falling) with size is ruled out. -/
+theorem bending_exponent_sheet_rules_out {F ℓ Z : ℝ → ℝ} {kF kℓ kZ : ℝ} (hF : AreaLaw F kF) (hℓ : LeverLaw ℓ kℓ)
+    (hZ : SectionModulusLaw Z kZ) {L₁ L₂ b : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) (hne : L₁ ≠ L₂)
+    (hb : Real.log (bendingStress F ℓ Z L₂ / bendingStress F ℓ Z L₁) = b * Real.log (L₂ / L₁)) (h : b ≠ 0) :
+    False := by
+  have := bendingStress_log_sheet hF hℓ hZ h₁ h₂
+  rw [hb] at this
+  exact h (mul_right_cancel₀ (log_ratio_ne_zero h₁ h₂ hne) this)
+
 /-- **C11, Froude.** At equal Froude number speed scales as `√L`: a committed speed ratio `r ≥ 0` at length
 ratio `ℓ` with `r² ≠ ℓ` is ruled out. -/
 theorem froude_rules_out {Fr g : ℝ} (hFr : 0 < Fr) (hg : 0 < g) {L₁ L₂ r ℓ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂)

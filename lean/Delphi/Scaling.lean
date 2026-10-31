@@ -237,6 +237,72 @@ theorem exists_size_limit {W S M P : ℝ → ℝ} {k₁ k₂ kM ρ Cmax LD f p :
   rw [← hratio] at h1
   rwa [lt_div_iff₀ hPpos, one_mul] at h1
 
+/-! ### R9: bending via the section modulus -/
+
+/-- Geometrically similar sections: the section modulus is `k L³` (`Z = k_Z d³` with `d = k_d L`). -/
+def SectionModulusLaw (Z : ℝ → ℝ) (k : ℝ) : Prop := 0 < k ∧ ∀ L, 0 < L → Z L = k * L ^ 3
+
+/-- The lever arm scales with the body: `ℓ = k L`. -/
+def LeverLaw (ℓ : ℝ → ℝ) (k : ℝ) : Prop := 0 < k ∧ ∀ L, 0 < L → ℓ L = k * L
+
+/-- Maximum bending stress of a slender linear-elastic beam under transverse load `F` at lever arm `ℓ`:
+`σ_b = M_b / Z = F ℓ / Z`. -/
+noncomputable def bendingStress (F ℓ Z : ℝ → ℝ) (L : ℝ) : ℝ := F L * ℓ L / Z L
+
+/-- **R9a, conclusion 1 (body-like load).** With the load scaling as the body (`CubeLaw F`), lever arm `∝ L` and
+similar sections (`Z ∝ L³`), bending stress scales as `L`. -/
+theorem bendingStress_ratio_body {F ℓ Z : ℝ → ℝ} {kF kℓ kZ : ℝ} (hF : CubeLaw F kF) (hℓ : LeverLaw ℓ kℓ)
+    (hZ : SectionModulusLaw Z kZ) {L₁ L₂ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) :
+    bendingStress F ℓ Z L₂ / bendingStress F ℓ Z L₁ = L₂ / L₁ := by
+  unfold bendingStress
+  rw [hF.2 L₁ h₁, hF.2 L₂ h₂, hℓ.2 L₁ h₁, hℓ.2 L₂ h₂, hZ.2 L₁ h₁, hZ.2 L₂ h₂]
+  have := hF.1; have := hℓ.1; have := hZ.1
+  field_simp
+
+/-- The `log` form of R9a: exponent `1`. -/
+theorem bendingStress_log_body {F ℓ Z : ℝ → ℝ} {kF kℓ kZ : ℝ} (hF : CubeLaw F kF) (hℓ : LeverLaw ℓ kℓ)
+    (hZ : SectionModulusLaw Z kZ) {L₁ L₂ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) :
+    Real.log (bendingStress F ℓ Z L₂ / bendingStress F ℓ Z L₁) = 1 * Real.log (L₂ / L₁) := by
+  rw [bendingStress_ratio_body hF hℓ hZ h₁ h₂, one_mul]
+
+/-- **R9a, conclusion 2.** The bending safety factor `σ_max / σ_b` equals `σ_max k_Z / (k_F k_ℓ L)`: it falls as `1/L`. -/
+theorem bendingSafety_eq {F ℓ Z : ℝ → ℝ} {kF kℓ kZ σmax : ℝ} (hF : CubeLaw F kF) (hℓ : LeverLaw ℓ kℓ)
+    (hZ : SectionModulusLaw Z kZ) {L : ℝ} (hL : 0 < L) :
+    σmax / bendingStress F ℓ Z L = σmax * kZ / (kF * kℓ * L) := by
+  unfold bendingStress
+  rw [hF.2 L hL, hℓ.2 L hL, hZ.2 L hL]
+  have := hF.1; have := hℓ.1; have := hZ.1
+  field_simp
+
+/-- **Size limit in bending.** Above `L_max,b = σ_max k_Z / (k_F k_ℓ n)` the member cannot carry `n` times its
+load in bending: the stress at `n` times the load exceeds `σ_max`. Same shape as `cannot_carry`. -/
+theorem bending_cannot_carry {F ℓ Z : ℝ → ℝ} {kF kℓ kZ σmax n : ℝ} (hF : CubeLaw F kF) (hℓ : LeverLaw ℓ kℓ)
+    (hZ : SectionModulusLaw Z kZ) (hσ : 0 < σmax) (hn : 0 < n) {L : ℝ}
+    (hL : σmax * kZ / (kF * kℓ * n) < L) : σmax < n * bendingStress F ℓ Z L := by
+  have hkF := hF.1; have hkℓ := hℓ.1; have hkZ := hZ.1
+  have hLpos : 0 < L := lt_of_le_of_lt (by positivity) hL
+  unfold bendingStress
+  rw [hF.2 L hLpos, hℓ.2 L hLpos, hZ.2 L hLpos]
+  rw [div_lt_iff₀ (by positivity)] at hL
+  rw [mul_div_assoc', lt_div_iff₀ (by positivity)]
+  nlinarith [mul_lt_mul_of_pos_right hL (pow_pos hLpos 3), mul_pos hkF hkℓ, pow_pos hLpos 3, mul_pos hσ hkZ]
+
+/-- **R9b (sheet-like load).** If the load scales as an area (`AreaLaw F`, a lamina of constant thickness),
+bending stress is independent of size: no size limit follows. -/
+theorem bendingStress_ratio_sheet {F ℓ Z : ℝ → ℝ} {kF kℓ kZ : ℝ} (hF : AreaLaw F kF) (hℓ : LeverLaw ℓ kℓ)
+    (hZ : SectionModulusLaw Z kZ) {L₁ L₂ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) :
+    bendingStress F ℓ Z L₂ / bendingStress F ℓ Z L₁ = 1 := by
+  unfold bendingStress
+  rw [hF.2 L₁ h₁, hF.2 L₂ h₂, hℓ.2 L₁ h₁, hℓ.2 L₂ h₂, hZ.2 L₁ h₁, hZ.2 L₂ h₂]
+  have := hF.1; have := hℓ.1; have := hZ.1
+  field_simp
+
+/-- The `log` form of R9b: exponent `0`. -/
+theorem bendingStress_log_sheet {F ℓ Z : ℝ → ℝ} {kF kℓ kZ : ℝ} (hF : AreaLaw F kF) (hℓ : LeverLaw ℓ kℓ)
+    (hZ : SectionModulusLaw Z kZ) {L₁ L₂ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) :
+    Real.log (bendingStress F ℓ Z L₂ / bendingStress F ℓ Z L₁) = 0 * Real.log (L₂ / L₁) := by
+  rw [bendingStress_ratio_sheet hF hℓ hZ h₁ h₂, Real.log_one, zero_mul]
+
 /-! ### R8: Froude -/
 
 /-- Speed at a fixed Froude number `Fr = v² / (g L)`. -/

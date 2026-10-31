@@ -58,7 +58,9 @@ export const QUANTITIES = {
   vmin_ratio: { unit: 'v_min(L2)/v_min(L1)', kind: 'point' },
   vmin_loglog_exponent: { unit: 'd log v_min / d log L', kind: 'interval' },
   power_required_loglog_exponent: { unit: 'd log P_req / d log L at v_min', kind: 'interval' },
-  froude_speed_ratio: { unit: 'v(L2)/v(L1) at equal Froude number', kind: 'point' }
+  froude_speed_ratio: { unit: 'v(L2)/v(L1) at equal Froude number', kind: 'point' },
+  bending_stress_loglog_exponent: { unit: 'd log σ_b / d log L, σ_b the maximum bending stress F ℓ / Z', kind: 'interval' },
+  bending_stress_ratio: { unit: 'σ_b(L2)/σ_b(L1)', kind: 'point' }
 };
 // Assumption flags: a candidate must accept the model before a theorem about the model can rule on it.
 export const ASSUMPTIONS = {
@@ -75,7 +77,12 @@ export const ASSUMPTIONS = {
   constant_lift_coefficient_max_and_density: 'C_L,max and ρ the same for every member of the family (R4 scaling)',
   constant_lift_to_drag: 'L/D the same for every member and flight at v_min (R5)',
   muscle_power_premise: 'Thompson\'s premise, contested: muscle mass a constant fraction f of body mass and mass-specific power p constant (R6, MusclePowerLaw)',
-  equal_froude_number: 'the compared animals move at equal Froude number v²/(g L) (R8)'
+  equal_froude_number: 'the compared animals move at equal Froude number v²/(g L) (R8)',
+  linear_elastic_slender_beam: 'Euler-Bernoulli beam: σ_b = M_b / Z with M_b = F ℓ, static load (R9)',
+  similar_sections: 'geometrically similar cross-sections, Z = k_Z d^3 with d ∝ L (R9)',
+  lever_arm_proportional: 'the lever arm ℓ scales as L (R9)',
+  body_like_load: 'the transverse load scales as the body, F ∝ L^3 (R9a; isometric mass with constant density)',
+  sheet_like_load: 'the transverse load is a lamina of constant thickness, F ∝ L^2 (R9b)'
 };
 
 const spec = [
@@ -203,6 +210,18 @@ const spec = [
     property: 'how speed scales with size at equal Froude number', relation: 'speed ratio = sqrt(L2/L1), checked as ratio^2 = L2/L1', symbols: { 'speed ratio': 'froude_speed_ratio', 'L2/L1': 'length_ratio' },
     requires: ['length_ratio', 'froude_speed_ratio'], appliesWhen: ['equal_froude_number'], rule: 'point commitments: eliminated when ratio^2 ≠ length_ratio',
     canEliminate: 'a candidate committing to equal Froude number and a speed ratio other than the square root of its length ratio', kernelCheckable: true },
+  { id: 'C12', claim_id: 'scaling-bending-law', lemma: 'Delphi.Constraints.bending_exponent_rules_out', law: 'Delphi.bendingStress_log_body', module: 'lean/Delphi/Scaling.lean',
+    property: 'how bending stress scales with size when the load scales as the body (R9a)', relation: 'd log σ_b / d log L = 1', symbols: { 'd log σ_b/d log L': 'bending_stress_loglog_exponent' },
+    requires: ['bending_stress_loglog_exponent'], appliesWhen: ['linear_elastic_slender_beam', 'similar_sections', 'lever_arm_proportional', 'body_like_load', 'same_material'], rule: 'eliminated when the committed exponent interval excludes 1',
+    canEliminate: 'a candidate asserting a body-like load and similar sections with a bending-stress exponent other than 1; an exponent of 1 is the theorem and is consistent (WP-077/C1)', kernelCheckable: true },
+  { id: 'C12b', claim_id: 'scaling-bending-law', lemma: 'Delphi.Constraints.bending_ratio_rules_out', law: 'Delphi.bendingStress_ratio_body', module: 'lean/Delphi/Scaling.lean',
+    property: 'the ratio of bending stress between two sizes under R9a', relation: 'σ_b ratio = L2/L1', symbols: { 'σ_b ratio': 'bending_stress_ratio', 'L2/L1': 'length_ratio' },
+    requires: ['length_ratio', 'bending_stress_ratio'], appliesWhen: ['linear_elastic_slender_beam', 'similar_sections', 'lever_arm_proportional', 'body_like_load', 'same_material'], rule: 'point commitments: eliminated when the ratio ≠ length_ratio',
+    canEliminate: 'a candidate committing a bending-stress ratio other than its length ratio under R9a', kernelCheckable: true },
+  { id: 'C12c', claim_id: 'scaling-bending-law', lemma: 'Delphi.Constraints.bending_exponent_sheet_rules_out', law: 'Delphi.bendingStress_log_sheet', module: 'lean/Delphi/Scaling.lean',
+    property: 'how bending stress scales with size when the load is a lamina of constant thickness (R9b)', relation: 'd log σ_b / d log L = 0', symbols: { 'd log σ_b/d log L': 'bending_stress_loglog_exponent' },
+    requires: ['bending_stress_loglog_exponent'], appliesWhen: ['linear_elastic_slender_beam', 'similar_sections', 'lever_arm_proportional', 'sheet_like_load', 'same_material'], rule: 'eliminated when the committed exponent interval excludes 0',
+    canEliminate: 'a candidate that commits to a constant-thickness blade and still claims bending stress rises with size (hence a bending size limit); under R9b no limit follows', kernelCheckable: true },
   { id: 'C7b', claim_id: 'thompson1917-ch03-07', lemma: 'Delphi.Constraints.exponent_rules_out', law: 'Delphi.cubeLaw_loglog_exponent', module: 'lean/Delphi/Thompson.lean',
     property: 'the log-log exponent of weight on a linear dimension under isometric scaling',
     relation: 'b = 3', symbols: { b: 'loglog_exponent' },
@@ -224,6 +243,8 @@ const WHY_NO_CANDIDATE = {
   C9: 'no enumerated candidate commits an airspeed with W, S, ρ and C_L,max; the specimen of the physics thread enters only through the illustrative glider-below-minimum-speed example',
   C9b: 'no enumerated candidate commits a minimum-speed ratio; ORX-10/C2 commits the exponent instead (C9c)',
   C10: 'no enumerated candidate commits a power-required exponent; the flight rows of the enumerator are about wing loading and minimum speed, and power available is not a constraint (muscle premise)',
+  C12b: 'no enumerated candidate commits a numeric bending-stress ratio; WP-077/C1 commits the exponent (C12)',
+  C12c: 'no enumerated candidate commits to a sheet-like (constant-thickness) load; WP-077/C1 commits to thickness scaling with size (R9a); the illustrative constant-thickness leaf exercises this fork',
   C11: 'no enumerated candidate commits to Froude scaling; the rows of the enumerator are flight and support, not swimming or walking',
   C2: 'the five fixation-probability rows adopt u = i/M as their premise and give no M or probability a value (untranslatable)',
   C4b: 'the two Fisher rows commit zero variance with a sign of the change (C4c); neither commits an interval for the change in mean fitness',
@@ -237,7 +258,7 @@ const WHY_NO_CANDIDATE = {
 const out = {
   built: new Date().toISOString(), tool: 'lean/eliminate/build-constraints.mjs', rulingsFrom: ledger ? `lean/eliminate/ledger.open-problems.json (run ${ledger.summary.run})` : null, leanReport: R.built, lemmaModule: 'lean/Delphi/Constraints.lean',
   framing: 'A theorem eliminates candidates, not open problems: a candidate is a proposed answer or design that commits to quantities the theorem forbids. Three states: eliminated (the violated relation with the numbers, kernel-checked where marked), consistent (not ruled out by these theorems; never "feasible"), cannot-rule (a required input or assumption is missing). An elimination holds only under the law\'s own assumptions, listed per constraint; three of the four original statements were judged narrower in scope than their claims by the assessor, and a candidate eliminated by a narrower statement is eliminated only under that statement\'s assumptions.',
-  nextConstraint: 'Strength scaling as L^2 is now formalised (R7, C8-C8e). Not yet formalised: bending (section modulus), elastic similarity, the walking (pendulum) route of thompson1917-ch02-10, and any quantitative muscle-power law (R6 is carried only as a named hypothesis).',
+  nextConstraint: 'Strength scaling as L^2 (R7, C8-C8e) and bending via the section modulus (R9, C12-C12c) are formalised. Not yet formalised: elastic similarity, the walking (pendulum) route of thompson1917-ch02-10, and any quantitative muscle-power law (R6 is carried only as a named hypothesis).',
   quantities: QUANTITIES, assumptions: ASSUMPTIONS,
   constraints: spec.map(c => {
     const f = claim(c.claim_id) || {};

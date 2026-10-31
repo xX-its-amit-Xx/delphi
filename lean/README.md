@@ -159,5 +159,7 @@ changed, the `C_L ≤ C_L,max` hypothesis dropped, the safety factor made consta
 Honesty notes, stated in each record: isometry is measured to fail within one flying-fish species (Davenport
 1992); `C_L,max`, `L/D` and `p` are assumed constant; the physics thread found one specimen inside its own
 `v_min` envelope but could not test the `√(W/S)` scaling, so these are statements about the model, not
-confirmed facts; no number from `physics/results.json` appears in any theorem. The walking (pendulum) route
-of `thompson1917-ch02-10`, bending (section modulus) and elastic similarity are not formalised.
+confirmed facts; no number from `physics/results.json` appears in any theorem. R9 adds bending via the section modulus
+(`bendingStress = F l / Z`): stress `~ L` with a size limit under a body-like load, size-independent with no limit
+under a sheet-like load, the load family being the empirical fork a candidate must commit to. The walking (pendulum)
+route of `thompson1917-ch02-10`, elastic similarity and dynamic loads are not formalised.

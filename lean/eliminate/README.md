@@ -87,9 +87,19 @@ not cover. The illustrative giant claimed to stand (reference safety factor 10, 
 C8c, and a glider below its own minimum speed by C9. Power available is not a constraint: its `L^3` rests on
 Thompson's muscle premise, carried as a named hypothesis.
 
+## Bending (R9) and the WP-077 fork
+
+R9 (`bendingStress = F l / Z`, similar sections `Z ~ L^3`, lever arm `~ L`) splits on the load: body-like
+(`F ~ L^3`, R9a) gives bending stress `~ L` and a size limit `sigma_max k_Z/(k_F k_l n)`; sheet-like (a lamina of
+constant thickness, `F ~ L^2`, R9b) gives size-independent stress and **no** limit. The candidate must commit
+to one fork (`body_like_load` or `sheet_like_load`). WP-077/C1 commits to thickness scaling with size, so its
+"bending stress ~ k" is R9a's own conclusion and the row is **consistent**; the illustrative constant-thickness
+leaf that still claims a rising stress is eliminated by C12c. Three mutants: `Z ~ d^2`, a sheet-like load kept
+with the body-like conclusion, and the size limit stated without `sigma_max`.
+
 ## The most valuable next constraints
 
-Bending (section modulus), elastic similarity, the walking (pendulum) route, and any quantitative muscle-power
+Elastic similarity, the walking (pendulum) route, and any quantitative muscle-power
 law; without the last, "a bird as large as a man could not fly" has an existence proof and no number.
 
 ## Mutants

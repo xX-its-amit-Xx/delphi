@@ -1,0 +1,71 @@
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <https://schema.org/> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/math-law/scaling-bending-law> a delphi:Concept, skos:Concept ;
+    rdfs:label "Bending strength of an isometric member via the section modulus (R9) (Lean 4, kernel-checked)" ;
+    dct:description "For a slender linear-elastic beam with similar sections and lever arm proportional to size, bending stress scales as L when the load scales as the body (and a size limit σ_max k_Z/(k_F k_ℓ n) follows) and is independent of size when the load scales as an area (no limit follows)." ;
+    dct:source "Proved in this project (lean/Delphi/Scaling.lean) from the physics thread's formal statements (physics/FORMAL-STATEMENTS.md, 2026-10-31; Galileo 1638 and Thompson 1917 ch. II for the idea); hypotheses named, no paper states it in this form." ;
+    skos:notation "σ_b = F ℓ / Z ; R9a: σ_b ∝ L, L_max,b = σ_max k_Z/(k_F k_ℓ n) ; R9b: σ_b ∝ L^0" ;
+    skos:definition """/-- **R9a, conclusion 1 (body-like load).** With the load scaling as the body (`CubeLaw F`), lever arm `∝ L` and similar sections (`Z ∝ L³`), bending stress scales as `L`. -/
+theorem bendingStress_ratio_body {F ℓ Z : ℝ → ℝ} {kF kℓ kZ : ℝ} (hF : CubeLaw F kF) (hℓ : LeverLaw ℓ kℓ)
+    (hZ : SectionModulusLaw Z kZ) {L₁ L₂ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) :
+    bendingStress F ℓ Z L₂ / bendingStress F ℓ Z L₁ = L₂ / L₁"""^^delphi:lean4 ;
+    schema:programmingLanguage "Lean 4" ;
+    delphi:leanDeclaration "Delphi.bendingStress" ;
+    delphi:leanTheorem "Delphi.bendingStress_ratio_body", "Delphi.bendingStress_log_body", "Delphi.bendingSafety_eq", "Delphi.bending_cannot_carry", "Delphi.bendingStress_ratio_sheet", "Delphi.bendingStress_log_sheet" ;
+    delphi:leanVerified "true"^^xsd:boolean ;
+    skos:scopeNote "Slender linear-elastic beam theory, geometrically similar sections, lever arm ∝ L and constant σ_max are named hypotheses; elastic similarity (d ∝ ℓ^(3/2)) and dynamic loads such as wind are not formalised." ;
+    rdfs:comment "Status: kernel-checked (Lean 4 accepted the module with zero sorry and standard axioms only). Not expert-validated. Does not establish: anything about organisms. The theorem is exact inside the stated model and silent outside it; strict neutrality, constant population size, Wright-Fisher reproduction and independent mutant fates (Kimura), fixed fitnesses and haploid inheritance (Fisher), equal fecundity and a 1:1 sex ratio (Maynard Smith) are assumptions written in the module header, not conclusions. Kernel-checked is not expert-validated: no human expert has validated these statements. Whether the Lean statement faithfully renders the paper is a separate assessment record, and so far only one assessor provider has run." ;
+    rdfs:seeAlso <https://github.com/fractastical/delphisci/blob/3617fb32/lean/Delphi/Scaling.lean>, <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/lean.json>, <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/> .
+  <https://w3id.org/delphi/resource/claim/scaling-bending-law> dct:conformsTo <https://w3id.org/delphi/resource/math-law/scaling-bending-law> ;
+    delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/lean-kernel-check-scaling-bending-law> .
+  <https://w3id.org/delphi/resource/evidence/lean-kernel-check-scaling-bending-law> a delphi:EvidenceItem ;
+    rdfs:label "Lean 4 kernel accepted Delphi.bendingStress_ratio_body with zero sorry and standard axioms, and rejected 3 deliberately broken variant(s)" ;
+    dct:description "Build receipt. Lean (version 4.35.0, x86_64-w64-windows-gnu, commit eb6cafb7290e8bd5f2937522d8d804f58f02bafc, Release); toolchain leanprover/lean4:v4.35.0; Mathlib v4.35.0 (56a005855ea17e0b0958f73ec801ae140b0a1679). lake build exit 0 in 5.2 s with 0 errors; 0 sorry in lean/Delphi/Scaling.lean (320 lines). #print axioms for Delphi.bendingStress_ratio_body, Delphi.bendingStress_log_body, Delphi.bendingSafety_eq, Delphi.bending_cannot_carry, Delphi.bendingStress_ratio_sheet, Delphi.bendingStress_log_sheet: Classical.choice, Quot.sound, propext only (Lean's standard axioms; no sorryAx). Mutation evidence (lean/mutate.mjs, 2026-10-31T19:28:19.294Z): 3 deliberate change(s) to the statement or the model were each rejected by the compiler: [bending-section-modulus-squared] R9 model mutant: the section modulus made to scale as d^2 instead of d^3 (then bending stress would scale as L^2 under a body-like load), so conclusion 1 must fail. Rejected with 4 error(s): bending-section-modulus-squared.lean:256:65: error: unsolved goals [bending-sheet-load-claims-body-conclusion] R9 mutant: the load made sheet-like (AreaLaw F) while conclusion 1 (stress proportional to L) is kept; it must fail, since a sheet-like load gives size-independent stress. Rejected with 3 error(s): bending-sheet-load-claims-body-conclusion.lean:256:65: error: unsolved goals [bending-limit-without-sigma] R9 mutant: the size limit stated without the material strength (threshold k_Z/(k_F k_l n)), conclusion 2 kept while sigma_max is dropped from the bound; it must fail. Rejected with 1 error(s): bending-limit-without-sigma.lean:288:2: error: linarith failed to find a contradiction Controls: 11 of 11 unmodified modules accepted by the same command." ;
+    dct:subject <https://w3id.org/delphi/resource/math-law/scaling-bending-law> ;
+    rdfs:comment "This evidence item establishes that the stated theorem follows from the stated model. Does not establish: anything about organisms. The theorem is exact inside the stated model and silent outside it; strict neutrality, constant population size, Wright-Fisher reproduction and independent mutant fates (Kimura), fixed fitnesses and haploid inheritance (Fisher), equal fecundity and a 1:1 sex ratio (Maynard Smith) are assumptions written in the module header, not conclusions. Kernel-checked is not expert-validated: no human expert has validated these statements. Whether the Lean statement faithfully renders the paper is a separate assessment record, and so far only one assessor provider has run." ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/lean.json>, <https://github.com/fractastical/delphisci/blob/3617fb32/lean/mutations.json>, <https://github.com/fractastical/delphisci/blob/3617fb32/lean/Delphi/Audit.lean> .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> ;
+    prov:wasDerivedFrom <https://github.com/fractastical/delphisci/blob/3617fb32/lean/Delphi/Scaling.lean> , <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/lean.json> , <https://github.com/fractastical/delphisci/blob/3617fb32/lean/mutations.json> .
+  <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> a prov:SoftwareAgent ;
+    rdfs:label "delphisci lean thread (Claude Fable 5.1 writing the Lean modules and this builder; the Lean kernel, not the model, checked the proofs)" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/model/claude-fable-5-1> a delphi:LanguageModel ;
+    rdfs:label "Claude Fable 5.1" ;
+    dct:identifier "claude-fable-5-1" .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-10-31T19:28:54.998Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> ;
+    rdfs:comment "Owner ORCID not yet set: the key owner passes --owner <orcid> to lean/nanopubs/build.mjs at signing time; until then no human is named in this record." ;
+    rdfs:label "Bending strength of an isometric member via the section modulus (R9): machine-checked in Lean 4" ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType <https://w3id.org/delphi/ontology/Concept> ;
+    rdfs:comment "Hand-authored in Delphi ontology v2.0 terms (https://w3id.org/delphi/ontology/) by the builder, not created from a template. The template that would otherwise apply as Provenance template is <https://w3id.org/np/RAaYeFYF-Cz2bM5S1wPQsnvs5X6BBxsphL03UkbVZ1lcA>. Its published copy carries no legacy probknow IRI (checked 2026-10-31); it was consulted but not instantiated, so no template is declared. A template-conformance checker will therefore report no template declared." ;
+    rdfs:comment "Hand-authored in Delphi ontology v2.0 terms (https://w3id.org/delphi/ontology/) by the builder, not created from a template. The template that would otherwise apply as Pubinfo template is <https://w3id.org/np/RAtKj9bCnB4gUe0E9k-WhffQFSEWd9Ve2hrVllYoLuOB0>. Its published copy still uses legacy w3id.org/probknow IRIs (2 occurrences when checked on 2026-10-31), and its required statements cannot be instantiated from v2.0 terms, so it was not used and no template is declared. A template-conformance checker will therefore report no template declared." ;
+    npx:introduces <https://w3id.org/delphi/resource/math-law/scaling-bending-law> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/math-population-genetics-and-evolutionary-theory> .
+  <https://w3id.org/delphi/resource/domain/math-population-genetics-and-evolutionary-theory> rdfs:label "math-population-genetics-and-evolutionary-theory" .
+}

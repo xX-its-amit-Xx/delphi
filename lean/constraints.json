@@ -1,11 +1,11 @@
 {
- "built": "2026-10-31T19:02:07.937Z",
+ "built": "2026-10-31T19:17:06.135Z",
  "tool": "lean/eliminate/build-constraints.mjs",
- "rulingsFrom": "lean/eliminate/ledger.open-problems.json (run 2026-10-31T18:59:16.071Z)",
- "leanReport": "2026-10-31T19:00:29.315Z",
+ "rulingsFrom": "lean/eliminate/ledger.open-problems.json (run 2026-10-31T19:17:06.060Z)",
+ "leanReport": "2026-10-31T19:16:41.894Z",
  "lemmaModule": "lean/Delphi/Constraints.lean",
  "framing": "A theorem eliminates candidates, not open problems: a candidate is a proposed answer or design that commits to quantities the theorem forbids. Three states: eliminated (the violated relation with the numbers, kernel-checked where marked), consistent (not ruled out by these theorems; never \"feasible\"), cannot-rule (a required input or assumption is missing). An elimination holds only under the law's own assumptions, listed per constraint; three of the four original statements were judged narrower in scope than their claims by the assessor, and a candidate eliminated by a narrower statement is eliminated only under that statement's assumptions.",
- "nextConstraint": "Strength scaling as L^2 is now formalised (R7, C8-C8e). Not yet formalised: bending (section modulus), elastic similarity, the walking (pendulum) route of thompson1917-ch02-10, and any quantitative muscle-power law (R6 is carried only as a named hypothesis).",
+ "nextConstraint": "Strength scaling as L^2 (R7, C8-C8e) and bending via the section modulus (R9, C12-C12c) are formalised. Not yet formalised: elastic similarity, the walking (pendulum) route of thompson1917-ch02-10, and any quantitative muscle-power law (R6 is carried only as a named hypothesis).",
  "quantities": {
   "mutation_rate": {
    "unit": "mutations per site per generation",
@@ -170,6 +170,14 @@
   "froude_speed_ratio": {
    "unit": "v(L2)/v(L1) at equal Froude number",
    "kind": "point"
+  },
+  "bending_stress_loglog_exponent": {
+   "unit": "d log σ_b / d log L, σ_b the maximum bending stress F ℓ / Z",
+   "kind": "interval"
+  },
+  "bending_stress_ratio": {
+   "unit": "σ_b(L2)/σ_b(L1)",
+   "kind": "point"
   }
  },
  "assumptions": {
@@ -186,7 +194,12 @@
   "constant_lift_coefficient_max_and_density": "C_L,max and ρ the same for every member of the family (R4 scaling)",
   "constant_lift_to_drag": "L/D the same for every member and flight at v_min (R5)",
   "muscle_power_premise": "Thompson's premise, contested: muscle mass a constant fraction f of body mass and mass-specific power p constant (R6, MusclePowerLaw)",
-  "equal_froude_number": "the compared animals move at equal Froude number v²/(g L) (R8)"
+  "equal_froude_number": "the compared animals move at equal Froude number v²/(g L) (R8)",
+  "linear_elastic_slender_beam": "Euler-Bernoulli beam: σ_b = M_b / Z with M_b = F ℓ, static load (R9)",
+  "similar_sections": "geometrically similar cross-sections, Z = k_Z d^3 with d ∝ L (R9)",
+  "lever_arm_proportional": "the lever arm ℓ scales as L (R9)",
+  "body_like_load": "the transverse load scales as the body, F ∝ L^3 (R9a; isometric mass with constant density)",
+  "sheet_like_load": "the transverse load is a lamina of constant thickness, F ∝ L^2 (R9b)"
  },
  "constraints": [
   {
@@ -1671,6 +1684,200 @@
     "reached": 0
    },
    "whyNoCandidate": "no enumerated candidate commits to Froude scaling; the rows of the enumerator are flight and support, not swimming or walking"
+  },
+  {
+   "id": "C12",
+   "claim_id": "scaling-bending-law",
+   "lemma": "Delphi.Constraints.bending_exponent_rules_out",
+   "law": "Delphi.bendingStress_log_body",
+   "module": "lean/Delphi/Scaling.lean",
+   "property": "how bending stress scales with size when the load scales as the body (R9a)",
+   "relation": "d log σ_b / d log L = 1",
+   "symbols": {
+    "d log σ_b/d log L": "bending_stress_loglog_exponent"
+   },
+   "requires": [
+    "bending_stress_loglog_exponent"
+   ],
+   "appliesWhen": [
+    "linear_elastic_slender_beam",
+    "similar_sections",
+    "lever_arm_proportional",
+    "body_like_load",
+    "same_material"
+   ],
+   "rule": "eliminated when the committed exponent interval excludes 1",
+   "canEliminate": "a candidate asserting a body-like load and similar sections with a bending-stress exponent other than 1; an exponent of 1 is the theorem and is consistent (WP-077/C1)",
+   "kernelCheckable": true,
+   "label": "Bending strength of an isometric member via the section modulus (R9)",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "R9a: with CubeLaw F, LeverLaw ℓ and SectionModulusLaw Z, σ_b(L2)/σ_b(L1) = L2/L1, log exponent 1 (bendingStress_ratio_body, bendingStress_log_body); σ_max/σ_b = σ_max k_Z/(k_F k_ℓ L) (bendingSafety_eq); above σ_max k_Z/(k_F k_ℓ n) the stress at n times the load exceeds σ_max (bending_cannot_carry).",
+     "R9b: with AreaLaw F instead, σ_b(L2)/σ_b(L1) = 1, log exponent 0 (bendingStress_ratio_sheet, bendingStress_log_sheet): no size limit follows."
+    ],
+    "assumed": [
+     "Slender linear-elastic (Euler-Bernoulli) beam; σ_b = M_b/Z with a point load at the free end (a distributed load changes the constant, not the L-dependence).",
+     "Geometrically similar sections (Z = k_Z d^3, d ∝ L) and lever arm ∝ L; elastic similarity (d ∝ ℓ^(3/2)) is a different hypothesis family, not formalised.",
+     "Constant σ_max; static loads only (wind on a leaf is outside the model); which load family applies (R9a or R9b) is empirical and must be committed by the candidate."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "Euler-Bernoulli beam: σ_b = M_b / Z with M_b = F ℓ, static load (R9)",
+    "geometrically similar cross-sections, Z = k_Z d^3 with d ∝ L (R9)",
+    "the lever arm ℓ scales as L (R9)",
+    "the transverse load scales as the body, F ∝ L^3 (R9a; isometric mass with constant density)",
+    "the breaking stress σ is the same for every member of the family (R7)"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 1,
+    "cannotRule": 43,
+    "reached": 1
+   },
+   "whyNoCandidate": null
+  },
+  {
+   "id": "C12b",
+   "claim_id": "scaling-bending-law",
+   "lemma": "Delphi.Constraints.bending_ratio_rules_out",
+   "law": "Delphi.bendingStress_ratio_body",
+   "module": "lean/Delphi/Scaling.lean",
+   "property": "the ratio of bending stress between two sizes under R9a",
+   "relation": "σ_b ratio = L2/L1",
+   "symbols": {
+    "σ_b ratio": "bending_stress_ratio",
+    "L2/L1": "length_ratio"
+   },
+   "requires": [
+    "length_ratio",
+    "bending_stress_ratio"
+   ],
+   "appliesWhen": [
+    "linear_elastic_slender_beam",
+    "similar_sections",
+    "lever_arm_proportional",
+    "body_like_load",
+    "same_material"
+   ],
+   "rule": "point commitments: eliminated when the ratio ≠ length_ratio",
+   "canEliminate": "a candidate committing a bending-stress ratio other than its length ratio under R9a",
+   "kernelCheckable": true,
+   "label": "Bending strength of an isometric member via the section modulus (R9)",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "R9a: with CubeLaw F, LeverLaw ℓ and SectionModulusLaw Z, σ_b(L2)/σ_b(L1) = L2/L1, log exponent 1 (bendingStress_ratio_body, bendingStress_log_body); σ_max/σ_b = σ_max k_Z/(k_F k_ℓ L) (bendingSafety_eq); above σ_max k_Z/(k_F k_ℓ n) the stress at n times the load exceeds σ_max (bending_cannot_carry).",
+     "R9b: with AreaLaw F instead, σ_b(L2)/σ_b(L1) = 1, log exponent 0 (bendingStress_ratio_sheet, bendingStress_log_sheet): no size limit follows."
+    ],
+    "assumed": [
+     "Slender linear-elastic (Euler-Bernoulli) beam; σ_b = M_b/Z with a point load at the free end (a distributed load changes the constant, not the L-dependence).",
+     "Geometrically similar sections (Z = k_Z d^3, d ∝ L) and lever arm ∝ L; elastic similarity (d ∝ ℓ^(3/2)) is a different hypothesis family, not formalised.",
+     "Constant σ_max; static loads only (wind on a leaf is outside the model); which load family applies (R9a or R9b) is empirical and must be committed by the candidate."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "Euler-Bernoulli beam: σ_b = M_b / Z with M_b = F ℓ, static load (R9)",
+    "geometrically similar cross-sections, Z = k_Z d^3 with d ∝ L (R9)",
+    "the lever arm ℓ scales as L (R9)",
+    "the transverse load scales as the body, F ∝ L^3 (R9a; isometric mass with constant density)",
+    "the breaking stress σ is the same for every member of the family (R7)"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated candidate commits a numeric bending-stress ratio; WP-077/C1 commits the exponent (C12)"
+  },
+  {
+   "id": "C12c",
+   "claim_id": "scaling-bending-law",
+   "lemma": "Delphi.Constraints.bending_exponent_sheet_rules_out",
+   "law": "Delphi.bendingStress_log_sheet",
+   "module": "lean/Delphi/Scaling.lean",
+   "property": "how bending stress scales with size when the load is a lamina of constant thickness (R9b)",
+   "relation": "d log σ_b / d log L = 0",
+   "symbols": {
+    "d log σ_b/d log L": "bending_stress_loglog_exponent"
+   },
+   "requires": [
+    "bending_stress_loglog_exponent"
+   ],
+   "appliesWhen": [
+    "linear_elastic_slender_beam",
+    "similar_sections",
+    "lever_arm_proportional",
+    "sheet_like_load",
+    "same_material"
+   ],
+   "rule": "eliminated when the committed exponent interval excludes 0",
+   "canEliminate": "a candidate that commits to a constant-thickness blade and still claims bending stress rises with size (hence a bending size limit); under R9b no limit follows",
+   "kernelCheckable": true,
+   "label": "Bending strength of an isometric member via the section modulus (R9)",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "R9a: with CubeLaw F, LeverLaw ℓ and SectionModulusLaw Z, σ_b(L2)/σ_b(L1) = L2/L1, log exponent 1 (bendingStress_ratio_body, bendingStress_log_body); σ_max/σ_b = σ_max k_Z/(k_F k_ℓ L) (bendingSafety_eq); above σ_max k_Z/(k_F k_ℓ n) the stress at n times the load exceeds σ_max (bending_cannot_carry).",
+     "R9b: with AreaLaw F instead, σ_b(L2)/σ_b(L1) = 1, log exponent 0 (bendingStress_ratio_sheet, bendingStress_log_sheet): no size limit follows."
+    ],
+    "assumed": [
+     "Slender linear-elastic (Euler-Bernoulli) beam; σ_b = M_b/Z with a point load at the free end (a distributed load changes the constant, not the L-dependence).",
+     "Geometrically similar sections (Z = k_Z d^3, d ∝ L) and lever arm ∝ L; elastic similarity (d ∝ ℓ^(3/2)) is a different hypothesis family, not formalised.",
+     "Constant σ_max; static loads only (wind on a leaf is outside the model); which load family applies (R9a or R9b) is empirical and must be committed by the candidate."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "Euler-Bernoulli beam: σ_b = M_b / Z with M_b = F ℓ, static load (R9)",
+    "geometrically similar cross-sections, Z = k_Z d^3 with d ∝ L (R9)",
+    "the lever arm ℓ scales as L (R9)",
+    "the transverse load is a lamina of constant thickness, F ∝ L^2 (R9b)",
+    "the breaking stress σ is the same for every member of the family (R7)"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated candidate commits to a sheet-like (constant-thickness) load; WP-077/C1 commits to thickness scaling with size (R9a); the illustrative constant-thickness leaf exercises this fork"
   },
   {
    "id": "C7b",

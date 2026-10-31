@@ -88,3 +88,12 @@ import Delphi.Constraints
 #print axioms Delphi.Constraints.vmin_scaling_rules_out
 #print axioms Delphi.Constraints.powerRequired_exponent_rules_out
 #print axioms Delphi.Constraints.froude_rules_out
+#print axioms Delphi.bendingStress_ratio_body
+#print axioms Delphi.bendingStress_log_body
+#print axioms Delphi.bendingSafety_eq
+#print axioms Delphi.bending_cannot_carry
+#print axioms Delphi.bendingStress_ratio_sheet
+#print axioms Delphi.bendingStress_log_sheet
+#print axioms Delphi.Constraints.bending_exponent_rules_out
+#print axioms Delphi.Constraints.bending_ratio_rules_out
+#print axioms Delphi.Constraints.bending_exponent_sheet_rules_out
