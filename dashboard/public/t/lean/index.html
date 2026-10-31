@@ -68,7 +68,7 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
 <header class="top"><div class="wrap">
   <a class="back" href="../../index.html">&larr; Mission Control</a>
   <span class="brand">Lean thread</span>
-  <nav><a href="#result">Result</a><a href="#proved">What is proved</a><a href="#flyingfish">Flying fish</a><a href="#blueprint">Blueprint certificate</a><a href="#thompson">Cube law</a><a href="#eliminate">Eliminate</a><a href="#theorems">Theorems</a><a href="#faith">Faithfulness</a><a href="#audit">Audit</a><a href="#mutants">Break it</a><a href="#records">Records</a><a href="#watch">Watch it converge</a><a href="#repro">Reproduce</a><a href="#honest">Limits</a></nav>
+  <nav><a href="#result">Result</a><a href="#proved">What is proved</a><a href="#flyingfish">Flying fish</a><a href="#audit-fish">Audit vs fish</a><a href="#blueprint">Blueprint certificate</a><a href="#thompson">Cube law</a><a href="#eliminate">Eliminate</a><a href="#theorems">Theorems</a><a href="#faith">Faithfulness</a><a href="#audit">Audit</a><a href="#mutants">Break it</a><a href="#records">Records</a><a href="#watch">Watch it converge</a><a href="#repro">Reproduce</a><a href="#honest">Limits</a></nav>
   <button id="themeBtn" title="Toggle light or dark">Theme</button>
 </div></header>
 
@@ -118,6 +118,14 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
  <div class="card"><h3>Ceiling as a function of N (vacuous by construction)</h3><div class="scroll"><table id="ffCeiling"></table></div><p class="small mute" id="ffCeilingNote"></p></div>
 </div>
 <div class="card"><h3>Why the verdict is inconclusive, and what this does not establish</h3><ul class="small" id="ffUndefined"></ul><p class="small" id="ffReason"></p></div>
+</section>
+
+<section id="audit-fish"><h2>Every theorem against the real flying fish</h2>
+<p class="small">One row per theorem the compiler accepted: does it apply to Exocoetidae, which inputs are measured for flying fish (with the file), which are proxies, which are missing, and the verdict when instantiated. A theorem is never falsified by data; its hypotheses are. Full tables: <code>lean/AUDIT-FLYING-FISH.md</code>, <code>lean/flying-fish-audit.json</code>; per-part grounding of the 3D model: <code>lean/morphology-grounding.json</code>.</p>
+<div class="verdict" id="auVerdict"></div>
+<p class="small" id="auHeadline"></p>
+<div class="card"><h3>Measured facts used</h3><div class="scroll"><table id="auFacts"></table></div></div>
+<details><summary>All rows</summary><div class="in scroll"><table id="auRows"></table></div></details>
 </section>
 
 <section id="blueprint"><h2>Is the generated fish well-formed? A kernel-checked certificate</h2>
@@ -248,6 +256,16 @@ function init(R) {
     ${f.note ? `<p class="small"><b>Scope here:</b> ${esc(f.note)}</p>` : ''}
     ${f.proofScope ? `<div class="grid g2" style="margin:8px 0"><div><p class="small"><b>Kernel-checked (proved in Lean):</b></p><ul class="small">${f.proofScope.kernelChecked.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div><div><p class="small"><b>Assumed, not proved (stated in the module header):</b></p><ul class="small">${f.proofScope.assumed.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></div>` : ''}
     <p class="small">Theorem <code>${esc(f.theorem)}</code> in <code>${esc(f.module)}</code>. ${f.paper ? `Source: ${esc(f.paper.title)} (${esc(f.paper.year)})${f.paper.doi ? `, <a href="https://doi.org/${esc(f.paper.doi)}">doi:${esc(f.paper.doi)}</a>` : ''}.` : 'Not a paper\'s claim: proved in this project as an extension for the flying-fish budget, so it has no faithfulness assessment to run against a source.'}</p></div>`).join('');
+
+  // audit against the flying fish
+  const AU = R.flyingFishAudit;
+  if (AU) {
+    const v = AU.summary.verdicts, a = AU.summary.applies;
+    $('#auVerdict').innerHTML = `<span class="chip">${AU.rows.length} theorems audited</span><span class="chip ok">${v.holds || 0} hold</span><span class="chip warn">${v.violated || 0} hypotheses violated by data</span><span class="chip">${v['cannot-evaluate'] || 0} cannot evaluate (input missing)</span><span class="chip">applies: ${Object.entries(a).map(([k, n]) => `${k} ${n}`).join(', ')}</span>${AU.grounding ? `<span class="chip">${AU.grounding.objects} model parts: ${AU.grounding.withTheorems} reached by a theorem, ${AU.grounding.withNone} by none</span>` : ''}`;
+    $('#auHeadline').textContent = AU.summary.headline + ' Not measured for Exocoetidae at all: ' + AU.summary.notMeasuredForExocoetidae.join('; ') + '.';
+    $('#auFacts').innerHTML = '<tr><th>Fact</th><th>Value</th><th>Status</th><th>Source</th></tr>' + AU.summary.measuredFacts.map(f => `<tr><td class="small">${esc(f.name)}</td><td><b>${esc(f.value)}${f.unit ? ' ' + esc(f.unit) : ''}</b></td><td class="small">${esc(f.status)}</td><td class="small">${esc(f.source)}</td></tr>`).join('');
+    $('#auRows').innerHTML = '<tr><th>Theorem</th><th>Applies</th><th>Inputs</th><th>Verdict</th><th>Why</th></tr>' + AU.rows.map(t => `<tr><td class="small"><code>${esc(t.theorem.replace(/^Delphi\./, ''))}</code></td><td class="small">${esc(t.appliesClass)}</td><td class="small">${t.inputs.map(i => `${esc(i.name)}: <b>${esc(i.status)}</b>`).join('; ') || 'none'}</td><td><span class="chip ${t.verdict === 'holds' ? 'ok' : t.verdict === 'violated' ? 'warn' : ''}">${esc(t.verdict)}</span>${t.qualifier ? `<div class="small mute">${esc(t.qualifier)}</div>` : ''}</td><td class="small">${esc(t.why)}</td></tr>`).join('');
+  }
 
   // blueprint certificates
   const BC = R.blueprintCertificates || [];

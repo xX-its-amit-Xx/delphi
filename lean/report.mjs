@@ -306,6 +306,12 @@ const opLedgerFile = path.join(here, 'eliminate/ledger.open-problems.json');
 const opDoc = fs.existsSync(opLedgerFile) ? JSON.parse(fs.readFileSync(opLedgerFile, 'utf8')) : null;
 const eliminationsOpenProblems = opDoc ? { summary: opDoc.summary, ledger: opDoc.ledger, translations: 'lean/eliminate/translations.json', formal: 'open-problems/candidates.formal.json' } : null;
 
+// 7d. Flying-fish audit (lean/flying-fish/audit.mjs): every theorem against Exocoetidae, and the morphology grounding.
+const ffAuditFile = path.join(here, 'flying-fish-audit.json'), ffGroundFile = path.join(here, 'morphology-grounding.json');
+const ffAudit = fs.existsSync(ffAuditFile) ? JSON.parse(fs.readFileSync(ffAuditFile, 'utf8')) : null;
+const ffGround = fs.existsSync(ffGroundFile) ? JSON.parse(fs.readFileSync(ffGroundFile, 'utf8')) : null;
+const flyingFishAudit = ffAudit ? { summary: ffAudit.summary, rows: ffAudit.theorems.map(t => ({ theorem: t.theorem, module: t.module, appliesClass: t.appliesClass, verdict: t.verdict, qualifier: t.qualifier, why: t.why, inputs: t.inputs.map(i => ({ name: i.name, status: (i.status || '').split(' ')[0], value: i.value ?? null })) })), grounding: ffGround ? ffGround.summary : null, files: { audit: 'lean/flying-fish-audit.json', markdown: 'lean/AUDIT-FLYING-FISH.md', grounding: 'lean/morphology-grounding.json' } } : null;
+
 // 7. Flying-fish substitution budget (lean/bound/compute.mjs): applies the audited theorems to sourced parameters.
 let bound = null;
 try {
@@ -323,7 +329,7 @@ const report = {
   audit: { ok: audit.exit === 0 && axioms.length > 0 && nonStandard.length === 0, theorems: axioms, nonStandard, raw: audit.out.trim() },
   sorryTotal, modules, theorems, lemmas, formalized,
   mutations: mutations ? { summary: mutations.summary, results: mutations.results } : null,
-  nanopubs, bound, blueprintCertificates, thompsonTest, constraints, eliminations, eliminationsOpenProblems,
+  nanopubs, bound, blueprintCertificates, thompsonTest, constraints, eliminations, eliminationsOpenProblems, flyingFishAudit,
   summary: {
     theoremsCompiling: buildOk ? theorems.length : 0,
     lemmas: lemmas.length,
@@ -334,6 +340,7 @@ const report = {
     boundVerdict: bound && bound.verified ? bound.comparison.verdict : null,
     blueprintCertificates: blueprintCertificates.length, blueprintCertificatesVerified: blueprintCertificates.filter(c => c.verified && c.current).length,
     openProblemCandidatesChecked: eliminationsOpenProblems ? eliminationsOpenProblems.summary.candidates : 0, openProblemCandidatesEliminated: eliminationsOpenProblems ? eliminationsOpenProblems.summary.eliminated : 0, openProblemCandidatesConsistent: eliminationsOpenProblems ? eliminationsOpenProblems.summary.consistent : 0, openProblemCandidatesCannotRule: eliminationsOpenProblems ? eliminationsOpenProblems.summary.unconstrained : 0, openProblemCandidatesNotFormalised: eliminationsOpenProblems ? eliminationsOpenProblems.summary.candidatesWithNotFormalisedClaims : 0,
+    flyingFishAuditTheorems: flyingFishAudit ? flyingFishAudit.rows.length : 0, flyingFishAuditVerdicts: flyingFishAudit ? flyingFishAudit.summary.verdicts : null, morphologyObjects: flyingFishAudit && flyingFishAudit.grounding ? flyingFishAudit.grounding.objects : 0, morphologyObjectsWithTheorems: flyingFishAudit && flyingFishAudit.grounding ? flyingFishAudit.grounding.withTheorems : 0,
     constraints: constraints ? constraints.list.length : 0, candidatesChecked: eliminations ? eliminations.summary.candidates : 0, candidatesEliminated: eliminations ? eliminations.summary.eliminated : 0, candidatesConsistent: eliminations ? eliminations.summary.consistent : 0, candidatesUnconstrained: eliminations ? eliminations.summary.unconstrained : 0, kernelCheckedEliminations: eliminations ? eliminations.summary.kernelCheckedEliminations : 0,
     claimsAssessed: formalized.filter(f => f.assessments.length > 0).length,
     assessmentsRun: assessments.length,
