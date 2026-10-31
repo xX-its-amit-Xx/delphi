@@ -352,13 +352,16 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
     // slimmed genotype/map.vetted.json or as a top-level "vetted": true in genotype/map.json. Until then the page
     // says the file exists and why nothing is drawn. Only the per-node summary below ever reaches the browser.
     // Lookup order: the committed slim vetted map first, then the full vetted map, then map.json only if it says vetted.
+    // Test fixtures never go under genotype/ (that folder belongs to the Genotype thread): VIZ_GENOTYPE_MAP=<absolute path>
+    // points the builder at a fixture kept under C:/Temp instead, for local previews only.
     const noMap = process.env.VIZ_TEST_NO_MAP === '1';
-    const gmSlim = noMap ? null : J('genotype/map.vetted.slim.json');
+    const fixture = process.env.VIZ_GENOTYPE_MAP ? (() => { try { return JSON.parse(fs.readFileSync(process.env.VIZ_GENOTYPE_MAP, 'utf8')); } catch { return null; } })() : null;
+    const gmSlim = fixture || (noMap ? null : J('genotype/map.vetted.slim.json'));
     const gmVetted = gmSlim || noMap ? null : J('genotype/map.vetted.json');
     const gmFull = gmSlim || gmVetted || noMap ? null : J('genotype/map.json');
     // VIZ_UNGATED_TEST=1 lets the viz thread preview the renderer locally; never deploy a build made with it.
     const gmRaw = gmSlim || gmVetted || (gmFull && (gmFull.vetted === true || process.env.VIZ_UNGATED_TEST === '1') ? gmFull : null);
-    const gmSource = gmSlim ? 'genotype/map.vetted.slim.json' : gmVetted ? 'genotype/map.vetted.json' : 'genotype/map.json';
+    const gmSource = fixture ? `TEST FIXTURE ${process.env.VIZ_GENOTYPE_MAP} (never deploy)` : gmSlim ? 'genotype/map.vetted.slim.json' : gmVetted ? 'genotype/map.vetted.json' : 'genotype/map.json';
     let genotype = null;
     if (!gmRaw && gmFull) {
       genotype = { file: 'genotype/map.json', gated: true, built: gmFull.built || null,
