@@ -1,0 +1,207 @@
+{
+ "server": "delphisci-sim-engine",
+ "version": "0.1.0",
+ "transport": "stdio",
+ "envelope": {
+  "result": "tool-specific",
+  "provenance": "[{quantity, value, kind, source}]",
+  "scope": "string, mandatory"
+ },
+ "provenance_kinds": {
+  "measured": "Read from a primary source that measured it in the stated organism.",
+  "measured-secondhand": "A measurement, but quoted from a citing paper, review or summary rather than read in the source. Treat as provisional.",
+  "borrowed": "A real measurement, used for a molecule, tissue or stage it was NOT measured in. The borrowing is the assumption.",
+  "derived": "Computed from other entries here by a stated formula, adding no new empirical content.",
+  "calibrated": "Set so the model reproduces one named wild-type observation. Calibration is not prediction; a calibrated quantity can never be cited as a result.",
+  "assumed": "Not measured and not fetched. A placeholder. Any conclusion resting on it inherits that."
+ },
+ "tools": [
+  {
+   "name": "morphogen_diffusion",
+   "title": "Morphogen reaction-diffusion on a fin-bud domain",
+   "description": "Steady-state reaction-diffusion of one morphogen on a 2D or 3D rectangular domain standing for a pectoral fin bud, with a source region (ZPA Shh or AER Fgf). Returns the concentration field, its gradient length lambda = sqrt(D/k), and the size of the region above a threshold. Diffusion constants default to FETCHED zebrafish FCS measurements; a Shh source borrows the Fgf8 coefficient because no measured zebrafish Shh value was found, and says so.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "morphogen": {
+      "type": "string",
+      "enum": [
+       "fgf",
+       "shh",
+       "custom"
+      ],
+      "default": "fgf",
+      "description": "fgf uses the measured Fgf8a fast-fraction coefficient. shh uses the same number, labelled borrowed. custom requires D_um2_s."
+     },
+     "D_um2_s": {
+      "type": "number",
+      "description": "Overrides the fetched coefficient. Labelled assumed when given."
+     },
+     "half_life_min": {
+      "type": "number",
+      "description": "Overrides the fetched 9 min residence time. Labelled assumed when given."
+     },
+     "dims": {
+      "type": "array",
+      "items": {
+       "type": "integer",
+       "minimum": 4,
+       "maximum": 400
+      },
+      "minItems": 2,
+      "maxItems": 3,
+      "default": [
+       80,
+       80
+      ],
+      "description": "Grid cells per axis. Axis 0 anteroposterior, axis 1 dorsoventral, axis 2 proximodistal if 3D."
+     },
+     "spacing_um": {
+      "type": "number",
+      "default": 2.5,
+      "description": "Grid spacing in micrometres."
+     },
+     "source": {
+      "type": "object",
+      "description": "Production slab: { axis, from, to, rate }.",
+      "properties": {
+       "axis": {
+        "type": "integer"
+       },
+       "from": {
+        "type": "integer"
+       },
+       "to": {
+        "type": "integer"
+       },
+       "rate": {
+        "type": "number"
+       }
+      }
+     },
+     "boundary": {
+      "type": "string",
+      "enum": [
+       "no-flux",
+       "absorbing"
+      ],
+      "default": "no-flux"
+     },
+     "threshold_fraction": {
+      "type": "number",
+      "default": 0.1,
+      "description": "Report the region above this fraction of the peak concentration."
+     },
+     "return_field": {
+      "type": "boolean",
+      "default": false,
+      "description": "Include the full concentration field. Off by default because it is large."
+     }
+    }
+   }
+  },
+  {
+   "name": "protein_structure",
+   "title": "Protein structure from AlphaFold DB, or a variant folded with ESMFold",
+   "description": "Given a UniProt accession, fetches the AlphaFold DB model and reports mean pLDDT with metadata. Given a missense variant as well, folds wild type and variant with Meta public ESMFold and reports CA RMSD and both pLDDTs. Structure prediction only: it says nothing about function.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "accession": {
+      "type": "string",
+      "description": "UniProt accession, e.g. P02769."
+     },
+     "variant": {
+      "type": "string",
+      "description": "Missense variant in the form F326L (wild-type residue, 1-based position, variant residue). Omit for the AlphaFold model alone."
+     },
+     "fold_variant": {
+      "type": "boolean",
+      "default": true,
+      "description": "Call ESMFold when a variant is given. Requires sequence length <= 400."
+     }
+    },
+    "required": [
+     "accession"
+    ]
+   }
+  },
+  {
+   "name": "physiology_chain",
+   "title": "Oxygen-transport physiology chain",
+   "description": "Wraps physiology/index.js createPhysiology: gill oxygen uptake and the downstream transport chain for a fish of a given mass in given water. The underlying module labels each of its own quantities measured, derived, tuned or assumed, and those labels are passed through unchanged.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "mass_kg": {
+      "type": "number",
+      "description": "Body mass. Default 0.06 kg."
+     },
+     "gillArea_m2": {
+      "type": "number",
+      "description": "Total gill area; defaults to a per-kg value from the module."
+     },
+     "waterTemp_C": {
+      "type": "number",
+      "description": "Default 25."
+     },
+     "salinity_psu": {
+      "type": "number",
+      "description": "Default 35."
+     },
+     "waterO2_mg_per_l": {
+      "type": "number",
+      "description": "Defaults to air saturation at the given temperature and salinity."
+     }
+    }
+   }
+  },
+  {
+   "name": "growth_trajectory",
+   "title": "Growth trajectory",
+   "description": "Wraps development/trajectory.mjs: standard length and derived quantities against age, from the growth model fitted in that module.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "quantity": {
+      "type": "string",
+      "description": "Quantity to evaluate, passed to trajectory.at(). Omit for the whole series."
+     },
+     "ageDays": {
+      "type": "number",
+      "description": "Age in days."
+     },
+     "SLcm": {
+      "type": "number",
+      "description": "Standard length in cm; converted to an age if ageDays is absent."
+     },
+     "series": {
+      "type": "integer",
+      "description": "Return this many points instead of a single evaluation."
+     },
+     "maxDays": {
+      "type": "number",
+      "default": 365
+     }
+    }
+   }
+  },
+  {
+   "name": "lean_check",
+   "title": "Lean-backed constraint check (NOT a kernel check)",
+   "description": "Wraps lean/eliminate/browser-check.mjs. Evaluates in floating point the same formulas the Lean-backed constraints encode, and returns one verdict per constraint it can reach. This is NOT a kernel proof: kernel certificates exist only for the recorded examples under lean/Delphi/Certificates/.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "spec": {
+      "type": "object",
+      "description": "SI-unit spec: SL_m, mass_kg, finArea_m2, CLmax, LD_max, rho, airspeed_m_s, and the rest documented at the top of browser-check.mjs."
+     }
+    },
+    "required": [
+     "spec"
+    ]
+   }
+  }
+ ]
+}
