@@ -351,8 +351,8 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
     // GATE (hub, 2026-10-31): the map is drawn only when the genotype thread marks it vetted, either as a separate
     // slimmed genotype/map.vetted.json or as a top-level "vetted": true in genotype/map.json. Until then the page
     // says the file exists and why nothing is drawn. Only the per-node summary below ever reaches the browser.
-    const gmVetted = J('genotype/map.vetted.json');
-    const gmFull = gmVetted ? null : J('genotype/map.json');
+    const gmVetted = process.env.VIZ_TEST_NO_MAP === '1' ? null : J('genotype/map.vetted.json');
+    const gmFull = gmVetted || process.env.VIZ_TEST_NO_MAP === '1' ? null : J('genotype/map.json');
     // VIZ_UNGATED_TEST=1 lets the viz thread preview the renderer locally; never deploy a build made with it.
     const gmRaw = gmVetted || (gmFull && (gmFull.vetted === true || process.env.VIZ_UNGATED_TEST === '1') ? gmFull : null);
     const gmSource = gmVetted ? 'genotype/map.vetted.json' : 'genotype/map.json';
@@ -404,6 +404,14 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
       genotype.nodes_with_direct = Object.values(genotype.nodes).filter(n => n.direct).length;
       genotype.nodes_with_derived_only = Object.values(genotype.nodes).filter(n => n.derived_only).length;
       genotype.links_stored_here = Object.values(genotype.links).reduce((a, l) => a + l.length, 0);
+    } else if (!gmRaw && !gmFull) {
+      // Neither map is in this checkout (the vetted map is 14.7 MB and was not committed). Rather than silently
+      // dropping the genes, carry the genotype block of the previous build of this file and say so on the page.
+      const prev = J('dashboard/public/blueprint3d/data.json');
+      if (prev?.genotype && !prev.genotype.gated && !prev.genotype.error && prev.genotype.nodes) {
+        genotype = { ...prev.genotype, carried_from_previous_build: prev.genotype.carried_from_previous_build || prev.builtAt,
+          carried_note: `genotype/map.vetted.json is not in this checkout; the gene records shown were read from it by the build of ${prev.genotype.carried_from_previous_build || prev.builtAt} and carried forward unchanged.` };
+      }
     } else if (gmRaw) {
       genotype = { file: gmSource, error: 'the map has no layers block; shape not understood, nothing drawn', nodes: {}, links: {}, coverage: {} };
     }
@@ -438,6 +446,6 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
     };
     const dir = path.join(here, 'public/blueprint3d'); fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'data.json'), JSON.stringify(out3d));
-    console.log(`blueprint3d/data.json: ${terms.size} distinct terms, ${edges.length} edges, byLevel ${JSON.stringify(byLevel)}; certificate ${cert ? (out3d.certificate.matches_file_now ? 'matches the file' : 'STALE: hash differs') : 'missing'}; lean statements mentioning a term: ${bioMentioned.length}; genotype ${genotype ? (genotype.gated ? 'present but NOT vetted: gated, nothing drawn' : genotype.error || `${genotype.nodes_with_direct} nodes with direct records, ${genotype.links_stored_here} links kept`) : 'map.json not present'}`);
+    console.log(`blueprint3d/data.json: ${terms.size} distinct terms, ${edges.length} edges, byLevel ${JSON.stringify(byLevel)}; certificate ${cert ? (out3d.certificate.matches_file_now ? 'matches the file' : 'STALE: hash differs') : 'missing'}; lean statements mentioning a term: ${bioMentioned.length}; genotype ${genotype ? (genotype.carried_from_previous_build ? `CARRIED from the build of ${genotype.carried_from_previous_build} (no map in this checkout)` : genotype.gated ? 'present but NOT vetted: gated, nothing drawn' : genotype.error || `${genotype.nodes_with_direct} nodes with direct records, ${genotype.links_stored_here} links kept`) : 'map.json not present'}`);
   } else console.log('blueprint3d: organism-design/examples/a-flying-fish.json not found; nothing written');
 }
