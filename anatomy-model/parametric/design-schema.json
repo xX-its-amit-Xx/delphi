@@ -1,0 +1,182 @@
+{
+ "title": "DELPHI parametric organism / design schema",
+ "version": 1,
+ "generative_model": {
+  "formula": "parameters = SUM over parents ( weight_i * parent_i.parameter ) + delta",
+  "constraint": "weights sum to 1",
+  "reference_organisms": [
+   "flying-fish",
+   "zebrafish-adult",
+   "zebrafish-larva"
+  ],
+  "note": "Any proposed organism has its roots in another, or is a blend of two or more, plus an explicit novel part (the deltas)."
+ },
+ "THE_HARD_CAVEAT": "MORPHOLOGICAL interpolation, not genetic hybridisation. Averaging two species' body parameters says nothing about whether such an animal could be bred, is viable, or is developmentally reachable; genomes do not average. Flying fish and zebrafish are not crossable. This is a shape, not an organism.",
+ "design_file": {
+  "name": "string",
+  "kind": "'design'",
+  "hypothetical": "bool",
+  "parents": [
+   {
+    "organism": "id of a reference organism or another design",
+    "weight": "number, all summing to 1"
+   }
+  ],
+  "deltas": {
+   "<parameter>": {
+    "value | scale | add": "set absolutely | multiply the blend | offset the blend",
+    "reason": "string; why this parameter moved",
+    "evidence": "measured | hypothetical | 'measured value, hypothetical transfer' | none"
+   }
+  },
+  "falls_out": [
+   "derived quantities that must NOT be set by hand because the deltas already fix them"
+  ]
+ },
+ "output_manifest_guarantee": {
+  "provenance_per_parameter": "for EVERY parameter: ancestry (which parents at which weights), the parents' own values and kinds, the blended value, whether a delta moved it, the delta's reason and evidence, and the final kind",
+  "entirely_delta": "a parameter whose delta has evidence 'none' has NO ancestor and NO evidence. It is flagged NO_ANCESTOR_NO_EVIDENCE because that is exactly where a claim needs the most scrutiny.",
+  "moved_parameters": "the list of parameters a delta touched, for lean/eliminate/browser-check.mjs"
+ },
+ "parameters": {
+  "standard_length_m": {
+   "unit": "m",
+   "drives": "real-world standard length; sets the metres-per-model-unit scale",
+   "blend_rule": "arithmetic"
+  },
+  "body_mass_kg": {
+   "unit": "kg",
+   "drives": "wet mass; with flight_muscle_fraction sets the girdle muscle volume",
+   "blend_rule": "arithmetic"
+  },
+  "body_depth_over_SL": {
+   "unit": "-",
+   "drives": "maximum body depth / SL (full depth, not half)",
+   "blend_rule": "arithmetic"
+  },
+  "body_width_over_SL": {
+   "unit": "-",
+   "drives": "maximum body width / SL (full width)",
+   "blend_rule": "arithmetic"
+  },
+  "body_section_exponent": {
+   "unit": "-",
+   "drives": "superellipse exponent of the trunk cross-section (2 = ellipse)",
+   "blend_rule": "arithmetic"
+  },
+  "head_fraction_SL": {
+   "unit": "-",
+   "drives": "fraction of SL over which the snout rounds off",
+   "blend_rule": "arithmetic"
+  },
+  "peduncle_depth_frac": {
+   "unit": "-",
+   "drives": "caudal peduncle depth / maximum body depth",
+   "blend_rule": "arithmetic"
+  },
+  "peduncle_width_frac": {
+   "unit": "-",
+   "drives": "caudal peduncle width / maximum body width",
+   "blend_rule": "arithmetic"
+  },
+  "pectoral_len_over_SL": {
+   "unit": "-",
+   "drives": "longest pectoral fin ray, base to tip, / SL",
+   "blend_rule": "arithmetic"
+  },
+  "pectoral_span_over_SL": {
+   "unit": "-",
+   "drives": "pectoral tip-to-tip span / SL (both fins, across the body)",
+   "blend_rule": "arithmetic"
+  },
+  "pectoral_area_over_SL2": {
+   "unit": "-",
+   "drives": "membrane area of BOTH pectoral fins / SL^2 (the Park & Choi / physics-flier convention)",
+   "blend_rule": "arithmetic"
+  },
+  "pectoral_ray_count": {
+   "unit": "count",
+   "drives": "lepidotrichia per pectoral fin (one named mesh each)",
+   "blend_rule": "round"
+  },
+  "pelvic_len_over_SL": {
+   "unit": "-",
+   "drives": "longest pelvic fin ray / SL",
+   "blend_rule": "arithmetic"
+  },
+  "pelvic_ray_count": {
+   "unit": "count",
+   "drives": "rays per pelvic fin",
+   "blend_rule": "round"
+  },
+  "dorsal_height_over_SL": {
+   "unit": "-",
+   "drives": "tallest dorsal fin ray / SL",
+   "blend_rule": "arithmetic"
+  },
+  "dorsal_ray_count": {
+   "unit": "count",
+   "drives": "dorsal fin rays",
+   "blend_rule": "round"
+  },
+  "anal_height_over_SL": {
+   "unit": "-",
+   "drives": "tallest anal fin ray / SL",
+   "blend_rule": "arithmetic"
+  },
+  "anal_ray_count": {
+   "unit": "count",
+   "drives": "anal fin rays",
+   "blend_rule": "round"
+  },
+  "caudal_upper_lobe_over_SL": {
+   "unit": "-",
+   "drives": "upper caudal lobe length / SL",
+   "blend_rule": "arithmetic"
+  },
+  "caudal_lower_lobe_over_SL": {
+   "unit": "-",
+   "drives": "lower caudal lobe length / SL",
+   "blend_rule": "arithmetic"
+  },
+  "caudal_ray_count": {
+   "unit": "count",
+   "drives": "caudal fin rays",
+   "blend_rule": "round"
+  },
+  "vertebra_count": {
+   "unit": "count",
+   "drives": "vertebrae (one named mesh each)",
+   "blend_rule": "round"
+  },
+  "myomere_count": {
+   "unit": "count",
+   "drives": "trunk myomeres per side",
+   "blend_rule": "round"
+  },
+  "flight_muscle_fraction": {
+   "unit": "-",
+   "drives": "pectoral/girdle muscle mass / body mass; sets the VOLUME of pectoral_muscle_L/R, so it visibly thickens the girdle musculature",
+   "blend_rule": "arithmetic"
+  },
+  "mesh_detail": {
+   "unit": "-",
+   "drives": "global mesh resolution multiplier (1.0 = the committed flying-fish detail)",
+   "blend_rule": "min"
+  }
+ },
+ "derived_never_set_directly": {
+  "pectoral_aspect_ratio": "pectoral_span^2 / (area of ONE pectoral fin), the Park & Choi 2010 convention",
+  "lifting_area_m2": "pectoral (both) + pelvic (both) + caudal membrane area, the physics/flier convention",
+  "wing_loading_N_m2": "body_mass * 9.81 / lifting_area_m2",
+  "caudal_lobe_asymmetry": "caudal_lower_lobe_over_SL / caudal_upper_lobe_over_SL (1 = homocercal-looking)",
+  "flight_muscle_volume_m3": "flight_muscle_fraction * body_mass / 1060 kg/m3 (teleost muscle density, assumed)"
+ },
+ "kinds": [
+  "measured",
+  "derived",
+  "assumed",
+  "hypothetical",
+  "secondary"
+ ]
+}
