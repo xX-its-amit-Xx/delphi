@@ -1,11 +1,11 @@
 {
- "built": "2026-10-31T19:17:06.135Z",
+ "built": "2026-10-31T20:46:37.985Z",
  "tool": "lean/eliminate/build-constraints.mjs",
- "rulingsFrom": "lean/eliminate/ledger.open-problems.json (run 2026-10-31T19:17:06.060Z)",
- "leanReport": "2026-10-31T19:16:41.894Z",
+ "rulingsFrom": "lean/eliminate/ledger.open-problems.json (run 2026-10-31T20:46:37.904Z)",
+ "leanReport": "2026-10-31T20:46:12.815Z",
  "lemmaModule": "lean/Delphi/Constraints.lean",
  "framing": "A theorem eliminates candidates, not open problems: a candidate is a proposed answer or design that commits to quantities the theorem forbids. Three states: eliminated (the violated relation with the numbers, kernel-checked where marked), consistent (not ruled out by these theorems; never \"feasible\"), cannot-rule (a required input or assumption is missing). An elimination holds only under the law's own assumptions, listed per constraint; three of the four original statements were judged narrower in scope than their claims by the assessor, and a candidate eliminated by a narrower statement is eliminated only under that statement's assumptions.",
- "nextConstraint": "Strength scaling as L^2 (R7, C8-C8e) and bending via the section modulus (R9, C12-C12c) are formalised. Not yet formalised: elastic similarity, the walking (pendulum) route of thompson1917-ch02-10, and any quantitative muscle-power law (R6 is carried only as a named hypothesis).",
+ "nextConstraint": "Strength (R7), bending (R9), general allometry, climb, glide range with ground effect, and the aerobic power bound (Fick) with the crossover size limit are formalised. Not yet formalised: elastic similarity, gill O2 uptake as a function of water O2 and gill area (the first link of the simulator chain), taxiing thrust from the caudal fin, aspect ratio and induced drag, the walking (pendulum) route of thompson1917-ch02-10, and any quantitative muscle-power law (R6 is carried only as a named hypothesis).",
  "quantities": {
   "mutation_rate": {
    "unit": "mutations per site per generation",
@@ -178,6 +178,58 @@
   "bending_stress_ratio": {
    "unit": "σ_b(L2)/σ_b(L1)",
    "kind": "point"
+  },
+  "weight_loglog_exponent": {
+   "unit": "d log W / d log L (a fitted length-weight exponent b)",
+   "kind": "interval"
+  },
+  "glide_height_m": {
+   "unit": "h, height at the start of a steady glide, m",
+   "kind": "point"
+  },
+  "lift_to_drag_max": {
+   "unit": "(L/D)max of the glider",
+   "kind": "point"
+  },
+  "ground_effect_drag_reduction": {
+   "unit": "δ, fractional drag reduction near the surface (0 away from it)",
+   "kind": "point"
+  },
+  "glide_distance_m": {
+   "unit": "x, horizontal distance claimed for one steady unpowered glide, m",
+   "kind": "point"
+  },
+  "power_available_W": {
+   "unit": "P_avail, mechanical power available, W",
+   "kind": "point"
+  },
+  "power_required_W": {
+   "unit": "P_req, mechanical power for level flight, W",
+   "kind": "point"
+  },
+  "climb_rate_m_s": {
+   "unit": "c, vertical speed claimed, m/s",
+   "kind": "point"
+  },
+  "muscular_efficiency": {
+   "unit": "η, mechanical over metabolic power, dimensionless",
+   "kind": "point"
+  },
+  "oxycaloric_equivalent_J_per_unit_O2": {
+   "unit": "E_O2, joules per unit of O2 (the unit must match Q × Ca)",
+   "kind": "point"
+  },
+  "cardiac_output": {
+   "unit": "Q, blood volume per second",
+   "kind": "point"
+  },
+  "arterial_O2_content": {
+   "unit": "Ca, O2 per blood volume",
+   "kind": "point"
+  },
+  "lift_to_drag": {
+   "unit": "L/D in level flight",
+   "kind": "point"
   }
  },
  "assumptions": {
@@ -199,7 +251,11 @@
   "similar_sections": "geometrically similar cross-sections, Z = k_Z d^3 with d ∝ L (R9)",
   "lever_arm_proportional": "the lever arm ℓ scales as L (R9)",
   "body_like_load": "the transverse load scales as the body, F ∝ L^3 (R9a; isometric mass with constant density)",
-  "sheet_like_load": "the transverse load is a lamina of constant thickness, F ∝ L^2 (R9b)"
+  "sheet_like_load": "the transverse load is a lamina of constant thickness, F ∝ L^2 (R9b)",
+  "power_law_forms": "weight and lifting area each follow a single power law in L over the range in question (PowerLaw)",
+  "power_balance_nonneg_losses": "available mechanical power = level-flight power + W × climb rate + non-negative losses",
+  "steady_unpowered_glide": "one steady glide, no thrust, lift equal to weight, L/D ≤ (L/D)max, potential energy spent on drag work plus non-negative losses; ground effect only as a stated drag reduction",
+  "fick_aerobic_supply": "sustained mechanical power ≤ η × E_O2 × Q × (Ca − Cv) with 0 ≤ Cv ≤ Ca, 0 ≤ η ≤ 1 (Fick; aerobic, not burst)"
  },
  "constraints": [
   {
@@ -1878,6 +1934,256 @@
     "reached": 0
    },
    "whyNoCandidate": "no enumerated candidate commits to a sheet-like (constant-thickness) load; WP-077/C1 commits to thickness scaling with size (R9a); the illustrative constant-thickness leaf exercises this fork"
+  },
+  {
+   "id": "C13",
+   "claim_id": "flight-allometry-law",
+   "lemma": "Delphi.Constraints.allometry_consistency_rules_out",
+   "law": "Delphi.powerLaw_div",
+   "module": "lean/Delphi/Flight.lean",
+   "property": "whether committed weight, area and wing-loading exponents are mutually consistent",
+   "relation": "bWS = bW − bS",
+   "symbols": {
+    "bW": "weight_loglog_exponent",
+    "bS": "area_loglog_exponent",
+    "bWS": "stress_loglog_exponent"
+   },
+   "requires": [
+    "weight_loglog_exponent",
+    "area_loglog_exponent",
+    "stress_loglog_exponent"
+   ],
+   "appliesWhen": [
+    "power_law_forms"
+   ],
+   "rule": "eliminated when the interval bW − bS is disjoint from the committed bWS interval (separate regressions need intervals; point commitments without error would spuriously eliminate)",
+   "canEliminate": "a candidate committing three exponents that cannot all hold",
+   "kernelCheckable": true,
+   "label": "General allometry: measured exponents compose (W = a L^b)",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "PowerLaw f a b ⇒ f(L2)/f(L1) = (L2/L1)^b and log exponent b (powerLaw_ratio, powerLaw_log).",
+     "Quotients: PowerLaw (f/g) (a1/a2) (b1 − b2) (powerLaw_div); CubeLaw is PowerLaw with b = 3 (cubeLaw_powerLaw).",
+     "Under PowerLaw W and PowerLaw S with constant ρ, C_L,max: the v_min log exponent is (bW − bS)/2 (vmin_powerLaw_log)."
+    ],
+    "assumed": [
+     "That weight and area follow single power laws over the size range in question with the exponents committed; the fitted exponents are separate regressions with their own errors.",
+     "Nothing measured for Exocoetidae enters a statement; the exponents are candidate inputs."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "weight and lifting area each follow a single power law in L over the range in question (PowerLaw)"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated candidate commits all three exponents; the Davenport triple (2.981, 1.834, 1.236) is three separate fits without confidence intervals, so no honest interval commitment exists yet"
+  },
+  {
+   "id": "C14",
+   "claim_id": "aerobic-power-bound",
+   "lemma": "Delphi.Constraints.aerobic_flight_rules_out",
+   "law": "Delphi.sustained_flight_requires",
+   "module": "lean/Delphi/Flight.lean",
+   "property": "whether oxygen delivery can sustain level flight at the stated speed",
+   "relation": "η E_O2 Q Ca ≥ W v / (L/D)",
+   "symbols": {
+    "η": "muscular_efficiency",
+    "E_O2": "oxycaloric_equivalent_J_per_unit_O2",
+    "Q": "cardiac_output",
+    "Ca": "arterial_O2_content",
+    "W": "weight_N",
+    "v": "airspeed_m_s",
+    "L/D": "lift_to_drag"
+   },
+   "requires": [
+    "muscular_efficiency",
+    "oxycaloric_equivalent_J_per_unit_O2",
+    "cardiac_output",
+    "arterial_O2_content",
+    "weight_N",
+    "airspeed_m_s",
+    "lift_to_drag"
+   ],
+   "appliesWhen": [
+    "fick_aerobic_supply"
+   ],
+   "rule": "eliminated when η E Q Ca < W v/(L/D); units must be consistent (E × Q × Ca in watts)",
+   "canEliminate": "a design claiming sustained powered flight its oxygen delivery cannot pay for",
+   "kernelCheckable": true,
+   "label": "Sustained mechanical power is bounded by oxygen delivery (Fick) times efficiency",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "η E Q (Ca − Cv) ≤ η E Q Ca for Cv ≥ 0 (aerobic_le_Ca); ≤ E Q Ca for η ≤ 1 (aerobic_le_metabolic); P ≤ aerobicPower ⇒ P ≤ η E Q Ca (sustained_le).",
+     "P_req ≤ P ≤ aerobicPower ⇒ P_req ≤ η E Q Ca (sustained_flight_requires); climb under aerobic supply c ≤ (η E Q Ca − P_req)/W (climb_le_aerobic).",
+     "PowerLaw demand and supply with b_supply < b_demand ⇒ ∃ L* > 0, ∀ L > L*, supply < demand (powerLaw_crossover)."
+    ],
+    "assumed": [
+     "Fick: O2 delivered = Q (Ca − Cv); the oxycaloric equivalent E converts O2 to metabolic power; mechanical power is at most η times it; sustained power is aerobic (anaerobic bursts, oxygen debt, and the glide phase, which needs no muscle power, are outside).",
+     "0 ≤ Cv ≤ Ca, 0 ≤ η ≤ 1, Q, E ≥ 0; the supply exponent is whatever the physiology gives, not derived here."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "sustained mechanical power ≤ η × E_O2 × Q × (Ca − Cv) with 0 ≤ Cv ≤ Ca, 0 ≤ η ≤ 1 (Fick; aerobic, not burst)"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated candidate commits oxygen-delivery physiology; the physics thread's simulator will supply Q, Ca, E and η for the designed variant"
+  },
+  {
+   "id": "C15",
+   "claim_id": "flight-climb-glide-law",
+   "lemma": "Delphi.Constraints.glide_range_rules_out",
+   "law": "Delphi.glide_range_le_groundEffect",
+   "module": "lean/Delphi/Flight.lean",
+   "property": "how far one steady unpowered glide can go from a given height",
+   "relation": "x ≤ h (L/D)max / (1 − δ)",
+   "symbols": {
+    "x": "glide_distance_m",
+    "h": "glide_height_m",
+    "(L/D)max": "lift_to_drag_max",
+    "δ": "ground_effect_drag_reduction"
+   },
+   "requires": [
+    "glide_distance_m",
+    "glide_height_m",
+    "lift_to_drag_max",
+    "ground_effect_drag_reduction"
+   ],
+   "appliesWhen": [
+    "steady_unpowered_glide"
+   ],
+   "rule": "eliminated when x > h (L/D)max/(1 − δ)",
+   "canEliminate": "a claim that a single unpowered glide from height h covers more than the energy bound allows; taxiing thrust, repeated touch-and-go and wind are outside the model and must be committed separately",
+   "kernelCheckable": true,
+   "label": "Climb from excess power and the range of a steady glide",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "Power balance P_avail = P_req + W c + loss with loss ≥ 0 ⇒ c ≤ (P_avail − P_req)/W (climbRate_le); 0 ≤ (P_avail − P_req)/W ⇔ P_req ≤ P_avail (climb_nonneg_iff).",
+     "Energy balance W h = D x + loss, loss ≥ 0, lift = W, L/D ≤ (L/D)max ⇒ x ≤ h (L/D)max (glide_range_le); with drag (1 − δ) D ⇒ x ≤ h (L/D)max/(1 − δ) (glide_range_le_groundEffect)."
+    ],
+    "assumed": [
+     "A single steady glide with no thrust and lift equal to weight; taxiing, repeated touch-and-go, wind and updrafts are outside the model.",
+     "Losses non-negative; the ground-effect fraction δ and (L/D)max are inputs."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "one steady glide, no thrust, lift equal to weight, L/D ≤ (L/D)max, potential energy spent on drag work plus non-negative losses; ground effect only as a stated drag reduction"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated candidate commits a glide geometry; the illustrative field-glide candidates exercise it"
+  },
+  {
+   "id": "C16",
+   "claim_id": "flight-climb-glide-law",
+   "lemma": "Delphi.Constraints.climb_rules_out",
+   "law": "Delphi.climbRate_le",
+   "module": "lean/Delphi/Flight.lean",
+   "property": "the climb rate available from excess power",
+   "relation": "c ≤ (P_avail − P_req)/W",
+   "symbols": {
+    "c": "climb_rate_m_s",
+    "P_avail": "power_available_W",
+    "P_req": "power_required_W",
+    "W": "weight_N"
+   },
+   "requires": [
+    "climb_rate_m_s",
+    "power_available_W",
+    "power_required_W",
+    "weight_N"
+   ],
+   "appliesWhen": [
+    "power_balance_nonneg_losses"
+   ],
+   "rule": "eliminated when c > (P_avail − P_req)/W",
+   "canEliminate": "a powered design claiming a climb rate its excess power cannot deliver",
+   "kernelCheckable": true,
+   "label": "Climb from excess power and the range of a steady glide",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "proofScope": {
+    "kernelChecked": [
+     "Power balance P_avail = P_req + W c + loss with loss ≥ 0 ⇒ c ≤ (P_avail − P_req)/W (climbRate_le); 0 ≤ (P_avail − P_req)/W ⇔ P_req ≤ P_avail (climb_nonneg_iff).",
+     "Energy balance W h = D x + loss, loss ≥ 0, lift = W, L/D ≤ (L/D)max ⇒ x ≤ h (L/D)max (glide_range_le); with drag (1 − δ) D ⇒ x ≤ h (L/D)max/(1 − δ) (glide_range_le_groundEffect)."
+    ],
+    "assumed": [
+     "A single steady glide with no thrust and lift equal to weight; taxiing, repeated touch-and-go, wind and updrafts are outside the model.",
+     "Losses non-negative; the ground-effect fraction δ and (L/D)max are inputs."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "available mechanical power = level-flight power + W × climb rate + non-negative losses"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 44,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated candidate commits a climb rate; the powered variant will"
   },
   {
    "id": "C7b",

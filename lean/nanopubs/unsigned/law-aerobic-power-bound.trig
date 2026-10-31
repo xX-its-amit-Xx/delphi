@@ -1,0 +1,71 @@
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <https://schema.org/> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/math-law/aerobic-power-bound> a delphi:Concept, skos:Concept ;
+    rdfs:label "Sustained mechanical power is bounded by oxygen delivery (Fick) times efficiency (Lean 4, kernel-checked)" ;
+    dct:description "Aerobic mechanical power is at most η E Q (Ca − Cv) ≤ η E Q Ca; sustained flight needing P_req requires η E Q Ca ≥ P_req; climb under aerobic supply is at most (η E Q Ca − P_req)/W; and if supply scales with size with a smaller exponent than demand, there is a size above which supply falls short." ;
+    dct:source "Proved in this project (lean/Delphi/Flight.lean) for the flying-fish audit and the physics thread's coupled simulator (hub items 3 and 4, 2026-10-31); hypotheses named, no paper states it in this form." ;
+    skos:notation "P ≤ η E_O2 Q (Ca − Cv) ≤ η E_O2 Q Ca ; sustained flight ⇒ η E_O2 Q Ca ≥ P_req ; b_supply < 7/2 ⇒ ∃ L*" ;
+    skos:definition """/-- **Sustained flight needs enough oxygen.** If flight at speed `v` needs `P_req = W v / (L/D)` and the sustained power is aerobic, then `P_req ≤ η E Q Ca`. -/
+theorem sustained_flight_requires {W v LD P η E Q Ca Cv : ℝ} (hη : 0 ≤ η) (hE : 0 ≤ E) (hQ : 0 ≤ Q) (hCv : 0 ≤ Cv)
+    (hsus : P ≤ aerobicPower η E Q Ca Cv) (hflight : powerRequired W v LD ≤ P) :
+    powerRequired W v LD ≤ η * E * Q * Ca"""^^delphi:lean4 ;
+    schema:programmingLanguage "Lean 4" ;
+    delphi:leanDeclaration "Delphi.aerobicPower" ;
+    delphi:leanTheorem "Delphi.sustained_flight_requires", "Delphi.aerobic_le_Ca", "Delphi.aerobic_le_metabolic", "Delphi.sustained_le", "Delphi.climb_le_aerobic", "Delphi.powerLaw_crossover" ;
+    delphi:leanVerified "true"^^xsd:boolean ;
+    skos:scopeNote "Fick's principle, the oxycaloric conversion, aerobic (not burst) power and 0 ≤ η ≤ 1 are named hypotheses; no physiological number for Exocoetidae is in any statement." ;
+    rdfs:comment "Status: kernel-checked (Lean 4 accepted the module with zero sorry and standard axioms only). Not expert-validated. Does not establish: anything about organisms. The theorem is exact inside the stated model and silent outside it; strict neutrality, constant population size, Wright-Fisher reproduction and independent mutant fates (Kimura), fixed fitnesses and haploid inheritance (Fisher), equal fecundity and a 1:1 sex ratio (Maynard Smith) are assumptions written in the module header, not conclusions. Kernel-checked is not expert-validated: no human expert has validated these statements. Whether the Lean statement faithfully renders the paper is a separate assessment record, and so far only one assessor provider has run." ;
+    rdfs:seeAlso <https://github.com/fractastical/delphisci/blob/3617fb32/lean/Delphi/Flight.lean>, <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/lean.json>, <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/> .
+  <https://w3id.org/delphi/resource/claim/aerobic-power-bound> dct:conformsTo <https://w3id.org/delphi/resource/math-law/aerobic-power-bound> ;
+    delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/lean-kernel-check-aerobic-power-bound> .
+  <https://w3id.org/delphi/resource/evidence/lean-kernel-check-aerobic-power-bound> a delphi:EvidenceItem ;
+    rdfs:label "Lean 4 kernel accepted Delphi.sustained_flight_requires with zero sorry and standard axioms, and rejected 3 deliberately broken variant(s)" ;
+    dct:description "Build receipt. Lean (version 4.35.0, x86_64-w64-windows-gnu, commit eb6cafb7290e8bd5f2937522d8d804f58f02bafc, Release); toolchain leanprover/lean4:v4.35.0; Mathlib v4.35.0 (56a005855ea17e0b0958f73ec801ae140b0a1679). lake build exit 0 in 5.5 s with 0 errors; 0 sorry in lean/Delphi/Flight.lean (206 lines). #print axioms for Delphi.sustained_flight_requires, Delphi.aerobic_le_Ca, Delphi.aerobic_le_metabolic, Delphi.sustained_le, Delphi.climb_le_aerobic, Delphi.powerLaw_crossover: Classical.choice, Quot.sound, propext only (Lean's standard axioms; no sorryAx). Mutation evidence (lean/mutate.mjs, 2026-10-31T21:00:09.361Z): 3 deliberate change(s) to the statement or the model were each rejected by the compiler: [aerobic-venous-term-wrong-way] Mutant: the venous term dropped the wrong way, claiming aerobic power is at most η E Q Cv (the venous content) instead of η E Q Ca; false whenever Ca > 2 Cv, so the proof must fail. Rejected with 3 error(s): aerobic-venous-term-wrong-way.lean:150:2: error: linarith failed to find a contradiction [aerobic-efficiency-above-one] Mutant: the hypothesis η ≤ 1 dropped (replaced by True) while the metabolic ceiling E Q Ca is kept; with η > 1 mechanical power could exceed metabolic power, so the proof must fail. Rejected with 1 error(s): aerobic-efficiency-above-one.lean:157:4: error: linarith failed to find a contradiction [crossover-exponent-reversed] Mutant: the crossover claimed when the supply exponent EXCEEDS the demand exponent (b₁ < b₂); then supply overtakes demand and no size limit exists, so the proof must fail. Rejected with 1 error(s): crossover-exponent-reversed.lean:188:33: error: linarith failed to find a contradiction Controls: 12 of 12 unmodified modules accepted by the same command." ;
+    dct:subject <https://w3id.org/delphi/resource/math-law/aerobic-power-bound> ;
+    rdfs:comment "This evidence item establishes that the stated theorem follows from the stated model. Does not establish: anything about organisms. The theorem is exact inside the stated model and silent outside it; strict neutrality, constant population size, Wright-Fisher reproduction and independent mutant fates (Kimura), fixed fitnesses and haploid inheritance (Fisher), equal fecundity and a 1:1 sex ratio (Maynard Smith) are assumptions written in the module header, not conclusions. Kernel-checked is not expert-validated: no human expert has validated these statements. Whether the Lean statement faithfully renders the paper is a separate assessment record, and so far only one assessor provider has run." ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/lean.json>, <https://github.com/fractastical/delphisci/blob/3617fb32/lean/mutations.json>, <https://github.com/fractastical/delphisci/blob/3617fb32/lean/Delphi/Audit.lean> .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> ;
+    prov:wasDerivedFrom <https://github.com/fractastical/delphisci/blob/3617fb32/lean/Delphi/Flight.lean> , <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/lean.json> , <https://github.com/fractastical/delphisci/blob/3617fb32/lean/mutations.json> .
+  <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> a prov:SoftwareAgent ;
+    rdfs:label "delphisci lean thread (Claude Fable 5.1 writing the Lean modules and this builder; the Lean kernel, not the model, checked the proofs)" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/model/claude-fable-5-1> a delphi:LanguageModel ;
+    rdfs:label "Claude Fable 5.1" ;
+    dct:identifier "claude-fable-5-1" .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-10-31T21:01:09.697Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> ;
+    rdfs:comment "Owner ORCID not yet set: the key owner passes --owner <orcid> to lean/nanopubs/build.mjs at signing time; until then no human is named in this record." ;
+    rdfs:label "Sustained mechanical power is bounded by oxygen delivery (Fick) times efficiency: machine-checked in Lean 4" ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType <https://w3id.org/delphi/ontology/Concept> ;
+    rdfs:comment "Hand-authored in Delphi ontology v2.0 terms (https://w3id.org/delphi/ontology/) by the builder, not created from a template. The template that would otherwise apply as Provenance template is <https://w3id.org/np/RAaYeFYF-Cz2bM5S1wPQsnvs5X6BBxsphL03UkbVZ1lcA>. Its published copy carries no legacy probknow IRI (checked 2026-10-31); it was consulted but not instantiated, so no template is declared. A template-conformance checker will therefore report no template declared." ;
+    rdfs:comment "Hand-authored in Delphi ontology v2.0 terms (https://w3id.org/delphi/ontology/) by the builder, not created from a template. The template that would otherwise apply as Pubinfo template is <https://w3id.org/np/RAtKj9bCnB4gUe0E9k-WhffQFSEWd9Ve2hrVllYoLuOB0>. Its published copy still uses legacy w3id.org/probknow IRIs (2 occurrences when checked on 2026-10-31), and its required statements cannot be instantiated from v2.0 terms, so it was not used and no template is declared. A template-conformance checker will therefore report no template declared." ;
+    npx:introduces <https://w3id.org/delphi/resource/math-law/aerobic-power-bound> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/math-population-genetics-and-evolutionary-theory> .
+  <https://w3id.org/delphi/resource/domain/math-population-genetics-and-evolutionary-theory> rdfs:label "math-population-genetics-and-evolutionary-theory" .
+}

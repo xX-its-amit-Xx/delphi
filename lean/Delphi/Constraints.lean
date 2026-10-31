@@ -23,6 +23,7 @@ import Delphi.Fisher
 import Delphi.MaynardSmith
 import Delphi.Thompson
 import Delphi.Scaling
+import Delphi.Flight
 
 namespace Delphi.Constraints
 
@@ -300,6 +301,37 @@ theorem bending_exponent_sheet_rules_out {F ℓ Z : ℝ → ℝ} {kF kℓ kZ : �
   have := bendingStress_log_sheet hF hℓ hZ h₁ h₂
   rw [hb] at this
   exact h (mul_right_cancel₀ (log_ratio_ne_zero h₁ h₂ hne) this)
+
+/-- **C13, allometric consistency.** If weight and lifting area are power laws with exponents `bW`, `bS`, the
+wing-loading exponent is `bW - bS`: a committed triple with `bWS ≠ bW - bS` is ruled out. -/
+theorem allometry_consistency_rules_out {W S : ℝ → ℝ} {aW bW aS bS bWS : ℝ} (hW : PowerLaw W aW bW)
+    (hS : PowerLaw S aS bS) {L₁ L₂ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) (hne : L₁ ≠ L₂)
+    (hb : Real.log ((W L₂ / S L₂) / (W L₁ / S L₁)) = bWS * Real.log (L₂ / L₁)) (h : bWS ≠ bW - bS) : False := by
+  have := powerLaw_log (powerLaw_div hW hS) h₁ h₂
+  rw [hb] at this
+  exact h (mul_right_cancel₀ (log_ratio_ne_zero h₁ h₂ hne) this)
+
+/-- **C14, aerobic sustained flight.** A claim of sustained (aerobic) flight at power `P_req = W v/(L/D)` with
+`η E Q Ca < P_req` is ruled out. -/
+theorem aerobic_flight_rules_out {W v LD P η E Q Ca Cv : ℝ} (hη : 0 ≤ η) (hE : 0 ≤ E) (hQ : 0 ≤ Q) (hCv : 0 ≤ Cv)
+    (hsus : P ≤ aerobicPower η E Q Ca Cv) (hflight : powerRequired W v LD ≤ P)
+    (h : η * E * Q * Ca < powerRequired W v LD) : False := by
+  have := sustained_flight_requires hη hE hQ hCv hsus hflight
+  linarith
+
+/-- **C15, glide range.** A claimed steady unpowered glide of distance `x > h (L/D)_max / (1 - δ)` from
+height `h` with drag reduced by a fraction `δ` near the surface (`δ = 0` away from it) is ruled out. -/
+theorem glide_range_rules_out {W h D x LDmax loss Lift δ : ℝ} (hW : 0 < W) (hD : 0 < D) (hh : 0 ≤ h)
+    (hδ0 : 0 ≤ δ) (hδ1 : δ < 1) (hlift : Lift = W) (hLD : Lift / D ≤ LDmax)
+    (henergy : W * h = (1 - δ) * D * x + loss) (hloss : 0 ≤ loss) (hx : h * LDmax / (1 - δ) < x) : False := by
+  have := glide_range_le_groundEffect hW hD hh hδ0 hδ1 hlift hLD henergy hloss
+  linarith
+
+/-- **C16, climb.** A claimed climb rate `c` above `(P_avail - P_req)/W` under the power balance is ruled out. -/
+theorem climb_rules_out {W Pavail Preq c loss : ℝ} (hW : 0 < W) (hbal : Pavail = Preq + W * c + loss)
+    (hloss : 0 ≤ loss) (h : climbRate W Pavail Preq < c) : False := by
+  have := climbRate_le hW hbal hloss
+  linarith
 
 /-- **C11, Froude.** At equal Froude number speed scales as `√L`: a committed speed ratio `r ≥ 0` at length
 ratio `ℓ` with `r² ≠ ℓ` is ruled out. -/

@@ -163,3 +163,15 @@ confirmed facts; no number from `physics/results.json` appears in any theorem. R
 (`bendingStress = F l / Z`): stress `~ L` with a size limit under a body-like load, size-independent with no limit
 under a sheet-like load, the load family being the empirical fork a candidate must commit to. The walking (pendulum)
 route of `thompson1917-ch02-10`, elastic similarity and dynamic loads are not formalised.
+
+## Flight: allometry, climb, glide and the aerobic bound
+
+`Delphi/Flight.lean` (hub items 3 and 4, from Amit's direction to ground every part in Lean and to bridge chemistry to
+mechanics): `PowerLaw f a b` with real exponents (`powerLaw_ratio`, `powerLaw_log`, `powerLaw_div`, `cubeLaw_powerLaw`,
+`vmin_powerLaw_log`), the climb bound `climbRate_le`, the glide range `glide_range_le` and its ground-effect form,
+the aerobic bound (`aerobic_le_Ca`, `aerobic_le_metabolic`, `sustained_le`, `sustained_flight_requires`,
+`climb_le_aerobic`) and `powerLaw_crossover`. Every physiological and aerodynamic quantity is a named hypothesis
+or a candidate input; no number from `physics/` is in a statement. The audit (`lean/AUDIT-FLYING-FISH.md`) records
+what each gives on the real fish: the fitted length-weight exponents (FishBase, seven field studies, 2.908-3.011 and
+2.208) sit under the allometry rows, the glide bound rules out the single-unpowered-glide reading of the field
+distances with the measured L/D, and the aerobic rows wait for the physics thread's physiology.

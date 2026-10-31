@@ -75,6 +75,44 @@ const sqRatio = (c, cand, tn, qty, build) => {
   return { state: 'eliminated', reason: 'under the stated hypotheses the ratio is exactly sqrt(length_ratio)', violated: `${qty}^2 = ${str(r2)} ≠ ${str(l)} = length_ratio`, numbers, cert: build(r, l) };
 };
 const rules = {
+  C13(c, cand, tn) {
+    const bW = interval(cand.commits.weight_loglog_exponent), bS = interval(cand.commits.area_loglog_exponent), bWS = interval(cand.commits.stress_loglog_exponent);
+    const diff = { low: sub(bW.low, bS.high), high: sub(bW.high, bS.low) };
+    const numbers = { bW: [str(bW.low), str(bW.high)], bS: [str(bS.low), str(bS.high)], 'bW - bS': [str(diff.low), str(diff.high)], bWS: [str(bWS.low), str(bWS.high)] };
+    if (cmp(bWS.high, diff.low) < 0 || cmp(diff.high, bWS.low) < 0) return { state: 'eliminated', reason: 'wing loading is the quotient of weight and area, so its exponent must be bW − bS', violated: `bWS ∈ [${str(bWS.low)}, ${str(bWS.high)}] is disjoint from bW − bS ∈ [${str(diff.low)}, ${str(diff.high)}]`, numbers,
+      cert: `theorem ${tn} : ∀ (W S : ℝ → ℝ) (aW bW aS bS bWS L₁ L₂ : ℝ), Delphi.PowerLaw W aW bW → Delphi.PowerLaw S aS bS → 0 < L₁ → 0 < L₂ → L₁ ≠ L₂ →\n    Real.log ((W L₂ / S L₂) / (W L₁ / S L₁)) = bWS * Real.log (L₂ / L₁) → (${lean(bW.low)} ≤ bW ∧ bW ≤ ${lean(bW.high)}) → (${lean(bS.low)} ≤ bS ∧ bS ≤ ${lean(bS.high)}) → (${lean(bWS.low)} ≤ bWS ∧ bWS ≤ ${lean(bWS.high)}) → False :=\n  fun W S aW bW aS bS bWS L₁ L₂ hW hS h₁ h₂ hne hb rW rS rWS => Delphi.Constraints.allometry_consistency_rules_out hW hS h₁ h₂ hne hb (fun h => by linarith [rW.1, rW.2, rS.1, rS.2, rWS.1, rWS.2])` };
+    return { state: 'consistent', reason: 'the committed intervals overlap', numbers };
+  },
+  C14(c, cand, tn) {
+    const q = ['muscular_efficiency', 'oxycaloric_equivalent_J_per_unit_O2', 'cardiac_output', 'arterial_O2_content', 'weight_N', 'airspeed_m_s', 'lift_to_drag'];
+    if (!q.every(x => isPoint(cand.commits[x]))) return { state: 'cannot-rule', reason: 'cannot rule: C14 needs exact (point) values' };
+    const [eta, E, Qc, Ca, W, v, LD] = q.map(x => parseQ(cand.commits[x]));
+    if (cmp(eta, Q(0n)) < 0 || cmp(E, Q(0n)) < 0 || cmp(Qc, Q(0n)) < 0 || cmp(LD, Q(0n)) <= 0) return { state: 'cannot-rule', reason: 'cannot rule: η, E, Q ≥ 0 and L/D > 0 are needed' };
+    const supply = mul(mul(mul(eta, E), Qc), Ca), preq = div(mul(W, v), LD); const numbers = { 'η E Q Ca': str(supply), 'P_req = W v/(L/D)': str(preq) };
+    if (cmp(supply, preq) < 0) return { state: 'eliminated', reason: 'oxygen delivery times efficiency is below the power level flight needs; sustained flight cannot be aerobic', violated: `η E Q Ca = ${str(supply)} < P_req = ${str(preq)}`, numbers,
+      cert: `theorem ${tn} : ∀ (P Cv : ℝ), 0 ≤ Cv → P ≤ Delphi.aerobicPower ${lean(eta)} ${lean(E)} ${lean(Qc)} ${lean(Ca)} Cv → Delphi.powerRequired ${lean(W)} ${lean(v)} ${lean(LD)} ≤ P → False :=\n  fun P Cv hCv hsus hfl => Delphi.Constraints.aerobic_flight_rules_out (by norm_num) (by norm_num) (by norm_num) hCv hsus hfl (by unfold Delphi.powerRequired; norm_num)` };
+    return { state: 'consistent', reason: 'η E Q Ca ≥ P_req: the oxygen budget can pay for level flight at this speed (nothing about burst power, drag estimates or heat)', numbers };
+  },
+  C15(c, cand, tn) {
+    const q = ['glide_distance_m', 'glide_height_m', 'lift_to_drag_max', 'ground_effect_drag_reduction'];
+    if (!q.every(x => isPoint(cand.commits[x]))) return { state: 'cannot-rule', reason: 'cannot rule: C15 needs exact (point) values' };
+    const [x, h, LD, d] = q.map(y => parseQ(cand.commits[y]));
+    if (cmp(h, Q(0n)) < 0 || cmp(d, Q(0n)) < 0 || cmp(d, Q(1n)) >= 0) return { state: 'cannot-rule', reason: 'cannot rule: h ≥ 0 and 0 ≤ δ < 1 are needed' };
+    const bound = div(mul(h, LD), sub(Q(1n), d)); const numbers = { x: str(x), h: str(h), '(L/D)max': str(LD), 'δ': str(d), 'h (L/D)max/(1-δ)': str(bound) };
+    if (cmp(bound, x) < 0) return { state: 'eliminated', reason: 'one steady unpowered glide cannot exceed the energy bound; the claimed distance needs thrust, repeated touch-and-go, wind, or a higher L/D', violated: `x = ${str(x)} > h (L/D)max/(1−δ) = ${str(bound)}`, numbers,
+      cert: `theorem ${tn} : ∀ (W D loss Lift : ℝ), 0 < W → 0 < D → Lift = W → Lift / D ≤ ${lean(LD)} → W * ${lean(h)} = (1 - ${lean(d)}) * D * ${lean(x)} + loss → 0 ≤ loss → False :=\n  fun W D loss Lift hW hD hl hLD he hlo => Delphi.Constraints.glide_range_rules_out hW hD (by norm_num) (by norm_num) (by norm_num) hl hLD he hlo (by norm_num)` };
+    return { state: 'consistent', reason: 'the claimed distance is within the energy bound of one steady glide', numbers };
+  },
+  C16(c, cand, tn) {
+    const q = ['climb_rate_m_s', 'power_available_W', 'power_required_W', 'weight_N'];
+    if (!q.every(x => isPoint(cand.commits[x]))) return { state: 'cannot-rule', reason: 'cannot rule: C16 needs exact (point) values' };
+    const [cr, Pa, Pr, W] = q.map(y => parseQ(cand.commits[y]));
+    if (cmp(W, Q(0n)) <= 0) return { state: 'cannot-rule', reason: 'cannot rule: weight must be positive' };
+    const bound = div(sub(Pa, Pr), W); const numbers = { c: str(cr), '(P_avail - P_req)/W': str(bound) };
+    if (cmp(bound, cr) < 0) return { state: 'eliminated', reason: 'the climb rate exceeds what the excess power can lift', violated: `c = ${str(cr)} > (P_avail − P_req)/W = ${str(bound)}`, numbers,
+      cert: `theorem ${tn} : ∀ loss : ℝ, (${lean(Pa)} : ℝ) = ${lean(Pr)} + ${lean(W)} * ${lean(cr)} + loss → 0 ≤ loss → False :=\n  fun loss hbal hloss => Delphi.Constraints.climb_rules_out (by norm_num) hbal hloss (by unfold Delphi.climbRate; norm_num)` };
+    return { state: 'consistent', reason: 'the claimed climb rate is within the excess power', numbers };
+  },
   C12: (c, cand, tn) => expRule(c, cand, tn, 'bending_stress_loglog_exponent', Q(1n), '1', b => `theorem ${tn} : ∀ (F ℓ Z : ℝ → ℝ) (kF kℓ kZ L₁ L₂ b : ℝ), Delphi.CubeLaw F kF → Delphi.LeverLaw ℓ kℓ → Delphi.SectionModulusLaw Z kZ → 0 < L₁ → 0 < L₂ → L₁ ≠ L₂ →\n    Real.log (Delphi.bendingStress F ℓ Z L₂ / Delphi.bendingStress F ℓ Z L₁) = b * Real.log (L₂ / L₁) → (${lean(b.low)} ≤ b ∧ b ≤ ${lean(b.high)}) → False :=\n  fun F ℓ Z kF kℓ kZ L₁ L₂ b hF hℓ hZ h₁ h₂ hne hb hr => Delphi.Constraints.bending_exponent_rules_out hF hℓ hZ h₁ h₂ hne hb (fun h => by linarith [hr.1, hr.2])`),
   C12b: (c, cand, tn) => ptRatio(c, cand, tn, 'bending_stress_ratio', 1, (r, l) => `theorem ${tn} : ∀ (F ℓ Z : ℝ → ℝ) (kF kℓ kZ L₁ L₂ : ℝ), Delphi.CubeLaw F kF → Delphi.LeverLaw ℓ kℓ → Delphi.SectionModulusLaw Z kZ → 0 < L₁ → 0 < L₂ →\n    Delphi.bendingStress F ℓ Z L₂ / Delphi.bendingStress F ℓ Z L₁ = ${lean(r)} → L₂ / L₁ = ${lean(l)} → False :=\n  fun F ℓ Z kF kℓ kZ L₁ L₂ hF hℓ hZ h₁ h₂ hr hq => Delphi.Constraints.bending_ratio_rules_out hF hℓ hZ h₁ h₂ hr hq (by norm_num)`),
   C12c: (c, cand, tn) => expRule(c, cand, tn, 'bending_stress_loglog_exponent', Q(0n), '0', b => `theorem ${tn} : ∀ (F ℓ Z : ℝ → ℝ) (kF kℓ kZ L₁ L₂ b : ℝ), Delphi.AreaLaw F kF → Delphi.LeverLaw ℓ kℓ → Delphi.SectionModulusLaw Z kZ → 0 < L₁ → 0 < L₂ → L₁ ≠ L₂ →\n    Real.log (Delphi.bendingStress F ℓ Z L₂ / Delphi.bendingStress F ℓ Z L₁) = b * Real.log (L₂ / L₁) → (${lean(b.low)} ≤ b ∧ b ≤ ${lean(b.high)}) → False :=\n  fun F ℓ Z kF kℓ kZ L₁ L₂ b hF hℓ hZ h₁ h₂ hne hb hr => Delphi.Constraints.bending_exponent_sheet_rules_out hF hℓ hZ h₁ h₂ hne hb (fun h => by linarith [hr.1, hr.2])`),
@@ -261,7 +299,7 @@ for (const cand of CAND.candidates) {
 // Generate and compile the certificate file.
 let compile = null;
 if (certs.length) {
-  const text = `import Delphi.Constraints\nimport Delphi.Blueprint\nimport Delphi.Scaling\n/-!\nGENERATED by lean/eliminate/eliminate.mjs from ${path.relative(root, path.resolve(file)).replace(/\\/g, '/')} (${new Date().toISOString()}).\nOne theorem per elimination: the matching lemma of lean/Delphi/Constraints.lean instantiated with the candidate's\ncommitted numbers, the arithmetic discharged by norm_num. Do not edit; regenerate.\n-/\n\nnamespace Delphi.Constraints.Eliminations\n\n${certs.map(c => `/-- Candidate \`${c.candidate}\`, constraint ${c.constraint}. -/\n${c.text}`).join('\n\n')}\n\nend Delphi.Constraints.Eliminations\n`;
+  const text = `import Delphi.Constraints\nimport Delphi.Blueprint\nimport Delphi.Scaling\nimport Delphi.Flight\n/-!\nGENERATED by lean/eliminate/eliminate.mjs from ${path.relative(root, path.resolve(file)).replace(/\\/g, '/')} (${new Date().toISOString()}).\nOne theorem per elimination: the matching lemma of lean/Delphi/Constraints.lean instantiated with the candidate's\ncommitted numbers, the arithmetic discharged by norm_num. Do not edit; regenerate.\n-/\n\nnamespace Delphi.Constraints.Eliminations\n\n${certs.map(c => `/-- Candidate \`${c.candidate}\`, constraint ${c.constraint}. -/\n${c.text}`).join('\n\n')}\n\nend Delphi.Constraints.Eliminations\n`;
   fs.mkdirSync(path.dirname(path.join(leanDir, leanRel)), { recursive: true });
   fs.writeFileSync(path.join(leanDir, leanRel), text);
   const candidates = [process.env.ELAN_HOME, path.join(process.env.USERPROFILE || process.env.HOME || '', '.elan'), 'C:/Temp/elan'].filter(Boolean);

@@ -60,7 +60,20 @@ export const QUANTITIES = {
   power_required_loglog_exponent: { unit: 'd log P_req / d log L at v_min', kind: 'interval' },
   froude_speed_ratio: { unit: 'v(L2)/v(L1) at equal Froude number', kind: 'point' },
   bending_stress_loglog_exponent: { unit: 'd log σ_b / d log L, σ_b the maximum bending stress F ℓ / Z', kind: 'interval' },
-  bending_stress_ratio: { unit: 'σ_b(L2)/σ_b(L1)', kind: 'point' }
+  bending_stress_ratio: { unit: 'σ_b(L2)/σ_b(L1)', kind: 'point' },
+  weight_loglog_exponent: { unit: 'd log W / d log L (a fitted length-weight exponent b)', kind: 'interval' },
+  glide_height_m: { unit: 'h, height at the start of a steady glide, m', kind: 'point' },
+  lift_to_drag_max: { unit: '(L/D)max of the glider', kind: 'point' },
+  ground_effect_drag_reduction: { unit: 'δ, fractional drag reduction near the surface (0 away from it)', kind: 'point' },
+  glide_distance_m: { unit: 'x, horizontal distance claimed for one steady unpowered glide, m', kind: 'point' },
+  power_available_W: { unit: 'P_avail, mechanical power available, W', kind: 'point' },
+  power_required_W: { unit: 'P_req, mechanical power for level flight, W', kind: 'point' },
+  climb_rate_m_s: { unit: 'c, vertical speed claimed, m/s', kind: 'point' },
+  muscular_efficiency: { unit: 'η, mechanical over metabolic power, dimensionless', kind: 'point' },
+  oxycaloric_equivalent_J_per_unit_O2: { unit: 'E_O2, joules per unit of O2 (the unit must match Q × Ca)', kind: 'point' },
+  cardiac_output: { unit: 'Q, blood volume per second', kind: 'point' },
+  arterial_O2_content: { unit: 'Ca, O2 per blood volume', kind: 'point' },
+  lift_to_drag: { unit: 'L/D in level flight', kind: 'point' }
 };
 // Assumption flags: a candidate must accept the model before a theorem about the model can rule on it.
 export const ASSUMPTIONS = {
@@ -82,7 +95,11 @@ export const ASSUMPTIONS = {
   similar_sections: 'geometrically similar cross-sections, Z = k_Z d^3 with d ∝ L (R9)',
   lever_arm_proportional: 'the lever arm ℓ scales as L (R9)',
   body_like_load: 'the transverse load scales as the body, F ∝ L^3 (R9a; isometric mass with constant density)',
-  sheet_like_load: 'the transverse load is a lamina of constant thickness, F ∝ L^2 (R9b)'
+  sheet_like_load: 'the transverse load is a lamina of constant thickness, F ∝ L^2 (R9b)',
+  power_law_forms: 'weight and lifting area each follow a single power law in L over the range in question (PowerLaw)',
+  power_balance_nonneg_losses: 'available mechanical power = level-flight power + W × climb rate + non-negative losses',
+  steady_unpowered_glide: 'one steady glide, no thrust, lift equal to weight, L/D ≤ (L/D)max, potential energy spent on drag work plus non-negative losses; ground effect only as a stated drag reduction',
+  fick_aerobic_supply: 'sustained mechanical power ≤ η × E_O2 × Q × (Ca − Cv) with 0 ≤ Cv ≤ Ca, 0 ≤ η ≤ 1 (Fick; aerobic, not burst)'
 };
 
 const spec = [
@@ -222,6 +239,22 @@ const spec = [
     property: 'how bending stress scales with size when the load is a lamina of constant thickness (R9b)', relation: 'd log σ_b / d log L = 0', symbols: { 'd log σ_b/d log L': 'bending_stress_loglog_exponent' },
     requires: ['bending_stress_loglog_exponent'], appliesWhen: ['linear_elastic_slender_beam', 'similar_sections', 'lever_arm_proportional', 'sheet_like_load', 'same_material'], rule: 'eliminated when the committed exponent interval excludes 0',
     canEliminate: 'a candidate that commits to a constant-thickness blade and still claims bending stress rises with size (hence a bending size limit); under R9b no limit follows', kernelCheckable: true },
+  { id: 'C13', claim_id: 'flight-allometry-law', lemma: 'Delphi.Constraints.allometry_consistency_rules_out', law: 'Delphi.powerLaw_div', module: 'lean/Delphi/Flight.lean',
+    property: 'whether committed weight, area and wing-loading exponents are mutually consistent', relation: 'bWS = bW − bS', symbols: { bW: 'weight_loglog_exponent', bS: 'area_loglog_exponent', bWS: 'stress_loglog_exponent' },
+    requires: ['weight_loglog_exponent', 'area_loglog_exponent', 'stress_loglog_exponent'], appliesWhen: ['power_law_forms'], rule: 'eliminated when the interval bW − bS is disjoint from the committed bWS interval (separate regressions need intervals; point commitments without error would spuriously eliminate)',
+    canEliminate: 'a candidate committing three exponents that cannot all hold', kernelCheckable: true },
+  { id: 'C14', claim_id: 'aerobic-power-bound', lemma: 'Delphi.Constraints.aerobic_flight_rules_out', law: 'Delphi.sustained_flight_requires', module: 'lean/Delphi/Flight.lean',
+    property: 'whether oxygen delivery can sustain level flight at the stated speed', relation: 'η E_O2 Q Ca ≥ W v / (L/D)', symbols: { η: 'muscular_efficiency', E_O2: 'oxycaloric_equivalent_J_per_unit_O2', Q: 'cardiac_output', Ca: 'arterial_O2_content', W: 'weight_N', v: 'airspeed_m_s', 'L/D': 'lift_to_drag' },
+    requires: ['muscular_efficiency', 'oxycaloric_equivalent_J_per_unit_O2', 'cardiac_output', 'arterial_O2_content', 'weight_N', 'airspeed_m_s', 'lift_to_drag'], appliesWhen: ['fick_aerobic_supply'], rule: 'eliminated when η E Q Ca < W v/(L/D); units must be consistent (E × Q × Ca in watts)',
+    canEliminate: 'a design claiming sustained powered flight its oxygen delivery cannot pay for', kernelCheckable: true },
+  { id: 'C15', claim_id: 'flight-climb-glide-law', lemma: 'Delphi.Constraints.glide_range_rules_out', law: 'Delphi.glide_range_le_groundEffect', module: 'lean/Delphi/Flight.lean',
+    property: 'how far one steady unpowered glide can go from a given height', relation: 'x ≤ h (L/D)max / (1 − δ)', symbols: { x: 'glide_distance_m', h: 'glide_height_m', '(L/D)max': 'lift_to_drag_max', δ: 'ground_effect_drag_reduction' },
+    requires: ['glide_distance_m', 'glide_height_m', 'lift_to_drag_max', 'ground_effect_drag_reduction'], appliesWhen: ['steady_unpowered_glide'], rule: 'eliminated when x > h (L/D)max/(1 − δ)',
+    canEliminate: 'a claim that a single unpowered glide from height h covers more than the energy bound allows; taxiing thrust, repeated touch-and-go and wind are outside the model and must be committed separately', kernelCheckable: true },
+  { id: 'C16', claim_id: 'flight-climb-glide-law', lemma: 'Delphi.Constraints.climb_rules_out', law: 'Delphi.climbRate_le', module: 'lean/Delphi/Flight.lean',
+    property: 'the climb rate available from excess power', relation: 'c ≤ (P_avail − P_req)/W', symbols: { c: 'climb_rate_m_s', P_avail: 'power_available_W', P_req: 'power_required_W', W: 'weight_N' },
+    requires: ['climb_rate_m_s', 'power_available_W', 'power_required_W', 'weight_N'], appliesWhen: ['power_balance_nonneg_losses'], rule: 'eliminated when c > (P_avail − P_req)/W',
+    canEliminate: 'a powered design claiming a climb rate its excess power cannot deliver', kernelCheckable: true },
   { id: 'C7b', claim_id: 'thompson1917-ch03-07', lemma: 'Delphi.Constraints.exponent_rules_out', law: 'Delphi.cubeLaw_loglog_exponent', module: 'lean/Delphi/Thompson.lean',
     property: 'the log-log exponent of weight on a linear dimension under isometric scaling',
     relation: 'b = 3', symbols: { b: 'loglog_exponent' },
@@ -245,6 +278,10 @@ const WHY_NO_CANDIDATE = {
   C10: 'no enumerated candidate commits a power-required exponent; the flight rows of the enumerator are about wing loading and minimum speed, and power available is not a constraint (muscle premise)',
   C12b: 'no enumerated candidate commits a numeric bending-stress ratio; WP-077/C1 commits the exponent (C12)',
   C12c: 'no enumerated candidate commits to a sheet-like (constant-thickness) load; WP-077/C1 commits to thickness scaling with size (R9a); the illustrative constant-thickness leaf exercises this fork',
+  C13: 'no enumerated candidate commits all three exponents; the Davenport triple (2.981, 1.834, 1.236) is three separate fits without confidence intervals, so no honest interval commitment exists yet',
+  C14: 'no enumerated candidate commits oxygen-delivery physiology; the physics thread\'s simulator will supply Q, Ca, E and η for the designed variant',
+  C15: 'no enumerated candidate commits a glide geometry; the illustrative field-glide candidates exercise it',
+  C16: 'no enumerated candidate commits a climb rate; the powered variant will',
   C11: 'no enumerated candidate commits to Froude scaling; the rows of the enumerator are flight and support, not swimming or walking',
   C2: 'the five fixation-probability rows adopt u = i/M as their premise and give no M or probability a value (untranslatable)',
   C4b: 'the two Fisher rows commit zero variance with a sign of the change (C4c); neither commits an interval for the change in mean fitness',
@@ -258,7 +295,7 @@ const WHY_NO_CANDIDATE = {
 const out = {
   built: new Date().toISOString(), tool: 'lean/eliminate/build-constraints.mjs', rulingsFrom: ledger ? `lean/eliminate/ledger.open-problems.json (run ${ledger.summary.run})` : null, leanReport: R.built, lemmaModule: 'lean/Delphi/Constraints.lean',
   framing: 'A theorem eliminates candidates, not open problems: a candidate is a proposed answer or design that commits to quantities the theorem forbids. Three states: eliminated (the violated relation with the numbers, kernel-checked where marked), consistent (not ruled out by these theorems; never "feasible"), cannot-rule (a required input or assumption is missing). An elimination holds only under the law\'s own assumptions, listed per constraint; three of the four original statements were judged narrower in scope than their claims by the assessor, and a candidate eliminated by a narrower statement is eliminated only under that statement\'s assumptions.',
-  nextConstraint: 'Strength scaling as L^2 (R7, C8-C8e) and bending via the section modulus (R9, C12-C12c) are formalised. Not yet formalised: elastic similarity, the walking (pendulum) route of thompson1917-ch02-10, and any quantitative muscle-power law (R6 is carried only as a named hypothesis).',
+  nextConstraint: 'Strength (R7), bending (R9), general allometry, climb, glide range with ground effect, and the aerobic power bound (Fick) with the crossover size limit are formalised. Not yet formalised: elastic similarity, gill O2 uptake as a function of water O2 and gill area (the first link of the simulator chain), taxiing thrust from the caudal fin, aspect ratio and induced drag, the walking (pendulum) route of thompson1917-ch02-10, and any quantitative muscle-power law (R6 is carried only as a named hypothesis).',
   quantities: QUANTITIES, assumptions: ASSUMPTIONS,
   constraints: spec.map(c => {
     const f = claim(c.claim_id) || {};

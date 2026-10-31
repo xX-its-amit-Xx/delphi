@@ -11,6 +11,7 @@ import Delphi.Blueprint
 import Delphi.Thompson
 import Delphi.Certificates.AFlyingFish
 import Delphi.Scaling
+import Delphi.Flight
 import Delphi.Constraints
 
 #print axioms Delphi.NeutralChain.fixedBy_tendsto
@@ -97,3 +98,22 @@ import Delphi.Constraints
 #print axioms Delphi.Constraints.bending_exponent_rules_out
 #print axioms Delphi.Constraints.bending_ratio_rules_out
 #print axioms Delphi.Constraints.bending_exponent_sheet_rules_out
+#print axioms Delphi.powerLaw_ratio
+#print axioms Delphi.powerLaw_log
+#print axioms Delphi.powerLaw_div
+#print axioms Delphi.cubeLaw_powerLaw
+#print axioms Delphi.vmin_powerLaw_log
+#print axioms Delphi.climbRate_le
+#print axioms Delphi.climb_nonneg_iff
+#print axioms Delphi.glide_range_le
+#print axioms Delphi.glide_range_le_groundEffect
+#print axioms Delphi.aerobic_le_Ca
+#print axioms Delphi.aerobic_le_metabolic
+#print axioms Delphi.sustained_le
+#print axioms Delphi.sustained_flight_requires
+#print axioms Delphi.climb_le_aerobic
+#print axioms Delphi.powerLaw_crossover
+#print axioms Delphi.Constraints.allometry_consistency_rules_out
+#print axioms Delphi.Constraints.aerobic_flight_rules_out
+#print axioms Delphi.Constraints.glide_range_rules_out
+#print axioms Delphi.Constraints.climb_rules_out

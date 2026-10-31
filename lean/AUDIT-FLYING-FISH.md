@@ -1,21 +1,21 @@
 # Every theorem against the flying fish (Exocoetidae)
 
-Generated 2026-10-31T20:34:28.498Z by `lean/flying-fish/audit.mjs` from `lean.json` (built 2026-10-31T19:29:27.259Z) and the data files named below. One row per theorem the compiler accepted: whether it applies to Exocoetidae, which inputs are measured for flying fish, which are proxies, which are missing, and the verdict when instantiated. "Holds" and "violated" are about the model's hypotheses meeting the data; a theorem is never falsified by data, its hypotheses are.
+Generated 2026-10-31T20:46:38.067Z by `lean/flying-fish/audit.mjs` from `lean.json` (built 2026-10-31T20:46:12.815Z) and the data files named below. One row per theorem the compiler accepted: whether it applies to Exocoetidae, which inputs are measured for flying fish, which are proxies, which are missing, and the verdict when instantiated. "Holds" and "violated" are about the model's hypotheses meeting the data; a theorem is never falsified by data, its hypotheses are.
 
 ## Summary
 
-Of 92 theorems, 19 hold when instantiated on the flying fish (the blueprint certificate's 11 structural theorems, the exact minimum-speed bound on the Park and Choi specimen, the cube law approximately on Davenport's exponent, and 4 bookkeeping lemmas), 6 have their isometry hypotheses violated by Davenport's within-species exponents (fin area 1.834 vs 2, wing loading 1.236 vs 1), and 67 cannot be evaluated because an input is missing: a neutral substitution rate or fixation probability for the family, fitness variance at any locus, an asexual lineage (none known), material strength and section data for fin rays and bone, muscle fraction and power, and v_min or L/D at a second body size.
+Of 111 theorems, 22 hold when instantiated on the flying fish (the blueprint certificate's 11 structural theorems, the exact minimum-speed bound on the Park and Choi specimen, the cube law approximately on Davenport's exponent, and 6 bookkeeping lemmas), 9 have their isometry hypotheses violated by Davenport's within-species exponents (fin area 1.834 vs 2, wing loading 1.236 vs 1), and 80 cannot be evaluated because an input is missing: a neutral substitution rate or fixation probability for the family, fitness variance at any locus, an asexual lineage (none known), material strength and section data for fin rays and bone, muscle fraction and power, and v_min or L/D at a second body size.
 
 | Verdict | Theorems |
 |---|---|
-| holds | 19 |
-| cannot-evaluate | 67 |
-| violated | 6 |
+| holds | 22 |
+| cannot-evaluate | 80 |
+| violated | 9 |
 
 | Applies to Exocoetidae | Theorems |
 |---|---|
-| yes | 22 |
-| yes-under-named-hypotheses | 64 |
+| yes | 25 |
+| yes-under-named-hypotheses | 80 |
 | no | 6 |
 
 ## Measured facts used (each with its file)
@@ -35,6 +35,11 @@ Of 92 theorems, 19 hold when instantiated on the flying fish (the blueprint cert
 | neutral substitution budget per site | 0.053 to 0.451 | computed from the above | lean/bound/parameters.json and lean/bound/result.json |
 | blueprint certificate | 536 terms, 674 edges, 1390 never_in_taxon and 5435 in_taxon rows | ontology-derived (Uberon, Cell Ontology via Ubergraph), not a measurement | lean/blueprint/certificates/a-flying-fish.json and lean/blueprint/data/a-flying-fish.taxon.json |
 | L/D max for specimen L3 | 4.37 | measured (wind tunnel, one specimen) | physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994) |
+| FishBase length-weight exponents b, fitted field studies | Cheilopogon atrisignis b = 3.011 (n = 570, FL); Cheilopogon unicolor b = 2.971 (n = 1640, FL); Cypselurus poecilopterus b = 2.908 (n = 2769, FL); Hirundichthys affinis male b = 2.208 (n = 117, TL); Hirundichthys affinis female b = 2.985 (n = 193, TL); Hirundichthys oxycephalus b = 2.910 (n = 682, FL) | measured (6 fitted studies with locality and n; 19 further rows with b = 3.000 and n ≤ 6 are unverified FishBase estimates and are not used) | physics/length-weight.csv (FishBase Length-Weight list page; references not shown on the page) |
+| field glide distances | 400 and 50 m | secondary (field summaries) | physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994) |
+| maximum recorded flight height | 8 m | secondary (Deng 2019 citing its ref 6) | physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994) |
+| theoretical (L/D)max, Cheilopogon heterurus | 15.7 | theory-secondary (Kawachi et al. 1993 via Deng 2019) | physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994) |
+| largest measured ground-effect drag reduction | 0.14 | measured (Park and Choi 2010, model L3 over water at h/b = 0.33; lift unaffected) | physics/ground-effect.json |
 
 Not measured for Exocoetidae at all: mutation rate (proxy from herring and stickleback); effective population size for the family (one mitochondrial Ne for E. volitans); any neutral substitution rate; fitness variance at any locus; breaking stress and cross-sections of fin rays or bone; muscle mass fraction and mass-specific power; v_min, L/D or C_L,max at more than one body size; confidence intervals on the Davenport 1992 exponents (abstract only).
 
@@ -87,6 +92,10 @@ Not measured for Exocoetidae at all: mutation rate (proxy from herring and stick
 | `Constraints.bending_exponent_rules_out` | yes-under-named-hypotheses (R9a) | bending-stress exponent of fin rays: **missing** | **cannot-evaluate** | no data |
 | `Constraints.bending_ratio_rules_out` | yes-under-named-hypotheses (R9a) | bending-stress ratio: **missing** | **cannot-evaluate** | no data |
 | `Constraints.bending_exponent_sheet_rules_out` | yes-under-named-hypotheses (R9b, the natural reading for a fin under aerodynamic load) | bending-stress exponent of fin rays: **missing** | **cannot-evaluate** | no data |
+| `Constraints.allometry_consistency_rules_out` | yes: a candidate committing the three Davenport exponents | mass vs standard length exponent: **measured** (2.981); lateral fin area vs standard length exponent: **measured** (1.834); wing loading vs standard length exponent: **measured** (1.236) | **cannot-evaluate** | as points the triple (2.981, 1.834, 1.236) is inconsistent by 0.089, but the three are separate fits without confidence intervals, so no honest interval commitment exists and the lemma must not be fired on points (missing: CIs) |
+| `Constraints.aerobic_flight_rules_out` | yes-under-named-hypotheses (Fick, aerobic) | Q, Ca, E, η: **missing** | **cannot-evaluate** | no physiology for the family |
+| `Constraints.glide_range_rules_out` | yes: the pure-glide reading of the field distances | maximum recorded flight height: **secondary** (8 m); L/D max for specimen L3: **measured** (4.37); field glide distances: **secondary** (400 and 50 m); largest measured ground-effect drag reduction: **measured** (0.14) | **violated** | fires: one unpowered glide of 50 m from 8 m needs (L/D)max ≥ 6.25 (or 5.38 with the measured ground effect); the stuffed-model 4.37 fails, the theoretical 15.7 passes (lean/eliminate/examples.json) |
+| `Constraints.climb_rules_out` | yes-under-named-hypotheses (powered flight) | P_avail, P_req, climb rate: **missing** | **cannot-evaluate** | no powered-flight data for a glider |
 | `Constraints.froude_rules_out` | yes-under-named-hypotheses (swimming phase) | speed ratio at two sizes: **missing** | **cannot-evaluate** | one size class |
 
 ## lean/Delphi/Favored.lean
@@ -111,6 +120,26 @@ Not measured for Exocoetidae at all: mutation rate (proxy from herring and stick
 | `fisher_fundamental_theorem` | yes-under-named-hypotheses: one haploid or clonal locus, fixed fitnesses, infinite population; Exocoetidae are diploid, so the formalised (haploid) form is narrower than the biology (faithfulness: narrower scope) | variance in fitness at any Exocoetidae locus: **missing**; mean fitness: **missing** | **cannot-evaluate** | no fitness variance or mean fitness measured |
 | `fisher_fundamental_theorem'` | yes-under-named-hypotheses (as fisher_fundamental_theorem) | variance in fitness: **missing**; mean fitness: **missing** | **cannot-evaluate** | as above |
 | `mean_fitness_nondecreasing` | yes-under-named-hypotheses (as fisher_fundamental_theorem) | mean fitness in two consecutive generations under fixed fitnesses: **missing** | **cannot-evaluate** | no time series of mean fitness |
+
+## lean/Delphi/Flight.lean
+
+| Theorem | Applies | Inputs (measured / proxy / missing) | Verdict | Why |
+|---|---|---|---|---|
+| `powerLaw_ratio` | yes-under-named-hypotheses: a fitted power law W = a L^b over the size range | FishBase length-weight exponents b, fitted field studies: **measured** (Cheilopogon atrisignis b = 3.011 (n = 570, FL); Cheilopogon unicolor b = 2.971 (n = 1640, FL); Cypselurus poecilopterus b = 2.908 (n = 2769, FL); Hirundichthys affinis male b = 2.208 (n = 117, TL); Hirundichthys affinis female b = 2.985 (n = 193, TL); Hirundichthys oxycephalus b = 2.910 (n = 682, FL)); mass vs standard length exponent: **measured** (2.981) | **holds** (the fitted form is the hypothesis; the seven FishBase field studies give b from 2.908 to 3.011 for five species (n 570 to 2769) and 2.208 for Hirundichthys affinis males (n 117), Davenport 2.981 for E. obtusirostris) | length-weight regressions are power laws by construction; the theorem then gives the ratio between sizes |
+| `powerLaw_log` | yes-under-named-hypotheses (as powerLaw_ratio) | FishBase length-weight exponents b, fitted field studies: **measured** (Cheilopogon atrisignis b = 3.011 (n = 570, FL); Cheilopogon unicolor b = 2.971 (n = 1640, FL); Cypselurus poecilopterus b = 2.908 (n = 2769, FL); Hirundichthys affinis male b = 2.208 (n = 117, TL); Hirundichthys affinis female b = 2.985 (n = 193, TL); Hirundichthys oxycephalus b = 2.910 (n = 682, FL)) | **holds** (the log-log slope IS the fitted b) | as powerLaw_ratio |
+| `powerLaw_div` | yes-under-named-hypotheses: power laws for both weight and fin area over the same range | mass vs standard length exponent: **measured** (2.981); lateral fin area vs standard length exponent: **measured** (1.834); wing loading vs standard length exponent: **measured** (1.236) | **cannot-evaluate** (predicts the wing-loading exponent bW − bS = 1.147 from Davenport's mass and fin-area fits; Davenport's directly fitted wing-loading exponent is 1.236; the three are separate regressions with no confidence intervals in the abstract, so whether the 0.09 gap is estimation error cannot be decided (missing: CIs)) | no confidence intervals |
+| `cubeLaw_powerLaw` | yes (the cube law is the case b = 3) | FishBase length-weight exponents b, fitted field studies: **measured** (Cheilopogon atrisignis b = 3.011 (n = 570, FL); Cheilopogon unicolor b = 2.971 (n = 1640, FL); Cypselurus poecilopterus b = 2.908 (n = 2769, FL); Hirundichthys affinis male b = 2.208 (n = 117, TL); Hirundichthys affinis female b = 2.985 (n = 193, TL); Hirundichthys oxycephalus b = 2.910 (n = 682, FL)) | **holds** (bookkeeping; six of seven fitted Exocoetidae studies have b within 0.1 of 3, H. affinis males 2.208) | identity of forms |
+| `vmin_powerLaw_log` | yes-under-named-hypotheses: power laws for weight and lifting area, constant ρ and C_L,max | mass vs standard length exponent: **measured** (2.981); lateral fin area vs standard length exponent: **measured** (1.834); v_min at two body sizes: **missing** | **cannot-evaluate** (predicts a v_min exponent of (2.981 − 1.834)/2 = 0.573 for E. obtusirostris instead of the isometric 0.5, i.e. larger individuals must fly relatively faster; no multi-size v_min data to test it) | no multi-size v_min |
+| `climbRate_le` | yes-under-named-hypotheses for a POWERED flyer (power balance); a gliding fish has no P_avail in the air, so for the real fish this concerns the launch and taxiing phase at most | P_avail (muscle power during taxiing) and P_req: **missing** | **cannot-evaluate** | no power data |
+| `climb_nonneg_iff` | yes-under-named-hypotheses (as climbRate_le) | none | **cannot-evaluate** | as climbRate_le |
+| `glide_range_le` | yes-under-named-hypotheses: one steady unpowered glide, lift equal to weight, L/D ≤ (L/D)max | maximum recorded flight height: **secondary** (8 m); L/D max for specimen L3: **measured** (4.37); field glide distances: **secondary** (400 and 50 m); theoretical (L/D)max, Cheilopogon heterurus: **theory-secondary** (15.7) | **violated** (the single-glide model's hypotheses fail for the field figures: from 8 m with the stuffed-model (L/D)max 4.37 the bound is 35.0 m, below the 400 and 50 m reported; with the theoretical (L/D)max 15.7 it is 126 m, which covers 50 m but not 400 m. The theorem is untouched; what fails is the reading that a field flight is one unpowered glide (taxiing thrust from the tail, repeated touch-and-go and wind are outside the model)) | the pure-glide reading of the field distances is ruled out with the measured L/D |
+| `glide_range_le_groundEffect` | yes-under-named-hypotheses (as glide_range_le, with the measured drag reduction) | maximum recorded flight height: **secondary** (8 m); L/D max for specimen L3: **measured** (4.37); largest measured ground-effect drag reduction: **measured** (0.14); field glide distances: **secondary** (400 and 50 m) | **violated** (with δ = 0.14 the bound rises only to 40.7 m, still below 50 m: ground effect alone does not close the gap with the measured L/D) | as glide_range_le |
+| `aerobic_le_Ca` | yes-under-named-hypotheses: Fick, oxycaloric conversion, aerobic power | cardiac output Q, arterial O2 content Ca, oxycaloric equivalent E and efficiency η for Exocoetidae: **missing** | **cannot-evaluate** | no physiological inputs for the family |
+| `aerobic_le_metabolic` | yes-under-named-hypotheses (as aerobic_le_Ca) | Q, Ca, E, η: **missing** | **cannot-evaluate** | as above |
+| `sustained_le` | yes-under-named-hypotheses (as aerobic_le_Ca) | Q, Ca, E, η: **missing** | **cannot-evaluate** | as above |
+| `sustained_flight_requires` | yes-under-named-hypotheses: for sustained POWERED flight; a glider does not sustain flight by muscle power, so for the real fish this bounds taxiing and launch, and for a designed powered variant it is the central check | Q, Ca, E, η: **missing**; L/D max for specimen L3: **measured** (4.37); v_min for specimen L3: **computed** (9.85 m/s) | **cannot-evaluate** (P_req at v_min for specimen L3 is W v_min/(L/D) = 1.33 W with the measured L/D 4.37; the oxygen side is missing) | no physiological inputs |
+| `climb_le_aerobic` | yes-under-named-hypotheses (as sustained_flight_requires) | Q, Ca, E, η: **missing** | **cannot-evaluate** | as above |
+| `powerLaw_crossover` | yes-under-named-hypotheses: demand and supply as power laws in size; with R5 the demand exponent is 7/2 | the supply exponent (how Q Ca scales with size in Exocoetidae): **missing** | **cannot-evaluate** (replaces the muscle premise: any supply exponent below 7/2 gives a size limit; whether 0.5 m flying fish are below it needs the constants) | supply exponent missing |
 
 ## lean/Delphi/Kimura.lean
 
