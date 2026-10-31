@@ -89,7 +89,7 @@ const status = {
     { label: 'direct links: required for', value: S.direct_links_by_type['required for'] },
     { label: 'direct links: sufficient for', value: S.direct_links_by_type['sufficient for'] },
     { label: 'pectoral fin: genes required for (standard conditions)', value: pf.counts.required_for_genes },
-    { label: 'phenotype rows dropped: non-standard condition', value: rejectedEnv },
+    { label: 'phenotype rows dropped: condition not standard or ambiguous', value: rejectedEnv },
     { label: 'phenotype rows dropped: dominant allele, loss of function not established', value: rejectedDom },
     { label: 'Bgee genes merged onto ZFIN ids by symbol', value: S.gene_id_rules?.genes_merged_by_symbol ?? null },
   ],

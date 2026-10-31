@@ -34,7 +34,7 @@
    "research": {
     "status": "partial",
     "run": "research/prior-art/REPORT.md",
-    "finding": "The search found Monarch, uPheno and Phenoscape doing cross-species genotype-to-phenotype reasoning with OWL; it did not report on propagation rules specifically. Still reach-synthesis until checked against those projects' documented reasoning."
+    "finding": "The search found Monarch, uPheno and Phenoscape doing cross-species genotype-to-phenotype reasoning with OWL; it did not report on propagation rules specifically. Still reach-synthesis until checked against those projects' documented reasoning. Genotype thread PubMed check (genotype/cache/pubmed_propagation.json, 4 queries, 4 abstracts incl. uPheno 10.1093/genetics/iyaf027) found no abstract documenting part_of propagation of phenotypes; Phenoscape and Monarch full text not checked."
    },
    "status": "adopted-provisionally",
    "affects": [
@@ -226,6 +226,82 @@
    "affects": [
     "dashboard/public/deck/",
     "README.md"
+   ],
+   "decided": "2026-10-31"
+  },
+  {
+   "id": "idea-gene-id-symbol-merge",
+   "idea": "Bgee 15.2 and ZFIN ensembl_1_to_1 use different Ensembl releases; a Bgee gene with no 1:1 row is merged onto the ZFIN gene with the identical symbol (1,614 merges), else kept under its Ensembl id.",
+   "origin": "serendipitous",
+   "proposed_by": "genotype thread (session 68)",
+   "evidence": "genotype/map.vetted.slim.json summary.gene_id_rules; genotype/nanopubs/unsigned/gotcha-bgee-zfin-ensembl-release-mismatch.trig",
+   "status": "adopted",
+   "alternatives_rejected": [
+    "keeping both keys (double counts fgf10a, shha)"
+   ],
+   "affects": [
+    "genotype/build.py",
+    "genotype/map.vetted*.json"
+   ],
+   "decided": "2026-10-31"
+  },
+  {
+   "id": "idea-zfin-standard-conditions-filter",
+   "idea": "Keep a ZFIN phenotype row only when every experiment it matches is ZECO:0000103 standard conditions.",
+   "origin": "reach-synthesis",
+   "proposed_by": "genotype thread (session 68)",
+   "sources": [
+    "ZFIN pheno_environment_fish.txt",
+    "ZFIN phenotype_fish.txt"
+   ],
+   "research": {
+    "status": "not-run"
+   },
+   "status": "adopted",
+   "alternatives_rejected": [
+    "trusting the clean file name (102 uniquely non-standard and 2,914 ambiguous rows in it)"
+   ],
+   "affects": [
+    "genotype/build.py",
+    "required-for counts"
+   ],
+   "decided": "2026-10-31"
+  },
+  {
+   "id": "idea-lof-evidence-and-dominance-rule",
+   "idea": "Every required-for link carries a loss-of-function evidence class (knockdown; truncating allele; recessive allele, presumed); a homozygous allele that also shows a heterozygous phenotype and has no truncating consequence is rejected as possible gain of function. Required-for links 10,544 to 10,042.",
+   "origin": "reach-synthesis",
+   "proposed_by": "genotype thread (session 68)",
+   "sources": [
+    "ZFIN features-affected-genes.txt",
+    "Perathoner 2014 (alf kcnk5b is dominant gain-of-function missense)"
+   ],
+   "research": {
+    "status": "not-run"
+   },
+   "status": "adopted",
+   "alternatives_rejected": [
+    "dropping all alleles without a recorded consequence (loses 9,637 rows of classical recessive mutants)",
+    "keeping dominant alleles with a flag (would present possible GOF as LOF)"
+   ],
+   "affects": [
+    "genotype/build.py"
+   ],
+   "decided": "2026-10-31"
+  },
+  {
+   "id": "idea-lat4a-is-slc43a2a",
+   "idea": "Daane 2021 lat4a is zebrafish slc43a2a.",
+   "origin": "researched",
+   "proposed_by": "genotype thread (session 68)",
+   "research": {
+    "status": "done",
+    "run": "genotype/cache/calls.json",
+    "finding": "NCBI Gene 124935 (human SLC43A2, alias LAT4) and 393221 (zebrafish slc43a2a); ZFIN curated the Daane paper (ZDB-PUB-210918-31, PMID 34534441) to slc43a2a: 6 phenotype rows, allele dmh26, pectoral and caudal fin decreased length."
+   },
+   "status": "adopted",
+   "affects": [
+    "genotype/"
    ],
    "decided": "2026-10-31"
   }

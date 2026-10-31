@@ -1,0 +1,86 @@
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix schema: <https://schema.org/> .
+@prefix spdx: <http://spdx.org/rdf/terms#> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/claim/genotype-refusal-bgee-sparql-endpoint> a delphi:Claim ;
+    rdfs:label "The Bgee SPARQL endpoint refused the thread's query with HTTP 403 (a Cloudflare challenge page), so expression came from Bgee's bulk call files instead" ;
+    dct:description "Status: documented refusal (observed at the stated time). A probe query to https://www.bgee.org/sparql/ at 2026-10-31T18:04:16Z returned HTTP 403. The Bgee REST expr_calls page returned 200 with no calls for the parameters tried. The bulk files under https://www.bgee.org/ftp/current/download/calls/expr_calls/ worked and were used, restricted to present calls with data observed in the structure itself. What it does not establish: It does not establish that the endpoint is down for everyone or for other clients; one request from one client at one time. Pre-registration: none." ;
+    delphi:context "Logged in genotype/cache/calls.json with the full URL, time, status and body hash." ;
+    delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/genotype-refusal-bgee-sparql-endpoint> ;
+    prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-genotype-thread-claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/evidence/genotype-refusal-bgee-sparql-endpoint> a delphi:EvidenceItem ;
+    rdfs:label "Bgee SPARQL probe call record" ;
+    dct:description "Read from genotype/cache/calls.json, name bgee_sparql_probe." ;
+    delphi:statisticalTest "None; an observed HTTP status." ;
+    prov:used <https://w3id.org/delphi/resource/dataset/bgee-15-2-expr-calls-zebrafish-medaka> ;
+    prov:wasDerivedFrom sub:map ;
+    rdfs:seeAlso <https://delphi-mission-control.ashenoy000.workers.dev/t/genotype/data.json> .
+  <https://w3id.org/delphi/resource/evidence/genotype-refusal-bgee-sparql-endpoint> schema:additionalProperty sub:m0 .
+  sub:m0 a schema:PropertyValue ; schema:propertyID "status" ; schema:value "documented refusal (observed at the stated time)" ; schema:description "status of this record in the words of AGENTS.md (supported, refuted, mixed, inconclusive, or a descriptive status)" .
+  <https://w3id.org/delphi/resource/evidence/genotype-refusal-bgee-sparql-endpoint> schema:additionalProperty sub:m1 .
+  sub:m1 a schema:PropertyValue ; schema:propertyID "http_status" ; schema:value "403"^^xsd:integer ; schema:description "HTTP status returned by the SPARQL endpoint" .
+  <https://w3id.org/delphi/resource/dataset/bgee-15-2-expr-calls-zebrafish-medaka> a dcat:Dataset ;
+    dct:title "Bgee 15.2 anatomy-level expression call files, Danio rerio and Oryzias latipes (expr_advanced)" ;
+    dcat:landingPage <https://www.bgee.org/> ;
+    dct:license <https://creativecommons.org/publicdomain/zero/1.0/> ;
+    dcat:version "as retrieved on 2026-10-31 (see each distribution's time)" ;
+    dcat:distribution sub:bgeef0, sub:bgeef1 .
+  sub:bgeef0 a dcat:Distribution, prov:Entity ;
+    dcat:downloadURL <https://www.bgee.org/ftp/current/download/calls/expr_calls/Danio_rerio_expr_advanced.tsv.gz> ;
+    dcat:byteSize "28748573"^^xsd:nonNegativeInteger ;
+    prov:generatedAtTime "2026-10-31T18:04:18Z"^^xsd:dateTime ;
+    spdx:checksum sub:bgeef0sha .
+  sub:bgeef0sha a spdx:Checksum ; spdx:algorithm spdx:checksumAlgorithm_sha256 ; spdx:checksumValue "f39fcf8092a6cb2376bf005676ee0087398f5b6f5303ab340b39826a756df384" .
+  sub:bgeef1 a dcat:Distribution, prov:Entity ;
+    dcat:downloadURL <https://www.bgee.org/ftp/current/download/calls/expr_calls/Oryzias_latipes_expr_advanced.tsv.gz> ;
+    dcat:byteSize "10940481"^^xsd:nonNegativeInteger ;
+    prov:generatedAtTime "2026-10-31T18:04:20Z"^^xsd:dateTime ;
+    spdx:checksum sub:bgeef1sha .
+  sub:bgeef1sha a spdx:Checksum ; spdx:algorithm spdx:checksumAlgorithm_sha256 ; spdx:checksumValue "022dcb0e4e2931ec9228a2b46f7fed96e248462c213542efb5846524babe6bc2" .
+  sub:map a prov:Entity ;
+    dct:title "genotype/map.vetted.json (vetted, slimmed genotype-phenotype map; built 2026-10-31T18:43:58Z by genotype/build.py)" ;
+    spdx:checksum sub:map-sha ;
+    schema:contentSize "9193407"^^xsd:integer ;
+    prov:generatedAtTime "2026-10-31T18:43:58Z"^^xsd:dateTime .
+  sub:map-sha a spdx:Checksum ; spdx:algorithm spdx:checksumAlgorithm_sha256 ; spdx:checksumValue "4b8adf68e8ffdfce9ca5839c73ecb4b8744a6ae577facb856944a8e75041baa8" .
+  <https://w3id.org/delphi/resource/agent/delphisci-genotype-thread-claude-fable-5-1> a prov:SoftwareAgent ;
+    rdfs:label "delphisci genotype thread (session scienceclaw-68, Claude Fable 5.1): built and vetted the genotype-phenotype map from proxy-fish records" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/model/claude-fable-5-1> a delphi:LanguageModel ; rdfs:label "Claude Fable 5.1" ; dct:identifier "claude-fable-5-1" .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-genotype-thread-claude-fable-5-1> ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/genotype/data.json> , sub:map ;
+    prov:generatedAtTime "2026-10-31T18:44:10Z"^^xsd:dateTime .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-10-31T18:44:10Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/delphisci-genotype-thread-claude-fable-5-1> ;
+    rdfs:label "Draft: The Bgee SPARQL endpoint refused the thread's query with HTTP 403 (a Cloudflare challenge page), so expression came from Bgee's bulk call files instead" ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType delphi:Claim ;
+    npx:introduces <https://w3id.org/delphi/resource/claim/genotype-refusal-bgee-sparql-endpoint> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/genotype-phenotype-mapping> ;
+    rdfs:comment "Unsigned draft, not published. Built by genotype/nanopubs/build-nanopubs.mjs from genotype/map.vetted.json, which is not yet committed; the resolvable copy of its numbers is the live sub-dashboard data file linked from the provenance. The creator is the software agent that built the map; the key holder's ORCID is added only when that person approves and signs. No assertion, provenance or pubinfo template is declared because this 2.0 record was not created from one. Publishing needs the key owner's approval: test registry first, never production without it." .
+  <https://w3id.org/delphi/resource/domain/genotype-phenotype-mapping> rdfs:label "genotype-phenotype-mapping" .
+}
