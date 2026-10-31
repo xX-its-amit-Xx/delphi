@@ -81,7 +81,9 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
 
 <section id="envelope"><h2>The envelope</h2>
 <p class="lede">The lift a wing makes is &frac12;&thinsp;&rho;&thinsp;v&sup2;&thinsp;S&thinsp;C<sub>L</sub>. To stay up it must equal the weight W, so the slowest possible lift-supported speed is v<sub>min</sub> = &radic;(2&thinsp;(W/S) / (&rho;&thinsp;C<sub>L,max</sub>)). That is Thompson's "must": speed grows as the square root of wing loading W/S, and under isometry as the square root of length. The dashed line below has that slope, drawn through the flying fish.</p>
-<div class="grid g2">
+<div class="fig" id="vminwrap"><div id="figVmin"></div>
+<p class="small mute">The blue line is the slowest speed at which the measured fins of a 0.06 kg darkedged-wing flying fish can carry its weight; the shaded band runs to three times that. Each bar is a speed from the glide table, coloured by how the source got it. Hover any bar or the band for the source, the locator and the retrieval time. Standalone copy for the deck: <a href="vmin-band.svg">vmin-band.svg</a>.</p></div>
+<div class="grid g2" style="margin-top:14px">
   <div class="card"><h3>Reading B: the fish on its own envelope</h3><div id="readingB"></div></div>
   <div class="card"><h3>Reading A: does speed scale as (W/S)<sup>&frac12;</sup>?</h3><div id="readingA"></div></div>
 </div>
@@ -162,8 +164,9 @@ const chip=(v)=>{const cls=v==='inside'||v==='supports'?'ok':(v==='outside'||v==
 Promise.all([
   fetch('status.json').then(r=>r.json()), fetch('results.json').then(r=>r.json()),
   fetch('data/glide-data.csv').then(r=>r.text()), fetch('data/comparison-data.csv').then(r=>r.text()),
-  fetch('data/sources.json').then(r=>r.json()), fetch('data/allometry.json').then(r=>r.json()), fetch('envelope.svg').then(r=>r.text())
-]).then(([st,res,gcsv,ccsv,src,allo,svg])=>{
+  fetch('data/sources.json').then(r=>r.json()), fetch('data/allometry.json').then(r=>r.json()), fetch('envelope.svg').then(r=>r.text()), fetch('vmin-band.svg').then(r=>r.text())
+]).then(([st,res,gcsv,ccsv,src,allo,svg,svg2])=>{
+  document.getElementById('figVmin').innerHTML=svg2;
   const g=parseCSV(gcsv), c=parseCSV(ccsv);
   document.getElementById('verdict').innerHTML=`Overall: ${chip(res.overall.verdict)} &nbsp; reading B ${chip(res.verdicts.B)} &nbsp; reading A gliders ${chip(res.verdicts.A_gliders)} &nbsp; reading A powered ${chip(res.verdicts.A_powered)} &nbsp; reading C ${chip(res.verdicts.C)}`;
   const B=res.interpretation_B, A=res.interpretation_A, C=res.interpretation_C;
