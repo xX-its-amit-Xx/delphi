@@ -74,7 +74,19 @@ a.go{cursor:pointer}
 .prov{border-left:3px solid var(--accent);padding:4px 10px;margin:6px 0}
 .prov.model{border-left-style:dashed;border-left-color:var(--mute)}
 .prov b{display:block;font-size:.8rem}
+#modeSel{font-weight:600}
+#physio{position:absolute;left:10px;right:10px;bottom:52px;height:46%;min-height:230px;background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--line);border-radius:10px;display:none;z-index:3;overflow:hidden}
+#physio canvas{position:absolute;inset:0;width:100%;height:100%}
+#physio .bar{position:absolute;right:8px;top:6px;display:flex;gap:6px;z-index:1}
+#physio .bar button{padding:2px 8px;font-size:.78rem}
+#basis{position:absolute;right:10px;top:52px;max-width:360px;display:none;line-height:1.35}
+#basis b{display:block;font-size:.78rem;cursor:pointer}#basis b::after{content:' \25BE';color:var(--mute)}
+#basis.chip{max-width:none;padding:4px 10px;cursor:pointer}#basis.chip b{display:inline}#basis.chip b::after{content:' \25B8'}#basis.chip .body{display:none}
+#basis .k{color:var(--mute)}
+#isvg{position:absolute;inset:0;width:100%;height:100%;display:none;background:var(--surface)}
+#isvg text{font-family:"Inter Tight",system-ui,sans-serif}
 body.embed header,body.embed #panel{display:none}body.embed main{grid-template-columns:1fr}
+@media (max-width:880px){#physio{height:52%;bottom:48px}#basis{max-width:60%;font-size:.7rem}}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
@@ -83,6 +95,7 @@ body.embed header,body.embed #panel{display:none}body.embed main{grid-template-c
   <b>Open the Fish</b>
   <nav><a href="../start/">Start</a><a href="../">Mission Control</a><a href="./?view=radial">Radial 3D view</a><a href="../graph/?view=flyingfish">Graph</a><a href="../t/genotype/">Genotype thread</a><a href="../t/lean/index.html#blueprint">Lean certificate</a></nav>
   <div class="ctl">
+    <select id="modeSel" title="What to show"><option value="anatomy">Anatomy</option><option value="physiology">Physiology: circulation and gills</option><option value="tissue">Tissue signalling</option><option value="cell">Cell-cell interactions</option></select>
     <label title="Split the fish along the midline and swing the halves apart">split <input type="range" id="split" min="0" max="100" value="0"></label>
     <label title="Peel the layers from the outside in: skin, then muscle, then the skeleton, leaving the organs">peel <input type="range" id="peel" min="0" max="3" value="0" step="1"></label>
     <select id="organSel" title="Open an organ's panel"><option value="">organ&hellip;</option></select>
@@ -102,7 +115,10 @@ body.embed header,body.embed #panel{display:none}body.embed main{grid-template-c
     <div id="crumbs" class="ov"></div>
     <div id="legend" class="ov"></div>
     <div id="inset" class="ov"></div>
-    <div id="stages"><button data-s="0">1 outside</button><button data-s="1">2 split</button><button data-s="2">3 skin off</button><button data-s="3">4 muscle off</button><button data-s="4">5 organs</button></div>
+    <svg id="isvg"></svg>
+    <div id="basis" class="ov"></div>
+    <div id="physio"><canvas id="gillC"></canvas><div class="bar"><button id="ccBtn" class="primary">counter-current</button><button id="coBtn">co-current</button><button id="playBtn">pause</button><button id="gillClose">close</button></div></div>
+    <div id="stages"><button data-s="0">1 outside</button><button data-s="1">2 split</button><button data-s="2">3 skin off</button><button data-s="3">4 muscle off</button><button data-s="4">5 organs</button><button id="gillBtn" title="Zoom into one gill lamella">gill lamella</button></div>
   </div>
   <aside id="panel"><h2>Loading&hellip;</h2></aside>
 </main>
@@ -110,6 +126,8 @@ body.embed header,body.embed #panel{display:none}body.embed main{grid-template-c
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { standinCirculation, normaliseCirculation, Circulation, GillPanel, GILL_STANDIN, BASIS_STANDIN, solveExchange } from './physio.js';
+import { normaliseInteractions, PENDING, drawInteractionGraph } from './interact.js';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const params=new URLSearchParams(location.search);
@@ -118,16 +136,19 @@ const tk='delphi-theme';
 try{if(localStorage.getItem(tk))document.documentElement.dataset.theme=localStorage.getItem(tk);}catch{}
 if(params.get('theme'))document.documentElement.dataset.theme=params.get('theme');
 let PAL={};
-function readPalette(){const cs=getComputedStyle(document.documentElement);['--surface','--ink','--mute','--accent','--suff','--req','--expr','--panel'].forEach(k=>PAL[k]=cs.getPropertyValue(k).trim());}
+function readPalette(){const cs=getComputedStyle(document.documentElement);['--surface','--ink','--mute','--accent','--suff','--req','--expr','--panel','--soft','--line'].forEach(k=>PAL[k]=cs.getPropertyValue(k).trim());}
+// blood colour: the validated orange/blue pair; oxygenated = orange, deoxygenated = blue (identity, not a ramp)
+const physPal=()=>({oxy:PAL['--suff']||'#eb6834',deoxy:PAL['--req']||'#2a78d6',mix:'#8a6c8a',ink:PAL['--ink'],mute:PAL['--mute'],soft:PAL['--soft'],line:PAL['--line'],surface:PAL['--surface']});
 readPalette();
-$('#themeBtn').onclick=()=>{const c=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');const n=c==='dark'?'light':'dark';document.documentElement.dataset.theme=n;try{localStorage.setItem(tk,n)}catch{};readPalette();applyState();drawInset();};
+$('#themeBtn').onclick=()=>{const c=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');const n=c==='dark'?'light':'dark';document.documentElement.dataset.theme=n;try{localStorage.setItem(tk,n)}catch{};readPalette();if(circ)circ.setPalette(physPal());if(gill)gill.pal=physPal();applyState();drawInset();if(state.mode==='tissue'||state.mode==='cell')drawInteractions();};
 
 const LEVEL_NAME={body:'body',organ_system:'organ system',organ:'organ',tissue:'tissue',cell:'cell type'};
 const FIN_ORGAN='UBERON_0000151';
 const WING_GENES=['kcnk5b','kcnh2a','slc43a2a'];
 const MODEL='model/flying-fish.glb', MANIFEST='model/manifest.json';
 let D=null,T=new Map(),children=new Map(),G=null,MF=null,modelInfo={source:'none'};
-let state={split:0,peel:0,obj:null,organ:null,tissue:null,gene:null,preset:null};let hovered=null,noteCollapsed=false,noteTimer=null;
+let state={split:0,peel:0,obj:null,organ:null,tissue:null,gene:null,preset:null,mode:'anatomy'};let hovered=null,noteCollapsed=false,noteTimer=null;
+let circ=null,circData=null,gill=null,physStatus=null,physMods={},interData=null,lastT=0,basisTimer=null;
 
 // ---------- data access (blueprint terms and the ZFA fin subtree answer alike) ----------
 const FS=()=>G&&G.fin_subtree&&G.fin_subtree.nodes?G.fin_subtree:null;
@@ -294,6 +315,7 @@ function pick(e){const h=pickAt(e);const tip=$('#tip');hovered=h?h.name:null;if(
 function frame(){if(spin&&!userMoved)cam.theta+=0.0018;
   if(flyTarget){cam.target.lerp(flyTarget.p,0.08);cam.dist+=(flyTarget.d-cam.dist)*0.08;if(cam.target.distanceTo(flyTarget.p)<0.005&&Math.abs(cam.dist-flyTarget.d)<0.005)flyTarget=null;}
   const x=cam.dist*Math.sin(cam.phi)*Math.cos(cam.theta),y=cam.dist*Math.cos(cam.phi),z=cam.dist*Math.sin(cam.phi)*Math.sin(cam.theta);
+  const now=performance.now()/1000,dt=Math.min(0.05,now-(lastT||now));lastT=now;if(circ)circ.step(dt);if(gill&&$('#physio').style.display==='block')gill.draw(dt);
   camera.position.set(x,y,z).add(cam.target);camera.lookAt(cam.target);renderer.render(scene,camera);labels();$('#stage').dataset.cam=`${cam.target.x.toFixed(3)},${cam.target.y.toFixed(3)},${cam.target.z.toFixed(3)} d=${cam.dist.toFixed(3)} fly=${!!flyTarget}`;requestAnimationFrame(frame);}
 const labelEls=new Map();
 const GROUP_LABEL={pectoral_fin_ray:'pectoral fin rays',vertebra:'vertebral column',ribs:'ribs',pelvic_fin_rays:'pelvic fin rays',dorsal_fin_rays:'dorsal fin rays',anal_fin_rays:'anal fin rays',caudal_fin_rays:'caudal fin rays',gills:'gills',gonad:'gonads',skull:'skull',muscle:'muscle (myomeres)',skin:'skin and scales',eye:'eyes',scapula:'scapula',coracoid:'coracoid',cleithrum:'cleithrum'};
@@ -345,10 +367,10 @@ function fitView(animate){if(!renderer)return;scene.updateMatrixWorld(true);cons
   if(animate)flyTarget={p:c,d};else{cam.target.copy(c);cam.dist=d;flyTarget=null;}}
 function setStage(n){const m=[[0,0],[1,0],[1,1],[1,2],[1,3]][n];state.split=m[0];state.peel=m[1];$('#split').value=m[0]*100;$('#peel').value=m[1];if(!userMoved)cam.phi=state.split>0.3?0.95:1.25;applyState();fitView(true);}
 function reset(){state={split:0,peel:0,obj:null,organ:null,tissue:null,gene:null,preset:null};$('#split').value=0;$('#peel').value=0;$('#organSel').value='';$('#geneQ').value='';cam.theta=-0.9;cam.phi=1.25;cam.dist=1.9;cam.target.set(0,0,0);userMoved=false;flyTarget=null;applyState();fitView(false);intro();}
-function crumbs(){const parts=['<a data-c="body">fish</a>'];if(state.split>0.02)parts.push('split');if(state.peel>0)parts.push(['','skin off','muscle off','skeleton off'][state.peel]);
+function crumbs(){const parts=['<a data-c="body">fish</a>'];if(state.mode&&state.mode!=='anatomy')parts.push({physiology:'physiology',tissue:'tissue signalling',cell:'cell-cell interactions'}[state.mode]);if(state.split>0.02)parts.push('split');if(state.peel>0)parts.push(['','skin off','muscle off','skeleton off'][state.peel]);
   const o=state.obj&&objs.find(x=>x.name===state.obj);if(o)parts.push(esc(o.m.label||o.name));if(state.organ&&!(o&&o.m.ontology_id&&nid(o.m.ontology_id)===state.organ))parts.push(esc(term(state.organ)?.label||state.organ));if(state.tissue)parts.push(esc(term(state.tissue)?.label||state.tissue));if(state.gene)parts.push(`gene lens: <span class="mono">${esc(state.gene)}</span>`);
   $('#crumbs').innerHTML=parts.join(' &rsaquo; ');$$('#stages button').forEach(b=>{const n=+b.dataset.s;b.classList.toggle('on',(n===0&&state.split<0.02&&state.peel===0)||(n===1&&state.split>=0.3&&state.peel===0)||(n>=2&&state.peel===n-1));});
-  $$('#crumbs a').forEach(a=>a.onclick=reset);}
+  $$('#crumbs a').forEach(a=>a.onclick=()=>{setMode('anatomy');reset();});}
 
 // ---------- panel ----------
 function collapseNote(){if(noteCollapsed)return;noteCollapsed=true;$('#note').classList.add('chip');}
@@ -431,6 +453,63 @@ function drawInset(){const box=$('#inset');const fp=G&&G.fin_proportions;if(stat
   const y0=34+groups.length*22;[0,0.25,0.5,0.75,1].forEach(v=>{s+=`<line x1="${x(v)}" y1="${y0}" x2="${x(v)}" y2="${y0+4}" stroke="var(--mute)"/><text x="${x(v)}" y="${y0+15}" text-anchor="middle" fill="var(--mute)">${v}</text>`;});
   s+=`</svg><div class="tiny">Range (bar) and median (tick) of museum specimens, Daane et al. 2021 Data S1, recomputed by the genotype thread; lengths of preserved fish, no mass or fin area. n = ${esc(fp.n_specimens)}. The model's fin uses the flying-fish median.</div>`;box.innerHTML=s;box.style.display='block';}
 
+// ---------- modes: physiology (circulation + gill lamella) and interactions (tissue, cell) ----------
+async function loadPhysiology(){
+  physStatus=await fetch('physiology/status.json').then(r=>r.ok?r.json():null).catch(()=>null);
+  const present=new Set((physStatus&&physStatus.present)||[]);
+  const circRaw=present.has('circulation.json')?await fetch('physiology/circulation.json').then(r=>r.json()).catch(()=>null):null;
+  const gillRaw=present.has('gills.json')?await fetch('physiology/gills.json').then(r=>r.json()).catch(()=>null):null;
+  for(const f of ['countercurrent.js','cardiac.js'])if(present.has(f)){try{physMods[f]=await import('./physiology/'+f);}catch(e){physMods[f]={error:String(e)};}}
+  circData=normaliseCirculation(circRaw,MF)||standinCirculation(MF);
+  const cc=physMods['countercurrent.js'];const solver=cc&&typeof(cc.solve||cc.solveExchange||cc.default)==='function'?(cc.solve||cc.solveExchange||cc.default):null;
+  const gp=gillRaw&&(gillRaw.params||gillRaw.lamella||gillRaw);const params=gp&&typeof gp.Pw_in==='number'?Object.assign({},GILL_STANDIN,gp):GILL_STANDIN;
+  gill=new GillPanel($('#gillC'),physPal(),params,solver);gill.sourced={gills:!!gillRaw,solver:!!solver,circ:circData.source!=='stand-in'};
+}
+function setMode(m){state.mode=m;$('#modeSel').value=m;
+  if(circ){circ.dispose();circ=null;}
+  $('#physio').style.display='none';$('#basis').style.display='none';$('#isvg').style.display='none';$('#gillBtn').style.display=m==='physiology'?'':'none';
+  if(m==='physiology'){if(!circData){loadPhysiology().then(()=>setMode('physiology'));return;}
+    if(state.peel<3){state.peel=3;$('#peel').value=3;}if(state.split<0.3){state.split=1;$('#split').value=100;}
+    circ=new Circulation(scene,root.children[0],circData,physPal());applyState();fitView(true);basisBox();physioPanel();}
+  else if(m==='tissue'||m==='cell'){if(!interData){fetch('interactions.json').then(r=>r.ok?r.json():null).catch(()=>null).then(raw=>{interData=normaliseInteractions(raw)||PENDING;setMode(m);});return;}
+    $('#isvg').style.display='block';drawInteractions();}
+  else{applyState();intro();}
+  crumbs();}
+function basisBox(){const B=circData.basis||BASIS_STANDIN;const src=circData.source;
+  $('#basis').innerHTML=`<b>Basis of this animation${src==='stand-in'?' (stand-in, pending the physiology thread)':''}</b><span class="body">
+    <div><span class="k">flying-fish data:</span> ${esc(B.flying_fish_data||'see file')}</div><div><span class="k">proxy teleost:</span> ${esc(B.proxy_teleost||B.proxy||'see file')}</div><div><span class="k">assumed:</span> ${esc(B.assumed||'see file')}</div>${src==='stand-in'?`<div><span class="k">pending:</span> ${esc(B.pending||'')}</div>`:`<div><span class="k">source:</span> ${esc(src)}${circData.note?' · '+esc(circData.note):''}</div>`}
+    <div class="tiny" style="margin-top:4px"><span style="color:var(--suff)">&#9679;</span> oxygenated &nbsp;<span style="color:var(--req)">&#9679;</span> deoxygenated; particles are a flow cartoon, not a measured velocity field.</div></span>`;$('#basis').style.display='block';$('#basis').classList.remove('chip');$('#basis').onclick=()=>$('#basis').classList.toggle('chip');clearTimeout(basisTimer);basisTimer=setTimeout(()=>$('#basis').classList.add('chip'),8000);}
+function physioPanel(){const C=circData;const nodes=C.nodes.filter(n=>!/proxy/.test(n.label));
+  let h=`<h2>Circulation and gill breathing</h2><p class="small">A teleost has one circuit: the heart pumps deoxygenated blood to the gills, oxygenated blood runs through the dorsal aorta to the organs and returns by the veins to the heart. Particles follow that loop over the model's organ centres${C.source==='stand-in'?'; the route, branch shares and speed are stand-ins until the physiology thread\'s circulation.json lands':''}.</p>
+    <div class="sec"><h4>Stations on the loop</h4><table><tr><th>station</th><th>blood</th><th>position basis</th></tr>${nodes.map(n=>`<tr><td>${esc(n.label)}</td><td><span class="chip" style="color:${n.o2==='oxygenated'?'var(--suff)':n.o2==='deoxygenated'?'var(--req)':'var(--mute)'}">${esc(n.o2)}</span></td><td class="tiny">${esc(n.basis||'')}</td></tr>`).join('')}</table><p class="tiny">Vessel proxies (dorsal aorta, cardinal vein, carotid) are not objects of the model; their positions are chosen along the vertebral column and the ventral body wall.</p></div>
+    <div class="sec"><h4>Gill lamella</h4><p class="small">Press <b>gill lamella</b> to zoom into one lamella: water flows one way, blood the other, and O\u2082 diffuses down the PO\u2082 difference along the whole length. Toggle to co-current to see why the counter-current arrangement lets blood leave with a higher PO\u2082 than the water leaving.</p><p class="tiny">${esc((gill&&gill.p.note)||GILL_STANDIN.note)}${gill&&gill.sourced&&gill.sourced.solver?' Solver: physiology/countercurrent.js.':' Solver: the page\'s own 1-D exchange stand-in (physio.js).'}</p></div>
+    <div class="sec"><h4>What is not here</h4><ul class="t small"><li>No flying-fish heart rate, cardiac output, gill area or blood gas is in the files; nothing drawn is a measurement.</li><li>Air-breathing or gliding effects on gas exchange are not modelled.</li><li>${physStatus&&physStatus.present&&physStatus.present.length?`Physiology files present: ${physStatus.present.map(esc).join(', ')}.`:'physiology/ has not been written yet.'}</li></ul></div>`;
+  $('#panel').innerHTML=h;}
+function openGill(){if(!gill)return;$('#basis').classList.add('chip');const box=$('#physio');box.style.display='block';const c=$('#gillC');const r=box.getBoundingClientRect();c.width=Math.round(r.width*(devicePixelRatio||1));c.height=Math.round(r.height*(devicePixelRatio||1));gill.ctx.setTransform(devicePixelRatio||1,0,0,devicePixelRatio||1,0,0);Object.defineProperty(gill.c,'width',{value:r.width,configurable:true});Object.defineProperty(gill.c,'height',{value:r.height,configurable:true});gill.draw(0);
+  const o=objs.find(x=>/^gills_/.test(x.name));if(o){state.obj=o.name;applyState();fitView(true);}gillPanel();}
+function gillPanel(){const res=solveExchange(gill.p,true),co=solveExchange(gill.p,false);
+  $('#panel').innerHTML=`<h2>One gill lamella</h2><p class="small">Water passes over the lamella in one direction; blood in the secondary lamellar capillaries runs the opposite way. Because the two streams meet along their whole length, the PO\u2082 difference stays positive everywhere and blood can leave at a PO\u2082 higher than the water that leaves. With co-current flow the two streams converge to one value and the blood can never exceed the water outlet.</p>
+    <div class="sec"><h4>With the stand-in parameters</h4><table><tr><th></th><th>counter-current</th><th>co-current</th></tr><tr><td>O\u2082 extracted from water</td><td>${(res.extraction*100).toFixed(0)} %</td><td>${(co.extraction*100).toFixed(0)} %</td></tr><tr><td>blood PO\u2082 out (mmHg)</td><td>${res.Pb_out.toFixed(0)}</td><td>${co.Pb_out.toFixed(0)}</td></tr><tr><td>water PO\u2082 out (mmHg)</td><td>${res.Pw_out.toFixed(0)}</td><td>${co.Pw_out.toFixed(0)}</td></tr></table><p class="tiny">${esc(gill.p.note||'')} The percentages depend on the assumed transfer coefficient and capacitance ratio; the ordering (counter-current extracts more) does not.</p></div>
+    <div class="sec"><h4>Anatomy behind it</h4><p class="small">The model's gills are four schematic arches per side (manifest: illustrative count). The blueprint has no gill, lamella or aorta node for Exocoetidae, which is why this zoom is drawn as a diagram rather than from a term.</p></div>
+    <div class="sec"><h4>Basis</h4><ul class="t small"><li>flying-fish data: none</li><li>proxy teleost: the counter-current arrangement of water and blood in teleost gills (textbook physiology)</li><li>assumed: every number on the panel</li><li>${gill.sourced&&gill.sourced.solver?'solver from physiology/countercurrent.js':'solver: the page\'s own stand-in'}; ${gill.sourced&&gill.sourced.gills?'parameters from physiology/gills.json':'parameters: stand-in'}</li></ul></div>`;}
+function drawInteractions(){const kind=state.mode;const svg=$('#isvg');const organ=state.organ&&term(state.organ)&&term(state.organ).level==='organ'?state.organ:FIN_ORGAN;const ot=term(organ);
+  let nodes=[],caption='';
+  if(kind==='tissue'){const F=FS();if(organ===FIN_ORGAN&&F){const ids=Object.keys(F.nodes).filter(k=>['part','precursor','precursor part'].includes(F.nodes[k].level));nodes=ids.map(k=>({id:k,label:F.nodes[k].label||k,hasRec:hasRec(k)}));caption=`${ot.label}: ${nodes.length} tissues and bud parts from genotype/fin-subtree.json (zebrafish anatomy)`;}
+    else{const ids=(children.get(organ)||[]).filter(k=>term(k)&&term(k).level==='tissue');nodes=ids.map(k=>({id:k,label:term(k).label,hasRec:hasRec(k)}));caption=`${ot.label}: ${nodes.length} tissues from the blueprint`;}}
+  else{const F=FS();if(organ===FIN_ORGAN&&F){const ids=Object.keys(F.nodes).filter(k=>F.nodes[k].level==='cell');nodes=ids.map(k=>({id:k,label:F.nodes[k].label||k,hasRec:hasRec(k)}));caption=`${ot.label}: ${nodes.length} post-composed cell types from genotype/fin-subtree.json`;}
+    else{const ids=(children.get(organ)||[]).filter(k=>term(k)&&term(k).level==='cell');nodes=ids.map(k=>({id:k,label:term(k).label,hasRec:hasRec(k)}));caption=`${ot.label}: ${nodes.length} cell types the blueprint places under the organ`;}}
+  const links=(kind==='tissue'?interData.tissue:interData.cell);
+  const res=drawInteractionGraph(svg,nodes,links,{kind,caption:caption+(interData.source==='pending'?' · interactions: pending':` · ${links.length} interactions from ${interData.source}`),onPick:id=>{state.tissue=id;show(id);},onLink:(l,a,b)=>interactionPanel(l,a,b)});
+  interactionPanel(null,null,null,{organ:ot,kind,nodes:nodes.length,drawn:res.drawn,unmatched:res.unmatched});}
+function interactionPanel(l,a,b,ctx){
+  if(l){$('#panel').innerHTML=`<h2>${esc(a.label)} \u2192 ${esc(b.label)}</h2><div><span class="chip ${l.grade==='experimental'?'ok':'warn'}">${esc(l.grade==='experimental'?'shown experimentally':l.grade==='inferred'?'inferred by orthology from human/mouse databases':'evidence: '+l.grade)}</span>${l.organism?`<span class="chip">${esc(l.organism)}</span>`:''}${l.kind?`<span class="chip">${esc(l.kind)}</span>`:''}</div>
+      ${l.genes&&l.genes.length?`<div class="sec"><h4>Genes</h4><div>${l.genes.map(g=>`<span class="gene" data-g="${esc(g)}">${esc(g)}</span>`).join('')}</div></div>`:''}${l.ligand||l.receptor?`<p class="small">ligand <span class="mono">${esc(l.ligand||'?')}</span> \u2192 receptor <span class="mono">${esc(l.receptor||'?')}</span></p>`:''}${l.pathway?`<p class="small">pathway: ${esc(l.pathway)}</p>`:''}
+      <div class="sec"><h4>Source</h4><p class="small">${l.url?`<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.source||l.url)}</a>`:esc(l.source||'no source given in interactions.json')}</p></div><p class="tiny">From ${esc(interData.source)}${interData.built?', built '+esc(interData.built):''}. ${esc(interData.organism_note||'')}</p>`;
+    $$('[data-g]').forEach(x=>x.onclick=()=>{setMode('anatomy');lens(x.dataset.g);});return;}
+  const c=ctx;$('#panel').innerHTML=`<h2>${c.kind==='tissue'?'Tissue signalling':'Cell-cell interactions'}: ${esc(c.organ.label)}</h2>
+    <p class="small">${c.kind==='tissue'?'Arrows are signalling from one tissue to another (for the fin bud: apical ectodermal ridge, mesoderm, zone of polarizing activity, fin fold), each labelled with its genes and clickable to its source.':'Glyphs are cell types; links are ligand-receptor pairs or gap junctions, each with its source and evidence grade.'} Solid dark arrows: shown experimentally. Dashed grey arrows: inferred by orthology from human or mouse databases.</p>
+    ${interData.source==='pending'?`<div class="prov model"><b>Pending</b><span class="small">${esc(interData.note)}</span></div>`:`<p class="small">${c.drawn} interaction${c.drawn===1?'':'s'} drawn${c.unmatched?`; ${c.unmatched} rows name tissues or cells not among these ${c.nodes} nodes`:''}. Source ${esc(interData.source)}${interData.built?', built '+esc(interData.built):''}. ${esc(interData.note||'')}</p>`}
+    <p class="tiny">Pick another organ from the dropdown to change the set; click a node for its genes and provenance. Hollow glyph: no gene record (unstudied, not gene-free).</p>`;}
 // ---------- boot ----------
 Promise.all([fetch('data.json').then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}),loadModel()]).then(([d,sc])=>{D=d;init(sc);}).catch(e=>{$('#panel').innerHTML='<h2>The view failed to load</h2><p class="small">'+esc(e.message)+'</p>';console.error(e);});
 function init(sc){
@@ -438,11 +517,14 @@ function init(sc){
   for(const t of D.terms){for(const p of t.parents){if(!children.has(p.id))children.set(p.id,[]);children.get(p.id).push(t.id);}}
   G=D.genotype&&!D.genotype.gated&&!D.genotype.error&&D.genotype.nodes?D.genotype:null;
   const sel=$('#organSel');for(const o of D.terms.filter(t=>t.level==='organ').sort((a,b)=>a.label.localeCompare(b.label))){const op=document.createElement('option');op.value=o.id;op.textContent=o.label+(hasRec(o.id)?'':' (no gene record)');sel.appendChild(op);}
-  sel.onchange=()=>{if(sel.value)goOrgan(sel.value);};
+  sel.onchange=()=>{if(!sel.value)return;if(state.mode==='tissue'||state.mode==='cell'){state.organ=sel.value;drawInteractions();}else goOrgan(sel.value);};
   const dl=$('#geneList');if(G){for(const s of Object.keys(G.gene_index||{}).sort()){const op=document.createElement('option');op.value=s;dl.appendChild(op);}}
   $('#geneQ').onchange=e=>{const q=e.target.value.trim();if(q)lens(q);};$('#geneQ').onkeydown=e=>{if(e.key==='Enter'){const q=e.target.value.trim();if(q)lens(q);}};
   $('#split').oninput=e=>{state.split=+e.target.value/100;applyState();};$('#peel').oninput=e=>{state.peel=+e.target.value;applyState();};$('#split').onchange=$('#peel').onchange=()=>fitView(true);
-  $$('#stages button').forEach(b=>b.onclick=()=>{collapseNote();setStage(+b.dataset.s);});$('#wingBtn').onclick=()=>wing();$('#resetBtn').onclick=reset;
+  $$('#stages button[data-s]').forEach(b=>b.onclick=()=>{collapseNote();setStage(+b.dataset.s);});
+  $('#modeSel').onchange=e=>{collapseNote();setMode(e.target.value);};$('#gillBtn').onclick=openGill;$('#gillClose').onclick=()=>{$('#physio').style.display='none';physioPanel();};
+  $('#ccBtn').onclick=()=>{gill.counter=true;$('#ccBtn').classList.add('primary');$('#coBtn').classList.remove('primary');gillPanel();};$('#coBtn').onclick=()=>{gill.counter=false;$('#coBtn').classList.add('primary');$('#ccBtn').classList.remove('primary');gillPanel();};$('#playBtn').onclick=()=>{gill.playing=!gill.playing;if(circ)circ.playing=gill.playing;$('#playBtn').textContent=gill.playing?'pause':'play';};
+  $('#gillBtn').style.display='none';$('#wingBtn').onclick=()=>wing();$('#resetBtn').onclick=reset;
   build(sc);legend();
   if(params.get('split')){state.split=Math.max(0,Math.min(1,+params.get('split')));$('#split').value=state.split*100;}
   if(params.get('peel')){state.peel=Math.max(0,Math.min(3,+params.get('peel')));$('#peel').value=state.peel;}
@@ -456,6 +538,7 @@ function init(sc){
   applyState();if(!userMoved&&state.split>0.3)cam.phi=0.95;fitView(false);
   if(params.get('gene'))lens(params.get('gene'),true);
   else if(state.tissue)show(state.tissue);else if(state.organ)show(state.organ);else if(state.obj)selectObj(state.obj);else intro();
+  const mode=params.get('mode');if(mode&&['physiology','tissue','cell'].includes(mode)){collapseNote();setMode(mode);if(mode==='physiology'&&params.get('gill')==='1')setTimeout(openGill,800);}
 }
 </script>
 </body>
