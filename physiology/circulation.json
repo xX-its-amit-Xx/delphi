@@ -1,0 +1,579 @@
+{
+ "title": "Teleost single circuit (heart -> gills -> body -> heart) for the flying-fish viewer",
+ "note": "Directed graph. share = fraction of cardiac output on that edge at rest (null = not sourced). object = anatomy-model/manifest.json object name (null -> see position_hint). term_id = id in dashboard/public/blueprint3d/data.json terms (looked up 2026-10-31; null where no term exists; the manifest gills, intestine, swim bladder and muscle objects carry no ontology id). o2: oxygenated | deoxygenated | oxygenating. No flying-fish circulation data were found; all values are other-teleost proxies or assumptions. No bird data used.",
+ "cardiac_output_ml_min_kg": {
+  "rest": 28.54,
+  "max": 58.48,
+  "kind": "proxy",
+  "species": "Lutjanus apodus, 28 degC",
+  "source": "durnford2026 Table 1",
+  "alt": {
+   "rest": 26.3,
+   "kind": "proxy",
+   "species": "O. mykiss SW 10.5 degC",
+   "source": "sundell2018"
+  }
+ },
+ "venous_PO2_kPa": {
+  "rest": 2.5,
+  "fatigue_floor": 1.15,
+  "kind": "proxy",
+  "source": "rest: derived (gills.json Pb_in); floor: steffensen1998 8.6 torr at fatigue (trout)"
+ },
+ "flow_note": "flow on an edge (ml/min/kg) = share x cardiac output",
+ "nodes": [
+  {
+   "id": "sinus_venosus",
+   "label": "sinus venosus",
+   "object": "heart",
+   "o2": "deoxygenated",
+   "term_id": "UBERON_0000948",
+   "term_note": "no sinus venosus term in data.json; heart used"
+  },
+  {
+   "id": "atrium",
+   "label": "atrium",
+   "object": "heart",
+   "o2": "deoxygenated",
+   "term_id": "UBERON_0000948",
+   "related_terms": [
+    "UBERON_0004490 cardiac muscle tissue of atrium"
+   ]
+  },
+  {
+   "id": "ventricle",
+   "label": "ventricle",
+   "object": "heart",
+   "o2": "deoxygenated",
+   "term_id": "UBERON_0000948",
+   "related_terms": [
+    "UBERON_0018649 cardiac muscle tissue of ventricle"
+   ],
+   "HR_bpm": {
+    "rest": 96.41,
+    "max": 153.01,
+    "kind": "proxy",
+    "source": "durnford2026 (Lutjanus apodus, 28 degC)"
+   },
+   "SV_ml_kg": {
+    "rest": 0.306,
+    "max": 0.429,
+    "kind": "proxy",
+    "source": "durnford2026"
+   }
+  },
+  {
+   "id": "bulbus_arteriosus",
+   "label": "bulbus arteriosus",
+   "object": "heart",
+   "o2": "deoxygenated",
+   "term_id": "UBERON_0000948",
+   "term_note": "no bulbus term in data.json"
+  },
+  {
+   "id": "ventral_aorta",
+   "label": "ventral aorta",
+   "object": null,
+   "o2": "deoxygenated",
+   "position_hint": "midline below the gills, between heart and gill arches",
+   "term_id": null,
+   "pressure_kPa": {
+    "mean": 2.71,
+    "kind": "assumed",
+    "source": "P_DA / (1 - 0.25): gill resistance fraction assumed (cardiac.js); no fetched absolute ventral aortic pressure"
+   },
+   "PO2_kPa": {
+    "value": 2.5,
+    "kind": "derived",
+    "source": "mixed venous PO2 of the trout reference (gills.json Pb_in)"
+   }
+  },
+  {
+   "id": "afferent_branchial_L",
+   "label": "afferent branchial arteries, left",
+   "object": "gills_L",
+   "o2": "deoxygenated",
+   "term_id": null,
+   "parent_term": "UBERON_0000171 respiration organ"
+  },
+  {
+   "id": "afferent_branchial_R",
+   "label": "afferent branchial arteries, right",
+   "object": "gills_R",
+   "o2": "deoxygenated",
+   "term_id": null,
+   "parent_term": "UBERON_0000171 respiration organ"
+  },
+  {
+   "id": "lamellae_L",
+   "label": "gill filaments / secondary lamellae, left",
+   "object": "gills_L",
+   "o2": "oxygenating",
+   "term_id": null,
+   "parent_term": "UBERON_0000171 respiration organ",
+   "model": "countercurrent.js + gills.json"
+  },
+  {
+   "id": "lamellae_R",
+   "label": "gill filaments / secondary lamellae, right",
+   "object": "gills_R",
+   "o2": "oxygenating",
+   "term_id": null,
+   "parent_term": "UBERON_0000171 respiration organ",
+   "model": "countercurrent.js + gills.json"
+  },
+  {
+   "id": "efferent_branchial_L",
+   "label": "efferent branchial arteries, left",
+   "object": "gills_L",
+   "o2": "oxygenated",
+   "term_id": null
+  },
+  {
+   "id": "efferent_branchial_R",
+   "label": "efferent branchial arteries, right",
+   "object": "gills_R",
+   "o2": "oxygenated",
+   "term_id": null
+  },
+  {
+   "id": "dorsal_aorta",
+   "label": "dorsal aorta",
+   "object": null,
+   "o2": "oxygenated",
+   "position_hint": "midline just below the vertebral column (vertebra_* objects)",
+   "term_id": null,
+   "pressure_kPa": {
+    "mean": 2.03,
+    "kind": "proxy",
+    "source": "sundell2018: 20.7 +/- 1.5 cmH2O, SW rainbow trout 10.5 degC (FW 30.8)"
+   },
+   "PO2_kPa": {
+    "value": 15.8,
+    "kind": "proxy",
+    "source": "mcarley2022: resting arterial PO2, rainbow trout ~10 degC"
+   }
+  },
+  {
+   "id": "coeliacomesenteric_artery",
+   "label": "coeliacomesenteric artery",
+   "object": null,
+   "o2": "oxygenated",
+   "position_hint": "first caudal branch of the dorsal aorta (brijs2015)",
+   "term_id": null
+  },
+  {
+   "id": "liver",
+   "label": "liver",
+   "object": "liver",
+   "o2": "oxygenated",
+   "term_id": "UBERON_0002107",
+   "note": "receives arterial and hepatic portal blood (gerry2014)"
+  },
+  {
+   "id": "stomach",
+   "label": "stomach",
+   "object": null,
+   "o2": "oxygenated",
+   "term_id": "UBERON_0000945",
+   "position_hint": "no stomach object in manifest; between oesophagus and intestine"
+  },
+  {
+   "id": "intestine",
+   "label": "intestine and pyloric caeca",
+   "object": "intestine",
+   "o2": "oxygenated",
+   "term_id": "UBERON_0002108",
+   "term_note": "manifest intestine has no ontology id; small intestine term used"
+  },
+  {
+   "id": "spleen",
+   "label": "spleen",
+   "object": "spleen",
+   "o2": "oxygenated",
+   "term_id": "UBERON_0002106"
+  },
+  {
+   "id": "swim_bladder",
+   "label": "swim bladder",
+   "object": "swim_bladder",
+   "o2": "oxygenated",
+   "term_id": null
+  },
+  {
+   "id": "gonads",
+   "label": "gonads",
+   "object": "gonad_L",
+   "o2": "oxygenated",
+   "also_object": "gonad_R",
+   "term_id": "UBERON_0000991"
+  },
+  {
+   "id": "kidney",
+   "label": "kidneys (trunk kidney)",
+   "object": "kidney",
+   "o2": "oxygenated",
+   "also_object": "head_kidney",
+   "term_id": "UBERON_0002113",
+   "note": "receives arterial and renal portal blood (gerry2014, bjorgen2021)"
+  },
+  {
+   "id": "coronary",
+   "label": "coronary circulation (compact myocardium)",
+   "object": "heart",
+   "o2": "oxygenated",
+   "term_id": "UBERON_0000948"
+  },
+  {
+   "id": "body_rest",
+   "label": "axial muscle, fin muscles, skin, brain, eyes and other tissues",
+   "object": "muscle_L",
+   "o2": "oxygenated",
+   "also_objects": [
+    "muscle_R",
+    "brain",
+    "eye_L",
+    "eye_R",
+    "skin_L",
+    "skin_R"
+   ],
+   "term_ids": {
+    "brain": "UBERON_0000955",
+    "eye": "UBERON_0000970",
+    "skin": "UBERON_0002097",
+    "muscle": null
+   },
+   "note": "remainder of cardiac output; gerry2014 splits it among muscle groups only in Fig. 2 (not read)"
+  },
+  {
+   "id": "hepatic_portal_vein",
+   "label": "hepatic portal vein",
+   "object": null,
+   "o2": "deoxygenated",
+   "position_hint": "from gut and spleen to liver",
+   "term_id": null
+  },
+  {
+   "id": "hepatic_vein",
+   "label": "hepatic veins",
+   "object": null,
+   "o2": "deoxygenated",
+   "position_hint": "liver to sinus venosus",
+   "term_id": null
+  },
+  {
+   "id": "renal_portal",
+   "label": "renal portal veins (segmental veins of trunk muscle and skin)",
+   "object": null,
+   "o2": "deoxygenated",
+   "position_hint": "from lateral and dorsal musculature and skin to kidney (bjorgen2021)",
+   "term_id": null
+  },
+  {
+   "id": "caudal_cardinal",
+   "label": "caudal (posterior) cardinal veins",
+   "object": null,
+   "o2": "deoxygenated",
+   "position_hint": "kidney to duct of Cuvier (bjorgen2021: vv. cardinales caudales)",
+   "term_id": null
+  },
+  {
+   "id": "anterior_cardinal",
+   "label": "anterior cardinal veins",
+   "object": null,
+   "o2": "deoxygenated",
+   "position_hint": "head to duct of Cuvier; not in a fetched source",
+   "term_id": null,
+   "kind": "assumed"
+  },
+  {
+   "id": "duct_of_cuvier",
+   "label": "common cardinal veins (ducts of Cuvier)",
+   "object": null,
+   "o2": "deoxygenated",
+   "position_hint": "into the sinus venosus; not in a fetched source",
+   "term_id": null,
+   "kind": "assumed"
+  }
+ ],
+ "edges": [
+  {
+   "from": "sinus_venosus",
+   "to": "atrium",
+   "share": 1,
+   "source": "single circuit: all venous return"
+  },
+  {
+   "from": "atrium",
+   "to": "ventricle",
+   "share": 1,
+   "source": "single circuit"
+  },
+  {
+   "from": "ventricle",
+   "to": "bulbus_arteriosus",
+   "share": 1,
+   "source": "single circuit"
+  },
+  {
+   "from": "bulbus_arteriosus",
+   "to": "ventral_aorta",
+   "share": 1,
+   "source": "single circuit"
+  },
+  {
+   "from": "ventral_aorta",
+   "to": "afferent_branchial_L",
+   "share": 0.5,
+   "source": "left/right symmetry assumed",
+   "kind": "assumed"
+  },
+  {
+   "from": "ventral_aorta",
+   "to": "afferent_branchial_R",
+   "share": 0.5,
+   "source": "left/right symmetry assumed",
+   "kind": "assumed"
+  },
+  {
+   "from": "afferent_branchial_L",
+   "to": "lamellae_L",
+   "share": 0.5,
+   "source": "all gill flow passes the lamellae (shunts not modelled)",
+   "kind": "assumed"
+  },
+  {
+   "from": "afferent_branchial_R",
+   "to": "lamellae_R",
+   "share": 0.5,
+   "source": "as left",
+   "kind": "assumed"
+  },
+  {
+   "from": "lamellae_L",
+   "to": "efferent_branchial_L",
+   "share": 0.5,
+   "source": ""
+  },
+  {
+   "from": "lamellae_R",
+   "to": "efferent_branchial_R",
+   "share": 0.5,
+   "source": ""
+  },
+  {
+   "from": "efferent_branchial_L",
+   "to": "dorsal_aorta",
+   "share": 0.5,
+   "source": ""
+  },
+  {
+   "from": "efferent_branchial_R",
+   "to": "dorsal_aorta",
+   "share": 0.5,
+   "source": ""
+  },
+  {
+   "from": "dorsal_aorta",
+   "to": "coronary",
+   "share": 0.01,
+   "source": "gerry2014 Discussion: salmonid coronary circulation ~1% of cardiac output at rest (citing refs); origin drawn from the dorsal aorta for simplicity (assumed)",
+   "kind": "secondary"
+  },
+  {
+   "from": "dorsal_aorta",
+   "to": "coeliacomesenteric_artery",
+   "share": 0.1664,
+   "source": "sum of organs it supplies; brijs2015: stomach, intestine, liver, gonads (spleen, swim bladder assumed on this branch)",
+   "kind": "proxy"
+  },
+  {
+   "from": "coeliacomesenteric_artery",
+   "to": "liver",
+   "share": 0.0296,
+   "source": "gerry2014 Table 1 (O. mykiss, microspheres, % of total blood flow at rest; mean)",
+   "kind": "proxy",
+   "share_at_0p9Umax": 0.0016
+  },
+  {
+   "from": "coeliacomesenteric_artery",
+   "to": "stomach",
+   "share": 0.022799999999999997,
+   "source": "gerry2014 Table 1 (O. mykiss, microspheres, % of total blood flow at rest; mean)",
+   "kind": "proxy",
+   "share_at_0p9Umax": 0.0070999999999999995
+  },
+  {
+   "from": "coeliacomesenteric_artery",
+   "to": "intestine",
+   "share": 0.0977,
+   "source": "gerry2014 Table 1 (O. mykiss, microspheres, % of total blood flow at rest; mean)",
+   "kind": "proxy",
+   "share_at_0p9Umax": 0.029300000000000003
+  },
+  {
+   "from": "coeliacomesenteric_artery",
+   "to": "spleen",
+   "share": 0.0031,
+   "source": "gerry2014 Table 1 (O. mykiss, microspheres, % of total blood flow at rest; mean)",
+   "kind": "proxy",
+   "share_at_0p9Umax": 0.0003
+  },
+  {
+   "from": "coeliacomesenteric_artery",
+   "to": "gonads",
+   "share": 0.011200000000000002,
+   "source": "gerry2014 Table 1 (O. mykiss, microspheres, % of total blood flow at rest; mean)",
+   "kind": "proxy",
+   "share_at_0p9Umax": 0.0024
+  },
+  {
+   "from": "coeliacomesenteric_artery",
+   "to": "swim_bladder",
+   "share": 0.002,
+   "source": "gerry2014 Table 1 (O. mykiss, microspheres, % of total blood flow at rest; mean)",
+   "kind": "proxy",
+   "share_at_0p9Umax": 0.0012
+  },
+  {
+   "from": "dorsal_aorta",
+   "to": "kidney",
+   "share": 0.0779,
+   "source": "gerry2014 Table 1 (O. mykiss, microspheres, % of total blood flow at rest; mean); arterial share only",
+   "kind": "proxy",
+   "share_at_0p9Umax": 0.0292
+  },
+  {
+   "from": "dorsal_aorta",
+   "to": "body_rest",
+   "share": 0.7457,
+   "source": "remainder = 1 - organs in gerry2014 Table 1 - coronary 1%; mostly muscle, and the muscle share rises with swimming speed (gerry2014)",
+   "kind": "derived"
+  },
+  {
+   "from": "stomach",
+   "to": "hepatic_portal_vein",
+   "share": 0.022799999999999997,
+   "source": "gut venous blood drains to the liver (gerry2014: liver gets portal blood)",
+   "kind": "proxy"
+  },
+  {
+   "from": "intestine",
+   "to": "hepatic_portal_vein",
+   "share": 0.0977,
+   "source": "as stomach",
+   "kind": "proxy"
+  },
+  {
+   "from": "spleen",
+   "to": "hepatic_portal_vein",
+   "share": 0.0031,
+   "source": "bjorgen2021: splenic veins join the hepatic portal system",
+   "kind": "proxy"
+  },
+  {
+   "from": "hepatic_portal_vein",
+   "to": "liver",
+   "share": 0.1236,
+   "source": "portal flow = sum of drained beds",
+   "kind": "derived"
+  },
+  {
+   "from": "liver",
+   "to": "hepatic_vein",
+   "share": 0.1532,
+   "source": "arterial + portal",
+   "kind": "derived"
+  },
+  {
+   "from": "hepatic_vein",
+   "to": "sinus_venosus",
+   "share": 0.1532,
+   "source": "",
+   "kind": "derived"
+  },
+  {
+   "from": "body_rest",
+   "to": "renal_portal",
+   "share": null,
+   "source": "bjorgen2021: segmental veins from lateral and dorsal musculature and skin supply the kidney sinusoids (renal portal system); fraction not found"
+  },
+  {
+   "from": "renal_portal",
+   "to": "kidney",
+   "share": null,
+   "source": "bjorgen2021"
+  },
+  {
+   "from": "kidney",
+   "to": "caudal_cardinal",
+   "share": null,
+   "source": "bjorgen2021: venous drainage via the vv. cardinales caudales"
+  },
+  {
+   "from": "body_rest",
+   "to": "anterior_cardinal",
+   "share": null,
+   "source": "head drainage; assumed",
+   "kind": "assumed"
+  },
+  {
+   "from": "gonads",
+   "to": "caudal_cardinal",
+   "share": 0.011200000000000002,
+   "source": "drainage route assumed",
+   "kind": "assumed"
+  },
+  {
+   "from": "swim_bladder",
+   "to": "caudal_cardinal",
+   "share": 0.002,
+   "source": "drainage route assumed",
+   "kind": "assumed"
+  },
+  {
+   "from": "caudal_cardinal",
+   "to": "duct_of_cuvier",
+   "share": null,
+   "source": "assumed anatomy",
+   "kind": "assumed"
+  },
+  {
+   "from": "anterior_cardinal",
+   "to": "duct_of_cuvier",
+   "share": null,
+   "source": "assumed anatomy",
+   "kind": "assumed"
+  },
+  {
+   "from": "duct_of_cuvier",
+   "to": "sinus_venosus",
+   "share": null,
+   "source": "assumed anatomy",
+   "kind": "assumed"
+  },
+  {
+   "from": "coronary",
+   "to": "sinus_venosus",
+   "share": 0.01,
+   "source": "coronary venous return; route assumed",
+   "kind": "assumed"
+  }
+ ],
+ "basis": {
+  "flying_fish": [],
+  "proxy": [
+   "Oncorhynchus mykiss: organ flow fractions (gerry2014), dorsal aortic pressure (sundell2018), arterial PO2 (mcarley2022), venous PO2 floor (steffensen1998)",
+   "Lutjanus apodus: cardiac output, HR, SV (durnford2026)",
+   "teleost anatomy: renal and hepatic portal systems (bjorgen2021), coeliacomesenteric artery (brijs2015)"
+  ],
+  "assumed": [
+   "ventral aortic pressure (gill resistance 25% of total)",
+   "left/right symmetry",
+   "anterior cardinal and duct of Cuvier routes",
+   "coronary origin and drainage",
+   "no gill shunts",
+   "gonad and swim bladder venous drainage"
+  ]
+ }
+}

@@ -370,6 +370,55 @@ if (kh) records.push(record({
   evLabel: 'ZFIN row counts for kcnh2a and the provenance of its sufficiency grade', evDesc: 'Read from genotype/causal-chains.json, gene kcnh2a, and from the ZFIN bulk files in the thread\'s raw set.',
 }));
 
+// ---- the refutations: limb-biology expectations that zebrafish evidence does not support ----------
+// One record per entry in interactions.json refuted_or_unsufficient, built from the data rather than retyped, so
+// each carries the verbatim sentence the refutation rests on. These are the records most likely to stop another
+// team asserting a textbook tetrapod-limb interaction in a fish.
+const IX = rd('genotype/interactions.json');
+const ixSha = shaOf('genotype/interactions.json'), ixSize = sizeOf('genotype/interactions.json');
+const ixEntity = `  sub:interactions a prov:Entity ;\n    dct:title "genotype/interactions.json (tissue-to-tissue and cell-to-cell arrows with a grade and a source on each; built ${esc(IX.built)})" ;\n    spdx:checksum sub:ix-sha ;\n    schema:contentSize "${ixSize}"^^xsd:integer ;\n    prov:generatedAtTime "${esc(IX.built)}"^^xsd:dateTime .\n  sub:ix-sha a spdx:Checksum ; spdx:algorithm spdx:checksumAlgorithm_sha256 ; spdx:checksumValue "${ixSha}" .\n`;
+const slugify = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 72);
+(IX.refuted_or_unsupported || []).forEach((r, i) => {
+  const pubs = (r.sources || []).filter(s => s.pmid).filter((s, j, a) => a.findIndex(x => x.pmid === s.pmid) === j);
+  const refuted = /^Refuted|does not exist|contradicted|not the pectoral|not across/i.test(r.finding || '');
+  records.push(record({
+    file: `refutation-${i + 1}-${slugify((r.proposed || '').split(/[.(]/)[0])}.trig`,
+    slug: `genotype-refutation-${i + 1}-${slugify((r.proposed || '').split(/[.(]/)[0])}`,
+    label: `Not established in zebrafish: ${(r.proposed || '').replace(/\s+$/, '')} — ${r.finding}`,
+    status: refuted ? 'refuted for zebrafish, or shown to hold for a different structure or clade than the one assumed' : 'not established in zebrafish: proposed from tetrapod limb biology, and the zebrafish evidence does not support it',
+    description: `A subagent working under genotype/AGENT_BRIEF.md was given this interaction as something to verify or refute, taken from what is known in tetrapod limbs, and the fetched zebrafish sources do not support it. What the sources actually say: ${r.finding} This matters because the project builds a fin, not a limb, and an arrow carried over from chick or mouse limb biology would have been drawn on a flying fish's pectoral fin with no fish evidence behind it. The verbatim sentences are attached to each cited publication.`,
+    context: `From genotype/interactions.json (refuted_or_unsupported entry ${i + 1} of ${(IX.refuted_or_unsupported || []).length}), produced while mapping tissue-to-tissue and cell-to-cell signalling in the zebrafish pectoral fin and fin bud. The arrows that WERE supported are in the same file: ${IX.coverage.interactions} of them, ${IX.coverage.by_grade.mechanism || 0} graded mechanism.`,
+    test: 'Literature check under genotype/AGENT_BRIEF.md: the proposed interaction was searched for in zebrafish sources through a logged fetcher; an arrow with no fetched zebrafish source was recorded as unsupported rather than drawn. No statistical test.',
+    metrics: [['publications_cited', pubs.length, 'publications whose text was quoted for this refutation'],
+              ['supported_arrows_in_the_same_file', IX.coverage.interactions, 'interactions that did pass the same test'],
+              ['arrows_needing_orthology_inference', IX.coverage.orthology_inferred, 'of those, how many had to be inferred from another species (the rest are zebrafish-native)']],
+    datasets: [], publications: pubs, derivedFrom: 'sub:interactions', also: [ixEntity],
+    notEstablished: 'It does not establish that the interaction is absent in zebrafish: absence of a fetched source is not absence of the biology, and several of these were searched for rather than tested experimentally. It establishes that the project has no fish evidence for it today, and so must not draw it.',
+    prereg: 'the interaction was named as a thing to verify BEFORE the search, in the subagent task that the hub and the project lead specified, which is why a negative answer counts here rather than being discarded.',
+    evLabel: `Zebrafish sources checked for: ${(r.proposed || '').slice(0, 120)}`,
+    evDesc: `Read from genotype/interactions.json, refuted_or_unsupported entry ${i + 1}, with the verbatim sentence from each cited paper.`,
+  }));
+});
+
+// the structural gap: no ray-to-inter-ray arrow exists in any fetched source
+const rayGap = (IX.gaps || []).find(g => /inter-?ray/i.test(g.gap || ''));
+records.push(record({
+  file: 'gap-no-ray-to-interray-signalling.trig', slug: 'genotype-gap-no-ray-to-interray-arrow-found',
+  label: 'No signalling arrow between a fin ray and the inter-ray tissue could be sourced in any fin of any fish: no fetched paper names a ligand in one compartment and a receptor in the other',
+  status: 'measured null: an absence of evidence after a logged search, not a demonstration of absence',
+  description: `The fin ray and the tissue between rays are the two compartments that set a fin's shape, so signalling between them was one of the interactions the project asked for by name. ${rayGap ? 'The subagent reported: ' + rayGap.gap : 'The subagent found no source for it.'} Of ${IX.coverage.interactions} interactions recorded in the same run, with ${IX.coverage.by_grade.mechanism || 0} graded mechanism, none runs ray to inter-ray. The arrows that do exist run epidermis to pre-osteoblast, mesenchyme to osteoblast, and blastema to osteoblast, all within or across layers rather than between the ray and inter-ray compartments. A further structural gap found in the same run: every regeneration arrow comes from the caudal fin, so the pectoral equivalents do not exist either.`,
+  context: 'Searched while building genotype/interactions.json. The project needs this arrow because a viewer zooming into a fin ray should be able to show what the ray exchanges with its neighbourhood; it currently cannot, and that is a statement about the literature.',
+  test: 'Logged literature search for a ligand in one compartment and its receptor in the other, in any fin of any fish, through genotype/agent_fetch.py. No statistical test.',
+  metrics: [['ray_to_interray_arrows_found', 0, 'arrows found between the ray and inter-ray compartments'],
+            ['interactions_found_in_the_same_run', IX.coverage.interactions, 'interactions the same run did support'],
+            ['regeneration_arrows_from_the_pectoral_fin', 0, 'regeneration arrows measured in the pectoral rather than the caudal fin'],
+            ['gaps_recorded_in_the_same_run', (IX.gaps || []).length, 'distinct gaps the run recorded']],
+  datasets: [], publications: [], derivedFrom: 'sub:interactions', also: [ixEntity],
+  notEstablished: 'It does not establish that no such signalling exists, nor that nobody has studied it: the search was bounded by what the fetcher could reach, and paywalled full texts were recorded as refusals. It establishes that the project cannot draw this arrow from a source today.',
+  prereg: 'ray and inter-ray signalling was named in the task before the search, so the null is a pre-specified outcome rather than a post-hoc observation.',
+  evLabel: 'Logged search for ray-to-inter-ray signalling, and what was found instead', evDesc: 'Read from genotype/interactions.json gaps and coverage.',
+}));
+
 fs.writeFileSync(path.join(here, 'manifest.json'), JSON.stringify({ built: NOW, map: MAP, map_sha256: mapSha, map_bytes: mapSize, unsigned: true, records }, null, 2));
 console.log(`${records.length} unsigned draft records in ${out}`);
 

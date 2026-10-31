@@ -55,8 +55,22 @@ def closure(root, rel):
     return seen
 PF = "ZFA:0001161"; assert names[PF] == "pectoral fin"
 BUD = next(t for t, n in names.items() if n == "pectoral fin bud")
-fin_terms = closure(PF, "part of"); bud_terms = closure(BUD, "part of")
-terms = fin_terms | bud_terms
+FIELD = next(t for t, n in names.items() if n == "pectoral fin field")   # part_of posterior lateral plate mesoderm, the precursor field
+fin_terms = closure(PF, "part of"); bud_terms = closure(BUD, "part of") | closure(FIELD, "part of")
+# A subclass of a term that is part of the fin is itself inside the fin: 'pectoral fin endoskeletal disc' is_a
+# 'pectoral fin cartilage'. The part_of closure alone misses these, and two subagents hit exactly that gap
+# (ZFA:0001456 holds several of the deepest shha phenotype rows), so is_a descendants are added here.
+subclass_of = {}
+for base in (fin_terms, bud_terms):
+    frontier = set(base)
+    while frontier:
+        nxt = set()
+        for t in frontier:
+            for k in kids[(t, "is_a")]:
+                if k not in base and k not in subclass_of: subclass_of[k] = t; nxt.add(k)
+        base |= nxt; frontier = nxt
+fin_terms |= {t for t, p in subclass_of.items() if p in fin_terms or t in fin_terms}
+terms = fin_terms | bud_terms | {FIELD}
 cl_of, cur = {}, None
 for line in open(os.path.join(RAW, "zfa.obo"), encoding="utf8"):
     line = line.strip()
@@ -83,10 +97,13 @@ def depth_from(root, pool):
 dep = depth_from(PF, fin_terms); depb = depth_from(BUD, bud_terms)
 def level_of(t):
     if t == PF: return "organ"
-    if t == BUD: return "precursor"
+    if t in (BUD, FIELD): return "precursor"
     if t in depb: return "precursor part"
+    if t in subclass_of: return "subpart"     # a kind of a fin part, e.g. the endoskeletal disc
     return "part" if dep.get(t, 9) == 1 else "subpart"
 edges = []
+for t, p in subclass_of.items():
+    if t in terms and p in terms: edges.append({"child": t, "parent": p, "rel": "is_a (a kind of this part)"})
 for t in terms:
     for p in pars[(t, "part of")]:
         if p in terms: edges.append({"child": t, "parent": p, "rel": "part_of"})

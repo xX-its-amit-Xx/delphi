@@ -1,6 +1,6 @@
 # Causal chains from gene to phenotype in the pectoral fin
 
-Built 2026-10-31T20:52:06Z by `genotype/assemble_chains.py` from 7 subagent result files.
+Built 2026-10-31T20:53:36Z by `genotype/assemble_chains.py` from 8 subagent result files.
 Every link carries its own source, organism, experiment type and evidence grade; the grades are, weakest to strongest,
 `hypothesis`, `association`, `necessity`, `sufficiency`, `mechanism`. A link with no fetched source is `missing` and is named as a gap.
 
@@ -10,13 +10,13 @@ Every link carries its own source, organism, experiment type and evidence grade;
 
 | | |
 |---|---|
-| genes with a chain | 35 |
-| chains whose **weakest** link is `necessity` or better | 24 |
-| genes with at least one link graded `necessity` or better | 35 |
-| genes with at least one link graded `mechanism` | 33 |
-| complete four-step chains | 31 |
-| distinct publications cited | 101 |
-| fetched calls by the subagents | 293 |
+| genes with a chain | 42 |
+| chains whose **weakest** link is `necessity` or better | 29 |
+| genes with at least one link graded `necessity` or better | 42 |
+| genes with at least one link graded `mechanism` | 38 |
+| complete four-step chains | 38 |
+| distinct publications cited | 122 |
+| fetched calls by the subagents | 295 |
 
 ## Strongest chain end to end: mib1
 
@@ -42,8 +42,10 @@ Ordered by **chain strength**, the weakest grade on the chain, because that is w
 | kcnk5b | `sufficiency` | `mechanism` | mesenchyme pectoral fin (part) | 3 / 1 | molecular_function->process. The step is heavily sourced but the papers disagree on sign: Perathoner 2014 shows the gain-of-function channel hyperpolarizes (oocytes), Jiang 2024 shows Kcnk5b produces  |
 | kcnh2a | `sufficiency` | `mechanism` | mesenchyme pectoral fin (part) | 1 / 3 | gene->molecular_function joined to molecular_function->process. The biophysics (Kume 2026) is measured for the zebrafish channel but in Xenopus oocytes and for a gene the same paper finds is brain-enr |
 | fgf24 | `necessity` | `mechanism` | scapulocoracoid (subpart) | 4 / 3 | gene->molecular_function: no direct Fgf24-receptor binding or activation assay in any fetched source; the ligand assignment is sequence-family (GO IBA/IEA only) plus receptor-side genetics, and the tr |
+| mymk | `necessity` | `mechanism` | pectoral fin bud / myoblast (cell) | 3 / 2 | process->phenotype: the step from mononucleate muscle to a small, porous pectoral girdle is correlative (n=3 adults per genotype, alizarin red morphology) and the authors offer two alternative mechani |
 | apc | `necessity` | `mechanism` | pectoral fin fold (part) | 3 / 2 | process->cell_or_tissue_effect in the PECTORAL fin: the apc allele itself was assayed in the median fin fold, and the pectoral fin fold result used the GSK-3beta inhibitor BIO. The apc-specific pector |
 | tbx5a | `necessity` | `mechanism` | pectoral fin lepidotrichium (subpart) | 2 / 5 | gene->molecular_function: Tbx5a's DNA binding and transcriptional activation were shown in cardiac/cell-based assays (Tong 2014) and inferred from the T-box family, never assayed in fin bud tissue; th |
+| bmp1a | `necessity` | `necessity` | pectoral fin / osteoblast (cell) | 2 / 3 | cell_or_tissue_effect->phenotype: the pectoral-fin size rows rest on van Eeden et al. 1996, which I could read only as an abstract and which never names bmp1a; and the osteoblast evidence (ZFIN 'osteo |
 | rerea | `necessity` | `mechanism` | pectoral fin (organ) | 2 / 3 | process->cell_or_tissue_effect: the molecular mechanism (RA coactivation) is established only in mouse and in zebrafish tissues other than the fin, and the one pathway test performed on the zebrafish  |
 | hhip | `necessity` | `mechanism` | pectoral fin radial (subpart) | 2 / 2 | process->cell_or_tissue_effect is resolved only to the whole pectoral fin bud / endochondral disk; the zone of polarizing activity (ZFA:0001451) and apical ectodermal ridge (ZFA:0000085) are never ass |
 | hmcn1 | `necessity` | `mechanism` | pectoral fin fold (part) | 2 / 2 | cell_or_tissue_effect->phenotype in the PECTORAL fin: the ultrastructural mechanism (blister below the lamina densa) was established in the median fin fold; for the pectoral fin only light-microscopy  |
@@ -54,16 +56,21 @@ Ordered by **chain strength**, the weakest grade on the chain, because that is w
 | fgf10a | `necessity` | `mechanism` | apical ectodermal ridge pectoral fin bud (part) | 1 / 5 | process->cell_or_tissue_effect: that Fgf10a is the mesenchymal signal that induces the AER is stated only as a hedged inference in the fetched sources (Leerberg: "is likely responsible"); the direct f |
 | shha | `necessity` | `mechanism` | pectoral fin actinotrichium (subpart) | 1 / 5 | gene->molecular_function: Shha-Patched binding itself is only inferred (GO IBA/ISS). The fin-stage mechanism evidence is pharmacological (cyclopamine blocks Smoothened, ptc1 read-out), so it demonstra |
 | extl3 | `necessity` | `mechanism` | pectoral fin fold (part) | 1 / 4 | process->cell_or_tissue_effect: no fetched paper shows, in extl3/boxer mutants specifically, the cell-level event in the pectoral fin bud ectoderm (AER maintenance, ectodermal expansion) that links re |
+| meox1 | `necessity` | `mechanism` | ZFA:0000407 within the fin subtree; cell-level evidence exists only for axial muscle at ZFA:0009116 / ZFA:0009117, outside the subtree (subpart) | 1 / 4 | cell_or_tissue_effect->phenotype: there is no sourced cellular or developmental account of how a somitic muscle-stem-cell deficit produces an asymmetric pectoral girdle in the adult; the two ends of t |
 | prdm1a | `necessity` | `mechanism` | cleithrum (subpart) | 1 / 2 | process->cell_or_tissue_effect: the cellular event in the fin (proliferation and apoptosis) did not reach significance, so 'failure of differentiation' is an inference, not a measurement |
+| enpp1 | `necessity` | `mechanism` | pectoral fin cartilage (subpart) | 1 / 1 | process->cell_or_tissue_effect at the cell level: the paper explicitly rules out an osteoblast or chondrocyte programme at the ectopic sites, so no cell type can be assigned; and the fin-cartilage res |
 | fras1 | `necessity` | `mechanism` | pectoral fin fold (part) | 1 / 1 | cell_or_tissue_effect->phenotype in the PECTORAL fin: the electron microscopy that pins the blister to the sublamina densa was done on median fin blisters; for the pectoral fin only light microscopy a |
 | sec24d | `necessity` | `mechanism` | pectoral fin skeleton (part) | 1 / 1 | process->cell_or_tissue_effect in the FIN: every cell-biological measurement (Col2a1/Matrilin retention, ER distension, failed chondroblast intercalation, BiP induction) was made in craniofacial carti |
 | b3galt6 | `necessity` | `mechanism` | pectoral fin radial (subpart) | 1 / 0 | process->cell_or_tissue_effect: the collagen fibril disorganisation was measured by TEM in skin, bone and intervertebral space, not in the pectoral fin, so the mechanistic bridge from reduced GAG to t |
 | frem1a | `necessity` | `mechanism` | pectoral fin fold (part) | 1 / 0 | gene->molecular_function: there is no biochemical or cell-biological characterisation of Frem1a protein in zebrafish at all (no antibody, no localisation, no binding partner); the molecular function i |
 | ric1 | `necessity` | `mechanism` | pectoral fin (organ) | 1 / 0 | process->cell_or_tissue_effect in the FIN: procollagen retention and chondrocyte shrinkage were measured in craniofacial cartilage and notochord sheath cells only. Nothing was measured in a pectoral f |
+| sp7 | `necessity` | `mechanism` | cleithrum / osteoblast (cell) | 1 / 0 | the osteoblast-level evidence (electron microscopy, differentiation reporters) is from the parietal bone at juvenile stages while the cleithrum phenotype is at 4 dpf; no figure in this paper shows ost |
 | cyp26a1 | `necessity` | `mechanism` | pectoral fin bud (organ) | 0 / 7 | cell_or_tissue_effect->phenotype: the fin-bud size measurement comes from a morpholino annotated in ZFIN to a somitogenesis paper that does not discuss the fin, and the mutant fin phenotype in Emoto 2 |
 | sox9a | `necessity` | `mechanism` | scapulocoracoid (subpart) | 0 / 5 | process->cell_or_tissue_effect in the fin: the chondrocyte stacking/individuation defect was measured in pharyngeal arch condensations, not in the pectoral fin or scapulocoracoid, so the cellular step |
 | lef1 | `association` | `mechanism` | pectoral fin lepidotrichium (subpart) | 3 / 4 | gene->molecular_function (association only): no fetched source shows Lef1 occupying or activating a fin target gene; its pathway position is asserted, not demonstrated, in every fetched paper. |
 | hdac1 | `association` | `mechanism` | pectoral fin cartilage (subpart) | 2 / 4 | molecular_function->process: the only candidate target link is whole-embryo RT-qPCR on 'potential targets', and the fin in situ shows tbx5a intensity unchanged in the bud, so no transcriptional mechan |
+| foxc1a | `association` | `mechanism` | ZFA:0000563+ZFA:0009115 (pectoral fin musculature / skeletal muscle cell), not in NODE_IDS.json (cell) | 1 / 2 | gene->molecular_function: no Foxc1a target gene or binding experiment relevant to the fin was read, so the molecular step is association while the cell and process steps are much stronger; and the who |
+| pax7a | `association` | `necessity` | ZFA:0005651+ZFA:0009115 (primitive pectoral fin abductor / skeletal muscle cell); nearest node in NODE_IDS.json is ZFA:0000141+ZFA:0009025 (cell) | 1 / 1 | gene->molecular_function: pax7a's molecular activity is supported only by expression and the words 'transcription factor' in a review, so that link is association; and the whole chain is a redundant r |
 | pbx4 | `hypothesis` | `necessity` | pectoral fin bud (precursor) | 4 / 3 | The whole chain: no fetched publication TEXT describes a pbx4 pectoral fin phenotype, and there is no fetched evidence of any kind connecting pbx4 to Wnt signalling. The fin link exists only as ZFIN c |
 | ptch1 | `hypothesis` | `mechanism` | pectoral fin (organ) | 2 / 1 | gene->molecular_function: graded hypothesis, since the only fetched statements about zebrafish Ptch1 binding Hh and inhibiting Smo are domain inference and received pathway topology, with no binding o |
 | tbx5b | `hypothesis` | `necessity` | pectoral fin (organ) | 2 / 1 | gene->molecular_function: nothing experimental. The Tbx5b protein has never been shown to bind DNA or activate transcription; its molecular function is pure phylogenetic inference (GO IBA only). |
@@ -84,6 +91,29 @@ Ordered by **chain strength**, the weakest grade on the chain, because that is w
 
 ## What could not be established
 
+- **bmp1a**: Asharani et al. 2012 (PMID 22482805) is not retrievable as full text: Europe PMC fullTextXML gave HTTP 500 and NCBI PMC efetch returned a publisher block, so the collagen biochemistry and the osteoblast figure were read only through the abstract and a review.
+- **bmp1a**: No fetched source shows bmp1a acting in pectoral-fin or cleithrum osteoblasts specifically; the osteoblast result is generic bone.
+- **bmp1a**: No source read in this run reports bmp1a expression or function in the pectoral fin bud, so the developmental origin of the small fin is unestablished.
+- **enpp1**: No cell type for the fin phenotype: mineralisation at the pectoral fin cartilage is reporter-negative for osteoblast (osteocalcin, col10a1a) and cartilage (col2a1a) markers, so this chain cannot reach CL level.
+- **enpp1**: Huitema et al. 2012 (PMID 23236130), the ZFIN source for 'cleithrum / nodular', was read as abstract only and that abstract does not mention the cleithrum; the row is unverified against the paper text.
+- **enpp1**: The rescue experiments (etidronate, tissue-specific enpp1 re-expression) were done on the notochord, not on the pectoral fin cartilage, so sufficiency at the fin endpoint is untested.
+- **sp7**: No osteoblast-level imaging of the cleithrum or any pectoral-girdle element in sp7 mutants in any source I fetched.
+- **sp7**: sp7 is not reported in the pectoral fin endoskeleton or pectoral lepidotrichia here; the only fin ray row is caudal (ZFA:0001550).
+- **sp7**: The zinc-finger DNA-binding function is cited from mouse (Nakashima et al. 2002), which I did not fetch; no direct Sp7 target-promoter experiment was read in this run.
+- **mymk**: No fetched source shows mymk expression or mymk-dependent fusion in pectoral-fin muscle; all fusion data are somitic/trunk fast muscle or cultured cells, so the fin-bud myoblast node is a placement, not a demonstration.
+- **mymk**: The muscle-mass-to-girdle-bone step has no mechanism: not tested with osteoblast or osteoclast markers, no mechanical-loading manipulation, no rescue.
+- **mymk**: The ZFIN girdle rows are annotated to mymk(sq36/sq36) while Dhar et al. write 'mymk-/-' in the text; I could not confirm from the text which mymk allele was used for the alizarin red skeletons.
+- **pax7a**: Nord et al. 2022 has no PMC record (Europe PMC isOpenAccess=N, no pmcid), so I read only its abstract; the per-muscle, per-stage cell counts in my chain come from ZFIN's curation of that paper.
+- **pax7a**: No Pax7a target gene, binding site or reporter experiment in any source fetched, so the molecular function step cannot be taken above association.
+- **pax7a**: node_not_in_subtree: the exact post-composed node for the cell-level finding, ZFA:0005651+ZFA:0009115 (primitive pectoral fin abductor / skeletal muscle cell), is not in NODE_IDS.json.
+- **meox1**: Dauer et al. 2018 (PMID 30277257) could not be read in full: Europe PMC fullTextXML gave HTTP 500 and NCBI PMC efetch for PMC6231172 returned a publisher block, so the girdle phenotype rests on the abstract sentence alone.
+- **meox1**: Both Nguyen et al. papers (PMID 25119043, 28686860) are closed access; the meox1-to-ccnb1 mechanism and the appendicular-muscle deficit were read only in abstracts and a review.
+- **meox1**: No source read here examines meox1 expression or function in the pectoral fin bud, pectoral girdle or fin muscle, so the fin end of the chain has no cell type.
+- **meox1**: node_not_in_subtree for ZFA:0001056 (myotome), ZFA:0009116 (slow muscle cell) and ZFA:0009117 (fast muscle cell), used for the cell/tissue step.
+- **foxc1a**: Banerjee et al. 2015 (PMID 25670796) could not be read as full text: Europe PMC fullTextXML HTTP 500 and NCBI PMC efetch for PMC4325381 returned 'The publisher of this article does not allow downloading of the full text in XML form.' Every quote in this chain is from the abstract.
+- **foxc1a**: No Foxc1a transcriptional target in fin muscle or nerve is identified in any source fetched; the only target shown (acta2) is in head vascular smooth muscle, a different tissue.
+- **foxc1a**: foxc1a has no bone or cartilage phenotype in the pectoral fin in the ZFIN rows I read, so it contributes nothing to the skeletal side of a gliding fin.
+- **foxc1a**: node_not_in_subtree: ZFA:0000563+ZFA:0009115 is not listed in NODE_IDS.json.
 - **prdm1a**: No prdm1a data of any kind in a flying fish (Exocoetidae); the whole chain is Danio rerio proxy evidence.
 - **prdm1a**: No transplantation, chimera or fin-restricted conditional allele: autonomy rests on fin-cell-resolved biochemistry, not on a cell-autonomy experiment.
 - **prdm1a**: The Prdm1a cofactor for activation at fgfr1a and smo is unidentified; Kdm4a is proposed as a hypothesis only.
