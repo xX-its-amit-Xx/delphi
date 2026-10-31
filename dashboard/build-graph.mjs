@@ -204,6 +204,54 @@ for (const row of (ledger?.ledger || [])) {
   }
 }
 
+
+// ---- the formal spine: every constraint -> the claim it came from; open problems clustered by claim ----
+// Strong link: a theorem actually ruled on a candidate of the problem (eliminated or consistent).
+// Weak link: the enumerator tagged the candidate as checkable against that theorem but no theorem
+// could rule. The two are drawn and labelled differently.
+const SLUG = { 'square-cube': 'C7', 'kimura-neutral-rate': 'C1', 'twofold-cost-of-sex': 'C5',
+  'blueprint-well-formedness': 'C6', 'neutral-substitution-budget': 'C3b',
+  'neutral-fixation-probability': 'C2', 'fisher-fundamental-theorem-haploid': 'C4' };
+for (const [k, c] of cons) {
+  const kid = 'constraint:' + k;
+  add(kid, {
+    type: 'theorem', domain: 'mathbio', label: `${k}: ${String(c.property || c.label || '').slice(0, 60)}`,
+    info: { english: c.property || null, relation: c.relation || null, faithfulness: c.faithfulness || null,
+            kernelChecked: c.proofScope?.kernelChecked || [], assumed: c.proofScope?.assumed || [] },
+    prov: { file: 'lean/constraints.json', lemma: c.lemma || null, module: c.module || 'lean/Delphi/Constraints.lean' },
+    core: true, ledger: true
+  });
+  nodes.get(kid).formal = true;
+  const clid = 'claim:' + c.claim_id;
+  if (!nodes.has(clid)) add(clid, {
+    type: 'claim', domain: 'mathbio', label: c.claim_id,
+    info: { statement: c.property, status: 'derived here, not extracted from a source' },
+    prov: { file: 'lean/constraints.json', note: 'a statement derived by the Lean thread, not a claim from the extracted corpus' },
+    core: true
+  });
+  nodes.get(clid).formal = true;
+  link(kid, clid, 'constraint from');
+}
+for (const n of nodes.values()) if (n.type === 'theorem') n.formal = true;
+for (const l of links) {
+  const a = nodes.get(l.source), b = nodes.get(l.target);
+  if (l.rel === 'formalised as' && a) a.formal = true;
+}
+const candSrc = J('open-problems/candidates.json');
+for (const c of ((candSrc && (candSrc.candidates || candSrc)) || [])) {
+  const cid = 'cand:' + c.id;
+  if (!nodes.has(cid)) continue;
+  nodes.get(cid).formal = true;
+  const pid = 'problem:' + c.problem_id;
+  if (nodes.has(pid)) nodes.get(pid).formal = true;
+  const ruled = new Set(links.filter(l => l.source === cid && /^(eliminated by|consistent with)$/.test(l.rel)).map(l => l.target));
+  for (const slug of (c.checkable_against || [])) {
+    const k = SLUG[slug]; if (!k) continue;
+    const kid = 'constraint:' + k;
+    if (!ruled.has(kid)) link(cid, kid, 'tagged relevant (no ruling)');
+  }
+}
+
 const out = {
   builtAt: new Date().toISOString(),
   legend: {
