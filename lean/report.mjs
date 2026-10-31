@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import crypto from 'node:crypto';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
@@ -42,6 +43,7 @@ const errors = (build.out.match(/error:/g) || []).length;
 const audit = run('lake', ['env', 'lean', 'Delphi/Audit.lean']);
 const axioms = [];
 for (const m of audit.out.matchAll(/'(.+?)' depends on axioms: \[([^\]]*)\]/g)) axioms.push({ theorem: m[1], axioms: m[2].split(',').map(s => s.trim()).filter(Boolean) });
+for (const m of audit.out.matchAll(/'(.+?)' does not depend on any axioms/g)) axioms.push({ theorem: m[1], axioms: [] });
 const standard = new Set(['propext', 'Classical.choice', 'Quot.sound']);
 const nonStandard = axioms.flatMap(a => a.axioms.filter(x => !standard.has(x)).map(x => ({ theorem: a.theorem, axiom: x })));
 
@@ -95,6 +97,22 @@ formalized.push({ claim_id: 'favored-fixation-lower-bound', theorem: 'Delphi.Fav
   notation: 'E[X_{t+1} | X_t = i] >= i  =>  u(i) >= i/M ;  mu T <= M mu u T <= M mu T',
   context: 'Proved for the Exocoetidae substitution budget (lean/bound/). Kimura 1962 gives u ~ 2s for a selected mutant in the diffusion limit; that formula is not formalised. This is the exact, weaker statement that selection for the mutant cannot make fixation rarer than neutral drift does.',
   note: 'A lower bound only. Neutral chains are favored chains, and for them the bound is attained, so no upper bound in terms of s follows from this module.', paper: null });
+// Blueprint well-formedness (lean/Delphi/Blueprint.lean + generated certificates): structural, not biological.
+formalized.push({ claim_id: 'blueprint-well-formedness', theorem: 'Delphi.Blueprint.wellFormed_of_check', module: 'lean/Delphi/Blueprint.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified',
+  derived: true, label: 'An emitted anatomical blueprint graph is well-formed under its own rules',
+  statement: 'For a finite graph of ontology terms with a body root, a level per node and part_of edges (part, whole): if every edge goes strictly down in level, every edge joins two nodes, and every non-root node has a whole, then part_of is acyclic (its transitive closure is transitive and strictly decreases the level, so nothing is part of itself) and every node reaches the root. With pinned taxon statements: no never_in_taxon on a kept term, a superclass or a whole names a taxon containing the blueprint taxon, and every in_taxon or stated_in_taxon names a containing taxon. A Boolean checker decides all of this, and its truth implies the well-formedness (wellFormed_of_check); each emitted blueprint gets a certificate the kernel evaluates by decide.',
+  notation: 'LevelsDown ∧ Closed ∧ (∀ a ≠ root, ∃ b, a part_of b) ⟹ Acyclic ∧ Rooted ; check g D = true ⟹ WellFormed g D',
+  context: 'Built for the organism thread\'s text-to-blueprint tool (organism-design/blueprint.mjs). The certificate fixes the distinct-term counts per level, which is the count whose placement-versus-term confusion (343 placements against 257 distinct cell types) the organism thread fixed by hand on 2026-10-31.',
+  note: 'Structural only. The certificate says the emitted structure is internally coherent under its stated rules; it does not say the organism is real, that the anatomy is correct or complete, that Uberon or the Cell Ontology are right, or anything about a transition between forms.', paper: null });
+// Thompson's cube law (thompson-growth-form/claims.json), with the claims thread's measured exponents pointed to, not derived.
+try {
+  const tc = JSON.parse(fs.readFileSync(path.join(root, 'thompson-growth-form/claims.json'), 'utf8'));
+  const tl = (Array.isArray(tc) ? tc : tc.claims).find(c => c.id === 'thompson1917-ch03-07');
+  formalized.push({ claim_id: 'thompson1917-ch03-07', theorem: 'Delphi.cubeLaw_loglog_exponent', module: 'lean/Delphi/Thompson.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified',
+    label: tl.label, statement: tl.claim, notation: tl.notation, context: `${tl.quote} (On Growth and Form, ch. ${tl.chapter}, "${tl.section}", lines ${tl.lineStart}-${tl.lineEnd})`,
+    note: 'Exact form only: W = k L^3 (isometric growth at constant density) gives a log-log exponent of exactly 3 and weight ratio (L2/L1)^3; a measured exponent other than 3 refutes the exact law on that interval. Thompson\'s "mainly (though not wholly)" and the claim test\'s tolerance band are outside the theorem.',
+    paper: { title: 'On Growth and Form', year: 1917, doi: null, author: "D'Arcy Wentworth Thompson" } });
+} catch (e) { console.error('thompson claim not loaded: ' + e.message); }
 // 4b. Proof scope: which decisions the Lean kernel checked, and which are assumptions stated in the
 // module header and never proved. Mirrors the module headers; kept here so the page can show both halves.
 const proofScope = {
@@ -138,6 +156,30 @@ const proofScope = {
       'mu, T, M are free parameters; the module measures nothing. Which mutations are favored, how many a trait needs, and in what order, are outside it.'
     ]
   },
+  'blueprint-well-formedness': {
+    kernelChecked: [
+      'Generic (any node type): edges strictly down in level ⟹ the part_of closure is transitive, strictly decreases the level, and is acyclic (Graph.acyclic_of_levelsDown, Graph.transGen_trans, Graph.transGen_level_lt).',
+      'Generic: edges closed and every non-root node has a whole ⟹ every node reaches the root (Graph.rooted_of, strong induction on level).',
+      'Generic: the Boolean checker is sound for LevelsDown, Closed, Acyclic, Rooted and the taxon conditions (wellFormed_of_check).',
+      'Per blueprint: the kernel evaluates the checker on the emitted graph and the pinned taxon rows (decide +kernel), and fixes the distinct-term counts per level and the graph size (lean/Delphi/Certificates/*.lean).'
+    ],
+    assumed: [
+      'That Uberon and the Cell Ontology are correct and that Ubergraph served their part_of, subClassOf, never_in_taxon and in_taxon statements correctly and completely on the retrieval date: the graph and the taxon rows are data, pinned by hash and query.',
+      'That the five levels (body, organ system, organ, tissue, cell) are the right notion of depth; the theorems use only that edges strictly decrease it.',
+      'Nothing about any organism: not that it is real, that the anatomy is correct or complete, that any part was measured, or anything about a transition between forms.'
+    ]
+  },
+  'thompson1917-ch03-07': {
+    kernelChecked: [
+      'If W L = k L^3 for all L > 0 with k > 0, then for L1 ≠ L2 the log-log slope (log W L2 − log W L1)/(log L2 − log L1) equals exactly 3 (cubeLaw_loglog_exponent) and W L2 / W L1 = (L2/L1)^3 (cubeLaw_ratio).',
+      'Contrapositive: two sizes with a log-log slope b ≠ 3 rule out W = k L^3 for every k (not_cubeLaw_of_exponent_ne_three).'
+    ],
+    assumed: [
+      'A single linear dimension L and mass W of one body family; fixed shape and constant density are what W = k L^3 encodes.',
+      `Thompson's "mainly (though not wholly)" is not formalised: the theorem is exact, the law is approximate, and the tolerance band [2.5, 3.5] the claim test uses is a decision rule outside the module.`,
+      `No data enters the module; the measured exponents are read from the claims thread's result files and pointed to.`
+    ]
+  },
   'maynardsmith-twofold-cost': {
     kernelChecked: [
       'For 0 < q < 1 and fecundity f > 0 the odds of asexual to sexual females satisfy odds(q_next) = 2 odds(q), and f cancels.',
@@ -179,6 +221,35 @@ const chkFile = path.join(here, 'nanopubs/check.json');
 const npCheck = fs.existsSync(chkFile) ? JSON.parse(fs.readFileSync(chkFile, 'utf8')) : null;
 const nanopubs = npManifest ? { built: npManifest.built, check: npCheck ? { ...npCheck.summary, perFile: npCheck.results.map(r => ({ file: r.file, parsed: r.parsed, npValid: r.ok, notes: r.npCheck.issues.length })) } : null, templateConformance: npManifest.templateConformance || null, commitPinned: npManifest.commitPinned, status: npManifest.publishing.status, policy: npManifest.publishing.policy, drafts: npManifest.nanopubs.length, byKind: Object.fromEntries([...new Set(npManifest.nanopubs.map(n => n.kind))].map(k => [k, npManifest.nanopubs.filter(n => n.kind === k).length])), signed: npManifest.nanopubs.filter(n => n.trustyUri).length, published: npManifest.nanopubs.filter(n => n.registry).length, files: npManifest.nanopubs.map(n => ({ file: n.file, kind: n.kind, status: n.status, publishable: n.publishable || null })) } : null;
 
+// 7a. Blueprint certificates (lean/blueprint/certify.mjs): one per emitted blueprint, with the audit of its theorems.
+const certDir = path.join(here, 'blueprint/certificates');
+const blueprintCertificates = fs.existsSync(certDir) ? fs.readdirSync(certDir).filter(f => f.endsWith('.json')).map(f => {
+  const c = JSON.parse(fs.readFileSync(path.join(certDir, f), 'utf8'));
+  const au = Object.fromEntries(Object.entries(c.theorems).map(([k, n]) => [k, axioms.find(a => a.theorem === n) || null]));
+  const audited = Object.values(au).every(a => a && a.axioms.every(x => standard.has(x)));
+  return { ...c, audit: au, verified: buildOk && c.compile.ok && audited, blueprintSha256Now: (() => { try { return crypto.createHash('sha256').update(fs.readFileSync(path.join(root, c.blueprint.file))).digest('hex'); } catch { return null; } })() };
+}).map(c => ({ ...c, current: c.blueprintSha256Now === c.blueprint.sha256 })) : [];
+// 7b. Thompson cube-law test results (claims thread), pointed to from the record: exponents measured against 3.
+let thompsonTest = null;
+try {
+  const dir = path.join(root, 'claim-tests/thompson-growth-form/thompson1917-ch03-07');
+  const res = JSON.parse(fs.readFileSync(path.join(dir, 'result.json'), 'utf8'));
+  const sum = JSON.parse(fs.readFileSync(path.join(dir, 'derived/summary.json'), 'utf8'));
+  const cx = JSON.parse(fs.readFileSync(path.join(dir, 'derived/cross_check.json'), 'utf8'));
+  const w = cx.theirs.slope_by_age_window;
+  thompsonTest = {
+    source: 'claim-tests/thompson-growth-form/thompson1917-ch03-07 (result.json, derived/summary.json, derived/cross_check.json)', verdict: res.verdict, confidence: res.confidence, passCriterion: res.fail_criterion,
+    exponents: [
+      { label: 'males, age-bin means 2-19 y (this test)', b: sum.male.free_exponent_b, ci95: sum.male.b_ci95, n: sum.male.n_participants, cubicR2: sum.male.cubic_model_r2_original_scale },
+      { label: 'females, age-bin means 2-19 y (this test)', b: sum.female.free_exponent_b, ci95: sum.female.b_ci95, n: sum.female.n_participants, cubicR2: sum.female.cubic_model_r2_original_scale },
+      { label: 'pooled individuals 2-19 y, OLS (cross-check)', b: cx.ours_individual_level.pooled.ols_exponent, ci95: cx.ours_individual_level.pooled.ci95, n: cx.ours_individual_level.pooled.n_individuals },
+      { label: 'pooled individuals 0-19 y, OLS (earlier run, NHANES 2007-2018)', b: cx.theirs.pooled_0_19_individuals.ols_slope, ci95: cx.theirs.pooled_0_19_individuals.ols_slope_ci95, n: cx.theirs.pooled_0_19_individuals.n },
+      ...Object.entries(w).map(([k, v]) => ({ label: `window ${k}, OLS (earlier run)`, b: v.ols_slope, ci95: v.ols_slope_ci95, n: v.n }))
+    ],
+    cycles: sum.cycles, caveats: res.caveats
+  };
+} catch (e) { thompsonTest = { error: String(e.message) }; }
+
 // 7. Flying-fish substitution budget (lean/bound/compute.mjs): applies the audited theorems to sourced parameters.
 let bound = null;
 try {
@@ -196,7 +267,7 @@ const report = {
   audit: { ok: audit.exit === 0 && axioms.length > 0 && nonStandard.length === 0, theorems: axioms, nonStandard, raw: audit.out.trim() },
   sorryTotal, modules, theorems, lemmas, formalized,
   mutations: mutations ? { summary: mutations.summary, results: mutations.results } : null,
-  nanopubs, bound,
+  nanopubs, bound, blueprintCertificates, thompsonTest,
   summary: {
     theoremsCompiling: buildOk ? theorems.length : 0,
     lemmas: lemmas.length,
@@ -205,6 +276,7 @@ const report = {
     claimsVerified: formalized.filter(f => f.status === 'verified' && !f.derived).length,
     extensionsVerified: formalized.filter(f => f.status === 'verified' && f.derived).length,
     boundVerdict: bound && bound.verified ? bound.comparison.verdict : null,
+    blueprintCertificates: blueprintCertificates.length, blueprintCertificatesVerified: blueprintCertificates.filter(c => c.verified && c.current).length,
     claimsAssessed: formalized.filter(f => f.assessments.length > 0).length,
     assessmentsRun: assessments.length,
     assessorProviders: [...new Set(assessments.map(a => a.assessor.provider))],
