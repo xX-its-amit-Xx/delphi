@@ -30,10 +30,9 @@ nav a:hover{background:var(--soft);color:var(--ink)}
 .ctl input[type=checkbox]{margin:0}
 select,input[type=search],button{font:inherit;font-size:.86rem;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:4px 9px}
 button{cursor:pointer}
-main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 380px;min-height:0}
+main{flex:1;display:grid;grid-template-columns:1fr 380px;min-height:0}
 @media (max-width:880px){main{grid-template-columns:1fr;grid-template-rows:60vh auto}}
-#stage{position:relative;min-height:0;min-width:0;overflow:hidden;background:var(--surface)}
-#g{position:absolute;inset:0}
+#g{position:relative;min-height:0;background:var(--surface)}
 #panel{border-left:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:16px}
 #panel h2{font-family:Fraunces,serif;font-size:1.15rem;margin:0 0 6px;line-height:1.2}
 .chip{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.75rem;border:1px solid var(--line);background:var(--soft);color:var(--mute);margin:0 4px 4px 0}
@@ -60,13 +59,9 @@ table{border-collapse:collapse;width:100%;font-size:.8rem}td,th{text-align:left;
   <div class="ctl">
     <select id="view" title="Which nodes to draw">
       <option value="core">Evidenced core</option>
-      <option value="theorems">Theorems &rarr; claims &rarr; open problems</option>
-      <option value="ledger">Open problems &rarr; candidates &rarr; theorems</option>
       <option value="flyingfish">The flying fish chain</option>
-      <option value="ideas">Ideas and choices, by origin</option>
       <option value="all">Everything (880 claims)</option>
     </select>
-    <label title="Datasets are hidden by default to keep the graph legible"><input type="checkbox" id="showData">datasets</label>
     <label><input type="checkbox" data-d="darwin" checked>Darwin</label>
     <label><input type="checkbox" data-d="thompson" checked>Thompson</label>
     <label><input type="checkbox" data-d="wolfram" checked>Wolfram</label>
@@ -76,8 +71,7 @@ table{border-collapse:collapse;width:100%;font-size:.8rem}td,th{text-align:left;
   </div>
 </header>
 <main>
-  <div id="stage">
-    <div id="g"></div>
+  <div id="g">
     <div id="stats"></div>
     <div id="legend"></div>
   </div>
@@ -98,24 +92,17 @@ table{border-collapse:collapse;width:100%;font-size:.8rem}td,th{text-align:left;
 'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let PAL={};
-function readPalette(){const cs=getComputedStyle(document.documentElement);
-  ['--d-darwin','--d-thompson','--d-wolfram','--d-mathbio','--neutral','--edge','--panel','--ink','--accent','--soft','--mute','--bad'].forEach(k=>PAL[k]=cs.getPropertyValue(k).trim());}
-readPalette();
-const css=v=>PAL[v]!==undefined?PAL[v]:getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const tk='delphi-theme';
 if(localStorage.getItem(tk))document.documentElement.dataset.theme=localStorage.getItem(tk);
 $('#themeBtn').onclick=()=>{const c=document.documentElement.dataset.theme||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
-  const n=c==='dark'?'light':'dark';document.documentElement.dataset.theme=n;try{localStorage.setItem(tk,n)}catch{}; readPalette(); legend&&D&&legend(); G&&G.refresh&&G.refresh();};
+  const n=c==='dark'?'light':'dark';document.documentElement.dataset.theme=n;try{localStorage.setItem(tk,n)}catch{}; G&&G.refresh&&G.refresh();};
 
 // colour carries domain (three validated hues + neutral ink for mathematical biology, which also gets a ring);
 // shape carries node type, so identity is never colour alone
 const fill=n=>n.domain==='darwin'?css('--d-darwin'):n.domain==='thompson'?css('--d-thompson'):n.domain==='wolfram'?css('--d-wolfram'):n.domain==='mathbio'?css('--d-mathbio'):css('--neutral');
-const R={claim:4,test:5,theorem:7,dataset:2.4,taxon:4.5,source:7,morph:3,problem:6,candidate:4.2,idea:6,area:5};
-// origin of an idea: a glyph and a word, never a hue (the palette is at its colour-blind limit)
-const OG={researched:'✓','reach-synthesis':'…',serendipitous:'✶'};
-const ON={researched:'researched','reach-synthesis':'not yet checked against prior art',serendipitous:'serendipitous'};
-const VG={supports:'✓',refutes:'✕',mixed:'~',inconclusive:'?',eliminated:'✕',consistent:'○','cannot-rule':'?'};
+const R={claim:4,test:5,theorem:7,dataset:2.4,taxon:4.5,source:7,morph:3};
+const VG={supports:'✓',refutes:'✕',mixed:'~',inconclusive:'?'};
 
 function shape(ctx,n,x,y,r){
   ctx.beginPath();
@@ -125,37 +112,25 @@ function shape(ctx,n,x,y,r){
     case 'taxon': ctx.moveTo(x,y-r*1.2);ctx.lineTo(x+r*1.1,y+r*.8);ctx.lineTo(x-r*1.1,y+r*.8);ctx.closePath(); break;
     case 'morph': for(let i=0;i<6;i++){const a=Math.PI/3*i+Math.PI/6;ctx[i?'lineTo':'moveTo'](x+r*Math.cos(a),y+r*Math.sin(a));}ctx.closePath(); break;
     case 'source': ctx.rect(x-r*1.3,y-r*.8,2.6*r,1.6*r); break;
-    case 'problem': ctx.rect(x-r*1.5,y-r*.7,3*r,1.4*r); break;
-    case 'idea': for(let i=0;i<5;i++){const a=-Math.PI/2+2*Math.PI*i/5;ctx[i?'lineTo':'moveTo'](x+r*1.25*Math.cos(a),y+r*1.25*Math.sin(a));}ctx.closePath(); break;
-    case 'area': ctx.rect(x-r*1.6,y-r*.6,3.2*r,1.2*r); break;
     default: ctx.arc(x,y,r,0,2*Math.PI);
   }
 }
 
-let D,G,sel=null,fitPending=false;
-fetch('../graph.json').then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
-  .then(d=>{D=d;try{init();}catch(e){$('#panel').innerHTML='<h2>The graph failed to draw</h2><p class="small">'+esc(e.message)+'</p>';console.error(e);}})
-  .catch(e=>{$('#panel').innerHTML='<h2>Could not load graph.json</h2><p class="small">'+esc(e.message)+'</p>';});
+let D,G,sel=null;
+fetch('../graph.json').then(r=>r.json()).then(d=>{D=d;init();}).catch(e=>{$('#panel').innerHTML='<h2>Could not load graph.json</h2><p class="small">'+esc(e.message)+'</p>';});
 
 function subset(){
   const view=$('#view').value;
   const doms=new Set($$('[data-d]').filter(i=>i.checked).map(i=>i.dataset.d));
   let keep;
-  if(view==='theorems'){
-    keep=new Set(D.nodes.filter(n=>n.formal).map(n=>n.id));
-  }else if(view==='ledger'){
-    keep=new Set(D.nodes.filter(n=>n.ledger).map(n=>n.id));
-  }else if(view==='ideas'){
-    keep=new Set(D.nodes.filter(n=>n.idea).map(n=>n.id));
-  }else if(view==='flyingfish'){
+  if(view==='flyingfish'){
     const seed=new Set(['source:darwin-flying-fish','taxon:exocoetidae','bound:exocoetidae']);
     D.nodes.forEach(n=>{if(n.type==='morph'||/Favored/.test(n.id))seed.add(n.id)});
     keep=seed;
   }else{
     keep=new Set(D.nodes.filter(n=>(view==='all'||n.core)&&(n.domain==='none'||doms.has(n.domain))).map(n=>n.id));
   }
-  const showData=$('#showData').checked;
-  const nodes=D.nodes.filter(n=>keep.has(n.id)&&(showData||n.type!=='dataset')).map(n=>Object.assign({},n));
+  const nodes=D.nodes.filter(n=>keep.has(n.id)).map(n=>Object.assign({},n));
   const ids=new Set(nodes.map(n=>n.id));
   const links=D.links.filter(l=>ids.has(l.source.id||l.source)&&ids.has(l.target.id||l.target)).map(l=>({source:l.source.id||l.source,target:l.target.id||l.target,rel:l.rel}));
   return {nodes,links};
@@ -167,75 +142,56 @@ function init(){
     .backgroundColor('rgba(0,0,0,0)')
     .nodeId('id')
     .nodeLabel(n=>esc(n.label))
-    .linkColor(l=>l.rel==='eliminated by'?css('--bad'):css('--edge'))
-    .linkLineDash(l=>l.rel==='tagged relevant (no ruling)'?[2,2]:null)
+    .linkColor(()=>css('--edge'))
     .linkWidth(l=>sel&&(l.source.id===sel||l.target.id===sel)?2:0.7)
     .linkDirectionalArrowLength(2.5).linkDirectionalArrowRelPos(1)
     .nodeCanvasObject((n,ctx,s)=>{
       const r=(R[n.type]||3)*(n.type==='morph'&&n.scale==='organ_system'?1.6:1);
       shape(ctx,n,n.x,n.y,r);
-      const hollow=n.type==='test'||n.type==='candidate'||n.type==='idea'||n.type==='area';
-      ctx.fillStyle=hollow?css('--panel'):n.type==='problem'?css('--soft'):fill(n);
+      ctx.fillStyle=n.type==='test'?css('--panel'):fill(n);
       ctx.fill();
       ctx.lineWidth=(n.id===sel?2.6:1)/Math.sqrt(s);
-      ctx.strokeStyle=n.type==='candidate'?(n.verdict==='eliminated'?css('--bad'):css('--mute')):n.type==='problem'||n.type==='area'?css('--mute'):n.type==='idea'?(n.origin==='researched'?css('--accent'):css('--ink')):n.type==='test'?fill(n):(n.domain==='mathbio'||n.type==='theorem'?css('--accent'):css('--panel'));
-      if(n.type==='area')ctx.setLineDash([3/s,2/s]);
+      ctx.strokeStyle=n.type==='test'?fill(n):(n.domain==='mathbio'||n.type==='theorem'?css('--accent'):css('--panel'));
       if(n.type==='test'&&n.swarm==='collaborator')ctx.setLineDash([2/s,1.5/s]);
       ctx.stroke();ctx.setLineDash([]);
       if(n.type==='theorem'){shape(ctx,n,n.x,n.y,r+2.2);ctx.lineWidth=0.8/Math.sqrt(s);ctx.strokeStyle=css('--accent');ctx.stroke();}
-      if(n.type==='idea'&&OG[n.origin]){ctx.fillStyle=n.origin==='researched'?css('--accent'):css('--ink');ctx.font=`${r*1.4}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(OG[n.origin],n.x,n.y+0.3);}
-      if((n.type==='test'||n.type==='candidate')&&VG[n.verdict]){ctx.fillStyle=n.type==='candidate'?(n.verdict==='eliminated'?css('--bad'):css('--mute')):fill(n);ctx.font=`${r*1.5}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(VG[n.verdict],n.x,n.y+0.3);}
-      const always=n.type==='theorem'||n.type==='source'||(n.type==='claim'&&n.formal)||n.type==='idea'||n.type==='area';
-      if(n.id===sel||always||(s>5&&n.type!=='dataset')){
+      if(n.type==='test'&&VG[n.verdict]){ctx.fillStyle=fill(n);ctx.font=`${r*1.5}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(VG[n.verdict],n.x,n.y+0.3);}
+      if((s>2.2&&n.type!=='dataset')||n.id===sel||n.type==='source'||n.type==='theorem'){
         ctx.font=`${11/s}px Inter Tight, sans-serif`;ctx.fillStyle=css('--ink');ctx.textAlign='left';ctx.textBaseline='middle';
-        const lab=n.type==='idea'?`${ON[n.origin]||n.origin}: ${n.label}`:String(n.label);ctx.fillText((n.type==='theorem'&&s<3&&n.id!==sel)?lab.split(':')[0].slice(0,24):lab.slice(0,n.type==='idea'?70:46),n.x+r+3,n.y);
+        ctx.fillText(String(n.label).slice(0,46),n.x+r+3,n.y);
       }
     })
     .nodePointerAreaPaint((n,c,ctx)=>{ctx.fillStyle=c;ctx.beginPath();ctx.arc(n.x,n.y,(R[n.type]||3)+3,0,2*Math.PI);ctx.fill();})
     .onNodeClick(n=>{sel=n.id;show(n);G.centerAt(n.x,n.y,500);})
-    .cooldownTicks(160)
-    .onEngineStop(()=>{if(fitPending){fitPending=false;G.zoomToFit(0,40);}});
-  const st=$('#stage');const resize=()=>G.width(st.clientWidth).height(st.clientHeight);
+    .cooldownTicks(160);
+  const resize=()=>G.width(el.clientWidth).height(el.clientHeight);
   addEventListener('resize',resize);resize();
-  const qv=new URLSearchParams(location.search).get('view');if(qv&&[...$('#view').options].some(o=>o.value===qv))$('#view').value=qv;
   legend();load();
-  $('#view').onchange=load; $$('[data-d]').forEach(i=>i.onchange=load); $('#showData').onchange=load;
+  $('#view').onchange=load; $$('[data-d]').forEach(i=>i.onchange=load);
   $('#q').oninput=e=>{const q=e.target.value.trim().toLowerCase();if(q.length<3)return;
     const n=G.graphData().nodes.find(n=>String(n.label).toLowerCase().includes(q)||n.id.toLowerCase().includes(q));
     if(n){sel=n.id;show(n);G.centerAt(n.x,n.y,600);G.zoom(4,600);}};
 }
 
 function load(){
-  const g=subset();const ideasView=$('#view').value==='ideas';
-  // the ideas view is small (tens of nodes): longer links keep its shapes at a readable zoom
-  G.d3Force('link').distance(ideasView?120:30);G.d3Force('charge').strength(ideasView?-200:-30);G.graphData(g);sel=null;
+  const g=subset();G.graphData(g);sel=null;
   const by=g.nodes.reduce((a,n)=>(a[n.type]=(a[n.type]||0)+1,a),{});
   $('#stats').textContent=`${g.nodes.length} nodes · ${g.links.length} links · `+Object.entries(by).map(([k,v])=>`${v} ${k}`).join(', ');
-  if($('#view').value==='ideas'){const o=D.counts.ideasByOrigin||{},tot=Object.values(o).reduce((a,b)=>a+b,0);
-    $('#stats').textContent+=` · ${tot} ideas: ${['researched','reach-synthesis','serendipitous'].map(k=>`${o[k]||0} ${k}`).join(', ')}`;
-    $('#panel').innerHTML=`<h2>Ideas and choices, by origin</h2><p class="small">Every idea or choice adopted in this project, read from <span class="mono">decisions/ideas.json</span>, with where it came from. <b>${o.researched||0} of ${tot}</b> survived a logged prior-art search; <b>${o['reach-synthesis']||0}</b> were synthesised from other sources and are <b>not yet checked against prior work</b>; <b>${o.serendipitous||0}</b> arose by accident.</p>
-      <div class="sec"><h4>How to read it</h4><ul class="t small"><li>✓ researched &middot; … reach-synthesis, not yet checked &middot; ✶ serendipitous. The glyph and the word carry origin; colour does not.</li><li>An idea links to the graph nodes whose provenance sits under a path it affects. A dashed box is a repo area with no drawn node, so the edge is to the area, not invented.</li></ul></div>
-      <p class="tiny">${esc(D.counts.ideasNote||'')}</p>`;}
   setTimeout(()=>G.zoomToFit(600,40),900);
-  // a second fit once the simulation has cooled (160 ticks); the ideas view is small, so cap its zoom
-  fitPending=true;   // and once more, instantly, when the simulation stops (see onEngineStop)
 }
 
 function legend(){
   const sw=(t,dom)=>{const c=document.createElement('canvas');c.width=c.height=18;const x=c.getContext('2d');
-    shape(x,{type:t},9,9,t==='dataset'?3:t==='idea'?4.5:5);x.fillStyle=t==='test'||t==='idea'||t==='area'?css('--panel'):fill({domain:dom||'none'});x.fill();
+    shape(x,{type:t},9,9,t==='dataset'?3:5);x.fillStyle=t==='test'?css('--panel'):fill({domain:dom||'none'});x.fill();
     x.strokeStyle=t==='test'?fill({domain:'darwin'}):css('--accent');x.lineWidth=1.2;x.stroke();return c.toDataURL();};
   const row=(img,txt)=>`<div class="row"><img src="${img}" width="14" height="14" alt="">${txt}</div>`;
-  $('#legend').innerHTML=`<details open id="legDet"><summary style="cursor:pointer;font-weight:700">Legend</summary><b>Domain</b> (colour)
+  $('#legend').innerHTML=`<b>Domain</b> (colour)
     ${row(sw('claim','darwin'),'Darwin, evolution')}${row(sw('claim','thompson'),'Thompson, growth and form')}
     ${row(sw('claim','wolfram'),'Wolfram, computation')}${row(sw('claim','mathbio'),'Mathematical biology (ringed)')}
     <b style="display:block;margin-top:6px">Kind</b> (shape)
     ${row(sw('claim','darwin'),'claim')}${row(sw('test','darwin'),'data test &mdash; ✓ ✕ ~ ? inside; dashed = collaborator swarm')}
     ${row(sw('theorem','mathbio'),'Lean theorem or bound (double ring)')}${row(sw('taxon'),'taxon')}
-    ${row(sw('morph'),'blueprint structure')}${row(sw('source'),'source sentence')}${row(sw('dataset'),'dataset')}
-    ${row(sw('problem'),'open problem')}${row(sw('test','none'),'candidate answer &mdash; ✕ eliminated, ○ consistent, ? cannot rule')}
-    ${row(sw('idea'),'idea or choice &mdash; ✓ researched, … not yet checked, ✶ serendipitous')}${row(sw('area'),'repo area an idea affects (no node drawn)')}</details>`;
-  if(innerWidth<1100)$('#legDet').open=false;
+    ${row(sw('morph'),'blueprint structure')}${row(sw('source'),'source sentence')}${row(sw('dataset'),'dataset')}`;
 }
 
 function show(n){
@@ -249,18 +205,7 @@ function show(n){
     ${n.verdict?`<span class="chip ${vc}">${esc(n.verdict)}</span>`:''}
     ${n.swarm?`<span class="chip">${n.swarm==='ours'?'our swarm':'collaborator swarm'}</span>`:''}
     ${n.scale?`<span class="chip">scale: ${esc(n.scale.replace('_',' '))}</span>`:''}</div>`;
-  if(n.type==='idea')h+=`<div><span class="chip ${n.origin==='researched'?'ok':'warn'}">${esc(OG[n.origin]||'')} ${esc(ON[n.origin]||n.origin)}</span>${I.status?`<span class="chip">${esc(I.status)}</span>`:''}${I.decided?`<span class="chip">decided ${esc(I.decided)}</span>`:''}</div>`;
   if(I.statement)h+=`<div class="quote">${esc(I.statement)}</div>`;
-  if(n.type==='idea'){
-    h+=`<div class="sec"><h4>Origin</h4><p class="small">${esc(D.legend.origins?.[n.origin]||n.origin)}</p>${I.sources&&I.sources.length?`<ul class="t small">${I.sources.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}</div>`;
-    if(I.research)h+=`<div class="sec"><h4>Prior-art search</h4><p class="small">status: <span class="chip ${I.research.status==='done'?'ok':'warn'}">${esc(I.research.status||'')}</span>${I.research.run?` &middot; run: <span class="mono">${esc(I.research.run)}</span>`:''}${I.research.note?`<br>${esc(I.research.note)}`:''}</p></div>`;
-    else h+=`<div class="sec"><h4>Prior-art search</h4><p class="small">none recorded</p></div>`;
-    if(I.evidence)h+=`<div class="sec"><h4>Evidence</h4><p class="small">${esc(I.evidence)}</p></div>`;
-    if(I.alternatives_rejected)h+=`<div class="sec"><h4>Alternatives rejected</h4><ul class="t small">${(Array.isArray(I.alternatives_rejected)?I.alternatives_rejected:[I.alternatives_rejected]).map(x=>`<li>${esc(typeof x==='string'?x:JSON.stringify(x))}</li>`).join('')}</ul></div>`;
-    if(I.affects&&I.affects.length)h+=`<div class="sec"><h4>Affects</h4><p class="small">${I.affects.map(x=>`<span class="mono">${esc(x)}</span>`).join(' ')}</p></div>`;
-    if(I.claimed)h+=`<p class="tiny">claimed: ${esc(typeof I.claimed==='string'?I.claimed:JSON.stringify(I.claimed))}</p>`;
-  }
-  if(n.type==='area')h+=`<p class="small">${esc(I.note||'')}</p>`;
   if(I.quote)h+=`<div class="sec"><h4>In the source's own words</h4><div class="quote">${esc(I.quote)}</div></div>`;
   if(I.thinker)h+=`<p class="tiny">${esc(I.thinker)}${I.year?', '+esc(I.year):''}${I.work?' &middot; '+esc(I.work):''}${I.chapter?' &middot; '+esc(I.chapter):''}${I.kind?' &middot; '+esc(I.kind):''} &middot; status: ${esc(I.status||'')}</p>`;
   if(I.hypothesis)h+=`<div class="sec"><h4>Pre-registered hypothesis</h4><p class="small">${esc(I.hypothesis)}</p></div>`;
@@ -274,18 +219,6 @@ function show(n){
   if(I.counts)h+=`<div class="sec"><h4>What the blueprint holds</h4><p class="small">${Object.entries(I.counts).map(([k,v])=>`${v} ${k.replace('_',' ')}`).join(' &middot; ')}</p>${I.unread&&I.unread.length?`<p class="small">Words it could not read: ${I.unread.map(w=>`<span class="mono">${esc(w)}</span>`).join(' ')}</p>`:''}<p class="tiny">${esc(I.note||'')}</p></div>`;
   if(I.term)h+=`<p class="small">Ontology term <span class="mono">${esc(I.term)}</span>${I.named?' &middot; named in the description':''}</p>${I.note?`<p class="tiny">${esc(I.note)}</p>`:''}`;
   if(I.gbif||I.ncbi)h+=`<p class="small">GBIF ${esc(I.gbif||'')} &middot; NCBI ${esc(I.ncbi||'')} &middot; ${esc(I.wikidata||'')}</p>${I.genome?`<p class="tiny">genome: ${esc(I.genome)}</p>`:''}`;
-  if(n.type==='candidate'){
-    h+=`<p class="small">${esc(I.provenance||'')}${I.illustrative?' &middot; <b>uses illustrative values the enumerator chose</b>':''}</p>`;
-    if(I.caveat)h+=`<div class="sec"><h4>What this elimination means</h4><p class="small">${esc(I.caveat)}</p></div>`;
-    if(I.commits)h+=`<div class="sec"><h4>Formal commitment</h4><p class="small">${Object.entries(I.commits).map(([k,v])=>`<span class="mono">${esc(k)} = ${esc(typeof v==='object'?JSON.stringify(v):v)}</span>`).join(' ')}</p></div>`;
-    if(I.untranslatable)h+=`<div class="sec"><h4>Could not be formalised</h4><p class="small">${esc(I.untranslatable)}</p></div>`;
-    const ruled=(I.results||[]).filter(r=>!/^cannot/.test(r.state||''));
-    const codes=(I.results||[]).filter(r=>/^cannot/.test(r.state||'')).reduce((a,r)=>(a[r.code]=(a[r.code]||0)+1,a),{});
-    if(ruled.length)h+=`<div class="sec"><h4>Theorems that ruled</h4><table>${ruled.map(r=>`<tr><td class="small"><b>${esc(r.constraint)}</b> <span class="mono">${esc(r.relation)}</span><br><span class="tiny">${esc(r.lemma||'')}</span></td><td><span class="chip ${/^eliminated/.test(r.state)?'bad':''}">${esc(String(r.state).split(' (')[0])}</span></td></tr>`).join('')}</table>
-      <p class="tiny">Faithfulness of the statement used: ${esc((ruled[0]||{}).faithfulness||'')}</p></div>`;
-    if(Object.keys(codes).length)h+=`<details><summary>Why the other theorems could not rule</summary><ul class="t small">${Object.entries(codes).map(([k,v])=>`<li><span class="mono">${esc(k)}</span> &times; ${v}</li>`).join('')}</ul></details>`;
-    if(I.notFormalised&&I.notFormalised.length)h+=`<p class="small"><b>Rests on something not formalised:</b> ${I.notFormalised.map(esc).join('; ')}</p>`;
-  }
   if(I.caveats&&I.caveats.length)h+=`<details><summary>What it does not establish</summary><ul class="t small">${I.caveats.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></details>`;
   const pv=Object.entries(P).filter(([,v])=>v!=null&&v!=='');
   if(pv.length)h+=`<div class="sec"><h4>Provenance</h4><table>${pv.map(([k,v])=>`<tr><td class="tiny">${esc(k)}</td><td>${/^https?:/.test(String(v))?`<a href="${esc(v)}" target="_blank" rel="noopener">${esc(String(v).slice(0,60))}</a>`:k==='browse'?`<a href="${esc(v)}">open in the Claim Book &rarr;</a>`:`<span class="mono">${esc(v)}</span>`}</td></tr>`).join('')}</table></div>`;
