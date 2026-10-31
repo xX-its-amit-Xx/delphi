@@ -520,3 +520,30 @@ only**, and leave production for the ORCID key owner's explicit approval, each t
 project lead to record findings is not the same as the key owner authorising an irreversible signature.
 Until that approval exists, every record is an **unsigned draft** and says so. Corrections use `supersede`
 and withdrawals use `retract`, both signed by the same agent identity, so plan for them before publishing.
+
+### Standing order: every new idea is researched, or labelled as what it is
+
+Added Oct 31 at the project lead's instruction. Applies to every role and every session.
+
+Before a new change or idea is adopted, it is either **backed by a research run** or **labelled honestly**.
+Every idea is recorded in `decisions/ideas.json`, and the knowledge graph shows each one as a node linked
+to what it affects. An idea carries exactly one of three origins:
+
+| origin | meaning | what it needs |
+|---|---|---|
+| `researched` | A research agent searched for prior work and the idea survived it | The run's report path, the works it found with resolvable identifiers, and whether prior work already does it |
+| `reach-synthesis` | Synthesised by an agent or person from other sources, not yet independently researched | The sources it draws on, and a note that it has not been checked against prior art |
+| `serendipitous` | Arose by accident: a check that caught something, an overlap nobody planned | What was being done when it surfaced, and the evidence that it is real |
+
+Rules:
+1. **A `reach-synthesis` idea may be used, but must be presented as one.** It never appears in a pitch or a
+   record as established method.
+2. **Research before novelty.** No idea is described as new or first until a research run has looked for
+   prior art and recorded what it found. Most ideas will turn out to have precedent; citing it is the
+   point, not a failure.
+3. **Research runs log their searches.** Every query, its time and its result go in the run's
+   `SEARCHES.md`. Citations come only from searches that returned them, never from memory.
+4. **Never send personal identifiers** (an email, a name, an account id) as a parameter to an outside
+   service. A research agent sent the project lead's email to NCBI as an etiquette parameter; that is now
+   prohibited.
+5. **A choice between alternatives is an idea too.** Record what was chosen, what was rejected, and why.
