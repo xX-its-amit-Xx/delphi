@@ -22,7 +22,14 @@ for (const f of fs.existsSync(exDir) ? fs.readdirSync(exDir).filter(f => f.endsW
   examples.push({
     file: 'data/examples/' + f, description: b.input.description, refused: !!b.refused, reason: b.refused ? b.reason : null,
     taxon: b.reading?.taxon ? { label: b.reading.taxon.label, term: b.reading.taxon.term, chosen_because: b.reading.taxon.chosen_because } : null,
-    counts: b.counts || null, conflicts: (b.reading?.conflicts || []).map(c => c.label), queries: nq,
+    // counts are placements in the hierarchy, counts_distinct are distinct ontology terms. The page
+    // shows the distinct ones: a tissue that is part of four organs is one tissue.
+    counts: b.counts || null, counts_distinct: b.counts_distinct || b.counts || null,
+    conflicts: (b.reading?.conflicts || []).map(c => c.label), queries: nq,
+    structures_read: (b.reading?.anatomy_words || []).map(a => ({ matched: a.matched, label: a.label || a.term })),
+    words_not_recognised: b.reading?.words_not_recognised || [],
+    pruned: b.pruning?.totals || null,
+    named_structures_cut: (b.pruning?.named_structures_cut || []).map(x => x.label),
     cells_with_markers: b.genome_sketch?.cells_with_markers ?? null, built: b.built,
     evidence: b.nodes ? { stated: b.nodes.filter(n => n.level === 'organ' && n.taxon_evidence?.startsWith('stated')).length, weak: b.nodes.filter(n => n.level === 'organ' && n.taxon_evidence?.startsWith('weak')).length, none: b.nodes.filter(n => n.level === 'organ' && n.taxon_evidence?.startsWith('none')).length } : null
   });
