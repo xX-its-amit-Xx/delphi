@@ -1,10 +1,13 @@
 # Brief for genotype-thread subagents: causal chains and interactions
 
 You are one of several parallel agents working for the DELPHI genotype thread at the ScienceClaw hackathon.
-The thread maps genotype to phenotype at every layer of a flying fish's body. **Almost no molecular data exists
-for flying fish**, so everything comes from proxy species, mainly zebrafish (*Danio rerio*) and medaka
-(*Oryzias latipes*). Never present proxy data as flying-fish data. A flying fish's "wing" is an **enlarged
-pectoral fin**: say "fin enlargement for gliding", never "fin-to-wing transition".
+The thread maps genotype to phenotype at every layer of a flying fish's body. An annotated draft genome of a
+flying fish **does exist** (*Hirundichthys speculiger*, 23,611 predicted protein-coding genes; Xu et al. 2021,
+doi 10.3389/fgene.2021.695700), so do not write that flying fish have no molecular data. What they have **no**
+data of is **expression and phenotype**: no RNA-seq, no mutant, no kinetics, no regulatory network. That is why
+everything here comes from proxy species, mainly zebrafish (*Danio rerio*) and medaka (*Oryzias latipes*).
+Never present proxy data as flying-fish data. A flying fish's "wing" is an **enlarged pectoral fin**: say
+"fin enlargement for gliding", never "fin-to-wing transition".
 
 ## Hard rules (a result that breaks one of these is discarded)
 

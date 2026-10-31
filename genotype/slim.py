@@ -57,6 +57,7 @@ for L, D in M["layers"].items():
 
 fs = M["fin_size"]
 out = {k: M[k] for k in ("title", "built", "tool", "constraint", "causation_warning", "link_types", "propagation_rules", "blueprint", "crosswalk")}
+out["flying_fish_genome"] = M.get("flying_fish_genome")   # the corrected record of what flying-fish data does and does not exist
 out["summary"] = {k: v for k, v in M["summary"].items() if k != "direct_links_by_layer_kind_organism"}
 out["focus_genes"] = {"note": M["focus_genes"]["note"] + " Evidence blobs are in map.vetted.json.",
                       "genes": [{k: g[k] for k in ("family_in_DATA_md", "symbol", "gene", "organism", "flying_fish_correspondence", "breadth")} | {"pectoral_fin_links": len(g["pectoral_fin_links"])} for g in M["focus_genes"]["genes"]]}

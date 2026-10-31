@@ -325,7 +325,10 @@ leads.sort(key=lambda x: (not x["fin_in_title"], x["pubdate"] or ""))
 out = {
  "title": "Fin-focused extension of the flying-fish blueprint: the zebrafish pectoral fin and its parts, with proxy-fish gene links re-attached to the structure each record names",
  "built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "tool": "genotype/build_fin_subtree.py", "vetted": True,
- "constraint": "Every node below the pectoral fin is a zebrafish anatomy (ZFA) term, and every gene link is a zebrafish or medaka record. None of it is flying-fish data. A flying fish's wing is an enlarged pectoral fin.",
+ "constraint": ("Every node below the pectoral fin is a zebrafish anatomy (ZFA) term, and every gene link is a zebrafish or medaka record. None of it is a "
+                "flying-fish measurement. Note what that does and does not mean: an annotated draft genome of a flying fish exists (Hirundichthys speculiger, "
+                "23,611 predicted protein-coding genes; see map.vetted.json flying_fish_genome), so the gap is not missing genes but missing expression and "
+                "phenotype records, which exist only for zebrafish and medaka. A flying fish's wing is an enlarged pectoral fin."),
  "causation_warning": "'expressed in' is detection, not causation. 'required for' is a loss-of-function phenotype at exactly the structure ZFIN names, never pushed down to parts or cells. 'sufficient for' is a verified gain-of-function allele that changes the structure's size, not one that makes it.",
  "link_types": {"expressed in": "expression data", "required for": "a loss-of-function phenotype", "sufficient for": "a gain-of-function result"},
  "propagation_rules": {"expressed in": "not propagated in this file (each link sits on the structure the record names)", "required for": "never propagates down; not propagated up in this file either", "sideways": "never"},

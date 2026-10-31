@@ -216,6 +216,7 @@ out = {
  "status": "HYPOTHESIS THROUGHOUT. Not a predicted genome, not a design, and not a claim that any of this is achievable.",
  "built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "tool": "genotype/build_flier_genome.py",
  "constraint": (M.get("constraint") or "") + " No bird data is used anywhere: class Aves is this project's held-out clade, so bird flight-muscle and respiratory genetics are excluded by construction.",
+ "flying_fish_genome": M.get("flying_fish_genome"),
  "physics_simulation_results": PHYSICS,
  "physics_spec": {"file": "physics/flier/spec.json", "note": SPEC.get("note"), "parameter_diff_real_to_flier": diff,
                   "what_physics_says_it_does_not_establish": SPEC.get("what_this_does_not_establish")},

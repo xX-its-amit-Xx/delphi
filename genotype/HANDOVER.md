@@ -76,3 +76,7 @@ Direct links: 360,205 (349,658 expressed in, 10,544 required for, 3 sufficient f
 - **Missing GO coverage:** GO system mapping missed musculoskeletal, integumental and other systems, because the blueprint uses Uberon terms that no GO term "results in development of". The GO set also includes irrelevant terms (e.g. "open tracheal system development"), which match nothing in zebrafish.
 - **No ZP IDs:** ZP term IDs were not produced; ZFIN's EQ annotations (ZFA + PATO) stand in.
 - **Heavy dependence on proxies:** nothing here is flying-fish data. Exocoetidae has one scaffold-level assembly (GCA_018398805.1), and OrthoDB has no Belonoidei genomes. Both facts come from the hub's brief and dashboard/figures/DATA.md and were not refetched by me.
+  - **CORRECTION, added 2026-10-31 by the Genotype session (this is the background agent's original text, kept as the historical record).** Calling that assembly merely
+    scaffold-level understates it. It is annotated: 23,611 predicted protein-coding genes, 23,492 of them (99.5%) with at least one database hit (Xu et al. 2021,
+    doi 10.3389/fgene.2021.695700, read in full). The gap is not missing genes but missing expression and phenotype records. See the `flying_fish_genome` block of
+    `map.vetted.json` and the constraint paragraph in `README.md`.

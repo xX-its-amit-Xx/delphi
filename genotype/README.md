@@ -3,10 +3,20 @@
 Amit's #53 deliverable ("genotype-phenotype links for the demo taxa"). Owner: the genotype thread (session
 `scienceclaw-68`), taking over from a background agent whose notes are in `HANDOVER.md`.
 
-**The constraint, stated on every number:** almost no molecular data exists for flying fish (Exocoetidae).
-NCBI holds one scaffold-level assembly (GCA_018398805.1) and OrthoDB holds no genome for the suborder
-Belonoidei. Every gene link here was measured in a **proxy** species: zebrafish (*Danio rerio*; ZFIN and
-Bgee) or medaka (*Oryzias latipes*, same order Beloniformes; Bgee). None of it is flying-fish data.
+**The constraint, stated on every number, corrected 2026-10-31.** An annotated draft genome of a flying fish
+**exists**: Xu et al. 2021 (Front Genet 12:695700, doi 10.3389/fgene.2021.695700) assembled the mirrorwing
+flyingfish *Hirundichthys speculiger* at 1.04 Gb and predicted **23,611 protein-coding genes, 23,492 of them
+(99.5%) with at least one database hit**, and that assembly is the one catalogued as GCA_018398805.1. So the
+gap is **not missing genes**. What is missing is phenotype and expression: that paper reports no RNA-seq and
+no transcriptome at all, no mutant, no kinetics and no regulatory network, and ZFIN-style expression and
+mutant-phenotype records exist only for zebrafish and, through Bgee, medaka. Every gene link here is therefore
+a **proxy**-species record, zebrafish (*Danio rerio*) or medaka (*Oryzias latipes*, same order Beloniformes),
+and it is a proxy for that reason rather than because flying-fish genes are unknown. None of these links is a
+flying-fish measurement. Two caveats travel with the genome: "functionally annotated" there means one
+sequence-similarity or domain hit, with TrEMBL alone supplying 23,477 of them and TrEMBL being automatic and
+unreviewed; and *H. speculiger* is not one of the species in the fin measurements this thread uses, so mixing
+them is cross-species within Exocoetidae and must be labelled. The full record, verified against the paper's
+own text, is the `flying_fish_genome` block of `map.vetted.json`.
 
 **Wording:** a flying fish's "wing" is an enlarged pectoral fin. Say "fin enlargement for gliding", never
 "fin-to-wing transition".

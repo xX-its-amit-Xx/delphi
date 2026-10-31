@@ -568,7 +568,35 @@ for l in direct: genes_by_org[l["organism"]["name"]].add(l["gene"])
 out = {
  "title": "Genotype-phenotype map for the flying-fish blueprint, from proxy fish, at every layer",
  "built": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "tool": "genotype/build.py",
- "constraint": "Almost no molecular data exists for flying fish (Exocoetidae). NCBI holds one scaffold-level assembly (GCA_018398805.1, Hirundichthys speculiger) and OrthoDB holds no genome for the whole suborder Belonoidei. Every gene link here was measured in a PROXY species, zebrafish (Danio rerio) or medaka (Oryzias latipes, same order Beloniformes as flying fish). None of it is flying-fish data.",
+ # Corrected 2026-10-31 after Amit caught that the earlier wording understated the flying-fish genome. The paper was
+ # then read from its own full text (genotype/cache/calls_flyingfish_genome.json) rather than from the relay.
+ "constraint": ("A draft genome of a flying fish EXISTS and is annotated, so the limit here is not missing genes. Xu et al. 2021 (Front Genet 12:695700, "
+                "doi 10.3389/fgene.2021.695700) assembled the mirrorwing flyingfish Hirundichthys speculiger and predicted 23,611 protein-coding genes, of "
+                "which 23,492 (99.5%) carry at least one database hit; that assembly is the one catalogued as GCA_018398805.1. What the flying fish lacks is "
+                "PHENOTYPE and EXPRESSION records: that paper reports no RNA-seq and no transcriptome at all, no mutant, no kinetics and no regulatory "
+                "network, and ZFIN-style expression and mutant-phenotype data exist only for zebrafish and, through Bgee, medaka. Every gene link in this map "
+                "is therefore a PROXY-species record, zebrafish (Danio rerio) or medaka (Oryzias latipes, the same order Beloniformes as flying fish), and it "
+                "is a proxy for that reason rather than because flying-fish genes are unknown. None of these links is a flying-fish measurement."),
+ "flying_fish_genome": {
+   "exists": True, "species": "Hirundichthys speculiger (mirrorwing flyingfish)", "family": "Exocoetidae",
+   "paper": {"authors": "Xu et al.", "year": 2021, "journal": "Frontiers in Genetics 12:695700", "doi": "10.3389/fgene.2021.695700", "pmcid": "PMC8294118", "pmid": "34306036"},
+   "assembly": {"size_gb": 1.04, "scaffolds": 3052, "contig_n50_kb": 992.83, "scaffold_n50_kb": 1152.47, "ncbi_accession": "GCA_018398805.1", "bioproject": "PRJNA714815"},
+   "busco": {"genome_percent": 94.2, "gene_set_percent": 95.7, "lineage": "actinopterygii_odb9", "tool": "BUSCO v3"},
+   "gene_set": {"protein_coding_genes": 23611, "functionally_annotated": 23492, "percent": 99.5,
+                "hits_by_database": {"KEGG": 20692, "SwissProt": 21453, "TrEMBL": 23477, "InterPro": 21888},
+                "annotation_download": "figshare doi 10.6084/m9.figshare.14600634.v1"},
+   "what_functionally_annotated_means_here": ("at least one sequence-similarity or domain hit in one of four databases, and nothing more. TrEMBL alone accounts for "
+                                              "23,477 of the hits, and TrEMBL is automatically generated and unreviewed, so 99.5% is a measure of database "
+                                              "coverage rather than of understood function."),
+   "what_the_paper_does_not_contain": ["no RNA-seq and no transcriptome: the words do not appear anywhere in its text",
+                                       "no expression data of any kind, so no gene can be placed in a flying-fish tissue",
+                                       "no mutant, no knockdown and no functional assay", "no kinetics and no regulatory network",
+                                       "no measurement of the pectoral fin beyond the species' taxonomy"],
+   "why_proxies_are_still_needed": ("Sequence is available; phenotype and expression are not. A gene list cannot say where a gene is expressed, what happens when it is "
+                                    "lost, or at which stage it acts, and those are what this map is built from."),
+   "species_caveat": ("H. speculiger is not one of the species in the fin measurements this thread uses (Cheilopogon furcatus, Exocoetus volitans, Hirundichthys "
+                      "rondeleti), so any use of its sequence alongside those measurements is cross-species within Exocoetidae and must be labelled so."),
+   "verified": "read from the paper's own full text via Europe PMC on 2026-10-31; every figure above was checked against it (genotype/cache/calls_flyingfish_genome.json)"},
  "causation_warning": "Most links are 'expressed in': the gene's RNA or protein was detected in the structure. That is not causation. 'required for' means a single-gene loss-of-function zebrafish has an abnormal phenotype there (or, for GO-based links, that GO places the gene in the structure's developmental process on mutant evidence). 'sufficient for' here means a verified gain-of-function allele changes the structure (e.g. enlarges it); it does not mean the gene makes the structure. No gene 'makes' a fin.",
  "link_types": {"expressed in": "expression data", "required for": "a loss-of-function phenotype", "sufficient for": "a gain-of-function result"},
  "propagation_rules": {

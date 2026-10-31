@@ -2,7 +2,7 @@
 
 **HYPOTHESIS THROUGHOUT. Not a predicted genome, not a design, and not a claim that any of this is achievable.**
 
-Built 2026-10-31T21:11:35Z by `genotype/build_flier_genome.py` from the physics thread's `physics/flier/spec.json`, this thread's
+Built 2026-10-31T21:55:18Z by `genotype/build_flier_genome.py` from the physics thread's `physics/flier/spec.json`, this thread's
 `interventions.json` and `causal-chains.json`, and two logged literature runs. No bird data anywhere: class Aves is this
 project's held-out clade, so the usual source of flight genetics is excluded by construction.
 
