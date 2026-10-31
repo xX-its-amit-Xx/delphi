@@ -321,8 +321,15 @@ def main():
                          'the substrate site? -- CANNOT be answered from fetched sources. Placing F326L on the '
                          'LAT4 structure would require the sequence Daane 2021 numbered against, which is not '
                          'in any record this layer fetched. Nothing is renumbered or guessed here.'),
-            what_would_settle_it=('the Lat4a reference sequence (or the exon-8 alignment) behind Figure 2 of '
-                                  'PMID 34534441, or the authors\' Data S1 alignment'),
+            RESOLVED=('SOLVED, in structures/convergence-test.json. The numbering is against the ENSEMBL '
+                      'release 116 medaka protein, not the UniProt one. The sequence thread '
+                      '(sequences/alignments/slc43a2a.json) established this from Daane 2021 Data S1 sheet '
+                      '"G - conv. aa subst." and checked that the reference residue there is F. The site is '
+                      'human LAT4 position 320, 20.1 A from the bound substrate in 9JBT. The UniProt-based '
+                      'mapping in variant_positions_on_structures (position 300) is therefore WRONG; it is '
+                      'kept only to show what the error looked like before it was caught.'),
+            what_would_settle_it=('the Lat4a reference sequence behind Figure 2 of PMID 34534441, or the '
+                                  'authors\' Data S1 alignment -- obtained by the sequence thread, see RESOLVED'),
             incidental=('Both zebrafish and medaka do carry a phenylalanine at position 340, 14 residues after '
                         'the stated position. That is noted as a coincidence, not an identification.'))
 

@@ -112,6 +112,10 @@ def main():
                       '/homology/id/danio_rerio/{id}?type=orthologues&format=condensed for every '
                       'orthologue Ensembl Compara holds. A species counts as PRESENT when Compara '
                       'returns at least one orthologue in it.',
+            query_species=('Every member gene is a ZEBRAFISH gene from genotype/pathways.json, so zebrafish '
+                           'is the query species and is marked present by construction. Ensembl Compara does '
+                           'not list a gene as its own orthologue; a first version of this table therefore '
+                           'read 0/N for zebrafish in every pathway, which was an artefact, not a finding.'),
             do_not_over_read=('An orthologue missing from Compara is NOT evidence the gene is missing from '
                               'the animal. Three different things produce the same blank: (1) the species '
                               'has no genome in Ensembl at all, (2) it has a genome but the gene is not '
@@ -153,6 +157,12 @@ def main():
             row['status'] = 'ok'
             row['n_species_with_orthologue'] = len(orth)
             for label, meta in want.items():
+                # Compara does not return a gene as its own orthologue, so the QUERY species
+                # (zebrafish) would read as absent everywhere. It is present by construction.
+                if meta['ensembl_species'] == 'danio_rerio':
+                    row['present_in'][label] = True
+                    row.setdefault('orthologue_types', {})[label] = ['query species (present by construction)']
+                    continue
                 hits = orth.get(meta['ensembl_species'], [])
                 row['present_in'][label] = bool(hits)
                 if hits:
