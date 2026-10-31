@@ -622,7 +622,7 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
     { const sqSrc = path.join(root, 'sequences'), sqDst = path.join(here, 'public/blueprint3d/sequences');
       if (fs.existsSync(sqDst)) fs.rmSync(sqDst, { recursive: true, force: true }); fs.mkdirSync(path.join(sqDst, 'alignments'), { recursive: true });
       const present = [], alignments = [];
-      for (const f of ['genes.json', 'genome-regions.json', 'engineered-diff.json']) { const s = path.join(sqSrc, f); if (fs.existsSync(s)) { fs.copyFileSync(s, path.join(sqDst, f)); present.push(f); copied.studio.push({ file: 'sequences/' + f, as: 'blueprint3d/sequences/' + f }); } }
+      for (const f of ['genes.json', 'genome-regions.json', 'engineered-diff.json', 'gliders.json', 'progression.json']) { const s = path.join(sqSrc, f); if (fs.existsSync(s)) { fs.copyFileSync(s, path.join(sqDst, f)); present.push(f); copied.studio.push({ file: 'sequences/' + f, as: 'blueprint3d/sequences/' + f }); } }
       const aSrc = path.join(sqSrc, 'alignments'); if (fs.existsSync(aSrc)) for (const f of fs.readdirSync(aSrc).filter(f => /\.json$/.test(f))) { fs.copyFileSync(path.join(aSrc, f), path.join(sqDst, 'alignments', f)); alignments.push(f); }
       if (alignments.length) present.push('alignments/');
       fs.writeFileSync(path.join(sqDst, 'status.json'), JSON.stringify({ builtAt: new Date().toISOString(), present, alignments, note: present.length ? 'copied from sequences/ by dashboard/build-graph.mjs' : 'sequences/ has no genes.json, alignments or regions yet; the page draws a labelled stand-in layout' })); }

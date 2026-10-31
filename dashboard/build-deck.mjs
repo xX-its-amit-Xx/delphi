@@ -55,7 +55,8 @@ const countDrafts = dir => {
 };
 const recordSets = [
   ['lean', 'lean/nanopubs'], ['organism', 'organism-design/nanopubs'],
-  ['swarm', 'swarm/nanopubs'], ['claims', 'claim-tests/nanopubs']
+  ['swarm', 'swarm/nanopubs'], ['claims', 'claim-tests/nanopubs'],
+  ['genotype', 'genotype/nanopubs'], ['holdout', 'holdout/nanopubs'], ['physics', 'physics/nanopubs']
 ].map(([k, d]) => ({ thread: k, ...(countDrafts(d) || { drafts: 0 }) })).filter(r => r.drafts);
 let priorProduction = null;
 try {
@@ -73,8 +74,14 @@ const records = {
 
 
 // ---- real figures (plots made from measured data) and the two-swarm cross-check ----
+// Only the plots a slide actually renders are shipped. The manifest also holds figures built for
+// other pages, and some of those describe the frozen holdout clade, which must not travel with the deck.
+const FIGS_ON_SLIDES = ['cert_vs_assays.png', 'ablation.png', 'swarm_exp1.svg', 'swarm_exp2.svg'];
 let figures = [];
-try { figures = JSON.parse(fs.readFileSync(path.join(out, 'fig/manifest.json'), 'utf8')); } catch {}
+try {
+  figures = JSON.parse(fs.readFileSync(path.join(out, 'fig/manifest.json'), 'utf8'))
+    .filter(f => FIGS_ON_SLIDES.includes(f.file.split('/').pop()));
+} catch {}
 const crosscheck = read('crosscheck.json');
 
 
@@ -487,7 +494,9 @@ try {
   if (found.length) examLine = {
     examined: found.length,
     inconclusive: found.filter(f => f.exam_verdict === 'inconclusive').length,
-    reasons: found.map(f => f.exam_verdict_reason).filter(Boolean),
+    // the clade is the frozen holdout and never travels with the deck, so the reason is reported
+    // as a count of held-out species rather than by naming them
+    reasons: found.map(f => (f.exam_verdict_reason || '').replace(/ [A-Za-z]+ species/, ' held-out species')).filter(Boolean),
     // the two claim tests that reached a stated reason both stopped on the pre-registered minimum n
     withReason: found.filter(f => f.exam_verdict_reason).length,
     underpowered: found.filter(f => f.exam_verdict_reason).every(f => /underpowered/i.test(f.exam_verdict_reason))
@@ -555,8 +564,8 @@ const numbers = {
     behind: crosscheck.refs.behind, theirsDate: crosscheck.refs.theirsDate,
     differing: crosscheck.comparisons.filter(c => !c.agree).map(c => ({ claim: c.claim, ours: c.ours?.verdict, theirs: c.theirs?.verdict, kind: c.kind, ourValue: c.ours?.measured?.value, theirValue: c.theirs?.measured?.value, ourUnit: c.ours?.measured?.unit, theirUnit: c.theirs?.measured?.unit }))
   } : null,
-  threads: threads.map(t => ({ key: t.k, title: t.s.title, state: t.s.state, headline: t.s.headline, updated: t.s.updated })),
-  holdoutHeadline: threads.find(t => t.k === 'holdout')?.s?.headline || null,
+  // thread headlines are left out: no slide renders them and one of them names the frozen holdout clade
+  threads: threads.map(t => ({ key: t.k, title: t.s.title, state: t.s.state, updated: t.s.updated })),
   leanAssessment: leanThread?.headline && /faithful/i.test(leanThread.headline) ? leanThread.headline : null
 };
 

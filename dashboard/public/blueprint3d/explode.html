@@ -160,7 +160,7 @@ body.embed header,body.embed #panel{display:none}body.embed main{grid-template-c
   <b>Open the Fish</b>
   <nav><a href="../start/">Start</a><a href="../">Mission Control</a><a href="./?view=radial">Radial 3D view</a><a href="../graph/?view=flyingfish">Graph</a><a href="../t/genotype/">Genotype thread</a><a href="../t/lean/index.html#blueprint">Lean certificate</a></nav>
   <div class="ctl">
-    <select id="speciesSel" title="Which segmented model to open (loaded on demand)"><option value="flying-fish">Flying fish</option><option value="zebrafish-adult">Zebrafish, adult</option><option value="zebrafish-larva" title="about 4-5 days post fertilisation, at swim-bladder inflation">Zebrafish larva</option></select>
+    <select id="speciesSel" title="Which segmented model to open (loaded on demand)"><optgroup label="Observed animals (schematic)"><option value="flying-fish">Flying fish</option><option value="zebrafish-adult">Zebrafish, adult</option><option value="zebrafish-larva" title="about 4-5 days post fertilisation, at swim-bladder inflation">Zebrafish larva</option></optgroup><optgroup label="&#9888; HYPOTHETICAL designs (parents + deltas)"><option value="winged-zebrafish">Winged zebrafish</option><option value="wingless-flying-fish">Wingless flying fish</option><option value="ff-zf-chimera">50:50 blend</option><option value="tff">Truly flying fish (TFF)</option></optgroup></select>
     <select id="modeSel" title="What to show"><option value="anatomy">Anatomy</option><option value="physiology">Physiology: circulation and gills</option><option value="tissue">Tissue signalling</option><option value="cell">Cell-cell interactions</option><option value="physics">Physics: flight simulator</option><option value="design">Design Studio</option><option value="sequences">Sequences</option><option value="compare">Compare: 2×2 + TFF</option><option value="growth">Growth</option></select>
     <label title="Split the fish along the midline and swing the halves apart">split <input type="range" id="split" min="0" max="100" value="0"></label>
     <label title="Peel the layers from the outside in: skin, then muscle, then the skeleton, leaving the organs">peel <input type="range" id="peel" min="0" max="3" value="0" step="1"></label>
@@ -230,11 +230,24 @@ const WING_GENES=['kcnk5b','kcnh2a','slc43a2a'];
 const MODELS={
   'flying-fish':{label:'flying fish (Exocoetidae)',short:'flying fish',species:'Exocoetidae',glb:'model/flying-fish.glb',manifest:'model/manifest.json',ont:'uberon',mb:'2.6 MB'},
   'zebrafish-adult':{label:'zebrafish, adult (Danio rerio)',short:'zebrafish, adult',species:'Danio rerio',glb:'model/zebrafish-adult.glb',manifest:'model/manifest-adult.json',ont:'zfa',mb:'4.4 MB'},
-  'zebrafish-larva':{label:'zebrafish larva, ~4-5 dpf (Danio rerio)',short:'zebrafish larva',species:'Danio rerio',glb:'model/zebrafish-larva.glb',manifest:'model/manifest-larva.json',ont:'zfa',mb:'2.5 MB'}
+  'zebrafish-larva':{label:'zebrafish larva, ~4-5 dpf (Danio rerio)',short:'zebrafish larva',species:'Danio rerio',glb:'model/zebrafish-larva.glb',manifest:'model/manifest-larva.json',ont:'zfa',mb:'2.5 MB'},
+  // HYPOTHETICAL designs from anatomy-model/parametric: parents + deltas, every moved parameter carrying its own
+  // provenance. They are drawn, and the panel says what each moved number rests on. None is an observed animal.
+  'winged-zebrafish':{label:'winged zebrafish (HYPOTHETICAL design)',short:'winged zebrafish',species:'design',glb:'model/winged-zebrafish.glb',manifest:'model/winged-zebrafish-manifest.json',ont:'uberon',mb:'2.4 MB',design:true},
+  'wingless-flying-fish':{label:'wingless flying fish (HYPOTHETICAL design)',short:'wingless flying fish',species:'design',glb:'model/wingless-flying-fish.glb',manifest:'model/wingless-flying-fish-manifest.json',ont:'uberon',mb:'2.6 MB',design:true},
+  'ff-zf-chimera':{label:'flying fish / zebrafish blend, 50:50 (HYPOTHETICAL design)',short:'50:50 blend',species:'design',glb:'model/ff-zf-chimera.glb',manifest:'model/ff-zf-chimera-manifest.json',ont:'uberon',mb:'2.5 MB',design:true},
+  'tff':{label:'truly flying fish, TFF (HYPOTHETICAL design)',short:'TFF',species:'design',glb:'model/tff.glb',manifest:'model/tff-manifest.json',ont:'uberon',mb:'2.6 MB',design:true}
 };
 let modelKey=MODELS[params.get('model')]?params.get('model'):'flying-fish';
-const isFF=()=>modelKey==='flying-fish', isZF=()=>modelKey!=='flying-fish';
+const isFF=()=>modelKey==='flying-fish', isZF=()=>MODELS[modelKey].ont==='zfa', isDesign=()=>!!MODELS[modelKey].design;
+// the Lean grounding, the Studio's parameters and the gene map are all the flying fish's; only the flying fish uses them
+const isRealFF=()=>modelKey==='flying-fish';
 const MI=()=>MODELS[modelKey];
+// a design's parents, read from its own manifest; a design with a zebrafish parent is still a zebrafish on screen
+const designParents=()=>(MF&&MF.parents)||[];
+const hasZebrafishAncestry=()=>isZF()||designParents().some(p=>/zebrafish/.test(p.organism||''));
+const hasFlyingFishAncestry=()=>isFF()||designParents().some(p=>/flying-fish/.test(p.organism||''));
+const ancestryLine=()=>designParents().map(p=>`${Math.round((p.weight||0)*100)} % ${esc(p.organism)}`).join(' + ')||'not stated';
 let D=null,T=new Map(),children=new Map(),G=null,MF=null,modelInfo={source:'none'};
 let state={split:0,peel:0,obj:null,organ:null,tissue:null,gene:null,preset:null,mode:'anatomy'};let hovered=null,noteCollapsed=false,noteTimer=null;
 let circ=null,circData=null,gill=null,physStatus=null,physMods={},interData=null,lastT=0,basisTimer=null,ctx='development',intensity=0,cardiac=null,chains=null;
@@ -343,7 +356,7 @@ function normEntry(o){if(!o)return null;const raw=o.ontology_id||null,zfa=o.zfa_
   const node=ux&&term(ux)?ux:raw&&term(nid(raw))?nid(raw):zfa&&term(zfa)?zfa:null;
   const anc=o.nearest_ancestor_in_files||null;const ancId=anc?(anc.match(/(UBERON_\d+|CL_\d+|ZFA:\d+)/)||[])[1]||null:null;
   return {name:o.object||o.name,label:o.label||o.object||o.name,ontology_id:node,manifest_id:raw,manifest_label:o.ontology_label||null,zfa_id:zfa,ancestor:anc,ancestor_id:ancId&&term(ancId)?ancId:null,
-    uberon_id:ux,uberon_label:o.uberon_label||null,zfa_label:o.zfa_id?(o.ontology_label||null):null,
+    uberon_id:ux,uberon_label:o.uberon_label||null,hypothetical:!!o.hypothetical,hypothetical_note:o.hypothetical_note||null,zfa_label:o.zfa_id?(o.ontology_label||null):null,
     level:o.level||null,system:o.organ_system_id||o.system||null,system_label:o.organ_system||null,layer:o.layer||'outer',side:o.side==='mid'?null:(o.side||null),colour:o.colour||null,
     geometry_basis:o.geometry_basis||null,note:o.note||null,ontology_note:o.ontology_note||null,source:o.ontology_source||null};}
 function manifestFor(name){const list=(MF&&MF.objects)||[];const nm=o=>o.object||o.name;let m=list.find(o=>nm(o)===name);if(m)return normEntry(m);const base=name.replace(/_(L|R)$/,'');m=list.find(o=>nm(o)===base);if(m)return normEntry(m);m=list.find(o=>name.startsWith(nm(o)));return m?normEntry(m):null;}
@@ -524,6 +537,8 @@ function modelEvidenceLine(){
   if(MF&&MF.evidence_backed)return `Evidence-backed: pectoral fin length ${esc(MF.evidence_backed.pectoral_fin_length_over_SL)} of standard length (n = ${esc(MF.evidence_backed.n_specimens)}, ${esc(MF.evidence_backed.source||'')}); ${esc(MF.evidence_backed.caveat||'')}.`;
   if(MF&&MF.sourced_values){const n=Object.keys(MF.sourced_values).length,m=Object.keys(MF.schematic_values||{}).length;const cov=MF.ontology_coverage||{};
     return `Sourced from the literature: ${n} proportions and counts (each piece lists them as "sourced:"); ${m} values schematic. ${cov.with_zfa_id!=null?`All ${cov.with_zfa_id} pieces carry a ZFA id and an Uberon cross-reference (${cov.null_zfa||0} null).`:''}${MF.stage?` Stage: ${esc(MF.stage.label||'')}.`:''}`;}
+  if(MF&&MF.provenance_per_parameter){const mv=(MF.moved_parameters||[]).length,n=Object.keys(MF.parameters||{}).length;
+    return `<b>HYPOTHETICAL design</b>, not an observed animal: ${n} parameters inherited from ${ancestryLine()}, of which <b>${mv} were moved by a delta</b>; every moved number carries its own reason and evidence grade in the panel. ${esc(MF.MORPHOLOGICAL_NOT_GENETIC||'')}`;}
   return 'No measured proportion is stated for this model.';}
 function legend(){
   $('#legend').innerHTML=`<details id="legDet"><summary style="cursor:pointer;font-weight:700">Legend</summary>
@@ -612,6 +627,9 @@ function zfaBlock(o){const m=o.m;if(!m.zfa_id&&!m.uberon_id)return '';
   h+=`<p class="tiny">Model: <span class="mono">${esc(MI().glb)}</span>, manifest <span class="mono">${esc(MI().manifest)}</span>; built by anatomy-model/zebrafish/. ${esc((MF&&MF.ontology)||'')}</p></div>`;
   return h;}
 function drawnAs(o){if(!o)return '';const zf=!!(o.m.zfa_id||o.m.uberon_id);
+  const hyp=isDesign()?`<p class="tiny" style="color:var(--bad)">&#9888; ${esc(o.m.hypothetical_note||'HYPOTHETICAL: this piece belongs to a design, not to any observed animal.')}</p>`:'';
+  return hyp+drawnAsBody(o,zf);}
+function drawnAsBody(o,zf){
   // on a zebrafish piece the geometry basis is long and sourced clause by clause: it is laid out in "Trace this piece" instead
   return `<p class="tiny">Drawn as <span class="mono">${esc(o.name)}</span> (${esc(o.m.label||'')})${zf?'':': '+esc(o.m.geometry_basis||'geometry basis not stated')}${o.m.note?'; '+esc(o.m.note):''}${o.m.layer?' &middot; layer '+esc(o.m.layer):''}${!zf&&o.m.manifest_id&&o.m.manifest_id!==o.m.ontology_id?` &middot; the manifest names <span class="mono">${esc(o.m.manifest_id)}</span> (${esc(o.m.manifest_label||'')}), not a node of the blueprint; the panel opens its fin-subtree node`:''}${modelInfo.source==='stand-in'?' &middot; stand-in primitive':''}.</p>`;}
 function showObj(o){const zf=!!(o.m.zfa_id||o.m.uberon_id);let h=`<h2>${esc(o.m.label||o.name)}</h2>${drawnAs(o)}<p class="small"><b>${zf?`No node in the blueprint for ${esc(o.m.label||o.name)}.`:'No node in the files.'}</b> ${zf?`Its term exists (ZFA <span class="mono">${esc(o.m.zfa_id||'none')}</span>, Uberon <span class="mono">${esc(o.m.uberon_id||'none')}</span>), but the flying-fish blueprint in data.json does not contain that Uberon class, so this panel has no genes, claims or theorems to show for it. The trace below is the manifest’s own record. `:''}${zf?'':esc(o.m.ontology_note||'This piece is drawn for orientation only;')+' it carries no term of its own, so no genes, claims or theorems attach to it.'}${o.m.ancestor?` Nearest ancestor in the files: ${o.m.ancestor_id?`<a class="go" data-go="${esc(o.m.ancestor_id)}">${esc(o.m.ancestor)}</a>`:esc(o.m.ancestor)}.`:''}${o.m.system&&term(o.m.system)?` The manifest files it under <a class="go" data-go="${esc(o.m.system)}">${esc(term(o.m.system).label)}</a>.`:o.m.system_label?` The manifest says: ${esc(o.m.system_label)}.`:''}</p>`;
@@ -643,7 +661,33 @@ function introZF(){const M=MI(),cov=(MF&&MF.ontology_coverage)||{};
     <li>Geometry is segmented and schematic except where a piece names a sourced value; counts of rays, vertebrae and arches follow the manifest's sourced counts.</li>
     <li>Switch back to the flying fish for the Lean grounding, the claim graph and the nanopub drafts.</li></ul></div>`;
   $('#panel').innerHTML=h;$$('[data-go]').forEach(a=>a.onclick=()=>{goOrgan(a.dataset.go,true);applyState();show(a.dataset.go);});}
-function intro(){if(isZF())return introZF();const c=D.counts_distinct||{};
+// the opening panel for a parametric design: what it inherited, what was moved, and what each moved number rests on
+function introDesign(){const M=MI(),R=MF.design_record||{},pp=MF.provenance_per_parameter||{},moved=MF.moved_parameters||[];
+  const ev=k=>{const c={measured:'ok',derived:'',hypothetical:'warn',assumed:'warn'}[k]||'';return `<span class="chip ${c}">${esc(k||'unstated')}</span>`;};
+  const fmtv=v=>typeof v==='number'?(Math.abs(v)<0.01?v.toPrecision(3):(+v.toFixed(4)+'')):esc(String(v));
+  let h=`<h2>${esc(M.label)}</h2>
+    <div class="flier"><b>&#9888; HYPOTHETICAL design</b> ${esc(MF.model||'')}. <b>Nothing here was observed.</b> It was generated from a parameter set by anatomy-model/parametric/build.py, as <span class="mono">parameters = SUM over parents (weight &times; parent parameter) + delta</span>.
+      <p class="tiny" style="margin:4px 0 0">${esc(MF.MORPHOLOGICAL_NOT_GENETIC||'')}</p></div>
+    <p class="small"><b>Ancestry:</b> ${ancestryLine()}. <b>${objs.length} named pieces</b> from <span class="mono">${esc(M.glb)}</span>, driven by <span class="mono">${esc(M.manifest)}</span>. ${Object.keys(MF.parameters||{}).length} parameters, <b>${moved.length} moved by a delta</b>, the rest inherited unchanged.</p>`;
+  if(R.real_experimental_counterpart){const C=R.real_experimental_counterpart;
+    h+=`<div class="prov model" style="border-left-color:var(--warn)"><b>${C.exists?'The closest real experiment':'No real counterpart'}</b><span class="small">${esc(C.what||'')}</span><p class="small">${esc(C.caveat||'')}</p></div>`;}
+  if(moved.length)h+=`<div class="sec"><h4>What was moved, and on what (${moved.length})</h4>${moved.map(k=>{const v=pp[k]||{};const d=v.delta||{};
+    return `<div class="prov${/hypothetical|assumed/.test(v.kind||'')?' model':''}"><b>${esc(k.replace(/_/g,' '))} = ${fmtv(v.value)}${v.unit&&v.unit!=='-'?' '+esc(v.unit):''}</b>
+      <span class="small">${ev(v.kind)} <span class="chip">${esc(d.applied||'delta')}</span> inherited value ${fmtv(v.blended_value)} from ${esc(v.ancestry||'')}.</span>
+      <p class="small">${esc(d.reason||'no reason recorded')}</p>
+      <p class="tiny">${esc(v.drives||'')}</p></div>`;}).join('')}
+    <p class="tiny">These are the only numbers that differ from the parents. Everything else is the parents' own value, at the weights above.</p></div>`;
+  else h+=`<div class="sec"><h4>What was moved</h4><p class="small"><b>No delta at all.</b> Every parameter is the weighted blend of the parents; nothing was set by hand. The blend itself is the hypothesis.</p></div>`;
+  if(MF.lean_recheck)h+=`<div class="prov model"><b>Lean</b><span class="small">${esc(MF.lean_recheck.why||'')} ${esc(MF.lean_recheck.run||'')}${(MF.lean_recheck.parameters||[]).length?': '+MF.lean_recheck.parameters.map(esc).join(', '):''}. <b>This page has not run that re-check on this design</b>; the Lean rows in the Design Studio are about the measured flying fish.</span></div>`;
+  const dm=MF.derived_from_the_mesh;
+  if(dm)h+=`<div class="sec"><h4>Measured off the built mesh</h4><table><tr><th>quantity</th><th>value</th></tr>${Object.entries(dm).filter(([k,v])=>typeof v==='number').map(([k,v])=>`<tr><td>${esc(k.replace(/_/g,' '))}</td><td>${fmtv(v)}</td></tr>`).join('')}</table><p class="tiny">${esc(dm.measured_how||'')} ${esc(dm.flight_muscle_note||'')}</p></div>`;
+  h+=`<div class="sec"><h4>What this model is not</h4><ul class="t small">
+    <li>Not an animal: no such fish has been observed, bred, or shown to be developmentally reachable.</li>
+    <li>Not a genetic claim: the parameters are morphological, and genomes do not average. Use the Genotype browser for what the sequences do and do not show.</li>
+    <li>No Lean verdict and no gene strip attaches to the design itself; both are about the measured flying fish.</li>
+    <li>Pieces keep their parents' ontology terms, so a piece's panel traces the term, not the design.</li></ul></div>`;
+  $('#panel').innerHTML=h;$$('[data-go]').forEach(a=>a.onclick=()=>{goOrgan(a.dataset.go,true);applyState();show(a.dataset.go);});}
+function intro(){if(isDesign())return introDesign();if(isZF())return introZF();const c=D.counts_distinct||{};
   let h=`<h2>Open the fish</h2><p class="small">The blueprint for &ldquo;${esc(D.description)}&rdquo; read as <b>${esc(D.taxon?.label)}</b>: ${c.organ_system} organ systems, ${c.organ} organs, ${c.tissue} tissues, ${c.cell} cell types, every one an existing ontology term. The 3D fish is schematic; click any piece to see what it maps to and trace it.</p>
     <div class="sec"><h4>Stages</h4><ol class="small" style="margin:.2em 0;padding-left:1.2em"><li>outside: orbit the fish</li><li>split along the midline</li><li>peel the skin, then the muscle, then the skeleton</li><li>organ systems inside: click one to isolate it</li><li>drill system &rarr; organ &rarr; tissue &rarr; cell in this panel</li><li>double-click a piece to fly to it</li><li>trace every node: term, query, genes, claims, Lean scope, nanopub drafts, physics</li></ol></div>`;
   if(G){h+=`<div class="sec"><h4>Gene records</h4><p class="small">${esc(G.constraint||'')}</p><table><tr><th>layer</th><th>direct</th><th>inferred only</th><th>none</th></tr>${['body','organ_system','organ','tissue','cell'].map(l=>{const v=G.coverage[l];return v?`<tr><td>${esc(LEVEL_NAME[l])}</td><td>${v.nodes_with_direct_record} / ${v.denominator}</td><td>${v.nodes_with_only_derived_records}</td><td>${v.nodes_with_none}</td></tr>`:''}).join('')}</table><p class="tiny">A node with no record is unstudied in these sources, not gene-free. Source ${esc(G.file)}${G.built?', built '+esc(G.built):''}${G.carried_from_previous_build?' (carried from the build of '+esc(G.carried_from_previous_build)+')':''}.</p></div>`;}
@@ -865,8 +909,8 @@ async function ensureDesign(){if(design)return;
 const KSENT='evaluates the same formulas; not a kernel check';
 // the Studio's parameters, baselines and constraint checks are the flying fish's measured reference. With a zebrafish
 // model on screen the fish is still drawn, but nothing is applied to its geometry and the panel says so.
-function studioSpeciesLine(){if(isFF())return '';
-  return `<div class="prov model"><b>Model on screen: ${esc(MI().label)}</b><span class="small">Every parameter, baseline and constraint row below is the <b>flying fish's</b> (${esc((refSpec&&refSpec.label)||'Park and Choi L3 specimen')}): <b>they are not applied to the zebrafish geometry</b>, which stays exactly as it was built, and the drag handles are hidden. What does change with the species is the genetic evidence: see "Genetic level" below. Switch back to the flying fish to edit a design.</span></div>`;}
+function studioSpeciesLine(){if(isFF())return '';const what=isDesign()?'design geometry':'zebrafish geometry';
+  return `<div class="prov model"><b>Model on screen: ${esc(MI().label)}</b><span class="small">Every parameter, baseline and constraint row below is the <b>flying fish's</b> (${esc((refSpec&&refSpec.label)||'Park and Choi L3 specimen')}): <b>they are not applied to the ${what}</b>, which stays exactly as it was built, and the drag handles are hidden. What does change with the species is the genetic evidence: see "Genetic level" below. Switch back to the flying fish to edit a design.</span></div>`;}
 function studioBanner(){const b=$('#banner');b.classList.add('side','studio');b.innerHTML=`${esc(DS.BANNER)}${isZF()?`<br><b>Model on screen:</b> ${esc(MI().label)} &mdash; the design numbers stay the flying fish's and are not applied to it.`:''}<br><b>Constraint checker:</b> ${checkerSource==='missing'?'lean/eliminate/browser-check.mjs did not load; no verdicts.':`lean/eliminate/browser-check.mjs ${esc(KSENT)} (${esc(kernelNote.replace(/^.*?not a kernel check:?\s*/,''))}).`}`;b.style.display='block';}
 function conditionsSection(where){if(!conditions)return `<div class="sec"><h4>Conditions (locked at average)</h4><p class="small">conditions/baseline.json was not found in this build; the conditions are not shown rather than guessed.</p></div>`;
   return `<div class="sec"><h4>Conditions (locked at average)</h4><p class="small">${esc(conditions.rule)} <span class="tiny">Decided ${esc(conditions.decided)} by ${esc(conditions.decided_by)}; read from conditions/baseline.json.</span></p>
@@ -1063,14 +1107,14 @@ const routeOrganism=r=>String((r&&r.organism)||'');
 const routeIsZebrafish=r=>/danio\s+rerio/i.test(routeOrganism(r));
 const routeIsFlyingFish=r=>/exocoet|flying fish/i.test(routeOrganism(r));
 function routeSpeciesChip(r){
-  if(isZF())return routeIsZebrafish(r)
+  if(hasZebrafishAncestry())return routeIsZebrafish(r)
     ?`<span class="chip ok" title="measured in Danio rerio, the species of the model on screen">same species</span>`
     :`<span class="chip warn" title="${esc(routeOrganism(r)||'organism not stated')}">not Danio rerio</span>`;
   return routeIsFlyingFish(r)
     ?`<span class="chip ok" title="${esc(routeOrganism(r))}">flying fish</span>`
     :`<span class="chip warn" title="${esc(routeOrganism(r)||'organism not stated')}; no genetic manipulation has ever been done in a flying fish">cross-species</span>`;}
 function speciesEvidenceNote(){const I=interv;const rows=(I&&I.all)||[];const z=rows.filter(routeIsZebrafish).length;
-  if(isZF())return `<div class="prov"><b>Same-species evidence for this model</b><span class="small">The model on screen is <b>${esc(MI().label)}</b> and genotype/interventions.json was measured in <b>Danio rerio</b>${rows.length?` (${z} of ${rows.length} entries; the rest add medaka, Xenopus oocytes or human constructs and are marked <span class="chip warn">not Danio rerio</span>)`:''}. For this model each route below is <b>same-species evidence</b>: the experiment and the fish on screen are the same species, so no transfer across species is being assumed. It changes nothing else &mdash; grade, magnitude, stage regime and pleiotropy are exactly as before, and same species is not the same as calibrated.</span></div>`;
+  if(hasZebrafishAncestry())return `<div class="prov"><b>Same-species evidence for this model</b><span class="small">The model on screen is <b>${esc(MI().label)}</b> and genotype/interventions.json was measured in <b>Danio rerio</b>${rows.length?` (${z} of ${rows.length} entries; the rest add medaka, Xenopus oocytes or human constructs and are marked <span class="chip warn">not Danio rerio</span>)`:''}. For this model each route below is <b>same-species evidence</b>: the experiment and the fish on screen are the same species, so no transfer across species is being assumed. It changes nothing else &mdash; grade, magnitude, stage regime and pleiotropy are exactly as before, and same species is not the same as calibrated.</span></div>`;
   return `<div class="prov model"><b>Cross-species transfer</b><span class="small">The model on screen is the <b>flying fish (Exocoetidae)</b>. Every route below that manipulates anything was measured in a proxy species, overwhelmingly zebrafish${rows.length?` (${z} of ${rows.length} entries in Danio rerio; ${(()=>{const n=rows.filter(routeIsFlyingFish).length;return n===1?'1 is a flying-fish <i>sequence</i> entry only, with no manipulation':n+' are flying-fish <i>sequence</i> entries only, with no manipulation';})()})`:''}; <b>no genetic manipulation has ever been done in a flying fish</b>, so each route is a cross-species transfer, not a flying-fish result. Select a zebrafish model in the species menu and the same rows become same-species evidence.</span></div>`;}
 function routesSection(changed){const I=interv;let h=`<div class="sec"><h4>Genetic level: candidate routes to this change</h4>${speciesEvidenceNote()}`;
   if(!changed.length)h+=`<p class="small">No change yet. Drag a handle, move a slider or describe a change; the candidate genetic routes for each edited parameter appear here.</p>`;

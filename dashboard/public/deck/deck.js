@@ -112,7 +112,7 @@ function build(D) {
     const r = N.route, sweep = N.kappaSweep || [];
     if (!r) return `${ribbon('anticipated')}<h2>A route, and its weakest step.</h2><div class="ghostbox"><div class="gi">Waiting on ${esc(needs('route'))}</div></div>`;
     return `${ribbon(st('route'))}${rub('impact')}
-      <h2>Four changes. No usable shortcut.</h2>
+      <h2>${['One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'][r.nodes.length - 2] || (r.nodes.length - 1)} changes. No usable shortcut.</h2>
       <div class="route" data-anim="route-break" data-weakest="${r.weakest}">
         ${r.nodes.map((nd, i, a) => `<div class="node${i === 0 ? ' start' : i === a.length - 1 ? ' end' : ''}" data-i="${i}">${esc(nd)}</div>`
           + (i < a.length - 1 ? `<div class="link" data-i="${i}"></div>` : '')).join('')}
@@ -231,7 +231,7 @@ function build(D) {
       <div><div class="ghostbox"><div class="gi"><b>Which genes move which feature</b><br>no measurement, no model</div></div>
         <p class="tiny" style="margin-top:8px">Anticipated: gene to structure to flight performance, each link evidenced or refused.</p></div>
     </div>
-    <p class="caption">This slide stays grey until there is something real behind it. An insect wing and a fish fin solve the same problem with unrelated parts, which makes the comparison worth running &mdash; and makes a pretty rendering easy to mistake for a result. ${esc(needs('wing'))}.</p>`;
+    <p class="caption">This slide stays grey until there is something real behind it. An insect wing and a fish fin solve the same problem with unrelated parts, which makes the comparison worth running &mdash; and makes a pretty rendering easy to mistake for a result. ${esc(sentence(needs('wing')))}</p>`;
 
   SL.scales = () => `${ribbon('partial')}
     <h2>The honest state of the ladder.</h2>
@@ -239,14 +239,16 @@ function build(D) {
       ${[['molecule', 'live'], ['tissue', 'partial'], ['organ', 'partial'], ['whole organism', 'partial'], ['population', 'live']]
         .map(([k, s], i) => `<div class="stage${s === 'live' ? ' key' : ''}" data-i="${i}"><b>${s === 'live' ? 'evidenced' : 'thin'}</b>${esc(k)}</div>`).join('')}
     </div>
-    <p class="caption">We can go from a sequence to a measured growth rate, and from a claim to a population-level test. The middle of the ladder is where the data thins out, and we are not going to pretend otherwise: the species with a complete record at every scale is a short list, and we publish its length rather than loosening the definition. ${esc(needs('scales'))}.</p>`;
+    <p class="caption">We can go from a sequence to a measured growth rate, and from a claim to a population-level test. The middle of the ladder is where the data thins out, and we are not going to pretend otherwise: the species with a complete record at every scale is a short list, and we publish its length rather than loosening the definition. ${esc(sentence(needs('scales')))}</p>`;
 
 
   SL.records = () => {
     const R = N.records;
     if (!R || !R.drafts) return `${ribbon('anticipated')}<h2>Findings, made citable.</h2><div class="ghostbox"><div class="gi">No records drafted yet</div></div>`;
     const mx = Math.max(...R.sets.map(x => x.drafts));
-    const names = { lean: 'Proofs and their assessments', organism: 'Blueprints, predictions, a refusal', swarm: 'The swarm experiments', claims: 'Claim tests, including refutations' };
+    const names = { lean: 'Proofs and their assessments', organism: 'Blueprints, predictions, a refusal',
+      swarm: 'The swarm experiments', claims: 'Claim tests, including refutations',
+      genotype: 'Gene-to-fin records, mostly negative', holdout: 'The held-out exam', physics: 'Flight physics' };
     return `${ribbon(st('records'))}
       ${rub('reuse')}<h2>Every finding, made citable.</h2>
       <div class="bars" style="max-width:800px">
@@ -292,6 +294,7 @@ function build(D) {
   // fold a sentence read from a data file into the middle of one of ours: lead lower-case, no trailing stop
   const splice = t => (t ? t.trim().replace(/\.$/, '').replace(/^([A-Z])(?=[a-z])/, (m, c) => c.toLowerCase()) : null);
   const ghost = id => `${ribbon('anticipated')}<div class="ghostbox"><div class="gi">Waiting on ${esc(needs(id))}</div></div>`;
+  const sentence = t => (t ? t.trim().replace(/^[a-z]/, c => c.toUpperCase()).replace(/([^.])$/, '$1.') : '');
 
   // Phenoscape, Uberon, the Cell Ontology and Daane 2021 underlie this work and are cited where they do.
   const CITE = {

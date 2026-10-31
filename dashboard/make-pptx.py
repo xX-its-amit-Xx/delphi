@@ -276,7 +276,9 @@ caption(s, "Two rules carry most of the weight. Nothing scores its own work, so 
 
 # 5 the route
 r = N.get("route")
-s = new("Four changes. No usable shortcut.", STATE["route"]["state"])
+_steps = len(r["nodes"]) - 1 if r else 0
+_word = ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"][_steps - 1] if 1 <= _steps <= 10 else str(_steps)
+s = new(f"{_word} changes. No usable shortcut.", STATE["route"]["state"])
 if r:
     route_row(s, r["nodes"], Inches(2.45), r.get("weakest"), broken=False)
     route_row(s, r["nodes"], Inches(3.75), r.get("weakest"), broken=True)
@@ -605,17 +607,20 @@ if Q:
 # ----------------------------------------------------------------- the 3D organism
 AN = N.get("anatomy")
 if AN:
-    s = new(f"{fmt(AN['pieces'])} named pieces. One measured proportion.", STATE["organism3d"]["state"])
+    s = new(f"{fmt(AN['pieces'])} named pieces. {AN['sourcedValues']} measured numbers behind them.", STATE["organism3d"]["state"])
     barchart(s, [m["name"] for m in AN["models"]],
              [("pieces", tuple(m["pieces"] for m in AN["models"])),
               ("with an ontology term", tuple(m["mapped"] for m in AN["models"]))],
              y=Inches(2.2), height=Inches(2.3), colors=[S1, S3], legend=True)
+    _zf = [m for m in AN["models"] if not m["unmapped"]]
     note(s, Inches(4.7),
-         f"Evidence-backed: exactly one proportion — pectoral fin length at {AN['evidenceBacked']['ratio']} of standard length, the "
-         f"median of {AN['evidenceBacked']['n']} museum specimens, read from the measurement file rather than typed in "
-         f"({AN['evidenceBacked']['caveat']}).   Schematic, and labelled so per piece: everything else, including every count.   "
-         f"Where the ontology ran out: {AN['unmapped']} of the flying fish's pieces have no ontology term at all; the manifest "
-         "records a null and the nearest ancestor it could find instead of inventing one.", ACCENT)
+         f"Evidence-backed: the flying fish rests on exactly ONE measured proportion — pectoral fin length at "
+         f"{AN['evidenceBacked']['ratio']} of standard length, the median of {AN['evidenceBacked']['n']} museum specimens, read "
+         f"from the measurement file rather than typed in ({AN['evidenceBacked']['caveat']}). The two zebrafish models carry "
+         f"{sum(m['sourcedValues'] for m in _zf)} sourced proportions and counts between them.   Schematic, and labelled so per "
+         f"piece: everything else, including every count.   Where the ontology ran out: {AN['unmapped']} of the flying fish's "
+         "pieces have no ontology term at all; the manifest records a null and the nearest ancestor it could find, instead of "
+         "inventing one.", ACCENT)
     caption(s, "The one novelty claim we make, worded as narrowly as the search supports: we did not find prior use of a proof "
                "assistant on an ontology-derived anatomy hierarchy. Ten logged searches turned up no Lean, Coq or Isabelle proofs "
                "about a hierarchy built from Uberon and the Cell Ontology. That is \"not found\", not \"does not exist\", and it is "
@@ -667,7 +672,8 @@ R = N.get("records") or {}
 if R.get("drafts"):
     s = new("Every finding, made citable.", STATE.get("records", {}).get("state", "partial"))
     names = {"lean": "Proofs + assessments", "organism": "Blueprints, predictions, a refusal",
-             "swarm": "Swarm experiments", "claims": "Claim tests, incl. refutations"}
+             "swarm": "Swarm experiments", "claims": "Claim tests, incl. refutations",
+             "genotype": "Gene-to-fin, mostly negative", "holdout": "The held-out exam", "physics": "Flight physics"}
     barchart(s, [names.get(x["thread"], x["thread"]) for x in R["sets"]],
              [("records drafted", tuple(x["drafts"] for x in R["sets"]))],
              y=Inches(2.15), height=Inches(2.5), colors=[S3])
