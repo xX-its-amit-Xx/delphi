@@ -1,0 +1,63 @@
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+@prefix schema: <https://schema.org/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/hypothesis/coupled-model-real-flying-fish-cannot-power-fly> a delphi:Hypothesis, skos:Concept ;
+    rdfs:label "The coupled simulator correctly denies the real flying fish powered flight at its own muscle, but lets it power-fly for half a minute if given a bat's flight-muscle fraction" ;
+    dct:description "Pre-registered test 4 (physics/sim/PREREG.md): the model must not let the real fish gain net mechanical energy while airborne. Run on 2026-10-31 with the physiology chain (gill counter-current, haemoglobin, cardiac output, Hill-type muscle, blood and burst stores; physiology/ at the hub's commit). Arm (a), chain default of no flight muscle: the fish gains nothing (0 J/kg; flight power 0 W against 1.44 W required): supported. Arm (b), flight muscle at the bat mean of 9.13 percent with the launch capped by the chain: never airborne, so trivially supported. Arm (b'), added after (b) and more generous to flight (uncapped launch, flapping allowed): the fish gains 54 J/kg of mechanical energy and sustains 26 s bouts of 337 m at 16.5 m/s on its burst store (1.60 W available against 1.44 W required) until the store empties: the model FAILS its key test under the pre-registered non-bird upper bound. Status: refuted for the model as configured under (b'); supported under (a). A second finding: with the chain capping the launch, the real fish cannot reach lift-off at all, because its axial burst power (8.75 W) cannot drive the thrust the tuned hydrodynamics demand (about 36 to 40 W), which shows the tuned water drag and thrust of runs 5 and 6 to be unphysical." ;
+    delphi:context "Claim under test: thompson1917-ch02-06 (D Arcy Thompson 1917, On Growth and Form, ch. II, Project Gutenberg 55264 lines 1716-1790), with thompson1917-ch02-07 and thompson1917-ch02-10. Taxon: Exocoetidae, NCBI Taxonomy 76072, GBIF 2968. Class Aves is the frozen holdout (holdout/exam.json); no bird value enters this record." ;
+    delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/physics-simulator-test4> ;
+    prov:wasDerivedFrom <https://doi.org/10.1242/jeb.046052>, <https://doi.org/10.1038/s42003-024-06032-9> ;
+    skos:scopeNote "Simulated throughout. The pre-registration and run log are the evidence of what was fixed before and changed after each run." ;
+    rdfs:comment "Status: refuted. Does not establish: that a real flying fish can power-fly (it has no 9 percent flight muscle: Davenport 1992); that the chain's white-muscle burst power applies to fin muscle; that the field sequence is reachable at all under the chain (it is not, with the tuned launch); anything about birds. Tests 1 to 3 remain post-hoc. What the fail means: the pre-registered upper bound, or the chain's burst power as applied to a flight muscle, or both, are too generous, and the hydrodynamic launch is unphysical; the next version must fix the launch against the chain's power before any validation claim." ;
+    rdfs:comment "Pre-registration: physics/tests/thompson1917-ch02-06/result.json, written 2026-10-31T18:21:00Z before any wing loading, lifting area or lift coefficient was read, amended 2026-10-31T18:26:00Z before any fit ran (the file lists both and the values seen before each); sha256 at build 0094c084db22278a5f98d96cc2971ccd27813b0acdc458d60cadf7c7b7bcae48. The git commit that timestamps it is pending: the physics thread does not commit; the hub does." ;
+    skos:related <https://w3id.org/delphi/resource/claim/thompson1917-ch02-06> ;
+    rdfs:seeAlso <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/>, <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/results.json> .
+  <https://w3id.org/delphi/resource/evidence/physics-simulator-test4> a delphi:EvidenceItem ;
+    rdfs:label "Test 4 runs (a), (b), (b') and the flier readout with the chain on" ;
+    dct:description "Numbers from the simulator's own validation table, headless, recorded in physics/sim/RUNS.md: (a) net gain 0.0 J/kg, P_avail(flight) 0.00 W, P_req(level) min 1.44 W; (b) identical, never airborne (60 s taxi at 3.5 m/s, burst store 0 percent); (b') net gain 54.0 J/kg, P_avail(flight) 1.60 W, glides of 337 m in 26.2 s to 6.9 m at 16.5 m/s, burst store 0 percent at the end, blood O2 store 38 percent. Flier with the chain on: climbs to 179 m at 66 s, then its flight power falls below 0.5 W, limited by the burst store (0 percent) with the blood O2 store at 35 percent. Physiology copy sha256-identical to physiology/ (node physiology/test.mjs passed per the hub). Flags added for (b'): launchcap=0, flap=1, tmax." ;
+    dct:subject <https://w3id.org/delphi/resource/hypothesis/coupled-model-real-flying-fish-cannot-power-fly> ;
+    rdfs:comment "Computed by physics/analysis.py from physics/glide-data.csv (sha256 bc24245b5163723b192e95fccf714ef6e4b3b28e71df4fef3befbaf008a00635) and physics/comparison-data.csv (sha256 e0d3d74639c1fe856fe5128c1783151596fde3acc923a2409be3d3f870cc394a); numbers in physics/results.json (sha256 63336841c0d4c9ae2760ae5c87a9251b97218e3ebfdd453cad4cffb9cdf6ba0b). Every input value carries its source, locator, retrieval time and value kind in those files." ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/results.json>, <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/data/glide-data.csv>, <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/data/comparison-data.csv> .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-physics-thread-builder> ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/data/result.json>, <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/results.json> .
+  <https://w3id.org/delphi/resource/agent/delphisci-physics-thread-builder> a prov:SoftwareAgent ;
+    rdfs:label "delphisci physics thread (Claude Fable 5.1 writing the data tables, the analysis script and this builder; a builder, not an assessor)" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/model/claude-fable-5-1> a delphi:LanguageModel ;
+    rdfs:label "Claude Fable 5.1" ;
+    dct:identifier "claude-fable-5-1" .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-10-31T21:00:57.000Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/delphisci-physics-thread-builder> ;
+    rdfs:label "The coupled simulator correctly denies the real flying fish powered flight at its own muscle, but lets it power-fly for half a minute if given a bat's flight-muscle fraction" ;
+    rdfs:comment "Unsigned draft. Not a publication. The test registry comes first and production needs the ORCID key owner's explicit approval every time. Owner ORCID not set: the key owner adds it at signing time; until then no human is named in this record." ;
+    rdfs:comment "Hand-authored in Delphi ontology v2.0 terms (https://w3id.org/delphi/ontology/) by the builder, not created from a template: the published Delphi templates still use legacy probknow IRIs (team decision 2026-10-31, DECISIONS.md), so no nt:wasCreatedFromTemplate is declared and a template-conformance checker will report none." ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType <https://w3id.org/delphi/ontology/Hypothesis> ;
+    npx:introduces <https://w3id.org/delphi/resource/hypothesis/coupled-model-real-flying-fish-cannot-power-fly> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/biomechanics-and-scaling> .
+  <https://w3id.org/delphi/resource/domain/biomechanics-and-scaling> rdfs:label "biomechanics-and-scaling" .
+}

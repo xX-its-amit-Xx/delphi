@@ -45,3 +45,58 @@ availability was added or moved in any run (the physiology stub still returns ze
 4. The validation row "glide speed stays above v_min" on the page was rewritten after run 2 to match the pre-registered
    test-1 wording (no climbing segment longer than 0.2 s below 0.95 v_min); the earlier row was stricter than PREREG.md.
 No `measured` or `secondary` value was moved. No tolerance was widened. No power-related parameter exists yet.
+
+## Test 4 (confirmatory): written BEFORE the run, 2026-10-31 ~22:25 UTC
+
+The hub confirmed the physiology chain (`physiology/`, committed as the reference version; `node physiology/test.mjs` passes,
+including "blood O2 store drains in air") and gave the go. Procedure, fixed now:
+
+- Two arms, both on the real fish (Park and Choi L3), run-6 parameters, physiology chain ON, environment from
+  `conditions/baseline.json`:
+  - (a) chain default: flight-muscle fraction 0 (the observed behaviour: flying fish do not flap; Davenport 1994).
+  - (b) upper bound: flight-muscle fraction 0.0913, the mean of extant bats (PMC10966098 citing Bullen and McKenzie 2004),
+    the most generous non-bird value with a source, passed as `?fmf=0.0913`. This is the "sourced non-bird upper bound"
+    PREREG.md names.
+- Pass only if the real fish cannot gain net mechanical energy while airborne under (b) as well as (a): the TEST 4 row on the
+  page reports the maximum net gain of mechanical energy per unit mass after lift-off (must stay at or below 0.5 J/kg, the
+  pre-registered "no net gain" with integration slack) and the maximum available flight power against the minimum level-flight
+  power over v_min to 25 m/s (must be below).
+- Nothing else changed: no parameter moved, no equation touched, the physiology modules used as published. The copy beside the
+  page is byte-identical to `physiology/` at the hub's commit.
+- Both outcomes are reported whatever they are. If the real fish gains net energy under (b), the model fails its key test and
+  that is the result.
+- Afterwards, the hypothetical flier is re-run with the chain ON and its climb duration and limiter (blood O2 store or burst
+  store) reported; that run is a design-study readout, not a test.
+
+### Test 4 results, 2026-10-31 ~22:45 UTC (physiology copy byte-identical to `physiology/` at the hub's commit)
+
+| arm | configuration | airborne? | max net mechanical energy gain | max P_avail(flight) vs min P_req(level) | TEST 4 row |
+|---|---|---|---|---|---|
+| (a) | chain default, flight muscle 0; swim and taxi thrust capped by the chain's axial power | **no**: 60 s of taxi at 3.5 m/s, burst store 0 %, axial power 0 W | 0.0 J/kg | 0.00 W vs 1.44 W | within (trivially) |
+| (b) | as (a) with flight muscle 0.0913 (bat mean) | **no**, same as (a) | 0.0 J/kg | 0.00 W vs 1.44 W | within (trivially: the flight muscle was never airborne) |
+| (b') | added after seeing (a) and (b): launch thrust NOT capped (the tuned run-6 launch), flapping thrust allowed from the 0.0913 flight muscle | yes: lifts off at 12.9 then 16.5 m/s | **54.0 J/kg** | **1.60 W vs 1.44 W** | **OUTSIDE: FAIL** |
+
+**Plainly: the model fails its key test under (b').** With a bat's mean flight-muscle fraction, the chain's burst (anaerobic)
+power lets the real fish's body sustain powered flight for about 26 s per bout (glides of 337 m lasting 26 s at 16.5 m/s to
+6.9 m, limited by the burst store, which reads 0 % at the end; blood O2 store 38 %). This is a result, as the hub asked:
+either the non-bird upper bound is too generous for a fish (a flying fish has no such muscle, Davenport 1992), or the chain's
+white-muscle burst power (307 W/kg) applied to a 9 % flight muscle overstates what fin muscle can deliver, or both. Under the
+observed muscle fraction (a) the real fish cannot power-fly.
+
+**A second finding from (a) and (b):** with the chain capping the launch, the real fish never leaves the water: the chain's
+axial burst power (8.75 W) cannot drive the tuned swim and taxi thrust, which demand about 36 to 40 W (3.59 N at 10 m/s,
+2.5 N at 16 m/s). So the hydrodynamic thrust tuned in runs 5 and 6 (post-hoc, against assumed water drag and lobe drag) is
+unphysical for a 60 g fish, and tests 1 to 3 as "within" rest on it. The assumed water drag (C_d 0.1 on an assumed 7 cm²
+frontal area) is the likeliest culprit; nothing has been retuned.
+
+**Deviation (recorded):** arm (b') was added after seeing that (b) never exercised the flight muscle. It is more generous to
+powered flight than (b) (uncapped launch, flapping allowed), so a pass under it would have been stricter; it failed instead.
+No measured or secondary value was moved; the flags `launchcap=0`, `flap=1`, `tmax` were added to the page for this run.
+
+### Hypothetical flier with the chain ON (design-study readout, not a test)
+
+Lifts off at 7.7 m/s, climbs at about 2.8 m/s to **179 m at t = 66 s**, where the flight power falls below 0.5 W:
+**limited by the burst store (0 %)**, with the blood O₂ store still at 35 % (aerobic power in air is small because the gills do
+not ventilate, so the blood store is barely drawn). It then glides down, reaching 900 m horizontal at 54 m height at 156 s.
+So the designed flier's climb is a burst of about a minute on anaerobic stores, not sustained aerobic flight; sustained flight
+needs an air-breathing respiratory surface, as reported to Genotype.
