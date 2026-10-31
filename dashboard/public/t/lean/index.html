@@ -68,7 +68,7 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
 <header class="top"><div class="wrap">
   <a class="back" href="../../index.html">&larr; Mission Control</a>
   <span class="brand">Lean thread</span>
-  <nav><a href="#result">Result</a><a href="#proved">What is proved</a><a href="#flyingfish">Flying fish</a><a href="#audit-fish">Audit vs fish</a><a href="#blueprint">Blueprint certificate</a><a href="#thompson">Cube law</a><a href="#eliminate">Eliminate</a><a href="#theorems">Theorems</a><a href="#faith">Faithfulness</a><a href="#audit">Audit</a><a href="#mutants">Break it</a><a href="#records">Records</a><a href="#watch">Watch it converge</a><a href="#repro">Reproduce</a><a href="#honest">Limits</a></nav>
+  <nav><a href="#result">Result</a><a href="#proved">What is proved</a><a href="#flyingfish">Flying fish</a><a href="#audit-fish">Audit vs fish</a><a href="#blueprint">Blueprint certificate</a><a href="#thompson">Cube law</a><a href="#eliminate">Eliminate</a><a href="#genotype">Genotype</a><a href="#empirical">Observations</a><a href="#laws">Law catalogue</a><a href="#theorems">Theorems</a><a href="#faith">Faithfulness</a><a href="#audit">Audit</a><a href="#mutants">Break it</a><a href="#records">Records</a><a href="#watch">Watch it converge</a><a href="#repro">Reproduce</a><a href="#honest">Limits</a></nav>
   <button id="themeBtn" title="Toggle light or dark">Theme</button>
 </div></header>
 
@@ -149,6 +149,31 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
 <div class="card"><h3>The open-problems candidates (<code>open-problems/candidates.formal.json</code> → <code>lean/eliminate/ledger.open-problems.json</code>)</h3><p class="small" id="opNote"></p><div class="verdict" id="opVerdict"></div><div class="scroll"><table id="opLedger"></table></div></div>
 <div class="card"><h3>Other ledgers: the physics thread's flier, and the physiology chain against sustained flight</h3><div id="exLedgers"></div></div>
 <div class="card"><h3>Illustrative candidate ledger (<code>lean/eliminate/ledger.json</code>)</h3><p class="small mute" id="elLedgerNote"></p><div class="scroll"><table id="elLedger"></table></div></div>
+</section>
+
+<section id="genotype"><h2>Genotype-level checks: the code, pleiotropy, development, time</h2>
+<p class="lede">Five checks the Design Studio's genetic edits need. Each is small, each is a statement about data or about a named model, and each says plainly what it cannot do.</p>
+<div class="verdict" id="gtVerdict"></div>
+<div class="card"><h3>The five checks</h3><div class="scroll"><table id="gtChecks"></table></div></div>
+<div class="card"><h3>Developmental ordering, certified on the fin subtree</h3><p class="small" id="gtDevNote"></p><div class="scroll"><table id="gtDev"></table></div></div>
+<div class="card"><h3>What the map says a gene reaches (the closure check)</h3><p class="small" id="gtGeneNote"></p><div class="scroll"><table id="gtGenes"></table></div></div>
+<div class="card"><h3>Candidate ledger</h3><p class="small" id="gtLedgerNote"></p><div class="scroll"><table id="gtLedger"></table></div></div>
+</section>
+
+<section id="empirical"><h2>Observations the checker uses, and why none of them is an axiom</h2>
+<p class="lede">An observation is not a mathematical truth. Every measurement here is a field of a Lean structure whose proof obligations are the inequalities the observation asserts, so a theorem that needs one takes it as an argument and the axiom list stays clean. Reject an entry and you lose its eliminations, nothing else.</p>
+<div class="verdict" id="emVerdict"></div>
+<p class="small" id="emFraming"></p>
+<div class="card"><h3>Is the set consistent? The non-vacuity witness</h3><p class="small" id="emWitness"></p></div>
+<div class="card"><h3>The entries</h3><div class="scroll"><table id="emEntries"></table></div></div>
+<div class="card"><h3>Eliminations conditional on an observation</h3><p class="small" id="emLedgerNote"></p><div class="scroll"><table id="emLedger"></table></div></div>
+</section>
+
+<section id="laws"><h2>The law catalogue: what is checked, what is assumed, what is missing</h2>
+<p class="lede">Every law the Studio can check, every hypothesis it carries without proof, and every gap it must not treat as checked. Built from the compiler's own report (<code>lean/laws.json</code>, <code>lean/LAWS.md</code>).</p>
+<div class="verdict" id="lwVerdict"></div>
+<p class="small" id="lwNote"></p>
+<div class="card"><h3>By level</h3><div class="scroll"><table id="lwTable"></table></div></div>
 </section>
 
 <section id="theorems"><h2>The theorems the compiler accepted</h2>
@@ -434,6 +459,84 @@ function init(R) {
   };
   $('#mRange').oninput = draw; $('#tRange').oninput = draw; draw();
 }
+</script>
+
+<script>
+// The genotype, observation and law-catalogue sections. Their own fetches (the browser serves both from
+// cache), so the main renderer above is untouched.
+(function () {
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const chip = (t, c) => '<span class="chip' + (c ? ' ' + c : '') + '">' + esc(t) + '</span>';
+  const rows = (head, body) => '<tr>' + head.map(h => '<th>' + h + '</th>').join('') + '</tr>' + body;
+  const vcls = v => v === 'eliminated' ? 'bad' : v && v.startsWith('consistent') ? 'ok' : '';
+
+  fetch('lean.json').then(r => r.json()).then(R => {
+    // ---- genotype ----
+    const G = (R.constraints && R.constraints.list || []).filter(c => /^G[1-9]/.test(c.id));
+    const gl = (R.extraLedgers || []).find(l => l.name === 'genotype');
+    const dev = R.genotype && R.genotype.development, reach = R.genotype && R.genotype.geneReach;
+    if (G.length) {
+      $('#gtVerdict').innerHTML = chip(G.length + ' checks proved', 'ok') +
+        (dev ? chip(dev.edges.certified + ' develops_from edges certified', 'ok') + chip(dev.edges.unknownStage + ' edges not certified (unknown stage)', 'warn') : '') +
+        (reach ? chip(reach.genes.filter(g => g.nodeCount).length + ' genes with a mapped node set') : '') +
+        (gl ? chip(gl.summary.eliminated + ' candidates eliminated', 'bad') + chip(gl.summary.consistent + ' consistent (not ruled out)') + chip(gl.summary.kernelCheckedEliminations + ' eliminations kernel-checked', 'ok') : '');
+      $('#gtChecks').innerHTML = rows(['Check', 'Relation', 'Theorem', 'What it can rule out', 'Under'], G.map(c =>
+        '<tr><td><b>' + esc(c.id) + '</b><br><span class="small mute">' + esc(c.property) + '</span></td><td><code>' + esc(c.relation) + '</code></td><td><code class="small">' + esc(c.lemma) + '</code><br><span class="small mute">' + esc(c.module) + '</span></td><td class="small">' + esc(c.canEliminate) + '</td><td class="small mute">' + esc((c.appliesWhen || []).join('; ')) + '</td></tr>').join(''));
+    }
+    if (dev) {
+      $('#gtDevNote').textContent = 'Source ' + dev.source.file + ' (sha256 ' + String(dev.source.sha256).slice(0, 12) + '…). The kernel evaluates the checker on the recorded stages: ' + dev.theorems.ordered + '. Stage order: ' + dev.stageOrder + '. ' + dev.edges.unknownStage + ' edges have an unknown stage and are NOT certified.';
+      $('#gtDev').innerHTML = rows(['Derivative', 'Stage', 'Develops from', 'Stage', 'Certified'],
+        dev.certifiedEdges.map(e => '<tr><td>' + esc(e.derivativeLabel) + '</td><td class="small">' + esc(e.derivativeStage) + ' (' + e.derivativeZfs + ')</td><td>' + esc(e.precursorLabel) + '</td><td class="small">' + esc(e.precursorStage) + ' (' + e.precursorZfs + ')</td><td>' + chip('kernel', 'ok') + '</td></tr>').join('') +
+        dev.unknownStageEdges.map(e => '<tr><td>' + esc(e.derivativeLabel) + '</td><td class="small mute">' + esc(e.derivativeStage || 'unknown') + '</td><td>' + esc(e.precursorLabel) + '</td><td class="small mute">' + esc(e.precursorStage || 'unknown') + '</td><td>' + chip('not certified', 'warn') + '</td></tr>').join(''));
+    }
+    if (reach) {
+      $('#gtGeneNote').textContent = reach.rule + ' Source ' + reach.source.file + '; ' + reach.genesInSource + ' genes in that file.';
+      $('#gtGenes').innerHTML = rows(['Gene', 'Nodes the map links', 'Which'], reach.genes.map(g =>
+        '<tr><td><code>' + esc(g.symbol) + '</code></td><td>' + (g.nodeCount === null ? chip('absent', 'warn') : g.nodeCount) + '</td><td class="small">' + esc(g.nodes ? g.nodes.map(n => n.label).join('; ') : g.note) + '</td></tr>').join(''));
+    }
+    if (gl) {
+      $('#gtLedgerNote').textContent = gl.summary.label + '. Input ' + gl.summary.input + ' (sha256 ' + String(gl.summary.inputSha256).slice(0, 12) + '…). "Consistent" means not ruled out by these checks; it never means right.';
+      $('#gtLedger').innerHTML = rows(['Candidate', 'Verdict', 'By', 'Detail'], gl.ledger.map(l => {
+        const el = l.results.filter(x => x.state === 'eliminated');
+        return '<tr><td><b>' + esc(l.id) + '</b><br><span class="small mute">' + esc(l.description || '') + '</span></td><td>' + chip(l.verdict.split(' (')[0], vcls(l.verdict)) + (l.eliminationCaveat ? '<br><span class="small mute">' + esc(l.eliminationCaveat) + '</span>' : '') + '</td><td class="small">' + esc(l.summary.eliminated.join(', ') || l.summary.consistent.join(', ') || '—') + '</td><td class="small">' + esc(el.map(x => x.violated).join('; ') || (l.untranslatable ? 'untranslatable: ' + l.untranslatable : (l.results.find(x => x.state === 'consistent') || {}).reason || '')) + '</td></tr>';
+      }).join(''));
+    }
+
+    // ---- the empirical layer ----
+    const E = R.empirical, el = (R.extraLedgers || []).find(l => l.name === 'empirical');
+    if (E) {
+      $('#emVerdict').innerHTML = chip(E.counts.empirical + ' observations', 'ok') + chip(E.counts.conventions + ' project convention') +
+        chip(E.noAxiomDeclared ? 'no axiom declared' : 'AN AXIOM IS DECLARED', E.noAxiomDeclared ? 'ok' : 'bad') +
+        chip(E.nonVacuity.witnessVerified ? 'witness compiles: the set is satisfiable' : 'witness not verified', E.nonVacuity.witnessVerified ? 'ok' : 'bad') +
+        (E.leanNumbersChecked ? chip(E.leanNumbersChecked.length + ' numbers checked against their files', 'ok') : '');
+      $('#emFraming').textContent = E.framing;
+      $('#emWitness').innerHTML = esc(E.nonVacuity.why) + ' Theorem <code>' + esc(E.nonVacuity.theorem) + '</code>, witness <code>' + esc(E.nonVacuity.witness) + '</code>' +
+        (E.nonVacuity.witnessAxioms ? ', axioms ' + E.nonVacuity.witnessAxioms.map(a => '<code>' + esc(a) + '</code>').join(', ') : '') + '. Mutation: ' + esc(E.nonVacuity.mutation);
+      $('#emEntries').innerHTML = rows(['Entry', 'Status', 'The observation', 'Source and taxa', 'Scope', 'If you reject it'], E.entries.map(e =>
+        '<tr><td><b>' + esc(e.id) + '</b><br><span class="small">' + esc(e.title) + '</span>' + (e.constraints && e.constraints.length ? '<br>' + e.constraints.map(c => chip(c)).join('') : '') + '</td><td class="small">' + esc(e.status) + '</td><td class="small">' + esc(e.observation) + '<br><code class="small">' + esc(e.statement) + '</code></td><td class="small mute">' + esc(e.source) + '<br>' + esc(e.taxa) + '</td><td class="small mute">' + esc(e.scope) + '</td><td class="small">' + esc(e.rejectable || '') + '</td></tr>').join(''));
+      if (el) {
+        $('#emLedgerNote').textContent = el.summary.label + '. Input ' + el.summary.input + '. Every elimination below names the observation it rests on; the arithmetic is kernel-checked either way.';
+        $('#emLedger').innerHTML = rows(['Candidate', 'Verdict', 'Conditional on', 'Numbers'], el.ledger.map(l => {
+          const e = l.results.filter(x => x.state === 'eliminated'), c = l.results.filter(x => x.state === 'consistent');
+          const shown = e.length ? e : c;
+          return '<tr><td><b>' + esc(l.id) + '</b><br><span class="small mute">' + esc(l.description || '') + '</span></td><td>' + chip(l.verdict.split(' (')[0], vcls(l.verdict)) + '</td><td class="small">' + esc((l.conditionalEliminations || []).map(x => x.constraint + ' on ' + x.conditionalOn).join('; ') || shown.map(x => x.constraint).join('; ')) + '</td><td class="small">' + esc(shown.map(x => x.violated || x.reason).join(' | ')) + '</td></tr>';
+        }).join(''));
+      }
+    }
+  }).catch(e => { const v = $('#gtVerdict'); if (v) v.innerHTML = chip('could not load lean.json: ' + e.message, 'bad'); });
+
+  fetch('laws.json').then(r => r.json()).then(L => {
+    $('#lwVerdict').innerHTML = Object.entries(L.coverage).map(([k, v]) => chip(v + ' ' + k, k === 'proved' ? 'ok' : /not formalised/.test(k) ? 'warn' : '')).join('');
+    $('#lwNote').textContent = L.note + ' Built ' + L.built + ' from the report of ' + L.leanReport + '.';
+    const byLevel = {};
+    for (const l of L.laws) (byLevel[l.level] = byLevel[l.level] || []).push(l);
+    $('#lwTable').innerHTML = rows(['Level', 'Law', 'Status', 'Statement', 'Constraints', 'Studio fields'],
+      Object.entries(byLevel).map(([lv, ls]) => ls.map((l, i) =>
+        '<tr>' + (i === 0 ? '<td rowspan="' + ls.length + '"><b>' + esc(lv) + '</b></td>' : '') +
+        '<td class="small"><code>' + esc(l.id) + '</code>' + (l.theorem ? '<br><code class="small mute">' + esc(String(l.theorem).replace(/^Delphi\./, '')) + '</code>' : '') + '</td><td class="small">' + esc(l.status) + '</td><td class="small">' + esc(l.statement) + (l.observation ? '<br><span class="small mute">' + esc(l.observation) + '</span>' : '') + '</td><td class="small">' + esc((l.constraints || []).join(', ') || '—') + '</td><td class="small mute">' + esc((l.studioFields || []).join('; ') || (l.why || '')) + '</td></tr>').join('')).join(''));
+  }).catch(e => { const v = $('#lwVerdict'); if (v) v.innerHTML = chip('could not load laws.json: ' + e.message, 'bad'); });
+})();
 </script>
 </body>
 </html>

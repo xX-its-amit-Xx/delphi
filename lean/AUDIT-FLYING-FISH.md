@@ -1,22 +1,22 @@
 # Every theorem against the flying fish (Exocoetidae)
 
-Generated 2026-10-31T21:05:54.198Z by `lean/flying-fish/audit.mjs` from `lean.json` (built 2026-10-31T21:01:44.908Z) and the data files named below. One row per theorem the compiler accepted: whether it applies to Exocoetidae, which inputs are measured for flying fish, which are proxies, which are missing, and the verdict when instantiated. "Holds" and "violated" are about the model's hypotheses meeting the data; a theorem is never falsified by data, its hypotheses are.
+Generated 2026-10-31T22:07:21.032Z by `lean/flying-fish/audit.mjs` from `lean.json` (built 2026-10-31T22:04:20.134Z) and the data files named below. One row per theorem the compiler accepted: whether it applies to Exocoetidae, which inputs are measured for flying fish, which are proxies, which are missing, and the verdict when instantiated. "Holds" and "violated" are about the model's hypotheses meeting the data; a theorem is never falsified by data, its hypotheses are.
 
 ## Summary
 
-Of 111 theorems, 22 hold when instantiated on the flying fish (the blueprint certificate's 11 structural theorems, the exact minimum-speed bound on the Park and Choi specimen, the cube law approximately on Davenport's exponent, and 6 bookkeeping lemmas), 11 have their isometry hypotheses violated by Davenport's within-species exponents (fin area 1.834 vs 2, wing loading 1.236 vs 1), and 78 cannot be evaluated because an input is missing: a neutral substitution rate or fixation probability for the family, fitness variance at any locus, an asexual lineage (none known), material strength and section data for fin rays and bone, muscle fraction and power, and v_min or L/D at a second body size.
+Of 152 theorems, 35 hold when instantiated on the flying fish (the blueprint certificate's 11 structural theorems, the exact minimum-speed bound on the Park and Choi specimen, the cube law approximately on Davenport's exponent, and 19 bookkeeping lemmas), 14 have their isometry hypotheses violated by Davenport's within-species exponents (fin area 1.834 vs 2, wing loading 1.236 vs 1), and 103 cannot be evaluated because an input is missing: a neutral substitution rate or fixation probability for the family, fitness variance at any locus, an asexual lineage (none known), material strength and section data for fin rays and bone, muscle fraction and power, and v_min or L/D at a second body size.
 
 | Verdict | Theorems |
 |---|---|
-| holds | 22 |
-| cannot-evaluate | 78 |
-| violated | 11 |
+| cannot-evaluate | 103 |
+| violated | 14 |
+| holds | 35 |
 
 | Applies to Exocoetidae | Theorems |
 |---|---|
-| yes | 25 |
-| yes-under-named-hypotheses | 80 |
-| no | 6 |
+| yes-under-named-hypotheses | 99 |
+| yes | 38 |
+| no | 15 |
 
 ## Measured facts used (each with its file)
 
@@ -45,6 +45,18 @@ Of 111 theorems, 22 hold when instantiated on the flying fish (the blueprint cer
 | power for level flight at 10 m/s with (L/D)max 4.37 | 1.346 W | computed from measured W and L/D (the most generous, lowest, value) | physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994) |
 
 Not measured for Exocoetidae at all: mutation rate (proxy from herring and stickleback); effective population size for the family (one mitochondrial Ne for E. volitans); any neutral substitution rate; fitness variance at any locus; breaking stress and cross-sections of fin rays or bone; muscle mass fraction and mass-specific power; v_min, L/D or C_L,max at more than one body size; confidence intervals on the Davenport 1992 exponents (abstract only).
+
+## lean/Delphi/Altitude.lean
+
+| Theorem | Applies | Inputs (measured / proxy / missing) | Verdict | Why |
+|---|---|---|---|---|
+| `Altitude.vmin_mono` | yes-under-named-hypotheses: a monotone atmosphere | v_min for specimen L3: **computed** (9.85 m/s); L/D max for specimen L3: **measured** (4.37); pectoral fin length / standard length: **measured** (0.687) | **cannot-evaluate** | the direction is proved for any such atmosphere; no flying fish is observed at altitude, and the project's conditions are sea level |
+| `Altitude.demand_mono` | yes-under-named-hypotheses: as vmin_mono, with L/D fixed | v_min for specimen L3: **computed** (9.85 m/s); L/D max for specimen L3: **measured** (4.37) | **cannot-evaluate** | as vmin_mono; the physics thread's 1000 m candidates are a hypothetical design, not an observation |
+| `Altitude.supply_anti` | yes-under-named-hypotheses: arterial content nondecreasing in O2 partial pressure | physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2: **proxy** (Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)) | **cannot-evaluate** | the Hill curve of the chain is monotone, but no flying-fish blood is measured at any altitude |
+| `Altitude.feasible_downward_closed` | yes-under-named-hypotheses: the monotone atmosphere and supply | physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2: **proxy** (Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)); power for level flight at 10 m/s with (L/D)max 4.37: **computed** (1.346 W) | **cannot-evaluate** | a statement about the model at all heights; the real fish is already infeasible at the ground, which is the case the next row covers |
+| `Altitude.ceiling` | yes-under-named-hypotheses | physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2: **proxy** (Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)); power for level flight at 10 m/s with (L/D)max 4.37: **computed** (1.346 W) | **cannot-evaluate** | the ceiling is proved to exist as a boundary of a downward-closed set; its value is not computed and no flying fish is observed climbing |
+| `Altitude.infeasible_at_ground_infeasible_everywhere` | yes-under-named-hypotheses: Fick and the monotone atmosphere | physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2: **proxy** (Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)); power for level flight at 10 m/s with (L/D)max 4.37: **computed** (1.346 W) | **violated** | fires on the real fish: its oxygen budget cannot pay for level flight at sea level (C14), so under this model it cannot at any height, and altitude explains nothing about it |
+| `Altitude.demand_anti_area` | yes-under-named-hypotheses: lift-supported flight at a fixed height | v_min for specimen L3: **computed** (9.85 m/s); L/D max for specimen L3: **measured** (4.37) | **holds** | a larger lifting area lowers the power required at a fixed height, which the measured specimen satisfies trivially; it is the only direction in which wing and oxygen budget can be traded |
 
 ## lean/Delphi/Blueprint.lean
 
@@ -101,6 +113,26 @@ Not measured for Exocoetidae at all: mutation rate (proxy from herring and stick
 | `Constraints.climb_rules_out` | yes-under-named-hypotheses (powered flight) | P_avail, P_req, climb rate: **missing** | **cannot-evaluate** | no powered-flight data for a glider |
 | `Constraints.froude_rules_out` | yes-under-named-hypotheses (swimming phase) | speed ratio at two sizes: **missing** | **cannot-evaluate** | one size class |
 
+## lean/Delphi/Empirical.lean
+
+| Theorem | Applies | Inputs (measured / proxy / missing) | Verdict | Why |
+|---|---|---|---|---|
+| `Empirical.not_isometric_area` | yes: the observation is measured ON a flying fish (Davenport 1992, Exocoetus obtusirostris) | lateral fin area vs standard length exponent: **measured** (1.834) | **violated** | fin area grows as SL^1.834, so the isometric exponent 2 is excluded: this is the measurement that makes nine audit rows read "violated" |
+| `Empirical.loading_rises` | yes: measured within a flying-fish species | wing loading vs standard length exponent: **measured** (1.236) | **holds** | wing loading grows as SL^1.236 > 1, so a bigger fish of the species is more loaded than isometry predicts |
+| `Empirical.weight_ratio_band` | yes: the band is six fitted field studies of five flying-fish species | mass vs standard length exponent: **measured** (2.981) | **holds** | the fitted exponents 2.908 to 3.011 all lie in [2.90, 3.02], so the band holds on the project's own table (the H. affinis male row at 2.208 is excluded and named) |
+| `Empirical.weight_ratio_rules_out` | yes: a design committing a mass exponent | mass vs standard length exponent: **measured** (2.981) | **holds** | it rules out a design claiming the male-only 2.208 as the family exponent; the measured rows themselves are not ruled out |
+| `Empirical.aerobicCeiling_le` | yes-under-named-hypotheses: the measured teleost ranges, applied at the measured mass | physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2: **proxy** (Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)) | **holds** | inside the ranges the physiology chain cites, the sustained aerobic ceiling at 0.06 kg is at most 0.0458 W; the chain's own proxies give 0.0357 W, which satisfies it |
+| `Empirical.no_aerobic_flight_above_ceiling` | yes-under-named-hypotheses: Fick plus the measured ranges | physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2: **proxy** (Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)); power for level flight at 10 m/s with (L/D)max 4.37: **computed** (1.346 W) | **violated** | fires on the real fish: level flight at 10 m/s with the measured L/D 4.37 needs 1.3473 W against a ceiling of 0.0458 W for EVERY teleost the ranges allow, a factor of about 29 |
+| `Empirical.stored_power_le` | yes-under-named-hypotheses: no gill ventilation in air | an O2 store carried into the air for Exocoetidae: **missing** | **cannot-evaluate** | no blood volume or venous reserve is measured for Exocoetidae, so the store must be committed; with an illustrative 1 ml the bound forbids a minute of powered flight and allows two seconds |
+| `Empirical.finRatio_outside` | yes: 49 measured flying-fish specimens | none | **holds** | pectoral/SL of the measured specimens runs 0.406 to 0.823 (median 0.687), and the theorem only says a value outside that is above or below it: a statement about the record, never an impossibility |
+| `Empirical.requiredFor_not_propagated_of_check` | no: a convention about this project's map, not a property of animals | none | **cannot-evaluate** | it checks the map's derived links against a rule the project adopted; no measurement enters |
+| `Empirical.requiredFor_propagated_violates` | no: as requiredFor_not_propagated_of_check | none | **cannot-evaluate** | as requiredFor_not_propagated_of_check |
+| `Empirical.cannot_score_of_lethal_before` | no: the lethal levers are zebrafish alleles | a lethal stage for Exocoetidae: **missing** | **cannot-evaluate** | the two instantiated rows (ezh2, wls) are Danio rerio; lethality in zebrafish is not a flying-fish measurement |
+| `Empirical.empirical_nonvacuous` | yes: the witness is built from the project's own measured numbers | lateral fin area vs standard length exponent: **measured** (1.834); wing loading vs standard length exponent: **measured** (1.236); mass vs standard length exponent: **measured** (2.981); physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2: **proxy** (Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)) | **holds** | the measured numbers satisfy every observation at once, so the empirical layer cannot be eliminating candidates by contradiction |
+| `Empirical.measured_ceiling_le` | yes: the chain's own proxies | physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2: **proxy** (Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)) | **holds** | the chain's ceiling 0.0357 W is inside the 0.0458 W bound the measured ranges allow |
+| `Empirical.ezh2_cannot_be_scored` | no: a zebrafish allele | none | **cannot-evaluate** | the genotype thread records death and scoring both at 48 hpf for ezh2 in zebrafish; nothing about a flying fish |
+| `Empirical.wls_rays_cannot_be_scored` | no: a zebrafish allele | none | **cannot-evaluate** | death by 12 dpf against ray parameters from 45 dpf, in zebrafish |
+
 ## lean/Delphi/Favored.lean
 
 | Theorem | Applies | Inputs (measured / proxy / missing) | Verdict | Why |
@@ -144,6 +176,25 @@ Not measured for Exocoetidae at all: mutation rate (proxy from herring and stick
 | `climb_le_aerobic` | yes-under-named-hypotheses (as sustained_flight_requires) | Q, Ca, E, η: **missing** | **cannot-evaluate** | as above |
 | `powerLaw_crossover` | yes-under-named-hypotheses: demand and supply as power laws in size; with R5 the demand exponent is 7/2 | the supply exponent (how Q Ca scales with size in Exocoetidae): **missing** | **cannot-evaluate** (replaces the muscle premise: any supply exponent below 7/2 gives a size limit; whether 0.5 m flying fish are below it needs the constants) | supply exponent missing |
 
+## lean/Delphi/Genotype.lean
+
+| Theorem | Applies | Inputs (measured / proxy / missing) | Verdict | Why |
+|---|---|---|---|---|
+| `Genotype.minSubst_le` | yes (the standard code applies to any teleost) | none | **holds** | the code distance bounds the Hamming distance of any codon pair; the project records one flying-fish amino-acid change, slc43a2a F326L (Daane 2021), and the code allows it in one substitution |
+| `Genotype.claimed_substitutions_rules_out` | yes: a claim about a flying-fish substitution | none | **holds** | applied to F326L (Phe to Leu, minSubst 1) the claim of one substitution is NOT ruled out; the controls (the same change in zero, and Met to Trp in one) are |
+| `Genotype.phe_leu_one` | yes (the change the project records) | none | **holds** | kernel-evaluated on the code table: UUU to UUA, exactly the F326L claim |
+| `Genotype.trp_stop_one` | yes (a property of the code) | none | **holds** | kernel-evaluated; no flying-fish nonsense mutation is recorded in this project |
+| `Genotype.met_trp_two` | yes (a property of the code) | none | **holds** | kernel-evaluated; carries no information about the fish beyond the code |
+| `Genotype.devOrdered_acyclic` | no: the certified graph is zebrafish anatomy (ZFA) with ZFIN stages, not Exocoetidae | a staged develops_from graph for Exocoetidae: **missing** | **cannot-evaluate** | no flying-fish developmental series exists in this project; the certificate is about the zebrafish fin subtree |
+| `Genotype.devOrdered_of_check` | no: as devOrdered_acyclic | a staged develops_from graph for Exocoetidae: **missing** | **cannot-evaluate** | the 8 certified edges are zebrafish; nothing here is a flying-fish stage |
+| `Genotype.closure_of_check` | no: the map is zebrafish links joined to the blueprint | a gene-to-structure map for Exocoetidae: **missing** | **cannot-evaluate** | the gene reach comes from ZFIN and Bgee rows for Danio rerio; no Exocoetidae expression data is in this project |
+| `Genotype.closure_violated` | no: as closure_of_check | a gene-to-structure map for Exocoetidae: **missing** | **cannot-evaluate** | it fires on a Studio view built from the zebrafish map, not on a measurement of a flying fish |
+| `Genotype.expectedWaitingTime_neutral` | yes-under-named-hypotheses: neutral, constant M and mu | gene copies M = 2N: **proxy** (2.00e+9 (from Ne > 1e9)); mutation rate per site per generation: **proxy** (1.10e-9 to 4.83e-9); a measured neutral substitution rate or fixation probability for any Exocoetidae locus: **missing** | **cannot-evaluate** | the neutral waiting time N/mu needs a required substitution count N, which is undefined for any flying-fish trait, and mu is a proxy from other teleosts |
+| `Genotype.expectedWaitingTime_bounds` | yes-under-named-hypotheses: independent sequential fixations | gene copies M = 2N: **proxy** (2.00e+9 (from Ne > 1e9)); mutation rate per site per generation: **proxy** (1.10e-9 to 4.83e-9); a measured neutral substitution rate or fixation probability for any Exocoetidae locus: **missing**; a required number of substitutions for Exocoetidae: **missing** | **cannot-evaluate** | both bounds need N; no wing requirement in substitutions is defined anywhere in this project |
+| `Genotype.too_little_time_rules_out` | yes-under-named-hypotheses | gene copies M = 2N: **proxy** (2.00e+9 (from Ne > 1e9)); mutation rate per site per generation: **proxy** (1.10e-9 to 4.83e-9); a measured neutral substitution rate or fixation probability for any Exocoetidae locus: **missing**; a required number of substitutions for Exocoetidae: **missing** | **cannot-evaluate** | with the fossil duration (about 4.8e7 generations at one year) and the proxy M and mu the model allows any N up to about 4.8e8, so it rules out nothing about the fish; it fires only on a control |
+| `Genotype.haldane_time_lower` | yes-under-named-hypotheses: Haldane's cost accounting, contested | a reproductive excess for Exocoetidae: **missing**; a cost per substitution for Exocoetidae: **missing**; a required number of substitutions for Exocoetidae: **missing** | **cannot-evaluate** | no reproductive excess, cost or requirement is measured for Exocoetidae; the bound is proved FROM the hypothesis, which this project neither proves nor endorses |
+| `Genotype.haldane_rules_out` | yes-under-named-hypotheses: as haldane_time_lower | a reproductive excess for Exocoetidae: **missing**; a cost per substitution for Exocoetidae: **missing** | **cannot-evaluate** | fires only on a control with illustrative numbers |
+
 ## lean/Delphi/Kimura.lean
 
 | Theorem | Applies | Inputs (measured / proxy / missing) | Verdict | Why |
@@ -164,6 +215,16 @@ Not measured for Exocoetidae at all: mutation rate (proxy from herring and stick
 | `asexualNext_mem` | no (as twofold_cost_of_sex; bookkeeping lemma) | none | **cannot-evaluate** | premise absent |
 | `asexualAfter_mem` | no (as twofold_cost_of_sex; bookkeeping lemma) | none | **cannot-evaluate** | premise absent |
 | `twofold_cost_of_sex_n` | no (as twofold_cost_of_sex) | fraction of asexual females over n generations: **missing** | **cannot-evaluate** | premise absent |
+
+## lean/Delphi/Physiology.lean
+
+| Theorem | Applies | Inputs (measured / proxy / missing) | Verdict | Why |
+|---|---|---|---|---|
+| `Physiology.q10_ratio` | yes-under-named-hypotheses: a rate that follows a Q10 law | a Q10 for any rate for Exocoetidae: **missing** | **cannot-evaluate** | the chain scales muscle rates with Q10 values from scup (Rome 1992); no flying-fish Q10 exists, and the conditions file fixes 25 C so no instance is evaluated |
+| `Physiology.q10_log` | yes-under-named-hypotheses: as q10_ratio | a Q10 for any rate for Exocoetidae: **missing** | **cannot-evaluate** | as q10_ratio |
+| `Physiology.sphereWallStress_mono` | yes (a thin wall is a thin wall) | a vessel or swim-bladder radius for Exocoetidae: **missing**; a wall thickness for Exocoetidae: **missing** | **cannot-evaluate** | no radius or thickness for any flying-fish vessel or swim bladder is in this project |
+| `Physiology.laplace_pressure_limit` | yes-under-named-hypotheses: thin wall, static pressure | a wall strength for Exocoetidae: **missing**; a wall thickness for Exocoetidae: **missing**; a radius for Exocoetidae: **missing** | **cannot-evaluate** | proved with no instance: the three inputs are unmeasured for Exocoetidae |
+| `Physiology.hoop_pressure_limit` | yes-under-named-hypotheses: as laplace_pressure_limit | a wall strength for Exocoetidae: **missing**; a wall thickness for Exocoetidae: **missing**; a radius for Exocoetidae: **missing** | **cannot-evaluate** | as laplace_pressure_limit |
 
 ## lean/Delphi/Scaling.lean
 

@@ -1,0 +1,1133 @@
+{
+ "built": "2026-10-31T22:10:02.294Z",
+ "tool": "lean/laws/build-laws.mjs",
+ "leanReport": "2026-10-31T22:10:02.190Z",
+ "constraintsBuilt": "2026-10-31T22:01:50.885Z",
+ "coverage": {
+  "proved": 23,
+  "proved from a named hypothesis": 1,
+  "stated-not-proved (a named hypothesis)": 2,
+  "not formalised": 7,
+  "empirical observation": 6,
+  "project convention": 1,
+  "proved (listed with the observations)": 1
+ },
+ "note": "Coverage is explicit: \"proved\" entries come from the compiler's report and the constraints file; \"stated-not-proved\" entries are hypotheses the modules carry by name; \"not formalised\" entries are gaps the Studio must not treat as checked. \"All the biological laws\" is not a closed set; this file is what the project has, and every law not here is unchecked.",
+ "laws": [
+  {
+   "id": "kimura-substitution-rate",
+   "level": "genotype",
+   "statement": "For neutral mutations the long-run rate of molecular substitution equals the mutation rate per generation, independent of population size, which yields a molecular clock.",
+   "label": "Neutral substitution rate equals the mutation rate",
+   "status": "proved",
+   "module": "lean/Delphi/Kimura.lean",
+   "theorem": "Delphi.neutral_substitution_rate",
+   "source": "Evolutionary Rate at the Molecular Level (1968)",
+   "constraints": [
+    "C1",
+    "C1b"
+   ],
+   "studioFields": [
+    "mutation_rate: mutation_rate",
+    "neutral_substitution_rate: (no Studio field)",
+    "mutation_rate_ratio: (no Studio field)",
+    "neutral_substitution_rate_ratio: (no Studio field)"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "A neutral absorbing chain on {0..M} copies (stochastic, mean-preserving, both ends absorbing, positive one-step escape from every interior state) fixes a mutant with probability i/M, with an explicit geometric error bound at every finite time t.",
+     "The Wright-Fisher binomial kernel is such a chain (row sums, mean preservation and absorption proved from Bernstein polynomial identities).",
+     "With u = 1/M the defined substitution rate M * mu * u equals mu, also in the diploid 2N form and as the t -> infinity limit."
+    ],
+    "assumed": [
+     "Strict neutrality of the mutations.",
+     "Constant population size and Wright-Fisher reproduction (non-overlapping generations, multinomial sampling).",
+     "Independent fates of mutants: the substitution rate is DEFINED, as in Kimura 1968, as (new mutants per generation) x (fixation probability of one mutant). Interference between lineages is excluded by that definition, not proved absent.",
+     "The mutation rate mu per copy per generation is a free parameter; nothing here measures it."
+    ]
+   },
+   "faithfulness": "faithful-with-narrower-scope (1 provider: openai)",
+   "flyingFishAudit": {
+    "cannot-evaluate": 7
+   }
+  },
+  {
+   "id": "kimura-fixation-probability",
+   "level": "genotype",
+   "statement": "The probability that a mutant allele eventually fixes in a finite population depends on its initial frequency, its selective advantage and the effective population size, and equals its initial frequency when it is neutral.",
+   "label": "Kimura fixation probability of a mutant allele",
+   "status": "proved",
+   "module": "lean/Delphi/Kimura.lean",
+   "theorem": "Delphi.NeutralChain.fixedBy_tendsto",
+   "source": "On the probability of fixation of mutant genes in a population (1962)",
+   "constraints": [
+    "C2"
+   ],
+   "studioFields": [
+    "gene_copies_M: gene_copies_M",
+    "fixation_probability: (no Studio field)"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "Fixation probability i/M for any neutral absorbing chain, hence for the exact finite Wright-Fisher chain (Delphi.NeutralChain.fixedBy_tendsto)."
+    ],
+    "assumed": [
+     "Neutral case only (s = 0). Kimura 1962 with selection in the diffusion limit is not formalised."
+    ]
+   },
+   "faithfulness": "faithful-with-narrower-scope (1 provider: openai)",
+   "flyingFishAudit": {
+    "cannot-evaluate": 7
+   }
+  },
+  {
+   "id": "fisher-ftns",
+   "level": "population",
+   "statement": "The rate of increase in mean fitness of a population due to natural selection equals its additive genetic variance in fitness at that time.",
+   "label": "Fisher's fundamental theorem of natural selection (partial-change form)",
+   "status": "proved",
+   "module": "lean/Delphi/Fisher.lean",
+   "theorem": "Delphi.fisher_fundamental_theorem",
+   "source": "The Genetical Theory of Natural Selection (1930)",
+   "constraints": [
+    "C4",
+    "C4b",
+    "C4c"
+   ],
+   "studioFields": [
+    "mean_fitness_change: (no Studio field)",
+    "mean_fitness: (no Studio field)",
+    "variance_fitness: (no Studio field)",
+    "mean_fitness_change_sign: (no Studio field)"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "For one locus with finitely many types, frequencies p (nonneg, summing to 1), fixed fitnesses w and mean fitness > 0: selection p_next = p w / wbar yields wbar_next - wbar = Var(w)/wbar exactly.",
+     "Corollary: mean fitness never decreases under fixed fitnesses."
+    ],
+    "assumed": [
+     "Haploid or clonal inheritance, so the variance in fitness IS the additive genetic variance; the diploid average-effect version is not formalised.",
+     "Fitnesses constant within the step (partial change): no dominance, epistasis, frequency dependence or environmental change.",
+     "Infinite population: deterministic frequencies, no drift, no mutation."
+    ]
+   },
+   "faithfulness": "faithful-with-narrower-scope (1 provider: openai)",
+   "flyingFishAudit": {
+    "holds": 1,
+    "cannot-evaluate": 3
+   }
+  },
+  {
+   "id": "maynardsmith-twofold-cost",
+   "level": "population",
+   "statement": "An asexual mutant female in a sexual population with equal sex ratio produces twice as many grandchildren as a sexual female, so sex needs a compensating advantage of up to twofold to persist.",
+   "label": "Twofold cost of sex",
+   "status": "proved",
+   "module": "lean/Delphi/MaynardSmith.lean",
+   "theorem": "Delphi.twofold_cost_of_sex",
+   "source": "The Evolution of Sex (1978)",
+   "constraints": [
+    "C5",
+    "C5b"
+   ],
+   "studioFields": [
+    "asexual_fraction_initial: (no Studio field)",
+    "generations_n: (no Studio field)",
+    "asexual_fraction_after: (no Studio field)",
+    "asexual_odds_growth_factor: (no Studio field)"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "For 0 < q < 1 and fecundity f > 0 the odds of asexual to sexual females satisfy odds(q_next) = 2 odds(q), and f cancels.",
+     "Iterated n generations the odds are 2^n times the initial odds."
+    ],
+    "assumed": [
+     "Anisogamy: males contribute nothing to offspring number or survival.",
+     "Equal fecundity and viability of sexual and asexual females and of their daughters.",
+     "Primary sex ratio exactly 1:1 in sexual broods; discrete non-overlapping generations; infinite population (deterministic fractions)."
+    ]
+   },
+   "faithfulness": "faithful (1 provider: openai)",
+   "flyingFishAudit": {
+    "cannot-evaluate": 4
+   }
+  },
+  {
+   "id": "favored-fixation-lower-bound",
+   "level": "genotype",
+   "statement": "In an absorbing chain on 0..M gene copies whose expected copy number never decreases (neutral, or selection for the mutant), a lineage present in i copies is eventually fixed with probability at least i/M. Wright-Fisher sampling with mutant relative fitness 1+s, s >= 0, is such a chain. Hence the expected number of substitutions over T generations is at least mu T (and at most M mu T), whatever M.",
+   "label": "Fixation is at least i/M when selection does not oppose the mutant",
+   "status": "proved",
+   "module": "lean/Delphi/Favored.lean",
+   "theorem": "Delphi.FavoredChain.fixationProbability_ge",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "C3",
+    "C3b"
+   ],
+   "studioFields": [
+    "gene_copies_M: gene_copies_M",
+    "fixation_probability: (no Studio field)",
+    "selection_coefficient_nonnegative: (no Studio field)",
+    "expected_substitutions_total: (no Studio field)",
+    "sites_G: (no Studio field)",
+    "mutation_rate: mutation_rate",
+    "generations_T: generations_T"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "For any absorbing chain on {0..M} copies with E[X_{t+1} | X_t = i] >= i (stochastic, both ends absorbing, positive one-step escape from every interior state), P(fixed by t) is nondecreasing and bounded, its limit u(i) exists, and u(i) >= i/M (Delphi.FavoredChain.fixationProbability_ge); also u(i) <= 1.",
+     "Wright-Fisher sampling with success probability (1+s) i / (M + s i), s >= 0, is such a chain (Delphi.wrightFisherSelection), so a single new mutant fixes with probability at least 1/M.",
+     "The defined expected count M mu u T equals mu T for the neutral Wright-Fisher chain, is at least mu T for any favored chain, and is at most M mu T for any u <= 1."
+    ],
+    "assumed": [
+     "The expected count is a DEFINITION (rate x generations, independent fates, Kimura 1968); linkage, interference, changing M, changing s and overlapping generations are excluded by it, not shown absent.",
+     "Selection enters only through the sampling probability (1+s) i / (M + s i), constant in time and across sites.",
+     "mu, T, M are free parameters; the module measures nothing. Which mutations are favored, how many a trait needs, and in what order, are outside it."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "cannot-evaluate": 7,
+    "holds": 2
+   }
+  },
+  {
+   "id": "blueprint-well-formedness",
+   "level": "phenotype (structure)",
+   "statement": "For a finite graph of ontology terms with a body root, a level per node and part_of edges (part, whole): if every edge goes strictly down in level, every edge joins two nodes, and every non-root node has a whole, then part_of is acyclic (its transitive closure is transitive and strictly decreases the level, so nothing is part of itself) and every node reaches the root. With pinned taxon statements: no never_in_taxon on a kept term, a superclass or a whole names a taxon containing the blueprint taxon, and every in_taxon or stated_in_taxon names a containing taxon. A Boolean checker decides all of this, and its truth implies the well-formedness (wellFormed_of_check); each emitted blueprint gets a certificate the kernel evaluates by decide.",
+   "label": "An emitted anatomical blueprint graph is well-formed under its own rules",
+   "status": "proved",
+   "module": "lean/Delphi/Blueprint.lean",
+   "theorem": "Delphi.Blueprint.wellFormed_of_check",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "C6"
+   ],
+   "studioFields": [
+    "blueprint_file: the emitted blueprint (organism-design)"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "Generic (any node type): edges strictly down in level ⟹ the part_of closure is transitive, strictly decreases the level, and is acyclic (Graph.acyclic_of_levelsDown, Graph.transGen_trans, Graph.transGen_level_lt).",
+     "Generic: edges closed and every non-root node has a whole ⟹ every node reaches the root (Graph.rooted_of, strong induction on level).",
+     "Generic: the Boolean checker is sound for LevelsDown, Closed, Acyclic, Rooted and the taxon conditions (wellFormed_of_check).",
+     "Per blueprint: the kernel evaluates the checker on the emitted graph and the pinned taxon rows (decide +kernel), and fixes the distinct-term counts per level and the graph size (lean/Delphi/Certificates/*.lean)."
+    ],
+    "assumed": [
+     "That Uberon and the Cell Ontology are correct and that Ubergraph served their part_of, subClassOf, never_in_taxon and in_taxon statements correctly and completely on the retrieval date: the graph and the taxon rows are data, pinned by hash and query.",
+     "That the five levels (body, organ system, organ, tissue, cell) are the right notion of depth; the theorems use only that edges strictly decrease it.",
+     "Nothing about any organism: not that it is real, that the anatomy is correct or complete, that any part was measured, or anything about a transition between forms."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "holds": 11
+   }
+  },
+  {
+   "id": "thompson1917-ch03-07",
+   "level": "phenotype",
+   "statement": "Whatever the law of increase in a linear dimension, volume and therefore weight tend to vary as the cube of linear dimensions, which mainly (though not wholly) explains why the human weight curve differs in shape from the stature curve.",
+   "label": "Weight tends to vary as the cube of linear dimensions during growth",
+   "status": "proved",
+   "module": "lean/Delphi/Thompson.lean",
+   "theorem": "Delphi.cubeLaw_loglog_exponent",
+   "source": "On Growth and Form (1917)",
+   "constraints": [
+    "C7",
+    "C7b"
+   ],
+   "studioFields": [
+    "length_ratio: SL_m (vs reference)",
+    "weight_ratio: mass_kg (vs reference)",
+    "loglog_exponent: mass_kg, SL_m"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "If W L = k L^3 for all L > 0 with k > 0, then for L1 ≠ L2 the log-log slope (log W L2 − log W L1)/(log L2 − log L1) equals exactly 3 (cubeLaw_loglog_exponent) and W L2 / W L1 = (L2/L1)^3 (cubeLaw_ratio).",
+     "Contrapositive: two sizes with a log-log slope b ≠ 3 rule out W = k L^3 for every k (not_cubeLaw_of_exponent_ne_three)."
+    ],
+    "assumed": [
+     "A single linear dimension L and mass W of one body family; fixed shape and constant density are what W = k L^3 encodes.",
+     "Thompson's \"mainly (though not wholly)\" is not formalised: the theorem is exact, the law is approximate, and the tolerance band [2.5, 3.5] the claim test uses is a decision rule outside the module.",
+     "No data enters the module; the measured exponents are read from the claims thread's result files and pointed to."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "holds": 2,
+    "cannot-evaluate": 1
+   }
+  },
+  {
+   "id": "scaling-area-law",
+   "level": "phenotype",
+   "statement": "In an isometric family an area scales as the square of the linear dimension, S(L2)/S(L1) = (L2/L1)^2, and with the cube law the weight per unit area (wing loading, or stress W/A) scales as L2/L1.",
+   "label": "Area law and wing loading under isometry (R2, R3)",
+   "status": "proved",
+   "module": "lean/Delphi/Scaling.lean",
+   "theorem": "Delphi.areaLaw_ratio",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "C2a",
+    "C2b"
+   ],
+   "studioFields": [
+    "area_loglog_exponent: fin_area_m2, SL_m",
+    "length_ratio: SL_m (vs reference)",
+    "area_ratio: fin_area_m2"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "If S L = k L^2 for all L > 0 (AreaLaw) then S(L2)/S(L1) = (L2/L1)^2 and log S(L2)/S(L1) = 2 log(L2/L1) (areaLaw_ratio, areaLaw_log).",
+     "With CubeLaw W: (W/S)(L2)/(W/S)(L1) = L2/L1, exponent 1 (wingLoading_ratio, wingLoading_log)."
+    ],
+    "assumed": [
+     "Isometry of the area and of the mass (constant density): named hypotheses, measured to fail within one flying-fish species (Davenport 1992).",
+     "Nothing about which family is isometric; the theorems bound only families that are."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "violated": 4,
+    "cannot-evaluate": 19,
+    "holds": 1
+   }
+  },
+  {
+   "id": "scaling-strength-law",
+   "level": "phenotype",
+   "statement": "A member of cross-section A made of material with breaking stress σ fails under axial load σ A. With isometric sections and the same material the breaking load scales as (L2/L1)^2, the static safety factor F_break/W equals σ k3/(k1 L) and falls as 1/L, stress W/A grows as L, and above L_max = σ k3/(k1 n) the member cannot carry n body weights.",
+   "label": "Strength scales as L^2: the missing half of Galileo's square-cube argument (R7)",
+   "status": "proved",
+   "module": "lean/Delphi/Scaling.lean",
+   "theorem": "Delphi.breakLoad_ratio",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "C8",
+    "C8b",
+    "C8c",
+    "C8d",
+    "C8e"
+   ],
+   "studioFields": [
+    "breaking_stress_Pa: breaking_stress_Pa",
+    "cross_section_m2: cross_section_m2",
+    "weight_N: mass_kg",
+    "load_in_body_weights: load_in_body_weights",
+    "length_ratio: SL_m (vs reference)",
+    "breaking_load_ratio: (scaling)",
+    "reference_safety_factor: referenceSafetyFactor",
+    "claimed_safety_factor: (scaled design must stand)",
+    "stress_ratio: mass_kg, fin_area_m2",
+    "stress_loglog_exponent: mass_kg, fin_area_m2, SL_m"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "F_break = σ A: with AreaLaw A and σ > 0, F_break(L2)/F_break(L1) = (L2/L1)^2 (breakLoad_ratio).",
+     "With CubeLaw W: F_break/W = σ k3/(k1 L) (safetyFactor_eq); the safety factor of the scaled body is the reference one divided by the length ratio (safetyFactor_scaled); stress W/A scales as L2/L1 (stress_ratio).",
+     "Above L_max = σ k3/(k1 n) the member cannot carry n body weights (cannot_carry)."
+    ],
+    "assumed": [
+     "Axial loading (bending has the same L^2 dependence with a different constant; not formalised).",
+     "Isometric load-bearing sections and the same material (constant σ): real animals thicken bones with size.",
+     "Nothing about any real giant: the checker rules only on a candidate that commits to isometry, the same material and a safety factor."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "violated": 4,
+    "cannot-evaluate": 19,
+    "holds": 1
+   }
+  },
+  {
+   "id": "scaling-bending-law",
+   "level": "phenotype",
+   "statement": "For a slender linear-elastic beam the maximum bending stress is the moment over the section modulus, σ_b = F ℓ / Z. With similar sections (Z ∝ L^3) and a lever arm ∝ L: if the load scales as the body (F ∝ L^3, R9a) then σ_b scales as L, the bending safety factor σ_max/σ_b equals σ_max k_Z/(k_F k_ℓ L) and above L_max,b = σ_max k_Z/(k_F k_ℓ n) the member cannot carry n times its load; if the load scales as an area (a lamina of constant thickness, F ∝ L^2, R9b) then σ_b is independent of size and no size limit follows.",
+   "label": "Bending strength of an isometric member via the section modulus (R9)",
+   "status": "proved",
+   "module": "lean/Delphi/Scaling.lean",
+   "theorem": "Delphi.bendingStress_ratio_body",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "C12",
+    "C12b",
+    "C12c"
+   ],
+   "studioFields": [
+    "bending_stress_loglog_exponent: (fin rays as beams; no Studio field yet)",
+    "length_ratio: SL_m (vs reference)",
+    "bending_stress_ratio: (fin rays as beams; no Studio field yet)"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "R9a: with CubeLaw F, LeverLaw ℓ and SectionModulusLaw Z, σ_b(L2)/σ_b(L1) = L2/L1, log exponent 1 (bendingStress_ratio_body, bendingStress_log_body); σ_max/σ_b = σ_max k_Z/(k_F k_ℓ L) (bendingSafety_eq); above σ_max k_Z/(k_F k_ℓ n) the stress at n times the load exceeds σ_max (bending_cannot_carry).",
+     "R9b: with AreaLaw F instead, σ_b(L2)/σ_b(L1) = 1, log exponent 0 (bendingStress_ratio_sheet, bendingStress_log_sheet): no size limit follows."
+    ],
+    "assumed": [
+     "Slender linear-elastic (Euler-Bernoulli) beam; σ_b = M_b/Z with a point load at the free end (a distributed load changes the constant, not the L-dependence).",
+     "Geometrically similar sections (Z = k_Z d^3, d ∝ L) and lever arm ∝ L; elastic similarity (d ∝ ℓ^(3/2)) is a different hypothesis family, not formalised.",
+     "Constant σ_max; static loads only (wind on a leaf is outside the model); which load family applies (R9a or R9b) is empirical and must be committed by the candidate."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "violated": 4,
+    "cannot-evaluate": 19,
+    "holds": 1
+   }
+  },
+  {
+   "id": "flight-allometry-law",
+   "level": "phenotype",
+   "statement": "For power laws f L = a L^b with real exponents: the ratio between two sizes is (L2/L1)^b, the log-log exponent is b, a quotient of power laws is a power law with exponent b1 − b2 (so wing loading W/S has exponent bW − bS), the cube law is the case b = 3, and under power laws for weight and lifting area with constant ρ and C_L,max the minimum-speed exponent is (bW − bS)/2.",
+   "label": "General allometry: measured exponents compose (W = a L^b)",
+   "status": "proved",
+   "module": "lean/Delphi/Flight.lean",
+   "theorem": "Delphi.vmin_powerLaw_log",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "C13"
+   ],
+   "studioFields": [
+    "weight_loglog_exponent: (no Studio field)",
+    "area_loglog_exponent: fin_area_m2, SL_m",
+    "stress_loglog_exponent: mass_kg, fin_area_m2, SL_m"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "PowerLaw f a b ⇒ f(L2)/f(L1) = (L2/L1)^b and log exponent b (powerLaw_ratio, powerLaw_log).",
+     "Quotients: PowerLaw (f/g) (a1/a2) (b1 − b2) (powerLaw_div); CubeLaw is PowerLaw with b = 3 (cubeLaw_powerLaw).",
+     "Under PowerLaw W and PowerLaw S with constant ρ, C_L,max: the v_min log exponent is (bW − bS)/2 (vmin_powerLaw_log)."
+    ],
+    "assumed": [
+     "That weight and area follow single power laws over the size range in question with the exponents committed; the fitted exponents are separate regressions with their own errors.",
+     "Nothing measured for Exocoetidae enters a statement; the exponents are candidate inputs."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "holds": 3,
+    "cannot-evaluate": 9,
+    "violated": 3
+   }
+  },
+  {
+   "id": "flight-climb-glide-law",
+   "level": "phenotype",
+   "statement": "If available mechanical power is spent on level flight, on raising the weight at vertical speed c, and on non-negative losses, then c ≤ (P_avail − P_req)/W. A steady glide with no thrust, lift equal to weight and L/D ≤ (L/D)max from height h covers at most h (L/D)max horizontally; with drag reduced by a fraction δ near the surface and lift unaffected, at most h (L/D)max/(1 − δ).",
+   "label": "Climb from excess power and the range of a steady glide",
+   "status": "proved",
+   "module": "lean/Delphi/Flight.lean",
+   "theorem": "Delphi.glide_range_le",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "C15",
+    "C16"
+   ],
+   "studioFields": [
+    "glide_distance_m: glideDistance_m",
+    "glide_height_m: glideHeight_m",
+    "lift_to_drag_max: LD_max",
+    "ground_effect_drag_reduction: groundEffect",
+    "climb_rate_m_s: climbRate_m_s",
+    "power_available_W: muscle_fraction × musclePowerPerKg_W (R6, hypothesis) or powerAvailable_W",
+    "power_required_W: mass_kg, airspeed_m_s, LD_max",
+    "weight_N: mass_kg"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "Power balance P_avail = P_req + W c + loss with loss ≥ 0 ⇒ c ≤ (P_avail − P_req)/W (climbRate_le); 0 ≤ (P_avail − P_req)/W ⇔ P_req ≤ P_avail (climb_nonneg_iff).",
+     "Energy balance W h = D x + loss, loss ≥ 0, lift = W, L/D ≤ (L/D)max ⇒ x ≤ h (L/D)max (glide_range_le); with drag (1 − δ) D ⇒ x ≤ h (L/D)max/(1 − δ) (glide_range_le_groundEffect)."
+    ],
+    "assumed": [
+     "A single steady glide with no thrust and lift equal to weight; taxiing, repeated touch-and-go, wind and updrafts are outside the model.",
+     "Losses non-negative; the ground-effect fraction δ and (L/D)max are inputs."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "holds": 3,
+    "cannot-evaluate": 9,
+    "violated": 3
+   }
+  },
+  {
+   "id": "aerobic-power-bound",
+   "level": "physiology",
+   "statement": "With cardiac output Q, arterial and venous O2 contents Ca ≥ Cv ≥ 0, oxycaloric equivalent E and muscular efficiency 0 ≤ η ≤ 1, aerobic mechanical power is η E Q (Ca − Cv) ≤ η E Q Ca ≤ E Q Ca. A sustained power supplied aerobically is at most η E Q Ca; sustained flight needing P_req = W v/(L/D) requires η E Q Ca ≥ P_req; climb under an aerobic supply is at most (η E Q Ca − P_req)/W. If demand and supply are power laws in size with the supply exponent below the demand exponent there is a size above which supply falls short (crossover), so Thompson's size limit holds for any supply exponent below 7/2 without the muscle premise.",
+   "label": "Sustained mechanical power is bounded by oxygen delivery (Fick) times efficiency",
+   "status": "proved",
+   "module": "lean/Delphi/Flight.lean",
+   "theorem": "Delphi.sustained_flight_requires",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "C14",
+    "C14b"
+   ],
+   "studioFields": [
+    "muscular_efficiency: efficiency",
+    "oxycaloric_equivalent_J_per_unit_O2: oxycaloric",
+    "cardiac_output: cardiacOutput",
+    "arterial_O2_content: arterialO2 (gill_area_m2 is not enough: the gill link is not formalised)",
+    "weight_N: mass_kg",
+    "airspeed_m_s: airspeed_m_s",
+    "lift_to_drag: LD_max",
+    "aerobic_ceiling_W: computed from cardiacOutput, arterialO2, efficiency and oxycaloric, or committed directly",
+    "power_required_W: mass_kg, airspeed_m_s, LD_max"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "η E Q (Ca − Cv) ≤ η E Q Ca for Cv ≥ 0 (aerobic_le_Ca); ≤ E Q Ca for η ≤ 1 (aerobic_le_metabolic); P ≤ aerobicPower ⇒ P ≤ η E Q Ca (sustained_le).",
+     "P_req ≤ P ≤ aerobicPower ⇒ P_req ≤ η E Q Ca (sustained_flight_requires); climb under aerobic supply c ≤ (η E Q Ca − P_req)/W (climb_le_aerobic).",
+     "PowerLaw demand and supply with b_supply < b_demand ⇒ ∃ L* > 0, ∀ L > L*, supply < demand (powerLaw_crossover)."
+    ],
+    "assumed": [
+     "Fick: O2 delivered = Q (Ca − Cv); the oxycaloric equivalent E converts O2 to metabolic power; mechanical power is at most η times it; sustained power is aerobic (anaerobic bursts, oxygen debt, and the glide phase, which needs no muscle power, are outside).",
+     "0 ≤ Cv ≤ Ca, 0 ≤ η ≤ 1, Q, E ≥ 0; the supply exponent is whatever the physiology gives, not derived here."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "holds": 3,
+    "cannot-evaluate": 9,
+    "violated": 3
+   }
+  },
+  {
+   "id": "thompson1917-ch02-06",
+   "level": "phenotype",
+   "statement": "A bird of fixed proportions must fly at a minimum speed proportional to the square root of its linear size, so the work needed for flight varies as the 3½ power of linear size while the work its muscles can supply varies only as the cube; flight thus becomes harder as birds get larger (about 1.4 times harder per doubling of length).",
+   "label": "Power needed for flight grows as length^3.5 while muscle power grows as length^3",
+   "status": "proved",
+   "module": "lean/Delphi/Scaling.lean",
+   "theorem": "Delphi.powerRequired_log",
+   "source": "On Growth and Form (1917)",
+   "constraints": [
+    "C9",
+    "C10"
+   ],
+   "studioFields": [
+    "airspeed_m_s: airspeed_m_s",
+    "weight_N: mass_kg",
+    "lifting_area_m2: fin_area_m2",
+    "air_density_kg_m3: conditions/baseline.json (and the altitude parameter, part B)",
+    "max_lift_coefficient: CL_max",
+    "power_required_loglog_exponent: (no Studio field)"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "Exact: lift = ½ ρ v² S C_L equal to weight with 0 < C_L ≤ C_L,max implies v ≥ sqrt(2W/(ρ S C_L,max)) (vmin_le).",
+     "Under R1, R2, constant ρ and C_L,max: v_min(L2)/v_min(L1) = sqrt(L2/L1), log exponent 1/2 (vmin_ratio, vmin_log).",
+     "With constant L/D, power required at v_min: ratio (L2/L1)^3 sqrt(L2/L1), log exponent 7/2 (powerRequired_ratio, powerRequired_log).",
+     "Under MusclePowerLaw (named hypothesis) and R1: power available ratio (L2/L1)^3 (powerAvailable_ratio); P_req/P_avail = c sqrt(L) with an explicit c (powerRatio_eq)."
+    ],
+    "assumed": [
+     "Constant C_L,max across sizes (Reynolds effects change it), constant ρ, constant L/D, and flight at v_min rather than a faster, more efficient speed.",
+     "The muscle premise of Thompson (muscle fraction f and mass-specific power p constant) is contested: contraction frequency falls with size, so the modern expectation is an exponent below 3. It is carried as a hypothesis, never proved or asserted.",
+     "The physics thread found one Cypselurus hiraii specimen inside its v_min envelope (v_min 9.85 m/s against field speeds 10-20 m/s) but could not test the sqrt(W/S) scaling with its data; the theorems are statements about the model, not confirmed facts."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "violated": 4,
+    "cannot-evaluate": 19,
+    "holds": 1
+   }
+  },
+  {
+   "id": "thompson1917-ch02-07",
+   "level": "phenotype",
+   "statement": "The ostrich probably, and the moa certainly, reached a size at which flight by muscular action with ordinary bird anatomy became physiologically impossible, and a bird as large as a man could not fly.",
+   "label": "Ostrich and moa have passed the size at which muscular flight is possible",
+   "status": "proved",
+   "module": "lean/Delphi/Scaling.lean",
+   "theorem": "Delphi.exists_size_limit",
+   "source": "On Growth and Form (1917)",
+   "constraints": [],
+   "studioFields": [],
+   "scope": {
+    "kernelChecked": [
+     "Under R1, R2, constant ρ, C_L,max, L/D and MusclePowerLaw there is a size L* > 0 such that for every L > L*, P_avail(L) < P_req(L) at v_min (exists_size_limit, with L* = 1/c² for the explicit c of powerRatio_eq)."
+    ],
+    "assumed": [
+     "Everything in thompson1917-ch02-06, and that the family extends to the size in question with unchanged proportions.",
+     "The value of L* needs f, p, L/D, ρ and C_L,max; the proof supplies none, so nothing here places the ostrich, the moa or a man-sized bird above it."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "violated": 4,
+    "cannot-evaluate": 19,
+    "holds": 1
+   }
+  },
+  {
+   "id": "thompson1917-ch02-10",
+   "level": "phenotype",
+   "statement": "Leaving aside differences in mechanical construction, swimming (Froude's law), flight (minimum stable speed) and walking (the leg swinging as a pendulum) all give the same result: an animal's velocity tends to vary as the square root of its linear dimensions.",
+   "label": "Speed varies as the square root of linear size in swimming, flight and walking",
+   "status": "proved",
+   "module": "lean/Delphi/Scaling.lean",
+   "theorem": "Delphi.vmin_ratio",
+   "source": "On Growth and Form (1917)",
+   "constraints": [
+    "C9b",
+    "C9c",
+    "C11"
+   ],
+   "studioFields": [
+    "length_ratio: SL_m (vs reference)",
+    "vmin_ratio: mass_kg, fin_area_m2, SL_m",
+    "vmin_loglog_exponent: mass_kg, fin_area_m2, SL_m",
+    "froude_speed_ratio: (no Studio field)"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "Flight: v_min(L2)/v_min(L1) = sqrt(L2/L1) under R1, R2, constant ρ and C_L,max (vmin_ratio).",
+     "Swimming: at equal Froude number v = sqrt(Fr g L), so v(L2)/v(L1) = sqrt(L2/L1) (froude_ratio)."
+    ],
+    "assumed": [
+     "That the compared animals move at equal Froude number, or fly at v_min with the same ρ and C_L,max.",
+     "The walking route (the leg as a pendulum) is not formalised."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "violated": 4,
+    "cannot-evaluate": 19,
+    "holds": 1
+   }
+  },
+  {
+   "id": "genotype-genetic-code",
+   "level": "genotype",
+   "statement": "With the standard genetic code as a 64-codon table and minSubst a b the least number of positions in which a codon for a and a codon for b differ, no codon pair turns a into b in fewer than minSubst a b nucleotide substitutions. A claim of n substitutions with n < minSubst a b is therefore impossible. minSubst is computed over the table, so the kernel evaluates each instance: Phe to Leu takes 1, Trp to Stop 1, Met to Trp 2.",
+   "label": "A claimed amino-acid change is impossible below the code distance",
+   "status": "proved",
+   "module": "lean/Delphi/Genotype.lean",
+   "theorem": "Delphi.Genotype.claimed_substitutions_rules_out",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "G1"
+   ],
+   "studioFields": [
+    "wt_amino_acid: genotype_edits[].wt_aa",
+    "mutant_amino_acid: genotype_edits[].mut_aa",
+    "claimed_substitutions: genotype_edits[].substitutions"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "The standard code as a 64-case table, hamming distance on codons, and minSubst as the least distance over the codons of the two amino acids.",
+     "That no codon pair realises a to b in fewer than minSubst a b substitutions, so a claim below that count is impossible.",
+     "Each instance by kernel evaluation of the table: Phe to Leu 1, Trp to Stop 1, Met to Trp 2."
+    ],
+    "assumed": [
+     "The standard genetic code. Mitochondrial and variant codes differ; selenocysteine insertion and RNA editing are outside the table.",
+     "One codon per position, substitutions within that codon; frameshifts, indels and multi-codon changes are not modelled.",
+     "That reachability in the code is only reachability: nothing here says a substitution occurred, was favoured, or had the claimed effect."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "holds": 5,
+    "cannot-evaluate": 9
+   }
+  },
+  {
+   "id": "genotype-pleiotropy-closure",
+   "level": "genotype-to-phenotype",
+   "statement": "The Boolean check closureB mapped changed is true exactly when every node in the mapped list occurs in the changed list; its truth implies the inclusion (closure_of_check), and a single mapped node absent from the changed list makes it false (closure_violated). Applied to the genotype map: a view that shows an edit to a gene changing fewer nodes than the map links to that gene is ruled out.",
+   "label": "An edit to a gene must be shown changing every node the map links that gene to",
+   "status": "proved (a statement about what a view may omit, not about development)",
+   "module": "lean/Delphi/Genotype.lean",
+   "theorem": "Delphi.Genotype.closure_of_check",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "G2"
+   ],
+   "studioFields": [
+    "gene: genotype_edits[].gene",
+    "changed_nodes: genotype_edits[].nodes_changed"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "That the Boolean list-inclusion check is sound (its truth implies every mapped node is changed) and that a single missing node makes it false."
+    ],
+    "assumed": [
+     "That the nodes the genotype map links a gene to are the nodes an edit may change: a bound on what a picture may omit, not a model of development.",
+     "That an unstudied node is absent from the map: the closure is only as complete as the sources behind it (ZFIN, Bgee), and the fin subtree is zebrafish anatomy.",
+     "Nothing about magnitude: the check cannot say how much any node changes, or in which direction."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "holds": 5,
+    "cannot-evaluate": 9
+   }
+  },
+  {
+   "id": "genotype-developmental-ordering",
+   "level": "developmental",
+   "statement": "Taking the developmental stage as the level of a blueprint graph whose edges are develops_from, the Boolean check devOrderedB is true exactly when every edge goes strictly down in stage; its truth implies that every derivative is staged strictly after its precursor and that develops_from is acyclic. The fin subtree's own edges are certified by a kernel evaluation of the checker on the recorded stages (lean/Delphi/Certificates/FinDevelopment.lean).",
+   "label": "No structure develops from a precursor that appears later than it does",
+   "status": "proved",
+   "module": "lean/Delphi/Genotype.lean",
+   "theorem": "Delphi.Genotype.devOrdered_of_check",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "G3"
+   ],
+   "studioFields": [
+    "derivative_stage_zfs: developmental_claims[].derivative_zfs",
+    "precursor_stage_zfs: developmental_claims[].precursor_zfs"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "That a develops_from graph whose Boolean stage check passes has every derivative staged strictly after its precursor, and is acyclic.",
+     "The fin subtree's 8 edges with both stages recorded, by kernel evaluation of the checker on those stages."
+    ],
+    "assumed": [
+     "That the ZFIN stage-series ids order development (they are assigned in order for the main series).",
+     "That develops_from means the derivative appears no earlier than its precursor.",
+     "The 4 edges with an unknown stage are not certified, and nothing here concerns the flying fish."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "holds": 5,
+    "cannot-evaluate": 9
+   }
+  },
+  {
+   "id": "genotype-substitution-time",
+   "level": "genotype",
+   "statement": "With M gene copies, mutation rate mu per copy per generation and fixation probability u, the expected time for N substitutions arriving at Kimura's rate M mu u is N/(M mu u); for 1/M <= u <= 1 it lies between N/(M mu) and N/mu, and equals N/mu in the neutral case u = 1/M. An available time below N/(M mu), the fastest the model allows because it assumes every single mutant fixes, is ruled out.",
+   "label": "The time N independent substitutions need lies between N/(M mu) and N/mu",
+   "status": "proved (a bound on speed only; it eliminates nothing unless the number of required substitutions is defined, and it is not for any wing claim here)",
+   "module": "lean/Delphi/Genotype.lean",
+   "theorem": "Delphi.Genotype.expectedWaitingTime_bounds",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "G4"
+   ],
+   "studioFields": [
+    "required_substitutions: required_substitutions",
+    "gene_copies_M: gene_copies_M",
+    "mutation_rate: mutation_rate",
+    "generations_T: generations_T"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "That the expected time for N substitutions at rate M mu u is N/(M mu u), and that for 1/M <= u <= 1 it lies between N/(M mu) and N/mu, with equality at N/mu for the neutral u = 1/M.",
+     "That an available time below N/(M mu) contradicts the model even with every mutant fixing."
+    ],
+    "assumed": [
+     "Independent sequential fixations at Kimura's definition rate with constant M, mu and u: no linkage, no standing variation, no recombination of partial solutions.",
+     "That the number of required substitutions is given. It is not defined for any wing claim here, which is why this bound eliminates nothing about the flying fish.",
+     "Nothing about whether the required substitutions exist, are favoured, or produce the trait."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "holds": 5,
+    "cannot-evaluate": 9
+   }
+  },
+  {
+   "id": "haldane-cost-of-selection",
+   "level": "genotype",
+   "statement": "HaldaneCost N T e c is the NAMED HYPOTHESIS that N substitutions by selection in T generations cost at most e T / c, with reproductive excess e > 0 and cost per substitution c > 0. From it, T is at least c N / e, and a stated time below c N / e contradicts the hypothesis. The hypothesis itself is never proved.",
+   "label": "From Haldane's cost accounting (a hypothesis, not proved here): N substitutions need at least c N / e generations",
+   "status": "proved FROM a named hypothesis (HaldaneCost is never proved here, and has been contested since 1957)",
+   "module": "lean/Delphi/Genotype.lean",
+   "theorem": "Delphi.Genotype.haldane_time_lower",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "G5"
+   ],
+   "studioFields": [
+    "required_substitutions: required_substitutions",
+    "generations_T: generations_T",
+    "reproductive_excess: reproductive_excess",
+    "cost_per_substitution: cost_per_substitution"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "That the hypothesis HaldaneCost N T e c (N <= e T / c, c > 0, e >= 0) with e > 0 implies T >= c N / e, and that a time below c N / e contradicts it."
+    ],
+    "assumed": [
+     "Haldane 1957's cost accounting itself, which is NOT proved here and has been contested since publication (soft selection, truncation selection, standing variation and linked substitutions all change the cost).",
+     "A value for the cost per substitution c and the reproductive excess e; the project supplies neither for any real population.",
+     "That the candidate accepts the accounting: one that rejects it is not ruled on."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "holds": 5,
+    "cannot-evaluate": 9
+   }
+  },
+  {
+   "id": "physiology-q10",
+   "level": "physiology",
+   "statement": "For a rate X(T) = X0 Q10^((T - Tref)/10) with X0 nonzero and Q10 > 0, the ratio X(T2)/X(T1) is Q10^((T2 - T1)/10), and the log of that ratio is (T2 - T1)/10 times log Q10, so a Q10 fit is a straight line in log rate against temperature.",
+   "label": "Q10 temperature scaling: the ratio between two temperatures is Q10 raised to their difference over ten",
+   "status": "proved, no instance (no candidate commits a Q10; the conditions file fixes 25 C)",
+   "module": "lean/Delphi/Physiology.lean",
+   "theorem": "Delphi.Physiology.q10_ratio",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [],
+   "studioFields": [],
+   "scope": {
+    "kernelChecked": [
+     "That X(T) = X0 Q10^((T - Tref)/10) gives ratio Q10^((T2-T1)/10) between two temperatures, and a straight line in log rate against temperature."
+    ],
+    "assumed": [
+     "That a rate follows a Q10 law at all, and a value of Q10: both are inputs. The project's conditions fix 25 C and no candidate commits a Q10, so no instance is evaluated."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "cannot-evaluate": 5
+   }
+  },
+  {
+   "id": "physiology-laplace",
+   "level": "physiology",
+   "statement": "For a thin-walled sphere the wall stress is P r / (2 t) and for a cylinder P r / t; at fixed pressure and thickness the stress grows with radius, and a wall that holds at most sigma_max limits the pressure to 2 sigma_max t / r (sphere) or sigma_max t / r (cylinder).",
+   "label": "Laplace wall stress: pressure in a thin-walled vessel is limited by wall strength, thickness and radius",
+   "status": "proved, no instance (no vessel radius, thickness or wall strength for any fish exists in this project)",
+   "module": "lean/Delphi/Physiology.lean",
+   "theorem": "Delphi.Physiology.laplace_pressure_limit",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [],
+   "studioFields": [],
+   "scope": {
+    "kernelChecked": [
+     "That thin-wall stress P r/(2t) (sphere) and P r/t (cylinder) grow with radius at fixed pressure and thickness, and that a wall strength sigma_max limits pressure to 2 sigma_max t/r and sigma_max t/r."
+    ],
+    "assumed": [
+     "The thin-wall idealisation, static loading, no bending or residual stress.",
+     "A radius, a wall thickness and a wall strength: none exists in this project for any fish, so the bound is proved with no instance."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "cannot-evaluate": 5
+   }
+  },
+  {
+   "id": "altitude-coupling",
+   "level": "phenotype+physiology",
+   "statement": "In an atmosphere where air density and oxygen partial pressure both fall with height, the minimum speed of lift-supported flight and the power to fly at it are nondecreasing in height, while the aerobic supply (with arterial content nondecreasing in partial pressure, as a Hill curve gives) is nonincreasing. Hence sustained flight possible at a height is possible at every lower height; above an infeasible height every height is infeasible, so the flyable set is an interval from the ground up to a ceiling; and a design that cannot fly at the ground cannot fly at any height. A larger lifting area lowers the power required at a fixed height.",
+   "label": "Demand rises and supply falls with height together, so the flyable heights reach down to the ground",
+   "status": "proved",
+   "module": "lean/Delphi/Altitude.lean",
+   "theorem": "Delphi.Altitude.feasible_downward_closed",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [],
+   "studioFields": [],
+   "scope": {
+    "kernelChecked": [
+     "That the minimum speed and the power required at it are nondecreasing in height, given only that air density falls with height.",
+     "That the aerobic supply is nonincreasing in height, given only that oxygen partial pressure falls with height and arterial content is nondecreasing in it.",
+     "That the feasible heights are downward closed, that infeasibility propagates upward (a ceiling in that sense), and that infeasibility at the ground forces infeasibility everywhere.",
+     "That a larger lifting area lowers the power required at a fixed height."
+    ],
+    "assumed": [
+     "A monotone atmosphere: both density and oxygen partial pressure fall with height. No profile, no numbers; the candidates' profile is the physics thread's NASA Glenn fit.",
+     "Arterial content nondecreasing in partial pressure (a Hill curve is, but the Hill equation, the Bohr shift and the Root effect are not formalised).",
+     "Everything else held fixed with height: the animal makes no compensation (haematocrit, ventilation, cardiac output), and temperature, humidity and wind are outside the model.",
+     "The size of the effect is NOT proved: it is gentle, and the binding constraint for the real fish is the aerobic ceiling at sea level."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {
+    "cannot-evaluate": 5,
+    "violated": 1,
+    "holds": 1
+   }
+  },
+  {
+   "id": "muscle-power-premise",
+   "level": "physiology",
+   "statement": "Power available = f p M with muscle fraction f and mass-specific power p constant (Thompson 1917, ch. II).",
+   "status": "stated-not-proved (named hypothesis MusclePowerLaw in lean/Delphi/Scaling.lean; replaced for the Studio by the aerobic bound)",
+   "module": "lean/Delphi/Scaling.lean",
+   "theorem": null,
+   "constraints": [],
+   "studioFields": [
+    "muscle_fraction, musclePowerPerKg_W (only to form P_avail for C16, flagged as the premise)"
+   ],
+   "scope": {
+    "kernelChecked": [],
+    "assumed": [
+     "contested: contraction frequency falls with size, so the modern expectation is an exponent below 3"
+    ]
+   }
+  },
+  {
+   "id": "fick-principle",
+   "level": "physiology",
+   "statement": "O2 delivered to tissue = cardiac output × (arterial − venous O2 content).",
+   "status": "stated-not-proved (the aerobic bound takes it as its named hypothesis fick_aerobic_supply)",
+   "module": "lean/Delphi/Flight.lean",
+   "theorem": null,
+   "constraints": [
+    "C14"
+   ],
+   "studioFields": [
+    "cardiacOutput, arterialO2, efficiency, oxycaloric"
+   ],
+   "scope": {
+    "kernelChecked": [],
+    "assumed": [
+     "conservation of O2 in the circulation; aerobic power only"
+    ]
+   }
+  },
+  {
+   "id": "gill-o2-uptake",
+   "level": "physiology",
+   "statement": "Arterial O2 content as a function of water O2, gill area and ventilation (the first link of the simulator chain).",
+   "status": "not formalised",
+   "module": null,
+   "theorem": null,
+   "constraints": [],
+   "studioFields": [],
+   "scope": null,
+   "why": "not formalised: the counter-current model in physiology/countercurrent.js is numerical; the Studio must commit arterialO2 directly"
+  },
+  {
+   "id": "taxiing-thrust",
+   "level": "phenotype",
+   "statement": "Thrust from the caudal fin during taxiing, which the field glide distances require beyond one unpowered glide.",
+   "status": "not formalised",
+   "module": null,
+   "theorem": null,
+   "constraints": [],
+   "studioFields": [],
+   "scope": null,
+   "why": "not formalised: no model of tail-beat thrust in lean/; the glide bound shows it is needed"
+  },
+  {
+   "id": "aspect-ratio-induced-drag",
+   "level": "phenotype",
+   "statement": "Induced drag falls with aspect ratio; L/D depends on fin shape.",
+   "status": "not formalised",
+   "module": null,
+   "theorem": null,
+   "constraints": [],
+   "studioFields": [],
+   "scope": null,
+   "why": "not formalised: L/D enters only as a committed number"
+  },
+  {
+   "id": "elastic-similarity",
+   "level": "phenotype",
+   "statement": "Bones thicken with size (d ∝ ℓ^(3/2)) rather than isometrically.",
+   "status": "not formalised",
+   "module": null,
+   "theorem": null,
+   "constraints": [],
+   "studioFields": [],
+   "scope": null,
+   "why": "not formalised: R7 and R9 use isometric sections"
+  },
+  {
+   "id": "walking-pendulum-speed",
+   "level": "phenotype",
+   "statement": "Walking speed ∝ √L from the leg as a pendulum (Thompson ch. II, third route).",
+   "status": "not formalised",
+   "module": null,
+   "theorem": null,
+   "constraints": [],
+   "studioFields": [],
+   "scope": null,
+   "why": "not formalised"
+  },
+  {
+   "id": "fin-length-ratio",
+   "level": "phenotype",
+   "statement": "What sets pectoral fin length relative to body length (0.687 measured, Daane 2021).",
+   "status": "not formalised",
+   "module": null,
+   "theorem": null,
+   "constraints": [],
+   "studioFields": [],
+   "scope": null,
+   "why": "no theorem constrains fin length; it is an input the model carries"
+  },
+  {
+   "id": "gene-regulatory-dynamics",
+   "level": "genotype-to-phenotype",
+   "statement": "How a gene edit changes a structure quantitatively (bioelectric kcnk5b, slc43a2a transport).",
+   "status": "not formalised",
+   "module": null,
+   "theorem": null,
+   "constraints": [],
+   "studioFields": [],
+   "scope": null,
+   "why": "not formalised: the map records links (expressed in, required for, sufficient for), not dynamics; the Studio may only propagate an edit to every linked node (G2)"
+  },
+  {
+   "id": "E1",
+   "level": "empirical observation",
+   "statement": "areaExponent < 2 and 1 < wingLoadingExponent, with the mass exponent in [2.90, 3.02].",
+   "label": "Isometry fails within a species",
+   "status": "empirical",
+   "module": "lean/Delphi/Empirical.lean",
+   "theorem": "Delphi.Empirical.not_isometric_area",
+   "source": "physics/allometry.json (Davenport 1992, as the physics thread recorded it)",
+   "constraints": [],
+   "studioFields": [],
+   "scope": null,
+   "observation": "Within one species, pectoral fin area grows as SL^1.834 and wing loading as SL^1.236 (mass as SL^2.981): fin area falls behind the isometric square and wing loading outruns the isometric first power, so a bigger fish of the same species is more heavily loaded than isometry predicts.",
+   "taxa": "Exocoetus obtusirostris, one species, within-species regressions (the exponents are the three 'vs standard length' entries of the file)",
+   "why": "Three separate regressions, no confidence intervals, and NOT mutually consistent: 2.981 - 1.834 = 1.147 against the fitted 1.236. That inconsistency is why C13 needs intervals, and it is the reason nine audit rows read \"violated\" rather than a defect of those theorems.",
+   "rejectable": "Reject it and the audit rows that read \"violated\" become \"cannot evaluate\"; nothing proved elsewhere changes."
+  },
+  {
+   "id": "E2",
+   "level": "empirical observation",
+   "statement": "2.90 <= b <= 3.02; hence for a weight following one power law, r^2.90 <= W(L2)/W(L1) <= r^3.02 when r = L2/L1 >= 1.",
+   "label": "The fitted mass exponent lies in [2.90, 3.02]",
+   "status": "empirical",
+   "module": "lean/Delphi/Empirical.lean",
+   "theorem": "Delphi.Empirical.weight_ratio_band",
+   "source": "physics/length-weight.csv (FishBase length-weight list page, rows with a locality and n)",
+   "constraints": [
+    "E2"
+   ],
+   "studioFields": [
+    "E2"
+   ],
+   "scope": null,
+   "observation": "The 6 fitted field length-weight studies of 5 flying-fish species in the project's own table give exponents from 2.908 to 3.011.",
+   "taxa": "Cheilopogon atrisignis; Cheilopogon unicolor; Cypselurus poecilopterus; Hirundichthys affinis (female); Hirundichthys affinis (mixed); Hirundichthys oxycephalus",
+   "why": "The 1 male-only row (Hirundichthys affinis, b = 2.208) is EXCLUDED and named: including it would widen the band to 2.21. Length types differ across rows (SL, FL, TL) and the FishBase page does not show the references. Eighteen further rows with b exactly 3.000 and n of 2 to 6 are unverified estimates and are not used.",
+   "rejectable": "Reject it and a scaled design's weight is unconstrained by the record; the exact cube law (C7b) still rules under isometry."
+  },
+  {
+   "id": "E3",
+   "level": "empirical observation",
+   "statement": "eta <= 0.15, oxycaloric <= 19.35 J/ml, cardiac output <= 0.075 ml/s and arterial O2 <= 0.21 ml/ml imply an aerobic ceiling of at most 0.0458 W.",
+   "label": "Efficiency, cardiac output and arterial O2 lie in the measured teleost ranges",
+   "status": "empirical",
+   "module": "lean/Delphi/Empirical.lean",
+   "theorem": "Delphi.Empirical.aerobicCeiling_le",
+   "source": "physiology/muscle.js (efficiency, oxycaloric), physiology/cardiac.js (cardiac output range), physiology/haemoglobin.js (blood O2 capacity), as cited in lean/eliminate/physiology-candidates.json",
+   "constraints": [
+    "E3"
+   ],
+   "studioFields": [
+    "E3"
+   ],
+   "scope": null,
+   "observation": "No teleost in the ranges the physiology chain cites has a sustained aerobic ceiling above 0.0458 W at the measured mass (0.06 kg). This is what makes the C14 eliminations binding: they hold for every animal the measured record allows, not only for one choice of proxies.",
+   "taxa": "Every value is a PROXY from another teleost: Salmo salar ventricular muscle (efficiency), Lutjanus apodus and Oncorhynchus mykiss (cardiac output), Oncorhynchus mykiss (blood O2). No Exocoetidae physiology exists in this project.",
+   "why": "The bound is an upper bound at one mass, and the cardiac output ceiling is the maximum of a secondary range (20 to 75 ml/min/kg, gerry2014 Discussion). It bounds SUSTAINED AEROBIC power only: burst power on white-muscle stores is outside it, and that is what a flying fish is understood to use. Scaling it to another mass requires the cardiac output per kg, not this number.",
+   "rejectable": "Reject it and C14 still rules, but only on the particular proxies a candidate commits, not on every teleost."
+  },
+  {
+   "id": "E4",
+   "level": "empirical observation",
+   "statement": "uptakeInAir = 0; hence over a flight of duration t the mean aerobic power is at most E S / t for an O2 store S.",
+   "label": "Gills do not ventilate in air",
+   "status": "empirical",
+   "module": "lean/Delphi/Empirical.lean",
+   "theorem": "Delphi.Empirical.stored_power_le",
+   "source": "physiology/index.js (the chain sets uptake to zero in air) and its self-test, where the store drains",
+   "constraints": [
+    "E4"
+   ],
+   "studioFields": [
+    "E4"
+   ],
+   "scope": null,
+   "observation": "O2 uptake is zero while airborne, so airborne aerobic work is paid for out of the store carried into the air, and the airborne aerobic ceiling falls as the flight lengthens.",
+   "taxa": "A property of the gill as a water-breathing organ, not of a species; the chain applies it to its flying-fish model.",
+   "why": "Bounds the AEROBIC part only, and takes the store and the oxycaloric equivalent as inputs: neither is measured for Exocoetidae here. Cutaneous and buccal exchange in air are not modelled, and burst (anaerobic) power is outside it.",
+   "rejectable": "Reject it and the airborne ceiling is whatever the circulation can deliver, i.e. C14 with no time limit."
+  },
+  {
+   "id": "E5",
+   "level": "empirical observation",
+   "statement": "0.406 <= pectoral/SL <= 0.823 for a measured specimen; a design outside the range is above or below it.",
+   "label": "The observed pectoral/SL range",
+   "status": "empirical (provenance, not impossibility)",
+   "module": "lean/Delphi/Empirical.lean",
+   "theorem": "Delphi.Empirical.finRatio_outside",
+   "source": "genotype/cache/daane2021_fin_ratios.json (Daane 2021 Data S1, sha256 4ffb805544d59c60)",
+   "constraints": [],
+   "studioFields": [],
+   "scope": null,
+   "observation": "Across 49 flying-fish specimens, pectoral fin length over standard length runs from 0.406 to 0.823, median 0.687 (standard lengths 1.68 to 24 cm).",
+   "taxa": "Beloniform museum specimens: flying fish only in this entry (the file also records flying halfbeaks 0.175-0.388, halfbeaks 0.115-0.177, needlefish 0.071-0.106).",
+   "why": "A statement about the RECORD. A design outside the range is outside everything measured, which is weaker than impossible, and no theorem here says such a fish cannot exist. Preserved museum specimens, lengths only: no mass, no fin area, no glide data. It is deliberately NOT a constraint in the ledger, so that nothing is ever reported as eliminated by it; it is a flag in the Design Studio.",
+   "rejectable": "Reject it and the Studio loses a provenance flag; no verdict anywhere changes."
+  },
+  {
+   "id": "E6",
+   "level": "empirical observation",
+   "statement": "No row of the map whose link type is \"required for\" is derived by propagating a link down a part_of edge.",
+   "label": "\"required for\" is never propagated down part_of",
+   "status": "project convention (not an observation)",
+   "module": "lean/Delphi/Empirical.lean",
+   "theorem": "Delphi.Empirical.requiredFor_not_propagated_of_check",
+   "source": "the genotype map's own propagation_rules (genotype/map.vetted.json) and the hub's adopted rule",
+   "constraints": [],
+   "studioFields": [],
+   "scope": null,
+   "observation": "Not an observation at all: a rule this project adopted for building the genotype map (the hub's idea-gp-propagation-rules). A gene required for a whole need not be required for each part.",
+   "taxa": "none: a rule about the map, not about animals",
+   "why": "A convention, so it can be wrong only in the sense of being a bad choice. Labelled as such wherever it appears, and it licenses no biological conclusion.",
+   "rejectable": "Reject it and the map may carry downward \"required for\" links; the closure check (G2) then propagates an edit to more nodes, not fewer."
+  },
+  {
+   "id": "E7",
+   "level": "empirical observation",
+   "statement": "death_hpf <= scored_hpf implies the phenotype cannot be scored in a living animal.",
+   "label": "A lever lethal before the scoring stage cannot produce the phenotype",
+   "status": "empirical",
+   "module": "lean/Delphi/Empirical.lean",
+   "theorem": "Delphi.Empirical.cannot_score_of_lethal_before",
+   "source": "genotype/interventions.json (the genotype thread's own lethality notes, quoted in the value)",
+   "constraints": [
+    "E7"
+   ],
+   "studioFields": [
+    "E7"
+   ],
+   "scope": null,
+   "observation": "Two levers in the project's own intervention table state both times: ezh2 dies at 48 hpf, the stage at which its fin absence is scored, and wls dies by 12 dpf while the ray parameters exist only from 45 dpf.",
+   "taxa": "Danio rerio (zebrafish) alleles and treatments; nothing here is measured on a flying fish.",
+   "why": "Only the 2 rows that state both a death time and a scoring stage in hours are instantiated. the genotype thread records lethality as free text (58 rows say \"not reported\"); only rows that state BOTH a time of death and a scoring stage in hours are instantiated here, and no time is parsed out of prose beyond those two Lethality of a homozygote says nothing about a heterozygote, a mosaic, a conditional allele or a rescue, and a lever lethal in zebrafish may not be in another species.",
+   "rejectable": "Reject it and a design may claim a phenotype from a lever whose animal does not reach the stage; nothing proved elsewhere changes."
+  },
+  {
+   "id": "E8",
+   "level": "empirical observation",
+   "statement": "Every develops_from edge goes strictly later in stage, and the relation is acyclic.",
+   "label": "A part cannot appear before its precursor",
+   "status": "not an empirical entry: already proved",
+   "module": "lean/Delphi/Empirical.lean",
+   "theorem": "Delphi.Genotype.devOrdered_of_check",
+   "source": "genotype/fin-subtree.json, certified in lean/Delphi/Certificates/FinDevelopment.lean",
+   "constraints": [
+    "G3"
+   ],
+   "studioFields": [
+    "G3"
+   ],
+   "scope": null,
+   "observation": "The stages are data (ZFIN); the ordering is a THEOREM about that data, certified by a kernel evaluation on the fin subtree. Restating it as an empirical hypothesis would weaken a theorem into an assumption, so it is not in this layer.",
+   "taxa": "Danio rerio anatomy (ZFA), joined to the blueprint by cross-reference",
+   "why": "See the law genotype-developmental-ordering in lean/laws.json.",
+   "rejectable": "The ZFIN stage order is the assumption; reject it and the certificate says nothing."
+  }
+ ]
+}

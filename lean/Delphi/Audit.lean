@@ -12,6 +12,10 @@ import Delphi.Thompson
 import Delphi.Certificates.AFlyingFish
 import Delphi.Scaling
 import Delphi.Flight
+import Delphi.Genotype
+import Delphi.Physiology
+import Delphi.Empirical
+import Delphi.Altitude
 import Delphi.Constraints
 
 #print axioms Delphi.NeutralChain.fixedBy_tendsto
@@ -117,3 +121,44 @@ import Delphi.Constraints
 #print axioms Delphi.Constraints.aerobic_flight_rules_out
 #print axioms Delphi.Constraints.glide_range_rules_out
 #print axioms Delphi.Constraints.climb_rules_out
+#print axioms Delphi.Genotype.minSubst_le
+#print axioms Delphi.Genotype.claimed_substitutions_rules_out
+#print axioms Delphi.Genotype.phe_leu_one
+#print axioms Delphi.Genotype.trp_stop_one
+#print axioms Delphi.Genotype.met_trp_two
+#print axioms Delphi.Genotype.devOrdered_acyclic
+#print axioms Delphi.Genotype.devOrdered_of_check
+#print axioms Delphi.Genotype.closure_of_check
+#print axioms Delphi.Genotype.closure_violated
+#print axioms Delphi.Genotype.expectedWaitingTime_neutral
+#print axioms Delphi.Genotype.expectedWaitingTime_bounds
+#print axioms Delphi.Genotype.too_little_time_rules_out
+#print axioms Delphi.Genotype.haldane_time_lower
+#print axioms Delphi.Genotype.haldane_rules_out
+#print axioms Delphi.Physiology.q10_ratio
+#print axioms Delphi.Physiology.q10_log
+#print axioms Delphi.Physiology.sphereWallStress_mono
+#print axioms Delphi.Physiology.laplace_pressure_limit
+#print axioms Delphi.Physiology.hoop_pressure_limit
+#print axioms Delphi.Empirical.not_isometric_area
+#print axioms Delphi.Empirical.loading_rises
+#print axioms Delphi.Empirical.weight_ratio_band
+#print axioms Delphi.Empirical.weight_ratio_rules_out
+#print axioms Delphi.Empirical.aerobicCeiling_le
+#print axioms Delphi.Empirical.no_aerobic_flight_above_ceiling
+#print axioms Delphi.Empirical.stored_power_le
+#print axioms Delphi.Empirical.finRatio_outside
+#print axioms Delphi.Empirical.requiredFor_not_propagated_of_check
+#print axioms Delphi.Empirical.requiredFor_propagated_violates
+#print axioms Delphi.Empirical.cannot_score_of_lethal_before
+#print axioms Delphi.Empirical.empirical_nonvacuous
+#print axioms Delphi.Empirical.measured_ceiling_le
+#print axioms Delphi.Empirical.ezh2_cannot_be_scored
+#print axioms Delphi.Empirical.wls_rays_cannot_be_scored
+#print axioms Delphi.Altitude.vmin_mono
+#print axioms Delphi.Altitude.demand_mono
+#print axioms Delphi.Altitude.supply_anti
+#print axioms Delphi.Altitude.feasible_downward_closed
+#print axioms Delphi.Altitude.ceiling
+#print axioms Delphi.Altitude.infeasible_at_ground_infeasible_everywhere
+#print axioms Delphi.Altitude.demand_anti_area

@@ -1,0 +1,167 @@
+{
+ "note": "Genotype-level candidates for the checker (hub direction A, 2026-10-31). The two real claims come from the project's own genotype data: slc43a2a F326L (Daane et al. 2021, medaka numbering, genotype/map.vetted.json) and the kcnk5b alf allele ty86d (ZFIN: one point mutation, missense or in-frame; genotype/fin-subtree.full.json). The controls are constructed to show the checker firing and carry uses_illustrative_values per candidate. Pleiotropy sets come from lean/genotype/gene-nodes.json (direct links only). Substitution-time inputs reuse lean/bound/parameters.json proxies (M from the only Ne, mu from other teleosts) and are illustrative where the required count is assumed.",
+ "candidates": [
+  {
+   "id": "slc43a2a-F326L-one-snp",
+   "problem": "Is the slc43a2a F326L flying-fish variant reachable by one nucleotide substitution?",
+   "description": "Daane et al. 2021 report F326L in slc43a2a (lat4a) as a single SNP present in at least 7 of 9 sequenced flying-fish species (medaka protein numbering). Claim: phenylalanine to leucine in one substitution.",
+   "source": "genotype/map.vetted.json (lat4a_rows: F326L; SNP table notes); Daane JM et al. 2021 Curr Biol doi 10.1016/j.cub.2021.08.054",
+   "origin": "source",
+   "accepts": [
+    "standard_genetic_code"
+   ],
+   "commits": {
+    "wt_amino_acid": "Phe",
+    "mutant_amino_acid": "Leu",
+    "claimed_substitutions": 1
+   }
+  },
+  {
+   "id": "control-F326L-zero-substitutions",
+   "problem": "Control: the same change claimed with no nucleotide substitution",
+   "description": "Phe to Leu claimed in zero substitutions; must be eliminated (no codon codes for both).",
+   "source": "lean thread control",
+   "origin": "proposed-here",
+   "uses_illustrative_values": true,
+   "accepts": [
+    "standard_genetic_code"
+   ],
+   "commits": {
+    "wt_amino_acid": "Phe",
+    "mutant_amino_acid": "Leu",
+    "claimed_substitutions": 0
+   }
+  },
+  {
+   "id": "control-Met-to-Trp-one-substitution",
+   "problem": "Control: methionine to tryptophan in one substitution",
+   "description": "AUG to UGG differs in two positions and both are the only codons; one substitution cannot do it; must be eliminated.",
+   "source": "lean thread control (standard code)",
+   "origin": "proposed-here",
+   "uses_illustrative_values": true,
+   "accepts": [
+    "standard_genetic_code"
+   ],
+   "commits": {
+    "wt_amino_acid": "Met",
+    "mutant_amino_acid": "Trp",
+    "claimed_substitutions": 1
+   }
+  },
+  {
+   "id": "kcnk5b-alf-ty86d-missense",
+   "problem": "Is the kcnk5b alf (another longfin) allele reachable by one substitution?",
+   "description": "ZFIN records the ty86d allele as one point mutation, missense or in-frame, with a gain-of-function long-fin phenotype (sufficient for pectoral fin size); the amino-acid change is not recorded in the project's data.",
+   "source": "genotype/fin-subtree.full.json (ZFIN rows kcnk5b[ty86d]); ZFIN ZDB-PUB-970210-21",
+   "origin": "source",
+   "accepts": [
+    "standard_genetic_code"
+   ],
+   "commits": {
+    "claimed_substitutions": 1
+   },
+   "untranslatable": "the wild-type and mutant amino acids of ty86d are not in the project's data (ZFIN gives only 'one point mutation; missense or in-frame'), so the genetic-code check has nothing to decide"
+  },
+  {
+   "id": "tbx5a-fin-only-edit",
+   "problem": "May the Studio show a tbx5a edit as a change to the pectoral fin only?",
+   "description": "A Studio edit to tbx5a (zebrafish) presented as changing only the pectoral fin, while the map links tbx5a directly to 8 nodes of the fin subtree including the pectoral girdle, fin bud mesoderm and fin cartilage. The data are the project’s own; the scenario is written here to exercise the check.",
+   "source": "lean/genotype/gene-nodes.json (direct links from genotype/fin-subtree.full.json; ZFIN, Bgee); lean thread illustration of pleiotropy closure",
+   "origin": "proposed-here",
+   "accepts": [
+    "map_links_are_the_gene_reach"
+   ],
+   "commits": {
+    "gene": "tbx5a",
+    "changed_nodes": [
+     "ZFA:0001161"
+    ]
+   }
+  },
+  {
+   "id": "kcnk5b-fin-edit-within-subtree",
+   "problem": "May the Studio show a kcnk5b edit as a change to the pectoral fin only?",
+   "description": "A Studio edit to kcnk5b presented as changing only the pectoral fin; within the fin subtree the map links kcnk5b directly to the pectoral fin alone (the alf phenotype also touches other fins and lepidotrichia, recorded in ZFIN rows outside the pectoral subtree, so the closure here is subtree-local).",
+   "source": "lean/genotype/gene-nodes.json; genotype/fin-subtree.full.json wing_genes note",
+   "origin": "proposed-here",
+   "accepts": [
+    "map_links_are_the_gene_reach"
+   ],
+   "commits": {
+    "gene": "kcnk5b",
+    "changed_nodes": [
+     "ZFA:0001161"
+    ]
+   }
+  },
+  {
+   "id": "fin-before-fin-bud",
+   "problem": "Could the pectoral fin appear before the fin bud?",
+   "description": "A developmental claim placing the pectoral fin at Prim-5 (ZFS:0000029) and its precursor the fin bud at Prim-15 (ZFS:0000030): the derivative before the precursor. Must be eliminated. The data are the project’s own; the scenario is written here to exercise the check.",
+   "source": "lean thread control; stage ids from genotype/fin-subtree.json",
+   "origin": "proposed-here",
+   "accepts": [
+    "zfin_stage_order"
+   ],
+   "commits": {
+    "derivative_stage_zfs": 29,
+    "precursor_stage_zfs": 30
+   }
+  },
+  {
+   "id": "fin-after-fin-bud",
+   "problem": "The recorded order: fin bud at Prim-5, fin at Prim-15",
+   "description": "The fin subtree's own develops_from edge pectoral fin (ZFS:0000030) from pectoral fin bud (ZFS:0000029).",
+   "source": "genotype/fin-subtree.json edges; certified in lean/Delphi/Certificates/FinDevelopment.lean",
+   "origin": "source",
+   "accepts": [
+    "zfin_stage_order"
+   ],
+   "commits": {
+    "derivative_stage_zfs": 30,
+    "precursor_stage_zfs": 29
+   }
+  },
+  {
+   "id": "wing-100-substitutions-in-family-time",
+   "problem": "Could 100 required substitutions fix in the time the family has had?",
+   "description": "An assumed requirement of 100 specific substitutions (illustrative; no requirement for a wing is defined), M = 2e9 gene copies (from the only Ne), mutation rate 5e-9 per copy per generation (upper proxy), 4.8e7 generations (the family's fossil duration at a 1-year generation), favoured or neutral mutations.",
+   "source": "lean/bound/parameters.json proxies; N = 100 is illustrative",
+   "origin": "proposed-here",
+   "uses_illustrative_values": true,
+   "accepts": [
+    "independent_sequential_fixations",
+    "haldane_cost_of_selection"
+   ],
+   "commits": {
+    "required_substitutions": 100,
+    "gene_copies_M": 2000000000,
+    "mutation_rate": "5e-9",
+    "generations_T": 48000000,
+    "reproductive_excess": "0.1",
+    "cost_per_substitution": 30
+   }
+  },
+  {
+   "id": "control-100-substitutions-in-5-generations",
+   "problem": "Control: the same 100 substitutions in 5 generations",
+   "description": "Even if every mutant fixed, 100 sequential fixations at rate M mu need at least 10 generations; 5 must be eliminated. Haldane with e = 0.1 and c = 30 needs 30000.",
+   "source": "lean thread control",
+   "origin": "proposed-here",
+   "uses_illustrative_values": true,
+   "accepts": [
+    "independent_sequential_fixations",
+    "haldane_cost_of_selection"
+   ],
+   "commits": {
+    "required_substitutions": 100,
+    "gene_copies_M": 2000000000,
+    "mutation_rate": "5e-9",
+    "generations_T": 5,
+    "reproductive_excess": "0.1",
+    "cost_per_substitution": 30
+   }
+  }
+ ],
+ "label": "genotype-level candidates: two claims from the project’s own genotype data and eight scenarios written here to exercise the five genotype checks"
+}

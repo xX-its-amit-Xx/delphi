@@ -1,0 +1,70 @@
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <https://schema.org/> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/math-law/altitude-coupling> a delphi:Concept, skos:Concept ;
+    rdfs:label "Demand rises and supply falls with height together, so the flyable heights reach down to the ground (Lean 4, kernel-checked)" ;
+    dct:description "In an atmosphere where air density and oxygen partial pressure both fall with height, the minimum speed of lift-supported flight and the power to fly at it rise with height while the aerobic supply falls, so flight possible at a height is possible at every lower height, infeasibility propagates upward, and a design that cannot fly at the ground cannot fly at any height. The direction is proved; the size of the effect is data and it is gentle." ;
+    dct:source "Proved in this project (lean/Delphi/Favored.lean) as an extension of the neutral case of Kimura (1962) to non-opposing selection; no paper states it in this form." ;
+    skos:notation "h1 ≤ h2 and feasible(h2) implies feasible(h1); not feasible(0) implies not feasible(h) for all h ≥ 0" ;
+    skos:definition """/-- **The minimum speed rises with height.** -/
+theorem vmin_mono {W S CL : ℝ} (hW : 0 < W) (hS : 0 < S) (hCL : 0 < CL) {h₁ h₂ : ℝ} (h : h₁ ≤ h₂) :
+    vminAt A W S CL h₁ ≤ vminAt A W S CL h₂"""^^delphi:lean4 ;
+    schema:programmingLanguage "Lean 4" ;
+    delphi:leanDeclaration "Delphi.Altitude.Atmosphere" ;
+    delphi:leanTheorem "Delphi.Altitude.vmin_mono", "Delphi.Altitude.demand_mono", "Delphi.Altitude.supply_anti", "Delphi.Altitude.feasible_downward_closed", "Delphi.Altitude.ceiling", "Delphi.Altitude.infeasible_at_ground_infeasible_everywhere" ;
+    delphi:leanVerified "true"^^xsd:boolean ;
+    skos:scopeNote "The DIRECTION of the effect is proved; its SIZE is data and it is gentle (about 30% more required capacity from 0 to 5000 m, arterial content 0.190 to 0.173 ml/ml), and the real fish sits more than thirty times below every boundary at every height. So nothing here supports reading \"the feasible region shrinks with altitude\" as the reason a fish cannot fly high: the reason is the oxygen budget at sea level. Compensation an animal might make at altitude (haematocrit, ventilation, cardiac output) is held fixed, and no bird data is used." ;
+    rdfs:comment "Status: kernel-checked (Lean 4 accepted the module with zero sorry and standard axioms only). Not expert-validated. Does not establish: anything about organisms. The theorem is exact inside the stated model and silent outside it; strict neutrality, constant population size, Wright-Fisher reproduction and independent mutant fates (Kimura), fixed fitnesses and haploid inheritance (Fisher), equal fecundity and a 1:1 sex ratio (Maynard Smith) are assumptions written in the module header, not conclusions. Kernel-checked is not expert-validated: no human expert has validated these statements. Whether the Lean statement faithfully renders the paper is a separate assessment record, and so far only one assessor provider has run." ;
+    rdfs:seeAlso <https://github.com/fractastical/delphisci/blob/3617fb32/lean/Delphi/Altitude.lean>, <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/lean.json>, <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/> .
+  <https://w3id.org/delphi/resource/claim/altitude-coupling> dct:conformsTo <https://w3id.org/delphi/resource/math-law/altitude-coupling> ;
+    delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/lean-kernel-check-altitude-coupling> .
+  <https://w3id.org/delphi/resource/evidence/lean-kernel-check-altitude-coupling> a delphi:EvidenceItem ;
+    rdfs:label "Lean 4 kernel accepted Delphi.Altitude.vmin_mono with zero sorry and standard axioms, and rejected 0 deliberately broken variant(s)" ;
+    dct:description "Build receipt. Lean (version 4.35.0, x86_64-w64-windows-gnu, commit eb6cafb7290e8bd5f2937522d8d804f58f02bafc, Release); toolchain leanprover/lean4:v4.35.0; Mathlib v4.35.0 (56a005855ea17e0b0958f73ec801ae140b0a1679). lake build exit 0 in 23.2 s with 0 errors; 0 sorry in lean/Delphi/Altitude.lean (152 lines). #print axioms for Delphi.Altitude.vmin_mono, Delphi.Altitude.demand_mono, Delphi.Altitude.supply_anti, Delphi.Altitude.feasible_downward_closed, Delphi.Altitude.ceiling, Delphi.Altitude.infeasible_at_ground_infeasible_everywhere: Classical.choice, Quot.sound, propext only (Lean's standard axioms; no sorryAx). Mutation evidence (lean/mutate.mjs, 2026-10-31T21:58:20.213Z): 0 deliberate change(s) to the statement or the model were each rejected by the compiler:  Controls: 16 of 16 unmodified modules accepted by the same command." ;
+    dct:subject <https://w3id.org/delphi/resource/math-law/altitude-coupling> ;
+    rdfs:comment "This evidence item establishes that the stated theorem follows from the stated model. Does not establish: anything about organisms. The theorem is exact inside the stated model and silent outside it; strict neutrality, constant population size, Wright-Fisher reproduction and independent mutant fates (Kimura), fixed fitnesses and haploid inheritance (Fisher), equal fecundity and a 1:1 sex ratio (Maynard Smith) are assumptions written in the module header, not conclusions. Kernel-checked is not expert-validated: no human expert has validated these statements. Whether the Lean statement faithfully renders the paper is a separate assessment record, and so far only one assessor provider has run." ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/lean.json>, <https://github.com/fractastical/delphisci/blob/3617fb32/lean/mutations.json>, <https://github.com/fractastical/delphisci/blob/3617fb32/lean/Delphi/Audit.lean> .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> ;
+    prov:wasDerivedFrom <https://github.com/fractastical/delphisci/blob/3617fb32/lean/Delphi/Altitude.lean> , <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/lean.json> , <https://github.com/fractastical/delphisci/blob/3617fb32/lean/mutations.json> .
+  <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> a prov:SoftwareAgent ;
+    rdfs:label "delphisci lean thread (Claude Fable 5.1 writing the Lean modules and this builder; the Lean kernel, not the model, checked the proofs)" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/model/claude-fable-5-1> a delphi:LanguageModel ;
+    rdfs:label "Claude Fable 5.1" ;
+    dct:identifier "claude-fable-5-1" .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-10-31T22:03:26.216Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> ;
+    rdfs:comment "Owner ORCID not yet set: the key owner passes --owner <orcid> to lean/nanopubs/build.mjs at signing time; until then no human is named in this record." ;
+    rdfs:label "Demand rises and supply falls with height together, so the flyable heights reach down to the ground: machine-checked in Lean 4" ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType <https://w3id.org/delphi/ontology/Concept> ;
+    rdfs:comment "Hand-authored in Delphi ontology v2.0 terms (https://w3id.org/delphi/ontology/) by the builder, not created from a template. The template that would otherwise apply as Provenance template is <https://w3id.org/np/RAaYeFYF-Cz2bM5S1wPQsnvs5X6BBxsphL03UkbVZ1lcA>. Its published copy carries no legacy probknow IRI (checked 2026-10-31); it was consulted but not instantiated, so no template is declared. A template-conformance checker will therefore report no template declared." ;
+    rdfs:comment "Hand-authored in Delphi ontology v2.0 terms (https://w3id.org/delphi/ontology/) by the builder, not created from a template. The template that would otherwise apply as Pubinfo template is <https://w3id.org/np/RAtKj9bCnB4gUe0E9k-WhffQFSEWd9Ve2hrVllYoLuOB0>. Its published copy still uses legacy w3id.org/probknow IRIs (2 occurrences when checked on 2026-10-31), and its required statements cannot be instantiated from v2.0 terms, so it was not used and no template is declared. A template-conformance checker will therefore report no template declared." ;
+    npx:introduces <https://w3id.org/delphi/resource/math-law/altitude-coupling> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/math-population-genetics-and-evolutionary-theory> .
+  <https://w3id.org/delphi/resource/domain/math-population-genetics-and-evolutionary-theory> rdfs:label "math-population-genetics-and-evolutionary-theory" .
+}

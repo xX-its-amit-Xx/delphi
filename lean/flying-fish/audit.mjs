@@ -235,10 +235,67 @@ const CONSTR = {
 };
 for (const [k, [kind, applies, inputs, verdict, why]] of Object.entries(CONSTR)) JUDGE[k] = { applies, inputs, verdict, why, kind };
 
+// ---- NEW_MODULE_JUDGEMENTS: genotype, physiology, the empirical layer, altitude ----
+// Written against the real flying fish, as every other row is: "holds" only where measured or recorded
+// values satisfy the statement, "violated" where they contradict it, "cannot-evaluate" where an input the
+// statement needs is not measured for Exocoetidae. Zebrafish records are NOT flying-fish measurements, so
+// rows that rest on them say so.
+const noFish = what => missing(what + ' for Exocoetidae', 'undefined');
+const GENOTYPE = {
+  'Delphi.Genotype.minSubst_le': ['law', 'yes (the standard code applies to any teleost)', [], 'holds', 'the code distance bounds the Hamming distance of any codon pair; the project records one flying-fish amino-acid change, slc43a2a F326L (Daane 2021), and the code allows it in one substitution'],
+  'Delphi.Genotype.claimed_substitutions_rules_out': ['filter', 'yes: a claim about a flying-fish substitution', [], 'holds', 'applied to F326L (Phe to Leu, minSubst 1) the claim of one substitution is NOT ruled out; the controls (the same change in zero, and Met to Trp in one) are'],
+  'Delphi.Genotype.phe_leu_one': ['law', 'yes (the change the project records)', [], 'holds', 'kernel-evaluated on the code table: UUU to UUA, exactly the F326L claim'],
+  'Delphi.Genotype.trp_stop_one': ['law', 'yes (a property of the code)', [], 'holds', 'kernel-evaluated; no flying-fish nonsense mutation is recorded in this project'],
+  'Delphi.Genotype.met_trp_two': ['law', 'yes (a property of the code)', [], 'holds', 'kernel-evaluated; carries no information about the fish beyond the code'],
+  'Delphi.Genotype.devOrdered_acyclic': ['law', 'no: the certified graph is zebrafish anatomy (ZFA) with ZFIN stages, not Exocoetidae', [noFish('a staged develops_from graph')], 'cannot-evaluate', 'no flying-fish developmental series exists in this project; the certificate is about the zebrafish fin subtree'],
+  'Delphi.Genotype.devOrdered_of_check': ['law', 'no: as devOrdered_acyclic', [noFish('a staged develops_from graph')], 'cannot-evaluate', 'the 8 certified edges are zebrafish; nothing here is a flying-fish stage'],
+  'Delphi.Genotype.closure_of_check': ['law', 'no: the map is zebrafish links joined to the blueprint', [noFish('a gene-to-structure map')], 'cannot-evaluate', 'the gene reach comes from ZFIN and Bgee rows for Danio rerio; no Exocoetidae expression data is in this project'],
+  'Delphi.Genotype.closure_violated': ['filter', 'no: as closure_of_check', [noFish('a gene-to-structure map')], 'cannot-evaluate', 'it fires on a Studio view built from the zebrafish map, not on a measurement of a flying fish'],
+  'Delphi.Genotype.expectedWaitingTime_neutral': ['law', 'yes-under-named-hypotheses: neutral, constant M and mu', popgenInputs, 'cannot-evaluate', 'the neutral waiting time N/mu needs a required substitution count N, which is undefined for any flying-fish trait, and mu is a proxy from other teleosts'],
+  'Delphi.Genotype.expectedWaitingTime_bounds': ['law', 'yes-under-named-hypotheses: independent sequential fixations', popgenInputs.concat([noFish('a required number of substitutions')]), 'cannot-evaluate', 'both bounds need N; no wing requirement in substitutions is defined anywhere in this project'],
+  'Delphi.Genotype.too_little_time_rules_out': ['filter', 'yes-under-named-hypotheses', popgenInputs.concat([noFish('a required number of substitutions')]), 'cannot-evaluate', 'with the fossil duration (about 4.8e7 generations at one year) and the proxy M and mu the model allows any N up to about 4.8e8, so it rules out nothing about the fish; it fires only on a control'],
+  'Delphi.Genotype.haldane_time_lower': ['law', 'yes-under-named-hypotheses: Haldane\'s cost accounting, contested', [noFish('a reproductive excess'), noFish('a cost per substitution'), noFish('a required number of substitutions')], 'cannot-evaluate', 'no reproductive excess, cost or requirement is measured for Exocoetidae; the bound is proved FROM the hypothesis, which this project neither proves nor endorses'],
+  'Delphi.Genotype.haldane_rules_out': ['filter', 'yes-under-named-hypotheses: as haldane_time_lower', [noFish('a reproductive excess'), noFish('a cost per substitution')], 'cannot-evaluate', 'fires only on a control with illustrative numbers']
+};
+const PHYSIOLOGY = {
+  'Delphi.Physiology.q10_ratio': ['law', 'yes-under-named-hypotheses: a rate that follows a Q10 law', [noFish('a Q10 for any rate')], 'cannot-evaluate', 'the chain scales muscle rates with Q10 values from scup (Rome 1992); no flying-fish Q10 exists, and the conditions file fixes 25 C so no instance is evaluated'],
+  'Delphi.Physiology.q10_log': ['law', 'yes-under-named-hypotheses: as q10_ratio', [noFish('a Q10 for any rate')], 'cannot-evaluate', 'as q10_ratio'],
+  'Delphi.Physiology.sphereWallStress_mono': ['law', 'yes (a thin wall is a thin wall)', [noFish('a vessel or swim-bladder radius'), noFish('a wall thickness')], 'cannot-evaluate', 'no radius or thickness for any flying-fish vessel or swim bladder is in this project'],
+  'Delphi.Physiology.laplace_pressure_limit': ['law', 'yes-under-named-hypotheses: thin wall, static pressure', [noFish('a wall strength'), noFish('a wall thickness'), noFish('a radius')], 'cannot-evaluate', 'proved with no instance: the three inputs are unmeasured for Exocoetidae'],
+  'Delphi.Physiology.hoop_pressure_limit': ['law', 'yes-under-named-hypotheses: as laplace_pressure_limit', [noFish('a wall strength'), noFish('a wall thickness'), noFish('a radius')], 'cannot-evaluate', 'as laplace_pressure_limit']
+};
+const EMPIRICAL = {
+  'Delphi.Empirical.not_isometric_area': ['law', 'yes: the observation is measured ON a flying fish (Davenport 1992, Exocoetus obtusirostris)', [F.bArea], 'violated', `fin area grows as SL^${bArea.exponent}, so the isometric exponent 2 is excluded: this is the measurement that makes nine audit rows read "violated"`],
+  'Delphi.Empirical.loading_rises': ['law', 'yes: measured within a flying-fish species', [F.bWS], 'holds', `wing loading grows as SL^${bWS.exponent} > 1, so a bigger fish of the species is more loaded than isometry predicts`],
+  'Delphi.Empirical.weight_ratio_band': ['law', 'yes: the band is six fitted field studies of five flying-fish species', [F.bMass], 'holds', 'the fitted exponents 2.908 to 3.011 all lie in [2.90, 3.02], so the band holds on the project\'s own table (the H. affinis male row at 2.208 is excluded and named)'],
+  'Delphi.Empirical.weight_ratio_rules_out': ['filter', 'yes: a design committing a mass exponent', [F.bMass], 'holds', 'it rules out a design claiming the male-only 2.208 as the family exponent; the measured rows themselves are not ruled out'],
+  'Delphi.Empirical.aerobicCeiling_le': ['law', 'yes-under-named-hypotheses: the measured teleost ranges, applied at the measured mass', [F.chain], 'holds', 'inside the ranges the physiology chain cites, the sustained aerobic ceiling at 0.06 kg is at most 0.0458 W; the chain\'s own proxies give 0.0357 W, which satisfies it'],
+  'Delphi.Empirical.no_aerobic_flight_above_ceiling': ['filter', 'yes-under-named-hypotheses: Fick plus the measured ranges', [F.chain, F.preqField], 'violated', 'fires on the real fish: level flight at 10 m/s with the measured L/D 4.37 needs 1.3473 W against a ceiling of 0.0458 W for EVERY teleost the ranges allow, a factor of about 29'],
+  'Delphi.Empirical.stored_power_le': ['law', 'yes-under-named-hypotheses: no gill ventilation in air', [noFish('an O2 store carried into the air')], 'cannot-evaluate', 'no blood volume or venous reserve is measured for Exocoetidae, so the store must be committed; with an illustrative 1 ml the bound forbids a minute of powered flight and allows two seconds'],
+  'Delphi.Empirical.finRatio_outside': ['law', 'yes: 49 measured flying-fish specimens', [], 'holds', 'pectoral/SL of the measured specimens runs 0.406 to 0.823 (median 0.687), and the theorem only says a value outside that is above or below it: a statement about the record, never an impossibility'],
+  'Delphi.Empirical.requiredFor_not_propagated_of_check': ['law', 'no: a convention about this project\'s map, not a property of animals', [], 'cannot-evaluate', 'it checks the map\'s derived links against a rule the project adopted; no measurement enters'],
+  'Delphi.Empirical.requiredFor_propagated_violates': ['filter', 'no: as requiredFor_not_propagated_of_check', [], 'cannot-evaluate', 'as requiredFor_not_propagated_of_check'],
+  'Delphi.Empirical.cannot_score_of_lethal_before': ['filter', 'no: the lethal levers are zebrafish alleles', [noFish('a lethal stage')], 'cannot-evaluate', 'the two instantiated rows (ezh2, wls) are Danio rerio; lethality in zebrafish is not a flying-fish measurement'],
+  'Delphi.Empirical.empirical_nonvacuous': ['law', 'yes: the witness is built from the project\'s own measured numbers', [F.bArea, F.bWS, F.bMass, F.chain], 'holds', 'the measured numbers satisfy every observation at once, so the empirical layer cannot be eliminating candidates by contradiction'],
+  'Delphi.Empirical.measured_ceiling_le': ['law', 'yes: the chain\'s own proxies', [F.chain], 'holds', 'the chain\'s ceiling 0.0357 W is inside the 0.0458 W bound the measured ranges allow'],
+  'Delphi.Empirical.ezh2_cannot_be_scored': ['filter', 'no: a zebrafish allele', [], 'cannot-evaluate', 'the genotype thread records death and scoring both at 48 hpf for ezh2 in zebrafish; nothing about a flying fish'],
+  'Delphi.Empirical.wls_rays_cannot_be_scored': ['filter', 'no: a zebrafish allele', [], 'cannot-evaluate', 'death by 12 dpf against ray parameters from 45 dpf, in zebrafish']
+};
+const ALTITUDE = {
+  'Delphi.Altitude.vmin_mono': ['law', 'yes-under-named-hypotheses: a monotone atmosphere', [F.vmin, F.LD, F.finLen], 'cannot-evaluate', 'the direction is proved for any such atmosphere; no flying fish is observed at altitude, and the project\'s conditions are sea level'],
+  'Delphi.Altitude.demand_mono': ['law', 'yes-under-named-hypotheses: as vmin_mono, with L/D fixed', [F.vmin, F.LD], 'cannot-evaluate', 'as vmin_mono; the physics thread\'s 1000 m candidates are a hypothetical design, not an observation'],
+  'Delphi.Altitude.supply_anti': ['law', 'yes-under-named-hypotheses: arterial content nondecreasing in O2 partial pressure', [F.chain], 'cannot-evaluate', 'the Hill curve of the chain is monotone, but no flying-fish blood is measured at any altitude'],
+  'Delphi.Altitude.feasible_downward_closed': ['law', 'yes-under-named-hypotheses: the monotone atmosphere and supply', [F.chain, F.preqField], 'cannot-evaluate', 'a statement about the model at all heights; the real fish is already infeasible at the ground, which is the case the next row covers'],
+  'Delphi.Altitude.ceiling': ['filter', 'yes-under-named-hypotheses', [F.chain, F.preqField], 'cannot-evaluate', 'the ceiling is proved to exist as a boundary of a downward-closed set; its value is not computed and no flying fish is observed climbing'],
+  'Delphi.Altitude.infeasible_at_ground_infeasible_everywhere': ['filter', 'yes-under-named-hypotheses: Fick and the monotone atmosphere', [F.chain, F.preqField], 'violated', 'fires on the real fish: its oxygen budget cannot pay for level flight at sea level (C14), so under this model it cannot at any height, and altitude explains nothing about it'],
+  'Delphi.Altitude.demand_anti_area': ['law', 'yes-under-named-hypotheses: lift-supported flight at a fixed height', [F.vmin, F.LD], 'holds', 'a larger lifting area lowers the power required at a fixed height, which the measured specimen satisfies trivially; it is the only direction in which wing and oxygen budget can be traded'],
+};
+for (const [k, [kind, applies, inputs, verdict, why]] of Object.entries({ ...GENOTYPE, ...PHYSIOLOGY, ...EMPIRICAL, ...ALTITUDE })) JUDGE[k] = { applies, inputs, verdict, why, kind };
+
 // ---- build the audit ----
 const audited = Object.fromEntries(R.audit.theorems.map(a => [a.theorem, a.axioms]));
 const theorems = R.theorems.map(t => {
-  const full = t.file.includes('Blueprint') ? `Delphi.Blueprint.${t.name}` : t.file.includes('Constraints') ? `Delphi.Constraints.${t.name}` : t.file.includes('Favored') && /^(fixedBy_tendsto|fixationProbability_ge|fixationProbability_le_one)$/.test(t.name) ? `Delphi.FavoredChain.${t.name}` : t.file.includes('Kimura') && /^(fixedBy_sub_le|fixedBy_tendsto|fixationProbability_eq)$/.test(t.name) ? `Delphi.NeutralChain.${t.name}` : `Delphi.${t.name}`;
+  const full = t.file.includes('Genotype') ? `Delphi.Genotype.${t.name}` : t.file.includes('Physiology') ? `Delphi.Physiology.${t.name}` : t.file.includes('Empirical') ? `Delphi.Empirical.${t.name}` : t.file.includes('Altitude') ? `Delphi.Altitude.${t.name}` : t.file.includes('Blueprint') ? `Delphi.Blueprint.${t.name}` : t.file.includes('Constraints') ? `Delphi.Constraints.${t.name}` : t.file.includes('Favored') && /^(fixedBy_tendsto|fixationProbability_ge|fixationProbability_le_one)$/.test(t.name) ? `Delphi.FavoredChain.${t.name}` : t.file.includes('Kimura') && /^(fixedBy_sub_le|fixedBy_tendsto|fixationProbability_eq)$/.test(t.name) ? `Delphi.NeutralChain.${t.name}` : `Delphi.${t.name}`;
   const j = JUDGE[full];
   if (!j) throw new Error('no judgement for ' + full);
   return { theorem: full, module: t.file, line: t.line, doc: t.doc, axioms: audited[full] ?? null, kind: j.kind || (t.file.includes('Constraints') ? 'filter' : 'law'), appliesToExocoetidae: j.applies, appliesClass: null, inputs: j.inputs, verdict: j.verdict, qualifier: j.qualifier || null, why: j.why };

@@ -1,11 +1,11 @@
 {
- "built": "2026-10-31T21:09:15.909Z",
+ "built": "2026-10-31T22:01:50.885Z",
  "tool": "lean/eliminate/build-constraints.mjs",
  "rulingsFrom": "lean/eliminate/ledger.open-problems.json (run 2026-10-31T21:08:50.912Z)",
- "leanReport": "2026-10-31T21:07:55.520Z",
+ "leanReport": "2026-10-31T22:01:43.959Z",
  "lemmaModule": "lean/Delphi/Constraints.lean",
  "framing": "A theorem eliminates candidates, not open problems: a candidate is a proposed answer or design that commits to quantities the theorem forbids. Three states: eliminated (the violated relation with the numbers, kernel-checked where marked), consistent (not ruled out by these theorems; never \"feasible\"), cannot-rule (a required input or assumption is missing). An elimination holds only under the law's own assumptions, listed per constraint; three of the four original statements were judged narrower in scope than their claims by the assessor, and a candidate eliminated by a narrower statement is eliminated only under that statement's assumptions.",
- "nextConstraint": "Strength (R7), bending (R9), general allometry, climb, glide range with ground effect, and the aerobic power bound (Fick) with the crossover size limit are formalised. Not yet formalised: elastic similarity, gill O2 uptake as a function of water O2 and gill area (the first link of the simulator chain), taxiing thrust from the caudal fin, aspect ratio and induced drag, the walking (pendulum) route of thompson1917-ch02-10, and any quantitative muscle-power law (R6 is carried only as a named hypothesis).",
+ "nextConstraint": "Strength (R7), bending (R9), general allometry, climb, glide range with ground effect, the aerobic power bound (Fick) with the crossover size limit, and five genotype-level checks (the genetic code, pleiotropy closure, developmental ordering, the substitution-time budget and Haldane's cost) are formalised. Not yet formalised: elastic similarity, gill O2 uptake as a function of water O2 and gill area (the first link of the simulator chain), taxiing thrust from the caudal fin, aspect ratio and induced drag, the walking (pendulum) route of thompson1917-ch02-10, and any quantitative muscle-power law (R6 is carried only as a named hypothesis).",
  "quantities": {
   "mutation_rate": {
    "unit": "mutations per site per generation",
@@ -230,6 +230,66 @@
   "lift_to_drag": {
    "unit": "L/D in level flight",
    "kind": "point"
+  },
+  "o2_store_ml": {
+   "unit": "ml O2 carried into the air (the store the flight spends)",
+   "kind": "point"
+  },
+  "flight_duration_s": {
+   "unit": "s of airborne time claimed",
+   "kind": "point"
+  },
+  "death_stage_hpf": {
+   "unit": "hours post fertilisation at which the source reports death",
+   "kind": "natural"
+  },
+  "phenotype_scored_hpf": {
+   "unit": "hours post fertilisation at which the phenotype is scored",
+   "kind": "natural"
+  },
+  "aerobic_ceiling_W": {
+   "unit": "W of sustained mechanical power the oxygen budget can pay for: the product η E Q Ca committed as one number",
+   "kind": "point"
+  },
+  "wt_amino_acid": {
+   "unit": "wild-type amino acid: a three-letter name of the standard 20, or Stop",
+   "kind": "name"
+  },
+  "mutant_amino_acid": {
+   "unit": "mutant amino acid: a three-letter name of the standard 20, or Stop",
+   "kind": "name"
+  },
+  "claimed_substitutions": {
+   "unit": "nucleotide substitutions claimed within the codon",
+   "kind": "natural"
+  },
+  "gene": {
+   "unit": "gene symbol, as the genotype map records it",
+   "kind": "name"
+  },
+  "changed_nodes": {
+   "unit": "anatomy terms the edit is shown to change",
+   "kind": "list"
+  },
+  "derivative_stage_zfs": {
+   "unit": "stage of the derivative: the number of its ZFIN stage-series id",
+   "kind": "natural"
+  },
+  "precursor_stage_zfs": {
+   "unit": "stage of the precursor it develops from: the number of its ZFIN stage-series id",
+   "kind": "natural"
+  },
+  "required_substitutions": {
+   "unit": "specific substitutions the claim requires to be fixed",
+   "kind": "natural"
+  },
+  "reproductive_excess": {
+   "unit": "selective deaths the population can pay per individual per generation (Haldane e)",
+   "kind": "point"
+  },
+  "cost_per_substitution": {
+   "unit": "cost of one substitution in units of reproductive excess (Haldane c; he took about 30)",
+   "kind": "point"
   }
  },
  "assumptions": {
@@ -255,7 +315,16 @@
   "power_law_forms": "weight and lifting area each follow a single power law in L over the range in question (PowerLaw)",
   "power_balance_nonneg_losses": "available mechanical power = level-flight power + W × climb rate + non-negative losses",
   "steady_unpowered_glide": "one steady glide, no thrust, lift equal to weight, L/D ≤ (L/D)max, potential energy spent on drag work plus non-negative losses; ground effect only as a stated drag reduction",
-  "fick_aerobic_supply": "sustained mechanical power ≤ η × E_O2 × Q × (Ca − Cv) with 0 ≤ Cv ≤ Ca, 0 ≤ η ≤ 1 (Fick; aerobic, not burst)"
+  "fitted_mass_exponent_band": "empirical entry E2: the mass exponent of a fitted field study lies in [2.90, 3.02] (six fitted rows of five species, the male-only outlier excluded and named); the candidate accepts the observation",
+  "teleost_measured_ranges": "empirical entry E3: efficiency, oxycaloric equivalent, cardiac output and arterial O2 content lie inside the measured teleost ranges the physiology chain cites, so the sustained aerobic ceiling at 0.06 kg is at most 0.0458 W",
+  "no_aerial_uptake": "empirical entry E4: gills do not ventilate in air, so airborne aerobic work is paid out of the O2 store carried into the air",
+  "lethality_before_scoring": "empirical entry E7: an animal that the source reports dead at or before the scoring stage cannot show the scored phenotype",
+  "fick_aerobic_supply": "sustained mechanical power ≤ η × E_O2 × Q × (Ca − Cv) with 0 ≤ Cv ≤ Ca, 0 ≤ η ≤ 1 (Fick; aerobic, not burst)",
+  "standard_genetic_code": "the standard genetic code as tabulated in lean/Delphi/Genotype.lean (no alternative or mitochondrial code, no selenocysteine, no editing); one codon per amino acid position",
+  "map_links_are_the_gene_reach": "the nodes the genotype map links a gene to are the nodes an edit to that gene may change; the map records links, not dynamics, so this bounds what a picture may hide, never how much a node changes",
+  "zfin_stage_order": "the ZFIN stage-series ids order the stages of development (they are assigned in developmental order for the main series), and develops_from means the derivative appears no earlier than its precursor",
+  "independent_sequential_fixations": "the required substitutions fix one after another at Kimura's rate M μ u with constant M, μ and u, 1/M ≤ u ≤ 1 (neutral or favoured, by the Favored module); no linkage, no standing variation, no recombination of partial solutions",
+  "haldane_cost_of_selection": "Haldane 1957's accounting: substitutions by selection over T generations are at most e T / c, with reproductive excess e and cost per substitution c. A contested model, carried as a named hypothesis and never proved here"
  },
  "constraints": [
   {
@@ -292,6 +361,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "A neutral absorbing chain on {0..M} copies (stochastic, mean-preserving, both ends absorbing, positive one-step escape from every interior state) fixes a mutant with probability i/M, with an explicit geometric error bound at every finite time t.",
@@ -358,6 +428,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "A neutral absorbing chain on {0..M} copies (stochastic, mean-preserving, both ends absorbing, positive one-step escape from every interior state) fixes a mutant with probability i/M, with an explicit geometric error bound at every finite time t.",
@@ -424,6 +495,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "Fixation probability i/M for any neutral absorbing chain, hence for the exact finite Wright-Fisher chain (Delphi.NeutralChain.fixedBy_tendsto)."
@@ -486,6 +558,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "For any absorbing chain on {0..M} copies with E[X_{t+1} | X_t = i] >= i (stochastic, both ends absorbing, positive one-step escape from every interior state), P(fixed by t) is nondecreasing and bounded, its limit u(i) exists, and u(i) >= i/M (Delphi.FavoredChain.fixationProbability_ge); also u(i) <= 1.",
@@ -551,6 +624,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "For any absorbing chain on {0..M} copies with E[X_{t+1} | X_t = i] >= i (stochastic, both ends absorbing, positive one-step escape from every interior state), P(fixed by t) is nondecreasing and bounded, its limit u(i) exists, and u(i) >= i/M (Delphi.FavoredChain.fixationProbability_ge); also u(i) <= 1.",
@@ -612,6 +686,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "For one locus with finitely many types, frequencies p (nonneg, summing to 1), fixed fitnesses w and mean fitness > 0: selection p_next = p w / wbar yields wbar_next - wbar = Var(w)/wbar exactly.",
@@ -674,6 +749,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "For one locus with finitely many types, frequencies p (nonneg, summing to 1), fixed fitnesses w and mean fitness > 0: selection p_next = p w / wbar yields wbar_next - wbar = Var(w)/wbar exactly.",
@@ -738,6 +814,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "For one locus with finitely many types, frequencies p (nonneg, summing to 1), fixed fitnesses w and mean fitness > 0: selection p_next = p w / wbar yields wbar_next - wbar = Var(w)/wbar exactly.",
@@ -804,6 +881,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "For 0 < q < 1 and fecundity f > 0 the odds of asexual to sexual females satisfy odds(q_next) = 2 odds(q), and f cancels.",
@@ -866,6 +944,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "For 0 < q < 1 and fecundity f > 0 the odds of asexual to sexual females satisfy odds(q_next) = 2 odds(q), and f cancels.",
@@ -927,6 +1006,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "Generic (any node type): edges strictly down in level ⟹ the part_of closure is transitive, strictly decreases the level, and is acyclic (Graph.acyclic_of_levelsDown, Graph.transGen_trans, Graph.transGen_level_lt).",
@@ -985,6 +1065,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "If W L = k L^3 for all L > 0 with k > 0, then for L1 ≠ L2 the log-log slope (log W L2 − log W L1)/(log L2 − log L1) equals exactly 3 (cubeLaw_loglog_exponent) and W L2 / W L1 = (L2/L1)^3 (cubeLaw_ratio).",
@@ -1041,6 +1122,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "If S L = k L^2 for all L > 0 (AreaLaw) then S(L2)/S(L1) = (L2/L1)^2 and log S(L2)/S(L1) = 2 log(L2/L1) (areaLaw_ratio, areaLaw_log).",
@@ -1098,6 +1180,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "If S L = k L^2 for all L > 0 (AreaLaw) then S(L2)/S(L1) = (L2/L1)^2 and log S(L2)/S(L1) = 2 log(L2/L1) (areaLaw_ratio, areaLaw_log).",
@@ -1159,6 +1242,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "F_break = σ A: with AreaLaw A and σ > 0, F_break(L2)/F_break(L1) = (L2/L1)^2 (breakLoad_ratio).",
@@ -1220,6 +1304,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "F_break = σ A: with AreaLaw A and σ > 0, F_break(L2)/F_break(L1) = (L2/L1)^2 (breakLoad_ratio).",
@@ -1286,6 +1371,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "F_break = σ A: with AreaLaw A and σ > 0, F_break(L2)/F_break(L1) = (L2/L1)^2 (breakLoad_ratio).",
@@ -1349,6 +1435,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "F_break = σ A: with AreaLaw A and σ > 0, F_break(L2)/F_break(L1) = (L2/L1)^2 (breakLoad_ratio).",
@@ -1408,6 +1495,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "F_break = σ A: with AreaLaw A and σ > 0, F_break(L2)/F_break(L1) = (L2/L1)^2 (breakLoad_ratio).",
@@ -1474,6 +1562,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "Exact: lift = ½ ρ v² S C_L equal to weight with 0 < C_L ≤ C_L,max implies v ≥ sqrt(2W/(ρ S C_L,max)) (vmin_le).",
@@ -1536,6 +1625,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "Flight: v_min(L2)/v_min(L1) = sqrt(L2/L1) under R1, R2, constant ρ and C_L,max (vmin_ratio).",
@@ -1595,6 +1685,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "Flight: v_min(L2)/v_min(L1) = sqrt(L2/L1) under R1, R2, constant ρ and C_L,max (vmin_ratio).",
@@ -1655,6 +1746,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "Exact: lift = ½ ρ v² S C_L equal to weight with 0 < C_L ≤ C_L,max implies v ≥ sqrt(2W/(ρ S C_L,max)) (vmin_le).",
@@ -1718,6 +1810,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "Flight: v_min(L2)/v_min(L1) = sqrt(L2/L1) under R1, R2, constant ρ and C_L,max (vmin_ratio).",
@@ -1777,6 +1870,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "R9a: with CubeLaw F, LeverLaw ℓ and SectionModulusLaw Z, σ_b(L2)/σ_b(L1) = L2/L1, log exponent 1 (bendingStress_ratio_body, bendingStress_log_body); σ_max/σ_b = σ_max k_Z/(k_F k_ℓ L) (bendingSafety_eq); above σ_max k_Z/(k_F k_ℓ n) the stress at n times the load exceeds σ_max (bending_cannot_carry).",
@@ -1843,6 +1937,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "R9a: with CubeLaw F, LeverLaw ℓ and SectionModulusLaw Z, σ_b(L2)/σ_b(L1) = L2/L1, log exponent 1 (bendingStress_ratio_body, bendingStress_log_body); σ_max/σ_b = σ_max k_Z/(k_F k_ℓ L) (bendingSafety_eq); above σ_max k_Z/(k_F k_ℓ n) the stress at n times the load exceeds σ_max (bending_cannot_carry).",
@@ -1907,6 +2002,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "R9a: with CubeLaw F, LeverLaw ℓ and SectionModulusLaw Z, σ_b(L2)/σ_b(L1) = L2/L1, log exponent 1 (bendingStress_ratio_body, bendingStress_log_body); σ_max/σ_b = σ_max k_Z/(k_F k_ℓ L) (bendingSafety_eq); above σ_max k_Z/(k_F k_ℓ n) the stress at n times the load exceeds σ_max (bending_cannot_carry).",
@@ -1971,6 +2067,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "PowerLaw f a b ⇒ f(L2)/f(L1) = (L2/L1)^b and log exponent b (powerLaw_ratio, powerLaw_log).",
@@ -2039,6 +2136,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "η E Q (Ca − Cv) ≤ η E Q Ca for Cv ≥ 0 (aerobic_le_Ca); ≤ E Q Ca for η ≤ 1 (aerobic_le_metabolic); P ≤ aerobicPower ⇒ P ≤ η E Q Ca (sustained_le).",
@@ -2062,6 +2160,65 @@
     "reached": 0
    },
    "whyNoCandidate": "no enumerated candidate commits oxygen-delivery physiology; the physics thread's simulator will supply Q, Ca, E and η for the designed variant"
+  },
+  {
+   "id": "C14b",
+   "claim_id": "aerobic-power-bound",
+   "lemma": "Delphi.sustained_le",
+   "law": "Delphi.sustained_flight_requires",
+   "module": "lean/Delphi/Flight.lean",
+   "property": "whether a committed aerobic ceiling covers the committed power required",
+   "relation": "ceiling ≥ P_req",
+   "symbols": {
+    "ceiling": "aerobic_ceiling_W",
+    "P_req": "power_required_W"
+   },
+   "requires": [
+    "aerobic_ceiling_W",
+    "power_required_W"
+   ],
+   "appliesWhen": [
+    "fick_aerobic_supply"
+   ],
+   "rule": "eliminated when the committed ceiling is below the committed power required. The same statement as C14 with the product η E Q Ca given as one number instead of its four factors, for a candidate whose chain computed the ceiling elsewhere; the certificate instantiates the theorem with η = E = Q = 1 and Ca = the ceiling, so the kernel checks the same inequality",
+   "canEliminate": "a design whose own oxygen chain reports a ceiling below the power its flight needs",
+   "kernelCheckable": true,
+   "label": "Sustained mechanical power is bounded by oxygen delivery (Fick) times efficiency",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "empirical": null,
+   "proofScope": {
+    "kernelChecked": [
+     "η E Q (Ca − Cv) ≤ η E Q Ca for Cv ≥ 0 (aerobic_le_Ca); ≤ E Q Ca for η ≤ 1 (aerobic_le_metabolic); P ≤ aerobicPower ⇒ P ≤ η E Q Ca (sustained_le).",
+     "P_req ≤ P ≤ aerobicPower ⇒ P_req ≤ η E Q Ca (sustained_flight_requires); climb under aerobic supply c ≤ (η E Q Ca − P_req)/W (climb_le_aerobic).",
+     "PowerLaw demand and supply with b_supply < b_demand ⇒ ∃ L* > 0, ∀ L > L*, supply < demand (powerLaw_crossover)."
+    ],
+    "assumed": [
+     "Fick: O2 delivered = Q (Ca − Cv); the oxycaloric equivalent E converts O2 to metabolic power; mechanical power is at most η times it; sustained power is aerobic (anaerobic bursts, oxygen debt, and the glide phase, which needs no muscle power, are outside).",
+     "0 ≤ Cv ≤ Ca, 0 ≤ η ≤ 1, Q, E ≥ 0; the supply exponent is whatever the physiology gives, not derived here."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "sustained mechanical power ≤ η × E_O2 × Q × (Ca − Cv) with 0 ≤ Cv ≤ Ca, 0 ≤ η ≤ 1 (Fick; aerobic, not burst)"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 0,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated open-problem candidate commits an aerobic ceiling; the physics thread's altitude candidates do, translated in lean/eliminate/tff-candidates.json"
   },
   {
    "id": "C15",
@@ -2101,6 +2258,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "Power balance P_avail = P_req + W c + loss with loss ≥ 0 ⇒ c ≤ (P_avail − P_req)/W (climbRate_le); 0 ≤ (P_avail − P_req)/W ⇔ P_req ≤ P_avail (climb_nonneg_iff).",
@@ -2162,6 +2320,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "Power balance P_avail = P_req + W c + loss with loss ≥ 0 ⇒ c ≤ (P_avail − P_req)/W (climbRate_le); 0 ≤ (P_avail − P_req)/W ⇔ P_req ≤ P_avail (climb_nonneg_iff).",
@@ -2184,6 +2343,493 @@
     "reached": 0
    },
    "whyNoCandidate": "no enumerated candidate commits a climb rate; the powered variant will"
+  },
+  {
+   "id": "G1",
+   "claim_id": "genotype-genetic-code",
+   "lemma": "Delphi.Genotype.claimed_substitutions_rules_out",
+   "law": "Delphi.Genotype.minSubst_le",
+   "module": "lean/Delphi/Genotype.lean",
+   "property": "whether an amino-acid change is reachable in the claimed number of nucleotide substitutions",
+   "relation": "n ≥ minSubst(a, b), the least Hamming distance between a codon for a and a codon for b",
+   "symbols": {
+    "n": "claimed_substitutions",
+    "a": "wt_amino_acid",
+    "b": "mutant_amino_acid"
+   },
+   "requires": [
+    "wt_amino_acid",
+    "mutant_amino_acid",
+    "claimed_substitutions"
+   ],
+   "appliesWhen": [
+    "standard_genetic_code"
+   ],
+   "rule": "eliminated when the claimed count is below minSubst(a, b) over the 64-codon table; consistent when some codon pair is within the claim. The checker decides reachability in the code, not whether the substitution happened",
+   "canEliminate": "a claim that one point mutation produced an amino-acid change the code needs two or three for (for example methionine to tryptophan)",
+   "kernelCheckable": true,
+   "prior": "A Lean formalisation of the genetic code and its codon graph exists independently (arXiv doi 10.48550/arxiv.2610.36343); this module was written here and does not depend on it.",
+   "label": "A claimed amino-acid change is impossible below the code distance",
+   "lawAxioms": [
+    "propext",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "empirical": null,
+   "proofScope": {
+    "kernelChecked": [
+     "The standard code as a 64-case table, hamming distance on codons, and minSubst as the least distance over the codons of the two amino acids.",
+     "That no codon pair realises a to b in fewer than minSubst a b substitutions, so a claim below that count is impossible.",
+     "Each instance by kernel evaluation of the table: Phe to Leu 1, Trp to Stop 1, Met to Trp 2."
+    ],
+    "assumed": [
+     "The standard genetic code. Mitochondrial and variant codes differ; selenocysteine insertion and RNA editing are outside the table.",
+     "One codon per position, substitutions within that codon; frameshifts, indels and multi-codon changes are not modelled.",
+     "That reachability in the code is only reachability: nothing here says a substitution occurred, was favoured, or had the claimed effect."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "the standard genetic code as tabulated in lean/Delphi/Genotype.lean (no alternative or mitochondrial code, no selenocysteine, no editing); one codon per amino acid position"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 0,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated open-problem candidate states an amino-acid change with a substitution count; the genotype candidates of lean/genotype/genotype-candidates.json exercise it"
+  },
+  {
+   "id": "G2",
+   "claim_id": "genotype-pleiotropy-closure",
+   "lemma": "Delphi.Genotype.closure_violated",
+   "law": "Delphi.Genotype.closure_of_check",
+   "module": "lean/Delphi/Genotype.lean",
+   "property": "whether an edit to a gene is shown changing every node the map links that gene to",
+   "relation": "every node the map links to the gene is in the set the edit changes",
+   "symbols": {
+    "gene": "gene",
+    "changed": "changed_nodes"
+   },
+   "requires": [
+    "gene",
+    "changed_nodes"
+   ],
+   "appliesWhen": [
+    "map_links_are_the_gene_reach"
+   ],
+   "rule": "eliminated when the map links the gene to a node the edit does not change (the picture would hide a pleiotropic effect); consistent when the changed set covers every linked node. Link sets come from lean/genotype/gene-nodes.json (direct, non-derived links of genotype/fin-subtree.full.json), so an absent node is unstudied, not gene-free",
+   "canEliminate": "a Design Studio view showing a gene edit as a change to one structure when the map links that gene to several",
+   "kernelCheckable": true,
+   "label": "An edit to a gene must be shown changing every node the map links that gene to",
+   "lawAxioms": [
+    "propext",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "empirical": null,
+   "proofScope": {
+    "kernelChecked": [
+     "That the Boolean list-inclusion check is sound (its truth implies every mapped node is changed) and that a single missing node makes it false."
+    ],
+    "assumed": [
+     "That the nodes the genotype map links a gene to are the nodes an edit may change: a bound on what a picture may omit, not a model of development.",
+     "That an unstudied node is absent from the map: the closure is only as complete as the sources behind it (ZFIN, Bgee), and the fin subtree is zebrafish anatomy.",
+     "Nothing about magnitude: the check cannot say how much any node changes, or in which direction."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "the nodes the genotype map links a gene to are the nodes an edit to that gene may change; the map records links, not dynamics, so this bounds what a picture may hide, never how much a node changes"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 0,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated open-problem candidate names a gene and the nodes an edit changes; this constraint is for the Design Studio, and the genotype candidates exercise it"
+  },
+  {
+   "id": "G3",
+   "claim_id": "genotype-developmental-ordering",
+   "lemma": "Delphi.Genotype.devOrdered_of_check",
+   "law": "Delphi.Genotype.devOrdered_acyclic",
+   "module": "lean/Delphi/Genotype.lean",
+   "property": "whether a structure is claimed to appear before the precursor it develops from",
+   "relation": "stage(precursor) < stage(derivative)",
+   "symbols": {
+    "derivative": "derivative_stage_zfs",
+    "precursor": "precursor_stage_zfs"
+   },
+   "requires": [
+    "derivative_stage_zfs",
+    "precursor_stage_zfs"
+   ],
+   "appliesWhen": [
+    "zfin_stage_order"
+   ],
+   "rule": "eliminated when the derivative is staged at or before its precursor; consistent when it is staged later. The fin subtree's own develops_from edges are certified separately by lean/genotype/certify-dev.mjs, which the kernel evaluates on the recorded stages",
+   "canEliminate": "a developmental sequence that puts a fin before its fin bud",
+   "kernelCheckable": true,
+   "label": "No structure develops from a precursor that appears later than it does",
+   "lawAxioms": [],
+   "lemmaAxioms": [
+    "propext",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "empirical": null,
+   "proofScope": {
+    "kernelChecked": [
+     "That a develops_from graph whose Boolean stage check passes has every derivative staged strictly after its precursor, and is acyclic.",
+     "The fin subtree's 8 edges with both stages recorded, by kernel evaluation of the checker on those stages."
+    ],
+    "assumed": [
+     "That the ZFIN stage-series ids order development (they are assigned in order for the main series).",
+     "That develops_from means the derivative appears no earlier than its precursor.",
+     "The 4 edges with an unknown stage are not certified, and nothing here concerns the flying fish."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "the ZFIN stage-series ids order the stages of development (they are assigned in developmental order for the main series), and develops_from means the derivative appears no earlier than its precursor"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 0,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated open-problem candidate states a developmental order; the fin subtree's own edges are certified by lean/genotype/certify-dev.mjs"
+  },
+  {
+   "id": "G4",
+   "claim_id": "genotype-substitution-time",
+   "lemma": "Delphi.Genotype.too_little_time_rules_out",
+   "law": "Delphi.Genotype.expectedWaitingTime_bounds",
+   "module": "lean/Delphi/Genotype.lean",
+   "property": "whether the stated number of generations can carry the required substitutions at the stated mutation rate",
+   "relation": "T ≥ N / (M μ)",
+   "symbols": {
+    "T": "generations_T",
+    "N": "required_substitutions",
+    "M": "gene_copies_M",
+    "μ": "mutation_rate"
+   },
+   "requires": [
+    "required_substitutions",
+    "gene_copies_M",
+    "mutation_rate",
+    "generations_T"
+   ],
+   "appliesWhen": [
+    "independent_sequential_fixations"
+   ],
+   "rule": "eliminated when T < N/(M μ), the fastest the model allows (fixation probability u = 1, every mutant fixed); consistent otherwise. Consistency here is very weak: the neutral case needs N/μ, M times longer, and the model says nothing about whether the substitutions exist or help",
+   "canEliminate": "a claim needing more sequential substitutions than the mutation supply can deliver in the stated time; it cannot eliminate anything for a trait whose required count is undefined, which is the state of every wing claim in this project",
+   "kernelCheckable": true,
+   "label": "The time N independent substitutions need lies between N/(M mu) and N/mu",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "empirical": null,
+   "proofScope": {
+    "kernelChecked": [
+     "That the expected time for N substitutions at rate M mu u is N/(M mu u), and that for 1/M <= u <= 1 it lies between N/(M mu) and N/mu, with equality at N/mu for the neutral u = 1/M.",
+     "That an available time below N/(M mu) contradicts the model even with every mutant fixing."
+    ],
+    "assumed": [
+     "Independent sequential fixations at Kimura's definition rate with constant M, mu and u: no linkage, no standing variation, no recombination of partial solutions.",
+     "That the number of required substitutions is given. It is not defined for any wing claim here, which is why this bound eliminates nothing about the flying fish.",
+     "Nothing about whether the required substitutions exist, are favoured, or produce the trait."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "the required substitutions fix one after another at Kimura's rate M μ u with constant M, μ and u, 1/M ≤ u ≤ 1 (neutral or favoured, by the Favored module); no linkage, no standing variation, no recombination of partial solutions"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 0,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated open-problem candidate commits a required substitution count with M, mu and T together; the Cambrian and human-chimp rows give mu and T but no M or count"
+  },
+  {
+   "id": "G5",
+   "claim_id": "haldane-cost-of-selection",
+   "lemma": "Delphi.Genotype.haldane_rules_out",
+   "law": "Delphi.Genotype.haldane_time_lower",
+   "module": "lean/Delphi/Genotype.lean",
+   "property": "whether the population can pay the cost of the required substitutions in the stated time",
+   "relation": "T ≥ c N / e",
+   "symbols": {
+    "T": "generations_T",
+    "N": "required_substitutions",
+    "c": "cost_per_substitution",
+    "e": "reproductive_excess"
+   },
+   "requires": [
+    "required_substitutions",
+    "generations_T",
+    "reproductive_excess",
+    "cost_per_substitution"
+   ],
+   "appliesWhen": [
+    "haldane_cost_of_selection"
+   ],
+   "rule": "eliminated when T < c N / e; consistent otherwise. The bound is PROVED FROM Haldane's accounting, which is itself a named hypothesis the module never proves and which has been contested since 1957 (soft selection, truncation selection and standing variation all change c); a candidate that does not accept it is not ruled on",
+   "canEliminate": "a claim that accepts Haldane's cost model and still asks for more substitutions than its reproductive excess can pay for",
+   "kernelCheckable": true,
+   "label": "From Haldane's cost accounting (a hypothesis, not proved here): N substitutions need at least c N / e generations",
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "status": "verified",
+   "empirical": null,
+   "proofScope": {
+    "kernelChecked": [
+     "That the hypothesis HaldaneCost N T e c (N <= e T / c, c > 0, e >= 0) with e > 0 implies T >= c N / e, and that a time below c N / e contradicts it."
+    ],
+    "assumed": [
+     "Haldane 1957's cost accounting itself, which is NOT proved here and has been contested since publication (soft selection, truncation selection, standing variation and linked substitutions all change the cost).",
+     "A value for the cost per substitution c and the reproductive excess e; the project supplies neither for any real population.",
+     "That the candidate accepts the accounting: one that rejects it is not ruled on."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "verdicts": [],
+   "assumptionsText": [
+    "Haldane 1957's accounting: substitutions by selection over T generations are at most e T / c, with reproductive excess e and cost per substitution c. A contested model, carried as a named hypothesis and never proved here"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 0,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated open-problem candidate accepts Haldane's cost model with a reproductive excess and a cost per substitution"
+  },
+  {
+   "id": "E2",
+   "claim_id": "empirical-E2",
+   "empirical": "E2",
+   "status": "empirical",
+   "lemma": "Delphi.Empirical.weight_ratio_rules_out",
+   "law": "Delphi.Empirical.weight_ratio_band",
+   "module": "lean/Delphi/Empirical.lean",
+   "property": "whether a committed mass exponent lies in the band the project's own fitted studies span",
+   "relation": "2.90 ≤ b ≤ 3.02",
+   "symbols": {
+    "b": "loglog_exponent"
+   },
+   "requires": [
+    "loglog_exponent"
+   ],
+   "appliesWhen": [
+    "fitted_mass_exponent_band"
+   ],
+   "rule": "eliminated when the committed exponent interval is disjoint from [2.90, 3.02]; the certificate shows no member of the measured band has that exponent. CONDITIONAL on the observation: a reader who rejects E2 drops this elimination and keeps every proved one",
+   "canEliminate": "a design committing a mass exponent no fitted flying-fish study supports",
+   "kernelCheckable": true,
+   "label": null,
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "proofScope": null,
+   "faithfulness": "not assessed (no paper states this form)",
+   "verdicts": [],
+   "assumptionsText": [
+    "empirical entry E2: the mass exponent of a fitted field study lies in [2.90, 3.02] (six fitted rows of five species, the male-only outlier excluded and named); the candidate accepts the observation"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 0,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated open-problem candidate commits a mass exponent while accepting the fitted band; the empirical candidates of lean/empirical/empirical-candidates.json exercise it"
+  },
+  {
+   "id": "E3",
+   "claim_id": "empirical-E3",
+   "empirical": "E3",
+   "status": "empirical",
+   "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling",
+   "law": "Delphi.Empirical.aerobicCeiling_le",
+   "module": "lean/Delphi/Empirical.lean",
+   "property": "whether the power required exceeds the ceiling of every teleost in the measured ranges",
+   "relation": "P_req ≤ 0.0458 W",
+   "symbols": {
+    "P_req": "power_required_W"
+   },
+   "requires": [
+    "power_required_W"
+   ],
+   "appliesWhen": [
+    "teleost_measured_ranges"
+   ],
+   "rule": "eliminated when the committed power required exceeds 0.0458 W, the largest sustained aerobic ceiling the measured ranges allow at 0.06 kg. Stronger than C14, which rules only on the particular proxies a candidate commits; CONDITIONAL on E3",
+   "canEliminate": "any claim of sustained aerobic flight at this mass above the ceiling of every teleost the measured record allows",
+   "kernelCheckable": true,
+   "label": null,
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "proofScope": null,
+   "faithfulness": "not assessed (no paper states this form)",
+   "verdicts": [],
+   "assumptionsText": [
+    "empirical entry E3: efficiency, oxycaloric equivalent, cardiac output and arterial O2 content lie inside the measured teleost ranges the physiology chain cites, so the sustained aerobic ceiling at 0.06 kg is at most 0.0458 W"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 0,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated open-problem candidate accepts the measured teleost ranges; the empirical candidates do"
+  },
+  {
+   "id": "E4",
+   "claim_id": "empirical-E4",
+   "empirical": "E4",
+   "status": "empirical",
+   "lemma": "Delphi.Empirical.stored_power_le",
+   "law": "Delphi.Empirical.stored_power_le",
+   "module": "lean/Delphi/Empirical.lean",
+   "property": "whether the O2 store carried into the air can pay for the claimed flight",
+   "relation": "P_req ≤ E_O2 S / t",
+   "symbols": {
+    "P_req": "power_required_W",
+    "E_O2": "oxycaloric_equivalent_J_per_unit_O2",
+    "S": "o2_store_ml",
+    "t": "flight_duration_s"
+   },
+   "requires": [
+    "power_required_W",
+    "oxycaloric_equivalent_J_per_unit_O2",
+    "o2_store_ml",
+    "flight_duration_s"
+   ],
+   "appliesWhen": [
+    "no_aerial_uptake"
+   ],
+   "rule": "eliminated when the claimed power exceeds E S / t, the mean aerobic power the store allows over the claimed duration; CONDITIONAL on E4. Bounds the aerobic part only: burst power on white-muscle stores is outside it",
+   "canEliminate": "a long powered flight on a store too small to pay for it aerobically",
+   "kernelCheckable": true,
+   "label": null,
+   "lawAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "lemmaAxioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "proofScope": null,
+   "faithfulness": "not assessed (no paper states this form)",
+   "verdicts": [],
+   "assumptionsText": [
+    "empirical entry E4: gills do not ventilate in air, so airborne aerobic work is paid out of the O2 store carried into the air"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 0,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated open-problem candidate commits an O2 store and a flight duration"
+  },
+  {
+   "id": "E7",
+   "claim_id": "empirical-E7",
+   "empirical": "E7",
+   "status": "empirical",
+   "lemma": "Delphi.Empirical.cannot_score_of_lethal_before",
+   "law": "Delphi.Empirical.CanScore",
+   "module": "lean/Delphi/Empirical.lean",
+   "property": "whether the animal is alive at the stage the phenotype is scored",
+   "relation": "scored < death",
+   "symbols": {
+    "death": "death_stage_hpf",
+    "scored": "phenotype_scored_hpf"
+   },
+   "requires": [
+    "death_stage_hpf",
+    "phenotype_scored_hpf"
+   ],
+   "appliesWhen": [
+    "lethality_before_scoring"
+   ],
+   "rule": "eliminated when the source reports death at or before the scoring stage; CONDITIONAL on E7 and on the times the source states. Lethality of a homozygote says nothing about a heterozygote, a mosaic, a conditional allele or a rescue",
+   "canEliminate": "a design that claims a phenotype from a lever whose animal does not reach the stage at which the phenotype exists",
+   "kernelCheckable": true,
+   "label": null,
+   "lawAxioms": null,
+   "lemmaAxioms": [
+    "propext",
+    "Quot.sound"
+   ],
+   "proofScope": null,
+   "faithfulness": "not assessed (no paper states this form)",
+   "verdicts": [],
+   "assumptionsText": [
+    "empirical entry E7: an animal that the source reports dead at or before the scoring stage cannot show the scored phenotype"
+   ],
+   "openProblemRulings": {
+    "eliminated": 0,
+    "consistent": 0,
+    "cannotRule": 0,
+    "reached": 0
+   },
+   "whyNoCandidate": "no enumerated open-problem candidate commits a death stage and a scoring stage"
   },
   {
    "id": "C7b",
@@ -2217,6 +2863,7 @@
     "Quot.sound"
    ],
    "status": "verified",
+   "empirical": null,
    "proofScope": {
     "kernelChecked": [
      "If W L = k L^3 for all L > 0 with k > 0, then for L1 ≠ L2 the log-log slope (log W L2 − log W L1)/(log L2 − log L1) equals exactly 3 (cubeLaw_loglog_exponent) and W L2 / W L1 = (L2/L1)^3 (cubeLaw_ratio).",

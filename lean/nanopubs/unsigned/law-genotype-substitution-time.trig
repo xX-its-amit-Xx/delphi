@@ -1,0 +1,71 @@
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema: <https://schema.org/> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/math-law/genotype-substitution-time> a delphi:Concept, skos:Concept ;
+    rdfs:label "The time N independent substitutions need lies between N/(M mu) and N/mu (Lean 4, kernel-checked)" ;
+    dct:description "With M gene copies, mutation rate mu per copy per generation and fixation probability u between 1/M and 1, the expected time for N independent sequential substitutions lies between N/(M mu) and N/mu, and equals N/mu in the neutral case; a time below N/(M mu) is impossible even if every mutant fixed." ;
+    dct:source "Proved in this project (lean/Delphi/Favored.lean) as an extension of the neutral case of Kimura (1962) to non-opposing selection; no paper states it in this form." ;
+    skos:notation "N/(M mu) <= N/(M mu u) <= N/mu ; T < N/(M mu) => False" ;
+    skos:definition """/-- With `1/M ≤ u ≤ 1`, the waiting time lies between `N/(M μ)` and `N/μ`. -/
+theorem expectedWaitingTime_bounds (N : ℝ) (hN : 0 ≤ N) (M : ℕ) (hM : 0 < M) (μ : ℝ) (hμ : 0 < μ) {u : ℝ}
+    (hu1 : 1 / (M : ℝ) ≤ u) (hu2 : u ≤ 1) :
+    N / ((M : ℝ) * μ) ≤ expectedWaitingTime N M μ u ∧ expectedWaitingTime N M μ u ≤ N / μ"""^^delphi:lean4 ;
+    schema:programmingLanguage "Lean 4" ;
+    delphi:leanDeclaration "Delphi.Genotype.expectedWaitingTime" ;
+    delphi:leanTheorem "Delphi.Genotype.expectedWaitingTime_bounds", "Delphi.Genotype.expectedWaitingTime_neutral", "Delphi.Genotype.too_little_time_rules_out" ;
+    delphi:leanVerified "true"^^xsd:boolean ;
+    skos:scopeNote "An upper bound on speed, and nothing more. It cannot say a trait had too little time unless the number of required substitutions is defined, which it is not for any wing claim in this project; independent sequential fixations with constant M, mu and u exclude linkage, standing variation and recombination of partial solutions by assumption." ;
+    rdfs:comment "Status: kernel-checked (Lean 4 accepted the module with zero sorry and standard axioms only). Not expert-validated. Does not establish: anything about organisms. The theorem is exact inside the stated model and silent outside it; strict neutrality, constant population size, Wright-Fisher reproduction and independent mutant fates (Kimura), fixed fitnesses and haploid inheritance (Fisher), equal fecundity and a 1:1 sex ratio (Maynard Smith) are assumptions written in the module header, not conclusions. Kernel-checked is not expert-validated: no human expert has validated these statements. Whether the Lean statement faithfully renders the paper is a separate assessment record, and so far only one assessor provider has run." ;
+    rdfs:seeAlso <https://github.com/fractastical/delphisci/blob/3617fb32/lean/Delphi/Genotype.lean>, <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/lean.json>, <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/> .
+  <https://w3id.org/delphi/resource/claim/genotype-substitution-time> dct:conformsTo <https://w3id.org/delphi/resource/math-law/genotype-substitution-time> ;
+    delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/lean-kernel-check-genotype-substitution-time> .
+  <https://w3id.org/delphi/resource/evidence/lean-kernel-check-genotype-substitution-time> a delphi:EvidenceItem ;
+    rdfs:label "Lean 4 kernel accepted Delphi.Genotype.expectedWaitingTime_bounds with zero sorry and standard axioms, and rejected 1 deliberately broken variant(s)" ;
+    dct:description "Build receipt. Lean (version 4.35.0, x86_64-w64-windows-gnu, commit eb6cafb7290e8bd5f2937522d8d804f58f02bafc, Release); toolchain leanprover/lean4:v4.35.0; Mathlib v4.35.0 (56a005855ea17e0b0958f73ec801ae140b0a1679). lake build exit 0 in 23.2 s with 0 errors; 0 sorry in lean/Delphi/Genotype.lean (224 lines). #print axioms for Delphi.Genotype.expectedWaitingTime_bounds, Delphi.Genotype.expectedWaitingTime_neutral, Delphi.Genotype.too_little_time_rules_out: Classical.choice, Quot.sound, propext only (Lean's standard axioms; no sorryAx). Mutation evidence (lean/mutate.mjs, 2026-10-31T21:58:20.213Z): 1 deliberate change(s) to the statement or the model were each rejected by the compiler: [waiting-time-bounds-swapped] Statement swapped: the waiting time claimed to be at most N/(M mu) and at least N/mu, the reverse of the bound. False for every u strictly between the ends, so the proof must fail. Rejected with 5 error(s): Genotype.lean:195:9: error: invalid 'calc' step, left-hand side is Controls: 16 of 16 unmodified modules accepted by the same command." ;
+    dct:subject <https://w3id.org/delphi/resource/math-law/genotype-substitution-time> ;
+    rdfs:comment "This evidence item establishes that the stated theorem follows from the stated model. Does not establish: anything about organisms. The theorem is exact inside the stated model and silent outside it; strict neutrality, constant population size, Wright-Fisher reproduction and independent mutant fates (Kimura), fixed fitnesses and haploid inheritance (Fisher), equal fecundity and a 1:1 sex ratio (Maynard Smith) are assumptions written in the module header, not conclusions. Kernel-checked is not expert-validated: no human expert has validated these statements. Whether the Lean statement faithfully renders the paper is a separate assessment record, and so far only one assessor provider has run." ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/lean.json>, <https://github.com/fractastical/delphisci/blob/3617fb32/lean/mutations.json>, <https://github.com/fractastical/delphisci/blob/3617fb32/lean/Delphi/Audit.lean> .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> ;
+    prov:wasDerivedFrom <https://github.com/fractastical/delphisci/blob/3617fb32/lean/Delphi/Genotype.lean> , <https://delphi-mission-control.ashenoy000.workers.dev/t/lean/lean.json> , <https://github.com/fractastical/delphisci/blob/3617fb32/lean/mutations.json> .
+  <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> a prov:SoftwareAgent ;
+    rdfs:label "delphisci lean thread (Claude Fable 5.1 writing the Lean modules and this builder; the Lean kernel, not the model, checked the proofs)" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/model/claude-fable-5-1> a delphi:LanguageModel ;
+    rdfs:label "Claude Fable 5.1" ;
+    dct:identifier "claude-fable-5-1" .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-10-31T22:03:26.216Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/delphisci-lean-thread-builder> ;
+    rdfs:comment "Owner ORCID not yet set: the key owner passes --owner <orcid> to lean/nanopubs/build.mjs at signing time; until then no human is named in this record." ;
+    rdfs:label "The time N independent substitutions need lies between N/(M mu) and N/mu: machine-checked in Lean 4" ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType <https://w3id.org/delphi/ontology/Concept> ;
+    rdfs:comment "Hand-authored in Delphi ontology v2.0 terms (https://w3id.org/delphi/ontology/) by the builder, not created from a template. The template that would otherwise apply as Provenance template is <https://w3id.org/np/RAaYeFYF-Cz2bM5S1wPQsnvs5X6BBxsphL03UkbVZ1lcA>. Its published copy carries no legacy probknow IRI (checked 2026-10-31); it was consulted but not instantiated, so no template is declared. A template-conformance checker will therefore report no template declared." ;
+    rdfs:comment "Hand-authored in Delphi ontology v2.0 terms (https://w3id.org/delphi/ontology/) by the builder, not created from a template. The template that would otherwise apply as Pubinfo template is <https://w3id.org/np/RAtKj9bCnB4gUe0E9k-WhffQFSEWd9Ve2hrVllYoLuOB0>. Its published copy still uses legacy w3id.org/probknow IRIs (2 occurrences when checked on 2026-10-31), and its required statements cannot be instantiated from v2.0 terms, so it was not used and no template is declared. A template-conformance checker will therefore report no template declared." ;
+    npx:introduces <https://w3id.org/delphi/resource/math-law/genotype-substitution-time> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/math-population-genetics-and-evolutionary-theory> .
+  <https://w3id.org/delphi/resource/domain/math-population-genetics-and-evolutionary-theory> rdfs:label "math-population-genetics-and-evolutionary-theory" .
+}

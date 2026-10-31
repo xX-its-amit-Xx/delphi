@@ -149,7 +149,130 @@ try {
 } catch (e) { console.error('thompson flight claims not loaded: ' + e.message); }
 // 4b. Proof scope: which decisions the Lean kernel checked, and which are assumptions stated in the
 // module header and never proved. Mirrors the module headers; kept here so the page can show both halves.
+// Genotype-level checks and two physiology bounds (lean/Delphi/Genotype.lean, lean/Delphi/Physiology.lean),
+// written for the Design Studio's genetic edits. No paper states them in these forms.
+formalized.push({ claim_id: 'genotype-genetic-code', theorem: 'Delphi.Genotype.claimed_substitutions_rules_out', module: 'lean/Delphi/Genotype.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified', derived: true,
+  label: 'A claimed amino-acid change is impossible below the code distance',
+  statement: 'With the standard genetic code as a 64-codon table and minSubst a b the least number of positions in which a codon for a and a codon for b differ, no codon pair turns a into b in fewer than minSubst a b nucleotide substitutions. A claim of n substitutions with n < minSubst a b is therefore impossible. minSubst is computed over the table, so the kernel evaluates each instance: Phe to Leu takes 1, Trp to Stop 1, Met to Trp 2.',
+  notation: 'n < minSubst a b  =>  not exists codons c d, code c = a and code d = b and hamming c d <= n',
+  context: 'Needed by the Design Studio, where a genetic edit is shown as an amino-acid change. The flying-fish variant the project records, slc43a2a F326L (Daane et al. 2021), is reachable in one substitution.',
+  note: 'The code table is data, not a theorem: mitochondrial and variant codes differ, and selenocysteine and RNA editing are outside it. Reachability in the code is not evidence that a substitution occurred. Prior Lean work formalising the genetic code exists independently (arXiv doi 10.48550/arxiv.2610.36343, cited by the hub and not used here), so no first is claimed.', paper: null });
+formalized.push({ claim_id: 'genotype-pleiotropy-closure', theorem: 'Delphi.Genotype.closure_of_check', module: 'lean/Delphi/Genotype.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified', derived: true,
+  label: 'An edit to a gene must be shown changing every node the map links that gene to',
+  statement: 'The Boolean check closureB mapped changed is true exactly when every node in the mapped list occurs in the changed list; its truth implies the inclusion (closure_of_check), and a single mapped node absent from the changed list makes it false (closure_violated). Applied to the genotype map: a view that shows an edit to a gene changing fewer nodes than the map links to that gene is ruled out.',
+  notation: 'closureB mapped changed = true  =>  forall n in mapped, n in changed',
+  context: 'The map (lean/genotype/gene-nodes.json, from the genotype thread\'s fin subtree) links tbx5a to 8 nodes, shha to 12, fgf24 to 8, kcnk5b and slc43a2a to the pectoral fin alone within that subtree.',
+  note: 'A statement about pictures, not about development: it bounds what a view may omit, never how much a node changes. The map records links (expressed in, required for, sufficient for), so a node no source studied is unstudied, not gene-free, and the closure is only as complete as the sources.', paper: null });
+formalized.push({ claim_id: 'genotype-developmental-ordering', theorem: 'Delphi.Genotype.devOrdered_of_check', module: 'lean/Delphi/Genotype.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified', derived: true,
+  label: 'No structure develops from a precursor that appears later than it does',
+  statement: 'Taking the developmental stage as the level of a blueprint graph whose edges are develops_from, the Boolean check devOrderedB is true exactly when every edge goes strictly down in stage; its truth implies that every derivative is staged strictly after its precursor and that develops_from is acyclic. The fin subtree\'s own edges are certified by a kernel evaluation of the checker on the recorded stages (lean/Delphi/Certificates/FinDevelopment.lean).',
+  notation: 'devOrderedB g = true  =>  (forall edges a b, level b < level a) and Acyclic',
+  context: 'The pectoral-fin subtree of the genotype thread: 8 develops_from edges with both stages recorded are certified, 4 more have an unknown stage and are not.',
+  note: 'The ZFIN stage-series ids are taken to order the stages. Nothing here is about the flying fish: the subtree is zebrafish anatomy joined to the blueprint by cross-references. An edge with an unknown stage is not certified, not passed.', paper: null });
+formalized.push({ claim_id: 'genotype-substitution-time', theorem: 'Delphi.Genotype.expectedWaitingTime_bounds', module: 'lean/Delphi/Genotype.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified', derived: true,
+  label: 'The time N independent substitutions need lies between N/(M mu) and N/mu',
+  statement: 'With M gene copies, mutation rate mu per copy per generation and fixation probability u, the expected time for N substitutions arriving at Kimura\'s rate M mu u is N/(M mu u); for 1/M <= u <= 1 it lies between N/(M mu) and N/mu, and equals N/mu in the neutral case u = 1/M. An available time below N/(M mu), the fastest the model allows because it assumes every single mutant fixes, is ruled out.',
+  notation: 'N/(M mu) <= N/(M mu u) <= N/mu ; T < N/(M mu) => False',
+  context: 'The time half of the Exocoetidae substitution budget (lean/bound/). The rate itself is Kimura\'s definition, proved in lean/Delphi/Kimura.lean and bounded below for favoured mutants in lean/Delphi/Favored.lean.',
+  note: 'An upper bound on speed, and nothing more. It cannot say a trait had too little time unless the number of required substitutions is defined, which it is not for any wing claim in this project; independent sequential fixations with constant M, mu and u exclude linkage, standing variation and recombination of partial solutions by assumption.', paper: null });
+formalized.push({ claim_id: 'haldane-cost-of-selection', theorem: 'Delphi.Genotype.haldane_time_lower', module: 'lean/Delphi/Genotype.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified', derived: true,
+  label: 'From Haldane\'s cost accounting (a hypothesis, not proved here): N substitutions need at least c N / e generations',
+  statement: 'HaldaneCost N T e c is the NAMED HYPOTHESIS that N substitutions by selection in T generations cost at most e T / c, with reproductive excess e > 0 and cost per substitution c > 0. From it, T is at least c N / e, and a stated time below c N / e contradicts the hypothesis. The hypothesis itself is never proved.',
+  notation: 'HaldaneCost N T e c  =>  c N / e <= T',
+  context: 'Haldane 1957 (J. Genet. 55:511) put c at about 30 and read it as about one substitution per 300 generations. Carried here so that a candidate accepting the accounting can be checked against it.',
+  note: 'Contested since it was published: soft and truncation selection, standing variation and linked substitutions all change c, and the project takes no position. A candidate that does not accept the accounting is not ruled on by it. What is machine-checked is the arithmetic consequence, never the biology of the cost.', paper: null });
+formalized.push({ claim_id: 'physiology-q10', theorem: 'Delphi.Physiology.q10_ratio', module: 'lean/Delphi/Physiology.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified', derived: true,
+  label: 'Q10 temperature scaling: the ratio between two temperatures is Q10 raised to their difference over ten',
+  statement: 'For a rate X(T) = X0 Q10^((T - Tref)/10) with X0 nonzero and Q10 > 0, the ratio X(T2)/X(T1) is Q10^((T2 - T1)/10), and the log of that ratio is (T2 - T1)/10 times log Q10, so a Q10 fit is a straight line in log rate against temperature.',
+  notation: 'X(T2)/X(T1) = Q10^((T2-T1)/10)', context: 'The form every physiological rate in the simulator chain uses for temperature; the project\'s conditions file fixes 25 C, so no instance is evaluated here.',
+  note: 'Pure consequence of the definition: it says nothing about whether any rate follows a Q10 law, and nothing about a value of Q10. No candidate commits a Q10 yet, so no constraint uses it.', paper: null });
+formalized.push({ claim_id: 'physiology-laplace', theorem: 'Delphi.Physiology.laplace_pressure_limit', module: 'lean/Delphi/Physiology.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified', derived: true,
+  label: 'Laplace wall stress: pressure in a thin-walled vessel is limited by wall strength, thickness and radius',
+  statement: 'For a thin-walled sphere the wall stress is P r / (2 t) and for a cylinder P r / t; at fixed pressure and thickness the stress grows with radius, and a wall that holds at most sigma_max limits the pressure to 2 sigma_max t / r (sphere) or sigma_max t / r (cylinder).',
+  notation: 'sigma = P r / (2 t) <= sigma_max  =>  P <= 2 sigma_max t / r',
+  context: 'The standard thin-wall relation, stated for the circulation (a bigger vessel at the same thickness bears more stress at the same pressure).',
+  note: 'Thin-wall idealisation, static, no bending or residual stress. No vessel radius, thickness or wall strength for any fish is in this project, so the bound is proved with no instance; it constrains nothing until those are measured.', paper: null });
+
+formalized.push({ claim_id: 'altitude-coupling', theorem: 'Delphi.Altitude.feasible_downward_closed', module: 'lean/Delphi/Altitude.lean', status: buildOk && nonStandard.length === 0 ? 'verified' : 'not verified', derived: true,
+  label: 'Demand rises and supply falls with height together, so the flyable heights reach down to the ground',
+  statement: 'In an atmosphere where air density and oxygen partial pressure both fall with height, the minimum speed of lift-supported flight and the power to fly at it are nondecreasing in height, while the aerobic supply (with arterial content nondecreasing in partial pressure, as a Hill curve gives) is nonincreasing. Hence sustained flight possible at a height is possible at every lower height; above an infeasible height every height is infeasible, so the flyable set is an interval from the ground up to a ceiling; and a design that cannot fly at the ground cannot fly at any height. A larger lifting area lowers the power required at a fixed height.',
+  notation: 'h1 \u2264 h2 and feasible(h2) implies feasible(h1); not feasible(0) implies not feasible(h) for all h \u2265 0',
+  context: 'Written for the physics thread\'s truly-flying fish at 1000 m. The atmosphere is a named hypothesis with no numbers; the altitude profile used by the candidates is the physics thread\'s NASA Glenn troposphere fit (physics/flier/tff/tff.json), an explicit design parameter, while the project\'s conditions file stays at sea level.',
+  note: 'The DIRECTION of the effect is proved; its SIZE is data and it is gentle (about 30% more required capacity from 0 to 5000 m, arterial content 0.190 to 0.173 ml/ml), and the real fish sits more than thirty times below every boundary at every height. So nothing here supports reading "the feasible region shrinks with altitude" as the reason a fish cannot fly high: the reason is the oxygen budget at sea level. Compensation an animal might make at altitude (haematocrit, ventilation, cardiac output) is held fixed, and no bird data is used.', paper: null });
+
 const proofScope = {
+  'altitude-coupling': {
+    kernelChecked: [
+      'That the minimum speed and the power required at it are nondecreasing in height, given only that air density falls with height.',
+      'That the aerobic supply is nonincreasing in height, given only that oxygen partial pressure falls with height and arterial content is nondecreasing in it.',
+      'That the feasible heights are downward closed, that infeasibility propagates upward (a ceiling in that sense), and that infeasibility at the ground forces infeasibility everywhere.',
+      'That a larger lifting area lowers the power required at a fixed height.'
+    ],
+    assumed: [
+      'A monotone atmosphere: both density and oxygen partial pressure fall with height. No profile, no numbers; the candidates\' profile is the physics thread\'s NASA Glenn fit.',
+      'Arterial content nondecreasing in partial pressure (a Hill curve is, but the Hill equation, the Bohr shift and the Root effect are not formalised).',
+      'Everything else held fixed with height: the animal makes no compensation (haematocrit, ventilation, cardiac output), and temperature, humidity and wind are outside the model.',
+      'The size of the effect is NOT proved: it is gentle, and the binding constraint for the real fish is the aerobic ceiling at sea level.'
+    ]
+  },
+  'genotype-genetic-code': {
+    kernelChecked: [
+      'The standard code as a 64-case table, hamming distance on codons, and minSubst as the least distance over the codons of the two amino acids.',
+      'That no codon pair realises a to b in fewer than minSubst a b substitutions, so a claim below that count is impossible.',
+      'Each instance by kernel evaluation of the table: Phe to Leu 1, Trp to Stop 1, Met to Trp 2.'
+    ],
+    assumed: [
+      'The standard genetic code. Mitochondrial and variant codes differ; selenocysteine insertion and RNA editing are outside the table.',
+      'One codon per position, substitutions within that codon; frameshifts, indels and multi-codon changes are not modelled.',
+      'That reachability in the code is only reachability: nothing here says a substitution occurred, was favoured, or had the claimed effect.'
+    ]
+  },
+  'genotype-pleiotropy-closure': {
+    kernelChecked: ['That the Boolean list-inclusion check is sound (its truth implies every mapped node is changed) and that a single missing node makes it false.'],
+    assumed: [
+      'That the nodes the genotype map links a gene to are the nodes an edit may change: a bound on what a picture may omit, not a model of development.',
+      'That an unstudied node is absent from the map: the closure is only as complete as the sources behind it (ZFIN, Bgee), and the fin subtree is zebrafish anatomy.',
+      'Nothing about magnitude: the check cannot say how much any node changes, or in which direction.'
+    ]
+  },
+  'genotype-developmental-ordering': {
+    kernelChecked: [
+      'That a develops_from graph whose Boolean stage check passes has every derivative staged strictly after its precursor, and is acyclic.',
+      'The fin subtree\'s 8 edges with both stages recorded, by kernel evaluation of the checker on those stages.'
+    ],
+    assumed: [
+      'That the ZFIN stage-series ids order development (they are assigned in order for the main series).',
+      'That develops_from means the derivative appears no earlier than its precursor.',
+      'The 4 edges with an unknown stage are not certified, and nothing here concerns the flying fish.'
+    ]
+  },
+  'genotype-substitution-time': {
+    kernelChecked: [
+      'That the expected time for N substitutions at rate M mu u is N/(M mu u), and that for 1/M <= u <= 1 it lies between N/(M mu) and N/mu, with equality at N/mu for the neutral u = 1/M.',
+      'That an available time below N/(M mu) contradicts the model even with every mutant fixing.'
+    ],
+    assumed: [
+      'Independent sequential fixations at Kimura\'s definition rate with constant M, mu and u: no linkage, no standing variation, no recombination of partial solutions.',
+      'That the number of required substitutions is given. It is not defined for any wing claim here, which is why this bound eliminates nothing about the flying fish.',
+      'Nothing about whether the required substitutions exist, are favoured, or produce the trait.'
+    ]
+  },
+  'haldane-cost-of-selection': {
+    kernelChecked: ['That the hypothesis HaldaneCost N T e c (N <= e T / c, c > 0, e >= 0) with e > 0 implies T >= c N / e, and that a time below c N / e contradicts it.'],
+    assumed: [
+      'Haldane 1957\'s cost accounting itself, which is NOT proved here and has been contested since publication (soft selection, truncation selection, standing variation and linked substitutions all change the cost).',
+      'A value for the cost per substitution c and the reproductive excess e; the project supplies neither for any real population.',
+      'That the candidate accepts the accounting: one that rejects it is not ruled on.'
+    ]
+  },
+  'physiology-q10': {
+    kernelChecked: ['That X(T) = X0 Q10^((T - Tref)/10) gives ratio Q10^((T2-T1)/10) between two temperatures, and a straight line in log rate against temperature.'],
+    assumed: ['That a rate follows a Q10 law at all, and a value of Q10: both are inputs. The project\'s conditions fix 25 C and no candidate commits a Q10, so no instance is evaluated.']
+  },
+  'physiology-laplace': {
+    kernelChecked: ['That thin-wall stress P r/(2t) (sphere) and P r/t (cylinder) grow with radius at fixed pressure and thickness, and that a wall strength sigma_max limits pressure to 2 sigma_max t/r and sigma_max t/r.'],
+    assumed: ['The thin-wall idealisation, static loading, no bending or residual stress.', 'A radius, a wall thickness and a wall strength: none exists in this project for any fish, so the bound is proved with no instance.']
+  },
   'kimura-substitution-rate': {
     kernelChecked: [
       'A neutral absorbing chain on {0..M} copies (stochastic, mean-preserving, both ends absorbing, positive one-step escape from every interior state) fixes a mutant with probability i/M, with an explicit geometric error bound at every finite time t.',
@@ -330,7 +453,7 @@ const eliminations = ledgerDoc ? { summary: ledgerDoc.summary, ledger: ledgerDoc
 const opLedgerFile = path.join(here, 'eliminate/ledger.open-problems.json');
 const opDoc = fs.existsSync(opLedgerFile) ? JSON.parse(fs.readFileSync(opLedgerFile, 'utf8')) : null;
 const eliminationsOpenProblems = opDoc ? { summary: opDoc.summary, ledger: opDoc.ledger, translations: 'lean/eliminate/translations.json', formal: 'open-problems/candidates.formal.json' } : null;
-const extraLedgers = [['flier', 'lean/eliminate/ledger.flier.json', 'physics/flier/lean-candidate.json (the physics thread\'s hypothetical flier F1 and the real fish, C9)'], ['physiology', 'lean/eliminate/ledger.physiology.json', 'lean/eliminate/physiology-candidates.json (C14 with the physiology chain\'s own proxies: the question of physics test 4)']]
+const extraLedgers = [['flier', 'lean/eliminate/ledger.flier.json', 'physics/flier/lean-candidate.json (the physics thread\'s hypothetical flier F1 and the real fish, C9)'], ['physiology', 'lean/eliminate/ledger.physiology.json', 'lean/eliminate/physiology-candidates.json (C14 with the physiology chain\'s own proxies: the question of physics test 4)'], ['empirical', 'lean/eliminate/ledger.empirical.json', 'lean/empirical/empirical-candidates.json (the empirical constraints E2, E3, E4 and E7; every elimination here is conditional on the observation named in the row)'], ['tff', 'lean/eliminate/ledger.tff.json', 'lean/eliminate/tff-candidates.json (the physics thread\'s truly-flying-fish v2 at 1000 m, translated: C9 minimum speed and C14b the aerobic ceiling committed as one number)'], ['genotype', 'lean/eliminate/ledger.genotype.json', 'lean/genotype/genotype-candidates.json (the genotype checks G1-G5: the genetic code, pleiotropy closure, developmental ordering, substitution time and Haldane\'s cost)']]
   .filter(([, f]) => fs.existsSync(path.join(root, f))).map(([name, f, about]) => { const doc = JSON.parse(fs.readFileSync(path.join(root, f), 'utf8')); return { name, file: f, about, summary: doc.summary, ledger: doc.ledger }; });
 
 // 7d. Flying-fish audit (lean/flying-fish/audit.mjs): every theorem against Exocoetidae, and the morphology grounding.
@@ -338,6 +461,27 @@ const ffAuditFile = path.join(here, 'flying-fish-audit.json'), ffGroundFile = pa
 const ffAudit = fs.existsSync(ffAuditFile) ? JSON.parse(fs.readFileSync(ffAuditFile, 'utf8')) : null;
 const ffGround = fs.existsSync(ffGroundFile) ? JSON.parse(fs.readFileSync(ffGroundFile, 'utf8')) : null;
 const flyingFishAudit = ffAudit ? { summary: ffAudit.summary, rows: ffAudit.theorems.map(t => ({ theorem: t.theorem, module: t.module, appliesClass: t.appliesClass, verdict: t.verdict, qualifier: t.qualifier, why: t.why, inputs: t.inputs.map(i => ({ name: i.name, status: (i.status || '').split(' ')[0], value: i.value ?? null })) })), grounding: ffGround ? ffGround.summary : null, files: { audit: 'lean/flying-fish-audit.json', markdown: 'lean/AUDIT-FLYING-FISH.md', grounding: 'lean/morphology-grounding.json' } } : null;
+
+// 7e. Genotype inputs the checks run on: the developmental certificate and the gene reach of the closure check.
+const devCertFile = path.join(here, 'genotype/dev-certificate.json'), geneNodesFile = path.join(here, 'genotype/gene-nodes.json');
+const genotype = fs.existsSync(devCertFile) || fs.existsSync(geneNodesFile) ? {
+  development: fs.existsSync(devCertFile) ? (() => { const d = JSON.parse(fs.readFileSync(devCertFile, 'utf8')); return { file: 'lean/genotype/dev-certificate.json', source: d.source, leanModule: d.leanModule, theorems: d.theorems, stageOrder: d.stageOrder, edges: d.edges, certifiedEdges: d.certifiedEdges, unknownStageEdges: d.unknownStageEdges, compile: d.compile, kernelChecked: d.kernelChecked, assumed: d.assumed }; })() : null,
+  geneReach: fs.existsSync(geneNodesFile) ? (() => { const g = JSON.parse(fs.readFileSync(geneNodesFile, 'utf8')); return { file: 'lean/genotype/gene-nodes.json', source: g.source, rule: g.rule, genesInSource: g.allGenes, genes: Object.entries(g.genes).map(([symbol, v]) => ({ symbol, nodeCount: v ? v.nodeCount : null, nodes: v ? v.nodes.map(n => ({ term: n.term, label: n.label, linkTypes: n.linkTypes })) : null, note: v ? null : 'not linked by any direct row in the source' })) }; })() : null,
+  code: { file: 'lean/genotype/code.mjs', note: 'the same 64-codon table as lean/Delphi/Genotype.lean, in JavaScript, so the ledger and the browser checker evaluate the function the kernel evaluates; self-checked against the three Lean examples' }
+} : null;
+
+// 7f. The empirical layer (lean/empirical.json, lean/Delphi/Empirical.lean): observations carried as Lean
+// structures rather than axioms, each with the entry a reader would reject to drop the eliminations that
+// depend on it, and the non-vacuity witness that the set is jointly satisfiable.
+const empFile = path.join(root, 'lean/empirical.json');
+const empirical = fs.existsSync(empFile) ? (() => {
+  const E = JSON.parse(fs.readFileSync(empFile, 'utf8'));
+  const witness = axioms.find(a => a.theorem === E.nonVacuity.theorem) || null;
+  return { built: E.built, module: E.module, framing: E.framing, counts: E.counts, leanNumbersChecked: E.leanNumbersChecked || null,
+    nonVacuity: { ...E.nonVacuity, witnessAxioms: witness ? witness.axioms : null, witnessVerified: !!witness && buildOk },
+    entries: E.entries.map(e => ({ ...e, leanAxioms: (e.lean && e.lean.theorems ? e.lean.theorems : []).map(t => ({ theorem: t, axioms: (axioms.find(a => a.theorem === t) || {}).axioms ?? null })) })),
+    noAxiomDeclared: !/^axiom /m.test(fs.readFileSync(path.join(root, 'lean/Delphi/Empirical.lean'), 'utf8')) };
+})() : null;
 
 // 7. Flying-fish substitution budget (lean/bound/compute.mjs): applies the audited theorems to sourced parameters.
 let bound = null;
@@ -356,7 +500,7 @@ const report = {
   audit: { ok: audit.exit === 0 && axioms.length > 0 && nonStandard.length === 0, theorems: axioms, nonStandard, raw: audit.out.trim() },
   sorryTotal, modules, theorems, lemmas, formalized,
   mutations: mutations ? { summary: mutations.summary, results: mutations.results } : null,
-  nanopubs, bound, blueprintCertificates, thompsonTest, constraints, eliminations, eliminationsOpenProblems, extraLedgers, flyingFishAudit,
+  nanopubs, bound, blueprintCertificates, thompsonTest, constraints, eliminations, eliminationsOpenProblems, extraLedgers, flyingFishAudit, genotype, empirical,
   summary: {
     theoremsCompiling: buildOk ? theorems.length : 0,
     lemmas: lemmas.length,

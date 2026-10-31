@@ -1,0 +1,56 @@
+{
+ "note": "The physics thread's truly-flying-fish (TFF) v2 candidates at altitude, translated into the names this checker uses. Source file: physics/flier/tff/lean-candidates-tff.json (owned by the physics thread; not edited here). What the translation changed, and nothing else: (1) the third candidate's quantities aerobic_ceiling_W and power_required_W are kept under those names and ruled on by C14b, a constraint added here for a ceiling committed as one number; (2) assumption flags were added so the constraints apply, fick_aerobic_supply for the aerobic candidate (its ceiling comes from the physiology chain, which is Fick) and lift_supported_flight was already present for the two speed candidates. Air density at altitude comes from the NASA GRC metric troposphere fit recorded in physics/flier/tff/tff.json, which is an explicit design parameter: the project's conditions file stays at sea level. The TFF itself is a hypothetical design, not an animal, and no bird data enters any of this.",
+ "translatedBy": "lean/eliminate/tff-candidates.json (lean thread), from the physics thread's file",
+ "candidates": [
+  {
+   "id": "tff-v2-cruise-at-1000m",
+   "problem": "Can the TFF hold level lift-supported flight at its target altitude?",
+   "description": "HYPOTHETICAL TFF v2 at 1000 m: W 0.5886 N, S 0.04905 m2, C_Lmax 0.78, rho(1000 m) 1.1133 kg/m3, cruising at 6 m/s (the physics thread computes v_min 5.26 m/s).",
+   "source": "physics/flier/tff/lean-candidates-tff.json, from physics/flier/tff/tff.json (air density from the NASA GRC troposphere fit)",
+   "origin": "proposed-here",
+   "accepts": [
+    "lift_supported_flight"
+   ],
+   "commits": {
+    "airspeed_m_s": 6,
+    "weight_N": "0.5886",
+    "lifting_area_m2": "0.04905",
+    "air_density_kg_m3": "1.1133",
+    "max_lift_coefficient": "0.78"
+   }
+  },
+  {
+   "id": "tff-v2-too-slow-at-1000m",
+   "problem": "Control: the TFF claimed at 4 m/s at 1000 m",
+   "description": "The same design below its minimum speed; the physics thread expects C9 to eliminate it.",
+   "source": "physics/flier/tff/lean-candidates-tff.json",
+   "origin": "proposed-here",
+   "uses_illustrative_values": true,
+   "accepts": [
+    "lift_supported_flight"
+   ],
+   "commits": {
+    "airspeed_m_s": 4,
+    "weight_N": "0.5886",
+    "lifting_area_m2": "0.04905",
+    "air_density_kg_m3": "1.1133",
+    "max_lift_coefficient": "0.78"
+   }
+  },
+  {
+   "id": "real-fish-aerobic-at-1000m",
+   "problem": "Could the real fish sustain aerobic flight at 1000 m?",
+   "description": "The real flying fish with the physiology chain's own numbers at 1000 m: cardiac output 0.0656 ml/s, arterial O2 content 0.1880 ml/ml at that altitude, efficiency 0.15, oxycaloric equivalent 19.34 J/ml, giving an aerobic ceiling of 0.03577 W against 1.8723 W required at its minimum speed.",
+   "source": "physics/flier/tff/lean-candidates-tff.json, from physics/flier/tff/tff.json; the chain inputs are the proxies of lean/eliminate/physiology-candidates.json",
+   "origin": "source-hypothesis+formalized-here",
+   "accepts": [
+    "fick_aerobic_supply"
+   ],
+   "commits": {
+    "aerobic_ceiling_W": "0.03577",
+    "power_required_W": "1.8723"
+   }
+  }
+ ],
+ "label": "the physics thread’s truly-flying-fish candidates at 1000 m, translated into this checker’s names"
+}

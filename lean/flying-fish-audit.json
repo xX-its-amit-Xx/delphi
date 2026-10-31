@@ -1,6 +1,6 @@
 {
  "summary": {
-  "theorems": 111,
+  "theorems": 152,
   "measuredFacts": [
    {
     "name": "v_min for specimen L3",
@@ -151,23 +151,23 @@
    }
   ],
   "verdicts": {
-   "holds": 22,
-   "cannot-evaluate": 78,
-   "violated": 11
+   "cannot-evaluate": 103,
+   "violated": 14,
+   "holds": 35
   },
   "applies": {
-   "yes": 25,
-   "yes-under-named-hypotheses": 80,
-   "no": 6
+   "yes-under-named-hypotheses": 99,
+   "yes": 38,
+   "no": 15
   },
   "inputs": {
-   "missing inputs only": 52,
-   "no inputs needed": 10,
-   "proxy only": 13,
-   "computed from measured and proxy": 8,
-   "has measured inputs": 28
+   "has measured inputs": 36,
+   "proxy only": 19,
+   "computed from measured and proxy": 12,
+   "missing inputs only": 65,
+   "no inputs needed": 20
   },
-  "headline": "Of 111 theorems, 22 hold when instantiated on the flying fish (the blueprint certificate's 11 structural theorems, the exact minimum-speed bound on the Park and Choi specimen, the cube law approximately on Davenport's exponent, and 6 bookkeeping lemmas), 11 have their isometry hypotheses violated by Davenport's within-species exponents (fin area 1.834 vs 2, wing loading 1.236 vs 1), and 78 cannot be evaluated because an input is missing: a neutral substitution rate or fixation probability for the family, fitness variance at any locus, an asexual lineage (none known), material strength and section data for fin rays and bone, muscle fraction and power, and v_min or L/D at a second body size.",
+  "headline": "Of 152 theorems, 35 hold when instantiated on the flying fish (the blueprint certificate's 11 structural theorems, the exact minimum-speed bound on the Park and Choi specimen, the cube law approximately on Davenport's exponent, and 19 bookkeeping lemmas), 14 have their isometry hypotheses violated by Davenport's within-species exponents (fin area 1.834 vs 2, wing loading 1.236 vs 1), and 103 cannot be evaluated because an input is missing: a neutral substitution rate or fixation probability for the family, fitness variance at any locus, an asexual lineage (none known), material strength and section data for fin rays and bone, muscle fraction and power, and v_min or L/D at a second body size.",
   "notMeasuredForExocoetidae": [
    "mutation rate (proxy from herring and stickleback)",
    "effective population size for the family (one mitochondrial Ne for E. volitans)",
@@ -178,11 +178,237 @@
    "v_min, L/D or C_L,max at more than one body size",
    "confidence intervals on the Davenport 1992 exponents (abstract only)"
   ],
-  "generated": "2026-10-31T21:05:54.198Z",
+  "generated": "2026-10-31T22:07:21.032Z",
   "tool": "lean/flying-fish/audit.mjs",
-  "leanReport": "2026-10-31T21:01:44.908Z"
+  "leanReport": "2026-10-31T22:04:20.134Z"
  },
  "theorems": [
+  {
+   "theorem": "Delphi.Altitude.vmin_mono",
+   "module": "lean/Delphi/Altitude.lean",
+   "line": 74,
+   "doc": "**The minimum speed rises with height.**",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: a monotone atmosphere",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "v_min for specimen L3",
+     "value": 9.85,
+     "unit": "m/s",
+     "how": "sqrt(2W/(ρ S C_L,max)) with W = 0.588 N (mass 0.06 kg × g), S = 0.012688 m² (pectoral + pelvic + body planform), C_L,max = 0.78, ρ = 1.225 kg/m³ (assumed)",
+     "status": "computed from measured",
+     "source": "physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994)"
+    },
+    {
+     "name": "L/D max for specimen L3",
+     "value": 4.37,
+     "status": "measured (wind tunnel, one specimen)",
+     "source": "physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994)"
+    },
+    {
+     "name": "pectoral fin length / standard length",
+     "value": 0.687,
+     "status": "measured (median of 49 preserved specimens; length only)",
+     "source": "genotype/cache/daane2021_fin_ratios.json (Daane et al. 2021 Data S1A, 49 flying-fish museum specimens)"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "the direction is proved for any such atmosphere; no flying fish is observed at altitude, and the project's conditions are sea level"
+  },
+  {
+   "theorem": "Delphi.Altitude.demand_mono",
+   "module": "lean/Delphi/Altitude.lean",
+   "line": 84,
+   "doc": "**The power required rises with height**, because the minimum speed does.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: as vmin_mono, with L/D fixed",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "v_min for specimen L3",
+     "value": 9.85,
+     "unit": "m/s",
+     "how": "sqrt(2W/(ρ S C_L,max)) with W = 0.588 N (mass 0.06 kg × g), S = 0.012688 m² (pectoral + pelvic + body planform), C_L,max = 0.78, ρ = 1.225 kg/m³ (assumed)",
+     "status": "computed from measured",
+     "source": "physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994)"
+    },
+    {
+     "name": "L/D max for specimen L3",
+     "value": 4.37,
+     "status": "measured (wind tunnel, one specimen)",
+     "source": "physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994)"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "as vmin_mono; the physics thread's 1000 m candidates are a hypothetical design, not an observation"
+  },
+  {
+   "theorem": "Delphi.Altitude.supply_anti",
+   "module": "lean/Delphi/Altitude.lean",
+   "line": 92,
+   "doc": "**The aerobic supply falls with height**, because the oxygen partial pressure does and arterial content is nondecreasing in it.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: arterial content nondecreasing in O2 partial pressure",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2",
+     "value": "Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)",
+     "status": "proxy (no Exocoetidae physiology exists; every value is from another teleost or tuned)",
+     "source": "physiology/ at commit a1ca4f00, via lean/eliminate/physiology-candidates.json"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "the Hill curve of the chain is monotone, but no flying-fish blood is measured at any altitude"
+  },
+  {
+   "theorem": "Delphi.Altitude.feasible_downward_closed",
+   "module": "lean/Delphi/Altitude.lean",
+   "line": 106,
+   "doc": "**The feasible heights reach down to the ground.** If the design can fly at a height, it can fly at every lower one: demand only falls as you descend and supply only rises.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: the monotone atmosphere and supply",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2",
+     "value": "Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)",
+     "status": "proxy (no Exocoetidae physiology exists; every value is from another teleost or tuned)",
+     "source": "physiology/ at commit a1ca4f00, via lean/eliminate/physiology-candidates.json"
+    },
+    {
+     "name": "power for level flight at 10 m/s with (L/D)max 4.37",
+     "value": 1.346,
+     "unit": "W",
+     "status": "computed from measured W and L/D (the most generous, lowest, value)",
+     "source": "physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994)"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "a statement about the model at all heights; the real fish is already infeasible at the ground, which is the case the next row covers"
+  },
+  {
+   "theorem": "Delphi.Altitude.ceiling",
+   "module": "lean/Delphi/Altitude.lean",
+   "line": 118,
+   "doc": "**A ceiling exists**, in the only sense this model can give one: above an infeasible height, every height is infeasible. The feasible set is therefore an interval from the ground up to a ceiling, which may be empty (nothing says the ground itself is feasible) and whose value this theorem does not compute.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "filter",
+   "appliesToExocoetidae": "yes-under-named-hypotheses",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2",
+     "value": "Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)",
+     "status": "proxy (no Exocoetidae physiology exists; every value is from another teleost or tuned)",
+     "source": "physiology/ at commit a1ca4f00, via lean/eliminate/physiology-candidates.json"
+    },
+    {
+     "name": "power for level flight at 10 m/s with (L/D)max 4.37",
+     "value": 1.346,
+     "unit": "W",
+     "status": "computed from measured W and L/D (the most generous, lowest, value)",
+     "source": "physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994)"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "the ceiling is proved to exist as a boundary of a downward-closed set; its value is not computed and no flying fish is observed climbing"
+  },
+  {
+   "theorem": "Delphi.Altitude.infeasible_at_ground_infeasible_everywhere",
+   "module": "lean/Delphi/Altitude.lean",
+   "line": 129,
+   "doc": "**What matters for the flying fish.** A design whose oxygen budget cannot pay for flight at the ground cannot pay for it at any height, so altitude explains nothing about such a design. The real fish is in this case at sea level by a factor of about thirty (C14), and the gentle shrink of the feasible region with height is NOT the reason.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "filter",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: Fick and the monotone atmosphere",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2",
+     "value": "Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)",
+     "status": "proxy (no Exocoetidae physiology exists; every value is from another teleost or tuned)",
+     "source": "physiology/ at commit a1ca4f00, via lean/eliminate/physiology-candidates.json"
+    },
+    {
+     "name": "power for level flight at 10 m/s with (L/D)max 4.37",
+     "value": 1.346,
+     "unit": "W",
+     "status": "computed from measured W and L/D (the most generous, lowest, value)",
+     "source": "physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994)"
+    }
+   ],
+   "verdict": "violated",
+   "qualifier": null,
+   "why": "fires on the real fish: its oxygen budget cannot pay for level flight at sea level (C14), so under this model it cannot at any height, and altitude explains nothing about it"
+  },
+  {
+   "theorem": "Delphi.Altitude.demand_anti_area",
+   "module": "lean/Delphi/Altitude.lean",
+   "line": 138,
+   "doc": "**The wing can be traded against the oxygen budget, but only at a fixed height.** A larger lifting area lowers the minimum speed and so the power required; this says nothing about altitude, and it is the only direction in which the two sides of the constraint can be exchanged.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: lift-supported flight at a fixed height",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "v_min for specimen L3",
+     "value": 9.85,
+     "unit": "m/s",
+     "how": "sqrt(2W/(ρ S C_L,max)) with W = 0.588 N (mass 0.06 kg × g), S = 0.012688 m² (pectoral + pelvic + body planform), C_L,max = 0.78, ρ = 1.225 kg/m³ (assumed)",
+     "status": "computed from measured",
+     "source": "physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994)"
+    },
+    {
+     "name": "L/D max for specimen L3",
+     "value": 4.37,
+     "status": "measured (wind tunnel, one specimen)",
+     "source": "physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994)"
+    }
+   ],
+   "verdict": "holds",
+   "qualifier": null,
+   "why": "a larger lifting area lowers the power required at a fixed height, which the measured specimen satisfies trivially; it is the only direction in which wing and oxygen budget can be traded"
+  },
   {
    "theorem": "Delphi.Blueprint.Graph.transGen_trans",
    "module": "lean/Delphi/Blueprint.lean",
@@ -1342,6 +1568,368 @@
    "why": "one size class"
   },
   {
+   "theorem": "Delphi.Empirical.not_isometric_area",
+   "module": "lean/Delphi/Empirical.lean",
+   "line": 86,
+   "doc": "**The area law fails** under this observation: the exponent is not 2, so `AreaLaw` cannot hold with it.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes: the observation is measured ON a flying fish (Davenport 1992, Exocoetus obtusirostris)",
+   "appliesClass": "yes",
+   "inputs": [
+    {
+     "name": "lateral fin area vs standard length exponent",
+     "value": 1.834,
+     "status": "measured (one species, abstract, no CI)",
+     "source": "physics/allometry.json (Davenport 1992 abstract, Exocoetus obtusirostris, log-log slopes on standard length; no CI in the abstract)"
+    }
+   ],
+   "verdict": "violated",
+   "qualifier": null,
+   "why": "fin area grows as SL^1.834, so the isometric exponent 2 is excluded: this is the measurement that makes nine audit rows read \"violated\""
+  },
+  {
+   "theorem": "Delphi.Empirical.loading_rises",
+   "module": "lean/Delphi/Empirical.lean",
+   "line": 91,
+   "doc": "**Wing loading rises with size** under this observation: a bigger member of the family is more loaded, which is the content of the measured 1.236 rather than the isometric 1.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes: measured within a flying-fish species",
+   "appliesClass": "yes",
+   "inputs": [
+    {
+     "name": "wing loading vs standard length exponent",
+     "value": 1.236,
+     "status": "measured (one species, abstract, no CI)",
+     "source": "physics/allometry.json (Davenport 1992 abstract, Exocoetus obtusirostris, log-log slopes on standard length; no CI in the abstract)"
+    }
+   ],
+   "verdict": "holds",
+   "qualifier": null,
+   "why": "wing loading grows as SL^1.236 > 1, so a bigger fish of the species is more loaded than isometry predicts"
+  },
+  {
+   "theorem": "Delphi.Empirical.weight_ratio_band",
+   "module": "lean/Delphi/Empirical.lean",
+   "line": 110,
+   "doc": "**A scaled design's weight ratio must lie in the measured band.** For a weight that follows one power law over the range, the ratio between two lengths is between `r^2.90` and `r^3.02`.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes: the band is six fitted field studies of five flying-fish species",
+   "appliesClass": "yes",
+   "inputs": [
+    {
+     "name": "mass vs standard length exponent",
+     "value": 2.981,
+     "status": "measured (one species, abstract, no CI)",
+     "source": "physics/allometry.json (Davenport 1992 abstract, Exocoetus obtusirostris, log-log slopes on standard length; no CI in the abstract)"
+    }
+   ],
+   "verdict": "holds",
+   "qualifier": null,
+   "why": "the fitted exponents 2.908 to 3.011 all lie in [2.90, 3.02], so the band holds on the project's own table (the H. affinis male row at 2.208 is excluded and named)"
+  },
+  {
+   "theorem": "Delphi.Empirical.weight_ratio_rules_out",
+   "module": "lean/Delphi/Empirical.lean",
+   "line": 117,
+   "doc": "A design committing a weight ratio outside the band, under one power law, is ruled out.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "filter",
+   "appliesToExocoetidae": "yes: a design committing a mass exponent",
+   "appliesClass": "yes",
+   "inputs": [
+    {
+     "name": "mass vs standard length exponent",
+     "value": 2.981,
+     "status": "measured (one species, abstract, no CI)",
+     "source": "physics/allometry.json (Davenport 1992 abstract, Exocoetus obtusirostris, log-log slopes on standard length; no CI in the abstract)"
+    }
+   ],
+   "verdict": "holds",
+   "qualifier": null,
+   "why": "it rules out a design claiming the male-only 2.208 as the family exponent; the measured rows themselves are not ruled out"
+  },
+  {
+   "theorem": "Delphi.Empirical.aerobicCeiling_le",
+   "module": "lean/Delphi/Empirical.lean",
+   "line": 145,
+   "doc": "**The aerobic ceiling of anything inside the measured ranges is at most 0.0458 W.** This is what makes the C14 eliminations binding rather than a choice of proxies: no teleost the measured record allows, at this mass, has a larger sustained aerobic ceiling.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: the measured teleost ranges, applied at the measured mass",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2",
+     "value": "Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)",
+     "status": "proxy (no Exocoetidae physiology exists; every value is from another teleost or tuned)",
+     "source": "physiology/ at commit a1ca4f00, via lean/eliminate/physiology-candidates.json"
+    }
+   ],
+   "verdict": "holds",
+   "qualifier": null,
+   "why": "inside the ranges the physiology chain cites, the sustained aerobic ceiling at 0.06 kg is at most 0.0458 W; the chain's own proxies give 0.0357 W, which satisfies it"
+  },
+  {
+   "theorem": "Delphi.Empirical.no_aerobic_flight_above_ceiling",
+   "module": "lean/Delphi/Empirical.lean",
+   "line": 161,
+   "doc": "**No teleost inside the measured ranges can fly aerobically above that ceiling.** Composed with the Fick bound of lean/Delphi/Flight.lean: a sustained flight needing more than 0.0458 W is ruled out for every animal the measured record allows, not only for one set of proxies.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "filter",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: Fick plus the measured ranges",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2",
+     "value": "Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)",
+     "status": "proxy (no Exocoetidae physiology exists; every value is from another teleost or tuned)",
+     "source": "physiology/ at commit a1ca4f00, via lean/eliminate/physiology-candidates.json"
+    },
+    {
+     "name": "power for level flight at 10 m/s with (L/D)max 4.37",
+     "value": 1.346,
+     "unit": "W",
+     "status": "computed from measured W and L/D (the most generous, lowest, value)",
+     "source": "physics/glide-data.csv (Park and Choi 2010 Table 1 model L3 and Table 2; field summaries citing Hertel 1966, Fish 1990, Davenport 1994)"
+    }
+   ],
+   "verdict": "violated",
+   "qualifier": null,
+   "why": "fires on the real fish: level flight at 10 m/s with the measured L/D 4.37 needs 1.3473 W against a ceiling of 0.0458 W for EVERY teleost the ranges allow, a factor of about 29"
+  },
+  {
+   "theorem": "Delphi.Empirical.stored_power_le",
+   "module": "lean/Delphi/Empirical.lean",
+   "line": 179,
+   "doc": "**Airborne aerobic power is time-limited.** With no uptake, a flight of duration `t > 0` can spend at most the store `S` (ml O2) at `E` J/ml, so the mean mechanical power is at most `E S / t`. Nothing here bounds anaerobic (burst) power, which is what a flying fish is understood to use.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: no gill ventilation in air",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "an O2 store carried into the air for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "no blood volume or venous reserve is measured for Exocoetidae, so the store must be committed; with an illustrative 1 ml the bound forbids a minute of powered flight and allows two seconds"
+  },
+  {
+   "theorem": "Delphi.Empirical.finRatio_outside",
+   "module": "lean/Delphi/Empirical.lean",
+   "line": 190,
+   "doc": "A ratio outside the measured range is above or below it: a statement about the record, not about what is possible. No theorem here says such a fish cannot exist.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes: 49 measured flying-fish specimens",
+   "appliesClass": "yes",
+   "inputs": [],
+   "verdict": "holds",
+   "qualifier": null,
+   "why": "pectoral/SL of the measured specimens runs 0.406 to 0.823 (median 0.687), and the theorem only says a value outside that is above or below it: a statement about the record, never an impossibility"
+  },
+  {
+   "theorem": "Delphi.Empirical.requiredFor_not_propagated_of_check",
+   "module": "lean/Delphi/Empirical.lean",
+   "line": 204,
+   "doc": "Soundness of the check: if it passes, no \"required for\" row was derived by downward propagation.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "no: a convention about this project's map, not a property of animals",
+   "appliesClass": "no",
+   "inputs": [],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "it checks the map's derived links against a rule the project adopted; no measurement enters"
+  },
+  {
+   "theorem": "Delphi.Empirical.requiredFor_propagated_violates",
+   "module": "lean/Delphi/Empirical.lean",
+   "line": 213,
+   "doc": "A row that breaks the convention makes the check fail.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "filter",
+   "appliesToExocoetidae": "no: as requiredFor_not_propagated_of_check",
+   "appliesClass": "no",
+   "inputs": [],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "as requiredFor_not_propagated_of_check"
+  },
+  {
+   "theorem": "Delphi.Empirical.cannot_score_of_lethal_before",
+   "module": "lean/Delphi/Empirical.lean",
+   "line": 227,
+   "doc": "**An intervention lethal at or before the scoring stage cannot produce the scored phenotype.**",
+   "axioms": [
+    "propext",
+    "Quot.sound"
+   ],
+   "kind": "filter",
+   "appliesToExocoetidae": "no: the lethal levers are zebrafish alleles",
+   "appliesClass": "no",
+   "inputs": [
+    {
+     "name": "a lethal stage for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "the two instantiated rows (ezh2, wls) are Danio rerio; lethality in zebrafish is not a flying-fish measurement"
+  },
+  {
+   "theorem": "Delphi.Empirical.empirical_nonvacuous",
+   "module": "lean/Delphi/Empirical.lean",
+   "line": 266,
+   "doc": "**The empirical layer is non-vacuous**: the measured numbers satisfy every entry at once.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes: the witness is built from the project's own measured numbers",
+   "appliesClass": "yes",
+   "inputs": [
+    {
+     "name": "lateral fin area vs standard length exponent",
+     "value": 1.834,
+     "status": "measured (one species, abstract, no CI)",
+     "source": "physics/allometry.json (Davenport 1992 abstract, Exocoetus obtusirostris, log-log slopes on standard length; no CI in the abstract)"
+    },
+    {
+     "name": "wing loading vs standard length exponent",
+     "value": 1.236,
+     "status": "measured (one species, abstract, no CI)",
+     "source": "physics/allometry.json (Davenport 1992 abstract, Exocoetus obtusirostris, log-log slopes on standard length; no CI in the abstract)"
+    },
+    {
+     "name": "mass vs standard length exponent",
+     "value": 2.981,
+     "status": "measured (one species, abstract, no CI)",
+     "source": "physics/allometry.json (Davenport 1992 abstract, Exocoetus obtusirostris, log-log slopes on standard length; no CI in the abstract)"
+    },
+    {
+     "name": "physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2",
+     "value": "Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)",
+     "status": "proxy (no Exocoetidae physiology exists; every value is from another teleost or tuned)",
+     "source": "physiology/ at commit a1ca4f00, via lean/eliminate/physiology-candidates.json"
+    }
+   ],
+   "verdict": "holds",
+   "qualifier": null,
+   "why": "the measured numbers satisfy every observation at once, so the empirical layer cannot be eliminating candidates by contradiction"
+  },
+  {
+   "theorem": "Delphi.Empirical.measured_ceiling_le",
+   "module": "lean/Delphi/Empirical.lean",
+   "line": 270,
+   "doc": "The measured aerobic proxies are inside the measured ranges, so the ceiling theorem applies to them: the chain's own ceiling is at most 0.0458 W.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes: the chain's own proxies",
+   "appliesClass": "yes",
+   "inputs": [
+    {
+     "name": "physiology chain proxies for a 0.06 kg fish: Q, Ca, η, E_O2",
+     "value": "Q 0.06564 ml/s (cardiac.js state(1), snapper), Ca 0.1872 ml/ml (haemoglobin.js at 15.8 kPa, trout curve, tuned warm capacity), η 0.15 (muscle.js, salmon ventricle), E 19.34 J/ml (gerry2014)",
+     "status": "proxy (no Exocoetidae physiology exists; every value is from another teleost or tuned)",
+     "source": "physiology/ at commit a1ca4f00, via lean/eliminate/physiology-candidates.json"
+    }
+   ],
+   "verdict": "holds",
+   "qualifier": null,
+   "why": "the chain's ceiling 0.0357 W is inside the 0.0458 W bound the measured ranges allow"
+  },
+  {
+   "theorem": "Delphi.Empirical.ezh2_cannot_be_scored",
+   "module": "lean/Delphi/Empirical.lean",
+   "line": 277,
+   "doc": "The two lethal levers the genotype thread states in hours: *ezh2* (death 48 hpf, fin absence scored at 48 hpf) and *wls* (death by 12 dpf = 288 hpf, ray parameters from 45 dpf = 1080 hpf). Neither phenotype can be scored in a living animal.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "filter",
+   "appliesToExocoetidae": "no: a zebrafish allele",
+   "appliesClass": "no",
+   "inputs": [],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "the genotype thread records death and scoring both at 48 hpf for ezh2 in zebrafish; nothing about a flying fish"
+  },
+  {
+   "theorem": "Delphi.Empirical.wls_rays_cannot_be_scored",
+   "module": "lean/Delphi/Empirical.lean",
+   "line": 279,
+   "doc": "",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "filter",
+   "appliesToExocoetidae": "no: a zebrafish allele",
+   "appliesClass": "no",
+   "inputs": [],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "death by 12 dpf against ray parameters from 45 dpf, in zebrafish"
+  },
+  {
    "theorem": "Delphi.FavoredChain.fixedBy_tendsto",
    "module": "lean/Delphi/Favored.lean",
    "line": 218,
@@ -2183,6 +2771,352 @@
    "why": "supply exponent missing"
   },
   {
+   "theorem": "Delphi.Genotype.minSubst_le",
+   "module": "lean/Delphi/Genotype.lean",
+   "line": 122,
+   "doc": "`minSubst` is a lower bound on the distance between any two codons of the two amino acids.",
+   "axioms": [
+    "propext",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes (the standard code applies to any teleost)",
+   "appliesClass": "yes",
+   "inputs": [],
+   "verdict": "holds",
+   "qualifier": null,
+   "why": "the code distance bounds the Hamming distance of any codon pair; the project records one flying-fish amino-acid change, slc43a2a F326L (Daane 2021), and the code allows it in one substitution"
+  },
+  {
+   "theorem": "Delphi.Genotype.claimed_substitutions_rules_out",
+   "module": "lean/Delphi/Genotype.lean",
+   "line": 130,
+   "doc": "**A missense claim with too few substitutions is impossible.**",
+   "axioms": [
+    "propext",
+    "Quot.sound"
+   ],
+   "kind": "filter",
+   "appliesToExocoetidae": "yes: a claim about a flying-fish substitution",
+   "appliesClass": "yes",
+   "inputs": [],
+   "verdict": "holds",
+   "qualifier": null,
+   "why": "applied to F326L (Phe to Leu, minSubst 1) the claim of one substitution is NOT ruled out; the controls (the same change in zero, and Met to Trp in one) are"
+  },
+  {
+   "theorem": "Delphi.Genotype.phe_leu_one",
+   "module": "lean/Delphi/Genotype.lean",
+   "line": 137,
+   "doc": "Phe to Leu needs one substitution (e.g. UUU to UUA): the slc43a2a F326L of Daane et al. 2021 is one SNP away.",
+   "axioms": [],
+   "kind": "law",
+   "appliesToExocoetidae": "yes (the change the project records)",
+   "appliesClass": "yes",
+   "inputs": [],
+   "verdict": "holds",
+   "qualifier": null,
+   "why": "kernel-evaluated on the code table: UUU to UUA, exactly the F326L claim"
+  },
+  {
+   "theorem": "Delphi.Genotype.trp_stop_one",
+   "module": "lean/Delphi/Genotype.lean",
+   "line": 140,
+   "doc": "Trp to Stop needs one; Met to Trp needs two: examples the table decides.",
+   "axioms": [],
+   "kind": "law",
+   "appliesToExocoetidae": "yes (a property of the code)",
+   "appliesClass": "yes",
+   "inputs": [],
+   "verdict": "holds",
+   "qualifier": null,
+   "why": "kernel-evaluated; no flying-fish nonsense mutation is recorded in this project"
+  },
+  {
+   "theorem": "Delphi.Genotype.met_trp_two",
+   "module": "lean/Delphi/Genotype.lean",
+   "line": 141,
+   "doc": "",
+   "axioms": [],
+   "kind": "law",
+   "appliesToExocoetidae": "yes (a property of the code)",
+   "appliesClass": "yes",
+   "inputs": [],
+   "verdict": "holds",
+   "qualifier": null,
+   "why": "kernel-evaluated; carries no information about the fish beyond the code"
+  },
+  {
+   "theorem": "Delphi.Genotype.devOrdered_acyclic",
+   "module": "lean/Delphi/Genotype.lean",
+   "line": 148,
+   "doc": "A `develops_from` graph is well-ordered when every derivative is staged strictly after its precursor (`stage` is the level; edge `(derivative, precursor)`). Then it is acyclic.",
+   "axioms": [],
+   "kind": "law",
+   "appliesToExocoetidae": "no: the certified graph is zebrafish anatomy (ZFA) with ZFIN stages, not Exocoetidae",
+   "appliesClass": "no",
+   "inputs": [
+    {
+     "name": "a staged develops_from graph for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "no flying-fish developmental series exists in this project; the certificate is about the zebrafish fin subtree"
+  },
+  {
+   "theorem": "Delphi.Genotype.devOrdered_of_check",
+   "module": "lean/Delphi/Genotype.lean",
+   "line": 155,
+   "doc": "",
+   "axioms": [
+    "propext",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "no: as devOrdered_acyclic",
+   "appliesClass": "no",
+   "inputs": [
+    {
+     "name": "a staged develops_from graph for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "the 8 certified edges are zebrafish; nothing here is a flying-fish stage"
+  },
+  {
+   "theorem": "Delphi.Genotype.closure_of_check",
+   "module": "lean/Delphi/Genotype.lean",
+   "line": 164,
+   "doc": "",
+   "axioms": [
+    "propext",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "no: the map is zebrafish links joined to the blueprint",
+   "appliesClass": "no",
+   "inputs": [
+    {
+     "name": "a gene-to-structure map for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "the gene reach comes from ZFIN and Bgee rows for Danio rerio; no Exocoetidae expression data is in this project"
+  },
+  {
+   "theorem": "Delphi.Genotype.closure_violated",
+   "module": "lean/Delphi/Genotype.lean",
+   "line": 171,
+   "doc": "A change set that omits a mapped node violates closure.",
+   "axioms": [
+    "propext",
+    "Quot.sound"
+   ],
+   "kind": "filter",
+   "appliesToExocoetidae": "no: as closure_of_check",
+   "appliesClass": "no",
+   "inputs": [
+    {
+     "name": "a gene-to-structure map for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "it fires on a Studio view built from the zebrafish map, not on a measurement of a flying fish"
+  },
+  {
+   "theorem": "Delphi.Genotype.expectedWaitingTime_neutral",
+   "module": "lean/Delphi/Genotype.lean",
+   "line": 182,
+   "doc": "",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: neutral, constant M and mu",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "gene copies M = 2N",
+     "value": "2.00e+9 (from Ne > 1e9)",
+     "status": "proxy (E. volitans mitochondrial Ne, Lewallen 2016; the only Ne for the family)",
+     "source": "lean/bound/parameters.json and lean/bound/result.json"
+    },
+    {
+     "name": "mutation rate per site per generation",
+     "value": "1.10e-9 to 4.83e-9",
+     "status": "proxy (herring and stickleback pedigrees; no Exocoetidae estimate)",
+     "source": "lean/bound/parameters.json and lean/bound/result.json"
+    },
+    {
+     "name": "a measured neutral substitution rate or fixation probability for any Exocoetidae locus",
+     "status": "missing",
+     "note": "no molecular-rate study of flying fish was found"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "the neutral waiting time N/mu needs a required substitution count N, which is undefined for any flying-fish trait, and mu is a proxy from other teleosts"
+  },
+  {
+   "theorem": "Delphi.Genotype.expectedWaitingTime_bounds",
+   "module": "lean/Delphi/Genotype.lean",
+   "line": 187,
+   "doc": "With `1/M ≤ u ≤ 1`, the waiting time lies between `N/(M μ)` and `N/μ`.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: independent sequential fixations",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "gene copies M = 2N",
+     "value": "2.00e+9 (from Ne > 1e9)",
+     "status": "proxy (E. volitans mitochondrial Ne, Lewallen 2016; the only Ne for the family)",
+     "source": "lean/bound/parameters.json and lean/bound/result.json"
+    },
+    {
+     "name": "mutation rate per site per generation",
+     "value": "1.10e-9 to 4.83e-9",
+     "status": "proxy (herring and stickleback pedigrees; no Exocoetidae estimate)",
+     "source": "lean/bound/parameters.json and lean/bound/result.json"
+    },
+    {
+     "name": "a measured neutral substitution rate or fixation probability for any Exocoetidae locus",
+     "status": "missing",
+     "note": "no molecular-rate study of flying fish was found"
+    },
+    {
+     "name": "a required number of substitutions for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "both bounds need N; no wing requirement in substitutions is defined anywhere in this project"
+  },
+  {
+   "theorem": "Delphi.Genotype.too_little_time_rules_out",
+   "module": "lean/Delphi/Genotype.lean",
+   "line": 202,
+   "doc": "**Too little time.** An available time `T` below `N/(M μ)` cannot suffice even if every mutant fixed.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "filter",
+   "appliesToExocoetidae": "yes-under-named-hypotheses",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "gene copies M = 2N",
+     "value": "2.00e+9 (from Ne > 1e9)",
+     "status": "proxy (E. volitans mitochondrial Ne, Lewallen 2016; the only Ne for the family)",
+     "source": "lean/bound/parameters.json and lean/bound/result.json"
+    },
+    {
+     "name": "mutation rate per site per generation",
+     "value": "1.10e-9 to 4.83e-9",
+     "status": "proxy (herring and stickleback pedigrees; no Exocoetidae estimate)",
+     "source": "lean/bound/parameters.json and lean/bound/result.json"
+    },
+    {
+     "name": "a measured neutral substitution rate or fixation probability for any Exocoetidae locus",
+     "status": "missing",
+     "note": "no molecular-rate study of flying fish was found"
+    },
+    {
+     "name": "a required number of substitutions for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "with the fossil duration (about 4.8e7 generations at one year) and the proxy M and mu the model allows any N up to about 4.8e8, so it rules out nothing about the fish; it fires only on a control"
+  },
+  {
+   "theorem": "Delphi.Genotype.haldane_time_lower",
+   "module": "lean/Delphi/Genotype.lean",
+   "line": 213,
+   "doc": "Under Haldane's hypothesis, `N` selected substitutions need at least `c N / e` generations.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: Haldane's cost accounting, contested",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "a reproductive excess for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    },
+    {
+     "name": "a cost per substitution for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    },
+    {
+     "name": "a required number of substitutions for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "no reproductive excess, cost or requirement is measured for Exocoetidae; the bound is proved FROM the hypothesis, which this project neither proves nor endorses"
+  },
+  {
+   "theorem": "Delphi.Genotype.haldane_rules_out",
+   "module": "lean/Delphi/Genotype.lean",
+   "line": 219,
+   "doc": "",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "filter",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: as haldane_time_lower",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "a reproductive excess for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    },
+    {
+     "name": "a cost per substitution for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "fires only on a control with illustrative numbers"
+  },
+  {
    "theorem": "Delphi.NeutralChain.fixedBy_sub_le",
    "module": "lean/Delphi/Kimura.lean",
    "line": 249,
@@ -2494,6 +3428,151 @@
    "verdict": "cannot-evaluate",
    "qualifier": null,
    "why": "premise absent"
+  },
+  {
+   "theorem": "Delphi.Physiology.q10_ratio",
+   "module": "lean/Delphi/Physiology.lean",
+   "line": 26,
+   "doc": "",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: a rate that follows a Q10 law",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "a Q10 for any rate for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "the chain scales muscle rates with Q10 values from scup (Rome 1992); no flying-fish Q10 exists, and the conditions file fixes 25 C so no instance is evaluated"
+  },
+  {
+   "theorem": "Delphi.Physiology.q10_log",
+   "module": "lean/Delphi/Physiology.lean",
+   "line": 32,
+   "doc": "",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: as q10_ratio",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "a Q10 for any rate for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "as q10_ratio"
+  },
+  {
+   "theorem": "Delphi.Physiology.sphereWallStress_mono",
+   "module": "lean/Delphi/Physiology.lean",
+   "line": 42,
+   "doc": "At fixed pressure and thickness, wall stress grows with radius.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes (a thin wall is a thin wall)",
+   "appliesClass": "yes",
+   "inputs": [
+    {
+     "name": "a vessel or swim-bladder radius for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    },
+    {
+     "name": "a wall thickness for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "no radius or thickness for any flying-fish vessel or swim bladder is in this project"
+  },
+  {
+   "theorem": "Delphi.Physiology.laplace_pressure_limit",
+   "module": "lean/Delphi/Physiology.lean",
+   "line": 50,
+   "doc": "**Laplace pressure limit.** A thin spherical wall of strength `σmax` and thickness `t` holds at most `2 σmax t / r`: the pressure limit falls as `1/r`.",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: thin wall, static pressure",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "a wall strength for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    },
+    {
+     "name": "a wall thickness for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    },
+    {
+     "name": "a radius for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "proved with no instance: the three inputs are unmeasured for Exocoetidae"
+  },
+  {
+   "theorem": "Delphi.Physiology.hoop_pressure_limit",
+   "module": "lean/Delphi/Physiology.lean",
+   "line": 57,
+   "doc": "",
+   "axioms": [
+    "propext",
+    "Classical.choice",
+    "Quot.sound"
+   ],
+   "kind": "law",
+   "appliesToExocoetidae": "yes-under-named-hypotheses: as laplace_pressure_limit",
+   "appliesClass": "yes-under-named-hypotheses",
+   "inputs": [
+    {
+     "name": "a wall strength for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    },
+    {
+     "name": "a wall thickness for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    },
+    {
+     "name": "a radius for Exocoetidae",
+     "status": "missing",
+     "note": "undefined"
+    }
+   ],
+   "verdict": "cannot-evaluate",
+   "qualifier": null,
+   "why": "as laplace_pressure_limit"
   },
   {
    "theorem": "Delphi.areaLaw_ratio",

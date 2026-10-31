@@ -5,11 +5,11 @@
 // error). A control run of the unmodified module must pass through the very same command. Results
 // go to lean/mutations.json and are folded into lean.json by report.mjs. Nothing under lean/Delphi
 // is modified.
-//   node lean/mutate.mjs
+//   node lean/mutate.mjs            # MUTANT_JOBS=n caps the concurrency, MUTANT_DIR sets the scratch root
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -92,26 +92,81 @@ const mutations = [
   { id: 'crossover-exponent-reversed', file: 'Delphi/Flight.lean', theorem: 'Delphi.powerLaw_crossover', claim_id: 'aerobic-power-bound', description: 'Mutant: the crossover claimed when the supply exponent EXCEEDS the demand exponent (b₁ < b₂); then supply overtakes demand and no size limit exists, so the proof must fail.', find: '    (hb : b₂ < b₁) : ∃ Ls : ℝ, 0 < Ls ∧ ∀ L, Ls < L → S L < D L := by', replace: '    (hb : b₁ < b₂) : ∃ Ls : ℝ, 0 < Ls ∧ ∀ L, Ls < L → S L < D L := by' },
   { id: 'glide-range-halved', file: 'Delphi/Flight.lean', theorem: 'Delphi.glide_range_le', claim_id: 'flight-climb-glide-law', description: 'Mutant: the glide range claimed to be at most half of h (L/D)max; the energy balance allows the full bound, so the proof must fail.', find: '    x ≤ h * LDmax := by\n  rw [hlift, div_le_iff₀ hD] at hLD', replace: '    x ≤ h * LDmax / 2 := by\n  rw [hlift, div_le_iff₀ hD] at hLD' },
   { id: 'climb-bound-reversed', file: 'Delphi/Flight.lean', theorem: 'Delphi.climbRate_le', claim_id: 'flight-climb-glide-law', description: 'Mutant: the climb bound reversed (the excess power over weight claimed to be at most the climb rate); false with positive losses, so the proof must fail.', find: '    (hloss : 0 ≤ loss) : c ≤ climbRate W Pavail Preq := by', replace: '    (hloss : 0 ≤ loss) : climbRate W Pavail Preq ≤ c := by' },
-  { id: 'allometry-quotient-sum', file: 'Delphi/Flight.lean', theorem: 'Delphi.powerLaw_div', claim_id: 'flight-allometry-law', description: 'Mutant: a quotient of power laws claimed to have the SUM of the exponents instead of the difference.', find: '    PowerLaw (fun L => f L / g L) (a₁ / a₂) (b₁ - b₂) := by', replace: '    PowerLaw (fun L => f L / g L) (a₁ / a₂) (b₁ + b₂) := by' }
+  { id: 'allometry-quotient-sum', file: 'Delphi/Flight.lean', theorem: 'Delphi.powerLaw_div', claim_id: 'flight-allometry-law', description: 'Mutant: a quotient of power laws claimed to have the SUM of the exponents instead of the difference.', find: '    PowerLaw (fun L => f L / g L) (a₁ / a₂) (b₁ - b₂) := by', replace: '    PowerLaw (fun L => f L / g L) (a₁ / a₂) (b₁ + b₂) := by' },
+  { id: 'empirical-witness-outside-band', file: 'Delphi/Empirical.lean', theorem: 'Delphi.Empirical.empirical_nonvacuous', claim_id: 'empirical-E3',
+    description: 'An empirical band moved so the measured value falls outside it: efficiency capped at 0.1 while the witness commits the measured 0.15. The non-vacuity witness must then fail to compile, which is the whole point of having one.',
+    find: '  eta_le : eta \u2264 0.15', replace: '  eta_le : eta \u2264 0.1' },
+  { id: 'empirical-contradictory-band', file: 'Delphi/Empirical.lean', theorem: 'Delphi.Empirical.empirical_nonvacuous', claim_id: 'empirical-E2',
+    description: 'A deliberately CONTRADICTORY pair of observations: the mass-exponent band is given a floor of 3.05 against its ceiling of 3.02, so no exponent satisfies both. The structure becomes uninhabitable and no witness exists; an inconsistent empirical set would otherwise let the checker eliminate every candidate, and that failure would look exactly like success.',
+    find: '  lo : (2.9 : \u211d) \u2264 b', replace: '  lo : (3.05 : \u211d) \u2264 b' },
+  { id: 'genetic-code-distance-wrong', file: 'Delphi/Genotype.lean', theorem: 'Delphi.Genotype.phe_leu_one', claim_id: 'genotype-genetic-code',
+    description: 'Data claim changed: Phe to Leu said to need 2 substitutions when the table gives 1 (UUU to UUA). The kernel evaluates minSubst on the code table, so it must reject it.',
+    find: 'theorem phe_leu_one : minSubst Phe Leu = 1 := by decide +kernel', replace: 'theorem phe_leu_one : minSubst Phe Leu = 2 := by decide +kernel' },
+  { id: 'genetic-code-distance-reversed', file: 'Delphi/Genotype.lean', theorem: 'Delphi.Genotype.minSubst_le', claim_id: 'genotype-genetic-code',
+    description: 'Statement reversed: the code distance claimed to be at least the Hamming distance of any codon pair instead of at most it. False for any pair further apart than the nearest, so the proof must fail.',
+    find: '    minSubst a b ≤ hamming c d := by', replace: '    hamming c d ≤ minSubst a b := by' },
+  { id: 'pleiotropy-closure-reversed', file: 'Delphi/Genotype.lean', theorem: 'Delphi.Genotype.closure_violated', claim_id: 'genotype-pleiotropy-closure',
+    description: 'Statement changed to claim the closure check is TRUE when a mapped node is missing from the changed list, which is exactly when it is false.',
+    find: '    closureB mapped changed = false := by', replace: '    closureB mapped changed = true := by' },
+  { id: 'waiting-time-bounds-swapped', file: 'Delphi/Genotype.lean', theorem: 'Delphi.Genotype.expectedWaitingTime_bounds', claim_id: 'genotype-substitution-time',
+    description: 'Statement swapped: the waiting time claimed to be at most N/(M mu) and at least N/mu, the reverse of the bound. False for every u strictly between the ends, so the proof must fail.',
+    find: '    N / ((M : ℝ) * μ) ≤ expectedWaitingTime N M μ u ∧ expectedWaitingTime N M μ u ≤ N / μ := by',
+    replace: '    expectedWaitingTime N M μ u ≤ N / ((M : ℝ) * μ) ∧ N / μ ≤ expectedWaitingTime N M μ u := by' },
+  { id: 'haldane-bound-reversed', file: 'Delphi/Genotype.lean', theorem: 'Delphi.Genotype.haldane_time_lower', claim_id: 'haldane-cost-of-selection',
+    description: "Statement reversed: Haldane's accounting claimed to put a CEILING of c N / e on the generations instead of a floor, which would make the cost an argument for speed.",
+    find: '(he : 0 < e) : c * N / e ≤ T := by', replace: '(he : 0 < e) : T ≤ c * N / e := by' },
+  { id: 'dev-certificate-self-edge', file: 'Delphi/Certificates/FinDevelopment.lean', theorem: 'Delphi.Genotype.Certificates.finDev_check', claim_id: 'genotype-developmental-ordering',
+    description: 'Data sabotaged: a develops_from edge from a node to itself is added to the certified list, so something would develop from itself and no stage could be strictly earlier. The kernel-evaluated checker must reject it.',
+    find: 'def finDevEdges : List (ℕ × ℕ) := [', replace: 'def finDevEdges : List (ℕ × ℕ) := [(0, 0), ' },
+  { id: 'q10-exponent-undivided', file: 'Delphi/Physiology.lean', theorem: 'Delphi.Physiology.q10_ratio', claim_id: 'physiology-q10',
+    description: 'Statement changed to raise Q10 to the whole temperature difference instead of the difference over ten, which is the definition of Q10 (a factor per 10 degrees).',
+    find: '    q10Scale X0 Q10 Tref T₂ / q10Scale X0 Q10 Tref T₁ = Q10 ^ ((T₂ - T₁) / 10) := by',
+    replace: '    q10Scale X0 Q10 Tref T₂ / q10Scale X0 Q10 Tref T₁ = Q10 ^ (T₂ - T₁) := by' },
+  { id: 'laplace-factor-dropped', file: 'Delphi/Physiology.lean', theorem: 'Delphi.Physiology.laplace_pressure_limit', claim_id: 'physiology-laplace',
+    description: 'Statement strengthened by dropping the factor 2: a sphere claimed to hold at most sigma_max t / r, the cylinder bound. Stronger than the wall stress allows, so the proof must fail.',
+    find: '    P ≤ 2 * σmax * t / r := by', replace: '    P ≤ σmax * t / r := by' },
 ];
 
-const tmp = fs.mkdtempSync(path.join(process.env.MUTANT_DIR || os.tmpdir(), 'delphi-mutants-'));
-const check = (file) => {
+// ---- runner: the compiles are independent, so they run in a bounded pool ----
+// Each compile gets its own directory under the scratch root so nothing two of them write can collide.
+// The cap is set by MEMORY, not cores: each lean process maps the whole Mathlib object set, and this is the
+// binding limit. MEASURED on this machine (32 cores, 126 GB, 48 GB free): 8 concurrent compiles exhausted it
+// and every compile, controls included, failed with "failed to read file ... .olean" - a resource failure that
+// looks exactly like a rejection, which is why the controls are run through the same command and must pass. lean also elaborates with its own thread
+// pool (one per core by default), so each child is given a slice of the cores through LEAN_NUM_THREADS;
+// without that slice the pool oversubscribes and each compile gets slower than it was in sequence.
+const ROOT_TMP = fs.mkdtempSync(path.join(process.env.MUTANT_DIR || os.tmpdir(), 'delphi-mutants-'));
+const CPUS = os.cpus().length;
+const GB_PER_COMPILE = 12; // measured: 8 concurrent compiles on this box exhausted memory and every one failed to read Mathlib oleans
+const JOBS = Math.max(1, Math.min(Number(process.env.MUTANT_JOBS) || Infinity, CPUS - 1, Math.max(1, Math.floor(os.freemem() / 2 ** 30 / GB_PER_COMPILE)), 4));
+const LEAN_THREADS = Math.max(1, Math.floor(CPUS / JOBS));
+const childEnv = { ...env, LEAN_NUM_THREADS: String(LEAN_THREADS) };
+
+const check = (dir, file) => new Promise(resolve => {
   const t0 = Date.now();
-  const r = spawnSync('lake', ['env', 'lean', file], { cwd: here, env, encoding: 'utf8', shell: process.platform === 'win32', maxBuffer: 64 * 1024 * 1024 });
-  const out = (r.stdout || '') + (r.stderr || '');
-  const errs = out.split(/\r?\n/).filter(l => /error:/.test(l));
-  const strip = s => s.replace(tmp.replace(/\\/g, '/'), '').replace(tmp, '').replace(/^[\\/]+/, '');
-  return { exit: r.status, seconds: +((Date.now() - t0) / 1000).toFixed(1), errors: errs.length, firstError: errs[0] ? strip(errs[0]).slice(0, 300) : null };
-};
+  let out = '';
+  const finish = (exit) => {
+    const errs = out.split(/\r?\n/).filter(l => /error:/.test(l));
+    const strip = x => x.split(dir.replace(/\\/g, '/')).join('').split(dir).join('').replace(/^[\\/]+/, '');
+    resolve({ exit, seconds: +((Date.now() - t0) / 1000).toFixed(1), errors: errs.length, firstError: errs[0] ? strip(errs[0]).slice(0, 300) : null });
+  };
+  const p = spawn('lake', ['env', 'lean', file], { cwd: here, env: childEnv, shell: process.platform === 'win32' });
+  p.stdout.on('data', d => { out += d; });
+  p.stderr.on('data', d => { out += d; });
+  p.on('error', e => { out += 'error: spawn failed: ' + e.message; finish(-1); });
+  p.on('close', code => finish(code));
+});
 
 const results = [];
-for (const f of [...new Set(mutations.map(m => m.file))]) {
-  const src = fs.readFileSync(path.join(here, f), 'utf8');
-  const dst = path.join(tmp, 'control-' + path.basename(f)); fs.writeFileSync(dst, src);
-  process.stdout.write(`control ${f} ... `);
-  const r = check(dst); console.log(r.exit === 0 ? `passed (${r.seconds}s)` : `FAILED exit ${r.exit}`);
-  results.push({ id: 'control-' + path.basename(f, '.lean').toLowerCase(), kind: 'control', file: 'lean/' + f, expected: 'accepted', outcome: r.exit === 0 && r.errors === 0 ? 'accepted' : 'rejected', asExpected: r.exit === 0 && r.errors === 0, ...r });
+// 1. Prepare every source first (sequential, cheap): controls are the unmodified modules, mutants the
+// patched copies. A find string that is not unique is recorded as not applied, never silently mutated.
+const prepared = [];
+for (const file of [...new Set(mutations.map(m => m.file))]) {
+  const id = 'control-' + path.basename(file, '.lean').toLowerCase();
+  const dir = path.join(ROOT_TMP, id); fs.mkdirSync(dir, { recursive: true });
+  const dst = path.join(dir, path.basename(file));
+  fs.writeFileSync(dst, fs.readFileSync(path.join(here, file), 'utf8'));
+  prepared.push({ kind: 'control', id, file, dir, dst });
 }
 for (const m of mutations) {
   const src = fs.readFileSync(path.join(here, m.file), 'utf8');
@@ -119,15 +174,46 @@ for (const m of mutations) {
   if (occ !== 1) { console.log(`${m.id}: find string occurs ${occ} times, skipping`); results.push({ ...m, kind: 'mutation', outcome: 'not applied', asExpected: false }); continue; }
   let mut = src.replace(m.find, m.replace);
   for (const [a, b] of m.also || []) { if (mut.split(a).length - 1 !== 1) throw new Error(m.id + ': secondary find not unique'); mut = mut.replace(a, b); }
-  const dst = path.join(tmp, m.id + '.lean'); fs.writeFileSync(dst, mut);
-  process.stdout.write(`${m.id} ... `);
-  const r = check(dst);
-  const rejected = r.exit !== 0 && r.errors > 0;
-  console.log(rejected ? `rejected (${r.errors} error(s), ${r.seconds}s)` : `NOT REJECTED exit ${r.exit}`);
-  results.push({ id: m.id, kind: 'mutation', file: 'lean/' + m.file, theorem: m.theorem, claim_id: m.claim_id, description: m.description, find: m.find, replace: m.replace, also: m.also || [], expected: 'rejected', outcome: rejected ? 'rejected' : 'accepted', asExpected: rejected, ...r });
+  const dir = path.join(ROOT_TMP, m.id); fs.mkdirSync(dir, { recursive: true });
+  const dst = path.join(dir, path.basename(m.file)); fs.writeFileSync(dst, mut);
+  prepared.push({ kind: 'mutation', id: m.id, file: m.file, dir, dst, m });
 }
-const summary = { run: new Date().toISOString(), command: 'lake env lean <mutant copy>', mutations: results.filter(r => r.kind === 'mutation').length, rejected: results.filter(r => r.kind === 'mutation' && r.outcome === 'rejected').length, controlsPassed: results.filter(r => r.kind === 'control' && r.asExpected).length, controls: results.filter(r => r.kind === 'control').length, allAsExpected: results.every(r => r.asExpected) };
+
+// 2. Run them. Completion order is whatever the pool gives; the results are sorted afterwards, so
+// mutations.json does not depend on it.
+console.log(`${prepared.length} compiles (${prepared.filter(p => p.kind === 'control').length} controls, ${prepared.filter(p => p.kind === 'mutation').length} mutants) at concurrency ${JOBS}, ${LEAN_THREADS} lean thread(s) each, on ${CPUS} cores`);
+const wall0 = Date.now();
+let cursor = 0, finished = 0;
+const worker = async () => {
+  while (cursor < prepared.length) {
+    const t = prepared[cursor++];
+    const r = await check(t.dir, t.dst);
+    finished++;
+    if (t.kind === 'control') {
+      const ok = r.exit === 0 && r.errors === 0;
+      console.log(`[${finished}/${prepared.length}] control ${t.file}: ${ok ? 'passed' : 'FAILED exit ' + r.exit} (${r.seconds}s)`);
+      results.push({ id: t.id, kind: 'control', file: 'lean/' + t.file, expected: 'accepted', outcome: ok ? 'accepted' : 'rejected', asExpected: ok, ...r });
+    } else {
+      const rejected = r.exit !== 0 && r.errors > 0;
+      console.log(`[${finished}/${prepared.length}] ${t.id}: ${rejected ? 'rejected (' + r.errors + ' error(s))' : 'NOT REJECTED exit ' + r.exit} (${r.seconds}s)`);
+      const m = t.m;
+      results.push({ id: m.id, kind: 'mutation', file: 'lean/' + m.file, theorem: m.theorem, claim_id: m.claim_id, description: m.description, find: m.find, replace: m.replace, also: m.also || [], expected: 'rejected', outcome: rejected ? 'rejected' : 'accepted', asExpected: rejected, ...r });
+    }
+  }
+};
+await Promise.all(Array.from({ length: JOBS }, worker));
+const wallSeconds = +((Date.now() - wall0) / 1000).toFixed(1);
+
+// 3. Deterministic order: controls first, then mutants, each by id, whatever order they finished in.
+const rank = r => (r.kind === 'control' ? 0 : 1);
+results.sort((a, b) => rank(a) - rank(b) || String(a.id).localeCompare(String(b.id)));
+
+const compileSeconds = +results.reduce((t, r) => t + (r.seconds || 0), 0).toFixed(1);
+const summary = { run: new Date().toISOString(), command: 'lake env lean <mutant copy>', mutations: results.filter(r => r.kind === 'mutation').length, rejected: results.filter(r => r.kind === 'mutation' && r.outcome === 'rejected').length, controlsPassed: results.filter(r => r.kind === 'control' && r.asExpected).length, controls: results.filter(r => r.kind === 'control').length, allAsExpected: results.every(r => r.asExpected),
+  concurrency: JOBS, leanThreadsPerCompile: LEAN_THREADS, cores: CPUS, wallClockSeconds: wallSeconds, compileSecondsSummed: compileSeconds, speedup: wallSeconds > 0 ? +(compileSeconds / wallSeconds).toFixed(2) : null,
+  order: 'controls first, then mutants, each sorted by id; the pool\'s completion order does not reach this file',
+  parallelNote: `The compiles are independent, so they run in a pool of ${JOBS}. The cap is memory, not cores: each lean process holds several GB with Mathlib imported. lake env lean type-checks a copy outside the package, writing no .olean, and each compile also has its own directory under the scratch root, so none can clobber another. lean's own elaboration threads are capped at ${LEAN_THREADS} per compile (LEAN_NUM_THREADS) so the pool does not oversubscribe ${CPUS} cores; wall clock against summed compile time is the speedup.` };
 fs.writeFileSync(path.join(here, 'mutations.json'), JSON.stringify({ summary, results }, null, 1));
-fs.rmSync(tmp, { recursive: true, force: true });
+fs.rmSync(ROOT_TMP, { recursive: true, force: true });
 console.log(JSON.stringify(summary));
 if (!summary.allAsExpected) process.exitCode = 1;
