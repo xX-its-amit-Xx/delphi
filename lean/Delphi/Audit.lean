@@ -6,6 +6,7 @@ show up here as `sorryAx`. `lean/report.mjs` runs this file and records the outp
 import Delphi.Kimura
 import Delphi.Fisher
 import Delphi.MaynardSmith
+import Delphi.Favored
 
 #print axioms Delphi.NeutralChain.fixedBy_tendsto
 #print axioms Delphi.NeutralChain.fixedBy_sub_le
@@ -18,3 +19,10 @@ import Delphi.MaynardSmith
 #print axioms Delphi.mean_fitness_nondecreasing
 #print axioms Delphi.twofold_cost_of_sex
 #print axioms Delphi.twofold_cost_of_sex_n
+#print axioms Delphi.FavoredChain.fixationProbability_ge
+#print axioms Delphi.FavoredChain.fixationProbability_le_one
+#print axioms Delphi.wrightFisherSelection_fixation_one_ge
+#print axioms Delphi.neutral_expectedSubstitutions
+#print axioms Delphi.favored_expectedSubstitutions_ge
+#print axioms Delphi.expectedSubstitutions_le
+#print axioms Delphi.wrightFisherSelection_substitutions_bounds

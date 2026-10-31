@@ -68,7 +68,7 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
 <header class="top"><div class="wrap">
   <a class="back" href="../../index.html">&larr; Mission Control</a>
   <span class="brand">Lean thread</span>
-  <nav><a href="#result">Result</a><a href="#proved">What is proved</a><a href="#theorems">Theorems</a><a href="#faith">Faithfulness</a><a href="#audit">Audit</a><a href="#mutants">Break it</a><a href="#records">Records</a><a href="#watch">Watch it converge</a><a href="#repro">Reproduce</a><a href="#honest">Limits</a></nav>
+  <nav><a href="#result">Result</a><a href="#proved">What is proved</a><a href="#flyingfish">Flying fish</a><a href="#theorems">Theorems</a><a href="#faith">Faithfulness</a><a href="#audit">Audit</a><a href="#mutants">Break it</a><a href="#records">Records</a><a href="#watch">Watch it converge</a><a href="#repro">Reproduce</a><a href="#honest">Limits</a></nav>
   <button id="themeBtn" title="Toggle light or dark">Theme</button>
 </div></header>
 
@@ -106,6 +106,18 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
  <li><b>Count next generation's daughters.</b> The asexual share becomes q&middot;f / (q&middot;f + (1&minus;q)&middot;f/2). This is <code>asexualNext</code>.</li>
  <li><b>The odds double.</b> <code>twofold_cost_of_sex</code> proves that the odds of asexual to sexual females next generation are exactly twice this generation's, and the fecundity f cancels. Iterated, <code>twofold_cost_of_sex_n</code> gives 2<sup>n</sup> after n generations. That factor of two is the advantage sex must buy back to persist.</li>
 </ol></div>
+</section>
+
+<section id="flyingfish"><h2>Did evolution have time? The flying-fish budget</h2>
+<p class="small">Darwin (1859, ch. VI) wrote that flying-fish "might have been modified into perfectly winged animals". The fixation theorems above, extended to selection that does not oppose a mutant, bound how much substitution the Exocoetidae lineage has had since its oldest fossil. Every number below is computed by <code>lean/bound/compute.mjs</code> from <code>lean/bound/parameters.json</code>, where each value names its source.</p>
+<div class="verdict" id="ffVerdict"></div>
+<div class="grid g2" id="ffScope"></div>
+<div class="card"><h3>Parameters and where each came from</h3><div class="scroll"><table id="ffParams"></table></div></div>
+<div class="grid g2">
+ <div class="card"><h3>What the lineage had (expected substitutions)</h3><div class="scroll"><table id="ffBudget"></table></div><p class="small mute" id="ffBudgetNote"></p></div>
+ <div class="card"><h3>Ceiling as a function of N (vacuous by construction)</h3><div class="scroll"><table id="ffCeiling"></table></div><p class="small mute" id="ffCeilingNote"></p></div>
+</div>
+<div class="card"><h3>Why the verdict is inconclusive, and what this does not establish</h3><ul class="small" id="ffUndefined"></ul><p class="small" id="ffReason"></p></div>
 </section>
 
 <section id="theorems"><h2>The theorems the compiler accepted</h2>
@@ -201,7 +213,7 @@ function init(R) {
     <span class="chip ${verified ? 'ok' : 'warn'}">${verified ? 'kernel-checked' : 'not verified'}</span>
     ${(R.summary.assessmentsRun ?? 0) ? Object.entries(R.summary.verdictCounts || {}).map(([v, n]) => `<span class="chip ${fcls(v)}">${n} ${esc(v)} (${esc((R.summary.assessorModels || []).join('; '))})</span>`).join('') : '<span class="chip">faithfulness not yet assessed</span>'}`;
   const S = R.summary;
-  const kp = [[S.theoremsCompiling, 'theorems compiling'], [S.lemmas, 'supporting lemmas'], [sorry, 'sorry in code'], [R.audit.nonStandard.length, 'non-standard axioms'], [S.claimsVerified, 'claims machine-checked'], [S.sourceLines, 'lines of Lean'], [R.build.seconds + ' s', 'last build time']];
+  const kp = [[S.theoremsCompiling, 'theorems compiling'], [S.lemmas, 'supporting lemmas'], [sorry, 'sorry in code'], [R.audit.nonStandard.length, 'non-standard axioms'], [S.claimsVerified, 'claims machine-checked'], [S.extensionsVerified ?? 0, 'extensions machine-checked'], [S.sourceLines, 'lines of Lean'], [R.build.seconds + ' s', 'last build time']];
   $('#kpis').innerHTML = kp.map(([v, l]) => `<div class="card"><div class="kpi">${esc(v)}<small>${esc(l)}</small></div></div>`).join('');
   $('#builtLine').textContent = `Report built ${R.built} from repo commit ${(R.versions.repoCommit || '').slice(0, 10) || 'unknown'}; ${R.versions.lean}.`;
 
@@ -213,7 +225,38 @@ function init(R) {
     <p class="small mute">${esc(f.context)}</p>
     ${f.note ? `<p class="small"><b>Scope here:</b> ${esc(f.note)}</p>` : ''}
     ${f.proofScope ? `<div class="grid g2" style="margin:8px 0"><div><p class="small"><b>Kernel-checked (proved in Lean):</b></p><ul class="small">${f.proofScope.kernelChecked.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div><div><p class="small"><b>Assumed, not proved (stated in the module header):</b></p><ul class="small">${f.proofScope.assumed.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div></div>` : ''}
-    <p class="small">Theorem <code>${esc(f.theorem)}</code> in <code>${esc(f.module)}</code>. Source: ${esc(f.paper?.title)} (${esc(f.paper?.year)})${f.paper?.doi ? `, <a href="https://doi.org/${esc(f.paper.doi)}">doi:${esc(f.paper.doi)}</a>` : ''}.</p></div>`).join('');
+    <p class="small">Theorem <code>${esc(f.theorem)}</code> in <code>${esc(f.module)}</code>. ${f.paper ? `Source: ${esc(f.paper.title)} (${esc(f.paper.year)})${f.paper.doi ? `, <a href="https://doi.org/${esc(f.paper.doi)}">doi:${esc(f.paper.doi)}</a>` : ''}.` : 'Not a paper\'s claim: proved in this project as an extension for the flying-fish budget, so it has no faithfulness assessment to run against a source.'}</p></div>`).join('');
+
+  // flying-fish budget
+  const FB = R.bound;
+  if (FB && FB.verified) {
+    const e2 = x => Number(x).toExponential(2), f3 = x => Number(x).toFixed(3);
+    $('#ffVerdict').innerHTML = `<span class="chip warn">verdict: ${esc(FB.comparison.verdict)}</span><span class="chip ok">${Object.keys(FB.theorems).length} theorems used, all standard axioms</span><span class="chip">neutral budget independent of N</span><span class="chip">required substitutions: undefined</span><span class="chip">computed ${esc(FB.computed)}</span>`;
+    $('#ffScope').innerHTML = `<div class="card"><h3>Kernel-checked (proved in Lean)</h3><ul class="small">${FB.kernelChecked.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div><div class="card"><h3>Assumed, not proved (arithmetic and parameters layered on top)</h3><ul class="small">${FB.assumed.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`;
+    const I = FB.inputs;
+    $('#ffParams').innerHTML = '<tr><th>Parameter</th><th>Value used</th><th>Source</th></tr>' + [
+      ['Time since oldest fossil (Ma)', `${I.durationMa.low} to ${I.durationMa.high}`, `${esc(I.durationMa.source)} <a href="${esc(I.durationMa.url)}">PBDB query</a>`, true],
+      ['Generation time (years)', `${I.generationTimeYears.low} to ${I.generationTimeYears.high} (sensitivity ${I.generationTimeYears.sensitivityHigh})`, I.generationTimeYears.sources.join(' ')],
+      ['Mutation rate per site per generation', `${e2(I.mutationRatePerSitePerGeneration.low)} to ${e2(I.mutationRatePerSitePerGeneration.high)}`, I.mutationRatePerSitePerGeneration.sources.join(' ')],
+      ['Sites per genome', e2(I.genomeSites.value), I.genomeSites.source],
+      ['Population size N', `table values ${I.populationSize.tableValues.map(e2).join(', ')}`, `Only published estimate: ${I.populationSize.pointEstimates.join('; ')}`],
+      ['Selection coefficient s', 'undefined', I.undefined.selectionCoefficient],
+      ['Fraction of mutations favored', 'undefined', I.undefined.fractionOfMutationsFavored],
+      ['Substitutions a wing requires', 'undefined', I.undefined.requiredSubstitutions]
+    ].map(([k, v, src, html]) => `<tr><th class="small">${esc(k)}</th><td class="small"><b>${esc(v)}</b></td><td class="small">${html ? src : esc(src)}</td></tr>`).join('');
+    $('#ffBudget').innerHTML = '<tr><th>Quantity</th><th>Low</th><th>High</th><th>Theorem</th></tr>' + [
+      ['Generations available T', e2(FB.generations.low), e2(FB.generations.high), 'duration / generation time'],
+      ['Neutral substitutions per site, mu T', f3(FB.neutralPerSite.low), f3(FB.neutralPerSite.high), FB.theorems.neutral.name],
+      ['Neutral substitutions genome-wide', e2(FB.neutralPerGenome.low), e2(FB.neutralPerGenome.high), FB.theorems.neutral.name],
+      ['Same, 2-year generation time (low end)', f3(FB.neutralPerSite.sensitivity2y) + ' per site', e2(FB.neutralPerGenome.sensitivity2y) + ' genome-wide', 'sensitivity'],
+      ['Floor on adaptive substitutions per site', 'mu_f T, mu_f undefined', 'equals mu T at mu_f = mu', FB.theorems.floor.name]
+    ].map(r => `<tr><th class="small">${esc(r[0])}</th><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td class="small"><code>${esc(r[3])}</code></td></tr>`).join('');
+    $('#ffBudgetNote').textContent = FB.floor.statement + ' None of these numbers depends on N: that is the content of the theorem, and it is why the poorly constrained population size does not matter for the floor.';
+    $('#ffCeiling').innerHTML = '<tr><th>N</th><th>2 N mu T per site, low</th><th>high</th></tr>' + FB.ceiling.perSiteByN.map(r => `<tr><td>${esc(e2(r.N))}</td><td>${esc(e2(r.low))}</td><td>${esc(e2(r.high))}</td></tr>`).join('');
+    $('#ffCeilingNote').textContent = FB.ceiling.statement + ` Theorem ${FB.theorems.ceiling.name}.`;
+    $('#ffUndefined').innerHTML = Object.entries(I.undefined).map(([k, v]) => `<li><b>${esc(k)}:</b> ${esc(v)}</li>`).join('') + FB.assumed.slice(1).map(x => `<li>${esc(x)}</li>`).join('');
+    $('#ffReason').textContent = FB.comparison.reason;
+  } else { $('#ffVerdict').innerHTML = `<span class="chip warn">budget not computed${FB && FB.error ? ': ' + esc(FB.error) : ''}</span>`; }
 
   // faithfulness assessments by other providers
   $('#faithCards').innerHTML = R.formalized.map(f => `<div class="card"><h3>${esc(f.label)}</h3>

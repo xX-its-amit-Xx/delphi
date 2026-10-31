@@ -75,3 +75,34 @@ location matters for reproduction.
   change would be arithmetic dressed in the law's vocabulary. All six were rejected at the changed
   line, and the unmodified modules passed through the same command. Details in
   `lean/nanopubs/README.md`.
+
+## Flying-fish budget: where Lean stops
+
+`Delphi/Favored.lean` extends the Kimura module for one question from the hub: did the flying-fish lineage
+have time for Darwin's "perfectly winged animals" (Origin, ch. VI)? The honest answer is **inconclusive**, and
+the files are arranged so that the reason is visible.
+
+**Kernel-checked** (`#print axioms`: standard only; three statement mutants rejected): in any absorbing chain
+on `0..M` copies whose expected copy number never decreases (neutral, or selection for the mutant), a lineage of
+`i` copies fixes with probability at least `i/M` (`FavoredChain.fixationProbability_ge`); Wright-Fisher sampling
+with relative fitness `1+s`, `s >= 0`, is such a chain (`wrightFisherSelection`); and for the defined expected
+count `M mu u T` the bounds `mu T <= M mu u T <= M mu T` hold. The neutral count is `mu T` for every `M`.
+
+**Not kernel-checked**: that the expected count is the right quantity (it is Kimura's 1968 definition, so
+independence of mutant fates, constant `M`, `mu`, `s` and non-overlapping generations are assumed by it); and
+every number. `lean/bound/parameters.json` names a source for each parameter (PBDB first appearance
+48.07-56 Ma; FishBase generation time 0.6-1.0 y for one species; herring and stickleback pedigree
+mutation rates 1.1e-9 to 4.83e-9; a 1.04 Gb draft genome; one mtDNA Ne estimate above 1e9 for *Exocoetus
+volitans*). `lean/bound/compute.mjs` applies the theorems' formulas and writes `lean/bound/result.json`,
+folded into `lean.json` as `bound`.
+
+**Result**: 4.81e+07-9.33e+07 generations; neutral budget 0.053-0.451 substitutions per site
+(5.50e+07-4.69e+08 genome-wide), independent of `N` by the theorem; adaptive floor `mu_f T` with `mu_f`
+undefined; ceiling `2 N mu T` vacuous. The denominator, "substitutions a wing requires", is not a defined
+quantity, and no figure is invented. Kimura's selected-fixation formula `u ~ 2s` is **not** formalised; the
+module proves only that selection for a mutant cannot make fixation rarer than drift does.
+
+The record `lean/nanopubs/unsigned/bound-exocoetidae-substitution-budget.trig` (a `delphi:Hypothesis`, since
+no source states it) cites the three law records, the PBDB dataset record, the literature DOIs, and the
+organism thread's blueprint record via `skos:related`, with a comment saying the two are independent
+statements about the same taxon. `lean/bound/links.json` holds that link; the lean thread owns it.
