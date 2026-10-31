@@ -538,7 +538,11 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
       const on = nodes.get(o); const key = m.replace('morph:', ''); if (!on) continue;
       (graphLinks[key] || (graphLinks[key] = [])).push({ id: o, label: on.label, type: on.type, rel: l.rel, out: m === a, browse: 'graph/?view=flyingfish' });
     }
-    const provenance = { constraints: provConstraints, nanopubs, physics, graph_links: graphLinks,
+    // Lean morphology grounding (lean/morphology-grounding.json): per manifest object, which theorems constrain it,
+    // their audit verdicts, how, numbers, and what nothing constrains. Shown instead of the generic constraint list.
+    const mg = J('lean/morphology-grounding.json');
+    const grounding = mg && mg.grounding ? { file: 'lean/morphology-grounding.json', summary: mg.summary || null, audit_file: 'lean/flying-fish-audit.json', page: 't/lean/#audit-fish', parts: mg.grounding } : null;
+    const provenance = { constraints: provConstraints, nanopubs, physics, graph_links: graphLinks, grounding,
       note: 'Constraints apply by level as stated in constraints.applies; every proofScope is about the stated model, not about any fish. Nanopub drafts are unsigned and unpublished. Graph links are the explicit edges of dashboard/public/graph.json, never text matches.',
       applies: { all: provConstraints.all.map(c => c.id), skeleton_fin: provConstraints.skeleton_fin.map(c => c.id) } };
     // ---- physiology and interactions inputs (other threads' files), copied into the viz folder when present ----
