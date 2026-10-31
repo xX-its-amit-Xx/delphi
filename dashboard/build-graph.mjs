@@ -161,11 +161,54 @@ for (const t of (inv?.taxa || [])) {
   for (const c of hits) link('claim:' + c, tid, 'mentions');
 }
 
+
+// ---- open problems -> candidates -> the constraint that ruled on them (lean/eliminate ledger) ----
+const ledger = J('lean/eliminate/ledger.open-problems.json');
+const constraints = J('lean/constraints.json');
+const cons = new Map(((constraints && (constraints.constraints || constraints)) || []).map(c => [c.id, c]));
+for (const row of (ledger?.ledger || [])) {
+  const pid = 'problem:' + (row.meta?.problem_id || row.id.split('/')[0]);
+  add(pid, {
+    type: 'problem', domain: 'none', label: String(row.problem || '').slice(0, 90),
+    info: { statement: row.problem, source: row.meta?.problem_source || row.source || null },
+    prov: { file: 'open-problems/problems.json', id: row.meta?.problem_id || null, retrieved: row.meta?.retrieved || null },
+    core: true, ledger: true
+  });
+  const cid = 'cand:' + row.id;
+  add(cid, {
+    type: 'candidate', domain: 'none', label: String(row.description || row.id).slice(0, 90),
+    verdict: /^eliminated/.test(row.verdict) ? 'eliminated' : /^consistent/.test(row.verdict) ? 'consistent' : 'cannot-rule', ledger: true, core: true,
+    info: {
+      statement: row.description, verdictLong: row.verdict, provenance: row.provenance,
+      illustrative: !!row.uses_illustrative_values, caveat: row.eliminationCaveat || null,
+      commits: row.commits || null, untranslatable: row.untranslatable || null,
+      notFormalised: row.notFormalised || [],
+      results: (row.results || []).map(r => ({ constraint: r.constraint, state: r.state, lemma: r.lemma, relation: r.relation, faithfulness: r.faithfulness, reason: r.reason, code: r.reasonCode }))
+    },
+    prov: { file: 'open-problems/candidates.formal.json', ledger: 'lean/eliminate/ledger.open-problems.json', certificates: 'lean/Delphi/Certificates/EliminationsOpenProblems.lean' }
+  });
+  link(pid, cid, 'candidate answer');
+  for (const r of (row.results || [])) {
+    const k = r.constraint;
+    const st = /^eliminated/.test(r.state || '') ? 'eliminated' : /^consistent/.test(r.state || '') ? 'consistent' : null;
+    if (!k || !st) continue;   // cannot-rule stays in the panel, with its reason code
+    const kid = 'constraint:' + k, c = cons.get(k) || {};
+    add(kid, {
+      type: 'theorem', domain: 'mathbio', label: `${k}: ${String(c.property || c.name || '').slice(0, 60)}`,
+      info: { english: c.property || null, relation: r.relation, mutations: null, faithfulness: r.faithfulness || c.faithfulness || null,
+              kernelChecked: c.proofScope?.kernelChecked || [], assumed: c.proofScope?.assumed || [] },
+      prov: { file: 'lean/constraints.json', lemma: r.lemma || c.lemma || null, theorem: c.theorem || null, module: 'lean/Delphi/Constraints.lean' },
+      core: true, ledger: true
+    });
+    link(cid, kid, st === 'eliminated' ? 'eliminated by' : 'consistent with');
+  }
+}
+
 const out = {
   builtAt: new Date().toISOString(),
   legend: {
     domains: { darwin: 'Darwin, evolution', thompson: 'Thompson, growth and form', wolfram: 'Wolfram, computation', mathbio: 'Mathematical biology (Fisher, Kimura, Hamilton, Maynard Smith, Turing)' },
-    types: { claim: 'claim', test: 'data test', theorem: 'Lean theorem or bound', dataset: 'dataset', taxon: 'taxon', source: 'source sentence', morph: 'blueprint structure' }
+    types: { problem: 'open problem', candidate: 'candidate answer', claim: 'claim', test: 'data test', theorem: 'Lean theorem or bound', dataset: 'dataset', taxon: 'taxon', source: 'source sentence', morph: 'blueprint structure' }
   },
   counts: {
     nodes: nodes.size, links: links.length,
