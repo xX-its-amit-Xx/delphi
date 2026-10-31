@@ -174,3 +174,22 @@ at body 0.015 or lobe 0.15. As drag areas: body C_d·A ≤ 7 × 10⁻⁶ m², lo
 assumption (C_d 0.1 on the body) is ten times the body threshold. Any future fetched drag value decides H3 directly against
 this bound. Even where airborne, the maximum speed reached is 11.5 to 13.7 m/s, below the field 15 to 20 m/s, so the chain's
 power reproduces lift-off but not the field airspeed at any drag in the sweep.
+
+## TFF v2 and the winged zebrafish (design-study readouts, not tests), 2026-10-31 ~21:40 UTC
+
+**TFF v2 (fish 2, HYPOTHETICAL; physics/flier/tff/tff.json).** Altitude-dependent air density and O2 partial pressure from the
+NASA GRC troposphere fit; flapping power = the co-design aerobic capacity 1.31 W scaled by C_a(h)/C_a(0) on the trout Hill curve
+(air-breathing assumed; the chain is not used because it has no air-breathing path), minus 0.48 W inertial. First run at the
+v1 flier's 8 deg angle of attack: no climb (the fish flew at 6.3 m/s and the 10 percent margin went to drag); the TFF's angle
+was then set to 30 deg so it flies near the minimum speed where the map evaluates the requirement (assumed, recorded in
+params.json). Final run, 600 s: lifts off at 11.6 m/s, climbs at 0.15 m/s at 5.2 m/s airspeed to 91 m, with 3.1 km covered;
+the map's ceiling for this point is 2741 m (arterial PO2 = inspired PO2, an upper bound), which at this margin would take
+about five hours of flight. Consistent with the map; nothing else moved.
+
+**Winged zebrafish (fish 3, HYPOTHETICAL).** 3.0 cm standard length, 0.51 g (FishBase Danio rerio length-weight, an
+unverified estimate row), flying-fish fin proportions by isometric scaling of the Park and Choi fins: wing loading 18 N/m2,
+v_min 6.1 m/s = 205 body lengths per second. Run on the chain-driven launch (v2=1, phys=1): never airborne; peak 7.3 m/s,
+then the burst store empties and it taxis at 2 m/s for the rest of the 60 s. Run on the tuned flying-fish launch (no chain;
+unphysical for this body, kept only to answer "could it glide if launched"): six glides of 12 to 17 m lasting 1.6 to 2.5 s to
+0.7 to 3.3 m at 9.6 to 12.2 m/s. So: fins of flying-fish proportion would let a zebrafish body glide if something launched it
+above 6 m/s; its own modelled muscles do not. One panel of the 2x2; the other three are Genotype's.

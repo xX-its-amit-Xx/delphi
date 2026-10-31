@@ -65,7 +65,7 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
 <header class="top"><div class="wrap">
   <a class="back" href="../../index.html">&larr; Mission Control</a>
   <span class="brand">Physics thread</span>
-  <nav><a href="#result">Result</a><a href="#envelope">Envelope</a><a href="#sim">Simulator</a><a href="#flier">Flier (hypothetical)</a><a href="#bridge">Bridge</a><a href="#data">Glide data</a><a href="#compare">Comparison</a><a href="#formal">For Lean</a><a href="#method">Method</a><a href="#honest">Limits</a><a href="#sources">Sources</a></nav>
+  <nav><a href="#result">Result</a><a href="#envelope">Envelope</a><a href="#sim">Simulator</a><a href="#flier">Flier (hypothetical)</a><a href="#tff">TFF map</a><a href="#bridge">Bridge</a><a href="#data">Glide data</a><a href="#compare">Comparison</a><a href="#formal">For Lean</a><a href="#method">Method</a><a href="#honest">Limits</a><a href="#sources">Sources</a></nav>
   <button id="themeBtn" title="Toggle light or dark">Theme</button>
 </div></header>
 
@@ -123,6 +123,18 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
    <p class="small mute">Not established: that such a fish could develop (development is not simulated), that fins of four times the area keep the measured polar, that any gill can deliver the oxygen, and anything about birds. The genome question is Genotype's: the parameter diff above is what they translate.</p>
   </div>
 </div>
+</section>
+
+<section id="tff"><h2>TFF v2: a co-design map for altitude <span class="chip bad">HYPOTHETICAL</span></h2>
+<p class="lede">The Lean thread's certificates make the oxygen side binding: sustained aerobic flight is eliminated for the real fish and the first flier (aerobic ceiling 0.0357 W against about 1 W), and gills do not work in air. So the truly-flying fish is no longer a point but a map: for each altitude, the pairs of wing loading and aerobic capacity (&eta;&middot;E&middot;Q&middot;C<sub>a</sub>) that allow sustained level flight, using the real fin polar, the standard atmosphere for air density and oxygen partial pressure (NASA GRC fit, fetched), and the trout haemoglobin curve from the physiology chain. Birds are the frozen holdout, so "similar to birds" is not benchmarked against any bird: the target altitude, 1000 m, comes from a bat reference (Brazilian free-tailed bats forage at over 1 km above ground), and the map is drawn to 5000 m to show the shrinkage. Files: <a href="data/flier/tff/tff.json">tff.json</a>, <a href="data/flier/tff/lean-candidates-tff.json">lean-candidates-tff.json</a>, <a href="data/flier/tff/COEVOLUTION.md">COEVOLUTION.md</a>. Run it: <a href="sim/index.html?fish=2">the simulator with the TFF</a> (altitude readout) and <a href="sim/index.html?fish=3">the winged zebrafish</a>.</p>
+<div class="fig" id="tffwrap"><div id="figTff"></div>
+<p class="small mute">Above each curve, sustained level flight is possible at that altitude. The region shrinks with altitude on both axes: thinner air raises the minimum speed and the power for every wing loading, and lower oxygen pressure lowers the arterial content for every cardiac output. Along a curve, bigger wings (lower wing loading) buy lower oxygen capacity as a square root. The real fish sits below every curve by more than thirty times; the TFF point reaches 1000 m only with an oxygen supply no sourced fish has. Hover any curve or point for its numbers.</p></div>
+<div class="grid g2" style="margin-top:14px">
+  <div class="card"><h3>The TFF v2 spec, and what no animal has</h3><div id="tffSpec" class="small"></div></div>
+  <div class="card"><h3>Ceiling as a function of parameters</h3><div id="tffCeil" class="small"></div><p class="small mute">Highest altitude at which &eta;&middot;E&middot;Q&middot;C<sub>a</sub>(h) &ge; W&middot;v<sub>min</sub>(h)/(L/D) + inertial power, with arterial PO<sub>2</sub> taken equal to inspired PO<sub>2</sub> (an assumed upper bound). "none" means not even at sea level.</p></div>
+</div>
+<div class="card" style="margin-top:14px"><h3>Co-evolution of wings and oxygen processing: what the literature search found</h3><p class="small" id="coevo">The project lead's hypothesis is that wing size co-evolves with oxygen processing because oxygen thins with altitude. The map above says a model-level version of that: at a given altitude, flight needs either lower wing loading or higher oxygen delivery. A logged literature search for comparative evidence in bats and insects (no birds) found <b>no source either supporting or opposing</b> the co-variation; two insect elevational-gradient papers would be the first to read, and the high-altitude mammal haemoglobin literature exists by title but was not read. The claim stays a hypothesis. Details and verdict: <a href="data/flier/tff/COEVOLUTION.md">COEVOLUTION.md</a>.</p></div>
+<div class="card" style="margin-top:14px"><h3>The 2&times;2: a winged zebrafish</h3><p class="small" id="zebra">One panel of the developmental comparison. An adult zebrafish of 3.0 cm standard length weighs 0.51 g by the FishBase length-weight row for the species (an unverified estimate, like most flying-fish rows). Given flying-fish fin proportions by isometric scaling of the measured fins, its wing loading is 18 N/m² and its minimum lift-supported speed 6.1 m/s, which is 205 body lengths per second. The simulator result for whether it can reach that speed on its scaled physiology is in the status line below once run.</p><p class="small mute" id="zebraRun"></p></div>
 </section>
 
 <section id="bridge"><h2>The bridge: fin proportion from real specimens, under the envelope</h2>
@@ -205,8 +217,11 @@ const chip=(v)=>{const cls=v==='inside'||v==='supports'?'ok':(v==='outside'||v==
 Promise.all([
   fetch('status.json').then(r=>r.json()), fetch('results.json').then(r=>r.json()),
   fetch('data/glide-data.csv').then(r=>r.text()), fetch('data/comparison-data.csv').then(r=>r.text()),
-  fetch('data/sources.json').then(r=>r.json()), fetch('data/allometry.json').then(r=>r.json()), fetch('envelope.svg').then(r=>r.text()), fetch('vmin-band.svg').then(r=>r.text()), fetch('bridge.svg').then(r=>r.text()), fetch('bridge.json').then(r=>r.json())
-]).then(([st,res,gcsv,ccsv,src,allo,svg,svg2,svg3,br])=>{
+  fetch('data/sources.json').then(r=>r.json()), fetch('data/allometry.json').then(r=>r.json()), fetch('envelope.svg').then(r=>r.text()), fetch('vmin-band.svg').then(r=>r.text()), fetch('bridge.svg').then(r=>r.text()), fetch('bridge.json').then(r=>r.json()), fetch('tff-map.svg').then(r=>r.text()), fetch('data/flier/tff/tff.json').then(r=>r.json())
+]).then(([st,res,gcsv,ccsv,src,allo,svg,svg2,svg3,br,svg4,tf])=>{
+  document.getElementById('figTff').innerHTML=svg4;
+  const T=tf.tff; document.getElementById('tffSpec').innerHTML=`<table><tr><th>parameter</th><th>TFF v2</th><th>measured range (sourced)</th><th>verdict</th></tr>${tf.parameters_vs_measured_ranges.map(r=>`<tr><td>${r.parameter}</td><td>${typeof r.tff==='number'?(r.tff>=10?r.tff.toFixed(0):r.tff.toFixed(2)):r.tff} ${r.unit}</td><td class="mute">${r.measured_range_sourced}</td><td>${r.verdict}</td></tr>`).join('')}</table><p>Mass ${T.mass_kg.value} kg (kept); lifting area ${(0.5886/T.wing_loading_N_m2.value).toFixed(4)} m²; aerobic capacity ${T.aerobic_capacity_W.value.toFixed(2)} W; O<sub>2</sub> to be taken up in air ${T.air_breathing_surface.required_O2_uptake_ml_min_kg.toFixed(0)} ml/min/kg (surface area not computable: ${T.air_breathing_surface.note.split(';')[1]||''}); target ${T.target_altitude_m.value} m (${T.target_altitude_m.justification}); ceiling ${T.ceiling_m.value.toFixed(0)} m.</p>`;
+  const ct=tf.ceiling_table; document.getElementById('tffCeil').innerHTML='<table><tr><th>W/S N/m²</th><th>cardiac output ml/s (ml/min/kg)</th><th>ceiling m</th></tr>'+ct.map(r=>`<tr><td>${r.Q}</td><td>${r.Qc_ml_s} (${(r.Qc_ml_s*60/0.06).toFixed(0)})</td><td>${r.ceiling_m==null?'none':r.ceiling_m.toFixed(0)}</td></tr>`).join('')+'</table>';
   document.getElementById('figVmin').innerHTML=svg2;
   document.getElementById('figBridge').innerHTML=svg3;
   const ffs=br.groups['flying fish'];

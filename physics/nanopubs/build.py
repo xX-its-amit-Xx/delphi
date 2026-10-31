@@ -262,5 +262,33 @@ man.append(record('finding-sim-v3-drag-not-power.trig', 'Hypothesis',
     "Does not establish: which drag coefficient is right, or that the real fish's hydrodynamic losses are small (only that the chain's power suffices if they are); anything about burst-powered flight beyond v1's post-hoc finding; anything about birds. Tests 1 to 3 remain post-hoc; the preprint's numbers are labelled preprint and used for nothing.",
     scopes=["Simulated throughout; the pre-registration fixed the hypothesis, its refuting outcome, the untestability of the drag arm, and both arms before any run."],
     related=CLAIM))
+
+# 12. TFF v2 co-design map
+tf = json.load(open(os.path.join(PHYS, 'flier', 'tff', 'tff.json'), encoding='utf-8')); T = tf['tff']
+man.append(record('hypothesis-tff-v2-codesign-map.trig', 'Hypothesis',
+    'https://w3id.org/delphi/resource/hypothesis/truly-flying-fish-codesign-map-altitude',
+    'HYPOTHETICAL: for a 60 g flying fish to sustain flight at altitude, the gap to close is oxygen delivery, not wing size; within the troposphere the feasible region shrinks by about a third while the real fish sits thirty times below it',
+    f"Co-design map under the real fin polar (Park and Choi 2010), the NASA GRC standard-atmosphere fit for air density and O2 partial pressure, and the trout haemoglobin curve of the physiology chain: sustained level flight at altitude h needs aerobic capacity eta E Q C_a(h) >= W v_min(h)/(L/D) + inertial power, with v_min = sqrt(2 (W/S)/(rho(h) C_Lmax)). The feasible region in (wing loading, aerobic capacity) shrinks with altitude on both axes: from sea level to 5000 m the required capacity at any wing loading rises by about 30 percent (rho 1.227 to 0.738 kg/m3) and the arterial content falls from 0.190 to 0.173 ml/ml; along a boundary, lower wing loading buys lower capacity as a square root. The real fish (46.4 N/m2, 0.0357 W by Lean's C14 numbers) lies below every boundary by more than thirty times. A design point at 12 N/m2 reaching a 1000 m target (chosen from the one non-bird altitude reference fetched, Tadarida brasiliensis foraging above 1 km) needs {T['aerobic_capacity_W']['value']:.2f} W, which at the chain's efficiency and the trout curve is a cardiac output of {T['cardiac_output_ml_s_at_fish_Ca']['per_kg_ml_min']:.0f} ml/min/kg, 36 times the sourced fish maximum, or an air-breathing surface taking up {T['air_breathing_surface']['required_O2_uptake_ml_min_kg']:.0f} ml O2/min/kg in air, whose area no fetched source allows computing; its ceiling is {T['ceiling_m']['value']:.0f} m with arterial PO2 equal to inspired PO2 (an upper bound). In the simulator with altitude-dependent density and O2 it climbs at 0.15 m/s. Status: hypothesis (design study); the parameters it needs are outside every measured range fetched.",
+    'inconclusive',
+    'https://w3id.org/delphi/resource/evidence/physics-tff-v2-map',
+    'physics/flier/tff/design.py outputs: boundaries, ceiling table, parameter comparison',
+    "tff.json: atmosphere samples (NASA GRC fit fetched 2026-10-31T21:13:00Z), C_a at 0 to 5000 m, boundary A_req(h, W/S) for h = 0, 1000, 2000, 3000, 5000 m, ceiling table over wing loading 8 to 46.4 N/m2 and cardiac output 0.0656 to 4 ml/s, parameter-versus-measured-range table. Sim run (fish 2, 600 s): lift-off 11.6 m/s, climb 0.15 m/s at 5.2 m/s, 91 m. No bird value used; birds are the frozen holdout.",
+    [doi('park-choi-2010'), '<https://doi.org/10.1098/rsos.160398>', '<https://doi.org/10.1371/journal.pone.0139477>'],
+    "Does not establish: that any organism can have these values (the cardiac output and the air-breathing surface are outside everything fetched); the co-evolution of wings and oxygen processing (a logged search found no comparative evidence either way, physics/flier/tff/COEVOLUTION.md); anything about development; anything about birds. The square-root trade and the shrinkage are consequences of the lift equation and the Hill curve, not observations.",
+    scopes=["Hypothetical throughout. Assumed: arterial PO2 equals inspired PO2; the real fin polar at four times the area; eta 0.15 and E 19.34 J/ml from the chain; troposphere fit valid to 11 km."],
+    related='https://w3id.org/delphi/resource/claim/thompson1917-ch02-07'))
+# 13. winged zebrafish
+man.append(record('finding-winged-zebrafish-cannot-launch.trig', 'Hypothesis',
+    'https://w3id.org/delphi/resource/hypothesis/winged-zebrafish-could-glide-but-cannot-launch',
+    'HYPOTHETICAL: a zebrafish with flying-fish fin proportions could glide if launched above six metres per second, but its own modelled muscles do not get it out of the water',
+    "An adult zebrafish of 3.0 cm standard length weighs 0.51 g by the FishBase length-weight row for Danio rerio (a 0.01889, b 3.000; an unverified estimate row, like most flying-fish rows). With the Park and Choi fins scaled isometrically to its length its wing loading is 18 N/m2 and its minimum lift-supported speed 6.1 m/s, 205 body lengths per second. In the simulator with the physiology chain scaled to its mass and the launch driven by that power, it peaks at 7.3 m/s, empties its burst store, never becomes airborne, and taxis at 2 m/s. With the flying-fish-tuned launch (unphysical for this body) it glides six times, 12 to 17 m for 1.6 to 2.5 s. Status: supported, as a statement about the model; one panel of the four-way developmental comparison, the other three being the genetics thread's.",
+    'supported',
+    'https://w3id.org/delphi/resource/evidence/physics-winged-zebrafish-runs',
+    'Winged-zebrafish parameters and two simulator runs',
+    "FishBase Danio rerio length-weight page fetched 2026-10-31T21:14:25Z (one row, n 3, locality not given). Areas and lengths scaled by (3.0/20.3): reference area 2.77e-4 m2, span 0.0386 m, frontal area 1.53e-5 m2 (assumed). Runs: fish=3&phys=1&v2=1 (chain launch): not airborne, peak 7.3 m/s; fish=3 (tuned launch): six glides 12 to 17 m. physics/sim/RUNS.md.",
+    ['<https://www.fishbase.se/>', doi('park-choi-2010')],
+    "Does not establish: what a real winged zebrafish would do (the physiology is a chain of proxies scaled by mass; the fins are a geometric scaling; the length-weight row is unverified); anything about development, which is not simulated; anything about birds.",
+    scopes=["Hypothetical; isometric scaling of fins and of the chain's physiology by mass is assumed."],
+    related='https://w3id.org/delphi/resource/claim/darwin1859-ch06-05'))
 json.dump({'built': NOW, 'signed': 0, 'published': 0, 'hashes': H, 'records': man}, open(os.path.join(HERE, 'manifest.json'), 'w', encoding='utf-8'), indent=2)
 print(json.dumps(man, indent=1))

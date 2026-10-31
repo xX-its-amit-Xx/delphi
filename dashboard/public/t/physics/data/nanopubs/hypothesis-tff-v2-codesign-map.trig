@@ -1,0 +1,63 @@
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+@prefix schema: <https://schema.org/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/hypothesis/truly-flying-fish-codesign-map-altitude> a delphi:Hypothesis, skos:Concept ;
+    rdfs:label "HYPOTHETICAL: for a 60 g flying fish to sustain flight at altitude, the gap to close is oxygen delivery, not wing size; within the troposphere the feasible region shrinks by about a third while the real fish sits thirty times below it" ;
+    dct:description "Co-design map under the real fin polar (Park and Choi 2010), the NASA GRC standard-atmosphere fit for air density and O2 partial pressure, and the trout haemoglobin curve of the physiology chain: sustained level flight at altitude h needs aerobic capacity eta E Q C_a(h) >= W v_min(h)/(L/D) + inertial power, with v_min = sqrt(2 (W/S)/(rho(h) C_Lmax)). The feasible region in (wing loading, aerobic capacity) shrinks with altitude on both axes: from sea level to 5000 m the required capacity at any wing loading rises by about 30 percent (rho 1.227 to 0.738 kg/m3) and the arterial content falls from 0.190 to 0.173 ml/ml; along a boundary, lower wing loading buys lower capacity as a square root. The real fish (46.4 N/m2, 0.0357 W by Lean's C14 numbers) lies below every boundary by more than thirty times. A design point at 12 N/m2 reaching a 1000 m target (chosen from the one non-bird altitude reference fetched, Tadarida brasiliensis foraging above 1 km) needs 1.31 W, which at the chain's efficiency and the trout curve is a cardiac output of 2365 ml/min/kg, 36 times the sourced fish maximum, or an air-breathing surface taking up 451 ml O2/min/kg in air, whose area no fetched source allows computing; its ceiling is 2741 m with arterial PO2 equal to inspired PO2 (an upper bound). In the simulator with altitude-dependent density and O2 it climbs at 0.15 m/s. Status: hypothesis (design study); the parameters it needs are outside every measured range fetched." ;
+    delphi:context "Claim under test: thompson1917-ch02-06 (D Arcy Thompson 1917, On Growth and Form, ch. II, Project Gutenberg 55264 lines 1716-1790), with thompson1917-ch02-07 and thompson1917-ch02-10. Taxon: Exocoetidae, NCBI Taxonomy 76072, GBIF 2968. Class Aves is the frozen holdout (holdout/exam.json); no bird value enters this record." ;
+    delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/physics-tff-v2-map> ;
+    prov:wasDerivedFrom <https://doi.org/10.1242/jeb.046052>, <https://doi.org/10.1098/rsos.160398>, <https://doi.org/10.1371/journal.pone.0139477> ;
+    skos:scopeNote "Hypothetical throughout. Assumed: arterial PO2 equals inspired PO2; the real fin polar at four times the area; eta 0.15 and E 19.34 J/ml from the chain; troposphere fit valid to 11 km." ;
+    rdfs:comment "Status: inconclusive. Does not establish: that any organism can have these values (the cardiac output and the air-breathing surface are outside everything fetched); the co-evolution of wings and oxygen processing (a logged search found no comparative evidence either way, physics/flier/tff/COEVOLUTION.md); anything about development; anything about birds. The square-root trade and the shrinkage are consequences of the lift equation and the Hill curve, not observations." ;
+    rdfs:comment "Pre-registration: physics/tests/thompson1917-ch02-06/result.json, written 2026-10-31T18:21:00Z before any wing loading, lifting area or lift coefficient was read, amended 2026-10-31T18:26:00Z before any fit ran (the file lists both and the values seen before each); sha256 at build 0094c084db22278a5f98d96cc2971ccd27813b0acdc458d60cadf7c7b7bcae48. The git commit that timestamps it is pending: the physics thread does not commit; the hub does." ;
+    skos:related <https://w3id.org/delphi/resource/claim/thompson1917-ch02-07> ;
+    rdfs:seeAlso <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/>, <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/results.json> .
+  <https://w3id.org/delphi/resource/evidence/physics-tff-v2-map> a delphi:EvidenceItem ;
+    rdfs:label "physics/flier/tff/design.py outputs: boundaries, ceiling table, parameter comparison" ;
+    dct:description "tff.json: atmosphere samples (NASA GRC fit fetched 2026-10-31T21:13:00Z), C_a at 0 to 5000 m, boundary A_req(h, W/S) for h = 0, 1000, 2000, 3000, 5000 m, ceiling table over wing loading 8 to 46.4 N/m2 and cardiac output 0.0656 to 4 ml/s, parameter-versus-measured-range table. Sim run (fish 2, 600 s): lift-off 11.6 m/s, climb 0.15 m/s at 5.2 m/s, 91 m. No bird value used; birds are the frozen holdout." ;
+    dct:subject <https://w3id.org/delphi/resource/hypothesis/truly-flying-fish-codesign-map-altitude> ;
+    rdfs:comment "Computed by physics/analysis.py from physics/glide-data.csv (sha256 bc24245b5163723b192e95fccf714ef6e4b3b28e71df4fef3befbaf008a00635) and physics/comparison-data.csv (sha256 e0d3d74639c1fe856fe5128c1783151596fde3acc923a2409be3d3f870cc394a); numbers in physics/results.json (sha256 63336841c0d4c9ae2760ae5c87a9251b97218e3ebfdd453cad4cffb9cdf6ba0b). Every input value carries its source, locator, retrieval time and value kind in those files." ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/results.json>, <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/data/glide-data.csv>, <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/data/comparison-data.csv> .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/delphisci-physics-thread-builder> ;
+    prov:wasDerivedFrom <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/data/result.json>, <https://delphi-mission-control.ashenoy000.workers.dev/t/physics/results.json> .
+  <https://w3id.org/delphi/resource/agent/delphisci-physics-thread-builder> a prov:SoftwareAgent ;
+    rdfs:label "delphisci physics thread (Claude Fable 5.1 writing the data tables, the analysis script and this builder; a builder, not an assessor)" ;
+    delphi:usesModel <https://w3id.org/delphi/resource/model/claude-fable-5-1> .
+  <https://w3id.org/delphi/resource/model/claude-fable-5-1> a delphi:LanguageModel ;
+    rdfs:label "Claude Fable 5.1" ;
+    dct:identifier "claude-fable-5-1" .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-10-31T21:21:39.000Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/delphisci-physics-thread-builder> ;
+    rdfs:label "HYPOTHETICAL: for a 60 g flying fish to sustain flight at altitude, the gap to close is oxygen delivery, not wing size; within the troposphere the feasible region shrinks by about a third while the real fish sits thirty times below it" ;
+    rdfs:comment "Unsigned draft. Not a publication. The test registry comes first and production needs the ORCID key owner's explicit approval every time. Owner ORCID not set: the key owner adds it at signing time; until then no human is named in this record." ;
+    rdfs:comment "Hand-authored in Delphi ontology v2.0 terms (https://w3id.org/delphi/ontology/) by the builder, not created from a template: the published Delphi templates still use legacy probknow IRIs (team decision 2026-10-31, DECISIONS.md), so no nt:wasCreatedFromTemplate is declared and a template-conformance checker will report none." ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType <https://w3id.org/delphi/ontology/Hypothesis> ;
+    npx:introduces <https://w3id.org/delphi/resource/hypothesis/truly-flying-fish-codesign-map-altitude> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/biomechanics-and-scaling> .
+  <https://w3id.org/delphi/resource/domain/biomechanics-and-scaling> rdfs:label "biomechanics-and-scaling" .
+}
