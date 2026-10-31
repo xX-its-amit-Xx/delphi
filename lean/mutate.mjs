@@ -62,7 +62,19 @@ const mutations = [
     find: '    neverIn := [', replace: '    neverIn := [(1, 7742), ' },
   { id: 'thompson-exponent-two', file: 'Delphi/Thompson.lean', theorem: 'Delphi.cubeLaw_loglog_exponent', claim_id: 'thompson1917-ch03-07',
     description: 'Statement changed to claim the log-log exponent of a cube law is 2 instead of 3.',
-    find: '(h₂ : 0 < L₂) (hne : L₁ ≠ L₂) : logSlope W L₁ L₂ = 3 := by', replace: '(h₂ : 0 < L₂) (hne : L₁ ≠ L₂) : logSlope W L₁ L₂ = 2 := by' }
+    find: '(h₂ : 0 < L₂) (hne : L₁ ≠ L₂) : logSlope W L₁ L₂ = 3 := by', replace: '(h₂ : 0 < L₂) (hne : L₁ ≠ L₂) : logSlope W L₁ L₂ = 2 := by' },
+  { id: 'elimination-certificate-false-claim', file: 'Delphi/Certificates/Eliminations.lean', theorem: 'Delphi.Constraints.Eliminations.elim_giant_insect_mass_C7', claim_id: 'thompson1917-ch03-07',
+    description: 'Certificate sabotaged: the giant-insect elimination is rewritten to claim that a weight ratio of exactly 10^6 at length ratio 100 is ruled out. It is not (10^6 = 100^3), so norm_num must fail and the kernel must reject the certificate.',
+    find: '((100 : ℝ) ≤ W L₂ / W L₁ ∧ W L₂ / W L₁ ≤ (100 : ℝ))', replace: '((1000000 : ℝ) ≤ W L₂ / W L₁ ∧ W L₂ / W L₁ ≤ (1000000 : ℝ))' },
+  { id: 'constraints-fisher-sign-flipped', file: 'Delphi/Constraints.lean', theorem: 'Delphi.Constraints.fisher_decline_rules_out', claim_id: 'fisher-ftns',
+    description: 'Lemma statement changed to rule out a RISE in mean fitness (0 < b) instead of a fall; the law says mean fitness never decreases, so this must fail.',
+    find: '    (hΔ : meanFitness (select p w) w - meanFitness p w ≤ b) (h : b < 0) : False := by', replace: '    (hΔ : meanFitness (select p w) w - meanFitness p w ≤ b) (h : 0 < b) : False := by' },
+  { id: 'constraints-twofold-factor-three', file: 'Delphi/Constraints.lean', theorem: 'Delphi.Constraints.twofold_factor_rules_out', claim_id: 'maynardsmith-twofold-cost',
+    description: 'Lemma statement changed to rule out any odds factor other than 3 instead of 2; the law gives exactly 2, so this must fail.',
+    find: '(hr : odds (asexualNext q f) = r * odds q) (h : r ≠ 2) : False := by', replace: '(hr : odds (asexualNext q f) = r * odds q) (h : r ≠ 3) : False := by' },
+  { id: 'open-problems-certificate-ratio-one', file: 'Delphi/Certificates/EliminationsOpenProblems.lean', theorem: 'Delphi.Constraints.Eliminations.elim_ORX_20_C2_C1b', claim_id: 'kimura-substitution-rate',
+    description: 'Certificate sabotaged: the ORX-20/C2 elimination is rewritten to claim that a substitution-rate ratio of exactly 1 at equal mutation rates is ruled out. It is not (that is the theorem), so norm_num must fail and the kernel must reject it.',
+    find: '(100 : ℝ) * Delphi.substitutionRate M₁', replace: '(1 : ℝ) * Delphi.substitutionRate M₁' }
 ];
 
 const tmp = fs.mkdtempSync(path.join(process.env.MUTANT_DIR || os.tmpdir(), 'delphi-mutants-'));
