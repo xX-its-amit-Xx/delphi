@@ -100,3 +100,27 @@ Lifts off at 7.7 m/s, climbs at about 2.8 m/s to **179 m at t = 66 s**, where th
 not ventilate, so the blood store is barely drawn). It then glides down, reaching 900 m horizontal at 54 m height at 156 s.
 So the designed flier's climb is a burst of about a minute on anaerobic stores, not sustained aerobic flight; sustained flight
 needs an air-breathing respiratory surface, as reported to Genotype.
+
+## v2 (launch from the physiology chain only), pre-registered in `PREREG-v2.md` (sha256 2dde1f61..., written 21:03 UTC before any v2 run)
+
+Runs at 21:05 to 21:15 UTC, real fish, run-6 aerodynamics, flags as pre-registered, 90 s each.
+
+| arm | flags | airborne? | max speed reached | aerobic flight power max | burst bouts | TEST 4 v2 row |
+|---|---|---|---|---|---|---|
+| (a) | v2=1, fmf=0, C_d 0.1 | **no** | 10.0 m/s | 0 W | 0 | within (sustained flight impossible without being airborne) |
+| (b) | v2=1, fmf=0.0913, flapsrc=total | **no** | 10.0 m/s | 0.009 W | 0 | describes: no bout, never airborne |
+| (c) | v2=1, fmf=0.0913, flapsrc=aerobic | **no** | 10.0 m/s | 0.009 W (vs 1.44 W required) | 0 | within |
+| sweep | (a) with C_d 0.03 | **no** | 13.7 m/s | 0 W | 0 | within |
+| sweep | (a) with C_d 0.3 | **no** | 7.3 m/s | 0 W | 0 | within |
+
+**Outcome, as pre-registered in §5: test 4 v2 is NOT REACHABLE under these drag assumptions.** Driven by the chain's axial power
+alone (aerobic plus burst, 8.75 W at best, the burst store empty within the attempt), the 60 g fish cannot reach the speed at
+which its fins lift it (about 16 m/s under the run-6 trim law and polar), at any water drag in the sweep. It is neither
+passed nor failed. Two numbers do stand regardless of reachability: the chain's aerobic flight power for a bat-sized 9.1 %
+flight muscle is 0.009 W, against 1.44 W needed for level flight, so **sustained (aerobic) powered flight is out by more than
+two orders of magnitude for a fish-muscle flier of this size**, and the field airspeeds of 15 to 20 m/s are not reproduced by
+the chain's power with these drag assumptions either, which points at the drag (assumed, no fetched coefficient), the taxi
+thrust model (assumed), or the chain's burst store (mahi-mahi proxy), in that order of suspicion. Nothing was tuned.
+
+Flier with the chain on is unchanged from the v1 readout (burst of about a minute, 179 m); it was not re-run under v2's
+launch since its design question is powered flight after take-off, which v2 cannot reach for the real body.

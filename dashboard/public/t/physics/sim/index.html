@@ -41,7 +41,7 @@ footer{padding:20px 0;color:var(--mute);font-size:.85rem}
 <header class="top"><div class="wrap">
   <a href="../index.html" style="text-decoration:none;color:var(--mute)">&larr; Physics thread</a>
   <span class="brand">Flying fish simulator</span>
-  <span class="mute small">version 1, run 6 parameters; tests 1-3 post-hoc; test 4 run: pass at own muscle, FAIL at the upper bound</span>
+  <span class="mute small">version 1, run 6 parameters; tests 1-3 post-hoc; test 4 v1: pass at own muscle, FAIL at the upper bound; v2: not reachable</span>
   <button id="themeBtn" style="margin-left:auto">Theme</button>
 </div></header>
 
@@ -103,7 +103,7 @@ function derive(f){
   d.m=f.mass_kg.value; d.S=f.ref_area_m2.value; d.b=f.span_m.value/2; d.CLmax=f.CL_max.value; d.LDmax=f.LD_max.value; d.CDmin=f.CD_min.value;
   d.CL0=f.CL_at_zero_deg.value; d.stall=f.stall_alpha_deg.value; d.alpha=f.glide_alpha_deg.value;
   d.CLslope=(d.CLmax-d.CL0)/d.stall; d.k=(d.CL0/d.LDmax-d.CDmin)/(d.CL0*d.CL0);
-  d.Af=f.body_frontal_area_m2.value; d.Cdw=f.water_drag_coefficient.value; d.vapp=f.approach_speed_m_s.value;
+  d.Af=f.body_frontal_area_m2.value; d.Cdw=FLAGS.get('cdw')?+FLAGS.get('cdw'):f.water_drag_coefficient.value; d.vapp=f.approach_speed_m_s.value;
   d.Tswim=0.5*P.constants.rho_water.value*d.vapp*d.vapp*d.Af*d.Cdw; d.taxiFactor=f.taxi_thrust_N.factor??0.7; d.Ttaxi=d.taxiFactor*d.Tswim;
   d.lobe=f.lobe_length_m.value; d.pitch=f.pitch_at_leap_deg.value*Math.PI/180; d.appr=f.approach_angle_deg.value*Math.PI/180; d.vto=f.takeoff_speed_target_m_s.value; d.z0=f.start_depth_m.value; d.vre=f.reentry_min_speed_m_s.value; d.maxG=f.max_glides.value;
   d.powered=!!(f.powered&&f.powered.value); d.fmf=(f.flight_muscle_fraction&&f.flight_muscle_fraction.value)||0; d.pspec=(f.muscle_specific_power_W_per_kg&&f.muscle_specific_power_W_per_kg.value)||0; d.pinert=(f.inertial_power_W_per_kg_body&&f.inertial_power_W_per_kg_body.value)||0; d.Pavail=Math.max(0,d.fmf*d.m*d.pspec-d.pinert*d.m); d.W=d.m*P.constants.g.value; d.vmin=Math.sqrt(2*d.W/(P.constants.rho_air.value*d.S*d.CLmax));
@@ -123,17 +123,17 @@ function accel(d,s,ph){
   if(ph==='swim'){
     az+=g; // neutral buoyancy
     const Dw=0.5*rw*v*v*d.Af*d.Cdw; ax-=Dw/d.m*ux; az-=Dw/d.m*uz;
-    const Ts=physCap('axial',v,d.Tswim); if(CUR) CUR.physDem+=Ts*v; ax+=Ts/d.m*Math.cos(d.appr); az+=Ts/d.m*Math.sin(d.appr);
+    let Ts=physCap('axial',v,d.Tswim); if(FLAGS.get('v2')==='1'&&CUR&&CUR.phys){ const pa=CUR.physLast&&CUR.physLast.axial; Ts=pa?Math.min(pa.total_W/Math.max(v,0.5),4*d.W):0; } if(CUR) CUR.physDem+=Ts*v; ax+=Ts/d.m*Math.cos(d.appr); az+=Ts/d.m*Math.sin(d.appr);
   } else {
     let alpha=d.alpha; if(ph==='taxi'){ if(v<d.vto){ const need=d.W*(1+2*((d.lobe/2-s.z)/d.lobe)-2*s.vz)/(0.5*ra*v*v*d.S); alpha=Math.max(-10,Math.min(d.stall,(need-d.CL0)/d.CLslope)); } }
     const cl=CL(d,alpha), cd=CD(d,cl);
     const h=Math.max(0,s.z); const q=0.5*ra*v*v*d.S;
     const Lf=q*cl, Df=q*cd*fge(h/d.b);
     ax+= (-Df*ux - Lf*uz)/d.m; az+= (-Df*uz + Lf*ux)/d.m;
-    if(ph==='glide'&&(d.powered||(FLAGS.get('flap')==='1'&&CUR&&CUR.phys))){ let T=d.Pavail>0?Math.min(d.Pavail/Math.max(v,1),2*d.W):0; if(CUR&&CUR.phys){ const pf=CUR.physLast&&CUR.physLast.flight; T=pf?Math.min(Math.max(0,pf.total_W-d.pinert*d.m)/Math.max(v,1),2*d.W):0; } if(CUR) CUR.physDem+=T*v; if(T>0){ ax+=T/d.m*ux; az+=T/d.m*uz; } }
+    if(ph==='glide'&&(d.powered||(FLAGS.get('flap')==='1'&&CUR&&CUR.phys))){ let T=d.Pavail>0?Math.min(d.Pavail/Math.max(v,1),2*d.W):0; if(CUR&&CUR.phys){ const pf=CUR.physLast&&CUR.physLast.flight; const Pf=pf?((FLAGS.get('flapsrc')==='aerobic')?pf.aerobic_W:pf.total_W):0; T=pf?Math.min(Math.max(0,Pf-d.pinert*d.m)/Math.max(v,1),2*d.W):0; } if(CUR) CUR.physDem+=T*v; if(T>0){ ax+=T/d.m*ux; az+=T/d.m*uz; } }
     if(ph==='taxi'){
       const imm=Math.min(1,Math.max(0,(d.lobe-s.z)/d.lobe)); // immersed fraction of the lobe
-      const T=physCap('axial',v,d.Ttaxi*imm); if(CUR) CUR.physDem+=T*v; ax+=T/d.m*ux; az+=T/d.m*uz;
+      let T=physCap('axial',v,d.Ttaxi*imm); if(FLAGS.get('v2')==='1'&&CUR&&CUR.phys){ const pa=CUR.physLast&&CUR.physLast.axial; T=pa?Math.min(pa.total_W/Math.max(v,0.5),4*d.W)*imm:0; } if(CUR) CUR.physDem+=T*v; ax+=T/d.m*ux; az+=T/d.m*uz;
       const Dl=0.5*rw*v*v*(d.Af*0.2*imm)*d.Cdw; ax-=Dl/d.m*ux; az-=Dl/d.m*uz; // lobe water drag, assumed 20% of frontal area
       if(s.z<0){ az+=g*Math.min(1,-s.z/d.lobe); } // partial buoyancy while breaching (assumed linear)
     }
@@ -168,6 +168,8 @@ function stepSim(S,T){
     }
     CUR=S; S.physDem=0; S.s=rk4(d,S.s,S.dt,S.phase); S.t+=S.dt;
     if(S.phys){ S.physAcc+=S.dt; S.physDemSum=(S.physDemSum||0)+S.physDem/4; if(S.physAcc>=0.01){ const vv=Math.hypot(S.s.vx,S.s.vz); S.phys.step(S.physAcc,{phase:S.phase,speed_m_s:vv,demand_W:S.physDemSum/S.physAcc*S.dt}); S.physLast={axial:S.phys.powerAvailable('axial',vv),flight:S.phys.powerAvailable('flight',vv),o2:S.phys.o2()}; S.physAcc=0; S.physDemSum=0; } }
+    S.vmaxReached=Math.max(S.vmaxReached||0,Math.hypot(S.s.vx,S.s.vz));
+    if(S.physLast){ const pf=S.physLast.flight; S.test4.PaeroMax=Math.max(S.test4.PaeroMax||0,pf.aerobic_W); if(S.phase==='glide'){ const E=0.5*(S.s.vx*S.s.vx+S.s.vz*S.s.vz)+P.constants.g.value*S.s.z; if(S.airStart==null){S.airStart=S.t;S.Eair0=E;S.Eref=E;} else { if(E>S.Eref+0.5){ S.gainHeld=(S.gainHeld||0)+S.dt; } else { S.gainHeld=0; S.Eref=Math.min(S.Eref,E); } S.test4.gainHeldMax=Math.max(S.test4.gainHeldMax||0,S.gainHeld||0); } if(pf.total_W>0.5){ if(S.bout==null) S.bout={t0:S.t}; } else if(S.bout){ S.bout.t1=S.t; S.bout.end=pf.limitedBy; (S.bouts=S.bouts||[]).push(S.bout); S.bout=null; } } else { S.airStart=null; if(S.bout){ S.bout.t1=S.t; S.bout.end='re-entry'; (S.bouts=S.bouts||[]).push(S.bout); S.bout=null; } } }
     if(S.phase==='glide'){ const E=0.5*(S.s.vx*S.s.vx+S.s.vz*S.s.vz)+P.constants.g.value*S.s.z; if(S.Eair==null) S.Eair=E; else { S.test4.maxGain=Math.max(S.test4.maxGain,E-S.Eair); S.Eair=Math.min(S.Eair,E); } if(S.physLast){ S.test4.PavailMax=Math.max(S.test4.PavailMax,S.physLast.flight.total_W); } }
     if(S.cur){S.cur.zmax=Math.max(S.cur.zmax,S.s.z);S.cur.vmax=Math.max(S.cur.vmax,Math.hypot(S.s.vx,S.s.vz));}
     if(S.t>=S.nextSample){S.hist.push({t:S.t,x:S.s.x,z:S.s.z,v:Math.hypot(S.s.vx,S.s.vz),ph:S.phase});S.nextSample+=0.02;}
@@ -223,6 +225,7 @@ function draw(){
    ['take-off speed','about 10 m/s',S.takeoffV==null?null:S.takeoffV.toFixed(1)+' m/s',S.takeoffV==null?null:S.takeoffV>7&&S.takeoffV<13],
    ['whole sequence',`400 m in 30 s`,S.done?`${tot.toFixed(0)} m in ${S.t.toFixed(1)} s`:null,S.done?(tot/Math.max(S.t,1)>8&&tot/Math.max(S.t,1)<20):null],
    ['single pure glide ≤ h_max·(L/D)max (Lean bound)','35 m',maxDist==null?null:maxDist.toFixed(1)+' m',maxDist==null?null:maxDist<=35],
+   ...((S.phys&&FLAGS.get('v2')==='1')?[['TEST 4 v2: sustained powered flight = aerobic-only net gain held 10 s','none; aerobic P_avail(flight) < P_req(level) min',`aerobic-only gain held ${((S.test4.gainHeldMax||0)).toFixed(1)} s; max aerobic flight power ${(S.test4.PaeroMax||0).toFixed(3)} W; max speed reached ${(S.vmaxReached||0).toFixed(1)} m/s; airborne ${S.airStart!=null||S.glides.length||S.bouts?'yes':'no'}; burst bouts ${(S.bouts||[]).length}${(S.bouts||[]).length?' ('+S.bouts.map(b=>(b.t1-b.t0).toFixed(1)+' s, ended by '+b.end).join('; ')+')':''}`,((S.test4.gainHeldMax||0)<10)]]:[]),
    ...((S.phys&&!d.powered)?[['TEST 4: real fish cannot gain net mechanical energy airborne (confirmatory; physiology chain)','no net gain; P_avail(flight) < P_req at every speed',`max net gain ${S.test4.maxGain.toFixed(1)} J/kg; max P_avail(flight) ${S.test4.PavailMax.toFixed(2)} W vs P_req(level) min ${(()=>{let m=Infinity;for(let vv=d.vmin;vv<=25;vv+=0.5){const q=0.5*P.constants.rho_air.value*vv*vv*d.S;const cl=d.W/q;if(cl>d.CLmax)continue;const cd=d.CDmin+d.k*cl*cl;m=Math.min(m,q*cd*vv);}return m;})().toFixed(2)} W`,(S.test4.maxGain<=0.5)&&(S.test4.PavailMax<(()=>{let m=Infinity;for(let vv=d.vmin;vv<=25;vv+=0.5){const q=0.5*P.constants.rho_air.value*vv*vv*d.S;const cl=d.W/q;if(cl>d.CLmax)continue;const cd=d.CDmin+d.k*cl*cl;m=Math.min(m,q*cd*vv);}return m;})())]]:[]),
    ['no climb below 0.95 v_min (test 1)','v_min '+d.vmin.toFixed(2)+' m/s',(()=>{let bad=0,run=0;for(let i=1;i<h.length;i++){const p=h[i];if(p.ph==='glide'&&p.v<0.95*d.vmin&&p.z>h[i-1].z){run+=0.02;bad=Math.max(bad,run);}else run=0;}return bad.toFixed(2)+' s of climbing below it';})(),gl.length?(()=>{let bad=0,run=0;for(let i=1;i<h.length;i++){const p=h[i];if(p.ph==='glide'&&p.v<0.95*d.vmin&&p.z>h[i-1].z){run+=0.02;bad=Math.max(bad,run);}else run=0;}return bad<=0.2;})():null]];
   const climb=d.powered?`<p><b>Design-study readout (HYPOTHETICAL fish; ${S.phys?'physiology chain ON: flapping power comes from the flight muscle as limited by O2 delivery and the blood and burst stores':'power-limited only, O2 supply not yet applied'}; the field targets below are the real fish's and do not apply):</b> altitude now ${S.s.z.toFixed(1)} m, highest ${(S.zmax||0).toFixed(1)} m at t = ${(S.zmaxT||0).toFixed(1)} s,${S.climbEnd?` flight power fell below 0.5 W at t = ${S.climbEnd.t.toFixed(1)} s (z ${S.climbEnd.z.toFixed(1)} m, limited by ${S.climbEnd.limitedBy}; blood O2 store ${(S.climbEnd.o2*100).toFixed(0)} %, burst store ${(S.climbEnd.burst*100).toFixed(0)} %),`:''}${S.physLast?` blood O2 store ${(S.physLast.o2.storeFraction*100).toFixed(0)} %, burst store ${(S.physLast.o2.burstStoreFraction*100).toFixed(0)} %, flight power ${S.physLast.flight.total_W.toFixed(2)} W (${S.physLast.flight.limitedBy}),`:''} mean climb rate since take-off ${(()=>{const a=h.find(p=>p.ph==='glide');return a?((S.s.z-a.z)/Math.max(S.t-a.t,1e-6)).toFixed(2):'0';})()} m/s, P_avail ${d.Pavail.toFixed(2)} W, v_min ${d.vmin.toFixed(2)} m/s.</p>`:'';
