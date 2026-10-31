@@ -481,6 +481,67 @@ if (G) {
   }));
 }
 
+// ---- the sequence layer: the convergent-site panel is not a dose-response for fin length -----------
+// Every number is read from genotype/sequence-layer.json, which reads the sequences thread's own output.
+const SL = (() => { try { return rd('genotype/sequence-layer.json'); } catch { return null; } })();
+if (SL) {
+  const site = SL.lat4a_convergent_site, wb = site.within_beloniformes;
+  const gh = wb['flying (gliding) halfbeak'], ff = wb['flying fish (Exocoetidae)'];
+  const hb = wb['halfbeak (non-gliding)'], nf = wb['needlefish or saury (non-gliding)'];
+  const slSha = shaOf('genotype/sequence-layer.json'), slSize = sizeOf('genotype/sequence-layer.json');
+  const slEntity = `  sub:seqlayer a prov:Entity ;\n    dct:title "genotype/sequence-layer.json (sequence-level layer, built ${esc(SL.built)} from the sequences thread's reciprocal-best-hit output)" ;\n    spdx:checksum sub:sl-sha ;\n    schema:contentSize "${slSize}"^^xsd:integer ;\n    prov:generatedAtTime "${esc(SL.built)}"^^xsd:dateTime ;\n    rdfs:comment "${esc(SL.layer_boundary)}" .\n  sub:sl-sha a spdx:Checksum ; spdx:algorithm spdx:checksumAlgorithm_sha256 ; spdx:checksumValue "${slSha}" .\n`;
+  DS.flyingfish_proteins = { id: 'hirundichthys-speculiger-annotated-proteins-and-daane-exon-panel', title: 'Annotated Hirundichthys speculiger protein set (Xu et al. 2021; figshare 10.6084/m9.figshare.14600634.v1) and the Daane et al. 2021 convergent-substitution panel (Data S1 sheet G)', landing: 'https://doi.org/10.3389/fgene.2021.695700', licence: 'https://creativecommons.org/licenses/by/4.0/', calls: ['epmc_fulltext_PMC8294118'] };
+  records.push(record({
+    file: 'finding-convergent-site-panel-is-not-a-dose-response.trig', slug: 'genotype-convergent-site-panel-not-a-dose-response-for-fin-length',
+    label: `The convergent-substitution panel that implicates lat4a in flying-fish fins is not a dose-response for fin length: gliding halfbeaks carry a mean of ${gh.mean_derived_states_of_38_sites} derived states of 38 sites at a pectoral-fin-to-body ratio of ${gh.fin_over_SL_group_median}, while flying fishes carry ${ff.mean_derived_states_of_38_sites} at a ratio of ${ff.fin_over_SL_group_median}, so the group with the much smaller fin carries slightly MORE derived residues`,
+    status: 'supported by enumeration of the sequence panel against the measured fin ratios; it refutes the dose-response reading that the series invites, and it does not disturb the substitution\'s association with gliding',
+    description: (
+      `FIRST AND MOST IMPORTANT: the count of derived residues does not scale with fin length. Across the four beloniform groups the measured pectoral-fin-to-standard-length `
+      + `medians run ${nf.fin_over_SL_group_median} (needlefishes and saury, ${nf.n_species_sequenced} species sequenced), ${hb.fin_over_SL_group_median} (halfbeaks, ${hb.n_species_sequenced}), `
+      + `${gh.fin_over_SL_group_median} (gliding halfbeaks, ${gh.n_species_sequenced}) and ${ff.fin_over_SL_group_median} (flying fishes, ${ff.n_species_sequenced}), a roughly eightfold range. `
+      + `The mean number of derived states of the 38 panel sites runs ${nf.mean_derived_states_of_38_sites}, ${hb.mean_derived_states_of_38_sites}, ${gh.mean_derived_states_of_38_sites} `
+      + `(range ${(gh.range || []).join(' to ')}) and ${ff.mean_derived_states_of_38_sites} (range ${(ff.range || []).join(' to ')}). Between the two gliding groups the fin ratio rises 2.5-fold `
+      + `while the residue count falls slightly. Anyone reading the series as a ladder would assume more derived residues meant a longer fin; the data do not show that. `
+      + `SECOND: the zero in the two non-gliding groups is circular and cannot be used as evidence. Daane's Data S1 sheet G lists only substitutions shared by gliders and ABSENT `
+      + `from outgroups, so non-gliding species carry the ancestral residue at these sites by construction. The zero is a property of how the site list was built, not a finding `
+      + `about non-gliders. `
+      + `THIRD: at the lat4a site itself the substitution does track gliding WITHIN this order, and the annotated flying-fish protein carries the derived residue `
+      + `(${site.annotated_flying_fish_protein_carries}), which is an independent confirmation of the identification. But outside Beloniformes the site is ancestral in every glider `
+      + `tested: all three bats, both colugos, the sugar glider, plus mouse, human, the reptile controls and the frog. It is a beloniform-specific change, not a general gliding `
+      + `signature, and it must not be presented as convergence with gliding mammals. The sequences thread's own caveat travels with that: the nine genes were chosen from `
+      + `zebrafish fin biology rather than glider biology, so absence of convergence in them says nothing about the rest of the genome. `
+      + `FOURTH, a detail that is otherwise lost behind "7 of 9": kcnh2a and shha FAILED reciprocal best hit, each pairing back to its own paralogue (kcnh2a to kcnh7a, shha to `
+      + `shhb). For a teleost family duplicated in the whole-genome duplication this is the EXPECTED failure mode, not an error and not an absence: a similar sequence is present, `
+      + `but which paralogue it is cannot be resolved at this identity level. Those two are recorded as hits and never as orthologue calls, and one of them, kcnh2a, is one of the `
+      + `three genes this project calls the wing genes.`),
+    context: (`The seven genes that did resolve cleanly (kcnk5b, slc43a2a, gja1b, tbx5a, fgf10a, hhip, prdm1a) sit at 56 to 89 percent identity to their zebrafish counterparts. `
+      + `This is a SEQUENCE layer and is kept apart from this project's expression and phenotype layers, because presence is not place or time of action: no gene's evidence grade `
+      + `changed as a result of being found in the gene set. The sequenced animal is Hirundichthys speculiger while the measured fins are Cheilopogon furcatus, Exocoetus volitans `
+      + `and Hirundichthys rondeleti, so sequence and morphometry are cross-species within Exocoetidae wherever used together.`),
+    test: ('Enumeration: per-group mean of derived states across the 38 panel sites, set beside the per-group median pectoral-fin-to-standard-length ratio from the museum specimen '
+      + 'measurements. NO correlation was computed and none should be: four groups is far too few, and species share ancestry so a cross-species correlation would need a '
+      + 'phylogenetic correction that cannot be done meaningfully with four groups. Orthology by reciprocal best hit against the zebrafish proteome.'),
+    metrics: [['n_panel_sites', 38, 'convergent substitution sites in the panel'],
+              ['mean_derived_states_gliding_halfbeaks', gh.mean_derived_states_of_38_sites, 'mean derived states, gliding halfbeaks', 'decimal'],
+              ['mean_derived_states_flying_fishes', ff.mean_derived_states_of_38_sites, 'mean derived states, flying fishes', 'decimal'],
+              ['fin_over_SL_gliding_halfbeaks', gh.fin_over_SL_group_median, 'median pectoral fin length over standard length, gliding halfbeaks', 'decimal'],
+              ['fin_over_SL_flying_fishes', ff.fin_over_SL_group_median, 'median pectoral fin length over standard length, flying fishes', 'decimal'],
+              ['mean_derived_states_non_gliders', 0, 'mean derived states in both non-gliding groups, zero BY CONSTRUCTION of the site list'],
+              ['genes_queried', SL.counts.genes_queried, 'fin-size genes searched in the annotated flying-fish gene set'],
+              ['clean_reciprocal_best_hits', SL.counts.clean_reciprocal_best_hits, 'genes resolved as clean orthologue calls'],
+              ['failed_reciprocal_best_hit', SL.counts.failed_reciprocal_best_hit, 'genes whose best hit paired back to a paralogue, so unresolved rather than absent'],
+              ['gliding_lineages_outside_beloniformes_with_the_derived_residue', 0, 'bats, colugos and the sugar glider carrying the derived residue at the lat4a site']],
+    datasets: ['flyingfish_proteins'], publications: [], derivedFrom: 'sub:seqlayer', also: [slEntity],
+    notEstablished: ('It does not establish that lat4a is uninvolved in fin size: the substitution still tracks gliding within this order, and a flat count across two gliding groups '
+      + 'is not evidence against involvement. It does not establish that the panel is the wrong panel, since the sites were selected for a different purpose. It computes no '
+      + 'correlation and offers no statistic, because four phylogenetically nested groups cannot support one. And it says nothing about expression, stage or function in any '
+      + 'flying fish, where no such measurement exists.'),
+    prereg: 'none: an enumeration done when the sequence results arrived. The reading it refutes is the one the project itself would have reached, which is why it was recorded.',
+    evLabel: 'Derived-state counts across the 38-site panel against measured fin ratios, by beloniform group',
+    evDesc: 'Read from genotype/sequence-layer.json, which reads the sequences thread\'s genes.json, gliders.json and progression.json.',
+  }));
+}
+
 fs.writeFileSync(path.join(here, 'manifest.json'), JSON.stringify({ built: NOW, map: MAP, map_sha256: mapSha, map_bytes: mapSize, unsigned: true, records }, null, 2));
 console.log(`${records.length} unsigned draft records in ${out}`);
 
