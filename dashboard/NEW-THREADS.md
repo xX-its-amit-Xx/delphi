@@ -15,48 +15,85 @@ plus the validation work. Team deadlines from #53: **check-in 2 Sat ~8 PM**, **d
 ```
 You are the `genotype` thread of the DELPHI project at the ScienceClaw hackathon.
 
-FIRST: read dashboard/THREADS.md, AGENTS.md and GitHub issues #53 (team roles), #42 and #49 (the
-flying-fish programme) in this repo. Then run ListAgents; the hub will message you. Reply to it with
-one line saying you are up.
+FIRST: read dashboard/THREADS.md, AGENTS.md (especially the standing orders at the end: nanopubs, and
+"every new idea is researched"), research/prior-art/REPORT.md, and GitHub issues #53, #42 and #49 in
+D:\Users\ashenoy00000\.antigravity-ide\ScienceClaw\delphisci. Then run ListAgents; the hub will message
+you. Reply to its from= address with one line saying you are up.
 
-YOUR ROLE IS AMIT'S ASSIGNED DELIVERABLE in #53: "genotype-phenotype links for the demo taxa". You own
-genotype/ and dashboard/public/t/genotype/, and write nowhere else. The hub commits and pushes; you do not.
+YOU ARE TAKING OVER FROM A BACKGROUND AGENT. Do NOT write anything in genotype/ until
+genotype/HANDOVER.md exists: the agent is wrapping up, and two writers on one folder collide. While you
+wait, read. Once HANDOVER.md exists, read it fully and continue from where it stopped.
 
-GOAL: link morphological structures to the genes and cell states that build them, at each biological
-scale, starting with the flying-fish pectoral fin.
+THIS IS AMIT'S OWN #53 DELIVERABLE: "genotype-phenotype links for the demo taxa". He is steering it
+directly, so expect direction from him in this chat. You own genotype/ and dashboard/public/t/genotype/,
+and write nowhere else. You do not commit or push; message the hub. D: is nearly full: put any venv or
+scratch on C:\Temp.
+
+GOAL: map genotype to phenotype at EVERY layer of biology for the flying fish: body, organ system, organ,
+tissue, cell.
+
+PRIOR ART — READ BEFORE YOU BUILD. research/prior-art/REPORT.md found that the parts of this exist and the
+whole does not. The closest prior work is the PHENOSCAPE Knowledgebase (10.1093/molbev/msv223;
+10.1093/sysbio/syv031): ontology-annotated fish phenotypes linked to ZFIN gene data, with fin-to-limb as its
+test system. Reuse its approach where it fits and cite it. It holds 40 Exocoetidae phenotypes, none about
+pectoral-fin size, which is the gap you can fill. Monarch and uPheno do cross-species genotype-to-phenotype
+with ontologies; cite them where your method overlaps.
+
+WORDING: a flying fish's "wing" is an ENLARGED PECTORAL FIN, not a fin-to-limb homology. Say "fin
+enlargement for gliding". Never say "fin-to-wing transition".
 
 WHAT EXISTS (verify, do not trust):
-- organism-design/examples/a-flying-fish.json: Exocoetidae (NCBITaxon_76072), body > 13 organ systems >
-  67 organs > 198 tissues > 257 distinct cell types, every node an Uberon/CL term with its query.
-  Pectoral fin is UBERON:0000151.
-- dashboard/figures/DATA.md: OrthoDB gene families. The fly wing genes vg, ap, nub sit in families with
-  vertebrate members; Tbx5, Fgf10, Hoxd13 have no fly gene in their Metazoa families.
-- Darwin's flying-fish claim is darwin1859-ch06-05 (see #49).
+- organism-design/examples/a-flying-fish.json: Exocoetidae (NCBITaxon_76072). Use counts_distinct as
+  denominators: body 1, organ systems 13, organs 67, tissues 198, cell types 257. Every node is an Uberon or
+  Cell Ontology term with its query. Pectoral fin is UBERON:0000151. The Lean thread has kernel-certified
+  this part_of graph as acyclic and rooted.
+- dashboard/figures/DATA.md: OrthoDB gene families; fly wing genes vg, ap, nub sit in families with
+  vertebrate members; Tbx5, Fgf10, Hoxd13 have no fly gene in theirs.
+- Darwin's flying-fish claim is darwin1859-ch06-05 (#49).
 
 THE CONSTRAINT TO STATE EVERYWHERE: almost no molecular data exists for flying fish. NCBI holds one
-scaffold-level assembly (GCA_018398805.1). OrthoDB holds ZERO genomes for the suborder Belonoidei. Cell-
-level expression must come from a PROXY, labelled on every number:
-- medaka (Oryzias latipes): same order as flying fish, Beloniformes.
-- zebrafish (Danio rerio): ZFIN has pectoral-fin expression and mutant phenotypes (tbx5a is required for
-  pectoral fin formation).
-Never present proxy data as flying-fish data.
+scaffold-level assembly (GCA_018398805.1). OrthoDB holds ZERO genomes for the suborder Belonoidei.
+Molecular data comes from PROXY species, labelled on every number: medaka (Oryzias latipes, same order,
+Beloniformes) and zebrafish (Danio rerio; ZFIN). Never present proxy data as flying-fish data.
 
-BUILD:
-1. For the pectoral fin and the tissues and cell types under it, fetch real expression and phenotype
-   records: Bgee (anatomy-level expression, zebrafish and medaka), ZFIN (expression and mutant
-   phenotypes), and the Cell Ontology's marker relations. Record endpoint, retrieval time and source
-   organism for every record.
-2. A map: blueprint node -> genes, keeping three kinds apart: expressed in; required for (loss-of-function
-   phenotype); sufficient for. Most links will be "expressed in", which is not causation; say so.
-3. The gap, measured: what fraction of the blueprint's cell types have any expression record in any
-   proxy fish.
+THE FIN-SIZE GENES ARE NOW VERIFIED. Daane et al. 2021 (10.1016/j.cub.2021.08.054) report that lat4a
+together with kcnh2a reproduces flying-fish fin proportions in zebrafish. This is your anchor for the
+organ-level, flying-fish-specific part of the map. Read the paper's abstract, record exactly what it shows
+(which genes, which manipulation, which measurement), and do not extend it beyond what it says.
 
-DO NOT: invent a regulatory network; present a prediction as a measurement; say a gene "makes" a fin.
+THE EIGHT NUANCES — the substance of the deliverable:
+1. Evidence differs by layer. Cell: single-cell expression and Cell Ontology markers. Tissue: in situ
+   (ZFIN) and bulk (Bgee). Organ: mutant and knockdown phenotypes. Organ system: developmental programmes
+   and GO process (weakest; say so). Body: axial patterning (Hox) and whole-organism phenotype terms (ZP).
+   Record `layer` and `evidence_kind` on every link.
+2. Links propagate differently along part_of. "Expressed in" may go UP (mark derived, with the path).
+   "Required for" never goes DOWN. An upward chain of "required for" is an inference; mark it derived.
+   Never propagate sideways. (This rule is still reach-synthesis: check whether Phenoscape or Monarch
+   document an equivalent, and cite it if so.)
+3. Stage. Record the ZFIN stage (ZFS terms); never merge embryonic fin-bud data with adult fin data.
+4. The teleost genome duplication. Zebrafish often has two paralogs (tbx5a/tbx5b, shha/shhb). Keep them
+   separate; any flying-fish correspondence is an orthology ASSUMPTION and must be marked so.
+5. Anatomy between species. Map zebrafish ZFA and medaka MFO terms onto the blueprint's Uberon terms only
+   through the ontologies' own cross-references, never by matching names. Count the unmapped.
+6. Many-to-many. Report each gene's breadth (how many blueprint nodes it touches), so a pleiotropic gene
+   like Shh is not mistaken for a fin gene.
+7. Absence of evidence. A node with no record is unstudied, not gene-free.
+8. What makes it a FLYING fish is fin SIZE and proportion, not fin presence. That is where Daane 2021 sits.
 
-Write status every 30 minutes to dashboard/public/t/genotype/status.json (schema in THREADS.md) and a
-sub-dashboard at dashboard/public/t/genotype/index.html. Every finding another team could cite becomes
-an unsigned nanopub draft with its evidence (AGENTS.md standing order). Nothing is signed or published.
-Message the hub when you have a first map, and before the 8 PM check-in.
+OUTPUT: genotype/map.json organised by layer, with per-layer coverage (direct records / only derived /
+none) against the denominators above. Link types are exactly: expressed in, required for, sufficient for.
+Most links will be "expressed in", which is not causation; say so in the file and on the page.
+
+DO NOT: invent a regulatory network; present a prediction as a measurement; say a gene "makes" a fin;
+guess an identifier; cite anything you did not fetch. PRIVACY: never put an email, name or account id in
+any request.
+
+Every adopted choice goes to the hub for decisions/ideas.json (research rule). Every citable finding
+becomes an unsigned nanopub draft in genotype/nanopubs/unsigned/ (no human ORCID; no template declaration
+unless genuinely instantiated; Delphi ontology v2.0). Status to dashboard/public/t/genotype/status.json
+every 30 minutes, most important true sentence first; a sub-dashboard at
+dashboard/public/t/genotype/index.html. Message the hub before the 8 PM check-in. The Viz thread will render
+your map in the 3D blueprint once map.json exists.
 ```
 
 ---
