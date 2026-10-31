@@ -106,3 +106,21 @@ The record `lean/nanopubs/unsigned/bound-exocoetidae-substitution-budget.trig` (
 no source states it) cites the three law records, the PBDB dataset record, the literature DOIs, and the
 organism thread's blueprint record via `skos:related`, with a comment saying the two are independent
 statements about the same taxon. `lean/bound/links.json` holds that link; the lean thread owns it.
+
+## Blueprint certificates and a morphological law
+
+**Blueprint well-formedness** (`Delphi/Blueprint.lean`, certificates in `Delphi/Certificates/`, tooling and
+the full account in `lean/blueprint/README.md`). For the organism thread's generated anatomies: a generic
+theory that a decidable checker implies acyclicity of `part_of`, transitivity of its closure, reachability of
+every term from the body root, and that the pinned taxon statements exclude nothing; then, per emitted
+blueprint, Lean literals and `decide +kernel`. The flying-fish certificate pins 536 terms, 674 edges, 1390
+`never_in_taxon` and 5435 `in_taxon` statements, and fixes the distinct counts per level (13 / 67 / 198 / 257).
+Structural only: it does not say the fish is real, the anatomy correct, or the ontology right.
+
+**Thompson's cube law** (`Delphi/Thompson.lean`, claim `thompson1917-ch03-07`): an exact cube law
+`W = k L^3` has log-log exponent exactly 3 and weight ratio `(L2/L1)^3`; a measured exponent other than 3
+refutes the exact law on that interval (`not_cubeLaw_of_exponent_ne_three`). The claims thread measured
+2.74 (males) and 2.86 (females) on NHANES age-bin means, 2.76 on pooled individuals, and an earlier run
+found 2.10 at 0-2 years, 3.10 at 10-20 years and 2.41 pooled 0-19; `report.mjs` reads those from
+`claim-tests/thompson-growth-form/thompson1917-ch03-07` and the page shows them against 3. Thompson's
+"mainly (though not wholly)" and the test's tolerance band are outside the theorem.
