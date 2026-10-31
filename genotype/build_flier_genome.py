@@ -74,6 +74,36 @@ PHYSICS = {
  "physics_conclusion_in_their_words": "a jumper with a long ballistic-plus-burst arc",
 }
 
+# The Lean thread's elimination for sustained aerobic flight. Read from their ledger and RECOMPUTED here from the
+# numbers they committed, rather than quoting their conclusion: if their inputs change, this file disagrees visibly
+# instead of echoing a stale claim. Their certificate's own compile block says whether the kernel accepted it, and
+# this records whether their files are committed, because an uncommitted path does not resolve for an outside reader.
+def lean_elimination():
+    led = load(os.path.join(ROOT, "lean", "eliminate", "ledger.physiology.json"))
+    if not led: return None
+    e = next((x for x in led.get("ledger", []) if x.get("id") == "flier-F1-sustained-aerobic-cruise"), None)
+    if not e: return None
+    c = e.get("commits", {})
+    try:
+        eta, E, Q, Ca = (float(c[k]) for k in ("muscular_efficiency", "oxycaloric_equivalent_J_per_unit_O2", "cardiac_output", "arterial_O2_content"))
+        W, v, ld = float(c["weight_N"]), float(c["airspeed_m_s"]), float(c["lift_to_drag"])
+    except (KeyError, ValueError): return None
+    ceiling, required = eta * E * Q * Ca, W * v / ld
+    tracked = os.popen('git -C "%s" ls-files lean/eliminate/ledger.physiology.json' % ROOT).read().strip()
+    comp = (led.get("summary") or {}).get("compile") or {}
+    return {"source": "lean thread, lean/eliminate/ledger.physiology.json and lean/Delphi/Certificates/EliminationsPhysiology.lean",
+            "candidate": e.get("id"), "problem": e.get("problem"), "constraint_accepted": e.get("accepts"),
+            "committed_inputs": c, "inputs_note": "teleost proxy values committed by the Lean thread; the generous case, since in air the gills do not ventilate and arterial content only falls",
+            "recomputed_here": {"aerobic_ceiling_W": round(ceiling, 6), "power_required_W": round(required, 6), "shortfall_factor": round(required / ceiling, 2),
+                                "formula": "ceiling = muscular efficiency x oxycaloric equivalent x cardiac output x arterial O2 content; required = weight x airspeed / lift-to-drag"},
+            "kernel_accepted": bool(comp.get("ok")), "theorems": comp.get("theorems"), "compile_seconds": comp.get("seconds"),
+            "citation_status": ("committed" if tracked else "NOT YET COMMITTED: the certificate and ledger exist in the working tree but are untracked, so this citation "
+                                                          "does not resolve for anyone outside this machine until the Lean thread's files are pushed"),
+            "what_it_means_for_the_genome": ("The elimination is not about any single gene. It says the PRODUCT of muscular efficiency, cardiac output and arterial oxygen "
+                                             "content must rise by about %sx over teleost values, while airborne. Genetics can act on each of those three factors, but the "
+                                             "requirement is on their product, so a route that improves one by a few tens of percent does not approach it." % round(required / ceiling, 1))}
+LEAN = lean_elimination()
+
 items = []
 
 # ---- (1) lifting area 3.9x at 2.5x span -----------------------------------------------------------
@@ -135,10 +165,14 @@ items.append({
  "route": mo2_v.get("oxygen_delivery_5x_bat", {}).get("route", "not yet researched") if MO2 else "not yet researched",
  "verdict": (mo2_v.get("oxygen_delivery_5x_bat", {}).get("reasoning") if MO2 else
              "The literature run for this item has not finished, so no verdict is recorded."),
+ "lean_elimination": LEAN,
  "oxygen_delivery_entries": (MO2 or {}).get("oxygen_delivery", [])[:10],
  "closest_fish_figure": mo2_v.get("oxygen_delivery_5x_bat", {}).get("closest_fish_figure") if MO2 else None,
  "what_is_missing": ["This thread's own data say nothing about oxygen delivery: the genotype map covers anatomy and gene links, not physiology.",
-                     "No bird comparison is permitted here (Aves is the project's held-out clade), which removes the usual source of flight-oxygen genetics."]})
+                     "No bird comparison is permitted here (Aves is the project's held-out clade), which removes the usual source of flight-oxygen genetics."]
+                    + ([("The requirement is on a PRODUCT of three physiological quantities, about %sx over teleost values. No genetic result in this "
+                         "literature reports any of the three as a quantity, let alone their product: genetics reports globin repertoires and heart sizes, "
+                         "not cardiac output in litres per minute or arterial oxygen content.") % LEAN["recomputed_here"]["shortfall_factor"]] if LEAN else [])})
 
 # ---- (4) a respiratory surface that works in air -------------------------------------------------
 air_routes = (AIR or {}).get("routes", [])
@@ -147,13 +181,20 @@ items.append({
  "item": 4, "requirement": "a respiratory surface that works in air, since gills do not ventilate in air",
  "physics_numbers": {"note": "the climb requires the oxygen flux in item 3 while airborne"},
  "route": ("partial" if with_gen else "anatomy known, genetics none") if AIR else "not yet researched",
- "verdict": (("Real fishes breathe air by several routes, so the ANATOMY is not hypothetical, but the GENETICS of building such a surface is "
-              "largely absent: %d of %d fetched routes have any genetics attached. Nothing is known for Beloniformes, the order containing flying "
-              "fishes.") % (len(with_gen), len(air_routes)) if AIR else
-             "The air-breathing literature run has not finished, so no verdict is recorded."),
+ "verdict": ((("Real fishes breathe air by at least %d distinct routes, so the ANATOMY is not hypothetical at all: this is the one requirement of the four that "
+               "living fishes already meet, repeatedly and in several unrelated lineages. The GENETICS is a different matter. %d of the %d routes have some "
+               "genetics attached, but only %s rise above correlation to a functional result, so for most routes the molecular account of how the surface is "
+               "built is not available. And the decisive fact for this project: NOTHING is known for Beloniformes, the order containing flying fishes, "
+               "halfbeaks and needlefishes, and nothing at all for Exocoetidae. The homology of the gas bladder and the tetrapod lung is accepted and now "
+               "supported at the level of cell types, but the molecular account of the switch between them is incomplete and partly negative, so even the "
+               "best-studied starting point does not give a route.")
+              % (len(air_routes), len(with_gen), len(air_routes), (AIR.get("summary") or {}).get("routes_with_functional_genetics_above_association", "very few")))
+             if AIR else "The air-breathing literature run has not finished, so no verdict is recorded."),
+ "routes_with_functional_genetics_above_association": (AIR.get("summary") or {}).get("routes_with_functional_genetics_above_association") if AIR else None,
  "routes": [{"route": r.get("route"), "anatomy": r.get("anatomy"), "taxa": r.get("taxa"), "obligate_or_facultative": r.get("obligate_or_facultative"),
              "genetics_known": (r.get("genetics") or {}).get("known"), "genetics": r.get("genetics"), "costs_and_limits": r.get("costs_and_limits"),
              "sources": [{k: s.get(k) for k in ("pmid", "doi", "first_author", "year", "quote", "read")} for s in (r.get("sources") or [])[:2]]} for r in air_routes],
+ "costs_and_limits_across_routes": sorted({c for r in air_routes for c in (r.get("costs_and_limits") or [])})[:14] if AIR else [],
  "beloniformes": (AIR or {}).get("beloniformes_and_exocoetidae"),
  "gas_bladder_lung_homology": (AIR or {}).get("gas_bladder_lung_homology"),
  "physics_confirms_the_requirement": {**PHYSICS["climb_with_the_oxygen_chain_wired"], "source": PHYSICS["source"], "kind": PHYSICS["kind"],
@@ -209,6 +250,14 @@ for i in items:
                       ("physics_confirms_the_requirement", "What the physics confirms about this requirement")):
         if i.get(key):
             L += [f"**{head}** (the physics thread's modelled result, not a biological measurement): {i[key]['what_it_changes']}", ""]
+    if i.get("lean_elimination"):
+        le = i["lean_elimination"]; r = le["recomputed_here"]
+        L += [f"**Lean's elimination.** The Lean thread eliminated sustained aerobic cruise for this flier with a certificate its own ledger reports as",
+              f"kernel-accepted ({le['theorems']} theorems, compiled in {le['compile_seconds']} s). Recomputed here from the numbers they committed rather than",
+              f"quoted: aerobic ceiling **{r['aerobic_ceiling_W']} W** against **{r['power_required_W']} W** required, short by **{r['shortfall_factor']}x**.",
+              f"`{r['formula']}`. {le['inputs_note'].capitalize()}.", "",
+              f"{le['what_it_means_for_the_genome']}", "",
+              f"*Citation status: {le['citation_status']}.*", ""]
     rs = i.get("candidate_routes") or []
     if rs:
         L += ["Each row is a manipulation that changed the parameter named in its own row, which is not always the parameter this item asks for.\n",
@@ -220,9 +269,19 @@ for i in items:
             L.append(f"| {r['gene']} | {str(r.get('parameter') or '?')[:40]} | {r['level']} | {r['direction']} | `{r['evidence_grade']}` | {val} | "
                      f"{'yes' if r['calibrated'] else 'no'} | {str(n) + ' nodes' if n else 'not computed'} |")
         L.append("")
-    for r in (i.get("routes") or [])[:8]:
-        L.append(f"- **{r.get('route')}** ({', '.join((r.get('taxa') or [])[:4])}): genetics known: {r.get('genetics_known')}.")
+    for r in (i.get("routes") or [])[:9]:
+        g = r.get("genetics") or {}
+        grade = g.get("evidence_grade") or ("none" if not g.get("known") else "unstated")
+        L.append(f"- **{r.get('route')}** ({', '.join((r.get('taxa') or [])[:3])}): genetics `{grade}`"
+                 + (f", genes {', '.join((g.get('genes') or [])[:5])}" if g.get("genes") else ", no genes identified") + ".")
     if i.get("routes"): L.append("")
+    if i.get("costs_and_limits_across_routes"):
+        L += ["**Costs and limits recorded across those routes.** These are reasons the requirement is harder than it looks, and they are biology, not physics:\n"]
+        L += [f"- {c}" for c in i["costs_and_limits_across_routes"][:10]] + [""]
+    if i.get("beloniformes") and i["beloniformes"].get("anything_known") is False:
+        b = i["beloniformes"]
+        L += [f"**Nothing is known for the flying fish's own order.** {b.get('finding')}", "",
+              f"*Queries run: {len(b.get('what_was_searched') or [])}, all recorded in the agent's output file.*", ""]
     if i.get("what_is_missing"):
         L += ["**What is missing:**\n"] + [f"- {x}" for x in i["what_is_missing"]] + [""]
 L += ["## How to read this\n"] + [f"- {x}" for x in out["how_to_read_this"]]
