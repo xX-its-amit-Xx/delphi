@@ -59,6 +59,7 @@ table{border-collapse:collapse;width:100%;font-size:.8rem}td,th{text-align:left;
   <div class="ctl">
     <select id="view" title="Which nodes to draw">
       <option value="core">Evidenced core</option>
+      <option value="ledger">Open problems &rarr; candidates &rarr; theorems</option>
       <option value="flyingfish">The flying fish chain</option>
       <option value="all">Everything (880 claims)</option>
     </select>
@@ -101,8 +102,8 @@ $('#themeBtn').onclick=()=>{const c=document.documentElement.dataset.theme||(mat
 // colour carries domain (three validated hues + neutral ink for mathematical biology, which also gets a ring);
 // shape carries node type, so identity is never colour alone
 const fill=n=>n.domain==='darwin'?css('--d-darwin'):n.domain==='thompson'?css('--d-thompson'):n.domain==='wolfram'?css('--d-wolfram'):n.domain==='mathbio'?css('--d-mathbio'):css('--neutral');
-const R={claim:4,test:5,theorem:7,dataset:2.4,taxon:4.5,source:7,morph:3};
-const VG={supports:'✓',refutes:'✕',mixed:'~',inconclusive:'?'};
+const R={claim:4,test:5,theorem:7,dataset:2.4,taxon:4.5,source:7,morph:3,problem:6,candidate:4.2};
+const VG={supports:'✓',refutes:'✕',mixed:'~',inconclusive:'?',eliminated:'✕',consistent:'○','cannot-rule':'?'};
 
 function shape(ctx,n,x,y,r){
   ctx.beginPath();
@@ -112,6 +113,7 @@ function shape(ctx,n,x,y,r){
     case 'taxon': ctx.moveTo(x,y-r*1.2);ctx.lineTo(x+r*1.1,y+r*.8);ctx.lineTo(x-r*1.1,y+r*.8);ctx.closePath(); break;
     case 'morph': for(let i=0;i<6;i++){const a=Math.PI/3*i+Math.PI/6;ctx[i?'lineTo':'moveTo'](x+r*Math.cos(a),y+r*Math.sin(a));}ctx.closePath(); break;
     case 'source': ctx.rect(x-r*1.3,y-r*.8,2.6*r,1.6*r); break;
+    case 'problem': ctx.rect(x-r*1.5,y-r*.7,3*r,1.4*r); break;
     default: ctx.arc(x,y,r,0,2*Math.PI);
   }
 }
@@ -123,7 +125,9 @@ function subset(){
   const view=$('#view').value;
   const doms=new Set($$('[data-d]').filter(i=>i.checked).map(i=>i.dataset.d));
   let keep;
-  if(view==='flyingfish'){
+  if(view==='ledger'){
+    keep=new Set(D.nodes.filter(n=>n.ledger).map(n=>n.id));
+  }else if(view==='flyingfish'){
     const seed=new Set(['source:darwin-flying-fish','taxon:exocoetidae','bound:exocoetidae']);
     D.nodes.forEach(n=>{if(n.type==='morph'||/Favored/.test(n.id))seed.add(n.id)});
     keep=seed;
@@ -142,20 +146,21 @@ function init(){
     .backgroundColor('rgba(0,0,0,0)')
     .nodeId('id')
     .nodeLabel(n=>esc(n.label))
-    .linkColor(()=>css('--edge'))
+    .linkColor(l=>l.rel==='eliminated by'?css('--bad'):css('--edge'))
     .linkWidth(l=>sel&&(l.source.id===sel||l.target.id===sel)?2:0.7)
     .linkDirectionalArrowLength(2.5).linkDirectionalArrowRelPos(1)
     .nodeCanvasObject((n,ctx,s)=>{
       const r=(R[n.type]||3)*(n.type==='morph'&&n.scale==='organ_system'?1.6:1);
       shape(ctx,n,n.x,n.y,r);
-      ctx.fillStyle=n.type==='test'?css('--panel'):fill(n);
+      const hollow=n.type==='test'||n.type==='candidate';
+      ctx.fillStyle=hollow?css('--panel'):n.type==='problem'?css('--soft'):fill(n);
       ctx.fill();
       ctx.lineWidth=(n.id===sel?2.6:1)/Math.sqrt(s);
-      ctx.strokeStyle=n.type==='test'?fill(n):(n.domain==='mathbio'||n.type==='theorem'?css('--accent'):css('--panel'));
+      ctx.strokeStyle=n.type==='candidate'?(n.verdict==='eliminated'?css('--bad'):css('--mute')):n.type==='problem'?css('--mute'):n.type==='test'?fill(n):(n.domain==='mathbio'||n.type==='theorem'?css('--accent'):css('--panel'));
       if(n.type==='test'&&n.swarm==='collaborator')ctx.setLineDash([2/s,1.5/s]);
       ctx.stroke();ctx.setLineDash([]);
       if(n.type==='theorem'){shape(ctx,n,n.x,n.y,r+2.2);ctx.lineWidth=0.8/Math.sqrt(s);ctx.strokeStyle=css('--accent');ctx.stroke();}
-      if(n.type==='test'&&VG[n.verdict]){ctx.fillStyle=fill(n);ctx.font=`${r*1.5}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(VG[n.verdict],n.x,n.y+0.3);}
+      if((n.type==='test'||n.type==='candidate')&&VG[n.verdict]){ctx.fillStyle=n.type==='candidate'?(n.verdict==='eliminated'?css('--bad'):css('--mute')):fill(n);ctx.font=`${r*1.5}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(VG[n.verdict],n.x,n.y+0.3);}
       if((s>2.2&&n.type!=='dataset')||n.id===sel||n.type==='source'||n.type==='theorem'){
         ctx.font=`${11/s}px Inter Tight, sans-serif`;ctx.fillStyle=css('--ink');ctx.textAlign='left';ctx.textBaseline='middle';
         ctx.fillText(String(n.label).slice(0,46),n.x+r+3,n.y);
@@ -191,7 +196,8 @@ function legend(){
     <b style="display:block;margin-top:6px">Kind</b> (shape)
     ${row(sw('claim','darwin'),'claim')}${row(sw('test','darwin'),'data test &mdash; ✓ ✕ ~ ? inside; dashed = collaborator swarm')}
     ${row(sw('theorem','mathbio'),'Lean theorem or bound (double ring)')}${row(sw('taxon'),'taxon')}
-    ${row(sw('morph'),'blueprint structure')}${row(sw('source'),'source sentence')}${row(sw('dataset'),'dataset')}`;
+    ${row(sw('morph'),'blueprint structure')}${row(sw('source'),'source sentence')}${row(sw('dataset'),'dataset')}
+    ${row(sw('problem'),'open problem')}${row(sw('test','none'),'candidate answer &mdash; ✕ eliminated, ○ consistent, ? cannot rule')}`;
 }
 
 function show(n){
@@ -219,6 +225,18 @@ function show(n){
   if(I.counts)h+=`<div class="sec"><h4>What the blueprint holds</h4><p class="small">${Object.entries(I.counts).map(([k,v])=>`${v} ${k.replace('_',' ')}`).join(' &middot; ')}</p>${I.unread&&I.unread.length?`<p class="small">Words it could not read: ${I.unread.map(w=>`<span class="mono">${esc(w)}</span>`).join(' ')}</p>`:''}<p class="tiny">${esc(I.note||'')}</p></div>`;
   if(I.term)h+=`<p class="small">Ontology term <span class="mono">${esc(I.term)}</span>${I.named?' &middot; named in the description':''}</p>${I.note?`<p class="tiny">${esc(I.note)}</p>`:''}`;
   if(I.gbif||I.ncbi)h+=`<p class="small">GBIF ${esc(I.gbif||'')} &middot; NCBI ${esc(I.ncbi||'')} &middot; ${esc(I.wikidata||'')}</p>${I.genome?`<p class="tiny">genome: ${esc(I.genome)}</p>`:''}`;
+  if(n.type==='candidate'){
+    h+=`<p class="small">${esc(I.provenance||'')}${I.illustrative?' &middot; <b>uses illustrative values the enumerator chose</b>':''}</p>`;
+    if(I.caveat)h+=`<div class="sec"><h4>What this elimination means</h4><p class="small">${esc(I.caveat)}</p></div>`;
+    if(I.commits)h+=`<div class="sec"><h4>Formal commitment</h4><p class="small">${Object.entries(I.commits).map(([k,v])=>`<span class="mono">${esc(k)} = ${esc(typeof v==='object'?JSON.stringify(v):v)}</span>`).join(' ')}</p></div>`;
+    if(I.untranslatable)h+=`<div class="sec"><h4>Could not be formalised</h4><p class="small">${esc(I.untranslatable)}</p></div>`;
+    const ruled=(I.results||[]).filter(r=>!/^cannot/.test(r.state||''));
+    const codes=(I.results||[]).filter(r=>/^cannot/.test(r.state||'')).reduce((a,r)=>(a[r.code]=(a[r.code]||0)+1,a),{});
+    if(ruled.length)h+=`<div class="sec"><h4>Theorems that ruled</h4><table>${ruled.map(r=>`<tr><td class="small"><b>${esc(r.constraint)}</b> <span class="mono">${esc(r.relation)}</span><br><span class="tiny">${esc(r.lemma||'')}</span></td><td><span class="chip ${/^eliminated/.test(r.state)?'bad':''}">${esc(String(r.state).split(' (')[0])}</span></td></tr>`).join('')}</table>
+      <p class="tiny">Faithfulness of the statement used: ${esc((ruled[0]||{}).faithfulness||'')}</p></div>`;
+    if(Object.keys(codes).length)h+=`<details><summary>Why the other theorems could not rule</summary><ul class="t small">${Object.entries(codes).map(([k,v])=>`<li><span class="mono">${esc(k)}</span> &times; ${v}</li>`).join('')}</ul></details>`;
+    if(I.notFormalised&&I.notFormalised.length)h+=`<p class="small"><b>Rests on something not formalised:</b> ${I.notFormalised.map(esc).join('; ')}</p>`;
+  }
   if(I.caveats&&I.caveats.length)h+=`<details><summary>What it does not establish</summary><ul class="t small">${I.caveats.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></details>`;
   const pv=Object.entries(P).filter(([,v])=>v!=null&&v!=='');
   if(pv.length)h+=`<div class="sec"><h4>Provenance</h4><table>${pv.map(([k,v])=>`<tr><td class="tiny">${esc(k)}</td><td>${/^https?:/.test(String(v))?`<a href="${esc(v)}" target="_blank" rel="noopener">${esc(String(v).slice(0,60))}</a>`:k==='browse'?`<a href="${esc(v)}">open in the Claim Book &rarr;</a>`:`<span class="mono">${esc(v)}</span>`}</td></tr>`).join('')}</table></div>`;
