@@ -58,6 +58,12 @@ const DOMAIN_CLAIMS = `${R}domain/math-population-genetics-and-evolutionary-theo
 const DOMAIN_METHOD = `${R}domain/held-out-clade-exam`;
 const LIVE = 'https://delphi-mission-control.ashenoy000.workers.dev/t/holdout/'; // the only resolvable copy of holdout/ today
 const LIVE_DATA = `${LIVE}data.json`;
+// Commit-pinned copy of holdout/ on the pushed branch (PR #36 against fractastical/delphi, head of delphi-hack-2026-10-31 on
+// xX-its-amit-Xx/delphi, public). Pass --commit <sha> when a newer push lands; files changed after this commit (the confirmed
+// re-freeze of CHECKSUMS.json, exam.json, split.json) are only in the live copy until then, and the manifest says so.
+const commitArg = process.argv.indexOf('--commit');
+const COMMIT = commitArg >= 0 ? process.argv[commitArg + 1] : 'df9b6bdc80036785aec106cd59595cbcc67bc288';
+const TREE = `https://github.com/xX-its-amit-Xx/delphi/tree/${COMMIT}/holdout`;
 const TEMPLATE = { // published Project Delphi assertion templates (project-delphi-ontology pipeline, commit 6ba5f9a)
   evidence: 'https://w3id.org/np/RAk4kcX4zA_touv8CeKku9tTUnbR5xiTLSLwFbrKSl3BE/template',
   claim: 'https://w3id.org/np/RApE-nGpCMigXqZjeHuYuMJEVTGmTlNTlZl7IcHi_fhdQ/template',
@@ -152,8 +158,21 @@ const statusPv = (subject, status) => `  ${iri(subject)} schema:additionalProper
     schema:value ${lit(status)} ;
     schema:description "Status of this evidence item in the words of holdout/EXAM.md and AGENTS.md A10" .
 `;
-const frozenExam = () => fileNode('frozen-exam', 'holdout/exam.json (frozen roster and rules of the held-out exam)', sums.outputs['exam.json'].sha256, sums.outputs['exam.json'].bytes, sums.frozen_at.replace(/\.\d{3}Z$/, 'Z'))
-  + fileNode('frozen-split', 'holdout/split.json (assignment of every inventory taxon to holdout, train or excluded)', sums.outputs['split.json'].sha256, sums.outputs['split.json'].bytes, sums.frozen_at.replace(/\.\d{3}Z$/, 'Z'));
+// The frozen exam and split as file nodes. An exam that ran against an earlier freeze (recorded in CHECKSUMS.json as
+// previous_freeze) cites that freeze's exam.json SHA-256; the node then says which freeze superseded it and whether
+// the roster moved, so the record and the result file agree on what was frozen.
+const tidy = s => String(s || '').replace(/\.\d{3}Z$/, 'Z');
+const frozenExam = (examSha = sums.outputs['exam.json'].sha256) => {
+  const pf = sums.previous_freeze;
+  const current = examSha === sums.outputs['exam.json'].sha256;
+  if (!current && !(pf && pf.outputs?.['exam.json']?.sha256 === examSha)) throw new Error(`exam.json SHA-256 ${examSha} matches neither the current freeze nor the recorded previous one`);
+  const when = current ? sums.frozen_at : pf.frozen_at;
+  const examDesc = current
+    ? `holdout/exam.json (frozen roster and rules of the held-out exam; ${sums.provisional ? 'provisional' : `clade ${sums.decision?.status || 'confirmed'} ${sums.decision?.decided_on || ''}`.trim()}${sums.first_frozen_at && sums.first_frozen_at !== sums.frozen_at ? `; roster first frozen ${tidy(sums.first_frozen_at)}` : ''})`
+    : `holdout/exam.json as frozen ${tidy(pf.frozen_at)} (${pf.provisional ? 'provisional' : 'confirmed'}), the freeze this exam ran against; superseded ${tidy(sums.frozen_at)} by the confirmed freeze (exam.json SHA-256 ${sums.outputs['exam.json'].sha256}) with the roster ${pf.roster_unchanged ? 'unchanged' : 'CHANGED'}`;
+  return fileNode('frozen-exam', examDesc, examSha, current ? sums.outputs['exam.json'].bytes : pf.outputs['exam.json'].bytes, tidy(when))
+    + fileNode('frozen-split', `holdout/split.json (assignment of every inventory taxon to holdout, train or excluded${current ? '' : `, as frozen ${tidy(pf.frozen_at)}`})`, current ? sums.outputs['split.json'].sha256 : pf.outputs['split.json'].sha256, current ? sums.outputs['split.json'].bytes : pf.outputs['split.json'].bytes, tidy(when));
+};
 
 const out = [];
 const emit = (name, trig, meta) => out.push({ name, trig, meta });
@@ -225,11 +244,11 @@ ${statusPv(evidence, STATUS)}  sub:preregistration a prov:Entity, prov:Plan ;
     dct:title ${lit(`Builder's pre-registered decision rule for ${id} (claim-tests/math-bio-theorems/${id}/result.json, fields pass_criterion and fail_criterion)`)} ;
     prov:generatedAtTime ${dt('2026-10-31T05:57:42Z')} ;
     prov:value ${lit(`PASS: ${b.pass_criterion} FAIL: ${b.fail_criterion}`)} .
-${numbers.map(([p, v, d, k], i) => pv(evidence, `m${i + 1}`, p, v, d, k)).join('')}${frozenExam()}${agentTriples}}
+${numbers.map(([p, v, d, k], i) => pv(evidence, `m${i + 1}`, p, v, d, k)).join('')}${frozenExam(e.exam_roster_sha256)}${agentTriples}}
 
 sub:provenance {
   sub:assertion prov:wasAttributedTo ${iri(ASSESSOR)} ;
-    prov:wasDerivedFrom ${iri(LIVE_DATA)} , ${iri(np.trustyUri)} ;
+    prov:wasDerivedFrom ${iri(LIVE_DATA)} , ${iri(TREE)} , ${iri(np.trustyUri)} ;
     prov:wasGeneratedBy sub:exam .
   sub:exam a prov:Activity ;
     rdfs:label ${lit(`node holdout/exam-results/run-claim-exam.mjs claim-tests/math-bio-theorems/${id} (protocol: holdout/EXAM.md; rule encoded in holdout/exam-results/rules.mjs from the builder's result.json prose)`)} ;
@@ -261,7 +280,7 @@ ${agentTriples}}
 
 sub:provenance {
   sub:assertion prov:wasAttributedTo ${iri(ASSESSOR)} ;
-    prov:wasDerivedFrom ${iri(LIVE_DATA)} , <https://doi.org/10.6084/m9.figshare.16586228> .
+    prov:wasDerivedFrom ${iri(LIVE_DATA)} , ${iri(TREE)} , <https://doi.org/10.6084/m9.figshare.16586228> .
 }
 
 ${pubinfo({ label, type: 'delphi:TestableHypothesis', introduces: HYP, domain: DOMAIN_METHOD, templates: [TEMPLATE.hypothesis] })}`;
@@ -303,11 +322,11 @@ ${statusPv(evidence, STATUS)}${[
     ['n_ratites_on_roster', m.A_keel.ratites_on_roster, 'palaeognath ratites on the roster, the keel-absent class'],
     ['n_conflicts_not_reported', m.C_conflict_free.not_reported, 'species whose blueprint carries no reading.conflicts field (test C not evaluable)'],
     ['n_distinct_prediction_vectors', x.distinct_prediction_vectors_across_roster, 'exploratory, not pre-registered: distinct prediction vectors across the roster'],
-  ].map(([p, v, d], i) => pv(evidence, `m${i + 1}`, p, v, d)).join('')}${fileNode('predictions', 'organism-design/exam/aves-predictions.json (the organism thread\'s predictions for the roster)', organism.preconditions.predictions_sha256)}${frozenExam()}${agentTriples}}
+  ].map(([p, v, d], i) => pv(evidence, `m${i + 1}`, p, v, d)).join('')}${fileNode('predictions', 'organism-design/exam/aves-predictions.json (the organism thread\'s predictions for the roster)', organism.preconditions.predictions_sha256)}${frozenExam(organism.exam_roster_sha256)}${agentTriples}}
 
 sub:provenance {
   sub:assertion prov:wasAttributedTo ${iri(ASSESSOR)} ;
-    prov:wasDerivedFrom ${iri(LIVE_DATA)} ;
+    prov:wasDerivedFrom ${iri(LIVE_DATA)} , ${iri(TREE)} ;
     prov:wasGeneratedBy sub:exam .
   sub:exam a prov:Activity ;
     rdfs:label "node holdout/exam-results/organism-design/score.mjs --rerun --reason ... (protocol: holdout/EXAM.md and PREREG.md)" ;
@@ -339,13 +358,15 @@ ${pubinfo({ label, type: 'delphi:Assessment', introduces: assessment, domain: DO
   const cc = fs.existsSync(ccP) ? JSON.parse(fs.readFileSync(ccP, 'utf8')) : null;
   const ccDiffer = cc ? cc.comparisons.filter(r => !r.agree) : [];
   const ccSentence = cc ? ` Scope of the exam: it checks a builder's prediction on species the builder never saw, under the builder's own pre-registered rule and unit of analysis; it does not detect that a verdict depends on the operationalisation chosen. The hub's cross-check against the collaborator swarm (dashboard/public/crosscheck.json, ${cc.builtAt}) shows that hazard is real: of ${cc.counts.overlapping} claims both swarms tested independently, ${cc.counts.agreements} verdicts agree and ${cc.counts.disagreements} differ (${ccDiffer.map(r => `${r.claim.split('/').pop()}: ours ${r.ours.verdict}, theirs ${r.theirs.verdict}`).join('; ')}), each difference one of degree between supports and mixed under different operationalisations rather than a factual contradiction. Blindness to the clade and robustness to the operationalisation are two separate checks, and a claim needs both.` : '';
-  const label = `Holding out Aves keeps all ${nTests} completed claim tests blind; holding out Mammalia would make ${postHoc.length} already-built tests post hoc and 1 of 2 exams decisive`;
+  const dec = split.decision && split.decision.status === 'confirmed' ? split.decision : null;
+  const examinedRows = power.tests.filter(t => t.clade === 'Aves');
+  const label = `The public tables cannot support a blind clade exam at the builders' own minimum n: with Aves held out ${examinedRows.map(t => `${t.held_out_n} birds against ${t.builder_min_n} for ${t.test}`).join(', ')}; Aves was ${dec ? `confirmed on ${dec.decided_on}` : 'kept'} knowing this, over a Mammalia holdout that would make 1 of 2 exams decisive but ${postHoc.length} already-built tests post hoc`;
   const trig = `${PREFIXES}
 ${HEAD}
 sub:assertion {
   ${iri(claim)} a delphi:Claim ;
     rdfs:label ${lit(label)} ;
-    dct:description ${lit(`Status: established by enumeration of the project's own files (not a scientific hypothesis). Of the ${nTests} completed claim tests, ${nExamined} were examined on held-out birds and ${nNA} contain no bird rows at all, so under the Aves holdout no completed test has fitted on held-out data. Under a Mammalia holdout, the ${nExamined} examined tests (which fitted on mammal rows) and ${mammalOnly.join(', ')} (mammals only) would already be built on held-out data: ${postHoc.length} post hoc tests. Power: with the builders' own minimum sample sizes, Aves reaches a verdict in ${decisive.Aves} of 2 examined tests and Mammalia in ${decisive.Mammalia} of 2. Aves is the frozen clade, labelled provisional until the project lead confirms. It does not establish which clade is scientifically better; it establishes the blindness and power trade-off for the tests that exist today, and it will change as tests are added.${ccSentence}`)} ;
+    dct:description ${lit(`Status: established by enumeration of the project's own files (not a scientific hypothesis). The finding first: for the laws tested so far, the public trait and demographic tables leave too few held-out bird species to meet the builders' own pre-registered minimum sample sizes (${examinedRows.map(t => `${t.test}: ${t.held_out_n} against ${t.builder_min_n}`).join('; ')}), so a blind clade exam at those minimums cannot yet decide. This is a result about the state of the data, not about the thread, and it is more useful to the next team than a decisive-looking number from a compromised design. The decision: ${dec ? `class Aves was confirmed on ${dec.decided_on} by ${dec.decided_by}, relayed by the hub, after being provisional from the first freeze at ${split.decision.provisional_from}; the re-freeze left the roster unchanged.` : 'class Aves is the frozen clade, provisional until the project lead confirms.'} The cost was taken knowingly: ${dec ? dec.reasoning.slice(0, 3).join(' ') : ''} Of the ${nTests} completed claim tests, ${nExamined} were examined on held-out birds and ${nNA} contain no bird rows at all, so under the Aves holdout no completed test has fitted on held-out data. Under a Mammalia holdout, the ${nExamined} examined tests (which fitted on mammal rows) and ${mammalOnly.join(', ')} (mammals only) would already be built on held-out data: ${postHoc.length} post hoc tests. Power: with the builders' own minimum sample sizes, Aves reaches a verdict in ${decisive.Aves} of 2 examined tests and Mammalia in ${decisive.Mammalia} of 2. ${dec ? 'Aves is the frozen and confirmed clade.' : 'Aves is the frozen clade, labelled provisional until the project lead confirms.'} It does not establish which clade is scientifically better; it establishes the blindness and power trade-off for the tests that exist today, and it will change as tests are added.${ccSentence}`)} ;
     delphi:context ${lit(`Inventory sizes from holdout/split.json and holdout/alt/Mammalia/split.json: Aves ${inv.Aves.roster_species} roster species (${inv.Aves.genome_ready} genome-ready at chromosome or complete level), Mammalia ${inv.Mammalia.roster_species} roster species (${inv.Mammalia.genome_ready} genome-ready). Triage file: holdout/exam-results/not-applicable.json. Power file: holdout/power-analysis.json (${power.generated_at}).`)} ;
     delphi:hasEvidence ${iri(evidence)} ;
     prov:wasAttributedTo ${iri(ASSESSOR)} .
@@ -374,7 +395,7 @@ ${statusPv(evidence, STATUS)}${[
 
 sub:provenance {
   sub:assertion prov:wasAttributedTo ${iri(ASSESSOR)} ;
-    prov:wasDerivedFrom ${iri(LIVE_DATA)} , sub:frozen-split .
+    prov:wasDerivedFrom ${iri(LIVE_DATA)} , ${iri(TREE)} , sub:frozen-split .
 }
 
 ${pubinfo({ label: `Clade decision: ${label}`, type: 'delphi:Claim', introduces: claim, domain: DOMAIN_METHOD, templates: [TEMPLATE.claim, TEMPLATE.evidence] })}`;
@@ -411,7 +432,7 @@ ${statusPv(evidence, STATUS)}${[
 
 sub:provenance {
   sub:assertion prov:wasAttributedTo ${iri(ASSESSOR)} ;
-    prov:wasDerivedFrom ${iri(LIVE_DATA)} , sub:frozen-split ;
+    prov:wasDerivedFrom ${iri(LIVE_DATA)} , ${iri(TREE)} , sub:frozen-split ;
     prov:wasGeneratedBy sub:scan .
   sub:scan a prov:Activity ;
     rdfs:label "node holdout/check-leaks.mjs --json" ;
@@ -453,7 +474,7 @@ ${statusPv(evidence, STATUS)}${[
 
 sub:provenance {
   sub:assertion prov:wasAttributedTo ${iri(ASSESSOR)} ;
-    prov:wasDerivedFrom ${iri(LIVE_DATA)} .
+    prov:wasDerivedFrom ${iri(LIVE_DATA)} , ${iri(TREE)} .
 }
 
 ${pubinfo({ label, type: 'delphi:Claim', introduces: claim, domain: DOMAIN_METHOD, templates: [TEMPLATE.claim, TEMPLATE.evidence] })}`;
@@ -481,7 +502,7 @@ ${agentTriples}}
 
 sub:provenance {
   sub:assertion prov:wasAttributedTo ${iri(ASSESSOR)} ;
-    prov:wasDerivedFrom ${iri(LIVE_DATA)} ;
+    prov:wasDerivedFrom ${iri(LIVE_DATA)} , ${iri(TREE)} ;
     prov:wasQuotedFrom ${lit(`${b.disclosed_by} (swarm/compare/DEVIATIONS.md, recorded in holdout/burned.json)`)} .
 }
 
@@ -501,7 +522,11 @@ const manifest = {
   ontology: 'Project Delphi v2.0 (https://w3id.org/delphi/ontology/), templates from project-delphi-ontology commit 6ba5f9a97a4511c909f5dfd755c7993dd68989f3',
   inputs_frozen_at: sums.frozen_at,
   exam_json_sha256: sums.outputs['exam.json'].sha256,
-  note: 'Files under holdout/ are not yet committed; provenance points at the live sub-dashboard copy. Before signing: commit and push, replace the live link with commit-pinned blob links, re-run with --final, np check, lint, then test registry.',
+  commit: COMMIT,
+  commit_tree: TREE,
+  clade_decision: split.decision ? { status: split.decision.status, decided_on: split.decision.decided_on, decided_by: split.decision.decided_by } : null,
+  freeze: { frozen_at: sums.frozen_at, first_frozen_at: sums.first_frozen_at || sums.frozen_at, exam_json_sha256: sums.outputs['exam.json'].sha256, previous_exam_json_sha256: sums.previous_freeze?.outputs?.['exam.json']?.sha256 || null, roster_unchanged_at_refreeze: sums.previous_freeze?.roster_unchanged ?? null },
+  note: `Provenance points at the live sub-dashboard copy and at the commit-pinned holdout/ tree (${COMMIT}). That commit holds the provisional freeze the exams ran against; the confirmed re-freeze (${sums.frozen_at}: decision recorded, roster unchanged) is only in the live copy until the next push, after which rebuild with --commit <sha>. Before signing: --final with --creator <ORCID>, np check (check.mjs), lint, then test registry.`,
   lint_exemptions: Object.fromEntries(out.filter(o => ['clade-analysis', 'leak-check', 'triage-coverage'].includes(o.name)).map(o => [o.meta.introduces,
     'No empirical dataset: the claim is about files of this project (frozen split, triage record, leak-check run), all carried in the record with SHA-256 or counts. Exempted from CLAIM-NO-DATASET with this reason.'])),
   nanopubs: out.map(o => ({ file: `holdout/nanopubs/unsigned/${o.name}.trig`, ...o.meta, registry: null, trustyUri: null, signedFile: null, publishedAt: null })),
