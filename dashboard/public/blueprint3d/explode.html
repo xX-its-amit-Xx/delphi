@@ -37,6 +37,11 @@ main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 430px;min-height:0}
 #labels div{position:absolute;transform:translate(8px,-50%);font-size:11.5px;color:var(--ink);white-space:nowrap;text-shadow:0 0 3px var(--surface),0 0 3px var(--surface),0 0 2px var(--surface)}
 #labels div.hl{font-weight:700;color:var(--accent)}
 #labels div.sm{font-size:10.5px;color:var(--mute)}
+#loading{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);display:none;align-items:center;gap:9px;z-index:6;background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-size:.82rem;color:var(--ink);box-shadow:0 4px 18px rgba(0,0,0,.14)}
+#loading.on{display:flex}
+#loading .sp{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--accent);animation:spin .8s linear infinite;flex:0 0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){#loading .sp{animation:none}}
 .ov{position:absolute;background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.78rem;z-index:2}
 #note{left:10px;top:10px;max-width:330px;line-height:1.35}
 #note b{display:block;font-size:.8rem}
@@ -55,6 +60,8 @@ main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 430px;min-height:0}
 #inset svg text{font-size:10.5px;fill:var(--ink)}
 #tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:.78rem;display:none;max-width:300px;z-index:5}
 #panel{border-left:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:16px}
+#panel select,#panel input[type=text],#panel input[type=search]{max-width:100%}
+#panel .prov button{font:inherit;font-size:.72rem;padding:1px 7px}
 #panel h2{font-family:Fraunces,serif;font-size:1.15rem;margin:0 0 6px;line-height:1.2}
 .chip{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.75rem;border:1px solid var(--line);background:var(--soft);color:var(--mute);margin:0 4px 4px 0}
 .chip.acc{color:var(--accent);border-color:var(--accent)}.chip.warn{color:var(--warn);border-color:var(--warn)}.chip.ok{color:var(--ok);border-color:var(--ok)}
@@ -74,6 +81,7 @@ a.go{cursor:pointer}
 .prov{border-left:3px solid var(--accent);padding:4px 10px;margin:6px 0}
 .prov.model{border-left-style:dashed;border-left-color:var(--mute)}
 .prov b{display:block;font-size:.8rem}
+.prov span b,.prov p b,.prov li b,.prov td b,.prov blockquote b{display:inline;font-size:inherit}
 .ladder{border-left:3px solid var(--line);margin:8px 0 8px 6px;padding-left:12px}
 .rung{position:relative;padding:6px 0 8px;border-bottom:1px dashed var(--line)}.rung:last-child{border-bottom:0}
 .rung .rn{display:inline-block;width:18px;height:18px;border-radius:50%;background:var(--ink);color:var(--hollow);font-size:.72rem;text-align:center;line-height:18px;margin-left:-23px;margin-right:4px}
@@ -107,15 +115,15 @@ a.go{cursor:pointer}
 @media (max-width:560px){#growth{height:44%!important}#growth canvas{height:calc(100% - 66px)!important}#growth .bar input[type=range]{width:120px!important}.ctl{max-width:100%;min-width:0}.ctl select,.ctl input[type=text]{max-width:calc(100vw - 40px);min-width:0}#organSel{max-width:150px}header nav{max-width:100%}}
 #compare{position:absolute;inset:0;z-index:6;display:none;background:var(--surface)}
 #compare .cmpc{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-#compare .cmpgrid{position:absolute;left:8px;right:8px;top:8px;bottom:104px;display:grid;gap:8px;grid-template-columns:1fr 1fr 1.15fr;grid-template-rows:1fr 1fr;grid-template-areas:"a b e" "d c e"}
+#compare .cmpgrid{position:absolute;left:8px;right:8px;top:8px;bottom:118px;display:grid;gap:8px;grid-template-columns:1fr 1fr 1.15fr;grid-template-rows:1fr 1fr;grid-template-areas:"a b e" "d c e"}
 #compare .cmpp{position:relative;border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden}
 #compare .cmpp[data-k="E"]{border:1.5px solid var(--bad)}
 #compare .cmph{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;padding:4px 8px;font-size:.76rem;background:color-mix(in srgb,var(--panel) 86%,transparent);cursor:pointer}
 #compare .cmpt{font-weight:600}#compare .cmpl{font-size:.7rem;border:1px solid var(--line);border-radius:99px;padding:0 7px;color:var(--mute)}
 #compare .cmpl.ok{color:var(--ok);border-color:var(--ok)}#compare .cmpl.warn{color:var(--warn);border-color:var(--warn)}#compare .cmpl.bad{color:var(--bad);border-color:var(--bad);font-weight:700}
 #compare .cmpv{flex:1;min-height:40px}
-#compare .cmpr{font-size:.72rem;padding:3px 8px 5px;background:color-mix(in srgb,var(--panel) 86%,transparent);line-height:1.35}
-#compare .cmpbar{position:absolute;left:8px;right:8px;bottom:8px;height:88px;align-content:flex-end;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.78rem}
+#compare .cmpr{font-size:.72rem;padding:3px 8px 5px;max-height:58%;overflow:auto;background:color-mix(in srgb,var(--panel) 86%,transparent);line-height:1.35}
+#compare .cmpbar{position:absolute;left:8px;right:8px;bottom:8px;height:102px;align-content:flex-end;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.78rem}
 #compare .cmpbar label{display:inline-flex;gap:6px;align-items:center}
 @media (max-width:880px){#compare .cmpgrid{grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr 1.1fr;grid-template-areas:"a b" "d c" "e e";bottom:124px}#compare .cmpr .tiny{display:none}#compare .cmpbar{height:112px;font-size:.7rem}#compare .cmph{font-size:.68rem;padding:2px 6px}#compare .cmpl{font-size:.62rem}#compare .cmpr{font-size:.64rem}}
 #seqv{position:absolute;inset:0;z-index:6;display:none;background:var(--surface);overflow:auto;padding:10px 12px 60px;--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a}
@@ -152,6 +160,7 @@ body.embed header,body.embed #panel{display:none}body.embed main{grid-template-c
   <b>Open the Fish</b>
   <nav><a href="../start/">Start</a><a href="../">Mission Control</a><a href="./?view=radial">Radial 3D view</a><a href="../graph/?view=flyingfish">Graph</a><a href="../t/genotype/">Genotype thread</a><a href="../t/lean/index.html#blueprint">Lean certificate</a></nav>
   <div class="ctl">
+    <select id="speciesSel" title="Which segmented model to open (loaded on demand)"><option value="flying-fish">Flying fish</option><option value="zebrafish-adult">Zebrafish, adult</option><option value="zebrafish-larva" title="about 4-5 days post fertilisation, at swim-bladder inflation">Zebrafish larva</option></select>
     <select id="modeSel" title="What to show"><option value="anatomy">Anatomy</option><option value="physiology">Physiology: circulation and gills</option><option value="tissue">Tissue signalling</option><option value="cell">Cell-cell interactions</option><option value="physics">Physics: flight simulator</option><option value="design">Design Studio</option><option value="sequences">Sequences</option><option value="compare">Compare: 2×2 + TFF</option><option value="growth">Growth</option></select>
     <label title="Split the fish along the midline and swing the halves apart">split <input type="range" id="split" min="0" max="100" value="0"></label>
     <label title="Peel the layers from the outside in: skin, then muscle, then the skeleton, leaving the organs">peel <input type="range" id="peel" min="0" max="3" value="0" step="1"></label>
@@ -171,6 +180,7 @@ body.embed header,body.embed #panel{display:none}body.embed main{grid-template-c
     <div id="labels"></div>
     <div id="tip"></div>
     <div id="note" class="ov"></div>
+    <div id="loading"><span class="sp"></span><span class="lt">Loading&hellip;</span></div>
     <div id="crumbs" class="ov"></div>
     <div id="legend" class="ov"></div>
     <div id="inset" class="ov"></div>
@@ -213,10 +223,22 @@ $('#themeBtn').onclick=()=>{const c=document.documentElement.dataset.theme||(mat
 const LEVEL_NAME={body:'body',organ_system:'organ system',organ:'organ',tissue:'tissue',cell:'cell type'};
 const FIN_ORGAN='UBERON_0000151';
 const WING_GENES=['kcnk5b','kcnh2a','slc43a2a'];
-const MODEL='model/flying-fish.glb', MANIFEST='model/manifest.json';
+// ---------- the three segmented models; only the selected one is fetched (?model=...) ----------
+// All three are built the same way (Y-up, head at +X, one named mesh per piece, L/R halves,
+// layers outer/muscle/skeleton/organ, one manifest per model). The flying fish is Uberon-based;
+// the two zebrafish models are ZFA-based and carry an Uberon cross-reference on every piece.
+const MODELS={
+  'flying-fish':{label:'flying fish (Exocoetidae)',short:'flying fish',species:'Exocoetidae',glb:'model/flying-fish.glb',manifest:'model/manifest.json',ont:'uberon',mb:'2.6 MB'},
+  'zebrafish-adult':{label:'zebrafish, adult (Danio rerio)',short:'zebrafish, adult',species:'Danio rerio',glb:'model/zebrafish-adult.glb',manifest:'model/manifest-adult.json',ont:'zfa',mb:'4.4 MB'},
+  'zebrafish-larva':{label:'zebrafish larva, ~4-5 dpf (Danio rerio)',short:'zebrafish larva',species:'Danio rerio',glb:'model/zebrafish-larva.glb',manifest:'model/manifest-larva.json',ont:'zfa',mb:'2.5 MB'}
+};
+let modelKey=MODELS[params.get('model')]?params.get('model'):'flying-fish';
+const isFF=()=>modelKey==='flying-fish', isZF=()=>modelKey!=='flying-fish';
+const MI=()=>MODELS[modelKey];
 let D=null,T=new Map(),children=new Map(),G=null,MF=null,modelInfo={source:'none'};
 let state={split:0,peel:0,obj:null,organ:null,tissue:null,gene:null,preset:null,mode:'anatomy'};let hovered=null,noteCollapsed=false,noteTimer=null;
 let circ=null,circData=null,gill=null,physStatus=null,physMods={},interData=null,lastT=0,basisTimer=null,ctx='development',intensity=0,cardiac=null,chains=null;
+let pathways=null,seqLayer=null,genoLoaded=false,geno={applied:[],gene:null,sel:null};
 let design=null,baseDesign=null,checker=null,checkerSource='loading',checkerError=null,kernelNote='',refSpec=null,conditions=null,flierSpec=null,interv=null,handles=[],dragH=null,lastCheck=0,verdicts=[],glowT=0,traj=null,growth={age:0,playing:false,speed:7,edit:null,intervention:null},firstGlide=null,gcanvas=null;
 
 // ---------- data access (blueprint terms and the ZFA fin subtree answer alike) ----------
@@ -314,11 +336,14 @@ function standinScene(){ // a few primitives with the manifest's names; not a fi
 // ---------- scene ----------
 let renderer,scene,camera,root,pivots=null,objs=[],cam={theta:-0.9,phi:1.25,dist:1.9,target:new THREE.Vector3(0,0,0)},spin=true,userMoved=false,flyTarget=null;
 const GROUP=name=>name.replace(/_(L|R)_\d+$/,'').replace(/_\d+$/,'').replace(/_(L|R)$/,'');
-function normEntry(o){if(!o)return null;const raw=o.ontology_id||null,zfa=o.zfa_id||null;
-  // the node the drill panel opens: the manifest's Uberon id when it is in the blueprint, else its ZFA id when it is in the fin subtree
-  const node=raw&&term(nid(raw))?nid(raw):zfa&&term(zfa)?zfa:null;
+function normEntry(o){if(!o)return null;const raw=o.ontology_id||null,zfa=o.zfa_id||null,ux=o.uberon_id?nid(o.uberon_id):null;
+  // the node the drill panel opens: the Uberon id when it is in the blueprint (for a ZFA piece that is the manifest's
+  // uberon_id cross-reference, because data.json is Uberon-based and a bare ZFA id would never match), else the ZFA id
+  // when it is in the zebrafish fin subtree.
+  const node=ux&&term(ux)?ux:raw&&term(nid(raw))?nid(raw):zfa&&term(zfa)?zfa:null;
   const anc=o.nearest_ancestor_in_files||null;const ancId=anc?(anc.match(/(UBERON_\d+|CL_\d+|ZFA:\d+)/)||[])[1]||null:null;
   return {name:o.object||o.name,label:o.label||o.object||o.name,ontology_id:node,manifest_id:raw,manifest_label:o.ontology_label||null,zfa_id:zfa,ancestor:anc,ancestor_id:ancId&&term(ancId)?ancId:null,
+    uberon_id:ux,uberon_label:o.uberon_label||null,zfa_label:o.zfa_id?(o.ontology_label||null):null,
     level:o.level||null,system:o.organ_system_id||o.system||null,system_label:o.organ_system||null,layer:o.layer||'outer',side:o.side==='mid'?null:(o.side||null),colour:o.colour||null,
     geometry_basis:o.geometry_basis||null,note:o.note||null,ontology_note:o.ontology_note||null,source:o.ontology_source||null};}
 function manifestFor(name){const list=(MF&&MF.objects)||[];const nm=o=>o.object||o.name;let m=list.find(o=>nm(o)===name);if(m)return normEntry(m);const base=name.replace(/_(L|R)$/,'');m=list.find(o=>nm(o)===base);if(m)return normEntry(m);m=list.find(o=>name.startsWith(nm(o)));return m?normEntry(m):null;}
@@ -326,15 +351,53 @@ function registerObject(mesh){const m=manifestFor(mesh.name);const side=m?.side|
   mesh.traverse(c=>{if(c.isMesh){c.userData.obj=mesh.name;if(m&&m.colour&&modelInfo.source==='stand-in'){c.material=c.material.clone();c.material.color=new THREE.Color(m.colour);}else{c.material=c.material.clone();}c.material.transparent=true;c.material.userData.base={op:c.material.opacity,em:c.material.emissive?c.material.emissive.getHex():0};}});
   const box=new THREE.Box3().setFromObject(mesh);const centre=box.getCenter(new THREE.Vector3());mesh.parent.worldToLocal(centre);
   objs.push({name:mesh.name,mesh,m:m||{name:mesh.name,label:mesh.name.replace(/_/g,' '),ontology_id:null,layer:'outer',side,geometry_basis:'not described in the manifest'},side,group:GROUP(mesh.name),centre,basePos:mesh.position.clone(),baseRot:mesh.rotation.clone()});}
-function loadModel(){
-  const loadGlb=()=>new Promise((res,rej)=>{new GLTFLoader().load(MODEL,g=>res(g.scene),undefined,e=>rej(new Error('GLB failed: '+(e&&e.message||e))));});
-  return fetch(MANIFEST).then(r=>{if(!r.ok)throw new Error('no manifest ('+r.status+')');return r.json();}).then(mf=>{MF=mf;return loadGlb();}).then(sc=>{modelInfo={source:'glb',file:MODEL,manifest:MANIFEST,built:MF.built||MF.generated||null,objects:(MF.objects||[]).length};return sc;})
-  .catch(e=>{MF=STANDIN_MANIFEST;modelInfo={source:'stand-in',reason:e.message,objects:STANDIN_MANIFEST.objects.length};return standinScene();});}
+const manifestCache=new Map();
+function loadModel(key){key=key||modelKey;const M=MODELS[key];
+  const loadGlb=()=>new Promise((res,rej)=>{new GLTFLoader().load(M.glb,g=>res(g.scene),undefined,e=>rej(new Error('GLB failed: '+(e&&e.message||e))));});
+  const mfP=manifestCache.has(key)?Promise.resolve(manifestCache.get(key)):fetch(M.manifest).then(r=>{if(!r.ok)throw new Error('no manifest ('+r.status+')');return r.json();}).then(j=>{manifestCache.set(key,j);return j;});
+  return mfP.then(mf=>loadGlb().then(sc=>{MF=mf;modelInfo={source:'glb',key,file:M.glb,manifest:M.manifest,built:mf.built||mf.generated||null,objects:(mf.objects||[]).length};return sc;}))
+  .catch(e=>{if(key!=='flying-fish')throw e;MF=STANDIN_MANIFEST;modelInfo={source:'stand-in',key,reason:e.message,objects:STANDIN_MANIFEST.objects.length};return standinScene();});}
+function showLoading(msg){const el=$('#loading');if(!el)return;el.querySelector('.lt').textContent=msg||'Loading…';el.classList.add('on');}
+function hideLoading(){const el=$('#loading');if(el)el.classList.remove('on');}
+// switch the model on screen: dispose what belongs to the old one, mount the new one, keep the mode
+let switching=false;
+function switchModel(key){
+  if(!MODELS[key]||key===modelKey||switching)return Promise.resolve();
+  const prev=modelKey;switching=true;modelKey=key;$('#speciesSel').value=key;
+  showLoading('Loading '+MODELS[key].short+' ('+MODELS[key].mb+')…');
+  if(circ){circ.dispose();circ=null;}circData=null;gill=null;physStatus=null;
+  if(cmp){cmp.dispose();cmp=null;$('#compare').style.display='none';}
+  return loadModel(key).then(sc=>{
+    unmountModel();mountModel(sc);
+    // pieces are not shared between models: drop any selection that pointed into the old one
+    state.obj=null;state.organ=null;state.tissue=null;state.preset=null;const os=$('#organSel');if(os)os.value='';
+    if(design)buildHandles();
+    const u=new URL(location.href);if(key==='flying-fish')u.searchParams.delete('model');else u.searchParams.set('model',key);
+    for(const k of ['part','organ','tissue','preset'])u.searchParams.delete(k);
+    history.replaceState(null,'',u.toString());
+    legend();applyState();fitView(false);
+    const m=state.mode;if(m&&m!=='anatomy')setMode(m);else{crumbs();intro();}
+  }).catch(e=>{modelKey=prev;$('#speciesSel').value=prev;console.error(e);
+    $('#panel').innerHTML=`<h2>That model did not load</h2><p class="small"><span class="mono">${esc(MODELS[key].glb)}</span>: ${esc(e.message)}. The ${esc(MODELS[prev].short)} stays on screen.</p>`;})
+  .finally(()=>{switching=false;hideLoading();});}
 function build(sc){
   const el=$('#c');renderer=new THREE.WebGLRenderer({canvas:el,antialias:true,alpha:true,preserveDrawingBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
   scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(36,1,0.02,100);
   scene.add(new THREE.HemisphereLight(0xffffff,0x6a7a80,0.95));const dl=new THREE.DirectionalLight(0xffffff,1.0);dl.position.set(2,3,2);scene.add(dl);const dl2=new THREE.DirectionalLight(0xffffff,0.35);dl2.position.set(-2,-1,-2);scene.add(dl2);
-  root=new THREE.Group();scene.add(root);root.add(sc);
+  root=new THREE.Group();scene.add(root);
+  mountModel(sc);
+  const st=$('#stage');const resize=()=>{const w=st.clientWidth,h=st.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};addEventListener('resize',resize);resize();
+  controls(el);applyState();requestAnimationFrame(frame);}
+// take the current model off the scene and free its GPU memory
+function unmountModel(){
+  const old=root.children[0];
+  if(old){root.remove(old);old.traverse(c=>{if(!c.isMesh)return;if(c.geometry&&c.geometry.dispose)c.geometry.dispose();for(const m of (Array.isArray(c.material)?c.material:[c.material]))if(m&&m.dispose)m.dispose();});}
+  objs=[];pivots=null;hovered=null;SCALED.clear();glowing.clear();root.scale.setScalar(1);
+  for(const [,el] of labelEls)el.remove();labelEls.clear();
+  const lv=$('#leaders');if(lv)lv.innerHTML='';const tp=$('#tip');if(tp)tp.style.display='none';}
+// put a freshly loaded GLB scene on the stage: normalise it, build the L/R hinge, register every piece
+function mountModel(sc){
+  root.add(sc);
   // normalise: about 1 unit long, centred
   const box=new THREE.Box3().setFromObject(sc);const size=box.getSize(new THREE.Vector3());const s=size.x>0?1/size.x:1;sc.scale.setScalar(s);const c=box.getCenter(new THREE.Vector3()).multiplyScalar(s);sc.position.sub(c);
   // book hinge: a pivot per side on the dorsal midline (top of the model's bounding box, x and z at 0); side pieces are
@@ -345,8 +408,8 @@ function build(sc){
   for(const ch of [...sc.children]){if(ch===pivots.L||ch===pivots.R)continue;const m=manifestFor(ch.name);const side=m?.side||(/_L(_\d+)?$/.test(ch.name)?'L':/_R(_\d+)?$/.test(ch.name)?'R':null);if(side&&(m?.layer||'outer')!=='organ')pivots[side].attach(ch);}
   sc.updateMatrixWorld(true);
   for(const ch of [...sc.children,...pivots.L.children,...pivots.R.children]){if(ch===pivots.L||ch===pivots.R)continue;registerObject(ch);}
-  const st=$('#stage');const resize=()=>{const w=st.clientWidth,h=st.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();};addEventListener('resize',resize);resize();
-  $('#stage').dataset.objs=objs.map(o=>o.name).join(',');controls(el);applyState();requestAnimationFrame(frame);}
+  $('#stage').dataset.objs=objs.map(o=>o.name).join(',');$('#stage').dataset.model=modelKey;
+  if(isZF())loadZSources();}
 function lensSetNow(){return state.gene&&G&&G.gene_index[state.gene]?G.gene_index[state.gene].nodes:null;}
 function objTouched(o,lensSet){if(!lensSet)return false;const id=o.m.ontology_id;if(id&&lensSet[id])return true;if(o.m.zfa_id&&lensSet[o.m.zfa_id])return true;
   // a piece that stands for a whole system (skin, muscle) lights when the gene touches any node under that system
@@ -363,7 +426,7 @@ function applyState(){
     const keep=isSel||(state.preset==='wing'&&/^pectoral_fin/.test(o.name));
     m.visible=keep||p<peelLevel;
     const ghost=(selObj||selId)&&!isSel&&!lensSet;
-    m.traverse(c=>{if(!c.isMesh)return;const mat=c.material,b=mat.userData.base||{op:1,em:0};mat.opacity=ghost?Math.min(b.op,0.1):b.op;mat.depthWrite=!ghost;
+    m.traverse(c=>{if(!c.isMesh)return;const mat=c.material,b=mat.userData.base||{op:1,em:0};mat.opacity=ghost?Math.min(b.op,objs.length>120?0.04:0.1):b.op;mat.depthWrite=!ghost;
       if(mat.emissive){if(lensSet&&objTouched(o,lensSet)){mat.emissive.set(PAL['--suff']||'#eb6834');mat.emissiveIntensity=0.6;}else if(isSel){mat.emissive.set(PAL['--accent']||'#0e7c86');mat.emissiveIntensity=0.4;}else{mat.emissive.setHex(b.em);mat.emissiveIntensity=1;}}});}
   crumbs();drawInset();}
 function controls(el){let drag=null;
@@ -430,8 +493,17 @@ function fitView(animate){if(!renderer)return;scene.updateMatrixWorld(true);cons
   for(const o of objs){if(!o.mesh.visible)continue;let op=1;o.mesh.traverse(c=>{if(c.isMesh&&c.material.opacity<op)op=c.material.opacity;});if(op<0.2)continue;box.expandByObject(o.mesh);any=true;}
   if(circ){circ.lines.updateMatrixWorld(true);box.expandByObject(circ.lines);any=true;}
   if(!any)return;const c=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());
+  // the bounding box of a peeled fish spans the whole body because one long piece (the spinal cord, the notochord)
+  // runs its length, while the organs sit in the anterior third. Pull the target toward where the pieces actually are.
+  if(!state.obj&&!state.organ&&state.peel>=2){const cen=new THREE.Vector3();let n=0;const v2=new THREE.Vector3();
+    for(const o of objs){if(!o.mesh.visible)continue;let op=1;o.mesh.traverse(x=>{if(x.isMesh&&x.material.opacity<op)op=x.material.opacity;});if(op<0.2)continue;
+      v2.copy(o.centre);o.mesh.parent.localToWorld(v2);cen.add(v2);n++;}
+    if(n>3)c.lerp(cen.multiplyScalar(1/n),0.55);}
   const r=Math.max(sz.x,sz.y,sz.z)*0.5;const fov=camera.fov*Math.PI/180;const fitH=r/Math.sin(fov/2),fitW=r/Math.sin(Math.atan(Math.tan(fov/2)*camera.aspect));
-  const d=Math.max(fitH,fitW)*((state.obj||state.organ)&&!state.gene?1.9:circ?0.72:1.0);
+  let d=Math.max(fitH,fitW)*((state.obj||state.organ)&&!state.gene?1.9:circ?0.72:1.0);
+  // a single small piece of a densely segmented model (a larval heart chamber, a zebrafish fin ray) would otherwise
+  // pull the camera inside the fish: keep enough distance that the body around it stays in frame
+  if((state.obj||state.organ)&&!state.gene)d=Math.max(d,0.45);
   // shift the target down a little so the content sits above the stage-button bar
   const up=new THREE.Vector3().setFromMatrixColumn(camera.matrix,1).normalize();let h2=d*Math.tan(fov/2);c.addScaledVector(up,-h2*0.09);
   // Design Studio: the studio panel covers the left of the canvas, so fit the fish into the free area to its right
@@ -447,6 +519,12 @@ function crumbs(){const parts=['<a data-c="body">fish</a>'];if(state.mode&&state
 // ---------- panel ----------
 function collapseNote(){if(noteCollapsed)return;noteCollapsed=true;$('#note').classList.add('chip');}
 function expandNote(){noteCollapsed=false;$('#note').classList.remove('chip');}
+// one sentence about what is measured in the model on screen, in that model's own terms
+function modelEvidenceLine(){
+  if(MF&&MF.evidence_backed)return `Evidence-backed: pectoral fin length ${esc(MF.evidence_backed.pectoral_fin_length_over_SL)} of standard length (n = ${esc(MF.evidence_backed.n_specimens)}, ${esc(MF.evidence_backed.source||'')}); ${esc(MF.evidence_backed.caveat||'')}.`;
+  if(MF&&MF.sourced_values){const n=Object.keys(MF.sourced_values).length,m=Object.keys(MF.schematic_values||{}).length;const cov=MF.ontology_coverage||{};
+    return `Sourced from the literature: ${n} proportions and counts (each piece lists them as "sourced:"); ${m} values schematic. ${cov.with_zfa_id!=null?`All ${cov.with_zfa_id} pieces carry a ZFA id and an Uberon cross-reference (${cov.null_zfa||0} null).`:''}${MF.stage?` Stage: ${esc(MF.stage.label||'')}.`:''}`;}
+  return 'No measured proportion is stated for this model.';}
 function legend(){
   $('#legend').innerHTML=`<details id="legDet"><summary style="cursor:pointer;font-weight:700">Legend</summary>
     <div class="row"><span class="sw" style="background:#5b7fae"></span>outside (skin, fins) &middot; <span class="sw" style="background:#b8605a"></span>muscle &middot; <span class="sw" style="background:#e9e4d2"></span>skeleton</div>
@@ -455,7 +533,7 @@ function legend(){
     <div class="row"><span class="g" style="border-color:var(--suff)">sufficient for</span><span class="g" style="border-color:var(--req)">required for</span><span class="g" style="border-color:var(--expr)">expressed in</span></div>
     <div class="tiny" style="margin-top:4px">Genes were measured in zebrafish and medaka, never in a flying fish. Expressed in is detection, not causation.</div></details>`;
   const src=modelInfo.source==='glb'?`Model: <span class="mono">${esc(modelInfo.file)}</span>, ${modelInfo.objects} named pieces${MF.built_with?', '+esc(MF.built_with):''}. ${MF.schematic?'Schematic: '+esc(MF.schematic)+'.':''}`:`<b style="color:var(--warn)">Stand-in: a few primitives with the model's names, drawn by this page while the segmented model is built${modelInfo.reason?' ('+esc(modelInfo.reason)+')':''}.</b>`;
-  $('#note').innerHTML=`<b>Schematic geometry; not measured anatomy.</b><span class="body">Orbit the fish, split it along the midline, peel skin, muscle and skeleton to the organs, click any part. Each part names its ontology node or says it has none; organ positions are approximate. ${src}<span class="tiny"> ${MF&&MF.evidence_backed?`Evidence-backed: pectoral fin length ${esc(MF.evidence_backed.pectoral_fin_length_over_SL)} of standard length (n = ${esc(MF.evidence_backed.n_specimens)}, ${esc(MF.evidence_backed.source||'')}); ${esc(MF.evidence_backed.caveat||'')}.`:'The pectoral fin\'s length (0.69 of standard length, Daane 2021 median) is the one evidence-backed proportion.'} Behind the parts: the blueprint's Uberon and Cell Ontology part_of statements and the zebrafish fin subtree.</span></span>`;
+  $('#note').innerHTML=`<b>${esc(MI().label)} — schematic geometry, not measured anatomy.</b><span class="body">Orbit the fish, split it along the midline, peel skin, muscle and skeleton to the organs, click any part. Each part names its ontology node or says it has none; organ positions are approximate. ${src}<span class="tiny"> ${modelEvidenceLine()} ${isZF()?'Behind the parts: ZFA ids looked up in Ubergraph, each with an Uberon cross-reference; the flying-fish blueprint holds only a few of those classes, and a piece it does not hold says so.':"Behind the parts: the blueprint's Uberon and Cell Ontology part_of statements and the zebrafish fin subtree."}</span></span>`;
   $('#note').onclick=()=>{if(noteCollapsed)expandNote();else collapseNote();};
   clearTimeout(noteTimer);noteTimer=setTimeout(collapseNote,6000);}
 function provenance(id,o){const P=D.provenance;if(!P)return '';const norm=s=>String(s).replace(':','_');const t=term(id);
@@ -465,7 +543,7 @@ function provenance(id,o){const P=D.provenance;if(!P)return '';const norm=s=>Str
   if(gl.length)h+=`<div class="prov"><b>Linked in the claim graph (explicit edges)</b><ul class="t small">${gl.map(l=>`<li>${l.out?'':'&larr; '}<i>${esc(l.rel)}</i> ${l.out?'&rarr; ':''}<a href="../${esc(l.browse)}">${esc(l.label)}</a> <span class="tiny">${esc(l.type)}</span></li>`).join('')}</ul></div>`;
   else h+=`<div class="prov model"><b>Claims</b><span class="small">No claim in the graph is linked to this node by an explicit edge; Darwin's sentence, the taxon and the substitution budget link to the body only (<a href="../graph/?view=flyingfish">graph</a>).</span></div>`;
   const cons=[...(P.constraints.all||[]),...(skelFin(id)?(P.constraints.skeleton_fin||[]):[])];
-  const mgr=P.grounding&&o&&P.grounding.parts[o.name];
+  const mgr=o?groundingFor(o.name):null;
   if(mgr){h+=groundingBlock(mgr,o);}
   else for(const c of cons){const sc=c.proofScope||{};h+=`<div class="prov model"><b>Lean ${esc(c.id)}: ${esc(c.property||c.label||'')}</b><span class="small">${c.id==='C6'?'Covers every node: the kernel-checked certificate that the blueprint graph is acyclic, rooted and taxon-consistent.':'Applies to skeleton and fin parts as a scaling constraint on the stated model.'} <b>Scope: about the model, not about any fish.</b></span>
     <details><summary>Kernel-checked and assumed (${(sc.kernelChecked||[]).length} / ${(sc.assumed||[]).length})</summary><ul class="t small">${(sc.kernelChecked||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="tiny">Assumed, or named hypotheses carried unproved:</p><ul class="t small">${(sc.assumed||[]).map(x=>`<li>${esc(x)}</li>`).join('')}${c.requires?`<li>requires: ${esc(typeof c.requires==='string'?c.requires:JSON.stringify(c.requires))}</li>`:''}</ul><p class="tiny"><span class="mono">${esc(c.lemma||c.theorem||'')}</span> &middot; ${esc(c.module||'')} &middot; faithfulness: ${esc(c.faithfulness||'not assessed')} &middot; <a href="../graph/?view=theorems">graph</a> &middot; <a href="../t/lean/index.html#eliminate">Lean thread</a></p></details></div>`;}
@@ -490,11 +568,82 @@ function groundingBlock(gr,o){const th=gr.theorems||[];const by=th.reduce((a,t)=
   if(gr.notConstrained&&gr.notConstrained.length)h+=`<p class="small"><b>Not constrained by any theorem:</b> ${gr.notConstrained.map(esc).join('; ')}</p>`;
   h+=`<p class="tiny">Verdicts are the Lean thread's audit of each theorem against the real fish's inputs: holds, violated, or cannot-evaluate (an input is missing). "Applies under named hypotheses" means the statement is conditional on isometry or another hypothesis carried unproved. <b>Scope: about the stated model, not about any fish.</b> <a href="../${esc(D.provenance.grounding.page)}">Full audit on the Lean page</a> &middot; <span class="mono">${esc(D.provenance.grounding.audit_file)}</span></p></div>`;
   return h;}
-function drawnAs(o){if(!o)return '';return `<p class="tiny">Drawn as <span class="mono">${esc(o.name)}</span> (${esc(o.m.label||'')}): ${esc(o.m.geometry_basis||'geometry basis not stated')}${o.m.note?'; '+esc(o.m.note):''}${o.m.layer?' &middot; layer '+esc(o.m.layer):''}${o.m.manifest_id&&o.m.manifest_id!==o.m.ontology_id?` &middot; the manifest names <span class="mono">${esc(o.m.manifest_id)}</span> (${esc(o.m.manifest_label||'')}), not a node of the blueprint; the panel opens its fin-subtree node`:''}${modelInfo.source==='stand-in'?' &middot; stand-in primitive':''}.</p>`;}
-function showObj(o){let h=`<h2>${esc(o.m.label||o.name)}</h2>${drawnAs(o)}<p class="small"><b>No node in the files.</b> ${esc(o.m.ontology_note||'This piece is drawn for orientation only;')} it carries no term of its own, so no genes, claims or theorems attach to it.${o.m.ancestor?` Nearest ancestor in the files: ${o.m.ancestor_id?`<a class="go" data-go="${esc(o.m.ancestor_id)}">${esc(o.m.ancestor)}</a>`:esc(o.m.ancestor)}.`:''}${o.m.system&&term(o.m.system)?` The manifest files it under <a class="go" data-go="${esc(o.m.system)}">${esc(term(o.m.system).label)}</a>.`:o.m.system_label?` The manifest says: ${esc(o.m.system_label)}.`:''}</p>`;
-  const gr=D.provenance&&D.provenance.grounding&&D.provenance.grounding.parts[o.name];if(gr)h+=`<div class="sec"><h4>Trace it</h4>${groundingBlock(gr,o)}</div>`;
+// lean/morphology-grounding.json was computed on the flying-fish manifest. Several zebrafish pieces happen to share a
+// name with a flying-fish piece (skin_L, muscle_L, gills_L ...), so the grounding is only ever read for the flying fish.
+function groundingFor(name){return isFF()&&D.provenance&&D.provenance.grounding?(D.provenance.grounding.parts[name]||null):null;}
+// anatomy-model/zebrafish/sources.json, fetched the first time a zebrafish piece's panel is opened
+let ZSRC=null,zsrcTried=false;
+function loadZSources(){if(zsrcTried)return;zsrcTried=true;fetch('model/zebrafish-sources.json').then(r=>r.ok?r.json():null).catch(()=>null).then(j=>{if(!j)return;ZSRC=j;if(state.obj){const o=objs.find(x=>x.name===state.obj);if(o)selectObj(o.name);}});}
+const OBO=id=>'http://purl.obolibrary.org/obo/'+String(id).split('+')[0].replace(':','_');
+// geometry_basis is one string: "sourced: <short>, <measure> = <value> (<derivation>); ...; <rest> schematic".
+// Split it, keep the sourced clauses apart from the schematic ones, and attach the source's citation and a quote.
+function basisRows(basis){const out=[];if(!basis)return out;
+  for(const part of String(basis).split(/;\s+(?=sourced:|schematic|[a-z])/)){
+    const t=part.trim();if(!t)continue;
+    if(/^sourced:/i.test(t)){const body=t.replace(/^sourced:\s*/i,'');
+      const src=(ZSRC&&ZSRC.sources||[]).find(s=>s.short&&body.startsWith(s.short))||null;
+      const rest=src?body.slice(src.short.length).replace(/^,\s*/,''):body;
+      let quote=null;if(src&&src.quotes&&src.quotes.length){const num=(rest.match(/[-+]?\d+\.\d+|\d+/g)||[]).filter(n=>n.length>2);
+        quote=src.quotes.find(q=>num.some(n=>q.includes(n)))||src.quotes[0];}
+      out.push({kind:'sourced',text:rest,src,quote});}
+    else out.push({kind:'schematic',text:t});}
+  return out;}
+function basisBlock(o){const rows=basisRows(o.m.geometry_basis);
+  if(!rows.length)return `<div class="prov"><b>Geometry basis</b><span class="small">${esc(o.m.geometry_basis||'not stated in the manifest')}</span></div>`;
+  const s=rows.filter(r=>r.kind==='sourced'),sc=rows.filter(r=>r.kind!=='sourced');
+  let h=`<div class="prov"><b>Geometry basis (${s.length} sourced, ${sc.length} schematic)</b>`;
+  const scReal=sc.filter(r=>!/^schematic\.?$/i.test(r.text));
+  if(s.length)h+=`<ul class="t small">${s.map(r=>`<li>${esc(r.text)}${r.src?`<br><span class="tiny">${r.src.url?`<a href="${esc(r.src.url)}" target="_blank" rel="noopener">${esc(r.src.short)}</a>`:esc(r.src.short)}${r.src.doi?' &middot; doi '+esc(r.src.doi):''}${r.src.read?' &middot; '+esc(r.src.read):''}</span>`:''}${r.quote?`<blockquote class="small" style="margin:.3em 0;border-left:3px solid var(--line);padding-left:8px">${esc(r.quote)}</blockquote>`:''}</li>`).join('')}</ul>`;
+  else h+=`<span class="small"><b>schematic</b> &mdash; no measured value is applied to this piece.</span>`;
+  if(scReal.length)h+=`<p class="tiny"><b>Schematic in this piece:</b> ${scReal.map(r=>esc(r.text)).join('; ')}.</p>`;
+  if(!ZSRC&&s.length)h+=`<p class="tiny">Citations and quotes come from anatomy-model/zebrafish/sources.json, which has not loaded here.</p>`;
+  return h+`</div>`;}
+// the ZFA/Uberon trace for a piece of either zebrafish model
+function zfaBlock(o){const m=o.m;if(!m.zfa_id&&!m.uberon_id)return '';
+  const t=m.ontology_id?term(m.ontology_id):null;
+  const broad=m.note&&/closest class|mapped to|no separate|posterior lobe/i.test(m.note);
+  let h=`<div class="sec"><h4>Trace this piece</h4>
+    <div class="prov"><b>Ontology</b><span class="small">ZFA <a href="${esc(OBO(m.zfa_id||''))}" target="_blank" rel="noopener"><span class="mono">${esc(m.zfa_id||'none')}</span></a>${m.zfa_label?' '+esc(m.zfa_label):''} &middot; Uberon cross-reference <a href="${esc(OBO(m.uberon_id||''))}" target="_blank" rel="noopener"><span class="mono">${esc(m.uberon_id||'none')}</span></a>${m.uberon_label?' '+esc(m.uberon_label):''}.<br>${esc(m.source||'ontology source not stated')}. The blueprint (data.json) is Uberon-based, so the panel looks the piece up by its Uberon cross-reference, never by its ZFA id.</span>
+      <p class="small">In the blueprint: ${t?`<b>yes</b>, <a class="go" data-go="${esc(m.ontology_id)}">${esc(t.label)}</a> (<span class="mono">${esc(m.ontology_id)}</span>).`:`<b>no node in the blueprint for ${esc(m.label||o.name)}</b> — its Uberon class ${m.uberon_id?`<span class="mono">${esc(m.uberon_id)}</span> (${esc(m.uberon_label||'')})`:'(none)'} is not one of the ${T.size} terms the flying-fish blueprint read out of its description, so no genes, claims or theorems attach to it here. The term itself exists; the blueprint simply does not contain it.`}</p></div>`;
+  h+=`<div class="prov"><b>Organ system</b><span class="small">${m.system&&term(m.system)?`<a class="go" data-go="${esc(m.system)}">${esc(term(m.system).label)}</a>`:m.system_label?esc(m.system_label):'not stated'}.${m.system_label&&/no ZFA part_of link/i.test(m.system_label)?' <b>This is a null organ_system on purpose</b>: the manifest records that the lookup found no part_of link, rather than inventing one.':''}</span></div>`;
+  h+=basisBlock(o);
+  if(m.note)h+=`<div class="prov${broad?' model':''}"><b>${broad?'Manifest note: the mapping is broader than the mesh':'Manifest note'}</b><span class="small">${esc(m.note)}</span>${broad?`<p class="tiny">The piece drawn is narrower than the class it is filed under; the manifest says so rather than minting a term for the mesh.</p>`:''}</div>`;
+  h+=`<div class="prov model"><b>Lean</b><span class="small">lean/morphology-grounding.json was computed on the flying-fish manifest only. <b>No theorem is evaluated against this zebrafish piece</b>, and the flying fish's verdicts are not carried across.</span></div>`;
+  h+=`<p class="tiny">Model: <span class="mono">${esc(MI().glb)}</span>, manifest <span class="mono">${esc(MI().manifest)}</span>; built by anatomy-model/zebrafish/. ${esc((MF&&MF.ontology)||'')}</p></div>`;
+  return h;}
+function drawnAs(o){if(!o)return '';const zf=!!(o.m.zfa_id||o.m.uberon_id);
+  // on a zebrafish piece the geometry basis is long and sourced clause by clause: it is laid out in "Trace this piece" instead
+  return `<p class="tiny">Drawn as <span class="mono">${esc(o.name)}</span> (${esc(o.m.label||'')})${zf?'':': '+esc(o.m.geometry_basis||'geometry basis not stated')}${o.m.note?'; '+esc(o.m.note):''}${o.m.layer?' &middot; layer '+esc(o.m.layer):''}${!zf&&o.m.manifest_id&&o.m.manifest_id!==o.m.ontology_id?` &middot; the manifest names <span class="mono">${esc(o.m.manifest_id)}</span> (${esc(o.m.manifest_label||'')}), not a node of the blueprint; the panel opens its fin-subtree node`:''}${modelInfo.source==='stand-in'?' &middot; stand-in primitive':''}.</p>`;}
+function showObj(o){const zf=!!(o.m.zfa_id||o.m.uberon_id);let h=`<h2>${esc(o.m.label||o.name)}</h2>${drawnAs(o)}<p class="small"><b>${zf?`No node in the blueprint for ${esc(o.m.label||o.name)}.`:'No node in the files.'}</b> ${zf?`Its term exists (ZFA <span class="mono">${esc(o.m.zfa_id||'none')}</span>, Uberon <span class="mono">${esc(o.m.uberon_id||'none')}</span>), but the flying-fish blueprint in data.json does not contain that Uberon class, so this panel has no genes, claims or theorems to show for it. The trace below is the manifest’s own record. `:''}${zf?'':esc(o.m.ontology_note||'This piece is drawn for orientation only;')+' it carries no term of its own, so no genes, claims or theorems attach to it.'}${o.m.ancestor?` Nearest ancestor in the files: ${o.m.ancestor_id?`<a class="go" data-go="${esc(o.m.ancestor_id)}">${esc(o.m.ancestor)}</a>`:esc(o.m.ancestor)}.`:''}${o.m.system&&term(o.m.system)?` The manifest files it under <a class="go" data-go="${esc(o.m.system)}">${esc(term(o.m.system).label)}</a>.`:o.m.system_label?` The manifest says: ${esc(o.m.system_label)}.`:''}</p>`;
+  const gr=groundingFor(o.name);if(gr)h+=`<div class="sec"><h4>Trace it</h4>${groundingBlock(gr,o)}</div>`;
+  h+=zfaBlock(o);
   $('#panel').innerHTML=h;$$('[data-go]').forEach(a=>a.onclick=()=>{goOrgan(a.dataset.go,true);applyState();show(a.dataset.go);});}
-function intro(){const c=D.counts_distinct||{};
+// the opening panel for a zebrafish model: its own build, its own sources, and what the blueprint does not hold
+function introZF(){const M=MI(),cov=(MF&&MF.ontology_coverage)||{};
+  const withNode=objs.filter(o=>o.m.ontology_id),without=objs.filter(o=>!o.m.ontology_id);
+  const sv=Object.entries((MF&&MF.sourced_values)||{}),scv=Object.entries((MF&&MF.schematic_values)||{});
+  const nulls=[];const seen=new Set();
+  for(const o of objs){const sl=o.m.system_label;if(sl&&/no ZFA part_of link|no organ system/i.test(sl)&&!seen.has(sl)){seen.add(sl);nulls.push({label:sl,pieces:objs.filter(x=>x.m.system_label===sl).map(x=>x.m.label||x.name)});}}
+  const broader=[];const bseen=new Set();
+  for(const o of objs){const n=o.m.note;if(n&&/closest class|mapped to|no separate|only the posterior lobe/i.test(n)&&!bseen.has(n)){bseen.add(n);broader.push(o);}}
+  let h=`<h2>${esc(M.label)}</h2><p class="small">${esc((MF&&MF.model)||'')}</p>
+    <p class="small"><b>${objs.length} named pieces</b> on screen from <span class="mono">${esc(M.glb)}</span>, driven by <span class="mono">${esc(M.manifest)}</span>${MF&&MF.built_with?'; built with '+esc(MF.built_with):''}. ${esc((MF&&MF.units_and_axes)||'')}</p>
+    ${MF&&MF.stage?`<p class="small"><b>Stage:</b> ${esc(MF.stage.label||'')}${MF.stage.reference_SL_mm?` (reference SL ${esc(MF.stage.reference_SL_mm)} mm)`:''}. ${esc(MF.stage.why||'')}</p>`:''}
+    <div class="sec"><h4>Stages</h4><ol class="small" style="margin:.2em 0;padding-left:1.2em"><li>outside: orbit the fish</li><li>split along the midline</li><li>peel the skin, then the muscle, then the skeleton</li><li>organs inside: click one to isolate it</li><li>click any piece for its ZFA id, its Uberon cross-reference and its geometry basis</li></ol></div>
+    <div class="sec"><h4>Ontology</h4><p class="small">${esc((MF&&MF.ontology)||'')}</p>
+      <table><tr><th>pieces</th><th>n</th></tr><tr><td>with a ZFA id</td><td>${cov.with_zfa_id!=null?cov.with_zfa_id:'&mdash;'}</td></tr><tr><td>with an Uberon cross-reference</td><td>${cov.with_uberon_xref!=null?cov.with_uberon_xref:'&mdash;'}</td></tr><tr><td>with no ZFA id</td><td>${cov.null_zfa!=null?cov.null_zfa:'&mdash;'}</td></tr></table>
+      <p class="small"><b>In the flying-fish blueprint:</b> ${withNode.length} of ${objs.length} pieces resolve to one of its ${T.size} terms through their Uberon cross-reference; <b>${without.length} have no node in the blueprint</b> and their panels say so by name. The blueprint was read out of a flying-fish description, so a zebrafish-only class (a barbel, a Weberian ossicle, a melanophore stripe) is simply not in it: that is a gap in this page's blueprint, not in the ontology.</p></div>`;
+  if(sv.length)h+=`<div class="sec"><h4>Values read from the literature (${sv.length})</h4><table><tr><th>quantity</th><th>value</th><th>source</th></tr>${sv.map(([k,v])=>`<tr><td>${esc(k.replace(/_/g,' '))}<br><span class="tiny">${esc((v&&v.measure)||'')}</span></td><td>${esc(v&&v.value!=null?v.value:v)}</td><td class="tiny">${esc((v&&v.source)||'')}${v&&v.derivation?'<br>'+esc(v.derivation):''}</td></tr>`).join('')}</table><p class="tiny">Sources: ${esc((MF&&MF.sources_file)||'anatomy-model/zebrafish/sources.json')}; every piece repeats the clauses that shaped it, with the paper's own quote.</p></div>`;
+  if(scv.length)h+=`<div class="sec"><h4>Values that are schematic (${scv.length})</h4><p class="small">${scv.map(([k,v])=>`${esc(k.replace(/_/g,' '))} = ${esc(v)}`).join('; ')}. <b>None of these is a measurement</b>; they set proportions so the model reads as a fish.</p></div>`;
+  if(broader.length)h+=`<div class="sec"><h4>Mappings broader than the mesh (${broader.length})</h4><ul class="t small">${broader.map(o=>`<li><b>${esc(o.m.label||o.name)}</b> &rarr; <span class="mono">${esc(o.m.zfa_id||'')}</span> ${esc(o.m.zfa_label||o.m.uberon_label||'')}<br><span class="tiny">${esc(o.m.note)}</span></li>`).join('')}</ul><p class="tiny">The class is wider than the piece drawn. The manifest says so rather than inventing a term for the mesh.</p></div>`;
+  if(nulls.length)h+=`<div class="sec"><h4>Pieces with a null organ system (on purpose)</h4><ul class="t small">${nulls.map(n=>`<li>${esc(n.label)}<br><span class="tiny">${n.pieces.slice(0,6).map(esc).join(', ')}${n.pieces.length>6?` and ${n.pieces.length-6} more`:''}</span></li>`).join('')}</ul><p class="tiny">The lookup found no part_of link to an organ system, so the manifest stores null and a note, not a guess.</p></div>`;
+  h+=`<div class="sec"><h4>What this model is not</h4><ul class="t small">
+    <li>No gene strip: the gene map in this build is indexed on the flying-fish blueprint's terms, so a piece with no node there shows no genes. A piece that does resolve (pectoral fin, liver, spleen, eye, spinal cord) shows the same proxy-fish records as before.</li>
+    <li>No Lean verdicts: lean/morphology-grounding.json was computed on the flying-fish manifest. Nothing is carried across.</li>
+    <li>Geometry is segmented and schematic except where a piece names a sourced value; counts of rays, vertebrae and arches follow the manifest's sourced counts.</li>
+    <li>Switch back to the flying fish for the Lean grounding, the claim graph and the nanopub drafts.</li></ul></div>`;
+  $('#panel').innerHTML=h;$$('[data-go]').forEach(a=>a.onclick=()=>{goOrgan(a.dataset.go,true);applyState();show(a.dataset.go);});}
+function intro(){if(isZF())return introZF();const c=D.counts_distinct||{};
   let h=`<h2>Open the fish</h2><p class="small">The blueprint for &ldquo;${esc(D.description)}&rdquo; read as <b>${esc(D.taxon?.label)}</b>: ${c.organ_system} organ systems, ${c.organ} organs, ${c.tissue} tissues, ${c.cell} cell types, every one an existing ontology term. The 3D fish is schematic; click any piece to see what it maps to and trace it.</p>
     <div class="sec"><h4>Stages</h4><ol class="small" style="margin:.2em 0;padding-left:1.2em"><li>outside: orbit the fish</li><li>split along the midline</li><li>peel the skin, then the muscle, then the skeleton</li><li>organ systems inside: click one to isolate it</li><li>drill system &rarr; organ &rarr; tissue &rarr; cell in this panel</li><li>double-click a piece to fly to it</li><li>trace every node: term, query, genes, claims, Lean scope, nanopub drafts, physics</li></ol></div>`;
   if(G){h+=`<div class="sec"><h4>Gene records</h4><p class="small">${esc(G.constraint||'')}</p><table><tr><th>layer</th><th>direct</th><th>inferred only</th><th>none</th></tr>${['body','organ_system','organ','tissue','cell'].map(l=>{const v=G.coverage[l];return v?`<tr><td>${esc(LEVEL_NAME[l])}</td><td>${v.nodes_with_direct_record} / ${v.denominator}</td><td>${v.nodes_with_only_derived_records}</td><td>${v.nodes_with_none}</td></tr>`:''}).join('')}</table><p class="tiny">A node with no record is unstudied in these sources, not gene-free. Source ${esc(G.file)}${G.built?', built '+esc(G.built):''}${G.carried_from_previous_build?' (carried from the build of '+esc(G.carried_from_previous_build)+')':''}.</p></div>`;}
@@ -517,7 +666,8 @@ function show(id,o){const t=term(id);if(!t){$('#panel').innerHTML=`<h2>${esc(id)
   let h=`<h2>${esc(t.label)}</h2><div><span class="chip acc">${esc(t.zfa?ZLEVEL[t.level]||t.level:LEVEL_NAME[t.level])}</span>${t.ontology?`<span class="chip">${esc(t.ontology)}</span>`:''}${t.named_in_description?'<span class="chip ok">named in the description</span>':''}${t.in_blueprint?'<span class="chip ok">also in the blueprint</span>':''}${t.zebrafish_only?'<span class="chip warn">zebrafish-only term, no Uberon xref</span>':''}</div>${drawnAs(o)}
     <p class="small">Term <a href="${esc(t.iri)}" target="_blank" rel="noopener"><span class="mono">${esc(t.id)}</span></a>${t.parents.length?` &middot; part of ${t.parents.map(p=>`<a class="go" data-go="${esc(p.id)}">${esc(term(p.id)?.label||p.id)}</a>`).join(', ')}`:''}${t.zfa?'':` &middot; query ${esc(t.via||'root')}`}${(t.uberon_xref||[]).length?` &middot; Uberon ${t.uberon_xref.map(x=>`<span class="mono">${esc(x.uberon||x)}</span>`).join(' ')}`:''}${t.cl_xref?` &middot; CL <span class="mono">${esc(t.cl_xref)}</span>`:''}${t.stage_range?` &middot; stages ${esc(t.stage_range)}`:''}</p>`;
   if(t.zfa)h+=`<p class="tiny">${esc(FS().constraint||'')}</p>`;
-  h+=groundingSummary(D.provenance&&D.provenance.grounding&&o&&D.provenance.grounding.parts[o.name]);
+  h+=groundingSummary(o?groundingFor(o.name):null);
+  const zfTrace=o?zfaBlock(o):'';
   if(chains)h+=nodeChainsHtml(chains,id);
   if(!o&&modelInfo.source==='glb'&&(t.level==='organ'||t.level==='organ_system'))h+=`<p class="tiny">Not drawn as a piece of the model${id==='UBERON_0000945'?': the model builder left the stomach out because beloniforms are described as stomachless, a statement its README marks as unchecked; the blueprint still lists a stomach from Uberon':''}.</p>`;
   let drill='';const kids=kidsOf(id);if(kids.length){const by=kids.reduce((a,k)=>{const kt=term(k);const l=kt?kt.level:'?';a[l]=(a[l]||0)+1;return a;},{});
@@ -527,7 +677,7 @@ function show(id,o){const t=term(id);if(!t){$('#panel').innerHTML=`<h2>${esc(id)
   h+=`<div class="sec"><h4>Genes at this node</h4>${geneStrip(id,pins)}</div>`;h+=drill;
   if(pins&&FS()&&FS().wing_genes){const W=FS().wing_genes;h+=`<div class="sec"><h4>Where the wing genes sit below the fin</h4><p class="small">${esc(W.honest_summary||'')}</p><ul class="t small">${Object.entries(W.genes).map(([g,v])=>`<li><span class="mono">${esc(g)}</span>: ${v.links_in_fin_subtree} link${v.links_in_fin_subtree===1?'':'s'} in the fin subtree, deepest level ${esc(v.deepest_level_reached||'none')}</li>`).join('')}</ul></div>`;}
   if(pins&&G&&G.fin_size){const vl=G.fin_size.verified_leads||[];h+=`<div class="sec"><h4>Fin-size leads, as the genotype thread checked them</h4><ul class="t small">${vl.map(v=>`<li><span class="mono">${esc(v.gene)}</span>${v.link_type?' &middot; '+esc(v.link_type):''}<br><span class="tiny">${esc(v.finding||'')} ${(v.citations||[]).map(esc).join('; ')}</span></li>`).join('')}</ul></div>`;}
-  h+=provenance(id,o);h+=`<p class="tiny">Click a gene chip to tint every piece it touches.</p>`;
+  h+=zfTrace;h+=provenance(id,o);h+=`<p class="tiny">Click a gene chip to tint every piece it touches.</p>`;
   $('#panel').innerHTML=h;
   $$('[data-go]').forEach(a=>a.onclick=()=>{const g=a.dataset.go;const gt=term(g);if(gt&&(gt.level==='tissue'||(gt.zfa&&gt.level!=='cell')))state.tissue=g;goOrgan(g,true);if(gt&&(gt.level==='tissue'||gt.zfa))state.tissue=g;applyState();show(g);});
   $$('[data-g]').forEach(a=>a.onclick=()=>lens(a.dataset.g));$$('[data-chain]').forEach(a=>a.onclick=()=>showChain(a.dataset.chain));
@@ -589,7 +739,7 @@ function basisBox(){const B=circData.basis||BASIS_STANDIN;const src=circData.sou
     <div><span class="k">flying-fish data:</span> ${esc(B.flying_fish_data||'see file')}</div><div><span class="k">proxy teleost:</span> ${esc(B.proxy_teleost||B.proxy||'see file')}</div><div><span class="k">assumed:</span> ${esc(B.assumed||'see file')}</div>${cardiacLine()}${src==='stand-in'?`<div><span class="k">pending:</span> ${esc(B.pending||'')}</div>`:`<div><span class="k">source:</span> ${esc(src)}${circData.note?' · '+esc(circData.note):''}</div>`}
     <div class="tiny" style="margin-top:4px"><span style="color:var(--suff)">&#9679;</span> oxygenated &nbsp;<span style="color:var(--req)">&#9679;</span> deoxygenated; particles are a flow cartoon, not a measured velocity field.</div></span>`;$('#basis').style.display='block';$('#basis').classList.remove('chip');$('#basis').onclick=()=>$('#basis').classList.toggle('chip');clearTimeout(basisTimer);basisTimer=setTimeout(()=>$('#basis').classList.add('chip'),8000);}
 function physioPanel(){const C=circData;const nodes=C.nodes.filter(n=>!/proxy/.test(n.label));
-  let h=`<h2>Circulation and gill breathing</h2><p class="small">A teleost has one circuit: the heart pumps deoxygenated blood to the gills, oxygenated blood runs through the dorsal aorta to the organs and returns by the veins to the heart. Particles follow that loop over the model's organ centres${C.source==='stand-in'?'; the route, branch shares and speed are stand-ins until the physiology thread\'s circulation.json lands':''}.</p>${C.source!=='stand-in'?`<p class="small">From physiology/circulation.json: ${C.nodes.length} of ${C.nodesInFile} stations and ${C.edges.length} of ${C.edgesInFile} vessels drawn; ${C.proxyNodes} stations have no model piece and sit at proxy positions named in the table; ${C.unsourcedShares} vessel shares are not sourced in the file and take an equal part of what their sourced siblings leave. Particles split at each branch by its share of cardiac output at rest${C.cardiac_output?` (rest ${C.cardiac_output.rest} ml/min/kg, ${esc(C.cardiac_output.species||'')}, ${esc(C.cardiac_output.kind||'')})`:''}.</p>`:''}
+  let h=`<h2>Circulation and gill breathing</h2>${isZF()?`<div class="prov model"><b>Model on screen: ${esc(MI().label)}</b><span class="small">physiology/circulation.json is a generic teleost loop with no species of its own, and its proxy figures (heart rate, cardiac output) come from a snapper, not from a zebrafish. The stations are placed on whichever model is on screen, so here they sit on the zebrafish pieces; a station with no matching piece keeps its proxy position. Nothing on this page is a zebrafish measurement.</span></div>`:''}<p class="small">A teleost has one circuit: the heart pumps deoxygenated blood to the gills, oxygenated blood runs through the dorsal aorta to the organs and returns by the veins to the heart. Particles follow that loop over the model's organ centres${C.source==='stand-in'?'; the route, branch shares and speed are stand-ins until the physiology thread\'s circulation.json lands':''}.</p>${C.source!=='stand-in'?`<p class="small">From physiology/circulation.json: ${C.nodes.length} of ${C.nodesInFile} stations and ${C.edges.length} of ${C.edgesInFile} vessels drawn; ${C.proxyNodes} stations have no model piece and sit at proxy positions named in the table; ${C.unsourcedShares} vessel shares are not sourced in the file and take an equal part of what their sourced siblings leave. Particles split at each branch by its share of cardiac output at rest${C.cardiac_output?` (rest ${C.cardiac_output.rest} ml/min/kg, ${esc(C.cardiac_output.species||'')}, ${esc(C.cardiac_output.kind||'')})`:''}.</p>`:''}
     <div class="sec"><h4>Stations on the loop</h4><table><tr><th>station</th><th>blood</th><th>position basis</th></tr>${nodes.map(n=>`<tr><td>${esc(n.label)}</td><td><span class="chip" style="color:${n.o2==='oxygenated'?'var(--suff)':n.o2==='deoxygenated'?'var(--req)':'var(--mute)'}">${esc(n.o2)}</span></td><td class="tiny">${esc(n.basis||'')}</td></tr>`).join('')}</table><p class="tiny">Vessel proxies (dorsal aorta, cardinal vein, carotid) are not objects of the model; their positions are chosen along the vertebral column and the ventral body wall.</p></div>
     ${cardiac?`<div class="sec"><h4>Heart (physiology/cardiac.js)</h4><p class="small">${cardiacLine().replace(/<[^>]+>/g,'')}</p><table><tr><th></th><th>rest</th><th>maximum</th></tr><tr><td>heart rate (/min)</td><td>${cardiac.rest.HR_bpm.toFixed(0)}</td><td>${cardiac.max.HR_bpm.toFixed(0)}</td></tr><tr><td>stroke volume (ml/kg)</td><td>${cardiac.rest.SV_ml_kg.toFixed(3)}</td><td>${cardiac.max.SV_ml_kg.toFixed(3)}</td></tr><tr><td>cardiac output (ml/min/kg)</td><td>${cardiac.rest.Q_ml_min_kg.toFixed(1)}</td><td>${cardiac.max.Q_ml_min_kg.toFixed(1)}</td></tr></table><p class="tiny">Proxy set "${esc(cardiac.set)}": ${esc(cardiac.params.HR_rest_bpm&&cardiac.params.HR_rest_bpm.species||'')}; no flying-fish cardiac data were found (the module says so). The effort slider moves between the proxy's resting and maximal values.</p></div>`:''}
     <div class="sec"><h4>Gill lamella</h4><p class="small">Press <b>gill lamella</b> to zoom into one lamella: water flows one way, blood the other, and O\u2082 diffuses down the PO\u2082 difference along the whole length. Toggle to co-current to see why the counter-current arrangement lets blood leave with a higher PO\u2082 than the water leaving.</p><p class="tiny">${esc((gill&&gill.p.note)||GILL_STANDIN.note)}${gill&&gill.sourced&&gill.sourced.solver?' Solver: physiology/countercurrent.js.':' Solver: the page\'s own 1-D exchange stand-in (physio.js).'}</p></div>
@@ -651,7 +801,9 @@ function resetScaling(){for(const o of objs){o.mesh.scale.set(1,1,1);}SCALED.cle
 function scalePiece(o,sx,sy,sz){o.mesh.scale.set(sx,sy,sz);SCALED.set(o.name,[sx,sy,sz]);}
 // morphology parameters -> piece scales. Fins scale about their base (origin at the piece centre, so a translation
 // keeps the base fixed); body SL scales the whole model group; lobes scale the caudal fin.
-function applyDesignToModel(d){const b=baseDesign;const fl=d.finLen/b.finLen,sp=Math.sqrt(d.finSpan),sl=d.SL/b.SL,lobe=d.lowerLobe/b.lowerLobe;
+function applyDesignToModel(d){const b=baseDesign;
+  // the design parameters, their baselines and the handles are the flying fish's; they are never applied to a zebrafish model
+  if(!isFF()){resetScaling();root.scale.setScalar(1);return;}const fl=d.finLen/b.finLen,sp=Math.sqrt(d.finSpan),sl=d.SL/b.SL,lobe=d.lowerLobe/b.lowerLobe;
   for(const o of objs){const n=o.name;
     if(/^pectoral_fin_(L|R)$/.test(n)||/^pectoral_fin_ray_/.test(n)){const sg=o.side==='L'?-1:1;o.mesh.scale.set(fl,sp,1);
       // keep the fin base (the body end) in place: the piece centre moves half the growth along its own length axis
@@ -666,19 +818,19 @@ function renderVerdicts(){const el=$('#verdicts');if(!el)return;const ic={violat
   el.innerHTML=verdicts.map(v=>`<div class="v ${v.verdict==='cannot-evaluate'?'cannot':v.verdict}${v.noGlow?' noglow':''}" title="${esc((v.formula||'')+(v.note?' · '+v.note:''))}"><span class="ic" style="color:${vcol(v)}">${ic[v.verdict]||'?'}</span><span><b>${esc(v.id)}</b> ${esc(v.verdict==='reported'?'reported':v.verdict)}: ${esc(v.text)}${v.theorem?`<br><span class="tiny"><a href="../t/lean/#audit-fish">${esc(v.theorem)}</a>${v.noGlow&&v.verdict!=='reported'?' · no single design can supply this; no glow':''}</span>`:v.verdict==='reported'?'<br><span class="tiny">shown, never glows</span>':''}</span></div>`).join('')+`<p class="tiny" style="margin:4px 0 0">Checker: ${esc(checkerSource)}. The kernel sentence is in the banner above; open "Constraints in detail" in the side panel for each row's hypotheses and scope.</p>`;}
 const glowing=new Map();  // piece name -> 'violated' | 'cannot'
 function clearGlow(){for(const [n] of glowing){const o=objs.find(x=>x.name===n);if(o)o.mesh.traverse(c=>{if(c.isMesh&&c.material.emissive){c.material.emissive.setHex(c.material.userData.base?.em||0);c.material.emissiveIntensity=1;}});}glowing.clear();}
-function applyGlow(){clearGlow();const grd=D.provenance&&D.provenance.grounding;
+function applyGlow(){clearGlow();if(!isFF())return;const grd=D.provenance&&D.provenance.grounding;
   for(const v of verdicts){if(v.verdict==='holds')continue;for(const n of DS.piecesFor(v,grd)){if(!glowing.has(n)||v.verdict==='violated')glowing.set(n,v.verdict==='violated'?'violated':'cannot');}}
   if(dragH&&dragH.param){const v=verdicts.find(x=>x.verdict==='violated'&&!x.noGlow);if(v)for(const n of dragH.pieces)if(!glowing.has(n))glowing.set(n,v.verdict==='violated'?'violated':'cannot');}}
 function pulseGlow(){if(!glowing.size)return;const k=0.45+0.3*Math.sin(glowT*4);const red=new THREE.Color(PAL['--bad']||'#b3392f'),amb=new THREE.Color(PAL['--warn']||'#a8650b');
   for(const [n,st] of glowing){const o=objs.find(x=>x.name===n);if(!o)continue;o.mesh.traverse(c=>{if(c.isMesh&&c.material.emissive){c.material.emissive.copy(st==='violated'?red:amb);c.material.emissiveIntensity=st==='violated'?k:0.3;}});}}
 // drag handles: small spheres at the fin tip, the snout and the caudal lower lobe; dragging along the screen projection
 // of the handle's axis changes one parameter
-function buildHandles(){for(const h of handles)scene.remove(h.mesh);handles=[];const mk=(param,label,pos,axis,pieces)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(0.018,14,10),new THREE.MeshBasicMaterial({color:new THREE.Color(PAL['--accent']||'#0e7c86'),depthTest:false,transparent:true,opacity:0.9}));m.renderOrder=20;m.userData.handle=true;scene.add(m);handles.push({param,label,mesh:m,pos:pos.clone(),axis:axis.clone(),pieces});};
+function buildHandles(){for(const h of handles)scene.remove(h.mesh);handles=[];if(!isFF())return;const mk=(param,label,pos,axis,pieces)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(0.018,14,10),new THREE.MeshBasicMaterial({color:new THREE.Color(PAL['--accent']||'#0e7c86'),depthTest:false,transparent:true,opacity:0.9}));m.renderOrder=20;m.userData.handle=true;scene.add(m);handles.push({param,label,mesh:m,pos:pos.clone(),axis:axis.clone(),pieces});};
   const fin=objs.find(o=>o.name==='pectoral_fin_L');const tip=new THREE.Vector3(-0.14,0.17,-0.52);
   mk('finLen','pectoral fin length',tip,new THREE.Vector3(-0.5,0.3,-0.8).normalize(),['pectoral_fin_L','pectoral_fin_R',...objs.filter(o=>/^pectoral_fin_ray_/.test(o.name)).map(o=>o.name)]);
   mk('SL','standard length',new THREE.Vector3(0.49,0.0,0),new THREE.Vector3(1,0,0),['skin_L','skin_R']);
   mk('lowerLobe','caudal lower lobe',new THREE.Vector3(-0.49,-0.12,0),new THREE.Vector3(-0.6,-0.8,0).normalize(),['caudal_fin','caudal_fin_rays']);}
-function placeHandles(){if(!handles.length)return;const show=state.mode==='design';const b=baseDesign,d=design;
+function placeHandles(){if(!handles.length)return;const show=state.mode==='design'&&isFF();const b=baseDesign,d=design;
   for(const h of handles){h.mesh.visible=show;if(!show)continue;const p=h.pos.clone();
     if(h.param==='finLen'){const fl=d.finLen/b.finLen;p.set(0.33+(h.pos.x-0.33)*fl,h.pos.y*fl,h.pos.z*Math.sqrt(d.finSpan));}
     if(h.param==='SL')p.x=h.pos.x;if(h.param==='lowerLobe'){const l=d.lowerLobe/b.lowerLobe;p.set(h.pos.x,h.pos.y*l,0);}
@@ -711,14 +863,21 @@ async function ensureDesign(){if(design)return;
   design=params.get('saved')==='flier'&&flierSpec?DS.flierDesign(flierSpec,baseDesign):DS.decodeDesign(params.get('d'),baseDesign);
   buildHandles();}
 const KSENT='evaluates the same formulas; not a kernel check';
-function studioBanner(){const b=$('#banner');b.classList.add('side','studio');b.innerHTML=`${esc(DS.BANNER)}<br><b>Constraint checker:</b> ${checkerSource==='missing'?'lean/eliminate/browser-check.mjs did not load; no verdicts.':`lean/eliminate/browser-check.mjs ${esc(KSENT)} (${esc(kernelNote.replace(/^.*?not a kernel check:?\s*/,''))}).`}`;b.style.display='block';}
+// the Studio's parameters, baselines and constraint checks are the flying fish's measured reference. With a zebrafish
+// model on screen the fish is still drawn, but nothing is applied to its geometry and the panel says so.
+function studioSpeciesLine(){if(isFF())return '';
+  return `<div class="prov model"><b>Model on screen: ${esc(MI().label)}</b><span class="small">Every parameter, baseline and constraint row below is the <b>flying fish's</b> (${esc((refSpec&&refSpec.label)||'Park and Choi L3 specimen')}): <b>they are not applied to the zebrafish geometry</b>, which stays exactly as it was built, and the drag handles are hidden. What does change with the species is the genetic evidence: see "Genetic level" below. Switch back to the flying fish to edit a design.</span></div>`;}
+function studioBanner(){const b=$('#banner');b.classList.add('side','studio');b.innerHTML=`${esc(DS.BANNER)}${isZF()?`<br><b>Model on screen:</b> ${esc(MI().label)} &mdash; the design numbers stay the flying fish's and are not applied to it.`:''}<br><b>Constraint checker:</b> ${checkerSource==='missing'?'lean/eliminate/browser-check.mjs did not load; no verdicts.':`lean/eliminate/browser-check.mjs ${esc(KSENT)} (${esc(kernelNote.replace(/^.*?not a kernel check:?\s*/,''))}).`}`;b.style.display='block';}
 function conditionsSection(where){if(!conditions)return `<div class="sec"><h4>Conditions (locked at average)</h4><p class="small">conditions/baseline.json was not found in this build; the conditions are not shown rather than guessed.</p></div>`;
   return `<div class="sec"><h4>Conditions (locked at average)</h4><p class="small">${esc(conditions.rule)} <span class="tiny">Decided ${esc(conditions.decided)} by ${esc(conditions.decided_by)}; read from conditions/baseline.json.</span></p>
     <table><tr><th>condition</th><th>held at</th><th></th></tr>${conditions.rows.map(r=>`<tr title="${esc(r.note)}"><td>${esc(r.label)}</td><td><b>${esc(r.value)}</b></td><td><span class="chip" title="${esc(r.note)}">&#128274; locked · ${esc(r.kind)}</span></td></tr>`).join('')}</table>
     <p class="tiny">${where==='growth'?'Growth curves are field fits, which already embed average field nutrition; nothing on this page varies these.':'A design edit changes morphology, physiology parameters or genotype only; the checker reads air density '+(conditions.rows.find(r=>r.key==='air_density_kg_m3')||{value:'1.225'}).value+' kg/m³ from the same file.'} Hover a row for its note.</p></div>`;}
 function flierBanner(){const F=design&&design._flier;const el=$('#flierBan');if(!el)return;if(!F){el.style.display='none';return;}
   el.innerHTML=`<b>&#9888; HYPOTHETICAL</b> ${esc(String(F.label).replace(/^HYPOTHETICAL /,""))}: lifting area ${F.lifting_area_m2} m², span ${F.span_m.toFixed(3)} m, flight-muscle fraction ${F.flight_muscle_fraction}, mass ${F.mass_kg} kg (physics/flier/spec.json). ${esc(DS.FLIER_NOTE.replace(/; see .*$/,''))}; see <a href="../t/physics/sim/?fish=1&phys=1" target="_blank" rel="noopener">/t/physics/sim/?fish=1&amp;phys=1</a>.`;el.style.display='block';}
-async function openStudio(){await ensureDesign();state.obj=null;state.organ=null;studioBanner();
+async function openStudio(){await ensureDesign();await loadGenotypeLayer();state.obj=null;state.organ=null;studioBanner();
+  if(params.get('geno')&&!geno._fromUrl){geno._fromUrl=true;const ids=params.get('geno').split(',').filter(x=>(interv.all||[]).some(r=>r.id===x));
+    if(ids.length){geno.applied=ids;geno.gene=((interv.all||[]).find(r=>r.id===ids[0])||{}).gene||geno.gene;geno.sel=ids[0];
+      const movers=genoAppliedRows().map(r=>({r,k:genoMover(r)})).filter(x=>x.k);design={...baseDesign};if(movers.length===1)design[movers[0].k.param]=baseDesign[movers[0].k.param]*movers[0].k.factor;}}
   if(state.split<0.3){state.split=0;$('#split').value=0;}if(state.peel>0){state.peel=0;$('#peel').value=0;}applyState();applyDesignToModel(design);
   const th=DS.finLenThreshold(design,baseDesign);const P0=DS.PARAMS[0];
   $('#studio').innerHTML=`<div id="flierBan" class="flier" style="display:none"></div><h4>Edit in 3D or here</h4><p class="tiny" style="margin:0 0 4px">Drag the teal handles (fin tip, snout, tail lobe) or move the sliders. Every change is checked live.</p>
@@ -737,21 +896,183 @@ async function openStudio(){await ensureDesign();state.obj=null;state.organ=null
   // the fish was sitting under the studio panel at split 0: fit it into the free area once the panel has its size
   requestAnimationFrame(()=>fitView(false));}
 function studioPanel(){const b=baseDesign,d=design,q=DS.derive(d,b),B=b._basis;const changed=DS.PARAMS.filter(P=>Math.abs(d[P.id]-b[P.id])>1e-9);const F=d._flier;
-  let h=`<h2>Design Studio</h2><p class="small">${esc(DS.BANNER)}</p>
+  let h=`<h2>Design Studio</h2><p class="small">${esc(DS.BANNER)}</p>${studioSpeciesLine()}
     ${F?`<div class="flier"><b>&#9888; HYPOTHETICAL design</b> ${esc(String(F.label).replace(/^HYPOTHETICAL /,""))}. ${esc(F.note||'')} <br>${esc(DS.FLIER_NOTE.replace(/; see .*$/,''))}; see <a href="../t/physics/sim/?fish=1&phys=1" target="_blank" rel="noopener">/t/physics/sim/?fish=1&amp;phys=1</a>.<ul class="t small" style="margin:4px 0 0">${F.not_established.map(x=>`<li>does not establish ${esc(x)}</li>`).join('')}</ul><p class="tiny" style="margin:4px 0 0">From physics/flier/spec.json: lifting area ${F.lifting_area_m2} m², span ${F.span_m.toFixed(3)} m, wing loading ${F.wing_loading_N_m2} N/m², aspect ratio ${F.aspect_ratio}, C_L,max ${F.CL_max}, L/D ${F.LD_max}, flight-muscle fraction ${F.flight_muscle_fraction}, mass ${F.mass_kg} kg${F.muscle_power_W_per_kg?`; muscle mechanical power ${F.muscle_power_W_per_kg.toFixed(1)} W/kg (bat-derived maximum, the muscle premise R6, a named hypothesis) and a 1 m/s climb are passed to C16`:''}. In the studio's parameters the span ratio sets fin length (${d.finLen.toFixed(3)} SL) and the chord factor takes the rest of the area (${d.finSpan.toFixed(3)}).</p></div>`:''}
     <div class="sec"><h4>This design vs the measured fish</h4><table><tr><th>parameter</th><th>measured / baseline</th><th>design</th></tr>${DS.PARAMS.map(P=>`<tr${Math.abs(d[P.id]-b[P.id])>1e-9?' style="font-weight:600"':''}><td>${esc(P.label)}</td><td>${DS.fmt(b[P.id],P)}</td><td>${DS.fmt(d[P.id],P)}</td></tr>`).join('')}<tr><td>lifting area (derived)</td><td>${B.S_measured_m2} m²</td><td>${q.S_m2.toFixed(5)} m²</td></tr><tr><td>span (derived)</td><td>0.261 m</td><td>${q.span_m.toFixed(3)} m</td></tr><tr><td>wing loading (derived)</td><td>${(B.W_N/B.S_measured_m2).toFixed(1)} N/m²</td><td>${q.wingLoading.toFixed(1)} N/m²</td></tr></table>
     <p class="tiny">Baselines: ${DS.PARAMS.map(P=>esc(P.label)+': '+esc(P.basis)).join('; ')}. ${esc(B.SL_note)}. ${esc(B.mass_note)}. Rules: ${q.rules.map(esc).join('; ')}. C9 is checked at a fixed ${DS.AIRSPEED} m/s, the low end of the 10 to 20 m/s field speeds.</p></div>`;
   h+=verdictDetails();
+  h+=genotypeSection();
   h+=conditionsSection('design');
   h+=routesSection(changed);
   h+=`<div class="sec"><h4>Saved designs</h4><p class="small"><a href="${esc(urlForDesign())}">this design (URL)</a> · <a href="?mode=design">measured fish</a> · ${flierSpec?`<a href="?mode=design&saved=flier">hypothetical flier</a> <span class="chip" style="color:var(--bad);border-color:var(--bad)">&#9888; HYPOTHETICAL</span> <span class="tiny">physics/flier/spec.json: lifting area 0.04905 m², span 0.664 m, flight-muscle fraction 0.16, mass 0.06 kg</span>`:'hypothetical flier: physics/flier/spec.json not in this build'}</p></div>`;
-  $('#panel').innerHTML=h;wireRoutes();}
+  $('#panel').innerHTML=h;wireRoutes();wireGenotype();}
 // every constraint row with its theorem, hypotheses and scope (the list in the studio panel stays short)
 function verdictDetails(){if(!verdicts.length)return '';const ic={violated:'✕',holds:'✓','cannot-evaluate':'?',reported:'i'};
   return `<div class="sec"><h4>Constraints in detail</h4><p class="tiny">From ${esc(checkerSource)}. Glow: red = violated, amber = cannot evaluate (the missing input is named), none = holds. Rows a single design can never supply inputs for (exponents across sizes, a length different from the reference) and the unconstrained-inputs row are listed but never glow.</p>${verdicts.map(v=>`<details><summary><span style="color:${vcol(v)};font-weight:700">${ic[v.verdict]||'?'}</span> <b>${esc(v.id)}</b> ${esc(v.verdict==='reported'?'reported, unconstrained':v.verdict)}${v.noGlow&&v.verdict!=='reported'?' (no glow)':''}</summary><p class="small">${esc(v.text||'')}</p>${v.theorem?`<p class="tiny">theorem <span class="mono">${esc(v.theorem)}</span>${v.law?' · law <span class="mono">'+esc(v.law)+'</span>':''}${v.module?' · '+esc(v.module):''}${v.faithfulness?' · faithfulness '+esc(v.faithfulness):''}</p>`:''}${v.formula?`<p class="tiny">relation: ${esc(v.formula)}</p>`:''}${v.note?`<p class="tiny">${esc(v.note)}</p>`:''}${v.hypotheses&&v.hypotheses.length?`<p class="tiny">hypotheses: ${v.hypotheses.map(esc).join('; ')}</p>`:''}${v.scope?`<p class="tiny"><b>kernel-checked:</b> ${(v.scope.kernelChecked||[]).map(esc).join(' ')}<br><b>assumed:</b> ${(v.scope.assumed||[]).map(esc).join(' ')}</p>`:''}</details>`).join('')}</div>`;}
 const vcol=v=>v.verdict==='violated'?'var(--bad)':v.verdict==='holds'?'var(--ok)':v.verdict==='reported'?'var(--mute)':'var(--warn)';
+// ---------- Genotype panel: annotations while designing, and editing from the genotype side ----------
+// genotype/interventions.json is the only source of an intervention's magnitude, and the rules below are the project's,
+// not this page's: only the entries flagged usable_as_a_calibrated_knob carry a magnitude at a stated stage, and a
+// magnitude measured in the embryonic fin bud does not transfer to an adult design, because the two regimes do not
+// interpolate. Such a knob therefore moves the model in Growth, inside its own measured window, and not here.
+// Everything else can be selected and read in full, and moves nothing.
+const GENO_BANNER='Applying a measured effect is a LOOKUP of what that intervention did in one published experiment. It is not a prediction of what it would do in this design, and no source combines two interventions, so two are never summed.';
+// the magnitudes this page knows how to put on the model, each with the clause it comes from. Nothing else is mapped:
+// a cleithrum length, a fin fold size, a hypural count or a transcript level has no parameter in this Studio.
+const KNOB_MODEL={
+  'gja1b-stp-tl28d':{param:'finLen',factor:0.95,
+    says:'fin ray length about 95 % of wild type, in the paper’s own words &ldquo;in both larvae and adults&rdquo;; scored in the heterozygote stp^tl28d/+',
+    caveat:'the quote says <i>fin rays</i> and does not name a fin. The model’s pectoral fin length is the length of its longest ray, so the factor is applied there. Vertebral length in the same fish is 59-81 % of wild type, which this Studio has no parameter for.'},
+  'hhip-uki-loss-fin-area':{param:'finSpan',factor:1.65,
+    says:'pectoral fin area +65 % of wild type at 72-96 hpf',caveat:'measured in the larval fin.'},
+  'hhip-uki-loss-fin-dorsoventral':{param:'finSpan',factor:1.50,
+    says:'fin dorsoventral extent +50 % of wild type at 72-96 hpf',caveat:'measured in the larval fin.'}
+};
+// what the record says about survival. A record that says the mutants are viable must never be rendered as a death
+// warning: 'not embryonic lethal' contains the word lethal. Three outcomes: death reported, viability reported, or a
+// note that is neither (a drug concentration that damaged embryos, a heat shock that was too long).
+function genoLethal(r){const t=String((r&&r.lethality)||'').trim();
+  if(!t||/^(not applicable|not reported)$/i.test(t)||/^not reported[,;. ]/i.test(t))return null;
+  const viable=/\bviable\b|not embryonic lethal|raised to adulthood|not essential\b/i.test(t);
+  const dies=(/\b(dies?|died|dead|death)\b/i.test(t)||/\blethality\b/i.test(t)||/^LETHAL\b/.test(t))&&!viable;
+  return {text:t,dies,viable:viable&&!dies};}
+const genoRegime=r=>(r&&r.stage&&r.stage.regime)||'unstated';
+// a knob may move the Studio model only when the regime it was measured in is the regime the Studio draws: an adult.
+function genoMover(r){const k=r&&KNOB_MODEL[r.id];if(!k||!r||!r.knob)return null;return genoRegime(r)==='adult'?k:null;}
+function genoAppliedRows(){return geno.applied.map(id=>(interv&&interv.all||[]).find(r=>r.id===id)).filter(Boolean);}
+function genoGuardFor(g){const G=interv&&interv.guards;if(!G)return null;return (G.pairs||[]).find(p=>p.gene===g||p.paralog===g)||null;}
+// pathways.json: {symbols:{symbol->key}, genes:{key->[[pathway,sourceCode,evidence,orthology],...]}, pathways:{id->{name,source}}}
+function genoPathways(sym){if(!pathways||!pathways.genes)return null;const key=(pathways.symbols||{})[sym];if(!key)return {key:null,rows:[]};
+  const rows=(pathways.genes[key]||[]).map(r=>({id:r[0],src:r[1],evi:r[2],orth:r[3]===1,name:((pathways.pathways||{})[r[0]]||{}).name||r[0],source:((pathways.pathways||{})[r[0]]||{}).source||r[1]}));
+  return {key,rows};}
+function genoSeq(sym){if(!seqLayer)return null;
+  const ok=(seqLayer.orthologues_resolved||[]).find(x=>x.gene===sym);if(ok)return {...ok,resolved:true};
+  const no=(seqLayer.orthologues_not_resolved||[]).find(x=>x.gene===sym);if(no)return {...no,resolved:false};
+  return {missing:true};}
+function genoInteractions(sym){if(!interData||!interData.all)return [];const re=new RegExp('^'+String(sym).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'$','i');
+  return interData.all.filter(l=>[...l.ligands,...l.receptors,...l.channels,...l.genes].some(x=>re.test(String(x).split(/[ (/]/)[0])));}
+async function loadGenotypeLayer(){if(genoLoaded)return;genoLoaded=true;
+  const [pw,sq,ia]=await Promise.all([
+    fetch('pathways.json').then(r=>r.ok?r.json():null).catch(()=>null),
+    fetch('sequence-layer.json').then(r=>r.ok?r.json():null).catch(()=>null),
+    interData?Promise.resolve(null):fetch('interactions.json').then(r=>r.ok?r.json():null).catch(()=>null)]);
+  pathways=pw;seqLayer=sq;if(ia&&!interData)interData=normaliseInteractions(ia)||PENDING;}
+// rebuild the design from the baseline plus whatever the applied interventions are allowed to move, then re-check
+function applyGenotype(){
+  const applied=genoAppliedRows();const movers=applied.map(r=>({r,k:genoMover(r)})).filter(x=>x.k);
+  design={...baseDesign};
+  // two magnitudes are never summed: no source combines interventions, so the model shows neither
+  if(movers.length===1){const {k}=movers[0];design[k.param]=baseDesign[k.param]*k.factor;}
+  applyDesignToModel(design);runCheck(true);syncSliders();studioPanel();
+  const u=new URL(location.href);u.searchParams.set('mode','design');u.searchParams.delete('d');u.searchParams.delete('saved');
+  if(geno.applied.length)u.searchParams.set('geno',geno.applied.join(','));else u.searchParams.delete('geno');
+  history.replaceState(null,'',u.toString());}
+function genoAppliedBlock(){
+  const applied=genoAppliedRows();
+  if(!applied.length)return `<p class="small">Nothing applied. Pick a gene and an intervention and press <b>apply</b>: a calibrated knob measured in an adult moves the model and the Lean rows above are re-checked; everything else is shown in full and moves nothing.</p>`;
+  const movers=applied.map(r=>({r,k:genoMover(r)})).filter(x=>x.k);
+  let h='';
+  if(applied.length>1)h+=`<div class="prov model" style="border-left-color:var(--warn)"><b>&#9888; ${applied.length} interventions are applied at once</b><span class="small"><b>No source in genotype/interventions.json combines two interventions</b>, and nothing here is summed or composed. Each row below is read on its own, exactly as its own experiment reported it, and the model carries at most one magnitude. A real double mutant is a separate experiment: the only one in this file is the kcnh2a/lat4a double heterozygote, which has its own entry and its own compound level.</span></div>`;
+  if(movers.length>1)h+=`<div class="prov model" style="border-left-color:var(--bad)"><b>&#10007; Two magnitudes are applied at once</b><span class="small">No source in genotype/interventions.json combines two interventions, and this page will not sum them. The model is back at the measured fish and <b>neither magnitude is shown</b>. Remove one.</span></div>`;
+  for(const r of applied){
+    const k=genoMover(r),K=KNOB_MODEL[r.id],leth=genoLethal(r),g=genoGuardFor(r.gene);
+    const moved=k&&movers.length===1;
+    h+=`<div class="prov${moved?'':' model'}"><b>${esc(r.gene)} &middot; ${esc(r.parameter)}</b>
+      <span class="small">${routeSpeciesChip(r)}${gradeChip(r.grade,true)}<span class="chip">${esc(r.level)}</span>${r.knob?'<span class="chip ok">calibrated knob</span>':'<span class="chip warn">no magnitude reported</span>'}
+      <button data-unapply="${esc(r.id)}" style="float:right">remove</button></span>`;
+    if(moved)h+=`<p class="small"><b>&#10003; Applied to the model:</b> ${esc(DS.PARAMS.find(P=>P.id===K.param)?.label||K.param)} &times; ${K.factor} (${DS.fmt(baseDesign[K.param],DS.PARAMS.find(P=>P.id===K.param))} &rarr; ${DS.fmt(design[K.param],DS.PARAMS.find(P=>P.id===K.param))}). The source says: ${K.says}. The Lean rows above were re-evaluated on the new numbers by browser-check.mjs, and the pieces glow where a row is violated or cannot be evaluated.<br><span class="tiny">${K.caveat}</span>${isZF()?'<br><span class="tiny"><b>The model on screen is a zebrafish</b>, and the flying-fish design is never applied to it, so nothing moved in the 3D view; the numbers above did change.</span>':''}</p>`;
+    else if(k&&movers.length>1)h+=`<p class="small">Would move ${esc(K.param)} by &times;${K.factor}, but it is not applied while two magnitudes are selected.</p>`;
+    else if(r.knob&&K)h+=`<p class="small"><span class="chip warn">not applied here</span> This magnitude (${K.says}) was measured at <b>${esc(r.stage.text)}</b>, in the <b>${esc(genoRegime(r))}</b> regime. The design in this Studio is an adult, and <b>the two regimes do not interpolate</b>, so the model is not moved here. <button data-gtknob="${esc(r.id)}">apply it in Growth at ${esc(r.stage.h0)}-${esc(r.stage.h1)} hpf</button>, where the model is inside that window. <span class="tiny">${K.caveat}</span></p>`;
+    else if(r.knob)h+=`<p class="small"><span class="chip warn">nothing moved</span> It is a calibrated knob (${esc(r.effect&&r.effect.value!=null?r.effect.value+' '+(r.effect.unit||''):'magnitude in the record')}, ${esc(r.stage.text)}), but its parameter &mdash; ${esc(r.parameter)} &mdash; has no counterpart among this Studio&rsquo;s seven parameters, so there is nothing for it to move.</p>`;
+    else h+=`<p class="small"><b>Nothing moved.</b> ${r.number_kind?`The number in the record is <b>${esc(String(r.number_kind).split(' (')[0])}</b>, not a morphology magnitude.`:'The record carries no magnitude at a stated stage, so there is nothing to apply.'} The paper&rsquo;s own words are below.</p>`;
+    if(leth&&leth.dies)h+=`<p class="small" style="color:var(--bad)"><b>&#9888; Lethal:</b> ${esc(leth.text)}<br><span class="tiny">If this intervention were made, <b>the organism would not reach the stage being drawn here</b>. The phenotype above was scored in animals that were alive at the stage the paper names, which is not the adult on screen.</span></p>`;
+    else if(leth)h+=`<p class="small"><b>Survival, in the record&rsquo;s words:</b> ${esc(leth.text)}<br><span class="tiny">${leth.viable?'The record reports the animals as viable, so no death warning is shown.':'The record reports damage, but not death at a stated stage.'}</span></p>`;
+    if(g&&g.n_this+g.n_other===0)h+=`<p class="tiny"><b>Paralog guard:</b> ${esc(g.gene)} / ${esc(g.paralog)} &mdash; no route is offered for either, and evidence for one is never transferred to the other.</p>`;
+    else if(g)h+=`<p class="tiny"><b>Paralog guard:</b> ${esc(g.gene)} / ${esc(g.paralog)}; ${g.n_this} interventions for ${esc(g.gene)}, ${g.n_other} for ${esc(g.paralog)}. Evidence is never transferred between them.</p>`;
+    h+=`<details><summary>the record, in the paper&rsquo;s words</summary><p class="small">${routeBody(r)}</p></details></div>`;}
+  return h;}
+function genoAnnotations(sym,sel){
+  let h=`<p class="tiny" style="margin:8px 0 2px;text-transform:uppercase;letter-spacing:.06em">Annotations for <span class="mono">${esc(sym)}</span></p>`;
+  // --- sequence layer
+  const sq=genoSeq(sym);
+  if(!seqLayer)h+=`<div class="prov model"><b>Sequence layer</b><span class="small">genotype/sequence-layer.json did not load here, so no orthologue call is shown.</span></div>`;
+  else if(sq&&sq.missing)h+=`<div class="prov model"><b>Sequence layer</b><span class="small">This gene was not among the ${esc(seqLayer.counts&&seqLayer.counts.genes_queried)} searched in the flying-fish gene set, so there is no orthologue call for it either way.</span></div>`;
+  else if(sq&&sq.resolved)h+=`<div class="prov"><b>Sequence layer: orthologue present</b><span class="small"><span class="chip ok">clean reciprocal best hit</span> flying-fish protein <span class="mono">${esc(sq.flying_fish_protein)}</span>, ${esc(sq.percent_identity_to_zebrafish)} % identity to zebrafish ${esc(sym)} (${esc(sq.protein_length)} aa); the reverse best hit is <span class="mono">${esc(sq.reverse_best_zebrafish_symbol)}</span>.</span><p class="tiny">${esc(sq.what_this_adds||'')}</p></div>`;
+  else if(sq)h+=`<div class="prov model" style="border-left-color:var(--bad)"><b>&#10007; Sequence layer: NOT an orthologue call</b><span class="small"><span class="chip" style="color:var(--bad);border-color:var(--bad)">reciprocal best hit FAILED</span> ${esc(sq.why_not_an_orthologue_call||'')}</span><p class="tiny">${esc(sq.what_this_adds||'')} This row must never be read as an orthologue call for ${esc(sym)}.</p></div>`;
+  if(seqLayer)h+=`<p class="tiny">${esc(seqLayer.layer_boundary||'')}</p>`;
+  // --- pathways
+  const pw=genoPathways(sym);
+  if(!pathways)h+=`<div class="prov model"><b>Pathway membership</b><span class="small">blueprint3d/pathways.json did not load here.</span></div>`;
+  else if(!pw||!pw.key)h+=`<div class="prov model"><b>Pathway membership</b><span class="small">No ZFIN key for ${esc(sym)} in the sliced pathway table, so no membership row is shown. ${esc((pathways.slice&&pathways.slice.note)||'')}</span></div>`;
+  else{const rows=pw.rows;const byP={};for(const r of rows)(byP[r.id]||(byP[r.id]=[])).push(r);
+    const ids=Object.keys(byP).sort((a,b)=>(byP[b].length-byP[a].length)||a.localeCompare(b));const TOP=10;
+    const orth=rows.filter(r=>r.orth).length,comp=rows.filter(r=>/^(IEA|IBA)$/i.test(r.evi)).length;
+    h+=`<div class="prov"><b>Pathway membership (${ids.length} pathways, ${rows.length} rows)</b>
+      <span class="small">${orth?`<span class="chip warn">${orth} inferred by orthology</span>`:''}${comp?`<span class="chip warn">${comp} electronic (IEA/IBA)</span>`:''} Evidence codes are the source database's.</span>
+      <ul class="t small">${ids.slice(0,TOP).map(id=>{const r=byP[id][0];const codes=[...new Set(byP[id].map(x=>x.evi))].join(', ');
+        return `<li>${esc(r.name)} <span class="tiny">(<span class="mono">${esc(id)}</span>, ${esc(r.source)}; ${esc(codes)})</span>${byP[id].some(x=>x.orth)?' <span class="chip warn" style="font-size:.62rem">orthology-inferred</span>':''}</li>`;}).join('')}
+        ${ids.length>TOP?`<li class="tiny">and ${ids.length-TOP} more</li>`:''}</ul>
+      <p class="tiny"><b>Every Reactome zebrafish row in this file is inferred by orthology from human</b>, and GO IEA and Reactome IEA rows are electronic annotations. ${esc(pathways.not_causation||'')}</p></div>`;}
+  // --- causal chain
+  const ce=chains&&chains.bySymbol&&chains.bySymbol[sym];
+  if(ce)h+=`<div class="prov"><b>Causal chain</b><span class="small">chain strength ${gradeChip(ce.weakest,true)}${ce.strongest?` &middot; strongest single rung ${gradeChip(ce.strongest,true)}`:''} over ${ce.chain.length} rungs${ce.deepest?`; deepest node with evidence: ${esc(ce.deepest)}`:''}.</span>${ce.weakest_link?`<p class="small"><b>Weakest link:</b> ${esc(ce.weakest_link)}</p>`:''}<p class="tiny"><a class="go" data-chain="${esc(sym)}">open the full ladder</a></p></div>`;
+  else h+=`<div class="prov model"><b>Causal chain</b><span class="small">No chain was built for ${esc(sym)} in genotype/causal-chains.json.</span></div>`;
+  // --- pleiotropy (from the selected intervention's own record)
+  const pl=sel&&sel.pleiotropy;
+  if(pl&&pl.blueprint_nodes_touched!=null)h+=`<div class="prov"><b>Pleiotropy across the map</b><span class="small">A direct record on <b>${esc(pl.blueprint_nodes_touched)}</b> blueprint nodes${pl.by_layer?' ('+Object.entries(pl.by_layer).map(([k,v])=>esc(v)+' '+esc(k)).join(', ')+')':''}. ${esc(pl.note||'')}</span></div>`;
+  else if(pl)h+=`<div class="prov model"><b>Pleiotropy across the map</b><span class="small">${esc(pl.note||'not computed for this gene')}</span></div>`;
+  // --- interactions
+  const ix=genoInteractions(sym);
+  if(ix.length)h+=`<div class="prov"><b>Interactions (${ix.length})</b><ul class="t small">${ix.slice(0,6).map(l=>`<li>${esc(l.from.label||l.from.id)} &rarr; ${esc(l.to.label||l.to.id)} <span class="tiny">${esc(l.kind)}${l.pathway?' &middot; '+esc(l.pathway):''} &middot; ${esc(l.grade)}${l.orthology?' &middot; orthology-inferred'+(l.orthologySpecies?' from '+esc(l.orthologySpecies):''):''} &middot; ${esc(l.context)}</span></li>`).join('')}${ix.length>6?`<li class="tiny">and ${ix.length-6} more; see the Tissue and Cell views</li>`:''}</ul></div>`;
+  else h+=`<div class="prov model"><b>Interactions</b><span class="small">${interData?`No arrow in genotype/interactions.json names ${esc(sym)} as a ligand, receptor, channel or gene.`:'genotype/interactions.json has not loaded here.'}</span></div>`;
+  return h;}
+function genotypeSection(){
+  if(!interv||!interv.v2)return `<div class="sec"><h4>Genotype: annotations and edits</h4><p class="small">genotype/interventions.json is not in this build, so there is nothing to annotate or apply.</p></div>`;
+  const rows=interv.all;
+  const genes=[...new Set(rows.map(r=>r.gene))].sort((a,b)=>a.localeCompare(b));
+  // follow the gene lens when it lands on a gene that has interventions, so the panel annotates what is selected
+  if(state.gene&&genes.includes(state.gene)&&geno._lens!==state.gene){geno._lens=state.gene;geno.gene=state.gene;geno.sel=null;}
+  if(!geno.gene||!genes.includes(geno.gene))geno.gene=genes.includes('gja1b')?'gja1b':genes[0];
+  const mine=rows.filter(r=>r.gene===geno.gene);
+  if(!geno.sel||!mine.some(r=>r.id===geno.sel))geno.sel=(mine.find(r=>KNOB_MODEL[r.id])||mine.find(r=>r.knob)||mine[0]||{}).id||null;
+  const sel=rows.find(r=>r.id===geno.sel)||null;
+  const nKnob=rows.filter(r=>r.knob).length,nLeth=rows.filter(r=>{const L=genoLethal(r);return L&&L.dies;}).length,nSurv=rows.filter(genoLethal).length;
+  let h=`<div class="sec"><h4>Genotype: annotations, and editing from the genotype side</h4>
+    <div class="prov model" style="border-left-color:var(--warn)"><b>&#9888; What &ldquo;apply&rdquo; means here</b><span class="small">${esc(GENO_BANNER)}</span></div>
+    ${speciesEvidenceNote()}
+    <p class="small"><b>${nKnob} of ${rows.length}</b> interventions are flagged <span class="mono">usable_as_a_calibrated_knob</span>: only those carry a magnitude at a stated stage, and only inside the regime they were measured in (the embryonic fin bud, or the adult; <b>the two do not interpolate</b>). Any of the ${rows.length} can be selected and read in full; the rest move nothing. <b>${nLeth}</b> of the ${nSurv} records that say anything about survival report <b>death</b>; the rest report viability or damage short of death. Either way the record&rsquo;s own words are shown on the applied row.</p>
+    <p class="small"><label>gene <select id="gtGene">${genes.map(g=>`<option value="${esc(g)}"${g===geno.gene?' selected':''}>${esc(g)} (${rows.filter(r=>r.gene===g).length})</option>`).join('')}</select></label>
+      &nbsp;<label>intervention <select id="gtInt">${mine.map(r=>`<option value="${esc(r.id)}"${r.id===geno.sel?' selected':''}>${esc(r.parameter)} &middot; ${esc(r.level)}${r.knob?' [calibrated]':''}${(()=>{const L=genoLethal(r);return L&&L.dies?' [lethal]':'';})()}</option>`).join('')}</select></label>
+      &nbsp;<button id="gtApply" class="primary">apply</button>${geno.applied.length?` <button id="gtClear">clear all (${geno.applied.length})</button>`:''}</p>`;
+  h+=`<p class="tiny" style="margin:8px 0 2px;text-transform:uppercase;letter-spacing:.06em">Applied</p>${genoAppliedBlock()}`;
+  if(sel)h+=genoAnnotations(geno.gene,sel);
+  h+=`<p class="tiny">Sources: genotype/interventions.json (the interventions and their magnitudes, stages and lethality), genotype/sequence-layer.json (orthologue calls), blueprint3d/pathways.json (a slice of genotype/pathways.slim.json${pathways&&pathways.slice?`: ${esc(pathways.slice.genes_kept)} of ${esc(pathways.slice.genes_asked_for)} genes asked for, ${esc(pathways.slice.pathways_kept)} pathways`:''}), genotype/causal-chains.json (chains) and genotype/interactions.json (arrows). Everything was measured in a proxy species; none of it is flying-fish data.</p></div>`;
+  return h;}
+function wireGenotype(){
+  const g=$('#gtGene');if(g)g.onchange=e=>{geno.gene=e.target.value;geno.sel=null;studioPanel();};
+  const i=$('#gtInt');if(i)i.onchange=e=>{geno.sel=e.target.value;studioPanel();};
+  const a=$('#gtApply');if(a)a.onclick=()=>{const id=$('#gtInt')&&$('#gtInt').value;if(!id)return;if(!geno.applied.includes(id))geno.applied.push(id);applyGenotype();};
+  const c=$('#gtClear');if(c)c.onclick=()=>{geno.applied=[];applyGenotype();};
+  $$('#panel [data-unapply]').forEach(b=>b.onclick=()=>{geno.applied=geno.applied.filter(x=>x!==b.dataset.unapply);applyGenotype();});
+  $$('#panel [data-gtknob]').forEach(b=>b.onclick=()=>{const r=(interv.all||[]).find(x=>x.id===b.dataset.gtknob);if(!r)return;growth.intervention=r;growth.knobFresh=true;
+    const u=new URL(location.href);u.searchParams.set('mode','growth');u.searchParams.delete('saved');u.searchParams.set('knob',r.id);history.replaceState(null,'',u.toString());setMode('growth');});}
 // candidate genetic routes from genotype/interventions.json (or the labelled causal-chains stand-in when it is absent)
-function routesSection(changed){const I=interv;let h=`<div class="sec"><h4>Genetic level: candidate routes to this change</h4>`;
+// genotype/interventions.json was measured in zebrafish. Whether that is same-species evidence depends on the model on
+// screen: for a zebrafish model it is, for the flying fish it stays a cross-species transfer.
+const routeOrganism=r=>String((r&&r.organism)||'');
+const routeIsZebrafish=r=>/danio\s+rerio/i.test(routeOrganism(r));
+const routeIsFlyingFish=r=>/exocoet|flying fish/i.test(routeOrganism(r));
+function routeSpeciesChip(r){
+  if(isZF())return routeIsZebrafish(r)
+    ?`<span class="chip ok" title="measured in Danio rerio, the species of the model on screen">same species</span>`
+    :`<span class="chip warn" title="${esc(routeOrganism(r)||'organism not stated')}">not Danio rerio</span>`;
+  return routeIsFlyingFish(r)
+    ?`<span class="chip ok" title="${esc(routeOrganism(r))}">flying fish</span>`
+    :`<span class="chip warn" title="${esc(routeOrganism(r)||'organism not stated')}; no genetic manipulation has ever been done in a flying fish">cross-species</span>`;}
+function speciesEvidenceNote(){const I=interv;const rows=(I&&I.all)||[];const z=rows.filter(routeIsZebrafish).length;
+  if(isZF())return `<div class="prov"><b>Same-species evidence for this model</b><span class="small">The model on screen is <b>${esc(MI().label)}</b> and genotype/interventions.json was measured in <b>Danio rerio</b>${rows.length?` (${z} of ${rows.length} entries; the rest add medaka, Xenopus oocytes or human constructs and are marked <span class="chip warn">not Danio rerio</span>)`:''}. For this model each route below is <b>same-species evidence</b>: the experiment and the fish on screen are the same species, so no transfer across species is being assumed. It changes nothing else &mdash; grade, magnitude, stage regime and pleiotropy are exactly as before, and same species is not the same as calibrated.</span></div>`;
+  return `<div class="prov model"><b>Cross-species transfer</b><span class="small">The model on screen is the <b>flying fish (Exocoetidae)</b>. Every route below that manipulates anything was measured in a proxy species, overwhelmingly zebrafish${rows.length?` (${z} of ${rows.length} entries in Danio rerio; ${(()=>{const n=rows.filter(routeIsFlyingFish).length;return n===1?'1 is a flying-fish <i>sequence</i> entry only, with no manipulation':n+' are flying-fish <i>sequence</i> entries only, with no manipulation';})()})`:''}; <b>no genetic manipulation has ever been done in a flying fish</b>, so each route is a cross-species transfer, not a flying-fish result. Select a zebrafish model in the species menu and the same rows become same-species evidence.</span></div>`;}
+function routesSection(changed){const I=interv;let h=`<div class="sec"><h4>Genetic level: candidate routes to this change</h4>${speciesEvidenceNote()}`;
   if(!changed.length)h+=`<p class="small">No change yet. Drag a handle, move a slider or describe a change; the candidate genetic routes for each edited parameter appear here.</p>`;
   if(!I.v2){for(const P of changed){const list=(I.byParam||{})[P.id]||[];h+=`<p class="small"><b>${esc(P.label)}</b> ${DS.fmt(baseDesign[P.id],P)} → ${DS.fmt(design[P.id],P)}</p>`+(list.length?`<ul class="t small">${list.map(r=>`<li><a class="go gene" data-g="${esc(r.gene)}">${esc(r.gene)}</a> chain ${esc(r.chain_strength||'')} <span class="tiny">effect: ${esc(r.effect_text||'not sourced')}</span></li>`).join('')}</ul>`:`<p class="small" style="color:var(--warn)">No sourced genetic route to this change.</p>`);}
     return h+`<p class="tiny">${esc(I.note||'')} Source ${esc(I.source)}.</p></div>`;}
@@ -765,7 +1086,7 @@ function routesSection(changed){const I=interv;let h=`<div class="sec"><h4>Genet
     h+=`</div>`;}
   if(changed.some(P=>P.id==='finLen'||P.id==='finSpan')&&I.guards)h+=`<div class="prov model"><b>Paralog guards</b><span class="small">${esc(I.guards.rule)}</span><ul class="t small">${I.guards.pairs.map(g=>`<li><span class="mono">${esc(g.gene)}</span> / <span class="mono">${esc(g.paralog)}</span>: ${g.n_this} interventions for ${esc(g.gene)}, ${g.n_other} for ${esc(g.paralog)}; ${g.n_this+g.n_other===0?'<b>no route offered for either</b>':'never transferred between them'}.${/^tbx5/.test(g.gene)?' There is no tbx5 route at all yet.':''}</li>`).join('')}</ul></div>`;
   h+=`<p class="tiny">${esc(I.note||'')} ${esc(I.constraint||'')} Source ${esc(I.source)}${I.built?', built '+esc(I.built):''}${I.vetted?' (vetted)':''}.</p></div>`;return h;}
-function routeHead(r){return `<a class="go gene" data-g="${esc(r.gene)}" title="tint every piece this gene touches">${esc(r.gene)}</a> ${gradeChip(r.grade,true)}${r.chain_strength?' <span class="tiny">chain '+esc(r.chain_strength)+'</span>':''} <span class="tiny">· ${esc(r.direction||'')}</span>`;}
+function routeHead(r){return `<a class="go gene" data-g="${esc(r.gene)}" title="tint every piece this gene touches">${esc(r.gene)}</a> ${routeSpeciesChip(r)}${gradeChip(r.grade,true)}${r.chain_strength?' <span class="tiny">chain '+esc(r.chain_strength)+'</span>':''} <span class="tiny">· ${esc(r.direction||'')}</span>`;}
 function routeBody(r){const q=r.sources.find(s=>s.quote);const e=r.effect||{};
   return `<br><span class="tiny">${esc(String(r.lesion||'').replace(/<[^>]+>/g,'').slice(0,160))}${String(r.lesion||'').length>160?'…':''}</span>
     <br><span class="tiny">stage: ${esc(r.stage.text)} <b>(${esc(r.stage.regime)})</b>${r.organism?' · '+esc(r.organism):''}</span>
@@ -812,20 +1133,43 @@ function regionPanel(id){const r=SQ.regions&&SQ.regions.rows.find(x=>String(x.id
   $('#panel').innerHTML=`<h2>${esc(r.locus)}</h2><div><span class="chip">${esc(r.kind)}</span>${r.species?`<span class="chip">${esc(r.species)}</span>`:''}${r.chrom?`<span class="chip">${esc(r.chrom)}${r.start!=null?':'+r.start+(r.end!=null?'-'+r.end:''):''}</span>`:''}</div>${r.note?`<p class="small">${esc(r.note)}</p>`:''}<div class="sec"><h4>Source</h4><p class="small">${r.url?`<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.source||r.url)}</a>`:esc(r.source||'no source in the file')}</p>${r.quote?`<blockquote class="small" style="margin:.3em 0;border-left:3px solid var(--line);padding-left:8px">${esc(r.quote)}</blockquote>`:''}</div><p class="tiny">Associated with wing or fin proportion; mostly regulatory; not a "wing gene".</p>`;}
 function seqPanel(){const S=SQ;const st=S.status;
   $('#panel').innerHTML=`<h2>Sequences</h2><p class="small">Proxy and comparative sequence evidence around the flying fish's enlarged pectoral fins: per-gene alignments with the marked variant sites (including the lat4a F326L convergent site once sequences/ lands), % identity between species, the genome regions Daane 2021 and the bat wing-development work implicate, and how small an engineered edit set is next to the divergence between lineages.</p>
-    ${S.source==='stand-in'?`<div class="prov model"><b>Stand-in</b><span class="small">sequences/ has not been written yet${st&&st.note?' ('+esc(st.note)+')':''}; the view shows a labelled layout test, not data.</span></div>`:`<p class="small">From ${esc(S.source)}: ${S.genes.length} genes, ${Object.keys(S.aln).length} alignments, ${S.regions?S.regions.rows.length:0} genome regions${S.diff?', '+S.diff.rows.length+' engineered/divergence rows':''}.</p>`}
+    ${S.source==='stand-in'?`<div class="prov model"><b>Stand-in</b><span class="small">sequences/ has not been written yet${st&&st.note?' ('+esc(st.note)+')':''}; the view shows a labelled layout test, not data.</span></div>`:`<p class="small">From ${esc(S.source)}: ${S.genes.length} genes, ${Object.keys(S.aln).length} alignments, ${S.regions?S.regions.rows.length:0} genome regions${S.diff?', '+S.diff.rows.length+' engineered/divergence rows':''}.</p>${(S.unread||[]).length?`<div class="prov model" style="border-left-color:var(--warn)"><b>&#9888; Present but not read here</b><span class="small">${S.unread.map(u=>`<span class="mono">sequences/${esc(u.file)}</span> is in the build, but its shape is not the one this view reads${u.keys.length?` (top-level keys: ${u.keys.slice(0,8).map(esc).join(', ')}${u.keys.length>8?'\u2026':''})`:''}, so nothing is drawn from it.`).join('<br>')} Its tab is empty on purpose rather than filled with a stand-in.</span></div>`:''}`}
     <div class="sec"><h4>Holdout and limits</h4><ul class="t small"><li>${esc(S.birdNote||'Birds (Aves) are the frozen holdout: no bird row is drawn.')}</li><li>${esc(SQV.PTEROSAUR_NOTE)}</li><li>Bat sequences are mammalian comparisons for convergent regulatory logic, not evidence that a fish gene builds a wing.</li></ul></div>
     ${S.genes.length?`<div class="sec"><h4>Genes</h4><ul class="t small">${S.genes.map(g=>`<li><a class="go" data-sqg="${esc(g.gene)}">${esc(g.gene)}</a>${g.note?' <span class="tiny">'+esc(g.note)+'</span>':''}</li>`).join('')}</ul></div>`:''}`;
   $$('#panel [data-sqg]').forEach(a=>a.onclick=()=>{if(SQ.aln[a.dataset.sqg]){sqGene=a.dataset.sqg;sqTab='a';drawSequences();}});}
 
 // ---------- Compare (2x2 + TFF) ----------
-let cmp=null,cmpData=null;
+let cmp=null,cmpData=null,zfCompare=null;
+// Compare panels A and B draw the real zebrafish models. They are fetched here, the first time Compare is opened, and
+// normalised exactly as the stage normalises a model (1 unit long, centred) so a panel can scale them by SL alone.
+async function loadCompareModels(){
+  if(zfCompare!==null)return zfCompare;
+  const one=async key=>{const M=MODELS[key];
+    const mf=manifestCache.has(key)?manifestCache.get(key):await fetch(M.manifest).then(r=>r.ok?r.json():null).catch(()=>null);
+    if(mf)manifestCache.set(key,mf);
+    const sc=await new Promise((res,rej)=>new GLTFLoader().load(M.glb,g=>res(g.scene),undefined,e=>rej(new Error(M.glb+' failed'))));
+    const box=new THREE.Box3().setFromObject(sc);const size=box.getSize(new THREE.Vector3());const k=size.x>0?1/size.x:1;
+    sc.scale.setScalar(k);const c=box.getCenter(new THREE.Vector3()).multiplyScalar(k);sc.position.sub(c);sc.updateMatrixWorld(true);
+    const info={};
+    for(const ch of sc.children){const bb=new THREE.Box3().setFromObject(ch);const ctr=bb.getCenter(new THREE.Vector3());ch.parent.worldToLocal(ctr);
+      const e=((mf&&mf.objects)||[]).find(o=>(o.object||o.name)===ch.name);
+      const side=e&&e.side&&e.side!=='mid'?e.side:(/_L(_\d+)?$/.test(ch.name)?'L':/_R(_\d+)?$/.test(ch.name)?'R':null);
+      info[ch.name]={name:ch.name,side,centre:ctr,basePos:ch.position.clone()};}
+    const wrap=new THREE.Group();wrap.add(sc);           // the panel scales the wrapper; the inner scene keeps its normalisation
+    return {group:wrap,info,manifest:mf,file:M.glb};};
+  // the flying fish is loaded here too: Compare's four arms are fixed, so panels C, D and E must hold the flying fish
+  // whatever model the species menu has on the main stage.
+  try{const [larva,adult,ff]=await Promise.all([one('zebrafish-larva'),one('zebrafish-adult'),one('flying-fish')]);zfCompare={larva,adult,ff};}
+  catch(e){console.error(e);zfCompare={error:String(e&&e.message||e)};}
+  return zfCompare;}
 async function openCompare(){await ensureDesign();if(!traj){let mod=null;try{mod=await import('./development/trajectory.mjs');}catch(e){}traj=(mod&&DS.adaptTrajectory(mod,baseDesign))||DS.standinTrajectory(baseDesign);if(traj.min_age==null)traj.min_age=0;}
   $('#compare').style.display='block';
-  if(!cmp){let zf=null;try{zf=await import('./development/zebrafish/trajectory.mjs');}catch(e){}
+  if(!cmp){showLoading('Loading the zebrafish models for Compare…');let zf=null;try{zf=await import('./development/zebrafish/trajectory.mjs');}catch(e){}
+    const zfm=await loadCompareModels();hideLoading();
     const [c2,tf]=await Promise.all(['compare-2x2.json','tff.json'].map(u=>fetch(u).then(r=>r.ok?r.json():null).catch(()=>null)));cmpData={c2,tf,zf};
     // clone the model in its resting state
     state.split=0;state.peel=0;state.obj=null;state.organ=null;state.gene=null;$('#split').value=0;$('#peel').value=0;resetScaling();applyState();
-    cmp=new Compare($('#compare'),{root,objs,PAL,checker,base:baseDesign,derive:DS.derive,flier:flierSpec?DS.flierDesign(flierSpec,baseDesign):null,trajFF:traj,trajZF:null,zfMod:zf,data2x2:c2,tff:tf,zfModel:false,onPick:k=>comparePanel(k)});
+    cmp=new Compare($('#compare'),{root,objs,PAL,checker,base:baseDesign,derive:DS.derive,flier:flierSpec?DS.flierDesign(flierSpec,baseDesign):null,trajFF:traj,trajZF:null,zfMod:zf,data2x2:c2,tff:tf,zf:(zfm&&!zfm.error)?zfm:null,ff:(zfm&&!zfm.error)?zfm.ff:null,zfModel:!!(zfm&&!zfm.error),onPick:k=>comparePanel(k)});
     if(params.get('axis')==='stage'){cmp.mode='stage';cmp.el.querySelector('.cmpmode').value='stage';cmp.update();}
     if(params.get('age')!=null&&isFinite(+params.get('age'))){cmp.age=+params.get('age');cmp.update();}
     if(params.get('alt')!=null&&isFinite(+params.get('alt'))){cmp.alt=+params.get('alt');cmp.el.querySelector('.cmpalt').value=cmp.alt;cmp.update();}}
@@ -840,7 +1184,7 @@ function comparePanel(k){const C=cmpData&&cmpData.c2;const P=C&&C.panels?Object.
     return `<div class="sec"><h4>${p.key}. ${esc(p.title)}</h4><p class="small">${chip(p)}</p>${body}<p class="tiny">drawn: ${esc(st.finBasis||'')}; growth: ${esc(st.growthBasis||'')}</p></div>`;};
   const list=k?CMP_PANELS.filter(p=>p.key===k):CMP_PANELS;
   $('#panel').innerHTML=`<h2>Compare: development side by side</h2><p class="small">${esc(C&&C.status||'genotype/compare-2x2.json is not in this build; panels use stand-ins.')}</p>${C&&C.the_two_limits_of_this_comparison?`<div class="prov model"><b>&#9888; Two limits of this comparison</b><ul class="t small">${C.the_two_limits_of_this_comparison.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}
-    <p class="small">One age slider drives all five panels (days after hatching; flying-fish growth from development/trajectory.mjs, zebrafish growth from ${cmpData&&cmpData.zf&&cmpData.zf.compareAt?'development/zebrafish/trajectory.mjs':'a labelled stand-in until development/zebrafish/trajectory.mjs lands'}). Drag in any panel to turn all five; click a panel's title for its record. Fins glow red where browser-check.mjs finds C9 violated at the fixed 10 m/s (an artefact for small fish; see Growth). Each panel is scaled to its own adult size. Zebrafish panels reuse the flying-fish body until model/zebrafish-adult.glb and zebrafish-larva.glb are built; their pectoral fins are <b>not drawn</b> (the readout says when the fin is present: bud from 24 hpf, rays from ~6.4 mm SL), because <b>no sourced adult zebrafish pectoral fin length / SL exists</b> (compareAt returns null): the zebrafish panels are qualitative on the fin-ratio axis, the flying-fish panels quantitative. The <b>axis</b> menu chooses how the two clocks are matched (same days after hatching, or same stage progress); the two readings look very different and the choice is ours, not the data's.</p>
+    <p class="small">One age slider drives all five panels (days after hatching; flying-fish growth from development/trajectory.mjs, zebrafish growth from ${cmpData&&cmpData.zf&&cmpData.zf.compareAt?'development/zebrafish/trajectory.mjs':'a labelled stand-in until development/zebrafish/trajectory.mjs lands'}). Drag in any panel to turn all five; click a panel's title for its record. Fins glow red where browser-check.mjs finds C9 violated at the fixed 10 m/s (an artefact for small fish; see Growth). Each panel is scaled to its own adult size. ${zfCompare&&!zfCompare.error?'Panels A and B draw the <b>real zebrafish models</b>: <span class="mono">model/zebrafish-larva.glb</span> while the stage is larva and <span class="mono">model/zebrafish-adult.glb</span> from the juvenile stage on, swapping at the boundary the development data defines (Parichy 2009 milestone J, SL 11.0 mm). Their pectoral fins are drawn as the model has them, at the manifest&rsquo;s <b>schematic</b> 0.19 SL, and are <b>never scaled by a fin ratio</b>':'Panels A and B fall back to the flying-fish body (the zebrafish models did not load)'}: <b>no sourced adult zebrafish pectoral fin length / SL exists</b> (development/zebrafish/trajectory.mjs returns null), so no fin-ratio value is asserted for a zebrafish panel and the readout says &ldquo;no sourced value&rdquo;. The zebrafish panels stay qualitative on the fin-ratio axis, the flying-fish panels quantitative. Panel B (&ldquo;winged zebrafish&rdquo;) is therefore drawn exactly like panel A: the paper reports the paired fins as overgrown in figure panels only, with no magnitude to draw. The readout says when the fin is present (bud from 24 hpf, rays from ~6.4 mm SL). The <b>axis</b> menu chooses how the two clocks are matched (same days after hatching, or same stage progress); the two readings look very different and the choice is ours, not the data's.</p>
     ${k?`<p class="small"><a class="go" id="cmpAll">show all five panels</a></p>`:''}${list.map(one).join('')}${C&&C.how_to_read_this?`<div class="sec"><h4>How to read this</h4><ul class="t small">${C.how_to_read_this.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}`;
   const a=$('#cmpAll');if(a)a.onclick=()=>comparePanel();}
 
@@ -914,6 +1258,7 @@ function init(sc){
   $('#geneQ').onchange=e=>{const q=e.target.value.trim();if(q)lens(q);};$('#geneQ').onkeydown=e=>{if(e.key==='Enter'){const q=e.target.value.trim();if(q)lens(q);}};
   $('#split').oninput=e=>{state.split=+e.target.value/100;applyState();};$('#peel').oninput=e=>{state.peel=+e.target.value;applyState();};$('#split').onchange=$('#peel').onchange=()=>fitView(true);
   $$('#stages button[data-s]').forEach(b=>b.onclick=()=>{collapseNote();setStage(+b.dataset.s);});
+  $('#speciesSel').value=modelKey;$('#speciesSel').onchange=e=>{collapseNote();switchModel(e.target.value);};
   $('#modeSel').onchange=e=>{collapseNote();setMode(e.target.value);};$('#ctxSel').onchange=e=>{ctx=e.target.value;drawInteractions();};$('#intensity').oninput=e=>{intensity=+e.target.value/100;applyCardiac();if(circData)basisBox();};$('#gillBtn').onclick=openGill;$('#gillClose').onclick=()=>{$('#physio').style.display='none';physioPanel();};
   $('#ccBtn').onclick=()=>{gill.counter=true;$('#ccBtn').classList.add('primary');$('#coBtn').classList.remove('primary');gillPanel();};$('#coBtn').onclick=()=>{gill.counter=false;$('#coBtn').classList.add('primary');$('#ccBtn').classList.remove('primary');gillPanel();};$('#playBtn').onclick=()=>{gill.playing=!gill.playing;if(circ)circ.playing=gill.playing;$('#playBtn').textContent=gill.playing?'pause':'play';};
   $('#gillBtn').style.display='none';$('#wingBtn').onclick=()=>wing();$('#resetBtn').onclick=reset;

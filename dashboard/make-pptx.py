@@ -60,6 +60,12 @@ def realfig(slide, name, x, y, w, lead=None):
     return pic
 
 
+def splice(text, fallback=""):
+    """Fold a sentence read from a data file into the middle of one of ours: lower-case lead, no trailing stop."""
+    t = (text or fallback).strip().rstrip(".")
+    return (t[:1].lower() + t[1:]) if t[:2].isupper() is False else t
+
+
 def fmt(v, dash="—"):
     return f"{v:,}" if isinstance(v, (int, float)) else dash
 
@@ -365,10 +371,262 @@ caption(s, "A deliberately shuffled model scored as well as the real one. We lea
            "worth more than a result you cannot — and because most teams will not show you theirs.", y=Inches(3.95))
 realfig(s, "ablation.png", M, Inches(4.5), Inches(6.2), "Remove the learned model and the curves do not move")
 
+# ----------------------------------------------------------------- the shape of the output
+# Every number below comes from DATA["numbers"], which build-deck.mjs read out of the repository.
+def rows(s, items, y=Inches(2.3), gap=Inches(0.62), vw=Inches(3.2)):
+    """One line per result: what it is on the left, its number on the right, a note beneath."""
+    for head, note, val, col in items:
+        tbox(s, M, y, W - 2 * M - vw - Inches(0.3), Inches(0.34), head, 14, True, INK)
+        tbox(s, W - M - vw, y, vw, Inches(0.34), val, 14, True, col, align=PP_ALIGN.RIGHT)
+        if note:
+            tbox(s, M, y + Inches(0.3), W - 2 * M - Inches(0.4), gap - Inches(0.26), note, 10, False, MUTE, spacing=1.12)
+        y += gap
+    return y
+
+
+def note(s, y, text, col=GHOST, w=None):
+    """A bordered aside: what a result rests on, or what it does not cover."""
+    box = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, M, y, w or (W - 2 * M), Inches(0.1))
+    box.fill.solid()
+    box.fill.fore_color.rgb = PAPER
+    box.line.color.rgb = col
+    box.shadow.inherit = False
+    box.text_frame.word_wrap = True
+    p = box.text_frame.paragraphs[0]
+    r = p.add_run()
+    r.text = text
+    r.font.size = Pt(11)
+    r.font.color.rgb = INK
+    r.font.name = "Segoe UI"
+    return box
+
+
+SH = N.get("shape")
+if SH:
+    s = new("More of this is negative than positive.\nThat is the result.", STATE["shape"]["state"])
+    # one composition bar, 2px gaps between segments, direct labels beneath
+    xs, total_w, y0 = M, W - 2 * M, Inches(2.25)
+    segs = [(SH["negative"], S2, "negative or self-limiting"),
+            (SH["methodological"], S1, "methodological, found by accident"),
+            (SH["supported"], S3, "supported")]
+    x = xs
+    for n_, col, lab in segs:
+        w = Emu(int(total_w * n_ / SH["total"])) - Emu(19050)
+        b = s.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y0, w, Inches(0.34))
+        b.fill.solid()
+        b.fill.fore_color.rgb = col
+        b.line.fill.background()
+        b.shadow.inherit = False
+        tbox(s, x, y0 + Inches(0.4), w, Inches(0.6), f"{n_}  {lab}", 10, False, MUTE, spacing=1.1)
+        x = Emu(int(x + total_w * n_ / SH["total"]))
+    barchart(s, [r["label"] for r in SH["rows"]],
+             [("records", tuple(r["n"] for r in SH["rows"]))],
+             y=Inches(3.25), height=Inches(2.5), colors=[S2])
+    CR = N.get("corrections")
+    if CR:
+        note(s, Inches(5.95),
+             f"{CR['total']} claims corrected in one day — {CR['ours']} found by our own checks, {CR['collaborator']} by a "
+             "collaborator's independent cross-check: "
+             + "; ".join(x["title"].rstrip(".") + f" (caught by {x['who']})" for x in CR["items"])
+             + ". Every one is a record or a log entry, never a silent edit to history.", SERIOUS)
+    caption(s, f"This is an argument about method, not an apology. {SH['notAPlainWin']} of {SH['total']} records are not a win for "
+               f"the hypothesis we set out to test: {SH['negative']} are negative or self-limiting and {SH['methodological']} are "
+               "methodological findings we only have because something broke. A pipeline that mostly produces negatives, corrects "
+               "itself in public and refuses statistics its sample cannot support is making a stronger claim about its method than "
+               "one that reports only wins — because only the first kind can be wrong out loud.")
+
+# ----------------------------------------------------------------- the design validation
+V = N.get("designval")
+if V:
+    s = new("We pre-registered a test of a designed organism.\nIt failed.", STATE["designval"]["state"])
+    note(s, Inches(2.2),
+         "SAY THIS FIRST: the design is not ours. It is Daane et al. 2021's own germline double heterozygote — built, scored and "
+         "published by them, with their own claim that it phenocopies flying-fish fin proportions. Our contribution is the "
+         "validation arithmetic, not the organism. We did not design a flying fish.", SERIOUS)
+    rows(s, [
+        (f"Morphological axes that could be scored at all",
+         f"The axis the design is about, {V['definingAxis']}, cannot be scored on either side: no published adult zebrafish value "
+         "exists, and the design's value exists only inside a figure we refused to digitise.",
+         f"{V['scored']} of {V['axes']}", SERIOUS),
+        ("Loci known to differ in flying fishes that the design TOUCHES — a near miss, not a hit",
+         "Same gene, different variant. lat4a/slc43a2a is genuinely in Daane's convergent-substitution sheet, so the design touches "
+         "the right gene — but "
+         + splice((N.get("corrections") or {}).get("variantMismatch"),
+                   "the design's allele is T200K and the convergent substitution is F326L: different sites, different species, "
+                   "not the same variant")
+         + ". The design changes a different position in the same transporter, not the change flying fishes carry. The other half "
+           "of the design, kcnh2a, appears nowhere in that workbook.",
+         f"{V['lociReproduced']} of {V['lociKnownToDiffer']}  ·  {V['fraction'] * 100:.1f}%", SERIOUS),
+        ("The Lean constraint gate",
+         f"It fails for the design ({V['gateTallies']['DESIGN']['violated']} violated) and for the real flying fish "
+         f"({V['gateTallies']['REAL']['violated']} violated), so failing does not separate the design from its target. The gate is "
+         f"weak: only {V['rowsDecided']} of {V['gateRows']} rows are decided by a single design, and it tests nothing aerodynamic, "
+         "nothing developmental and nothing about fins.",
+         "FAILS, both arms", SERIOUS),
+    ], y=Inches(3.3), gap=Inches(1.08))
+    caption(s, "Dropped as unsupported, not disproved, under the pre-registration's own rule. The honest framing is also the "
+               "stronger one: we built the apparatus to ask whether a designed organism matches a real one, wrote the test down "
+               "first, ran it, and it failed — which is why we can now say what designing an organism would require. "
+               + ("At a single scored axis none of the pre-registered FAIL triggers could fire, so the letter of the rule would "
+                  "have awarded \"close\" by default; the agent refused that and logged it as a deviation against the design's own "
+                  "interest. " if V.get("refusedTheDefault") else "")
+               + f"Pre-registration hashed before the first number, sha256 {V['preregSha'][:16]}…"
+               + (" (verified unaltered)." if V.get("preregVerified") else "."))
+
+# ----------------------------------------------------------------- the correction
+G = N.get("genomeGap")
+if G:
+    s = new("We said there was no genome. There is.", STATE["annotation"]["state"])
+    hero(s, [(fmt(G["genes"]), "protein-coding genes predicted in the flying-fish assembly", S1),
+             (f"{G['percent']}%", f"of them carry at least one database hit ({fmt(G['annotated'])} genes)", S3),
+             (str(G["rnaseqMentions"]), 'occurrences of "RNA-seq" or "transcriptome" in that paper, counted', SERIOUS)],
+         y=Inches(2.3))
+    note(s, Inches(4.25),
+         f"What we said, and what changed: until this weekend our own files, our brief to ten subagents and the public dashboard "
+         f"all said that almost no molecular data exists for flying fish. That was wrong, and it was load-bearing — it was "
+         f"repeated on every number in the map. {G['filesCorrected']} files were rewritten and the error recorded as its own "
+         f"citable correction.   And the caveat on our own headline: \"functionally annotated\" means one sequence-similarity or "
+         f"domain hit. TrEMBL alone supplies {fmt(G['trembl'])} of the hits and is automatically generated and unreviewed, so "
+         f"{G['percent']}% measures database coverage, not understood function.", SERIOUS)
+    caption(s, "This is the cleanest statement of the gap we face. The genes are known; what is missing is measurement. That paper "
+               "reports no expression data, no mutant, no kinetics and no regulatory network, and the zero is established by "
+               "counting strings in the full text rather than by inference. "
+               f"{G['citation']}, doi {G['doi']}.")
+
+# ----------------------------------------------------------------- annotation is not measurement
+RD = N.get("readiness")
+if RD:
+    s = new(f"{RD['annotatedPct']}% annotated. 0% parameterised.", STATE["readiness"]["state"])
+    hero(s, [("0", f"of the {fmt(RD['needed'])} numbers a minimal dynamical model of our {fmt(RD['genes'])} genes would need", SERIOUS),
+             (f"{RD['annotatedPct']}%", f"of the same genes carry a functional annotation ({fmt(RD['annotated'])} of {fmt(RD['genes'])})", S3),
+             (fmt(RD["edges"]), f"of {fmt(RD['pairs'])} gene pairs with any direct experimental support ({RD['pairsPct']})", GHOST)],
+         y=Inches(2.25))
+    barchart(s, [i["label"] for i in RD["items"]],
+             [(f"of {fmt(RD['genes'])} genes", tuple(i["n"] for i in RD["items"]))],
+             y=Inches(4.2), height=Inches(1.9), colors=[S2])
+    caption(s, "This is not a complaint about missing data; it is a measurement nobody had made. Annotation says this gene is "
+               "involved in this process. A simulation needs this many molecules, decaying this fast, binding this tightly — and "
+               "the first does not constrain the second. Relaxed as far as honesty allows, accepting a relative abundance figure "
+               f"in place of an absolute one, it is {fmt(RD['lenientHeld'])} of {fmt(RD['needed'])} ({RD['lenientPct']}%), and every "
+               f"one of those is that same single substitute."
+               + (f" For scale: the whole-cell model that predicts phenotype from genotype used {RD['precedent']['genes']} genes and "
+                  f"{RD['precedent']['sources']} primary sources, for a single cell with no anatomy and no development "
+                  f"(Karr 2012, {RD['precedent']['doi']})." if RD.get("precedent") else ""))
+
+# ----------------------------------------------------------------- powered flight eliminated
+PH = N.get("physiology")
+if PH:
+    s = new("Sustained powered flight is eliminated,\nwith a certificate.", STATE["flight"]["state"])
+    ld = next((c for c in PH["cases"] if c["speed"] == 10), PH["cases"][0])
+    hero(s, [(f"{PH['ceilingW']} W", "aerobic mechanical ceiling the oxygen budget can pay for", S3),
+             (f"{ld['requiredW']} W", f"needed for level flight at {ld['speed']} m/s at the measured L/D of {ld['ld']}", S2),
+             (f"{ld['shortBy']}x", "short — and the gap is checked by the Lean kernel, not by us", SERIOUS)],
+         y=Inches(2.3))
+    y = Inches(4.3)
+    for c in PH["cases"]:
+        tag = "  [illustrative numbers]" if c["illustrative"] else ""
+        tbox(s, M, y, Inches(7.4), Inches(0.3), f"{c['what']}, {c['speed']} m/s{tag}", 11, False, INK)
+        tbox(s, W - M - Inches(4.2), y, Inches(4.2), Inches(0.3),
+             f"{c['requiredW']} W needed  ·  {c['shortBy']}x short", 11, True, SERIOUS, align=PP_ALIGN.RIGHT)
+        y += Inches(0.34)
+    FL = N.get("flier")
+    if FL and FL.get("musclePctThatFits"):
+        note(s, Inches(5.55),
+             f"WHAT A FISH THAT REALLY FLEW WOULD NEED, AND NO ANIMAL HAS: a flight muscle that does not fit in the animal. At "
+             f"{FL['muscleFraction'] * 100:.0f}% of a 60 g body and ordinary muscle density that is {FL['muscleVolumeM3']} m³ of "
+             f"muscle, and only {FL['musclePctThatFits']}% of it fits inside the body at the pectoral girdle — a geometric "
+             f"consequence of the specification, not an opinion. Beside it: a cardiac output of "
+             f"{FL['needs'][0]['value']:,.0f} {FL['needs'][0]['unit']}, {FL['cardiacVerdict'].split(':')[0]}. Building the design "
+             "as real geometry was itself a test, and it caught something three rounds of equations did not. The flier is "
+             "hypothetical throughout and now carries a requirement nothing can satisfy; it is not a validated design.", SERIOUS)
+    caption(s, "What it rests on: Fick's principle, aerobic power rather than burst power, and teleost proxy values for cardiac "
+               "output, arterial oxygen and efficiency — no flying-fish physiology exists, so the proxies are what the elimination "
+               "rests on. What it does NOT bound: gliding (a flying fish is a glider), and short burst flight. "
+               f"{PH['kernelChecked']} of {PH['candidates']} candidates eliminated, each by a theorem the compiler accepted; on the "
+               f"same candidates {PH['cannotRule']} other constraints could not be fired at all for want of an input. This is a "
+               "proof about a model instantiated with proxy numbers and it carries that scope — it is not a fact about a fish.")
+
+# ----------------------------------------------------------------- one glide is not enough
+GL = N.get("glide")
+if GL:
+    s = new("One glide cannot explain the long flights.", STATE["glide"]["state"])
+    cats = [f"From {GL['heightM']} m at the measured L/D {GL['ldMeasured']}",
+            f"… with the measured {GL['deltaGroundEffect'] * 100:.0f}% ground effect",
+            "Field flight, reported as one glide"]
+    vals = [GL["reachM"], GL["reachWithGroundEffectM"], GL["fieldSingleGlideM"]]
+    if GL.get("ldTheoretical"):
+        cats.append(f"… at the theoretical L/D {GL['ldTheoretical']}, for comparison")
+        vals.append(GL["reachTheoreticalM"])
+    barchart(s, cats, [("metres", tuple(vals))], y=Inches(2.3), height=Inches(3.1), colors=[S2])
+    caption(s, "A steady glide can only trade height for distance, so its range is at most height times lift-to-drag. At the "
+               f"measured ratio that is {GL['reachM']} m from the greatest recorded flight height, or {GL['reachWithGroundEffectM']} m "
+               f"once the measured ground effect is allowed — and the field reports {GL['fieldSingleGlideM']} m. So the single-glide "
+               "reading is eliminated, and taxiing re-launches or wind must account for the rest. The field figures are quoted "
+               f"second-hand and labelled secondary; the {GL['fieldSequenceM']} m one is already described by its own source as a "
+               "sequence of taxiing and glides, not one glide."
+               + (f" Our simulator reproduces that shape: {GL['sim']['glides']} glides and {GL['sim']['metres']} m in "
+                  f"{GL['sim']['seconds']} s, from a model changed after seeing results, so that run is exploratory and labelled so."
+                  if GL.get("sim") else ""))
+
+# ----------------------------------------------------------------- the sequence layer
+Q = N.get("sequences")
+if Q:
+    cv, la, dr, en = Q["convergence"], Q["lat4a"], Q["doseResponse"], Q["engineered"]
+    s = new("Four sequence results. Three of them say no.", STATE["sequence"]["state"])
+    rows(s, [
+        ("Gliders do not converge",
+         f"Across {cv['genes']} fin genes, {cv['gliderColumns']} alignment columns show a residue shared by independent gliders and "
+         f"absent from each lineage's non-gliding relative — against {cv['baselineColumns']} for the same count with the roles "
+         "swapped. Similarity follows ancestry, not gliding. The genes were picked from fin biology, so this says nothing about "
+         "the rest of the genome.",
+         f"{cv['gliderColumns']} vs {cv['baselineColumns']}", SERIOUS),
+        ("The lat4a substitution tracks gliding inside the fishes only",
+         f"L in {la['flyingFishL']} of {la['flyingFishN']} flying fishes and in both gliding halfbeaks, against {la['nonGliderF']} of "
+         f"{la['nonGliderSpecies']} non-gliding relatives carrying F. But all three bats, both colugos, the sugar glider, mouse, "
+         "human and every outgroup scored carry F too, so this is not convergence with gliding mammals. Tracking is not causing.",
+         f"{la['flyingFishL']}/{la['flyingFishN']}  ·  {la['nonGliderF']}/{la['nonGliderSpecies']}", GOOD),
+        ("The derived-site panel is not a dose-response",
+         f"Gliding halfbeaks carry a mean {dr['glidingHalfbeak']['derived']} of {dr['sites']} derived states at a fin-to-body ratio of "
+         f"{dr['glidingHalfbeak']['ratio']}; flying fishes carry {dr['flyingFish']['derived']} at {dr['flyingFish']['ratio']}. The group "
+         "with the far smaller fin carries slightly more derived residues. The non-gliders' zero is circular by construction and is "
+         "not shown as a finding; four groups is a ladder to read, not a statistical test.",
+         f"{dr['glidingHalfbeak']['derived']} at {dr['glidingHalfbeak']['ratio']}  ·  {dr['flyingFish']['derived']} at {dr['flyingFish']['ratio']}", SERIOUS),
+        ("An \"engineered\" genome is a handful of edits",
+         f"{en['editedLoci']} edited loci change {en['aminoAcidsChanged']} amino acid; the other edit is regulatory and changes none. "
+         f"In just {en['proteins']} of our causal-chain proteins, zebrafish and medaka differ by {fmt(en['naturalSubstitutions'])} "
+         f"amino-acid substitutions ({fmt(en['naturalDifferences'])} positions counting indels). Coding only, in a tiny gene sample.",
+         f"{en['aminoAcidsChanged']} vs {fmt(en['naturalSubstitutions'])}", SERIOUS),
+    ], y=Inches(2.2), gap=Inches(1.04))
+    caption(s, "All four are about fin enlargement for gliding, the trait Daane et al. 2021 measured (10.1016/j.cub.2021.08.054); "
+               "the fin ratios, the convergent-substitution panel and the captured exons are theirs. Three of these close a door we "
+               "would have liked open, and the one that holds, holds only inside the Beloniformes. No bird sequence, assembly or "
+               "annotation was fetched: Aves is this project's frozen holdout.")
+
+# ----------------------------------------------------------------- the 3D organism
+AN = N.get("anatomy")
+if AN:
+    s = new(f"{fmt(AN['pieces'])} named pieces. One measured proportion.", STATE["organism3d"]["state"])
+    barchart(s, [m["name"] for m in AN["models"]],
+             [("pieces", tuple(m["pieces"] for m in AN["models"])),
+              ("with an ontology term", tuple(m["mapped"] for m in AN["models"]))],
+             y=Inches(2.2), height=Inches(2.3), colors=[S1, S3], legend=True)
+    note(s, Inches(4.7),
+         f"Evidence-backed: exactly one proportion — pectoral fin length at {AN['evidenceBacked']['ratio']} of standard length, the "
+         f"median of {AN['evidenceBacked']['n']} museum specimens, read from the measurement file rather than typed in "
+         f"({AN['evidenceBacked']['caveat']}).   Schematic, and labelled so per piece: everything else, including every count.   "
+         f"Where the ontology ran out: {AN['unmapped']} of the flying fish's pieces have no ontology term at all; the manifest "
+         "records a null and the nearest ancestor it could find instead of inventing one.", ACCENT)
+    caption(s, "The one novelty claim we make, worded as narrowly as the search supports: we did not find prior use of a proof "
+               "assistant on an ontology-derived anatomy hierarchy. Ten logged searches turned up no Lean, Coq or Isabelle proofs "
+               "about a hierarchy built from Uberon and the Cell Ontology. That is \"not found\", not \"does not exist\", and it is "
+               "not a claim to a first. Built on Uberon (10.1186/gb-2012-13-1-r5), the Cell Ontology (10.1186/2041-1480-5-21) via "
+               "Ubergraph, Phenoscape (10.1093/molbev/msv223, 10.1093/sysbio/syv031) and Daane 2021 "
+               "(10.1016/j.cub.2021.08.054). The anatomy terms are theirs; only the hierarchy check is ours.")
+
 # 11 the wing: anticipated, deliberately empty
 s = new("Where this goes next.", "anticipated")
 tbox(s, M, Inches(2.1), Inches(9), Inches(0.5),
-     "The same question at the scale of a whole organism: which genes make a flying fish wing a wing?", 15, False, MUTE)
+     "The same question at the scale of a whole organism: which genes drive fin enlargement for gliding, and by how much?", 15, False, MUTE)
 bw = Inches(3.72)
 ghostbox(s, M, Inches(2.85), bw, Inches(2.2), "Printed flying-fish pectoral fin", "no specimen, no scan, no print exists")
 ghostbox(s, M + bw + Inches(0.2), Inches(2.85), bw, Inches(2.2), "Fruit-fly wing, scaled to match", "no matched control exists")
@@ -433,6 +691,22 @@ lines = [
     "The publications are unsigned drafts. Valid, unpublished, and described as drafts.",
     f"{rc.get('confirmed', '—')} of {rc.get('total', '—')} outside numbers reproduced exactly; the one we could not check, we said so rather than fill in.",
 ]
+if N.get("corrections"):
+    cr = N["corrections"]
+    lines.append(f"{cr['total']} of our own claims were corrected in one day — {cr['ours']} found by our own checks, "
+                 f"{cr['collaborator']} by a collaborator's independent cross-check. Each was withdrawn or narrowed in public, as "
+                 "a record or a log entry, never as a silent edit.")
+if N.get("designval"):
+    lines.append("We did not design an organism. The \"designed\" fish is Daane et al. 2021's published double heterozygote, and "
+                 "our pre-registered test of it came back unsupported. The apparatus is ours; the animal is not.")
+if N.get("examLine"):
+    ex = N["examLine"]
+    lines.append(f"Validation on unseen data ran, and returned nothing. A clade was frozen as a holdout before the tests were "
+                 f"built; {ex['examined']} completed results were examined against it and {ex['inconclusive']} came back "
+                 "inconclusive"
+                 + (f". The {ex['withReason']} that state a reason were stopped by the builders' own pre-registered minimum "
+                    "sample size, not by a verdict we disliked" if ex.get("underpowered") and ex.get("withReason") else "")
+                 + ". An exam that cannot reach a verdict is reported as one that cannot.")
 y = Inches(2.35)
 for ln in lines:
     tbox(s, M, y, W - 2 * M, Inches(0.8), "—  " + ln, 13, False, INK, spacing=1.15)

@@ -17,22 +17,51 @@ export const PTEROSAUR_NOTE = 'Pterosaurs: no DNA exists (extinct ~66 million ye
 
 // ---------- normalise whatever shape lands ----------
 export function normalise(raw) {
-  const out = { source: raw.source, genes: [], aln: {}, regions: null, diff: null, birdNote: null, dropped: 0, notes: [] };
-  const G = raw.genes; const glist = G ? arr(G.genes || G.list || G) : [];
-  out.genes = glist.map(g => typeof g === 'string' ? { gene: g } : { gene: g.gene || g.symbol || g.id, label: g.label || g.name || null, note: g.note || g.why || null, zfin: g.zfin_id || null }).filter(g => g.gene);
+  const out = { source: raw.source, genes: [], aln: {}, regions: null, diff: null, birdNote: null, dropped: 0, notes: [], unread: [] };
+  const G = raw.genes;
+  // sequences/genes.json keys its genes by symbol; the earlier shape was a list. Accept both.
+  const gsrc = G && G.genes ? G.genes : G;
+  const glist = !gsrc ? [] : Array.isArray(gsrc) ? gsrc
+    : (gsrc && typeof gsrc === 'object' && !gsrc.gene && !gsrc.symbol) ? Object.entries(gsrc).map(([k, v]) => ({ ...(v && typeof v === 'object' ? v : {}), gene: k }))
+    : arr(gsrc);
+  out.genes = glist.map(g => typeof g === 'string' ? { gene: g } : { gene: g.gene || g.symbol || g.id, label: g.label || g.name || null, note: g.note || g.why || g.description || null, zfin: g.zfin_id || null }).filter(g => g.gene);
   out.birdNote = (G && (G.birds_note || G.holdout_note || G.bird_note)) || (raw.regions && (raw.regions.birds_note || raw.regions.holdout_note)) || null;
   for (const [gene, a] of Object.entries(raw.aln || {})) { if (!a) continue;
-    let rows = arr(a.rows || a.sequences || a.species || a.alignment).map(r => ({ name: r.species || r.name || r.taxon || r.id, group: r.group || r.clade || r.lineage || null, seq: String(r.seq || r.sequence || r.aligned || ''), accession: r.accession || r.id || null }));
-    const before = rows.length; rows = rows.filter(r => !BIRD.test(r.name + ' ' + (r.group || ''))); out.dropped += before - rows.length;
+    // two shapes. OLD: a list of {species, seq}. REAL (sequences/alignments/*.json): alignment is a map
+    // key -> aligned string, and sequences is a map key -> {species, common, role, protein_id, length}.
+    let rows;
+    if (a.alignment && !Array.isArray(a.alignment) && typeof a.alignment === 'object' && typeof Object.values(a.alignment)[0] === 'string') {
+      const meta = (a.sequences && typeof a.sequences === 'object' && !Array.isArray(a.sequences)) ? a.sequences : {};
+      rows = Object.entries(a.alignment).map(([k, seq]) => { const m = meta[k] || {};
+        return { key: k, name: m.species || k.replace(/^[a-z0-9]+:/, '').replace(/_/g, ' '), group: m.role || m.group || m.clade || null,
+          seq: String(seq || ''), accession: m.protein_id || m.gene_id || null, common: m.common || null, homology: m.homology_type || null }; });
+    } else {
+      rows = arr(a.rows || a.sequences || a.species || a.alignment).map(r => ({ key: r.id || r.name, name: r.species || r.name || r.taxon || r.id,
+        group: r.group || r.clade || r.lineage || null, seq: String(r.seq || r.sequence || r.aligned || ''), accession: r.accession || r.id || null }));
+    }
+    const before = rows.length; rows = rows.filter(r => !BIRD.test([r.name, r.group, r.common, r.key].filter(Boolean).join(' '))); out.dropped += before - rows.length;
     const id = a.identity || a.percent_identity || a.pid || null; let ids = null;
-    if (id && (id.matrix || Array.isArray(id))) { const names = id.species || id.names || rows.map(r => r.name); const M = id.matrix || id; const keep = names.map((n, i) => !BIRD.test(n) ? i : -1).filter(i => i >= 0); ids = { names: keep.map(i => names[i]), M: keep.map(i => keep.map(j => M[i][j])) }; }
-    else if (rows.length > 1 && rows[0].seq) ids = identityFrom(rows);
-    const variants = arr(a.variants || a.variant_sites || a.sites || a.marked).map(v => ({ pos: +(v.column ?? v.pos ?? v.position ?? v.aln_pos), label: v.label || v.name || v.substitution || v.change || '', kind: v.kind || v.type || null, source: v.source || v.ref || v.citation || null, url: v.url || (v.pmid ? 'https://pubmed.ncbi.nlm.nih.gov/' + v.pmid + '/' : v.doi ? 'https://doi.org/' + v.doi : null), quote: v.quote || null, note: v.note || null, protein_pos: v.protein_pos || v.residue || null })).filter(v => isFinite(v.pos));
+    const Mraw = id && (id.matrix || (Array.isArray(id) ? id : null));
+    if (Mraw && !Array.isArray(Mraw) && typeof Mraw === 'object') {
+      // nested object: {key: {key: percent}}. Keep the keys that survived the bird filter, in the rows' order.
+      const label = k => { const r = rows.find(x => x.key === k); return r ? r.name : k.replace(/^[a-z0-9]+:/, '').replace(/_/g, ' '); };
+      const keys = Object.keys(Mraw).filter(k => !BIRD.test(k + ' ' + label(k)));
+      out.dropped += Object.keys(Mraw).length - keys.length;
+      ids = keys.length ? { names: keys.map(label), M: keys.map(i => keys.map(j => { const v = (Mraw[i] || {})[j]; return typeof v === 'number' ? v : null; })) } : null;
+    } else if (Mraw) { const names = id.species || id.names || rows.map(r => r.name); const M = Mraw;
+      const keep = names.map((n, i) => !BIRD.test(n) && Array.isArray(M[i]) ? i : -1).filter(i => i >= 0);
+      ids = keep.length ? { names: keep.map(i => names[i]), M: keep.map(i => keep.map(j => M[i][j])) } : null; }
+    if (!ids && rows.length > 1 && rows[0].seq) ids = identityFrom(rows);
+    const variants = arr(a.variants || a.variant_sites || a.sites || a.marked).map(v => ({ pos: +(v.alignment_column_1based ?? v.column ?? v.aln_pos ?? v.pos ?? v.position), label: v.label || v.name || v.substitution || v.change || (v.ref && v.alt ? v.ref + (v.pos ?? '') + v.alt : v.id || ''), kind: v.kind || v.type || null, source: v.source || v.ref || v.citation || null, url: v.url || (v.pmid ? 'https://pubmed.ncbi.nlm.nih.gov/' + v.pmid + '/' : v.doi ? 'https://doi.org/' + v.doi : null), quote: v.quote || null, note: v.note || null, protein_pos: v.protein_pos || v.residue || null })).filter(v => isFinite(v.pos));
     out.aln[gene] = { gene, rows, ids, variants, type: a.type || a.molecule || (rows[0] && /^[ACGTUN-]+$/i.test(rows[0].seq.slice(0, 60)) ? 'nucleotide' : 'protein'), note: a.note || null, source: a.source || null, offset: +(a.offset || a.start || 1) };
   }
   const R = raw.regions; if (R) { const rows = arr(R.regions || R.loci || R); const keep = rows.filter(r => !BIRD.test(JSON.stringify([r.species, r.taxon, r.group]))); out.dropped += rows.length - keep.length;
     out.regions = { note: R.note || null, rows: keep.map(r => ({ id: r.id || r.name, locus: r.locus || r.gene || r.nearest_gene || r.name || r.id, chrom: r.chrom || r.chromosome || r.scaffold || null, start: r.start ?? null, end: r.end ?? null, kind: kindKey(r.kind || r.type || r.category), kindRaw: r.kind || r.type || null, species: r.species || r.taxon || null, source: r.source || r.ref || null, url: r.url || (r.pmid ? 'https://pubmed.ncbi.nlm.nih.gov/' + r.pmid + '/' : r.doi ? 'https://doi.org/' + r.doi : null), quote: r.quote || null, note: r.note || null })) }; }
   const Df = raw.diff; if (Df) { const rows = arr(Df.rows || Df.comparisons || Df.bars || Df); out.diff = { note: Df.note || null, unit: Df.unit || 'differences', rows: rows.filter(r => !BIRD.test(JSON.stringify(r))).map(r => ({ label: r.label || r.name || r.comparison, value: +(r.value ?? r.count ?? r.edits ?? r.differences ?? r.n), kind: r.kind || r.type || null, note: r.note || r.basis || null, source: r.source || null })).filter(r => r.label && r.value > 0) }; }
+  // a file that is present but whose shape this view does not read is named, not quietly shown as empty
+  const topKeys = o => (o && typeof o === 'object' && !Array.isArray(o)) ? Object.keys(o) : [];
+  if (raw.regions && (!out.regions || !out.regions.rows.length)) out.unread.push({ file: 'genome-regions.json', keys: topKeys(raw.regions) });
+  if (raw.diff && (!out.diff || !out.diff.rows.length)) out.unread.push({ file: 'engineered-diff.json', keys: topKeys(raw.diff) });
   return out;
 }
 function identityFrom(rows) { const n = rows.length, M = []; for (let i = 0; i < n; i++) { M.push([]); for (let j = 0; j < n; j++) { let same = 0, tot = 0; const a = rows[i].seq, b = rows[j].seq; for (let k = 0; k < Math.min(a.length, b.length); k++) { if (a[k] === '-' && b[k] === '-') continue; tot++; if (a[k] === b[k] && a[k] !== '-') same++; } M[i].push(tot ? 100 * same / tot : null); } } return { names: rows.map(r => r.name), M, computed: true }; }

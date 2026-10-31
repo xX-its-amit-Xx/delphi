@@ -548,7 +548,7 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
     // ---- physiology and interactions inputs (other threads' files), copied into the viz folder when present ----
     // physiology/ (circulation.json, gills.json, countercurrent.js, cardiac.js) -> dashboard/public/blueprint3d/physiology/
     // genotype/interactions.json -> dashboard/public/blueprint3d/interactions.json. Nothing is written back to those folders.
-    const copied = { physiology: [], interactions: null };
+    const copied = { physiology: [], interactions: null, zebrafish_model: [] };
     const physDir = path.join(here, 'public/blueprint3d/physiology'); fs.mkdirSync(physDir, { recursive: true });
     const physSrcDir = path.join(root, 'physiology');
     const physFiles = fs.existsSync(physSrcDir) ? fs.readdirSync(physSrcDir).filter(f => /\.(js|mjs|json)$/.test(f) && !/^test/.test(f)) : [];
@@ -577,6 +577,46 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
         for (const f of fs.readdirSync(src)) { const sp = path.join(src, f); if (fs.statSync(sp).isDirectory()) { copyDev(sp, path.join(dst, f), rel + f + '/'); continue; }
           if (/\.(mjs|js|json)$/.test(f) && !/^test|\.test\./.test(f)) { fs.copyFileSync(sp, path.join(dst, f)); copied.studio.push({ file: 'development/' + rel + f, as: 'blueprint3d/development/' + rel + f }); } } };
       copyDev(path.join(root, 'development'), path.join(here, 'public/blueprint3d/development'), ''); }
+    // genotype/sequence-layer.json (the orthologue calls and the two labelled reciprocal-best-hit FAILURES) and a slice of
+    // genotype/pathways.slim.json. The slim file is 1.9 MB and holds 3857 genes; the viewer only ever asks about genes that
+    // appear in interventions.json, causal-chains.json or the sequence layer, so the slice keeps those and the pathway names
+    // they point at, and records which genes were kept. Nothing is recomputed here: rows are copied verbatim.
+    { const gDst = path.join(here, 'public/blueprint3d');
+      const seqSrc = path.join(root, 'genotype', 'sequence-layer.json'), seqDst = path.join(gDst, 'sequence-layer.json');
+      if (fs.existsSync(seqSrc)) { fs.copyFileSync(seqSrc, seqDst); copied.studio.push({ file: 'genotype/sequence-layer.json', as: 'blueprint3d/sequence-layer.json', bytes: fs.statSync(seqSrc).size }); }
+      else if (fs.existsSync(seqDst)) fs.unlinkSync(seqDst);
+      const pw = J('genotype/pathways.slim.json'), iv = J('genotype/interventions.json'), cc2 = J('genotype/causal-chains.json'), sq = J('genotype/sequence-layer.json');
+      const pwDst = path.join(gDst, 'pathways.json');
+      if (pw && pw.genes) {
+        const symbols = {}; const want = new Set();
+        const add = (sym, zfin) => { if (!sym || !zfin) return; const k = String(zfin).startsWith('ZF:') ? String(zfin) : 'ZF:' + zfin; symbols[sym] = k; want.add(k); };
+        for (const x of (iv && iv.interventions) || []) add(x.gene, x.zfin_id);
+        for (const g of (cc2 && (cc2.genes || cc2.chains)) || []) add(g.symbol, g.zfin_id);
+        for (const g of [...((sq && sq.orthologues_resolved) || []), ...((sq && sq.orthologues_not_resolved) || [])]) add(g.gene, g.zfin_id);
+        const genes = {}; const pids = new Set();
+        for (const k of want) { const rows = pw.genes[k]; if (!rows) continue; genes[k] = rows; for (const r of rows) pids.add(r[0]); }
+        const pathways = {}; for (const id of pids) if (pw.pathways[id]) pathways[id] = pw.pathways[id];
+        const out = { source: 'genotype/pathways.slim.json', built: pw.built || null, vetted: pw.vetted === true,
+          not_causation: pw.not_causation || null, constraint: pw.constraint || null, sources: pw.sources || null,
+          encoding: pw.encoding || null, summary: pw.summary || null,
+          slice: { note: 'Only the genes the viewer can ask about are kept: every gene named in genotype/interventions.json, genotype/causal-chains.json or genotype/sequence-layer.json. The full table is genotype/pathways.slim.json.',
+            genes_asked_for: want.size, genes_kept: Object.keys(genes).length, genes_with_no_pathway_row: want.size - Object.keys(genes).length, pathways_kept: Object.keys(pathways).length },
+          symbols, genes, pathways };
+        fs.writeFileSync(pwDst, JSON.stringify(out));
+        copied.studio.push({ file: 'genotype/pathways.slim.json', as: 'blueprint3d/pathways.json', bytes: fs.statSync(pwDst).size, note: 'sliced to ' + Object.keys(genes).length + ' genes' });
+      } else if (fs.existsSync(pwDst)) fs.unlinkSync(pwDst); }
+    // anatomy-model/zebrafish/: the two zebrafish manifests and the source list the viewer's provenance panel quotes.
+    // The .glb files themselves are committed under public/blueprint3d/model/ and are not copied here.
+    { const zmSrc = path.join(root, 'anatomy-model', 'zebrafish'), zmDst = path.join(here, 'public/blueprint3d/model');
+      copied.zebrafish_model = [];
+      for (const [f, as] of [['manifest-adult.json', 'manifest-adult.json'], ['manifest-larva.json', 'manifest-larva.json'], ['sources.json', 'zebrafish-sources.json']]) {
+        const sp = path.join(zmSrc, f), dp = path.join(zmDst, as);
+        if (fs.existsSync(sp)) { fs.mkdirSync(zmDst, { recursive: true }); fs.copyFileSync(sp, dp); copied.zebrafish_model.push({ file: 'anatomy-model/zebrafish/' + f, as: 'blueprint3d/model/' + as, bytes: fs.statSync(sp).size }); }
+        else if (fs.existsSync(dp) && as === 'zebrafish-sources.json') fs.unlinkSync(dp);
+      }
+      for (const g of ['zebrafish-adult.glb', 'zebrafish-larva.glb', 'flying-fish.glb']) {
+        const gp = path.join(zmDst, g); copied.zebrafish_model.push({ file: 'blueprint3d/model/' + g, present: fs.existsSync(gp), bytes: fs.existsSync(gp) ? fs.statSync(gp).size : 0 });
+      } }
     // sequences/ (Sequences view): genes.json, genome-regions.json, engineered-diff.json and alignments/*.json, plus a
     // status.json listing what is present (the page cannot list a folder). calls.json (the fetch log) is not copied.
     { const sqSrc = path.join(root, 'sequences'), sqDst = path.join(here, 'public/blueprint3d/sequences');

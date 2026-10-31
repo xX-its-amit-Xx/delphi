@@ -222,7 +222,7 @@ function build(D) {
 
   SL.wing = () => `${ribbon('anticipated')}
     <h2>Where this goes next.</h2>
-    <p class="sub">The same question at the scale of a whole organism: which genes make a flying fish wing a wing?</p>
+    <p class="sub">The same question at the scale of a whole organism: which genes drive fin enlargement for gliding, and by how much?</p>
     <div class="collapse">
       <div><div class="ghostbox"><div class="gi"><b>Printed flying-fish pectoral fin</b><br>no specimen, no scan, no print exists</div></div>
         <p class="tiny" style="margin-top:8px">Anticipated: a 3D print from a CT scan, with the load-bearing rays measured.</p></div>
@@ -268,6 +268,9 @@ function build(D) {
       <li><b>"Blocked" is not "impossible."</b> It means unreachable in the measured four-position graph, never in biology.</li>
       <li><b>The publications are unsigned drafts.</b> Valid, unpublished, and described as drafts.</li>
       <li><b>${N.recount ? `${N.recount.confirmed} of ${N.recount.total}` : 'Most'} outside numbers reproduced exactly</b>; the one we could not check, we said so rather than fill in.</li>
+      ${N.corrections ? `<li><b>${N.corrections.total} of our own claims were corrected in one day</b> &mdash; ${N.corrections.ours} found by our own checks, ${N.corrections.collaborator} by a collaborator&rsquo;s independent cross-check. Each was withdrawn or narrowed in public, as a record or a log entry, never as a silent edit.</li>` : ''}
+      ${N.designval ? `<li><b>We did not design an organism.</b> The &ldquo;designed&rdquo; fish is Daane et al. 2021&rsquo;s published double heterozygote, and our pre-registered test of it came back unsupported. The apparatus is ours; the animal is not.</li>` : ''}
+      ${N.examLine ? `<li><b>Validation on unseen data ran, and returned nothing.</b> A clade was frozen as a holdout before the tests were built; ${N.examLine.examined} completed results were examined against it and ${N.examLine.inconclusive} came back <em>inconclusive</em>${N.examLine.underpowered && N.examLine.withReason ? `. The ${N.examLine.withReason} that state a reason were stopped by the builders&rsquo; own pre-registered minimum sample size, not by a verdict we disliked` : ''}. An exam that cannot reach a verdict is reported as one that cannot, not quietly dropped.</li>` : ''}
     </ul>
     <p class="caption">Every one of these is on the public dashboard too, next to the result it limits.</p>`;
 
@@ -279,6 +282,328 @@ function build(D) {
       <li><b>A harder panel.</b> Our own check showed a benchmark can measure its own composition. Send pairs we did not pick.</li>
     </ul>
     <p class="caption">Live dashboard, every number traceable to a file: <b>delphi-mission-control.ashenoy000.workers.dev/start/</b></p>`;
+
+  // ================================================================================================
+  // The shape of the output, and the results that give it that shape. Every number here comes from
+  // D.numbers, which build-deck.mjs read out of the repository; none of it is written in this file.
+  // ================================================================================================
+
+  const srcs = list => `<p class="srcline">Read from ${list.map(esc).join(' &middot; ')}</p>`;
+  // fold a sentence read from a data file into the middle of one of ours: lead lower-case, no trailing stop
+  const splice = t => (t ? t.trim().replace(/\.$/, '').replace(/^([A-Z])(?=[a-z])/, (m, c) => c.toLowerCase()) : null);
+  const ghost = id => `${ribbon('anticipated')}<div class="ghostbox"><div class="gi">Waiting on ${esc(needs(id))}</div></div>`;
+
+  // Phenoscape, Uberon, the Cell Ontology and Daane 2021 underlie this work and are cited where they do.
+  const CITE = {
+    ontology: '<b>Built on other people&rsquo;s work:</b> Uberon (Mungall 2012, 10.1186/gb-2012-13-1-r5) and the Cell Ontology '
+      + '(Diehl 2016, 10.1186/2041-1480-5-21), served through Ubergraph; Phenoscape for ontology-based phenotype curation '
+      + '(Edmunds 2016, 10.1093/molbev/msv223; Dececchi 2015, 10.1093/sysbio/syv031); the Human Reference Atlas ASCT+B tables '
+      + '(10.1038/s41556-021-00788-6). The anatomy terms are theirs; only the hierarchy check is ours.',
+    daane: '<b>The measurements are Daane et al. 2021&rsquo;s</b> (10.1016/j.cub.2021.08.054): the fin ratios, the convergent-substitution '
+      + 'panel and the captured beloniform exons. We re-tabulated and re-read them; we measured no fish.'
+  };
+
+  // ---- the slide the lead asked for: what our output actually looks like ----
+  SL.shape = () => {
+    const S2 = N.shape, C = N.corrections;
+    if (!S2) return `${ghost('shape')}`;
+    const mx = Math.max(...S2.rows.map(r => r.n));
+    const col = { negative: 'var(--series-2)', neutral: 'var(--series-1)', positive: 'var(--series-3)' };
+    const pc = n => (n / S2.total * 100).toFixed(1) + '%';
+    return `${ribbon(st('shape'))}${rub('execution')}
+      <h2>More of this is negative than positive. That is the result.</h2>
+      <div class="strip" role="img" aria-label="${S2.total} records: ${S2.negative} negative or self-limiting, ${S2.methodological} methodological, ${S2.supported} supported">
+        <i style="flex:${S2.negative};background:var(--series-2)"></i>
+        <i style="flex:${S2.methodological};background:var(--series-1)"></i>
+        <i style="flex:${S2.supported};background:var(--series-3)"></i>
+      </div>
+      <div class="striplegend">
+        <span><i style="background:var(--series-2)"></i><b>${S2.negative}</b> negative or self-limiting &mdash; ${pc(S2.negative)}</span>
+        <span><i style="background:var(--series-1)"></i><b>${S2.methodological}</b> methodological, found by accident</span>
+        <span><i style="background:var(--series-3)"></i><b>${S2.supported}</b> supported</span>
+      </div>
+      <div class="split">
+        <div class="bars" style="max-width:none">
+          ${S2.rows.map(r => `<div class="brow" style="grid-template-columns:minmax(90px,270px) 1fr auto">
+            <span class="blab">${esc(r.label)}</span>
+            <span class="btrack" style="height:24px"><i class="bfill" data-w="${(r.n / mx * 100).toFixed(1)}" style="background:${col[r.sign]}"></i></span>
+            <span class="bval" style="min-width:2.2em">${r.n}</span></div>`).join('')}
+        </div>
+        <div>
+          ${C ? `<div class="scope warn"><h4>${C.total} claims corrected in one day &mdash; ${C.ours} by our own checks, ${C.collaborator} by a collaborator</h4>
+            <ul>${C.items.map(x => `<li><b>${esc(x.title)}.</b> ${esc(x.body)} <em>Caught by ${esc(x.who)}.</em></li>`).join('')}</ul>
+            <p style="margin:8px 0 0">Every one is a record or a log entry, never a silent edit to history.</p></div>` : ''}
+        </div>
+      </div>
+      <p class="caption" style="max-width:104ch"><b>This is an argument about method, not an apology.</b> ${S2.notAPlainWin} of
+        ${S2.total} records are not a win for the hypothesis we set out to test, and the documented refusal is a statistic we
+        declined to compute because the sample cannot support it. A pipeline that mostly produces negatives, corrects itself in
+        public and refuses the numbers it cannot stand behind is making a stronger claim about its method than one that reports
+        only wins &mdash; because only the first kind can be wrong out loud.</p>
+      ${srcs([S2.builtFrom, 'genotype/nanopubs/DECISIONS.md', 'genotype/CAUSAL.md'])}`;
+  };
+
+  // ---- the pre-registered design validation: a negative result, and the design is not ours ----
+  SL.designval = () => {
+    const V = N.designval;
+    if (!V) return `${ghost('designval')}`;
+    return `${ribbon(st('designval'))}${rub('execution')}
+      <h2>We pre-registered a test of a designed organism. It failed.</h2>
+      <div class="scope warn" style="max-width:none;margin:0 0 14px">
+        <h4>Say this first</h4><b>The design is not ours.</b> It is Daane et al. 2021&rsquo;s own germline double
+        heterozygote &mdash; built, scored and published by them in 2021, with their own claim that it phenocopies flying-fish fin
+        proportions. Our contribution is the validation arithmetic, not the organism. <b>We did not design a flying fish, and
+        nothing in this deck should be read as saying we did.</b></div>
+      <div class="rows" style="max-width:none">
+        <div class="rrow"><span>Morphological axes that could be scored at all
+          <small>The axis the design is <em>about</em>, ${esc(V.definingAxis)}, cannot be scored on either side: no published adult
+            zebrafish value exists, and the design&rsquo;s value exists only inside a figure we refused to digitise.</small></span>
+          <span class="v no">${V.scored} of ${V.axes}</span></div>
+        <div class="rrow"><span>Loci known to differ in flying fishes that the design <em>touches</em>
+          <span class="tag neg">a near miss, not a hit</span>
+          <small><b>Same gene, different variant.</b> <em>lat4a</em>/<em>slc43a2a</em> is genuinely in Daane&rsquo;s
+            convergent-substitution sheet, so the design touches the right gene &mdash; but
+            ${esc(splice(N.corrections && N.corrections.variantMismatch) || 'the design’s allele is T200K and the convergent substitution is F326L: different sites, different species, not the same variant')}.
+            The design changes a different position in the same transporter, not the change flying fishes carry. And the other
+            half of the design, <em>kcnh2a</em>, appears nowhere in that workbook.</small></span>
+          <span class="v no">${V.lociReproduced} of ${V.lociKnownToDiffer} &middot; ${(V.fraction * 100).toFixed(1)}%</span></div>
+        <div class="rrow"><span>The Lean constraint gate
+          <small>It fails for the design (${V.gateTallies.DESIGN.violated} violated) <b>and for the real flying fish</b>
+            (${V.gateTallies.REAL.violated} violated), so failing does not separate the design from its target. The gate is weak:
+            only ${V.rowsDecided} of ${V.gateRows} rows are decided by a single design, and it tests nothing aerodynamic, nothing
+            developmental and nothing about fins.</small></span>
+          <span class="v no">FAILS, both arms</span></div>
+      </div>
+      <p class="caption"><b>Dropped as unsupported, not disproved</b>, under the pre-registration&rsquo;s own rule. The framing that
+        is both honest and stronger: we built the apparatus to ask whether a designed organism matches a real one, wrote the test
+        down first, ran it, and it failed &mdash; which is exactly why we can now say what designing an organism would require.
+        ${V.refusedTheDefault ? 'One detail shows the method working: at a single scored axis none of the three pre-registered FAIL triggers could fire, so the letter of the rule would have awarded &ldquo;close&rdquo; by default. The agent refused that reading and logged it as a deviation against the design&rsquo;s own interest.' : ''}</p>
+      <p class="srcline">Pre-registration hashed before the first number was produced, sha256 ${esc(V.preregSha.slice(0, 16))}&hellip;
+        ${V.preregVerified ? '(verified unaltered)' : ''} &middot; design-validation/REPORT.md &middot; design-validation/scorecard.json</p>`;
+  };
+
+  // ---- the correction worth showing: a genome exists; what is missing is measurement ----
+  SL.annotation = () => {
+    const G = N.genomeGap;
+    if (!G) return `${ghost('annotation')}`;
+    return `${ribbon(st('annotation'))}${rub('impact')}
+      <h2>We said there was no genome. There is.</h2>
+      <div class="heroes">
+        <div class="hero s1"><div class="n" data-count="${G.genes}">0</div><div class="l">protein-coding genes predicted in the flying-fish assembly</div></div>
+        <div class="hero s3"><div class="n">${G.percent}%</div><div class="l">of them carry at least one database hit (${n0(G.annotated)} genes)</div></div>
+        <div class="hero"><div class="n" style="color:var(--serious)">${G.rnaseqMentions}</div><div class="l">occurrences of &ldquo;RNA-seq&rdquo; or &ldquo;transcriptome&rdquo; in that paper, counted</div></div>
+      </div>
+      <div class="split" style="margin-top:18px">
+        <div class="scope warn"><h4>What we said, and what changed</h4>Until this weekend our own files, our brief to ten
+          subagents and the public dashboard all said that almost no molecular data exists for flying fish and called the
+          available resource one scaffold-level assembly. That was wrong, and it was load-bearing: it was repeated on every
+          number in the map. ${G.filesCorrected} files were rewritten and the error was recorded as its own citable correction.</div>
+        <div class="scope"><h4>And the caveat on our own headline</h4>&ldquo;Functionally annotated&rdquo; means one
+          sequence-similarity or domain hit and nothing more. TrEMBL alone supplies ${n0(G.trembl)} of the hits and TrEMBL is
+          automatically generated and unreviewed, so ${G.percent}% measures <em>database coverage</em>, not understood function.
+          ${n0(G.swissprot)} hits come from SwissProt, the only manually reviewed set.</div>
+      </div>
+      <p class="caption"><b>This is the cleanest statement of the gap we actually face.</b> The genes are known. What is missing
+        is measurement: that paper reports no expression data, no mutant, no kinetics and no regulatory network. The count of zero
+        is established by counting the strings in the full text, not by inference &mdash; and the proxy-species rule survives with a
+        corrected justification: zebrafish and medaka are used because expression and phenotype records exist only for them, not
+        because flying-fish genes are unknown.</p>
+      <p class="srcline">${esc(G.citation)}, doi ${esc(G.doi)}, full text read &middot; ${esc(G.source)}</p>`;
+  };
+
+  // ---- annotation is not measurement, counted across the whole map ----
+  SL.readiness = () => {
+    const R = N.readiness;
+    if (!R) return `${ghost('readiness')}`;
+    const fig = R.coverageFig;
+    return `${ribbon(st('readiness'))}${rub('impact')}
+      <h2>${R.annotatedPct}% annotated. 0% parameterised.</h2>
+      <div class="split" style="grid-template-columns:minmax(0,.92fr) minmax(0,1.25fr)">
+        <div>
+          <div class="heroes" style="margin-bottom:16px">
+            <div class="hero"><div class="n" style="color:var(--serious)">0</div><div class="l">of the ${n0(R.needed)} numbers a minimal dynamical model of our ${n0(R.genes)} genes would need</div></div>
+            <div class="hero s3"><div class="n">${R.annotatedPct}%</div><div class="l">of the same genes carry a functional annotation</div></div>
+          </div>
+          <div class="scope"><h4>Zero, class by class</h4>Absolute abundance, protein half-life, mRNA half-life, transcription
+            rate, binding affinity and enzyme kinetics, cooperativity: <b>0 of ${n0(R.genes)}</b> each. Diffusion coefficients:
+            <b>4</b>. The regulatory network is <b>${n0(R.edges)}</b> of ${n0(R.pairs)} possible gene pairs with any direct
+            experimental support, ${esc(R.pairsPct)}, and it is undirected and unsigned, so not yet a network.</div>
+          <div class="scope"><h4>Relaxed as far as honesty allows</h4>Accept a relative abundance figure &mdash; a share of total
+            protein mass in a whole organism &mdash; in place of a count per cell in a named cell type at a named stage, and it
+            becomes ${n0(R.lenientHeld)} of ${n0(R.needed)}, ${R.lenientPct}%. Every one of those is that same single substitute.</div>
+        </div>
+        <div>
+          ${fig ? `<figure class="real"><img src="${esc(fig.file)}" alt="Coverage of each simulation parameter across the ${n0(R.genes)} genes of the map" style="max-height:56vh;object-fit:contain">
+            <figcaption><b>Every parameter class a simulation runs on, beside the annotation that is nearly complete</b><br>
+            Built by the readiness thread as ${esc(fig.from)}; copied, not redrawn.
+            <br><span class="prov">sha256 ${esc(fig.sha256.slice(0, 32))}&hellip;</span></figcaption></figure>` : ''}
+        </div>
+      </div>
+      <p class="caption" style="max-width:112ch"><b>This is not a complaint about missing data; it is a measurement nobody had
+        made.</b> Annotation says <em>this gene is involved in this process</em>; a simulation needs <em>this many molecules,
+        decaying this fast, binding this tightly</em>, and the first does not constrain the second. That is why our design tool
+        looks up measured effects instead of predicting them, and why we can name exactly what would have to be measured to change
+        it. ${R.precedent ? `For scale, the whole-cell model that predicts phenotype from genotype used ${R.precedent.genes} genes and
+        ${esc(R.precedent.sources)} primary sources, for ${esc(R.precedent.scope.toLowerCase())} (Karr 2012, ${esc(R.precedent.doi)});
+        functional annotation was its starting point, never a substitute for the numbers.` : ''}</p>
+      ${srcs([R.source, 'simulation-readiness/README.md', 'simulation-readiness/calls.json'])}`;
+  };
+
+  // ---- the physiology elimination, with its scope attached ----
+  SL.flight = () => {
+    const P = N.physiology, F = N.flier;
+    if (!P) return `${ghost('flight')}`;
+    const lead = P.cases.find(c => c.speed === 10) || P.cases[0];
+    return `${ribbon(st('flight'))}${rub('impact')}
+      <h2>Sustained powered flight is eliminated, with a certificate.</h2>
+      <div class="heroes">
+        <div class="hero s3"><div class="n">${P.ceilingW}<span style="font-size:.4em"> W</span></div><div class="l">aerobic mechanical ceiling the oxygen budget can pay for</div></div>
+        <div class="hero s2"><div class="n">${lead.requiredW}<span style="font-size:.4em"> W</span></div><div class="l">needed for level flight at ${lead.speed}&thinsp;m/s at the measured L/D of ${lead.ld}</div></div>
+        <div class="hero"><div class="n" style="color:var(--serious)">${lead.shortBy}&times;</div><div class="l">short &mdash; and the gap is checked by the Lean kernel, not by us</div></div>
+      </div>
+      <div class="split" style="margin-top:16px">
+        <div class="rows">
+          ${P.cases.map(c => `<div class="rrow"><span>${esc(c.what)}, ${c.speed}&thinsp;m/s
+            ${c.illustrative ? '<span class="tag grey">illustrative numbers</span>' : ''}
+            <small>${esc(c.theorem)}</small></span>
+            <span class="v no">${c.requiredW}&thinsp;W needed &middot; ${c.shortBy}&times; short</span></div>`).join('')}
+        </div>
+        <div>
+          <div class="scope"><h4>What the bound rests on</h4><ul>
+            <li>Fick&rsquo;s principle: supply is cardiac output times arterial oxygen content times efficiency.</li>
+            <li><b>Aerobic power, not burst power.</b></li>
+            <li><b>Teleost proxy values</b> for cardiac output, arterial O<sub>2</sub> and efficiency &mdash; no flying-fish
+              physiology exists. The proxies, not the fish, are what the elimination rests on.</li></ul></div>
+          <div class="scope warn"><h4>What it does not bound</h4><ul>
+            <li><b>Gliding.</b> Nothing here says a flying fish cannot glide; it is a glider.</li>
+            <li><b>Short burst flight.</b> The certificates bound sustained aerobic power only.</li></ul></div>
+        </div>
+      </div>
+      ${F ? `<div class="scope warn" style="max-width:none;margin-top:14px">
+        <h4>What a fish that really flew would need, and no animal has</h4>
+        <b>A flight muscle that does not fit in the animal.</b> At ${(F.muscleFraction * 100).toFixed(0)}% of a 60&thinsp;g body and
+        ordinary muscle density that is ${esc(String(F.muscleVolumeM3).replace(/e-(\d+)$/, ' × 10⁻⁶'))}&thinsp;m&sup3; of muscle, and only <b>${F.musclePctThatFits}%</b> of it fits
+        inside the body at the pectoral girdle. That is a geometric consequence of the specification, not an opinion
+        &mdash; and it sits beside a cardiac output of ${n0(Math.round(F.needs[0].value))}&thinsp;${esc(F.needs[0].unit)},
+        <b>${esc((F.cardiacVerdict || '').split(':')[0])}</b>.
+        ${F.foundByBuilding ? '<b>Building the design as real geometry was itself a test, and it caught something three rounds of equations did not.</b>' : ''}
+        The flier is hypothetical throughout and now carries a requirement nothing can satisfy; it is not a validated design.</div>` : ''}
+      <p class="caption" style="max-width:118ch">${P.kernelChecked} of ${P.candidates} candidates eliminated, each by a theorem
+        the compiler accepted. <b>The honest proportion:</b> on the same candidates ${P.cannotRule} other constraints could not be
+        fired at all, for want of an input. <b>This is a proof about a model instantiated with proxy numbers, and it carries that
+        scope wherever it goes &mdash; it is not a fact about a fish.</b>${N.designval ? ` A second, independent instantiation of the
+        same chain gives ${N.designval.realShortfall}&times;; both are far below what level flight needs.` : ''}</p>
+      ${srcs(P.sources)}`;
+  };
+
+  // ---- the glide bound ----
+  SL.glide = () => {
+    const G = N.glide;
+    if (!G) return `${ghost('glide')}`;
+    const mx = Math.max(G.reachTheoreticalM || 0, G.fieldSingleGlideM, G.reachWithGroundEffectM);
+    return `${ribbon(st('glide'))}${rub('impact')}
+      <h2>One glide cannot explain the long flights.</h2>
+      <div class="bars" style="max-width:900px">
+        ${bar(`From ${G.heightM} m at the measured L/D ${G.ldMeasured}`, G.reachM, mx, G.reachM + ' m', 2)}
+        ${bar(`… with the measured ${(G.deltaGroundEffect * 100).toFixed(0)}% ground effect`, G.reachWithGroundEffectM, mx, G.reachWithGroundEffectM + ' m', 2)}
+        ${bar('Field flight, reported as one glide', G.fieldSingleGlideM, mx, G.fieldSingleGlideM + ' m', 1)}
+        ${G.ldTheoretical ? bar(`… at the theoretical L/D ${G.ldTheoretical}, for comparison`, G.reachTheoreticalM, mx, G.reachTheoreticalM + ' m', 3) : ''}
+      </div>
+      <div class="legend"><span><i style="background:var(--series-2)"></i>what one glide can reach</span><span><i style="background:var(--series-1)"></i>what the field reports</span><span><i style="background:var(--series-3)"></i>a theoretical L/D we did not measure</span></div>
+      <p class="caption" style="max-width:88ch">A steady glide can only trade height for distance, so its range is at most
+        height times lift-to-drag. At the measured ratio that is <b>${G.reachM}&thinsp;m</b> from the greatest recorded flight
+        height, or <b>${G.reachWithGroundEffectM}&thinsp;m</b> once the measured ground effect is allowed &mdash; and the field
+        reports ${G.fieldSingleGlideM}&thinsp;m. <b>So the single-glide reading is eliminated, and taxiing re-launches or wind must
+        account for the rest.</b> ${G.sim ? `Our simulator reproduces the shape of that: ${G.sim.glides} glides and
+        ${G.sim.metres}&thinsp;m in ${G.sim.seconds}&thinsp;s${G.sim.postHoc ? ', from a model whose parameters were changed after seeing results, so that run is exploratory and labelled so' : ''}.` : ''}</p>
+      <p class="srcline">The ${G.fieldSingleGlideM}&thinsp;m and ${G.fieldSequenceM}&thinsp;m field figures are quoted second-hand and
+        labelled secondary; ${G.fieldSequenceIsASequence ? `the ${G.fieldSequenceM} m is already described by its own source as a sequence of taxiing and glides, not one glide` : ''}.
+        Ground effect: ${esc(G.groundEffectLocator || '')} &middot; ${G.sources.map(esc).join(' &middot; ')}</p>`;
+  };
+
+  // ---- the sequence layer: four results, three of them negative ----
+  SL.sequence = () => {
+    const Q = N.sequences;
+    if (!Q) return `${ghost('sequence')}`;
+    const c = Q.convergence, l = Q.lat4a, d = Q.doseResponse, e = Q.engineered;
+    return `${ribbon(st('sequence'))}${rub('impact')}
+      <h2>Four sequence results. Three of them say no.</h2>
+      <div class="rows" style="max-width:none">
+        <div class="rrow"><span><b>Gliders do not converge</b><span class="tag neg">negative</span>
+          <small>Across ${c.genes} fin genes, ${c.gliderColumns} alignment columns show a residue shared by independent gliders and absent
+            from each lineage&rsquo;s non-gliding relative &mdash; against ${c.baselineColumns} for the same count with the roles swapped.
+            Similarity follows ancestry, not gliding. ${esc(c.geneSetCaveat)}</small></span>
+          <span class="v no">${c.gliderColumns} vs ${c.baselineColumns}</span></div>
+        <div class="rrow"><span><b>The lat4a substitution tracks gliding inside the fishes only</b><span class="tag pos">holds, narrowly</span>
+          <small>L in ${l.flyingFishL} of ${l.flyingFishN} flying fishes and in both gliding halfbeaks, against ${l.nonGliderF} of
+            ${l.nonGliderSpecies} non-gliding relatives carrying F (the ${l.nonGliderOther === 1 ? 'one exception, a saury, carries I' : 'exceptions carry another residue'}).
+            But all three bats, both colugos, the sugar glider, mouse, human and every outgroup scored carry F too, so this is
+            <b>not convergence with gliding mammals</b>. Tracking is not causing.</small></span>
+          <span class="v">${l.flyingFishL}/${l.flyingFishN} &middot; ${l.nonGliderF}/${l.nonGliderSpecies}</span></div>
+        <div class="rrow"><span><b>The derived-site panel is not a dose-response</b><span class="tag neg">negative</span>
+          <small>Gliding halfbeaks carry a mean ${d.glidingHalfbeak.derived} of ${d.sites} derived states at a pectoral-fin-to-body ratio of
+            ${d.glidingHalfbeak.ratio}; flying fishes carry ${d.flyingFish.derived} at ${d.flyingFish.ratio}. The group with the far smaller
+            fin carries slightly <em>more</em> derived residues, so the series is mildly inverted.
+            ${d.nonGlidersZeroByConstruction ? 'The non-gliders&rsquo; zero is circular by the panel&rsquo;s construction and is not shown as a finding.' : ''}
+            ${d.notATest ? 'Four groups is a ladder to read, not a statistical test.' : ''}</small></span>
+          <span class="v no">${d.glidingHalfbeak.derived} at ${d.glidingHalfbeak.ratio} &middot; ${d.flyingFish.derived} at ${d.flyingFish.ratio}</span></div>
+        <div class="rrow"><span><b>An &ldquo;engineered&rdquo; genome is a handful of edits</b><span class="tag neg">scale check</span>
+          <small>${e.editedLoci} edited loci change ${e.aminoAcidsChanged} amino acid${e.aminoAcidsChanged === 1 ? '' : 's'}
+            ${e.regulatoryEdit ? '(the other edit is regulatory and changes none)' : ''}. In just ${e.proteins} of our causal-chain
+            proteins, zebrafish and medaka &mdash; same class, different orders &mdash; differ by ${n0(e.naturalSubstitutions)} amino-acid
+            substitutions (${n0(e.naturalDifferences)} positions counting indels). Coding only, in a tiny gene sample; the
+            genome-wide difference is necessarily larger.</small></span>
+          <span class="v no">${e.aminoAcidsChanged} vs ${n0(e.naturalSubstitutions)}</span></div>
+      </div>
+      <p class="caption">All four are about <b>fin enlargement for gliding</b>, the trait Daane and colleagues measured. Three of
+        them close a door we would have liked open, and the one that holds, holds only inside the Beloniformes.
+        ${c.birdsExcluded ? 'No bird sequence, assembly or annotation was fetched: Aves is this project&rsquo;s frozen holdout.' : ''}</p>
+      <p class="cite">${CITE.daane}</p>
+      ${srcs(Q.sources)}`;
+  };
+
+  // ---- the 3D organism, and how little of it is measured ----
+  SL.organism3d = () => {
+    const A = N.anatomy;
+    if (!A) return `${ghost('organism3d')}`;
+    const mx = Math.max(...A.models.map(m => m.pieces));
+    const zf = A.models.filter(m => !m.unmapped);
+    return `${ribbon(st('organism3d'))}${rub('execution')}
+      <h2>${n0(A.pieces)} named pieces. ${A.sourcedValues} measured numbers behind them.</h2>
+      <div class="split">
+        <div>
+          <div class="bars" style="max-width:none">
+            ${A.models.map((m, i) => `<div class="brow" style="grid-template-columns:minmax(90px,190px) 1fr auto">
+              <span class="blab">${esc(m.name)}</span>
+              <span class="btrack" style="height:24px"><i class="bfill" data-w="${(m.pieces / mx * 100).toFixed(1)}" style="background:var(--series-${[1, 3, 4][i % 3]})"></i></span>
+              <span class="bval" style="min-width:12.5em">${m.pieces} pieces &middot; ${m.mapped} with a term &middot; ${m.sourcedValues} measured</span></div>`).join('')}
+          </div>
+          <p class="tiny" style="margin:10px 0 14px;max-width:66ch">Every piece is its own mesh with a label, a level, an organ
+            system and a side, written by script from parameters rather than modelled by hand, so the whole thing rebuilds from
+            the numbers.</p>
+          <div class="scope"><h4>What is evidence-backed</h4>The flying fish rests on <b>exactly one</b> measured proportion:
+            pectoral fin length at <b>${A.evidenceBacked.ratio} of standard length</b>, the median of <b>${A.evidenceBacked.n}</b>
+            museum specimens, read from the measurement file rather than typed in. Its caveat travels with it:
+            ${esc(A.evidenceBacked.caveat)}. The two zebrafish models carry
+            ${zf.reduce((a, m) => a + m.sourcedValues, 0)} sourced proportions and counts between them.</div>
+        </div>
+        <div>
+          <div class="scope warn"><h4>What is schematic, and labelled so</h4>Everything else &mdash; body depth, head shape, every
+            other fin, the pose, and every organ&rsquo;s shape, size and position. All counts are illustrative. The manifest says so
+            per piece, so no rendering can be mistaken for a measurement.</div>
+          <div class="scope warn"><h4>Where the ontology ran out</h4><b>${A.unmapped}</b> of the flying fish&rsquo;s pieces have
+            <em>no</em> ontology term: the manifest records a null and the nearest ancestor it could find, instead of inventing
+            one. The two zebrafish models map ${zf.reduce((a, m) => a + m.pieces, 0)} of
+            ${zf.reduce((a, m) => a + m.pieces, 0)} pieces, every one with an Uberon cross-reference.</div>
+          <p class="cite" style="margin-top:14px">${CITE.ontology}</p>
+        </div>
+      </div>
+      <p class="caption" style="max-width:112ch">The one novelty claim we make, worded as narrowly as the search supports:
+        <b>we did not find prior use of a proof assistant on an ontology-derived anatomy hierarchy.</b> Ten logged searches turned
+        up no Lean, Coq or Isabelle proofs about a hierarchy built from Uberon and the Cell Ontology. That is &ldquo;not
+        found&rdquo;, not &ldquo;does not exist&rdquo;, and it is not a claim to a first.</p>
+      ${srcs(A.sources)}`;
+  };
 
   // ---------------- assemble ----------------
   const order = D.slides.map(s => s.id).filter(id => SL[id]);
@@ -310,6 +635,19 @@ function build(D) {
   // ---------------- animation: triggered on entry, each one showing a change in the evidence ----------------
   const reduce = matchMedia('(prefers-reduced-motion:reduce)').matches;
   const seen = new WeakSet();
+
+  // The end state, painted without motion. A slide nobody has scrolled to still has its bars at zero
+  // and its hero numbers at 0, which is what a print, a PDF export or a screenshot would capture, so
+  // those paths settle every slide first rather than publishing a deck full of zeros.
+  const settleSlide = sl => {
+    // the transition must go first: a value set while one is running is the target, not what paints
+    $$('.bfill,.node,.link,.stage', sl).forEach(el => { el.style.transition = 'none'; });
+    $$('.bfill', sl).forEach(el => { const w = el.dataset.w + '%'; el.style.setProperty('--w', w); el.style.width = w; });
+    $$('[data-count]', sl).forEach(el => { const to = +el.dataset.count; if (isFinite(to)) el.textContent = to.toLocaleString('en-US'); });
+    $$('.node,.link,.stage', sl).forEach(el => el.classList.add('in'));
+    $$('.pairgrid span', sl).forEach(el => { el.style.transition = 'none'; });
+  };
+
   const animate = sl => {
     // bars grow from zero: magnitude is the message
     $$('.bfill', sl).forEach((el, i) => {
@@ -343,6 +681,12 @@ function build(D) {
     }
   };
 
+  // still mode: reduced motion, print, PDF export, or ?still=1 for screenshots
+  const still = reduce || /[?&]still=1/.test(location.search);
+  const settleAll = () => slides.forEach(sl => { seen.add(sl); settleSlide(sl); });
+  if (still) settleAll();
+  addEventListener('beforeprint', settleAll);
+
   const io = new IntersectionObserver(es => es.forEach(e => {
     if (!e.isIntersecting) return;
     cur = slides.indexOf(e.target);
@@ -370,6 +714,16 @@ function build(D) {
   }
 
   // deep link: #slide-id
-  if (location.hash) { const i = order.indexOf(location.hash.slice(1)); if (i >= 0) setTimeout(() => go(i), 60); }
+  const show = i => { const sl = slides[i]; if (sl && !seen.has(sl)) { seen.add(sl); animate(sl); } };
+  if (location.hash) {
+    const i = order.indexOf(location.hash.slice(1));
+    if (i >= 0) setTimeout(() => { go(i); show(i); }, 60);
+  }
+  // belt and braces: whatever is resting in the viewport gets its final values, even if the
+  // observer never fired (it does not, reliably, under a headless virtual clock)
+  setTimeout(() => slides.forEach(sl => {
+    const r = sl.getBoundingClientRect();
+    if (r.top < innerHeight * 0.6 && r.bottom > innerHeight * 0.4 && !seen.has(sl)) { seen.add(sl); settleSlide(sl); }
+  }), 1200);
 }
 })();

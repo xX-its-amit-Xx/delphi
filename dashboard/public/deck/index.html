@@ -48,8 +48,8 @@ a{color:var(--accent)}
 .slide{height:100vh;scroll-snap-align:start;display:flex;flex-direction:column;justify-content:center;
   padding:clamp(28px,5vh,70px) clamp(20px,5vw,80px);position:relative;max-width:1500px;margin:0 auto}
 .slide > * {max-width:100%}
-.eyebrow{font-size:.74rem;letter-spacing:.17em;text-transform:uppercase;color:var(--mute);margin-bottom:10px;font-weight:650}
-.rubric{display:inline-block;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;
+.eyebrow{align-self:flex-start;font-size:.74rem;letter-spacing:.17em;text-transform:uppercase;color:var(--mute);margin-bottom:10px;font-weight:650}
+.rubric{display:inline-block;align-self:flex-start;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;font-weight:700;
   color:var(--accent);border:1px solid var(--accent);border-radius:99px;padding:2px 10px;margin-left:10px;vertical-align:3px}
 h1{font-family:"Fraunces",Georgia,serif;font-size:clamp(2.1rem,6.8vw,4.6rem);line-height:1.0;margin:0 0 .35em;letter-spacing:-.025em;font-weight:900;font-variation-settings:"opsz" 144}
 h2{font-family:"Fraunces",Georgia,serif;font-size:clamp(1.6rem,4vw,3rem);line-height:1.06;margin:0 0 .5em;letter-spacing:-.02em;font-weight:700;font-variation-settings:"opsz" 110}
@@ -68,7 +68,7 @@ h2{font-family:"Fraunces",Georgia,serif;font-size:clamp(1.6rem,4vw,3rem);line-he
 .bars{display:grid;gap:10px;margin:6px 0}
 .brow{display:grid;grid-template-columns:minmax(90px,210px) 1fr auto;gap:14px;align-items:center}
 .btrack{background:var(--ghost-soft);border-radius:4px;height:26px;position:relative;overflow:hidden}
-.bfill{height:100%;width:0;border-radius:0 4px 4px 0;transition:width .9s cubic-bezier(.22,.68,.26,1)}
+.bfill{display:block;height:100%;width:0;border-radius:0 4px 4px 0;transition:width .9s cubic-bezier(.22,.68,.26,1)}
 .bval{font-variant-numeric:tabular-nums;font-weight:700;min-width:4.5em;text-align:right}
 .blab{font-size:.9rem;color:var(--text-secondary)}
 .grouped .brow{grid-template-columns:minmax(90px,210px) 1fr auto}
@@ -82,7 +82,7 @@ h2{font-family:"Fraunces",Georgia,serif;font-size:clamp(1.6rem,4vw,3rem);line-he
   repeating-linear-gradient(45deg,transparent,transparent 9px,color-mix(in srgb,var(--ghost) 13%,transparent) 9px,color-mix(in srgb,var(--ghost) 13%,transparent) 18px);
   display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--ghost);min-height:190px}
 .ghostbox .gi{font-size:.92rem;max-width:30ch}
-.ribbon{display:inline-flex;align-items:center;gap:8px;background:var(--ghost-soft);color:var(--ghost);
+.ribbon{display:inline-flex;align-self:flex-start;align-items:center;gap:8px;background:var(--ghost-soft);color:var(--ghost);
   border:1px solid var(--ghost);border-radius:99px;padding:4px 14px;font-size:.8rem;font-weight:650;margin-bottom:14px}
 .ribbon::before{content:"";width:8px;height:8px;border-radius:99px;background:var(--ghost)}
 .ribbon.partial{color:var(--serious);border-color:var(--serious);background:color-mix(in srgb,var(--serious) 12%,transparent)}
@@ -155,8 +155,42 @@ table.mini th,table.mini td{text-align:left;padding:5px 12px 5px 0;border-bottom
 table.mini th{color:var(--mute);font-weight:600;font-size:.8rem}
 .flag{border-left:3px solid var(--serious);background:color-mix(in srgb,var(--serious) 8%,transparent);
   padding:10px 14px;border-radius:0 8px 8px 0;font-size:.9rem;max-width:66ch;margin-top:14px}
+.slide:has(.srcline){padding-bottom:calc(clamp(28px,5vh,70px) + 48px)}
 .srcline{position:absolute;bottom:58px;left:clamp(20px,5vw,80px);right:clamp(20px,5vw,80px);
   font-size:.72rem;color:var(--mute);opacity:.75}
+
+/* ---- composition strip: one bar, the whole output, 2px surface gaps between segments ---- */
+.strip{display:flex;flex:none;gap:2px;height:30px;border-radius:5px;overflow:hidden;margin:6px 0 12px;max-width:980px}
+.strip i{display:block;height:100%;position:relative}
+.striplegend{display:flex;gap:20px;flex-wrap:wrap;font-size:.85rem;color:var(--text-secondary);margin:0 0 14px}
+.striplegend b{color:var(--text-primary);font-variant-numeric:tabular-nums}
+.striplegend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:7px;vertical-align:-1px}
+
+/* ---- two columns that collapse, for a result plus its scope ---- */
+.split{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(16px,3vw,40px);align-items:start}
+@media (max-width:900px){.split{grid-template-columns:1fr}}
+.scope{border:1px solid var(--line);border-radius:12px;padding:13px 16px;background:var(--panel);font-size:.86rem;max-width:60ch}
+.scope h4{margin:0 0 5px;font-size:.72rem;letter-spacing:.11em;text-transform:uppercase;color:var(--mute)}
+.scope ul{margin:0;padding-left:1.05em}
+.scope li{margin:.3em 0}
+.scope + .scope{margin-top:10px}
+.scope.warn{border-left:3px solid var(--serious)}
+
+/* ---- a compact result row: the claim, the number, the verdict ---- */
+.rows{display:grid;gap:7px;margin:4px 0 2px}
+.rrow{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:baseline;
+  border-bottom:1px solid var(--line);padding-bottom:6px;font-size:.92rem}
+.rrow .v{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;color:var(--text-primary)}
+.rrow .no{color:var(--serious)} .rrow .yes{color:var(--good)}
+.rrow small{display:block;color:var(--mute);font-size:.79rem;margin-top:2px;max-width:76ch}
+.cite{font-size:.76rem;color:var(--mute);margin-top:12px;max-width:88ch;line-height:1.45}
+.cite b{color:var(--text-secondary);font-weight:600}
+.tag{display:inline-block;font-size:.68rem;letter-spacing:.09em;text-transform:uppercase;font-weight:700;
+  border-radius:4px;padding:1px 7px;vertical-align:1px;margin-left:6px}
+.tag.neg{color:var(--serious);background:color-mix(in srgb,var(--serious) 14%,transparent)}
+.tag.pos{color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent)}
+.tag.grey{color:var(--ghost);background:var(--ghost-soft)}
+figure.real img.figtall{max-height:40vh;object-fit:contain}
 
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important;animation:none!important}
