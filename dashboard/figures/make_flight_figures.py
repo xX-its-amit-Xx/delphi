@@ -146,39 +146,11 @@ def ma_range(p: dict) -> str:
     return "%g–%g" % (hi, lo)
 
 
-# Corrections to PBDB's reported first appearance, made by us and shown as corrections.
-# The replacement age is read from the fetched occurrence record named here, never typed in.
-# Evidence for each is in cache/pbdb_oldest.json and the "Data correction" sections of DATA.md.
-#   glyph "†": corrected; PBDB still reports the original value, which the figure also prints.
-#   glyph "‡": shown as PBDB gives it, but doubtful, and no better record exists to use.
-FOSSIL_FIX = {
-    "diptera":        {"glyph": "†", "use_oid": "occ:964190"},
-    "crocodylia":     {"glyph": "†", "use_oid": "occ:699894"},
-    "sciurini":       {"glyph": "†", "use_oid": "occ:2064049"},
-    "cynocephalidae": {"glyph": "‡", "use_oid": None},
-}
-
-
-def fossil_cell(k: str, pbdb: dict, old: dict):
-    """(value shown, glyph, PBDB's own value or None) for the fossil column."""
-    reported = ma_range(pbdb[k])
-    fix = FOSSIL_FIX.get(k)
-    if not fix:
-        return reported, "", None
-    if fix["use_oid"] is None:
-        return reported, fix["glyph"], None
-    rec = ((old.get("occurrences") or {}).get(fix["use_oid"]) or {}).get("record")
-    if not rec or rec.get("eag") is None:
-        return "not established", fix["glyph"], reported
-    return "%g–%g" % (float(rec["eag"]), float(rec["lag"])), fix["glyph"], reported
-
-
 # ===================================================================== 1. the cladogram
 def fig_tree() -> None:
     t = build_tree()
     gen = load("ncbi_genomes.json")
     pbdb = load("pbdb_appearances.json")
-    old = load("pbdb_oldest.json")
     tips = t["tip_order"]
     y = {k: len(tips) - 1 - i for i, k in enumerate(tips)}
 
@@ -187,7 +159,7 @@ def fig_tree() -> None:
     xi = {i: X0 + (X1 - X0) * t["level"][i] / (maxlev + 1) for i in t["internal"]}
     XTIP = X1
 
-    fig, ax = plt.subplots(figsize=(13.2, 9.4))
+    fig, ax = plt.subplots(figsize=(13.2, 7.6))
     ax.set_xlim(0, 100)
     ax.set_ylim(-1.9, len(tips) + 1.45)
     ax.axis("off")
@@ -253,18 +225,8 @@ def fig_tree() -> None:
         ax.text(CX["asm"], yy, "{:,}".format(a) if a is not None else "not retrieved",
                 fontsize=9.8, va="center", ha="right", color=INK if bold else MUTE,
                 fontweight="bold" if bold else "normal")
-        shown, glyph, reported = fossil_cell(k, pbdb, old)
-        ax.text(CX["fossil"] - (1.1 if glyph else 0), yy, shown, fontsize=9.8, va="center",
-                ha="right", color=INK if bold else MUTE)
-        if glyph:
-            ax.text(CX["fossil"] - 0.9, yy + 0.06, glyph, fontsize=11, va="center", ha="left",
-                    color=S2, fontweight="bold")
-        if reported:
-            # PBDB's own value stays on the figure, struck through, so the correction is seen
-            ax.text(CX["fossil"] - 1.1, yy - 0.42, "PBDB: " + reported, fontsize=8.2,
-                    va="center", ha="right", color=S2, style="italic")
-            ax.plot([CX["fossil"] - 1.1 - len(reported) * 4.6 / PT_PER_UNIT,
-                     CX["fossil"] - 1.1], [yy - 0.42] * 2, color=S2, lw=0.9, zorder=6)
+        ax.text(CX["fossil"], yy, ma_range(pbdb[k]), fontsize=9.8, va="center", ha="right",
+                color=INK if bold else MUTE)
 
     # column headers, with the measured/orientation split spelled out
     hy = len(tips) + 0.78
@@ -309,64 +271,17 @@ def fig_tree() -> None:
              % _ret(gen["aves"]["assemblies"]),
              fontsize=8.4, color=MUTE, ha="left", va="bottom", linespacing=1.5)
 
-    # Corrections footnote. Every count and name in it is read from cache/pbdb_oldest.json.
-    coll = old.get("collections") or {}
-    occ = old.get("occurrences") or {}
-
-    def fauna(oid: str, skip: str, level: str = "classes") -> str:
-        cl = (coll.get(oid) or {}).get(level) or {}
-        parts = ["%d %s" % (n, c) for c, n in sorted(cl.items(), key=lambda x: -x[1])
-                 if c and c not in (skip, "NO_CLASS_SPECIFIED")]
-        return ", ".join(parts)
-
-    def idn(oid: str) -> str:
-        r = (occ.get(oid) or {}).get("record") or {}
-        return (r.get("idn") or r.get("tna") or oid).replace(" n. gen. n. sp.", "")
-
-    dip = old["diptera_by_interval"]
-    n_cyno = len(old["lookups"]["Cynocephalidae_occurrences"]["records"] or [])
-    lines = [
-        "CORRECTIONS ARE OURS, AND PBDB STILL RETURNS THE STRUCK-THROUGH VALUES.",
-        "† Diptera: PBDB's %s Ma rests on one Devonian record, occ:1656545 “%s” "
-        "(Schöne et al. 1999), in a collection of %s."
-        % (pbdb["diptera"]["firstapp_max_ma"], idn("occ:1656545"),
-           fauna("occ:1656545", "Insecta")),
-        "    PBDB has %d Diptera in the Carboniferous and %d in the Permian: a probable "
-        "genus-name homonym, so the age shown is the oldest Triassic record, occ:964190 %s."
-        % (dip["Carboniferous"]["n_occurrences"], dip["Permian"]["n_occurrences"],
-           idn("occ:964190")),
-        "† Crocodylia: PBDB's %s Ma rests on occ:621595 “%s” in a collection "
-        "of %s, then on two trace-fossil taxa."
-        % (pbdb["crocodylia"]["firstapp_max_ma"], idn("occ:621595"),
-           fauna("occ:621595", "Chordata", "phyla")),
-        "    Shown from the oldest body fossil, occ:699894. Even that uses Crocodylia more "
-        "broadly than the crown group: a definitional difference, not a data error.",
-        "† Sciurini: PBDB's %s Ma is occ:1349001 %s, filed under Sciurus although PBDB "
-        "itself places Plesiarctomys in Ischyromyidae; shown from occ:2064049 %s."
-        % (pbdb["sciurini"]["firstapp_max_ma"], idn("occ:1349001"), idn("occ:2064049")),
-        "‡ Cynocephalidae: all %d PBDB records are African “Galeopithecidae indet.” "
-        "from primate, antelope, hominid and pollen papers, none a named colugo; shown as PBDB "
-        "gives it, but doubtful." % n_cyno,
-    ]
-    fig.text(0.045, 0.112, "\n".join(lines), fontsize=8.1, color=INK, ha="left",
-             va="bottom", linespacing=1.45)
-
-    fig.subplots_adjust(left=0.012, right=0.995, top=0.916, bottom=0.292)
+    fig.subplots_adjust(left=0.012, right=0.995, top=0.895, bottom=0.155)
     p = OUT / "flight_cladogram.png"
     fig.savefig(p, dpi=170)
     plt.close(fig)
     record(p, "Cladogram of 12 taxa in NCBI Taxonomy's nesting, with the six flying or "
               "gliding lineages marked and their genome-assembly counts and oldest PBDB "
-              "fossil occurrence beside them. Three PBDB first appearances are shown corrected "
-              "by us, with PBDB's value struck through: Diptera 390.5 to 247 Ma (a Devonian "
-              "probable genus-name homonym), Crocodylia 237 to 201.4 Ma (a probable "
-              "misassigned reef-collection record and trace fossils), Sciurini 41.03 to 37 Ma "
-              "(an ischyromyid filed under Sciurus); Cynocephalidae is flagged as doubtful",
+              "fossil occurrence beside them",
            "NCBI Datasets v2 taxonomy/taxon (topology and taxids) and genome/taxon "
            "dataset_report (assembly counts); Paleobiology Database data1.2 taxa/single "
-           "show=app (first appearance) and occs/list, occs/single, taxa/list and refs/single "
-           "for the occurrence-level checks behind the corrections. All calls logged in "
-           "dashboard/figures/DATA.md and cached under dashboard/figures/cache/",
+           "show=app (first appearance). All calls logged in dashboard/figures/DATA.md and "
+           "cached under dashboard/figures/cache/",
            "cladogram: topology drawn from NCBI Taxonomy for orientation, annotations measured")
 
 
