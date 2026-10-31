@@ -88,16 +88,21 @@
     else root.style.removeProperty('--dsh-h');
   }
 
-  // bring the link for the page you are on into view inside its own scroller,
-  // without moving the page
+  /* Bring the link for the page you are on into view inside its own scroller,
+     without moving the page, and only when it is not already readable: a nav
+     that scrolls itself on arrival would otherwise hide the groups at its
+     start for no reason. PAD keeps the pill clear of the edge fade. */
+  var PAD = 18;
   function revealCurrent() {
     var links = document.querySelectorAll('header.dsh a[aria-current="page"]');
     for (var i = 0; i < links.length; i++) {
       var a = links[i], box = a.parentNode;
       while (box && box !== document.body && !/dsh-nav|dsh-modes/.test(box.className || '')) box = box.parentNode;
       if (!box || box === document.body) continue;
-      var want = a.offsetLeft - (box.clientWidth - a.offsetWidth) / 2;
-      box.scrollLeft = Math.max(0, want);
+      var ar = a.getBoundingClientRect(), br = box.getBoundingClientRect();
+      if (ar.left >= br.left + PAD && ar.right <= br.right - PAD) continue;   // already visible
+      var left = box.scrollLeft + (ar.left - br.left);                        // its offset inside the scroller
+      box.scrollLeft = Math.max(0, left - Math.max(PAD, (box.clientWidth - ar.width) / 2));
     }
   }
 
