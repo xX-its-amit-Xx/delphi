@@ -47,11 +47,13 @@ footer{padding:20px 0;color:var(--mute);font-size:.85rem}
 
 <main class="wrap">
 <div class="card" id="statusBanner" style="border-color:var(--warn);margin:12px 0 4px;padding:10px 14px"><b>Validation status:</b> <span class="chip a">not a validated result</span> &nbsp;Pre-registered 2026-10-31 20:34 UTC before the first run (<a href="../data/sim/PREREG.md">PREREG.md</a>, hash in <a href="../data/sim/PREREG.sha256">PREREG.sha256</a>). Parameters shown are those of <b>run 6</b>; <b>tests 1 to 3 are post-hoc</b> (exploratory: the model was changed after run 1's result, every change is in <a href="../data/sim/RUNS.md">RUNS.md</a>); <b>test 4, the real fish cannot power-fly, is pending</b> the physiology chain and has not been run. A match in the table below means "not contradicted by the second-hand field figures with these parameters", nothing more.</div>
+<div class="card" id="hypoBanner" style="display:none;border-color:var(--bad);margin:12px 0 4px;padding:10px 14px"><b>HYPOTHETICAL.</b> The selected fish is a design study (physics/flier/spec.json), not an organism: the real fish's equations and measured fin polar with four times the lifting area, 16 % flight muscle and a flapping power derived from a bat. It exists to show what a truly flying fish would need. Nothing about it is measured.</div>
 <h1>How a flying fish swims, taxis, takes off and glides, in equations</h1>
 <p class="lede">A point-mass model of one real fish, the darkedged-wing flying fish specimen whose fins Park and Choi measured in a wind tunnel, moving through five phases. Every parameter is listed below with where it came from; the ones that are <span class="chip a">assumed</span> or <span class="chip t">tuned</span> have sliders so you can see how much they matter. The sim does not know what a real glide looks like; the validation panel compares it with the published field figures, which are themselves second-hand. Nothing here uses bird data (class Aves is the frozen holdout). <b>Scope:</b> this is the organism level of a chain whose chemistry (gill exchange, haemoglobin), organ (cardiac output) and tissue (muscle power) levels are being written as separate sourced modules; until they land the power interface is a stub that returns zero and says so. Development (genome to morphology) and molecular dynamics are not simulated. Flying fish are not isometric within a species (Davenport 1992: fin area &prop; L<sup>1.83</sup>, wing loading &prop; L<sup>1.24</sup>), so this one 60 g specimen does not stand for the family; the designed flier, when it comes, changes parameters only, never these equations.</p>
 
 <div class="row" style="margin:10px 0">
   <button id="runBtn" class="on">Run</button><button id="stepBtn">Step 0.1 s</button><button id="resetBtn">Reset</button>
+  <label class="small">fish <select id="fishSel"></select></label>
   <label class="small">speed <select id="speedSel"><option value="1">1x</option><option value="3" selected>3x</option><option value="10">10x</option><option value="100">as fast as possible</option></select></label>
   <span id="phaseLine" class="small"></span>
 </div>
@@ -77,6 +79,7 @@ Water drag:     D_w = ½ ρ_water v² A_f C_dw   (submerged body); on the lobe o
 Thrust:         T along the path; swim: T_swim = ½ ρ_water v_approach² A_f C_dw ; taxi: T_taxi = factor · T_swim while the lobe is in the water
 Path:           the swim thrust acts along the assumed approach angle (the measured 20° leap pitch is a body angle, not the path); while taxiing the fish trims α each step so lift balances weight at half the lobe height with a damping term on the vertical speed (assumed control law, gain 2 per m and 2 s/m), bounded to [-10°, stall]; it leaves the water when even -10° gives more lift than weight (about 16 m/s with this polar) or at the take-off speed target, then holds the glide α.
 Buoyancy:       taken equal to weight while submerged (assumed neutral).
+Powered flight: (hypothetical fish only) thrust along the path T = min(P_avail / v, 2W), P_avail = f_muscle · m · p_muscle − P_inertial, applied while airborne; the real fish gets none (it does not flap).
 Breach:         the vertical velocity is set to zero when the body centre reaches the surface, on exit and on re-entry (shallow leap, tail dipped; assumed, no planing model)
 Phases:         swim (z + lobe &lt; 0) → taxi (lobe in water, body out) → glide (lobe clear) → taxi again on re-entry if v ≥ v_reentry, else stop.</div>
   </div>
@@ -101,7 +104,7 @@ function derive(f){
   d.Af=f.body_frontal_area_m2.value; d.Cdw=f.water_drag_coefficient.value; d.vapp=f.approach_speed_m_s.value;
   d.Tswim=0.5*P.constants.rho_water.value*d.vapp*d.vapp*d.Af*d.Cdw; d.taxiFactor=f.taxi_thrust_N.factor??0.7; d.Ttaxi=d.taxiFactor*d.Tswim;
   d.lobe=f.lobe_length_m.value; d.pitch=f.pitch_at_leap_deg.value*Math.PI/180; d.appr=f.approach_angle_deg.value*Math.PI/180; d.vto=f.takeoff_speed_target_m_s.value; d.z0=f.start_depth_m.value; d.vre=f.reentry_min_speed_m_s.value; d.maxG=f.max_glides.value;
-  d.W=d.m*P.constants.g.value; d.vmin=Math.sqrt(2*d.W/(P.constants.rho_air.value*d.S*d.CLmax));
+  d.powered=!!(f.powered&&f.powered.value); d.fmf=(f.flight_muscle_fraction&&f.flight_muscle_fraction.value)||0; d.pspec=(f.muscle_specific_power_W_per_kg&&f.muscle_specific_power_W_per_kg.value)||0; d.pinert=(f.inertial_power_W_per_kg_body&&f.inertial_power_W_per_kg_body.value)||0; d.Pavail=Math.max(0,d.fmf*d.m*d.pspec-d.pinert*d.m); d.W=d.m*P.constants.g.value; d.vmin=Math.sqrt(2*d.W/(P.constants.rho_air.value*d.S*d.CLmax));
   return d;
 }
 function CL(d,a){ if(a<=d.stall) return Math.max(-0.5,d.CL0+d.CLslope*a); const a2=Math.min(a,60); return d.CLmax*(60-a2)/25; }
@@ -123,6 +126,7 @@ function accel(d,s,ph){
     const h=Math.max(0,s.z); const q=0.5*ra*v*v*d.S;
     const Lf=q*cl, Df=q*cd*fge(h/d.b);
     ax+= (-Df*ux - Lf*uz)/d.m; az+= (-Df*uz + Lf*ux)/d.m;
+    if(ph==='glide'&&d.powered&&d.Pavail>0){ const T=Math.min(d.Pavail/Math.max(v,1),2*d.W); ax+=T/d.m*ux; az+=T/d.m*uz; }
     if(ph==='taxi'){
       const imm=Math.min(1,Math.max(0,(d.lobe-s.z)/d.lobe)); // immersed fraction of the lobe
       const T=d.Ttaxi*imm; ax+=T/d.m*ux; az+=T/d.m*uz;
@@ -160,7 +164,7 @@ function stepSim(S,T){
     S.s=rk4(d,S.s,S.dt,S.phase); S.t+=S.dt;
     if(S.cur){S.cur.zmax=Math.max(S.cur.zmax,S.s.z);S.cur.vmax=Math.max(S.cur.vmax,Math.hypot(S.s.vx,S.s.vz));}
     if(S.t>=S.nextSample){S.hist.push({t:S.t,x:S.s.x,z:S.s.z,v:Math.hypot(S.s.vx,S.s.vz),ph:S.phase});S.nextSample+=0.02;}
-    if(S.t>60||S.s.x>600){S.done=true;S.phase='stopped';}
+    if(S.t>60||S.s.x>600||(d.powered&&S.t>40)){S.done=true;S.phase='stopped';}
   }
 }
 function line(ctx,pts,color,w=2,dash=null){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=w;if(dash)ctx.setLineDash(dash);ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();ctx.restore();}
@@ -209,8 +213,9 @@ function draw(){
    ['take-off speed','about 10 m/s',S.takeoffV==null?null:S.takeoffV.toFixed(1)+' m/s',S.takeoffV==null?null:S.takeoffV>7&&S.takeoffV<13],
    ['whole sequence',`400 m in 30 s`,S.done?`${tot.toFixed(0)} m in ${S.t.toFixed(1)} s`:null,S.done?(tot/Math.max(S.t,1)>8&&tot/Math.max(S.t,1)<20):null],
    ['single pure glide ≤ h_max·(L/D)max (Lean bound)','35 m',maxDist==null?null:maxDist.toFixed(1)+' m',maxDist==null?null:maxDist<=35],
-   ['no climb below 0.95 v_min (test 1)','v_min 9.85 m/s',(()=>{let bad=0,run=0;for(let i=1;i<h.length;i++){const p=h[i];if(p.ph==='glide'&&p.v<0.95*d.vmin&&p.z>h[i-1].z){run+=0.02;bad=Math.max(bad,run);}else run=0;}return bad.toFixed(2)+' s of climbing below it';})(),gl.length?(()=>{let bad=0,run=0;for(let i=1;i<h.length;i++){const p=h[i];if(p.ph==='glide'&&p.v<0.95*d.vmin&&p.z>h[i-1].z){run+=0.02;bad=Math.max(bad,run);}else run=0;}return bad<=0.2;})():null]];
-  document.getElementById('valid').innerHTML='<table><tr><th>quantity</th><th>published (second-hand)</th><th>this run</th><th></th></tr>'+rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]??''}</td><td>${chip(r[3])}</td></tr>`).join('')+'</table>';
+   ['no climb below 0.95 v_min (test 1)','v_min '+d.vmin.toFixed(2)+' m/s',(()=>{let bad=0,run=0;for(let i=1;i<h.length;i++){const p=h[i];if(p.ph==='glide'&&p.v<0.95*d.vmin&&p.z>h[i-1].z){run+=0.02;bad=Math.max(bad,run);}else run=0;}return bad.toFixed(2)+' s of climbing below it';})(),gl.length?(()=>{let bad=0,run=0;for(let i=1;i<h.length;i++){const p=h[i];if(p.ph==='glide'&&p.v<0.95*d.vmin&&p.z>h[i-1].z){run+=0.02;bad=Math.max(bad,run);}else run=0;}return bad<=0.2;})():null]];
+  const climb=d.powered?`<p><b>Design-study readout (HYPOTHETICAL fish; the field targets below are the real fish's and do not apply):</b> altitude now ${S.s.z.toFixed(1)} m, highest ${Math.max(...h.map(p=>p.z)).toFixed(1)} m, mean climb rate since take-off ${(()=>{const a=h.find(p=>p.ph==='glide');return a?((S.s.z-a.z)/Math.max(S.t-a.t,1e-6)).toFixed(2):'0';})()} m/s, P_avail ${d.Pavail.toFixed(2)} W, v_min ${d.vmin.toFixed(2)} m/s.</p>`:'';
+  document.getElementById('valid').innerHTML=climb+'<table><tr><th>quantity</th><th>published (second-hand)</th><th>this run</th><th></th></tr>'+rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]??''}</td><td>${chip(r[3])}</td></tr>`).join('')+'</table>';
 }
 function loop(ts){ if(!running) return; const dtReal=Math.min(0.05,(ts-last)/1000||0.016); last=ts; if(speedMul>=100){stepSim(sim,2);} else stepSim(sim,dtReal*speedMul); draw(); if(sim.done){running=false;document.getElementById('runBtn').classList.remove('on');} else requestAnimationFrame(loop); }
 function renderParams(){
@@ -219,8 +224,10 @@ function renderParams(){
   for(const [k,p] of Object.entries(f)){ if(typeof p!=='object'||p===null) continue;
     let val=p.value; if(k==='CL_slope_per_deg') val=d.CLslope.toFixed(4)+' /deg'; if(k==='CD_k') val=d.k.toFixed(3); if(k==='swim_thrust_N') val=d.Tswim.toFixed(2)+' N'; if(k==='taxi_thrust_N') val=d.Ttaxi.toFixed(2)+' N (factor '+d.taxiFactor.toFixed(2)+')';
     let slider=''; if(p.min!=null&&p.max!=null) slider=`<br><input type="range" min="${p.min}" max="${p.max}" step="${(p.max-p.min)/100}" value="${p.value}" data-k="${k}">`;
+    if(p.value===null||typeof p.value==='boolean'){val=String(p.value);}
     if(k==='taxi_thrust_N') slider=`<br><input type="range" min="${p.min_factor}" max="${p.max_factor}" step="0.01" value="${d.taxiFactor}" data-k="taxi_factor">`;
     html+=`<tr><td>${k.replace(/_/g,' ')}${slider}</td><td>${val??''}${p.alpha_deg!=null?' at '+p.alpha_deg+'°':''}</td><td><span class="chip ${kindChip[p.kind]||''}">${p.kind}</span></td><td class="small mute">${p.source||p.note||''}</td></tr>`; }
+  if(d.powered) html+=`<tr><td>P_avail for flapping (derived)</td><td>${d.Pavail.toFixed(2)} W</td><td><span class="chip h">hypothetical</span></td><td class="small mute">f_muscle x m x p_muscle - inertial; physics/flier/spec.json power budget</td></tr>`;
   html+=`<tr><td>v_min (derived)</td><td>${d.vmin.toFixed(2)} m/s</td><td><span class="chip">derived</span></td><td class="small mute">sqrt(2W/(rho S CL_max)); results.json gives ${res?res.interpretation_B.v_min_m_s.toFixed(2):'?'}</td></tr></table>`;
   const el=document.getElementById('params'); el.innerHTML=html;
   el.querySelectorAll('input[type=range]').forEach(inp=>inp.oninput=()=>{const k=inp.dataset.k; if(k==='taxi_factor') f.taxi_thrust_N.factor=+inp.value; else f[k].value=+inp.value; reset(); renderParams();});
@@ -230,7 +237,8 @@ document.getElementById('runBtn').onclick=()=>{ if(sim.done) reset(); running=!r
 document.getElementById('stepBtn').onclick=()=>{running=false;stepSim(sim,0.1);draw();};
 document.getElementById('resetBtn').onclick=reset;
 document.getElementById('speedSel').onchange=e=>speedMul=+e.target.value;
-Promise.all([fetch('params.json').then(r=>r.json()),fetch('../data/ground-effect.json').then(r=>r.json()),fetch('../results.json').then(r=>r.json())]).then(([p,g,r])=>{P=p;ge=g;res=r;fish=p.fish[0];fish.taxi_thrust_N.factor=fish.taxi_thrust_N.factor??0.7;renderParams();reset();const q=new URLSearchParams(location.search);if(q.get('taxi')){fish.taxi_thrust_N.factor=+q.get('taxi');renderParams();reset();}if(q.get('autorun')){stepSim(sim,60);draw();document.body.dataset.done='1';}}).catch(e=>{document.getElementById('phaseLine').textContent='could not load params.json, ground-effect.json or results.json: '+e;});
+function selectFish(i){fish=P.fish[i];if(fish.taxi_thrust_N.factor==null)fish.taxi_thrust_N.factor=0.7;document.getElementById('hypoBanner').style.display=fish.hypothetical?'block':'none';renderParams();reset();}
+Promise.all([fetch('params.json').then(r=>r.json()),fetch('../data/ground-effect.json').then(r=>r.json()),fetch('../results.json').then(r=>r.json())]).then(([p,g,r])=>{P=p;ge=g;res=r;const sel=document.getElementById('fishSel');p.fish.forEach((f,i)=>{const o=document.createElement('option');o.value=i;o.textContent=f.hypothetical?'HYPOTHETICAL flier F1':'real fish (Park and Choi L3)';sel.appendChild(o);});sel.onchange=e=>selectFish(+e.target.value);const q0=new URLSearchParams(location.search);if(q0.get('fish'))sel.value=q0.get('fish');fish=p.fish[+sel.value||0];fish.taxi_thrust_N.factor=fish.taxi_thrust_N.factor??0.7;renderParams();reset();document.getElementById('hypoBanner').style.display=fish.hypothetical?'block':'none';const q=new URLSearchParams(location.search);if(q.get('taxi')){fish.taxi_thrust_N.factor=+q.get('taxi');renderParams();reset();}if(q.get('autorun')){stepSim(sim,60);draw();document.body.dataset.done='1';}}).catch(e=>{document.getElementById('phaseLine').textContent='could not load params.json, ground-effect.json or results.json: '+e;});
 </script>
 </body>
 </html>

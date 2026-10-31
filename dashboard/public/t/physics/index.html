@@ -65,7 +65,7 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
 <header class="top"><div class="wrap">
   <a class="back" href="../../index.html">&larr; Mission Control</a>
   <span class="brand">Physics thread</span>
-  <nav><a href="#result">Result</a><a href="#envelope">Envelope</a><a href="#sim">Simulator</a><a href="#bridge">Bridge</a><a href="#data">Glide data</a><a href="#compare">Comparison</a><a href="#formal">For Lean</a><a href="#method">Method</a><a href="#honest">Limits</a><a href="#sources">Sources</a></nav>
+  <nav><a href="#result">Result</a><a href="#envelope">Envelope</a><a href="#sim">Simulator</a><a href="#flier">Flier (hypothetical)</a><a href="#bridge">Bridge</a><a href="#data">Glide data</a><a href="#compare">Comparison</a><a href="#formal">For Lean</a><a href="#method">Method</a><a href="#honest">Limits</a><a href="#sources">Sources</a></nav>
   <button id="themeBtn" title="Toggle light or dark">Theme</button>
 </div></header>
 
@@ -97,6 +97,31 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
 
 <section id="sim"><h2>The simulator: swim, taxi, take-off, glide, in equations</h2>
 <p class="lede">A 2D side-view model of the Park and Choi specimen, integrated with RK4 from the parameters on this page, runs in the browser at <a href="sim/index.html"><b>sim/</b></a>: live altitude, speed against the minimum lift-supported speed, and energy, with every parameter's source and kind shown and sliders on the assumed ones. Its validation was pre-registered before the first run (<a href="data/sim/PREREG.md">PREREG.md</a>, hash in <a href="data/sim/PREREG.sha256">PREREG.sha256</a>); the run log with every change made after seeing a result is <a href="data/sim/RUNS.md">RUNS.md</a>. Tests 1 to 3 became exploratory after run 1 and are labelled post-hoc; test 4 (the real fish cannot power-fly) is untouched and waits for the physiology chain. The pure-glide bound from the Lean thread, one glide at most h&middot;(L/D)<sub>max</sub> &asymp; 35 m, is a visible row: long field flights need repeated taxis.</p>
+</section>
+
+<section id="flier"><h2>A truly flying fish: what it would take <span class="chip bad">HYPOTHETICAL</span></h2>
+<p class="lede">A design study, not an organism. Starting from the real specimen, only morphology and physiology parameters are changed; the equations and the measured fin polar are the real fish's. Powered-flight values come from bats, insects and pterosaurs only; class Aves is the frozen holdout, and where a value exists only for birds the study says "unavailable (holdout)". Prior art and every number: <a href="data/flier/PRIOR-ART-FLIER.md">PRIOR-ART-FLIER.md</a>; the spec with its sources and arithmetic: <a href="data/flier/spec.json">spec.json</a>; the candidate for the Lean checker: <a href="data/flier/lean-candidate.json">lean-candidate.json</a>. Run it: <a href="sim/index.html?fish=1">the simulator with the flier selected</a>.</p>
+<div class="grid g2">
+  <div class="card"><h3>What changes, real fish to flier</h3><table>
+   <tr><th>parameter</th><th>real (measured)</th><th>flier (hypothetical)</th><th>why</th></tr>
+   <tr><td>wing loading</td><td>46.4 N/m²</td><td>12 N/m²</td><td>inside the bat range 6.5 to 14.25; below pterosaur hatchlings 15.8 to 17.9</td></tr>
+   <tr><td>lifting area</td><td>0.0127 m²</td><td>0.0491 m² (3.9×)</td><td>follows from the wing loading at 60 g</td></tr>
+   <tr><td>span at aspect ratio 9</td><td>0.26 m</td><td>0.66 m (2.5×)</td><td>the fish's own aspect ratio, kept</td></tr>
+   <tr><td>flight-muscle fraction</td><td>not reported (small)</td><td>0.16</td><td>smallest that covers a 1 m/s climb at the bat-derived maximum specific power of 202 W/kg muscle; bats average 0.091, minimum 0.078</td></tr>
+   <tr><td>mass, C<sub>L,max</sub>, (L/D)<sub>max</sub></td><td>0.06 kg, 0.78, 4.37</td><td>same</td><td>same body and fin section; conservative</td></tr>
+   <tr><td>O<sub>2</sub> delivery for sustained climb</td><td>unknown</td><td>about 930 ml O<sub>2</sub> per min per kg</td><td>18.6 W metabolic at 10 % conversion (bat-measured 7 to 10 %); 310 W/kg body, above bats (70 to 183) and below hovering bumblebees (559)</td></tr>
+  </table></div>
+  <div class="card"><h3>What the budget says</h3>
+   <ul class="small">
+    <li><b>Level flight</b> at the best speed (6 m/s) costs 1.28 W mechanical including 0.48 W of flapping inertia; a 1 m/s climb costs 1.86 W.</li>
+    <li>A 60 g fish with the <b>bat mean</b> muscle fraction (9.1 %) has 1.1 W at the bat-derived maximum specific power: <b>not enough for level flight</b>, let alone a climb.</li>
+    <li>At 16 % flight muscle it has 1.94 W: level flight with margin and a 1 m/s climb. In the simulator this fish lifts off at 11.6 m/s and climbs to 42 m in 40 s at about 6 m/s, with the real fish's equations. The real fish, in the same simulator, cannot (it gets no flapping thrust; whether its muscles <em>could</em> is test 4, pending the physiology chain).</li>
+    <li>The flapping power is a figure derived from two sourced bat numbers (0.140 W of mechanical power from 0.69 g of flight muscle); it is the parameter the physiology chain and the Lean O<sub>2</sub>-to-power bound will replace or confirm.</li>
+    <li>Minimum lift-supported speed of the flier: 5.0 m/s (constraint C9); the candidate file asks the Lean checker to confirm 7 m/s cruise is consistent and a 4 m/s claim is eliminated.</li>
+   </ul>
+   <p class="small mute">Not established: that such a fish could develop (development is not simulated), that fins of four times the area keep the measured polar, that any gill can deliver the oxygen, and anything about birds. The genome question is Genotype's: the parameter diff above is what they translate.</p>
+  </div>
+</div>
 </section>
 
 <section id="bridge"><h2>The bridge: fin proportion from real specimens, under the envelope</h2>

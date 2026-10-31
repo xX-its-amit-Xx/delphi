@@ -39,6 +39,12 @@ export const GILL_PARAMS = {
   N: P(20, 'assumed', 'lamella segments used at run time (test.mjs uses 50-200)'),
 };
 
+// Hb capacity that makes the snapper's measured maximum O2 extraction possible on the trout curve (see hbCap).
+export function warmHbCapacity() {
+  const EO2 = CARDIAC_PARAMS.warm.EO2_max_mg_ml.value * ML_O2_PER_MG;
+  return EO2 / (saturation(GILL_PARAMS.ref_PaO2_kPa.value) - saturation(GILL_PARAMS.Pv_floor_kPa.value));
+}
+
 let _calib = null;
 export function calibrateGills() {
   if (_calib) return _calib;
@@ -75,7 +81,9 @@ export function createPhysiology(spec = {}, env = {}) {
     waterO2_mg_l: P(waterO2, env.waterO2_mg_per_l !== undefined ? 'measured' : 'assumed', env.waterO2_mg_per_l !== undefined ? 'env (sim)' : 'default 6.8 mg/l, air-saturated warm sea water; assumed, not fetched'),
     gillArea_m2: P(g(spec.gillArea_m2, GILL_PARAMS.default_gillArea_m2_per_kg.value * M), spec.gillArea_m2 !== undefined ? 'proxy' : 'secondary', spec.gillArea_m2 !== undefined ? 'spec.gillArea_m2 (sim)' : GILL_PARAMS.default_gillArea_m2_per_kg.source),
     D_per_m2: P(cal.D_per_m2, 'tuned', 'gill O2 transfer per m2 (ml O2 s-1 kPa-1 m-2), tuned so the trout reference (Q, MO2, Hb) gives PaO2 15.8 kPa (mcarley2022); assumes flying-fish lamellar barrier = trout'),
-    hbCap: P(g(spec.hbCapacity_mlO2_per_ml, HB_PARAMS.cap_ml_per_ml.value), spec.hbCapacity_mlO2_per_ml !== undefined ? 'proxy' : 'proxy', spec.hbCapacity_mlO2_per_ml !== undefined ? 'spec.hbCapacity_mlO2_per_ml (sim)' : HB_PARAMS.cap_ml_per_ml.source + '. NOTE: snapper max EO2 0.205 mg/ml = 0.14 ml/ml (durnford2026) exceeds this, so trout blood underestimates warm-water fish'),
+    hbCap: spec.hbCapacity_mlO2_per_ml !== undefined
+      ? P(g(spec.hbCapacity_mlO2_per_ml), 'proxy', 'spec.hbCapacity_mlO2_per_ml (sim)')
+      : P(warmHbCapacity(), 'tuned', 'warm-water default: the snapper max blood O2 extraction 0.205 mg/ml = 0.1435 ml/ml (durnford2026) must fit between arterial saturation at PaO2 15.8 kPa and venous saturation at the 8.6 torr floor on the trout Hill curve: cap = 0.1435 / (S(15.8) - S(1.15)). Trout blood itself carries only ' + HB_PARAMS.cap_ml_per_ml.value.toFixed(4) + ' ml/ml (rummer2015), which cannot meet the snapper resting MO2 at snapper Q'),
     bloodVolume_ml: P(g(spec.bloodVolume_ml, GILL_PARAMS.blood_ml_per_kg.value * M), spec.bloodVolume_ml !== undefined ? 'proxy' : 'assumed', spec.bloodVolume_ml !== undefined ? 'spec.bloodVolume_ml (sim)' : GILL_PARAMS.blood_ml_per_kg.source),
     axialMuscleFraction: P(g(spec.axialMuscleFraction, 0.5), spec.axialMuscleFraction !== undefined ? 'proxy' : 'assumed', spec.axialMuscleFraction !== undefined ? 'spec (sim)' : 'assumed 0.5 of body mass; not fetched'),
     flightMuscleFraction: P(g(spec.flightMuscleFraction, 0), spec.flightMuscleFraction !== undefined ? 'proxy' : 'assumed', spec.flightMuscleFraction !== undefined ? 'spec (sim)' : 'assumed 0 (real flying fish glide; they do not flap)'),
@@ -90,7 +98,6 @@ export function createPhysiology(spec = {}, env = {}) {
     burstStore_J: P(MUSCLE_PARAMS.burstStore_J_per_kg_body.value * MUSCLE_PARAMS.efficiency.value * M, 'proxy', 'mechanical J = ' + MUSCLE_PARAMS.burstStore_J_per_kg_body.source + ' x efficiency'),
     burstRecovery_tau_s: P(MUSCLE_PARAMS.burstRecovery_tau_s.value, 'proxy', MUSCLE_PARAMS.burstRecovery_tau_s.source),
     Pv_floor_kPa: P(GILL_PARAMS.Pv_floor_kPa.value, 'proxy', GILL_PARAMS.Pv_floor_kPa.source),
-    ventilation_to_perfusion: P(GILL_PARAMS.ventilation_to_perfusion.value, 'assumed', GILL_PARAMS.ventilation_to_perfusion.source),
     ventilation_mode: P('unknown', 'assumed', 'ram vs buccal-opercular pumping in flying fish: no fetched source; both are modelled the same way (Vw = ratio x Q)'),
     gills_in_air: P(0, 'assumed', 'during taxi/glide/flight phases the gills are treated as not ventilating (no uptake); taxiing fish keep only the caudal lobe in water'),
   };
@@ -102,6 +109,29 @@ export function createPhysiology(spec = {}, env = {}) {
   const Cfloor = content(S.Pv_floor_kPa.value, hb);
   const Jml = S.oxycal_J_per_mgO2.value / ML_O2_PER_MG; // J per ml O2
   const eta = S.efficiency.value;
+
+  const Qr = S.Q_rest_ml_s.value, SMR = S.SMR_ml_s.value;
+  // Ventilation: tune water flow / blood flow (Vw/Q) so the resting fish (proxy Q_rest, SMR) reaches the same arterial
+  // PO2 as the trout reference (15.8 kPa, mcarley2022). Held constant as Q rises (assumption). The trout reference itself
+  // uses Vw/Q = 10 (assumed). If the gill area is too small to reach the target even with very high ventilation, the
+  // upper bound is used and gillLimited = true.
+  let vq = GILL_PARAMS.ventilation_to_perfusion.value, gillLimited = false, vqTuned = false;
+  if (spec.ventilation_to_perfusion !== undefined) vq = g(spec.ventilation_to_perfusion);
+  else {
+    const Pa_t = GILL_PARAMS.ref_PaO2_kPa.value, Ca_t = content(Pa_t, hb), Cv_t = Ca_t - SMR / Qr;
+    if (Cv_t > content(S.Pv_floor_kPa.value, hb)) {
+      const Pv_t = pressureFromContent(Cv_t, hb);
+      const out = (v) => solve({ Pw_in, Pb_in: Pv_t, N: GILL_PARAMS.N.value, physical: { D, Gw: v * Qr * betaW, Q: Qr, hb } }, true).bloodOut;
+      let lo = 1, hi = 2000;
+      if (out(hi) < Pa_t) { vq = hi; gillLimited = true; }
+      else { for (let i = 0; i < 40; i++) { const mid = Math.sqrt(lo * hi); if (out(mid) < Pa_t) lo = mid; else hi = mid; } vq = Math.sqrt(lo * hi); }
+      vqTuned = true;
+    }
+  }
+  S.ventilation_to_perfusion = spec.ventilation_to_perfusion !== undefined
+    ? P(vq, 'proxy', 'spec.ventilation_to_perfusion (sim)')
+    : vqTuned ? P(vq, 'tuned', 'Vw/Q chosen so the resting fish reaches PaO2 15.8 kPa (trout value, mcarley2022) with proxy Q_rest and SMR; no fetched ventilation volume' + (gillLimited ? '; GILL-LIMITED: target not reached at Vw/Q = 2000' : ''))
+    : P(vq, 'assumed', GILL_PARAMS.ventilation_to_perfusion.source + ' (tuning impossible: proxy SMR exceeds Q x O2 capacity)');
 
   const cache = new Map();
   function gillCa(Pv, Q) {
@@ -115,7 +145,6 @@ export function createPhysiology(spec = {}, env = {}) {
     return Ca;
   }
   // resting steady state in water: find C_pool with Q_rest (Ca - C_pool) = SMR
-  const Qr = S.Q_rest_ml_s.value, SMR = S.SMR_ml_s.value;
   let lo = 0, hi = content(Pw_in, hb);
   for (let i = 0; i < 50; i++) { const mid = 0.5 * (lo + hi); const up = Qr * (gillCa(pressureFromContent(mid, hb), Qr) - mid); if (up > SMR) lo = mid; else hi = mid; }
   const CpoolRest = 0.5 * (lo + hi);
@@ -181,6 +210,7 @@ export function createPhysiology(spec = {}, env = {}) {
       const rows = Object.entries(S).map(([k, p]) => ({ quantity: k, value: p.value, unit: unit[k] ?? '', kind: p.kind, source: p.source }));
       rows.push({ quantity: 'Pw_in_kPa', value: Pw_in, unit: 'kPa', kind: 'derived', source: 'airO2_fraction x (101.325 - pH2O(T)), Magnus pH2O (standard formula, not fetched); assumes air-saturated water' });
       rows.push({ quantity: 'VO2max_water_ml_s', value: VO2maxWater, unit: 'ml O2/s', kind: 'derived', source: 'Q_max x (Ca at Q_max - C at Pv_floor), gill counter-current + Hill' });
+      rows.push({ quantity: 'gillLimited', value: gillLimited, unit: '', kind: 'derived', source: 'true if gill area x D_per_m2 cannot reach PaO2 15.8 kPa at rest even with Vw/Q = 2000' });
       rows.push({ quantity: 'restingFeasible', value: restingFeasible, unit: '', kind: 'derived', source: 'false means proxy Q and Hb cannot meet proxy SMR (species mismatch); raise hbCapacity' });
       rows.push({ quantity: 'blood_store_ml_O2', value: S.bloodVolume_ml.value * (CpoolRest - Cfloor), unit: 'ml O2', kind: 'derived', source: 'V_b x (C_pool,rest - C_floor): usable O2 once gills leave the water' });
       return rows;

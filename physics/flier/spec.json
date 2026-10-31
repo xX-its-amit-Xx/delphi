@@ -1,0 +1,263 @@
+{
+  "note": "HYPOTHETICAL design study. Changes parameters only; the simulator equations and the measured polar are unchanged. No bird value anywhere.",
+  "sources": {
+    "real_fish": {
+      "mass_kg": 0.06,
+      "ref_area_m2": 0.012687999999999998,
+      "span_m": 0.261,
+      "AR": 10.7,
+      "CL_max": 0.78,
+      "LD_max": 4.37,
+      "CD_min": 0.055,
+      "kind": "measured",
+      "source": "park-choi-2010 Tables 1 and 2 (model L3)"
+    },
+    "bat_flight_muscle_fraction": {
+      "mean": 0.0913,
+      "min": 0.078,
+      "kind": "secondary",
+      "source": "PMC10966098 (Onychonycteris paper, 10.1038/s42003-024-06032-9) citing Bullen and McKenzie 2004: flight muscle on average 9.13 % of body mass in extant bats, minimum 7.8 %"
+    },
+    "bat_mech_power_W": {
+      "mean": 0.092,
+      "max": 0.14,
+      "min": 0.046,
+      "body_mass_kg": 0.0076,
+      "kind": "measured",
+      "source": "PMC10154928 (10.1098/rspb.2023.0045): Pipistrellus nathusii, 7.6 +- 0.8 g, estimated mechanical power 0.046 to 0.140 W, mean 0.092 W, from aerodynamic measurement"
+    },
+    "bat_conversion_efficiency": {
+      "low": 0.07,
+      "high": 0.104,
+      "kind": "measured",
+      "source": "PMC10154928: conversion efficiency 7.0 to 10.4 % increasing with speed in P. nathusii"
+    },
+    "bat_metabolic_power_per_weight_W_per_N": {
+      "min": 7.1,
+      "max": 18.7,
+      "kind": "measured",
+      "source": "PMC10154928: weight-specific metabolic power 7.1 to 18.7 W per N"
+    },
+    "bat_inertial_power_W_per_kg": {
+      "value": 8,
+      "kind": "secondary",
+      "source": "PMC9490335 (10.1098/rsif.2022.0315): inertial power about 8 W/kg, roughly independent of speed (Cynopterus brachyotis model); 6 to 7 W/kg in Plecotus and Glossophaga per Norberg"
+    },
+    "bat_wing_loading_N_m2": {
+      "low": 6.5,
+      "high": 14.25,
+      "kind": "secondary-compilation",
+      "source": "physics/comparison-data.csv (span-efficiency compilation): Plecotus auritus 6.5, Glossophaga soricina 11.05, Leptonycteris yerbabuenae 14.25 N/m2"
+    },
+    "pterosaur_hatchling": {
+      "wing_loading_N_m2": [
+        15.83,
+        17.88
+      ],
+      "AR": [
+        6.1,
+        6.5
+      ],
+      "kind": "modelled",
+      "source": "PMC8298463 (10.1038/s41598-021-92499-z): hatchling pterosaur wing loading 15.83 to 17.88 N/m2, aspect ratio 6.1 to 6.5 (modelled from fossils); Draco 22.7 to 24.2 N/m2 quoted there"
+    },
+    "bumblebee_hover_metabolic_W_per_kg": {
+      "value": 559,
+      "efficiency": [
+        0.073,
+        0.147
+      ],
+      "kind": "measured",
+      "source": "PMC12606204 (10.1098/rsbl.2025.0325): hovering metabolic power 559 W/kg body; overall efficiency 7.3 to 14.7 %"
+    },
+    "oxycaloric_J_per_ml_O2": {
+      "value": 20.1,
+      "kind": "standard",
+      "source": "oxycaloric equivalent for mixed substrate; the bumblebee paper uses 21.1 J per ml CO2 for carbohydrate"
+    },
+    "bird_values": {
+      "kind": "unavailable (holdout)",
+      "source": "class Aves is the frozen holdout; no bird parameter, comparison or figure is used"
+    }
+  },
+  "bat_muscle_specific_power_derived_W_per_kg": {
+    "mean": 132.58776733729175,
+    "max": 201.76399377413964
+  },
+  "design": {
+    "label": "HYPOTHETICAL truly-flying fish F1 (design study)",
+    "hypothetical": true,
+    "mass_kg": {
+      "value": 0.06,
+      "changed": false,
+      "reason": "same body; the question is what fins and muscle a 60 g fish would need"
+    },
+    "wing_loading_N_m2": {
+      "value": 12.0,
+      "changed": true,
+      "from": 46.39029003783103,
+      "reason": "inside the bat range 6.5 to 14.25 N/m2 and below the pterosaur hatchling 15.8 to 17.9; chosen, not optimised"
+    },
+    "lifting_area_m2": {
+      "value": 0.04905,
+      "changed": true,
+      "from": 0.012687999999999998
+    },
+    "aspect_ratio": {
+      "value": 9.0,
+      "changed": false,
+      "from": 10.7,
+      "reason": "kept at the fish value (9.0 to 10.7 in Park and Choi), which already lies in the powered-flier range the pterosaur paper quotes (6.1 to 6.5 for hatchlings; \"avian 5 to 12\" is a bird figure and is NOT used)"
+    },
+    "span_m": {
+      "value": 0.664417037710503,
+      "changed": true,
+      "from": 0.261
+    },
+    "CL_max": {
+      "value": 0.78,
+      "changed": false,
+      "reason": "same fin section; measured"
+    },
+    "LD_max": {
+      "value": 4.37,
+      "changed": false,
+      "reason": "same measured polar (conservative: bats are not assumed better)"
+    },
+    "flight_muscle_fraction": {
+      "value": 0.16,
+      "changed": true,
+      "from": "not reported for flying fish (Davenport 1992: red axial muscle no more than mackerel)",
+      "reason": "see power budget: 0.16 is the smallest fraction that covers a 1 m/s climb at the bat-derived MAX specific power (0.15 falls 0.05 W short); it is ABOVE the bat mean (9.1 %) and minimum (7.8 %); the bat maximum is not in the fetched sources; at the bat MEAN specific power even 0.16 only just fails level flight"
+    },
+    "muscle_specific_mech_power_W_per_kg": {
+      "value": 201.76399377413964,
+      "range": [
+        132.58776733729175,
+        201.76399377413964
+      ],
+      "changed": "new",
+      "kind": "derived",
+      "reason": "P. nathusii mechanical power 0.140 W (max) over its flight muscle 7.6 g x 9.13 % = 0.69 g: 202 W/kg muscle (mean 133); a derived figure from two sourced numbers, and the chain may replace it"
+    },
+    "conversion_efficiency": {
+      "value": 0.1,
+      "range": {
+        "low": 0.07,
+        "high": 0.104,
+        "kind": "measured",
+        "source": "PMC10154928: conversion efficiency 7.0 to 10.4 % increasing with speed in P. nathusii"
+      },
+      "changed": "new",
+      "reason": "top of the bat-measured range; bumblebee 7 to 15 %"
+    }
+  },
+  "power_budget": {
+    "v_min_m_s": 5.011760110325881,
+    "P_req_table": [
+      {
+        "v_m_s": 5.011760110325881,
+        "P_req_level_W": null,
+        "P_req_climb_1_m_s_W": null
+      },
+      {
+        "v_m_s": 6,
+        "P_req_level_W": 1.2757578394071358,
+        "P_req_climb_1_m_s_W": 1.8643578394071358
+      },
+      {
+        "v_m_s": 7,
+        "P_req_level_W": 1.4229168511882593,
+        "P_req_climb_1_m_s_W": 2.0115168511882593
+      },
+      {
+        "v_m_s": 8,
+        "P_req_level_W": 1.6551485358053517,
+        "P_req_climb_1_m_s_W": 2.2437485358053517
+      },
+      {
+        "v_m_s": 10,
+        "P_req_level_W": 2.3956791836442815,
+        "P_req_climb_1_m_s_W": 2.9842791836442815
+      },
+      {
+        "v_m_s": 12,
+        "P_req_level_W": 3.5547213572035683,
+        "P_req_climb_1_m_s_W": 4.143321357203568
+      }
+    ],
+    "P_req_min_level_W": 1.2757578394071358,
+    "P_req_min_climb_1_m_s_W": 1.8643578394071358,
+    "P_avail_W_at_design_fraction": {
+      "max_specific": 1.9369343402317403,
+      "mean_specific": 1.2728425664380008
+    },
+    "P_avail_W_at_bat_mean_fraction": 1.105263157894737,
+    "verdict_mechanical": "design fraction 0.16 covers level flight and a 1 m/s climb at the bat-derived MAX specific power",
+    "verdict_bat_like": "a 60 g fish with the bat MEAN muscle fraction (9.1 %) could NOT fly level at the bat-derived max specific power, and could NOT climb at 1 m/s",
+    "metabolic_power_W_for_climb": 18.64357839407136,
+    "metabolic_W_per_kg_body": 310.726306567856,
+    "compare": {
+      "bat_metabolic_W_per_kg_body_range": [
+        69.651,
+        183.447
+      ],
+      "bumblebee_hover_W_per_kg": 559
+    },
+    "O2_demand_ml_per_s": 0.9275412136353909,
+    "O2_demand_ml_per_min_per_kg": 927.5412136353909,
+    "physiology_note": "The O2 demand is what the gill, haemoglobin and cardiac modules must supply for SUSTAINED flight; whether any gill can is for the physiology chain and the Lean O2-to-power bound. Burst (anaerobic) flight for seconds is a separate question. The real fish, per Davenport 1992, has no more red axial muscle than a mackerel."
+  },
+  "parameter_diff_real_to_flier": {
+    "lifting_area_m2": [
+      0.012687999999999998,
+      0.04905
+    ],
+    "wing_loading_N_m2": [
+      46.39029003783103,
+      12.0
+    ],
+    "span_m": [
+      0.261,
+      0.664417037710503
+    ],
+    "aspect_ratio": [
+      10.7,
+      9.0
+    ],
+    "flight_muscle_fraction": [
+      "unknown (small)",
+      0.16
+    ],
+    "muscle_specific_mech_power_W_per_kg": [
+      "unknown",
+      201.76399377413964
+    ],
+    "conversion_efficiency": [
+      "unknown",
+      0.1
+    ],
+    "O2_delivery_ml_per_min_per_kg_required": [
+      "unknown",
+      927.5412136353909
+    ],
+    "mass_kg": [
+      0.06,
+      0.06
+    ],
+    "CL_max": [
+      0.78,
+      0.78
+    ],
+    "LD_max": [
+      4.37,
+      4.37
+    ]
+  },
+  "what_this_does_not_establish": [
+    "that such a fish could develop (development is not simulated)",
+    "that fins of 4x area at the same section keep the measured polar",
+    "that any gill can deliver the O2 (physiology chain pending)",
+    "anything about birds (holdout)"
+  ]
+}

@@ -11,7 +11,8 @@
 // Blood side, haemoglobin mode (Hill curve from haemoglobin.js):
 //   Cb_out,i = Cb_in,i + J_i / Q ;  Pb = C^-1(Cb)
 // Dimensionless form (what the viewer uses): k = D / Gw (water-side transfer number), ratio = Gw / Gb.
-// The coupled profiles are solved by under-relaxed fixed-point iteration until the largest change < tol.
+// Co-current: one forward march. Counter-current: shooting - bisect on the blood outlet value at x=0 so that the
+// marched blood value at x=1 equals the blood inlet. Each segment is solved implicitly (fixed point on its flux).
 //
 // Outputs:
 //   extraction  = (Pw_in - Pw_out) / (Pw_in - Pb_in)  exchanger effectiveness: fraction of the maximum possible
@@ -27,64 +28,56 @@ import { content, pressureFromContent } from './haemoglobin.js';
 export function solve(params = {}, counter = true) {
   const N = params.N ?? 50;
   const Pw_in = params.Pw_in, Pb_in = params.Pb_in;
-  const tol = params.tol ?? 1e-10, maxIter = params.maxIter ?? 20000, relax = params.relax ?? 0.5;
   const phys = params.physical || null; // { D, Gw, Q, hb } -> Hill-curve blood; else linear with k, ratio
   const kseg = phys ? phys.D / phys.Gw / N : params.k / N;
-  const ratio = phys ? null : params.ratio;
-  const blood = new Array(N).fill(Pb_in), water = new Array(N).fill(Pw_in);
-  const waterEdge = new Array(N + 1);
-  const J = new Array(N);
-  const order = counter ? [...Array(N).keys()].reverse() : [...Array(N).keys()];
-  let iter = 0, delta = Infinity;
-  while (iter < maxIter && delta > tol) {
-    iter++;
-    // water march x = 0 -> 1, implicit in the water segment mean: Pw_out = Pw_in - kseg*((Pw_in+Pw_out)/2 - Pb)
-    waterEdge[0] = Pw_in;
+  // blood state variable c: PO2 (linear mode) or O2 content (Hb mode)
+  const toP = phys ? (c) => pressureFromContent(c, phys.hb) : (c) => c;
+  const toC = phys ? (P) => content(P, phys.hb) : (P) => P;
+  const dc = phys ? (J) => (J * phys.Gw) / phys.Q : (J) => J * params.ratio; // blood gain per water-PO2 drop J
+  const sgn = counter ? -1 : 1; // blood change in +x direction
+  const c_in = toC(Pb_in);
+  // March x = 0 -> 1 from known water inlet and a blood value at x = 0, implicit per segment (fixed point on J).
+  function march(c0) {
+    const water = new Array(N), blood = new Array(N);
+    let Pw = Pw_in, c = c0;
     for (let i = 0; i < N; i++) {
-      const a = waterEdge[i];
-      const out = (a - kseg * (a / 2 - blood[i])) / (1 + kseg / 2);
-      waterEdge[i + 1] = out;
-      J[i] = a - out; // flux in water-PO2 units (x Gw = ml O2/s)
-    }
-    // blood march in its own flow direction
-    const newBlood = new Array(N);
-    if (!phys) {
-      let Pb = Pb_in;
-      for (const i of order) { const outP = Pb + J[i] * ratio; newBlood[i] = 0.5 * (Pb + outP); Pb = outP; }
-    } else {
-      let C = content(Pb_in, phys.hb);
-      for (const i of order) {
-        const Cout = C + (J[i] * phys.Gw) / phys.Q;
-        newBlood[i] = pressureFromContent(0.5 * (C + Cout), phys.hb);
-        C = Cout;
+      let J = kseg * (Pw - toP(c)) / (1 + kseg / 2);
+      for (let it = 0; it < 30; it++) {
+        const cR = c + sgn * dc(J);
+        const Jn = (kseg * (Pw - toP(0.5 * (c + cR)))) / (1 + kseg / 2);
+        if (Math.abs(Jn - J) < 1e-13) { J = Jn; break; }
+        J = Jn;
       }
+      const cR = c + sgn * dc(J);
+      water[i] = Pw - J / 2; blood[i] = toP(0.5 * (c + cR));
+      Pw -= J; c = cR;
     }
-    delta = 0;
-    for (let i = 0; i < N; i++) {
-      const nb = blood[i] + relax * (newBlood[i] - blood[i]);
-      delta = Math.max(delta, Math.abs(nb - blood[i]));
-      blood[i] = nb;
-    }
+    return { water, blood, waterOut: Pw, cEnd: c };
   }
-  for (let i = 0; i < N; i++) water[i] = 0.5 * (waterEdge[i] + waterEdge[i + 1]);
-  const Jtot = waterEdge[0] - waterEdge[N];
-  let bloodOut, bloodOutContent = null;
-  if (!phys) bloodOut = Pb_in + Jtot * ratio;
+  let r, cOut, iterations = 0;
+  if (!counter) { r = march(c_in); cOut = r.cEnd; }
   else {
-    bloodOutContent = content(Pb_in, phys.hb) + (Jtot * phys.Gw) / phys.Q;
-    bloodOut = pressureFromContent(bloodOutContent, phys.hb);
+    // shoot on the blood outlet value at x = 0: it lies between c_in and equilibrium with inspired water
+    let lo = c_in, hi = toC(Pw_in);
+    for (; iterations < 80; iterations++) {
+      const mid = 0.5 * (lo + hi);
+      r = march(mid);
+      if (r.cEnd > c_in) hi = mid; else lo = mid;
+      if (hi - lo < 1e-12 * Math.max(1, Math.abs(hi))) break;
+    }
+    cOut = 0.5 * (lo + hi); r = march(cOut);
   }
-  const waterOut = waterEdge[N];
+  const Jtot = Pw_in - r.waterOut;
+  const bloodOut = toP(cOut);
   return {
     mode: counter ? 'counter' : 'co',
-    x: water.map((_, i) => (i + 0.5) / N),
-    water, blood, // segment-mean PO2 (kPa) at the same x positions; blood enters at x=1 (counter) or x=0 (co)
-    waterOut, bloodOut, bloodOutContent,
-    extraction: (Pw_in - waterOut) / (Pw_in - Pb_in),
-    utilisation: (Pw_in - waterOut) / Pw_in,
+    x: r.water.map((_, i) => (i + 0.5) / N),
+    water: r.water, blood: r.blood, // segment-mean PO2 (kPa) at the same x; blood enters at x=1 (counter) or x=0 (co)
+    waterOut: r.waterOut, bloodOut, bloodOutContent: phys ? cOut : null,
+    extraction: Jtot / (Pw_in - Pb_in),
+    utilisation: Jtot / Pw_in,
     uptake: phys ? Jtot * phys.Gw : Jtot, // ml O2/s (physical mode) or water-PO2 units (dimensionless mode)
-    iterations: iter,
-    converged: delta <= tol,
+    iterations, converged: true,
   };
 }
 
@@ -98,7 +91,7 @@ export function analytic(k, R, counter = true) {
 // Find the transfer D (ml O2 s-1 kPa-1) for which the physical (Hb) counter-current solution gives a target
 // arterial PO2. Used to tune D to a measured arterial PO2 (see gills.json "k").
 export function tuneD(target_Pa, base, counter = true) {
-  let lo = 1e-6, hi = 1e3;
+  let lo = base.physical.Gw * 1e-3, hi = base.physical.Gw * 1e2; // k between 0.001 and 100
   for (let i = 0; i < 60; i++) {
     const mid = Math.sqrt(lo * hi);
     const r = solve({ ...base, physical: { ...base.physical, D: mid } }, counter);
