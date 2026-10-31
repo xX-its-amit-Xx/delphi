@@ -7,6 +7,9 @@ import Delphi.Kimura
 import Delphi.Fisher
 import Delphi.MaynardSmith
 import Delphi.Favored
+import Delphi.Blueprint
+import Delphi.Thompson
+import Delphi.Certificates.AFlyingFish
 
 #print axioms Delphi.NeutralChain.fixedBy_tendsto
 #print axioms Delphi.NeutralChain.fixedBy_sub_le
@@ -26,3 +29,16 @@ import Delphi.Favored
 #print axioms Delphi.favored_expectedSubstitutions_ge
 #print axioms Delphi.expectedSubstitutions_le
 #print axioms Delphi.wrightFisherSelection_substitutions_bounds
+#print axioms Delphi.Blueprint.Graph.acyclic_of_levelsDown
+#print axioms Delphi.Blueprint.Graph.transGen_trans
+#print axioms Delphi.Blueprint.Graph.transGen_level_lt
+#print axioms Delphi.Blueprint.Graph.rooted_of
+#print axioms Delphi.Blueprint.wellFormed_of_check
+#print axioms Delphi.Blueprint.Certificates.aFlyingFish_check
+#print axioms Delphi.Blueprint.Certificates.aFlyingFish_wellFormed
+#print axioms Delphi.Blueprint.Certificates.aFlyingFish_nodup
+#print axioms Delphi.Blueprint.Certificates.aFlyingFish_counts
+#print axioms Delphi.Blueprint.Certificates.aFlyingFish_size
+#print axioms Delphi.cubeLaw_ratio
+#print axioms Delphi.cubeLaw_loglog_exponent
+#print axioms Delphi.not_cubeLaw_of_exponent_ne_three
