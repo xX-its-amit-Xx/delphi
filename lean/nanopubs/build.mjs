@@ -116,14 +116,15 @@ const manifest = [];
 const write = (name, text, extra) => { fs.writeFileSync(path.join(outDir, name), text); manifest.push({ file: `lean/nanopubs/unsigned/${name}`, status: 'unsigned draft', registry: null, trustyUri: null, ...extra }); };
 
 // Which audited theorems belong to each module, and the main definition the law rests on.
-const leanDecl = { 'kimura-substitution-rate': 'Delphi.substitutionRate', 'kimura-fixation-probability': 'Delphi.NeutralChain', 'fisher-ftns': 'Delphi.meanFitness', 'maynardsmith-twofold-cost': 'Delphi.asexualNext' };
-const theoremsFor = { 'kimura-substitution-rate': ['Delphi.neutral_substitution_rate', 'Delphi.neutral_substitution_rate_diploid', 'Delphi.neutral_substitution_rate_tendsto', 'Delphi.wrightFisher_fixation_one'], 'kimura-fixation-probability': ['Delphi.NeutralChain.fixedBy_tendsto', 'Delphi.NeutralChain.fixedBy_sub_le'], 'fisher-ftns': ['Delphi.fisher_fundamental_theorem', "Delphi.fisher_fundamental_theorem'", 'Delphi.mean_fitness_nondecreasing'], 'maynardsmith-twofold-cost': ['Delphi.twofold_cost_of_sex', 'Delphi.twofold_cost_of_sex_n'] };
+const leanDecl = { 'kimura-substitution-rate': 'Delphi.substitutionRate', 'kimura-fixation-probability': 'Delphi.NeutralChain', 'fisher-ftns': 'Delphi.meanFitness', 'maynardsmith-twofold-cost': 'Delphi.asexualNext', 'favored-fixation-lower-bound': 'Delphi.FavoredChain' };
+const theoremsFor = { 'kimura-substitution-rate': ['Delphi.neutral_substitution_rate', 'Delphi.neutral_substitution_rate_diploid', 'Delphi.neutral_substitution_rate_tendsto', 'Delphi.wrightFisher_fixation_one'], 'kimura-fixation-probability': ['Delphi.NeutralChain.fixedBy_tendsto', 'Delphi.NeutralChain.fixedBy_sub_le'], 'fisher-ftns': ['Delphi.fisher_fundamental_theorem', "Delphi.fisher_fundamental_theorem'", 'Delphi.mean_fitness_nondecreasing'], 'maynardsmith-twofold-cost': ['Delphi.twofold_cost_of_sex', 'Delphi.twofold_cost_of_sex_n'], 'favored-fixation-lower-bound': ['Delphi.FavoredChain.fixationProbability_ge', 'Delphi.FavoredChain.fixationProbability_le_one', 'Delphi.wrightFisherSelection_fixation_one_ge', 'Delphi.neutral_expectedSubstitutions', 'Delphi.favored_expectedSubstitutions_ge', 'Delphi.expectedSubstitutions_le', 'Delphi.wrightFisherSelection_substitutions_bounds'] };
 const auditOf = name => R.audit.theorems.find(t => t.theorem === name);
 const plain = {
   'kimura-substitution-rate': 'In a neutral Wright-Fisher population of M gene copies, the rate at which new mutations become fixed equals the mutation rate per copy per generation, whatever M is.',
   'kimura-fixation-probability': 'In a neutral absorbing chain on 0..M copies, including the exact Wright-Fisher chain, a mutant present in i copies is eventually fixed with probability i/M.',
   'fisher-ftns': 'For one haploid or clonal locus with fixed fitnesses, one round of selection raises mean fitness by exactly the variance in fitness divided by the mean fitness.',
-  'maynardsmith-twofold-cost': 'With equal fecundity, a 1:1 sex ratio and males contributing nothing, the odds of asexual to sexual females double every generation and are 2^n times the initial odds after n generations.'
+  'maynardsmith-twofold-cost': 'With equal fecundity, a 1:1 sex ratio and males contributing nothing, the odds of asexual to sexual females double every generation and are 2^n times the initial odds after n generations.',
+  'favored-fixation-lower-bound': 'In an absorbing chain on 0..M gene copies whose expected copy number never decreases (neutral, or selection for the mutant), including Wright-Fisher sampling with relative fitness 1+s for any s >= 0, a lineage of i copies is eventually fixed with probability at least i/M; so the expected number of substitutions over T generations is at least mu T and at most M mu T.'
 };
 const notEstablished = 'Does not establish: anything about organisms. The theorem is exact inside the stated model and silent outside it; strict neutrality, constant population size, Wright-Fisher reproduction and independent mutant fates (Kimura), fixed fitnesses and haploid inheritance (Fisher), equal fecundity and a 1:1 sex ratio (Maynard Smith) are assumptions written in the module header, not conclusions. Kernel-checked is not expert-validated: no human expert has validated these statements. Whether the Lean statement faithfully renders the paper is a separate assessment record, and so far only one assessor provider has run.';
 
@@ -141,8 +142,7 @@ for (const f of R.formalized) {
   <${law}> a delphi:Concept, skos:Concept ;
     rdfs:label ${lit(`${f.label} (Lean 4, kernel-checked)`)} ;
     dct:description ${lit(plain[id])} ;
-    dct:source ${lit(`${f.paper.title} (${f.paper.year})`)} ;
-${f.paper.doi ? `    prov:wasDerivedFrom <https://doi.org/${f.paper.doi}> ;\n` : ''}    skos:notation ${lit(f.notation)} ;
+${f.paper ? `    dct:source ${lit(`${f.paper.title} (${f.paper.year})`)} ;\n` : `    dct:source "Proved in this project (lean/Delphi/Favored.lean) as an extension of the neutral case of Kimura (1962) to non-opposing selection; no paper states it in this form." ;\n`}${f.paper?.doi ? `    prov:wasDerivedFrom <https://doi.org/${f.paper.doi}> ;\n` : ''}    skos:notation ${lit(f.notation)} ;
     skos:definition ${longlit(leanSrc)}^^delphi:lean4 ;
     schema:programmingLanguage "Lean 4" ;
     delphi:leanDeclaration ${lit(leanDecl[id])} ;
@@ -174,6 +174,44 @@ ${ps.assumed.map(x => `    skos:scopeNote ${lit('Assumed, not proved: ' + x)} ;`
 }`;
   write(`scope-${id}.trig`, trig(scope, builderProv([blob(f.module), `${SITE}/lean.json`]), pubinfo(`Proof scope of ${f.label}`, `${DELPHI}Concept`, null, [['wasCreatedFromProvenanceTemplate', TEMPLATES.provenance], ['wasCreatedFromPubinfoTemplate', TEMPLATES.pubinfoDomain]])),
     { kind: 'proof-scope', law, kernelChecked: ps.kernelChecked.length, assumed: ps.assumed.length });
+}
+
+// The flying-fish substitution budget: a delphi:Hypothesis (a proposition the graph represents without
+// asserting; no source states it) derived from the audited theorems and the sourced parameters in
+// lean/bound/parameters.json. Every number is read from lean.json's `bound` block (lean/bound/compute.mjs).
+const B = R.bound;
+if (B && B.verified) {
+  const P = JSON.parse(fs.readFileSync(path.join(here, '../bound/parameters.json'), 'utf8'));
+  const links = fs.existsSync(path.join(here, '../bound/links.json')) ? JSON.parse(fs.readFileSync(path.join(here, '../bound/links.json'), 'utf8')) : {};
+  const HYP = `${DELPHIR}hypothesis/exocoetidae-substitution-budget`, BEV = `${DELPHIR}evidence/exocoetidae-substitution-budget-computation`;
+  const lawF = `${DELPHIR}math-law/favored-fixation-lower-bound`, lawK = `${DELPHIR}math-law/kimura-substitution-rate`, lawP = `${DELPHIR}math-law/kimura-fixation-probability`;
+  const DATASET = `${DELPHIR}dataset/pbdb-occurrence-counts-2026-10-31`;
+  const e2 = x => Number(x).toExponential(2), f3 = x => Number(x).toFixed(3);
+  const dois = [...P.mutationRatePerSitePerGeneration.sources.map(s => s.doi), P.genomeSites.source.doi, ...P.populationSize.pointEstimates.map(p => p.doi), ...P.generationTimeYears.sources.filter(s => s.doi).map(s => s.doi)].filter(Boolean).map(d => `<https://doi.org/${d}>`);
+  const urls = [P.durationMa.source.url, ...P.generationTimeYears.sources.filter(s => s.url).map(s => s.url)].map(u => `<${u}>`);
+  const numbers = `Generations available: ${e2(B.generations.low)} to ${e2(B.generations.high)} (duration ${B.inputs.durationMa.low} to ${B.inputs.durationMa.high} Ma over a generation time of ${B.inputs.generationTimeYears.high} to ${B.inputs.generationTimeYears.low} years). Neutral budget, mu T per site (Delphi.neutral_expectedSubstitutions, independent of N): ${f3(B.neutralPerSite.low)} to ${f3(B.neutralPerSite.high)} substitutions per site, ${e2(B.neutralPerGenome.low)} to ${e2(B.neutralPerGenome.high)} genome-wide (G = ${e2(B.inputs.genomeSites.value)}); with a 2-year generation time the low end becomes ${f3(B.neutralPerSite.sensitivity2y)} per site. Floor on adaptive substitutions (Delphi.favored_expectedSubstitutions_ge): mu_f T per site, with mu_f (the rate of mutations selection does not oppose) undefined; it equals the neutral budget at mu_f = mu and is independent of N. Ceiling (Delphi.expectedSubstitutions_le): 2 N mu T per site, ${B.ceiling.perSiteByN.map(r => `N = ${e2(r.N)}: ${e2(r.low)} to ${e2(r.high)}`).join('; ')}; vacuous. Required substitutions for a wing: undefined. Verdict: ${B.comparison.verdict}.`;
+  const plainB = `Over the ${B.inputs.durationMa.low} to ${B.inputs.durationMa.high} million years since the oldest Exocoetidae fossil, the machine-checked fixation theorems give the lineage a neutral substitution budget of ${f3(B.neutralPerSite.low)} to ${f3(B.neutralPerSite.high)} substitutions per site (${e2(B.neutralPerGenome.low)} to ${e2(B.neutralPerGenome.high)} genome-wide), independent of population size; adaptive substitutions have a floor of mu_f T per site that depends on an undefined favored-mutation rate, and a ceiling of 2 N mu T per site that is vacuous. Whether this was enough to modify a gliding fish into a winged animal (Darwin 1859, ch. VI) is inconclusive: the number of substitutions a wing requires is not a defined quantity, so there is nothing to compare the budget with.`;
+  const assertion = `sub:assertion {
+  <${HYP}> a delphi:Hypothesis, skos:Concept ;
+    rdfs:label "Substitution budget of the flying-fish lineage (Exocoetidae) over its fossil duration, from the machine-checked fixation theorems: inconclusive for the gliding-to-flight question" ;
+    dct:description ${lit(plainB)} ;
+    delphi:context ${lit(`Darwin, On the Origin of Species (1859), chapter VI: flying-fish "might have been modified into perfectly winged animals" (Project Gutenberg text 1228, lines 5639-5642; organisms/darwin-origin/ch05-06/mentions.json). Taxon: Exocoetidae, NCBI Taxonomy ${P.taxon.ncbi_taxid}, GBIF ${P.taxon.gbif_usage_key}, Wikidata ${P.taxon.wikidata_qid}, PBDB ${P.taxon.pbdb_taxon}. Parameters and sources: ${P.durationMa.source.label} ${P.generationTimeYears.sources.map(s => s.label).join(' ')} ${P.mutationRatePerSitePerGeneration.sources.map(s => s.label).join(' ')} ${P.genomeSites.source.label} ${P.populationSize.pointEstimates.map(p => `${p.species}: ${p.value}, ${p.what}; ${p.source}`).join(' ')} Caveats: ${P.durationMa.caveat} ${P.generationTimeYears.caveat} ${P.mutationRatePerSitePerGeneration.caveat} ${P.genomeSites.caveat} ${P.populationSize.caveat}`)} ;
+    delphi:hasEvidence <${BEV}> ;
+    prov:used <${lawF}>, <${lawK}>, <${lawP}>, <${DATASET}> ;
+    prov:wasDerivedFrom ${[...dois, ...urls].join(', ')} ;
+${B.kernelChecked.map(x => `    skos:scopeNote ${lit('Kernel-checked: ' + x)} ;`).join('\n')}
+${B.assumed.map(x => `    skos:scopeNote ${lit('Assumed, not proved: ' + x)} ;`).join('\n')}
+    rdfs:comment ${lit(`Verdict: ${B.comparison.verdict}. ${B.comparison.reason} Does not establish: that a wing was or was not reachable; which genes or substitutions a wing needs; that any of the named parameters hold for Exocoetidae (none of mu, generation time or N is measured for the family, and the fossil age is a minimum); anything beyond the Wright-Fisher model with independent mutant fates. The arithmetic multiplying the proved rate by generations and sites is a definition applied with a script (lean/bound/compute.mjs), kernel-checked only in the form of the theorems named above. Kernel-checked is not expert-validated. The dataset IRI <${DATASET}> follows the Delphi dataset convention for the repository record organisms/darwin-origin/ch05-06/datasets/pbdb-occurrence-counts-2026-10-31.json; its dataset nanopub is unpublished at build time.${links.blueprintClaim ? '' : ' The organism thread\'s blueprint record for the flying fish is not linked because it did not exist when this draft was built; rebuild with lean/bound/links.json once it does.'}`)} ;
+${links.blueprintClaim ? `    skos:related <${links.blueprintClaim}> ;\n    rdfs:comment ${lit(`Related record: <${links.blueprintClaim}> is the organism thread's ontology-derived anatomical blueprint for the living family${links.blueprintNote ? ' (' + links.blueprintNote + ')' : ''}. The two records are independent statements about the same taxon; this is a citation, not a support or derivation relation in either direction. Neither record is evidence about the transition Darwin imagined.`)} ;\n` : ''}${links.darwinReference ? `    dct:references ${lit(links.darwinReference)} ;\n` : ''}    rdfs:seeAlso <${blob('lean/bound/parameters.json')}>, <${blob('lean/bound/compute.mjs')}>, <${blob('lean/Delphi/Favored.lean')}>, <${blob('organisms/darwin-origin/ch05-06/taxa/exocoetidae.json')}>, <${SITE}/lean.json>, <${SITE}/#flyingfish> .
+  <${BEV}> a delphi:EvidenceItem ;
+    rdfs:label "Computation of the Exocoetidae substitution budget from the audited theorems and the sourced parameters" ;
+    dct:description ${lit(`Theorems (all accepted by Lean ${R.versions.toolchain} with standard axioms only; see lean.json audit): ${Object.values(B.theorems).map(t => `${t.name} [${t.formula}]`).join('; ')}. ${numbers} Computed ${B.computed} by lean/bound/compute.mjs from lean/bound/parameters.json.`)} ;
+    dct:subject <${HYP}> ;
+    rdfs:comment "This evidence item establishes only that the numbers follow from the named theorems' formulas and the named parameter values. It is not evidence that the parameters are right for Exocoetidae, and not evidence about wings." ;
+    prov:wasDerivedFrom <${SITE}/lean.json>, <${blob('lean/bound/parameters.json')}>, <${blob('lean/bound/result.json')}> .
+}`;
+  write('bound-exocoetidae-substitution-budget.trig', trig(assertion, builderProv([blob('lean/bound/parameters.json'), blob('lean/bound/compute.mjs'), blob('lean/Delphi/Favored.lean'), `${SITE}/lean.json`]), pubinfo('Substitution budget of the flying-fish lineage from the machine-checked fixation theorems: inconclusive', `${DELPHI}Hypothesis`, HYP, [['wasCreatedFromProvenanceTemplate', TEMPLATES.provenance], ['wasCreatedFromPubinfoTemplate', TEMPLATES.pubinfoDomain]])),
+    { kind: 'bound', hypothesis: HYP, evidence: BEV, verdict: B.comparison.verdict, blueprintLinked: !!links.blueprintClaim, publishable: 'after signing by the key owner, test registry first; rebuild with lean/bound/links.json once the organism thread\'s blueprint record exists' });
 }
 
 // Rubric lean-faithfulness/0.1.0 as a concept with four dimensions (text from lean/assessment/prompt.md).
@@ -259,4 +297,4 @@ fs.writeFileSync(path.join(here, 'manifest.json'), JSON.stringify({
   mutations: M.summary,
   nanopubs: manifest
 }, null, 1));
-console.log(`${manifest.length} unsigned drafts in lean/nanopubs/unsigned (${manifest.filter(m => m.kind === 'law').length} law, ${manifest.filter(m => m.kind === 'proof-scope').length} proof-scope, 1 rubric, ${manifest.filter(m => m.kind === 'assessment').length} assessment); commitPinned=${!!commit}; claimsWithTwoProviders=${claimsWithTwoProviders}`);
+console.log(`${manifest.length} unsigned drafts in lean/nanopubs/unsigned (${manifest.filter(m => m.kind === 'law').length} law, ${manifest.filter(m => m.kind === 'proof-scope').length} proof-scope, ${manifest.filter(m => m.kind === 'bound').length} bound, 1 rubric, ${manifest.filter(m => m.kind === 'assessment').length} assessment); commitPinned=${!!commit}; claimsWithTwoProviders=${claimsWithTwoProviders}`);
