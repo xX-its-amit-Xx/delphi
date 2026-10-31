@@ -40,7 +40,17 @@ const mutations = [
     find: 'meanFitness (select p w) w - meanFitness p w = variance p w / meanFitness p w := by', replace: 'meanFitness (select p w) w - meanFitness p w = variance p w := by' },
   { id: 'maynardsmith-threefold', file: 'Delphi/MaynardSmith.lean', theorem: 'Delphi.twofold_cost_of_sex', claim_id: 'maynardsmith-twofold-cost',
     description: 'Statement changed to claim the odds triple each generation instead of doubling.',
-    find: 'odds (asexualNext q f) = 2 * odds q := by', replace: 'odds (asexualNext q f) = 3 * odds q := by' }
+    find: 'odds (asexualNext q f) = 2 * odds q := by', replace: 'odds (asexualNext q f) = 3 * odds q := by' },
+  { id: 'favored-floor-strengthened', file: 'Delphi/Favored.lean', theorem: 'Delphi.FavoredChain.fixationProbability_ge', claim_id: 'favored-fixation-lower-bound',
+    description: 'Statement changed to claim a favored lineage of i copies fixes with probability at least (i+1)/M instead of i/M. Not true (the neutral chain is favored and fixes with exactly i/M), so the proof must fail.',
+    find: '    ((i : ℕ) : ℝ) / M ≤ C.fixationProbability i := by', replace: '    (((i : ℕ) : ℝ) + 1) / M ≤ C.fixationProbability i := by' },
+  { id: 'favored-budget-doubled', file: 'Delphi/Favored.lean', theorem: 'Delphi.favored_expectedSubstitutions_ge', claim_id: 'favored-fixation-lower-bound',
+    description: 'Statement changed to claim the expected substitutions over T generations are at least 2 mu T instead of mu T.',
+    find: '    μ * T ≤ expectedSubstitutions M μ (C.fixationProbability (oneCopy M hM)) T := by', replace: '    2 * μ * T ≤ expectedSubstitutions M μ (C.fixationProbability (oneCopy M hM)) T := by' },
+  { id: 'favored-drift-dropped', file: 'Delphi/Favored.lean', theorem: 'Delphi.FavoredChain.fixationProbability_ge', claim_id: 'favored-fixation-lower-bound',
+    description: 'Model hypothesis removed: the chain no longer has to keep the expected copy number from falling (favored := True). Selection against the mutant is then allowed, so the lower bound i/M must fail.',
+    find: '  favored : ∀ i : Fin (M + 1), ((i : ℕ) : ℝ) ≤ ∑ j, P i j * ((j : ℕ) : ℝ)', replace: '  favored : True',
+    also: [['  { C with favored := fun i => (C.neutral i).ge }', '  { C with favored := trivial }'], ['  favored i := by rw [binomial_mean]; exact hfav i', '  favored := trivial']] }
 ];
 
 const tmp = fs.mkdtempSync(path.join(process.env.MUTANT_DIR || os.tmpdir(), 'delphi-mutants-'));
