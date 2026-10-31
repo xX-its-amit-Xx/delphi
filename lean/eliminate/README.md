@@ -1,0 +1,87 @@
+# Eliminating candidates with the formalised theorems
+
+A Lean proof does not eliminate an open problem: a problem is open precisely when no known theorem
+settles it. What a proof can do is eliminate a **candidate**, a specific proposed answer or design that
+commits to quantities the theorem forbids. Galileo's giant is the model: a body scaled without change of
+shape or density must weigh `(L2/L1)^3` times more, so a giant "only 100 times heavier" at 100 times the
+length is ruled out. With ten constraints from seven formalised entries, most candidates survive only
+because nothing we proved touches them. That reads **"unconstrained by our theorems"**, never "feasible".
+
+## Files
+
+| File | What it is |
+|---|---|
+| `lean/Delphi/Constraints.lean` | One lemma per constraint, concluding `False` from the law plus a candidate's commitment; the last hypothesis is a decidable fact about the committed numbers. |
+| `build-constraints.mjs` → `lean/constraints.json` | The constraints, joined with `lean.json` so theorem names, axioms, proof scope and faithfulness verdicts are never retyped. |
+| `eliminate.mjs <candidates.json>` → `ledger.json`, `lean/Delphi/Certificates/Eliminations.lean` | The checker and the certificates. |
+| `examples.json` | Twelve illustrative candidates written by this thread to exercise the three states. They are not the open-problems enumerator's candidates and contain no measurement. |
+
+## Candidate schema
+
+```json
+{ "candidates": [ { "id": "giant-insect-mass", "problem": "…", "description": "…", "source": "…",
+    "accepts": ["isometric_constant_density"],
+    "commits": { "length_ratio": 100, "weight_ratio": { "low": "90", "high": "110" } } } ] }
+```
+
+`commits` holds quantities named in `constraints.json` (`quantities`): a number, an exact decimal or
+fraction string (`"1e-9"`, `"4/103"`), or `{low, high}`; a point value is the interval `[v, v]`.
+`accepts` lists the model assumptions the candidate commits to (`constraints.json`, `assumptions`); a
+theorem about a model can only rule on a candidate that accepts the model. Arithmetic is exact (BigInt
+rationals); nothing is rounded.
+
+## The three states
+
+* **eliminated**: the violated relation with the numbers, the constraint's lemma, and the certificate
+  theorem the kernel accepted (`kernelChecked: true`), or "plain computation" where no certificate exists
+  (C6 on rejection: the checker's completeness is not proved).
+* **consistent**: not ruled out by this constraint. It is not a claim that the candidate is possible.
+* **cannot rule**: a required input is missing, or the candidate did not commit to the model assumption.
+  This is the honest state for an omission; the checker never lets an omission pass.
+
+A candidate's verdict is "eliminated" if any constraint eliminates it, "consistent (not ruled out by
+these theorems; not shown feasible)" if some constraint ruled and none eliminated, and "unconstrained by
+our theorems" if no constraint could rule at all.
+
+## Limits, stated so they are not mistaken for strength
+
+* An elimination holds only under the law's assumptions. Three of the four original statements were judged
+  by the assessor to be narrower in scope than their claims (`faithfulness` per constraint); a candidate
+  eliminated by a narrower statement is eliminated only under that statement's assumptions, and the ledger
+  row says which.
+* The cube law covers the **mass side** of the square–cube argument only. Strength scaling as `L^2` is not
+  formalised, so a giant that weighs the right `10^6` times more and is claimed to stand up is *consistent*
+  with C7, not shown possible (`giant-insect-strength` in the examples).
+* C3b bounds an **expectation**; a realised count can exceed its expectation, so a candidate committing to a
+  realised count cannot be ruled on.
+* C4 and C5 need exact point values; C1, C2, C3, C3b, C4b, C7 and C7b accept intervals and eliminate only
+  when the intervals are disjoint from what the theorem allows.
+* C6 (blueprint well-formedness) is structural: it says nothing biological, and on rejection it reports the
+  checker's failing condition as plain computation.
+
+## The open-problems candidates (2026-10-31)
+
+Another agent enumerated 215 problems from named sources and 80 candidates into `open-problems/`; 44 carry a
+constraint tag. `translations.json` is this thread's reading of each of the 44 into the schema, and
+`translate.mjs` joins it with the originals into `open-problems/candidates.formal.json`, keeping the original
+English commitment beside the formal one and a one-sentence reading. Policy: no number is invented; a candidate
+that adopts a theorem as its premise and commits no value is **untranslatable**; a candidate whose real claim
+rests on strength, cross-section or exchange-area scaling gets a per-constraint **not-formalised** reason; a
+candidate that denies the model's own premise (no males; unequal fecundity) is **premise-rejected**; one that adds
+a term the model lacks (a fitness advantage, parasites) is **outside-model**; a homology or part-of claim stated in
+words rather than emitted as a graph is **no-graph**. `ledger.open-problems.json` is the result, with every row
+carrying provenance (published, proposed-here, illustrative values) and, on an elimination, the caveat that a
+proposed-here candidate's elimination eliminates the enumerator's construction, not a published hypothesis.
+Rank nothing by elimination count.
+
+## The most valuable next constraint
+
+Galileo's argument becomes an elimination only when strength scaling as `L^2` (cross-section) is formalised
+beside mass scaling as `L^3`: then "a giant of unchanged proportions can stand up" is ruled out, not merely
+unconstrained. Nothing in the repository proves that yet, and the ledger must not be read as if it did.
+
+## Mutants
+
+`lean/mutate.mjs` rewrites the giant-insect certificate to claim that a weight ratio of exactly `10^6`
+at length ratio 100 is ruled out (it is not: `10^6 = 100^3`) and flips the sign in the Fisher lemma to
+rule out a rise in mean fitness. Both must be rejected by the compiler.
