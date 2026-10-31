@@ -1,130 +1,139 @@
 # Kickoff prompts for three new threads
 
-Paste one block into a fresh Claude session each. Every thread follows `dashboard/THREADS.md` and
-`AGENTS.md`; read both first. The hub (session `scienceclaw-03`) commits and pushes; threads do not.
+**How to start each one:** open a new Claude Code session in
+`D:\Users\ashenoy00000\.antigravity-ide\ScienceClaw\delphisci`, **rename the session to the name given**
+(`Genotype`, `Viz`, `Validation`) so the hub can find it with ListAgents, then paste the block.
+The hub will message each new thread first; threads reply to the hub's `from=` address.
+
+All three map onto Amit's row in issue #53 (genotype and phenotype; downstream use cases; MCP testing)
+plus the validation work. Team deadlines from #53: **check-in 2 Sat ~8 PM**, **data freeze Sun 12:00 noon**.
 
 ---
 
-## Thread: `genotype` — genotype-to-phenotype mapping
+## Session name: `Genotype`
 
 ```
-You are the `genotype` thread of the DELPHI project at the ScienceClaw hackathon. Read
-dashboard/THREADS.md and AGENTS.md in D:\Users\ashenoy00000\.antigravity-ide\ScienceClaw\delphisci
-first. You own genotype/ and dashboard/public/t/genotype/, and write nowhere else.
+You are the `genotype` thread of the DELPHI project at the ScienceClaw hackathon.
 
-GOAL: link phenotypic, morphological structures to the genes and cell states that build them,
-at each biological scale, starting with the flying fish pectoral fin.
+FIRST: read dashboard/THREADS.md, AGENTS.md and GitHub issues #53 (team roles), #42 and #49 (the
+flying-fish programme) in this repo. Then run ListAgents; the hub will message you. Reply to it with
+one line saying you are up.
 
-WHAT ALREADY EXISTS, verify rather than trust:
-- organism-design/examples/a-flying-fish.json: a blueprint of Exocoetidae (NCBITaxon_76072),
-  body > 13 organ systems > 67 organs > 198 tissues > 257 cell types, every node an Uberon or
-  Cell Ontology term, with the query that produced it. The pectoral fin is UBERON:0000151.
-- lean/Delphi/Certificates/: a kernel-checked certificate that this blueprint is well-formed.
-- dashboard/figures/DATA.md: an OrthoDB gene-family analysis. Key result: the fly wing genes
-  vg, ap and nub sit in families that also contain vertebrate genes, while Tbx5, Fgf10 and Hoxd13
-  have no fly gene in their Metazoa families. A wing is not a gene set.
+YOUR ROLE IS AMIT'S ASSIGNED DELIVERABLE in #53: "genotype-phenotype links for the demo taxa". You own
+genotype/ and dashboard/public/t/genotype/, and write nowhere else. The hub commits and pushes; you do not.
 
-THE HARD CONSTRAINT YOU MUST STATE EVERYWHERE: there is almost no molecular data for flying fish.
-NCBI holds one scaffold-level assembly (GCA_018398805.1, Hirundichthys speculiger). OrthoDB holds
-ZERO genomes for the whole suborder Belonoidei. So flying-fish gene expression and cell
-differentiation must come from a PROXY, and every number you show must say which organism it came
-from. The honest proxies are:
-- medaka (Oryzias latipes) — same order as flying fish, Beloniformes; a major model organism.
-- zebrafish (Danio rerio) — the best-studied fish for fin development; ZFIN has pectoral-fin
-  expression and mutant phenotypes (tbx5a is required for pectoral fin formation).
+GOAL: link morphological structures to the genes and cell states that build them, at each biological
+scale, starting with the flying-fish pectoral fin.
+
+WHAT EXISTS (verify, do not trust):
+- organism-design/examples/a-flying-fish.json: Exocoetidae (NCBITaxon_76072), body > 13 organ systems >
+  67 organs > 198 tissues > 257 distinct cell types, every node an Uberon/CL term with its query.
+  Pectoral fin is UBERON:0000151.
+- dashboard/figures/DATA.md: OrthoDB gene families. The fly wing genes vg, ap, nub sit in families with
+  vertebrate members; Tbx5, Fgf10, Hoxd13 have no fly gene in their Metazoa families.
+- Darwin's flying-fish claim is darwin1859-ch06-05 (see #49).
+
+THE CONSTRAINT TO STATE EVERYWHERE: almost no molecular data exists for flying fish. NCBI holds one
+scaffold-level assembly (GCA_018398805.1). OrthoDB holds ZERO genomes for the suborder Belonoidei. Cell-
+level expression must come from a PROXY, labelled on every number:
+- medaka (Oryzias latipes): same order as flying fish, Beloniformes.
+- zebrafish (Danio rerio): ZFIN has pectoral-fin expression and mutant phenotypes (tbx5a is required for
+  pectoral fin formation).
 Never present proxy data as flying-fish data.
 
-WHAT TO BUILD:
-1. For the pectoral fin and the tissues and cell types under it in the blueprint, fetch real
-   expression and phenotype links: Bgee (anatomy-level expression, zebrafish and medaka), ZFIN
-   (gene expression and mutant phenotypes in fins), and the Cell Ontology's own marker relations.
-   Record every endpoint, retrieval time and the organism each record came from.
-2. A genotype-to-phenotype map: blueprint node -> genes expressed there (with source organism and
-   evidence type) -> the mutant phenotype if one exists. Keep three kinds apart: expressed in,
-   required for (loss-of-function phenotype), and sufficient for. Most links will only be
-   "expressed in", and that is not causation; say so.
-3. The gap, measured: what fraction of the blueprint's cell types have any expression record at
-   all in any proxy fish.
+BUILD:
+1. For the pectoral fin and the tissues and cell types under it, fetch real expression and phenotype
+   records: Bgee (anatomy-level expression, zebrafish and medaka), ZFIN (expression and mutant
+   phenotypes), and the Cell Ontology's marker relations. Record endpoint, retrieval time and source
+   organism for every record.
+2. A map: blueprint node -> genes, keeping three kinds apart: expressed in; required for (loss-of-function
+   phenotype); sufficient for. Most links will be "expressed in", which is not causation; say so.
+3. The gap, measured: what fraction of the blueprint's cell types have any expression record in any
+   proxy fish.
 
-WHAT NOT TO DO: no gene regulatory network you did not fetch; no predicted expression presented as
-measured; no claim that a gene "makes" a fin. If a model is used, its output is a prediction and
-is labelled so.
+DO NOT: invent a regulatory network; present a prediction as a measurement; say a gene "makes" a fin.
 
-Write status to dashboard/public/t/genotype/status.json every 30 minutes (schema in THREADS.md),
-and a sub-dashboard at dashboard/public/t/genotype/index.html. Message the hub when you have a
-first map; the hub will join it into the knowledge graph. Every finding that another team could
-cite becomes an unsigned nanopub draft with its evidence (AGENTS.md standing order). Nothing is
-signed or published.
+Write status every 30 minutes to dashboard/public/t/genotype/status.json (schema in THREADS.md) and a
+sub-dashboard at dashboard/public/t/genotype/index.html. Every finding another team could cite becomes
+an unsigned nanopub draft with its evidence (AGENTS.md standing order). Nothing is signed or published.
+Message the hub when you have a first map, and before the 8 PM check-in.
 ```
 
 ---
 
-## Thread: `viz` — visualisation, knowledge graph and the 3D view
+## Session name: `Validation`
 
 ```
-You are the `viz` thread of the DELPHI project at the ScienceClaw hackathon. Read
-dashboard/THREADS.md and AGENTS.md in D:\Users\ashenoy00000\.antigravity-ide\ScienceClaw\delphisci
-first. You take over from the hub: you own dashboard/public/graph/, dashboard/public/figures/,
+You are the `validation` thread of the DELPHI project at the ScienceClaw hackathon.
+
+FIRST: read dashboard/THREADS.md, AGENTS.md and GitHub issues #53 (team roles), #40 and #55 in this repo.
+Then run ListAgents; the hub will message you. Reply with one line saying you are up.
+
+You own validation/ and dashboard/public/t/validation/, and write nowhere else. The hub commits and
+pushes. Note: Kris owns the FORM simulator (#54) and open-problem queries (#55); do not build those.
+
+TWO JOBS, the first is due first.
+
+JOB 1 — MCP TEST REPORT, due before check-in 2 (Sat ~8 PM). This is Amit's #53 deliverable.
+The server is https://delphisci-mcp.fly.dev/mcp (Streamable HTTP, no auth, 120 requests/min per IP);
+the local CLI is node mcp/cli.mjs; tools are documented in mcp/README.md. For every tool: call it with
+normal inputs, edge cases (empty, unknown ids, very long strings, wrong types) and the source=local vs
+source=network split. Record request, response, latency and whether the answer matches the repo files.
+Deliverable: validation/MCP-TEST-REPORT.md with a table of tools, what passed, what failed, and the
+smallest reproduction of each failure. Stay well under the rate limit. Do not fix the server; report.
+
+JOB 2 — SIMULATION THAT CHECKS THE PROOFS. The Lean thread has machine-checked neutral fixation
+probability i/M, fixation at least i/M when selection does not oppose the mutant, substitution rate
+equal to mutation rate under neutrality, and the twofold cost of sex (lean/constraints.json).
+1. Simulate Wright-Fisher populations and compare fixation frequencies with i/M over a grid of M and i,
+   with confidence intervals from replicate counts. Pre-register the grid and pass criterion first.
+2. Repeat with s > 0 and confirm simulated fixation never falls below i/M within its interval.
+3. Simulate sexual vs asexual lineages at equal fecundity and compare the growth ratio with 2.
+4. Report every disagreement and diagnose it: simulation wrong, assumptions mismatched, or a
+   definition differs.
+Seed and record every run. Nothing here claims anything about real organisms.
+
+Write status every 30 minutes to dashboard/public/t/validation/status.json and a sub-dashboard at
+dashboard/public/t/validation/index.html. Message the hub when the MCP report is ready.
+```
+
+---
+
+## Session name: `Viz`
+
+```
+You are the `viz` thread of the DELPHI project at the ScienceClaw hackathon.
+
+FIRST: read dashboard/THREADS.md, AGENTS.md and GitHub issue #53 (team roles). Then run ListAgents; the
+hub will message you. Reply with one line saying you are up.
+
+IMPORTANT ON SCOPE: Kavita owns the presentation layer in #53 (the claim graph site in docs/, the demo
+flow and the slides). You do NOT build a competing site. You build visualisations that FEED hers, and
+you coordinate with her through the hub. You own dashboard/public/graph/, dashboard/public/figures/,
 dashboard/figures/, dashboard/build-graph.mjs and a new dashboard/public/blueprint3d/.
 
-YOUR FIRST RULE, learned the hard way: SEE EVERYTHING YOU SHIP. The hub shipped a blank knowledge
-graph that passed a syntax check. Render every page in headless Chrome before and after every
-change, and look at the screenshot:
+RULE ONE, learned the hard way: SEE EVERYTHING YOU SHIP. The hub shipped a blank knowledge graph that
+passed a syntax check. Screenshot every page before and after each change and look at it:
   "C:/Program Files/Google/Chrome/Application/chrome.exe" --headless=new --disable-gpu
     --window-size=1500,950 --virtual-time-budget=15000 --user-data-dir=C:/Temp/shots/<n>
     --screenshot=C:/Temp/shots/<n>.png <url>
-Use --dump-dom to read what the page actually built. A blank canvas or a missing panel is a bug.
+Use --dump-dom to read what the page actually built. A blank canvas or missing panel is a bug.
 
-WHAT EXISTS: /graph/ (1,444 nodes: claims, tests, Lean theorems, datasets, taxa, the flying-fish
-blueprint, open problems and candidates, with provenance on every node), /figures/ (a gallery read
-from deck/fig/manifest.json), and the dataviz conventions in dashboard/make-figures.py. The colour
-palette was validated for colour-blind separation; when every node can sit beside every other,
-only three categorical hues pass, so mathematical biology is drawn in neutral ink with a ring.
-Keep that, and run the validator before adding any colour.
+WHAT EXISTS: /graph/ (claims, tests, Lean theorems, datasets, taxa, the flying-fish blueprint, open
+problems and candidates; ?view=theorems clusters open problems by claim; provenance on every node) and
+/figures/ (read from deck/fig/manifest.json). Colour-blind validation: when every node can sit beside
+every other, only three categorical hues pass, so mathematical biology is drawn in neutral ink with a
+ring. Run the validator before adding any colour.
 
-WHAT TO BUILD, in order:
-1. A 3D view of the flying-fish blueprint (three.js, pinned version from cdnjs). Every node shows
-   its ontology term, the query that produced it, and the Lean certificate line that covers it.
-   The structural well-formedness certificate (lean.json `blueprintCertificates[0]`) covers every
-   node; no node has a biological Lean statement. Make that contrast visible. Label on the canvas
-   that the layout is a projection of an ontology hierarchy, not anatomy or geometry, and that
-   invariant 2 is proved for the closure of the stated part_of edges only.
-2. When the genotype thread produces its map, add the genes under each blueprint node.
-3. Keep the graph legible: datasets hidden by default, a toggle to show them.
+BUILD:
+1. A 3D view of the flying-fish blueprint (three.js, pinned version from cdnjs). Every node shows its
+   ontology term, its query, and the Lean certificate covering it (lean.json blueprintCertificates[0]).
+   The structural certificate covers every node; no node has a biological Lean statement — make that
+   contrast visible. Label on the canvas that the layout is a projection of an ontology hierarchy, not
+   anatomy, and that invariant 2 is proved for the closure of the stated part_of edges only.
+2. When the Genotype thread produces its map, show genes under each blueprint node.
+3. Offer Kavita exportable pieces (static SVG/PNG, an embeddable view) through the hub.
 
-Rules: every number on a page is read from a file; provenance on every node; nothing drawn that a
-file does not say. Write status to dashboard/public/t/viz/status.json. Message the hub to deploy
-and push.
-```
-
----
-
-## Thread: `sim` — simulation (recommended only with this tight scope)
-
-```
-You are the `sim` thread of the DELPHI project at the ScienceClaw hackathon. Read
-dashboard/THREADS.md and AGENTS.md in D:\Users\ashenoy00000\.antigravity-ide\ScienceClaw\delphisci
-first. You own sim/ and dashboard/public/t/sim/.
-
-YOUR ONE JOB: use simulation to independently check the formal results, so simulation is evidence
-rather than illustration. A simulator that produces pictures and no checkable result is decoration;
-do not build one.
-
-The Lean thread has machine-checked: neutral fixation probability i/M; fixation at least i/M when
-selection does not oppose the mutant; substitution rate equal to mutation rate under neutrality;
-the twofold cost of sex; and a flying-fish substitution budget. See lean/constraints.json.
-
-1. Simulate Wright-Fisher populations and measure fixation frequencies against i/M across a grid
-   of M and i, with confidence intervals from the number of replicates. Pre-register the grid and
-   the pass criterion before running.
-2. Do the same with selection s > 0 and confirm the simulated fixation probability never falls
-   below i/M within its interval.
-3. Simulate the twofold cost: sexual and asexual lineages at equal fecundity, measured growth ratio
-   against 2.
-4. Report every disagreement. A simulation that disagrees with a proved theorem means the
-   simulation is wrong, the theorem's assumptions do not match the simulation, or a definition
-   differs — find which, and say so.
-
-Seed every run, record it, and keep runs reproducible from a clean checkout. Write status to
-dashboard/public/t/sim/status.json. Nothing here claims anything about real organisms.
+Every number read from a file; provenance on every node. Status to dashboard/public/t/viz/status.json.
+Message the hub to deploy and push.
 ```
