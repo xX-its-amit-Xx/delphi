@@ -70,6 +70,31 @@ const data = {
     aliases_check: M.fin_size.aliases_check },
   fin_ratios: (() => { const p = path.join(root, 'genotype/cache/daane2021_fin_ratios.json'); if (!fs.existsSync(p)) return null; const F = JSON.parse(fs.readFileSync(p, 'utf8'));
     return { source: F.source, n_rows: F.n_rows, groups: F.groups, species: F.species.map(s => ({ group: s.group, species: s.species, n: s.n_specimens, SL_cm_min: s.SL_cm_min, SL_cm_max: s.SL_cm_max, median: s.pectoral_over_SL_median, min: s.pectoral_over_SL_min, max: s.pectoral_over_SL_max })) }; })(),
+  pathways: (() => { const p = path.join(root, 'genotype/pathways.slim.json'); if (!fs.existsSync(p)) return null; const P = JSON.parse(fs.readFileSync(p, 'utf8'));
+    const finTop = Object.entries(P.fin_pathways || {}).sort((a, b) => b[1].length - a[1].length).slice(0, 20)
+      .map(([id, gs]) => ({ id, name: P.pathways[id]?.name, source: P.pathways[id]?.source, n_fin_genes: gs.length }));
+    return { built: P.built, not_causation: P.not_causation, coverage: P.coverage, summary: P.summary,
+      sources: { go: { call: P.sources.go_bp.call, gaf_date: P.sources.go_bp.gaf_date_generated, retrieved: P.sources.go_bp.retrieved },
+        reactome: { version: P.sources.reactome.database_version, inferred_by_orthology: true, note: P.sources.reactome.note, retrieved: P.sources.reactome.retrieved },
+        kegg: { release: P.sources.kegg.release, retrieved: P.sources.kegg.retrieved } },
+      top_fin_pathways: finTop }; })(),
+  causal_chains: (() => { const p = path.join(root, 'genotype/causal-chains.json'); if (!fs.existsSync(p)) return null; const C = JSON.parse(fs.readFileSync(p, 'utf8'));
+    return { built: C.built, note: C.note, grades: C.grades, coverage: C.coverage, validation_flags: C.validation_flags,
+      agent_calls: Object.values(C.agent_calls || {}).reduce((a, c) => a + c.calls, 0),
+      genes: (C.genes || []).map(g => ({ symbol: g.symbol, agent: g.agent, chain_strength: g.chain_strength, best_grade: g.best_grade, weakest_grade: g.weakest_grade, deepest_level: g.deepest_level,
+        n_full_text_sources: g.n_full_text_sources, n_abstract_only_sources: g.n_abstract_only_sources, chain_complete: g.chain_complete,
+        deepest_node: g.deepest_node_with_evidence, n_sources: g.n_sources, weakest_link: g.weakest_link, gaps: g.gaps,
+        chain: (g.chain || []).map(s => ({ step: s.step, from: s.from, to: s.to || s.phenotype, to_node: s.to_node, to_node_label: s.to_node_label, grade: s.evidence_grade,
+          organism: s.organism, experiment_type: s.experiment_type, stage: s.stage,
+          sources: (s.sources || []).map(x => ({ pmid: x.pmid, doi: x.doi, first_author: x.first_author, year: x.year, journal: x.journal, quote: x.quote, read: x.read })) })) })),
+      cross_gene: C.cross_gene }; })(),
+  interactions: (() => { const p = path.join(root, 'genotype/interactions.json'); if (!fs.existsSync(p)) return null; const I = JSON.parse(fs.readFileSync(p, 'utf8'));
+    return { built: I.built, coverage: I.coverage, agents: I.agents,
+      interactions: (I.interactions || []).map(x => ({ id: x.id, sender: x.sender_node, sender_label: x.sender_node_label, receiver: x.receiver_node, receiver_label: x.receiver_node_label,
+        kind: x.kind, signal: x.signal, what_is_shown: x.what_is_shown, grade: x.evidence_grade, organism: x.organism, stage: x.stage, context: x.context,
+        orthology_inferred: x.orthology_inferred, inferred_from: x.inferred_from,
+        sources: (x.sources || []).map(s => ({ pmid: s.pmid, doi: s.doi, first_author: s.first_author, year: s.year, quote: s.quote })) })),
+      refuted_or_unsupported: I.refuted_or_unsupported, gaps: I.gaps }; })(),
   not_sourced: M.not_sourced, vetting: M.vetting, slimming: { rule: M.slimming?.rule, nodes_with_omitted_expression_links: Object.keys(M.slimming?.expressed_in_links_omitted_by_node || {}).length },
   crosswalk_rule: M.crosswalk.rule,
 };

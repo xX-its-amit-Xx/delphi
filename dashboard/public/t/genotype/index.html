@@ -70,7 +70,7 @@ footer{padding:28px 0;color:var(--mute);font-size:.85rem}
 <body>
 <header class="top"><div class="wrap">
   <a class="brand" href="../../index.html">&larr; DELPHI mission control</a>
-  <nav><a href="#headline">Headline</a><a href="#layers">Five layers</a><a href="#fin">Pectoral fin</a><a href="#finsize">Fin size</a><a href="#rules">Rules</a><a href="#vetting">Vetting</a><a href="#sources">Sources</a></nav>
+  <nav><a href="#headline">Headline</a><a href="#layers">Five layers</a><a href="#fin">Pectoral fin</a><a href="#finsize">Fin size</a><a href="#pathways">Pathways</a><a href="#causal">Causal chains</a><a href="#interactions">Interactions</a><a href="#rules">Rules</a><a href="#vetting">Vetting</a><a href="#sources">Sources</a></nav>
   <button id="themeBtn" type="button" aria-label="Toggle dark mode">Theme</button>
 </div></header>
 
@@ -110,6 +110,24 @@ footer{padding:28px 0;color:var(--mute);font-size:.85rem}
   <div id="finratios"></div>
   <details><summary>Zebrafish genes with any fin size or length phenotype in ZFIN</summary><div class="in" id="finsizegenes"></div></details>
   <details><summary>Focus gene families from the OrthoDB figure (Tbx5, Fgf10, Shh, Hoxd13): paralogs kept apart, breadth shown</summary><div class="in" id="focus"></div></details>
+</section>
+
+<section id="pathways">
+  <h2>Pathway membership for every gene</h2>
+  <p class="lede">Which processes and pathways each gene belongs to, from three bulk sources. <b>Membership is not causation</b>, and it is not even a claim about the fin.</p>
+  <div id="pw"></div>
+</section>
+
+<section id="causal">
+  <h2>Causal chains: gene to molecular function to process to tissue to phenotype</h2>
+  <p class="lede">Each link carries its own source, organism, experiment type and an evidence grade. Grades, weakest to strongest: hypothesis, association (expression only), necessity (loss of function), sufficiency (gain of function), mechanism (a pathway step shown experimentally). A link with no fetched source is marked missing and named as a gap.</p>
+  <div id="chains"></div>
+</section>
+
+<section id="interactions">
+  <h2>Tissue-to-tissue and cell-to-cell interactions</h2>
+  <p class="lede">Directed arrows between fin tissues and cell types, for zooming into one piece of the fin. An arrow whose ligand-receptor pair comes from a human or mouse database is marked inferred by orthology.</p>
+  <div id="inter"></div>
 </section>
 
 <section id="rules">
@@ -198,6 +216,53 @@ fetch('data.json').then(r => r.json()).then(D => {
   $('#finsizegenes').innerHTML = `<p class="small">${esc(fz.definition)} <b>${fz.count} genes.</b> Top 25 by rows:</p><div class="scroll"><table><tr><th>gene</th><th class="n">rows</th><th>most frequent phenotypes</th><th>zygosity of rows</th></tr>${fz.top.map(g => `<tr><td><b>${esc(g.symbol)}</b> <span class="tiny">${g.zfin}</span></td><td class="n">${g.rows}</td><td>${Object.entries(g.qualities).map(([k, v]) => `${esc(k)} (${v})`).join('; ')}</td><td>${Object.entries(g.zygosity_of_rows).map(([k, v]) => `${k} ${v}`).join(', ')}</td></tr>`).join('')}</table></div>`;
   $('#focus').innerHTML = `<div class="scroll"><table><tr><th>family</th><th>gene</th><th>organism</th><th class="n">blueprint nodes touched</th><th>layers</th><th class="n">pectoral-fin links</th></tr>${D.focus_genes.map(g => `<tr><td>${esc(g.family)}</td><td><b>${esc(g.symbol)}</b> <span class="tiny">${esc(g.gene)}</span></td><td>${esc(g.organism)}</td><td class="n">${g.breadth.blueprint_nodes_direct}</td><td>${Object.entries(g.breadth.layers || {}).map(([k, v]) => `${LN[k]} ${v}`).join(', ')}</td><td class="n">${g.pectoral_fin_links.length}</td></tr>`).join('')}</table></div>
     <p class="tiny">Any correspondence between a zebrafish paralog and a flying-fish gene is an orthology assumption, not established here. Breadth: a gene touching many nodes is pleiotropic, not a fin gene. Median fish gene touches ${S.gene_breadth.median_blueprint_nodes} nodes (max ${S.gene_breadth.max}).</p>`;
+
+  const GR = { mechanism: 'ok', sufficiency: 'ok', necessity: 'acc', association: 'warn', hypothesis: 'warn', missing: 'bad' };
+  const P = D.pathways;
+  $('#pw').innerHTML = !P ? '<p class="mute small">genotype/pathways.slim.json not built yet.</p>' : `
+    <div class="warnbox"><b>Not causation.</b> ${esc(P.not_causation)}</div>
+    <div class="grid g4">
+      <div class="card"><div class="kpi">${fmt(P.coverage.all_genes_in_vetted_map.with_any_pathway)}<small>of ${fmt(P.coverage.all_genes_in_vetted_map.genes)} genes have at least one pathway or process (${pct(P.coverage.all_genes_in_vetted_map.with_any_pathway, P.coverage.all_genes_in_vetted_map.genes)})</small></div></div>
+      <div class="card"><div class="kpi">${P.coverage.fin_subtree_required_or_sufficient_genes.with_any_pathway}<small>of ${P.coverage.fin_subtree_required_or_sufficient_genes.genes} fin genes with a loss- or gain-of-function link</small></div></div>
+      <div class="card"><div class="kpi">${fmt(P.summary.distinct_pathways)}<small>distinct pathways and processes (${Object.entries(P.summary.distinct_pathways_by_source).map(([k, v]) => `${k} ${fmt(v)}`).join(', ')})</small></div></div>
+      <div class="card"><div class="kpi">${fmt(P.summary.entries_inferred_by_orthology)}<small>of ${fmt(P.summary.entries)} entries are inferred by orthology from human (all of Reactome's zebrafish entries)</small></div></div>
+    </div>
+    <p class="small">Sources: Gene Ontology biological process from ZFIN's annotation file (generated ${esc(P.sources.go.gaf_date || '?')}), every evidence code kept; Reactome database version ${esc(P.sources.reactome.version)}, every zebrafish entry inferred by orthology; KEGG zebrafish maps (${esc((P.sources.kegg.release || []).join(' / ')).slice(0, 120)}).</p>
+    <p class="tiny">${esc(P.sources.reactome.note)}</p>
+    <p class="small">Medaka: ${P.coverage.medaka_genes.with_any_pathway} of ${P.coverage.medaka_genes.genes}. ${esc(P.coverage.medaka_genes.note)}</p>
+    <details><summary>Pathways with the most fin genes</summary><div class="in"><div class="scroll"><table><tr><th>pathway</th><th>name</th><th>source</th><th class="n">fin genes</th></tr>
+      ${P.top_fin_pathways.map(p => `<tr><td class="tiny">${esc(p.id)}</td><td>${esc(p.name)}</td><td>${esc(p.source)}</td><td class="n">${p.n_fin_genes}</td></tr>`).join('')}</table></div></div></details>`;
+
+  const C = D.causal_chains;
+  const srcList = ss => (ss || []).map(s => `${s.pmid ? `<a href="https://pubmed.ncbi.nlm.nih.gov/${s.pmid}/">PMID ${s.pmid}</a>` : s.doi ? `<a href="https://doi.org/${s.doi}">${esc(s.doi)}</a>` : 'no identifier'}${s.read === 'abstract only' ? ' <span class="tiny">(abstract only)</span>' : ''}`).join(', ') || '<b>no source</b>';
+  $('#chains').innerHTML = !C ? '<p class="mute small">genotype/causal-chains.json not built yet; the subagents are still working.</p>' : `
+    <div class="grid g4">
+      <div class="card"><div class="kpi">${C.coverage.genes_with_a_chain}<small>genes with a chain</small></div></div>
+      <div class="card"><div class="kpi">${C.coverage.chains_whose_weakest_link_is_necessity_or_better}<small>chains whose <b>weakest</b> link is necessity or better. A chain is only as strong as its weakest link</small></div></div>
+      <div class="card"><div class="kpi">${C.coverage.genes_with_a_link_graded_mechanism}<small>genes with at least one link graded mechanism, which is a much weaker statement than the chain reaching it</small></div></div>
+      <div class="card"><div class="kpi">${fmt(C.coverage.distinct_publications)}<small>distinct publications cited, from ${fmt(C.agent_calls)} logged fetches</small></div></div>
+    </div>
+    <p class="tiny">${esc(C.note)}</p>
+    ${C.genes.map(g => `<details${g === C.genes[0] ? ' open' : ''}><summary>${esc(g.symbol)} <span class="chip ${GR[g.chain_strength] || ''}">chain: ${esc(g.chain_strength || 'no grade')}</span> <span class="tiny">strongest link ${esc(g.best_grade || '-')} · deepest ${esc(g.deepest_node || '-')} (${esc(g.deepest_level || '-')}) · ${g.n_full_text_sources || 0} papers in full text, ${g.n_abstract_only_sources || 0} abstract only</span></summary><div class="in">
+      <ol class="small">${(g.chain || []).map(s => `<li><span class="chip ${GR[s.grade] || ''}">${esc(s.grade)}</span> <b>${esc(s.from || '')}</b> &rarr; ${esc(s.to || '')}${s.to_node ? ` <span class="tiny">at ${esc(s.to_node_label || s.to_node)}</span>` : ''}<br><span class="tiny">${esc(s.experiment_type || '')}${s.organism ? ', ' + esc(s.organism) : ''}${s.stage ? ', stage ' + esc(s.stage) : ''} · ${srcList(s.sources)}</span>${(s.sources || [])[0]?.quote ? `<div class="quote tiny">"${esc(s.sources[0].quote)}"</div>` : ''}</li>`).join('')}</ol>
+      ${g.weakest_link ? `<p class="small"><b>Where it breaks:</b> ${esc(g.weakest_link)}</p>` : ''}
+      ${(g.gaps || []).length ? `<p class="tiny"><b>Gaps:</b> ${g.gaps.map(esc).join('; ')}</p>` : ''}</div></details>`).join('')}
+    ${(C.cross_gene || []).length ? `<h3>Claims spanning several genes</h3><ul class="small">${C.cross_gene.map(c => `<li><span class="chip ${GR[c.evidence_grade] || ''}">${esc(c.evidence_grade)}</span> ${esc(c.claim)} ${srcList(c.sources)}</li>`).join('')}</ul>` : ''}
+    ${Object.keys(C.validation_flags || {}).length ? `<details><summary>Validation flags from the assembler</summary><div class="in"><table>${Object.entries(C.validation_flags).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<tr><td class="small">${esc(k)}</td><td class="n">${v}</td></tr>`).join('')}</table></div></details>` : ''}`;
+
+  const I = D.interactions;
+  $('#inter').innerHTML = !I ? '<p class="mute small">genotype/interactions.json not built yet; the two interaction subagents are still working.</p>' : `
+    <div class="grid g4">
+      <div class="card"><div class="kpi">${I.coverage.interactions}<small>interactions, ${I.coverage.orthology_inferred} of them inferred by orthology</small></div></div>
+      <div class="card"><div class="kpi">${I.coverage.distinct_sender_nodes}<small>distinct sender nodes</small></div></div>
+      <div class="card"><div class="kpi">${fmt(I.coverage.distinct_publications)}<small>distinct publications cited</small></div></div>
+      <div class="card"><div class="kpi">${Object.entries(I.coverage.by_grade || {}).filter(([k]) => k === 'mechanism').map(([, v]) => v)[0] || 0}<small>arrows graded mechanism</small></div></div>
+    </div>
+    ${(I.agents?.cellcell?.connexin_and_fin_length) ? `<div class="warnbox"><b>Gap junctions and fin length:</b> ${esc(I.agents.cellcell.connexin_and_fin_length.answer)}. ${esc(I.agents.cellcell.connexin_and_fin_length.phenotype_in_papers_words || '')} ${esc(I.agents.cellcell.connexin_and_fin_length.relation_to_potassium_channel_story || '')}</div>` : ''}
+    <div class="scroll"><table><tr><th>from</th><th>to</th><th>signal</th><th>what is shown</th><th>grade</th><th>context</th><th>source</th></tr>
+      ${I.interactions.map(x => `<tr><td>${esc(x.sender_label || x.sender)}</td><td>${esc(x.receiver_label || x.receiver)}</td><td class="small">${esc([...(x.signal?.ligands || []), ...(x.signal?.receptors || []), ...(x.signal?.channels || [])].join(', '))}${x.signal?.pathway ? ` <span class="tiny">(${esc(x.signal.pathway)})</span>` : ''}</td><td class="small">${esc(x.what_is_shown || '')}${x.orthology_inferred ? ` <span class="chip warn">orthology-inferred${x.inferred_from ? ' from ' + esc(x.inferred_from) : ''}</span>` : ''}</td><td><span class="chip ${GR[x.grade] || ''}">${esc(x.grade)}</span></td><td class="tiny">${esc(x.context || '')}</td><td class="tiny">${srcList(x.sources)}</td></tr>`).join('')}</table></div>
+    ${(I.refuted_or_unsupported || []).length ? `<details><summary>Proposed but not supported by the sources</summary><div class="in"><ul class="small">${I.refuted_or_unsupported.map(r => `<li><b>${esc(r.proposed)}</b>: ${esc(r.finding)}</li>`).join('')}</ul></div></details>` : ''}
+    ${(I.gaps || []).length ? `<details><summary>Known in tetrapod limbs, no zebrafish pectoral-fin source found</summary><div class="in"><ul class="small">${I.gaps.map(g => `<li>${esc(g.gap || g)}</li>`).join('')}</ul></div></details>` : ''}`;
 
   $('#rules-cards').innerHTML = [
     ['Evidence differs by layer', 'Cell: single-cell expression and Cell Ontology markers. Tissue: in situ (ZFIN) and bulk (Bgee). Organ: mutant and knockdown phenotypes. Organ system: GO developmental process, the weakest kind and labelled so. Body: axial patterning (GO) and whole-organism phenotype terms. Every link carries its layer and evidence kind.'],
