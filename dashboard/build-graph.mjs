@@ -367,7 +367,7 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
       const CAP = 40;
       const KIND_RANK = k => /single|in situ|immunost/i.test(k || '') ? 0 : /bulk|RNA Seq/i.test(k || '') ? 2 : 1;
       const short = o => /Danio/.test(o?.name || '') ? 'zebrafish' : /Oryzias/.test(o?.name || '') ? 'medaka' : (o?.name || 'unstated');
-      genotype = { file: gmSource, built: gmRaw.built || null, tool: gmRaw.tool || null, title: gmRaw.title || null,
+      genotype = { file: gmSource, built: gmRaw.built || null, tool: gmRaw.tool || null, title: gmRaw.title || null, vetted: gmRaw.vetted === true, vetting: gmRaw.vetting || null, slimming: gmRaw.slimming || null,
         constraint: gmRaw.constraint || null, causation_warning: gmRaw.causation_warning || null,
         link_types: gmRaw.link_types || null, propagation_rules: gmRaw.propagation_rules || null, not_sourced: gmRaw.not_sourced || [],
         proxy_organisms: gmRaw.summary?.proxy_organisms || [], blueprint_sha256: gmRaw.blueprint?.sha256 || null, matches_blueprint_now: (gmRaw.blueprint?.sha256 || null) === sha,
