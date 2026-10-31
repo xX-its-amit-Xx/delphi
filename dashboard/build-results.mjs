@@ -96,8 +96,10 @@ function clip(s, max) {
   if (!t) return '';
   if (t.length <= max) return t;
   const head = t.slice(0, max);
-  const stop = Math.max(head.lastIndexOf('. '), head.lastIndexOf('; '), head.lastIndexOf(': '));
-  if (stop > max * 0.45) return head.slice(0, stop + 1);
+  const dot = head.lastIndexOf('. ');
+  if (dot > max * 0.4) return head.slice(0, dot + 1);
+  const semi = Math.max(head.lastIndexOf('; '), head.lastIndexOf(': '));
+  if (semi > max * 0.4) return head.slice(0, semi) + '…';
   const sp = head.lastIndexOf(' ');
   return (sp > 0 ? head.slice(0, sp) : head) + '…';
 }
@@ -490,6 +492,8 @@ section>h4{margin-top:20px}
 code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em}
 pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;margin:6px 0}
 .mute{color:var(--mute)} .small{font-size:.86rem} .tiny{font-size:.78rem}
+td .sub{color:var(--mute);font-size:.86em;margin-top:4px;font-weight:400}
+tr.unev td .sub{color:var(--un)}
 .na{color:var(--un);font-style:italic;border-bottom:1px dotted var(--un)}
 .na-block{color:var(--un);font-style:italic}
 .unev{color:var(--un)}
@@ -698,10 +702,10 @@ function itemRow(k) {
   const zero = Number(it.strict_count || 0) === 0;
   return `<tr class="${zero ? 'unev' : ''}">
    <td class="num"><b>(${esc(k)})</b></td>
-   <td>${esc(checklist?.[k] || it.need || '')}</td>
    <td class="num">${num(it.strict_count)}</td>
    <td>${zero ? '<span class="chip un">– none held</span>' : '<span class="chip warn">! partial</span>'}</td>
-   <td class="small">${esc(clip(it.verdict, 300))}</td>
+   <td>${esc(checklist?.[k] || it.need || '')}
+    <div class="sub">${esc(clip(it.verdict, 300))}</div></td>
   </tr>`;
 }
 
@@ -725,7 +729,7 @@ const sec3 = `<section id="simulation">
 
 <h3>Item by item</h3>
 <div class="card"><div class="scroll"><table>
- <thead><tr><th class="num">item</th><th>what a simulation needs</th><th class="num">genes we hold it for</th><th>state</th><th>the source's own verdict</th></tr></thead>
+ <thead><tr><th class="num">item</th><th class="num">genes we<br>hold it for</th><th>state</th><th>what a simulation needs, and the source's own verdict</th></tr></thead>
  <tbody>${itemOrder.map(itemRow).join('')}</tbody>
 </table></div>
 <p class="small mute">Item (h) is a network, so its denominator is gene pairs, not genes: ${ratio?.pairwise_framing ? `${num(ratio.pairwise_framing.pairs_with_any_direct_experimental_support)} of ${num(ratio.pairwise_framing.unordered_gene_pairs)} unordered pairs (${esc(ratio.pairwise_framing.fraction_text)}) have any direct experimental support, and none of it is signed, directed and quantified.` : NA}</p>
@@ -815,8 +819,8 @@ const sec4 = `<section id="held">
 <div class="card" style="margin-top:14px">
  <h3>Six things the literature does not support in zebrafish</h3>
  <p class="small">Each was proposed from tetrapod limb biology or assumed across fishes, and each was checked against the zebrafish evidence.</p>
- <div class="scroll"><table><thead><tr><th>the assumption</th><th>status</th><th>what the evidence says</th></tr></thead><tbody>
-  ${refutations.map(r => `<tr><td>${esc(r.claim)}</td><td><span class="chip bad">✕ ${esc(r.status || '')}</span></td><td class="small">${esc(clip(r.finding, 360))}</td></tr>`).join('') || `<tr><td colspan="3" class="na-block">${NA}</td></tr>`}
+ <div class="scroll"><table><thead><tr><th>status</th><th>the assumption, and what the evidence says</th></tr></thead><tbody>
+  ${refutations.map(r => `<tr><td><span class="chip bad">✕ ${esc(r.status || '')}</span></td><td>${esc(r.claim)}<div class="sub">${esc(clip(r.finding, 360))}</div></td></tr>`).join('') || `<tr><td colspan="2" class="na-block">${NA}</td></tr>`}
  </tbody></table></div>
  ${src('genotype/nanopubs/unsigned/refutation-1…6-*.trig', SRC.npIndex)}
 </div>
