@@ -50,7 +50,19 @@ const mutations = [
   { id: 'favored-drift-dropped', file: 'Delphi/Favored.lean', theorem: 'Delphi.FavoredChain.fixationProbability_ge', claim_id: 'favored-fixation-lower-bound',
     description: 'Model hypothesis removed: the chain no longer has to keep the expected copy number from falling (favored := True). Selection against the mutant is then allowed, so the lower bound i/M must fail.',
     find: '  favored : ∀ i : Fin (M + 1), ((i : ℕ) : ℝ) ≤ ∑ j, P i j * ((j : ℕ) : ℝ)', replace: '  favored : True',
-    also: [['  { C with favored := fun i => (C.neutral i).ge }', '  { C with favored := trivial }'], ['  favored i := by rw [binomial_mean]; exact hfav i', '  favored := trivial']] }
+    also: [['  { C with favored := fun i => (C.neutral i).ge }', '  { C with favored := trivial }'], ['  favored i := by rw [binomial_mean]; exact hfav i', '  favored := trivial']] },
+  { id: 'blueprint-closure-level-flipped', file: 'Delphi/Blueprint.lean', theorem: 'Delphi.Blueprint.Graph.transGen_level_lt', claim_id: 'blueprint-well-formedness',
+    description: 'Statement changed to claim the level INCREASES along the part_of closure (level a < level b) instead of decreasing; acyclicity rests on this lemma, so the proof must fail.',
+    find: '    g.level b < g.level a := by\n  induction h with', replace: '    g.level a < g.level b := by\n  induction h with' },
+  { id: 'blueprint-certificate-cycle', file: 'Delphi/Certificates/AFlyingFish.lean', theorem: 'Delphi.Blueprint.Certificates.aFlyingFish_check', claim_id: 'blueprint-well-formedness',
+    description: 'Data sabotaged: an edge making the body root part of node 1 is added to the certified edge list (an upward edge, closing a cycle through the root). The kernel-evaluated checker must reject it.',
+    find: 'Edges : List (ℕ × ℕ) := [', replace: 'Edges : List (ℕ × ℕ) := [(0, 1), ' },
+  { id: 'blueprint-certificate-excluded-taxon', file: 'Delphi/Certificates/AFlyingFish.lean', theorem: 'Delphi.Blueprint.Certificates.aFlyingFish_check', claim_id: 'blueprint-well-formedness',
+    description: 'Data sabotaged: a never_in_taxon row saying node 1 is never in Vertebrata (NCBITaxon 7742, an ancestor of Exocoetidae) is added. The checker must reject it.',
+    find: '    neverIn := [', replace: '    neverIn := [(1, 7742), ' },
+  { id: 'thompson-exponent-two', file: 'Delphi/Thompson.lean', theorem: 'Delphi.cubeLaw_loglog_exponent', claim_id: 'thompson1917-ch03-07',
+    description: 'Statement changed to claim the log-log exponent of a cube law is 2 instead of 3.',
+    find: '(h₂ : 0 < L₂) (hne : L₁ ≠ L₂) : logSlope W L₁ L₂ = 3 := by', replace: '(h₂ : 0 < L₂) (hne : L₁ ≠ L₂) : logSlope W L₁ L₂ = 2 := by' }
 ];
 
 const tmp = fs.mkdtempSync(path.join(process.env.MUTANT_DIR || os.tmpdir(), 'delphi-mutants-'));
