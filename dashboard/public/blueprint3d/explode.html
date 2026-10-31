@@ -220,7 +220,7 @@ function sysPos(id){
   const s=SYS[id];const ids=Object.keys(SYS);
   const top=ids.filter(k=>SYS[k].row==='top').sort((a,b)=>SYS[a].x-SYS[b].x), bot=ids.filter(k=>SYS[k].row==='bottom').sort((a,b)=>SYS[a].x-SYS[b].x);
   const row=s.row==='top'?top:bot, i=row.indexOf(id), n=row.length;
-  const ex=110+(780*(i+0.5)/n), ey=(s.row==='top'?56:496)+(i%2?(s.row==='top'?30:-30):0);
+  const ex=110+(780*(i+0.5)/n), ey=(s.row==='top'?56:486)+(i%2?(s.row==='top'?30:-30):0);
   const t=state.t;return {x:s.x+(ex-s.x)*t,y:s.y+(ey-s.y)*t,ax:s.x,ay:s.y};
 }
 function fan(cx,cy,n,radius,a0,a1){const out=[];for(let i=0;i<n;i++){const a=n===1?(a0+a1)/2:a0+(a1-a0)*i/(n-1);out.push({x:cx+radius*Math.cos(a),y:cy+radius*Math.sin(a)});}return out;}
@@ -237,7 +237,7 @@ function render(){
   el('path',{d:PECTORAL,class:'fin'+(xray&&state.organ!==FIN_ORGAN?' ghost':'')},gBody);
   el('path',{d:PELVIC,class:'fin'+(xray?' ghost':'')},gBody);
   el('circle',{cx:EYE.cx,cy:EYE.cy,r:EYE.r,class:'outline'+(xray?' ghost':'')},gBody);
-  const tx=el('text',{x:118,y:540,class:'lab small'},gBody);tx.textContent='Schematic side view drawn for this page; outline and positions are not measured anatomy. Enlarged pectoral fin shaded.';
+  const tx=el('text',{x:360,y:548,class:'lab small'},gBody);tx.textContent='Schematic side view drawn for this page; outline and positions are not measured anatomy. Enlarged pectoral fin shaded.';
   if(xray)tx.style.display='none';
   // systems
   const gLead=el('g',{},svg), gSys=el('g',{},svg), gOrg=el('g',{},svg), gTis=el('g',{},svg), gCell=el('g',{},svg);
@@ -275,9 +275,9 @@ function render(){
       let cells=[],cellSrc='';
       if(selT&&selT.cells&&selT.cells.length){cells=selT.cells.map(c=>({id:c.id,label:c.label||c.id}));cellSrc='fin-subtree';}
       else{cells=cellsOfOrgan(o).map(id=>({id,label:T.get(id).label}));cellSrc='blueprint';}
-      const cx=Math.min(op.x+20,760), cy=op.y+74;
+      const cx=360, cy=op.y+128;
       if(cells.length){
-        const cols=3;cells.forEach((c,i)=>{const x=cx+(i%cols)*95, y=cy-((Math.ceil(cells.length/cols)-1)*16)/2+Math.floor(i/cols)*16;
+        const cols=5;cells.forEach((c,i)=>{const x=cx+(i%cols)*110, y=cy-((Math.ceil(cells.length/cols)-1)*16)/2+Math.floor(i/cols)*16;
           const g=el('g',{class:'node'},gCell);g.dataset.id=c.id;const w=Math.min(90,7+c.label.length*5.6);
           el('rect',{x:x-2,y:y-7,width:w,height:13,rx:6,fill:hasRec(c.id)?'var(--fill)':'var(--hollow)',stroke:'var(--fill)','stroke-width':1},g);
           const t=el('text',{x:x+3,y:y+3,class:'chip'},g);t.textContent=c.label.slice(0,15)+(c.label.length>15?'…':'');t.style.fill=hasRec(c.id)?'var(--hollow)':'var(--ink)';
@@ -318,14 +318,14 @@ function finXray(op,gLead,gTis,gCell){
   if(sel&&placed[sel]&&F.nodes[sel].level!=='cell'){const q=placed[sel];const subs=zkids(sel,'subpart');const spts=fan(q.x,q.y,subs.length,60,Math.PI*0.65,Math.PI*1.35);
     subs.forEach((id,i)=>{const r=spts[i];placed[id]=r;el('line',{x1:q.x,y1:q.y,x2:r.x,y2:r.y,class:'edge'},gLead);node(gTis,id,r.x,r.y,R.cell,'','small',F.nodes[id].label,false,{zfa:true},r.x<q.x-10);});}
   const host=sel&&F.nodes[sel]&&F.nodes[sel].level!=='cell'?sel:root; const cells=zkids(host,'cell');
-  const hx=(placed[host]||op).x+28, hy=(placed[host]||op).y+(host===root?70:46);
-  if(cells.length){const cols=2;cells.forEach((id,i)=>{const x=hx+(i%cols)*125,y=hy+Math.floor(i/cols)*16;const g=el('g',{class:'node'},gCell);g.dataset.id=id;const lab=F.nodes[id].label;const w=Math.min(120,7+lab.length*5.6);
+  const hx=360, hy=op.y+128;
+  if(cells.length){const cols=4;cells.forEach((id,i)=>{const x=hx+(i%cols)*135,y=hy+Math.floor(i/cols)*16;const g=el('g',{class:'node'},gCell);g.dataset.id=id;const lab=F.nodes[id].label;const w=Math.min(120,7+lab.length*5.6);
       el('rect',{x:x-2,y:y-7,width:w,height:13,rx:6,fill:hasRec(id)?'var(--fill)':'var(--hollow)',stroke:'var(--fill)','stroke-width':1},g);
       const t=el('text',{x:x+3,y:y+3,class:'chip'},g);t.textContent=lab.slice(0,21)+(lab.length>21?'…':'');t.style.fill=hasRec(id)?'var(--hollow)':'var(--ink)';
       g.onclick=()=>show(id);g.onmouseenter=e=>tip(e,lab+' · fin cell type (ZFA post-composed'+(F.nodes[id].cl_xref?', '+F.nodes[id].cl_xref:'')+')');g.onmouseleave=untip;});
-    const lab=el('text',{x:hx-2,y:hy-14,class:'lab small'},gCell);lab.textContent=`${cells.length} cell type${cells.length>1?'s':''} ZFIN records in ${F.nodes[host].label} (post-composed, ZFA)`;}
+    const lab=el('text',{x:hx-2,y:hy-14,class:'lab small'},gCell);lab.textContent=`Cell types ZFIN records in ${F.nodes[host].label} (${cells.length}, post-composed ZFA; expressed-in links only, no required-for reaches a cell)`;}
   else{const lab=el('text',{x:hx-2,y:hy,class:'lab small'},gCell);lab.textContent=`no cell-level record in ${F.nodes[host].label}`;}
-  const cap=el('text',{x:118,y:540,class:'lab small'},gCell);cap.textContent=`Below the fin: ${Object.keys(F.nodes).length} zebrafish anatomy (ZFA) terms from the genotype thread, xref-mapped; not flying-fish anatomy.`;
+  const cap=el('text',{x:360,y:548,class:'lab small'},gCell);cap.textContent=`Below the fin: ${Object.keys(F.nodes).length} zebrafish anatomy (ZFA) terms from the genotype thread, xref-mapped; not flying-fish anatomy.`;
 }
 function node(parent,id,x,y,r,cls,labCls,label,lit,extra,leftLabel){
   const g=el('g',{class:'node'+(cls?' '+cls:'')},parent);g.dataset.id=id;
@@ -355,14 +355,13 @@ function crumbs(){const parts=['<a data-c="body">fish</a>'];if(state.t>0.02)part
 
 // ---- panel ----
 function legend(){
-  $('#legend').innerHTML=`<details open id="legDet"><summary style="cursor:pointer;font-weight:700">Legend</summary>
+  $('#legend').innerHTML=`<details id="legDet"><summary style="cursor:pointer;font-weight:700">Legend</summary>
     <div class="row"><span class="sw f"></span>has a direct gene record (proxy fish)</div>
     <div class="row"><span class="sw"></span>hollow: no record &mdash; unstudied, not gene-free</div>
     <div class="row"><span class="ln"></span>part_of (blueprint) or leader back to the schematic position</div>
     <div class="row"><span class="ln d"></span>inferred: propagated up part_of; counts only, rows not stored</div>
     <div class="row"><span class="g" style="border-color:var(--suff)">sufficient for</span><span class="g" style="border-color:var(--req)">required for</span><span class="g" style="border-color:var(--expr)">expressed in</span></div>
     <div class="tiny" style="margin-top:4px">Genes were measured in zebrafish and medaka, never in a flying fish. &ldquo;Expressed in&rdquo; is detection, not causation.</div></details>`;
-  if(innerWidth<1100)$('#legDet').open=false;
   $('#note').innerHTML=`<b>A flying fish, opened layer by layer</b>Body &rarr; organ systems &rarr; organs &rarr; tissues &rarr; cell types, with the genes recorded at each level. Drag the explode slider, click a system, then an organ, then a tissue. Pick a gene to light up every node it touches.<span class="tiny"> Positions are schematic; the structure is Uberon and Cell Ontology part_of statements from the blueprint, counts from <span class="mono">${esc(D.source.file.split('/').pop())}</span>.</span>`;
 }
 function intro(){
