@@ -25,12 +25,21 @@ pg.on('requestfinished', async r => { const resp = await r.response(); if (resp 
 await pg.goto('http://localhost:8231/docs/', { waitUntil: 'networkidle', timeout: 60000 });
 await pg.waitForTimeout(3500);
 await pg.screenshot({ path: `${OUT}/01-hero.jpg`, quality: 86, type: 'jpeg' });
-// walk the five chapters
-for (const id of ['nanopubs', 'lean', 'mcp', 'studio', 'harness', 'questions']) {
-  await pg.evaluate(i => document.getElementById(i)?.scrollIntoView(), id);
-  await pg.waitForTimeout(1400);
-  await pg.screenshot({ path: `${OUT}/${id}.jpg`, quality: 86, type: 'jpeg' });
+// walk the five product tabs: click each, wait for its panel, shoot it
+const tabIds = await pg.$$eval('.tab', ts => ts.map(t => t.dataset.tab));
+if (!tabIds.length) throw new Error('no product tabs found - the page structure changed');
+for (const id of tabIds) {
+  await pg.click(`#tab-${id}`);
+  await pg.waitForSelector(`#panel-${id}:not([hidden])`, { timeout: 10000 });
+  await pg.evaluate(() => document.querySelector('.tabwrap')?.scrollIntoView());
+  await pg.waitForTimeout(1200);
+  await pg.screenshot({ path: `${OUT}/tab-${id}.jpg`, quality: 86, type: 'jpeg' });
+  // and the benchmark strip for that product, which is the part that must be legible
+  const bench = await pg.$(`#panel-${id} .bench`);
+  if (bench) { await bench.scrollIntoViewIfNeeded(); await pg.waitForTimeout(700);
+    await pg.screenshot({ path: `${OUT}/bench-${id}.jpg`, quality: 86, type: 'jpeg' }); }
 }
+console.error(`tabs shot: ${tabIds.join(', ')}`);
 // agent mode
 await pg.click('#mAgent');
 await pg.evaluate(() => document.getElementById('overview')?.scrollIntoView());

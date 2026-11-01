@@ -156,6 +156,140 @@
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
   }
 
+  /* ---------------------------------------------------------------- product tabs */
+  const TAB_KEY = 'leanbio-docs-tab';
+  const tabs = $$('.tab');
+  function showTab(id, push) {
+    let found = false;
+    for (const t of tabs) {
+      const on = t.dataset.tab === id;
+      t.setAttribute('aria-selected', String(on));
+      const panel = document.getElementById(`panel-${t.dataset.tab}`);
+      if (panel) panel.hidden = !on;
+      if (on) found = true;
+    }
+    if (!found) return;
+    try { localStorage.setItem(TAB_KEY, id); } catch { /* blocked storage */ }
+    if (push && location.hash !== `#${id}`) history.replaceState(null, '', `#${id}`);
+  }
+  tabs.forEach(t => t.addEventListener('click', () => {
+    showTab(t.dataset.tab, true);
+    document.querySelector('.tabwrap')?.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+  }));
+  // arrow keys move between tabs, as a tablist should
+  document.querySelector('.tabs')?.addEventListener('keydown', e => {
+    const i = tabs.findIndex(t => t.getAttribute('aria-selected') === 'true');
+    if (i < 0) return;
+    const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+    if (!d) return;
+    e.preventDefault();
+    const n = tabs[(i + d + tabs.length) % tabs.length];
+    showTab(n.dataset.tab, true); n.focus();
+  });
+  let initial = location.hash.slice(1);
+  if (!tabs.some(t => t.dataset.tab === initial)) {
+    try { initial = localStorage.getItem(TAB_KEY) || ''; } catch { initial = ''; }
+  }
+  showTab(tabs.some(t => t.dataset.tab === initial) ? initial : (tabs[0]?.dataset.tab || ''), false);
+
+  /* ---------------------------------------------------------------- the real runs
+     Three architectures per product, each card saying plainly whether it was executed just
+     now or read from a recorded benchmark run. A card with no run says so and shows no number. */
+  const ARMS = [
+    ['single', 'single', 'Single agent'],
+    ['decentralised', 'dec', 'Decentralised swarm'],
+    ['centralised', 'cen', 'Centralised organisation'],
+  ];
+  const secs = ms => (ms == null ? null : `${(ms / 1000).toFixed(1)} s`);
+
+  function archCard(armKey, cls, label, a) {
+    if (!a) {
+      return `<div class="ac ${cls}"><span class="arm">${label}</span>
+        <h5>Not run on this product</h5>
+        <p class="why">The harness supports this architecture here exactly as it does elsewhere &mdash; the arm is a
+        property of <code>swarm/benchmark/run.mjs</code>, not of the tool. It has simply not been executed against
+        this surface, so there is nothing to show and no number is invented.</p>
+        <div class="meta"><span class="chip">no run</span></div></div>`;
+    }
+    const live = a.kind === 'live';
+    const okChip = live
+      ? `<span class="chip ${a.ok ? 'ok' : 'no'}">exit ${a.exit_code}</span>`
+      : `<span class="chip ok">${a.n_calls} logged calls</span>`;
+    const body = live
+      ? `<pre>${esc(a.stdout?.text || '(no output)')}${a.stdout?.truncated_lines ? esc(`\n… ${a.stdout.truncated_lines} more lines`) : ''}</pre>`
+      : `<pre>${esc(a.artifact?.text || '(this cell produced no artifact)')}${a.artifact?.truncated_lines ? esc(`\n… ${a.artifact.truncated_lines} more lines`) : ''}</pre>`;
+    const meta = live
+      ? `<span class="chip live">run just now</span>${okChip}<span class="chip">${secs(a.duration_ms)}</span>`
+      : `<span class="chip rec">recorded run</span>${okChip}`
+        + (a.cost_usd != null ? `<span class="chip">$${Number(a.cost_usd).toFixed(3)}</span>` : '')
+        + (a.wall_s != null ? `<span class="chip">${Number(a.wall_s).toFixed(0)} s</span>` : '')
+        + (a.score != null ? `<span class="chip">score ${Number(a.score).toFixed(3)}</span>` : '');
+    const cmd = live
+      ? `<pre style="max-height:none">$ ${esc(a.command)}</pre>`
+      : `<p class="why" style="font-size:12px"><code>${esc(a.log_dir)}</code> &mdash; every call's prompt, raw output, tokens and stop reason</p>`;
+    return `<div class="ac ${cls}"><span class="arm">${label}</span>
+      <h5>${esc(a.title || '')}</h5>
+      <p class="why">${esc(a.why || '')}</p>
+      ${cmd}${body}
+      <div class="meta">${meta}</div></div>`;
+  }
+
+  function benchBlock(b) {
+    if (!b) return '';
+    if (!b.measured) {
+      return `<div class="bench"><h4>Benchmark</h4>
+        <p style="margin:0;color:var(--ink2);font-size:13.5px">${esc(b.note)}</p></div>`;
+    }
+    const arms = b.arms || {};
+    const rows = ARMS.map(([k, cls, label]) => {
+      const a = arms[k]; if (!a) return '';
+      const pct = Math.max(1.5, (a.mean || 0) * 100);
+      return `<div class="bar ${cls}">
+        <span class="lab">${label}</span>
+        <span class="track"><span class="fill" style="width:${pct.toFixed(1)}%"></span></span>
+        <span class="val">${(a.mean ?? 0).toFixed(3)} &middot; ${a.cost_x ?? '—'}&times; cost</span></div>`;
+    }).join('');
+    const caps = ARMS.map(([k, , l]) => (arms[k] ? `${l} ${arms[k].cap_stops}` : '')).filter(Boolean).join(' · ');
+    return `<div class="bench">
+      <h4>Benchmark &mdash; stage ${b.stage}, ${esc(b.title || '')}</h4>
+      <p style="margin:0 0 10px;font-size:13px;color:var(--ink3)">${esc(b.metric || '')} &middot; n = ${b.n_tasks} tasks per arm, single draws, no replicates</p>
+      ${rows}
+      <p style="margin:10px 0 0;font-size:12.5px;color:var(--ink3)">Calls stopped at the per-call budget cap: ${esc(caps)}</p>
+      <p class="verdictline"><b>Reading.</b> ${esc(b.reading || '')}</p>
+      ${b.caveat ? `<p class="verdictline">${esc(b.caveat)}</p>` : ''}
+    </div>`;
+  }
+
+  fetch('usecases.json')
+    .then(r => { if (!r.ok) throw new Error(`usecases.json: HTTP ${r.status}`); return r.json(); })
+    .then(u => {
+      for (const host of $$('.cases')) {
+        const key = host.dataset.cases;
+        const p = u.products?.[key];
+        if (!p) { host.innerHTML = ''; continue; }
+        const x = p.extra_live || {};
+        host.innerHTML = `
+          <h3>The same job, three ways &mdash; and every one of these was executed</h3>
+          <div class="arch">${ARMS.map(([k, cls, label]) => archCard(k, cls, label, p.architectures?.[k])).join('')}</div>
+          ${benchBlock(p.benchmark)}
+          <h3>${esc(x.title || 'And one more')}</h3>
+          <p>${esc(x.why || '')}</p>
+          <pre>$ ${esc(x.command || '')}
+
+${esc(x.stdout?.text || '')}${x.stdout?.truncated_lines ? esc(`… ${x.stdout.truncated_lines} more lines`) : ''}</pre>
+          <p class="src">Live cases were executed by <code>${esc(u.generated_by)}</code> at ${esc(u.generated_at)}.
+          ${esc(u.what_ran?.recorded || '')}</p>`;
+      }
+    })
+    .catch(err => {
+      for (const host of $$('.cases')) {
+        host.innerHTML = `<div class="card bad"><h4>usecases.json did not load</h4>
+          <p style="margin:0">${esc(String(err.message))} &mdash; run <code>node dashboard/public/docs/usecases.mjs</code></p></div>`;
+      }
+      console.error(err);
+    });
+
+
   /* ---------------------------------------------------------------- hero field
      A slow lattice that reads as depth without pretending to be data. It is decoration and is
      labelled as such; nothing here is read from a result. Drops out entirely under
