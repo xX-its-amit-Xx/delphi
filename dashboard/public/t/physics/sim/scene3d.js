@@ -983,11 +983,6 @@ ${creatures && creatures.SCOPE_NOTES ? `<details style="margin:8px 0 0"><summary
     $('#s3cam').onchange = e => { st.cam = e.target.value; if (orbit) orbit.enabled = (st.cam === 'orbit'); };
     $('#s3restart').onclick = () => { st.t = 0; st.playing = true; $('#s3play').textContent = '❚❚ Pause'; $('#s3play').classList.add('on'); };
 
-    const num = (id, key, meta) => {
-      const el = $(id);
-      el.onchange = () => { B.setParam(key, +el.value, meta); };
-      el.oninput = () => { const o = $(id + 'Out'); if (o) o.textContent = fx(+el.value, 2) + ' m/s'; };
-    };
     $('#s3vto').onchange = e => B.setParam('takeoff_speed_target_m_s', +e.target.value);
     $('#s3vto').oninput = e => { $('#s3vtoOut').textContent = fx(+e.target.value, 1) + ' m/s'; };
     $('#s3depth').onchange = e => B.setParam('start_depth_m', +e.target.value);
@@ -1219,7 +1214,7 @@ function layoutHtml() {
 <style>
 #sim3d h3{margin:0 0 4px}
 #s3stageWrap{position:relative;margin:8px 0 0}
-#s3Stage{position:relative;width:100%;aspect-ratio:16/9;min-height:280px;max-height:62vh;border-radius:10px;overflow:hidden;background:#9ec4d8;border:1px solid var(--line)}
+#s3Stage{position:relative;width:100%;aspect-ratio:16/9;min-height:280px;max-height:56vh;border-radius:10px;overflow:hidden;background:#9ec4d8;border:1px solid var(--line)}
 #s3hud{position:absolute;left:8px;top:8px;max-width:min(430px,60%);padding:7px 9px;border-radius:8px;background:rgba(6,22,27,.62);color:#eaf6f8;font:500 11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;pointer-events:none;backdrop-filter:blur(3px)}
 #s3fps{position:absolute;right:8px;top:8px;z-index:2;padding:3px 7px;border-radius:7px;background:rgba(6,22,27,.55);color:#cfe8ee;font:500 11px ui-monospace,monospace;pointer-events:none}
 #s3msg{position:absolute;left:8px;right:8px;bottom:8px;z-index:2;padding:8px 10px;border-radius:8px;background:rgba(120,30,20,.92);color:#fff;font-size:12.5px;display:none}

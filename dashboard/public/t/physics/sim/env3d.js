@@ -488,7 +488,7 @@ export function makeOcean({ THREE, scene, size = 48, segments, conditions } = {}
     // A tight specular lobe: water is close to a mirror, so the sun must make a narrow glitter
     // path, not a wash across the whole near field. DECORATIVE (D6) but chosen from the look of
     // a real sun glitter path, not from a Fresnel calculation.
-    specular: 0x3a5266,
+    specular: 0x2a323c,
     shininess: 900,
     emissive: new THREE.Color(0.012, 0.042, 0.060),  // so the sea is never pure black without lights
     side: THREE.FrontSide,
@@ -517,7 +517,7 @@ export function makeOcean({ THREE, scene, size = 48, segments, conditions } = {}
       // at eye level or 300 m up. A short fade baked into the vertices looked correct from a
       // raft and turned the whole sea pale from the air.
       const f = Math.pow(smoothstep(0, 1, clamp((r - 300) / 8000, 0, 1)), 0.8);
-      tmp.copy(WATER_DEEP).lerp(HORIZON, f * 0.55);
+      tmp.copy(WATER_DEEP).lerp(WATER_SHALLOW, 0.5).lerp(HORIZON, f * 0.55);
       for (let i = 0; i <= farSectors; i++, p++) {
         const a = (i / farSectors) * Math.PI * 2;
         fpos[p * 3] = Math.cos(a) * r;
@@ -542,11 +542,13 @@ export function makeOcean({ THREE, scene, size = 48, segments, conditions } = {}
   farGeo.setAttribute('color', new THREE.BufferAttribute(fcol, 3));
   farGeo.setIndex(new THREE.BufferAttribute(fidx, 1));
   farGeo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), FAR_DISC_M * 1.05);
-  // Lit by the same lights as the detailed patch (Lambert, which is cheap and has no specular to
-  // give away that it is flat). An unlit disc read as a visible square of different colour around
-  // the patch from the air.
-  const farMat = new THREE.MeshLambertMaterial({
-    color: 0xffffff, vertexColors: true, emissive: new THREE.Color(0.012, 0.042, 0.060),
+  // Same lighting model and same constants as the detailed patch, or the patch reads as a bright
+  // tile sitting on a different sea -- which is exactly how it looked with an unlit disc, and
+  // still looked with a Lambert one.
+  const farMat = new THREE.MeshPhongMaterial({
+    color: 0xffffff, vertexColors: true,
+    specular: 0x2a323c, shininess: 900,
+    emissive: new THREE.Color(0.012, 0.042, 0.060),
     side: THREE.DoubleSide, depthWrite: false, fog: true
   });
   const far = new THREE.Mesh(farGeo, farMat);

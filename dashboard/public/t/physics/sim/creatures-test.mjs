@@ -13,6 +13,7 @@ import {
   DISTRIBUTIONS, SEA_STATE, MASS_CV, REF_AREA_CV, PARK_CHOI_REF_AREAS_M2,
   elevationSd, slopeSdDeg, makeRng, perturbRun, glideTrajectory, analyticBound,
   makeEnsemble, summarise, seedFromUrl, seedToUrl, isFlier, UNCERTAINTY_NOTE, LEGEND,
+  FIELD_OBSERVATIONS, OPEN_QUESTIONS, SCOPE_NOTES, sequenceStats, launchDrawGate, TAXI_BAND_LOW_M_S,
 } from './creatures.js';
 
 const SABOTAGE = process.env.CREATURES_TEST_SABOTAGE === '1';
@@ -333,6 +334,65 @@ ok(/No birds anywhere/.test(LEGEND.no_birds), 'the legend states there are no bi
   const z = makeEnsemble({ draws: 20, seed: 'zseq', baseParams: ZF, keepTrajectories: false });
   ok(z.stats.sequence && /cannot glide/.test(z.stats.sequence.note) && !z.stats.sequence.hops_to_cover_400m,
     'no sequence statistics for an animal that cannot glide');
+}
+
+
+// ---------------------------------------------------------------- 9d. THE STAGE GATE (defect D1)
+// A flying-fish LARVA is a flying fish by species and NOT an adult by stage. glide.mjs gives the
+// 15-20 m/s taxi band to adults only; every earlier stage gets min(10 m/s, 30 BL/s x SL) and the
+// comment "no taxiing speed is measured for juveniles, so none is added". Gating on the species
+// text alone handed the larva the adult band and the larva glided -- validation defect D1 coming
+// back through the ensemble (D1 is the one the harness caught when a 0.5 mg zebrafish larva
+// "glided" 42.8 m on a default 15 m/s launch). These checks were written to FAIL against the
+// species-only gate, and they did: the larva drew 15-20 m/s and can_glide_fraction was 1.
+{
+  // A flying-fish larva, 6 mm SL. Launch speed is the engine's own for this stage:
+  // min(10 m/s, 30 BL/s x 0.006 m) = 0.18 m/s (glide.mjs organismLaunchSpeed, non-adult branch).
+  // Mass and area scaled isometrically from the L3 adult (0.203 m, 0.06 kg, 0.012688 m2).
+  const k = 0.006 / 0.203;
+  const LARVA = {
+    id: 'cypselurus-hiraii-larva', species: 'Cypselurus hiraii', stage: 'larva',
+    SL_m: { value: 0.006 },
+    mass_kg: { value: 0.06 * k ** 3 }, ref_area_m2: { value: 0.012688 * k ** 2 }, span_m: { value: 0.261 * k },
+    CL_max: { value: 0.78 }, LD_max: { value: 4.37 }, CD_min: { value: 0.055 },
+    CL_at_zero_deg: { value: 0.4 }, stall_alpha_deg: { value: 35 }, glide_alpha_deg: { value: 5 },
+    approach_angle_deg: { value: 10 },
+    launch_airspeed_m_s: { value: Math.min(10, 30 * 0.006), kind: 'borrowed', source: 'glide.mjs organismLaunchSpeed, non-adult branch: 30 BL/s x SL, capped at the 10 m/s adult leap speed' },
+  };
+  ok(isFlier(LARVA) === true, 'the larva IS a flying fish by species: the species test alone cannot save us');
+  const g = launchDrawGate(LARVA, 0.18);
+  ok(g.allow === false, 'THE STAGE GATE REFUSES the taxi band to a flying-fish larva');
+  ok(g.species_matches === true, 'the gate records that the species did match, so the refusal is about the stage');
+  ok(/STAGE does not/.test(g.reason) && /ADULT flying fish only/.test(g.reason), 'the refusal says it is the stage, and that the band is adult-only');
+  ok(/organismLaunchSpeed/.test(g.reason), 'the refusal names the engine function it defers to');
+  const d = perturbRun(LARVA, makeRng('larva'));
+  ok(d.skipped.includes('launch_airspeed_m_s'), 'the larva gets NO launch-speed draw');
+  ok(d.draw.launch_airspeed_m_s.skipped === true, 'the draw record marks the launch speed as skipped');
+  near(d.params.launch_airspeed_m_s.value, 0.18, 1e-9, "the larva keeps the engine's own 0.18 m/s launch speed");
+  ok(/NOT DRAWN/.test(d.params.launch_airspeed_m_s.source), 'the kept larva launch speed says it was not drawn');
+  const E = makeEnsemble({ draws: 300, seed: 'larva', baseParams: LARVA, keepTrajectories: false });
+  ok(E.species_gate.launch_speed_drawn === false, 'species_gate.launch_speed_drawn is false for the larva');
+  ok(E.species_gate.species_matches_flier === true, 'species_gate separates the species match from the stage decision');
+  ok(E.stats.can_glide_fraction === 0, 'THE LARVA NEVER GLIDES, in any draw');
+  ok(E.stats.launch_airspeed_m_s.max < TAXI_BAND_LOW_M_S, `no larva draw reached the taxi band (max ${E.stats.launch_airspeed_m_s.max.toFixed(2)} m/s)`);
+  ok(E.stats.launch_airspeed_m_s.min === E.stats.launch_airspeed_m_s.max, 'the larva launch speed is a point value, not a spread');
+  ok(E.deterministic.can_glide === false, 'the deterministic larva run cannot glide either');
+  for (const sd of ['a', 'b', 'c']) {
+    ok(makeEnsemble({ draws: 50, seed: sd, baseParams: LARVA, keepTrajectories: false }).stats.can_glide_fraction === 0, `seed "${sd}": the larva still never glides`);
+  }
+  // A JUVENILE capped at the 10 m/s leap speed is also below the band and must also be refused.
+  ok(launchDrawGate({ species: 'Cypselurus hiraii', stage: 'juvenile' }, 10).allow === false,
+    'a juvenile at the 10 m/s leap speed is still below the 15 m/s band and is refused');
+  // The ADULT, whose engine launch speed IS a taxi speed, still qualifies.
+  ok(launchDrawGate(L3, 17.5).allow === true, 'the adult at 17.5 m/s still gets the band');
+  ok(launchDrawGate(L3, 15).allow === true, "the band's lower end itself qualifies");
+  ok(launchDrawGate(L3, 14.99).allow === false, 'just below the band does not');
+  // The caller may state the answer, which is how validate/physics/ensemble.mjs asks.
+  ok(launchDrawGate(L3, 17.5, false).allow === false, 'an explicit allow_launch_draw false overrides');
+  ok(perturbRun(L3, makeRng('ov'), { allow_launch_draw: false }).skipped.includes('launch_airspeed_m_s'),
+    'perturbRun honours allow_launch_draw false');
+  ok(makeEnsemble({ draws: 20, seed: 'ov', baseParams: L3, allow_launch_draw: false, keepTrajectories: false }).species_gate.launch_speed_drawn === false,
+    'makeEnsemble honours allow_launch_draw false');
 }
 
 // ---------------------------------------------------------------- 10. the seed in the URL state

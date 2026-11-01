@@ -1,0 +1,260 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "lean/registry/open-questions/open-questions.schema.json",
+  "title": "A versioned open question, failed theorem, requirement record or promotion request",
+  "description": "The four record types lean/registry/open-questions/ holds, as fixed by pipeline/leanbio/debate/CRITERIA.md 'Record types emitted (1.1.0)'. An open question is NEVER deleted: it is settled or abandoned, with the reason, and its file stays. Versioned exactly like a law (semver per record, content_hash over the hashed fields, history append-only).",
+  "oneOf": [
+    { "$ref": "#/$defs/openQuestion" },
+    { "$ref": "#/$defs/failedTheorem" },
+    { "$ref": "#/$defs/requirements" },
+    { "$ref": "#/$defs/promotionRequest" }
+  ],
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "description": "One item of evidence for or against an arm. Every item cites a primary source and carries the sentence it rests on.",
+      "required": ["claim", "source", "locator", "quote", "kind", "belief_class"],
+      "properties": {
+        "claim": { "type": "string", "minLength": 1, "description": "what this item asserts, in plain English" },
+        "source": { "type": "string", "minLength": 1, "description": "authors, year, journal, and PMID/DOI where there is one" },
+        "locator": { "type": "string", "minLength": 1, "description": "where to find it: repo path with line or key, and the paper's figure/table/section" },
+        "quote": { "type": "string", "minLength": 1, "description": "VERBATIM. A record whose quote is a paraphrase misleads about what the source says." },
+        "kind": { "type": "string", "minLength": 1, "description": "what sort of evidence: measurement, population regression, curated database mapping, computed metric, repo claim, Lean proof, ..." },
+        "belief_class": { "type": "string", "enum": ["preregistered-test", "repo-evidence", "literature", "model-elicitation", "lean-conflict"], "description": "the evidence class in pipeline/leanbio/belief-params.json; fixes this item's rand/syst in the belief formula" },
+        "belief_key": { "type": "string", "description": "the independence key (a DOI, PMID, claim id, draft path or law id). Items sharing a key count ONCE. Defaults to `source` when absent." },
+        "side": { "type": "string", "enum": ["support", "contradict"], "default": "support", "description": "whether this item supports or contradicts THE ARM IT IS LISTED UNDER" },
+        "quote_kind": { "type": "string", "description": "e.g. 'full text', 'abstract only', 'secondhand (the later paper restates the earlier record)'" }
+      }
+    },
+    "arm": {
+      "type": "object",
+      "required": ["arm_id", "position", "statement_en", "formalisable", "evidence"],
+      "properties": {
+        "arm_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+        "position": { "type": "string", "minLength": 1, "description": "'for', 'against', or a named alternative (e.g. 'biphasic'). A question with a genuine third position names it rather than forcing two sides." },
+        "statement_en": { "type": "string", "minLength": 1 },
+        "lean_ref": {
+          "type": ["object", "null"],
+          "description": "the Lean declaration that states this arm, when it has been formalised. null when it has not, and `formalisable` then says whether it could be.",
+          "required": ["module", "theorem"],
+          "properties": {
+            "module": { "type": "string" },
+            "theorem": { "type": ["string", "null"] },
+            "structure": { "type": ["string", "null"] },
+            "commit": { "type": ["string", "null"] },
+            "statement_sha256": { "type": ["string", "null"] },
+            "non_vacuity_witness": { "type": ["string", "null"] },
+            "built": { "type": ["string", "null"], "description": "how and when it was compiled, and the axioms printed" }
+          }
+        },
+        "formalisable": { "type": "boolean", "description": "can this arm be stated as a named hypothesis over quantities a design or an observation could carry? false needs a reason in `not_formalisable_because`." },
+        "not_formalisable_because": { "type": ["string", "null"] },
+        "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } },
+        "belief": { "type": ["number", "null"], "description": "COMPUTED by openq-lib.mjs from `evidence` via pipeline/leanbio/belief.mjs. Never hand-written; recompute() overwrites it." },
+        "belief_basis": { "type": ["object", "null"], "description": "the breakdown the belief formula returned: E, R, per-class counts, and the params version. Reproducible, not asserted." }
+      }
+    },
+    "openQuestion": {
+      "type": "object",
+      "required": ["record_type", "question_id", "version", "statement_en", "status", "arms", "proportion", "what_would_settle_it", "touches", "history", "content_hash"],
+      "properties": {
+        "record_type": { "const": "open-question" },
+        "question_id": { "type": "string", "pattern": "^oq-[a-z0-9][a-z0-9-]*$" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "statement_en": { "type": "string", "minLength": 1, "description": "the QUESTION, not either answer." },
+        "status": { "type": "string", "enum": ["open", "settled", "abandoned"] },
+        "arms": {
+          "type": "array",
+          "minItems": 2,
+          "description": "At least TWO arms. A one-armed open question is not a question, it is an unsupported claim, and openq-lib.mjs rejects it.",
+          "items": { "$ref": "#/$defs/arm" }
+        },
+        "proportion": {
+          "type": "object",
+          "description": "the belief split across arms, COMPUTED from the arms' evidence by pipeline/leanbio/belief.mjs so it is reproducible rather than asserted.",
+          "required": ["computed_by", "shares", "beliefs"],
+          "properties": {
+            "computed_by": { "type": "string" },
+            "params_version": { "type": "string" },
+            "shares": { "type": "object", "description": "arm_id -> share of total belief, 3 decimals, summing to 1" },
+            "beliefs": { "type": "object", "description": "arm_id -> raw belief" },
+            "note": { "type": "string" },
+            "computed_at": { "type": "string" }
+          }
+        },
+        "what_would_settle_it": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["observation", "how", "why_decisive", "feasible_today"],
+            "properties": {
+              "observation": { "type": "string", "minLength": 1 },
+              "how": { "type": "string", "minLength": 1 },
+              "why_decisive": { "type": "string", "minLength": 1 },
+              "feasible_today": { "type": "boolean" },
+              "feasibility_note": { "type": "string" },
+              "settles_in_favour_of": { "type": "string", "description": "the arm_id this observation would select, or 'either' when the observation's VALUE decides" }
+            }
+          }
+        },
+        "touches": {
+          "type": "object",
+          "required": ["law_ids", "design_properties", "scenario_keys"],
+          "description": "what in this project rests on the answer. The Studio uses it to flag a verdict as resting on an unsettled question.",
+          "properties": {
+            "law_ids": { "type": "array", "items": { "type": "string" } },
+            "design_properties": { "type": "array", "items": { "type": "string" } },
+            "scenario_keys": { "type": "array", "items": { "type": "string" } },
+            "constraints": { "type": "array", "items": { "type": "string" } },
+            "files": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "guard": {
+          "type": "object",
+          "description": "how the guard recognises a law that asserts an arm. Signatures are conservative token sets, not NLP.",
+          "properties": {
+            "keywords": { "type": "array", "items": { "type": "string" }, "description": "kept in step with pipeline/leanbio/debate/open-disputes.json" },
+            "dispute_id": { "type": ["string", "null"], "description": "the matching id in open-disputes.json, so the two lists cannot drift apart silently" },
+            "arm_signatures": {
+              "type": "object",
+              "description": "arm_id -> {all_of:[tokens], none_of?:[tokens]}. A law whose statement contains EVERY all_of token (and no none_of token) is treated as asserting that arm.",
+              "additionalProperties": {
+                "type": "object",
+                "required": ["all_of"],
+                "properties": {
+                  "all_of": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+                  "none_of": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            },
+            "scoped_exemptions": {
+              "type": "array",
+              "description": "law_ids allowed to state ONE arm because they are narrowed to the preparation that arm was measured in, so they do not assert the disputed general claim. A two-sided handshake: the law file must ALSO carry open_question_scoped naming this question, or the exemption does not apply. This is the only way past the guard short of settling the question.",
+              "items": {
+                "type": "object",
+                "required": ["law_id", "arm_id", "how", "approved_by_role"],
+                "properties": {
+                  "law_id": { "type": "string" },
+                  "arm_id": { "type": "string" },
+                  "how": { "type": "string", "minLength": 1, "description": "the narrowing that makes the law not an assertion of the arm" },
+                  "approved_by_role": { "type": "string", "minLength": 1, "description": "a role, never a personal identifier" },
+                  "date": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "exclusivity": {
+          "type": "object",
+          "description": "whether the arms actually contradict. Forcing a contradiction where there is none misrepresents the sources.",
+          "required": ["kind", "statement"],
+          "properties": {
+            "kind": { "type": "string", "enum": ["proved-unconditionally", "proved-under-premise", "not-contradictory", "stated-not-proved", "unknown"] },
+            "statement": { "type": "string", "minLength": 1 },
+            "lean_ref": { "type": ["object", "null"] },
+            "premise": { "type": ["string", "null"], "description": "for 'proved-under-premise': the added empirical premise the contradiction needs, which is itself unestablished" }
+          }
+        },
+        "settled": {
+          "type": ["object", "null"],
+          "description": "REQUIRED when status is 'settled': which arm survived and WHICH EVIDENCE settled it.",
+          "required": ["arm_id", "date", "settled_by", "evidence", "approved_by_role"],
+          "properties": {
+            "arm_id": { "type": "string" },
+            "date": { "type": "string" },
+            "settled_by": { "type": "string", "minLength": 1 },
+            "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } },
+            "approved_by_role": { "type": "string", "minLength": 1 },
+            "retired_arms": { "type": "array", "items": { "type": "string" }, "description": "the arm_ids the settling evidence eliminated. Kept, never deleted." }
+          }
+        },
+        "abandoned": {
+          "type": ["object", "null"],
+          "description": "REQUIRED when status is 'abandoned': why the question was given up rather than answered.",
+          "required": ["date", "reason", "approved_by_role"],
+          "properties": {
+            "date": { "type": "string" },
+            "reason": { "type": "string", "minLength": 1 },
+            "approved_by_role": { "type": "string", "minLength": 1 },
+            "what_would_revive_it": { "type": "string" }
+          }
+        },
+        "found_by": { "type": "string", "description": "how this question came to be recorded. Worth keeping: several were found by trying to FORMALISE a dispute, which is an argument for formalisation as a method." },
+        "origin": { "type": "object", "properties": { "by_role": { "type": "string" }, "kind": { "type": "string" } } },
+        "history": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["version", "date", "change"], "properties": { "version": { "type": "string" }, "date": { "type": "string" }, "change": { "type": "string", "minLength": 1 } } } },
+        "content_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      },
+      "allOf": [
+        { "if": { "properties": { "status": { "const": "settled" } } }, "then": { "required": ["settled"], "properties": { "settled": { "type": "object" } } } },
+        { "if": { "properties": { "status": { "const": "abandoned" } } }, "then": { "required": ["abandoned"], "properties": { "abandoned": { "type": "object" } } } }
+      ]
+    },
+    "failedTheorem": {
+      "type": "object",
+      "description": "A statement we tried to establish and could not. Kept so nobody reproposes it, and so the failure is a result rather than a gap.",
+      "required": ["record_type", "failure_id", "version", "statement_en", "reason", "what_was_tried", "what_survives", "history", "content_hash"],
+      "properties": {
+        "record_type": { "const": "failed-theorem" },
+        "failure_id": { "type": "string", "pattern": "^ft-[a-z0-9][a-z0-9-]*$" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "statement_en": { "type": "string", "minLength": 1, "description": "the statement that was attempted, as attempted" },
+        "reason": {
+          "type": "string",
+          "enum": ["unprovable-as-stated", "vacuous", "contradicted-by-data", "provable-but-not-checkable", "abandoned-for-lack-of-a-constant", "unsourced", "fires-on-wild-type", "measurement-does-not-exist"],
+          "description": "the category of failure. 'provable-but-not-checkable' is NOT a rejection: CRITERIA.md routes it to a requirements record, and it appears here only when the missing inputs are known to be unobtainable."
+        },
+        "reason_detail": { "type": "string", "minLength": 1 },
+        "what_was_tried": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "what_survives": { "type": "string", "minLength": 1, "description": "what is still true after the failure. A failure record that says only 'it failed' throws away the result." },
+        "lean_ref": { "type": ["object", "null"], "description": "the attempted declaration, if one was written" },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+        "sources": { "type": "array", "items": { "type": "string" } },
+        "became_open_question": { "type": ["string", "null"], "description": "question_id, when the failure turned out to be a live two-sided question rather than a settled negative" },
+        "touches": { "type": "object" },
+        "do_not_repropose": { "type": "boolean", "default": true },
+        "origin": { "type": "object" },
+        "found_by": { "type": "string" },
+        "history": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["version", "date", "change"] } },
+        "content_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "description": "CRITERIA.md 'candidate-with-requirements': a NEEDS-WORK ruling, including the 'provable but not checkable' case (a sound statement with no shared scope, so the Studio has nothing to evaluate). NOT a failure: the referee's list of what would make it promotable travels with the law.",
+      "required": ["record_type", "requirement_id", "version", "statement_en", "missing_inputs", "would_constrain_if_supplied", "history", "content_hash"],
+      "properties": {
+        "record_type": { "const": "candidate-with-requirements" },
+        "requirement_id": { "type": "string", "pattern": "^cr-[a-z0-9][a-z0-9-]*$" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "law_id": { "type": ["string", "null"] },
+        "statement_en": { "type": "string", "minLength": 1 },
+        "verdict": { "type": "string", "enum": ["NEEDS-WORK"] },
+        "not_checkable_because": { "type": "string" },
+        "missing_inputs": { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "the quantities a design would have to carry for this to bind" },
+        "would_constrain_if_supplied": { "type": "string", "minLength": 1 },
+        "lean_ref": { "type": ["object", "null"] },
+        "origin": { "type": "object" },
+        "history": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["version", "date", "change"] } },
+        "content_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "promotionRequest": {
+      "type": "object",
+      "description": "CRITERIA.md 'promotion-request': queued for a human. The law itself is already in the registry as `candidate`; promotion to `accepted` is never automated.",
+      "required": ["record_type", "request_id", "version", "law_id", "history", "content_hash"],
+      "properties": {
+        "record_type": { "const": "promotion-request" },
+        "request_id": { "type": "string", "pattern": "^pr-[a-z0-9][a-z0-9-]*$" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "law_id": { "type": "string" },
+        "statement_en": { "type": "string" },
+        "ruling": { "type": "object" },
+        "blocked_by_open_questions": { "type": "array", "items": { "type": "string" }, "description": "question_ids the guard found this law asserting an arm of. Non-empty means it is NOT promotable." },
+        "origin": { "type": "object" },
+        "history": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["version", "date", "change"] } },
+        "content_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    }
+  }
+}

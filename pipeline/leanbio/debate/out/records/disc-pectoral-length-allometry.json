@@ -1,0 +1,91 @@
+{
+ "schema": "leanbio-debate-record/1.0.0",
+ "note": "Emitted by pipeline/leanbio/debate for lean/registry/open-questions/, which owns its own schema and versioning. This file is the debate's output, not a registry entry.",
+ "type": "candidate-with-requirements",
+ "law_id": "disc-pectoral-length-allometry",
+ "emitted_at": "2026-11-01T05:35:40.226Z",
+ "verdict": "NEEDS-WORK",
+ "criteria_version": "leanbio-debate-criteria/1.2.0",
+ "criteria_sha256": "13ee79891caebd62799dc8947b73de041c9488c39a395861d34cf157a0f10169",
+ "why": [
+  "Narrow scope to the 3 sampled species, named, with life_stages covering larva/juvenile/adult as pooled, ranges SL 1.68-24 cm, and state 'preserved specimens, pooled across species and ontogeny'. Do not declare Exocoetidae.",
+  "State in statement_en and evidence.caveats that this is a record bound: the CI of a pooled OLS slope in a single sample of 49 specimens, with no held-back data and about 3 independent species-level observations. It is not an impossibility.",
+  "Fix the provenance: reconcile the cited sha256 (9c941299f5869e56) with the repo file (4f654c701f6196dc), then recompute the OLS slope and CI from the correctly hashed Data S1A. Declare 1.017 and 1.099 as derived with the stated derivation (the recomputation script and its rounding), not found by string match.",
+  "Make C6 evaluable: add a finLengthExponent to wildtype.json for in-scope organisms. Compute it only from within-species size series where such data exist (for example, per-species slopes from the same Data S1A rows), or else keep the law out of the Studio.",
+  "Consider reporting the exponent per species, or an RMA slope, so that the pooled Simpson-type artefact the proponent flags can be checked."
+ ],
+ "failed_gate": null,
+ "label": "Flying-fish pectoral length scales as SL^1.02-1.10 (machine-proposed)",
+ "statement_en": "Across museum flying-fish specimens, pectoral fin length scales with standard length as SL^b with the exponent inside its 95% CI [1.017, 1.099] (OLS on log-log, n = 49, b = 1.058, r^2 = 0.983).",
+ "scope": {
+  "taxa": [
+   "Exocoetidae"
+  ],
+  "life_stages": [],
+  "ranges": {}
+ },
+ "sources": [
+  "genotype/cache/daane2021_data_s1A_fin_measurements.csv (sha256 9c941299f5869e56), Daane JM et al. 2021 Curr Biol doi:10.1016/j.cub.2021.08.054 Data S1 sheet A"
+ ],
+ "lean": {
+  "file": "lean/registry/discovered/disc-pectoral-length-allometry/meta.json",
+  "declaration": "Delphi.Proposed.PectoralAllometry.PectoralLengthAllometry",
+  "witness": "Delphi.Proposed.PectoralAllometry.witness"
+ },
+ "criteria": {
+  "C1_binds_something_real": {
+   "verdict": "pass",
+   "reason": "a witness satisfies the law, and the in-range design {\"finLengthExponent\":0} is rejected by 1.017 ≤ q.finLengthExponent"
+  },
+  "C2_constants_sourced": {
+   "verdict": "pass",
+   "reason": "all 2 non-structural constant(s) declared with an allowed kind and a source; every constant was found in its cited source by a GET"
+  },
+  "C3_scope_honest": {
+   "verdict": "fail",
+   "reason": "Scope declares the whole family Exocoetidae with empty life_stages and empty ranges. The evidence is 49 preserved specimens from 3 species, pooled across species and ontogeny, SL 1.68-24 cm, larvae and juveniles included. The proponent concedes the scope is wider than the evidence, and the critic agrees. The family has roughly 70 species, and the 3 sampled species are not even named in the candidate."
+  },
+  "C4_independent": {
+   "verdict": "pass",
+   "reason": "E5 bounds the pectoral/SL ratio at a single size, and this law bounds the log-log slope across sizes. A design with every specimen's ratio inside [0.406, 0.823] can still have a slope of 0.8 or 1.25, which E5 permits and this law rejects. E1 and E2 constrain mass and area exponents and share no quantity with it. It is not a definition. It is a partly related summary of the same Daane Data S1 file as E5, so it is weak as independent evidence, but it does add a constraint E5 does not impose."
+  },
+  "C5_consistent": {
+   "verdict": "pass",
+   "reason": "propose.mjs constructed a joint witness with every accepted law whose scope overlaps"
+  },
+  "C6_wild_type_survives": {
+   "verdict": "unclear",
+   "reason": "24 wild-type organism(s) are in scope but none carries finLengthExponent: the law cannot be evaluated against a real animal, so it may not be promoted"
+  },
+  "C7_not_circular": {
+   "verdict": "fail",
+   "reason": "The proponent concedes this is a record bound: the 95% CI of a pooled OLS fit, tested on the same 49 specimens (which clustered by species/lot give about 3 independent species-level observations), with nothing held back. The witness is the fitted point estimate, so it passes by construction. The statement is not sold as an impossibility, so this is not an un-fixable REJECT. But neither statement_en nor evidence.caveats labels it as a record bound, which the criteria require. The critic's 'fatal' rating overreaches for the same reason: the law claims a sample statistic, not a mechanism. The failure is the missing label, which is fixable."
+  }
+ },
+ "ruling": "The law binds a single quantity, the pooled log-log slope of pectoral length on SL, to the 95% CI [1.017, 1.099] from 49 preserved specimens of 3 species. It does add a size-scaling constraint that E5's single-size ratio band does not. It cannot be promoted for three reasons. C6 is unclear because no in-scope wild-type organism carries the exponent. C3 fails because the family-wide scope rests on 3 unnamed species with pooled ontogeny. C7 fails because a record bound is not labelled as one. The C2 gate passes, but the evidence checker shows the 'found' verdicts were matcher false positives, the cited file hash does not match, and the CI bounds were never recomputed. None of the defects is un-fixable, so this is NEEDS-WORK, not REJECT.",
+ "requirements": [
+  "Narrow scope to the 3 sampled species, named, with life_stages covering larva/juvenile/adult as pooled, ranges SL 1.68-24 cm, and state 'preserved specimens, pooled across species and ontogeny'. Do not declare Exocoetidae.",
+  "State in statement_en and evidence.caveats that this is a record bound: the CI of a pooled OLS slope in a single sample of 49 specimens, with no held-back data and about 3 independent species-level observations. It is not an impossibility.",
+  "Fix the provenance: reconcile the cited sha256 (9c941299f5869e56) with the repo file (4f654c701f6196dc), then recompute the OLS slope and CI from the correctly hashed Data S1A. Declare 1.017 and 1.099 as derived with the stated derivation (the recomputation script and its rounding), not found by string match.",
+  "Make C6 evaluable: add a finLengthExponent to wildtype.json for in-scope organisms. Compute it only from within-species size series where such data exist (for example, per-species slopes from the same Data S1A rows), or else keep the law out of the Studio.",
+  "Consider reporting the exponent per species, or an RMA slope, so that the pooled Simpson-type artefact the proponent flags can be checked."
+ ],
+ "arms": null,
+ "what_would_settle_it": null,
+ "belief_inputs": {
+  "note": "pipeline/leanbio/belief.mjs computes the belief-weighted proportion across arms; this record supplies the evidence lists it needs, not a score.",
+  "supporting_sources": [
+   "genotype/cache/daane2021_data_s1A_fin_measurements.csv (sha256 9c941299f5869e56), Daane JM et al. 2021 Curr Biol doi:10.1016/j.cub.2021.08.054 Data S1 sheet A"
+  ],
+  "preregistered_tests": [],
+  "evidence_checker_verified": false,
+  "evidence_fetch_verdict": "all-constants-found-in-source"
+ },
+ "promotion": {
+  "automatic_status_written": null,
+  "accepted_automatically": false,
+  "why_not": "Only a human promotes a law to accepted in this project; see pipeline/leanbio/debate/README.md, \"The automation question\"."
+ },
+ "retired": false,
+ "superseded_by": null
+}

@@ -193,20 +193,33 @@ export function paraloguesFromCard(card) {
   if (!Array.isArray(entries)) return null; // null = not recorded, NOT "none"
   const out = [];
   for (const e of entries) {
-    let v = e.v;
-    if (typeof v === 'string') { try { v = JSON.parse(v); } catch { /* leave as string */ } }
-    if (v && typeof v === 'object') {
+    // The index normalises rows inconsistently: sometimes `v` is the paralogue SYMBOL and the
+    // structured row sits in `value`; sometimes `v` is the structured row serialised as JSON.
+    // Handle all three shapes, or we silently drop paralogues (which this code did at first,
+    // and which turned 'unknown' into a false 'not-expected' for vegfaa).
+    let obj = (e.value && typeof e.value === 'object') ? e.value : null;
+    if (!obj && typeof e.v === 'string' && e.v.trim().startsWith('{')) {
+      try { obj = JSON.parse(e.v); } catch { obj = null; }
+    }
+    if (!obj && e.v && typeof e.v === 'object') obj = e.v;
+    if (obj) {
       out.push({
-        symbol: v.symbol ?? null,
-        ensembl_gene: v.ensembl_gene ?? null,
-        zfin_id: v.zfin_id ?? null,
-        identity_pct: typeof v.identity_pct === 'number' ? v.identity_pct : null,
-        type: v.type ?? null,
+        symbol: obj.symbol ?? (typeof e.v === 'string' && !e.v.trim().startsWith('{') ? e.v : null),
+        ensembl_gene: obj.ensembl_gene ?? null,
+        zfin_id: obj.zfin_id ?? null,
+        identity_pct: typeof obj.identity_pct === 'number' ? obj.identity_pct : null,
+        type: obj.type ?? null,
         source: 'Ensembl Compara (omics/genomic)'
       });
+    } else if (typeof e.v === 'string' && e.v.trim()) {
+      out.push({ symbol: e.v, ensembl_gene: null, zfin_id: null, identity_pct: null, type: null,
+                 source: 'Ensembl Compara (omics/genomic)' });
     }
   }
-  return out;
+  // An EMPTY result means the card recorded no paralogue rows, which is "not recorded", NOT an
+  // assertion that none exists. Returning [] here would trip R11 and manufacture a confident
+  // refusal out of silence, so return null and let R10 answer 'unknown'.
+  return out.length ? out : null;
 }
 
 /** Pull the transcriptomic evidence out of an omics card into the shape R06 tests. */

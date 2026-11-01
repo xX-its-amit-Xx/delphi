@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>networks.js test harness</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin:0; font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
+         background:#f9f9f7; color:#0b0b0b; }
+  @media (prefers-color-scheme: dark) { body { background:#0d0d0d; color:#f0efec; } }
+  header { padding:12px 16px; border-bottom:1px solid rgba(128,128,128,.3); }
+  h1 { font-size:15px; margin:0 0 4px; }
+  p.lede { margin:0; font-size:12px; opacity:.75; max-width:80ch; }
+  #results { padding:10px 16px; font-size:12px; font-family:ui-monospace,Menlo,Consolas,monospace; white-space:pre-wrap; }
+  .pass { color:#0ca30c; } .fail { color:#d03b3b; font-weight:700; }
+  #stage { border-top:1px solid rgba(128,128,128,.3); }
+  .mount { border-bottom:4px solid rgba(128,128,128,.3); }
+  .mount > h2 { font:600 12px system-ui; margin:0; padding:6px 16px; opacity:.7;
+                background:rgba(128,128,128,.08); }
+  .host { display:block; }
+  #narrow .host { width:358px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>networks.js — test harness</h1>
+  <p class="lede">Mounts the networks act against the <strong>real</strong> served data under
+  <code>../blueprint3d/</code> for two subjects: a morphological <em>addition</em> and a
+  morphological <em>subtraction</em>. <code>data.case</code> is derived here from the committed
+  design manifests (parents + moved_parameters versus the parent's own resolved parameters), which
+  is how <code>run.json</code>'s generator derives it. <strong>This harness stands in for
+  run.json, which has not landed; nothing here is a mock of the underlying science data — every
+  number comes from the committed files.</strong></p>
+</header>
+<div id="results">running…</div>
+<div id="stage"></div>
+<div id="narrow"></div>
+
+<script type="module">
+const out = document.getElementById('results');
+const lines = [];
+let failures = 0;
+const consoleErrors = [];
+const origErr = console.error.bind(console);
+console.error = (...a) => { consoleErrors.push(a.map(String).join(' ')); origErr(...a); };
+window.addEventListener('error', e => consoleErrors.push('window.error: ' + (e.message || e)));
+window.addEventListener('unhandledrejection', e => consoleErrors.push('unhandledrejection: ' + (e.reason && e.reason.message || e.reason)));
+
+function log(s) { lines.push(s); out.textContent = lines.join('\n'); }
+function ok(name, cond, detail) {
+  if (cond) log(`  PASS  ${name}${detail ? '  — ' + detail : ''}`);
+  else { failures++; log(`  FAIL  ${name}${detail ? '  — ' + detail : ''}`); }
+}
+function eq(name, got, want) { ok(name, got === want, `got ${JSON.stringify(got)}, expected ${JSON.stringify(want)}`); }
+
+const BASE = new URL('../blueprint3d/', location.href);
+const j = async p => { const r = await fetch(new URL(p, BASE)); if (!r.ok) throw new Error(r.status + ' ' + p); return r.json(); };
+
+/* ---- derive data.case from the committed manifests, the way the generator does ---- */
+const PART_WORD = s => {
+  // the parameter's leading token is the anatomical token in this repo's naming scheme
+  const t = String(s).split('_')[0];
+  return t.length > 2 ? t : null;
+};
+async function buildCase(designId) {
+  const man = await j(`model/${designId}-manifest.json`);
+  const parentId = man.parents?.[0]?.organism || null;
+  let parentParams = null;
+  for (const cand of [`model/${parentId}-manifest.json`, `model/${parentId}-dev-manifest.json`]) {
+    try { parentParams = (await j(cand)).parameters; break; } catch {}
+  }
+  const moved = man.moved_parameters || [];
+  const rec = man.design_record || {};
+  const changed = moved.map(p => {
+    const to = man.parameters?.[p];
+    const from = parentParams?.[p];
+    const d = rec.deltas?.[p] || {};
+    const factor = (typeof from === 'number' && from !== 0 && typeof to === 'number') ? to / from : (d.scale ?? null);
+    return {
+      parameter: p,
+      label: p.replace(/_over_SL2?$/, '').replace(/_/g, ' '),
+      part: PART_WORD(p),
+      from: from ?? null, to: to ?? null,
+      direction: factor == null ? 'mixed' : factor > 1 ? 'increase' : 'decrease',
+      factor,
+      kind: d.evidence ? 'hypothetical' : 'derived',
+      source: d.reason || 'design manifest delta',
+    };
+  });
+  const dirs = new Set(changed.map(c => c.direction));
+  const direction = dirs.size === 1 ? [...dirs][0] : dirs.size === 0 ? 'none' : 'mixed';
+  const kind = (man.parents || []).length > 1 ? 'blend'
+    : direction === 'increase' ? 'morphological-addition'
+    : direction === 'decrease' ? 'morphological-subtraction' : 'blend';
+  return {
+    id: designId, kind, direction,
+    kind_derived_from: `${moved.length} moved parameter(s) in the design manifest compared against the resolved parameters of parent "${parentId}"; all ${direction}.`,
+    parents: man.parents || [],
+    changed,
+    function: {
+      name: null,
+      status: direction === 'increase' ? 'gained' : direction === 'decrease' ? 'lost' : 'retained',
+      base_has: null, analogue_has: null, no_real_organism_has_it: false,
+    },
+  };
+}
+
+async function buildData(designId) {
+  const [stat, man, c] = await Promise.all([
+    j('validate-static.json'),
+    j(`model/${designId}-manifest.json`),
+    buildCase(designId),
+  ]);
+  const rep = (stat.reports || []).find(r => r.design_key === designId);
+  if (!rep) throw new Error('no validator report for ' + designId);
+  const res = rep.report.results || {};
+  return {
+    meta: { generated_by: 'networks-test.html (harness; stands in for run.json)', generated_at: new Date().toISOString(), pipeline: 'assembled-from-parts', pipeline_note: 'assembled in the test harness from the committed validator output and design manifests; run.json had not landed.' },
+    case: c,
+    design: { id: designId, name: man.model, hypothetical: !!man.hypothetical, base: man.parents?.[0]?.organism || null, manifest: `model/${designId}-manifest.json`, edits: [], parameters: {} },
+    genotype_similarity: res.genotype_similarity,
+    phenotype_similarity: res.phenotype_similarity,
+    lean_check: res.lean_check,
+    functional_resolution: res.functional_resolution,
+    verdict: null, gaps: [],
+  };
+}
+
+/* --------------------------------------------------------------- the run */
+const { mountScene } = await import('./networks.js');
+
+async function runCase(designId, hostWrap, opts = {}) {
+  log(`\n=== ${designId} ${opts.reducedMotion ? '(reduced motion) ' : ''}${opts.narrow ? '(390px) ' : ''}===`);
+  const data = await buildData(designId);
+  log(`  case.kind = ${data.case.kind}  direction = ${data.case.direction}  changed = ${data.case.changed.length}`);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'mount';
+  wrap.innerHTML = `<h2>${designId} — ${data.case.kind}${opts.narrow ? ' @390px' : ''}</h2>`;
+  const host = document.createElement('div');
+  host.className = 'host';
+  wrap.appendChild(host);
+  hostWrap.appendChild(wrap);
+
+  /* spy on rAF so we can prove nothing animates while paused */
+  let rafCalls = 0;
+  const realRaf = window.requestAnimationFrame;
+  window.requestAnimationFrame = cb => { rafCalls++; return realRaf(cb); };
+
+  const notes = [];
+  const scene = await mountScene({
+    container: host, THREE: undefined, data, act: 5,
+    theme: opts.theme || 'light', reducedMotion: !!opts.reducedMotion,
+    onReady: () => {}, onNote: n => notes.push(n),
+  });
+  window.requestAnimationFrame = realRaf;
+
+  if (scene && scene.skip) {
+    log(`  scene skipped with reason: ${scene.skip && scene.reason}`);
+    ok(`${designId}: a skip carries a reason`, typeof scene.reason === 'string' && scene.reason.length > 20);
+    return { scene, data, notes };
+  }
+
+  /* ---- contract ---- */
+  for (const m of ['play', 'pause', 'seek', 'dispose']) ok(`${designId}: ${m}() exists`, typeof scene[m] === 'function');
+  ok(`${designId}: duration is 18–45 s`, scene.duration >= 18 && scene.duration <= 45, `duration=${scene.duration}`);
+  ok(`${designId}: <= 6 chapters, each with a say`, Array.isArray(scene.chapters) && scene.chapters.length <= 6 && scene.chapters.every(c => typeof c.say === 'string' && c.say.length > 20), `${scene.chapters?.length} chapters`);
+
+  /* ---- real counts, asserted ---- */
+  const d = scene.__debug;
+  const nNodes = d.subject.genesShown.length;
+  const nEdges = d.net.edges.length;
+  const byClass = d.net.byClass;
+  const classSum = Object.values(byClass).reduce((a, b) => a + b, 0);
+  log(`  NODES ${nNodes} drawn of ${d.subject.genesAll.length} resolved (+${d.subject.hiddenGenes} not drawn)`);
+  log(`  EDGES ${nEdges}  by evidence class: ${JSON.stringify(byClass)}`);
+  log(`  CLUSTERS ${d.net.clusters.size}  agreement rows ${d.net.agreement.length}`);
+  log(`  EXPRESSION structures ${d.exp.all.length} (drawn ${d.exp.shown.length})`);
+  log(`  METABOLIC pathways ${d.met.pathways.length}  chain links ${d.met.chain.length}  broken ${d.met.broken.length}`);
+  log(`  DEV stages ${d.dev.stages.length}  disagreements ${d.dev.disagreements.length}  notFound ${d.dev.notFound.length}`);
+  log(`  CHAINS ${d.ch.chains.length}  genes with no chain ${d.ch.withoutChain.length}`);
+  log(`  PARTS resolved: ${d.subject.parts.map(p => p.label + ' (' + p.id + ')').join(', ') || 'none'}`);
+
+  ok(`${designId}: at least 8 real gene nodes`, nNodes >= 8, `${nNodes} nodes`);
+  ok(`${designId}: at least 20 real edges`, nEdges >= 20, `${nEdges} edges`);
+  ok(`${designId}: every edge has an evidence class`, classSum === nEdges, `${classSum} classified of ${nEdges}`);
+  ok(`${designId}: more than one evidence class present`, Object.values(byClass).filter(n => n > 0).length >= 2, JSON.stringify(byClass));
+  ok(`${designId}: a body part resolved from the case`, d.subject.parts.length >= 1, d.subject.parts.map(p => p.label).join(','));
+  ok(`${designId}: expression structures found`, d.exp.all.length >= 3, `${d.exp.all.length}`);
+  ok(`${designId}: an oxygen chain with a computed broken rung`, d.met.chain.length >= 3 && !!d.met.worst, `${d.met.chain.length} links, worst=${d.met.worst && d.met.worst.step}`);
+  ok(`${designId}: a developmental trajectory`, d.dev.present && d.dev.stages.length >= 3, `${d.dev.stages.length} stages`);
+  ok(`${designId}: causal chains with a weakest link`, d.ch.chains.length >= 1 && d.ch.chains.every(c => typeof c.strength === 'string'), `${d.ch.chains.length} chains`);
+
+  /* ---- no KEGG anywhere on the page (licence) ---- */
+  ok(`${designId}: no KEGG row shipped`, !/\bKEGG\b/.test(host.textContent) || /local-only|licence|license/i.test(host.textContent),
+    'KEGG may only appear as a stated exclusion');
+
+  /* ---- provenance §4 ---- */
+  const prov = scene.provenance;
+  ok(`${designId}: provenance object`, !!prov && typeof prov.summary === 'string' && Array.isArray(prov.items));
+  const KINDS = new Set(['measured','derived','secondary','assumed','tuned','hypothetical','proxy','observed','standard','decorative','absent']);
+  const badKinds = (prov.items || []).filter(i => !KINDS.has(i.kind)).map(i => i.kind);
+  ok(`${designId}: every provenance kind is in the vocabulary`, badKinds.length === 0, badKinds.join(',') || 'all valid');
+  ok(`${designId}: decorative things are labelled decorative`, (prov.items || []).some(i => i.kind === 'decorative'));
+  ok(`${designId}: rendered gaps are declared absent`, (prov.items || []).some(i => i.kind === 'absent'));
+  log(`  PROVENANCE verdict=${prov.verdict}  items=${prov.items.length}  absent=${prov.items.filter(i=>i.kind==='absent').length}  decorative=${prov.items.filter(i=>i.kind==='decorative').length}`);
+
+  /* ---- the stated gaps are actually on screen, not only in provenance ---- */
+  const txt = host.textContent;
+  ok(`${designId}: a gap block is rendered on the page`, /gap ·/.test(txt), 'looked for a rendered gap heading');
+  if (data.functional_resolution && data.functional_resolution.ran === false)
+    ok(`${designId}: the not-run gate says so on screen`, /did not run/i.test(txt));
+
+  /* ---- seek(t) purity: forwards and backwards must give the identical frame ---- */
+  scene.seek(0);
+  scene.seek(3);
+  const at3 = host.innerHTML;
+  scene.seek(scene.duration);
+  scene.seek(12);
+  scene.seek(3);
+  ok(`${designId}: seek(3) is pure in t (identical after scrubbing away and back)`, host.innerHTML === at3,
+    host.innerHTML === at3 ? 'byte-identical' : 'FRAME DIFFERED');
+
+  /* ---- no rAF while paused ---- */
+  scene.pause();
+  let after = 0;
+  const realRaf2 = window.requestAnimationFrame;
+  window.requestAnimationFrame = cb => { after++; return realRaf2(cb); };
+  scene.seek(5); scene.pause();
+  await new Promise(r => setTimeout(r, 120));
+  window.requestAnimationFrame = realRaf2;
+  eq(`${designId}: no requestAnimationFrame while paused`, after, 0);
+
+  /* ---- reduced motion must not start a rAF loop at all ---- */
+  if (opts.reducedMotion) {
+    let rm = 0;
+    const r3 = window.requestAnimationFrame;
+    window.requestAnimationFrame = cb => { rm++; return r3(cb); };
+    scene.play(0);
+    await new Promise(r => setTimeout(r, 120));
+    window.requestAnimationFrame = r3;
+    scene.pause();
+    eq(`${designId}: reduced motion schedules no animation frame`, rm, 0);
+  }
+
+  /* ---- layout: no horizontal overflow ---- */
+  scene.seek(0);
+  await new Promise(r => requestAnimationFrame(r));
+  const overflow = host.scrollWidth - host.clientWidth;
+  ok(`${designId}: no horizontal overflow (${host.clientWidth}px wide)`, overflow <= 1, `scrollWidth-clientWidth = ${overflow}`);
+
+  /* ---- theme flip ---- */
+  if (typeof scene.setTheme === 'function') {
+    scene.setTheme('dark'); scene.setTheme('light');
+    ok(`${designId}: setTheme survives a flip`, true);
+  }
+
+  /* ---- clickable anatomy announces the part ---- */
+  const btn = host.querySelector('.nw-anat');
+  if (btn) {
+    let got = null;
+    host.addEventListener('delphi:part-select', e => { got = e.detail; }, { once: true });
+    btn.click();
+    ok(`${designId}: clicking a structure announces it to the stage`, !!got && typeof got.label === 'string', JSON.stringify(got));
+  } else {
+    log('  (no clickable structure in this case — expression panel is a gap)');
+  }
+
+  log(`  NOTES pushed to the rail: ${notes.length}${notes.length ? ' — ' + notes.map(n => n.severity + ':' + n.title).join(' | ') : ''}`);
+  return { scene, data, notes, counts: { nNodes, nEdges, byClass } };
+}
+
+const stage = document.getElementById('stage');
+const narrow = document.getElementById('narrow');
+const summary = {};
+try {
+  /* case A: morphological ADDITION */
+  const a = await runCase('winged-zebrafish', stage, { theme: 'light' });
+  summary['winged-zebrafish'] = a.counts;
+  /* case B: morphological SUBTRACTION — a real repo design */
+  const b = await runCase('wingless-flying-fish', stage, { theme: 'dark' });
+  summary['wingless-flying-fish'] = b.counts;
+  /* 390 px + reduced motion on the subtraction case */
+  const c = await runCase('wingless-flying-fish', narrow, { narrow: true, reducedMotion: true, theme: 'light' });
+
+  /* dispose must be idempotent and must leave nothing behind */
+  const host = document.createElement('div');
+  document.body.appendChild(host);
+  const s = await mountScene({ container: host, data: await buildData('winged-zebrafish'), theme: 'light', reducedMotion: false, onReady(){}, onNote(){} });
+  s.dispose(); s.dispose();
+  log('');
+  eq('dispose() is idempotent and empties the container', host.childElementCount, 0);
+  host.remove();
+
+  log('');
+  eq('no console errors during the whole run', consoleErrors.length, 0);
+  if (consoleErrors.length) for (const e of consoleErrors) log('    ' + e);
+} catch (e) {
+  failures++;
+  log(`\n  FAIL  harness threw: ${e && e.stack || e}`);
+}
+
+log(`\n${failures === 0 ? 'ALL CHECKS PASS' : failures + ' CHECK(S) FAILED'}`);
+out.insertAdjacentHTML('afterbegin', `<div class="${failures ? 'fail' : 'pass'}">${failures ? failures + ' FAILED' : 'ALL PASS'}</div>`);
+window.__TEST__ = { failures, consoleErrors, summary, text: lines.join('\n') };
+window.__TEST_DONE__ = true;
+</script>
+</body>
+</html>

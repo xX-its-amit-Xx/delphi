@@ -148,7 +148,54 @@ const text = p => [p && p.species, p && p.id, p && p.label,
 // module gives a sourced launch speed to. 'flier'/'tff' are the repository's flying-fish-derived
 // designed fliers (params.json flier-F1, tff-v2): same 60 g body, taxi assumed to work the same way.
 const FF_RE = /exocoet|flying ?fish|cypselurus|hirundichthys|cheilopogon|\bflier\b|\btff\b/i;
+/** Does the SPECIES match? This is not sufficient to draw the taxi band -- see launchDrawGate. */
 export const isFlier = p => FF_RE.test(text(p));
+
+/** The lower end of the sourced 15-20 m/s taxi band. */
+export const TAXI_BAND_LOW_M_S = 15;
+
+/**
+ * THE STAGE GATE. May the 15-20 m/s taxi band be drawn for this animal?
+ *
+ * The species test alone is NOT enough, and the first version of this file got it wrong. The taxi
+ * band is measured for ADULT flying fish only. glide.mjs's `organismLaunchSpeed` is explicit:
+ * adults get the taxi end speed (15 m/s), and every earlier stage gets min(10 m/s, 30 BL/s x SL)
+ * with the comment "no taxiing speed is measured for juveniles, so none is added". Gating on the
+ * species text alone handed a flying-fish LARVA the adult taxi band, and the larva then glided.
+ *
+ * That is validation defect D1 coming back through the ensemble. D1 is the one the independent
+ * harness caught when every organism got a default 15 m/s launch and a 0.5 mg zebrafish larva
+ * "glided" 42.8 m; ENVIRONMENT.md's fix was "launch speed comes from the organism, never a global
+ * default". Drawing a band the organism's own stage has no claim to is the same error wearing a
+ * distribution, and a wider band makes it harder to see, not easier.
+ *
+ * The rule, matching sim-engine/validate/physics/ensemble.mjs so the two cannot diverge: draw the
+ * band only when THE ENGINE'S OWN LAUNCH SPEED FOR THIS STATE IS ALREADY A TAXI SPEED, i.e. at or
+ * above the band's lower end. An adult reaches 15-20 m/s by taxiing and qualifies; a larva at
+ * 0.15 m/s or a juvenile capped at the 10 m/s leap speed does not, and gets no launch-speed draw
+ * at all -- exactly as glide.mjs refuses to invent one.
+ *
+ * `override` (opts.allow_launch_draw) forces the answer when the caller has already asked the
+ * engine. Returns {allow, species_matches, reason}.
+ */
+export function launchDrawGate(params, baseLaunchSpeed, override) {
+  const species_matches = isFlier(params);
+  const v = baseLaunchSpeed;
+  if (override != null) {
+    return { allow: !!override, species_matches,
+      reason: override ? 'the caller states that the engine\'s own launch speed for this state is a taxi speed'
+        : `the caller states that the engine's own launch speed for this state is NOT a taxi speed (scenarios/glide.mjs organismLaunchSpeed), so no launch-speed spread is drawn and none is invented` };
+  }
+  if (!species_matches) {
+    return { allow: false, species_matches,
+      reason: 'no measured launch-speed spread exists for this animal: glide.mjs gives a sourced launch speed only to flying fish (the taxi band) and zebrafish (Umax = 1.15 Ucrit, a point value with no published spread), and this module invents neither' };
+  }
+  if (!(v >= TAXI_BAND_LOW_M_S)) {
+    return { allow: false, species_matches,
+      reason: `the species matches but the STAGE does not: the 15-20 m/s taxi band is measured for ADULT flying fish only, and the engine's own launch speed for this state is ${v == null ? 'not sourced' : `${(+v).toFixed(2)} m/s`}, below the band's lower end of ${TAXI_BAND_LOW_M_S} m/s (scenarios/glide.mjs organismLaunchSpeed: adults get the taxi end speed, earlier stages get min(10 m/s, 30 BL/s x SL) and "no taxiing speed is measured for juveniles, so none is added"). No launch-speed spread is drawn and none is invented.` };
+  }
+  return { allow: true, species_matches, reason: 'the 15-20 m/s taxi band applies to this animal at this stage' };
+}
 
 // ---------------------------------------------------------------- the distribution catalogue
 // EVERY random quantity in Section A appears here with:
@@ -202,9 +249,12 @@ export const DISTRIBUTIONS = [
     band: [15, 20],
     applies: 'adult flying fish and the flying-fish-derived designed fliers only',
     source: 'Band 15-20 m/s, second-hand but quoted in two fetched sources: "taxiing ... can probably accelerate the flying fish to a speed up to 15 - 20 m s-1 (Davenport 1994)" (Deng, Wang, Zhang, Mao 2019, bioRxiv doi:10.1101/765560, Introduction); flying fish "glide for up to 50 m ... at an air speed of 15 to 20 m s-1" (Makiguchi et al. 2013, Aquat Biol 18:105, doi:10.3354/ab00494, Introduction, citing Edgerton & Breder 1941 and Davenport 1990); see sim-engine/scenarios/glide.mjs TAXI_END_M_S / TAXI_MAX_M_S and physics/glide-data.csv. The BAND is measured-secondhand. The UNIFORM SHAPE inside the band is ASSUMED: neither source gives a distribution, only the two endpoints. Note the simulator\'s own deterministic take-off target, params.json takeoff_speed_target_m_s = 17.5 (kind assumed), is the midpoint of this band, so the band is centred on the deterministic run by construction; glide.mjs instead takes 15, the band\'s lower end, so glide.mjs\'s single number is this ensemble\'s lower edge, not its median.',
-    skip_reason: 'no measured launch-speed spread exists for this animal: glide.mjs gives a sourced launch speed only to flying fish (taxi band) and zebrafish (Umax = 1.15 Ucrit, a point value with no published spread), and this module invents neither',
     draw(rng, base, ctx) {
-      if (!isFlier(ctx.params)) return { skipped: true, reason: this.skip_reason, value: base };
+      // THE STAGE GATE, not just the species. See launchDrawGate: a flying-fish LARVA must get no
+      // launch-speed draw at all, because the taxi band is measured for adults only.
+      const g = launchDrawGate(ctx.params, base, ctx.allowLaunchDraw);
+      ctx.gate = g;
+      if (!g.allow) return { skipped: true, reason: g.reason, value: base };
       return { value: rng.uniform(this.band[0], this.band[1]) };
     },
   },
@@ -442,7 +492,7 @@ export function perturbRun(baseParams, rng, opts = {}) {
   const conditions = opts.conditions || {};
   const params = Object.assign({}, baseParams);
   const shaped = isShaped(baseParams);           // write absent fields in the base object's own shape
-  const ctx = { params: baseParams, conditions, sea };
+  const ctx = { params: baseParams, conditions, sea, allowLaunchDraw: opts.allow_launch_draw ?? null };
   const draw = {}, skipped = [];
 
   // Base values. launch airspeed: the explicit field, else the simulator's take-off target
@@ -495,7 +545,7 @@ export function perturbRun(baseParams, rng, opts = {}) {
   setPv(params, 'launch_path_angle_deg', gamma, src('launch_path_angle_deg') + ' Plus the drawn surface_slope_deg.', shaped);
   setPv(params, 'headwind_m_s', draw.wind_along_path_m_s ? draw.wind_along_path_m_s.value : 0, src('wind_along_path_m_s'), shaped);
 
-  return { params, draw, skipped };
+  return { params, draw, skipped, gate: ctx.gate || launchDrawGate(baseParams, base.launch_airspeed_m_s, opts.allow_launch_draw ?? null) };
 }
 
 // ---------------------------------------------------------------- the default solver
@@ -693,10 +743,11 @@ export function makeEnsemble(opts = {}) {
   if (pv(detParams, 'launch_path_angle_deg') == null) setPv(detParams, 'launch_path_angle_deg', pv(baseParams, 'approach_angle_deg') ?? 0, 'deterministic run: the base approach_angle_deg', detShaped);
   if (pv(detParams, 'headwind_m_s') == null) setPv(detParams, 'headwind_m_s', 0, 'deterministic run: still air', detShaped);
   const deterministic = Object.assign({}, run(detParams, solverOpts), { analytic: analyticBound(detParams), params: detParams });
+  const gate = launchDrawGate(baseParams, pv(detParams, 'launch_airspeed_m_s'), opts.allow_launch_draw ?? null);
 
   const runs = [];
   for (let i = 0; i < draws; i++) {
-    const { params, draw, skipped } = perturbRun(baseParams, rng, { distributions: dists, conditions, sea });
+    const { params, draw, skipped } = perturbRun(baseParams, rng, { distributions: dists, conditions, sea, allow_launch_draw: opts.allow_launch_draw ?? null });
     const result = run(params, solverOpts);
     if (!keep && result && result.pts) result.pts = null;
     runs.push({ i, draw, skipped, params, result, analytic: analyticBound(params) });
@@ -721,7 +772,11 @@ export function makeEnsemble(opts = {}) {
     : { note: 'not computed: this animal cannot glide, so it makes no hops', is_prediction: false };
   return {
     seed: String(seed), draws, runs, deterministic, stats, sea,
-    species_gate: { is_flier: isFlier(baseParams), note: isFlier(baseParams) ? 'the 15-20 m/s taxi band applies' : 'the 15-20 m/s taxi band does NOT apply: no sourced launch-speed spread for this animal, so the launch speed is left at the base value' },
+    species_gate: {
+      // Field names match sim-engine/validate/physics/ensemble.mjs so the two reports line up.
+      is_flier: gate.allow, species_matches_flier: gate.species_matches,
+      launch_speed_drawn: gate.allow, note: gate.reason,
+    },
     distributions: dists.map(d => ({
       key: d.key, label: d.label, unit: d.unit, shape: d.shape, band: d.band || null, sd: d.sd ?? null, cv: d.cv ?? null,
       spread: d.spread_text ? d.spread_text(sea) : d.band ? `${d.band[0]}-${d.band[1]} ${d.unit}` : d.cv != null ? `CV ${(d.cv * 100).toFixed(2)}%` : d.sd != null ? `sd ${d.sd} ${d.unit}` : 'see the source',
