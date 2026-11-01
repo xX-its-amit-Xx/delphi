@@ -11,7 +11,8 @@ assert.equal(liftingAreaNeeded(W, 20, DEFAULTS.rho, REFERENCE.CLmax).toFixed(6),
 assert.equal(vmin(W, REFERENCE.liftingArea_m2, DEFAULTS.rho, REFERENCE.CLmax).toFixed(2), '9.85');
 
 // The reference specimen at the field speeds holds C9; at 5 m/s it is violated.
-const base = { SL_m: REFERENCE.SL_m, mass_kg: REFERENCE.mass_kg, finArea_m2: REFERENCE.liftingArea_m2, CLmax: REFERENCE.CLmax, LD_max: REFERENCE.LD_max };
+// taxon: rows are judged against the law set (lean/registry), and a scoped law is out of scope for an unnamed organism.
+const base = { taxon: 'Cypselurus hiraii', SL_m: REFERENCE.SL_m, mass_kg: REFERENCE.mass_kg, finArea_m2: REFERENCE.liftingArea_m2, CLmax: REFERENCE.CLmax, LD_max: REFERENCE.LD_max };
 const r10 = check({ ...base, airspeed_m_s: 10 }), r5 = check({ ...base, airspeed_m_s: 5 });
 const by = (rs, id) => rs.find(r => r.id === id);
 assert.equal(by(r10, 'C9').verdict, 'holds');
@@ -31,10 +32,10 @@ assert.equal(e5in.verdict, 'holds');
 // E3 is stronger than C14: the real specimen at 10 m/s is above the ceiling of every teleost in the ranges.
 assert.equal(by(r10, 'E3').verdict, 'violated');
 assert.equal(by(check({ ...base, airspeed_m_s: 10, powerRequired_W: 0.04 }), 'E3').verdict, 'violated');
-assert.equal(by(check({ powerRequired_W: 0.04 }), 'E3').verdict, 'holds');
+assert.equal(by(check({ taxon: 'Cypselurus hiraii', powerRequired_W: 0.04 }), 'E3').verdict, 'holds');
 // E7 fires on the two levers the genotype thread states in hours, and passes a lever whose animal survives.
-assert.equal(by(check({ lethality: { death_hpf: 48, scored_hpf: 48 } }), 'E7').verdict, 'violated');
-assert.equal(by(check({ lethality: { death_hpf: 4320, scored_hpf: 2160 } }), 'E7').verdict, 'holds');
+assert.equal(by(check({ taxon: 'Danio rerio', lethality: { death_hpf: 48, scored_hpf: 48 } }), 'E7').verdict, 'violated');
+assert.equal(by(check({ taxon: 'Danio rerio', lethality: { death_hpf: 4320, scored_hpf: 2160 } }), 'E7').verdict, 'holds');
 
 // Scaling against the reference: an isometric doubling holds; doubling length without changing mass is violated.
 const iso = check({ ...base, SL_m: 2 * REFERENCE.SL_m, mass_kg: 8 * REFERENCE.mass_kg, finArea_m2: 4 * REFERENCE.liftingArea_m2, airspeed_m_s: 20 });

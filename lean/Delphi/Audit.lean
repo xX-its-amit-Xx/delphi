@@ -16,6 +16,7 @@ import Delphi.Genotype
 import Delphi.Physiology
 import Delphi.Empirical
 import Delphi.Altitude
+import Delphi.Perturb
 import Delphi.Constraints
 
 #print axioms Delphi.NeutralChain.fixedBy_tendsto
@@ -162,3 +163,30 @@ import Delphi.Constraints
 #print axioms Delphi.Altitude.ceiling
 #print axioms Delphi.Altitude.infeasible_at_ground_infeasible_everywhere
 #print axioms Delphi.Altitude.demand_anti_area
+#print axioms Delphi.Perturb.sustained_power_le
+#print axioms Delphi.Perturb.no_sustained_power_outside
+#print axioms Delphi.Perturb.thermal_rules_out
+#print axioms Delphi.Perturb.thermal_power_rules_out
+#print axioms Delphi.Perturb.station_requires
+#print axioms Delphi.Perturb.no_station_above_ucrit
+#print axioms Delphi.Perturb.no_station_above_drag_bound
+#print axioms Delphi.Perturb.Hydrostatic.pressure_pos
+#print axioms Delphi.Perturb.bladder_volume_eq
+#print axioms Delphi.Perturb.bladder_volume_anti
+#print axioms Delphi.Perturb.secretion_ratio
+#print axioms Delphi.Perturb.closed_bladder_rules_out
+#print axioms Delphi.Perturb.depth_le_isosmotic
+#print axioms Delphi.Perturb.no_teleost_below
+#print axioms Delphi.Perturb.isa_rho_pos
+#print axioms Delphi.Perturb.isa_rho_anti
+#print axioms Delphi.Perturb.vmin_inv_sqrt
+#print axioms Delphi.Perturb.vmin_density_ratio
+#print axioms Delphi.Perturb.vmin_isa_mono
+#print axioms Delphi.Perturb.glide_ground_range
+#print axioms Delphi.Perturb.glide_ground_range_le
+#print axioms Delphi.Perturb.wind_glide_rules_out
+#print axioms Delphi.Perturb.mass_declines_of_deficit
+#print axioms Delphi.Perturb.intake_needed
+#print axioms Delphi.Perturb.energy_rules_out
+#print axioms Delphi.Perturb.perturb_nonvacuous
+#print axioms Delphi.Perturb.measured_no_teleost_below

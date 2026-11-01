@@ -1,0 +1,114 @@
+{
+ "law_id": "perturb-energy-balance",
+ "version": "1.0.0",
+ "kind": "biological",
+ "class": "theorem-from-hypothesis",
+ "status": "candidate",
+ "label": null,
+ "level": null,
+ "lean_ref": {
+  "module": "lean/Delphi/Perturb.lean",
+  "theorem": "Delphi.Perturb.energy_rules_out",
+  "structure": null,
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "0737a1546dfcbff424e398eaca74b65ca8ccf1461648f9d8a690893087730716",
+  "content_hash": "1c6f8cc488235d3c1c50866409750850f2ab0878558138214dfd86a7aa67a561"
+ },
+ "statement_en": "Under daily energy conservation eps dm = a I - (R + Act + s a I) with SDA coefficient s, a design that does not take in at least (R + Act) / (a (1 - s)) loses mass; a claim to hold or gain mass on less is ruled out.",
+ "hypotheses": [
+  {
+   "name": "see theorem statement",
+   "statement": "the named hypothesis structure(s) in the theorem statement; instantiated with fetched numbers in Delphi.Perturb.measured"
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "Teleostei"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "SDA coefficients from walleye (Bihun 2024) and larval clownfish (McLeod and Clark 2016); energy conservation itself is general"
+ },
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "Bihun CJ, Stewart EMC, Lechner ER, Brownscombe JW, Raby GD 2024, Thermal performance curves for aerobic scope and specific dynamic action in a sexually dimorphic piscivore: implications for a warming climate. (PMID 38881304, doi:10.1242/jeb.247207); lean/perturb-sources.json#bihun2024",
+   "McLeod IM, Clark TD 2016, Limited Capacity for Faster Digestion in Larval Coral Reef Fish at an Elevated Temperature. (PMID 27191721, doi:10.1371/journal.pone.0155360); lean/perturb-sources.json#mcleodclark2016",
+   "Secor SM 2009, Specific dynamic action: a review of the postprandial metabolic response. (PMID 18597096, doi:10.1007/s00360-008-0283-7); lean/perturb-sources.json#secor2009"
+  ],
+  "observations": []
+ },
+ "sources": [
+  "Bihun CJ, Stewart EMC, Lechner ER, Brownscombe JW, Raby GD 2024, Thermal performance curves for aerobic scope and specific dynamic action in a sexually dimorphic piscivore: implications for a warming climate. (PMID 38881304, doi:10.1242/jeb.247207); lean/perturb-sources.json#bihun2024",
+  "McLeod IM, Clark TD 2016, Limited Capacity for Faster Digestion in Larval Coral Reef Fish at an Elevated Temperature. (PMID 27191721, doi:10.1371/journal.pone.0155360); lean/perturb-sources.json#mcleodclark2016",
+  "Secor SM 2009, Specific dynamic action: a review of the postprandial metabolic response. (PMID 18597096, doi:10.1007/s00360-008-0283-7); lean/perturb-sources.json#secor2009"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.Perturb.perturb_nonvacuous",
+  "statement": "theorem perturb_nonvacuous : Nonempty Record",
+  "file": "lean/Delphi/Perturb.lean"
+ },
+ "constraints": [
+  "P5"
+ ],
+ "introduced_in": "1.1.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": null,
+ "origin": "lean/registry/laws/perturb-energy-balance.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "propose.mjs against lawset 1.0.0: candidate"
+  }
+ ],
+ "content_hash": "1c6f8cc488235d3c1c50866409750850f2ab0878558138214dfd86a7aa67a561",
+ "lean": {
+  "theorem": "Delphi.Perturb.energy_rules_out",
+  "module": "lean/Delphi/Perturb.lean",
+  "line": 374,
+  "source": "/-- A design claiming to hold or gain mass on less intake than its costs need is ruled out. -/\ntheorem energy_rules_out (D : SDACoefficient) {ε dm a I R Act : ℝ} (hε : 0 < ε) (ha : 0 < a)\n    (hbal : ε * dm = a * I - (R + Act + D.s * (a * I))) (hgrow : 0 ≤ dm)\n    (hshort : I < (R + Act) / (a * (1 - D.s))) : False := by\n  have := intake_needed D hε ha hbal hgrow\n  linarith",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.Perturb.SDACoefficient",
+    "keyword": "structure",
+    "module": "lean/Delphi/Perturb.lean",
+    "line": 350,
+    "source": "/-- Specific dynamic action as a fraction `s` of the digestible (assimilated) energy, `0 ≤ s < 1`. -/\nstructure SDACoefficient where\n  s : ℝ\n  s_nonneg : 0 ≤ s\n  s_lt_one : s < 1"
+   }
+  ]
+ },
+ "constraint_details": [
+  {
+   "id": "P5",
+   "relation": "mass held or gained only if I ≥ (R + Act) / (a (1 − s))",
+   "lemma": "Delphi.Perturb.energy_rules_out",
+   "law": "Delphi.Perturb.intake_needed",
+   "module": "lean/Delphi/Perturb.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "daily_energy_conservation"
+   ],
+   "canEliminate": "a design that grows (or holds mass) on a daily ration that cannot pay its costs",
+   "lemma_source": "/-- A design claiming to hold or gain mass on less intake than its costs need is ruled out. -/\ntheorem energy_rules_out (D : SDACoefficient) {ε dm a I R Act : ℝ} (hε : 0 < ε) (ha : 0 < a)\n    (hbal : ε * dm = a * I - (R + Act + D.s * (a * I))) (hgrow : 0 ≤ dm)\n    (hshort : I < (R + Act) / (a * (1 - D.s))) : False := by\n  have := intake_needed D hε ha hbal hgrow\n  linarith"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Perturb.lean",
+  "decl": "Delphi.Perturb.energy_rules_out",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "0737a1546dfcbff424e398eaca74b65ca8ccf1461648f9d8a690893087730716",
+  "current_statement_sha256": "0737a1546dfcbff424e398eaca74b65ca8ccf1461648f9d8a690893087730716",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.1.0",
+  "1.2.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

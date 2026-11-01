@@ -130,7 +130,10 @@ export function organismLaunchSpeed(state) {
   if (/\+/.test(sp)) return { value: null, reason: 'blended species: no measured leap or burst speed exists for a blend, and none is invented' };
   if (FF_RE.test(sp)) {
     if (SL == null) return { value: null, reason: 'SL_m is null' };
-    const adult = String(val(state, 'stage') || '') === 'adult';
+    // Stage boundary: the state's own stage (the dominant parent's staging table, development/stages.json). For the
+    // reference flying fish that is 'adult' from ~250 days after hatching (SL >= ~0.187 m). Adults take the measured
+    // ~10 m/s leap speed; earlier stages scale 30 BL/s x SL (no leap speed is measured for them).
+    const adult = /adult/i.test(String(val(state, 'stage') || ''));
     const v = adult ? 10 : Math.min(10, 30 * SL);
     const big = SL >= 0.33; // 10 m/s = 20-30 BL/s implies fish of 0.33-0.5 m
     return { value: v, kind: adult && big ? 'measured-secondhand' : 'borrowed', source: adult ? `flying-fish leap speed ~10 m/s (makiguchi-2013 citing Davenport 1994, stroboscopic film; https://doi.org/10.3354/ab00494)${big ? '' : `; borrowed for this ${(SL * 1000).toFixed(0)} mm adult: the quoted 20-30 BL/s implies 0.33-0.5 m fish`}` : `30 BL/s x SL ${(SL * 1000).toFixed(0)} mm, capped at 10 m/s (upper end of the adult 20-30 BL/s leap speed, makiguchi-2013 citing Davenport 1994), borrowed for a non-adult stage` };

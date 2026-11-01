@@ -1,0 +1,1658 @@
+{
+ "meta": {
+  "example": "b-impossible-spec",
+  "ran_at": "2026-11-01T02:59:35.993Z",
+  "node": "v24.13.0",
+  "headline": "no design meets the spec: 57/57 rejected; C15 glide_range violated (bound 4.37 m from 1 m vs 1000 m), P1 thermal violated (CTmax 40.45 °C vs 45 °C)",
+  "checks": [
+   {
+    "name": "parser returns a valid spec",
+    "pass": true,
+    "detail": ""
+   },
+   {
+    "name": "parser keeps the impossible 1000 m target (does not clip it)",
+    "pass": true,
+    "detail": ""
+   },
+   {
+    "name": "parser keeps 45 °C",
+    "pass": true,
+    "detail": ""
+   },
+   {
+    "name": "design_from_spec: no design meets the spec",
+    "pass": true,
+    "detail": ""
+   },
+   {
+    "name": "every optimizer candidate rejected",
+    "pass": true,
+    "detail": ""
+   },
+   {
+    "name": "45 °C criterion fails on the starting design",
+    "pass": true,
+    "detail": ""
+   },
+   {
+    "name": "45 °C is above the zebrafish CTmax",
+    "pass": true,
+    "detail": ""
+   },
+   {
+    "name": "flight-climb-glide-law is accepted, theorem glide_range_le",
+    "pass": true,
+    "detail": ""
+   },
+   {
+    "name": "lean_check: C15 (glide range) violated by a 1000 m glide from 1 m",
+    "pass": true,
+    "detail": ""
+   },
+   {
+    "name": "lean_check: P1 (thermal window) violated at 45 °C",
+    "pass": true,
+    "detail": ""
+   },
+   {
+    "name": "the best glide any sampled candidate reached is far below 1000 m",
+    "pass": true,
+    "detail": ""
+   }
+  ]
+ },
+ "text": "a zebrafish-derived fish that glides at least 1000 m from a 1 m launch and survives 10–45 °C as an adult",
+ "parse": {
+  "contract_version": "0.3.0",
+  "result": {
+   "spec": {
+    "start_from": [
+     {
+      "organism": "zebrafish-adult",
+      "weight": 1
+     }
+    ],
+    "criteria": [
+     {
+      "scenario": "glide",
+      "metric": "glide_range_total_m",
+      "op": ">=",
+      "value": 1000,
+      "unit": "m",
+      "params": {
+       "launch_height_m": 1
+      },
+      "hard": true,
+      "weight": 1,
+      "source_text": "a zebrafish-derived fish that glides at least 1000 m from a 1 m launch",
+      "stages": [
+       "adult"
+      ],
+      "id": "c1"
+     },
+     {
+      "scenario": "temperature",
+      "params": {
+       "water_temperature_C": 10
+      },
+      "op": "survives",
+      "hard": true,
+      "weight": 1,
+      "source_text": "survives 10–45 °C as an adult",
+      "stages": [
+       "adult"
+      ],
+      "id": "c2"
+     },
+     {
+      "scenario": "temperature",
+      "params": {
+       "water_temperature_C": 45
+      },
+      "op": "survives",
+      "hard": true,
+      "weight": 1,
+      "source_text": "survives 10–45 °C as an adult",
+      "stages": [
+       "adult"
+      ],
+      "id": "c3"
+     }
+    ],
+    "editable": [],
+    "constraints": {
+     "lean": "must-hold"
+    }
+   },
+   "unparsed": [],
+   "refused": [],
+   "assumptions": [
+    "no stage stated for 1 criterion: adult assumed (say \"as a larva\", \"at all stages\" or \"at 30 dpf\")",
+    "no editable parameters stated: the optimizer has nothing to vary (say e.g. \"vary the pectoral fin area from 0.02 to 0.08\")",
+    "Lean constraints not mentioned: they hold anyway (constraints.lean is always \"must-hold\")"
+   ],
+   "validation": {
+    "ok": true,
+    "errors": [],
+    "warnings": [],
+    "normalised_spec": {
+     "start_from": [
+      {
+       "organism": "zebrafish-adult",
+       "weight": 1
+      }
+     ],
+     "criteria": [
+      {
+       "scenario": "glide",
+       "metric": "glide_range_total_m",
+       "op": ">=",
+       "value": 1000,
+       "unit": "m",
+       "params": {
+        "launch_height_m": 1
+       },
+       "hard": true,
+       "weight": 1,
+       "source_text": "a zebrafish-derived fish that glides at least 1000 m from a 1 m launch",
+       "stages": [
+        "adult"
+       ],
+       "id": "c1",
+       "better": "higher"
+      },
+      {
+       "scenario": "temperature",
+       "params": {
+        "water_temperature_C": 10
+       },
+       "op": "survives",
+       "hard": true,
+       "weight": 1,
+       "source_text": "survives 10–45 °C as an adult",
+       "stages": [
+        "adult"
+       ],
+       "id": "c2"
+      },
+      {
+       "scenario": "temperature",
+       "params": {
+        "water_temperature_C": 45
+       },
+       "op": "survives",
+       "hard": true,
+       "weight": 1,
+       "source_text": "survives 10–45 °C as an adult",
+       "stages": [
+        "adult"
+       ],
+       "id": "c3"
+      }
+     ],
+     "editable": [],
+     "constraints": {
+      "lean": "must-hold"
+     }
+    }
+   },
+   "engine": [
+    "scenarios/: altitude, current, daynight, digestion, glide, grip, predator, pressure, sleep, temperature, wind",
+    "lib/data-node.mjs bundle",
+    "lib/organism.mjs",
+    "lib/state.mjs"
+   ]
+  },
+  "provenance": [
+   {
+    "quantity": "parser",
+    "value": "sim-engine/lib/parse-text.mjs",
+    "kind": "derived",
+    "source": "Rule-based; no model, no network. The same text always gives the same spec."
+   }
+  ],
+  "scope": "A parse of the words, not an understanding of the request. Anything the rules do not cover is in `unparsed` and was NOT turned into a criterion; defaults the parser applied are in `assumptions`. Validation checks names, units and ranges against the scenario modules; it says nothing about whether the design can meet the criteria.",
+  "weakest_input": "derived",
+  "counts": {
+   "derived": 1
+  }
+ },
+ "spec": {
+  "start_from": [
+   {
+    "organism": "zebrafish-adult",
+    "weight": 1
+   }
+  ],
+  "criteria": [
+   {
+    "scenario": "glide",
+    "metric": "glide_range_total_m",
+    "op": ">=",
+    "value": 1000,
+    "unit": "m",
+    "params": {
+     "launch_height_m": 1,
+     "launch_airspeed_override_m_s": 10
+    },
+    "hard": true,
+    "weight": 1,
+    "source_text": "a zebrafish-derived fish that glides at least 1000 m from a 1 m launch",
+    "stages": [
+     "adult"
+    ],
+    "id": "c1",
+    "better": "higher"
+   },
+   {
+    "scenario": "temperature",
+    "params": {
+     "water_temperature_C": 10
+    },
+    "op": "survives",
+    "hard": true,
+    "weight": 1,
+    "source_text": "survives 10–45 °C as an adult",
+    "stages": [
+     "adult"
+    ],
+    "id": "c2"
+   },
+   {
+    "scenario": "temperature",
+    "params": {
+     "water_temperature_C": 45
+    },
+    "op": "survives",
+    "hard": true,
+    "weight": 1,
+    "source_text": "survives 10–45 °C as an adult",
+    "stages": [
+     "adult"
+    ],
+    "id": "c3"
+   }
+  ],
+  "editable": [
+   {
+    "target": {
+     "level": "body",
+     "id": "body"
+    },
+    "param": "pectoral_area_over_SL2",
+    "min": 0.016,
+    "max": 0.15475
+   },
+   {
+    "target": {
+     "level": "body",
+     "id": "body"
+    },
+    "param": "pectoral_span_over_SL",
+    "min": 0.42,
+    "max": 1.2857
+   }
+  ],
+  "constraints": {
+   "lean": "must-hold"
+  }
+ },
+ "design": {
+  "contract_version": "0.3.0",
+  "result": {
+   "status": "no design meets the spec",
+   "validation": {
+    "warnings": []
+   },
+   "spec": {
+    "start_from": [
+     {
+      "organism": "zebrafish-adult",
+      "weight": 1
+     }
+    ],
+    "criteria": [
+     {
+      "scenario": "glide",
+      "metric": "glide_range_total_m",
+      "op": ">=",
+      "value": 1000,
+      "unit": "m",
+      "params": {
+       "launch_height_m": 1,
+       "launch_airspeed_override_m_s": 10
+      },
+      "hard": true,
+      "weight": 1,
+      "source_text": "a zebrafish-derived fish that glides at least 1000 m from a 1 m launch",
+      "stages": [
+       "adult"
+      ],
+      "id": "c1",
+      "better": "higher"
+     },
+     {
+      "scenario": "temperature",
+      "params": {
+       "water_temperature_C": 10
+      },
+      "op": "survives",
+      "hard": true,
+      "weight": 1,
+      "source_text": "survives 10–45 °C as an adult",
+      "stages": [
+       "adult"
+      ],
+      "id": "c2"
+     },
+     {
+      "scenario": "temperature",
+      "params": {
+       "water_temperature_C": 45
+      },
+      "op": "survives",
+      "hard": true,
+      "weight": 1,
+      "source_text": "survives 10–45 °C as an adult",
+      "stages": [
+       "adult"
+      ],
+      "id": "c3"
+     }
+    ],
+    "editable": [
+     {
+      "target": {
+       "level": "body",
+       "id": "body"
+      },
+      "param": "pectoral_area_over_SL2",
+      "min": 0.016,
+      "max": 0.15475
+     },
+     {
+      "target": {
+       "level": "body",
+       "id": "body"
+      },
+      "param": "pectoral_span_over_SL",
+      "min": 0.42,
+      "max": 1.2857
+     }
+    ],
+    "constraints": {
+     "lean": "must-hold"
+    }
+   },
+   "objective": {
+    "kind": "weighted-normalised-sum",
+    "soft": [],
+    "hard": [
+     {
+      "id": "c1",
+      "scenario": "glide",
+      "metric": "glide_range_total_m",
+      "op": ">=",
+      "value": 1000,
+      "unit": "m",
+      "params": {
+       "launch_height_m": 1,
+       "launch_airspeed_override_m_s": 10
+      },
+      "stages": [
+       "adult"
+      ]
+     },
+     {
+      "id": "c2",
+      "scenario": "temperature",
+      "metric": null,
+      "op": "survives",
+      "value": null,
+      "unit": null,
+      "params": {
+       "water_temperature_C": 10
+      },
+      "stages": [
+       "adult"
+      ]
+     },
+     {
+      "id": "c3",
+      "scenario": "temperature",
+      "metric": null,
+      "op": "survives",
+      "value": null,
+      "unit": null,
+      "params": {
+       "water_temperature_C": 45
+      },
+      "stages": [
+       "adult"
+      ]
+     }
+    ],
+    "lean": "must-hold",
+    "aggregation": "each soft criterion is scored at its worst requested stage; hard criteria are constraints, not score terms; no-model never counts as met",
+    "editable": [
+     {
+      "target": {
+       "level": "body",
+       "id": "body"
+      },
+      "param": "pectoral_area_over_SL2",
+      "min": 0.016,
+      "max": 0.15475
+     },
+     {
+      "target": {
+       "level": "body",
+       "id": "body"
+      },
+      "param": "pectoral_span_over_SL",
+      "min": 0.42,
+      "max": 1.2857
+     }
+    ]
+   },
+   "starting_design": {
+    "doc": {
+     "id": "spec-design",
+     "base": {
+      "parents": [
+       {
+        "organism": "zebrafish-adult",
+        "weight": 1
+       }
+      ]
+     },
+     "edits": [],
+     "notes": "built from a DesignSpec",
+     "caveat": "MORPHOLOGICAL interpolation, not genetic hybridisation (anatomy-model/parametric/design-schema.json): a blended or edited parameter set is a shape, not an organism; it says nothing about whether such an animal could be bred, is viable, or is developmentally reachable."
+    },
+    "explanation": {
+     "meets": false,
+     "score": 0,
+     "summary": "Does NOT meet the spec: 2 hard criteria failed, 0 could not be evaluated (no model counts as not met). Soft score 0.000.",
+     "criteria": [
+      {
+       "id": "c1",
+       "text": "a zebrafish-derived fish that glides at least 1000 m from a 1 m launch",
+       "hard": true,
+       "op": ">=",
+       "target": 1000,
+       "unit": "m",
+       "verdict": "failed",
+       "stages": [
+        {
+         "stage": "adult",
+         "verdict": "failed",
+         "value": 0,
+         "unit": "m",
+         "limiting": null,
+         "lean_part": {
+          "lean_bound_m": 0,
+          "kinetic_phase_m": 0,
+          "covered": "lean_bound_m only"
+         },
+         "weakest_provenance": "assumed",
+         "why": null,
+         "scope": "Still air over a flat surface; steady glide polar of stuffed flying fish in a wind tunnel; ranges are upper bounds (every metre at (L/D)max). Only glide_range_lean_bound_m is covered by the Lean theorem glide_range_le. Launch speed is the organism's own sourced leap/burst speed (or a labelled what-if). Takeoff (taxiing), control, stability, flapping and burst power are not modelled. survives = null (a glide attempt is not a lethal perturbation in this model); feasible = lift can carry the weight at the reachable launch speed (null if no sourced launch speed).",
+         "age_days": 180
+        }
+       ],
+       "lean_coverage": "NOT covered as a whole: only the h·L/D part (glide_range_lean_bound_m) is covered by Lean glide_range_le; the kinetic phase (kinetic_phase_m) is outside the theorem."
+      },
+      {
+       "id": "c2",
+       "text": "survives 10–45 °C as an adult",
+       "hard": true,
+       "op": "survives",
+       "target": null,
+       "unit": null,
+       "verdict": "met",
+       "stages": [
+        {
+         "stage": "adult",
+         "verdict": "met",
+         "value": true,
+         "unit": null,
+         "limiting": null,
+         "weakest_provenance": "assumed",
+         "why": null,
+         "scope": "Acute exposure (minutes to hours) of an acclimated zebrafish. CT limits are ramp-test endpoints (loss of equilibrium), not lethal temperatures or long-term limits; chronic exposure, growth, reproduction and interactions with hypoxia are not modelled. Fin or wing edits do not change these numbers: the scenario reads only species, stage and temperature. survives = CTmin < T < CTmax; feasible = null (swimming capacity is in ucrit_relative and feasibility_note). CT limits, Ucrit(T) and Q10 are read back from their source papers (kind calibrated): not independent predictions.",
+         "age_days": 180
+        }
+       ]
+      },
+      {
+       "id": "c3",
+       "text": "survives 10–45 °C as an adult",
+       "hard": true,
+       "op": "survives",
+       "target": null,
+       "unit": null,
+       "verdict": "failed",
+       "stages": [
+        {
+         "stage": "adult",
+         "verdict": "failed",
+         "value": false,
+         "unit": null,
+         "limiting": "above CTmax (40.5 degC): loss of equilibrium in an acute ramp",
+         "weakest_provenance": "assumed",
+         "why": null,
+         "scope": "Acute exposure (minutes to hours) of an acclimated zebrafish. CT limits are ramp-test endpoints (loss of equilibrium), not lethal temperatures or long-term limits; chronic exposure, growth, reproduction and interactions with hypoxia are not modelled. Fin or wing edits do not change these numbers: the scenario reads only species, stage and temperature. survives = CTmin < T < CTmax; feasible = null (swimming capacity is in ucrit_relative and feasibility_note). CT limits, Ucrit(T) and Q10 are read back from their source papers (kind calibrated): not independent predictions.",
+         "age_days": 180
+        }
+       ]
+      }
+     ],
+     "lean": [],
+     "violations": [
+      {
+       "id": "c1",
+       "stage": "adult",
+       "value": 0
+      },
+      {
+       "id": "c3",
+       "stage": "adult",
+       "value": false
+      }
+     ],
+     "unverified": []
+    }
+   },
+   "optimizer": {
+    "objective": {
+     "criterion": "c1",
+     "scenario": "glide",
+     "metric": "glide_range_total_m",
+     "params": {
+      "launch_height_m": 1,
+      "launch_airspeed_override_m_s": 10
+     },
+     "direction": "maximize",
+     "surrogate": false,
+     "ageDays": 180
+    },
+    "hard_constraints": 3,
+    "not_passed_to_optimizer": [],
+    "status": "no design meets the spec",
+    "evaluations": 57,
+    "feasible_candidates": 0,
+    "rejected_count": 57,
+    "start": {
+     "metric": null,
+     "feasible": false,
+     "why": {
+      "eval": 1,
+      "values": "start (unchanged document)",
+      "reason": "hard constraint",
+      "constraint": "glide.glide_range_total_m >= 1000",
+      "actual": 0
+     }
+    },
+    "note": null,
+    "rejected_sample": [
+     {
+      "eval": 1,
+      "values": "start (unchanged document)",
+      "reason": "hard constraint",
+      "constraint": "glide.glide_range_total_m >= 1000",
+      "actual": 0
+     },
+     {
+      "eval": 2,
+      "values": {
+       "body:body.pectoral_area_over_SL2": 0.10300650925660738,
+       "body:body.pectoral_span_over_SL": 0.42236831382571255
+      },
+      "reason": "hard constraint",
+      "constraint": "glide.glide_range_total_m >= 1000",
+      "actual": 14.83386368899927
+     },
+     {
+      "eval": 3,
+      "values": {
+       "body:body.pectoral_area_over_SL2": 0.14196418597739907,
+       "body:body.pectoral_span_over_SL": 0.42
+      },
+      "reason": "hard constraint",
+      "constraint": "glide.glide_range_total_m >= 1000",
+      "actual": 17.613813772963777
+     },
+     {
+      "eval": 4,
+      "values": {
+       "body:body.pectoral_area_over_SL2": 0.09798677003963134,
+       "body:body.pectoral_span_over_SL": 0.6484986469402738
+      },
+      "reason": "hard constraint",
+      "constraint": "glide.glide_range_total_m >= 1000",
+      "actual": 14.346029553244449
+     },
+     {
+      "eval": 5,
+      "values": {
+       "body:body.pectoral_area_over_SL2": 0.07522608887987942,
+       "body:body.pectoral_span_over_SL": 0.42
+      },
+      "reason": "hard constraint",
+      "constraint": "glide.glide_range_total_m >= 1000",
+      "actual": 11.511840465801626
+     },
+     {
+      "eval": 6,
+      "values": {
+       "body:body.pectoral_area_over_SL2": 0.11976628647544839,
+       "body:body.pectoral_span_over_SL": 0.5431903259535252
+      },
+      "reason": "hard constraint",
+      "constraint": "glide.glide_range_total_m >= 1000",
+      "actual": 16.21507534384419
+     },
+     {
+      "eval": 7,
+      "values": {
+       "body:body.pectoral_area_over_SL2": 0.10508521819524304,
+       "body:body.pectoral_span_over_SL": 0.4732958577712355
+      },
+      "reason": "hard constraint",
+      "constraint": "glide.glide_range_total_m >= 1000",
+      "actual": 15.024729638402988
+     },
+     {
+      "eval": 8,
+      "values": {
+       "body:body.pectoral_area_over_SL2": 0.07738397657921024,
+       "body:body.pectoral_span_over_SL": 0.444293602796433
+      },
+      "reason": "hard constraint",
+      "constraint": "glide.glide_range_total_m >= 1000",
+      "actual": 11.835402630463562
+     }
+    ],
+    "best_values": null,
+    "scope": "Seeded random-restart hill climb (seed 1, 57 evaluations including the start design): a local search, not a global optimum. A candidate counts only if it beats the start design by more than 0.1 % (relative). Constraint: no NEW binding Lean violation (floating point, not a kernel check) and every hard constraint. The objective is only as good as the scenario model and the STATE inputs it rests on; an optimised design is a shape, not a viable organism. MORPHOLOGICAL interpolation, not genetic hybridisation (anatomy-model/parametric/design-schema.json): a blended or edited parameter set is a shape, not an organism; it says nothing about whether such an animal could be bred, is viable, or is developmentally reachable."
+   },
+   "meets": false,
+   "summary": "No candidate in 57 evaluations satisfied the hard criteria and the Lean laws together. The starting design: Does NOT meet the spec: 2 hard criteria failed, 0 could not be evaluated (no model counts as not met). Soft score 0.000."
+  },
+  "provenance": [
+   {
+    "quantity": "spec engine",
+    "value": "sim-engine/lib/spec.mjs",
+    "kind": "derived",
+    "source": "validateSpec, specToObjective, explainResult: no new empirical content."
+   },
+   {
+    "quantity": "optimizer",
+    "value": "random-restart hill climb",
+    "kind": "derived",
+    "source": "sim-engine/tools/studio.mjs optimize"
+   },
+   {
+    "quantity": "tolerance",
+    "value": 0.001,
+    "kind": "assumed",
+    "source": "relative improvement required over the start design (caller or default 0.001)"
+   }
+  ],
+  "scope": "A local, seeded search (the optimize tool) over the editable parameters, climbing one metric; every other criterion is re-checked on the result at every requested stage. Not a global optimum. Verdicts are only as good as the scenario models and the STATE inputs they rest on; each criterion row carries the weakest provenance kind behind it and the model's limiting factor. Lean verdicts are floating-point evaluations of the Lean-backed formulas, not kernel checks; by default only NEW binding violations (absent from the unedited parents) fail a design. A \"no-model\" criterion is not met. A designed parameter set is a shape, not a viable organism: MORPHOLOGICAL interpolation, not genetic hybridisation.",
+  "weakest_input": "assumed",
+  "counts": {
+   "derived": 2,
+   "assumed": 1
+  }
+ },
+ "glide_run": {
+  "ok": true,
+  "scenario": "glide",
+  "params": {
+   "launch_height_m": 1,
+   "launch_airspeed_override_m_s": 10,
+   "ground_effect": 1
+  },
+  "metrics": [
+   {
+    "key": "glide_range_lean_bound_m",
+    "label": "Glide distance covered by the Lean bound, h (L/D)max",
+    "value": 0,
+    "unit": "m",
+    "better": "higher",
+    "kind": "derived",
+    "source": "cannot glide: 0"
+   },
+   {
+    "key": "kinetic_phase_m",
+    "label": "Level kinetic-energy phase (OUTSIDE the Lean theorem; assumption flagged)",
+    "value": 0,
+    "unit": "m",
+    "better": "higher",
+    "kind": "derived",
+    "source": "cannot glide: 0"
+   },
+   {
+    "key": "glide_range_total_m",
+    "label": "Sum: Lean-covered part + kinetic phase (the sum is NOT covered by the theorem)",
+    "value": 0,
+    "unit": "m",
+    "better": "higher",
+    "kind": "derived",
+    "source": "cannot glide: 0"
+   },
+   {
+    "key": "launch_airspeed_m_s",
+    "label": "Launch speed reachable by this organism",
+    "value": 10,
+    "unit": "m/s",
+    "better": "higher",
+    "kind": "assumed",
+    "source": "what-if override launch_airspeed_override_m_s = 10 m/s (not this organism's measured speed)"
+   },
+   {
+    "key": "wing_loading_N_m2",
+    "label": "Wing loading W/S (lifting area)",
+    "value": 81.08432142857144,
+    "unit": "N/m2",
+    "better": "lower",
+    "kind": "derived",
+    "source": "m g / lifting area (derived)"
+   },
+   {
+    "key": "v_min_m_s",
+    "label": "Minimum lift-supported airspeed",
+    "value": 13.027710387697745,
+    "unit": "m/s",
+    "better": "lower",
+    "kind": "derived",
+    "source": "sqrt(2W/(rho S C_Lmax)), physics/results.json interpretation B"
+   },
+   {
+    "key": "launch_speed_margin_m_s",
+    "label": "Launch speed minus v_min",
+    "value": -3.027710387697745,
+    "unit": "m/s",
+    "better": "higher",
+    "kind": "derived",
+    "source": "launch speed - v_min"
+   },
+   {
+    "key": "glide_airspeed_m_s",
+    "label": "Descent airspeed at best L/D (rests on an assumed C_L(0 deg))",
+    "value": null,
+    "unit": "m/s",
+    "better": null,
+    "kind": "assumed",
+    "source": "none",
+    "reason": "cannot glide"
+   },
+   {
+    "key": "glide_time_s",
+    "label": "Time airborne (bound)",
+    "value": 0,
+    "unit": "s",
+    "better": "higher",
+    "kind": "derived",
+    "source": "(L/D)_eff (v0 - v_min)/g + h (L/D)/v_LD; v_LD uses the assumed C_L(0 deg)"
+   },
+   {
+    "key": "glide_ratio",
+    "label": "(L/D)max used",
+    "value": 4.37,
+    "unit": "1",
+    "better": "higher",
+    "kind": "borrowed",
+    "source": "Park H, Choi H (2010). Aerodynamic characteristics of flying fish in gliding flight. J Exp Biol 213:3269-3279, Table 2 (stuffed C. hiraii in a wind tunnel); borrowed: this animal's own polar is not measured"
+   },
+   {
+    "key": "power_required_W",
+    "label": "Power for level flight at v_min, W v_min/(L/D)max",
+    "value": 0.02030499239143513,
+    "unit": "W",
+    "better": "lower",
+    "kind": "derived",
+    "source": "physics/results.json interpretation C formula"
+   },
+   {
+    "key": "aerobic_power_available_W",
+    "label": "Fick aerobic power bound eta E Q Ca",
+    "value": 0.0003722168094778689,
+    "unit": "W",
+    "better": "higher",
+    "kind": "derived",
+    "source": "eta E Q Ca, Ca 0.1896 ml/ml at PO2 20.5 kPa (Hill P50 3.31 kPa, n 1.34), Q 0.0007 ml/s"
+   },
+   {
+    "key": "powered_flight_margin",
+    "label": "Aerobic power available / power required",
+    "value": 0.018331295195898423,
+    "unit": "1",
+    "better": "higher",
+    "kind": "derived",
+    "source": ">= 1 would mean the O2 budget does not forbid level flight (necessary, not sufficient)"
+   }
+  ],
+  "survives": null,
+  "feasible": false,
+  "feasibility_note": "cannot glide: the reachable launch speed 10.00 m/s is below v_min 13.03 m/s, so lift cannot carry the weight",
+  "limiting": null,
+  "provenance": [
+   {
+    "quantity": "C_Lmax",
+    "value": 0.78,
+    "kind": "borrowed",
+    "source": "Park H, Choi H (2010). Aerodynamic characteristics of flying fish in gliding flight. J Exp Biol 213:3269-3279, Table 2 (stuffed C. hiraii in a wind tunnel); borrowed: this animal's own polar is not measured"
+   },
+   {
+    "quantity": "(L/D)max",
+    "value": 4.37,
+    "kind": "borrowed",
+    "source": "Park H, Choi H (2010). Aerodynamic characteristics of flying fish in gliding flight. J Exp Biol 213:3269-3279, Table 2 (stuffed C. hiraii in a wind tunnel); borrowed: this animal's own polar is not measured"
+   },
+   {
+    "quantity": "C_L at 0 deg (best-L/D airspeed only)",
+    "value": 0.4,
+    "kind": "assumed",
+    "source": "dashboard/public/t/physics/sim/params.json CL_at_zero_deg (Park & Choi Fig. 5 not read)"
+   },
+   {
+    "quantity": "air density (kg/m3)",
+    "value": 1.225,
+    "kind": "assumed",
+    "source": "conditions/baseline.json air_density_kg_m3 (1.225, assumed)"
+   },
+   {
+    "quantity": "lifting area (m2)",
+    "value": 0.000084,
+    "kind": "derived",
+    "source": "mesh-measured lifting area of dashboard/public/blueprint3d/model/zebrafish-dev-manifest.json (0.000084 m2 at SL 0.0388 m; pectoral 0.000034 m2 on the mesh, 1.412 x the parameter value): pectoral = STATE pectoral area x that ratio; pelvic + caudal scaled by (SL/0.0388)^2, isometric (assumed). Convention pectoral + pelvic + caudal (physics/flier), NOT the Lean reference's pectoral + pelvic + body planform."
+   },
+   {
+    "quantity": "launch speed (m/s)",
+    "value": 10,
+    "kind": "assumed",
+    "source": "what-if override launch_airspeed_override_m_s = 10 m/s (not this organism's measured speed)"
+   },
+   {
+    "quantity": "g (m/s2)",
+    "value": 9.81,
+    "kind": "measured-secondhand",
+    "source": "standard gravity, rounded to 9.81 as in physics/results.json"
+   },
+   {
+    "quantity": "Fick eta",
+    "value": 0.15,
+    "kind": "borrowed",
+    "source": "gamperl2021 via physiology/muscle.js: ventricular muscle efficiency ~15% in Atlantic salmon (no fetched value for fish skeletal muscle)"
+   },
+   {
+    "quantity": "Fick E_O2 (J/ml)",
+    "value": 19.34285714285714,
+    "kind": "measured-secondhand",
+    "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89) / 0.7 mg O2 per ml (STPD) = 19.34 J/ml; physiology/muscle.js"
+   },
+   {
+    "quantity": "Hb O2 capacity (ml/ml)",
+    "value": 0.206,
+    "kind": "calibrated",
+    "source": "physiology/index.js warmHbCapacity: set so the snapper maximal O2 extraction (durnford2026) fits the trout Hill curve. Calibrated, not measured"
+   },
+   {
+    "quantity": "cardiac output (ml/s)",
+    "value": 0.0006767110666666666,
+    "kind": "borrowed",
+    "source": "durnford2026 Table 1 (Ucrit) maximum Q 58.48 +/- 3.44 ml/min/kg [Lutjanus apodus; physiology/cardiac.js] x mass / 60; per-kg transfer to this organism and size assumed"
+   },
+   {
+    "quantity": "arterial PO2 = inspired air PO2 (kPa, upper bound)",
+    "value": 20.51612216853939,
+    "kind": "derived",
+    "source": "air_O2_fraction x (P_atm - pH2O(T)); for water, the O2 tension of surface water in equilibrium with air (as physiology/index.js). Hydrostatic pressure does not raise dissolved pO2 in an open water column; stratified or hypoxic water is not modelled."
+   }
+  ],
+  "scope": "Still air over a flat surface; steady glide polar of stuffed flying fish in a wind tunnel; ranges are upper bounds (every metre at (L/D)max). Only glide_range_lean_bound_m is covered by the Lean theorem glide_range_le. Launch speed is the organism's own sourced leap/burst speed (or a labelled what-if). Takeoff (taxiing), control, stability, flapping and burst power are not modelled. survives = null (a glide attempt is not a lethal perturbation in this model); feasible = lift can carry the weight at the reachable launch speed (null if no sourced launch speed).",
+  "validity": {
+   "inRange": false,
+   "notes": "Mass 0.0006943 kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~0.4 kg): polar extrapolated. Chord Reynolds number ~4.5e+3 is far from the polar's ~1e5 (air kinematic viscosity 1.5e-5 m2/s assumed). glide_range_total_m exceeds the Lean bound whenever the kinetic phase is non-zero; only glide_range_lean_bound_m is covered by glide_range_le. Fick bound: arterial PO2 taken equal to air PO2 and gills taken to work in air; gills do not ventilate in air (physiology chain), so for a gill-breather this is a generous upper bound. TFF: NOTES-FOR-HUB.md item 2 says only 29.5% of the flight muscle the simulator charges fits in the body. This module uses no muscle power (the Fick bound is the cap), so the issue does not enter here; any muscle-based claim for the TFF must take it into account."
+  }
+ },
+ "temperature_run": {
+  "ok": true,
+  "scenario": "temperature",
+  "params": {
+   "water_temperature_C": 45,
+   "acclimation_temperature_C": 25
+  },
+  "metrics": [
+   {
+    "key": "ctmax_C",
+    "label": "Critical thermal maximum at this acclimation",
+    "value": 40.45,
+    "unit": "°C",
+    "better": "higher",
+    "kind": "calibrated",
+    "source": "linear in acclimation temperature between the two measured points (Cortemeglia C, Beitinger TL (2005). Temperature tolerances of wild-type and red transgenic zebra danios. Trans Am Fish Soc 134:1431-1437 (abstract))"
+   },
+   {
+    "key": "ctmin_C",
+    "label": "Critical thermal minimum at this acclimation",
+    "value": 8.4,
+    "unit": "°C",
+    "better": "lower",
+    "kind": "calibrated",
+    "source": "linear in acclimation temperature between the two measured points (Cortemeglia C, Beitinger TL (2005). Temperature tolerances of wild-type and red transgenic zebra danios. Trans Am Fish Soc 134:1431-1437 (abstract))"
+   },
+   {
+    "key": "thermal_margin_C",
+    "label": "Distance to the nearer critical limit",
+    "value": -4.549999999999997,
+    "unit": "°C",
+    "better": "higher",
+    "kind": "calibrated",
+    "source": "min(CTmax - T, T - CTmin); negative = past a limit"
+   },
+   {
+    "key": "ucrit_relative",
+    "label": "Ucrit relative to the 28 °C value (measured curve)",
+    "value": null,
+    "unit": "1",
+    "better": "higher",
+    "kind": "assumed",
+    "source": "none",
+    "reason": "45 degC is outside the measured 12-38 degC"
+   },
+   {
+    "key": "smr_factor",
+    "label": "Standard metabolic rate relative to acclimation temperature (Q10)",
+    "value": 1.9320999999999997,
+    "unit": "1",
+    "better": null,
+    "kind": "assumed",
+    "source": "Q10 1.39 ^ ((T - T_acclimation)/10) (Ripley DM, Quinn FA, Dickson J, Arthur J, Shiels HA (2022). Thermal preference does not align with optimal temperature for aerobic scope in zebrafish (Danio rerio). J Exp Biol 225:jeb243774)"
+   },
+   {
+    "key": "mmr_factor",
+    "label": "Maximum metabolic rate relative to acclimation temperature (Q10)",
+    "value": 1.3224999999999998,
+    "unit": "1",
+    "better": null,
+    "kind": "assumed",
+    "source": "Q10 1.15 ^ ((T - T_acclimation)/10) (Ripley DM, Quinn FA, Dickson J, Arthur J, Shiels HA (2022). Thermal preference does not align with optimal temperature for aerobic scope in zebrafish (Danio rerio). J Exp Biol 225:jeb243774)"
+   }
+  ],
+  "survives": false,
+  "feasible": null,
+  "feasibility_note": "swimming capacity collapses: at 38 degC every fish failed to swim at 10 cm/s (Wakamatsu 2019), below CTmax",
+  "limiting": "above CTmax (40.5 degC): loss of equilibrium in an acute ramp",
+  "provenance": [
+   {
+    "quantity": "CTmax at 20 / 30 degC acclimation",
+    "value": "39.2 / 41.7 degC",
+    "kind": "measured",
+    "source": "Cortemeglia C, Beitinger TL (2005). Temperature tolerances of wild-type and red transgenic zebra danios. Trans Am Fish Soc 134:1431-1437 (abstract), https://doi.org/10.1577/T04-197.1"
+   },
+   {
+    "quantity": "CTmin at 20 / 30 degC acclimation",
+    "value": "6.2 / 10.6 degC",
+    "kind": "measured",
+    "source": "Cortemeglia C, Beitinger TL (2005). Temperature tolerances of wild-type and red transgenic zebra danios. Trans Am Fish Soc 134:1431-1437 (abstract), https://doi.org/10.1577/T04-197.1"
+   },
+   {
+    "quantity": "Ucrit(T) curve, 28 degC-reared adults",
+    "value": "[[12,11.6],[14,15.4],[16,22],[24,22.5],[26,23.6],[28,23.8],[30,23.1],[34,18.5],[36,15.9]]",
+    "kind": "measured",
+    "source": "Wakamatsu Y, Ogino K, Hirata H (2019). Swimming capability of zebrafish is governed by water temperature, caudal fin length and genetic background. Sci Rep 9:16307, Results (Fig. 3 values in text), https://doi.org/10.1038/s41598-019-52592-w"
+   },
+   {
+    "quantity": "Q10 SMR / MMR",
+    "value": "1.39 / 1.15",
+    "kind": "borrowed",
+    "source": "Ripley DM, Quinn FA, Dickson J, Arthur J, Shiels HA (2022). Thermal preference does not align with optimal temperature for aerobic scope in zebrafish (Danio rerio). J Exp Biol 225:jeb243774, https://doi.org/10.1242/jeb.243774"
+   }
+  ],
+  "scope": "Acute exposure (minutes to hours) of an acclimated zebrafish. CT limits are ramp-test endpoints (loss of equilibrium), not lethal temperatures or long-term limits; chronic exposure, growth, reproduction and interactions with hypoxia are not modelled. Fin or wing edits do not change these numbers: the scenario reads only species, stage and temperature. survives = CTmin < T < CTmax; feasible = null (swimming capacity is in ucrit_relative and feasibility_note). CT limits, Ucrit(T) and Q10 are read back from their source papers (kind calibrated): not independent predictions.",
+  "validity": {
+   "inRange": true,
+   "notes": "The Ucrit curve was measured in 28 degC-reared fish; at another acclimation temperature it is borrowed. Q10 values were measured for 28 degC-acclimated fish over 23-35.5 degC; outside that (T 45, acclimation 25) they are extrapolated."
+  }
+ },
+ "laws": {
+  "glide": {
+   "law_id": "flight-climb-glide-law",
+   "version": "1.0.0",
+   "status": "accepted",
+   "lean_ref": {
+    "module": "lean/Delphi/Flight.lean",
+    "theorem": "Delphi.glide_range_le",
+    "structure": null,
+    "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+    "statement_sha256": "02e40d2043c0977d1f6a3e5f426b30ff743f30b05c04ebaf74c551ae72e367b2",
+    "content_hash": "6ac1beea70e547754cd61b3766b9b7588cf781964ab9c81c375dd36419e67181"
+   },
+   "statement_en": "If available mechanical power is spent on level flight, on raising the weight at vertical speed c, and on non-negative losses, then c ≤ (P_avail − P_req)/W. A steady glide with no thrust, lift equal to weight and L/D ≤ (L/D)max from height h covers at most h (L/D)max horizontally; with drag reduced by a fraction δ near the surface and lift unaffected, at most h (L/D)max/(1 − δ).",
+   "constraint_details": [
+    {
+     "id": "C15",
+     "relation": "x ≤ h (L/D)max / (1 − δ)",
+     "lemma": "Delphi.Constraints.glide_range_rules_out",
+     "law": "Delphi.glide_range_le_groundEffect",
+     "module": "lean/Delphi/Flight.lean",
+     "status": "verified",
+     "appliesWhen": [
+      "steady_unpowered_glide"
+     ],
+     "canEliminate": "a claim that a single unpowered glide from height h covers more than the energy bound allows; taxiing thrust, repeated touch-and-go and wind are outside the model and must be committed separately",
+     "lemma_source": "/-- **C15, glide range.** A claimed steady unpowered glide of distance `x > h (L/D)_max / (1 - δ)` from\nheight `h` with drag reduced by a fraction `δ` near the surface (`δ = 0` away from it) is ruled out. -/\ntheorem glide_range_rules_out {W h D x LDmax loss Lift δ : ℝ} (hW : 0 < W) (hD : 0 < D) (hh : 0 ≤ h)\n    (hδ0 : 0 ≤ δ) (hδ1 : δ < 1) (hlift : Lift = W) (hLD : Lift / D ≤ LDmax)\n    (henergy : W * h = (1 - δ) * D * x + loss) (hloss : 0 ≤ loss) (hx : h * LDmax / (1 - δ) < x) : False := by\n  have := glide_range_le_groundEffect hW hD hh hδ0 hδ1 hlift hLD henergy hloss\n  linarith"
+    },
+    {
+     "id": "C16",
+     "relation": "c ≤ (P_avail − P_req)/W",
+     "lemma": "Delphi.Constraints.climb_rules_out",
+     "law": "Delphi.climbRate_le",
+     "module": "lean/Delphi/Flight.lean",
+     "status": "verified",
+     "appliesWhen": [
+      "power_balance_nonneg_losses"
+     ],
+     "canEliminate": "a powered design claiming a climb rate its excess power cannot deliver",
+     "lemma_source": "/-- **C16, climb.** A claimed climb rate `c` above `(P_avail - P_req)/W` under the power balance is ruled out. -/\ntheorem climb_rules_out {W Pavail Preq c loss : ℝ} (hW : 0 < W) (hbal : Pavail = Preq + W * c + loss)\n    (hloss : 0 ≤ loss) (h : climbRate W Pavail Preq < c) : False := by\n  have := climbRate_le hW hbal hloss\n  linarith"
+    }
+   ]
+  },
+  "thermal": {
+   "law_id": "perturb-thermal",
+   "version": "1.0.0",
+   "status": "candidate",
+   "lean_ref": {
+    "module": "lean/Delphi/Perturb.lean",
+    "theorem": "Delphi.Perturb.thermal_rules_out",
+    "structure": null,
+    "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+    "statement_sha256": "882f55cbd0e018470debadb6d75d1cbb3fb4e1fb99c67424e04785fbff4a1369",
+    "content_hash": "7656abd15ef10060989683d98d64632f2032eca295d81cd9f3f27b6e8d59398e"
+   },
+   "statement_en": "Under the thermal-performance hypothesis (sustained power zero outside [CTmin, CTmax], and at most P_ref Q10^((T - T_ref)/10) inside), no positive sustained power is possible outside the thermal window, and sustained power never exceeds the Q10 bound.",
+   "constraint_details": [
+    {
+     "id": "P1",
+     "relation": "CTmin ≤ T ≤ CTmax whenever P > 0",
+     "lemma": "Delphi.Perturb.thermal_rules_out",
+     "law": "Delphi.Perturb.no_sustained_power_outside",
+     "module": "lean/Delphi/Perturb.lean",
+     "status": "verified",
+     "appliesWhen": [
+      "thermal_window_q10"
+     ],
+     "canEliminate": "a design that keeps swimming at a temperature outside its own thermal window",
+     "lemma_source": "/-- A design claiming positive sustained power outside its thermal window is ruled out. -/\ntheorem thermal_rules_out (H : ThermalPerformance) {T P : ℝ} (hout : T < H.ctMin ∨ H.ctMax < T)\n    (hP : P ≤ H.sustained T) (hpos : 0 < P) : False := by\n  have := no_sustained_power_outside H hout hP\n  linarith"
+    },
+    {
+     "id": "P1b",
+     "relation": "P ≤ P_ref Q10^((T − T_ref)/10)",
+     "lemma": "Delphi.Perturb.thermal_power_rules_out",
+     "law": "Delphi.Perturb.sustained_power_le",
+     "module": "lean/Delphi/Perturb.lean",
+     "status": "verified",
+     "appliesWhen": [
+      "thermal_window_q10"
+     ],
+     "canEliminate": "a design claiming at a cold temperature the power it has at a warm one",
+     "lemma_source": "/-- A design claiming more sustained power at `T` than the Q10 bound allows is ruled out. -/\ntheorem thermal_power_rules_out (H : ThermalPerformance) {T P : ℝ} (hP : P ≤ H.sustained T)\n    (hbig : H.pRef * H.q10 ^ ((T - H.tRef) / 10) < P) : False := by\n  have := sustained_power_le H hP\n  linarith"
+    }
+   ]
+  }
+ },
+ "lean_check_input": {
+  "taxon": "Danio rerio",
+  "life_stage": "adult",
+  "glideHeight_m": 1,
+  "glideDistance_m": 1000,
+  "LD_max": 4.37,
+  "groundEffect": 0,
+  "water_temperature_C": 45,
+  "ct_min_C": 8.4,
+  "ct_max_C": 40.45,
+  "sustained_power_W": 0.000001
+ },
+ "lean_check": {
+  "contract_version": "0.3.0",
+  "result": {
+   "lawset": "1.1.0",
+   "kernel": "evaluates the same formulas; not a kernel check: kernel certificates exist only for the recorded examples",
+   "summary": {
+    "violated": 2,
+    "binding_violations": 1,
+    "holds": 0,
+    "out_of_scope": 6,
+    "cannot_evaluate": 21
+   },
+   "verdicts": [
+    {
+     "law_id": "thompson1917-ch02-06",
+     "version": "1.0.0",
+     "kind": "physical",
+     "status": "accepted",
+     "constraint": "C9",
+     "band": "proved",
+     "verdict": "cannot-evaluate",
+     "binding": true,
+     "missing": [
+      "mass_kg",
+      "finArea_m2",
+      "CLmax",
+      "airspeed_m_s"
+     ]
+    },
+    {
+     "law_id": "thompson1917-ch03-07",
+     "version": "1.0.0",
+     "kind": "physical",
+     "status": "accepted",
+     "constraint": "C7b",
+     "band": "proved",
+     "verdict": "out-of-scope",
+     "binding": true,
+     "missing": [
+      "SL_m"
+     ],
+     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
+     "evaluator_verdict": "cannot-evaluate"
+    },
+    {
+     "law_id": "scaling-area-law",
+     "version": "1.0.0",
+     "kind": "physical",
+     "status": "accepted",
+     "constraint": "C2a",
+     "band": "proved",
+     "verdict": "out-of-scope",
+     "binding": true,
+     "missing": [
+      "SL_m"
+     ],
+     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
+     "evaluator_verdict": "cannot-evaluate"
+    },
+    {
+     "law_id": "scaling-strength-law",
+     "version": "1.0.0",
+     "kind": "physical",
+     "status": "accepted",
+     "constraint": "C8e",
+     "band": "proved",
+     "verdict": "out-of-scope",
+     "binding": true,
+     "missing": [
+      "SL_m"
+     ],
+     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
+     "evaluator_verdict": "cannot-evaluate"
+    },
+    {
+     "law_id": "thompson1917-ch02-10",
+     "version": "1.0.0",
+     "kind": "physical",
+     "status": "accepted",
+     "constraint": "C9c",
+     "band": "proved",
+     "verdict": "out-of-scope",
+     "binding": true,
+     "missing": [
+      "SL_m"
+     ],
+     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
+     "evaluator_verdict": "cannot-evaluate"
+    },
+    {
+     "law_id": "scaling-strength-law",
+     "version": "1.0.0",
+     "kind": "physical",
+     "status": "accepted",
+     "constraint": "C8c",
+     "band": "proved",
+     "verdict": "cannot-evaluate",
+     "binding": true,
+     "missing": [
+      "SL_m"
+     ]
+    },
+    {
+     "law_id": "flight-climb-glide-law",
+     "version": "1.0.0",
+     "kind": "physical",
+     "status": "accepted",
+     "constraint": "C15",
+     "band": "proved",
+     "verdict": "violated",
+     "binding": true,
+     "missing": []
+    },
+    {
+     "law_id": "flight-climb-glide-law",
+     "version": "1.0.0",
+     "kind": "physical",
+     "status": "accepted",
+     "constraint": "C16",
+     "band": "proved",
+     "verdict": "cannot-evaluate",
+     "binding": true,
+     "missing": [
+      "airspeed_m_s and LD_max (or powerRequired_W)",
+      "powerAvailable_W (or flightMuscleFraction and musclePowerPerKg_W: the muscle premise R6, a named hypothesis)",
+      "climbRate_m_s",
+      "mass_kg"
+     ]
+    },
+    {
+     "law_id": "fick-principle",
+     "version": "1.0.0",
+     "kind": "biological",
+     "status": "accepted",
+     "constraint": "C14",
+     "band": "proved",
+     "verdict": "cannot-evaluate",
+     "binding": true,
+     "missing": [
+      "efficiency",
+      "oxycaloric_J_per_unit_O2",
+      "cardiacOutput",
+      "arterialO2",
+      "airspeed_m_s and LD_max (or powerRequired_W)"
+     ]
+    },
+    {
+     "law_id": "flight-allometry-law",
+     "version": "1.0.0",
+     "kind": "physical",
+     "status": "accepted",
+     "constraint": "C13",
+     "band": "proved",
+     "verdict": "cannot-evaluate",
+     "binding": true,
+     "missing": [
+      "fitted exponents for weight, area and wing loading with intervals"
+     ]
+    },
+    {
+     "law_id": "thompson1917-ch02-06",
+     "version": "1.0.0",
+     "kind": "physical",
+     "status": "accepted",
+     "constraint": "C10",
+     "band": "proved",
+     "verdict": "cannot-evaluate",
+     "binding": true,
+     "missing": [
+      "the power-required exponent across sizes"
+     ]
+    },
+    {
+     "law_id": "genotype-genetic-code",
+     "version": "1.0.0",
+     "kind": "biological",
+     "status": "accepted",
+     "constraint": "G1",
+     "band": "proved",
+     "verdict": "cannot-evaluate",
+     "binding": true,
+     "missing": [
+      "genotype_edits"
+     ]
+    },
+    {
+     "law_id": "genotype-pleiotropy-closure",
+     "version": "1.0.0",
+     "kind": "biological",
+     "status": "accepted",
+     "constraint": "G2",
+     "band": "proved",
+     "verdict": "cannot-evaluate",
+     "binding": true,
+     "missing": [
+      "genotype_edits"
+     ]
+    },
+    {
+     "law_id": "genotype-developmental-ordering",
+     "version": "1.0.0",
+     "kind": "biological",
+     "status": "accepted",
+     "constraint": "G3",
+     "band": "proved",
+     "verdict": "cannot-evaluate",
+     "binding": true,
+     "missing": [
+      "developmental_claims"
+     ]
+    },
+    {
+     "law_id": "genotype-substitution-time",
+     "version": "1.0.0",
+     "kind": "biological",
+     "status": "accepted",
+     "constraint": "G4",
+     "band": "proved",
+     "verdict": "cannot-evaluate",
+     "binding": true,
+     "missing": [
+      "substitution_budget.required_substitutions",
+      "substitution_budget.gene_copies_M",
+      "substitution_budget.mutation_rate",
+      "substitution_budget.generations_T"
+     ]
+    },
+    {
+     "law_id": "haldane-cost-of-selection",
+     "version": "1.0.0",
+     "kind": "biological",
+     "status": "contested",
+     "constraint": "G5",
+     "band": "proved",
+     "verdict": "cannot-evaluate",
+     "binding": false,
+     "missing": [
+      "substitution_budget.required_substitutions",
+      "substitution_budget.generations_T",
+      "substitution_budget.reproductive_excess",
+      "substitution_budget.cost_per_substitution"
+     ]
+    },
+    {
+     "law_id": "E2",
+     "version": "1.0.0",
+     "kind": "biological",
+     "status": "accepted",
+     "constraint": "E2",
+     "band": "empirical",
+     "verdict": "out-of-scope",
+     "binding": true,
+     "missing": [
+      "mass_exponent (or a length different from the reference specimen)"
+     ],
+     "scope_reason": "scoped to Exocoetidae (law E2 scope); the design is Danio rerio.",
+     "evaluator_verdict": "cannot-evaluate"
+    },
+    {
+     "law_id": "E3",
+     "version": "1.0.0",
+     "kind": "biological",
+     "status": "accepted",
+     "constraint": "E3",
+     "band": "empirical",
+     "verdict": "cannot-evaluate",
+     "binding": true,
+     "missing": [
+      "airspeed_m_s and LD_max (or powerRequired_W)"
+     ]
+    },
+    {
+     "law_id": "E4",
+     "version": "1.0.0",
+     "kind": "biological",
+     "status": "accepted",
+     "constraint": "E4",
+     "band": "empirical",
+     "verdict": "cannot-evaluate",
+     "binding": true,
+     "missing": [
+      "o2_store_ml",
+      "flight_duration_s",
+      "oxycaloric_J_per_unit_O2",
+      "airspeed_m_s and LD_max (or powerRequired_W)"
+     ]
+    },
+    {
+     "law_id": "E7",
+     "version": "1.0.0",
+     "kind": "biological",
+     "status": "accepted",
+     "constraint": "E7",
+     "band": "empirical",
+     "verdict": "out-of-scope",
+     "binding": true,
+     "missing": [
+      "lethality.death_hpf",
+      "lethality.scored_hpf"
+     ],
+     "scope_reason": "scoped to life stages embryo, larva; the design is at adult.",
+     "evaluator_verdict": "cannot-evaluate"
+    },
+    {
+     "law_id": "perturb-thermal",
+     "version": "1.0.0",
+     "kind": "biological",
+     "status": "candidate",
+     "constraint": "P1",
+     "band": "hypothesis",
+     "verdict": "violated",
+     "binding": false,
+     "missing": []
+    },
+    {
+     "law_id": "perturb-thermal",
+     "version": "1.0.0",
+     "kind": "biological",
+     "status": "candidate",
+     "constraint": "P1b",
+     "band": "hypothesis",
+     "verdict": "cannot-evaluate",
+     "binding": false,
+     "missing": [
+      "q10",
+      "reference_temperature_C",
+      "reference_sustained_power_W"
+     ]
+    },
+    {
+     "law_id": "perturb-current",
+     "version": "1.0.0",
+     "kind": "biological",
+     "status": "candidate",
+     "constraint": "P2",
+     "band": "hypothesis",
+     "verdict": "cannot-evaluate",
+     "binding": false,
+     "missing": [
+      "current_speed_m_s",
+      "critical_swimming_speed_m_s"
+     ]
+    },
+    {
+     "law_id": "perturb-current",
+     "version": "1.0.0",
+     "kind": "biological",
+     "status": "candidate",
+     "constraint": "P2b",
+     "band": "hypothesis",
+     "verdict": "cannot-evaluate",
+     "binding": false,
+     "missing": [
+      "current_speed_m_s",
+      "drag_coefficient",
+      "drag_area_m2",
+      "aerobicCeiling_W (or efficiency, oxycaloric, cardiacOutput, arterialO2)"
+     ]
+    },
+    {
+     "law_id": "perturb-pressure",
+     "version": "1.0.0",
+     "kind": "physical",
+     "status": "candidate",
+     "constraint": "P3",
+     "band": "hypothesis",
+     "verdict": "cannot-evaluate",
+     "binding": false,
+     "missing": [
+      "depth_m (>= 0)",
+      "bladder_volume_surface_ml",
+      "bladder_volume_at_depth_ml"
+     ]
+    },
+    {
+     "law_id": "perturb-depth-cap",
+     "version": "1.0.0",
+     "kind": "biological",
+     "status": "candidate",
+     "constraint": "P3b",
+     "band": "hypothesis",
+     "verdict": "cannot-evaluate",
+     "binding": false,
+     "missing": [
+      "depth_m"
+     ]
+    },
+    {
+     "law_id": "perturb-isa-vmin",
+     "version": "1.0.0",
+     "kind": "physical",
+     "status": "candidate",
+     "constraint": "P4",
+     "band": "hypothesis",
+     "verdict": "cannot-evaluate",
+     "binding": false,
+     "missing": [
+      "altitude_m",
+      "mass_kg",
+      "finArea_m2",
+      "CLmax",
+      "airspeed_m_s"
+     ]
+    },
+    {
+     "law_id": "perturb-wind-glide",
+     "version": "1.0.0",
+     "kind": "physical",
+     "status": "candidate",
+     "constraint": "P4b",
+     "band": "hypothesis",
+     "verdict": "cannot-evaluate",
+     "binding": false,
+     "missing": [
+      "wind_along_track_m_s (positive = tailwind)",
+      "horizontal_airspeed_m_s (or airspeed_m_s)",
+      "ground_distance_m"
+     ]
+    },
+    {
+     "law_id": "perturb-energy-balance",
+     "version": "1.0.0",
+     "kind": "biological",
+     "status": "candidate",
+     "constraint": "P5",
+     "band": "hypothesis",
+     "verdict": "cannot-evaluate",
+     "binding": false,
+     "missing": [
+      "intake_J_per_day",
+      "routine_cost_J_per_day",
+      "activity_cost_J_per_day",
+      "assimilation_efficiency",
+      "mass_change"
+     ]
+    }
+   ],
+   "violations": [
+    {
+     "law_id": "flight-climb-glide-law",
+     "version": "1.0.0",
+     "kind": "physical",
+     "status": "accepted",
+     "constraint": "C15",
+     "binding": true,
+     "inputs": {
+      "glideHeight_m": 1,
+      "LD_max": 4.37,
+      "groundEffect": 0,
+      "bound_m": 4.37,
+      "glideDistance_m": 1000
+     },
+     "message": "Climb from excess power and the range of a steady glide: x ≤ h (L/D)max / (1 − δ) fails for the committed numbers (one steady unpowered glide; taxiing thrust, repeated touch-and-go and wind are outside the model)"
+    },
+    {
+     "law_id": "perturb-thermal",
+     "version": "1.0.0",
+     "kind": "biological",
+     "status": "candidate",
+     "constraint": "P1",
+     "binding": false,
+     "inputs": {
+      "body_temperature_C": 45,
+      "ct_min_C": 8.4,
+      "ct_max_C": 40.45,
+      "sustained_power_W": 0.000001
+     },
+     "message": "null: CTmin ≤ T ≤ CTmax whenever P > 0 fails for the committed numbers (outside the thermal window no positive sustained power exists (thermal_rules_out)) [advisory: law status is candidate, not accepted]"
+    }
+   ],
+   "excluded": [],
+   "laws_without_browser_evaluation": [
+    "E1",
+    "E5",
+    "E6",
+    "altitude-coupling",
+    "aspect-ratio-induced-drag",
+    "blueprint-well-formedness",
+    "disc-flying-fish-fin-ratio-gap",
+    "disc-heterurus-mass-exponent",
+    "disc-measured-wing-loading-band",
+    "disc-pectoral-length-allometry",
+    "elastic-similarity",
+    "favored-fixation-lower-bound",
+    "fick-principle",
+    "fin-length-ratio",
+    "fisher-ftns",
+    "gene-regulatory-dynamics",
+    "genotype-developmental-ordering",
+    "gill-o2-uptake",
+    "kimura-fixation-probability",
+    "kimura-substitution-rate",
+    "maynardsmith-twofold-cost",
+    "muscle-power-premise",
+    "physiology-laplace",
+    "physiology-q10",
+    "scaling-bending-law",
+    "taxiing-thrust",
+    "thompson1917-ch02-07",
+    "walking-pendulum-speed"
+   ],
+   "unmapped_constraints": [
+    "E5"
+   ]
+  },
+  "provenance": [
+   {
+    "quantity": "law registry",
+    "value": "lean/registry/",
+    "kind": "derived",
+    "source": "Versioned law registry in this repository (lean/registry/laws/*.json, lawsets/*.json)."
+   },
+   {
+    "quantity": "git commit",
+    "value": "abfcf81cdd79e856c6d4032af92473ddfd48bd6d",
+    "kind": "derived",
+    "source": "git rev-parse HEAD (or DELPHI_GIT_SHA) at load time."
+   },
+   {
+    "quantity": "evaluator",
+    "value": "lean/eliminate/browser-check.mjs",
+    "kind": "derived",
+    "source": "Generated from lean/constraints.json; evaluates the Lean-backed formulas in floating point."
+   },
+   {
+    "quantity": "verification status",
+    "value": "floating-point evaluation of Lean-backed formulas",
+    "kind": "derived",
+    "source": "Not a kernel check."
+   }
+  ],
+  "scope": "NOT A KERNEL CHECK. The formulas the Lean constraints encode are evaluated in floating point. \"holds\" means the design satisfies the relation under its named hypotheses, never that the design is feasible; \"violated\" means the committed numbers break the relation under those hypotheses; \"out-of-scope\" means the law or the comparison is scoped (taxa, life stage, ranges) away from this design and says nothing either way (pass taxon to evaluate flying-fish-scoped rows). Laws listed in laws_without_browser_evaluation were not evaluated at all. Kernel certificates exist only for the recorded examples under lean/Delphi/Certificates/.",
+  "weakest_input": "derived",
+  "counts": {
+   "derived": 4
+  }
+ }
+}

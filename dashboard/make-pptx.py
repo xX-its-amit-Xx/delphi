@@ -650,6 +650,179 @@ if AN:
                "Ubergraph, Phenoscape (10.1093/molbev/msv223, 10.1093/sysbio/syv031) and Daane 2021 "
                "(10.1016/j.cub.2021.08.054). The anatomy terms are theirs; only the hierarchy check is ours.")
 
+# ----------------------------------------------------------------- the Design Studio
+# Four slides, every number from DATA["numbers"] (studio, lawreg, studioval, printkit), which build-deck.mjs read
+# out of sim-engine/, lean/registry/ and anatomy-model/print/. A block that is missing comes out greyed.
+DECK = ROOT / "public/deck"
+
+
+def picture(s, rel, x, y, w=None, h=None):
+    """Place a real image (screenshot or render) if it exists; returns the shape or None."""
+    f = DECK / rel
+    if not f.exists():
+        return None
+    return s.shapes.add_picture(str(f), x, y, width=w, height=h)
+
+
+ST = N.get("studio")
+if ST and ST.get("shot"):
+    sh = ST["shot"]
+    s = new("Say what the animal must do.\nThe studio says what it would take.", STATE["studio"]["state"])
+    pic = picture(s, sh["file"], M, Inches(2.2), h=Inches(3.85))
+    tbox(s, M, Inches(6.1), Inches(6.9), Inches(0.6),
+         f"Typed: “{sh['typed']}”. Read into {sh['criteria']} criteria, valid against the engine; every default it "
+         f"assumed is listed. Real page, real engine ({sh['engineLine'].replace('Engine: ', '')}); screenshot {sh['takenAt']}, "
+         f"sha256 {sh['sha256'][:16]}…", 8, False, MUTE, spacing=1.1)
+    rx = M + Inches(7.15)
+    rw = W - M - rx
+    y = Inches(2.2)
+    for head, body in [
+        ("Edit at any level", "body, organ system, organ, tissue, cell, gene; humans and agents in one append-only co-design log. Agents post proposals; a human applies them."),
+        (f"{len(ST['scenarios'])} perturbations, every developmental stage", ", ".join(ST["scenarios"]) + "."),
+        ("Every number keeps its kind", "measured, borrowed, derived, calibrated or assumed; a calibrated number can never be cited as a result."),
+        ("The optimizer refuses", "any candidate that breaks a binding law, and says “no design meets the spec” instead of returning its best failure."),
+    ]:
+        tbox(s, rx, y, rw, Inches(0.3), head, 13, True, INK)
+        tbox(s, rx, y + Inches(0.28), rw, Inches(0.6), body, 10, False, MUTE, spacing=1.1)
+        y += Inches(0.86)
+    tbox(s, rx, y + Inches(0.05), rw, Inches(1.0), "What it is not: an edited parameter set is a shape, not a viable or breedable "
+         "organism; mixing parents is morphological interpolation, not genetic hybridisation. Law verdicts are floating-point checks "
+         "of Lean-backed formulas, not kernel proofs.", 10, False, SERIOUS, spacing=1.1)
+else:
+    s = new("Say what the animal must do.", "anticipated")
+    ghostbox(s, M, Inches(2.4), W - 2 * M, Inches(2.6), "No screenshot of the studio on the real engine",
+             STATE.get("studio", {}).get("needs", ""))
+
+LR = N.get("lawreg")
+if LR:
+    s = new("The laws are data, with version numbers.", STATE["lawreg"]["state"])
+    what = {"proposed": "stated, not formalised: enters no verdict", "candidate": "builds, no sorry/axiom, witness, mutants rejected: advisory",
+            "accepted": "recorded human approval: the only laws that turn a design red", "contested": "proved contradiction or live dispute: amber",
+            "retired": "kept on file so old verdicts reproduce"}
+    bw, gap = Inches(2.22), Inches(0.13)
+    x = M
+    for t in LR["inLawset"]:
+        b = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, Inches(2.15), bw, Inches(1.75))
+        b.fill.solid()
+        b.fill.fore_color.rgb = PAPER
+        b.line.color.rgb = ACCENT if t["status"] == "accepted" else RGBColor(0xD9, 0xDF, 0xDB)
+        b.line.width = Pt(2 if t["status"] == "accepted" else 1)
+        b.shadow.inherit = False
+        tbox(s, x + Inches(0.12), Inches(2.22), bw - Inches(0.2), Inches(0.3), t["status"].upper(), 9, True, MUTE)
+        tbox(s, x + Inches(0.12), Inches(2.45), bw - Inches(0.2), Inches(0.6), str(t["n"]), 30, True, INK)
+        tbox(s, x + Inches(0.12), Inches(3.0), bw - Inches(0.2), Inches(0.9),
+             f"{t['physical']} physical · {t['biological']} biological\n{what[t['status']]}", 8, False, MUTE, spacing=1.1)
+        x += bw + gap
+    mir = LR.get("mirror") or {}
+    lines = [
+        f"Law set {LR['lawset']} pins {LR['inLawsetTotal']} laws, each with its version, a content hash over what it says, the Lean module "
+        "and theorem, and the commit and statement hash it was checked at. Promotion to accepted is never automated."
+        + (f" {LR['discovered']} further candidates were mined from the project's own sourced data." if LR.get("discovered") else ""),
+        f"Served three ways from one loader: the hosted delphisci MCP server {LR.get('mcpVersion') or ''} (lean_laws_list, lean_law_get, "
+        "lean_lawset_get, lean_check, lean_verify); the CLI and local sim-engine; and a static JSON mirror at /api/lean/"
+        + (f", currently serving law set {mir['lawset']} ({mir['count']} laws)" if mir else "")
+        + (", one release behind the registry; lean_verify reports exactly this drift." if mir and mir.get("lawset") != LR["lawset"] else "."),
+    ]
+    y = Inches(4.15)
+    for ln in lines:
+        tbox(s, M, y, W - 2 * M, Inches(0.7), ln, 12, False, INK, spacing=1.12)
+        y += Inches(0.82)
+    caption(s, "Red on the model means an accepted law is violated; amber means contested, candidate or not checkable. A law's status is "
+               "a registry decision, not a truth value, and the accepted set was grandfathered in at bootstrap with no per-law review "
+               "recorded; the approval field says exactly that. Read from lean/registry/ and dashboard/public/api/lean/index.json.")
+
+SV = N.get("studioval")
+if SV:
+    head = ("No numeric prediction about a real zebrafish\npasses as independent evidence." if SV["wildIndependentPasses"] == 0
+            else f"{SV['wildIndependentPasses']} of {SV['wildNumeric']} numeric wild-type predictions pass independently.")
+    s = new(head, STATE["studioval"]["state"])
+    SEG = [("pass", "pass", S3), ("pass-rests-on-assumed", "pass, rests on an assumed input", RGBColor(0x8F, 0xD6, 0xBC)),
+           ("circular", "circular: read the answer back", S4), ("fail", "fail", S2), ("no-target", "no target to test against", GHOST)]
+    used = [x for x in SEG if sum(g["counts"].get(x[0], 0) for g in SV["groups"])]
+    cd = CategoryChartData()
+    cats = [f"{g['label']} ({g['n']})" for g in SV["groups"]][::-1]
+    cd.categories = cats
+    for k, lab, _ in used:
+        tot = sum(g["counts"].get(k, 0) for g in SV["groups"])
+        cd.add_series(f"{tot} {lab}", [g["counts"].get(k, 0) or None for g in SV["groups"]][::-1])
+    gf = s.shapes.add_chart(XL_CHART_TYPE.BAR_STACKED, M, Inches(2.15), W - 2 * M, Inches(2.35), cd)
+    ch = gf.chart
+    ch.font.size = Pt(11)
+    ch.font.color.rgb = MUTE
+    ch.font.name = "Segoe UI"
+    ch.has_legend = True
+    ch.legend.position = XL_LEGEND_POSITION.BOTTOM
+    ch.legend.include_in_layout = False
+    plot = ch.plots[0]
+    plot.gap_width = 45
+    plot.overlap = 100
+    plot.has_data_labels = True
+    plot.data_labels.font.size = Pt(11)
+    plot.data_labels.font.bold = True
+    plot.data_labels.font.color.rgb = PAPER
+    for i, ser in enumerate(plot.series):
+        ser.format.fill.solid()
+        ser.format.fill.fore_color.rgb = used[i][2]
+        ser.format.line.color.rgb = PAPER
+        ser.format.line.width = Pt(1.5)
+    va = ch.value_axis
+    va.has_major_gridlines = False
+    va.visible = False
+    ch.category_axis.format.line.color.rgb = RGBColor(0xC3, 0xC2, 0xB7)
+    items = [(f"{f['id']} · {f['name']}", f["why"], "fail", S2) for f in SV["fails"]]
+    items.append((f"{len(SV['circular'])} “passes” were the studio reading its own sources back",
+                  f"{', '.join(SV['circular'])}: in band only because the module interpolates, or quotes, the paper it is scored against. "
+                  "Reclassified after the results in a labelled amendment (A1).", "circular", S4))
+    rows(s, items, y=Inches(4.7), gap=Inches(0.56), vw=Inches(1.4))
+    trust = ("Tests fixed before any scenario module existed"
+             + ("; the pre-registration still hashes to " + SV["preregSha"][:16] + "…" if SV.get("preregHashOk") else "")
+             + ". Written by an agent that built none of the studio."
+             + (f" Harness self-test: {SV['selftest']['ok']} of {SV['selftest']['total']} checks fail on a planted bad input." if SV.get("selftest") else "")
+             + (" Every negative, law and optimizer control held." if SV.get("controlsHeld") else " Not every control held."))
+    caption(s, trust + f"  Read from sim-engine/validation/studio-results.json, run {SV['generatedAt']}.", y=H - Inches(1.12))
+
+PK = N.get("printkit")
+if PK:
+    s = new("A design you can hold.\nNobody has thrown one yet.", STATE["printkit"]["state"])
+    if PK.get("render"):
+        picture(s, PK["render"]["file"], M, Inches(2.25), h=Inches(3.9))
+        tbox(s, M, Inches(6.2), Inches(5.3), Inches(0.5),
+             f"The life-size starter kit, exploded in assembly order: a render of the shipped STL files, not a photograph of a print. "
+             f"{PK['render']['from']}, sha256 {PK['render']['sha256'][:16]}…", 8, False, MUTE, spacing=1.1)
+    g = PK["glider"]
+    st0 = g["states"][0] if g["states"] else None
+    rod = next((x for x in g["states"] if x["stable"]), None)
+    rx = M + Inches(5.6)
+    items = [
+        ("Life-size starter kit", "keyed press-fit pegs, no glue; small organs merged into blocks, every merge recorded",
+         f"{PK['starter']['passed']} of {PK['starter']['passed'] + PK['starter']['failed']} pass", GOOD),
+        ("120 mm containment-hierarchy kit", "organs into system carriers into the body case; failing parts listed, not dropped",
+         f"{PK['kit120']['passed']} of {PK['kit120']['parts']} pass", INK),
+    ]
+    if st0 and rod:
+        items.append((f"The one to throw, {g['sl_mm']} mm",
+                      f"fin at the one measured proportion (flying-fish median, Daane 2021). Empty: static margin {st0['margin'] * 100:.1f}% "
+                      f"of chord, unstable; a {rod['mass_g'] - st0['mass_g']:.2f} g steel rod makes it +{rod['margin'] * 100:.1f}% (first-order)",
+                      f"v_min {st0['v_min']}–{rod['v_min']} m/s", INK))
+    y = Inches(2.25)
+    for head, body, val, col in items:
+        tbox(s, rx, y, Inches(4.0), Inches(0.3), head, 13, True, INK)
+        tbox(s, W - M - Inches(2.1), y, Inches(2.1), Inches(0.3), val, 13, True, col, align=PP_ALIGN.RIGHT)
+        tbox(s, rx, y + Inches(0.3), W - M - rx, Inches(0.6), body, 9.5, False, MUTE, spacing=1.1)
+        y += Inches(0.95)
+    box = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, rx, y + Inches(0.05), W - M - rx, Inches(1.3))
+    box.fill.solid()
+    box.fill.fore_color.rgb = PAPER
+    box.line.color.rgb = SERIOUS
+    box.shadow.inherit = False
+    box.text_frame.word_wrap = True
+    p = box.text_frame.paragraphs[0]
+    r = p.add_run()
+    r.text = "UNVERIFIED  " + (g.get("unverified") or "") + (" The winged zebrafish is a design, not a described species." if PK.get("hypothetical") else "")
+    r.font.size = Pt(10)
+    r.font.color.rgb = INK
+    r.font.name = "Segoe UI"
+
 # 11 the wing: anticipated, deliberately empty
 s = new("Where this goes next.", "anticipated")
 tbox(s, M, Inches(2.1), Inches(9), Inches(0.5),

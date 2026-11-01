@@ -112,7 +112,7 @@ a.go{cursor:pointer}
 #verdicts .v.holds{border-color:var(--ok)}
 #banner.side{left:360px;right:10px;transform:none;max-width:none}
 @media (max-width:880px){#banner.side{left:10px;right:10px}#banner.side.studio{top:auto;bottom:120px;font-size:.64rem;padding:3px 8px}}
-@media (max-width:560px){#growth{height:44%!important}#growth canvas{height:calc(100% - 66px)!important}#growth .bar input[type=range]{width:120px!important}.ctl{max-width:100%;min-width:0}.ctl select,.ctl input[type=text]{max-width:calc(100vw - 40px);min-width:0}#organSel{max-width:150px}header nav{max-width:100%}}
+@media (max-width:560px){#growth{height:50%!important;min-height:200px}#gRead{max-height:5.2em;overflow-y:auto}#growth .bar input[type=range]{width:120px!important}.ctl{max-width:100%;min-width:0}.ctl select,.ctl input[type=text]{max-width:calc(100vw - 40px);min-width:0}#organSel{max-width:150px}header nav{max-width:100%}}
 #compare{position:absolute;inset:0;z-index:6;display:none;background:var(--surface)}
 #compare .cmpc{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #compare .cmpgrid{position:absolute;left:8px;right:8px;top:8px;bottom:118px;display:grid;gap:8px;grid-template-columns:1fr 1fr 1.15fr;grid-template-rows:1fr 1fr;grid-template-areas:"a b e" "d c e"}
@@ -168,8 +168,9 @@ a.go{cursor:pointer}
 #verdicts .ic{font-weight:700;flex:none;width:16px;text-align:center}
 #hlabel{position:absolute;pointer-events:none;display:none;background:var(--panel);border:1.5px solid var(--bad);color:var(--ink);border-radius:8px;padding:4px 8px;font-size:.78rem;z-index:5;max-width:280px}
 #hlabel.cannot{border-color:var(--warn);border-style:dashed}#hlabel.holds{border-color:var(--ok)}
-#growth{position:absolute;left:10px;right:10px;bottom:52px;height:34%;min-height:170px;background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--line);border-radius:10px;display:none;z-index:3;overflow:hidden;padding:8px 10px}
-#growth canvas{position:absolute;left:0;right:0;bottom:0;width:100%;height:calc(100% - 56px)}
+#growth{position:absolute;left:10px;right:10px;bottom:52px;height:34%;min-height:170px;background:color-mix(in srgb,var(--panel) 94%,transparent);border:1px solid var(--line);border-radius:10px;display:none;flex-direction:column;gap:4px;z-index:3;overflow:hidden;padding:8px 10px}
+#growth canvas{display:block;flex:1 1 0;min-height:0;width:100%}
+#gRead{flex:1 1 100%;min-width:0;line-height:1.3}
 #growth .bar{display:flex;gap:8px;align-items:center;font-size:.8rem;flex-wrap:wrap}
 #growth .bar input[type=range]{width:200px}
 @media (max-width:880px){#studio{width:60%;max-height:40%}#banner{max-width:92%;font-size:.7rem}}
@@ -186,7 +187,7 @@ body.embed header,body.embed #panel{display:none}body.embed main{grid-template-c
   <nav><a href="../start/">Start</a><a href="../">Mission Control</a><a href="./?view=radial">Radial 3D view</a><a href="../graph/?view=flyingfish">Graph</a><a href="../t/genotype/">Genotype thread</a><a href="../t/lean/index.html#blueprint">Lean certificate</a></nav>
   <div class="ctl">
     <select id="speciesSel" title="Which segmented model to open (loaded on demand)"><optgroup label="Observed animals (schematic)"><option value="flying-fish">Flying fish</option><option value="zebrafish-adult">Zebrafish, adult</option><option value="zebrafish-larva" title="about 4-5 days post fertilisation, at swim-bladder inflation">Zebrafish larva</option></optgroup><optgroup label="&#9888; HYPOTHETICAL designs (parents + deltas)"><option value="winged-zebrafish">Winged zebrafish</option><option value="wingless-flying-fish">Wingless flying fish</option><option value="ff-zf-chimera">50:50 blend</option><option value="tff">Truly flying fish (TFF)</option></optgroup></select>
-    <select id="modeSel" title="What to show"><option value="anatomy">Anatomy</option><option value="physiology">Physiology: circulation and gills</option><option value="tissue">Tissue signalling</option><option value="cell">Cell-cell interactions</option><option value="physics">Physics: flight simulator</option><option value="design">Design Studio</option><option value="sequences">Sequences</option><option value="genotype" title="Genotype differences across organisms">Genotype browser</option><option value="compare">Compare: 2×2 + TFF</option><option value="growth">Growth</option></select>
+    <select id="modeSel" title="What to show"><option value="anatomy">Anatomy</option><option value="physiology">Physiology: circulation and gills</option><option value="tissue">Tissue signalling</option><option value="cell">Cell-cell interactions</option><option value="physics">Physics: flight simulator</option><option value="design">Design Studio</option><option value="sequences">Sequences</option><option value="genotype" title="Genotype differences across organisms">Genotype browser</option><option value="compare">Compare: 2×2 + TFF</option><option value="growth">Growth</option><option value="perturb" title="Select a part, edit it, perturb it, read every stage, optimise">Perturb &amp; optimise</option></select>
     <label title="Split the fish along the midline and swing the halves apart">split <input type="range" id="split" min="0" max="100" value="0"></label>
     <label title="Peel the layers from the outside in: skin, then muscle, then the skeleton, leaving the organs">peel <input type="range" id="peel" min="0" max="3" value="0" step="1"></label>
     <select id="organSel" title="Open an organ's panel"><option value="">organ&hellip;</option></select>
@@ -232,6 +233,7 @@ import * as DS from './design.js';
 import { Compare, PANELS as CMP_PANELS, PANEL_DESIGN as CMP_DESIGN } from './compare.js';
 import * as SQV from './seq.js';
 import * as GB from './genotype.js';
+import { mountPerturb } from './perturb.js';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const params=new URLSearchParams(location.search);
@@ -278,6 +280,7 @@ let D=null,T=new Map(),children=new Map(),G=null,MF=null,modelInfo={source:'none
 let state={split:0,peel:0,obj:null,organ:null,tissue:null,gene:null,preset:null,mode:'anatomy'};let hovered=null,noteCollapsed=false,noteTimer=null;
 let circ=null,circData=null,gill=null,physStatus=null,physMods={},interData=null,lastT=0,basisTimer=null,ctx='development',intensity=0,cardiac=null,chains=null;
 let pathways=null,seqLayer=null,genoLoaded=false,geno={applied:[],gene:null,sel:null};
+let perturb=null;const perturbSel=new Set();
 let design=null,baseDesign=null,checker=null,checkerSource='loading',checkerError=null,kernelNote='',refSpec=null,conditions=null,flierSpec=null,interv=null,handles=[],dragH=null,lastCheck=0,verdicts=[],glowT=0,traj=null,growth={age:0,playing:false,speed:7,edit:null,intervention:null},firstGlide=null,gcanvas=null;
 
 // ---------- data access (blueprint terms and the ZFA fin subtree answer alike) ----------
@@ -521,7 +524,7 @@ function labels(){const box=$('#labels'),w=box.clientWidth,h=box.clientHeight,v=
   const svg=$('#leaders');svg.setAttribute('viewBox',`0 0 ${w} ${h}`);svg.innerHTML=leaders.map(l=>`<line x1="${l[0].toFixed(1)}" y1="${l[1].toFixed(1)}" x2="${l[2].toFixed(1)}" y2="${l[3].toFixed(1)}"/>`).join('');}
 
 // ---------- selection and navigation ----------
-function selectObj(name){const o=objs.find(x=>x.name===name);if(!o)return;state.obj=name;collapseNote();const id=o.m.ontology_id?nid(o.m.ontology_id):null;
+function selectObj(name){const o=objs.find(x=>x.name===name);if(!o)return;state.obj=name;if(state.mode==='perturb'&&perturb){applyState();for(const f of perturbSel)f(o);return;}collapseNote();const id=o.m.ontology_id?nid(o.m.ontology_id):null;
   if(id&&term(id)){state.organ=id;state.tissue=null;$('#organSel').value=T.has(id)?id:'';applyState();show(id,o);}else{state.organ=null;state.tissue=null;applyState();showObj(o);}}
 function goOrgan(id,silent){const t=term(id);if(!t)return;state.organ=id;state.tissue=null;state.gene=null;$('#geneQ').value='';
   const o=objs.find(x=>x.m.ontology_id&&nid(x.m.ontology_id)===id);state.obj=o?o.name:null;$('#organSel').value=T.has(id)?id:'';if(!silent){applyState();show(id,o);}}
@@ -550,7 +553,7 @@ function fitView(animate){if(!renderer)return;scene.updateMatrixWorld(true);cons
   if(animate)flyTarget={p:c,d};else{cam.target.copy(c);cam.dist=d;flyTarget=null;}}
 function setStage(n){const m=[[0,0],[1,0],[1,1],[1,2],[1,3]][n];state.split=m[0];state.peel=m[1];$('#split').value=m[0]*100;$('#peel').value=m[1];if(!userMoved)cam.phi=state.split>0.3?0.95:1.25;applyState();fitView(true);}
 function reset(){state={split:0,peel:0,obj:null,organ:null,tissue:null,gene:null,preset:null};$('#split').value=0;$('#peel').value=0;$('#organSel').value='';$('#geneQ').value='';cam.theta=-0.9;cam.phi=1.25;cam.dist=1.9;cam.target.set(0,0,0);userMoved=false;flyTarget=null;applyState();fitView(false);intro();}
-function crumbs(){const parts=['<a data-c="body">fish</a>'];if(state.mode&&state.mode!=='anatomy')parts.push({physiology:'physiology',tissue:'tissue signalling',cell:'cell-cell interactions',physics:'physics simulator',design:'design studio',compare:'compare',sequences:'sequences',growth:'growth',genotype:'genotype browser'}[state.mode]);if(state.split>0.02)parts.push('split');if(state.peel>0)parts.push(['','skin off','muscle off','skeleton off'][state.peel]);
+function crumbs(){const parts=['<a data-c="body">fish</a>'];if(state.mode&&state.mode!=='anatomy')parts.push({physiology:'physiology',tissue:'tissue signalling',cell:'cell-cell interactions',physics:'physics simulator',design:'design studio',compare:'compare',sequences:'sequences',growth:'growth',genotype:'genotype browser',perturb:'perturb & optimise'}[state.mode]);if(state.split>0.02)parts.push('split');if(state.peel>0)parts.push(['','skin off','muscle off','skeleton off'][state.peel]);
   const o=state.obj&&objs.find(x=>x.name===state.obj);if(o)parts.push(esc(o.m.label||o.name));if(state.organ&&!(o&&o.m.ontology_id&&nid(o.m.ontology_id)===state.organ))parts.push(esc(term(state.organ)?.label||state.organ));if(state.tissue)parts.push(esc(term(state.tissue)?.label||state.tissue));if(state.gene)parts.push(`gene lens: <span class="mono">${esc(state.gene)}</span>`);
   $('#crumbs').innerHTML=parts.join(' &rsaquo; ');$$('#stages button').forEach(b=>{const n=+b.dataset.s;b.classList.toggle('on',(n===0&&state.split<0.02&&state.peel===0)||(n===1&&state.split>=0.3&&state.peel===0)||(n>=2&&state.peel===n-1));});
   $$('#crumbs a').forEach(a=>a.onclick=()=>{setMode('anatomy');reset();});}
@@ -785,12 +788,17 @@ async function loadPhysiology(){
   const params=typeof gp.Pw_in==='number'?Object.assign({},GILL_STANDIN,gp,{units:gunit||gp.units||'kPa',sources:gsrc,note:(gillRaw.note||'parameters from physiology/gills.json')+' Values: '+Object.entries(gsrc).map(([k,v])=>`${k} ${v.value} ${v.unit} (${v.kind})`).join(', ')+'.'}):GILL_STANDIN;
   window.__gref=gillRaw&&gillRaw.physical_reference_trout_per_kg&&gillRaw.physical_reference_trout_per_kg.result_counter;gill=new GillPanel($('#gillC'),physPal(),params,solver);gill.sourced={gills:!!gillRaw,solver:!!solver,circ:circData.source!=='stand-in'};
 }
-function setMode(m){state.mode=m;$('#modeSel').value=m;
+function setMode(m){state.mode=m;$('#modeSel').value=m;if(perturb&&m!=='perturb'){perturb.unmount();perturb=null;}
   if(circ){circ.dispose();circ=null;}
   $('#physio').style.display='none';$('#basis').style.display='none';$('#isvg').style.display='none';$('#simFrame').style.display='none';$('#ctxSel').style.display=(m==='tissue'||m==='cell')?'':'none';$('#intLab').style.display=(m==='physiology'&&cardiac)?'':'none';$('#gillBtn').style.display=m==='physiology'?'':'none';
-  $('#banner').style.display='none';$('#banner').classList.remove('side','studio');$('#studio').style.display='none';$('#growth').style.display='none';$('#hlabel').style.display='none';growth.playing=false;if(m!=='design'&&m!=='growth'){clearGlow();resetScaling();}
+  $('#banner').style.display='none';$('#banner').classList.remove('side','studio');$('#studio').style.display='none';$('#growth').style.display='none';hideDev(true);$('#hlabel').style.display='none';growth.playing=false;if(m!=='design'&&m!=='growth'){clearGlow();resetScaling();}
   $('#compare').style.display='none';$('#seqv').style.display='none';$('#genov').style.display='none';
+  if(m==='perturb'){openPerturb();crumbs();return;}
   if(m==='genotype'){openGenotype();crumbs();return;}
+function openPerturb(){if(perturb)perturb.unmount();
+  perturb=mountPerturb({THREE,scene,camera,renderer,root,meshes:()=>objs,get manifest(){return MF;},get species(){return modelKey;},
+    panelEl:$('#panel'),esc,data:D,getSelection:()=>state.obj?objs.find(o=>o.name===state.obj)||null:null,
+    onSelect:cb=>{perturbSel.add(cb);return()=>perturbSel.delete(cb);},codesignUrl:params.get('codesign')||null});}
   if(m==='sequences'){openSequences();crumbs();return;}
   if(m==='design'){openStudio();crumbs();return;}
   if(m==='compare'){openCompare();crumbs();return;}
@@ -1410,31 +1418,91 @@ function comparePanel(k){const C=cmpData&&cmpData.c2;const P=C&&C.panels?Object.
   const a=$('#cmpAll');if(a)a.onclick=()=>comparePanel();}
 
 // ---------- Growth ----------
-async function openGrowth(){await ensureDesign();if(!traj){let mod=null;try{mod=await import('./development/trajectory.mjs');}catch(e){}traj=(mod&&DS.adaptTrajectory(mod,baseDesign))||DS.standinTrajectory(baseDesign);if(traj.min_age==null)traj.min_age=0;if(params.get('age')!=null&&isFinite(+params.get('age')))growth.age=+params.get('age');}
+// zebrafish growth comes from development/zebrafish/ only; nothing flying-fish (Hirundichthys growth, Daane fin ratio, glide v_min, C9) is borrowed
+let trajFF=null,trajZF=null;
+async function zfTrajectory(){let zm=null;try{zm=await import('./development/zebrafish/trajectory.mjs');}catch(e){console.error(e);}if(!zm||typeof zm.at!=='function'||!zm.Z)return {species:'zebrafish',unavailable:true,source:'development/zebrafish/trajectory.mjs',note:'did not load, so no zebrafish size, mass or stage is shown here, and none is borrowed from the flying fish',basis:[],min_age:0,max_age:180/365,ageUnits:'years',conditions:null,
+    at:t=>({t,ageDays:t*365,unavailable:true,SL:null,mass:null,finLen:null,finSpan:1,stage:'not available (zebrafish trajectory not loaded)',egg:false,embryo:null,parts:{},partsList:[],vmin:null,finKind:null,proxy:false,genes_active:[]})};
+  let st=null;try{st=await fetch('development/zebrafish/stages.json').then(r=>r.ok?r.json():null);}catch(e){}const MS=zm.Z.milestones||[];
+  const at=t=>{const r=zm.at(t*365);const egg=r.SL_m==null;const SLmm=egg?null:r.SL_m*1000;const passed=new Set(r.parichyMilestonesPassed||[]);
+    const parts=egg?{pectoral_fin:false,fin_rays:false,caudal_fin:false,pelvic_fin:false,gonads:false,swim_bladder:false}:{pectoral_fin:true,fin_rays:SLmm>=zm.Z.pecRayOnset_SL_mm,caudal_fin:true,pelvic_fin:passed.has('PB'),gonads:r.stage==='adult',swim_bladder:passed.has('pSB')};
+    const partsList=[{part:'pectoral fin: '+r.pectoral.state,kind:r.pectoral.kind},...MS.filter(m=>passed.has(m[0])).map(m=>({part:m[1]+' ('+m[0]+', SSL '+m[2]+' mm)',kind:'measured (Parichy 2009 Table 4)'}))];
+    return {t,ageDays:r.ageDays,dpf:r.dpf,hpf:r.hpf,zfs:r.zfs,SL:egg?null:r.SL_m,mass:egg?null:r.mass_kg,massKind:r.mass_kind||null,finLen:null,finSpan:1,stage:r.stage,egg,
+      embryo:egg?{zfs_name:r.zfs.name,zfs:r.zfs.zfs,zebrafish_equivalent_hpf:r.hpf,kind:'ZFIN stage table (Kimmel 1995); same species, not a proxy'}:null,parts,partsList,vmin:null,
+      finKind:'no sourced wild-type value: '+(r.finLength_note||'not found'),proxy:false,genes_active:[],raw:r};};
+  return {at,species:'zebrafish',source:'development/zebrafish/trajectory.mjs',note:'staging tables, measured rates and published fits for the lab zebrafish; not a mechanistic model',basis:typeof zm.describe==='function'?zm.describe():[],
+    min_age:-zm.Z.hatch_dpf/365,max_age:180/365,ageUnits:'years',conditions:st&&st.conditions||null};}
+async function openGrowth(){await ensureDesign();if(!trajFF){let mod=null;try{mod=await import('./development/trajectory.mjs');}catch(e){}trajFF=(mod&&DS.adaptTrajectory(mod,baseDesign))||DS.standinTrajectory(baseDesign);if(trajFF.min_age==null)trajFF.min_age=0;if(params.get('age')!=null&&isFinite(+params.get('age')))growth.age=+params.get('age');}
+  if(isZF()&&!trajZF)trajZF=await zfTrajectory();traj=isZF()?trajZF:trajFF;growth.age=Math.min(traj.max_age*365,Math.max(traj.min_age*365,growth.age));
   if(!growth.intervention&&params.get('knob')&&interv.v2){const r=interv.all.find(x=>x.id===params.get('knob')&&x.knobEffect);if(r){growth.intervention=r;growth.knobFresh=true;}}
-  if(growth.intervention&&growth.knobFresh){growth.knobFresh=false;const r=growth.intervention;let zm=null;try{zm=await import('./development/zebrafish/trajectory.mjs');}catch(e){}
+  const clock=traj.species==='zebrafish'?'zf':'ff';if(growth.intervention&&(growth.knobFresh||growth.knobClock!==clock)){growth.knobFresh=false;growth.knobClock=clock;const r=growth.intervention;let zm=null;try{zm=await import('./development/zebrafish/trajectory.mjs');}catch(e){}
     // the effect was measured in zebrafish at h0-h1 hpf; place it on the flying-fish clock at the same life-stage progress
     // (development/zebrafish/trajectory.mjs progressAt / ageAtProgress; zebrafish day 0 = 48 hpf); without the module, the raw hours
-    if(zm&&zm.progressAt&&zm.ageAtProgress){const f=h=>zm.ageAtProgress('flyingFish',zm.progressAt('zebrafish',h/24-2));growth.knobWin={d0:f(r.stage.h0),d1:f(r.stage.h1),how:'stage-matched: zebrafish '+r.stage.h0+'-'+r.stage.h1+' hpf placed at the same life-stage progress on the flying-fish clock (development/zebrafish/trajectory.mjs), an assumption'};}
+    if(clock==='zf')growth.knobWin={d0:r.stage.h0/24-2,d1:r.stage.h1/24-2,how:'zebrafish hpf on the zebrafish clock (hatching = 48 hpf): same species, no stage matching'};
+    else if(zm&&zm.progressAt&&zm.ageAtProgress){const f=h=>zm.ageAtProgress('flyingFish',zm.progressAt('zebrafish',h/24-2));growth.knobWin={d0:f(r.stage.h0),d1:f(r.stage.h1),how:'stage-matched: zebrafish '+r.stage.h0+'-'+r.stage.h1+' hpf placed at the same life-stage progress on the flying-fish clock (development/zebrafish/trajectory.mjs), an assumption'};}
     else growth.knobWin={d0:r.stage.h0/24,d1:r.stage.h1/24,how:'raw hours on the flying-fish clock (no stage matching available), an assumption'};
     growth.age=(growth.knobWin.d0+growth.knobWin.d1)/2;}
-  $('#banner').textContent=DS.GROWTH_BANNER;$('#banner').classList.add('side');$('#banner').style.display='block';$('#growth').style.display='block';$('#gAge').min=Math.floor(traj.min_age*365);$('#gAge').max=traj.max_age*365;$('#gAge').value=growth.age;
+  $('#banner').textContent=DS.GROWTH_BANNER;$('#banner').classList.add('side');$('#banner').style.display='block';$('#growth').style.display='flex';$('#gAge').min=Math.floor(traj.min_age*365);$('#gAge').max=traj.max_age*365;$('#gAge').value=growth.age;
   if(state.peel>0){state.peel=0;$('#peel').value=0;}if(state.split>0.02){state.split=0;$('#split').value=0;}applyState();
   // where the fixed-10 m/s C9 check holds along the trajectory (reported as an artefact, never as a first glide)
-  firstGlide=null;const steps=240;for(let i=0;i<=steps;i++){const t=traj.min_age+(traj.max_age-traj.min_age)*i/steps;const r=traj.at(t);if(r.egg)continue;const dd={...baseDesign,SL:r.SL,mass:r.mass,finLen:r.finLen,finSpan:r.finSpan||1};const v=checker(dd,baseDesign).find(x=>x.id==='C9');if(v&&v.verdict==='holds'){firstGlide={t,SL:r.SL,mass:r.mass,stage:r.stage};break;}}
+  firstGlide=null;const steps=traj.species==='zebrafish'?-1:240;for(let i=0;i<=steps;i++){const t=traj.min_age+(traj.max_age-traj.min_age)*i/steps;const r=traj.at(t);if(r.egg)continue;const dd={...baseDesign,SL:r.SL,mass:r.mass,finLen:r.finLen,finSpan:r.finSpan||1};const v=checker(dd,baseDesign).find(x=>x.id==='C9');if(v&&v.verdict==='holds'){firstGlide={t,SL:r.SL,mass:r.mass,stage:r.stage};break;}}
   $('#gPlay').onclick=()=>{growth.playing=!growth.playing;$('#gPlay').textContent=growth.playing?'pause':'play';if(growth.playing&&growth.age>=traj.max_age*365)growth.age=traj.min_age*365;};
   $('#gSpeed').onchange=e=>{growth.speed=+e.target.value;};$('#gAge').oninput=e=>{growth.age=+e.target.value;applyGrowth();growthStageNote();};
   gcanvas=$('#gC');applyGrowth();growthPanel();}
 function knobActive(){const r=growth.intervention;if(!r||!r.knobEffect||!growth.knobWin)return null;return growth.age>=growth.knobWin.d0&&growth.age<=growth.knobWin.d1?r:null;}
+// developmental meshes (anatomy-model/parametric -dev.glb): one per observed species, morph targets = growth stages.
+// Weights come from the sibling manifest's morph_targets (kind 'stage', age_days); linear in age between the two bracketing
+// stages, clamped (never extrapolated) outside the manifest's range. Designs have no -dev.glb and keep the static model.
+const DEV_MESH={'flying-fish':{glb:'model/flying-fish-dev.glb',manifest:'model/flying-fish-dev-manifest.json'},'zebrafish-adult':{glb:'model/zebrafish-dev.glb',manifest:'model/zebrafish-dev-manifest.json'},'zebrafish-larva':{glb:'model/zebrafish-dev.glb',manifest:'model/zebrafish-dev-manifest.json'}};
+const devCache=new Map();  // glb path -> {spec,p,ent,err}; a GLB is fetched once per page
+function loadDev(spec){if(devCache.has(spec.glb))return devCache.get(spec.glb);const rec={spec,p:null,ent:null,err:null};devCache.set(spec.glb,rec);
+  rec.p=Promise.all([fetch(spec.manifest).then(r=>{if(!r.ok)throw new Error(spec.manifest+' HTTP '+r.status);return r.json();}),new Promise((res,rej)=>new GLTFLoader().load(spec.glb,g=>res(g.scene),undefined,e=>rej(new Error(spec.glb+' failed: '+(e&&e.message||e)))))]).then(([mf,sc])=>{
+    const stages=(mf.morph_targets||[]).filter(t=>t.kind==='stage'&&isFinite(t.age_days)).sort((a,b)=>a.age_days-b.age_days);const meshes=[];
+    // zero-thickness skin shell (no solidify with shape keys): draw double-sided so it does not vanish from inside
+    sc.traverse(c=>{if(!c.isMesh)return;for(const m of (Array.isArray(c.material)?c.material:[c.material]))if(m)m.side=THREE.DoubleSide;if(c.morphTargetInfluences)meshes.push(c);});
+    const missing=stages.filter(t=>meshes.some(m=>!(m.morphTargetDictionary&&t.name in m.morphTargetDictionary))).map(t=>t.name);
+    // normalise on the adult (all weights 0 = base) exactly as mountModel does, so earlier stages draw at their true relative size
+    const box=new THREE.Box3().setFromObject(sc,true);const size=box.getSize(new THREE.Vector3());const k=size.x>0?1/size.x:1;sc.scale.setScalar(k);sc.position.sub(box.getCenter(new THREE.Vector3()).multiplyScalar(k));
+    const group=new THREE.Group();group.name='dev_'+spec.glb;group.add(sc);group.visible=false;scene.add(group);
+    if(stages.length<2)throw new Error(spec.manifest+': fewer than two stage targets');
+    rec.ent={mf,group,meshes,stages,missing,k};return rec.ent;}).catch(e=>{rec.err=e.message;console.error(e);throw e;});
+  rec.p.then(()=>{if(state.mode==='growth'&&DEV_MESH[modelKey]&&DEV_MESH[modelKey].glb===spec.glb)applyGrowth();},()=>{if(state.mode==='growth')applyGrowth();});return rec;}
+function hideDev(restore){let was=false;for(const r of devCache.values())if(r.ent&&r.ent.group.visible){r.ent.group.visible=false;was=true;}if(!was)return;const nb=$('#note b');if(nb)nb.textContent=MI().label+' — schematic geometry, not measured anatomy.';if(restore&&objs.length)applyState();}
+function devSync(){const spec=state.mode==='growth'?DEV_MESH[modelKey]:null;if(!spec){hideDev(false);return {none:true};}const rec=loadDev(spec);
+  for(const r of devCache.values())if(r!==rec&&r.ent)r.ent.group.visible=false;
+  if(!rec.ent)return {spec,loading:!rec.err,err:rec.err};const E=rec.ent,S=E.stages,a0=S[0].age_days,a1=S[S.length-1].age_days;
+  const clamped=growth.age<a0||growth.age>a1,age=Math.min(a1,Math.max(a0,growth.age));let i=0;while(i<S.length-2&&S[i+1].age_days<age)i++;
+  const A=S[i],B=S[i+1],f=(age-A.age_days)/(B.age_days-A.age_days);
+  for(const m of E.meshes){const inf=m.morphTargetInfluences,d=m.morphTargetDictionary||{};inf.fill(0);if(A.name in d)inf[d[A.name]]=1-f;if(B.name in d)inf[d[B.name]]+=f;}
+  // the parametric fish grows backwards from a fixed snout; keep its middle where the adult's middle is (INTEGRATION.md, SL = 0.82 units)
+  const rel=(1-f)*A.size_rel+f*B.size_rel;E.group.position.set(-(1-rel)*0.5*0.82*E.k,0,0);E.group.visible=true;
+  const nb=$('#note b'),nt=`${isZF()?'zebrafish (Danio rerio)':'flying fish (Exocoetidae)'}, developmental mesh drawn at ${Math.round(age)} d after hatching (${f<0.5?A.stage:B.stage})${clamped?`, its ${growth.age<a0?"youngest":"oldest"} stage (slider at ${Math.round(growth.age)} d)`:""} — schematic parametric geometry, not measured anatomy.`;if(nb&&nb.textContent!==nt)nb.textContent=nt;
+  return {spec,shown:true,E,A,B,f,age,clamped,a0,a1,SL:(1-f)*A.SL_m+f*B.SL_m};}
+function devLine(v){if(v.none)return ` · no developmental mesh exists for this design (${MI().short}): the static model is drawn`;
+  if(v.loading)return ` · loading developmental mesh ${v.spec.glb}…`;if(v.err)return ` · developmental mesh failed to load (${v.err}): the static model is drawn`;
+  const E=v.E;return ` · mesh ${v.spec.glb}: ${v.A.name} ${(1-v.f).toFixed(2)} + ${v.B.name} ${v.f.toFixed(2)}, linear in age (weights: ${v.spec.manifest}), mesh SL ${(v.SL*1000).toFixed(1)} mm${v.clamped?` · CLAMPED to the manifest's ${v.a0}-${v.a1} d: drawn at ${v.age} d, no extrapolation`:''}${E.missing.length?` · ⚠ stage targets missing from the GLB: ${E.missing.join(', ')}`:''}${E.mf.MORPHOLOGICAL_NOT_GENETIC?' · MORPHOLOGICAL_NOT_GENETIC (hover)':''}`;}
+function zfRead(r,k){const g=growth.intervention;
+  if(r.unavailable)return `age ${Math.round(growth.age)} d after hatching · zebrafish trajectory not loaded (development/zebrafish/trajectory.mjs): no SL, mass or stage shown, none borrowed from the flying fish · glide v_min, C9: not applicable, zebrafish does not glide`;
+  return `age ${r.egg?Math.abs(growth.age).toFixed(1)+' d before hatching ('+r.hpf+' hpf)':Math.round(growth.age)+' d after hatching ('+r.dpf+' dpf)'} · ${r.egg?'egg, '+r.zfs.name:'SL '+(r.SL*1000).toFixed(1)+' mm · mass '+(r.mass*1e6).toFixed(r.mass*1e6<10?2:1)+' mg · '+r.stage} · zebrafish (development/zebrafish/) · fin/SL: no sourced value · glide v_min, C9: not applicable, zebrafish does not glide${g?(k?` · ${g.gene}: inside its measured window, not drawn (the zebrafish mesh has no fin-area handle)`:` · ${g.gene}: outside its measured window`):''}`;}
 function applyGrowth(){const r=traj.at(growth.age/365);design={...baseDesign,SL:r.SL,mass:r.mass,finLen:r.finLen,finSpan:r.finSpan||1};
-  const k=knobActive();if(k)design[k.knobEffect.param]*=k.knobEffect.factor;applyDesignToModel(design);
-  for(const o of objs){const n=o.name;const pp=r.parts||{};let vis=true;if(/^pectoral_fin_(L|R)$/.test(n))vis=pp.pectoral_fin!==false;else if(/^pectoral_fin_ray_|_rays$/.test(n))vis=pp.fin_rays!==false;else if(/^caudal_fin/.test(n))vis=pp.caudal_fin!==false;else if(/^pelvic_fin/.test(n))vis=pp.pelvic_fin!==false;else if(/^gonad/.test(n))vis=pp.gonads!==false;else if(/^swim_bladder/.test(n))vis=pp.swim_bladder!==false;o.mesh.visible=vis&&(o.m.layer==='outer'||o.m.layer==='organ'&&state.peel>=3||state.peel>=(LAYER_PEEL[o.m.layer]||1));}
-  if(r.egg){clearGlow();verdicts=[];}else runCheck(false);const c9=verdicts.find(v=>v.id==='C9');
-  $('#gRead').textContent=`age ${growth.age<0?Math.abs(growth.age).toFixed(1)+' d before hatching':(growth.age/365).toFixed(2)+' yr ('+Math.round(growth.age)+' d)'} · ${r.egg?'egg'+(r.embryo?' ≈ zebrafish '+r.embryo.zfs_name+' (proxy)':''):'SL '+(r.SL*100).toFixed(1)+' cm · mass '+(r.mass*1000).toFixed(r.mass<0.001?3:1)+' g · fin/SL '+r.finLen.toFixed(2)}${r.egg?"":" · "+r.stage}${r.proxy?' · PROXY / ASSUMED':''}${r.vmin!=null?' · derived v_min '+r.vmin+' m/s':''}${c9?' · '+(c9.verdict==='holds'?'✓ C9 holds at 10 m/s':c9.verdict==='violated'?'✕ C9 violated at 10 m/s':'? C9 cannot evaluate'):''}${growth.intervention?(k?` · ${growth.intervention.gene} applied: ${k.knobEffect.label}`:` · ${growth.intervention.gene}: outside its measured window, no magnitude applied`):''}`;
+  const k=knobActive();if(k)design[k.knobEffect.param]*=k.knobEffect.factor;applyDesignToModel(design);const dv=devSync();
+  for(const o of objs){const n=o.name;const pp=r.parts||{};let vis=true;if(/^pectoral_fin_(L|R)$/.test(n))vis=pp.pectoral_fin!==false;else if(/^pectoral_fin_ray_|_rays$/.test(n))vis=pp.fin_rays!==false;else if(/^caudal_fin/.test(n))vis=pp.caudal_fin!==false;else if(/^pelvic_fin/.test(n))vis=pp.pelvic_fin!==false;else if(/^gonad/.test(n))vis=pp.gonads!==false;else if(/^swim_bladder/.test(n))vis=pp.swim_bladder!==false;o.mesh.visible=!dv.shown&&vis&&(o.m.layer==='outer'||o.m.layer==='organ'&&state.peel>=3||state.peel>=(LAYER_PEEL[o.m.layer]||1));}
+  if(r.egg||traj.species==='zebrafish'){clearGlow();verdicts=[];}else runCheck(false);const c9=verdicts.find(v=>v.id==='C9');
+  $('#gRead').textContent=traj.species==='zebrafish'?zfRead(r,k)+devLine(dv):`age ${growth.age<0?Math.abs(growth.age).toFixed(1)+' d before hatching':(growth.age/365).toFixed(2)+' yr ('+Math.round(growth.age)+' d)'} · ${r.egg?'egg'+(r.embryo?' ≈ zebrafish '+r.embryo.zfs_name+' (proxy)':''):'SL '+(r.SL*100).toFixed(1)+' cm · mass '+(r.mass*1000).toFixed(r.mass<0.001?3:1)+' g · fin/SL '+r.finLen.toFixed(2)}${r.egg?"":" · "+r.stage}${r.proxy?' · PROXY / ASSUMED':''}${r.vmin!=null?' · derived v_min '+r.vmin+' m/s':''}${c9?' · '+(c9.verdict==='holds'?'✓ C9 holds at 10 m/s':c9.verdict==='violated'?'✕ C9 violated at 10 m/s':'? C9 cannot evaluate'):''}${growth.intervention?(k?` · ${growth.intervention.gene} applied: ${k.knobEffect.label}`:` · ${growth.intervention.gene}: outside its measured window, no magnitude applied`):''}${devLine(dv)}`;$('#gRead').title=dv.shown?(dv.E.mf.MORPHOLOGICAL_NOT_GENETIC||''):'';
   drawGrowthPlot(r);}
 function growthStageNote(){const el=$('#gStage');if(!el)return;const r=traj.at(growth.age/365);el.innerHTML=`<b>${esc(r.stage)}</b>${r.proxy?' <span class="chip warn">&#9888; proxy / assumed here</span>':''}${r.finKind?` <span class="tiny">fin/SL: ${esc(r.finKind)}</span>`:''}${r.embryo?`<br><span class="tiny">embryo staged on zebrafish: ${esc(r.embryo.zfs_name)} (${esc(r.embryo.zfs)}), ≈${esc(r.embryo.zebrafish_equivalent_hpf)} hpf; ${esc(r.embryo.kind)}</span>`:''}${r.partsList&&r.partsList.length?`<ul class="t small" style="margin:4px 0 0">${r.partsList.filter(p=>p.when!==false).map(p=>`<li>${esc(p.part)} <span class="tiny">(${esc(p.kind||'')})</span></li>`).join('')}</ul>`:''}`;$('#gGenes').textContent=(r.genes_active||[]).join(', ')||'none listed for this stage';
   const bad=verdicts.filter(v=>v.verdict==='violated');if(bad.length)el.innerHTML+=`<p class="small" style="margin:6px 0 0"><span style="color:var(--bad);font-weight:700">✕</span> violated here (the pieces glow red): ${bad.map(v=>`<b>${esc(v.id)}</b> ${esc(v.text)}`).join('; ')}.${bad.some(v=>v.id==='C2a')?' The development module scales fin area by SL^1.834 (Davenport 1992), which the isometry check (exponent 2 ± 0.1) rejects: the real fish are not isometric.':''}</p>`;}
-function drawGrowthPlot(cur){const c=gcanvas;if(!c)return;const box=c.getBoundingClientRect();const dpr=devicePixelRatio||1;if(c.width!==Math.round(box.width*dpr)){c.width=Math.round(box.width*dpr);c.height=Math.round(box.height*dpr);}const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);const W=box.width,H=box.height;g.clearRect(0,0,W,H);
+// zebrafish chart: SL (mm) against days after hatching from development/zebrafish/trajectory.mjs, plus the dev mesh's stage keyframes
+function drawZfPlot(g,W,H){const a0=traj.min_age*365,a1=traj.max_age*365;const L=46,R=W-16,T=12,B=H-22;if(B-T<20)return;const X=d=>L+(R-L)*(d-a0)/(a1-a0);const n=180;const pts=[];let maxSL=0;
+  for(let i=0;i<=n;i++){const d=a0+(a1-a0)*i/n;const r=traj.at(d/365);pts.push([d,r]);if(!r.egg&&r.SL!=null)maxSL=Math.max(maxSL,r.SL*1000);}
+  const rec=devCache.get('model/zebrafish-dev.glb'),K=rec&&rec.ent?rec.ent.stages:[];for(const s of K)maxSL=Math.max(maxSL,s.SL_m*1000);maxSL=Math.ceil(maxSL/10)*10||10;const Y=v=>B-(B-T)*v/maxSL;g.font='10.5px Inter Tight, system-ui, sans-serif';
+  g.fillStyle='rgba(128,128,128,0.12)';g.fillRect(X(a0),T,X(0)-X(a0),B-T);g.fillStyle=PAL['--mute'];g.fillText('egg',X(a0)+2,B-4);
+  g.strokeStyle=PAL['--line'];g.beginPath();g.moveTo(L,T);g.lineTo(L,B);g.lineTo(R,B);g.stroke();g.fillStyle=PAL['--mute'];g.fillText('SL (mm), zebrafish',L+4,T+10);g.textAlign='right';g.fillText('age (days after hatching; < 0 = embryo)',R,H-6);g.textAlign='left';
+  for(let v=0;v<=maxSL;v+=10){g.fillStyle=PAL['--mute'];g.fillText(String(v),22,Y(v)+4);}
+  g.strokeStyle=PAL['--accent'];g.lineWidth=2;g.beginPath();let st=false;for(const [d,r] of pts){if(r.egg||r.SL==null)continue;const x=X(d),y=Y(r.SL*1000);st?g.lineTo(x,y):g.moveTo(x,y);st=true;}g.stroke();
+  if(K.length){g.fillStyle=PAL['--suff']||'#eb6834';for(const s of K){g.beginPath();g.arc(X(s.age_days),Y(s.SL_m*1000),3,0,7);g.fill();}g.fillText('● mesh stage keyframes (zebrafish-dev manifest)',L+4,T+24);}
+  const nar=W<560;g.fillStyle=PAL['--mute'];g.textAlign=nar?'left':'right';g.fillText('fin length / SL: no sourced wild-type value · glide: not applicable',nar?L+4:R,nar?T+38:T+10);g.textAlign='left';
+  g.strokeStyle=PAL['--ink'];g.lineWidth=1;g.beginPath();g.moveTo(X(growth.age),T);g.lineTo(X(growth.age),B);g.stroke();}
+function drawGrowthPlot(cur){const c=gcanvas;if(!c)return;const box=c.getBoundingClientRect();const dpr=devicePixelRatio||1;if(c.width!==Math.round(box.width*dpr)||c.height!==Math.round(box.height*dpr)){c.width=Math.round(box.width*dpr);c.height=Math.round(box.height*dpr);}const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);const W=box.width,H=box.height;g.clearRect(0,0,W,H);if(traj.species==='zebrafish')return drawZfPlot(g,W,H);
   const a0=traj.min_age,a1=traj.max_age;const L=46,R=W-46,T=12,B=H-22;const X=t=>L+(R-L)*(t-a0)/(a1-a0);const n=160;let maxSL=0;const pts=[];for(let i=0;i<=n;i++){const t=a0+(a1-a0)*i/n;const r=traj.at(t);pts.push(r);if(!r.egg)maxSL=Math.max(maxSL,r.SL);}
   const Y=v=>B-(B-T)*v/maxSL;const font='10.5px Inter Tight, system-ui, sans-serif';g.font=font;
   // proxy / assumed band: before hatching and below the smallest measured fin (1.68 cm SL)
@@ -1453,7 +1521,17 @@ function drawGrowthPlot(cur){const c=gcanvas;if(!c)return;const box=c.getBoundin
     for(const v of [0,5,10,15]){g.fillStyle=PAL['--mute'];g.fillText(String(v),R+6,Yv(v)+4);}}
   else if(firstGlide){g.fillStyle=PAL['--ink'];g.fillText(`C9 lift bound first holds at 10 m/s: ${firstGlide.t.toFixed(2)} yr (not a first glide: reaching airspeed is not evaluated)`,X(firstGlide.t)+4,T+22);}
   g.strokeStyle=PAL['--ink'];g.lineWidth=1;g.beginPath();g.moveTo(X(growth.age/365),T);g.lineTo(X(growth.age/365),B);g.stroke();}
-function growthPanel(){const I=interv;const r0=growth.intervention;const dev=traj.source!=='stand-in';
+function zfGrowthPanel(){const r0=growth.intervention;
+  let h=`<h2>Growth: zebrafish</h2><p class="small">${esc(DS.GROWTH_BANNER)}</p><div class="sec"><h4>Trajectory</h4><p class="small">From <b>${esc(traj.source)}</b>: ${esc(traj.note)}. Age is days after hatching (hatching = 48 hpf); the slider runs from fertilisation to 180 d, the oldest stage of the developmental mesh. The flying-fish trajectory (<i>Hirundichthys</i> growth, Daane 2021 fin ratio) is not used for this species.</p>
+    <table><tr><th>quantity</th><th>kind</th><th>relation</th></tr>${traj.basis.map(b=>`<tr><td>${esc(b.quantity)}</td><td><span class="chip${/assumed|proxy/.test(b.kind)?' warn':''}">${esc(b.kind)}</span></td><td class="tiny">${esc(b.relation)}</td></tr>`).join('')}</table>
+    ${traj.conditions?`<p class="tiny">Conditions (development/zebrafish/stages.json): ${esc(traj.conditions)}</p>`:''}</div>
+    <div class="sec"><h4>At this age</h4><div class="small" id="gStage"></div></div>
+    <div class="sec"><h4>Gliding</h4><p class="small">Not applicable: zebrafish does not glide. The flying-fish lift check (C9) and the derived glide v_min are not computed for this species, and pectoral fin length / SL has no sourced wild-type value, so none is shown.</p></div>
+    <div class="sec"><h4>Genes active at this stage</h4><p class="small"><span id="gGenes"></span>. development/zebrafish/ has no stage-to-gene table, so none are listed rather than borrowed.</p></div>
+    <div class="sec"><h4>Edit the development</h4>${r0?`<p class="small">Selected: <b>${esc(r0.gene)}</b> ${esc(r0.knobEffect?r0.knobEffect.label:'')} (${esc(r0.id)}), measured at ${esc(r0.stage.text)}; window ${growth.knobWin?growth.knobWin.d0.toFixed(2)+' to '+growth.knobWin.d1.toFixed(2)+' d after hatching ('+esc(growth.knobWin.how)+')':'not placed'}. The zebrafish developmental mesh has no fin-area handle, so the effect is not drawn. <button id="gClear">remove</button></p>`:'<p class="small">Pick an intervention from the Design Studio fin area routes to see its measured window on this clock.</p>'}</div>`;
+  $('#panel').innerHTML=h;growthStageNote();
+  const gc=$('#gClear');if(gc)gc.onclick=()=>{growth.intervention=null;growth.knobWin=null;const u=new URL(location.href);u.searchParams.delete('knob');history.replaceState(null,'',u.toString());applyGrowth();growthPanel();};}
+function growthPanel(){if(traj.species==='zebrafish')return zfGrowthPanel();const I=interv;const r0=growth.intervention;const dev=traj.source!=='stand-in';
   let h=`<h2>Growth</h2><p class="small">${esc(DS.GROWTH_BANNER)}</p><div class="sec"><h4>Trajectory</h4><p class="small">${dev?'From <b>development/trajectory.mjs</b>: ':'<b>Stand-in, labelled</b>: development/ has no trajectory.mjs in this build, so this curve is illustrative: '}${esc(traj.note||'')}</p>
     ${dev?`<div class="prov model"><b>&#9888; Species are mixed across relations</b><span class="small">Growth is from <i>Hirundichthys affinis</i>, fin length from three species (Daane 2021, pooled), fin area from one <i>Cypselurus hiraii</i> specimen. Each relation's basis, from describe():</span></div><table><tr><th>quantity</th><th>kind</th><th>basis</th></tr>${traj.basis.map(b=>`<tr><td>${esc(b.quantity)}</td><td><span class="chip${/assumed|proxy/.test(b.kind)?' warn':''}">${/assumed|proxy/.test(b.kind)?'&#9888; ':''}${esc(b.kind)}</span></td><td class="tiny">${esc(b.relation)}. ${esc(b.basis)}</td></tr>`).join('')}</table>
     <p class="small">Below ${traj.finFitMin_cm} cm SL and before hatching everything is proxy or assumed (zebrafish fin bud from Prim-5, 24 hpf; incubation ${traj.incubation_d} d assumed); the plot shades that span amber.</p>
@@ -1497,7 +1575,7 @@ function init(sc){
   if(params.get('gene'))lens(params.get('gene'),true);
   else if(state.tissue)show(state.tissue);else if(state.organ)show(state.organ);else if(state.obj)selectObj(state.obj);else intro();
   if(params.get('context')&&CONTEXTS.includes(params.get('context'))){ctx=params.get('context');$('#ctxSel').value=ctx;}
-  const mode=params.get('mode');if(mode&&['physiology','tissue','cell','physics','design','growth','compare','sequences','genotype'].includes(mode)){collapseNote();setMode(mode);if(mode==='physiology'&&params.get('gill')==='1')setTimeout(openGill,800);}
+  const mode=params.get('mode');if(mode&&['physiology','tissue','cell','physics','design','growth','compare','sequences','genotype','perturb'].includes(mode)){collapseNote();setMode(mode);if(mode==='physiology'&&params.get('gill')==='1')setTimeout(openGill,800);}
 }
 </script>
 </body>

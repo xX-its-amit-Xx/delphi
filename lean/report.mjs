@@ -386,6 +386,9 @@ const proofScope = {
     ]
   }
 };
+// Perturbation laws (lean/Delphi/Perturb.lean): their claims and proof scope live in lean/perturb-sources.json, next to the sources.
+const perturbSrc = JSON.parse(fs.readFileSync(path.join(here, "perturb-sources.json"), "utf8"));
+for (const c of perturbSrc.claims) { formalized.push({ claim_id: c.claim_id, theorem: c.theorem, module: "lean/Delphi/Perturb.lean", status: buildOk && nonStandard.length === 0 ? "verified" : "not verified", derived: true, label: c.label, statement: c.statement, notation: c.notation, context: "Perturbation law for the Design Studio; every constant and its quoted source in lean/perturb-sources.json.", note: null, paper: null }); proofScope[c.claim_id] = { kernelChecked: c.kernelChecked, assumed: c.assumed }; }
 for (const f of formalized) f.proofScope = proofScope[f.claim_id] || null;
 
 

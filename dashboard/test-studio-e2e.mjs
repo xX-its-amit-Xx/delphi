@@ -168,7 +168,8 @@ async function measure(page, part) {
     const o = S.piece || window.__pt.api.state.piece; let root = o.mesh; while (root.parent && root.parent.type !== 'Scene') root = root.parent;
     const key = new URLSearchParams(location.search).get('model') || 'flying-fish-dev';
     const mf = await fetch(key === 'flying-fish' ? 'model/manifest.json' : `model/${key}-manifest.json`).then(r => r.json());
-    const m = pe.measurePart(root, part, mf); return { area: m.surface_area_m2 ?? m.surface_area_units2, raw: m };
+    const m = pe.measurePart(root, part, mf); const f = (m.fins || []).find(x => x.part === part) || (m.fins || [])[0] || {};
+    return { area: m.surface_area_m2 ?? m.surface_area_units2, span: f.length_m ?? null, raw: { ...m, bbox: undefined } };
   }, part);
 }
 async function applyEdit(page, labelRe, { op, value, why }) {
@@ -203,15 +204,16 @@ test(2, 'edit: select the fin, span x1.5 with a reason, mesh changes, listed, un
     const a1 = await measure(page, part);
     const edits = await page.$$eval('#ptSel .edit', es => es.map(e => e.innerText.replace(/\s+/g, ' ')));
     must(edits.length === nBefore + 1 && edits.some(t => /span/.test(t) && /1\.5/.test(t) && /longer fin span/.test(t)), `edit list does not show "span × 1.5 — e2e: longer fin span"; it shows: ${JSON.stringify(edits)}`, BP + 'perturb.js');
-    const ratio = a1.area / a0.area;
-    must(ratio > 1.2 && ratio < 2.4, `fin area did not change as a span x1.5 should (area ${a0.area.toPrecision(4)} -> ${a1.area.toPrecision(4)}, ratio ${ratio.toFixed(3)}; expected ~1.5)`, BP + 'partedit.js');
+    must(a0.span > 0, `partedit.measurePart(${part}) gave no fin span (fins[].length_m): ${JSON.stringify(a0.raw).slice(0, 300)}`, BP + 'partedit.js');
+    const ratio = a1.span / a0.span, aRatio = a1.area / a0.area;
+    must(Math.abs(ratio - 1.5) < 0.08, `fin span did not scale by 1.5 (span ${a0.span.toPrecision(4)} m -> ${a1.span.toPrecision(4)} m, ratio ${ratio.toFixed(3)}; area ratio ${aRatio.toFixed(3)})`, BP + 'partedit.js');
     await page.click('#ptUndo'); await settle(page);
     const a2 = await measure(page, part);
     const after = await page.$$eval('#ptSel .edit', e => e.length);
-    must(Math.abs(a2.area - a0.area) <= 1e-6 * a0.area, `undo did not restore the mesh: area ${a0.area.toPrecision(6)} -> ${a1.area.toPrecision(6)} -> after undo ${a2.area.toPrecision(6)}`, BP + 'perturb.js');
+    must(Math.abs(a2.area - a0.area) <= 1e-6 * a0.area && Math.abs(a2.span - a0.span) <= 1e-6 * a0.span, `undo did not restore the mesh: span ${a0.span} -> ${a1.span} -> after undo ${a2.span} m; area ${a0.area} -> ${a1.area} -> ${a2.area} m2`, BP + 'perturb.js');
     must(after === nBefore, `undo left ${after} edit(s) in the list (expected ${nBefore})`, BP + 'perturb.js');
     noErrors(page, 'edit flow');
-    return `${how.how}${note}; "${row.label}" scale 1.5: area ×${ratio.toFixed(3)}, listed, undo restored`;
+    return `${how.how}${note}; "${row.label}" scale 1.5 on ${part}: span ×${ratio.toFixed(3)} (area ×${aRatio.toFixed(3)}), listed, undo restored`;
   } catch (e) { e.shot = await shot(page, 'flow2', '#ptSel'); throw e; } finally { await page.ctx.close(); }
 });
 
@@ -290,7 +292,6 @@ test(4, 'timecourse: one point per stage; violated stages red', async (browser, 
     await applyEdit(page, BREAKER.param, BREAKER); await settle(page);
     const r = await page.evaluate(check); const red = verify(r, 'after standard_length x10');
     must(red.length > 0, `after the law-breaking edit no stage is marked violated (laws per stage: ${JSON.stringify(r.viol)})`, BP + 'perturb.js');
-    must(red.length < r.stages || true, '', '');
     noErrors(page, 'timecourse');
     return `${r.stages} stages, ${r.pts.length} points; unedited red stages ${JSON.stringify(base0)}; after edit red at ${JSON.stringify(red)} (${[...new Set(red.flatMap(i => r.viol[i]))].join(', ')})`;
   } catch (e) { e.shot = await shot(page, 'flow4', '#ptTc'); throw e; } finally { await page.ctx.close(); }
@@ -303,29 +304,18 @@ test(5, 'lean: a law-breaking edit glows red, names law id + lawset version; out
   const page = await newPage(browser, base);
   try {
     await page.goto(harness(base, BREAKER.model), { waitUntil: 'load' }); await settle(page);
+    // select a part first (gives the test a handle on the scene graph), then go back to the body crumb to edit
+    await page.evaluate(() => window.__pt.selectByName('skin_L')); await settle(page);
+    await page.click('#ptSel .crumbs button[data-lv="body"]'); await settle(page);
     await applyEdit(page, BREAKER.param, BREAKER); await settle(page); await page.waitForTimeout(600);
     const r = await page.evaluate(new Function(`const reddish = ${reddish}; const S = window.__pt.api.state;
-      const head = document.querySelector('#ptLaw h4')?.innerText || '';
-      const viols = [...document.querySelectorAll('#ptLaw .viol')].filter(v => !v.classList.contains('inherited') && !v.classList.contains('contested') && !v.classList.contains('candidate')).map(v => ({ text: v.innerText.replace(/\\s+/g, ' '), red: reddish(v).length > 0, lid: v.querySelector('.lid')?.innerText || '' }));
-      const glow = []; for (const o of window.__pt.api.state.engine ? [] : []) {}
-      let root = (S.piece && S.piece.mesh) || null; const objs = [];
-      // the harness's meshes: walk the scene from any known mesh
-      const any = document.querySelector('#stage') && window.__pt; let scene = null;
-      return { head, viols, lawsetJ: S.judged && S.judged.lawset };`));
-    const glow = await page.evaluate(async () => {
-      // read every mesh's emissive colour twice across the pulse; red = r dominates
-      const S = window.__pt.api.state; const seen = {}; const sample = () => { const hit = new Set();
-        const scan = n => { if (n.isMesh && n.material && n.material.emissive && n.material.emissiveIntensity > 0.05) { const c = n.material.emissive; if (c.r > 0.3 && c.r > c.g * 1.8 && c.r > c.b * 1.8) hit.add(n.userData.obj || n.name); } (n.children || []).forEach(scan); };
-        let any = null; window.__pt.selectByName && null; return { hit, scan }; };
-      return null;
-    });
-    void glow;
-    // the harness keeps objs private; reach the scene through the selection API: select nothing, read via a mesh
+      const head = document.querySelector('#ptLaw h4')?.textContent || '';
+      const viols = [...document.querySelectorAll('#ptLaw .viol')].filter(v => !v.classList.contains('inherited') && !v.classList.contains('contested') && !v.classList.contains('candidate')).map(v => ({ text: v.innerText.replace(/\s+/g, ' '), red: reddish(v).length > 0, lid: v.querySelector('.lid')?.innerText || '' }));
+      return { head, viols };`));
+    // sample every mesh's emissive colour across the pulse; red = r dominates
     const glowing = await page.evaluate(() => new Promise(res => {
-      const S = window.__pt.api.state; const names = new Set();
-      // perturb.js owns the glow loop; find meshes via the panel's piece or by selecting a known part without editing
-      const find = () => { let r = S.piece && S.piece.mesh; if (!r) { window.__pt.selectByName('skin_L'); r = S.piece && S.piece.mesh; } while (r && r.parent) r = r.parent; return r; };
-      const scene = find(); let n = 0;
+      const S = window.__pt.api.state; let scene = S.piece && S.piece.mesh; while (scene && scene.parent) scene = scene.parent;
+      if (!scene) return res([]); const names = new Set(); let n = 0;
       const tick = () => { scene.traverse(m => { if (m.isMesh && m.material && m.material.emissive && m.material.emissiveIntensity > 0.05) { const c = m.material.emissive; if (c.r > 0.3 && c.r > c.g * 1.8 && c.r > c.b * 1.8) names.add(m.userData.obj || m.name); } }); if (++n < 6) setTimeout(tick, 120); else res([...names]); };
       tick();
     }));
@@ -335,8 +325,6 @@ test(5, 'lean: a law-breaking edit glows red, names law id + lawset version; out
     must(r.viols.every(v => v.red), `a violation of an accepted law does not render red: ${r.viols.filter(v => !v.red).map(v => v.lid).join(', ')}`, BP + 'perturb.js');
     must(new RegExp('v' + current.replace(/\./g, '\\.')).test(r.head), `the law panel does not name law set v${current} (api/lean/current.json); header: "${r.head}"`, BP + 'perturb.js');
     must(glowing.length > 0, `no part glows red after the law-breaking edit (violations: ${r.viols.map(v => v.lid).join(', ')})`, BP + 'perturb.js');
-    // the edit selects skin_L above only to reach the scene graph; re-settle
-    await settle(page);
     // out-of-scope: a flying-fish-calibrated law judged on zebrafish, or any row the scope rule excludes
     let scopeNote = null;
     for (const model of [BREAKER.model, 'zebrafish-dev']) {

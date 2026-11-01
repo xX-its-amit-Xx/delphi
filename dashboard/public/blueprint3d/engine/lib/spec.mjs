@@ -6,7 +6,10 @@
 //     editable:    [{ target:{level,id}, param, min, max }]
 //     constraints: { lean: 'must-hold' } }
 //
-// op is '>=' | '<=' | 'survives' | 'maximize' | 'minimize'.
+// op is '>=' | '<=' | 'survives' | 'feasible' | 'maximize' | 'minimize'.
+//   survives: the scenario's run().survives (the organism lives through the condition).
+//   feasible: the scenario's run().feasible (the BEHAVIOUR is possible: it can glide, hold station,
+//             grip, escape). The two are separate verdicts; one never stands in for the other.
 // stages is 'all' | ['embryo','larva','juvenile','adult'] | { ageDays: { min, max } }.
 //
 // Pure ESM, no node-only import at top level, so the browser can load it next to parse-text.mjs.
@@ -19,7 +22,8 @@
 //   3. Aves are a frozen holdout (holdout/). No bird organism can be a parent, and no criterion or
 //      part may name one. That is a refusal with a reason, not a warning.
 
-export const OPS = ['>=', '<=', 'survives', 'maximize', 'minimize'];
+export const OPS = ['>=', '<=', 'survives', 'feasible', 'maximize', 'minimize'];
+const BOOL_OPS = new Set(['survives', 'feasible']);
 export const STAGES = ['embryo', 'larva', 'juvenile', 'adult'];
 // Same levels as lib/organism.mjs (which is the authority when loaded).
 export const LEVELS = ['body', 'system', 'organ', 'tissue', 'cell', 'gene'];
@@ -80,7 +84,12 @@ export const depthToKPa = (depth_m, water = 'sea') => 101.325 + depth_m * (water
 // export). These lists are ALIASES only: validateSpec maps a spec's key onto the first candidate the
 // real module declares, and says so in a warning. If none is declared it is an error, not a guess.
 export const METRIC_ALIASES = {
-  glide_range_m: ['glide_range_m', 'glide_range_total_m', 'glide_distance_m', 'range_m'],
+  // Glide distance (hub 2026-10-31): glide_range_total_m = kinetic phase + h·L/D glide, NOT covered by
+  // a Lean theorem as a whole; glide_range_lean_bound_m = h·L/D only, the part Lean glide_range_le covers.
+  // The wind scenario reports its total as ground_distance_total_m.
+  glide_range_total_m: ['glide_range_total_m', 'ground_distance_total_m', 'glide_range_m'],
+  glide_range_m: ['glide_range_total_m', 'ground_distance_total_m', 'glide_range_m', 'glide_distance_m', 'range_m'],
+  glide_range_lean_bound_m: ['glide_range_lean_bound_m'],
   glide_ratio: ['glide_ratio', 'LD', 'lift_to_drag', 'L_D'],
   v_min_m_s: ['v_min_m_s', 'min_speed_m_s'],
   wing_loading_N_m2: ['wing_loading_N_m2', 'wing_loading'],
@@ -291,7 +300,7 @@ export function validateSpec(input, registry = null) {
     c.stages = c.stages ?? ['adult'];
     if (typeof c.stages === 'string' && STAGES.includes(c.stages)) c.stages = [c.stages];
     if (!isNum(c.weight) || c.weight < 0) E(`${P}.weight`, 'weight must be a non-negative number');
-    if (c.hard == null) c.hard = c.op === '>=' || c.op === '<=' || c.op === 'survives';
+    if (c.hard == null) c.hard = c.op === '>=' || c.op === '<=' || BOOL_OPS.has(c.op);
     if (c.hard && (c.op === 'maximize' || c.op === 'minimize')) E(`${P}.hard`, `a ${c.op} criterion has no threshold, so it cannot be hard`);
     if ((c.op === '>=' || c.op === '<=') && !isNum(c.value)) E(`${P}.value`, `op ${c.op} needs a numeric value`);
     if (['>=', '<=', 'maximize', 'minimize'].includes(c.op) && !c.metric) E(`${P}.metric`, `op ${c.op} needs a metric`);
@@ -440,8 +449,12 @@ export function judge(c, run, state = null) {
   const vs = typeof v === 'string' ? v : v?.status || '';
   if (v && v.ok !== true && /out|invalid|extrapolat|no-model/i.test(vs)) return { verdict: 'no-model', why: `outside the model's validity: ${typeof v === 'string' ? v : JSON.stringify(v)}` };
   if (c.op === 'survives') {
-    if (typeof run.survives !== 'boolean') return { verdict: 'no-model', why: 'scenario returned no survival verdict' };
+    if (typeof run.survives !== 'boolean') return { verdict: 'no-model', why: `scenario returned no survival verdict (survives = ${run.survives ?? 'null'})` };
     return { verdict: run.survives ? 'met' : 'failed', value: run.survives };
+  }
+  if (c.op === 'feasible') {
+    if (typeof run.feasible !== 'boolean') return { verdict: 'no-model', why: `scenario returned no feasibility verdict (feasible = ${run.feasible ?? 'null'})` };
+    return { verdict: run.feasible ? 'met' : 'failed', value: run.feasible };
   }
   const { value, why } = metricValue(c, run, state);
   if (value == null) return { verdict: 'no-model', why: why || `metric "${c.metric}" not returned` };
@@ -452,7 +465,7 @@ export function judge(c, run, state = null) {
 
 // Score of one soft criterion at one stage. Threshold terms are capped at 1 (no reward for overshoot).
 function softTerm(c, value, ref) {
-  if (c.op === 'survives') return value ? 1 : 0;
+  if (BOOL_OPS.has(c.op)) return value ? 1 : 0;
   if (!isNum(value)) return 0;
   if (c.op === '>=') return c.value === 0 ? (value >= 0 ? 1 : 0) : Math.max(0, Math.min(1, value / c.value));
   if (c.op === '<=') return value <= 0 ? 1 : Math.max(0, Math.min(1, c.value / value));
@@ -564,16 +577,26 @@ export function explainResult(spec, evals, opts = {}) {
     const stages = Object.entries(evals[c.id] || {}).map(([stage, e]) => {
       const j = judge(c, e?.run, e?.state);
       const m = c.metric ? (e?.run?.metrics || []).find(x => x.key === c.metric) : null;
-      // the metric's own kind if it has one, else the weakest kind anywhere in the run
-      let weakest = m?.kind || weakestKind(e?.run);
+      // The weakest of the metric's own kind AND every input in the run's provenance: a metric marked
+      // 'derived' can rest on an assumed launch speed or a calibrated Umax, and that must show.
+      // Boolean verdicts (survives / feasible) rest on the whole run, so every metric kind counts too.
+      const kinds = [m?.kind, ...(e?.run?.provenance || []).map(q => q.kind), e?.run?.weakest_input,
+        ...(BOOL_OPS.has(c.op) || !m ? (e?.run?.metrics || []).map(x => x.kind) : [])].filter(k => k && k !== 'none');
+      let weakest = KIND_ORDER.find(k => kinds.includes(k)) || null;
       if (e?.ageKind === 'assumed' && j.verdict !== 'no-model') weakest = 'assumed';
-      return { stage, verdict: j.verdict, value: j.value ?? null, unit: c.op === 'survives' ? null : (c.unit || m?.unit || null),
-        limiting: e?.run?.limiting ?? null, weakest_provenance: weakest, why: j.why ?? null,
+      return { stage, verdict: j.verdict, value: j.value ?? null, unit: BOOL_OPS.has(c.op) ? null : (c.unit || m?.unit || null),
+        // feasible: the behaviour's reason (feasibility_note); survives: limiting (what kills it);
+        // a metric threshold: limiting, else the behaviour's reason (a glide range of 0 because the
+        // fish cannot reach v_min is explained by feasibility_note)
+        limiting: c.op === 'feasible' ? (e?.run?.feasibility_note ?? e?.run?.limiting ?? null)
+          : c.op === 'survives' ? (e?.run?.limiting ?? null) : (e?.run?.limiting ?? e?.run?.feasibility_note ?? null),
+        ...leanCoverage(c, e?.run), weakest_provenance: weakest, why: j.why ?? null,
         scope: e?.run?.scope ?? null, age_days: e?.ageDays ?? null,
         ...(e?.ageKind === 'assumed' ? { age_note: 'stage age is a fallback (state.mjs exported no stage table): assumed' } : {}) };
     });
     const verdict = !stages.length ? 'no-model' : stages.some(s => s.verdict === 'failed') ? 'failed' : stages.some(s => s.verdict === 'no-model') ? 'no-model' : 'met';
-    return { id: c.id, text: c.source_text || describeCriterion(c), hard: !!c.hard, op: c.op, target: c.value ?? null, unit: c.unit ?? null, verdict, stages };
+    return { id: c.id, text: c.source_text || describeCriterion(c), hard: !!c.hard, op: c.op, target: c.value ?? null, unit: c.unit ?? null, verdict, stages,
+      ...(LEAN_COVER[c.metric] ? { lean_coverage: LEAN_COVER[c.metric] } : {}) };
   });
   const n = k => rows.filter(r => r.hard && r.verdict === k).length;
   const leanUnchecked = summary.unverified.some(u => u.id === 'lean');
@@ -584,9 +607,22 @@ export function explainResult(spec, evals, opts = {}) {
   return { meets: summary.meets, score: summary.score, summary: line, criteria: rows, lean: opts.lean ?? null, violations: summary.violations, unverified: summary.unverified };
 }
 
+// Which part of a glide distance a Lean theorem covers. Stated on every glide row so a total that
+// "meets" is never read as a proved distance.
+const LEAN_COVER = {
+  glide_range_lean_bound_m: 'Covered: this is the h·L/D range bound of Lean theorem glide_range_le (evaluated in floating point, not a kernel check).',
+  glide_range_total_m: 'NOT covered as a whole: only the h·L/D part (glide_range_lean_bound_m) is covered by Lean glide_range_le; the kinetic phase (kinetic_phase_m) is outside the theorem.',
+  ground_distance_total_m: 'NOT covered as a whole: only the still-air h·L/D part (glide_range_lean_bound_m) is covered by Lean glide_range_le; the kinetic phase and the wind drift are outside it.',
+};
+function leanCoverage(c, run) {
+  if (!LEAN_COVER[c.metric] || !run?.metrics) return {};
+  const val = k => { const m = run.metrics.find(x => x.key === k); return typeof m?.value === 'number' ? m.value : null; };
+  return { lean_part: { lean_bound_m: val('glide_range_lean_bound_m'), kinetic_phase_m: val('kinetic_phase_m'), covered: c.metric === 'glide_range_lean_bound_m' ? 'all' : 'lean_bound_m only' } };
+}
+
 export function describeCriterion(c) {
   const st = c.stages === 'all' ? 'all stages' : Array.isArray(c.stages) ? c.stages.join(' + ') : c.stages?.ageDays ? `${c.stages.ageDays.min}–${c.stages.ageDays.max} d` : 'adult';
   const ps = Object.entries(c.params || {}).filter(([k]) => k !== 'water').map(([k, v]) => `${k}=${typeof v === 'number' ? +v.toFixed(4) : v}`).join(', ');
-  const body = c.op === 'survives' ? `survives ${c.scenario}` : c.op === 'maximize' || c.op === 'minimize' ? `${c.op} ${c.metric}` : `${c.metric} ${c.op} ${c.value} ${c.unit || ''}`.trim();
+  const body = BOOL_OPS.has(c.op) ? `${c.op === 'survives' ? 'survives' : 'can do'} ${c.scenario}` : c.op === 'maximize' || c.op === 'minimize' ? `${c.op} ${c.metric}` : `${c.metric} ${c.op} ${c.value} ${c.unit || ''}`.trim();
   return `${body}${ps ? ` (${ps})` : ''} [${st}]${c.hard ? '' : ' (soft)'}`;
 }

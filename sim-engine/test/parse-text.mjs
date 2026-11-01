@@ -44,14 +44,14 @@ const CORPUS = [
   // ── the headline request
   { text: 'a zebrafish that glides at least 30 m from 1 m height, survives 4 °C to 32 °C, outswims a 0.3 m/s current as a larva and adult, keep the Lean laws',
     expect: { start_from: ZF, constraints: { lean: 'must-hold' }, criteria: [
-      { scenario: 'glide', metric: 'glide_range_m', op: '>=', value: 30, unit: 'm', params: { launch_height_m: 1 }, stages: ['adult'], hard: true },
+      { scenario: 'glide', metric: 'glide_range_total_m', op: '>=', value: 30, unit: 'm', params: { launch_height_m: 1 }, stages: ['adult'], hard: true },
       T(4), T(32),
-      { scenario: 'current', op: 'survives', params: { current_m_s: 0.3 }, stages: ['larva', 'adult'] }] }, unparsed: 0, refused: 0 },
+      { scenario: 'current', op: 'feasible', params: { current_m_s: 0.3 }, stages: ['larva', 'adult'] }] }, unparsed: 0, refused: 0 },
   // ── organisms
   { text: '70% zebrafish 30% flying fish that survives 10 °C', expect: { start_from: [{ organism: 'zebrafish-adult', weight: 0.7 }, { organism: 'flying-fish', weight: 0.3 }], criteria: [T(10)] }, unparsed: 0 },
-  { text: 'a flying fish that glides at least 50 m from 2 m', expect: { start_from: FF, criteria: [{ scenario: 'glide', metric: 'glide_range_m', value: 50, params: { launch_height_m: 2 } }] }, unparsed: 0 },
+  { text: 'a flying fish that glides at least 50 m from 2 m', expect: { start_from: FF, criteria: [{ scenario: 'glide', metric: 'glide_range_total_m', value: 50, params: { launch_height_m: 2 } }] }, unparsed: 0 },
   { text: 'a winged zebrafish that glides at least 10 m from 0.5 m height as an adult', expect: { start_from: [{ organism: 'winged-zebrafish', weight: 1 }], criteria: [{ scenario: 'glide', value: 10, params: { launch_height_m: 0.5 }, stages: ['adult'] }] }, unparsed: 0 },
-  { text: 'a wingless flying fish that outswims a 0.5 m/s current at all stages', expect: { start_from: [{ organism: 'wingless-flying-fish', weight: 1 }], criteria: [{ scenario: 'current', params: { current_m_s: 0.5 }, stages: 'all' }] }, unparsed: 0 },
+  { text: 'a wingless flying fish that outswims a 0.5 m/s current at all stages', expect: { start_from: [{ organism: 'wingless-flying-fish', weight: 1 }], criteria: [{ scenario: 'current', op: 'feasible', params: { current_m_s: 0.5 }, stages: 'all' }] }, unparsed: 0 },
   { text: 'TFF that glides at least 100 m from 1 m', expect: { start_from: [{ organism: 'tff', weight: 1 }], criteria: [{ scenario: 'glide', value: 100 }] }, unparsed: 0 },
   { text: 'half zebrafish half flying fish gliding at least 20 m from 1 m', expect: { start_from: [{ organism: 'zebrafish-adult', weight: 0.5 }, { organism: 'flying-fish', weight: 0.5 }], criteria: [{ scenario: 'glide', value: 20 }] }, unparsed: 0 },
   { text: 'a zebrafish and a flying fish that survive 20 °C', expect: { start_from: [{ organism: 'zebrafish-adult', weight: 0.5 }, { organism: 'flying-fish', weight: 0.5 }], criteria: [T(20)] }, assume: /equal weights/, unparsed: 0 },
@@ -62,29 +62,37 @@ const CORPUS = [
   { text: 'a zebrafish that swims at least 10 BL/s as a juvenile', expect: { criteria: [{ scenario: 'current', metric: 'ucrit_m_s', op: '>=', value: 10, unit: 'BL/s', stages: ['juvenile'] }] }, unparsed: 0 },
   { text: 'a zebrafish that swims at least 1.8 km/h', expect: { criteria: [{ metric: 'ucrit_m_s', value: 1.8, unit: 'km/h' }] }, unparsed: 0 },
   { text: 'a zebrafish that outswims a 30 cm/s current', expect: { criteria: [{ scenario: 'current', params: { current_m_s: 0.3 } }] }, unparsed: 0 },
-  { text: 'a zebrafish that holds station in a 1 knot current', expect: { criteria: [{ scenario: 'current', params: { current_m_s: 0.514 } }] }, unparsed: 0 },
+  { text: 'a zebrafish that holds station in a 1 knot current', expect: { criteria: [{ scenario: 'current', op: 'feasible', params: { current_m_s: 0.514 } }] }, unparsed: 0 },
   { text: 'a zebrafish that survives a dive to 50 m depth', expect: { criteria: [{ scenario: 'pressure', params: { depth_m: 50, water: 'sea' } }] }, assume: /seawater assumed/, unparsed: 0 },
   { text: 'a zebrafish that survives 5 atm', expect: { criteria: [{ scenario: 'pressure', params: { pressure_kPa: 506.625 } }] }, unparsed: 0 },
   { text: 'a zebrafish that survives 2 MPa', expect: { criteria: [{ scenario: 'pressure', params: { pressure_kPa: 2000 } }] }, unparsed: 0 },
   { text: 'a zebrafish that survives 3 bar', expect: { criteria: [{ scenario: 'pressure', params: { pressure_kPa: 300 } }] }, unparsed: 0 },
   { text: 'a zebrafish that lives at 2000 m altitude', expect: { criteria: [{ scenario: 'altitude', params: { altitude_m: 2000 } }] }, unparsed: 0 },
-  { text: 'a flying fish that glides at least 0.05 km from 1 m', expect: { criteria: [{ metric: 'glide_range_m', value: 50, unit: 'm' }] }, unparsed: 0 },
+  { text: 'a flying fish that glides at least 0.05 km from 1 m', expect: { criteria: [{ metric: 'glide_range_total_m', value: 50, unit: 'm' }] }, unparsed: 0 },
   // ── bounds and objectives
-  { text: 'a flying fish that glides at most 20 m', expect: { criteria: [{ metric: 'glide_range_m', op: '<=', value: 20 }] }, unparsed: 0 },
-  { text: 'maximize glide distance for a flying fish', expect: { start_from: FF, criteria: [{ scenario: 'glide', metric: 'glide_range_m', op: 'maximize', hard: false }] }, unparsed: 0 },
+  { text: 'a flying fish that glides at most 20 m', expect: { criteria: [{ metric: 'glide_range_total_m', op: '<=', value: 20 }] }, unparsed: 0 },
+  { text: 'maximize glide distance for a flying fish', expect: { start_from: FF, criteria: [{ scenario: 'glide', metric: 'glide_range_total_m', op: 'maximize', hard: false }] }, unparsed: 0 },
   { text: 'a zebrafish that swims as fast as possible', expect: { criteria: [{ scenario: 'current', metric: 'ucrit_m_s', op: 'maximize', hard: false }] }, unparsed: 0 },
   { text: 'minimize cost of transport in a zebrafish', expect: { criteria: [{ metric: 'cost_of_transport', op: 'minimize' }] }, unparsed: 0 },
   { text: 'a zebrafish with a glide ratio of at least 4', expect: { criteria: [{ scenario: 'glide', metric: 'glide_ratio', op: '>=', value: 4 }] }, unparsed: 0 },
   { text: 'a flying fish with a take-off speed below 8 m/s', expect: { criteria: [{ scenario: 'glide', metric: 'v_min_m_s', op: '<=', value: 8 }] }, unparsed: 0 },
   { text: 'a flying fish that glides at least 30 m from 1 m, ideally glides at least 60 m from 1 m', expect: { criteria: [{ value: 30, hard: true }, { value: 60, hard: false }] }, unparsed: 0 },
   { text: 'a zebrafish that survives 35 °C (weight 3)', expect: { criteria: [{ ...T(35), weight: 3 }] }, unparsed: 0 },
+  // ── survives vs feasible; which glide distance
+  { text: 'a zebrafish that survives a 0.3 m/s current', expect: { criteria: [{ scenario: 'current', op: 'survives', params: { current_m_s: 0.3 } }] }, unparsed: 0 },
+  { text: 'a flying fish that can glide from 1 m', expect: { criteria: [{ scenario: 'glide', op: 'feasible', params: { launch_height_m: 1 } }] }, assume: /can glide/, unparsed: 0 },
+  { text: 'a flying fish that glides at least 20 m within the Lean bound from 1 m', expect: { criteria: [{ scenario: 'glide', metric: 'glide_range_lean_bound_m', op: '>=', value: 20, params: { launch_height_m: 1 } }] }, unparsed: 0 },
+  { text: 'a flying fish that provably glides at least 10 m from 2 m', expect: { criteria: [{ metric: 'glide_range_lean_bound_m', value: 10, params: { launch_height_m: 2 } }] }, unparsed: 0 },
+  { text: 'a flying fish that escapes a predator by air', expect: { criteria: [{ scenario: 'predator', op: 'feasible' }] }, assume: /by air/, unparsed: 0 },
+  { text: 'a zebrafish-derived fish that glides at least 5 m from a 1 m launch', expect: { start_from: ZF, criteria: [{ scenario: 'glide', metric: 'glide_range_total_m', value: 5, params: { launch_height_m: 1 } }] }, unparsed: 0 },
+  { text: 'a flying-fish-based design that glides at least 40 m from a 2 m height', expect: { start_from: FF, criteria: [{ value: 40, params: { launch_height_m: 2 } }] }, unparsed: 0 },
   // ── other scenarios
-  { text: 'a zebrafish that escapes a predator striking at 1.2 m/s as a larva', expect: { criteria: [{ scenario: 'predator', params: { predator_speed_m_s: 1.2 }, stages: ['larva'] }] }, unparsed: 0 },
+  { text: 'a zebrafish that escapes a predator striking at 1.2 m/s as a larva', expect: { criteria: [{ scenario: 'predator', op: 'feasible', params: { predator_speed_m_s: 1.2 }, stages: ['larva'] }] }, unparsed: 0 },
   { text: 'a zebrafish that escapes a predator twice as fast as it', expect: { criteria: [{ scenario: 'predator', params: { predator_speed_ratio: 2 } }] }, unparsed: 0 },
   { text: 'a zebrafish with an escape probability of at least 80% as a larva', expect: { criteria: [{ scenario: 'predator', metric: 'escape_probability', op: '>=', value: 0.8, stages: ['larva'] }] }, unparsed: 0 },
-  { text: 'a zebrafish that survives in a 10 m/s wind', expect: { criteria: [{ scenario: 'wind', params: { wind_m_s: 10 } }] }, unparsed: 0 },
+  { text: 'a zebrafish that survives in a 10 m/s wind', expect: { criteria: [{ scenario: 'wind', op: 'survives', params: { wind_m_s: 10 } }] }, unparsed: 0 },
   { text: 'a flying fish that survives 5 m/s gusts', expect: { criteria: [{ scenario: 'wind', params: { gust_m_s: 5 } }] }, unparsed: 0 },
-  { text: 'a zebrafish that clings to rocks in a 0.8 m/s flow', expect: { criteria: [{ scenario: 'grip', params: { flow_m_s: 0.8 } }] }, unparsed: 0 },
+  { text: 'a zebrafish that clings to rocks in a 0.8 m/s flow', expect: { criteria: [{ scenario: 'grip', op: 'feasible', params: { flow_m_s: 0.8 } }] }, unparsed: 0 },
   { text: 'a zebrafish that digests a meal within 12 hours', expect: { criteria: [{ scenario: 'digestion', metric: 'gut_transit_h', op: '<=', value: 12 }] }, unparsed: 0 },
   { text: 'a zebrafish that sleeps at least 6 h per night', expect: { criteria: [{ scenario: 'sleep', metric: 'sleep_h', op: '>=', value: 6 }] }, unparsed: 0 },
   { text: 'a zebrafish that survives 16 h of daylight', expect: { criteria: [{ scenario: 'daynight', params: { light_h: 16 } }] }, unparsed: 0 },
@@ -245,6 +253,45 @@ ok('stagePoints visits every table age whose label starts with the stage word', 
 });
 ok('unit conversion: BL/s converts only with a body length', () => { assert.equal(convert(10, 'BL/s', 'm/s'), null); assert.equal(convert(10, 'BL/s', 'm/s', { SL_m: 0.03 }), 0.3); });
 
+console.log('\nspec.mjs: survives vs feasible, limiting, provenance, Lean coverage');
+const SX = await import(process.env.SPEC_LIB ? new URL(`file:///${process.env.SPEC_LIB.replace(/\\/g, '/')}`).href : '../lib/spec.mjs');
+const cur = (feasible, survives = null) => ({ run: { metrics: [{ key: 'ucrit_m_s', value: 0.2, unit: 'm/s', kind: 'derived' }], survives, feasible,
+  limiting: null, feasibility_note: 'current exceeds Umax (0.033 m/s): swept downstream',
+  provenance: [{ quantity: 'Umax', kind: 'calibrated' }, { quantity: 'launch speed', kind: 'assumed' }], validity: { ok: true } } });
+const fspec = { start_from: ZF, constraints: { lean: 'must-hold' }, criteria: [
+  { id: 'c1', scenario: 'current', op: 'feasible', params: { current_m_s: 0.3 }, stages: ['adult'], hard: true, weight: 1 },
+  { id: 'c2', scenario: 'current', op: 'survives', params: { current_m_s: 0.3 }, stages: ['adult'], hard: true, weight: 1 },
+  { id: 'c3', scenario: 'current', metric: 'ucrit_m_s', op: '>=', value: 0.1, unit: 'm/s', stages: ['adult'], hard: true, weight: 1 }] };
+ok('feasible tests run.feasible, survives tests run.survives (never each other)', () => {
+  const x = SX.explainResult(fspec, { c1: { adult: cur(false, true) }, c2: { adult: cur(true, null) }, c3: { adult: cur(true) } }, { lean: [] });
+  assert.equal(x.criteria[0].verdict, 'failed', 'feasible=false must fail even though survives=true');
+  assert.equal(x.criteria[1].verdict, 'no-model', 'survives=null is no-model even though feasible=true');
+});
+ok('a feasible criterion shows the feasibility_note as its limiting factor', () => {
+  const x = SX.explainResult(fspec, { c1: { adult: cur(false) }, c2: { adult: cur(false, false) }, c3: { adult: cur(true) } }, { lean: [] });
+  assert.match(x.criteria[0].stages[0].limiting || '', /swept downstream/);
+});
+ok('a failed metric threshold with limiting=null shows the feasibility_note; survives does not borrow it', () => {
+  const gs = { start_from: FF, constraints: { lean: 'must-hold' }, criteria: [
+    { id: 'c1', scenario: 'glide', metric: 'glide_range_total_m', op: '>=', value: 5, unit: 'm', stages: ['adult'], hard: true, weight: 1 },
+    { id: 'c2', scenario: 'glide', op: 'survives', stages: ['adult'], hard: true, weight: 1 }] };
+  const run = { metrics: [{ key: 'glide_range_total_m', value: 0, unit: 'm', kind: 'derived' }], survives: true, feasible: false, limiting: null, feasibility_note: 'launch speed below v_min', validity: { ok: true } };
+  const x = SX.explainResult(gs, { c1: { adult: { run } }, c2: { adult: { run } } }, { lean: [] });
+  assert.equal(x.criteria[0].stages[0].limiting, 'launch speed below v_min');
+  assert.equal(x.criteria[1].stages[0].limiting, null);
+});
+ok('weakest provenance includes the run\'s inputs, not only the metric\'s own kind', () => {
+  const x = SX.explainResult(fspec, { c1: { adult: cur(true) }, c2: { adult: cur(true, true) }, c3: { adult: cur(true) } }, { lean: [] });
+  assert.equal(x.criteria[2].stages[0].weakest_provenance, 'assumed', 'ucrit is "derived" but rests on an assumed input');
+});
+ok('a total glide distance is marked as only partly Lean-covered, with the parts', () => {
+  const gs = { start_from: FF, constraints: { lean: 'must-hold' }, criteria: [{ id: 'c1', scenario: 'glide', metric: 'glide_range_total_m', op: '>=', value: 10, unit: 'm', stages: ['adult'], hard: true, weight: 1 }] };
+  const run = { metrics: [{ key: 'glide_range_total_m', value: 12, unit: 'm', kind: 'derived' }, { key: 'glide_range_lean_bound_m', value: 4.4, unit: 'm' }, { key: 'kinetic_phase_m', value: 7.6, unit: 'm' }], feasible: true, validity: { ok: true } };
+  const x = SX.explainResult(gs, { c1: { adult: { run } } }, { lean: [] });
+  assert.match(x.criteria[0].lean_coverage, /NOT covered as a whole/);
+  assert.deepEqual(x.criteria[0].stages[0].lean_part, { lean_bound_m: 4.4, kinetic_phase_m: 7.6, covered: 'lean_bound_m only' });
+});
+
 console.log('\nspec.mjs: against the real engine (organism.mjs + data bundle)');
 const real = await loadRegistry();
 ok('loads the organism bundle', () => assert.ok(real.organisms.has('zebrafish-adult') && real.organisms.has('flying-fish'), [...real.organisms].join()));
@@ -298,6 +345,18 @@ console.log('\ntools/spec-tools.mjs');
 const { SPEC_TOOLS } = await import('../tools/spec-tools.mjs');
 const tool = n => SPEC_TOOLS.find(t => t.name === n);
 const okA = async (name, fn) => { try { await fn(); pass++; console.log(`  ok    ${name}`); } catch (e) { fail++; console.log(`  FAIL  ${name}\n          ${e.message}`); } };
+await okA('optimizer feasible count is read from feasible_candidates, or counted from the trace', async () => {
+  const { feasibleCount } = await import('../tools/spec-tools.mjs');
+  assert.equal(typeof feasibleCount, 'function');
+  assert.equal(feasibleCount({ feasible_candidates: 56 }), 56);
+  assert.equal(feasibleCount({ status: 'no improvement', trace: [{ values: 'start', metric: 1 }, { values: [1], metric: 2 }, { values: [2], metric: null }] }), 1);
+});
+await okA('a feasible criterion becomes a feasible:true hard constraint for optimize', async () => {
+  const r = await tool('design_from_spec').handler({ spec: { start_from: FF, criteria: [{ scenario: 'current', op: 'feasible', params: { current_m_s: 0.1 } }], editable: [{ target: { level: 'organ', id: 'UBERON_0000151' }, param: 'pectoral_area_over_SL2', min: 0.05, max: 0.2 }] }, budget: 6 });
+  if (r.result.status === 'invalid') throw new Error(JSON.stringify(r.result.validation));
+  assert.ok(r.result.optimizer, r.result.status);
+  assert.equal(typeof r.result.optimizer.feasible_candidates, 'number');
+});
 await okA('both tools registered in the server shape', async () => { for (const n of ['parse_design_text', 'design_from_spec']) { const t = tool(n); assert.ok(t && t.title && t.description && t.inputSchema && typeof t.handler === 'function', n); } });
 await okA('design_from_spec stops on refused or unparsed text, designing nothing', async () => {
   const r = await tool('design_from_spec').handler({ text: 'copy a swift onto a zebrafish, survives 20 °C' });

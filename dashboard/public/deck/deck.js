@@ -617,6 +617,138 @@ function build(D) {
       ${srcs(A.sources)}`;
   };
 
+  // ================================================================================================
+  // The Design Studio. Every number comes from D.numbers (studio, lawreg, studioval, printkit), which
+  // build-deck.mjs read out of sim-engine/, lean/registry/ and anatomy-model/print/.
+  // ================================================================================================
+
+  // ---- the product: plain-text criteria in, an organism edited and perturbed under the laws ----
+  SL.studio = () => {
+    const S2 = N.studio;
+    if (!S2 || !S2.shot) return `${ghost('studio')}`;
+    const sh = S2.shot;
+    return `${ribbon(st('studio'))}${rub('collective')}
+      <h2>Say what the animal must do. The studio says what it would take.</h2>
+      <div class="split" style="grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)">
+        <figure class="real"><img src="${esc(sh.file)}" alt="The Design Studio after reading the typed criteria: start organism, three criteria, the defaults it applied, and a check against the engine" class="figshot" loading="lazy">
+          <figcaption><b>Typed: &ldquo;${esc(sh.typed)}&rdquo;</b><br>Read into ${esc(sh.criteria)} criteria${sh.valid ? ', valid against the engine&rsquo;s scenarios and parts' : ''}; every default it had to assume is listed, not hidden.
+            Real page, real engine: ${esc(sh.engineLine.replace(/^Engine:\s*/, ''))}<br><span class="prov">screenshot ${esc(sh.takenAt)} &middot; sha256 ${esc(sh.sha256.slice(0, 32))}&hellip;</span></figcaption></figure>
+        <div>
+          <ul class="plain" style="margin-top:0">
+            <li><b>Edit at any level</b> &mdash; body, organ system, organ, tissue, cell, gene &mdash; humans and agents in one append-only co-design log. Agents post <em>proposals</em>; a human applies them.</li>
+            <li><b>${S2.scenarios.length} perturbations at every developmental stage:</b> ${S2.scenarios.map(esc).join(', ')}.</li>
+            <li><b>Every number keeps its kind</b> &mdash; measured, borrowed, derived, calibrated or assumed &mdash; and a calibrated number can never be cited as a result.</li>
+            <li><b>The optimizer refuses</b> any candidate that breaks a binding law, and says &ldquo;no design meets the spec&rdquo; instead of returning its best failure.</li>
+          </ul>
+          <div class="scope warn"><h4>What it is not</h4>An edited parameter set is a shape, not a viable or breedable animal: mixing two parents is
+            morphological interpolation, not genetic hybridisation. Law verdicts in the studio are floating-point checks of Lean-backed formulas, not kernel proofs.</div>
+        </div>
+      </div>
+      ${srcs(S2.sources)}`;
+  };
+
+  // ---- laws as versioned data ----
+  SL.lawreg = () => {
+    const L = N.lawreg;
+    if (!L) return `${ghost('lawreg')}`;
+    const by = Object.fromEntries(L.inLawset.map(x => [x.status, x]));
+    const TONE = { proposed: 'grey', candidate: 'grey', accepted: 'pos', contested: 'neg', retired: 'grey' };
+    const WHAT = {
+      proposed: 'stated, not yet formalised: enters no verdict',
+      candidate: 'builds, no sorry or axiom, has a witness, rejects its mutants: advisory only',
+      accepted: 'needs a recorded human approval: the only laws that turn a design red',
+      contested: 'a proved contradiction or a live dispute: shown amber',
+      retired: 'kept on file, so an old verdict still reproduces'
+    };
+    return `${ribbon(st('lawreg'))}${rub('reuse')}
+      <h2>The laws are data, with version numbers.</h2>
+      <div class="chain" data-anim="chain">
+        ${['proposed', 'candidate', 'accepted', 'contested', 'retired'].map((k, i) => `<div class="stage${k === 'accepted' ? ' key' : ''}" data-i="${i}" style="max-width:15em">
+          <b>${esc(k)}</b><span style="font-size:1.6rem;font-weight:800;font-variant-numeric:tabular-nums">${by[k] ? by[k].n : 0}</span>
+          <span class="tag ${TONE[k]}">${by[k] ? `${by[k].physical} phys &middot; ${by[k].biological} bio` : ''}</span>
+          <small style="display:block;color:var(--mute);margin-top:4px">${esc(WHAT[k])}</small></div>`).join('')}
+      </div>
+      <div class="split">
+        <div class="scope" style="max-width:none"><h4>One law, one file</h4>Law set <b>${esc(L.lawset)}</b> pins ${L.inLawsetTotal} laws, each with its version, a content hash over
+          what it says, the Lean module and theorem, and the commit and statement hash it was checked at. Promotion to <em>accepted</em> is never automated.
+          ${L.discovered ? `${L.discovered} further candidates were mined from the project&rsquo;s own sourced data and wait in the queue like any other proposal.` : ''}</div>
+        <div class="scope" style="max-width:none"><h4>Served three ways, from one loader</h4>
+          <ul><li>MCP: the hosted <b>delphisci</b> server${L.mcpVersion ? ` ${esc(L.mcpVersion)}` : ''} adds <code>lean_laws_list</code>, <code>lean_law_get</code>, <code>lean_lawset_get</code>, <code>lean_check</code>, <code>lean_verify</code></li>
+          <li>CLI and the local sim-engine (MCP over stdio, or HTTP)</li>
+          <li>a static JSON mirror at <code>/api/lean/</code>${L.mirror ? ` &mdash; <b>currently serving law set ${esc(L.mirror.lawset)}</b> (${L.mirror.count} laws)${L.mirror.lawset !== L.lawset ? ', one release behind the registry; <code>lean_verify</code> reports exactly this kind of drift' : ''}` : ''}</li></ul></div>
+      </div>
+      <p class="caption">Red on the model means an <em>accepted</em> law is violated; amber means contested, candidate or not checkable. A law&rsquo;s status is a registry decision, not a truth value, and the accepted set was grandfathered in at bootstrap with no per-law review recorded &mdash; the approval field says exactly that.</p>
+      ${srcs(L.sources)}`;
+  };
+
+  // ---- the independent validation, as an honest result ----
+  SL.studioval = () => {
+    const V = N.studioval;
+    if (!V) return `${ghost('studioval')}`;
+    const SEG = [
+      ['pass', 'pass', 'var(--series-3)'],
+      ['pass-rests-on-assumed', 'pass, rests on an assumed input', 'var(--series-3)', true],
+      ['circular', 'circular: read the answer back', 'var(--series-4)'],
+      ['fail', 'fail', 'var(--series-2)'],
+      ['no-target', 'no target to test against', 'var(--ghost)', true]
+    ];
+    const tot = k => V.groups.reduce((a, g) => a + (g.counts[k] || 0), 0);
+    const used = SEG.filter(([k]) => tot(k) > 0);
+    const hatch = c => `background:repeating-linear-gradient(45deg,${c},${c} 5px,color-mix(in srgb,${c} 45%,var(--bg)) 5px,color-mix(in srgb,${c} 45%,var(--bg)) 10px)`;
+    const tip = (g, k) => g.rows.filter(r => r.status === k).map(r => `${r.id} ${r.name}`).join('; ');
+    const head = V.wildIndependentPasses === 0
+      ? 'No numeric prediction about a real zebrafish passes as independent evidence.'
+      : `${V.wildIndependentPasses} of ${V.wildNumeric} numeric wild-type predictions pass independently.`;
+    return `${ribbon(st('studioval'))}${rub('execution')}
+      <h2>${esc(head)}</h2>
+      <div class="stackrows" role="img" aria-label="${V.scored} pre-registered tests by family and verdict">
+        ${V.groups.map(g => `<div class="srow"><span class="blab">${esc(g.label)} <span class="mute">(${g.n})</span></span>
+          <span class="strip" style="margin:0;max-width:none">${used.filter(([k]) => g.counts[k]).map(([k, , c, ht]) =>
+            `<i style="flex:${g.counts[k]};${ht ? hatch(c) : 'background:' + c}" title="${esc(k)}: ${esc(tip(g, k))}"><em>${g.counts[k]}</em></i>`).join('')}</span></div>`).join('')}
+      </div>
+      <div class="striplegend" style="margin-top:10px">
+        ${used.map(([k, lab, c, ht]) => `<span><i style="${ht ? hatch(c) : 'background:' + c}"></i><b>${tot(k)}</b> ${esc(lab)}</span>`).join('')}
+      </div>
+      <div class="split">
+        <div class="rows">
+          ${V.fails.map(f => `<div class="rrow"><span><b>${esc(f.id)} &middot; ${esc(f.name)}</b><span class="tag neg">fail</span><small>${esc(f.why)}</small></span><span class="v no">fail</span></div>`).join('')}
+          <div class="rrow"><span><b>${V.circular.length} &ldquo;passes&rdquo; were the studio reading its own sources back</b><span class="tag grey">amendment A1</span>
+            <small>${V.circular.map(esc).join(', ')}: in band only because the module interpolates, or quotes, the very paper it is scored against. Reclassified after the results, in a labelled amendment, rather than counted as passes.</small></span><span class="v" style="color:var(--series-4)">circular</span></div>
+        </div>
+        <div class="scope"><h4>Why the scoreboard can be trusted</h4><ul>
+          <li>Tests fixed before any scenario module existed${V.preregHashOk ? `; the pre-registration still hashes to <span class="prov">${esc(V.preregSha.slice(0, 16))}&hellip;</span>` : ''}</li>
+          <li>Written by an agent that built none of the studio</li>
+          ${V.selftest ? `<li>Harness self-test: ${V.selftest.ok} of ${V.selftest.total} checks fail on a planted bad input, as designed</li>` : ''}
+          <li>${V.controlsHeld ? 'Every negative, law and optimizer control held: no fish at 10,000 m, no grip without a gripping organ, impossible specs answered &ldquo;no design meets the spec&rdquo;' : 'Not every control held; see the results file'}</li></ul></div>
+      </div>
+      ${srcs(V.sources.concat([`run ${V.generatedAt}`]))}`;
+  };
+
+  // ---- the printable kit ----
+  SL.printkit = () => {
+    const P = N.printkit;
+    if (!P) return `${ghost('printkit')}`;
+    const g = P.glider, empty = g.states[0], rod = g.states.find(s => s.stable);
+    return `${ribbon(st('printkit'))}${rub('reuse')}
+      <h2>A design you can hold. Nobody has thrown one yet.</h2>
+      <div class="split" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)">
+        ${P.render ? `<figure class="real"><img src="${esc(P.render.file)}" alt="Render of the life-size starter kit, exploded in assembly order" class="figshot" style="background:#36404d" loading="lazy">
+          <figcaption><b>The life-size starter kit, exploded in assembly order</b> &mdash; a render of the shipped STL files, not a photograph of a print.<br>
+            <span class="prov">${esc(P.render.from)} &middot; sha256 ${esc(P.render.sha256.slice(0, 32))}&hellip;</span></figcaption></figure>` : '<div class="ghostbox"><div class="gi">No render</div></div>'}
+        <div class="rows">
+          <div class="rrow"><span><b>Life-size starter kit</b><small>keyed press-fit pegs, no glue; small organs merged into blocks rather than inflated, every merge recorded</small></span>
+            <span class="v yes">${P.starter.passed} of ${P.starter.passed + P.starter.failed} parts pass</span></div>
+          <div class="rrow"><span><b>120 mm containment-hierarchy kit</b><small>organs into system carriers into the body case; the failing parts are listed, not dropped</small></span>
+            <span class="v">${P.kit120.passed} of ${P.kit120.parts} pass</span></div>
+          ${empty && rod ? `<div class="rrow"><span><b>The one to throw, ${g.sl_mm} mm</b><small>pectoral fin at the one measured proportion (flying-fish median, Daane 2021). Empty it is
+            unstable (static margin ${(empty.margin * 100).toFixed(1)}% of chord); a ${(rod.mass_g - empty.mass_g).toFixed(2)} g steel rod in the snout bore makes it +${(rod.margin * 100).toFixed(1)}% by a first-order estimate</small></span>
+            <span class="v">v<sub>min</sub> ${empty.v_min}&ndash;${rod.v_min} m/s</span></div>` : ''}
+          <div class="scope warn" style="margin-top:8px"><h4>Unverified</h4>${esc(g.unverified || '')} ${P.hypothetical ? 'The winged zebrafish is a design, not a described species.' : ''}</div>
+        </div>
+      </div>
+      ${srcs(P.sources)}`;
+  };
+
   // ---------------- assemble ----------------
   const order = D.slides.map(s => s.id).filter(id => SL[id]);
   $('#deck').innerHTML = order.map(id =>

@@ -29,7 +29,7 @@ const SPEC_SCHEMA = {
       scenario: { type: 'string', description: 'A key from scenario_list.' },
       params: { type: 'object', description: 'Scenario parameters (aliases such as water_temp_C or pressure_kPa are mapped and converted; the result says so).' },
       metric: { type: 'string', description: 'A metric key the scenario declares. Not needed for op "survives".' },
-      op: { enum: OPS },
+      op: { enum: OPS, description: 'survives = the organism lives (run().survives); feasible = the behaviour is possible (run().feasible: can glide, hold station, grip, escape).' },
       value: { type: 'number' }, unit: { type: 'string' },
       stages: { description: `'all', a list of ${STAGES.join('/')}, or {ageDays:{min,max}} (days after hatching). Default ['adult'].` },
       weight: { type: 'number', description: 'Soft-criterion weight (default 1).' },
@@ -100,7 +100,7 @@ function chooseObjective(spec, reg) {
     || spec.criteria.find(c => c.hard && c.metric && (c.op === '>=' || c.op === '<='));
   if (pick) return { criterion: pick.id, scenario: pick.scenario, metric: pick.metric, params: pick.params,
     direction: pick.op === 'minimize' || pick.op === '<=' ? 'minimize' : 'maximize', surrogate: false };
-  // survives-only spec: climb the first declared better-is-higher metric of the first hard scenario
+  // survives/feasible-only spec: climb the first declared better-is-higher metric of the first hard scenario
   for (const c of spec.criteria) {
     const m = (reg.scenarios[c.scenario]?.metrics || []).find(x => x.better === 'higher' && !/bool/.test(x.unit || ''));
     if (m) return { criterion: c.id, scenario: c.scenario, metric: m.key, params: c.params, direction: 'maximize', surrogate: true,
@@ -114,6 +114,7 @@ function hardConstraints(spec, table) {
   const out = [], skipped = [];
   for (const c of spec.criteria.filter(c => c.hard)) for (const pt of stagePoints(c, table)) {
     if (c.op === 'survives') out.push({ scenario: c.scenario, survives: true, params: c.params, ageDays: pt.ageDays });
+    else if (c.op === 'feasible') out.push({ scenario: c.scenario, feasible: true, params: c.params, ageDays: pt.ageDays });
     else if (c.unit === 'BL/s' && !/bl_s$/i.test(c.metric)) skipped.push({ id: c.id, why: 'BL/s threshold on an m/s metric: checked after optimisation, not inside it' });
     else out.push({ scenario: c.scenario, metric: c.metric, op: c.op, value: c.value, params: c.params, ageDays: pt.ageDays });
   }
@@ -177,7 +178,9 @@ export async function designFromSpec(args = {}) {
   }
   const o = opt.result;
   result.optimizer = { objective: { ...obj, ageDays: objAge }, hard_constraints: hard.length, not_passed_to_optimizer: skipped,
-    status: o.status, evaluations: o.evaluations, feasible: o.feasible ?? 0, rejected_count: o.rejected?.length ?? 0,
+    // optimize reports feasible_candidates on 'ok'; on 'no improvement' count them from its trace
+    status: o.status, evaluations: o.evaluations, feasible_candidates: feasibleCount(o), rejected_count: o.rejected?.length ?? 0,
+    start: o.start ?? null, note: o.note ?? null,
     rejected_sample: (o.rejected || []).slice(0, 8), best_values: o.best?.values ?? null, scope: opt.scope };
   prov.push(...(opt.provenance || []));
 
@@ -197,6 +200,11 @@ export async function designFromSpec(args = {}) {
   result.summary = bestExplain.summary;
   result.design = { doc: bestDoc, explanation: bestExplain };
   return envelope(result, prov, scopeText(true));
+}
+
+export function feasibleCount(o) {
+  if (typeof o?.feasible_candidates === 'number') return o.feasible_candidates;
+  return (o?.trace || []).filter(x => x.metric !== null && x.values !== 'start').length;
 }
 
 function scopeText(optimised) {

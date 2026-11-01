@@ -77,36 +77,83 @@ implemented.
 
 ## Studio tools
 
+**Contract version 0.3.0** (`lib/envelope.mjs` `CONTRACT_VERSION`; every envelope carries `contract_version`,
+and `contract.json` states it). History: `CHANGELOG.md`. Anything may change, provided it is versioned there.
+
 The Design Studio wrapper: agents and humans create, edit and co-design organisms, then test them in
-scenarios across development. Handlers in `tools/studio.mjs` (exported, so `server.mjs`, `cli.mjs` and the
-HTTP bridge call the same functions); the pure core runs unchanged in the browser
-(`node dashboard/build-engine.mjs` copies it to `dashboard/public/blueprint3d/engine/`; smoke page
-`engine/smoke.html`). Tests: `node sim-engine/test/studio.mjs` (`MUTATE=<name>` makes one check fail).
+scenarios across development. Handlers are exported from `tools/studio.mjs`, so `server.mjs`, `cli.mjs` and
+`http.mjs` call the same functions. The pure core (`lib/organism.mjs`, `lib/state.mjs`, `lib/envelope.mjs`,
+`scenarios/*.mjs`) runs unchanged in the browser: `node dashboard/build-engine.mjs` copies it to
+`dashboard/public/blueprint3d/engine/`, with smoke page `engine/smoke.html`. Tests: `node sim-engine/test/studio.mjs`.
+`MUTATE=<name>` makes one check fail, so each check can be seen to work.
 
 | name | what it does |
 |---|---|
-| `organism_create` / `organism_get` | Organism document `{id, base:{parents:[{organism, weight}]}, edits[], notes}`; get resolves STATE at an age and conditions. |
-| `organism_list_parts` | body → organ system → organ → tissue (manifest mesh parts), plus ontology tissue/cell terms and gene symbols, with editable params and what each edit feeds. |
-| `organism_edit` | Validates the target (unknown ids rejected), appends the edit, returns Lean verdicts and `violations`. |
-| `scenario_list` / `scenario_run` / `scenario_timecourse` | Scenario modules in `scenarios/*.mjs` (interface in `scenarios/index.mjs`); timecourse runs every stage age in `anatomy-model/parametric/stages.json`. |
-| `optimize` | Seeded random-restart hill climb over `{target, param, min, max}`; rejects candidates with a new binding Lean violation or a broken hard constraint and returns every rejection with its law. No feasible candidate → `status: "no design meets the spec"`. |
-| `session_open` / `session_post` / `session_read` | Append-only JSONL co-design log in `sessions/` (gitignored). Authors are role labels (`human`, `agent:physics`), never personal identifiers. |
+| `organism_create` / `organism_get` | Organism document `{id, base:{parents:[{organism, weight}]}, edits[], notes}`. `get` resolves STATE at an age and conditions. Optional `measured` takes values from partedit `measurePart`. |
+| `organism_list_parts` | body → organ system → organ → tissue (manifest mesh parts), plus ontology tissue and cell terms and gene symbols. Each node lists its editable params, including **partedit.js `editableParams`** (geometry), body-plan parameters, STATE overrides, and recorded-only params. |
+| `organism_edit` | Validates the target. Unknown ids are rejected, using the same rule as `partedit.js resolveTarget`: an object name, a bilateral base name (`pectoral_fin`), or an ontology id with `:` or `_`. Appends the edit and returns Lean verdicts and `violations`. |
+| `scenario_list` / `scenario_run` / `scenario_timecourse` | Scenario modules in `scenarios/*.mjs`. The directory is listed at call time, so a file that lands needs no restart. The timecourse runs every stage age in `anatomy-model/parametric/stages.json`. |
+| `optimize` | Scores the **start design first**. Then runs a seeded random-restart hill climb over `{target, param, min, max}`. It rejects a candidate that has a new binding Lean violation or breaks a hard constraint, and returns every rejection with the law it broke. Hard constraints take one of three forms: a metric with an operator, `{scenario, survives}`, or `{scenario, feasible}`. Status `ok` means a candidate beat the start by more than `tolerance` (default 0.1 % relative). `no improvement` returns the start design unchanged; a flat objective always lands here. `no design meets the spec` means nothing was feasible, the start included. |
+| `session_open` / `session_post` / `session_decide` / `session_read` | Co-design log, append-only JSONL in `sessions/` (gitignored). **Agents propose, humans decide.** `session_post` takes `kind` `comment`, `proposal` or `edit`. A proposal is a list of edits plus a `rationale` and `evidence` (for example the scenario results that motivated it); it is validated, not applied, and gets a `proposal_id`. `session_decide {proposal_id, decision: approve or reject, decided_by_role, reason}` applies the proposal's edits atomically (each edit records `approved_by` and `proposal_id`) or rejects it; either way it records `lawset_version` and the violations. Direct `edit` posts and decisions need a role starting with `human` (`human`, `human:lead`). Authors are role labels, never personal identifiers. |
+| `parse_design_text` / `design_from_spec` | From the spec thread (`tools/spec-tools.mjs`). `design_from_spec` calls `optimize` with the spec's hard criteria as `hard_constraints`. |
 
-**STATE** (`lib/state.mjs`): every field is `{value, unit, kind, source}`; a field the data do not support
-is `value: null, kind: "assumed"` with a `reason`. `body_density_kg_m3` and `caudal_area_m2` are null for
-every organism; `red_muscle_fraction`, `gill_area_m2` and `hb_P50_kPa` are `borrowed` (trout, mackerel).
-Age scaling carries the document's own values along each parent's growth track; ages outside the data
-are clamped and flagged.
+### STATE (`lib/state.mjs` `resolveState(doc, ageDays, conditions, bundle, opts)`)
 
-**Lean verdicts** go through `lib/lean-source.mjs` `checkDesign` (one path to the laws; floating point,
-not a kernel check). Each violation carries `law_id`, `law_version`, `status`, `lawset_version`,
-`lean_ref`, `kind` (physical / biological), `inputs`, `parts` (to light up in red), `severity`
-(red / amber for contested / advisory) and `baseline_violated`: whether the unedited base organism also
-violates it. Several laws compare implied scaling exponents with ONE flying-fish reference specimen, so a
-real zebrafish violates them; the optimizer's default constraint is "no NEW binding violation". Results
-outside a scenario's validity range are reported as `out_of_validity`, never as violations. Only the
-mass–length rows (C7b, E2) can currently be evaluated from STATE: STATE has no full lifting area, so the
-area laws come back cannot-evaluate rather than being fed pectoral area alone.
+Every field is `{value, unit, kind, source}`. A field may also carry `weakest_input`, `range` (a reported
+`[lo, hi]`, with `value` its midpoint and kind `derived`), `flags`, `source_choice` and `alternative`. A field
+the data do not support is `value: null, kind: "assumed"` with a `reason`.
+
+- **Fixed fields:** `species, design_id, ageDays, stage, SL_m, mass_kg, body_density_kg_m3, wetted_area_m2,
+  frontal_area_m2, pectoral_area_both_m2, pectoral_span_m, caudal_area_m2, red_muscle_fraction,
+  white_muscle_fraction, gill_area_m2, hb_P50_kPa, has_swimbladder, temperature_C, ambient, parts`.
+- **Optional fields** (0.3.0, for scenario `needs`): `lifting_area_m2`, `cardiac_output_max_ml_s`,
+  `myotomal_muscle_fraction`, `swimbladder_volume_fraction`, `pcrit_kPa`, `routine_metabolic_rate_umol_g_h`,
+  `standard_metabolic_rate_umol_g_h`, `ucrit_m_s`, `o2_uptake_site`, `hb_needed_for_routine_O2`.
+- **`ambient` keys**, each a field record: `medium, depth_m, altitude_m, salinity_psu, water_density_kg_m3,
+  air_density_kg_m3, pressure_kPa, pO2_kPa, air_O2_fraction`. Any other caller condition (for example
+  `current_m_s`, `wind_m_s`) passes through as `ambient.<key>`, kind `assumed`. These spellings are the
+  standard ones; scenario modules should read them.
+- **`params/ontogeny.json`** is consumed per `params/ONTOGENY.md`:
+  - Values are interpolated by size, not age.
+  - Mass, areas and metabolic rate use a piecewise power law in SL; density, fractions and Ucrit are linear in SL.
+  - Nulls are never bridged and there is no extrapolation past the first or last row.
+  - Ranges are carried as `[lo, hi]`.
+  - The larval allometry is preferred inside its validity range.
+  - Swim bladder is a step at the pSB size threshold.
+  - Adult Ucrit is held across adult sizes.
+  - Where ontogeny.json and the engine both have a value, the stronger kind wins. `source_choice` says which
+    won and why, and `alternative` keeps the loser.
+  - Areas from ontogeny are used only for an unedited single-species body, scaled by (SL/SL_species)².
+- **partedit geometry**:
+  - Fin edits (`length`, `span:<mode>`, `width`, `area:<mode>`; op `scale`, or `set`/`add` for `area`) move
+    STATE pectoral area and span by partedit's own factor rules.
+  - Gill `volume` × k moves gill area by k^(2/3).
+  - Body `length`, `depth`, `width` and `size` move the body-plan parameters, with mass at constant density
+    (an assumption, stated in the source).
+  - `set`/`add` of a fin span or length in metres needs the mesh, so STATE flags that it was not updated.
+- **`lifting_area_m2`** follows the physics/flier convention: pectoral + pelvic + caudal, from the manifest's
+  mesh measurement. It is NOT the Lean reference's pectoral + pelvic + body planform, so it is not passed to
+  Lean.
+
+### Scenario result (`scenarios/index.mjs`)
+
+`{metrics, survives, feasible, limiting, provenance, scope, validity}`. `survives` means the **organism**
+survives the perturbation. `feasible` (added in 0.3.0) means the **behaviour** the scenario asks about is
+possible: flight at altitude, aerial escape, grip. Both are `true`, `false` or `null`. A module that omits
+`feasible` gets `null` and a warning. Metrics are validated against the module's static `metrics` list.
+Out-of-validity results are reported as `out_of_validity`, never as violations.
+
+### Lean verdicts
+
+Verdicts go through `lib/lean-source.mjs` `checkDesign`, the one path to the laws: floating point, not a
+kernel check. The spec passed carries `taxon` (the parents' taxon; Teleostei for a blend) and `life_stage`, so
+laws scoped to one clade come back `out-of-scope` for other organisms instead of red. Each violation carries
+`law_id`, `law_version`, `status`, `lawset_version`, `lean_ref`, `kind` (physical / biological), `inputs`,
+`parts` (to light up in red), `severity` (red; amber for contested; advisory) and `baseline_violated`.
+
+Only the mass–length rows (C7b, E2) can be evaluated from STATE. The area rows need the Lean reference's
+lifting-area convention, which STATE does not have, so they come back cannot-evaluate rather than being fed a
+different area.
 
 ## Validation
 

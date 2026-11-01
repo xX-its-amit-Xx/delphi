@@ -33,7 +33,12 @@ try {
   check('zebrafish STATE at 90 d', typeof st.SL_m.value === 'number', `SL ${(st.SL_m.value * 1000).toFixed(2)} mm, mass ${(st.mass_kg.value * 1000).toFixed(3)} g`);
   const ref = S.resolveState(doc, 180, {}, bundle);
   check('reference age reproduces the organism file', ref.SL_m.value === bundle.organisms['zebrafish-adult'].parameters.standard_length_m.value);
-  check('body density is null, not invented', st.body_density_kg_m3.value === null, st.body_density_kg_m3.reason.slice(0, 60) + '...');
+  check('pcrit is null with a reason, not invented', st.pcrit_kPa.value === null && !!st.pcrit_kPa.reason, (st.pcrit_kPa.reason || '').slice(0, 60) + '...');
+  check('adult density from ontogeny.json', st.body_density_kg_m3.value === 1010, `${st.body_density_kg_m3.value} kg/m3, ${st.body_density_kg_m3.kind}`);
+  const PE = await import('../partedit.js');
+  const pe = PE.editableParams(O.primaryManifest(bundle, doc), 'pectoral_fin_L').map(p => p.param).join(',');
+  const mine = O.editableParams(bundle, doc, O.resolveTarget(bundle, doc, { level: 'organ', id: 'pectoral_fin_L' })).filter(p => p.source).map(p => p.param).join(',');
+  check('same editable fin params as partedit.js', pe === mine && pe.length > 0, pe);
   let rejected = false; try { O.appendEdit(bundle, doc, { target: { level: 'organ', id: 'wing_L' }, param: 'scale', op: 'set', value: 1, author: 'human', reason: 'x' }); } catch { rejected = true; }
   check('unknown part id rejected', rejected);
   const { scenarios, errors } = await R.loadScenarios();

@@ -197,6 +197,9 @@ const metric = (r, re, unitRe) => {
   const siblings = r.metrics.filter(x => x !== m && x.key && String(m.source || '').includes(x.key));
   return { ...m, inputs: [...(m.inputs || []), ...inputs, ...siblings.map(x => ({ quantity: x.key, kind: x.kind, source: x.source }))], ...(unref.length ? { calibrated_unreferenced: unref } : {}) };
 };
+// Contract 0.3.0: `feasible` = the behaviour is possible (hold station, glide, escape, grip); `survives` = the
+// organism lives. Amendment A2 (STUDIO-AMENDMENTS.md) reads `feasible` where the pre-registered wording said survives.
+const feasibleOf = r => (typeof r.feasible === 'boolean' ? r.feasible : null);
 const survives = r => (typeof r.survives === 'boolean' ? r.survives : (r.survives && typeof r.survives === 'object' && 'value' in r.survives ? !!r.survives.value : null));
 
 // ─────────────────────────────────────────────────────────── scoring (pure; self-tested below)
@@ -290,6 +293,8 @@ function selftest() {
   t('A1: interpolation of target paper -> amended circular', verdictBand({ testId: 'W2', value: 40.45, band: T.ctmax, metrics: M('derived', { source: 'linear in acclimation temperature between the two measured points (Cortemeglia & Beitinger 2005)' }) }).amended_status, 'circular');
   t('A1: target value read back -> amended circular', verdictBand({ testId: 'W1', value: 15.0, band: T.ucrit_bls, metrics: M('measured-secondhand', { source: 'Plaut 2000 adult Ucrit 15.5 SL/s at 28 degC' }) }).amended_status, 'circular');
   t('A1: independent source -> no amendment', verdictBand({ testId: 'W2', value: 40.45, band: T.ctmax, metrics: M('derived', { source: 'heat-shock protein model, Smith 2020' }) }).amended_status, undefined);
+  t('A2: feasible=false read even when survives=null', feasibleOf({ survives: null, feasible: false }), false);
+  t('A2: absent feasible -> null (falls back to survives)', feasibleOf({ survives: true }), null);
   t('optimizer: best effort labelled feasible -> claims met', claimsMet({ design: {}, feasible: true }), true);
   t('optimizer: explicit no design -> not claimed', claimsMet({ message: 'No design meets the spec', design: null, feasible: false }), false);
   t('optimizer: unlabelled design -> taken as claim', claimsMet({ design: { id: 'x' } }), true);
@@ -318,10 +323,10 @@ function testDefs(S) {
       if (!m) { m = metric(r, /ucrit|critical.?swim/i); band = T.ucrit_ms; unit = 'm/s'; if (m && /cm/i.test(m.unit)) m = { ...m, value: m.value / 100 }; }
       if (m) return { predicted: m.value, unit, measured: '15.5 SL/s (Plaut 2000); 18.0 BL/s (Palstra 2010)', band, ...verdictBand({ testId: 'W1', value: m.value, band, metrics: [m], src: src('current') }), metric: m.key };
       const k = curKey();
-      const b = await bisect(0.05, 3, async v => { const rr = await S.run('current', 'zebrafish-adult', { [k]: v }); return { s: survives(rr), r: rr }; }, 0.01);
+      const b = await bisect(0.05, 3, async v => { const rr = await S.run('current', 'zebrafish-adult', { [k]: v }); return { s: feasibleOf(rr) ?? survives(rr), r: rr }; }, 0.01);
       if (!b) throw new NE('no Ucrit metric and survives does not change over 0.05–3 m/s');
       const ms = b.runs.flatMap(x => x.metrics);
-      return { predicted: b.threshold, unit: 'm/s (located by bisection on survives)', band: T.ucrit_ms, ...verdictBand({ testId: 'W1', value: b.threshold, band: T.ucrit_ms, metrics: ms, src: src('current') }) };
+      return { predicted: b.threshold, unit: 'm/s (located by bisection on feasible, amendment A2; survives if feasible absent)', band: T.ucrit_ms, ...verdictBand({ testId: 'W1', value: b.threshold, band: T.ucrit_ms, metrics: ms, src: src('current') }) };
     } },
     ...[['W2', 'CTmax', /ctmax|upper.*(lethal|limit|tol)|t_?max|critical.*max/i, T.ctmax, 25, 60, '39.2 (20 °C accl.) – 41.7 (30 °C) °C; 40.97 °C (Morgan 2018)'],
         ['W3', 'CTmin', /ctmin|lower.*(lethal|limit|tol)|t_?min|critical.*min/i, T.ctmin, 25, -5, '6.2 (20 °C accl.) – 10.6 (30 °C) °C']].map(([id, nm, re, band, from, to, meas]) => ({
@@ -375,19 +380,23 @@ function testDefs(S) {
       const m = metric(r, /passage|transit|gut|evacuat/i);
       return { predicted: m ? `${fmt(m.value)} ${m.unit} (${m.kind})` : 'no passage metric', measured: 'none fetched', status: 'no-target', why: 'no fetched wild-type gut passage time; the studio value is UNVALIDATED', weakest: m ? weakestKind([m]) : 'n/a' };
     } },
-    { id: 'W11', name: 'sustained current sign (0.20 m/s survive, 1.10 m/s not)', scen: 'current', async run() {
+    { id: 'W11', name: 'sustained current sign (pre-registered: 0.20 m/s survive, 1.10 m/s not; A2 reads feasible)', scen: 'current', async run() {
       const k = curKey();
-      const a = survives(await S.run('current', 'zebrafish-adult', { [k]: T.current_ok }));
-      const b = survives(await S.run('current', 'zebrafish-adult', { [k]: T.current_lethal }));
-      const ok = a === true && b === false;
-      return { predicted: `0.20 m/s → ${a}; 1.10 m/s → ${b} (param ${k})`, measured: 'Uopt 0.396, Ucrit 0.548 m/s', status: ok ? 'pass' : 'fail', why: ok ? 'signs correct' : 'wrong sign', weakest: 'n/a (sign test)' };
+      const ra = await S.run('current', 'zebrafish-adult', { [k]: T.current_ok }), rb = await S.run('current', 'zebrafish-adult', { [k]: T.current_lethal });
+      const a = survives(ra), b = survives(rb), fa = feasibleOf(ra), fb = feasibleOf(rb);
+      const pre = a === true && b === false ? 'pass' : 'fail';
+      const amd = fa === null && fb === null ? pre : (fa === true && fb === false ? 'pass' : 'fail');
+      return { predicted: `survives: 0.20 m/s → ${a}, 1.10 m/s → ${b}; feasible: 0.20 → ${fa}, 1.10 → ${fb} (param ${k})`, measured: 'Uopt 0.396, Ucrit 0.548 m/s', status: pre,
+        ...(amd !== pre ? { amended_status: amd, amendment: 'A2' } : {}),
+        why: `pre-registered reading (survives): ${pre === 'pass' ? 'signs correct' : `not met, survives is ${a}/${b}`}; A2 reading (feasible = can hold station): ${amd === 'pass' ? 'signs correct' : 'wrong sign'}`, weakest: 'n/a (sign test)' };
     } },
     // ── negative controls
     { id: 'N1', name: 'real zebrafish must not glide (< 1 m)', scen: 'wind', async run() {
       const r = await findGlide(S, 'zebrafish-adult');
       if (!r) return { predicted: 'no glide metric for zebrafish in any scenario', status: 'pass', why: 'glide not reported for a fish without wing fins', weakest: 'n/a' };
       const ok = !(r.dist.value >= T.zf_glide_max) || r.survives === false;
-      return { predicted: `${fmt(r.dist.value)} m (from ${r.scen}, metric ${r.dist.key}, survives=${r.survives})`, measured: 'ballistic leap ≈ 0.07 m', status: ok ? 'pass' : 'fail', why: ok ? 'below 1 m or flagged not surviving' : (r.dist.value >= 30 ? 'zebrafish glides ≥ 30 m' : 'zebrafish glides 1–30 m: not as absurd, still unsupported'), weakest: weakestKind([r.dist]) };
+      const okA = ok || r.feasible === false;
+      return { predicted: `${fmt(r.dist.value)} m (from ${r.scen}, metric ${r.dist.key}, survives=${r.survives}, feasible=${r.feasible})`, measured: 'ballistic leap ≈ 0.07 m', status: ok ? 'pass' : 'fail', ...(okA !== ok ? { amended_status: 'pass', amendment: 'A2' } : {}), why: ok ? 'below 1 m or flagged not surviving' : (r.dist.value >= 30 ? 'zebrafish glides ≥ 30 m' : 'zebrafish glides 1–30 m: not as absurd, still unsupported'), weakest: weakestKind([r.dist]) };
     } },
     { id: 'N2', name: 'no fish survives at 9,000 or 10,000 m', scen: 'pressure', async run() {
       const viol = [], seen = [];
@@ -408,7 +417,7 @@ function testDefs(S) {
       const viol = [], rows = [];
       for (const org of S.organismIds()) {
         const sv = [];
-        for (const h of T.altitudes) { try { sv.push(survives(await S.envRun('altitude', org, 'altitude_m', h, ALT_RE))); } catch (e) { if (e.status === 'not-available') throw e; sv.push(null); } }
+        for (const h of T.altitudes) { try { { const ra = await S.envRun('altitude', org, 'altitude_m', h, ALT_RE); sv.push(feasibleOf(ra) ?? survives(ra)); } } catch (e) { if (e.status === 'not-available') throw e; sv.push(null); } }
         if (sv.every(x => x === null)) { rows.push(`${org}: not runnable`); continue; }
         rows.push(`${org}:${sv.map(x => (x ? 1 : 0)).join('')}`);
         if (!monotoneNonIncreasing(sv)) viol.push(`${org} [${sv}]`);
@@ -417,9 +426,22 @@ function testDefs(S) {
       return { predicted: rows.join('; '), measured: 'proved: feasible at h ⇒ feasible below h', status: viol.length ? 'fail' : 'pass', why: viol.length ? `non-monotone: ${viol.join('; ')}` : 'monotone for every organism', weakest: 'n/a (law control)' };
     } },
     { id: 'N5', name: 'glide range ≤ h·L/D/(1−δ) (Lean glide_range_le)', scen: 'wind', async run() {
-      const out = [], viol = [];
+      // Pre-registered reading: EVERY reported glide distance (here the total, the largest). Amendment A3 reading:
+      // only the distance the module declares covered by the theorem (glide_range_lean_bound_m), plus a check that
+      // the module explicitly labels the total as NOT covered.
+      const out = [], viol = [], leanOnly = [], leanViol = [], unlabelled = [];
       for (const org of S.organismIds()) {
         const g = await findGlide(S, org); if (!g) continue;
+        if (g.lean) {
+          const hk0 = Object.keys(S.paramSpec(g.scen)).find(k => /launch.?height|height/i.test(k));
+          const ld0 = metric(g.r, /(^|_)l_?d(_|$)|lift.?to.?drag|glide.?ratio/i), h0 = hk0 ? S.defaults(g.scen)[hk0] : null;
+          if (h0 != null && ld0) {
+            const okL = glideBoundOK(g.lean.value, h0, ld0.value, 0);
+            leanOnly.push(`${org}: ${fmt(g.lean.value)} ≤ ${fmt(h0 * ld0.value)}? ${okL}`);
+            if (!okL) leanViol.push(org);
+          }
+          if (g.dist !== g.lean && g.dist.value > (g.lean.value ?? 0) && !/not covered/i.test(String(g.dist.source) + String(g.dist.label))) unlabelled.push(org);
+        }
         const h = metric(g.r, /launch.?height|launch.?h|height/i), ld = metric(g.r, /(^|_)l_?d(_|$)|lift.?to.?drag|glide.?ratio/i), de = metric(g.r, /ground.?effect|(^|_)delta/i);
         const hk = Object.keys(S.paramSpec(g.scen)).find(k => /launch.?height|height/i.test(k));
         const hv = h ? h.value : hk ? S.defaults(g.scen)[hk] : null;
@@ -432,7 +454,9 @@ function testDefs(S) {
       }
       if (!out.length) throw new NE('no organism has a glide distance in any scenario');
       const allUncheckable = out.every(s => s.includes('no h or L/D'));
-      return { predicted: out.join('; '), status: viol.length ? 'fail' : (allUncheckable ? 'not-evaluable' : 'pass'), why: viol.length ? `bound violated for ${viol.join(', ')}` : (allUncheckable ? 'glide reported without launch height or L/D, so the proved bound cannot be checked' : 'bound holds'), weakest: 'n/a (law control)' };
+      const a3 = leanOnly.length ? { amended_status: leanViol.length || unlabelled.length ? 'fail' : 'pass', amendment: 'A3',
+        amended_detail: `Lean-covered metric only: ${leanOnly.join('; ')}${unlabelled.length ? `; total exceeds the bound WITHOUT a "not covered" label for ${unlabelled.join(', ')}` : '; every total above the bound is labelled NOT covered by the theorem'}` } : {};
+      return { ...a3, predicted: (a3.amended_detail ? `A3: ${a3.amended_detail} || pre-registered (every reported distance): ` : '') + out.join('; '), status: viol.length ? 'fail' : (allUncheckable ? 'not-evaluable' : 'pass'), why: viol.length ? `bound violated for ${viol.join(', ')}` : (allUncheckable ? 'glide reported without launch height or L/D, so the proved bound cannot be checked' : 'bound holds'), weakest: 'n/a (law control)' };
     } },
     // ── optimizer and parser controls
     { id: 'O1', name: 'already-maximal objective is not improved', scen: 'optimizer', async run() { return optimizerTest(S, 'O1'); } },
@@ -454,8 +478,8 @@ function testDefs(S) {
     } },
     { id: 'X2', observation: true, name: 'altitude: survives vs limiting consistency (zebrafish adult, defaults)', scen: 'altitude', async run() {
       const r = await S.run('altitude', 'zebrafish-adult');
-      const clash = r.survives === true && /below v_min|cannot/i.test(String(r.limiting || ''));
-      return { predicted: `survives=${r.survives}; limiting="${String(r.limiting).slice(0, 120)}"`, status: 'observation', why: clash ? 'survives=true while limiting says flight is impossible: survives means different things in different scenarios' : 'consistent' };
+      const clash = (r.feasible === true || (r.feasible === undefined && r.survives === true)) && /below v_min|cannot/i.test(String(r.feasibility_note || r.limiting || ''));
+      return { predicted: `survives=${r.survives}; feasible=${r.feasible}; feasibility_note="${String(r.feasibility_note ?? r.limiting).slice(0, 120)}"`, status: 'observation', why: clash ? 'survives=true while limiting says flight is impossible: survives means different things in different scenarios' : 'consistent' };
     } },
     // ── contract
     ...[...new Set([...SCENARIOS, ...extraScenarios()])].map(s => ({ id: `N7-${s}`, name: `contract + determinism: ${s}`, scen: s, async run() {
@@ -499,8 +523,9 @@ async function findGlide(S, org) {
   for (const s of order) {
     if (!S.scen[s]) continue;
     let r; try { r = await S.run(s, org); } catch { continue; }
-    const dist = metric(r, /glide.*(dist|range)|airborne.*dist|flight.*dist/i);
-    if (dist) return { scen: s, r, dist, speed: metric(r, /glide.*speed|air.?speed|flight.*speed/i), survives: survives(r), src: S.scen[s].src };
+    // The total distance is what a field glide measures; the Lean-covered part is kept separately for N5.
+    const dist = metric(r, /glide_range_total|still_air_range/i) || metric(r, /glide.*(dist|range)|airborne.*dist|flight.*dist/i);
+    if (dist) return { scen: s, r, dist, lean: metric(r, /lean_bound/i), speed: metric(r, /glide.*speed|air.?speed|flight.*speed/i), survives: survives(r), feasible: feasibleOf(r), src: S.scen[s].src };
   }
   if (!order.some(s => S.scen[s])) throw new NA('scenarios/wind.mjs (or another glide-reporting scenario)');
   return null;
@@ -719,13 +744,13 @@ function renderMd(o) {
     const bad = fx.results.filter(r => r.status !== 'not-available');
     L.push(`Fixture run (deliberately wrong scenario modules under C:/Temp/studio-validation-fixtures/bad, ${fx.generated_at}): ${bad.filter(r => r.status === 'fail' || r.status === 'circular').length} of ${bad.length} evaluable checks flagged the planted defect: ` + bad.map(r => `${r.id} ${r.status}`).join(', ') + '. (W5, the N7 rows whose fixture honoured the contract, and W9 whose fixture speed is random, can pass by design.)', '');
   } catch {}
-  L.push('## Scoreboard', '', '| status | pre-registered rule | after amendment A1 (post-results, see STUDIO-AMENDMENTS.md) |', '|---|---|---|');
+  L.push('## Scoreboard', '', '| status | pre-registered rule | after amendments A1–A3 (post-results, see STUDIO-AMENDMENTS.md) |', '|---|---|---|');
   for (const k of [...new Set([...Object.keys(o.tally), ...Object.keys(o.tally_after_amendment_A1)])].sort()) L.push(`| ${k} | ${o.tally[k] || 0} | ${o.tally_after_amendment_A1[k] || 0} |`);
   L.push('', 'Modules found: ' + Object.entries(o.modules_found).filter(([k]) => k !== 'scenarios').map(([k, v]) => `${k} ${v ? '`' + v + '`' : '—'}`).join(', ') + '; scenarios: ' + Object.entries(o.modules_found.scenarios).map(([k, v]) => `${k}${v ? '' : ' (missing)'}`).join(', ') + '.');
   if (Object.keys(o.import_errors).length) L.push('', 'Import errors: ' + Object.entries(o.import_errors).map(([k, v]) => `\`${k}\`: ${v}`).join('; '));
   L.push('', '## Per test', '', '| id | test | status | predicted | measured / band | weakest kind | why |', '|---|---|---|---|---|---|---|');
   const esc = s => String(s ?? '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
-  for (const r of o.results) L.push(`| ${r.id} | ${esc(r.name)} | **${r.status}**${r.amended_status ? ' → A1: **' + r.amended_status + '**' : ''} | ${esc(typeof r.predicted === 'number' ? fmt(r.predicted) + ' ' + (r.unit || '') : r.predicted)} | ${esc(r.measured || '')}${r.band ? ' band ' + esc(Array.isArray(r.band) ? '[' + r.band.join(', ') + ']' : r.band) : ''} | ${esc(r.weakest || '')} | ${esc(r.why)} |`);
+  for (const r of o.results) L.push(`| ${r.id} | ${esc(r.name)} | **${r.status}**${r.amended_status ? ' → ' + (r.amendment || 'A1') + ': **' + r.amended_status + '**' : ''} | ${esc(typeof r.predicted === 'number' ? fmt(r.predicted) + ' ' + (r.unit || '') : r.predicted)} | ${esc(r.measured || '')}${r.band ? ' band ' + esc(Array.isArray(r.band) ? '[' + r.band.join(', ') + ']' : r.band) : ''} | ${esc(r.weakest || '')} | ${esc(r.why)} |`);
   L.push('', '## Audit of scenario constants', '', 'Code literals only (strings and comments stripped; unit conversions and years ignored). A line is *sourced* if a URL/DOI/PMID/PMC id is within 3 lines, *named-only* if only an author-year or repository-file reference is, else *unsourced*. Named-only is not a defect by itself, but it cannot be fetched without guessing.', '');
   if (!o.audit.length) L.push('No scenario module has landed yet.');
   L.push('| module | lines with constants | sourced | named-only | unsourced |', '|---|---|---|---|---|');

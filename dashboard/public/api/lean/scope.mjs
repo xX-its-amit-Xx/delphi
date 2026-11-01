@@ -8,7 +8,8 @@
 //      names no taxon (a law calibrated on flying fish says nothing about an unnamed organism);
 //   2. the law's scope.life_stages is non-empty and the design states a life stage outside it;
 //   3. a quantity named in scope.ranges is given by the design and lies outside [min, max].
-// Until the registry carries a per-constraint scope, a constraint that compares the design with the single
+// A law may carry constraint_scopes: {<constraint id>: {taxa, life_stages, ranges, basis}}, which replaces law.scope
+// for that constraint (lean/registry/README.md). Where a constraint has none, a constraint that compares the design with the single
 // reference specimen (browser-check REFERENCE: Cypselurus hiraii, Park and Choi 2010) is scoped to Exocoetidae,
 // whatever the scope of its law: an exponent implied from one flying fish is not evidence about another clade.
 
@@ -16,14 +17,18 @@
 // lean/registry/registry-lib.mjs, plus flying-fish genera.
 export const PARENT = {
   Exocoetidae: 'Beloniformes', Beloniformes: 'Teleostei', 'Danio rerio': 'Teleostei', Danio: 'Teleostei',
+  Liparidae: 'Teleostei',
   Teleostei: 'Actinopterygii', Actinopterygii: 'Vertebrata', Vertebrata: 'Metazoa', Metazoa: 'any',
 };
 const FLYING_FISH_GENERA = ['Cypselurus', 'Exocoetus', 'Hirundichthys', 'Cheilopogon', 'Parexocoetus', 'Fodiator', 'Prognichthys', 'Oxyporhamphus'];
+const SNAILFISH_GENERA = ['Pseudoliparis', 'Notoliparis', 'Liparis'];
 const norm = t => {
   if (!t) return null;
   const s = String(t).trim();
   const genus = s.split(/\s+/)[0];
   if (FLYING_FISH_GENERA.includes(genus)) return 'Exocoetidae';
+  if (SNAILFISH_GENERA.includes(genus)) return 'Liparidae';
+  if (/^snailfish$/i.test(s)) return 'Liparidae';
   if (/^zebrafish$/i.test(s)) return 'Danio rerio';
   if (/^flying[- ]?fish$/i.test(s)) return 'Exocoetidae';
   return s;
@@ -53,10 +58,12 @@ export const REFERENCE_SCOPE = { taxa: ['Exocoetidae'], basis: 'compared with on
 
 // -> null when in scope, else { reason, scope }.
 export function outOfScope(row, law, design = {}) {
-  const ls = (law && law.scope) || {};
+  const cid = row && (row.id || row.constraint);
+  const cs = law && law.constraint_scopes && cid ? law.constraint_scopes[cid] : null;
+  const ls = cs || (law && law.scope) || {};
   const scopes = [];
-  if (Array.isArray(ls.taxa) && ls.taxa.length && !ls.taxa.includes('any')) scopes.push({ taxa: ls.taxa, basis: `law ${law.law_id} scope` });
-  if (comparesWithReference(row)) scopes.push(REFERENCE_SCOPE);
+  if (Array.isArray(ls.taxa) && ls.taxa.length && !ls.taxa.includes('any')) scopes.push({ taxa: ls.taxa, basis: cs ? `constraint ${cid} scope${cs.basis ? ': ' + cs.basis : ''}` : `law ${law.law_id} scope` });
+  if (!cs && comparesWithReference(row)) scopes.push(REFERENCE_SCOPE);
   const taxon = designTaxon(design);
   for (const s of scopes) {
     if (!taxon) return { reason: `scoped to ${s.taxa.join(', ')} (${s.basis}); the design names no taxon, so this is not evaluated. Pass taxon to evaluate it.`, scope: s };

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-01T02:56:39.457Z",
+  "generated_at": "2026-11-01T03:02:07.484Z",
   "preregistration": {
     "file": "sim-engine/validation/STUDIO-PREREGISTRATION.md",
     "recorded": "f2523da8529b998eea8ef9b9f165851f60d078a7ac5151a0dafa7bb4d324a66d",
@@ -30,15 +30,14 @@
   "import_errors": {},
   "tally": {
     "pass-rests-on-assumed": 2,
-    "circular": 5,
-    "pass": 21,
-    "fail": 2,
-    "no-target": 1
+    "circular": 6,
+    "pass": 20,
+    "no-target": 1,
+    "fail": 2
   },
   "tally_after_amendment_A1": {
-    "circular": 7,
-    "pass": 21,
-    "fail": 2,
+    "circular": 8,
+    "pass": 22,
     "no-target": 1
   },
   "selftest": {
@@ -130,6 +129,18 @@
       },
       {
         "check": "A1: independent source -> no amendment",
+        "ok": true
+      },
+      {
+        "check": "A2: feasible=false read even when survives=null",
+        "expected": false,
+        "got": false,
+        "ok": true
+      },
+      {
+        "check": "A2: absent feasible -> null (falls back to survives)",
+        "expected": null,
+        "got": null,
         "ok": true
       },
       {
@@ -281,12 +292,12 @@
       "id": "W9",
       "name": "flying fish glide distance and speed",
       "module": "wind",
-      "predicted": "4.37 m at 10.0 m/s (from glide)",
+      "predicted": "8.65 m at 10.0 m/s (from glide)",
       "measured": "up to 50 m at 15–20 m/s (secondhand)",
       "band": "5,75 m; 7.5,25 m/s",
-      "status": "fail",
+      "status": "circular",
       "weakest": "assumed",
-      "why": "distance: predicted 4.37 outside [5, 75]; speed: in band, but the predicted value equals a constant in the module sourced to the target paper (echo)"
+      "why": "distance: in band; weakest input is assumed; speed: in band, but the predicted value equals a constant in the module sourced to the target paper (echo)"
     },
     {
       "id": "W10",
@@ -300,19 +311,21 @@
     },
     {
       "id": "W11",
-      "name": "sustained current sign (0.20 m/s survive, 1.10 m/s not)",
+      "name": "sustained current sign (pre-registered: 0.20 m/s survive, 1.10 m/s not; A2 reads feasible)",
       "module": "current",
-      "predicted": "0.20 m/s → null; 1.10 m/s → null (param current_m_s)",
+      "predicted": "survives: 0.20 m/s → null, 1.10 m/s → null; feasible: 0.20 → true, 1.10 → false (param current_m_s)",
       "measured": "Uopt 0.396, Ucrit 0.548 m/s",
       "status": "fail",
-      "why": "wrong sign",
+      "amended_status": "pass",
+      "amendment": "A2",
+      "why": "pre-registered reading (survives): not met, survives is null/null; A2 reading (feasible = can hold station): signs correct",
       "weakest": "n/a (sign test)"
     },
     {
       "id": "N1",
       "name": "real zebrafish must not glide (< 1 m)",
       "module": "wind",
-      "predicted": "0.00 m (from glide, metric glide_range_lean_bound_m, survives=null)",
+      "predicted": "0.00 m (from glide, metric glide_range_total_m, survives=null, feasible=false)",
       "measured": "ballistic leap ≈ 0.07 m",
       "status": "pass",
       "why": "below 1 m or flagged not surviving",
@@ -342,7 +355,7 @@
       "id": "N4",
       "name": "flyable heights downward closed (Lean Altitude.feasible_downward_closed)",
       "module": "altitude",
-      "predicted": "flying-fish:111110; zebrafish-adult:111110; zebrafish-larva:111110; ff-zf-chimera:111110; tff:111110; winged-zebrafish:111110; wingless-flying-fish:111110",
+      "predicted": "flying-fish:111000; zebrafish-adult:000000; zebrafish-larva:000000; ff-zf-chimera:111110; tff:111110; winged-zebrafish:000000; wingless-flying-fish:000000",
       "measured": "proved: feasible at h ⇒ feasible below h",
       "status": "pass",
       "why": "monotone for every organism",
@@ -352,9 +365,12 @@
       "id": "N5",
       "name": "glide range ≤ h·L/D/(1−δ) (Lean glide_range_le)",
       "module": "wind",
-      "predicted": "flying-fish: d=4.37 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; zebrafish-adult: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; zebrafish-larva: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; tff: d=4.37 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; winged-zebrafish: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; wingless-flying-fish: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true",
-      "status": "pass",
-      "why": "bound holds",
+      "amended_status": "pass",
+      "amendment": "A3",
+      "amended_detail": "Lean-covered metric only: flying-fish: 4.37 ≤ 4.37? true; zebrafish-adult: 0.00 ≤ 4.37? true; zebrafish-larva: 0.00 ≤ 4.37? true; tff: 4.37 ≤ 4.37? true; winged-zebrafish: 0.00 ≤ 4.37? true; wingless-flying-fish: 0.00 ≤ 4.37? true; every total above the bound is labelled NOT covered by the theorem",
+      "predicted": "A3: Lean-covered metric only: flying-fish: 4.37 ≤ 4.37? true; zebrafish-adult: 0.00 ≤ 4.37? true; zebrafish-larva: 0.00 ≤ 4.37? true; tff: 4.37 ≤ 4.37? true; winged-zebrafish: 0.00 ≤ 4.37? true; wingless-flying-fish: 0.00 ≤ 4.37? true; every total above the bound is labelled NOT covered by the theorem || pre-registered (every reported distance): flying-fish: d=8.65 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? false; zebrafish-adult: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; zebrafish-larva: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; tff: d=21.0 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? false; winged-zebrafish: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; wingless-flying-fish: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true",
+      "status": "fail",
+      "why": "bound violated for flying-fish, tff",
       "weakest": "n/a (law control)"
     },
     {
@@ -389,7 +405,7 @@
       "id": "P1",
       "name": "parser keeps impossible targets (1000 m glide, 10,000 m depth)",
       "module": "parse",
-      "predicted": "glide → {\"spec\":{\"start_from\":[{\"organism\":\"zebrafish-adult\",\"weight\":1}],\"criteria\":[{\"scenario\":\"glide\",\"metric\":\"glide_range_m\",\"op\":\">=\",\"value\":1000,\"unit\":\"m\",\"params\":{},\"hard\":true,\"weight\":1,\"source_ | depth → {\"spec\":{\"start_from\":[],\"criteria\":[{\"scenario\":\"pressure\",\"params\":{\"depth_m\":10000,\"water\":\"sea\"},\"op\":\"survives\",\"hard\":true,\"weight\":1,\"source_text\":\"a fish at 10,000 m depth\",\"stages\":[\"adult\"],",
+      "predicted": "glide → {\"spec\":{\"start_from\":[{\"organism\":\"zebrafish-adult\",\"weight\":1}],\"criteria\":[{\"scenario\":\"glide\",\"metric\":\"glide_range_total_m\",\"op\":\">=\",\"value\":1000,\"unit\":\"m\",\"params\":{},\"hard\":true,\"weight\":1,\"s | depth → {\"spec\":{\"start_from\":[],\"criteria\":[{\"scenario\":\"pressure\",\"params\":{\"depth_m\":10000,\"water\":\"sea\"},\"op\":\"survives\",\"hard\":true,\"weight\":1,\"source_text\":\"a fish at 10,000 m depth\",\"stages\":[\"adult\"],",
       "status": "pass",
       "why": "both targets kept",
       "weakest": "n/a"
@@ -406,7 +422,7 @@
       "id": "X2",
       "name": "altitude: survives vs limiting consistency (zebrafish adult, defaults)",
       "module": "altitude",
-      "predicted": "survives=true; limiting=\"null\"",
+      "predicted": "survives=true; feasible=false; feasibility_note=\"cannot glide at 2000 m: reachable launch speed 0.67 m/s is below v_min 14.37 m/s\"",
       "status": "observation",
       "why": "consistent"
     },
@@ -1724,7 +1740,7 @@
           "named": null
         },
         {
-          "line": 140,
+          "line": 143,
           "constants": [
             25
           ],
@@ -1733,7 +1749,7 @@
           "named": null
         },
         {
-          "line": 154,
+          "line": 157,
           "constants": [
             30
           ],
@@ -1742,7 +1758,7 @@
           "named": null
         },
         {
-          "line": 243,
+          "line": 246,
           "constants": [
             0.02,
             0.4
@@ -1752,7 +1768,7 @@
           "named": null
         },
         {
-          "line": 244,
+          "line": 247,
           "constants": [
             30000
           ],
@@ -1860,7 +1876,7 @@
           "named": "conditions/baseline.json"
         },
         {
-          "line": 144,
+          "line": 147,
           "constants": [
             1.15
           ],
@@ -1869,7 +1885,7 @@
           "named": "Plaut 2000"
         },
         {
-          "line": 267,
+          "line": 270,
           "constants": [
             11
           ],
@@ -1878,7 +1894,7 @@
           "named": "physics/results.json"
         },
         {
-          "line": 268,
+          "line": 271,
           "constants": [
             12
           ],

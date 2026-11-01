@@ -17,7 +17,7 @@ const rows = csv.slice(1).map(l => { const c = []; let cur = '', q = false; for 
 const L3 = rows.find(r => /model L3/.test(r.source_locator));
 const REF = { name: 'Cypselurus hiraii, Park and Choi 2010 Table 1 model L3 (physics/glide-data.csv)', SL_m: +L3.body_length_m, mass_kg: +L3.body_mass_kg, pectoralFinArea_m2: +L3.pectoral_fin_area_m2, pelvicFinArea_m2: +L3.pelvic_fin_area_m2, bodyPlanformArea_m2: +L3.body_planform_area_m2, liftingArea_m2: +(+L3.pectoral_fin_area_m2 + +L3.pelvic_fin_area_m2 + +L3.body_planform_area_m2).toFixed(6), CLmax: +L3.CL_max, LD_max: +L3.LD_max };
 const meta = Object.fromEntries(C.constraints.map(c => [c.id, { constraint: c.id, theorem: c.lemma, law: c.law, module: c.module, relation: c.relation, band: c.empirical ? 'empirical' : 'proved', empirical: c.empirical || null, constraintStatus: c.status || null, scope: c.proofScope ? { kernelChecked: c.proofScope.kernelChecked, assumed: c.proofScope.assumed } : null, hypotheses: c.assumptionsText, faithfulness: c.faithfulness, canEliminate: c.canEliminate }]));
-const USED = ['C9', 'C7b', 'C2a', 'C8e', 'C8c', 'C14', 'C14b', 'C15', 'C16', 'C13', 'C10', 'C9c', 'G1', 'G2', 'G3', 'G4', 'G5', 'E2', 'E3', 'E4', 'E7'];
+const USED = ['C9', 'C7b', 'C2a', 'C8e', 'C8c', 'C14', 'C14b', 'C15', 'C16', 'C13', 'C10', 'C9c', 'G1', 'G2', 'G3', 'G4', 'G5', 'E2', 'E3', 'E4', 'E7', 'P1', 'P1b', 'P2', 'P2b', 'P3', 'P3b', 'P4', 'P4b', 'P5'];
 for (const u of USED) if (!meta[u]) throw new Error('constraint missing from constraints.json: ' + u);
 
 
@@ -42,6 +42,33 @@ const EMP_SLIM = { built: EMP.built, module: EMP.module, framing: EMP.framing, n
   entries: EMP.entries.map(e => ({ id: e.id, status: e.status, title: e.title, statement: e.statement, observation: e.observation, source: e.source, taxa: e.taxa, scope: e.scope, constraints: e.constraints, rejectable: e.rejectable, lean: e.lean })) };
 const EMP_FRAGMENT = fs.readFileSync(path.join(here, 'browser-check-empirical.fragment.mjs'), 'utf8')
   .split('__EMPIRICAL__').join(JSON.stringify(EMP_SLIM, null, 1));
+
+// The perturbation laws (lean/Delphi/Perturb.lean) and their sources (lean/perturb-sources.json).
+const PS = JSON.parse(fs.readFileSync(path.join(root, 'lean/perturb-sources.json'), 'utf8'));
+const PERTURB_SLIM = { module: PS.module, fetched: PS.fetched, rule: PS.rule, sources: Object.fromEntries(Object.entries(PS.sources).map(([k, v]) => [k, { pmid: v.pmid, doi: v.doi, authors: v.authors, year: v.year, title: v.title, quote: v.quote }])), notFormalised: PS.notFormalised };
+const PERTURB_FRAGMENT = fs.readFileSync(path.join(here, 'browser-check-perturb.fragment.mjs'), 'utf8')
+  .split('__PERTURB__').join(JSON.stringify(PERTURB_SLIM, null, 1))
+  .replace(/^\/\/ FRAGMENT[\s\S]*?placeholder[^\n]*\n/m, '// ---- perturbation rows (generated from lean/eliminate/browser-check-perturb.fragment.mjs) ----\n');
+
+// The law registry (lean/registry/README.md): which law each constraint belongs to, that law's version, kind,
+// status and scope in every released law set. check() judges against one law set (default: current).
+const REGDIR = path.join(root, 'lean/registry');
+const REG_CUR = JSON.parse(fs.readFileSync(path.join(REGDIR, 'lawsets/current.json'), 'utf8'));
+const REG_LAWS = fs.readdirSync(path.join(REGDIR, 'laws')).filter(f => f.endsWith('.json')).map(f => JSON.parse(fs.readFileSync(path.join(REGDIR, 'laws', f), 'utf8')));
+const LAWSETS = Object.fromEntries(fs.readdirSync(path.join(REGDIR, 'lawsets')).filter(f => /^lawset-\d+\.\d+\.\d+\.json$/.test(f)).map(f => JSON.parse(fs.readFileSync(path.join(REGDIR, 'lawsets', f), 'utf8')))
+  .map(ls => [ls.version, { created: ls.created, laws: Object.fromEntries(ls.laws.map(l => [l.law_id, { version: l.version, status: l.status, kind: l.kind, content_hash: l.content_hash }])) }]));
+if (!LAWSETS[REG_CUR.version]) throw new Error('lean/registry/lawsets/current.json names a missing law set ' + REG_CUR.version);
+const CONSTRAINT_LAW = {};
+for (const l of REG_LAWS) for (const c of l.constraints || []) if (USED.includes(c)) CONSTRAINT_LAW[c] = l.law_id;
+const LAW_INFO = Object.fromEntries(REG_LAWS.filter(l => Object.values(CONSTRAINT_LAW).includes(l.law_id)).map(l => [l.law_id, { label: l.label || null, statement_en: l.statement_en, kind: l.kind, scope: { taxa: l.scope.taxa, life_stages: l.scope.life_stages || [], ranges: l.scope.ranges || {}, basis: l.scope.basis || null }, constraint_scopes: l.constraint_scopes || {} }]));
+const unlawed = USED.filter(u => !CONSTRAINT_LAW[u]);
+if (unlawed.length) console.warn('warning: constraints with no registry law (rows carry law: null and are judged as before): ' + unlawed.join(', '));
+const LAWSET_FRAGMENT = fs.readFileSync(path.join(here, 'browser-check-lawset.fragment.mjs'), 'utf8')
+  .split('__LAWSET_VERSION__').join(JSON.stringify(REG_CUR.version))
+  .split('__LAWSETS__').join(JSON.stringify(LAWSETS, null, 1))
+  .split('__CONSTRAINT_LAW__').join(JSON.stringify(CONSTRAINT_LAW, null, 1))
+  .split('__LAW_INFO__').join(JSON.stringify(LAW_INFO, null, 1))
+  .replace(/^\/\/ FRAGMENT[\s\S]*?placeholders[^\n]*\n/m, '// ---- law-set judgement (generated from lean/eliminate/browser-check-lawset.fragment.mjs; data from lean/registry) ----\n');
 
 const BASE = JSON.parse(fs.readFileSync(path.join(root, 'conditions/baseline.json'), 'utf8'));
 const REF_RHO = BASE.conditions.air_density_kg_m3.value, REF_G = 9.80665, EXP_BAND = 0.1;
@@ -74,6 +101,7 @@ const out = `// GENERATED by lean/eliminate/build-browser-check.mjs on ${new Dat
 // Every empirical row carries band: "empirical", the observation in plain words, its source and scope, and
 // what rejecting it costs; the proved rows carry band: "proved". An empirical row is CONDITIONAL: the
 // arithmetic is checked, the observation is not, and a reader may reject it and drop that row alone.
+// Perturbation fields (P1-P5, lean/Delphi/Perturb.lean, sources in lean/perturb-sources.json): see checkPerturb below.
 // Reference specimen for scaling comparisons: ${REF.name}.
 
 export const KERNEL_NOTE = 'evaluates the same formulas; not a kernel check: kernel certificates exist only for the recorded examples';
@@ -98,7 +126,11 @@ const result = (id, verdict, numbers, missing, note, sides) => ({ id, ...META[id
 
 ${FRAGMENT}
 ${EMP_FRAGMENT}
-export function check(design) {
+${PERTURB_FRAGMENT}
+${LAWSET_FRAGMENT}
+/** check(design, {lawset, includeCandidates}): every row judged against a law set (see judgeRows). checkRaw(design) is the formulas alone. */
+export function check(design, opts = {}) { return judgeRows(checkRaw(design), design, normalise(design), opts); }
+export function checkRaw(design) {
   const s = { ...DEFAULTS, ...normalise(design) };
   const out = [];
   const unconstrained = ['finLength_SL', 'lowerLobe_SL'].filter(k => num(s[k])).map(k => ({ field: k, value: s[k], note: 'accepted, reported, constrained by no theorem (fin length ratio and caudal lobe ratio are inputs the model carries; see lean/morphology-grounding.json)' }));
@@ -157,6 +189,9 @@ export function check(design) {
   // Empirical rows, in their own band: each is conditional on an observation the reader may reject.
   const impliedMassExponent = (out.find(r => r.id === 'C7b') || {}).numbers?.impliedMassExponent ?? null;
   for (const r of checkEmpirical(s, { powerRequired_W: Preq, impliedMassExponent })) out.push(r);
+
+  // Perturbation rows (lean/Delphi/Perturb.lean): temperature, current, pressure, altitude and wind, daily energy. Sleep and day/night have no law.
+  for (const r of checkPerturb(s, { W_N: W, S_m2: S })) out.push(r);
   return out;
 }
 `;

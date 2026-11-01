@@ -499,6 +499,133 @@ if (rdy?.ratio) {
   };
 }
 
+// ================================================================================================
+// The Design Studio: the product, its laws, its independent validation, and the printable kit.
+// Each block reads the files the studio threads write; a block that cannot read its source is null
+// and its slide greys out. Nothing here is typed by hand except the sentences around the numbers.
+// ================================================================================================
+const copyFig = (from, to) => {
+  try {
+    const buf = fs.readFileSync(path.join(repoRoot, from));
+    fs.mkdirSync(path.join(out, 'fig'), { recursive: true });
+    fs.writeFileSync(path.join(out, 'fig', to), buf);
+    return { file: 'fig/' + to, from, sha256: crypto.createHash('sha256').update(buf).digest('hex') };
+  } catch { return null; }
+};
+
+// ---- the studio itself: the scenario modules on disk, and a real screenshot of the page ----
+let studio = null;
+{
+  let scenarios = [];
+  try {
+    scenarios = fs.readdirSync(path.join(repoRoot, 'sim-engine/scenarios'))
+      .filter(f => f.endsWith('.mjs') && !/^(index|_)/.test(f)).map(f => f.replace(/\.mjs$/, ''));
+  } catch {}
+  // written by dashboard/shot-studio.mjs only when the page rendered on the real engine (never the harness MOCK)
+  const shot = rj('dashboard/public/deck/fig/studio_spec.json');
+  const shotOk = shot && !shot.mock && fs.existsSync(path.join(out, shot.file || '-')) ? shot : null;
+  const contract = rt('sim-engine/CONTRACT.md');
+  if (scenarios.length) studio = {
+    scenarios,
+    shot: shotOk ? { file: shotOk.file, typed: shotOk.typed, model: shotOk.model, engineLine: shotOk.engineLine,
+      criteria: shotOk.criteria, valid: shotOk.valid, takenAt: shotOk.takenAt, sha256: shotOk.sha256 } : null,
+    // the contract says which laws STATE can feed today; quoted, not turned into a number
+    lawsEvaluable: (contract && /Only the mass[–-]length rows \(([^)]+)\) can currently be evaluated/.exec(contract)?.[1]) || null,
+    sources: ['sim-engine/scenarios/*.mjs', 'sim-engine/CONTRACT.md', shotOk ? 'deck/fig/studio_spec.json (dashboard/shot-studio.mjs)' : null].filter(Boolean)
+  };
+}
+
+// ---- laws as versioned data: the registry, its current law set, and the surfaces that serve it ----
+let lawreg = null;
+{
+  const cur = rj('lean/registry/lawsets/current.json');
+  const set = cur && rj('lean/registry/lawsets/' + cur.file);
+  let laws = [];
+  try {
+    const lawDir = path.join(repoRoot, 'lean/registry/laws');
+    laws = fs.readdirSync(lawDir).filter(f => f.endsWith('.json')).map(f => JSON.parse(fs.readFileSync(path.join(lawDir, f), 'utf8')));
+  } catch {}
+  if (set && laws.length) {
+    const ORDER = ['proposed', 'candidate', 'accepted', 'contested', 'retired'];
+    const tally = list => ORDER.map(s => ({ status: s, n: list.filter(l => l.status === s).length,
+      physical: list.filter(l => l.status === s && l.kind === 'physical').length,
+      biological: list.filter(l => l.status === s && l.kind === 'biological').length }));
+    const mirror = rj('dashboard/public/api/lean/index.json');
+    let discovered = null;
+    try { discovered = fs.readdirSync(path.join(repoRoot, 'lean/registry/discovered'), { withFileTypes: true }).filter(d => d.isDirectory()).length; } catch {}
+    lawreg = {
+      lawset: set.version, lawsetCreated: set.created, lawsetCommit: set.commit || null,
+      inLawset: tally(set.laws), inLawsetTotal: set.laws.length,
+      onDisk: tally(laws), onDiskTotal: laws.length,
+      mirror: mirror ? { lawset: mirror.current_lawset, count: mirror.count } : null,
+      mcpVersion: (rt('mcp/server.mjs') || '').match(/VERSION\s*=\s*"([^"]+)"/)?.[1] || null,
+      discovered,
+      sources: ['lean/registry/lawsets/current.json', 'lean/registry/lawsets/' + cur.file, 'lean/registry/laws/*.json',
+        'dashboard/public/api/lean/index.json', 'mcp/server.mjs']
+    };
+  }
+}
+
+// ---- the independent validation of the studio, as its harness scored it ----
+let studioval = null;
+{
+  const R = rj('sim-engine/validation/studio-results.json');
+  if (R && Array.isArray(R.results)) {
+    const scored = R.results.filter(r => r.status !== 'observation');
+    const final = r => r.amended_status || r.status;
+    const GROUPS = [
+      ['wild', 'Wild-type predictions', r => /^W/.test(r.id)],
+      ['neg', 'Negative and law controls', r => /^N[1-6]$/.test(r.id)],
+      ['opt', 'Optimizer and parser controls', r => /^[OP]\d/.test(r.id)],
+      ['contract', 'Contract and determinism, per scenario', r => /^N7/.test(r.id)]
+    ];
+    const STAT = ['pass', 'pass-rests-on-assumed', 'circular', 'fail', 'no-target'];
+    const groups = GROUPS.map(([key, label, f]) => {
+      const rs = scored.filter(f);
+      return { key, label, n: rs.length, counts: Object.fromEntries(STAT.map(s => [s, rs.filter(r => final(r) === s).length])),
+        rows: rs.map(r => ({ id: r.id, name: r.name, status: final(r), preregistered: r.status })) };
+    });
+    // the slide's headline, computed: how many numeric wild-type tests pass as independent evidence
+    const wildNumeric = scored.filter(r => /^W/.test(r.id) && Array.isArray(r.band));
+    studioval = {
+      generatedAt: R.generated_at,
+      preregHashOk: !!R.preregistration?.ok,
+      preregSha: R.preregistration?.recorded || null,
+      selftest: R.selftest?.checks ? { ok: R.selftest.checks.filter(c => c.ok).length, total: R.selftest.checks.length } : null,
+      tally: R.tally, tallyA1: R.tally_after_amendment_A1, scored: scored.length,
+      groups,
+      wildNumeric: wildNumeric.length,
+      wildIndependentPasses: wildNumeric.filter(r => final(r) === 'pass').length,
+      controlsHeld: scored.filter(r => /^(N[1-6]|O\d|P\d)$/.test(r.id)).every(r => final(r) === 'pass'),
+      fails: scored.filter(r => final(r) === 'fail').map(r => ({ id: r.id, name: r.name, why: r.why })),
+      circular: scored.filter(r => final(r) === 'circular').map(r => r.id),
+      sources: ['sim-engine/validation/studio-results.json', 'sim-engine/validation/STUDIO-PREREGISTRATION.md', 'sim-engine/validation/STUDIO-AMENDMENTS.md']
+    };
+  }
+}
+
+// ---- the printable kit: verified counts from its manifest, and one render ----
+let printkit = null;
+{
+  const M = rj('anatomy-model/print/manifest.json');
+  const render = copyFig('anatomy-model/print/renders/starter-exploded.jpg', 'print_starter_exploded.jpg');
+  if (M && M.life_size_1to1) {
+    const st = M.life_size_1to1.starter_kit_1to1 || {}, g = M.life_size_1to1.ff_fins_solid_1to1_GLIDER || {}, k = M.kit_120mm || {};
+    printkit = {
+      hypothetical: !!M.HYPOTHETICAL,
+      starter: { passed: st.n_passed ?? null, failed: st.n_failed ?? null },
+      kit120: { parts: k.n_parts ?? null, passed: k.n_passed ?? null, failed: k.n_failed ?? null },
+      glider: {
+        sl_mm: g.print_standard_length_mm ?? null, design: g.design || null, unverified: g.UNVERIFIED || null,
+        states: Object.entries(g.states_measured || {}).map(([name, s]) => ({ name, mass_g: s.mass_g, v_min: s.v_min_m_s, margin: s.static_margin_fraction_of_MAC, stable: s.stable }))
+      },
+      cellTypes: M.cell_tokens?.n_cell_types_recorded ?? null,
+      render,
+      sources: ['anatomy-model/print/manifest.json', 'anatomy-model/print/README.md', render ? render.from : null].filter(Boolean)
+    };
+  }
+}
+
 // ---- the holdout exam, as the validation-on-unseen-data line (no held-out organism data is shown) ----
 let examLine = null;
 try {
@@ -574,6 +701,7 @@ const numbers = {
   } : null,
   records,
   shape, corrections, physiology, flier, glide, sequences, anatomy, genomeGap, designval, readiness, examLine,
+  studio, lawreg, studioval, printkit,
   figures,
   crosscheck: crosscheck ? {
     ourTests: crosscheck.counts.ourTests, theirTests: crosscheck.counts.theirTests,
@@ -613,6 +741,12 @@ const slides = [
   { id: 'glide', state: have(glide) ? 'live' : 'anticipated', needs: 'the glide-range bound and the simulator run log' },
   { id: 'sequence', state: have(sequences) ? 'live' : 'anticipated', needs: 'the sequence comparison layer' },
   { id: 'organism3d', state: have(anatomy) ? 'partial' : 'anticipated', needs: 'one measured proportion carries the flying-fish model; the rest is schematic' },
+
+  // the Design Studio: the product, its laws, its independent validation, and the printable kit
+  { id: 'studio', state: studio?.shot ? 'live' : 'anticipated', needs: 'a screenshot of the studio rendering on the real engine (dashboard/shot-studio.mjs)' },
+  { id: 'lawreg', state: have(lawreg) ? 'live' : 'anticipated', needs: 'the versioned law registry' },
+  { id: 'studioval', state: have(studioval) ? 'live' : 'anticipated', needs: 'the pre-registered studio validation harness' },
+  { id: 'printkit', state: printkit ? 'partial' : 'anticipated', needs: 'a flight test: the files are verified, but no tunnel, CFD or free-flight test has been run on this geometry' },
 
   { id: 'wing', state: 'anticipated', needs: 'a printed wing and a matched scaled control; no specimen, no scan, no measurement exists' },
   { id: 'scales', state: 'partial', needs: 'records at every scale for one species' },

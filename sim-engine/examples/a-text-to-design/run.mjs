@@ -47,12 +47,18 @@ const W = whatif.result;
 let check = null;
 if (W.design?.doc) check = await scenarioRun({ organism: W.design.doc, scenario: 'glide', ageDays: 180, params: { launch_height_m: 1, launch_airspeed_override_m_s: WHATIF_LAUNCH } });
 const CR = check?.result?.run;
+// and the plain zebrafish, to show why the glide fails as written
+const start = await scenarioRun({ organism: 'zebrafish-adult', scenario: 'glide', ageDays: 180, params: { launch_height_m: 1 } });
+const SR = start.result.run;
+const why = SR.feasibility_note ?? SR.limiting ?? null;
 
 // ------------------------------------------------------------- expectations (what the README claims)
 const hExp = H.design?.explanation ?? H.starting_design.explanation;
 const hGlide = hExp.criteria.find(c => c.id === glideC.id);
 expect('as written: no design meets the spec', H.meets === false && /no design meets the spec|does not meet/.test(H.status), `status=${H.status}`);
-expect('as written: glide fails on launch speed below v_min', /launch speed .* below v_min/.test(hGlide?.stages?.[0]?.limiting || ''), hGlide?.stages?.[0]?.limiting);
+expect('as written: zebrafish glide infeasible, launch speed below v_min (scenario_run)', SR.feasible === false && /launch speed .* below v_min/.test(why || ''), `feasible=${SR.feasible} note=${why}`);
+expect('as written: zebrafish launch speed is labelled calibrated', metric(SR, 'launch_airspeed_m_s')?.kind === 'calibrated', JSON.stringify(metric(SR, 'launch_airspeed_m_s')));
+expect('design_from_spec explanation carries the limiting factor of the failed glide', !!hGlide?.stages?.[0]?.limiting, `limiting=${hGlide?.stages?.[0]?.limiting} (glide.mjs now puts the reason in feasibility_note; lib/spec.mjs explainResult reads only run.limiting)`);
 expect('as written: temperature criteria met at 10 and 30 °C', hExp.criteria.filter(c => c.id !== glideC.id).every(c => c.verdict === 'met'), JSON.stringify(hExp.criteria.map(c => [c.id, c.verdict])));
 expect('what-if: meets the spec', W.meets === true && W.status === 'meets the spec', `status=${W.status}`);
 const wGlide = W.design?.explanation?.criteria?.find(c => c.id === glideC.id);
@@ -71,6 +77,7 @@ const rejReasons = [...new Set((H.optimizer?.rejected_sample || []).map(r => r.c
 const glideRows = CR ? ['launch_airspeed_m_s', 'v_min_m_s', 'glide_range_lean_bound_m', 'kinetic_phase_m', 'glide_range_total_m', 'wing_loading_N_m2']
   .map(k => [k, n(metric(CR, k)?.value) + ' ' + (metric(CR, k)?.unit || ''), metric(CR, k)?.kind]) : [];
 const defects = [];
+if (!hGlide?.stages?.[0]?.limiting) defects.push(`- **The per-criterion explanation lost its limiting factor.** design_from_spec gives \`limiting: null\` for the failed glide. glide.mjs now puts the reason in \`feasibility_note\` (and sets \`limiting: null\`), but lib/spec.mjs explainResult reads only \`run.limiting\`. The reason quoted above comes from a direct \`scenario_run\`. Reported to the hub.`);
 if (weakDefect) defects.push(`- **weakest_provenance understates the glide verdict.** design_from_spec reports \`${wGlide.stages[0].weakest_provenance}\` for the glide criterion, but the launch speed behind it is \`${metric(CR, 'launch_airspeed_m_s')?.kind}\` in the what-if (and \`calibrated\` as written). lib/spec.mjs explainResult takes the metric's own kind before the run's weakest input. Reported to the hub.`);
 if (feasDefect) defects.push('- **The optimizer summary says `feasible: 0`** although the optimizer returned status ok with a feasible best design: tools/spec-tools.mjs reads `o.feasible`, but `optimize` now returns `feasible_candidates`. Reported to the hub.');
 if (P.unparsed.length) defects.push(`- **Parser gap:** "${P.unparsed.map(u => u.leftover ?? u.text).join('", "')}" was left unparsed, so \`design_from_spec({text})\` would stop at "needs clarification". Reported to the hub.`);
@@ -78,9 +85,9 @@ if (P.unparsed.length) defects.push(`- **Parser gap:** "${P.unparsed.map(u => u.
 const readme = `
 **Request (plain English):** "${TEXT}"
 
-**Headline.** As written, **${H.status}**. The glide criterion fails because ${hGlide.stages[0].limiting}.
+**Headline.** As written, **${H.status}**. The glide criterion fails: ${why} (\`scenario_run\` glide on the plain zebrafish; launch speed ${q(metric(SR, 'launch_airspeed_m_s'))}, v_min ${q(metric(SR, 'v_min_m_s'))}).
 With a labelled **what-if** that gives the fish a flying fish's ~${WHATIF_LAUNCH} m/s leap speed (an *assumed* input for a zebrafish), the optimizer finds a
-design that **${W.status}**: ${bestVals}, gliding ${n(wGlide?.stages?.[0]?.value)} m from 1 m. That design rests on the assumption. It is not evidence that a zebrafish-derived fish could glide.
+design that **${W.status}**: ${bestVals}, gliding ${n(wGlide?.stages?.[0]?.value)} m from 1 m. Only ${n(metric(CR, 'glide_range_lean_bound_m')?.value)} m of that is covered by the proved Lean bound; the rest is the level kinetic phase, which lies outside the theorem. That design rests on the assumption. It is not evidence that a zebrafish-derived fish could glide.
 
 ## Step 1. Text to spec (\`parse_design_text\`: rule-based, no LLM)
 
@@ -142,7 +149,7 @@ finish({
   output: {
     text: TEXT, parse: parsed,
     ranges_from: { 'zebrafish-adult': { pectoral_area_over_SL2: zf.pectoral_area_over_SL2, pectoral_span_over_SL: zf.pectoral_span_over_SL }, 'flying-fish': { pectoral_area_over_SL2: ff.pectoral_area_over_SL2, pectoral_span_over_SL: ff.pectoral_span_over_SL } },
-    spec, design_as_written: slim(honest), spec_whatif: specW, design_whatif: slim(whatif), whatif_glide_rerun: check ? slim(check) : null,
+    spec, design_as_written: slim(honest), spec_whatif: specW, design_whatif: slim(whatif), whatif_glide_rerun: check ? slim(check) : null, zebrafish_glide_as_written: slim(start),
     known_defects: { weakest_provenance_understated: weakDefect, optimizer_feasible_zero: feasDefect, parser_unparsed: P.unparsed },
   },
   readme,

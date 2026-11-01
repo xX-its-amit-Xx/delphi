@@ -1,0 +1,111 @@
+{
+ "law_id": "perturb-isa-vmin",
+ "version": "1.0.0",
+ "kind": "physical",
+ "class": "theorem-from-hypothesis",
+ "status": "candidate",
+ "label": null,
+ "level": null,
+ "lean_ref": {
+  "module": "lean/Delphi/Perturb.lean",
+  "theorem": "Delphi.Perturb.vmin_isa_mono",
+  "structure": null,
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "66a81033891ecd5b3309d74ac2c869df89043adc29ac0802694e27a640aa65c8",
+  "content_hash": "e91ac2a6100850efe8b9e962d59c406de959b8c21ed82064475828bd63859528"
+ },
+ "statement_en": "In the ISA troposphere air density falls with height, and the minimum flight speed sqrt(2W/(rho S C_Lmax)) rises with height (v_min proportional to 1/sqrt(rho)).",
+ "hypotheses": [
+  {
+   "name": "see theorem statement",
+   "statement": "the named hypothesis structure(s) in the theorem statement; instantiated with fetched numbers in Delphi.Perturb.measured"
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "standard atmosphere (Narayanan and Osechas 2022); troposphere only (h < T0/beta)"
+ },
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "Narayanan S, Osechas O 2022, Enhanced Vertical Navigation Using Barometric Measurements. (PMID 36501962, doi:10.3390/s22239263); lean/perturb-sources.json#narayanan2022"
+  ],
+  "observations": []
+ },
+ "sources": [
+  "Narayanan S, Osechas O 2022, Enhanced Vertical Navigation Using Barometric Measurements. (PMID 36501962, doi:10.3390/s22239263); lean/perturb-sources.json#narayanan2022"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.Perturb.perturb_nonvacuous",
+  "statement": "theorem perturb_nonvacuous : Nonempty Record",
+  "file": "lean/Delphi/Perturb.lean"
+ },
+ "constraints": [
+  "P4"
+ ],
+ "introduced_in": "1.1.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": null,
+ "origin": "lean/registry/laws/perturb-isa-vmin.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "propose.mjs against lawset 1.0.0: candidate"
+  }
+ ],
+ "content_hash": "e91ac2a6100850efe8b9e962d59c406de959b8c21ed82064475828bd63859528",
+ "lean": {
+  "theorem": "Delphi.Perturb.vmin_isa_mono",
+  "module": "lean/Delphi/Perturb.lean",
+  "line": 313,
+  "source": "/-- **In the ISA troposphere the minimum speed rises with height.** -/\ntheorem vmin_isa_mono (A : ISATroposphere) {Cmax W S h₁ h₂ : ℝ} (hS : 0 < S) (hC : 0 < Cmax) (hW : 0 ≤ W)\n    (h : h₁ ≤ h₂) (htop : h₂ < A.T0 / A.beta) :\n    vmin (A.rho h₁) Cmax W S ≤ vmin (A.rho h₂) Cmax W S := by\n  unfold vmin\n  apply Real.sqrt_le_sqrt\n  have hr₂ := isa_rho_pos A htop\n  have hle := isa_rho_anti A h htop\n  apply div_le_div_of_nonneg_left (by positivity) (by positivity)\n  exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hle hS.le) hC.le",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.Perturb.ISATroposphere",
+    "keyword": "structure",
+    "module": "lean/Delphi/Perturb.lean",
+    "line": 260,
+    "source": "/-- The troposphere of the barometric formula: `rho(h) = rho0 (1 - beta h / T0)^n`, `n > 0` (for the ISA\n`n = g0 / (R_d beta) - 1`, about 4.256). -/\nstructure ISATroposphere where\n  rho0 : ℝ\n  T0 : ℝ\n  beta : ℝ\n  n : ℝ\n  rho0_pos : 0 < rho0\n  T0_pos : 0 < T0\n  beta_pos : 0 < beta\n  n_pos : 0 < n"
+   }
+  ]
+ },
+ "constraint_details": [
+  {
+   "id": "P4",
+   "relation": "v ≥ v_min(ρ(h)) = sqrt(2 W / (ρ(h) S C_L,max)), ρ(h) = 1.225 (1 − 0.0065 h / 288.15)^4.2559",
+   "lemma": "Delphi.Perturb.vmin_isa_mono",
+   "law": "Delphi.Perturb.vmin_density_ratio",
+   "module": "lean/Delphi/Perturb.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "lift_supported_flight",
+    "isa_troposphere"
+   ],
+   "canEliminate": "a design flying at altitude at a speed that is only enough at sea level",
+   "lemma_source": "/-- **In the ISA troposphere the minimum speed rises with height.** -/\ntheorem vmin_isa_mono (A : ISATroposphere) {Cmax W S h₁ h₂ : ℝ} (hS : 0 < S) (hC : 0 < Cmax) (hW : 0 ≤ W)\n    (h : h₁ ≤ h₂) (htop : h₂ < A.T0 / A.beta) :\n    vmin (A.rho h₁) Cmax W S ≤ vmin (A.rho h₂) Cmax W S := by\n  unfold vmin\n  apply Real.sqrt_le_sqrt\n  have hr₂ := isa_rho_pos A htop\n  have hle := isa_rho_anti A h htop\n  apply div_le_div_of_nonneg_left (by positivity) (by positivity)\n  exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hle hS.le) hC.le"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Perturb.lean",
+  "decl": "Delphi.Perturb.vmin_isa_mono",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "66a81033891ecd5b3309d74ac2c869df89043adc29ac0802694e27a640aa65c8",
+  "current_statement_sha256": "66a81033891ecd5b3309d74ac2c869df89043adc29ac0802694e27a640aa65c8",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.1.0",
+  "1.2.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

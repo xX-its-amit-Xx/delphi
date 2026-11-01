@@ -208,6 +208,28 @@ for (const [name, mod] of Object.entries(ALL)) {
   const zl = wind.run(zlarva, {});
   check('wind: larva cannot glide -> distances 0', zl.feasible === false && get(zl, 'ground_distance_total_m') === 0);
 }
+// ---- positive / negative glide controls on the REAL, unedited organisms (core resolveState, read-only) ----------
+{
+  let rows = [];
+  try {
+    const { loadBundle } = await import('../lib/data-node.mjs');
+    const O = await import('../lib/organism.mjs');
+    const S = await import('../lib/state.mjs');
+    const b = await loadBundle();
+    for (const id of Object.keys(b.organisms)) {
+      const st = S.resolveState(O.docFor(b, id), null, {}, b); // reference (adult) age
+      if (MASS !== 1) st.mass_kg = { ...st.mass_kg, value: st.mass_kg.value * MASS };
+      const g = glide.run(st, {});
+      rows.push({ id, stage: st.stage.value, feasible: g.feasible, v0: get(g, 'launch_airspeed_m_s'), vmin: get(g, 'v_min_m_s') });
+    }
+  } catch (e) { rows = null; check('real organisms: core resolveState runs', false, e.message); }
+  if (rows) {
+    console.log('adult glide controls (reference age): ' + rows.map(r => `${r.id} [${r.stage}] v0 ${r.v0 == null ? 'null' : r.v0.toFixed(2)} vs v_min ${r.vmin.toFixed(2)} -> feasible ${r.feasible}`).join('; '));
+    const R = id => rows.find(r => r.id === id);
+    check('POSITIVE CONTROL: unedited adult flying fish can glide', R('flying-fish') && R('flying-fish').feasible === true, JSON.stringify(R('flying-fish')));
+    check('NEGATIVE CONTROL: unedited adult zebrafish cannot glide', R('zebrafish-adult') && R('zebrafish-adult').feasible === false, JSON.stringify(R('zebrafish-adult')));
+  }
+}
 // ---- no bird data in the environment scenario files --------------------------------------------------------
 {
   const dir = url.fileURLToPath(new URL('../scenarios/', import.meta.url));

@@ -24,8 +24,11 @@
 // --warn), with fallbacks so it also renders on a page that does not define them.
 
 const STAGES = ['embryo', 'larva', 'juvenile', 'adult'];
-const OPS = ['>=', '<=', 'survives', 'maximize', 'minimize'];
-const OP_WORD = { '>=': '≥', '<=': '≤', survives: 'survives', maximize: 'maximize', minimize: 'minimize' };
+// survives = the organism lives through it; feasible = the behaviour is possible (glide, hold station, grip, escape)
+const OPS = ['>=', '<=', 'survives', 'feasible', 'maximize', 'minimize'];
+const OP_WORD = { '>=': '≥', '<=': '≤', survives: 'survives', feasible: 'can do', maximize: 'maximize', minimize: 'minimize' };
+// glide distances: which part a Lean theorem covers (lib/spec.mjs LEAN_COVER)
+const LEAN_TAG = { glide_range_total_m: ' · total: only the h·L/D part is Lean-covered', ground_distance_total_m: ' · total: only the h·L/D part is Lean-covered', glide_range_lean_bound_m: ' · Lean-covered (glide_range_le)' };
 
 const CSS = `
 .specbox{--sb-panel:var(--panel,#fff);--sb-ink:var(--ink,#14201f);--sb-mute:var(--mute,#5a6b69);--sb-line:var(--line,#d9dfdb);--sb-accent:var(--accent,#0e7c86);--sb-soft:var(--soft,#eef2ef);--sb-ok:var(--ok,#2f7d4f);--sb-bad:var(--bad,#b3392f);--sb-warn:var(--warn,#a8650b);
@@ -79,7 +82,8 @@ function paramText(k, v) {
 const stageText = s => (s === 'all' ? 'all stages' : Array.isArray(s) ? s.join(' + ') : s?.ageDays ? `${s.ageDays.min}–${s.ageDays.max} d` : 'adult');
 function critText(c) {
   const ps = Object.entries(c.params || {}).filter(([k]) => k !== 'water').map(([k, v]) => paramText(k, v)).join(', ');
-  if (c.op === 'survives') return `${c.scenario}${ps ? `: ${ps}` : ''}`;
+  if (c.op === 'survives') return `survives ${c.scenario}${ps ? `: ${ps}` : ''}`;
+  if (c.op === 'feasible') return `can do ${c.scenario}${ps ? `: ${ps}` : ''}`;
   if (c.op === 'maximize' || c.op === 'minimize') return `${c.op} ${c.metric}${ps ? ` (${ps})` : ''}`;
   return `${c.metric} ${OP_WORD[c.op]} ${fmt(c.value)} ${c.unit || ''}${ps ? ` (${ps})` : ''}`;
 }
@@ -151,7 +155,7 @@ export async function mountSpecBox(root, opts = {}) {
       const chip = el('span', { class: `chip crit${c.hard ? '' : ' soft'}`, tabindex: '0', role: 'button', title: (c.source_text ? `from: "${c.source_text}" · ` : '') + 'click to edit',
         onclick: () => { editing = editing === c.id ? null : c.id; refresh(); },
         onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); editing = editing === c.id ? null : c.id; refresh(); } } },
-        el('span', { text: critText(c) }), el('span', { class: 'st', text: `· ${stageText(c.stages)}${c.hard ? '' : ' · soft'}${c.weight !== 1 ? ` · w${c.weight}` : ''}` }),
+        el('span', { text: critText(c) }), el('span', { class: 'st', text: `· ${stageText(c.stages)}${c.hard ? '' : ' · soft'}${c.weight !== 1 ? ` · w${c.weight}` : ''}${LEAN_TAG[c.metric] || ''}` }),
         el('button', { class: 'x', type: 'button', 'aria-label': 'delete criterion', text: '×', onclick: e => { e.stopPropagation(); spec.criteria.splice(i, 1); spec.criteria.forEach((x, j) => (x.id = `c${j + 1}`)); refresh(); } }));
       critRow.append(chip);
       if (editing === c.id) critRow.append(editor(c));

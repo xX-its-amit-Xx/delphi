@@ -34,3 +34,52 @@ independent source.
 against Morgan et al. 2018 (40.97 °C at 28 °C acclimation, a different lab; predicted 41.2 °C) and
 Andreassen et al. 2022 (41.0 °C). Those are real out-of-sample checks, and that is where its evidence lies.
 They are not this harness's tests, so this file only points to them.
+
+## A2 (2026-11-01, written after results): read `feasible` where the pre-registration said "survives" for a behaviour
+
+**Original pre-registered wording, unchanged in STUDIO-PREREGISTRATION.md:**
+- W11: "zebrafish survives sustained current of 0.20 m/s … and does **not** survive 1.10 m/s (2 × Ucrit)".
+- W1 fallback: "the harness locates it itself by bisection on `survives`".
+- N1: "… or the scenario reports glide as not applicable / survives = false / no glide metric".
+
+**Why.** The studio contract changed to 0.3.0 after the first results. The single `survives` flag was split
+into `survives` (the organism lives) and `feasible` (the behaviour asked about is possible: hold station,
+glide, aerial escape, grip), with a `feasibility_note`. This harness's own defect D6 had asked for that
+split, because `survives` meant different things in different scenarios. Under 0.3.0, `current.mjs`
+returns `survives: null`: being swept downstream is not modelled as lethal. So the pre-registered reading
+of W11 can no longer be met by any module. What W11 was written to test is "can the fish hold station at
+0.20 m/s but not at 1.10 m/s", and that is now `feasible`.
+
+**What changes.** W11, the W1 bisection fallback and N1's escape clause read `feasible` when the module
+reports it, and fall back to `survives` when it does not. This is a change in how the result is read: no
+band, threshold or test is added. N4 needed no amendment. Its pre-registered wording already says
+"`survives` (or flight feasibility)", and it now uses `feasible` when present.
+
+**How it is reported.** The pre-registered verdict stays in `status`. The A2 verdict goes in
+`amended_status` with `amendment: 'A2'`, shown side by side. At the first run after the change, W11 is
+`fail` under the pre-registered reading (survives = null at both speeds) and `pass` under A2 (feasible =
+true at 0.20 m/s, false at 1.10 m/s). N1 passes under both readings (glide_range_total_m = 0 for the adult
+zebrafish).
+
+## A3 (2026-11-01, written after results): N5 checks the distance the module declares covered by the Lean theorem
+
+**Original pre-registered wording:** "whenever a scenario reports a glide distance d together with a
+launch height h and an L/D, d ≤ h × L/D / (1 − δ)".
+
+**Why.** After this harness reported N5 as failed (defect D2: a single `glide_range_m` of 32.9 m against
+a bound of 4.37 m), `glide.mjs` split its distance into three metrics:
+- `glide_range_lean_bound_m` (h·(L/D)max, the part covered by `glide_range_le`);
+- `kinetic_phase_m` (labelled OUTSIDE the theorem);
+- `glide_range_total_m` (labelled "NOT covered by the Lean theorem as a whole").
+
+The pre-registered wording says "a glide distance", which includes the total. The total still exceeds the
+bound whenever the kinetic phase is non-zero, so N5 still **fails** under the pre-registered reading.
+
+**The amended reading.** N5 checks the metric the module declares covered by the theorem. It also
+requires that any reported distance above the bound carries an explicit "not covered" label, so that the
+studio never presents an unproved number as proved. A3 passes only if both hold.
+
+**Caveat, stated so nobody over-reads the A3 pass.** `glide_range_lean_bound_m` is computed as exactly
+h·(L/D)max, so checking it against h·(L/D)/(1 − δ) is close to a tautology. What A3 really verifies is the
+labelling: that the number exceeding the proved bound is marked as outside it. The physics of the kinetic
+phase is not checked by any Lean law.

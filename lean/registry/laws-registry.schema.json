@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://delphisci/lean/registry/laws-registry.schema.json",
+  "title": "DELPHI law registry: one law",
+  "description": "One file per law under lean/registry/laws/<law_id>.json. Empirical premises are named hypotheses (Lean structures or definitions), never `axiom`. Laws are never deleted: retired and contested laws keep their files so old results stay reproducible. See lean/registry/README.md.",
+  "type": "object",
+  "required": ["law_id", "version", "kind", "class", "status", "lean_ref", "statement_en", "hypotheses", "scope", "evidence", "sources", "non_vacuity_witness", "introduced_in", "supersedes", "superseded_by", "retired_reason", "approval", "origin", "history", "content_hash"],
+  "properties": {
+    "law_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "kind": { "enum": ["physical", "biological"] },
+    "class": { "enum": ["theorem", "theorem-from-hypothesis", "named-hypothesis", "empirical-observation", "convention", "gap"] },
+    "status": { "enum": ["proposed", "candidate", "accepted", "contested", "retired"] },
+    "label": { "type": ["string", "null"] },
+    "level": { "type": ["string", "null"] },
+    "lean_ref": {
+      "type": "object",
+      "required": ["module", "theorem", "commit", "statement_sha256", "content_hash"],
+      "properties": {
+        "module": { "type": ["string", "null"] },
+        "theorem": { "type": ["string", "null"] },
+        "structure": { "type": ["string", "null"] },
+        "commit": { "type": ["string", "null"] },
+        "statement_sha256": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" },
+        "content_hash": { "type": ["string", "null"], "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "statement_en": { "type": "string", "minLength": 1 },
+    "hypotheses": {
+      "type": "array",
+      "items": { "type": "object", "required": ["name", "statement"], "properties": { "name": { "type": ["string", "null"] }, "statement": { "type": "string" }, "unit": { "type": ["string", "null"] }, "source": { "type": ["string", "null"] } } }
+    },
+    "scope": {
+      "type": "object",
+      "required": ["taxa"],
+      "properties": { "taxa": { "type": "array", "items": { "type": "string" } }, "life_stages": { "type": "array", "items": { "type": "string" } }, "ranges": { "type": "object" }, "kernelChecked": { "type": "array" }, "assumed": { "type": "array" } }
+    },
+    "constraint_scopes": { "type": "object", "description": "per-constraint scope where the check is narrower than the law: {<constraint id>: {taxa, life_stages, ranges, basis}}" },
+    "shared_scope": {
+      "type": ["object", "null"],
+      "required": ["atoms", "quantities"],
+      "properties": { "atoms": { "type": "array", "items": { "type": "string" } }, "quantities": { "type": "object" }, "bridge": { "type": ["string", "null"] }, "witness_values": { "type": "object" } }
+    },
+    "evidence": { "type": "object", "required": ["sources"], "properties": { "sources": { "type": "array" }, "observations": { "type": "array" }, "n_organisms": { "type": ["integer", "null"] }, "n_observations": { "type": ["integer", "null"] } } },
+    "sources": { "type": "array", "items": { "type": "string" } },
+    "non_vacuity_witness": { "type": ["object", "null"], "required": ["lean", "statement"], "properties": { "lean": { "type": ["string", "null"] }, "statement": { "type": "string" }, "file": { "type": "string" } } },
+    "constraints": { "type": "array", "items": { "type": "string" } },
+    "introduced_in": { "type": ["string", "null"], "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "supersedes": { "type": ["string", "null"] },
+    "superseded_by": { "type": ["string", "null"] },
+    "retired_reason": { "type": ["string", "null"] },
+    "contested_with": { "type": "array", "items": { "type": "object", "required": ["law_id", "reason"] } },
+    "approval": {
+      "type": ["object", "null"],
+      "required": ["approved_by_role", "date", "basis"],
+      "properties": { "approved_by_role": { "type": "string", "minLength": 1, "not": { "pattern": "@" } }, "date": { "type": "string" }, "basis": { "type": "string" } }
+    },
+    "origin": { "type": "object", "required": ["by_role", "kind"], "properties": { "by_role": { "type": "string" }, "kind": { "enum": ["bootstrap", "human", "agent", "observation", "machine-discovery"] } } },
+    "history": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["version", "date", "change"] } },
+    "content_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  },
+  "allOf": [
+    { "if": { "properties": { "status": { "const": "accepted" } } }, "then": { "properties": { "approval": { "type": "object" } } } },
+    { "if": { "properties": { "status": { "const": "retired" } } }, "then": { "properties": { "retired_reason": { "type": "string", "minLength": 1 } } } },
+    { "if": { "properties": { "status": { "const": "contested" } } }, "then": { "required": ["contested_with"], "properties": { "contested_with": { "minItems": 1 } } } }
+  ]
+}

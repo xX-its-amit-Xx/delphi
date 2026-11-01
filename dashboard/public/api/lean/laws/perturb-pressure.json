@@ -1,0 +1,112 @@
+{
+ "law_id": "perturb-pressure",
+ "version": "1.0.0",
+ "kind": "physical",
+ "class": "theorem-from-hypothesis",
+ "status": "candidate",
+ "label": null,
+ "level": null,
+ "lean_ref": {
+  "module": "lean/Delphi/Perturb.lean",
+  "theorem": "Delphi.Perturb.closed_bladder_rules_out",
+  "structure": null,
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "9d3e6adb23a7cb7b4f71721be207c27a2dfde8e33cef537566b6c35c21e9b863",
+  "content_hash": "51ea0803912dfa11a5ebaf852ccb7d34247f3a1a124d04dd3b360dce6e621a53"
+ },
+ "statement_en": "Boyle's law for a closed swim bladder at fixed temperature with hydrostatic pressure p0 + k d: the volume at depth d is V0 p0 / P(d), so a closed bladder claiming more volume at depth is ruled out (quasi-static only).",
+ "hypotheses": [
+  {
+   "name": "see theorem statement",
+   "statement": "the named hypothesis structure(s) in the theorem statement; instantiated with fetched numbers in Delphi.Perturb.measured"
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "gas physics (Boyle) with 1 atm per 10 m of seawater (Yancey 2020); quasi-static only: fails for rapid decompression (Kerr 2023)"
+ },
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "Yancey PH 2020, Cellular responses in marine animals to hydrostatic pressure. (PMID 32096337, doi:10.1002/jez.2354); lean/perturb-sources.json#yancey2020",
+   "Kerr JR, White PR, Leighton TG, Silva LGM, Kemp PS 2023, Boyle's Law ignores dynamic processes in governing barotrauma in fish. (PMID 37926724, doi:10.1038/s41598-023-46125-9); lean/perturb-sources.json#kerr2023"
+  ],
+  "observations": []
+ },
+ "sources": [
+  "Yancey PH 2020, Cellular responses in marine animals to hydrostatic pressure. (PMID 32096337, doi:10.1002/jez.2354); lean/perturb-sources.json#yancey2020",
+  "Kerr JR, White PR, Leighton TG, Silva LGM, Kemp PS 2023, Boyle's Law ignores dynamic processes in governing barotrauma in fish. (PMID 37926724, doi:10.1038/s41598-023-46125-9); lean/perturb-sources.json#kerr2023"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.Perturb.perturb_nonvacuous",
+  "statement": "theorem perturb_nonvacuous : Nonempty Record",
+  "file": "lean/Delphi/Perturb.lean"
+ },
+ "constraints": [
+  "P3"
+ ],
+ "introduced_in": "1.1.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": null,
+ "origin": "lean/registry/laws/perturb-pressure.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "propose.mjs against lawset 1.0.0: candidate"
+  }
+ ],
+ "content_hash": "51ea0803912dfa11a5ebaf852ccb7d34247f3a1a124d04dd3b360dce6e621a53",
+ "lean": {
+  "theorem": "Delphi.Perturb.closed_bladder_rules_out",
+  "module": "lean/Delphi/Perturb.lean",
+  "line": 223,
+  "source": "/-- A closed-bladder design claiming a volume at depth larger than Boyle's law allows is ruled out. -/\ntheorem closed_bladder_rules_out (H : Hydrostatic) {V : ℝ → ℝ} {c d : ℝ}\n    (hboyle : ∀ d, 0 ≤ d → H.pressure d * V d = c) (hd : 0 ≤ d) {claimed : ℝ} (hclaim : V d = claimed)\n    (hbig : V 0 * H.p0 / H.pressure d < claimed) : False := by\n  have := bladder_volume_eq H hboyle hd\n  linarith",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.Perturb.Hydrostatic",
+    "keyword": "structure",
+    "module": "lean/Delphi/Perturb.lean",
+    "line": 174,
+    "source": "/-- Absolute pressure rises linearly with depth: `p0 + k d`. -/\nstructure Hydrostatic where\n  p0 : ℝ\n  k : ℝ\n  p0_pos : 0 < p0\n  k_pos : 0 < k"
+   }
+  ]
+ },
+ "constraint_details": [
+  {
+   "id": "P3",
+   "relation": "V(d) = V(0) p0 / (p0 + k d), p0 = 1 atm, k = 0.1 atm/m",
+   "lemma": "Delphi.Perturb.closed_bladder_rules_out",
+   "law": "Delphi.Perturb.bladder_volume_eq",
+   "module": "lean/Delphi/Perturb.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "boyle_closed_bladder"
+   ],
+   "canEliminate": "a closed-bladder design that keeps neutral buoyancy at depth without secreting gas",
+   "lemma_source": "/-- A closed-bladder design claiming a volume at depth larger than Boyle's law allows is ruled out. -/\ntheorem closed_bladder_rules_out (H : Hydrostatic) {V : ℝ → ℝ} {c d : ℝ}\n    (hboyle : ∀ d, 0 ≤ d → H.pressure d * V d = c) (hd : 0 ≤ d) {claimed : ℝ} (hclaim : V d = claimed)\n    (hbig : V 0 * H.p0 / H.pressure d < claimed) : False := by\n  have := bladder_volume_eq H hboyle hd\n  linarith"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Perturb.lean",
+  "decl": "Delphi.Perturb.closed_bladder_rules_out",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "9d3e6adb23a7cb7b4f71721be207c27a2dfde8e33cef537566b6c35c21e9b863",
+  "current_statement_sha256": "9d3e6adb23a7cb7b4f71721be207c27a2dfde8e33cef537566b6c35c21e9b863",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.1.0",
+  "1.2.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

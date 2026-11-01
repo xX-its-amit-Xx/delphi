@@ -1,0 +1,127 @@
+{
+ "law_id": "perturb-current",
+ "version": "1.0.0",
+ "kind": "biological",
+ "class": "theorem-from-hypothesis",
+ "status": "candidate",
+ "label": null,
+ "level": null,
+ "lean_ref": {
+  "module": "lean/Delphi/Perturb.lean",
+  "theorem": "Delphi.Perturb.no_station_above_ucrit",
+  "structure": null,
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "21066110bc387cadea26b67c0f41d79ad882df1723070327b776d8f6bae120de",
+  "content_hash": "f4702e881b21df060be5408b4944aa33060883165bcb641db413dc7bf4bf2ec4"
+ },
+ "statement_en": "Under the swim-limit hypothesis (sustained swimming at most U_crit; drag power rho C_d A U^3 / 2 paid aerobically), no design holds station in a current faster than U_crit, or in one whose drag power exceeds its aerobic ceiling eta E Q Ca.",
+ "hypotheses": [
+  {
+   "name": "see theorem statement",
+   "statement": "the named hypothesis structure(s) in the theorem statement; instantiated with fetched numbers in Delphi.Perturb.measured"
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "Teleostei"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "critical swimming speed protocol for fishes (Plaut 2001); scup red-muscle top speed (Rome 1992)"
+ },
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "Plaut I 2001, Critical swimming speed: its ecological relevance. (PMID 11733165, doi:10.1016/s1095-6433(01)00462-7); lean/perturb-sources.json#plaut2001",
+   "Rome LC, Choi IH, Lutz G, Sosnicki A 1992, The influence of temperature on muscle function in the fast swimming scup. I. Shortening velocity and muscle recruitment (PMID 1556514, doi:10.1242/jeb.163.1.259); lean/perturb-sources.json#rome1992a"
+  ],
+  "observations": []
+ },
+ "sources": [
+  "Plaut I 2001, Critical swimming speed: its ecological relevance. (PMID 11733165, doi:10.1016/s1095-6433(01)00462-7); lean/perturb-sources.json#plaut2001",
+  "Rome LC, Choi IH, Lutz G, Sosnicki A 1992, The influence of temperature on muscle function in the fast swimming scup. I. Shortening velocity and muscle recruitment (PMID 1556514, doi:10.1242/jeb.163.1.259); lean/perturb-sources.json#rome1992a"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.Perturb.perturb_nonvacuous",
+  "statement": "theorem perturb_nonvacuous : Nonempty Record",
+  "file": "lean/Delphi/Perturb.lean"
+ },
+ "constraints": [
+  "P2",
+  "P2b"
+ ],
+ "introduced_in": "1.1.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": null,
+ "origin": "lean/registry/laws/perturb-current.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "propose.mjs against lawset 1.0.0: candidate"
+  }
+ ],
+ "content_hash": "f4702e881b21df060be5408b4944aa33060883165bcb641db413dc7bf4bf2ec4",
+ "lean": {
+  "theorem": "Delphi.Perturb.no_station_above_ucrit",
+  "module": "lean/Delphi/Perturb.lean",
+  "line": 156,
+  "source": "/-- **No design holds station in a current faster than `U_crit`.** -/\ntheorem no_station_above_ucrit (L : SwimLimits) {Uswim Ucur P η E Q Ca Cv : ℝ} (hcur : 0 ≤ Ucur)\n    (hhold : 0 ≤ Uswim - Ucur) (hU : Uswim ≤ L.uCrit) (hdrag : dragPower L.rho L.Cd L.area Uswim ≤ P)\n    (hη : 0 ≤ η) (hE : 0 ≤ E) (hQ : 0 ≤ Q) (hCv : 0 ≤ Cv) (hsus : P ≤ aerobicPower η E Q Ca Cv)\n    (hfast : L.uCrit < Ucur) : False := by\n  have := (station_requires L hcur hhold hU hdrag hη hE hQ hCv hsus).1\n  linarith",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.Perturb.SwimLimits",
+    "keyword": "structure",
+    "module": "lean/Delphi/Perturb.lean",
+    "line": 127,
+    "source": "/-- Water density, drag coefficient, reference area and the critical (sustained) swimming speed. -/\nstructure SwimLimits where\n  rho : ℝ\n  Cd : ℝ\n  area : ℝ\n  uCrit : ℝ\n  rho_pos : 0 < rho\n  Cd_pos : 0 < Cd\n  area_pos : 0 < area\n  uCrit_pos : 0 < uCrit"
+   }
+  ]
+ },
+ "constraint_details": [
+  {
+   "id": "P2",
+   "relation": "U_current ≤ U_crit",
+   "lemma": "Delphi.Perturb.no_station_above_ucrit",
+   "law": "Delphi.Perturb.station_requires",
+   "module": "lean/Delphi/Perturb.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "station_holding_drag_fick"
+   ],
+   "canEliminate": "a design said to hold station in a current faster than its critical swimming speed",
+   "lemma_source": "/-- **No design holds station in a current faster than `U_crit`.** -/\ntheorem no_station_above_ucrit (L : SwimLimits) {Uswim Ucur P η E Q Ca Cv : ℝ} (hcur : 0 ≤ Ucur)\n    (hhold : 0 ≤ Uswim - Ucur) (hU : Uswim ≤ L.uCrit) (hdrag : dragPower L.rho L.Cd L.area Uswim ≤ P)\n    (hη : 0 ≤ η) (hE : 0 ≤ E) (hQ : 0 ≤ Q) (hCv : 0 ≤ Cv) (hsus : P ≤ aerobicPower η E Q Ca Cv)\n    (hfast : L.uCrit < Ucur) : False := by\n  have := (station_requires L hcur hhold hU hdrag hη hE hQ hCv hsus).1\n  linarith"
+  },
+  {
+   "id": "P2b",
+   "relation": "ρ_w C_d A U_current^3 / 2 ≤ η E_O2 Q Ca",
+   "lemma": "Delphi.Perturb.no_station_above_drag_bound",
+   "law": "Delphi.Perturb.station_requires",
+   "module": "lean/Delphi/Perturb.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "station_holding_drag_fick",
+    "fick_aerobic_supply"
+   ],
+   "canEliminate": "a design holding station in a current whose drag its oxygen budget cannot pay for",
+   "lemma_source": "/-- **No design holds station in a current whose drag power exceeds its aerobic ceiling `eta E Q Ca`.** -/\ntheorem no_station_above_drag_bound (L : SwimLimits) {Uswim Ucur P η E Q Ca Cv : ℝ} (hcur : 0 ≤ Ucur)\n    (hhold : 0 ≤ Uswim - Ucur) (hU : Uswim ≤ L.uCrit) (hdrag : dragPower L.rho L.Cd L.area Uswim ≤ P)\n    (hη : 0 ≤ η) (hE : 0 ≤ E) (hQ : 0 ≤ Q) (hCv : 0 ≤ Cv) (hsus : P ≤ aerobicPower η E Q Ca Cv)\n    (hbig : η * E * Q * Ca < dragPower L.rho L.Cd L.area Ucur) : False := by\n  have := (station_requires L hcur hhold hU hdrag hη hE hQ hCv hsus).2\n  linarith"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Perturb.lean",
+  "decl": "Delphi.Perturb.no_station_above_ucrit",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "21066110bc387cadea26b67c0f41d79ad882df1723070327b776d8f6bae120de",
+  "current_statement_sha256": "21066110bc387cadea26b67c0f41d79ad882df1723070327b776d8f6bae120de",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.1.0",
+  "1.2.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

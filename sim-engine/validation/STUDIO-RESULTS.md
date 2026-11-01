@@ -1,21 +1,21 @@
 # Design Studio: independent validation results
 
-Generated 2026-11-01T02:56:39.457Z by `sim-engine/validation/studio-harness.mjs` against the tests fixed in
+Generated 2026-11-01T03:02:07.484Z by `sim-engine/validation/studio-harness.mjs` against the tests fixed in
 `STUDIO-PREREGISTRATION.md` (sha256 `f2523da8529b998eea8ef9b9f165851f60d078a7ac5151a0dafa7bb4d324a66d`, integrity check: **hash matches**).
 Machine-readable: `studio-results.json`. Narrative and worst defects: `STUDIO-FINDINGS.md`. Post-results amendment: `STUDIO-AMENDMENTS.md`. Rows X* are observations added after results and are not counted. A pass that rests on a calibrated value is reported as `circular`, never as a pass.
 
-Harness self-test (each check made to fail on a planted bad input): **all 18 behave as designed**.
+Harness self-test (each check made to fail on a planted bad input): **all 20 behave as designed**.
 
 Fixture run (deliberately wrong scenario modules under C:/Temp/studio-validation-fixtures/bad, 2026-11-01T02:35:44.230Z): 12 of 18 evaluable checks flagged the planted defect: W2 circular, W3 fail, W4 fail, W5 pass, W6 fail, W7 fail, W9 pass, N1 fail, N2 fail, N3 fail, N4 fail, N5 fail, N7-temperature pass, N7-pressure pass, N7-altitude pass, N7-wind fail, N7-grip fail, N7-sleep pass. (W5, the N7 rows whose fixture honoured the contract, and W9 whose fixture speed is random, can pass by design.)
 
 ## Scoreboard
 
-| status | pre-registered rule | after amendment A1 (post-results, see STUDIO-AMENDMENTS.md) |
+| status | pre-registered rule | after amendments A1–A3 (post-results, see STUDIO-AMENDMENTS.md) |
 |---|---|---|
-| circular | 5 | 7 |
-| fail | 2 | 2 |
+| circular | 6 | 8 |
+| fail | 2 | 0 |
 | no-target | 1 | 1 |
-| pass | 21 | 21 |
+| pass | 20 | 22 |
 | pass-rests-on-assumed | 2 | 0 |
 
 Modules found: organism `lib/organism.mjs`, state `lib/state.mjs`, data `lib/data-node.mjs`, spec `lib/spec.mjs`, parse `lib/parse-text.mjs`, optimizer —; scenarios: temperature, current, pressure, altitude, wind, predator, grip, sleep, daynight, digestion, glide.
@@ -32,20 +32,20 @@ Modules found: organism `lib/organism.mjs`, state `lib/state.mjs`, data `lib/dat
 | W6 | adult day sleep fraction ≤ 7.7 % and below night | **circular** | 5.10 % | 5.1 ± 1.3 % (Yokogawa 2007) band [0, 7.7] | calibrated | in band, but rests on a calibrated quantity |
 | W7 | larval night sleep > adult, larval in [49.7, 66.7] % | **circular** | 58.2 (adult 33.4) | 58.17 % larva vs 33.37 % adult (Sorribes 2013) band [49.7, 66.7] | calibrated | in band, but rests on a calibrated quantity |
 | W8 | adult C-start peak speed | **pass-rests-on-assumed** → A1: **circular** | 0.951 m/s | ≈0.84 m/s derived from Re 27,800, TL 33 mm (Danos & Lauder 2012) band [0.42, 1.68] | assumed | in band; weakest input is assumed; AMENDMENT A1: the metric is an interpolation/fit of the target paper itself, so the pre-registered pass is not independent evidence |
-| W9 | flying fish glide distance and speed | **fail** | 4.37 m at 10.0 m/s (from glide) | up to 50 m at 15–20 m/s (secondhand) band 5,75 m; 7.5,25 m/s | assumed | distance: predicted 4.37 outside [5, 75]; speed: in band, but the predicted value equals a constant in the module sourced to the target paper (echo) |
+| W9 | flying fish glide distance and speed | **circular** | 8.65 m at 10.0 m/s (from glide) | up to 50 m at 15–20 m/s (secondhand) band 5,75 m; 7.5,25 m/s | assumed | distance: in band; weakest input is assumed; speed: in band, but the predicted value equals a constant in the module sourced to the target paper (echo) |
 | W10 | gut passage time | **no-target** | no passage metric | none fetched | n/a | no fetched wild-type gut passage time; the studio value is UNVALIDATED |
-| W11 | sustained current sign (0.20 m/s survive, 1.10 m/s not) | **fail** | 0.20 m/s → null; 1.10 m/s → null (param current_m_s) | Uopt 0.396, Ucrit 0.548 m/s | n/a (sign test) | wrong sign |
-| N1 | real zebrafish must not glide (< 1 m) | **pass** | 0.00 m (from glide, metric glide_range_lean_bound_m, survives=null) | ballistic leap ≈ 0.07 m | assumed | below 1 m or flagged not surviving |
+| W11 | sustained current sign (pre-registered: 0.20 m/s survive, 1.10 m/s not; A2 reads feasible) | **fail** → A2: **pass** | survives: 0.20 m/s → null, 1.10 m/s → null; feasible: 0.20 → true, 1.10 → false (param current_m_s) | Uopt 0.396, Ucrit 0.548 m/s | n/a (sign test) | pre-registered reading (survives): not met, survives is null/null; A2 reading (feasible = can hold station): signs correct |
+| N1 | real zebrafish must not glide (< 1 m) | **pass** | 0.00 m (from glide, metric glide_range_total_m, survives=null, feasible=false) | ballistic leap ≈ 0.07 m | assumed | below 1 m or flagged not surviving |
 | N2 | no fish survives at 9,000 or 10,000 m | **pass** | all 14 runs survive=false | no fish below 8,400 m (Yancey 2014) | n/a (negative control) | all fish die |
 | N3 | no grip force without a gripping organ (zebrafish) | **pass** | has_gripping_structure = false bool (derived); validity {"inRange":true,"notes":"nothing to model"} | zebrafish has no gripping organ | derived | no positive grip force |
-| N4 | flyable heights downward closed (Lean Altitude.feasible_downward_closed) | **pass** | flying-fish:111110; zebrafish-adult:111110; zebrafish-larva:111110; ff-zf-chimera:111110; tff:111110; winged-zebrafish:111110; wingless-flying-fish:111110 | proved: feasible at h ⇒ feasible below h | n/a (law control) | monotone for every organism |
-| N5 | glide range ≤ h·L/D/(1−δ) (Lean glide_range_le) | **pass** | flying-fish: d=4.37 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; zebrafish-adult: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; zebrafish-larva: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; tff: d=4.37 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; winged-zebrafish: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; wingless-flying-fish: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true |  | n/a (law control) | bound holds |
+| N4 | flyable heights downward closed (Lean Altitude.feasible_downward_closed) | **pass** | flying-fish:111000; zebrafish-adult:000000; zebrafish-larva:000000; ff-zf-chimera:111110; tff:111110; winged-zebrafish:000000; wingless-flying-fish:000000 | proved: feasible at h ⇒ feasible below h | n/a (law control) | monotone for every organism |
+| N5 | glide range ≤ h·L/D/(1−δ) (Lean glide_range_le) | **fail** → A3: **pass** | A3: Lean-covered metric only: flying-fish: 4.37 ≤ 4.37? true; zebrafish-adult: 0.00 ≤ 4.37? true; zebrafish-larva: 0.00 ≤ 4.37? true; tff: 4.37 ≤ 4.37? true; winged-zebrafish: 0.00 ≤ 4.37? true; wingless-flying-fish: 0.00 ≤ 4.37? true; every total above the bound is labelled NOT covered by the theorem \|\| pre-registered (every reported distance): flying-fish: d=8.65 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? false; zebrafish-adult: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; zebrafish-larva: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; tff: d=21.0 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? false; winged-zebrafish: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; wingless-flying-fish: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true |  | n/a (law control) | bound violated for flying-fish, tff |
 | O1 | already-maximal objective is not improved | **pass** | ctmax_C: start 40.5, run 1 best 40.5, re-run on own output best 40.5 (gain 0.00 %); returned design carries 0 edits ("start") although the objective is flat in them |  | n/a | idempotent and not worse than start |
 | O2 | impossible glide spec → no design meets the spec | **pass** | status "no design meets the spec", evaluations 57, rejections {"hard constraint":57} (launch height not a declared metric/param; the 1 m launch height of the pre-registered spec could not be imposed) |  | n/a | explicitly reports no design meets the spec |
 | O3 | impossible depth spec → no design meets the spec | **pass** | status "no design meets the spec", evaluations 57, rejections {"hard constraint":57} |  | n/a | explicitly reports no design meets the spec |
-| P1 | parser keeps impossible targets (1000 m glide, 10,000 m depth) | **pass** | glide → {"spec":{"start_from":[{"organism":"zebrafish-adult","weight":1}],"criteria":[{"scenario":"glide","metric":"glide_range_m","op":">=","value":1000,"unit":"m","params":{},"hard":true,"weight":1,"source_ \| depth → {"spec":{"start_from":[],"criteria":[{"scenario":"pressure","params":{"depth_m":10000,"water":"sea"},"op":"survives","hard":true,"weight":1,"source_text":"a fish at 10,000 m depth","stages":["adult"], |  | n/a | both targets kept |
+| P1 | parser keeps impossible targets (1000 m glide, 10,000 m depth) | **pass** | glide → {"spec":{"start_from":[{"organism":"zebrafish-adult","weight":1}],"criteria":[{"scenario":"glide","metric":"glide_range_total_m","op":">=","value":1000,"unit":"m","params":{},"hard":true,"weight":1,"s \| depth → {"spec":{"start_from":[],"criteria":[{"scenario":"pressure","params":{"depth_m":10000,"water":"sea"},"op":"survives","hard":true,"weight":1,"source_text":"a fish at 10,000 m depth","stages":["adult"], |  | n/a | both targets kept |
 | X1 | zebrafish LARVA glide (N1 covers only the adult) | **observation** | 0.00 m, survives=null, inRange=false (from glide) |  |  | ok |
-| X2 | altitude: survives vs limiting consistency (zebrafish adult, defaults) | **observation** | survives=true; limiting="null" |  |  | consistent |
+| X2 | altitude: survives vs limiting consistency (zebrafish adult, defaults) | **observation** | survives=true; feasible=false; feasibility_note="cannot glide at 2000 m: reachable launch speed 0.67 m/s is below v_min 14.37 m/s" |  |  | consistent |
 | N7-temperature | contract + determinism: temperature | **pass** | 6 metrics {"calibrated":5,"borrowed":1}; validatedAgainst: [{"organism":"Danio rerio adults, 28 °C acclimation, 0.3 °C/min ramp","observation":"CTmax, first trial","predicted":"41.2 °C","measured":"40.97 ± 0.10 °C (n = 40)","source":"Morgan et al. 2018 Result |  | borrowed | contract holds |
 | N7-current | contract + determinism: current | **pass** | 10 metrics {"calibrated":5,"derived":5}; validatedAgainst: [{"organism":"Danio rerio adults (literature summary)","observation":"Ucrit 40-55 cm/s in adults (Widrick 2018 Introduction, citing refs 10-13)","predicted":"46.5 cm/s for SL 30 mm at 28 °C","measured; note: survives=null |  | calibrated | contract holds |
 | N7-pressure | contract + determinism: pressure | **pass** | 7 metrics {"derived":7}; validatedAgainst: [{"organism":"Notoliparis kermadecensis (hadal snailfish), 7,000 m","observation":"muscle TMAO","predicted":"359 mmol/kg (line fitted only to 0-4,850 m teleost data, extrapolated 2,150 m)","measured":; note: survives=null |  | derived | contract holds |
@@ -157,10 +157,10 @@ Code literals only (strings and comments stripped; unit conversions and years ig
 - line 41: `if (r >= 0.97) return 1;`
 - line 42: `if (r <= 0.33) return 0.86;`
 - line 43: `return 0.86 + ((1 - 0.86) * (r - 0.33)) / (0.97 - 0.33);`
-- line 140: `const T = val(state, 'temperature_C') ?? 25;`
-- line 154: `export const LAUNCH_OVERRIDE_PARAM = { key: 'launch_airspeed_override_m_s', label: "What-if launch airspeed (0 = the organism's own sourced `
-- line 243: `if (m < 0.02 \|\| m > 0.4) { inRange = false; notes.push('Mass ${m} kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~`
-- line 244: `if (Re != null && (Re < 3e4 \|\| Re > 1e6)) { inRange = false; notes.push('Chord Reynolds number ~${Re.toExponential(1)} is far from the polar`
+- line 143: `const T = val(state, 'temperature_C') ?? 25;`
+- line 157: `export const LAUNCH_OVERRIDE_PARAM = { key: 'launch_airspeed_override_m_s', label: "What-if launch airspeed (0 = the organism's own sourced `
+- line 246: `if (m < 0.02 \|\| m > 0.4) { inRange = false; notes.push('Mass ${m} kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~`
+- line 247: `if (Re != null && (Re < 3e4 \|\| Re > 1e6)) { inRange = false; notes.push('Chord Reynolds number ~${Re.toExponential(1)} is far from the polar`
 
 </details>
 

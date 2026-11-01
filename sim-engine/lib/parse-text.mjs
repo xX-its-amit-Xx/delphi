@@ -207,6 +207,9 @@ function familyTemperature(cl, out, problems) {
   cl.take(/\b(?:water\s+)?temperatures?\b|\bwater\b|\bdown\s+to\b|\bup\s+to\b/i);
 }
 
+const SURVIVE_VERB = /\b(?:surviv(?:e|es|ing|al)|tolerat(?:e|es|ing)|withstand(?:s|ing)?|lives?\s+through)\b/i;
+const opFor = cl => (SURVIVE_VERB.test(cl.text) ? 'survives' : 'feasible');
+
 function familyGlide(cl, out, problems) {
   if (!cl.has(/\bglid(?:e|es|ing|er)\b|\bfl(?:y|ies|ight)\b|\bsoar|\bairborne\b|\btake[\s-]?off\b|\bstall\b|\bwing\s+loading\b|\bglide\s+ratio\b/i)) return;
   if (cl.has(/\bpowered\s+flight\b|\bunder\s+its\s+own\s+power\b|\bflap(?:s|ping)?\b|\btruly\s+fl(?:y|ies)\b|\bhover/i)) {
@@ -231,6 +234,10 @@ function familyGlide(cl, out, problems) {
     if (q.index >= 0) { const b = boundBefore(cl, q.index); op = b?.op || null; cl.blank(q.index, q.length); }
     out.push({ scenario: 'glide', metric, op: op || defOp, value: q.unit === to ? q.value : round(si(q, to)), unit: to, params: {}, ...(op ? {} : { _assumed: `no bound word for ${metric}; "${defOp}" assumed` }) });
   }
+  // "within the Lean bound" / "provably": the h·L/D range Lean glide_range_le covers; otherwise the
+  // total (kinetic phase + glide), which the explanation marks as only partly Lean-covered.
+  const leanBound = !!cl.take(/\b(?:within\s+the\s+lean\s+bound|(?:by|under)\s+the\s+lean\s+bound|lean[\s-]bound(?:ed)?|lean[\s-]covered|provabl[ey]|proven(?:\s+to)?)\b/i);
+  const rangeMetric = leanBound ? 'glide_range_lean_bound_m' : 'glide_range_total_m';
   // range and launch height
   const ls = quantities(cl).filter(q => q.dim === 'length');
   const params = {};
@@ -240,26 +247,32 @@ function familyGlide(cl, out, problems) {
       params.launch_height_m = round(si(q, 'm'));
       cl.blank(q.index, q.length);
       cl.take(new RegExp(String.raw`\b(?:from|off|launched\s+(?:from|at)|starting\s+(?:at|from)|dropped\s+from|released\s+(?:at|from)|at)\s+(?:a\s+)?(?:height\s+of\s+)?(?=\s*$|\s+)`, 'i'));
-      cl.take(/\b(?:launch\s+)?(?:height|high)\b(?:\s+above\s+the\s+water)?/i);
+      cl.take(/\b(?:launch\s+)?(?:height|high)\b(?:\s+above\s+the\s+water)?|\blaunch(?:\s+(?:point|platform))?\b/i);
     }
   }
   let any = !!gr;
   for (const q of quantities(cl).filter(q => q.dim === 'length')) {
     const b = boundBefore(cl, q.index);
     cl.blank(q.index, q.length);
-    out.push({ scenario: 'glide', metric: 'glide_range_m', op: b?.op || '>=', value: q.unit === 'm' ? q.value : round(si(q, 'm')), unit: 'm', params: { ...params },
+    out.push({ scenario: 'glide', metric: rangeMetric, op: b?.op || '>=', value: q.unit === 'm' ? q.value : round(si(q, 'm')), unit: 'm', params: { ...params },
       ...(b ? {} : { _assumed: `"${q.raw.trim()}" glide with no bound word: "at least" assumed` }), ...(b?.strict ? { _strict: true } : {}) });
     any = true;
   }
-  if (!any && !cl.has(/\b(?:maximi[sz]e|minimi[sz]e|as\s+far\s+as\s+possible|farthest|furthest|longest)\b/i) && !out.some(c => c.scenario === 'glide')) {
+  const objective = cl.has(/\b(?:maximi[sz]e|minimi[sz]e|as\s+far\s+as\s+possible|farthest|furthest|longest)\b/i);
+  if (!any && !objective && !out.some(c => c.scenario === 'glide')) {
     const unknownUnit = new RegExp(String.raw`${NUM}\s+([a-zA-Z]+)`).exec(cl.text);
-    problems.push(unknownUnit ? `glide distance "${unknownUnit[0].trim()}": unknown unit "${unknownUnit[2]}" (use m, km, cm or ft)` : 'glide/flight mentioned without a distance (say e.g. "glides at least 30 m from 1 m")');
+    if (unknownUnit) problems.push(`glide distance "${unknownUnit[0].trim()}": unknown unit "${unknownUnit[2]}" (use m, km, cm or ft)`);
+    else if (/\d|\b(?:one|two|three|four|five|six|seven|eight|nine|ten|twenty|thirty|forty|fifty|hundred)\b/i.test(cl.text)) problems.push('glide/flight with a distance the parser cannot read (write it as a number and unit, e.g. "30 m")');
+    // "can glide", "glides from 1 m": no distance asked for, so the criterion is the behaviour itself
+    else out.push({ scenario: 'glide', op: opFor(cl), params: { ...params }, _assumed: 'glide with no distance: read as "the organism can glide" (run().feasible)' });
   } else if (Object.keys(params).length && !any) out.push({ _paramsOnly: params });
+  cl.take(/\b(?:can|able\s+to)\b/i);
   cl.take(/\bglid(?:e|es|ing)\b(?:\s+(?:distance|range|for|over))?/i); cl.take(/\bfl(?:y|ies)\b(?:\s+(?:for|over))?/i); cl.take(/\bflight\s+(?:distance|range)\b/i);
 }
 
 function familySpeedIn(cl, out, problems, { word, scenario, param, label }) {
   if (!cl.has(word)) return false;
+  const op = opFor(cl);
   const q = quantities(cl).find(q => q.dim === 'speed');
   if (!q) {
     const unk = new RegExp(String.raw`${NUM}\s+([a-zA-Z/]+)`).exec(cl.text);
@@ -270,13 +283,13 @@ function familySpeedIn(cl, out, problems, { word, scenario, param, label }) {
   boundBefore(cl, q.index);
   cl.blank(q.index, q.length);
   cl.take(word);
-  if (q.unit === 'BL/s') out.push({ scenario, params: { [param.replace('_m_s', '_BL_s')]: q.value }, op: 'survives', _assumed: `${label} given in BL/s: the scenario takes m/s, so the value must be converted per stage from body length` });
-  else out.push({ scenario, params: { [param]: round(si(q, 'm/s')) }, op: 'survives', ...(q.unit !== 'm/s' ? { value_as_given: { value: q.value, unit: q.unit } } : {}) });
+  if (q.unit === 'BL/s') out.push({ scenario, params: { [param.replace('_m_s', '_BL_s')]: q.value }, op, _assumed: `${label} given in BL/s: the scenario takes m/s, so the value must be converted per stage from body length` });
+  else out.push({ scenario, params: { [param]: round(si(q, 'm/s')) }, op, ...(q.unit !== 'm/s' ? { value_as_given: { value: q.value, unit: q.unit } } : {}) });
   return true;
 }
 
 function familySwim(cl, out, problems) {
-  // a current/flow the fish must hold against → current scenario, survives
+  // a current/flow: "outswims / holds station in" → feasible; "survives a current" → survives
   const cur = /\b(?:currents?|flows?|stream|river|rapids|water\s+speed)\b/i;
   if (cl.has(cur) && !cl.has(/\b(?:grip|cling|hold\s+on|attach|stick)/i)) {
     familySpeedIn(cl, out, problems, { word: cur, scenario: 'current', param: 'current_m_s', label: 'current' });
@@ -330,16 +343,19 @@ function familyAltitude(cl, out, problems) {
   cl.take(/\baltitude\b|\bat\b/i);
 }
 
+const AIR_NOTE = 'escape "by air": tested by the predator scenario\'s feasible verdict; its aerial_escape_available and aerial_escape_distance_m metrics are in the explanation';
 function familyPredator(cl, out, problems) {
   if (!cl.has(/\bpredators?\b|\bescap(?:e|es|ing)\b|\b(?:being\s+)?(?:eaten|caught|attacked)\b|\bstrikes?\b/i)) return;
   const p = cl.take(new RegExp(String.raw`\b(?:escape|survival)\s+(?:probability|chance|rate)\s*(?:of\s+)?(?:(${GE.source})|(${LE.source}))?\s*${NUM}\s*(%)?`, 'i'));
   if (p) { const v = p[4] ? +p[3] / 100 : +p[3]; out.push({ scenario: 'predator', metric: 'escape_probability', op: p[2] ? '<=' : '>=', value: v, unit: '1', params: {} }); }
   // "a predator 3 times its speed" / "twice as fast": the scenario's own parameter is a speed ratio
+  const op = opFor(cl);
+  const byAir = cl.take(/\bby\s+(?:air|gliding|leaping|jumping(?:\s+out(?:\s+of\s+the\s+water)?)?|taking\s+to\s+the\s+air)\b/i);
   const ratio = cl.take(new RegExp(String.raw`\b(?:${NUM}\s*(?:x|×|times)|(twice|three\s+times|half))\s*(?:as\s+fast|faster|its\s+(?:own\s+)?speed|the\s+fish'?s?\s+speed)(?:\s+as\s+(?:it|the\s+fish))?`, 'i'));
   const q = ratio ? null : quantities(cl).find(q => q.dim === 'speed');
-  if (ratio) { const r = ratio[1] != null ? +ratio[1] : { twice: 2, 'three times': 3, half: 0.5 }[ratio[2].toLowerCase().replace(/\s+/g, ' ')]; out.push({ scenario: 'predator', params: { predator_speed_ratio: r }, op: 'survives' }); }
-  else if (q) { boundBefore(cl, q.index); cl.blank(q.index, q.length); out.push({ scenario: 'predator', params: { predator_speed_m_s: round(si(q, 'm/s')) }, op: 'survives' }); }
-  else if (!p) out.push({ scenario: 'predator', params: {}, op: 'survives', _assumed: 'predator without a speed: the scenario\'s default predator is used' });
+  if (ratio) { const r = ratio[1] != null ? +ratio[1] : { twice: 2, 'three times': 3, half: 0.5 }[ratio[2].toLowerCase().replace(/\s+/g, ' ')]; out.push({ scenario: 'predator', params: { predator_speed_ratio: r }, op, ...(byAir ? { _assumed: AIR_NOTE } : {}) }); }
+  else if (q) { boundBefore(cl, q.index); cl.blank(q.index, q.length); out.push({ scenario: 'predator', params: { predator_speed_m_s: round(si(q, 'm/s')) }, op, ...(byAir ? { _assumed: AIR_NOTE } : {}) }); }
+  else if (!p) out.push({ scenario: 'predator', params: {}, op, _assumed: 'predator without a speed: the scenario\'s default predator is used' + (byAir ? '; ' + AIR_NOTE : '') });
   cl.take(/\b(?:escap(?:e|es|ing)(?:\s+from)?|outruns?|evades?|avoids?)\b/i);
   cl.take(/\b(?:a\s+)?predators?(?:\s+(?:striking|swimming|attacking|lunging|moving))?(?:\s+at)?\b|\bstrikes?\b(?:\s+at)?/i);
   cl.take(/\b(?:being\s+)?(?:eaten|caught|attacked)\b/i);
@@ -355,8 +371,8 @@ function familyGrip(cl, out, problems) {
   const q = quantities(cl).find(q => q.dim === 'speed');
   cl.take(/\b(?:grip|grips|gripping|cling|clings|clinging|holds?\s+on(?:to)?|attach(?:es)?|sticks?\s+to)\b(?:\s+(?:to|onto))?/i);
   cl.take(/\b(?:a\s+|the\s+)?(?:rocks?|surfaces?|substrates?|stones?|walls?|bottom)\b/i);
-  if (q) { boundBefore(cl, q.index); cl.blank(q.index, q.length); cl.take(/\b(?:in\s+)?(?:a\s+)?(?:flow|current)s?\b|\bin\b/i); out.push({ scenario: 'grip', params: { flow_m_s: round(si(q, 'm/s')) }, op: 'survives' }); }
-  else out.push({ scenario: 'grip', params: {}, op: 'survives', _assumed: 'grip without a flow speed: the scenario default flow is used' });
+  if (q) { boundBefore(cl, q.index); cl.blank(q.index, q.length); cl.take(/\b(?:in\s+)?(?:a\s+)?(?:flow|current)s?\b|\bin\b/i); out.push({ scenario: 'grip', params: { flow_m_s: round(si(q, 'm/s')) }, op: opFor(cl) }); }
+  else out.push({ scenario: 'grip', params: {}, op: opFor(cl), _assumed: 'grip without a flow speed: the scenario default flow is used' });
 }
 
 function familyTime(cl, out, problems) {
@@ -388,7 +404,7 @@ function familyTime(cl, out, problems) {
 // maximise / minimise objectives
 const OBJECTIVES = [
   [/\bglide\s+ratio\b|\blift[\s-]to[\s-]drag\b/i, 'glide', 'glide_ratio'],
-  [/\b(?:glide|gliding|flight)\s+(?:distance|range)\b|\bglid(?:e|es|ing)\s+(?:as\s+far\s+as\s+possible|farthest|furthest)\b|\bglide\b|\bhow\s+far\s+it\s+glides\b/i, 'glide', 'glide_range_m'],
+  [/\b(?:glide|gliding|flight)\s+(?:distance|range)\b|\bglid(?:e|es|ing)\s+(?:as\s+far\s+as\s+possible|farthest|furthest)\b|\bglide\b|\bhow\s+far\s+it\s+glides\b/i, 'glide', 'glide_range_total_m'],
   [/\b(?:take[\s-]?off|stall)\s+speed\b/i, 'glide', 'v_min_m_s'],
   [/\bwing\s+loading\b/i, 'glide', 'wing_loading_N_m2'],
   [/\b(?:swim(?:ming)?\s+speed|u[\s-]?crit|critical\s+swimming\s+speed|sprint\s+speed|swim(?:s|ming)?\s+as\s+fast\s+as\s+possible|swim(?:s|ming)?\s+fastest|speed)\b/i, 'current', 'ucrit_m_s'],
@@ -516,6 +532,9 @@ export function parseDesignText(text) {
           cl.blank(m.index - pm[0].length, pm[0].length);
         }
         cl.blank(m.index, m[0].length);
+        // "zebrafish-derived", "flying-fish-based", "zebrafish-like": the suffix only says "start from"
+        const suf = /^[\s-]*(?:derived|based|like|type|style)\b/i.exec(cl.text.slice(m.index + m[0].length));
+        if (suf) cl.blank(m.index + m[0].length, suf[0].length);
         orgsHere.push({ organism: id, weight: w, index: m.index });
       }
     }

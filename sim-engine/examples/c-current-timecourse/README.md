@@ -1,0 +1,61 @@
+# Example (c): a 0.3 m/s current across development
+
+**Question.** A steady 0.3 m/s current (a design input, *assumed*). At which life stages can each fish hold station?
+`scenario_timecourse` runs `current` at every stage age in the organism's own stage table (anatomy-model/parametric/stages.json).
+
+**Headline.**
+- **Winged zebrafish:** it cannot hold station at 0 d, 3 d, 10 d, 25 d. It holds station from 60 d (juvenile, Ucrit 0.3298 m/s, calibrated) on.
+  The wing does not enter this model: Ucrit is the wild-type zebrafish value (15.5 SL/s from Plaut 2000) times SL, so it is *calibrated*. The pass at 60 d is a read-back of that paper rescaled by body length, not an independent prediction.
+- **Flying fish:** ruled out at 0 d by the physical bound (0.255 m/s, derived < 0.3 m/s); after that, **no model**. No flying-fish Ucrit was fetched, so `feasible` is `null` at 3 d, 10 d, 30 d, 90 d, 365 d. The only number is a physical *upper bound* on sustained speed (rigid drag = red-muscle power, resting on an assumed myotomal fraction). From 3 d on, that bound is above 0.3 m/s. That does not rule the fish out, but it does not show that it can hold station either.
+- `survives` is `null` everywhere, by design: being swept downstream is not modelled as lethal (current.mjs scope).
+
+## Winged zebrafish
+
+| age (d after hatching) | stage | SL | Ucrit | current / Ucrit | physical upper bound on sustained speed | feasible (holds station) | survives | reason given |
+|---|---|---|---|---|---|---|---|---|
+| 0 | hatching | 3.1 mm | null (assumed) | null | 0.1976 m/s (derived) | false | null | current exceeds the physical upper bound on sustained speed (0.198 m/s): even rigid-body drag would need more than the whole red-muscle power |
+| 3 | larva | 4.2 mm | 0.02905 m/s (calibrated) | 10.3 | 0.2795 m/s (derived) | false | null | current exceeds Umax (0.033 m/s): swept downstream |
+| 10 | larva | 6.44 mm | 0.046 m/s (calibrated) | 6.52 | 0.358 m/s (derived) | false | null | current exceeds Umax (0.053 m/s): swept downstream |
+| 25 | juvenile | 11.3 mm | 0.1653 m/s (calibrated) | 1.81 | 0.5081 m/s (derived) | false | null | current exceeds Umax (0.190 m/s): swept downstream |
+| 60 | juvenile | 22 mm | 0.3298 m/s (calibrated) | 0.91 | 0.7605 m/s (derived) | true | null |  |
+| 180 | adult | 38.8 mm | 0.5824 m/s (calibrated) | 0.515 | 1.125 m/s (derived) | true | null |  |
+
+## Flying fish
+
+| age (d after hatching) | stage | SL | Ucrit | current / Ucrit | physical upper bound on sustained speed | feasible (holds station) | survives | reason given |
+|---|---|---|---|---|---|---|---|---|
+| 0 | hatching | 3.94 mm | null (assumed) | null | 0.255 m/s (derived) | false | null | current exceeds the physical upper bound on sustained speed (0.255 m/s): even rigid-body drag would need more than the whole red-muscle power |
+| 3 | larva | 6.95 mm | null (assumed) | null | 0.3596 m/s (derived) | null | null |  |
+| 10 | larva | 14 mm | null (assumed) | null | 0.5482 m/s (derived) | null | null |  |
+| 30 | juvenile | 42.9 mm | null (assumed) | null | 1.079 m/s (derived) | null | null |  |
+| 90 | juvenile | 111 mm | null (assumed) | null | 1.916 m/s (derived) | null | null |  |
+| 365 | adult | 203 mm | null (assumed) | null | 2.199 m/s (derived) | null | null |  |
+
+Lean: new binding violations per stage. Winged zebrafish: 0 d: none; 3 d: none; 10 d: none; 25 d: none; 60 d: none; 180 d: none. Flying fish: 0 d: none; 3 d: none; 10 d: none; 30 d: none; 90 d: none; 365 d: none.
+(The full violation lists, including rows the unedited base also violates, are in output.json.)
+
+## Studio defects seen in this run
+
+none
+
+## Scope (from the tool)
+
+One scenario evaluated at each stage age in anatomy-model/parametric/stages.json. Between-stage behaviour is not sampled. Early-stage STATE leans on assumed ramps (see each field kind). MORPHOLOGICAL interpolation, not genetic hybridisation (anatomy-model/parametric/design-schema.json): a blended or edited parameter set is a shape, not an organism; it says nothing about whether such an animal could be bred, is viable, or is developmentally reachable.
+
+## Checks this script enforces (exit code 1 if any fails)
+
+| check | last run |
+|---|---|
+| both timecourses ran at every stage | pass |
+| winged zebrafish: cannot hold station as a larva (feasible=false) | pass |
+| winged zebrafish: holds station as an adult (feasible=true) | pass |
+| winged zebrafish: feasible is false exactly where Ucrit < current | pass |
+| winged zebrafish: Ucrit labelled calibrated (read back from Plaut 2000) | pass |
+| flying fish: no Ucrit model at any stage (ucrit null) | pass |
+| flying fish: physical upper bound exceeds the current from the juvenile stage on | pass |
+| flying fish: feasible is never true (no Ucrit to pass with) | pass |
+| flying fish: any false verdict comes from the physical upper bound | pass |
+| timecourse rows carry the reason a stage fails (feasibility_note or limiting) | pass |
+
+---
+Generated by `node sim-engine/examples/c-current-timecourse/run.mjs` on 2026-11-01T03:00:28.232Z from `output.json` in this folder. Numbers are rounded to 4 significant figures; full precision and every provenance record are in output.json. Provenance kinds: measured, measured-secondhand, borrowed, derived, calibrated (tuned to reproduce one observation: never a result), assumed (a placeholder). Lean verdicts are floating-point evaluations of Lean-backed formulas, not kernel proofs. No Aves data used.

@@ -23,8 +23,18 @@ Division of labour:
   constraints: { lean: 'must-hold' } }                           always; cannot be waived
 ```
 
-- `op`: `>=`, `<=`, `survives`, `maximize`, `minimize`. Thresholds and `survives` default to **hard**;
-  `maximize`/`minimize` are always soft.
+- `op`: `>=`, `<=`, `survives`, `feasible`, `maximize`, `minimize`. Thresholds, `survives` and `feasible`
+  default to **hard**; `maximize`/`minimize` are always soft.
+- **`survives` vs `feasible`** are separate scenario verdicts. `survives` = the organism lives through the
+  condition ("survives 4 °C", "survives 100 m depth"). `feasible` = the behaviour is possible ("can glide",
+  "holds station in / outswims a current", "can grip", "escapes a predator", "escapes by air"). Pick by the
+  user's verb. A scenario may return `null` for one of them (the current scenario does not model drowning in a
+  current, so `survives` there is no-model): that is reported, never substituted by the other.
+- **Glide distance**: `glide_range_total_m` (wind: `ground_distance_total_m`) is the whole distance, kinetic
+  phase + glide, and is NOT covered by a Lean theorem as a whole. `glide_range_lean_bound_m` is the h·L/D part
+  that Lean `glide_range_le` covers. Use the total for "glides X m"; use the Lean bound only when the user asks
+  for a proved distance ("provably", "within the Lean bound"). The explanation marks each glide row with
+  `lean_coverage` and the two parts, so say which part is covered when you report a glide verdict.
 - `stages`: `'all'`, a list of `embryo` / `larva` / `juvenile` / `adult`, or `{ageDays:{min,max}}` in
   **days after hatching** (zebrafish hatch at about 2 dpf: 30 dpf is 28 days after hatching). A stage
   name visits every age in the design's own stage table whose label starts with it (two larval ages,
@@ -38,7 +48,7 @@ Division of labour:
 
 1. **Read the request into criteria.** One requirement, one criterion. A range ("4 to 32 °C")
    is two `survives` criteria, one at each end. "Outswims a 0.3 m/s current" is `current`,
-   `survives`, `params:{current_m_s:0.3}`. "Swims at least 10 BL/s" is a threshold on `ucrit_bl_s`.
+   `feasible`, `params:{current_m_s:0.3}`. "Swims at least 10 BL/s" is a threshold on `ucrit_bl_s`.
 2. **Decide hard or soft** from the user's words: "must", "survive", "at least" are hard;
    "ideally", "if possible", "as far as possible" are soft.
 3. **Stages**: use what the user said. If they said nothing, the default is adult; tell them so.
@@ -74,7 +84,7 @@ Division of labour:
     { "scenario": "glide", "metric": "glide_range_total_m", "op": ">=", "value": 30, "unit": "m", "params": { "launch_height_m": 1 }, "stages": ["adult"] },
     { "scenario": "temperature", "op": "survives", "params": { "water_temperature_C": 4 }, "stages": ["adult"] },
     { "scenario": "temperature", "op": "survives", "params": { "water_temperature_C": 32 }, "stages": ["adult"] },
-    { "scenario": "current", "op": "survives", "params": { "current_m_s": 0.3 }, "stages": ["larva", "adult"] } ],
+    { "scenario": "current", "op": "feasible", "params": { "current_m_s": 0.3 }, "stages": ["larva", "adult"] } ],
   "editable": [],
   "constraints": { "lean": "must-hold" } }
 ```
@@ -111,7 +121,7 @@ user answers "about 1 m/s, juvenile", the criterion is:
 
 ```json
 { "start_from": [{ "organism": "zebrafish-adult", "weight": 1 }],
-  "criteria": [{ "scenario": "current", "op": "survives", "params": { "current_m_s": 1 }, "stages": ["juvenile"] }],
+  "criteria": [{ "scenario": "current", "op": "feasible", "params": { "current_m_s": 1 }, "stages": ["juvenile"] }],
   "editable": [{ "target": { "level": "body", "id": "body" }, "param": "red_muscle_fraction", "min": 0.02, "max": 0.3 }],
   "constraints": { "lean": "must-hold" } }
 ```

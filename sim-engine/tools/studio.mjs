@@ -215,7 +215,7 @@ export async function scenarioTimecourse(args = {}) {
   for (const st of stages) {
     const { state, run, lean } = await runOne(doc, bundle, s, args, st.ageDays);
     rows.push({ ageDays: st.ageDays, stage_key: st.key, stage: state.stage.value, label: st.label, track: st.track, SL_m: state.SL_m.value, mass_kg: state.mass_kg.value,
-      ok: run.ok, metrics: run.ok ? run.metrics : null, survives: run.ok ? run.survives : null, feasible: run.ok ? run.feasible : null, limiting: run.ok ? run.limiting : null,
+      ok: run.ok, metrics: run.ok ? run.metrics : null, survives: run.ok ? run.survives : null, feasible: run.ok ? run.feasible : null, feasibility_note: run.ok ? (run.feasibility_note ?? null) : null, limiting: run.ok ? run.limiting : null,
       validity: run.ok ? run.validity : null, error: run.ok ? null : run.error, missing: run.missing || null,
       violations: lean.violations, new_binding_violations: lean.new_binding_violations, flags: state._meta.flags });
     if (run.ok) prov.push(...run.provenance.map(q => ({ ...q, quantity: `${st.key}: ${q.quantity}` })));
