@@ -6,6 +6,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { GROUP_KEYS, SORT_KEYS, browseClaims } from "./graph.mjs";
+import { AXIS_IDS, GROUP_KEYS as ORG_GROUP_KEYS, SORT_KEYS as ORG_SORT_KEYS, browseOrganisms, getOrganism, organismsOverview } from "./organisms.mjs";
 import { NETWORK_ENDPOINT, PREFIXES, getClaim, overview, rankClaims, searchClaims, sparql } from "./lib.mjs";
 import { LEAN_TOOLS } from "../sim-engine/tools/lean-tools.mjs";
 import { LEANBIO_TOOLS } from "../pipeline/leanbio/tools.mjs";
