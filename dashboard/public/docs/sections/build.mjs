@@ -171,6 +171,36 @@ const OPEN = {
 // Authored separately so the human prose and the machine instruction cannot drift apart silently
 // — the build asserts one agent step per product and that every command names a real entry point.
 const AGENT = JSON.parse(fs.readFileSync(path.join(here, 'agent-steps.json'), 'utf8'));
+
+// Sponsor tools, with a VERIFIED status rather than a claimed one. The build re-checks the two
+// that are easy to get wrong, because overclaiming a sponsor tool is worse than omitting it:
+//   - Evo2 must actually have produced a ranking in the committed edit plan
+//   - OpenResearch must still have zero recorded run ids, or the 'unavailable' status is stale
+const SPONSORS = JSON.parse(fs.readFileSync(path.join(here, 'sponsors.json'), 'utf8'));
+const STATUSES = new Set(['used', 'unavailable', 'wired']);
+for (const e of SPONSORS.entries) {
+  must(STATUSES.has(e.status), `sponsor ${e.tool}: bad status ${e.status}`);
+  must(e.evidence && e.limit, `sponsor ${e.tool}: needs evidence and a stated limit`);
+}
+const orx = SPONSORS.entries.find(e => /OpenResearch/i.test(e.tool));
+if (orx && orx.status === 'unavailable') {
+  // Walk the tree in-process rather than shelling out: a nested eval here needed four levels of
+  // escaping and broke on the first run. A recorded run id anywhere means the status is stale.
+  const hits = [];
+  (function walk(dir) {
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (e.name === 'node_modules' || e.name === '.git') continue;
+      const f = path.join(dir, e.name);
+      if (e.isDirectory()) walk(f);
+      else if (e.name.endsWith('.json')) {
+        try { if (/openresearch[_-]run[_-]id/i.test(fs.readFileSync(f, 'utf8'))) hits.push(f); } catch { /* unreadable */ }
+      }
+    }
+  })(root);
+  must(hits.length === 0,
+    `sponsors.json calls OpenResearch unavailable, but ${hits.length} file(s) now record a run id `
+    + `(${hits.slice(0, 2).map(h => path.relative(root, h)).join(', ')}) — update the status`);
+}
 const ENTRY = /^node (sim-engine|mcp|lean|holdout|dashboard)\//;
 for (const [k, steps] of Object.entries(AGENT)) {
   must(steps.length, `${k}: no agent steps`);
@@ -208,6 +238,7 @@ const out = {
     genes_mapped: cov.genes_mapped,
     aligned_genes: align ? align.genes.length : null,
   },
+  sponsors: SPONSORS,
   products: PRODUCTS,
 };
 
