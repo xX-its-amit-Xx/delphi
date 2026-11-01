@@ -21,7 +21,18 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(here, '..', '..');
+// Find the repository root by walking up for the file this build actually needs, instead of
+// assuming a fixed depth. A byte-identical copy of this script is published under
+// dashboard/public/t/swarm/nanopubs/, where `../..` resolves to dashboard/public/t and the
+// script died with ENOENT. Walking up means the mirror copy runs correctly AND writes to the
+// one source of truth under swarm/nanopubs/, rather than regenerating drafts into the mirror.
+function findRoot(from) {
+  for (let d = from; ; d = path.dirname(d)) {
+    if (fs.existsSync(path.join(d, 'swarm/compare/results.json'))) return d;
+    if (d === path.dirname(d)) throw new Error('could not find the repository root above ' + from + ' (no swarm/compare/results.json)');
+  }
+}
+const root = findRoot(here);
 const read = p => JSON.parse(fs.readFileSync(path.join(root, p), 'utf8'));
 const R1 = read('swarm/compare/results.json');
 const R2 = read('swarm/compare/results2.json');
