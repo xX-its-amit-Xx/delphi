@@ -18,7 +18,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { closestFunctionalAnalogue, registry } from './analogue.mjs';
-import { genotypeOf, canonicalSymbol, baseGenome } from './designs.mjs';
+import { genotypeOf, baseGenome } from './designs.mjs';
 
 const HERE = import.meta.dirname;
 const read = p => JSON.parse(fs.readFileSync(p, 'utf8'));

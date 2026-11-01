@@ -79,6 +79,7 @@ function makeStage3D(container, { theme }) {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(38, w() / h(), 0.01, 400);
   camera.position.set(0.42, 0.1, 0.78);
+  camera.lookAt(0, 0, 0);
   scene.add(new THREE.HemisphereLight(0xcfeaf0, 0x08202a, 1.5));
   const key = new THREE.DirectionalLight(0xffffff, 1.5); key.position.set(1.3, 1.9, 1.1); scene.add(key);
   const rim = new THREE.DirectionalLight(0x76d6e2, 0.7); rim.position.set(-1.2, 0.3, -0.9); scene.add(rim);
@@ -267,6 +268,7 @@ async function actDesign(container, { data, theme }) {
       ? `${des.name || des.id}  —  standard length ${num(org.manifest?.parameters?.standard_length_m * 100, 'cm')} (from the manifest)`
       : `${des.name || des.id}`;
     d3.pivot.rotation.y = reduced() ? -0.5 : -0.5 + t * 0.082;
+    d3.camera.lookAt(0, 0, 0);
     d3.render();
   };
 
@@ -306,7 +308,7 @@ async function actAnalogue(container, { data, theme }) {
   const first = (an.analogues || [])[0] || null;
   const story = fn.not_expressible ? 'not-expressible' : !first ? 'none' : fn.status === 'lost' ? 'lost' : 'exists';
 
-  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:68px 16px 16px;overflow:auto;display:flex;flex-direction:column;gap:11px';
+  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:62px 16px 16px;overflow:auto;display:flex;flex-direction:column;justify-content:center;gap:11px';
   container.appendChild(host);
 
   let d3 = null, org = null, ana = null, render, duration = 20, chapters = [], items = [];
@@ -409,7 +411,7 @@ function actPhysics(container, { data }) {
   const gate = data.physics_check || null;
   const standing = (data.standing_checks || []).filter(s => String(s.status || '').toLowerCase().startsWith('fail'));
 
-  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:66px 14px 14px;overflow:auto';
+  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:62px 14px 14px;overflow:auto;display:flex;flex-direction:column;justify-content:center;gap:9px';
   container.appendChild(host);
   const grid = el('div'); grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px';
   host.appendChild(grid);
@@ -422,7 +424,7 @@ function actPhysics(container, { data }) {
     const h = el('div'); h.style.cssText = 'font:500 13px/1.25 "IBM Plex Sans",sans-serif'; h.textContent = c.label; d.appendChild(h);
     const s = el('div'); s.style.cssText = `font:500 10.5px/1 "IBM Plex Mono",monospace;letter-spacing:.05em;text-transform:uppercase;color:${k === 'fail' ? '#ef7a6e' : k === 'na' ? 'rgba(255,255,255,.66)' : '#58c07f'}`;
     const sm = SMAP[c.status] || ['na', '◌', c.status]; s.textContent = `${sm[1]} ${sm[2]}`; d.appendChild(s);
-    const key = (c.checks || [])[0];
+    const key = (c.checks || []).find(k => k.status === 'fail') || (c.checks || []).find(k => k.status === 'pass') || (c.checks || [])[0];
     if (key) { const v = el('div'); v.style.cssText = 'font:400 11px/1.4 "IBM Plex Mono",monospace;color:rgba(255,255,255,.8)'; v.textContent = `${key.label}: ${num(key.value, key.unit)}`; d.appendChild(v); }
     else if (c.reason) { const v = el('div'); v.style.cssText = 'font:400 10.5px/1.4 "IBM Plex Mono",monospace;color:rgba(255,255,255,.66)'; v.textContent = String(c.reason).slice(0, 120); d.appendChild(v); }
     grid.appendChild(d); return d;
@@ -495,7 +497,7 @@ function actPhysics(container, { data }) {
 // ACT 7 -- THE VERDICT. The five gates in turn, then the sentence. Never a number as the ending.
 function actVerdict(container, { data }) {
   const v = data.verdict || {}, gates = v.gates || [];
-  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:66px 14px 14px;overflow:auto;display:flex;flex-direction:column;gap:8px';
+  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:62px 14px 14px;overflow:auto;display:flex;flex-direction:column;justify-content:center;gap:8px';
   container.appendChild(host);
 
   const nodes = gates.map(g => {
@@ -625,7 +627,9 @@ function buildCaseButtons() {
   for (const c of S.runs.cases) {
     const b = el('button', 'case-b'); b.type = 'button';
     const kindWord = { 'morphological-addition': 'add', 'morphological-subtraction': 'remove', 'functional-addition': 'new ability', 'functional-subtraction': 'lost ability', blend: 'blend', 'morphological-mixed': 'mixed' }[c.kind] || c.kind;
-    b.append(el('span', null, (c.name || c.case).split(' - ')[0].replace(/^(a|the)\s+/i, '')), el('span', 'k', kindWord));
+    const short = c.case.length <= 4 ? c.case.toUpperCase() : c.case.replace(/-/g, ' ');
+    b.append(el('span', null, short), el('span', 'k', kindWord));
+    b.title = c.name || c.case;
     b.setAttribute('aria-pressed', 'false');
     b.addEventListener('click', () => loadCase(c.case, true).then(() => gotoAct(0)));
     b.dataset.case = c.case;
@@ -664,7 +668,13 @@ function renderMeta() {
     chip('gates', `${g.filter(x => sKind(x.status) === 'pass').length} pass / ${g.filter(x => sKind(x.status) === 'fail').length} fail / ${g.filter(x => sKind(x.status) === 'na').length} not assessed`),
     chip('gaps rendered', String((d.gaps || []).length)),
   );
-  $('#lede').textContent = `${d.case?.name || d.case?.id}. ${d.case?.kind_derived_from || ''}`;
+  const nch = (d.case?.changed || []).length, fnm = d.case?.function?.name;
+  const kindPhrase = { 'morphological-addition': 'a part made larger', 'morphological-subtraction': 'a part taken away',
+    'functional-addition': 'a new ability asked for', 'functional-subtraction': 'an ability removed',
+    blend: 'two parents averaged', 'morphological-mixed': 'several parts changed at once' }[d.case?.kind] || d.case?.kind;
+  $('#lede').textContent = `This run is ${kindPhrase}: ${nch} parameter(s) differ from ${d.design?.base_used}`
+    + `${fnm ? `, and the ability at stake is "${fnm}"` : ''}. Every number below came back from the validator on the run named here; `
+    + `where the evidence does not exist the page leaves a marked gap instead of drawing something pretty.`;
 }
 
 // ---- act mounting -------------------------------------------------------------------------------

@@ -113,6 +113,11 @@ const CSS = `
 .nw-pill{display:inline-block; max-width:100%; font-size:10px; padding:1px 6px; border-radius:99px; border:1px solid var(--nw-ring); color:var(--nw-ink2); white-space:normal; overflow-wrap:anywhere; box-sizing:border-box;}
 .nw-clkey{list-style:none; margin:0; padding:6px 16px 0; display:grid; gap:3px 12px; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); font-size:11px; color:var(--nw-ink2);}
 .nw-clkey li{display:flex; gap:6px; align-items:baseline;}
+.nw-agrow{padding:6px 0; border-bottom:1px solid var(--nw-grid);}
+.nw-agrow:last-child{border-bottom:none;}
+.nw-agh{display:flex; justify-content:space-between; gap:8px; font-size:12px; font-weight:650; color:var(--nw-ink); align-items:baseline;}
+.nw-agn{flex:0 0 auto; font-weight:400; font-size:11px; color:var(--nw-muted); font-variant-numeric:tabular-nums;}
+.nw-agb{font-size:11px; line-height:1.4; color:var(--nw-ink2); overflow-wrap:anywhere; margin-top:1px;}
 .nw-clkey b{flex:0 0 auto; font-variant-numeric:tabular-nums; font-weight:650; color:var(--nw-ink); min-width:1.1em;}
 .nw-anat{cursor:pointer; background:none; border:none; padding:0; font:inherit; color:inherit; text-align:left; text-decoration:underline; text-decoration-style:dotted; text-underline-offset:2px;}
 .nw-anat:hover,.nw-anat:focus-visible{color:var(--nw-ink); outline:2px solid var(--nw-ev2); outline-offset:2px; border-radius:3px;}
@@ -234,6 +239,14 @@ async function resolveSubject(data, base) {
   const parts = [];
   if (partsIdx) {
     const rows = Object.entries(partsIdx).map(([id, v]) => ({ id, ...v, toks: tokens(v.label) }));
+    /* Best case: the run states the ontology terms its edit actually reached. An id is exact, so
+       it is used ahead of any name matching. */
+    for (const t of ((data && data.anatomy_reached && data.anatomy_reached.terms) || [])) {
+      const hit = t && t.id && rows.find(r => r.id === t.id);
+      if (hit && !parts.some(p => p.id === hit.id)) {
+        parts.push({ ...hit, matched_from: 'anatomy_reached.terms (ontology id stated by the run)', matched_text: t.label || t.id });
+      }
+    }
     for (const w of wanted) {
       const wt = tokens(w.text);
       if (!wt.length) continue;
@@ -504,13 +517,17 @@ function buildExpression(subject, cards) {
      A token only counts if it is DISCRIMINATING in this set — present in under a quarter of the
      labels. Derived from the labels in play, so it holds for any anatomy. */
   const wantedU = new Set(subject.parts.map(p => p.id));
-  const df = new Map();
-  for (const R of rows.values()) for (const t of uniq(tokens(R.label))) df.set(t, (df.get(t) || 0) + 1);
-  const nLabels = Math.max(1, rows.size);
-  const discriminating = t => (df.get(t) || 0) / nLabels <= 0.25;
-  const wantedTok = uniq(subject.parts.flatMap(p => tokens(p.label))).filter(discriminating);
-  const isSubject = R => (R.uberon && wantedU.has(R.uberon)) || (R.zfa && wantedU.has(R.zfa))
-    || (wantedTok.length > 0 && tokens(R.label).some(t => wantedTok.includes(t)));
+  /* A structure counts as the one this design changed only if it carries EVERY token of the
+     changed part's name — "pectoral fin" matches "mesenchyme pectoral fin" and "pectoral fin bud
+     mesenchyme", and correctly does NOT match "caudal fin" or "median fin fold". Matching on any
+     single shared token would stamp the claim on half the body, because tokens like "fin" are
+     common to many structures. Ontology id equality still wins outright. */
+  const wantedSets = subject.parts.map(p => uniq(tokens(p.label))).filter(t => t.length);
+  const isSubject = R => {
+    if ((R.uberon && wantedU.has(R.uberon)) || (R.zfa && wantedU.has(R.zfa))) return true;
+    const rt = tokens(R.label);
+    return wantedSets.some(ws => ws.every(t => rt.includes(t)));
+  };
   list.sort((a, b) => (isSubject(b) - isSubject(a)) || (b.nGenes - a.nGenes));
   for (const R of list) R.isSubject = isSubject(R);
 
@@ -1059,7 +1076,8 @@ export async function mountScene({ container, THREE, data, act, theme, reducedMo
     if (!changed.length) return `This design carries no recorded parameter change against ${parentName}.`;
     const bits = changed.slice(0, 3).map(c => {
       const f = (typeof c.factor === 'number' && isFinite(c.factor) && c.factor > 0) ? `${num(c.factor)}×` : null;
-      return `${c.label || c.parameter} ${dirWord(c.direction)}${f ? ' ' + f : ''}`;
+      const join = c.direction === 'decrease' ? ' to ' : ' ';
+      return `${c.label || c.parameter} ${dirWord(c.direction)}${f ? join + f : ''}`;
     });
     return `${bits.join('; ')}${changed.length > 3 ? `, and ${changed.length - 3} more` : ''} against ${blend ? 'the weighted parents' : parentName}.`;
   };
@@ -1107,13 +1125,26 @@ export async function mountScene({ container, THREE, data, act, theme, reducedMo
       }
       /* the measured agreement, for THESE genes */
       if (net.agreement.length) {
+        const agRows = net.agreement.slice(0, 7);
+        if (W < 560) {
+          /* Five columns of prose do not fit a phone: the same numbers go in stacked rows, which
+             stay readable instead of shredding every source name into one letter per line. */
+          h += `<div class="nw-card">` + agRows.map(a => `<div class="nw-agrow">`
+            + `<div class="nw-agh"><span>${esc(a.label)}</span><span class="nw-agn">${a.nGenes} gene${a.nGenes === 1 ? '' : 's'}</span></div>`
+            + `<div class="nw-agb">${a.sourcesPresent.length ? esc(a.sourcesPresent.join(' · ')) : '<span style="color:var(--nw-critical)">no public source records these genes here</span>'}</div>`
+            + (a.sourcesMissing.length ? `<div class="nw-agb" style="color:var(--nw-muted)">no rows from ${esc(a.sourcesMissing.join(', '))}</div>` : '')
+            + `<div class="nw-agb">Jaccard ${a.pairs.length ? esc(num(a.jMin) + '–' + num(a.jMax)) : '—'} · `
+            + `<span style="${a.allThree.length === 0 ? 'color:var(--nw-critical);font-weight:650' : ''}">${a.allThree.length} confirmed in all ${net.coreSources.length}</span></div>`
+            + `</div>`).join('') + `</div>`;
+        } else {
         h += `<div class="nw-card"><table class="nw-tbl"><thead><tr><th>pathway cluster</th><th class="nw-num">genes</th><th>public sources present</th><th class="nw-wide">Jaccard</th><th class="nw-wide">in all ${net.coreSources.length}</th></tr></thead><tbody>`
-          + net.agreement.slice(0, 7).map(a => `<tr><td>${esc(a.label)}</td><td class="nw-num">${a.nGenes}</td>`
+          + agRows.map(a => `<tr><td>${esc(a.label)}</td><td class="nw-num">${a.nGenes}</td>`
             + `<td>${a.sourcesPresent.length ? esc(a.sourcesPresent.join(', ')) : '<span style="color:var(--nw-critical)">none</span>'}`
             + `${a.sourcesMissing.length ? `<br><span class="nw-pill">no rows from ${esc(a.sourcesMissing.join(', '))}</span>` : ''}</td>`
             + `<td class="nw-wide">${a.pairs.length ? esc(num(a.jMin) + '–' + num(a.jMax)) : '—'}</td>`
             + `<td class="nw-wide" style="${a.allThree.length === 0 ? 'color:var(--nw-critical);font-weight:650' : ''}">${a.allThree.length}</td></tr>`).join('')
           + `</tbody></table></div>`;
+        }
         h += `<p class="nw-note">Jaccard is computed here, over the genes in this picture only, between the public sources that actually have rows for each cluster. KEGG is excluded everywhere: its rows are licence-restricted and local-only, so only its pathway names could ever be cited.</p>`;
         if (noConfirm.length) {
           const silent = noConfirm.filter(a => a.sourcesMissing.length).length;

@@ -214,6 +214,107 @@ value would be a fabricated constant, which is worse than no law. Supply that on
 
 ---
 
+## 4a. Three CI criteria failures, all of which are findings
+
+`node pipeline/leanbio/check.mjs` ends on 3 problems after this round. **None is an accident and none should be
+silenced.** They are left red deliberately, with the argument attached, for a person to rule on.
+
+### (i) Two candidates fail criterion 3 (belief ≥ 0.5) — and I believe the criterion is miscalibrated for them
+
+| claim | both assessors' `p_true` | belief | why |
+|---|---|---|---|
+| `kimura-heterozygosity` | 0.99, 0.96 | **0.082** | a pre-registered claim test with verdict `refutes` |
+| `fisher-sex-ratio` | 0.98, 0.94 | **0.14** | a pre-registered claim test with verdict `mixed` |
+
+Both have the *strongest* model support in the corpus and belief far *below* the 0.548 that identical elicitations
+give elsewhere, because `belief = E·(1−R)` and a refuting pre-registered test drives R to 0.85. Neither was ever in
+the queue — **the queue never offered them and I proposed them anyway**, which is a procedural fault on my part worth
+stating plainly.
+
+But read what the tests actually say. `claim-tests/math-bio-theorems/kimura-heterozygosity/result.json`, in its own
+`interpretation` field: *"a slope far below 1 therefore means that Ne is decoupled from N (by linked selection,
+demography or variation in mu), **not that the within-model theorem is wrong**."* It used census size N as a proxy
+for Ne·μ, because independent Ne estimates do not exist for most species — that is Lewontin's paradox, which my law's
+own scope already names as a standing tension. The `fisher-sex-ratio` test is explicit that it is *"a weak test of a
+strong claim"* over UN reconstructed birth sex ratios.
+
+So: the tests refute the **claims as applied to census data**. The laws are `theorem-from-hypothesis` and assert no
+such thing. The pipeline README already states the one-way version of this — *a Lean proof is not used as evidence,
+because it proves a model's consequence, not that organisms obey the model*. **The converse is missing and should be
+added: a refuted empirical claim does not refute a model theorem derived from it.** Criterion 3 gates on claim-level
+belief, so it gates `theorem-from-hypothesis` laws on something they never assert.
+
+I am **not** proposing to loosen criterion 3, and I did not touch `belief-params.json`. Two defensible rulings exist
+and the choice is a person's: either criterion 3 applies only to laws that assert an empirical regularity (and
+`theorem-from-hypothesis` laws are gated on hypothesis sourcing instead), or these two candidates must be withdrawn.
+Until that is decided they stay `candidate` with the failure visible.
+
+### (ii) `development-growth-asymptote` fails criterion 4 (the law id must be the record id)
+
+It has no LeanBio record because it did not come from a claim or a draft — it came from the repo's own measured data
+file, `development/growth.json`. Criterion 4 assumes every law descends from a claim or a nanopub draft. **A law
+derived from repo measurements has no place in that lineage**, and the ironic result is that the one law of this round
+that actually binds a design is the one the criteria reject. The fix is a decision about the criterion (allow a
+`data:<path>` record origin alongside `draft:<path>`), not a rename of the law.
+
+### (iii) The queue shrank from 452 to 411
+
+Expected: the seven claims that became candidates left the queue, as designed. Recorded so the drop is not read as
+data loss.
+
+---
+
+## 4b. The debate ruled on all seven, and agreed with none of them
+
+The adversarial debate agent returned records in `pipeline/leanbio/debate/out/records/` for every candidate posted.
+**Verdict on all seven: `NEEDS-WORK`. No `PROMOTE`, and no `REJECT` either.** The recurring gates:
+
+- **C1 and C6 unclear** — "the law declares no shared atoms, so the studio cannot evaluate it", and "no wild-type
+  organism was tested". This is the same finding as §3, reached independently and stated more sharply than I stated
+  it: *"an untestable law does not get to turn designs dashed."*
+- **C3 fails** — scope. `taxa: ["any"]` with empty `ranges` leaves the real limiting conditions in prose only. The
+  critique is correct and I did not fix it: six of the eight carry `taxa: ["any"]`, which is honest about the
+  mathematics and useless as a scope. The one properly scoped law is `development-growth-asymptote` (Exocoetidae,
+  three life stages, ranges on Linf and K).
+- On `turing-ddi` specifically: *"the English statement says 'can pattern' where the proof covers only linear Turing
+  instability"* — a fair hit on my own wording, which §2 flags but the `statement_en` does not.
+
+That every candidate passed `propose.mjs` and none passed the debate is the most useful calibration of the round:
+**`propose.mjs` checks that a law is sound; it does not check that a law is worth having.**
+
+---
+
+## 4c. The one law that binds now actually binds
+
+`development-growth-asymptote` 1.1.0 had a `browser_check` but no `lookups`, so `growth_Linf_m` was always missing
+and the row was permanently `cannot-evaluate` — a law that looked wired and bound nothing, which is the exact failure
+the declarative mechanism exists to prevent. Version **1.2.0** adds a `lookups` entry resolving `growth_Linf_m` from
+`development/growth.json` `fishbase_rows`, matched on taxon, keyed on species, filtered to `length_type: FL`, scaled
+0.00927 (cm FL → m SL). Verified against the generated checker:
+
+| design | GROWTH1 |
+|---|---|
+| *Hirundichthys affinis*, SL 0.19 m | `holds` (green), bound 0.2772 m |
+| *Hirundichthys affinis*, SL 0.30 m | `candidate-violated` (grey, because the law is a candidate), bound 0.2772 m |
+
+Two judgement calls, made deliberately and open to reversal:
+
+- **`select: "max"`** — where a species has several published fits, the **loosest** asymptote is used, so a red
+  verdict never depends on which of three fits a reader believes. The alternative was to prefer the 23.3 cm row
+  FishBase marks *validated*, which is tighter and is the row I chose as the default curve. For a law whose job is to
+  rule designs **out**, the conservative direction is right: a tighter bound risks reddening a fish that is simply
+  bigger than one locality's fit. The better long-term fix is a `validated: true` flag on the rows in
+  `development/growth.json` and a `where` filter on it — **that is a request to whoever owns `development/`, not an
+  edit I made**, since adding flags to another thread's data file to make my own law look sharper is exactly the wrong
+  way round.
+- **`fallback_key: null`** — a species with no fork-length row gets `cannot-evaluate` rather than being judged
+  against another species' asymptote. Only 2 of 7 Exocoetidae species with growth rows have FL rows, so most of the
+  family is unevaluable. That is the honest verdict and it stays.
+
+The weakest number in the row is the 0.00927 cm-FL-to-m-SL scale factor, and the row's `note` says so.
+
+---
+
 ## 5. Process notes worth keeping
 
 - **One `lake` process at a time, across the whole repo.** Four agents contended for it tonight. `propose.mjs` itself

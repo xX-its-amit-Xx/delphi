@@ -99,7 +99,7 @@ export const SPECIFICITY_RULE = Object.freeze({
 });
 export function termSpecificity(t) {
   const S = spec();
-  const n = S.by_term[`${t.feature}|${t.id || t.term}`]?.n_genes ?? null;
+  const n = S.by_term[`${t.feature}|${t.id || t.term}`] ?? null;
   const frac = n == null ? null : +(n / S.genes_with_pathway_rows).toFixed(5);
   const excluded = SPECIFICITY_RULE.excluded_features.includes(t.feature);
   return { n_genes_with_term: n, fraction_of_universe: frac, universe: S.genes_with_pathway_rows, excluded_feature: excluded,

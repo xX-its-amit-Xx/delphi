@@ -1,0 +1,691 @@
+{
+  "kind": "use_cases",
+  "version": "1.0.0",
+  "as_of": "2026-11-01",
+  "_about": "One row per concrete job somebody would come here to do. Each names the question in a user's words, the tool sequence that answers it TODAY using real tool names from sim-engine/contract.json and the delphisci MCP server, what is missing, a worked example drawn from a file in this repo where one exists, and the honest limit of the answer. Every step is EXISTS, PARTIAL or MISSING with a gap id; the test fails if a step names a tool that is neither real nor marked MISSING. `answerable_today` is derived by build.mjs from the step statuses, not hand-asserted. Rows marked `uncomfortable` are the ones where the honest answer exposes a gap or is 'we do not know'.",
+  "scope": "A sequence here is a route, not a tested script: the arguments shown are illustrative and only the rows with a worked_example have been run. `answerable_today: yes` means every tool in the route exists and returns something relevant, not that the answer is correct or sufficient. Nothing here measures how long a route takes, how often it fails, or whether a user could find it without reading this file. One caveat on the EXISTS marks: the four capability-map tools themselves (leanbio_personas, leanbio_use_cases, leanbio_grand_questions, leanbio_tool_gap) are handlers in pipeline/leanbio/capability-map/tools.mjs reachable today through that folder's CLI and the static mirror, and they reach contract.json and the hosted MCP server only once the hub applies sim-engine/tools/CAPABILITY-REGISTER.md and mcp/CAPABILITY-PATCH.md; the test resolves them from that export rather than pretending they are already registered. Routes that would touch the held-out exam clade are not listed, because the pipeline withholds those records before any processing.",
+  "use_cases": [
+    {
+      "id": "uc-premise-follows",
+      "question": "This paper concludes X from premises P1, P2 and P3. Does X actually follow, or did they need a fourth premise?",
+      "personas": ["reviewer-editor", "theoretical-biologist", "evolutionary-geneticist"],
+      "scale": ["literature", "any"],
+      "uncomfortable": true,
+      "sequence": [
+        { "step": 1, "tool": "delphi_search_claims", "status": "EXISTS", "why": "Find whether the claim, or a near neighbour, is already recorded here with its own assumptions and sources.", "args": { "text": "fundamental theorem mean fitness", "mathOnly": true }, "surface": ["mcp", "cli"] },
+        { "step": 2, "tool": "delphi_get_claim", "status": "PARTIAL", "why": "Returns delphi:context, which holds the assumptions. They are PROSE, so nothing downstream can consume them without a human reading them first.", "surface": ["mcp", "cli"] },
+        { "step": 3, "tool": "premise_extract", "status": "MISSING", "why": "Turn the prose premises into a structured list of named hypotheses with their sources. This is the load-bearing missing step: without it the user hand-transcribes the paper.", "gap_id": "premise-extract" },
+        { "step": 4, "tool": "premise_check", "status": "MISSING", "why": "Given the structured premises and the stated conclusion, return derivable / not derivable / needs this additional premise, with the formalisation it used.", "gap_id": "premise-check" },
+        { "step": 5, "tool": "lean_propose", "status": "EXISTS", "why": "What a user can do today instead: hand-write the Lean statement and let propose.mjs tell them whether it builds, survives its mutants, and is jointly consistent with the accepted laws. Stdio only, because it runs a Lean build.", "surface": ["mcp", "lean-cli"] }
+      ],
+      "answerable_today": "no",
+      "missing": ["premise-extract", "premise-check"],
+      "worked_example": {
+        "what": "Fisher's fundamental theorem, done the long way: the claim's premises were read by hand and the statement written in Lean, which is what every user has to do today.",
+        "command": "node mcp/cli.mjs law fisher-ftns",
+        "result": "Delphi.fisher_fundamental_theorem proves that under a stated frequency vector and CONSTANT fitnesses the change in mean fitness equals the variance over the mean. Formalising it made visible that the published theorem needs constant fitness and no mutation, which is exactly what the Price 1972 and Basener-Sanford disputes are about. The formalisation took a person; no tool helped.",
+        "evidence": ["lean/Delphi/Fisher.lean", "lean/registry/laws/fisher-ftns.json"]
+      },
+      "does_not_establish": "A 'not derivable' answer would be a statement about the formalisation the tool built, not about the paper or its authors. It can mean the premises were transcribed badly, the conclusion was read too strongly, or the formalisation is in the wrong idiom. It must never be quoted as a verdict on a manuscript."
+    },
+    {
+      "id": "uc-which-laws-violated",
+      "question": "Find every law my design violates.",
+      "personas": ["synthetic-biologist", "student", "ai-agent", "comparative-physiologist"],
+      "scale": ["organism"],
+      "sequence": [
+        { "step": 1, "tool": "organism_get", "status": "EXISTS", "why": "Resolve the design to a STATE at an age and conditions, every field carrying {value, unit, kind, source}.", "args": { "id": "<organism id>", "ageDays": 120 }, "surface": ["mcp", "cli", "http"] },
+        { "step": 2, "tool": "lean_check", "status": "EXISTS", "why": "Per-law verdicts against the current lawset: holds, violated, cannot-evaluate, out-of-scope, unknown-lawset, with each violation carrying law_id, version, status, inputs, parts and severity.", "surface": ["mcp", "cli", "http", "page"] },
+        { "step": 3, "tool": "lean_law_get", "status": "EXISTS", "why": "For each violation, the law's statement, its named hypotheses with sources and its scope, so the user can see whether the law should have applied at all.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 4, "tool": "scenario_run", "status": "EXISTS", "why": "A violation is often a consequence of a behaviour. The scenario returns lean_inputs with the source of each fed quantity, which says which violations are driven by an assumption.", "surface": ["mcp", "cli", "http"] },
+        { "step": 5, "tool": "minimal_repair", "status": "MISSING", "why": "The next question is always 'what do I change'. Nothing answers it; optimize searches an objective and cannot report minimality or irreparability.", "gap_id": "minimal-repair" }
+      ],
+      "answerable_today": "partly",
+      "missing": ["minimal-repair"],
+      "worked_example": {
+        "what": "The lawset is versioned and the severity of a violation follows the law's registry status, read at call time rather than hard-coded.",
+        "command": "node mcp/cli.mjs check design.json --lawset 1.7.0",
+        "result": "Lawset 1.7.0 pins 53 laws, of which 36 are accepted (red), 13 candidate (dashed) and 3 contested (amber). Only display:'red' means a design violates a law; out-of-scope and candidate-violated deliberately do not match a naive /^viol/ test, so a page that still maps that regex to red keeps working without over-reporting.",
+        "evidence": ["lean/registry/lawsets/lawset-1.7.0.json", "lean/registry/README.md"]
+      },
+      "does_not_establish": "lean_check evaluates the same formulas in floating point and is not a kernel check. A row that holds means the arithmetic did not trip the inequality for the inputs it was given, several of which may be assumed. Laws absent from the lawset are unchecked, not satisfied."
+    },
+    {
+      "id": "uc-not-known-at-scale",
+      "question": "Show me what is NOT known at each biological scale for this gene.",
+      "personas": ["experimentalist", "knowledge-base-curator", "funder-programme-manager", "theoretical-biologist"],
+      "scale": ["gene", "molecule", "cell", "tissue", "organ", "organism"],
+      "uncomfortable": true,
+      "sequence": [
+        { "step": 1, "tool": "omics_gene", "status": "PARTIAL", "why": "Returns every omics layer the DELPHI universe holds for one gene. A layer with no row comes back absent, which a caller has to interpret as 'not in this dataset' rather than 'not known'.", "args": { "gene": "hhip" }, "surface": ["mcp", "cli"] },
+        { "step": 2, "tool": "leanbio_ground", "status": "EXISTS", "why": "Establish whether the gene symbol even resolves to an identifier, and against which authority. An ungroundable or declared-unresolvable symbol is itself a finding at the molecular scale.", "surface": ["mcp", "cli"] },
+        { "step": 3, "tool": "delphi_search_claims", "status": "PARTIAL", "why": "Find claims mentioning the gene. Text search only: there is no structured filter by scale, so a scale with no claim cannot be distinguished from a scale whose claims use different words.", "surface": ["mcp", "cli"] },
+        { "step": 4, "tool": "organism_list_parts", "status": "EXISTS", "why": "The anatomical hierarchy with the editable and recorded-only parameters per node, which is the scale ladder a coverage report would hang on.", "surface": ["mcp", "cli", "http"] },
+        { "step": 5, "tool": "scale_coverage", "status": "MISSING", "why": "The tool this question actually asks for: one answer per scale, with 'not known' as a first-class value distinguished from 'not in this dataset' and from 'we did not look'.", "gap_id": "scale-coverage" }
+      ],
+      "answerable_today": "no",
+      "missing": ["scale-coverage"],
+      "worked_example": {
+        "what": "The closest the system comes today, assembled by hand for one gene.",
+        "command": "node mcp/cli.mjs leanbio-ground --entity lat4a --kind gene",
+        "result": "lat4a does not ground: it is a former zebrafish gene symbol that no authority resolves, and the genotype thread settled it as slc43a2a by hand against an outside source. The pipeline reports it in coverage.json as not grounded rather than guessing, alongside Ammonoidea, Meganisoptera, Pterosauria and Pisces (fossil or obsolete taxon names) and Reptilia (low-confidence).",
+        "evidence": ["pipeline/leanbio/out/coverage.json", "pipeline/leanbio/README.md"]
+      },
+      "does_not_establish": "Absence from this repo is not absence from the literature. The gene universe is 3,860 zebrafish genes chosen for one blueprint, the claim set is weighted toward evolution and organism design, and a 'not known' from any assembled version of this route would mean 'not known HERE' until the route also searches outside sources."
+    },
+    {
+      "id": "uc-rank-open-questions",
+      "question": "Give me the open questions in my field ranked by how decisive new evidence would be.",
+      "personas": ["funder-programme-manager", "experimentalist", "theoretical-biologist"],
+      "scale": ["literature", "any"],
+      "uncomfortable": true,
+      "sequence": [
+        { "step": 1, "tool": "open_questions_list", "status": "MISSING", "why": "The 215 enumerated open problems, with their sources, categories and whether they are quantitative. They exist as files in open-problems/ and are reachable from no tool, CLI or API.", "gap_id": "open-questions-list" },
+        { "step": 2, "tool": "leanbio_queue", "status": "PARTIAL", "why": "The nearest thing today: 452 records queued for formalisation, ordered by formalizability then belief. It is a formalisation order, not a decisiveness order, and it says nothing about what a measurement would change.", "args": { "limit": 20, "min_belief": 0.5 }, "surface": ["mcp", "cli"] },
+        { "step": 3, "tool": "evidence_value", "status": "MISSING", "why": "For each question, how much the belief of the claims under it would move on each outcome of a candidate measurement. belief.mjs is a pure function of its evidence items, so this is computable rather than guessable.", "gap_id": "evidence-value" },
+        { "step": 4, "tool": "question_rank", "status": "MISSING", "why": "The ranking itself: questions ordered by expected belief movement and by how many claims would change status, with the ordering's inputs shown so it can be argued with.", "gap_id": "question-rank" }
+      ],
+      "answerable_today": "no",
+      "missing": ["open-questions-list", "evidence-value", "question-rank"],
+      "worked_example": {
+        "what": "The raw material exists and is unserved. This is the single clearest case in the map of data present and unreachable.",
+        "command": "node -e \"const p=require('./open-problems/problems.json'); console.log(p.problems.length)\"",
+        "result": "215 open problems from six named sources (Wikipedia revision 1379882679, Science 2005's 125 questions, screened literature), with 80 candidate answers for 47 eligible quantitative problems and 44 of those carrying a non-empty checkable_against. None of it is reachable from any tool. open-problems/SOURCES.md says plainly that no canonical exhaustive list exists and that coverage is weighted toward evolution and organism design.",
+        "evidence": ["open-problems/problems.json", "open-problems/candidates.json", "open-problems/SOURCES.md"]
+      },
+      "does_not_establish": "A decisiveness ranking would rank questions by how much OUR belief scores would move, which depends on hand-set parameters that were never fitted to a curated corpus. It would not measure scientific importance, tractability or cost, and it must not be presented as a funding recommendation."
+    },
+    {
+      "id": "uc-what-would-settle",
+      "question": "What measurement would settle this?",
+      "personas": ["experimentalist", "theoretical-biologist", "funder-programme-manager"],
+      "scale": ["any"],
+      "sequence": [
+        { "step": 1, "tool": "leanbio_claim", "status": "EXISTS", "why": "The claim's evidence items by source class, deduplicated, with the belief breakdown showing E, R and the independent counts. Shows which side of the claim is thin.", "args": { "id": "maynardsmith-hitchhiking" }, "surface": ["mcp", "cli"] },
+        { "step": 2, "tool": "delphi_get_claim", "status": "EXISTS", "why": "delphi:proposedTest is the claim's own statement of what would test it, written when the claim was distilled.", "surface": ["mcp", "cli"] },
+        { "step": 3, "tool": "lean_law_get", "status": "EXISTS", "why": "If the claim is linked to a law, the law's named hypotheses each carry a source, so an unsourced hypothesis is the measurement to make.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 4, "tool": "evidence_value", "status": "MISSING", "why": "Quantifies it: for each candidate measurement, the belief on each outcome, and whether either outcome flips the claim past a threshold. Without it the user compares evidence lists by eye.", "gap_id": "evidence-value" }
+      ],
+      "answerable_today": "partly",
+      "missing": ["evidence-value"],
+      "worked_example": {
+        "what": "Why the belief of most claims is uninformative, and therefore where a single measurement would matter most.",
+        "command": "node mcp/cli.mjs leanbio-claim maynardsmith-hitchhiking",
+        "result": "Belief 0.932 from one supporting pre-registered test and two supporting model scores: E = 1 - (0.05 + 0.10)(0.25 + 0.45^2) = 0.932, R = 0. Two model votes ALONE give 0.548, and 457 of 941 records sit in the 0.5-0.6 band, which means the single highest-value measurement for most claims in this corpus is the first pre-registered test of any kind.",
+        "evidence": ["pipeline/leanbio/out/summary.json", "pipeline/leanbio/belief-params.json", "pipeline/leanbio/README.md"]
+      },
+      "does_not_establish": "Belief is an ordering heuristic in INDRA's SimpleScorer form with hand-set, unfitted parameters. A computed 'this measurement moves belief by 0.3' would be a statement about this scoring function, not about how much the scientific community would update."
+    },
+    {
+      "id": "uc-sim-vs-laws",
+      "question": "Is my simulation output consistent with the accepted laws, or has it drifted outside them?",
+      "personas": ["simulation-modeller", "ai-agent", "synthetic-biologist"],
+      "scale": ["organism", "tissue"],
+      "sequence": [
+        { "step": 1, "tool": "scenario_list", "status": "EXISTS", "why": "The scenario modules with their params, required STATE fields, declared metrics and model caveats. The directory is listed at call time, so a new module needs no restart.", "surface": ["mcp", "cli", "http"] },
+        { "step": 2, "tool": "scenario_run", "status": "EXISTS", "why": "Runs it, and never runs when a required STATE field is null. Returns metrics, survives, feasible, limiting, and reports out-of-validity results as out_of_validity rather than as violations.", "surface": ["mcp", "cli", "http"] },
+        { "step": 3, "tool": "lean_check", "status": "EXISTS", "why": "Judges the resolved state and the scenario's perturbation inputs against the lawset. P1 through P5 are fed from lib/perturb-map.mjs using the exact names checkPerturb reads.", "surface": ["mcp", "cli", "http"] },
+        { "step": 4, "tool": "lean_source_status", "status": "EXISTS", "why": "Confirms which law source the server is using, when it was fetched, its integrity state and whether a fetch was rejected as tampered, so a verdict is not read off a silently stale set.", "surface": ["mcp", "cli"] },
+        { "step": 5, "tool": "provenance_audit", "status": "MISSING", "why": "One table of every number in the whole run with its kind and source. Today each envelope carries its own provenance and weakest_input, and nothing aggregates across a sequence.", "gap_id": "provenance-audit" }
+      ],
+      "answerable_today": "partly",
+      "missing": ["provenance-audit"],
+      "worked_example": {
+        "what": "A scenario claim checked against the laws rather than taken on trust.",
+        "command": "node sim-engine/cli.mjs scenario_run --claims '{\"glide_distance_m\": 45}'",
+        "result": "scenario_run accepts `claims`: what a designer ASSERTS. Claims are labelled as claims and checked by the laws against the scenario's own physics, so a designer's glide distance or mass gain is evaluated rather than recorded. The aerobic laws are scoped with applies_to and excludes so that an unpowered glide returns out-of-scope on C14 and E3 instead of violated, and a design that says nothing still evaluates and says so in the note.",
+        "evidence": ["sim-engine/CONTRACT.md", "lean/registry/README.md"]
+      },
+      "does_not_establish": "Consistency with the laws in this lawset is not consistency with physics or biology. 53 laws are pinned in 1.7.0; everything else is unconstrained here, and a simulation can be badly wrong in a direction no law covers."
+    },
+    {
+      "id": "uc-contradiction-hunt",
+      "question": "Where are several groups' claims mutually inconsistent, so the field cannot all be right?",
+      "personas": ["reviewer-editor", "funder-programme-manager", "metascientist"],
+      "scale": ["literature"],
+      "uncomfortable": true,
+      "sequence": [
+        { "step": 1, "tool": "delphi_graph", "status": "PARTIAL", "why": "Sort by disagreement, the maximum minus minimum p_true across models. That is disagreement between language models about a claim, not a proved inconsistency between claims.", "args": { "sort": "disagreement", "limit": 20 }, "surface": ["mcp", "cli"] },
+        { "step": 2, "tool": "leanbio_claim", "status": "EXISTS", "why": "Belief here is two-sided: contradicting evidence enters R. A claim with non-zero R has something against it recorded.", "surface": ["mcp", "cli"] },
+        { "step": 3, "tool": "lean_propose", "status": "PARTIAL", "why": "For LAWS this works properly: joint consistency is checked over shared-scope atoms, and a PROVED contradiction with an accepted law returns status contested with both ids recorded. It does nothing for claims that are not laws.", "surface": ["mcp", "lean-cli"] },
+        { "step": 4, "tool": "contradiction_scan", "status": "MISSING", "why": "Scan the claim set for pairs whose premises or conclusions are jointly inconsistent over shared quantities. Needs premise_extract first: there is nothing structured to compare.", "gap_id": "contradiction-scan" }
+      ],
+      "answerable_today": "no",
+      "missing": ["contradiction-scan", "premise-extract"],
+      "worked_example": {
+        "what": "Contradiction by observation does work, for laws, and has been used.",
+        "command": "node lean/registry/contest.mjs perturb-depth-cap --observation observations/jamieson2023b-pseudoliparis-8336m.json",
+        "result": "A measured snailfish at 8,336 m contradicts the perturb-depth-cap law within its own scope. The law's status changed to contested in lawset 1.2.0 and the file was kept, not deleted. Three laws in the registry are currently contested. For a candidate law contesting changes the status; for an accepted law it opens a conflict entry for a human.",
+        "evidence": ["lean/registry/observations/jamieson2023b-pseudoliparis-8336m.json", "lean/registry/README.md"]
+      },
+      "does_not_establish": "Model disagreement is not scientific controversy, and the absence of a recorded contradiction is not consistency: the corpus contains 850 claims, almost all with no structured premises, so nothing has been checked pairwise at all."
+    },
+    {
+      "id": "uc-formalise-model",
+      "question": "I have a model. Get it into the registry as a law.",
+      "personas": ["theoretical-biologist", "ai-agent", "formal-methods-engineer"],
+      "scale": ["any"],
+      "sequence": [
+        { "step": 1, "tool": "leanbio_queue", "status": "EXISTS", "why": "Pick a target that is already grounded, scored and not already in the registry, rather than inventing one.", "surface": ["mcp", "cli"] },
+        { "step": 2, "tool": "leanbio_claim", "status": "EXISTS", "why": "The record's INDRA-style typed statement (relation, subject, object), its grounded entities and its evidence, which is what the Lean statement must match.", "surface": ["mcp", "cli"] },
+        { "step": 3, "tool": "lean_sketch", "status": "MISSING", "why": "Emit a Lean skeleton from the typed statement: named hypotheses for the empirical premises, the theorem shape, and a witness stub. Today the first file is written from a blank page.", "gap_id": "lean-sketch" },
+        { "step": 4, "tool": "lean_laws_list", "status": "EXISTS", "why": "Find an existing statement of the same shape to reuse, filtered by kind, class and text.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 5, "tool": "lean_propose", "status": "EXISTS", "why": "Build, no sorry or axiom, standard axioms only, non-vacuity witness, every statement mutant rejected, joint consistency with the current lawset. Returns candidate, contested or proposed, never accepted.", "surface": ["mcp", "lean-cli"] },
+        { "step": 6, "tool": "lean_verify", "status": "EXISTS", "why": "Confirm the pins and the static mirror are current after the proposal lands.", "surface": ["mcp", "cli"] }
+      ],
+      "answerable_today": "partly",
+      "missing": ["lean-sketch"],
+      "worked_example": {
+        "what": "The whole route, run end to end once.",
+        "command": "node lean/registry/propose.mjs pipeline/leanbio/lean/Hitchhiking.lean --meta ... --write",
+        "result": "maynardsmith-hitchhiking, queue rank 2 at belief 0.932, became lean/Hitchhiking.lean with propose.mjs status 'candidate': it builds, uses only standard axioms, has a non-vacuity witness, and 3 of 3 statement mutants were rejected. check-exposed green. It is NOT accepted: that needs a person to set approval.approved_by_role and cut a lawset. Queue rank 1, darwin1859-ch11-13, was reviewed and DECLINED because the glacial-simultaneity claim has no quantity to formalise, and the decline is recorded in proposals.json as a result.",
+        "evidence": ["pipeline/leanbio/lean/Hitchhiking.lean", "pipeline/leanbio/proposals.json", "CONTRIBUTING-LEANBIO.md"]
+      },
+      "does_not_establish": "A candidate law is a statement that compiles, resists its own mutants and does not contradict the accepted set. Nothing in that chain is evidence that organisms satisfy the premises, and the registry status will never say otherwise."
+    },
+    {
+      "id": "uc-counter-model",
+      "question": "Prove to me that this claimed implication does NOT hold in general.",
+      "personas": ["theoretical-biologist", "evolutionary-geneticist", "formal-methods-engineer", "reviewer-editor"],
+      "scale": ["any"],
+      "uncomfortable": true,
+      "sequence": [
+        { "step": 1, "tool": "lean_propose", "status": "PARTIAL", "why": "Will report that a proof attempt failed, and will report a PROVED contradiction with an accepted law. Neither is a counter-model: a failed proof is silence, not a disproof.", "surface": ["mcp", "lean-cli"] },
+        { "step": 2, "tool": "lean_law_get", "status": "EXISTS", "why": "Read the non-vacuity witness, which is the closest existing object: a declaration showing the hypotheses CAN be satisfied. A counter-model is its mirror image.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 3, "tool": "lean_counter_model", "status": "MISSING", "why": "Construct and check a model satisfying the premises in which the conclusion fails, and return it as a certificate. This is the missing half of the registry's own epistemics.", "gap_id": "lean-counter-model" }
+      ],
+      "answerable_today": "no",
+      "missing": ["lean-counter-model"],
+      "worked_example": null,
+      "does_not_establish": "A counter-model would show the implication fails for SOME model of the premises. It would say nothing about whether the premises or the conclusion hold of organisms, and in a dispute like Hamilton's rule it would settle only the formal half."
+    },
+    {
+      "id": "uc-design-from-spec",
+      "question": "Here is what the organism must do, in plain words. Is any design in range possible?",
+      "personas": ["synthetic-biologist", "ai-agent"],
+      "scale": ["organism"],
+      "sequence": [
+        { "step": 1, "tool": "parse_design_text", "status": "EXISTS", "why": "Deterministic rule-based parsing, no language model. Returns the DesignSpec it could read AND every phrase it could not, so an unparsed requirement is visible rather than dropped.", "args": { "text": "glides 5 m, survives 10-30 C as an adult" }, "surface": ["mcp", "cli", "http"] },
+        { "step": 2, "tool": "design_from_spec", "status": "EXISTS", "why": "Validates the spec against the engine (unknown scenarios, metrics, units, parts and params are rejected) and calls optimize with the spec's hard criteria as hard_constraints.", "surface": ["mcp", "cli", "http"] },
+        { "step": 3, "tool": "optimize", "status": "EXISTS", "why": "Scores the start design FIRST, then a seeded random-restart hill climb, rejecting any candidate with a new binding Lean violation and returning each rejection with the law that caused it.", "surface": ["mcp", "cli", "http"] },
+        { "step": 4, "tool": "scenario_timecourse", "status": "EXISTS", "why": "Check the winner at every developmental stage, not only at the age the spec mentioned.", "surface": ["mcp", "cli", "http"] },
+        { "step": 5, "tool": "session_post", "status": "EXISTS", "why": "Record the result as a proposal with its rationale and the scenario results that motivated it: validated, not applied.", "surface": ["mcp", "cli", "http"] }
+      ],
+      "answerable_today": "yes",
+      "missing": [],
+      "worked_example": {
+        "what": "The optimizer's three honest answers, which is the part that matters.",
+        "command": "node sim-engine/cli.mjs design_from_spec --text \"glides 5 m, survives 10-30 C as an adult\"",
+        "result": "Status 'ok' means a candidate beat the start by more than the tolerance (default 0.1 per cent relative). 'no improvement' returns the START design unchanged, and a flat objective always lands there. 'no design meets the spec' means nothing was feasible, the start included: the optimizer says that rather than returning its best failure.",
+        "evidence": ["sim-engine/CONTRACT.md", "sim-engine/contract.json"]
+      },
+      "does_not_establish": "An organism that passes every law is a shape, not a viable animal. No numeric prediction about a real zebrafish from this engine yet counts as independent evidence: the passes it has are controls, signs and contract checks, and its one pre-registered quantitative test failed."
+    },
+    {
+      "id": "uc-stage-failure",
+      "question": "At which developmental stage does this design stop working?",
+      "personas": ["synthetic-biologist", "simulation-modeller", "comparative-physiologist"],
+      "scale": ["organism"],
+      "sequence": [
+        { "step": 1, "tool": "organism_get", "status": "EXISTS", "why": "Resolve the state at each age; ontogeny values are interpolated by SIZE, not age, and nulls are never bridged, so a stage with no data says so.", "surface": ["mcp", "cli", "http"] },
+        { "step": 2, "tool": "scenario_timecourse", "status": "EXISTS", "why": "Runs the scenario at every stage age in anatomy-model/parametric/stages.json rather than at one chosen age.", "surface": ["mcp", "cli", "http"] },
+        { "step": 3, "tool": "lean_check", "status": "EXISTS", "why": "The design carries life_stage, so laws scoped to one stage come back out-of-scope at other stages instead of red.", "surface": ["mcp", "cli", "http"] },
+        { "step": 4, "tool": "design_score", "status": "EXISTS", "why": "One number per stage with its components, including accepted-law violations, so a score cannot hide a stage-specific violation.", "surface": ["mcp", "cli"] }
+      ],
+      "answerable_today": "yes",
+      "missing": [],
+      "worked_example": {
+        "what": "Why a stagewise answer is possible at all: the ontogeny consumption rules refuse to extrapolate.",
+        "command": "node sim-engine/cli.mjs scenario_timecourse --organism <id> --scenario <name>",
+        "result": "params/ontogeny.json is consumed per params/ONTOGENY.md: mass, areas and metabolic rate by a piecewise power law in standard length; density, fractions and Ucrit linear in length; NO extrapolation past the first or last row and nulls never bridged; swim bladder a step at the pSB size threshold; adult Ucrit held across adult sizes. Where ontogeny and the engine both have a value the stronger provenance kind wins, source_choice says which and why, and alternative keeps the loser.",
+        "evidence": ["sim-engine/params/ONTOGENY.md", "sim-engine/CONTRACT.md"]
+      },
+      "does_not_establish": "A stage where nothing fails may simply be a stage with no data: a required STATE field that is null stops the scenario rather than producing a pass, and that is a silence, not a result."
+    },
+    {
+      "id": "uc-reproduce-old-verdict",
+      "question": "Reproduce the verdict I got last quarter, exactly.",
+      "personas": ["simulation-modeller", "formal-methods-engineer", "reviewer-editor"],
+      "scale": ["any"],
+      "sequence": [
+        { "step": 1, "tool": "lean_lawset_get", "status": "EXISTS", "why": "Fetch the exact lawset by version, with each law's pinned version and content hash.", "args": { "version": "1.2.0" }, "surface": ["mcp", "cli", "static-api"] },
+        { "step": 2, "tool": "lean_check", "status": "EXISTS", "why": "Judge against that version. The generated checker embeds the lawsets it knows and degrades to unknown-lawset rather than throwing when asked for one it does not.", "args": { "lawset": "1.2.0" }, "surface": ["mcp", "cli", "http"] },
+        { "step": 3, "tool": "lean_law_get", "status": "EXISTS", "why": "Archived versions are kept: a superseded law is readable at its old version, so the old verdict's reasoning is readable too.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 4, "tool": "lean_verify", "status": "EXISTS", "why": "Confirm no pinned statement has drifted since, which would mean the old verdict is reproducible but the old reasoning is not.", "surface": ["mcp", "cli"] }
+      ],
+      "answerable_today": "yes",
+      "missing": [],
+      "worked_example": {
+        "what": "A law that changed its content and therefore its version, with the old verdict still reproducible.",
+        "command": "node mcp/cli.mjs law perturb-pressure && node mcp/cli.mjs lawset 1.3.0",
+        "result": "perturb-pressure 1.0.0 (Delphi.Perturb.closed_bladder_rules_out, pressure p0 + k d with the Studio fixing k = 0.1 atm/m) was superseded in lawset 1.4.0 by 2.0.0 (Delphi.Hydro.closed_bladder_rules_out, pressure p0 + rho g d). The old version's file was copied to law-versions/ with superseded_by set, the old Lean declaration stayed compiled, and a check against lawset 1.3.0 still reproduces the old verdict.",
+        "evidence": ["lean/registry/law-versions/", "lean/registry/README.md"]
+      },
+      "does_not_establish": "Reproducing a verdict reproduces the judgement, not its correctness. An old verdict may have been wrong, and nothing in the versioning says which of two versions of a law is right."
+    },
+    {
+      "id": "uc-law-changed",
+      "question": "Did a law I depend on change since I ran this?",
+      "personas": ["simulation-modeller", "ai-agent", "formal-methods-engineer"],
+      "scale": ["any"],
+      "sequence": [
+        { "step": 1, "tool": "lean_changes", "status": "EXISTS", "why": "Lawset releases newer than your pinned version, newest first, with the CHANGELOG prose plus a diff of the pins: laws added or removed, version and status changes.", "args": { "since_version": "1.5.0" }, "surface": ["mcp", "cli", "static-api"] },
+        { "step": 2, "tool": "lean_source_status", "status": "EXISTS", "why": "Whether the server you are asking is itself current: source in use, when fetched, TTL, 304 counts, integrity, and the last error or rejected fetch.", "surface": ["mcp", "cli"] },
+        { "step": 3, "tool": "lean_check", "status": "EXISTS", "why": "Re-judge against the new lawset and against the old, and compare. A law that moved from candidate to accepted changes a dashed row to red without any design changing.", "surface": ["mcp", "cli", "http"] }
+      ],
+      "answerable_today": "yes",
+      "missing": [],
+      "worked_example": {
+        "what": "Subscription rather than polling, and the self-update integrity rule.",
+        "command": "curl https://delphisci-mcp.fly.dev/api/lean/changes.xml",
+        "result": "The same feed is served as changes.json and changes.xml (Atom 1.0), with <updated> set to the newest release date rather than the build time so the feed is deterministic. The hosted server re-checks its source every 600 s with ETag caching and accepts a new lawset ONLY when every law file matches the content hash its lawset pins; otherwise it keeps the last good set and reports the rejection in lean_source_status.",
+        "evidence": ["lean/registry/SELF-UPDATE.md", "mcp/README.md"]
+      },
+      "does_not_establish": "The feed reports that a law changed, not whether your conclusion changes with it. A status change from candidate to accepted alters severity and nothing about the underlying statement."
+    },
+    {
+      "id": "uc-joint-consistency",
+      "question": "Does my new law contradict the ones already accepted?",
+      "personas": ["formal-methods-engineer", "theoretical-biologist"],
+      "scale": ["any"],
+      "sequence": [
+        { "step": 1, "tool": "lean_lawset_get", "status": "EXISTS", "why": "The current lawset, which is the set the consistency check runs against.", "args": { "version": "current" }, "surface": ["mcp", "cli", "static-api"] },
+        { "step": 2, "tool": "lean_law_get", "status": "EXISTS", "why": "Each accepted law's shared_scope atoms: the Lean Props over named quantities that the joint-consistency check actually uses. Only laws that constrain observable quantities carry them.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 3, "tool": "lean_propose", "status": "EXISTS", "why": "Runs the check: it first proves the proposal's Lean structure equivalent to its shared-scope atoms (the bridge), then checks joint consistency. A PROVED contradiction returns contested with both ids recorded and an open_conflicts entry on the accepted law, which keeps its status.", "surface": ["mcp", "lean-cli"] }
+      ],
+      "answerable_today": "yes",
+      "missing": [],
+      "worked_example": {
+        "what": "The bridges that make the check mean something.",
+        "command": "node lean/registry/propose.mjs my-law.lean --meta my-law.meta.json",
+        "result": "For the accepted empirical laws the equivalence between the Lean structure and the shared-scope atoms is proved as Delphi.Registry.bridge_E1 through bridge_E5 in lean/registry/lean/Witnesses.lean, compiled with lake env lean. Without the bridge the consistency check would be over atoms nobody had shown to correspond to the laws.",
+        "evidence": ["lean/registry/lean/Witnesses.lean", "lean/registry/README.md"]
+      },
+      "does_not_establish": "Consistency is checked over the shared-scope atoms only. Two laws can be jointly consistent over the quantities they share and still both be wrong, or incompatible in a respect neither one's atoms express."
+    },
+    {
+      "id": "uc-law-drift",
+      "question": "Has any pinned statement drifted from the Lean source it hashes?",
+      "personas": ["formal-methods-engineer", "simulation-modeller"],
+      "scale": ["any"],
+      "sequence": [
+        { "step": 1, "tool": "lean_verify", "status": "EXISTS", "why": "Re-hashes every pinned module, reports drift, missing theorems and a stale static mirror in one call.", "surface": ["mcp", "cli"] },
+        { "step": 2, "tool": "lean_law_get", "status": "EXISTS", "why": "Each law carries its pinned commit, statement_sha256 and a LIVE drift flag, so drift is visible on an ordinary read and not only on a verify.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 3, "tool": "lean_source_status", "status": "EXISTS", "why": "Distinguishes a drifted local tree from a stale or tampered remote source.", "surface": ["mcp", "cli"] }
+      ],
+      "answerable_today": "yes",
+      "missing": [],
+      "worked_example": {
+        "what": "Why hashing only part of a law file is the right design.",
+        "command": "node mcp/cli.mjs verify",
+        "result": "The hashed fields are law_id, version, kind, class, lean_ref module/theorem/structure/statement_sha256, statement_en, hypotheses, scope, shared_scope and non_vacuity_witness. Status, approval, history and evidence are deliberately NOT hashed, because a law changes status without changing what it says. Any edit to a hashed field must bump the version, and test.mjs fails if a hash does not match.",
+        "evidence": ["lean/registry/README.md", "lean/registry/test.mjs"]
+      },
+      "does_not_establish": "A matching hash proves the statement text is unchanged since the pin. It does not prove the statement is a correct formalisation of the English claim beside it, which is the one check only a person makes."
+    },
+    {
+      "id": "uc-measured-or-assumed",
+      "question": "Is this number measured or assumed, and did anyone measure it in this animal?",
+      "personas": ["experimentalist", "student", "metascientist", "knowledge-base-curator"],
+      "scale": ["any"],
+      "sequence": [
+        { "step": 1, "tool": "organism_get", "status": "EXISTS", "why": "Every STATE field is {value, unit, kind, source}, and a field the data do not support is value null with kind assumed and a reason.", "surface": ["mcp", "cli", "http"] },
+        { "step": 2, "tool": "physiology_chain", "status": "EXISTS", "why": "Returns the provenance envelope with a kind per quantity, so a borrowed coefficient is labelled as borrowed and not as a measurement.", "surface": ["mcp", "cli", "http"] },
+        { "step": 3, "tool": "morphogen_diffusion", "status": "EXISTS", "why": "Each coefficient carries its URL, a quote and whether it was read in the source or quoted at second hand.", "surface": ["mcp", "cli", "http"] },
+        { "step": 4, "tool": "provenance_audit", "status": "MISSING", "why": "Aggregate it: every number in a whole answer or a whole corpus with its kind and source, in one table. Today each envelope carries its own and nothing joins them.", "gap_id": "provenance-audit" }
+      ],
+      "answerable_today": "partly",
+      "missing": ["provenance-audit"],
+      "worked_example": {
+        "what": "A real borrowing, labelled rather than hidden.",
+        "command": "node sim-engine/cli.mjs morphogen_diffusion --morphogen shh",
+        "result": "Shh has NO measured zebrafish diffusion coefficient; none was found. A Shh request borrows the Fgf8a value (D = 56 um^2/s, FCS on endogenous EGFP-tagged Fgf8a in a live zebrafish, measured) and the result is labelled kind 'borrowed'. The engine never invents a coefficient. The Fgf8a half-life is 'measured-secondhand' because it was quoted from a citing paper rather than read in the source.",
+        "evidence": ["sim-engine/params/zebrafish-morphogens.json", "sim-engine/CONTRACT.md"]
+      },
+      "does_not_establish": "The kind vocabulary is a discipline, not a guarantee. A server that labelled everything 'measured' would satisfy the schema and destroy the contract, and CONTRACT.md says so in those words. The labels are only as good as the person who wrote them."
+    },
+    {
+      "id": "uc-grounding-failures",
+      "question": "Which of my entities failed to ground, and against which authority?",
+      "personas": ["knowledge-base-curator", "metascientist"],
+      "scale": ["gene", "molecule", "tissue", "clade"],
+      "sequence": [
+        { "step": 1, "tool": "leanbio_ground", "status": "EXISTS", "why": "Text to mentions, or one entity to one decision, with status grounded / ambiguous / low-confidence / ungroundable, the best match and the alternatives, cached so reruns are offline.", "surface": ["mcp", "cli"] },
+        { "step": 2, "tool": "leanbio_claim", "status": "EXISTS", "why": "Per record: the mentions and the DECLARED identifiers separately, so an identifier a draft asserted about itself that does not resolve comes back as declared-unresolvable.", "surface": ["mcp", "cli"] },
+        { "step": 3, "tool": "delphi_sparql", "status": "EXISTS", "why": "Query the nanopub store directly for records whose groundings are missing or generic.", "surface": ["mcp", "cli"] },
+        { "step": 4, "tool": "literature_evidence_add", "status": "MISSING", "why": "Resolving a grounding often means resolving a citation. Nothing here fetches a DOI or PMID, so an unresolvable citation is caught by CI rather than by a tool.", "gap_id": "literature-evidence" }
+      ],
+      "answerable_today": "partly",
+      "missing": ["literature-evidence"],
+      "worked_example": {
+        "what": "The grounding report for the whole corpus, with the failures named.",
+        "command": "node pipeline/leanbio/run.mjs --check",
+        "result": "941 records (850 claims, 91 drafts, 24 more attached as evidence), 69 withheld by the held-out guard. 789 of 941 (83.8 per cent) have at least one grounded entity. Text mentions: 2,272 grounded, 16 ambiguous, 693 rejected as low-confidence, 1 ungroundable. Declared entities: 185 of 194 grounded. The nine failures are named: Ammonoidea, Meganisoptera, Pterosauria and Pisces (fossil or obsolete taxon names), Reptilia (low-confidence), and lat4a, a former gene symbol the genotype thread settled as slc43a2a.",
+        "evidence": ["pipeline/leanbio/out/coverage.json", "pipeline/leanbio/README.md"]
+      },
+      "does_not_establish": "A grounded entity is an identifier, not meaning. Many accepted groundings are generic MeSH concepts such as 'Population' or 'Animals', and the acceptance rule (score at or above 0.70, or 0.50 with a shared word stem) was set by hand and its precision has not been measured."
+    },
+    {
+      "id": "uc-evidence-both-sides",
+      "question": "What is the evidence for and against this claim, deduplicated?",
+      "personas": ["reviewer-editor", "metascientist", "experimentalist"],
+      "scale": ["literature"],
+      "sequence": [
+        { "step": 1, "tool": "leanbio_claim", "status": "EXISTS", "why": "Evidence items with source class and the two-sided belief breakdown: E from supporting, R from contradicting, belief = E x (1 - R).", "surface": ["mcp", "cli"] },
+        { "step": 2, "tool": "delphi_rank_claims", "status": "PARTIAL", "why": "Mean score across assessors, how many scored it and the spread. The math-biology claims have no per-claim assessments yet, so they cannot be ranked at all.", "surface": ["mcp", "cli"] },
+        { "step": 3, "tool": "delphi_get_claim", "status": "EXISTS", "why": "Every assessment with per-dimension child scores, plus the claim's sources.", "surface": ["mcp", "cli"] },
+        { "step": 4, "tool": "literature_evidence_add", "status": "MISSING", "why": "Evidence that searches found but no draft cites is deliberately NOT counted, which is honest and also means the picture is only as complete as the drafts. Nothing fetches the rest.", "gap_id": "literature-evidence" }
+      ],
+      "answerable_today": "partly",
+      "missing": ["literature-evidence"],
+      "worked_example": {
+        "what": "How independence is enforced, which is the part that makes the count mean anything.",
+        "command": "node mcp/cli.mjs leanbio-claim <id>",
+        "result": "Items are deduplicated by source key: a DOI counts once however many drafts cite it, a model counts once, a claim test counts once. A draft built from a claim test is the SAME experiment as the test, so neither it nor the datasets it cites count again. Contradicting evidence enters R, so adding a refuting test lowers belief rather than being ignored. A Lean proof is deliberately not counted at all.",
+        "evidence": ["pipeline/leanbio/belief.mjs", "pipeline/leanbio/README.md"]
+      },
+      "does_not_establish": "The largest evidence class in this corpus is elicited language-model opinion, and 457 of 941 records sit in the 0.5-0.6 belief band because they have two such votes and nothing else. For most claims 'the evidence' here is two machines' guesses."
+    },
+    {
+      "id": "uc-single-study-claims",
+      "question": "What fraction of the claims in this area rest on a single study, or on nothing?",
+      "personas": ["metascientist", "funder-programme-manager"],
+      "scale": ["literature"],
+      "uncomfortable": true,
+      "sequence": [
+        { "step": 1, "tool": "delphi_overview", "status": "EXISTS", "why": "The shape of the claim set per domain and how many carry mathematics. The call to make first.", "surface": ["mcp", "cli"] },
+        { "step": 2, "tool": "leanbio_queue", "status": "EXISTS", "why": "Every queued record carries its belief and the count of supporting pre-registered tests, so records with zero tests are identifiable in bulk.", "args": { "limit": 500 }, "surface": ["mcp", "cli"] },
+        { "step": 3, "tool": "delphi_rank_claims", "status": "PARTIAL", "why": "minAssessors drops thinly assessed claims, which answers the question for assessments. It does not answer it for empirical evidence, and no assessments are published to the network at all.", "surface": ["mcp", "cli"] },
+        { "step": 4, "tool": "provenance_audit", "status": "MISSING", "why": "The corpus-level version: how many claims rest on how many independent items, by class, in one table.", "gap_id": "provenance-audit" }
+      ],
+      "answerable_today": "partly",
+      "missing": ["provenance-audit"],
+      "worked_example": {
+        "what": "The answer for this corpus, which is uncomfortable and is published on our own dashboard.",
+        "command": "node -e \"const s=require('./pipeline/leanbio/out/summary.json'); console.log(JSON.stringify(s.belief.distribution))\"",
+        "result": "Mean belief 0.304 over 941 records. 331 records sit below 0.1, 457 in the 0.5-0.6 band (the two-model-votes-and-nothing-else value of 0.548), and only 5 above 0.9. In other words the modal claim in this corpus has no empirical evidence recorded for it at all, and the /leanbio/ page says so in those terms.",
+        "evidence": ["pipeline/leanbio/out/summary.json", "dashboard/public/leanbio/index.html"]
+      },
+      "does_not_establish": "This measures what is RECORDED here, not what exists. A claim with no evidence in this repo may be among the best-supported results in its field; the corpus is a set of distillations, not a literature review."
+    },
+    {
+      "id": "uc-agent-propose-edits",
+      "question": "I am an agent. Pull a task, propose a change, and get it decided by a human.",
+      "personas": ["ai-agent"],
+      "scale": ["organism", "gene", "tissue"],
+      "sequence": [
+        { "step": 1, "tool": "swarm_status", "status": "EXISTS", "why": "Every task with its derived status: open, claimed, done, failed, or expired, meaning the lease lapsed and it is claimable again.", "surface": ["mcp", "cli", "http"] },
+        { "step": 2, "tool": "swarm_claim", "status": "EXISTS", "why": "Claim the first task matching your role under a lease. A role holds one live claim at a time.", "surface": ["mcp", "cli", "http"] },
+        { "step": 3, "tool": "swarm_try_edits", "status": "EXISTS", "why": "Apply the edits to an inline copy, saving nothing, and get per-edit Lean verdicts and violations before committing to a proposal.", "surface": ["mcp", "cli", "http"] },
+        { "step": 4, "tool": "swarm_submit", "status": "EXISTS", "why": "Finishing with edits posts a session PROPOSAL: validated, NOT applied. Agents propose, humans decide.", "surface": ["mcp", "cli", "http"] },
+        { "step": 5, "tool": "session_decide", "status": "EXISTS", "why": "A role starting with 'human' approves or rejects. Approval applies the edits atomically, each recording approved_by and proposal_id, and either way the lawset_version and the violations are recorded.", "surface": ["mcp", "cli", "http"] },
+        { "step": 6, "tool": "provenance_audit", "status": "MISSING", "why": "Before submitting, an agent should be able to refuse its own answer when the weakest input is 'assumed'. Each envelope says so individually; nothing checks a whole proposal.", "gap_id": "provenance-audit" }
+      ],
+      "answerable_today": "partly",
+      "missing": ["provenance-audit"],
+      "worked_example": {
+        "what": "The constraint that makes the loop safe, enforced in the tool rather than in a prompt.",
+        "command": "node sim-engine/cli.mjs session_decide --proposal_id <id> --decision approve --decided_by_role human:lead",
+        "result": "Direct 'edit' posts and all decisions require a role starting with 'human' ('human', 'human:lead'). An agent cannot approve its own proposal, whatever it puts in its rationale. Authors are role labels, never personal identifiers. release.mjs applies the same rule to law acceptance and refuses an approval field that looks like an e-mail address.",
+        "evidence": ["sim-engine/CONTRACT.md", "lean/registry/README.md"]
+      },
+      "does_not_establish": "The human-decides rule prevents an agent from applying an unreviewed change. It does not make the agent's reasoning sound, and a human who approves without reading has defeated it entirely."
+    },
+    {
+      "id": "uc-why-is-this-red",
+      "question": "Why is this design red? Which law, and which number tripped it?",
+      "personas": ["student", "synthetic-biologist", "teacher"],
+      "scale": ["organism"],
+      "sequence": [
+        { "step": 1, "tool": "lean_check", "status": "EXISTS", "why": "Each violation carries law_id, law_version, status, lawset_version, lean_ref, kind, inputs, parts to highlight, severity and baseline_violated. The display field is authoritative: only display 'red' means a law is violated.", "surface": ["mcp", "http", "page"] },
+        { "step": 2, "tool": "lean_law_get", "status": "EXISTS", "why": "The law's class answers the real question: theorem, theorem-from-hypothesis, named-hypothesis, empirical-observation, convention or gap. A red row from a convention means something different from a red row from a theorem.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 3, "tool": "organism_get", "status": "EXISTS", "why": "Trace each input in the violation back to a STATE field with its kind and source, which is how a student sees that a red row rests on an assumption.", "surface": ["mcp", "cli", "http"] },
+        { "step": 4, "tool": "teach_claim", "status": "MISSING", "why": "The explanation at the level of someone meeting the law for the first time, with an in-scope and an out-of-scope example beside each other.", "gap_id": "teach-claim" }
+      ],
+      "answerable_today": "partly",
+      "missing": ["teach-claim"],
+      "worked_example": {
+        "what": "The scope rule that stops a red row being wrong, enforced by a standing test.",
+        "command": "node mcp/cli.mjs check design.json",
+        "result": "A standing check in lean/registry/test.mjs asserts over real organisms making realistic claims that NO accepted law may be violated by a real organism within its own scope, using sourced numbers only. Its deliberately broken input is the same glide mapped as a sustained powered demand, which the check must report. If a real organism does trip an accepted law, either the law is wrong or it is being applied out of scope.",
+        "evidence": ["lean/registry/test.mjs", "lean/registry/README.md"]
+      },
+      "does_not_establish": "A red row says a formula tripped against this lawset's inputs. Several accepted laws were grandfathered in at bootstrap with approval.approved_by_role recorded literally as 'bootstrap-grandfathered', meaning nobody reviewed them individually."
+    },
+    {
+      "id": "uc-teach-a-law",
+      "question": "Show me a theorem, its premises, its proof, and one organism it does not apply to.",
+      "personas": ["teacher", "student"],
+      "scale": ["any"],
+      "sequence": [
+        { "step": 1, "tool": "lean_laws_list", "status": "EXISTS", "why": "Pick by class, so a theorem can be set beside a named hypothesis and an empirical observation.", "args": { "kind": "biological", "status": "accepted" }, "surface": ["mcp", "cli", "static-api"] },
+        { "step": 2, "tool": "lean_law_get", "status": "EXISTS", "why": "Statement in English, the Lean source of the theorem AND of the named hypotheses, scope, sources, non-vacuity witness and version history.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 3, "tool": "lean_check", "status": "EXISTS", "why": "Run a real organism against it. A taxon outside the law's scope table comes back out-of-scope rather than red, which is the lesson.", "surface": ["mcp", "cli", "http", "page"] },
+        { "step": 4, "tool": "teach_claim", "status": "MISSING", "why": "Package the four pieces as one teachable unit, including a mutant whose proof fails, so a student can see the proof break.", "gap_id": "teach-claim" }
+      ],
+      "answerable_today": "partly",
+      "missing": ["teach-claim"],
+      "worked_example": {
+        "what": "A law whose scope is narrow for a stated and checkable reason.",
+        "command": "node mcp/cli.mjs law E2",
+        "result": "E2 rests on six flying-fish length-weight studies, so it is scoped to Exocoetidae adults and says nothing about anything else. C7b, C2a, C8e, C9c and C8c are evaluated by comparing a design with ONE specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3), so those rows are scoped to that family too. The scaling theorems, by contrast, hold for any isometric family. A design naming no taxon is out of scope for every law whose taxa are not 'any'.",
+        "evidence": ["lean/registry/laws/E2.json", "lean/registry/README.md"]
+      },
+      "does_not_establish": "A teachable law is not a settled fact about biology. The clearest thing this repo has to teach is a recorded failure: a pre-registered prediction wrong on the axis that mattered, with a reasoning error in the pre-registration itself."
+    },
+    {
+      "id": "uc-tautology-or-content",
+      "question": "Which of these famous results is a tautology under its own definitions, and which has empirical content?",
+      "personas": ["evolutionary-geneticist", "teacher", "reviewer-editor", "comparative-physiologist"],
+      "scale": ["any"],
+      "uncomfortable": true,
+      "sequence": [
+        { "step": 1, "tool": "lean_laws_list", "status": "EXISTS", "why": "The class field is exactly this distinction: theorem, theorem-from-hypothesis, named-hypothesis, empirical-observation, convention, gap.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 2, "tool": "lean_law_get", "status": "EXISTS", "why": "A theorem-from-hypothesis names the hypothesis and its source, so the empirical content is localised in the premise rather than hidden in the result.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 3, "tool": "leanbio_grand_questions", "status": "EXISTS", "why": "This capability map's own answer for the fourteen grand questions: the formalisable core separated from the empirical remainder, per question, with the declaration that proves each core where one exists.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 4, "tool": "premise_check", "status": "MISSING", "why": "To answer it for a result NOT in this registry, one would need to formalise its premises and check whether the conclusion follows without any of them. Nothing extracts or checks premises.", "gap_id": "premise-check" }
+      ],
+      "answerable_today": "partly",
+      "missing": ["premise-check"],
+      "worked_example": {
+        "what": "Three laws in this registry whose notes say exactly what they are, in the registry's own words.",
+        "command": "node mcp/cli.mjs laws --kind biological",
+        "result": "haldane-cost-of-selection: 'proved FROM a named hypothesis (HaldaneCost is never proved here, and has been contested since 1957)'. genotype-pleiotropy-closure: 'proved (a statement about what a view may omit, not about development)'. genotype-substitution-time: 'proved (a bound on speed only; it eliminates nothing unless the number of required substitutions is defined, and it is not for any wing claim here)'. Those notes are the capability, not the decoration.",
+        "evidence": ["lean/laws.json", "lean/registry/laws/haldane-cost-of-selection.json"]
+      },
+      "does_not_establish": "The class of a law is a judgement made when it was entered. Several were grandfathered at bootstrap, and a result can be labelled a theorem here while the published version it came from claimed much more."
+    },
+    {
+      "id": "uc-generality-claim",
+      "question": "The authors say their theorem is general. Is it, or is it general only under their definitions?",
+      "personas": ["reviewer-editor", "evolutionary-geneticist", "theoretical-biologist"],
+      "scale": ["any"],
+      "uncomfortable": true,
+      "sequence": [
+        { "step": 1, "tool": "leanbio_grand_questions", "status": "EXISTS", "why": "For the fourteen mapped questions, the split is already written: Hamilton's rule and Fisher's theorem each have a general form that is a rearrangement and a restricted form with substantive premises, with citations to both sides.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 2, "tool": "premise_extract", "status": "MISSING", "why": "For any other result, the premises have to come out of the prose first.", "gap_id": "premise-extract" },
+        { "step": 3, "tool": "premise_check", "status": "MISSING", "why": "Then: does the conclusion follow from the general definitions alone (so the result is a rearrangement), or only with the restrictive premises (so it has content and can fail)?", "gap_id": "premise-check" },
+        { "step": 4, "tool": "lean_counter_model", "status": "MISSING", "why": "A 'general only under their definitions' answer is properly established by a counter-model, not by a failed proof attempt.", "gap_id": "lean-counter-model" }
+      ],
+      "answerable_today": "no",
+      "missing": ["premise-extract", "premise-check", "lean-counter-model"],
+      "worked_example": {
+        "what": "The one case where the map already states the split, with both sides of the published dispute fetched and cited.",
+        "command": "node mcp/cli.mjs leanbio-grand-questions gq-hamiltons-rule",
+        "result": "The general form, with relatedness as a regression coefficient and benefit and cost as partial regressions, is a rearrangement of the Price equation and therefore has no empirical content on its own. The restricted form, with pairwise interaction, weak selection and additivity, is a substantive theorem whose premises can fail. Nowak, Tarnita and Wilson 2010 (doi 10.1038/nature09205) against; Abbot et al. 2011 (doi 10.1038/nature09831) and Gardner, West and Wild 2011 (doi 10.1111/j.1420-9101.2011.02236.x) for; Birch 2014 (doi 10.1093/bjps/axt016) on the two readings. None of the three statements is formalised here.",
+        "evidence": ["pipeline/leanbio/capability-map/grand-questions.json", "pipeline/leanbio/capability-map/citations.json"]
+      },
+      "does_not_establish": "Settling which definitions make a rule a theorem does not settle whether the rule explains anything. For Hamilton's rule that distinction is the whole dispute, and formalisation would resolve one half of it and leave the other untouched."
+    },
+    {
+      "id": "uc-exponent-vs-band",
+      "question": "Does this scaling exponent contradict the measured band for this clade?",
+      "personas": ["comparative-physiologist", "simulation-modeller"],
+      "scale": ["organism", "clade"],
+      "sequence": [
+        { "step": 1, "tool": "lean_laws_list", "status": "EXISTS", "why": "Find the empirical band laws and distinguish them from the scaling theorems by class.", "args": { "kind": "biological", "text": "exponent" }, "surface": ["mcp", "cli", "static-api"] },
+        { "step": 2, "tool": "lean_law_get", "status": "EXISTS", "why": "The band's scope and its sources: how many studies, in which clade, at which life stage.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 3, "tool": "growth_trajectory", "status": "EXISTS", "why": "Standard length and derived quantities against age from the fitted growth model, which is where an exponent for this organism comes from.", "surface": ["mcp", "cli", "http"] },
+        { "step": 4, "tool": "lean_check", "status": "PARTIAL", "why": "Only the mass-length rows (C7b, E2) can be evaluated from STATE alone. The AREA rows need the Lean reference's lifting-area convention, which STATE does not have, so they come back cannot-evaluate rather than being fed a different area.", "surface": ["mcp", "cli", "http"] },
+        { "step": 5, "tool": "data_metabolic_scaling", "status": "MISSING", "why": "For METABOLIC scaling specifically, there is no dataset here at all: the bands in this registry are about length, area, mass and aerobic budget.", "gap_id": "data-metabolic-scaling" }
+      ],
+      "answerable_today": "partly",
+      "missing": ["data-metabolic-scaling"],
+      "worked_example": {
+        "what": "A refusal to evaluate, which is the correct answer and the hard one to build.",
+        "command": "node mcp/cli.mjs check design.json --lawset current",
+        "result": "The area rows return cannot-evaluate because the Lean reference's lifting-area convention is pectoral + pelvic + body planform, while STATE's lifting_area_m2 follows the physics convention of pectoral + pelvic + caudal from the mesh measurement. They are different quantities, so STATE's value is deliberately NOT passed to Lean. A system that fed it anyway would return a verdict, and the verdict would be meaningless.",
+        "evidence": ["sim-engine/CONTRACT.md", "lean/registry/README.md"]
+      },
+      "does_not_establish": "Agreement with a band scoped to one family says nothing about another clade, and E1 proves that the isometry the theorems assume is false within a species, so a design can satisfy the empirical band and still violate the premises of every theorem above it."
+    },
+    {
+      "id": "uc-aerobic-budget",
+      "question": "Is this organism's claimed performance inside its own aerobic budget?",
+      "personas": ["comparative-physiologist", "synthetic-biologist", "simulation-modeller"],
+      "scale": ["organism"],
+      "sequence": [
+        { "step": 1, "tool": "physiology_chain", "status": "EXISTS", "why": "Gill oxygen uptake and the downstream transport chain, which supplies the terms the aerobic bound reads.", "surface": ["mcp", "cli", "http"] },
+        { "step": 2, "tool": "scenario_run", "status": "EXISTS", "why": "The behaviour's power demand, with lean_inputs reporting each fed quantity and its source.", "surface": ["mcp", "cli", "http"] },
+        { "step": 3, "tool": "lean_check", "status": "EXISTS", "why": "Evaluates the aerobic bound and E3. Crucially it applies the law's applies_to and excludes: an unpowered glide returns out-of-scope on C14 and E3 rather than violated.", "surface": ["mcp", "cli", "http"] },
+        { "step": 4, "tool": "lean_law_get", "status": "EXISTS", "why": "The bound rests on the Fick principle as a NAMED hypothesis (fick_aerobic_supply), which is where its empirical content sits and where its source is recorded.", "surface": ["mcp", "cli", "static-api"] }
+      ],
+      "answerable_today": "yes",
+      "missing": [],
+      "worked_example": {
+        "what": "A scope rule that prevents a specific, tempting false positive.",
+        "command": "node mcp/cli.mjs law E3 && node mcp/cli.mjs law fick-principle",
+        "result": "E3 (2.1.0) and fick-principle (1.2.0) state in scope.applies_to and scope.excludes that they bound sustained aerobic power DEMAND (powered level or climbing flight, sustained swimming) and NOT unpowered descent or glide, whose work comes from potential and kinetic energy rather than metabolism, nor burst effort on white-muscle stores. A design declaring flight_mode 'glide' with powered false gets out-of-scope instead of violated. When a design says nothing, those rows still evaluate and say so in the note, so an existing elimination is not silently dropped.",
+        "evidence": ["lean/registry/laws/E3.json", "lean/registry/laws/fick-principle.json", "lean/registry/README.md"]
+      },
+      "does_not_establish": "The bound is a theorem from the Fick principle, which is a named hypothesis and not proved here. A design inside the budget is not thereby shown to be able to perform the behaviour; the budget is one necessary condition among many that are not modelled."
+    },
+    {
+      "id": "uc-out-of-validity",
+      "question": "Which of my outputs is outside the validity range of the model that produced it?",
+      "personas": ["simulation-modeller", "ai-agent"],
+      "scale": ["any"],
+      "sequence": [
+        { "step": 1, "tool": "scenario_list", "status": "EXISTS", "why": "Each module declares its params, its required STATE fields, its metrics and its model caveats up front.", "surface": ["mcp", "cli", "http"] },
+        { "step": 2, "tool": "scenario_run", "status": "EXISTS", "why": "Returns a validity block, and out-of-validity results are reported as out_of_validity, never as violations. Metrics are validated against the module's static metrics list, so an undeclared metric cannot appear.", "surface": ["mcp", "cli", "http"] },
+        { "step": 3, "tool": "lean_check", "status": "EXISTS", "why": "scope_check per row with in_scope, a reason and the scope itself, so a grey row is explained rather than merely grey.", "surface": ["mcp", "cli", "http"] },
+        { "step": 4, "tool": "lean_law_get", "status": "EXISTS", "why": "scope.ranges per quantity, which is the numeric boundary the check applied.", "surface": ["mcp", "cli", "static-api"] }
+      ],
+      "answerable_today": "yes",
+      "missing": [],
+      "worked_example": {
+        "what": "A caveat carried in every scope string rather than noted once in a README.",
+        "command": "node sim-engine/cli.mjs morphogen_diffusion --morphogen fgf8a",
+        "result": "Two cautions travel with the morphogen numbers and are repeated in EVERY scope string: the measurements are from the gastrula, not a 72 hpf fin bud, and a source-sink model is only one of two live hypotheses for Fgf8 (hindered diffusion by heparan-sulfate binding is the other and is not implemented). The envelope throws without a scope string, so a tool that cannot state its own limits does not run.",
+        "evidence": ["sim-engine/CONTRACT.md", "sim-engine/lib/envelope.mjs"]
+      },
+      "does_not_establish": "A result inside the declared validity range is not thereby correct. The ranges are the module author's judgement, and the one place this engine's validity was tested against a pre-registered measurement, it failed."
+    },
+    {
+      "id": "uc-trajectory-possible",
+      "question": "Is this claimed evolutionary trajectory possible at all, given the mutation rate and the time available?",
+      "personas": ["evolutionary-geneticist", "theoretical-biologist", "reviewer-editor"],
+      "scale": ["population", "gene"],
+      "sequence": [
+        { "step": 1, "tool": "lean_laws_list", "status": "EXISTS", "why": "Find the substitution-supply and waiting-time laws, with their classes so a theorem is distinguishable from a theorem-from-a-contested-hypothesis.", "args": { "text": "substitution" }, "surface": ["mcp", "cli", "static-api"] },
+        { "step": 2, "tool": "lean_law_get", "status": "EXISTS", "why": "genotype-substitution-time and haldane-cost-of-selection with their premises. The registry's own note says the Haldane cost has been contested since 1957, which is what the user needs to know before using it.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 3, "tool": "lean_check", "status": "PARTIAL", "why": "Evaluates the budget once the required substitution count is defined. The registry note on genotype-substitution-time says plainly that it eliminates NOTHING unless that count is defined, and defining it is the user's job.", "surface": ["mcp", "cli", "http"] },
+        { "step": 4, "tool": "lean_module_genotype_network", "status": "MISSING", "why": "To get the substitution count from a stated genotype space rather than by hand, reachability in a stated mutational neighbourhood has to be formalised. The codon-space case is proved; the general case is not.", "gap_id": "lean-genotype-network" }
+      ],
+      "answerable_today": "partly",
+      "missing": ["lean-genotype-network"],
+      "worked_example": {
+        "what": "The code-based elimination, decided by the kernel rather than argued.",
+        "command": "node mcp/cli.mjs law genotype-genetic-code",
+        "result": "Delphi.Genotype.minSubst computes codon-space distance over the standard code by `decide +kernel`, with phe_leu_one, trp_stop_one and met_trp_two proved as instances. claimed_substitutions_rules_out then rules out any claimed substitution count below the minimum. The elimination is a decision procedure over a finite table, so it is as strong as the code table itself and no stronger.",
+        "evidence": ["lean/Delphi/Genotype.lean", "lean/registry/laws/genotype-genetic-code.json"]
+      },
+      "does_not_establish": "Ruling out a trajectory as too fast does not establish any other trajectory, and the waiting-time bound is an expectation: a particular lineage can be luckier than its expectation without violating anything."
+    },
+    {
+      "id": "uc-add-literature-evidence",
+      "question": "I found a paper that supports (or refutes) this claim. Get it in.",
+      "personas": ["knowledge-base-curator", "experimentalist", "metascientist"],
+      "scale": ["literature"],
+      "sequence": [
+        { "step": 1, "tool": "delphi_search_claims", "status": "EXISTS", "why": "Find the claim the paper bears on, by text, domain or mathOnly.", "surface": ["mcp", "cli"] },
+        { "step": 2, "tool": "leanbio_ground", "status": "EXISTS", "why": "Ground the paper's entities so the new draft has identifiers rather than words.", "surface": ["mcp", "cli"] },
+        { "step": 3, "tool": "literature_evidence_add", "status": "MISSING", "why": "Resolve the DOI or PMID against Europe PMC or Crossref, confirm it exists, and attach it as an evidence item with its source class. Today a DOI is a string in a draft that nothing fetches.", "gap_id": "literature-evidence" },
+        { "step": 4, "tool": "leanbio_claim", "status": "EXISTS", "why": "Confirm the belief moved in the right direction, and by how much, with the item counted once however many drafts cite it.", "surface": ["mcp", "cli"] }
+      ],
+      "answerable_today": "no",
+      "missing": ["literature-evidence"],
+      "worked_example": {
+        "what": "What does work today: harvesting from the public nanopub network, read-only, with the query guarded against injection.",
+        "command": "node pipeline/leanbio/harvest.mjs --count",
+        "result": "888 distinct nanopubs typed https://w3id.org/delphi/ontology/Claim on the Knowledge Pixels network, checked 2026-11-01 04:10 UTC. harvest.mjs sends SELECT queries over HTTP GET only; test.mjs asserts the query is a PREFIX...SELECT DISTINCT with no INSERT or DELETE, and its broken input is an injected 'DROP ALL'. A harvested nanopub is a CANDIDATE, not a record: bringing it in means adding a claim or draft that cites its IRI in prov:wasDerivedFrom, never copying its assertion.",
+        "evidence": ["pipeline/leanbio/harvest.mjs", "CONTRIBUTING-LEANBIO.md"]
+      },
+      "does_not_establish": "A resolvable identifier is not a read paper. The whole point of the measured-secondhand provenance kind is that a citation that exists can still be a number quoted from a review rather than read in the source."
+    },
+    {
+      "id": "uc-settled-vs-open",
+      "question": "In this area, what is actually settled, what is contested, and what is open?",
+      "personas": ["funder-programme-manager", "teacher", "comparative-physiologist", "metascientist"],
+      "scale": ["any"],
+      "sequence": [
+        { "step": 1, "tool": "delphi_overview", "status": "EXISTS", "why": "Claims per domain, how many have mathematics, which assessment types can be ranked.", "surface": ["mcp", "cli"] },
+        { "step": 2, "tool": "lean_laws_list", "status": "EXISTS", "why": "Status is the settled-versus-open axis for the formalised part: 36 accepted, 13 candidate, 7 proposed, 3 contested, 3 retired across 62 law files.", "args": { "status": "contested" }, "surface": ["mcp", "cli", "static-api"] },
+        { "step": 3, "tool": "leanbio_grand_questions", "status": "EXISTS", "why": "For the big questions, what is formalisable and what is not, per question, with what this repo already has graded real, adjacent or shape-only.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 4, "tool": "open_questions_list", "status": "MISSING", "why": "The 215 enumerated open problems, with category and whether they are quantitative. Unreachable from any tool.", "gap_id": "open-questions-list" }
+      ],
+      "answerable_today": "partly",
+      "missing": ["open-questions-list"],
+      "worked_example": {
+        "what": "The honest shape of 'settled' here, counted from the registry rather than claimed.",
+        "command": "node mcp/cli.mjs laws --status accepted",
+        "result": "62 law files: 36 accepted, 13 candidate, 7 proposed, 3 contested, 3 retired. Lawset 1.7.0 pins 53 of them. Nothing is deleted: retiring or contesting a law changes its status and its history and never removes its file, so the set of things that were once thought settled is also readable.",
+        "evidence": ["lean/registry/laws/", "lean/registry/lawsets/lawset-1.7.0.json"]
+      },
+      "does_not_establish": "'Accepted' is a statement about review, not truth, and the bootstrap laws carry the approving role 'bootstrap-grandfathered' precisely to say that no individual review was recorded. 'Settled' here means 'nobody in this project has contested it yet'."
+    },
+    {
+      "id": "uc-minimal-repair",
+      "question": "What is the smallest change that makes this design legal?",
+      "personas": ["synthetic-biologist", "student", "ai-agent"],
+      "scale": ["organism"],
+      "uncomfortable": true,
+      "sequence": [
+        { "step": 1, "tool": "lean_check", "status": "EXISTS", "why": "Identify the binding violations with their inputs, which bounds where a repair could act.", "surface": ["mcp", "cli", "http"] },
+        { "step": 2, "tool": "optimize", "status": "PARTIAL", "why": "A seeded hill climb over decision variables that rejects any candidate with a new binding violation and reports each rejection with the law. It searches for an OBJECTIVE, not for a minimal change, and cannot report that no repair exists.", "surface": ["mcp", "cli", "http"] },
+        { "step": 3, "tool": "swarm_try_edits", "status": "EXISTS", "why": "Try candidate repairs against an inline copy and read the per-edit verdicts without saving anything.", "surface": ["mcp", "cli", "http"] },
+        { "step": 4, "tool": "minimal_repair", "status": "MISSING", "why": "The actual question: the smallest edit set that clears every binding violation, or a certificate that none exists within the stated ranges.", "gap_id": "minimal-repair" }
+      ],
+      "answerable_today": "no",
+      "missing": ["minimal-repair"],
+      "worked_example": {
+        "what": "Why a naive repair search is dangerous here: edits propagate through STATE by stated rules, so a 'small' edit is not small.",
+        "command": "node sim-engine/cli.mjs organism_edit --target pectoral_fin --param area:planform --op scale --value 1.3",
+        "result": "A fin area scale moves STATE pectoral area and span by partedit's own factor rules; a gill volume change by k moves gill area by k^(2/3); a body length, depth, width or size change moves the body-plan parameters with mass held at CONSTANT DENSITY, which is an assumption stated in the source. A set or add of a fin span or length in metres needs the mesh, so STATE flags that it was NOT updated rather than guessing. Any minimal-repair search has to respect all of that or it will report repairs that do not exist.",
+        "evidence": ["sim-engine/CONTRACT.md", "sim-engine/lib/state.mjs"]
+      },
+      "does_not_establish": "A minimal change in parameter space is not a minimal change in biology. The edit that moves one number least may be the one no organism could make, and nothing here models developmental or genetic accessibility of an edit."
+    },
+    {
+      "id": "uc-capability-self-query",
+      "question": "What does this system actually have towards question X, and what would I need?",
+      "personas": ["ai-agent", "funder-programme-manager", "theoretical-biologist", "teacher"],
+      "scale": ["any"],
+      "sequence": [
+        { "step": 1, "tool": "leanbio_personas", "status": "EXISTS", "why": "Who this is for and which tools each kind of user needs, with EXISTS, PARTIAL or MISSING per tool.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 2, "tool": "leanbio_use_cases", "status": "EXISTS", "why": "The route for a concrete job, with every step's status, so an agent can tell before starting whether the job is answerable today.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 3, "tool": "leanbio_grand_questions", "status": "EXISTS", "why": "Per grand question: the formalisable core with the declaration that proves it where one exists, the empirical remainder, what is here, and what is needed.", "surface": ["mcp", "cli", "static-api"] },
+        { "step": 4, "tool": "leanbio_tool_gap", "status": "EXISTS", "why": "The deduplicated gap list with signatures, what each would read, effort, buildability and a derived rank by how many personas and use cases it unblocks.", "surface": ["mcp", "cli", "static-api"] }
+      ],
+      "answerable_today": "yes",
+      "missing": [],
+      "worked_example": {
+        "what": "The map is served through the same four surfaces every other capability here uses, and it reports its own gaps rather than only its features.",
+        "command": "node mcp/cli.mjs leanbio-tool-gap --limit 5",
+        "result": "The gap list is ranked by a count derived from personas.json and use-cases.json at build time, not by hand, so a gap cannot be promoted by editing its own entry. It also carries a not_gaps section naming the things deliberately absent (signing and publishing nanopubs, flight_sim, whole-embryo all-atom simulation, adhesion mechanics) so that a missing feature is distinguishable from an unmade decision.",
+        "evidence": ["pipeline/leanbio/capability-map/tool-gap.json", "pipeline/leanbio/capability-map/build.mjs"]
+      },
+      "does_not_establish": "This map is a self-assessment. The EXISTS marks were checked mechanically against contract.json, but the judgements about what each tool is GOOD for, how big each gap is, and where the formalisable core of a grand question stops were all made here and are arguable."
+    }
+  ]
+}

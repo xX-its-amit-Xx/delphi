@@ -57,7 +57,7 @@ const EDIT_RE = /\b([ACDEFGHIKLMNPQRSTVWY])(\d{1,5})([ACDEFGHIKLMNPQRSTVWY*])\b/
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const humanKey = (k) => String(k).replace(/_A$/, '').replace(/^min_dist_to_/, 'nearest ').replace(/^dist(ance)?_to_/, 'to the ')
-  .replace(/_/g, ' ').replace(/auth seq id/, 'residue number in the entry').replace(/residue name/, 'residue').trim();
+  .replace(/_/g, ' ').replace(/auth seq id/, 'residue number in the entry').replace(/residue name/, 'residue').trim();
 const norm = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const fmt = (n, d = 1) => (n == null || Number.isNaN(n) ? '—' : Number(n).toFixed(d));
 const trim = (s, n) => { s = String(s ?? ''); if (s.length <= n) return s;
@@ -757,7 +757,7 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
       <p><b>${esc(convGene)}</b> carries the one convergent substitution this project's sources name: <b>${esc(conv.substitution)}</b>. ${esc(conv.what || '')}</p>
       <p class="big">${fmt(conv.distance_to_the_functional_site_A, 1)} Å from the part of the protein that does the work</p>
       <dl class="kv">
-        <dt>measured on</dt><dd>${esc(conv.position_on_the_structure)} in ${esc(convSite?.pdb_id || '')}${convSite?.resolution_A ? `, ${fmt(convSite.resolution_A, 2)} Å` : ''}</dd>
+        <dt>measured on</dt><dd>position ${esc(conv.position_on_the_structure)} of ${esc(convSite?.pdb_id || '')}${convSite?.resolution_A ? ` (resolution ${fmt(convSite.resolution_A, 2)} Å)` : ''}</dd>
         <dt>is it in the site?</dt><dd>${conv.is_a_functional_site_residue ? '<span class="warn">yes</span>' : '<span class="fail">no</span>'}</dd>
         <dt>nearest helix</dt><dd>${conv.nearest_transmembrane_segment ? `${conv.nearest_transmembrane_segment.start}–${conv.nearest_transmembrane_segment.end}` : '—'}</dd>
         <dt>site residues</dt><dd>${(convSite?.positions || []).join(', ') || '—'}</dd>

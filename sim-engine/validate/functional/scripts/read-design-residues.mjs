@@ -129,7 +129,7 @@ const out = {};
 for (const r of REQ.requirements) {
   if (r.level !== 'residue') continue;
   const srcId = r.locus.source_id;
-  const dp = r.all_danio_orthologues?.length ? null : null;
+
   const prot = r.zebrafish.none ? null : (r.all_danio_orthologues.find(h => h.type === 'ortholog_one2one') || r.all_danio_orthologues[0]);
   if (!prot) { out[r.id] = { read: false, why: 'no Danio rerio orthologue' }; continue; }
   const src = SRC[srcId];

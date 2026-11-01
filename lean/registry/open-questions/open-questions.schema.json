@@ -50,7 +50,18 @@
         "formalisable": { "type": "boolean", "description": "can this arm be stated as a named hypothesis over quantities a design or an observation could carry? false needs a reason in `not_formalisable_because`." },
         "not_formalisable_because": { "type": ["string", "null"] },
         "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evidence" } },
-        "belief": { "type": ["number", "null"], "description": "COMPUTED by openq-lib.mjs from `evidence` via pipeline/leanbio/belief.mjs. Never hand-written; recompute() overwrites it." },
+        "wild_type_contradicted": {
+          "type": ["object", "null"],
+          "description": "THE ASYMMETRY. A law contradicted by an UNEDITED REAL ORGANISM within its own scope is wrong, not disputed (pipeline/leanbio/debate/CRITERIA.md 1.2.0 precedence: a wild-type failure outranks a contest). An arm in that position is REFUTED AS STATED and is not a live position, however much literature supports it. This is different from two measurements of the same system disagreeing with each other, where no organism contradicts either and the question is genuinely open. An arm marked here can never be the surviving arm of a settle.",
+          "required": ["organisms", "basis", "within_scope"],
+          "properties": {
+            "organisms": { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "the unedited real organisms that contradict this arm" },
+            "basis": { "type": "string", "minLength": 1 },
+            "within_scope": { "type": "boolean", "description": "false means the organism is OUTSIDE the arm's declared scope, so it does not refute it; say why in `basis`" },
+            "refuted_as_stated": { "type": "boolean", "description": "true: the arm is dead as written. The question may still be open about a WEAKER version, which `arms` should then carry as its own arm." }
+          }
+        },
+        "belief": { "type": ["number", "null"], "description": "COMPUTED by openq-lib.mjs from `evidence` via pipeline/leanbio/belief.mjs. Never hand-written; recompute() overwrites it. NOTE: belief is a weight of evidence and is deliberately BLIND to `wild_type_contradicted` -- an arm five real animals contradict can still carry a high literature belief, which is exactly why the wild-type check is a separate, outranking discriminator rather than another evidence class." },
         "belief_basis": { "type": ["object", "null"], "description": "the breakdown the belief formula returned: E, R, per-class counts, and the params version. Reproducible, not asserted." }
       }
     },
@@ -205,6 +216,12 @@
           "description": "the category of failure. 'provable-but-not-checkable' is NOT a rejection: CRITERIA.md routes it to a requirements record, and it appears here only when the missing inputs are known to be unobtainable."
         },
         "reason_detail": { "type": "string", "minLength": 1 },
+        "contradicted_by": {
+          "type": "string",
+          "enum": ["wild-type-organism", "another-measurement-of-the-same-system", "a-proof", "the-measurement-does-not-exist", "not-applicable"],
+          "description": "WHAT defeated it, which is the discriminator between a failed theorem and an open question. 'wild-type-organism' means an unedited real organism inside the statement's own scope contradicts it: that SETTLES the matter against the statement (CRITERIA.md 1.2.0), and it belongs here rather than in questions/. 'another-measurement-of-the-same-system' does NOT settle anything by itself -- two measurements disagreeing with each other is an open question, so a record using this value must say in reason_detail why it is nevertheless settled."
+        },
+        "wild_type_failures": { "type": "array", "items": { "type": "string" }, "description": "the organisms, when contradicted_by is 'wild-type-organism'" },
         "what_was_tried": { "type": "array", "minItems": 1, "items": { "type": "string" } },
         "what_survives": { "type": "string", "minLength": 1, "description": "what is still true after the failure. A failure record that says only 'it failed' throws away the result." },
         "lean_ref": { "type": ["object", "null"], "description": "the attempted declaration, if one was written" },

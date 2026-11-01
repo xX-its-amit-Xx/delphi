@@ -71,6 +71,15 @@ export function scoreCompensationVerdict(v) {
 
 const ev = (claim, source, kind) => ({ claim, source, kind });
 
+/** Our lesion kinds -> the classifier's mRNA-fate vocabulary (compensation/compensation-rules.json
+ *  allele_kinds). A cis-regulatory rearrangement has no entry there, and rightly so: the coding sequence is
+ *  intact and the transcript is not degraded, so it is sent as 'unknown' and the classifier abstains. Our own
+ *  evidenced rule table still refuses it outright (El-Brolosy 2019), and both are recorded on the row. */
+export const ALLELE_KIND_OF = {
+  nonsense: 'nonsense', frameshift: 'frameshift', missense: 'missense', knockout: 'various-null',
+  expression: 'knockdown-morpholino', regulatory: 'unknown', restore: 'unknown',
+};
+
 /** Does any edit in the design touch this requirement's gene? */
 function editsOn(genotype, symbol) {
   if (!symbol) return [];
@@ -261,9 +270,20 @@ export async function resolveOne(req, genotype, { direction = 'ADDITION' } = {})
 
   // COMPENSATORY - by rule, and only where a validated classifier says documented WITH functional rescue.
   const lesion = edits[0] || null;
-  if (comp.ok) {
+  if (comp.ok && lesion) {
+    // The classifier's vocabulary is an mRNA-FATE vocabulary, so the lesion is mapped onto it rather than
+    // handed over raw; an unmappable lesion goes over as 'unknown', which the classifier routes to an
+    // explicit abstention instead of a guess. A locus with NO lesion is never sent at all: there is no allele
+    // there to classify, and asking "would compensation rescue this" about an unedited wild-type gene would
+    // misuse the module.
     let v = null;
-    try { v = await comp.fn({ gene: symbol, lesion, requirement: req.requirement, paralogues: C.paralogues(symbol) }); } catch (err) { row.compensation_error = err.message; }
+    try {
+      v = await comp.fn({
+        gene: symbol, alleleKind: ALLELE_KIND_OF[(lesion.kind || '').toLowerCase()] || 'unknown',
+        omicsCard: C.card(symbol), organism: 'Danio rerio',
+        requirement: { anatomy: { id: C.PECTORAL_FIN.id, label: C.PECTORAL_FIN.label }, stage: null },
+      });
+    } catch (err) { row.compensation_error = err.message; }
     const s = scoreCompensationVerdict(v);
     row.compensation = { classifier: comp.from, verdict: v?.class ?? null, functional_rescue: v?.functional_rescue ?? null, r07_applies: v?.r07_applies ?? null, scored: s };
     if (s.counts) {
@@ -275,7 +295,12 @@ export async function resolveOne(req, genotype, { direction = 'ADDITION' } = {})
       return row;
     }
     if (s.flag === 'review') row.review_flag = s.why;
-    push(ev(`compensation was tested and NOT scored: ${s.why}`, `compensation classifier (${comp.from})`, 'curated'));
+    push(ev(`compensation was tested and NOT scored: ${s.why}${v?.why ? ` The classifier said: ${v.why}` : ''}`, `compensation classifier (${comp.from})${v?.rule_id ? `, rule ${v.rule_id}` : ''}`, 'curated'));
+  } else if (comp.ok) {
+    // The classifier is available but there is no lesion on this gene, so it is deliberately not called.
+    const r = compensationApplies({ requirementGene: symbol, lesion: null });
+    row.compensation = { classifier: comp.from, not_called: 'no lesion on this gene: there is no allele to classify, and transcriptional adaptation answers "what happens when you break gene X", not "what happens when gene X was never given the analogue\'s state"', applies: false };
+    push(...r.evidence, ev(`compensation REFUSED: ${r.refusal}`, 'functional/compensation.mjs', 'curated'));
   } else {
     const r = compensationApplies({ requirementGene: symbol, lesion, similarGene: null, expression: null });
     row.compensation = { classifier: null, classifier_absent: comp.reason, rule_applied: 'functional/compensation.mjs compensationApplies()', applies: r.applies, refusal: r.refusal };

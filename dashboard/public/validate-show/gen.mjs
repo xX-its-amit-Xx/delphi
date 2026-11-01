@@ -108,6 +108,7 @@ const labelOf = p => (PARAM_LABELS[p] ? PARAM_LABELS[p][0] : humanise(p));
 const partOf = p => (PARAM_LABELS[p] ? PARAM_LABELS[p][1] : null);
 const readJSON = f => JSON.parse(fs.readFileSync(f, 'utf8'));
 const r4 = n => (typeof n === 'number' && Number.isFinite(n) ? +n.toFixed(6) : n);
+const rx = n => (typeof n === 'number' && Number.isFinite(n) ? (n >= 100 || n < 0.01 ? n.toPrecision(3) : n.toFixed(2)) : '?');
 
 // ---------------------------------------------------------------------------------------------------
 /** The case classification, DERIVED from the pipeline's own difference set. Returns the sentence saying how
@@ -141,15 +142,15 @@ function classify(diffs, resolved, parentSets) {
   } else if (fnMoved.length) {
     kind = fnMoved.every(c => c.direction === 'decrease') ? 'functional-subtraction' : 'functional-addition';
     how = `the difference set includes ${fnMoved.map(c => c.parameter).join(', ')}, which is about what the animal can DO rather than what shape it is `
-      + `(${fnMoved.map(c => `${c.label} ${c.direction}d ${c.factor}x`).join('; ')}), so this is a FUNCTIONAL change. Derived from the validator's own `
+      + `(${fnMoved.map(c => `${c.label} ${c.direction}d ${rx(c.factor)}x`).join('; ')}), so this is a FUNCTIONAL change. Derived from the validator's own `
       + `difference set between ${resolved.id} and its base.`;
   } else if (direction === 'increase') {
     kind = 'morphological-addition';
-    how = `all ${ups.length} changed parameter(s) are LARGER in the design than in its base (${ups.map(c => `${c.label} x${c.factor}`).join('; ')}), `
+    how = `all ${ups.length} changed parameter(s) are LARGER in the design than in its base (${ups.map(c => `${c.label} x${rx(c.factor)}`).join('; ')}), `
       + `and none is a functional parameter, so this is a MORPHOLOGICAL ADDITION. Derived from the validator's difference set.`;
   } else if (direction === 'decrease') {
     kind = 'morphological-subtraction';
-    how = `all ${downs.length} changed parameter(s) are SMALLER in the design than in its base (${downs.map(c => `${c.label} x${c.factor}`).join('; ')}), `
+    how = `all ${downs.length} changed parameter(s) are SMALLER in the design than in its base (${downs.map(c => `${c.label} x${rx(c.factor)}`).join('; ')}), `
       + `and none is a functional parameter, so this is a MORPHOLOGICAL SUBTRACTION. The question therefore flips from "does the new function appear?" `
       + `to "what did removing this cost?". Derived from the validator's difference set.`;
   } else if (direction === 'mixed') {

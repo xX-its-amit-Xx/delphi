@@ -97,6 +97,27 @@ export function validateRecord(rec, { schema = readJson(SCHEMA) } = {}) {
       // An arm claiming a Lean ref must name a module that exists, or the record overstates what was formalised.
       if (a.lean_ref && a.lean_ref.module && !exists(R(a.lean_ref.module))) errs.push(`${id}/${a.arm_id}: lean_ref.module ${a.lean_ref.module} does not exist`);
     }
+    // THE ASYMMETRY (pipeline/leanbio/debate/CRITERIA.md 1.2.0 precedence, encoded here).
+    // A statement contradicted by an UNEDITED REAL ORGANISM in its own scope is wrong, not disputed. Two
+    // measurements of the same system disagreeing with each other is an open question, because no organism
+    // contradicts either. So:
+    //   - an arm a wild type refutes is NOT a live position and must say so (`refuted_as_stated`);
+    //   - it can never be the surviving arm of a settle;
+    //   - and if EVERY arm is refuted by a wild type, there is no question left: it is a failed theorem.
+    const live = arms.filter(a => !(a.wild_type_contradicted && a.wild_type_contradicted.within_scope !== false));
+    for (const a of arms) {
+      const w = a.wild_type_contradicted;
+      if (!w) continue;
+      if (w.within_scope !== false && w.refuted_as_stated !== true) errs.push(`${id}/${a.arm_id}: a wild-type organism contradicts this arm inside its own scope, so the arm is refuted as stated, not merely less believed. Set wild_type_contradicted.refuted_as_stated true (and carry any surviving weaker claim as its OWN arm), or set within_scope false with the reason.`);
+      if (w.within_scope !== false && !(w.organisms || []).length) errs.push(`${id}/${a.arm_id}: wild_type_contradicted needs the organisms that contradict the arm`);
+    }
+    if (arms.length && !live.length) errs.push(`${id}: every arm is refuted by a wild-type organism in its own scope, so nothing is in question. Record this as a failed-theorem (contradicted_by: wild-type-organism), not an open question.`);
+    if (rec.status === 'open' && arms.length > 1 && live.length === 1) errs.push(`${id}: only one arm (${live[0].arm_id}) is still a live position; the others are refuted by wild-type organisms. Either settle the question in favour of that arm, or carry the weaker surviving version of a refuted arm as its own arm so there is a real question.`);
+    if (rec.status === 'settled' && rec.settled) {
+      const sa = arms.find(a => a.arm_id === rec.settled.arm_id);
+      if (sa && sa.wild_type_contradicted && sa.wild_type_contradicted.within_scope !== false) errs.push(`${id}: settled in favour of arm ${rec.settled.arm_id}, which a wild-type organism contradicts in its own scope. A question cannot be settled in favour of an arm real animals refute.`);
+    }
+
     // Settling must say WHICH EVIDENCE settled it, and name a real arm.
     if (rec.status === 'settled') {
       const s = rec.settled;
@@ -114,8 +135,21 @@ export function validateRecord(rec, { schema = readJson(SCHEMA) } = {}) {
     for (const x of rec.guard?.scoped_exemptions || []) if (!seen.has(x.arm_id)) errs.push(`${id}: guard.scoped_exemptions names unknown arm ${x.arm_id}`);
     if (rec.exclusivity?.kind === 'proved-under-premise' && !rec.exclusivity.premise) errs.push(`${id}: exclusivity proved-under-premise needs the premise named`);
   }
-  if (rec.record_type === 'failed-theorem' && rec.reason === 'provable-but-not-checkable' && !rec.reason_detail) {
-    errs.push(`${id}: 'provable-but-not-checkable' is a requirements record under CRITERIA.md unless reason_detail says why the inputs are unobtainable`);
+  if (rec.record_type === 'failed-theorem') {
+    if (rec.reason === 'provable-but-not-checkable' && !rec.reason_detail) {
+      errs.push(`${id}: 'provable-but-not-checkable' is a requirements record under CRITERIA.md unless reason_detail says why the inputs are unobtainable`);
+    }
+    // The other side of the asymmetry: two measurements disagreeing with each other does NOT settle anything, so
+    // a failure resting on that must justify why it is a settled failure rather than an open question.
+    if (rec.contradicted_by === 'another-measurement-of-the-same-system' && !/open question|not an open question|settled because/i.test(String(rec.reason_detail || ''))) {
+      errs.push(`${id}: contradicted_by 'another-measurement-of-the-same-system' does not by itself settle a statement -- two measurements disagreeing is an OPEN QUESTION. reason_detail must say why this is nevertheless settled, or move the record to questions/ with an arm per measurement.`);
+    }
+    if (rec.reason === 'fires-on-wild-type' && rec.contradicted_by && rec.contradicted_by !== 'wild-type-organism') {
+      errs.push(`${id}: reason 'fires-on-wild-type' but contradicted_by is '${rec.contradicted_by}'`);
+    }
+    if (rec.contradicted_by === 'wild-type-organism' && !(rec.wild_type_failures || []).length) {
+      errs.push(`${id}: contradicted_by 'wild-type-organism' needs wild_type_failures: the organisms that contradict it`);
+    }
   }
   const want = contentHash(rec);
   if (rec.content_hash && rec.content_hash !== want) errs.push(`${id}: content_hash ${rec.content_hash.slice(0, 12)} != computed ${want.slice(0, 12)}; bump version if the content changed`);

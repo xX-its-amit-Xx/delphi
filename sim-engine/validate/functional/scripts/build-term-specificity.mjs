@@ -23,12 +23,15 @@ for (const line of txt.split('\n')) {
   if (!m.has(k)) m.set(k, { feature: r.feature, term: String(r.value), id: r.source?.accession || null, genes: new Set() });
   m.get(k).genes.add(gene);
 }
+// Stored as a flat {"<feature>|<id>": n_genes} map: the term's label and feature already come from the gene
+// card, so repeating them here only costs repo space (the project keeps files under ~1 MB).
 const by_term = {};
-for (const [k, v] of m) by_term[k] = { feature: v.feature, term: v.term, id: v.id, n_genes: v.genes.size };
+for (const [k, v] of m) by_term[k] = v.genes.size;
 fs.writeFileSync(path.join(HERE, '..', 'data', 'term-specificity.json'), JSON.stringify({
   title: 'How many genes of the annotated universe carry each pathway / GO / Reactome term',
   built: new Date().toISOString(), tool: 'sim-engine/validate/functional/scripts/build-term-specificity.mjs',
   source: 'omics/pathway/annotations.jsonl.gz (the omics pathway layer, 97k rows, GO + Reactome + WikiPathways + KEGG crosswalk)',
+  format: 'by_term maps "<feature>|<accession or value>" to the number of genes in the annotated universe carrying that term',
   rows_read: rows, genes_with_pathway_rows: universe.size, terms: Object.keys(by_term).length, by_term,
-}, null, 0));
+}));
 console.log(`${Object.keys(by_term).length} terms over ${universe.size} genes`);
