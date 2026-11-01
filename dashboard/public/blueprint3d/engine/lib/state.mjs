@@ -81,11 +81,13 @@ const pH2O = T => 0.61094 * Math.exp((17.625 * T) / (T + 243.04)); // Magnus for
 // ---------------------------------------------------------------- ambient
 /** conditions: { temperature_C, salinity_psu, depth_m, altitude_m, air_O2_fraction, medium, ...extra }.
  *  Unset values come from conditions/baseline.json (bundle.conditions). */
-export function resolveAmbient(conditions = {}, bundle) {
+export function resolveAmbient(conditions = {}, bundle, organismDefaults = {}) {
   const base = bundle.conditions;
   const given = k => conditions[k] !== undefined && conditions[k] !== null;
   const T = given('temperature_C') ? conditions.temperature_C : base.water_temperature_C.value;
-  const S = given('salinity_psu') ? conditions.salinity_psu : base.salinity_psu.value;
+  // organismDefaults.salinity_psu: a freshwater organism (zebrafish) defaults to 0 psu, not the marine baseline.
+  const orgS = organismDefaults.salinity_psu != null;
+  const S = given('salinity_psu') ? conditions.salinity_psu : orgS ? organismDefaults.salinity_psu : base.salinity_psu.value;
   const depth = given('depth_m') ? conditions.depth_m : 0;
   const alt = given('altitude_m') ? conditions.altitude_m : 0;
   const fO2 = given('air_O2_fraction') ? conditions.air_O2_fraction : base.air_O2_fraction.value;
@@ -101,7 +103,10 @@ export function resolveAmbient(conditions = {}, bundle) {
   const P_atm = 101.325 * Math.pow(isa, 5.25588);
   const rho_air_sl = base.air_density_kg_m3.value;
   const rho_air = rho_air_sl * Math.pow(isa, 4.2559);
-  const rho_w = S > 0 ? bundle.physiology.seawater_density_kg_m3.value : 1000;
+  // Fresh water (S = 0): NIST WebBook pure-water density at T (same table as scenarios/current.mjs), linear between 5 degC steps.
+  const FW = [[5, 999.97], [10, 999.70], [15, 999.10], [20, 998.21], [25, 997.05], [30, 995.65], [35, 994.03]];
+  const fwRho = t => { const x = Math.min(35, Math.max(5, t)); for (let i = 1; i < FW.length; i++) if (x <= FW[i][0]) { const f = (x - FW[i - 1][0]) / 5; return FW[i - 1][1] + f * (FW[i][1] - FW[i - 1][1]); } return FW.at(-1)[1]; };
+  const rho_w = S > 0 ? bundle.physiology.seawater_density_kg_m3.value : fwRho(T);
   const P = medium === 'water' ? P_atm + rho_w * 9.80665 * depth / 1000 : P_atm;
   const pO2 = fO2 * (P_atm - pH2O(T));
   const extra = {};
@@ -112,8 +117,8 @@ export function resolveAmbient(conditions = {}, bundle) {
       medium: F(medium, null, 'assumed', conditions.medium ? 'scenario condition' : 'water unless altitude_m > 0'),
       depth_m: F(depth, 'm', 'assumed', src('depth_m', '(surface)')),
       altitude_m: F(alt, 'm', 'assumed', src('altitude_m', '(sea level)')),
-      salinity_psu: F(S, 'psu', 'assumed', src('salinity_psu', 'salinity_psu (35, assumed)')),
-      water_density_kg_m3: F(rho_w, 'kg/m3', 'assumed', bundle.physiology.seawater_density_kg_m3.source),
+      salinity_psu: F(S, 'psu', 'assumed', given('salinity_psu') || !orgS ? src('salinity_psu', 'salinity_psu (35, assumed)') : organismDefaults.salinity_source),
+      water_density_kg_m3: F(rho_w, 'kg/m3', 'assumed', S > 0 ? bundle.physiology.seawater_density_kg_m3.source : 'fresh water: NIST Chemistry WebBook pure-water density at 0.101325 MPa, interpolated at the water temperature (https://webbook.nist.gov/chemistry/fluid/)'),
       air_density_kg_m3: F(rho_air, 'kg/m3', alt ? 'derived' : 'assumed', alt ? `standard-atmosphere troposphere rho = ${rho_air_sl} (1 - 2.25577e-5 h)^4.2559: U.S. Standard Atmosphere 1976 (NASA-TM-X-74335, https://ntrs.nasa.gov/citations/19770009539), L = 0.0065 K/m, T0 = 288.15 K; rho0 from conditions/baseline.json; valid below 11 km` : 'conditions/baseline.json air_density_kg_m3 (1.225, assumed)', alt > 11000 ? { flags: ['altitude above 11 km: ISA troposphere formula out of range'] } : {}),
       pressure_kPa: F(P, 'kPa', 'derived', medium === 'water' ? 'standard-atmosphere surface pressure (U.S. Standard Atmosphere 1976, P0 = 101.325 kPa) + rho_water g depth (hydrostatics, g = 9.80665 m/s2 standard gravity)' : 'standard-atmosphere troposphere P = 101.325 (1 - 2.25577e-5 h)^5.25588: U.S. Standard Atmosphere 1976 (NASA-TM-X-74335, https://ntrs.nasa.gov/citations/19770009539), = ICAO/ISO 2533 below 11 km'),
       pO2_kPa: F(pO2, 'kPa', 'derived', 'air_O2_fraction x (P_atm - pH2O(T)); for water, the O2 tension of surface water in equilibrium with air (as physiology/index.js). Hydrostatic pressure does not raise dissolved pO2 in an open water column; stratified or hypoxic water is not modelled.'),
@@ -328,7 +333,8 @@ export function resolveState(doc, ageDays, conditions = {}, bundle, opts = {}) {
   out.white_muscle_fraction = out.red_muscle_fraction.value == null ? NULL('-', 'red fraction unknown')
     : F(1 - out.red_muscle_fraction.value, '- (of myotomal muscle mass)', 'derived', '1 - red_muscle_fraction: two fibre types only; pink/intermediate fibres are not separated', { weakest_input: out.red_muscle_fraction.kind });
 
-  const amb = resolveAmbient(conditions, bundle);
+  // Zebrafish are freshwater animals: a zebrafish-only organism defaults to 0 psu (the baseline 35 psu is marine).
+  const amb = resolveAmbient(conditions, bundle, singleTrack && zfLeaf ? { salinity_psu: 0, salinity_source: 'freshwater organism default: Danio rerio is a freshwater species (0 psu); conditions/baseline.json 35 psu is the marine baseline and does not apply' } : {});
   out.temperature_C = amb.temperature;
   out.ambient = amb.ambient;
   out.parts = parts;

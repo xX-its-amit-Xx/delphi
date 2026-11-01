@@ -77,7 +77,9 @@ await ok('zebrafish swim bladder is absent before the pSB milestone and present 
 await ok('depth raises pressure by rho g h; pO2 of air-equilibrated water does not change with depth', () => {
   const a = st('zebrafish-adult', 90), d = st('zebrafish-adult', 90, { depth_m: 100 });
   const dp = d.ambient.pressure_kPa.value - a.ambient.pressure_kPa.value;
-  assert.ok(Math.abs(dp - 1023.4 * 9.80665 * 100 / 1000) < 1e-6, `dP ${dp}`);
+  // Zebrafish default to fresh water (0 psu; NIST pure-water density at the water temperature, 997.05 kg/m3 at 25 C).
+  assert.equal(d.ambient.salinity_psu.value, 0); assert.equal(d.ambient.water_density_kg_m3.value, 997.05);
+  assert.ok(Math.abs(dp - d.ambient.water_density_kg_m3.value * 9.80665 * 100 / 1000) < 1e-6, `dP ${dp}`);
   assert.equal(d.ambient.pO2_kPa.value, a.ambient.pO2_kPa.value);
 });
 await ok('superellipse area reduces to the ellipse at n = 2', () => {
@@ -421,8 +423,9 @@ console.log('\naccepted laws P4, P4b, P5 evaluate from their scenarios; designed
 const sev = (r, id) => { const v = r.result.violations.find(x => x.lean_ref.constraint === id); return v ? v.severity : null; };
 const verdict = (r, id) => r.result.verdicts.find(x => x.constraint === id)?.verdict;
 await ok('P4 (minimum airspeed at altitude): holds for a flying fish at 1000 m; at 4500 m its 10 m/s launch is below v_min -> red', async () => {
-  const lo = await T.scenarioRun({ organism: 'flying-fish', scenario: 'altitude', params: { altitude_m: 1000 } });
-  const hi = await T.scenarioRun({ organism: 'flying-fish', scenario: 'altitude', params: { altitude_m: M === 'p4' ? 1000 : 4500 } });
+  // An explicit 10 m/s launch (not the module default, which the glide owner may change) keeps this a test of P4.
+  const lo = await T.scenarioRun({ organism: 'flying-fish', scenario: 'altitude', params: { altitude_m: 1000, launch_airspeed_override_m_s: 10 } });
+  const hi = await T.scenarioRun({ organism: 'flying-fish', scenario: 'altitude', params: { altitude_m: M === 'p4' ? 1000 : 4500, launch_airspeed_override_m_s: 10 } });
   assert.equal(verdict(lo, 'P4'), 'holds'); assert.equal(verdict(hi, 'P4'), 'violated');
   const st = hi.result.verdicts.find(x => x.constraint === 'P4').status;
   assert.equal(sev(hi, 'P4'), SEVERITY[st] || 'advisory');
@@ -451,7 +454,7 @@ await ok('unknown claim keys are refused', async () => {
 });
 
 console.log('\nP1b, P2b and P4b-with-wind from the scenarios\' lean_inputs');
-await ok('P2b is fed from the current scenario for an unedited zebrafish: holds at 0.2 m/s; a claimed station-hold at 0.6 m/s beyond the drag bound -> red', async () => {
+await ok('P2b is fed from the current scenario for an unedited zebrafish: holds at 0.2 m/s; a claimed station-hold at 0.8 m/s beyond the drag bound -> red (0.6 m/s before the measured-MO2max ceiling, physics/FICK-CEILING-CHECK.md)', async () => {
   const lo = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'current', params: { current_m_s: 0.2 } });
   assert.equal(verdict(lo, 'P2b'), 'holds', `P2b is '${verdict(lo, 'P2b')}': not fed? missing ${JSON.stringify(lo.result.verdicts.find(x => x.constraint === 'P2b')?.missing)}`);
   const sp = lo.result.lean_inputs.spec;
@@ -459,14 +462,14 @@ await ok('P2b is fed from the current scenario for an unedited zebrafish: holds 
   const dragPower = 0.5 * sp.water_density_kg_m3 * sp.drag_coefficient * sp.drag_area_m2 * 0.2 ** 3;
   const scen = lo.result.run.metrics.find(m => m.key === 'drag_power_at_current_W').value;
   assert.ok(Math.abs(dragPower / scen - 1) < 1e-9, `drag power ${dragPower} vs the scenario's ${scen}: Cd counted twice?`);
-  assert.ok(/Fick upper bound/.test(lo.result.lean_inputs.sources.aerobicCeiling_W));
-  const hi = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'current', params: { current_m_s: 0.2 }, claims: { current_speed_m_s: M === 'p2b' ? 0.2 : 0.6 } });
+  assert.ok(/measured MO2max/.test(lo.result.lean_inputs.sources.aerobicCeiling_W)); // zebrafish: Palstra 2010 MO2max, not the snapper-Q Fick bound
+  const hi = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'current', params: { current_m_s: 0.2 }, claims: { current_speed_m_s: M === 'p2b' ? 0.2 : 0.8 } });
   assert.equal(verdict(hi, 'P2b'), 'violated'); assert.equal(sev(hi, 'P2b'), SEVERITY[hi.result.verdicts.find(x => x.constraint === 'P2b').status]);
 });
 await ok('P1b (sustained power within the Q10-scaled reference): holds at 28 C; a claimed 3x sustained power -> red', async () => {
   const ok1 = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'temperature', params: { water_temperature_C: 28 } });
   assert.equal(verdict(ok1, 'P1b'), 'holds');
-  assert.ok(/Fick upper bound/.test(ok1.result.lean_inputs.sources.reference_sustained_power_W));
+  assert.ok(/measured MO2max/.test(ok1.result.lean_inputs.sources.reference_sustained_power_W)); // zebrafish: Palstra 2010 MO2max
   const claim = 3 * ok1.result.lean_inputs.spec.sustained_power_W;
   const bad = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'temperature', params: { water_temperature_C: 28 }, claims: { sustained_power_W: M === 'p1b' ? claim / 3 : claim } });
   assert.equal(verdict(bad, 'P1b'), 'violated'); assert.equal(sev(bad, 'P1b'), SEVERITY[bad.result.verdicts.find(x => x.constraint === 'P1b').status]);

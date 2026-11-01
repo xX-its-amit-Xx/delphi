@@ -3,7 +3,7 @@
 // bound for any fish: the speed at which rigid-body skin-friction drag power equals the whole red-muscle
 // power. Pure ESM. Every constant fetched 2026-10-31 (modelCard.sources). No bird data.
 import { ucritRel } from './temperature.mjs';
-import { fickPower, FICK } from './glide.mjs'; // used only inside run(), so the glide <-> current import cycle is safe
+import { fickPower, FICK, measuredAerobicCeiling } from './glide.mjs'; // used only inside run(), so the glide <-> current import cycle is safe
 const LIN = (value, unit, kind, source, reason) => (value == null || (typeof value === 'number' && !Number.isFinite(value)) ? { value: null, unit, kind: 'assumed', source: 'none', reason: reason || 'not computable from the inputs given' } : { value, unit, kind, source });
 
 
@@ -129,11 +129,15 @@ export default {
     const amb = (state && state.ambient) || {};
     const pO2w = amb.pO2_kPa && amb.pO2_kPa.value != null ? amb.pO2_kPa.value : null;
     const fk = m != null && pO2w != null ? fickPower({ mass_kg: m, pO2_kPa: pO2w, P50_kPa: val(state, 'hb_P50_kPa') ?? FICK.P50_kPa.value, Q_ml_s: val(state, 'cardiac_output_max_ml_s') }) : null;
+    // Measured MO2max (zebrafish, Palstra 2010) where the species has one; else the Fick product with the snapper-Q fallback.
+    // physics/FICK-CEILING-CHECK.md: the snapper-Q bound (3.72e-4 W for the adult fixture) lies below measured zebrafish MO2 at Ucrit.
+    const mc = m != null ? measuredAerobicCeiling(val(state, 'species'), m, T) : null;
+    if (mc) prov.push({ quantity: 'aerobic ceiling from measured MO2max (W)', value: mc.P_W, kind: mc.kind, source: mc.source });
     const lean_inputs = {
       drag_coefficient: LIN(Cd, '1', 'borrowed', 'flat-plate C_D on wetted area at the current speed: 1.33 Re^-0.5 (Re < 5e5) or 0.072 Re^-0.2 (Li et al. 2021 formulas; rigid plate, a lower bound for an undulating fish)', U === 0 ? 'current speed is 0' : 'SL_m is null'),
       drag_reference_area_m2: LIN(Swet, 'm2', val(state, 'wetted_area_m2') != null ? (state.wetted_area_m2.kind || 'derived') : 'assumed', `wetted_area_m2 (STATE: ${state.wetted_area_m2 ? state.wetted_area_m2.source : 'none'}): the area drag_coefficient refers to; drag = 0.5 rho C_D A_ref U^2`, 'wetted_area_m2 is null'),
       drag_area_CdA_m2: LIN(Cd != null && Swet != null ? Cd * Swet : null, 'm2', 'derived', 'C_D x A_ref (CdA). Do NOT multiply by drag_coefficient again', Swet == null ? 'wetted_area_m2 is null' : 'drag coefficient not computable'),
-      aerobic_ceiling_W: LIN(fk ? fk.P_W : null, 'W', 'derived', fk ? `Fick bound eta E Q Ca: eta ${FICK.eta.value} (borrowed), E ${FICK.E_J_per_ml.value.toFixed(2)} J/ml, Q ${fk.Q_ml_s.toFixed(5)} ml/s (${val(state, 'cardiac_output_max_ml_s') != null ? 'STATE' : 'snapper 58.48 ml/min/kg, borrowed'}), Ca ${fk.Ca_ml_ml.toFixed(4)} ml/ml at water pO2 ${pO2w.toFixed(1)} kPa (PaO2 = water PO2, an upper bound; Hb capacity calibrated)` : 'none', m == null ? 'mass_kg is null' : 'state.ambient.pO2_kPa is null'),
+      aerobic_ceiling_W: mc ? LIN(mc.P_W, 'W', 'derived', `aerobic ceiling from measured MO2max: ${mc.source}`) : LIN(fk ? fk.P_W : null, 'W', 'derived', fk ? `FALLBACK (no measured MO2max for this species; snapper Q underestimates small cyprinids about 3x) Fick bound eta E Q Ca: eta ${FICK.eta.value} (borrowed), E ${FICK.E_J_per_ml.value.toFixed(2)} J/ml, Q ${fk.Q_ml_s.toFixed(5)} ml/s (${val(state, 'cardiac_output_max_ml_s') != null ? 'STATE' : 'snapper 58.48 ml/min/kg, borrowed'}), Ca ${fk.Ca_ml_ml.toFixed(4)} ml/ml at water pO2 ${pO2w.toFixed(1)} kPa (PaO2 = water PO2, an upper bound; Hb capacity calibrated)` : 'none', m == null ? 'mass_kg is null' : 'state.ambient.pO2_kPa is null'),
     };
     const bound = Pred != null && Swet != null && SL != null ? speedBound(Pred, w.rho, w.mu, SL, Swet) : null;
     if (Re != null && Re > 5e5) notes.push('Re above 5e5: turbulent plate coefficient used.');
@@ -154,6 +158,12 @@ export default {
     }
     if (stage === 'egg') { inRange = false; notes.push('Egg stage: no swimming.'); }
     const umax = uc.value != null ? uc.value * UMAX_OVER_UCRIT : null;
+    // The aerobic-only premise of P2b holds below about 0.8 Ucrit; the final Ucrit increments include anaerobic (white-muscle) power
+    // (physics/FICK-CEILING-CHECK.md sections 4 and 6). A flag for the law check, not a change to it.
+    const aerobicOnly = uc.value != null ? U <= 0.8 * uc.value : null;
+    lean_inputs.aerobic_only_premise = aerobicOnly == null ? { value: null, unit: null, kind: 'assumed', source: 'none', reason: 'no Ucrit for this organism' }
+      : { value: aerobicOnly, unit: null, kind: 'derived', source: `current ${U} m/s ${aerobicOnly ? '<=' : '>'} 0.8 x Ucrit (${(0.8 * uc.value).toFixed(3)} m/s): ${aerobicOnly ? 'sustained swimming taken as aerobic' : 'the aerobic-only premise does not apply; the final Ucrit increments include anaerobic (white-muscle) power, so drag power above the aerobic ceiling here is not a law violation by itself'} (physics/FICK-CEILING-CHECK.md)` };
+    if (aerobicOnly === false) notes.push(`Current above 0.8 x Ucrit (${(0.8 * uc.value).toFixed(3)} m/s): the aerobic-only premise does not apply; the final Ucrit increments include anaerobic power.`);
     // survives = null: being unable to hold station is not modelled as lethal. feasible = can hold station.
     let feasible = null, limiting = null;
     if (uc.value != null) {

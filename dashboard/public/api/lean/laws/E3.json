@@ -149,14 +149,14 @@
  "lean": {
   "theorem": "Delphi.Empirical.aerobicCeiling_le",
   "module": "lean/Delphi/Empirical.lean",
-  "line": 145,
+  "line": 149,
   "source": "/-- **The aerobic ceiling of anything inside the measured ranges is at most 0.0458 W.** This is what makes\nthe C14 eliminations binding rather than a choice of proxies: no teleost the measured record allows, at this\nmass, has a larger sustained aerobic ceiling. -/\ntheorem aerobicCeiling_le (T : TeleostAerobic) :\n    T.eta * T.oxycaloric * T.cardiacOutput * T.arterialO2 ≤ 0.0458 := by\n  have hA : T.eta * T.oxycaloric ≤ 0.15 * 19.35 :=\n    mul_le_mul T.eta_le T.oxy_le T.oxy_nonneg (by norm_num)\n  have hB : T.cardiacOutput * T.arterialO2 ≤ 0.075 * 0.21 :=\n    mul_le_mul T.q_le T.ca_le T.ca_nonneg (by norm_num)\n  have hBnn : 0 ≤ T.cardiacOutput * T.arterialO2 := mul_nonneg T.q_nonneg T.ca_nonneg\n  have := mul_le_mul hA hB hBnn (by norm_num : (0:ℝ) ≤ 0.15 * 19.35)\n  calc T.eta * T.oxycaloric * T.cardiacOutput * T.arterialO2\n      = T.eta * T.oxycaloric * (T.cardiacOutput * T.arterialO2) := by ring\n    _ ≤ 0.15 * 19.35 * (0.075 * 0.21) := this\n    _ ≤ 0.0458 := by norm_num",
   "named_hypotheses": [
    {
     "name": "Delphi.Empirical.TeleostAerobic",
     "keyword": "structure",
     "module": "lean/Delphi/Empirical.lean",
-    "line": 128,
+    "line": 132,
     "source": "/-- Efficiency, oxycaloric equivalent, cardiac output (ml blood/s) and arterial O2 content (ml O2/ml blood)\ninside the ranges the physiology chain cites, for a fish of the measured mass. -/\nstructure TeleostAerobic where\n  eta : ℝ\n  oxycaloric : ℝ\n  cardiacOutput : ℝ\n  arterialO2 : ℝ\n  eta_nonneg : 0 ≤ eta\n  eta_le : eta ≤ 0.15\n  oxy_nonneg : 0 ≤ oxycaloric\n  oxy_le : oxycaloric ≤ 19.35\n  q_nonneg : 0 ≤ cardiacOutput\n  q_le : cardiacOutput ≤ 0.075\n  ca_nonneg : 0 ≤ arterialO2\n  ca_le : arterialO2 ≤ 0.21"
    }
   ]

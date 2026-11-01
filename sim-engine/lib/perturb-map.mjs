@@ -124,7 +124,9 @@ export function perturbInputs(state, scenarioKey = null, params = {}, run = null
   const li = run && run.ok && run.lean_inputs && typeof run.lean_inputs === 'object' ? run.lean_inputs : {};
   const lv = k => (li[k] && num(li[k].value) ? li[k].value : undefined);
   const ls = (k, extra = '') => `${scenarioKey} scenario lean_inputs.${k} (${li[k]?.kind}): ${String(li[k]?.source || '').slice(0, 160)}${extra}`;
-  const FICK = '; NOTE: the Fick upper bound (borrowed cardiac output, calibrated Hb capacity), not a measured power';
+  const FICK_NOTE = '; NOTE: the Fick upper bound (borrowed cardiac output, calibrated Hb capacity), not a measured power';
+  const MO2_NOTE = '; NOTE: an aerobic ceiling from a measured MO2max (scaled to mass and temperature), not a measured power at this condition';
+  const noteFor = k => (/measured MO2max/.test(String(li[k]?.source || '')) ? MO2_NOTE : FICK_NOTE);
   // P2b (drag power within the aerobic ceiling), current scenario.
   if (scenarioKey === 'current' && num(lv('drag_coefficient'))) {
     put('drag_coefficient', lv('drag_coefficient'), ls('drag_coefficient'));
@@ -134,7 +136,7 @@ export function perturbInputs(state, scenarioKey = null, params = {}, run = null
     const cdA = lv('drag_area_CdA_m2') ?? lv('drag_area_m2');
     if (num(lv('drag_reference_area_m2'))) put('drag_area_m2', lv('drag_reference_area_m2'), ls('drag_reference_area_m2'));
     else if (num(cdA)) put('drag_area_m2', cdA / lv('drag_coefficient'), `${scenarioKey} scenario: CdA / drag_coefficient (fallback: the module reports no drag_reference_area_m2)`);
-    put('aerobicCeiling_W', lv('aerobic_ceiling_W'), ls('aerobic_ceiling_W', FICK));
+    put('aerobicCeiling_W', lv('aerobic_ceiling_W'), ls('aerobic_ceiling_W', noteFor('aerobic_ceiling_W')));
     const rhoC = run.provenance?.find(x => x.quantity === 'water density (kg/m3)')?.value;
     put('water_density_kg_m3', rhoC, "current scenario provenance: water density (kg/m3), the density its drag uses");
   }
@@ -144,8 +146,8 @@ export function perturbInputs(state, scenarioKey = null, params = {}, run = null
   if (scenarioKey === 'temperature') {
     put('q10', lv('q10'), ls('q10', li.q10_basis ? ` [basis ${li.q10_basis.value}]` : ''));
     put('reference_temperature_C', lv('reference_temperature_C'), ls('reference_temperature_C'));
-    put('reference_sustained_power_W', lv('reference_sustained_power_W'), ls('reference_sustained_power_W', FICK));
-    put('sustained_power_W', lv('sustained_power_W'), ls('sustained_power_W', FICK));
+    put('reference_sustained_power_W', lv('reference_sustained_power_W'), ls('reference_sustained_power_W', noteFor('reference_sustained_power_W')));
+    put('sustained_power_W', lv('sustained_power_W'), ls('sustained_power_W', noteFor('reference_sustained_power_W')));
   }
   // P4b with wind, wind scenario: descent phase only, wind applied (w positive = tailwind, so w = -headwind).
   if (scenarioKey === 'wind' && num(lv('descent_ground_distance_m'))) {
