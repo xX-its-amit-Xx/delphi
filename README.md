@@ -18,6 +18,22 @@ This project was created for **Science Claw Hack @ MIT**.
 
 
 
+## Product report — start here
+
+**[→ The product report](https://delphi-mission-control.ashenoy000.workers.dev/docs/)** is the
+human-readable guide to the whole system, with a **For humans / For agents** toggle on every page.
+Each of the five surfaces opens with the thing itself running:
+
+| | Surface | What the report covers |
+|---|---|---|
+| 1 | **Generating nanopubs** | The format, the errors that actually happen (each one observed, not hypothetical), the three validator complaints that are *not* errors, and what to do when you are unsure. |
+| 2 | **Nanopubs → Lean** | The two gates, the non-vacuity witness, the `hypotheses_load_bearing` test — and the three moves for formalising from **conflicting** evidence. |
+| 3 | **The MCP server** | Every tool family, the transports, and the capability map it was designed around: personas, use cases, grand questions. |
+| 4 | **Design Studio & export** | Example uses, and how to get results out to your own validator — `.stl` mesh, genome sequence, design JSON, with the caveats each carries. |
+| 5 | **Validation harness** | The five named results that are never summed, neighbour checking and functional explainability, Lean verification at a pinned lawset, why there is no composite verdict, and BYOK key handling. |
+
+It also lists **what is not built**, so no section has to be vague about it.
+
 ## Goal
 
 Our goal is to find the **fundamental theorems of biology**: the general laws that hold across organisms, scales, and systems, stated precisely enough to test.

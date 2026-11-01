@@ -59,6 +59,7 @@ const GROUPS = [
     { key: 'agents',   href: 'studio-api/',     text: 'Validate a design' },
     { key: 'genediff', href: 'gene-diff/',      text: 'Gene diff' },
     { key: 'bench',    href: 't/benchmark/',     text: 'Swarm benchmark' },
+    { key: 'docs',     href: 'docs/',           text: 'Product report' },
     { key: 'swarmb',   href: 'swarm-board/',    text: 'Swarm board' },
     { key: 'evolve',   href: 'evolve/',         text: 'Enzymes' }
   ]},
@@ -113,7 +114,8 @@ const OWNED = {
   'record/index.html':      'record',
   'scorer/index.html':      'scorer',
   'gene-diff/index.html':   'genediff',
-  't/benchmark/index.html': 'bench'
+  't/benchmark/index.html': 'bench',
+  'docs/index.html':        'docs'
 };
 
 /* ------------------------------------------------------------- link verifying */

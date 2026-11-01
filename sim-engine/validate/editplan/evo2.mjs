@@ -81,58 +81,147 @@ export function keyShape() {
     length_only: t.length };
 }
 
+// The shared nimHealth() probe folds an 8-residue peptide on the ESMFold NIM, and that path now 404s.
+// A 404 on a DIFFERENT model is not evidence about Evo2, and letting it gate this block would report
+// "Evo2 unavailable" while Evo2 is answering. So the status probe calls the Evo2 endpoint this module
+// actually uses, with the smallest legal request (one generated token, no logits).
 export async function status({ fresh = false } = {}) {
   const ks = keyShape();
   if (!ks.present) return { ...NOT_SET(), key: ks };
-  const h = await nimHealth({ fresh });
-  return { ran: h.status === 'ok', model: MODEL, endpoint: `${ENDPOINT_BASE}${NIM.endpoints.evo2}`,
-    provider_status: h.status, http: h.http ?? null, key: ks,
-    ...(h.status === 'ok' ? {} : { reason: `NVIDIA NIM reports "${h.status}"${h.http ? ` (HTTP ${h.http})` : ''}`, key_note: KEY_NOTE }) };
+  const endpoint = `${ENDPOINT_BASE}${NIM.endpoints.evo2}`;
+  let http = null, error = null;
+  try {
+    const r = await fetch(endpoint, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.NVIDIA_API_KEY}`, 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({ sequence: 'ACGTACGTACGTACGT', num_tokens: 1 }),
+    });
+    http = r.status;
+  } catch (e) { error = e.message; }
+  const ok = http === 200 || http === 202;
+  return { ran: ok, model: MODEL, endpoint, probe: 'POST evo2 generate (16 bp, 1 token)',
+    provider_status: ok ? 'ok' : error ? 'unreachable' : 'error', http, key: ks,
+    ...(ok ? {} : { reason: error ? `the Evo2 endpoint was unreachable: ${error}` : `the Evo2 endpoint returned HTTP ${http}`, key_note: KEY_NOTE }) };
 }
 
 // ---------------------------------------------------------------- the one network call
+//
+// HOW THE LIKELIHOOD IS OBTAINED, now that a working nvapi- key exists (2026-11-01).
+//
+// There is NO scoring route on this NIM. Probed against the live key from this box:
+//   POST /biology/arc/evo2-40b/score        -> 404
+//   POST /biology/arc/evo2-40b/logits       -> 404
+//   POST /biology/arc/evo2-40b/embeddings   -> 404
+//   POST /biology/arc/evo2-40b/forward      -> 200, but returns LAYER ACTIVATIONS (a base64 .npy of
+//                                              blocks.28.mlp.l3), not logits. `output_layers: ["logits"]`
+//                                              is rejected: "StripedHyena has no attribute `logits`".
+//   POST /biology/arc/evo2-40b/generate     -> 200, and with enable_logits returns the next-token logit
+//                                              vector (512-wide, byte vocabulary indexed by ASCII code).
+//
+// So the mean per-base log-likelihood here is computed by TEACHER FORCING through the generate route: for
+// each position i, the prefix seq[0..i) is sent, the returned next-token logits are log-softmaxed, and the
+// log-probability of the TRUE base seq[i] is read off. That is the textbook definition of the quantity, not
+// an approximation of it - but it costs one HTTP call per base, which is why windows are short.
+//
+// Position 0 has no prefix and is not scored; the mean is over the L-1 scored positions, and `scored_bp`
+// says so in every result. The vocabulary mapping was verified against the live endpoint rather than
+// assumed: ACGT sit at their ASCII indices 65/67/71/84 and dominate the distribution on genomic input.
+
+const EVO2_GEN_URL = `${NIM.base}${NIM.endpoints.evo2}`;
+const CONCURRENCY = Number(process.env.EDITPLAN_EVO2_CONCURRENCY ?? 4);
+
+/** One next-token logit vector for a prefix. Returns null on any non-200 or unparseable body. */
+async function nextTokenLogits(prefix, timeoutMs) {
+  const k = process.env.NVIDIA_API_KEY;
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), timeoutMs);
+  try {
+    const r = await fetch(EVO2_GEN_URL, {
+      method: 'POST', signal: ctl.signal,
+      headers: { Authorization: `Bearer ${k}`, 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify({ sequence: prefix, num_tokens: 1, enable_logits: true }),
+    });
+    if (!r.ok) return { ok: false, http: r.status };
+    const j = await r.json();
+    const lg = Array.isArray(j?.logits) ? j.logits[0] : null;
+    if (!Array.isArray(lg) || !lg.length) return { ok: false, http: r.status, reason: 'no logits in a 200 response' };
+    return { ok: true, logits: lg };
+  } catch (e) {
+    return { ok: false, reason: e.name === 'AbortError' ? 'timed out' : e.message };
+  } finally { clearTimeout(t); }
+}
+
+function logSoftmaxAt(logits, ch) {
+  const i = ch.charCodeAt(0);
+  if (i >= logits.length) return null;
+  let max = -Infinity;
+  for (const v of logits) if (v > max) max = v;
+  let sum = 0;
+  for (const v of logits) sum += Math.exp(v - max);
+  return (logits[i] - max) - Math.log(sum);
+}
+
 /**
- * Mean per-base log-likelihood of one sequence under Evo2.
+ * Mean per-base log-likelihood of one sequence under Evo2, by teacher forcing (see the note above).
  *
- * NOTE ON THE ENDPOINT. build.nvidia.com documents the Evo2 NIM's `generate` route, which returns
- * generated continuation and, when asked, per-token logits. The scoring route's exact field names were NOT
- * exercised against a live key from this box, because the only key available is a Brev "bak-" key that NIM
- * rejects. So this function PARSES DEFENSIVELY over the plausible response shapes and, if it cannot find a
- * likelihood field, returns {ran: false, reason: 'the response carried no recognisable likelihood field',
- * response_keys: [...]} with the key names it did see - rather than inventing a number. That is the whole
- * point: an unparseable response must look like a failure, not like a score.
+ * Still parses defensively: if any position fails to come back readable, this returns {ran: false} with the
+ * count of failures rather than a mean over whatever happened to succeed. A partial pass is not a score.
  */
-export async function scoreSequence(sequence, { timeoutMs = 300000 } = {}) {
+export async function scoreSequence(sequence, { timeoutMs = 120000 } = {}) {
   const ks = keyShape();
   if (!ks.present) return NOT_SET();
   if (!/^[ACGTacgt]+$/.test(sequence)) return { ran: false, reason: 'sequence must be A/C/G/T only (no N, no gaps)', length: sequence.length };
-  let raw;
-  try {
-    raw = await nimCall('evo2', { sequence: sequence.toUpperCase(), num_tokens: 0, output_scores: true, enable_logits: true }, { maxWaitMs: timeoutMs });
-  } catch (e) {
-    return { ran: false, reason: `the Evo2 NIM call failed: ${e.message}`, model: MODEL, key: ks, key_note: ks.usable_for_nim ? undefined : KEY_NOTE };
-  }
-  const ll = pickLogLikelihood(raw);
-  if (ll == null) return { ran: false, reason: 'the Evo2 response carried no recognisable likelihood field, so no number is reported', model: MODEL,
-    response_keys: Object.keys(raw || {}), note: 'parsed defensively on purpose: a response we cannot read must look like a failure, not like a score.' };
-  return { ran: true, model: MODEL, length_bp: sequence.length, mean_log_likelihood_per_base: +ll.mean.toFixed(6),
-    total_log_likelihood: ll.total == null ? null : +ll.total.toFixed(4), source_field: ll.field,
-    NOT: WHAT_IT_IS_NOT };
-}
+  const seq = sequence.toUpperCase();
+  const L = seq.length;
+  if (L < 2) return { ran: false, reason: 'need at least 2 bases: position 0 has no prefix and is not scored' };
 
-function pickLogLikelihood(r) {
-  if (!r || typeof r !== 'object') return null;
-  const cand = [['logits', r.logits], ['scores', r.scores], ['log_probs', r.log_probs], ['logprobs', r.logprobs],
-    ['token_scores', r.token_scores], ['data.logits', r.data?.logits], ['data.scores', r.data?.scores]];
-  for (const [field, v] of cand) {
-    if (typeof v === 'number') return { mean: v, total: null, field };
-    if (Array.isArray(v) && v.length && v.every(x => typeof x === 'number')) {
-      const total = v.reduce((a, b) => a + b, 0);
-      return { mean: total / v.length, total, field };
+  const lp = new Array(L).fill(null);
+  const failures = [];
+  let next = 1;
+  const worker = async () => {
+    for (;;) {
+      const i = next++;
+      if (i >= L) return;
+      // Transient failures on this endpoint are NOT a property of the sequence. The dominant one,
+      // confirmed against the live key, is HTTP 429: the NIM rate-limits well below the concurrency a
+      // per-base pass wants. So a 429 backs off hard and exponentially rather than counting as a
+      // failure, and anything else gets a short retry.
+      let got = null;
+      for (let attempt = 0; attempt < 7; attempt++) {
+        got = await nextTokenLogits(seq.slice(0, i), timeoutMs);
+        if (got.ok) break;
+        const rateLimited = got.http === 429;
+        const wait = rateLimited ? Math.min(16000, 800 * 2 ** attempt) + Math.random() * 400 : 400 * (attempt + 1);
+        if (!rateLimited && attempt >= 2) break;
+        await new Promise(r => setTimeout(r, wait));
+      }
+      if (!got.ok) { failures.push({ position: i, ...got }); continue; }
+      const v = logSoftmaxAt(got.logits, seq[i]);
+      if (v == null || !Number.isFinite(v)) { failures.push({ position: i, reason: `base ${seq[i]} outside the returned vocabulary` }); continue; }
+      lp[i] = v;
     }
-  }
-  for (const f of ['mean_log_likelihood', 'log_likelihood', 'loglikelihood', 'perplexity_log']) if (typeof r[f] === 'number') return { mean: r[f], total: null, field: f };
-  return null;
+  };
+  const t0 = Date.now();
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, L - 1) }, worker));
+  const elapsed_ms = Date.now() - t0;
+
+  if (failures.length) return {
+    ran: false,
+    reason: `${failures.length} of ${L - 1} scored positions did not come back readable, so no mean is reported`,
+    model: MODEL, length_bp: L, failures: failures.slice(0, 5), n_failures: failures.length,
+    note: 'a mean over only the positions that happened to succeed would be a different quantity wearing this one\'s name.',
+  };
+
+  const vals = lp.slice(1);
+  const total = vals.reduce((a, b) => a + b, 0);
+  return {
+    ran: true, model: MODEL, length_bp: L, scored_bp: vals.length,
+    mean_log_likelihood_per_base: +(total / vals.length).toFixed(6),
+    total_log_likelihood: +total.toFixed(4),
+    source_field: 'teacher-forced next-token logits from the generate route (no scoring route exists)',
+    calls: vals.length, elapsed_ms,
+    NOT: WHAT_IT_IS_NOT,
+  };
 }
 
 // ---------------------------------------------------------------- the three legitimate uses
