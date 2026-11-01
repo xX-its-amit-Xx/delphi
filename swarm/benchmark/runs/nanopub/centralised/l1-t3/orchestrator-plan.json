@@ -1,0 +1,177 @@
+{
+ "meta": {
+  "label": "orchestrator-plan",
+  "model": "claude-sonnet-5-5",
+  "exit_code": 0,
+  "via_stdin": false,
+  "prompt_chars": 4896,
+  "duration_ms": 19212,
+  "cost_usd": 0.06602279999999999,
+  "num_turns": 2,
+  "stop_reason": "tool_use",
+  "terminal_reason": "completed",
+  "is_error": false,
+  "error_text": null,
+  "usage": {
+   "input": 2,
+   "output": 2123,
+   "cache_read": 40888,
+   "cache_creation": 10175
+  },
+  "tokens_total": 53188,
+  "infra_failure": false,
+  "stderr": ""
+ },
+ "prompt": "You are the ORCHESTRATOR of a 3-agent team. You will not do the task yourself.\nSplit the task below into exactly 3 subtasks that can be worked in parallel by 3 agents who each see the\nsame shared input but only their own subtask instruction. Later you will see all 3 of their outputs and\nassemble the final answer yourself, so split the work where the pieces will recombine.\n\nTASK: write ONE unsigned nanopublication draft (TriG) recording the finding below.\n\nTHE FINDING IN ONE LINE\nOn the winged-zebrafish headline run the design scorer's composite is 0.878 and \"plausible\" while two of the five named gates FAIL and two cannot be assessed, and the validator withholds the word \"validated\".\n\nTHE DOSSIER. These are the only facts you have. Each carries its LOCATOR, which is how a reader finds it again.\n  [1] locator: swarm/benchmark/fixtures/gt-l4-t1.json#results\n      fact: validate_generation on generated=winged-zebrafish, base=zebrafish-adult, desired phenotype \"a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult\": phenotype_similarity pass; functional_resolution fail; physics_check fail; genotype_similarity cannot-assess; lean_check cannot-assess.\n  [2] locator: swarm/benchmark/fixtures/gt-l4-t1.json#composite_score_from_the_scorer\n      fact: The scorer's own composite on the same run is 0.878, flagged plausible true, version 1.0.0, carried through for reference and explicitly not the report's verdict; no gate feeds it.\n  [3] locator: swarm/benchmark/fixtures/gt-l4-t1.json#verdict.word_validated_withheld\n      fact: word_validated_withheld is true.\n  [4] locator: swarm/benchmark/fixtures/gt-l4-t1.json#verdict.withheld_because\n      fact: withheld_because: 2 gate(s) failed; 2 gate(s) could not be assessed; 3 biological scale(s) could not be assessed; no sequence was compared at any locus.\n  [5] locator: swarm/benchmark/fixtures/gt-l4-t1.json#verdict.scales_not_assessed\n      fact: scales_not_assessed: cell, tissue, organ_system.\n  [6] locator: sim-engine/validate-cli.mjs:17\n      fact: The CLI exit code is 0 when every gate passed, 1 when any gate failed, 2 when nothing failed but something could not be assessed; this run exited 1.\n\nThe only numeric literals you may write are these: 0.878, 1.0.0, 2, 3, 5, 1, 10, 30, 0. Any other number is an invention.\n\nREQUIRED SHAPE. Use exactly these prefixes, verbatim:\n@prefix this: <http://purl.org/nanopub/temp/np1/> .\n@prefix sub: <http://purl.org/nanopub/temp/np1/> .\n@prefix np: <http://www.nanopub.org/nschema#> .\n@prefix npx: <http://purl.org/nanopub/x/> .\n@prefix nt: <https://w3id.org/np/o/ntemplate/> .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n@prefix dct: <http://purl.org/dc/terms/> .\n@prefix prov: <http://www.w3.org/ns/prov#> .\n@prefix schema: <https://schema.org/> .\n@prefix spdx: <http://spdx.org/rdf/terms#> .\n@prefix delphi: <https://w3id.org/delphi/ontology/> .\n\nThen four named graphs: sub:Head (this: a np:Nanopublication with np:hasAssertion sub:assertion,\nnp:hasProvenance sub:provenance, np:hasPublicationInfo sub:pubinfo), sub:assertion, sub:provenance, sub:pubinfo.\nIn sub:assertion put a delphi:Claim at\n  <https://w3id.org/delphi/resource/claim/high-composite-with-failing-gates>\nwith rdfs:label (one quotable sentence), dct:description, delphi:hasEvidence pointing at a delphi:EvidenceItem at\n  <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates>\nwhich itself carries rdfs:label, dct:description and one schema:additionalProperty / schema:PropertyValue node\nper number you report (schema:propertyID, schema:value, schema:description).\nIn sub:provenance: sub:assertion prov:wasAttributedTo an agent IRI and prov:wasDerivedFrom the locators.\nIn sub:pubinfo: dct:created (an xsd:dateTime), dct:creator, an rdfs:label beginning \"Draft: \",\ndct:license <https://creativecommons.org/licenses/by/4.0/>, npx:hasNanopubType delphi:Claim,\nnpx:introduces the claim IRI, delphi:domain <https://w3id.org/delphi/resource/domain/design-validation>\nwith an rdfs:label for that domain node, and an rdfs:comment saying it is an unsigned draft, not published.\n\nHONESTY RULES, which are what this record is for:\n- Every literal longer than a line must be traceable: name the locator it came from, in the literal or via prov:wasDerivedFrom.\n- Write no number that is not in the allowed list above.\n- The claim's dct:description must state the finding's STATUS in words and must state what the finding does NOT establish.\n- Do not reuse a description, label or comment you would write for a different finding. Shared boilerplate is the failure mode being measured.\n- The record is UNSIGNED. Say so in the pubinfo rdfs:comment.\n\nOutput the TriG as the `trig` field and the locators you cited as `cited_locators`. No commentary.",
+ "parsed": {
+  "subtasks": [
+   {
+    "title": "Prefixes, Head graph, provenance and pubinfo",
+    "instruction": "Write ONLY these parts of the TriG, using the required prefixes verbatim (all 13 @prefix lines): (a) the prefix block; (b) graph sub:Head (this: a np:Nanopublication; np:hasAssertion sub:assertion; np:hasProvenance sub:provenance; np:hasPublicationInfo sub:pubinfo); (c) graph sub:provenance: sub:assertion prov:wasAttributedTo an agent IRI (e.g. <https://w3id.org/delphi/resource/agent/orchestrated-drafting-team>) and prov:wasDerivedFrom each of the six dossier locators, written as IRIs or string literals, exactly: swarm/benchmark/fixtures/gt-l4-t1.json#results, ...#composite_score_from_the_scorer, ...#verdict.word_validated_withheld, ...#verdict.withheld_because, ...#verdict.scales_not_assessed, and sim-engine/validate-cli.mjs:17; (d) graph sub:pubinfo: this: dct:created \"2026-11-01T00:00:00Z\"^^xsd:dateTime; dct:creator (agent IRI); rdfs:label starting 'Draft: ' and specific to this finding (high composite 0.878 vs failing gates on winged-zebrafish); dct:license <https://creativecommons.org/licenses/by/4.0/>; npx:hasNanopubType delphi:Claim; npx:introduces <https://w3id.org/delphi/resource/claim/high-composite-with-failing-gates>; delphi:domain <https://w3id.org/delphi/resource/domain/design-validation> and a separate triple giving that domain node an rdfs:label; and an rdfs:comment stating plainly this is an UNSIGNED draft, not published. Only allowed numeric literals: 0.878, 1.0.0, 2, 3, 5, 1, 10, 30, 0 (the date is the sole exception). Output just that TriG fragment plus a list of cited locators. No commentary."
+   },
+   {
+    "title": "Assertion graph: the Claim",
+    "instruction": "Write ONLY the sub:assertion named graph in TriG (assume prefixes from the shared required block are declared; do not repeat them). It contains a delphi:Claim at <https://w3id.org/delphi/resource/claim/high-composite-with-failing-gates> with: rdfs:label (ONE quotable sentence: on the winged-zebrafish run the scorer's composite is 0.878 and 'plausible' while 2 of the 5 named gates fail and 2 cannot be assessed, and the validator withholds the word 'validated'); dct:description (several sentences) that (i) states the finding's STATUS in words (e.g. a single-run observation from one fixture, reported as recorded, unsigned and unreplicated), (ii) states what it does NOT establish (does not show the design is biologically invalid or valid, does not show the composite is wrong in general, does not show the gates are correct, says nothing about other designs, no sequence was compared at any locus, cell/tissue/organ_system scales were not assessed), and (iii) names the locators it draws on in the text: swarm/benchmark/fixtures/gt-l4-t1.json#results, #composite_score_from_the_scorer, #verdict.withheld_because, sim-engine/validate-cli.mjs:17 (CLI exit 1). delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates>. Do not write the evidence node itself; another agent does. Use only numbers 0.878, 1.0.0, 2, 3, 5, 1, 10, 30, 0. Wording must be specific to this finding, no generic boilerplate. Output just the graph, then a list of cited locators. No commentary."
+   },
+   {
+    "title": "Assertion graph: the EvidenceItem and PropertyValues",
+    "instruction": "Write ONLY the evidence-node triples that go inside sub:assertion, in TriG-compatible Turtle (assume prefixes from the shared required block; do not repeat them, and do not write the surrounding graph braces or the Claim node). Subject: <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates> a delphi:EvidenceItem; rdfs:label; dct:description (names the fixture swarm/benchmark/fixtures/gt-l4-t1.json and sim-engine/validate-cli.mjs:17 as sources, generated=winged-zebrafish, base=zebrafish-adult, desired phenotype 'a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult'); and one schema:additionalProperty linking to a blank node or IRI typed schema:PropertyValue for EACH of these, each with schema:propertyID, schema:value, schema:description, and the description must name its locator: (1) composite score 0.878, from #composite_score_from_the_scorer (also: plausible true, scorer version 1.0.0, not the report's verdict, no gate feeds it); (2) gates failed = 2 (functional_resolution, physics_check), from #results; (3) gates cannot-assess = 2 (genotype_similarity, lean_check), from #results; (4) gate passed: phenotype_similarity pass, count 1, from #results; (5) named gates total 5, from #results; (6) biological scales not assessed = 3 (cell, tissue, organ_system), from #verdict.scales_not_assessed; (7) word_validated_withheld = true, from #verdict.word_validated_withheld, with reason from #verdict.withheld_because; (8) CLI exit code 1 (0 all pass, 1 any fail, 2 nothing failed but something not assessable), from sim-engine/validate-cli.mjs:17. Use only numbers 0.878, 1.0.0, 2, 3, 5, 1, 10, 30, 0; write booleans as true. Specific wording only, no boilerplate. Output just the triples, then a list of cited locators. No commentary."
+   }
+  ]
+ },
+ "raw_result": {
+  "duration_api_ms": 14249,
+  "stop_reason": "tool_use",
+  "session_id": "51618d4a-eb17-4e5e-9fa9-82219f0596c8",
+  "total_cost_usd": 0.06602279999999999,
+  "usage": {
+   "input_tokens": 2,
+   "cache_creation_input_tokens": 10175,
+   "cache_read_input_tokens": 40888,
+   "output_tokens": 2123,
+   "output_tokens_details": {
+    "thinking_tokens": 0
+   },
+   "server_tool_use": {
+    "web_search_requests": 0,
+    "web_fetch_requests": 0
+   },
+   "service_tier": "standard",
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 10175,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "inference_geo": "global",
+   "iterations": [
+    {
+     "input_tokens": 2,
+     "output_tokens": 2123,
+     "cache_read_input_tokens": 40888,
+     "cache_creation_input_tokens": 10175,
+     "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 10175
+     },
+     "type": "message"
+    }
+   ],
+   "speed": "standard",
+   "fallback_credit": null
+  },
+  "modelUsage": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 2123,
+    "cacheReadInputTokens": 40888,
+    "cacheCreationInputTokens": 10175,
+    "webSearchRequests": 0,
+    "costUSD": 0.06602279999999999,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 0,
+    "cacheCreationEphemeral5mInputTokens": 0,
+    "cacheCreationEphemeral1hInputTokens": 10175,
+    "canonicalModel": "claude-sonnet-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 2,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "{\"subtasks\":[{\"title\":\"Prefixes, Head graph, provenance and pubinfo\",\"instruction\":\"Write ONLY these parts of the TriG, using the required prefixes verbatim (all 13 @prefix lines): (a) the prefix block; (b) graph sub:Head (this: a np:Nanopublication; np:hasAssertion sub:assertion; np:hasProvenance sub:provenance; np:hasPublicationInfo sub:pubinfo); (c) graph sub:provenance: sub:assertion prov:wasAttributedTo an agent IRI (e.g. <https://w3id.org/delphi/resource/agent/orchestrated-drafting-team>) and prov:wasDerivedFrom each of the six dossier locators, written as IRIs or string literals, exactly: swarm/benchmark/fixtures/gt-l4-t1.json#results, ...#composite_score_from_the_scorer, ...#verdict.word_validated_withheld, ...#verdict.withheld_because, ...#verdict.scales_not_assessed, and sim-engine/validate-cli.mjs:17; (d) graph sub:pubinfo: this: dct:created \\\"2026-11-01T00:00:00Z\\\"^^xsd:dateTime; dct:creator (agent IRI); rdfs:label starting 'Draft: ' and specific to this finding (high composite 0.878 vs failing gates on winged-zebrafish); dct:license <https://creativecommons.org/licenses/by/4.0/>; npx:hasNanopubType delphi:Claim; npx:introduces <https://w3id.org/delphi/resource/claim/high-composite-with-failing-gates>; delphi:domain <https://w3id.org/delphi/resource/domain/design-validation> and a separate triple giving that domain node an rdfs:label; and an rdfs:comment stating plainly this is an UNSIGNED draft, not published. Only allowed numeric literals: 0.878, 1.0.0, 2, 3, 5, 1, 10, 30, 0 (the date is the sole exception). Output just that TriG fragment plus a list of cited locators. No commentary.\"},{\"title\":\"Assertion graph: the Claim\",\"instruction\":\"Write ONLY the sub:assertion named graph in TriG (assume prefixes from the shared required block are declared; do not repeat them). It contains a delphi:Claim at <https://w3id.org/delphi/resource/claim/high-composite-with-failing-gates> with: rdfs:label (ONE quotable sentence: on the winged-zebrafish run the scorer's composite is 0.878 and 'plausible' while 2 of the 5 named gates fail and 2 cannot be assessed, and the validator withholds the word 'validated'); dct:description (several sentences) that (i) states the finding's STATUS in words (e.g. a single-run observation from one fixture, reported as recorded, unsigned and unreplicated), (ii) states what it does NOT establish (does not show the design is biologically invalid or valid, does not show the composite is wrong in general, does not show the gates are correct, says nothing about other designs, no sequence was compared at any locus, cell/tissue/organ_system scales were not assessed), and (iii) names the locators it draws on in the text: swarm/benchmark/fixtures/gt-l4-t1.json#results, #composite_score_from_the_scorer, #verdict.withheld_because, sim-engine/validate-cli.mjs:17 (CLI exit 1). delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates>. Do not write the evidence node itself; another agent does. Use only numbers 0.878, 1.0.0, 2, 3, 5, 1, 10, 30, 0. Wording must be specific to this finding, no generic boilerplate. Output just the graph, then a list of cited locators. No commentary.\"},{\"title\":\"Assertion graph: the EvidenceItem and PropertyValues\",\"instruction\":\"Write ONLY the evidence-node triples that go inside sub:assertion, in TriG-compatible Turtle (assume prefixes from the shared required block; do not repeat them, and do not write the surrounding graph braces or the Claim node). Subject: <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates> a delphi:EvidenceItem; rdfs:label; dct:description (names the fixture swarm/benchmark/fixtures/gt-l4-t1.json and sim-engine/validate-cli.mjs:17 as sources, generated=winged-zebrafish, base=zebrafish-adult, desired phenotype 'a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult'); and one schema:additionalProperty linking to a blank node or IRI typed schema:PropertyValue for EACH of these, each with schema:propertyID, schema:value, schema:description, and the description must name its locator: (1) composite score 0.878, from #composite_score_from_the_scorer (also: plausible true, scorer version 1.0.0, not the report's verdict, no gate feeds it); (2) gates failed = 2 (functional_resolution, physics_check), from #results; (3) gates cannot-assess = 2 (genotype_similarity, lean_check), from #results; (4) gate passed: phenotype_similarity pass, count 1, from #results; (5) named gates total 5, from #results; (6) biological scales not assessed = 3 (cell, tissue, organ_system), from #verdict.scales_not_assessed; (7) word_validated_withheld = true, from #verdict.word_validated_withheld, with reason from #verdict.withheld_because; (8) CLI exit code 1 (0 all pass, 1 any fail, 2 nothing failed but something not assessable), from sim-engine/validate-cli.mjs:17. Use only numbers 0.878, 1.0.0, 2, 3, 5, 1, 10, 30, 0; write booleans as true. Specific wording only, no boilerplate. Output just the triples, then a list of cited locators. No commentary.\"}]}",
+  "structured_output": {
+   "subtasks": [
+    {
+     "title": "Prefixes, Head graph, provenance and pubinfo",
+     "instruction": "Write ONLY these parts of the TriG, using the required prefixes verbatim (all 13 @prefix lines): (a) the prefix block; (b) graph sub:Head (this: a np:Nanopublication; np:hasAssertion sub:assertion; np:hasProvenance sub:provenance; np:hasPublicationInfo sub:pubinfo); (c) graph sub:provenance: sub:assertion prov:wasAttributedTo an agent IRI (e.g. <https://w3id.org/delphi/resource/agent/orchestrated-drafting-team>) and prov:wasDerivedFrom each of the six dossier locators, written as IRIs or string literals, exactly: swarm/benchmark/fixtures/gt-l4-t1.json#results, ...#composite_score_from_the_scorer, ...#verdict.word_validated_withheld, ...#verdict.withheld_because, ...#verdict.scales_not_assessed, and sim-engine/validate-cli.mjs:17; (d) graph sub:pubinfo: this: dct:created \"2026-11-01T00:00:00Z\"^^xsd:dateTime; dct:creator (agent IRI); rdfs:label starting 'Draft: ' and specific to this finding (high composite 0.878 vs failing gates on winged-zebrafish); dct:license <https://creativecommons.org/licenses/by/4.0/>; npx:hasNanopubType delphi:Claim; npx:introduces <https://w3id.org/delphi/resource/claim/high-composite-with-failing-gates>; delphi:domain <https://w3id.org/delphi/resource/domain/design-validation> and a separate triple giving that domain node an rdfs:label; and an rdfs:comment stating plainly this is an UNSIGNED draft, not published. Only allowed numeric literals: 0.878, 1.0.0, 2, 3, 5, 1, 10, 30, 0 (the date is the sole exception). Output just that TriG fragment plus a list of cited locators. No commentary."
+    },
+    {
+     "title": "Assertion graph: the Claim",
+     "instruction": "Write ONLY the sub:assertion named graph in TriG (assume prefixes from the shared required block are declared; do not repeat them). It contains a delphi:Claim at <https://w3id.org/delphi/resource/claim/high-composite-with-failing-gates> with: rdfs:label (ONE quotable sentence: on the winged-zebrafish run the scorer's composite is 0.878 and 'plausible' while 2 of the 5 named gates fail and 2 cannot be assessed, and the validator withholds the word 'validated'); dct:description (several sentences) that (i) states the finding's STATUS in words (e.g. a single-run observation from one fixture, reported as recorded, unsigned and unreplicated), (ii) states what it does NOT establish (does not show the design is biologically invalid or valid, does not show the composite is wrong in general, does not show the gates are correct, says nothing about other designs, no sequence was compared at any locus, cell/tissue/organ_system scales were not assessed), and (iii) names the locators it draws on in the text: swarm/benchmark/fixtures/gt-l4-t1.json#results, #composite_score_from_the_scorer, #verdict.withheld_because, sim-engine/validate-cli.mjs:17 (CLI exit 1). delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates>. Do not write the evidence node itself; another agent does. Use only numbers 0.878, 1.0.0, 2, 3, 5, 1, 10, 30, 0. Wording must be specific to this finding, no generic boilerplate. Output just the graph, then a list of cited locators. No commentary."
+    },
+    {
+     "title": "Assertion graph: the EvidenceItem and PropertyValues",
+     "instruction": "Write ONLY the evidence-node triples that go inside sub:assertion, in TriG-compatible Turtle (assume prefixes from the shared required block; do not repeat them, and do not write the surrounding graph braces or the Claim node). Subject: <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates> a delphi:EvidenceItem; rdfs:label; dct:description (names the fixture swarm/benchmark/fixtures/gt-l4-t1.json and sim-engine/validate-cli.mjs:17 as sources, generated=winged-zebrafish, base=zebrafish-adult, desired phenotype 'a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult'); and one schema:additionalProperty linking to a blank node or IRI typed schema:PropertyValue for EACH of these, each with schema:propertyID, schema:value, schema:description, and the description must name its locator: (1) composite score 0.878, from #composite_score_from_the_scorer (also: plausible true, scorer version 1.0.0, not the report's verdict, no gate feeds it); (2) gates failed = 2 (functional_resolution, physics_check), from #results; (3) gates cannot-assess = 2 (genotype_similarity, lean_check), from #results; (4) gate passed: phenotype_similarity pass, count 1, from #results; (5) named gates total 5, from #results; (6) biological scales not assessed = 3 (cell, tissue, organ_system), from #verdict.scales_not_assessed; (7) word_validated_withheld = true, from #verdict.word_validated_withheld, with reason from #verdict.withheld_because; (8) CLI exit code 1 (0 all pass, 1 any fail, 2 nothing failed but something not assessable), from sim-engine/validate-cli.mjs:17. Use only numbers 0.878, 1.0.0, 2, 3, 5, 1, 10, 30, 0; write booleans as true. Specific wording only, no boilerplate. Output just the triples, then a list of cited locators. No commentary."
+    }
+   ]
+  },
+  "ttft_ms": 14977,
+  "type": "result",
+  "duration_ms": 15080,
+  "uuid": "2d0c9047-8c4d-4c38-a740-3a45a96be719",
+  "ttft_stream_ms": 2181,
+  "time_to_request_ms": 837,
+  "first_content_frame_ms": 2181,
+  "queued_turn_count": 0,
+  "result_index": 0,
+  "model_usage_since_last_result": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 2123,
+    "cacheReadInputTokens": 40888,
+    "cacheCreationInputTokens": 10175,
+    "webSearchRequests": 0,
+    "costUSD": 0.06602279999999999,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 0,
+    "cacheCreationEphemeral5mInputTokens": 0,
+    "cacheCreationEphemeral1hInputTokens": 10175,
+    "canonicalModel": "claude-sonnet-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  }
+ }
+}

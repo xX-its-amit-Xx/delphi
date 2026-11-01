@@ -69,6 +69,7 @@ function build(D) {
   const F = N.facts || {};
   const NEG = Object.fromEntries((N.negatives || []).map(n => [n.id, n]));
   const SHOT = Object.fromEntries((N.pageShots || []).map(p => [p.file.replace(/^fig\/page_|\.png$/g, ''), p]));
+  const LT = N.leanTruth, NP = N.nanopubTruth;
 
   // ---------------- shared pieces ----------------
   const srcs = list => `<p class="srcline">Read from ${list.filter(Boolean).map(esc).join(' &middot; ')}</p>`;
@@ -150,25 +151,31 @@ function build(D) {
     </div>`;
 
   SL.contrast = () => {
-    const m = F.mathlib, b = F.biologyFormal;
+    const m = F.mathlib, b = F.biologyFormal, fp = F.formalisationPapers;
     const greyed = !b || !b.verified;
     return `${ribbon(greyed ? 'partial' : 'live')}
       <h2>The asymmetry, in one line.</h2>
-      <div class="heroes">
-        <div class="hero s1">
-          <div class="n">${m && m.verified ? '250,000+' : '&mdash;'}</div>
-          <div class="l">machine-checked theorems in mathlib, mathematics&rsquo; largest formal library${m && m.asOf ? ` (${esc(m.asOf)})` : ''}</div>
-        </div>
-        <div class="hero" ${greyed ? 'style="opacity:.75"' : ''}>
-          <div class="n" style="color:var(--ghost)">${greyed ? '?' : esc(String(b.value))}</div>
-          <div class="l">${esc((b && b.claimWithoutANumber) || 'Nothing comparable exists for biology.')}</div>
-        </div>
+      <div class="heroes negtiles" style="align-items:flex-start">
+        <div class="hero s1"><div class="n">${m && m.verified ? n0(m.theorems) : '&mdash;'}</div>
+          <div class="l">theorems in mathlib, over ${m ? n0(m.definitions) : '&mdash;'} definitions, from ${m ? n0(m.contributors) : '&mdash;'} contributors${m && m.asOf ? ` &mdash; ${esc(m.asOf)}` : ''}</div></div>
+        <div class="hero s4"><div class="n">${fp && fp.verified ? n0(fp.value) : '&mdash;'}</div>
+          <div class="l">papers this year whose abstract talks about formalising maths in Lean; ${fp ? fp.october : '&mdash;'} in October alone. We counted these ourselves.</div></div>
+        <div class="hero"><div class="n" style="color:var(--critical)">${greyed ? '?' : (b.value + ' of ' + b.of)}</div>
+          <div class="l">${esc((b && b.claimWithoutANumber) || 'Nothing comparable exists for biology.')}</div></div>
       </div>
-      ${greyed ? `<div class="flag"><b>We will not put a number here.</b> ${esc(b.whyNoNumber)}</div>`
-               : `<p class="caption">${esc(b.sentence || '')}</p>`}
-      <p class="caption">The grey number is the deck working as intended. A quarter of a million proofs on one side
-        and a question mark on the other is the whole problem statement, and the question mark is honest.</p>
-      ${srcs([m && m.locator, b && b.locator])}`;
+      ${greyed
+        ? `<div class="flag"><b>We will not put a number here.</b> ${esc(b.whyNoNumber)}</div>`
+        : `<p class="sub" style="max-width:62ch">${esc(b.sentence)}</p>
+           <div class="split">
+             <div class="scope warn"><h4>What we are NOT claiming</h4>
+               <p style="margin:0">${esc(b.counterexamples)}</p></div>
+             <div class="scope"><h4>The narrow sense in which this is new</h4>
+               <p style="margin:0">${esc(b.narrowFirst)}</p></div>
+           </div>`}
+      <p class="caption">A bald &ldquo;zero biology theorems&rdquo; would be false, and the newest
+        counterexample is six days old. The zero we can defend is a zero <em>of something</em>: zero of
+        mathlib&rsquo;s 34 subject areas. You can check it from the stage.</p>
+      ${srcs([m && m.locator, fp && fp.locator, b && b.locator])}`;
   };
 
   SL.attrition = () => {
@@ -184,7 +191,8 @@ function build(D) {
         running more trials. It is in theoretical biology: knowing which experiment would change what you believe,
         before the experiment is paid for.</p>
       <div class="flag"><b>Say it exactly this way.</b> ${esc(a.trap)}</div>
-      <p class="tiny">${a.sources.map(esc).join(' &nbsp;&middot;&nbsp; ')} &nbsp;&middot;&nbsp; true range ${esc(a.range)}</p>
+      ${a.corrigendum ? `<p class="tiny"><b>Corrigendum:</b> ${esc(a.corrigendum)}</p>` : ''}
+      <p class="tiny">${a.sources.map(esc).join(' &nbsp;&middot;&nbsp; ')} &nbsp;&middot;&nbsp; ${esc(a.range)}</p>
       ${srcs([a.locator])}`;
   };
 
@@ -234,6 +242,10 @@ function build(D) {
         <p class="caption">Decentralised agent swarms distilled the assertions into nanopublications and argued the
           evidence sources <b>before</b> anything was formalised. Formalising first would have produced beautiful
           proofs of sentences nobody had checked anyone actually wrote.</p>
+        ${LT ? `<div class="flag"><b>And then almost none of it was proved.</b> Of the
+          ${n0(LT.claimsExtracted)} claims we extracted from these books, <b>four</b> are proved in the
+          built Lean library &mdash; all four Thompson&rsquo;s, none Darwin&rsquo;s, none Wolfram&rsquo;s.
+          ${esc(LT.avesNote)} So two of the four are not on any slide here.</div>` : ''}
       </div>
       ${pageFig('graph', 'The claim graph as served: each claim linked to the tests that checked it, the Lean theorem that formalised it, and the taxa it names', 'figwide')}
     </div>
@@ -441,11 +453,11 @@ function build(D) {
   };
 
   SL.knownbad = () => {
-    const ids = ['compensation', 'edges', 'deadlaws', 'nevertried'];
+    const ids = ['compensation', 'edges', 'deadlaws', 'nevertried', 'noapproval'];
     const got = ids.map(i => NEG[i]).filter(Boolean);
     if (!got.length) return ghost('knownbad');
     return `${ribbon(got.length === ids.length ? 'live' : 'partial')}
-      <h2>Four more results that go against us.</h2>
+      <h2>${['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'][got.length] || got.length} more results that go against us.</h2>
       <div class="rows">
         ${got.map(n => rrow(`<b>${esc(n.headline)}</b>`, n.keyFigure || '', esc(n.detail), 'no')).join('')}
       </div>
@@ -537,8 +549,13 @@ function build(D) {
         ${c ? `<li><b>${c.total} of our own claims were corrected in one day</b> &mdash; ${c.ours} by our own checks,
           ${c.collaborator} by a collaborator&rsquo;s independent cross-check. Each was withdrawn or narrowed in
           public, never as a silent edit.</li>` : ''}
-        ${R && R.drafts ? `<li><b>The publications are unsigned drafts.</b> ${R.drafts} records are drafted and
-          validated; ${R.signed} are signed, because publishing is irreversible and no key owner has signed off.</li>` : ''}
+        ${NP ? `<li><b>Published, and that cuts both ways.</b> ${n0(NP.onProduction)} of our records are live on the
+          public production nanopub registry (${n0(NP.darwinOnProduction)} Darwin claims, ${NP.mathBioOnProduction}
+          classical math-biology theorems, ${esc(NP.approverNote)}, which stays in the manifest and is not
+          reproduced here); ${n0(NP.signed)} records are signed in all.
+          But ${n0(NP.withNoApprovalField)} of the ${n0(NP.onProduction)} carry no approval field at all.
+          A further ${NP.unsignedThreadDrafts} thread drafts are written and deliberately unsigned, and
+          ${NP.avesDraftsExcluded} Aves-holdout drafts are excluded from every count on this slide.</li>` : ''}
         <li><b>No bird data anywhere.</b> Class Aves is a frozen holdout, excluded at build time from every layer,
           figure and record in this deck.</li>
       </ul>

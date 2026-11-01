@@ -705,22 +705,53 @@ const facts = {
   },
   mathlib: {
     verified: true,
-    value: 250000, prefix: 'over ',
-    sentence: 'mathlib, mathematics’ largest formal library, holds over 250,000 machine-checked theorems.',
-    asOf: 'December 2025',
-    locator: 'mathlib4 (leanprover-community), survey figure as of December 2025'
+    theorems: 292237, definitions: 140094, contributors: 772,
+    sentence: 'mathlib, mathematics’ largest formal library, holds 292,237 theorems over 140,094 '
+            + 'definitions, built by 772 contributors.',
+    asOf: '1 Nov 2026, 02:07 UTC',
+    // The maintainers' own slide warns that many definitions are automatically generated, and the same
+    // is true of a large share of the theorem count. This measures library SIZE, not human insights.
+    caveat: 'This is library size, not 292,237 human insights: many definitions and a large share of the '
+          + 'theorems are automatically generated (simp, instance and projection lemmas). mathlib is also '
+          + 'overwhelmingly human-written, not AI-written.',
+    locator: 'leanprover-community.github.io/mathlib_stats.html, gen_date 2026-11-01 02:07:42 (gitstats4.js)',
+    priorFigure: '250,000 theorems a year ago — Rothgang, "Lean and Mathlib", Potsdam colloquium, 17 Dec 2025'
+  },
+  // A number we measured ourselves, with the query published. Worth more on a slide than a borrowed one.
+  formalisationPapers: {
+    verified: true,
+    value: 688, october: 148, january: 18,
+    sentence: 'In 2026 so far, 688 papers have appeared whose abstracts talk about formalising mathematics '
+            + 'in Lean — 148 of them in October alone.',
+    query: 'get_keyword_trends(query="formalized Lean", granularity="year", start_date="2026-01-01", '
+         + 'end_date="2026-10-31") over 44,845,581 papers, 9 sources',
+    safest: '313 arXiv math.* papers over the same ten months',
+    caveat: 'This counts papers whose ABSTRACT mentions formalising in Lean, not papers that are themselves '
+          + 'formalisations. One clear false positive in the top 200 inspected; 200 distinct base ids, so no '
+          + 'preprint revision is counted twice. It is one ten-month window, not an all-time total.',
+    locator: 'deck/FACTS.md §1.1 — measured 2026-11-01, window 2026-01-01 to 2026-10-31'
   },
   // The biology side of the contrast. A bald "zero novel biology theorems" may simply be false --
   // there is real prior work in systems-biology model checking, process calculi for biochemistry and
   // formalised phylogenetics -- so no number goes here until FACTS.md states the narrow form.
   biologyFormal: {
-    verified: false,
-    claimWithoutANumber: 'Nothing comparable exists for biology.',
-    whyNoNumber: 'A flat "zero novel biology theorems" would be wrong: systems-biology model checking, '
-               + 'process calculi for biochemistry and formalised phylogenetics are real prior work. The '
-               + 'defensible form is narrower — no novel biological theorem proved in a proof assistant '
-               + 'and accepted AS BIOLOGY — and the exact wording is still being sourced.',
-    locator: 'deck/FACTS.md — NOT YET LANDED'
+    verified: true,
+    // The only clean zero we own, and one an audience can check live on stage. A bald "zero novel
+    // biology theorems" is FALSE and has named counterexamples, the newest six days old.
+    value: 0, of: 34,
+    sentence: 'mathlib holds 292,237 theorems across 34 subject areas — algebra, topology, number theory. '
+            + 'Not one of the 34 is biology.',
+    claimWithoutANumber: 'Not one of mathlib’s 34 subject areas is biology.',
+    counterexamples: 'Formal methods have been used on biology for twenty years: model checking of gene '
+                   + 'networks, Coq proofs about neuronal circuits, HOL for synthetic biology, and a Lean '
+                   + 'formalisation of the genetic code posted six days ago (arXiv:2610.36343, Jones & '
+                   + 'Josephson, 2026-10-26). Every one formalises something biologists already knew, or '
+                   + 'proves a property of a model.',
+    narrowFirst: 'We found no prior formalisation of classical population genetics — Kimura, Fisher, '
+               + 'Maynard Smith — in any proof assistant, and no prior system that uses machine-checked '
+               + 'biological laws to rule a proposed organism out. That is a negative search result over a '
+               + '44-million-paper corpus, not a proof of absence.',
+    locator: 'deck/FACTS.md §2.2–2.4 · GitHub API /repos/leanprover-community/mathlib4/contents/Mathlib, fetched 2026-11-01'
   },
   attrition: {
     verified: true,
@@ -729,11 +760,40 @@ const facts = {
         + 'different and false claim, and is the likeliest factual challenge in this deck.',
     sources: [
       'BIO / Informa / QLS 2011–2020: 12,728 phase transitions; Phase 1 → approval 7.9%',
-      'Wong, Siah & Lo, Biostatistics 2019 (MIT): 185,994 trials; 13.8%'
+      'Wong, Siah & Lo, Biostatistics 2019 (MIT): 185,994 trials; 13.8% — quote the headline only',
+      'Schuhmacher 2025: 14.3% for leading pharma, which cuts the other way'
     ],
-    range: '86–92% across the two sources',
+    range: '86–92% across the sources; 14.3% success for the top 20, so "90% of drugs fail" overstates it there',
+    corrigendum: 'Wong, Siah & Lo carries a corrigendum (doi:10.1093/biostatistics/kxy072) that corrected '
+               + 'exactly the phase-transition table. Quote its 13.8% headline, never its per-phase figures.',
     locator: 'BIO/Informa/QLS 2011–2020 · Wong, Siah & Lo, Biostatistics 2019, doi 10.1093/biostatistics/kxx069'
   }
+};
+
+// ---- what is actually proved, and what is actually published -----------------------------------
+// Both of these correct a figure the deck previously stated. The Lean count in the docs was stale, and
+// the deck used to say nothing was published, which is simply untrue: 269 records are on production.
+const leanTruth = {
+  theoremsInBuildTarget: 192, lemmasInBuildTarget: 60, sorry: 0, axioms: 0,
+  claimsExtracted: 859,
+  provedInBuiltLibrary: 8,          // 4 Thompson + 4 math-bio
+  provedFromNamedHypothesis: 8,     // outside lake build; checked one file at a time
+  thompsonProved: 4, thompsonShowable: 2,
+  avesNote: 'Two of Thompson’s four proved propositions are statements he made about birds in 1917. '
+          + 'Birds are our frozen holdout, so we do not show them.',
+  darwinFormalised: 0, wolframFormalised: 0,
+  locator: 'deck/FACTS.md §4.14–4.15 · lean/laws.json · lean/registry/laws/ · lean/Delphi/*.lean'
+};
+const nanopubTruth = {
+  onProduction: 269, darwinOnProduction: 248, mathBioOnProduction: 21,
+  withNoApprovalField: 248,
+  signed: 2107, projectRecords: 2766,
+  unsignedThreadDrafts: 151,   // 164 minus the 13 Aves-holdout records, which are not shown
+  avesDraftsExcluded: 13,
+  // The approver is identified by ORCID in the manifest. An ORCID is a personal identifier: it stays in
+  // the manifest and never reaches a slide.
+  approverNote: 'promoted to production under a named human’s ORCID',
+  locator: 'deck/FACTS.md §4.16 · darwin-origin/nanopubs/manifest.jsonl · math-bio-theorems/nanopubs/manifest.json'
 };
 
 // ---- the negative results, each checked against the file it came from ---------------------------
@@ -809,6 +869,20 @@ const NEGATIVES = [
     assert: /const NO_DESIGN_ROW = \{/
   },
   {
+    id: 'noapproval',
+    headline: 'Most of what we published carries no approval field',
+    keyFigure: '248 of 269',
+    detail: '269 of our records are live on the public production nanopub registry. Only the 21 '
+          + 'math-biology theorems record who approved the promotion; the 248 Darwin records carry no '
+          + 'approval field at all. Their manifest holds a file, an id, a trusty URI, a registry, a '
+          + 'timestamp and a commit — and nothing that names a human who signed off.',
+    figures: [['records on production', '269'], ['with no approval field', '248'],
+              ['that name an approver', '21'], ['signed overall', '2,107']],
+    locator: 'darwin-origin/nanopubs/manifest.jsonl · math-bio-theorems/nanopubs/manifest.json',
+    file: 'darwin-origin/nanopubs/manifest.jsonl',
+    assert: /"registry":\s*"production"/
+  },
+  {
     id: 'nevertried',
     headline: 'Nine of our 12 failed theorems were never attempted',
     keyFigure: '9 of 12',
@@ -843,7 +917,10 @@ try {
   const m = t.match(/const NO_DESIGN_ROW = \{([\s\S]*?)\n\};/);
   const keys = m ? [...m[1].matchAll(/^ {2}'?([A-Za-z0-9_-]+)'?:/gm)].map(x => x[1]) : [];
   const accepted = (lawreg?.inLawset || []).find(r => r.status === 'accepted')?.n ?? null;
-  lawRowFacts = { accepted, noDesignRow: keys.length, ids: keys };
+  // The id list is not shipped: one of the 15 is thompson1917-ch02-07, whose label names two birds,
+  // and class Aves is the frozen holdout. No slide uses the list; only the count and three hand-picked,
+  // bird-free reasons are shown (deck/FACTS.md 4.3).
+  lawRowFacts = { accepted, noDesignRow: keys.length };
 } catch {}
 
 // Counts for the failed-theorem entry, read from the served records.
@@ -865,7 +942,7 @@ try {
 } catch {}
 
 const numbers = {
-  facts, negatives, pageShots, lawRowFacts, failedTheoremFacts,
+  facts, negatives, pageShots, lawRowFacts, failedTheoremFacts, leanTruth, nanopubTruth,
   claims: D?.stats?.claims ?? D?.claims?.length ?? null,
   claimTests: (D?.tests || []).length || null,
   leanProved: D?.lean?.summary?.claimsVerified ?? null,

@@ -365,20 +365,30 @@ caption(s, "A design model can generate a sequence all day. Without a formal obj
            "every proposal is as good as every other, and the only filter left is an experiment that costs a year.")
 
 ML, BF = FACTS.get("mathlib") or {}, FACTS.get("biologyFormal") or {}
+FP = FACTS.get("formalisationPapers") or {}
 greyed = not BF.get("verified")
 s = new("The asymmetry, in one line.", "partial" if greyed else "live", EB)
 hero(s, [
-    ("250,000+" if ML.get("verified") else "—",
-     "machine-checked theorems in mathlib, mathematics' largest formal library"
-     + (f" ({ML['asOf']})" if ML.get("asOf") else ""), S1),
-    ("?" if greyed else str(BF.get("value")),
-     BF.get("claimWithoutANumber", "Nothing comparable exists for biology."), GHOST),
-], y=Inches(2.3))
+    (fmt(ML.get("theorems")) if ML.get("verified") else "—",
+     f"theorems in mathlib, over {fmt(ML.get('definitions'))} definitions, from {fmt(ML.get('contributors'))} "
+     f"contributors — {ML.get('asOf', '')}", S1),
+    (fmt(FP.get("value")) if FP.get("verified") else "—",
+     f"papers this year whose abstract talks about formalising maths in Lean; {FP.get('october')} in October "
+     "alone. We counted these ourselves.", S4),
+    ("?" if greyed else f"{BF.get('value')} of {BF.get('of')}",
+     BF.get("claimWithoutANumber", "Nothing comparable exists for biology."), SERIOUS),
+], y=Inches(2.15))
 if greyed:
-    note(s, Inches(4.35), "We will not put a number here.  " + BF.get("whyNoNumber", ""), SERIOUS)
-caption(s, "The grey number is the deck working as intended. A quarter of a million proofs on one side and "
-           "a question mark on the other is the whole problem statement, and the question mark is honest.")
-srcline(s, [ML.get("locator"), BF.get("locator")])
+    note(s, Inches(4.2), "We will not put a number here.  " + BF.get("whyNoNumber", ""), SERIOUS)
+else:
+    tbox(s, M, Inches(4.15), W - 2 * M, Inches(0.5), BF.get("sentence", ""), 13, False, INK, spacing=1.18)
+    nb = note(s, Inches(4.85), "What we are NOT claiming: " + BF.get("counterexamples", ""), SERIOUS, w=Inches(5.75))
+    nb2 = note(s, Inches(4.85), "The narrow sense in which this is new: " + BF.get("narrowFirst", ""), ACCENT, w=Inches(5.75))
+    nb2.left = M + Inches(6.0)
+caption(s, "A bald “zero biology theorems” would be false, and the newest counterexample is six days old. "
+           "The zero we can defend is a zero OF SOMETHING: zero of mathlib's 34 subject areas. You can check "
+           "it from the stage.")
+srcline(s, [ML.get("locator"), FP.get("locator"), BF.get("locator")])
 
 AT = FACTS.get("attrition") or {}
 s = new("That is why this is expensive.", "live" if AT.get("verified") else "anticipated", EB)
@@ -389,7 +399,9 @@ if AT.get("verified"):
          "in theoretical biology: knowing which experiment would change what you believe, before the "
          "experiment is paid for.", 14, False, INK, spacing=1.2)
     note(s, Inches(5.0), "Say it exactly this way.  " + AT.get("trap", ""), SERIOUS)
-    srcline(s, AT.get("sources", []) + ["true range " + AT.get("range", "")])
+    if AT.get("corrigendum"):
+        tbox(s, M, H - Inches(1.9), W - 2 * M, Inches(0.5), "Corrigendum: " + AT["corrigendum"], 9, False, MUTE, spacing=1.1)
+    srcline(s, AT.get("sources", []) + [AT.get("range", "")])
 else:
     ghostbox(s, M, Inches(2.4), W - 2 * M, Inches(2.4), "Not evidenced yet", STATE["attrition"].get("needs", ""))
 
@@ -443,9 +455,15 @@ for head, nt, val, vcol in [
     y += Inches(0.86)
 pageshot(s, "graph", COLX, Inches(2.25), COLW,
          "The claim graph as served: each claim linked to the tests that checked it and the theorem that formalised it")
+LT = N.get("leanTruth") or {}
+if LT:
+    note(s, Inches(6.05),
+         f"And then almost none of it was proved. Of the {fmt(LT.get('claimsExtracted'))} claims we extracted "
+         "from these books, FOUR are proved in the built Lean library — all four Thompson's, none Darwin's, "
+         "none Wolfram's. " + LT.get("avesNote", "") + " So two of the four are not on any slide here.", SERIOUS)
 caption(s, "Decentralised agent swarms distilled the assertions into nanopublications and argued the evidence "
            "sources BEFORE anything was formalised. Formalising first would have produced beautiful proofs of "
-           "sentences nobody had checked anyone actually wrote.")
+           "sentences nobody had checked anyone actually wrote.", y=H - Inches(1.05))
 srcline(s, ["docs/claims.json", "darwin-origin/", "thompson-growth-form/", "wolfram-nks/", "math-bio-theorems/"])
 
 ARMS = N.get("swarmArms") or []
@@ -652,17 +670,19 @@ if FR:
 else:
     ghostbox(s, M, Inches(2.4), W - 2 * M, Inches(2.6), "Not evidenced yet", STATE["funcledger"].get("needs", ""))
 
-GOT = [NEG[i] for i in ("compensation", "edges", "deadlaws", "nevertried") if i in NEG]
-s = new("Four more results that go against us.", "live" if len(GOT) == 4 else "partial", EB)
-y = Inches(2.3)
+WANT = ("compensation", "edges", "deadlaws", "noapproval", "nevertried")
+GOT = [NEG[i] for i in WANT if i in NEG]
+_count = ["No", "One", "Two", "Three", "Four", "Five", "Six"][len(GOT)] if len(GOT) < 7 else str(len(GOT))
+s = new(f"{_count} more results that go against us.", "live" if len(GOT) == len(WANT) else "partial", EB)
+y = Inches(2.25)
 for n in GOT:
     tbox(s, M, y, W - 2 * M - Inches(2.2), Inches(0.3), n["headline"], 14, True, INK)
     tbox(s, W - M - Inches(2.0), y, Inches(2.0), Inches(0.3), n.get("keyFigure", ""), 14, True, SERIOUS, align=PP_ALIGN.RIGHT)
-    tbox(s, M, y + Inches(0.28), W - 2 * M - Inches(2.4), Inches(0.72), n["detail"], 9, False, MUTE, spacing=1.12)
-    y += Inches(1.12)
-if len(GOT) < 4:
-    note(s, y, f"{4 - len(GOT)} further result(s) are not shown: their source file no longer says what this "
-               "deck claimed, so the claim was dropped rather than reprinted.", SERIOUS)
+    tbox(s, M, y + Inches(0.26), W - 2 * M - Inches(2.4), Inches(0.64), n["detail"], 9, False, MUTE, spacing=1.1)
+    y += Inches(0.96)
+if len(GOT) < len(WANT):
+    note(s, y, f"{len(WANT) - len(GOT)} further result(s) are not shown: their source file no longer says what "
+               "this deck claimed, so the claim was dropped rather than reprinted.", SERIOUS)
 caption(s, "Each one is read back out of its own source file at build time. If a number drifts, the row "
            "disappears from this slide rather than quietly going stale.")
 srcline(s, [n["locator"] for n in GOT])
@@ -748,9 +768,15 @@ if CR:
     lines.append(f"{CR['total']} of our own claims were corrected in one day — {CR['ours']} by our own checks, "
                  f"{CR['collaborator']} by a collaborator's independent cross-check. Each was withdrawn or "
                  "narrowed in public, never as a silent edit.")
-if RC.get("drafts"):
-    lines.append(f"The publications are unsigned drafts. {RC['drafts']} records are drafted and validated; "
-                 f"{RC.get('signed', 0)} are signed, because publishing is irreversible and no key owner has signed off.")
+NP = N.get("nanopubTruth") or {}
+if NP:
+    lines.append(f"Published, and that cuts both ways. {fmt(NP['onProduction'])} of our records are live on the "
+                 f"public production nanopub registry ({fmt(NP['darwinOnProduction'])} Darwin claims, "
+                 f"{NP['mathBioOnProduction']} classical math-biology theorems, {NP['approverNote']}); "
+                 f"{fmt(NP['signed'])} are signed in all. But {fmt(NP['withNoApprovalField'])} of the "
+                 f"{fmt(NP['onProduction'])} carry no approval field at all. A further "
+                 f"{NP['unsignedThreadDrafts']} thread drafts are written and deliberately unsigned, and "
+                 f"{NP['avesDraftsExcluded']} Aves-holdout drafts are excluded from every count here.")
 lines.append("No bird data anywhere. Class Aves is a frozen holdout, excluded at build time from every layer, "
              "figure and record in this deck.")
 y = Inches(2.3)
