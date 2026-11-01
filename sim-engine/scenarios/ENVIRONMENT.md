@@ -34,7 +34,16 @@ adult zebrafish, a zebrafish larva, a winged zebrafish and an adult flying fish 
    | current | null (being swept is not modelled as lethal) | can hold station |
    | glide, wind | null | can glide (wind: and no stall in a gust lull) |
 4. **Read-backs are labelled `calibrated`** (amendment A1). This covers CTmax, CTmin, the thermal margin, the Ucrit(T) curve, the Q10 factors and every zebrafish Ucrit-derived metric. These are not independent predictions. The independent checks are the out-of-sample ones in each model card: Morgan 2018, Andreassen 2022, and the Wakamatsu PET-strain failure.
-5. **Smaller fixes** (D9): g is labelled `measured-secondhand`; the ground-effect breakpoints and the 998.2 kg/m³ freshwater density are sourced in place.
+5. **Constants audit (CONSTANTS-AUDIT.md), applied:**
+   - Q10 corrected to SMR 1.56 / MMR 1.34 (the correction is cited, not the original).
+   - The adult Ucrit range is now 13.7-17.9 SL/s, with a note that Table 2 is Umax.
+   - The dry-air O2 fraction is 0.2095 and the air kinematic viscosity 1.46e-5 m²/s.
+   - C_L(0°) is 0.53 (derived), and the Re validity window is corrected to 5e3-1e5.
+   - The ground-effect toggle is labelled assumed. Osmolality 350/1100 is measured-secondhand (only 991 is measured).
+   - The sea-water density of 1025 kg/m³ and the Re 5e5 transition are stated as modelling choices.
+   - The NIST URL now carries its unit parameters, and the Magnus coefficients are credited to Alduchov & Eskridge.
+   - `design-choice` is not one of the six kinds that `lib/envelope.mjs` accepts, so those items are labelled `assumed`.
+6. **Smaller fixes** (D9): g is labelled `measured-secondhand`; the ground-effect breakpoints and the 998.2 kg/m³ freshwater density are sourced in place.
 
 **Harness after the revision** (`node sim-engine/validation/studio-harness.mjs`): N1, N2, N4 and N5 pass. N5 checks the Lean-covered part. X1 and X2 are consistent. W2, W3 and W1 are circular, as expected.
 - **W9 fails** with an honest number: at the organism's own 10 m/s leap speed from 1 m, the Lean-covered distance is 4.37 m. That is below the 5-75 m band, because the taxiing that real flying fish use to reach 15-20 m/s is not modelled.
@@ -75,7 +84,7 @@ speeds from Makiguchi 2013 (doi:10.3354/ab00494, second-hand).
 - The aerobic margin for L3 is 0.024: the bound is 41 times short of the requirement, the same direction as Lean C14.
 
 **What it cannot tell you.** It says nothing about takeoff, control, flapping or burst power. The range is an upper
-bound. The polar comes from stuffed specimens at Re ~1e5. A zebrafish-sized animal is far outside it and is flagged
+bound. The polar comes from stuffed specimens at one wind speed (12 m/s; Park & Choi: Re ~10⁴). The validity window is mean-chord Re 5e3-1e5. A zebrafish-sized animal is far outside it and is flagged
 inRange = false. The lifting area is pectoral × 1.98965 (one specimen's ratio, assumed) unless the state carries
 `lifting_area_m2`. The TFF muscle-fit problem (NOTES-FOR-HUB item 2) does not enter, because no muscle power is used.
 Any muscle-based claim about the TFF must still account for it.
@@ -87,12 +96,12 @@ Any muscle-based claim about the TFF must still account for it.
 - CTmin = 6.2 + 0.44 (Ta − 20)
 
 survives = CTmin < T < CTmax. Swimming capacity is the measured Ucrit(T)/Ucrit(28 °C) curve. Metabolic rate scales
-with Q10: SMR 1.39, MMR 1.15.
+with Q10: SMR 1.56, MMR 1.34. These are the **corrected** values from the published correction (J Exp Biol 226:jeb245488, doi:10.1242/jeb.245488); the original paper gave 1.39 and 1.15.
 
 **Sources.**
 - Cortemeglia & Beitinger 2005, wild type acclimated at 20 and 30 °C (abstract), doi:10.1577/T04-197.1.
 - Wakamatsu et al. 2019, Ucrit at 12-38 °C, doi:10.1038/s41598-019-52592-w.
-- Ripley et al. 2022, Q10, doi:10.1242/jeb.243774.
+- Ripley et al. 2022 as corrected in 2023: Q10, doi:10.1242/jeb.245488 (correction to doi:10.1242/jeb.243774).
 
 **Validation.**
 - Adults acclimated at 28 °C. Predicted CTmax 41.2 °C. Measured 40.97 ± 0.10 °C (Morgan et al. 2018, doi:10.1038/s41598-018-25593-4) and 41.0 ± 0.1 °C (Andreassen et al. 2022, doi:10.1073/pnas.2207052119). **Pass** (+0.2 °C).
@@ -106,7 +115,7 @@ Larvae borrow the adult acclimation slope, and larval CTmin is unmeasured.
 ## current (`current.mjs`)
 
 **Model.** Zebrafish Ucrit = k(age) × SL × r(T). The coefficient k is:
-- 15.5 SL/s for fish of 28 dpf and older (Plaut 2000, via the Widrick 2018 compilation; other studies give 10.3-17.9 SL/s);
+- 15.5 SL/s for fish of 28 dpf and older (Plaut 2000, via the Widrick 2018 compilation; the other adult entries give 13.7-17.9 SL/s; Fiaz's 10.3 is the 14 dpf column. Widrick's Table 2 is titled Umax. Plaut's 15.5 is used as Ucrit because Plaut used a 65-min incremental (Ucrit-type) protocol; that is this module's reading, not the table's label);
 - 10.5 SL/s at 14 dpf (Widrick's measured Umax of 12.1 SL/s, divided by 1.15);
 - interpolated between those two ages;
 - below 14 dpf, the absolute speed is interpolated from ~3 cm/s at 5 dpf.
@@ -182,8 +191,9 @@ trajectory at 20 m/s into a 10 m/s headwind (quoted by Deng 2019) is a theoretic
 the sources do not give, so it was not compared.
 
 **What it cannot tell you.** Wind shear over waves, updrafts and unsteady gust aerodynamics are not modelled. The
-descent airspeed uses an assumed C_L(0°) = 0.4, so the gust stall margin rests on that assumption. A low-v_min design
-such as the TFF fails the default 2 m/s gust only because it is assumed to glide at its best-L/D speed.
+descent airspeed uses C_L(0°) = 0.53, derived from Park & Choi's statement that lift at 0° about equals the weight for L3
+(range 0.49-0.57; Fig. 5 itself not read). It replaces the 0.4 assumed in the simulator's params.json. The gust stall margin is computed at the slower of the launch speed and that best-L/D speed, so slow, low-v_min
+designs such as the TFF (v_LD 6.1 m/s, v_min 5.0 m/s) fail even the default 2 m/s gust.
 
 ---
 

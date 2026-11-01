@@ -19,7 +19,7 @@ node sim-engine/examples/d-altitude/run.mjs   # or one at a time
 | [e-predator](e-predator/README.md) | Which organisms can escape a predator by air | aerial escape: yes = flying-fish, tff; no = zebrafish-adult, winged-zebrafish, wingless-flying-fish; no verdict = zebrafish-larva, ff-zf-chimera | 8/8 | ok |
 | [codesign-demo](codesign-demo/README.md) | A live co-design session over MCP stdio: physics proposes, genotype comments, a human approves, lean_check | proposal p1 by agent:physics (pectoral_area_over_SL2 0.07126 -> 0.1547), genotype caveat (kcnk5b chain sufficiency), approved by human via session_decide; agent edit and double decision refused; lean_check C15 holds for the Lean-covered glide and violated for the studio total; C14 violated, C16 cannot-evaluate | 19/19 | ok |
 
-Run at 2026-11-01T03:07:15.353Z on v24.13.0. Every check passed.
+Run at 2026-11-01T03:08:15.781Z on v24.13.0. Every check passed.
 
 ## Ground rules the examples follow
 

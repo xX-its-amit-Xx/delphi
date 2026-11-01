@@ -156,7 +156,7 @@ for (const l of LAWS.laws) {
     kind: PHYSICAL.has(l.id) ? 'physical' : 'biological',
     class: cls,
     status,
-    label: l.label || null,
+    label: l.label || String(l.statement).split(/[.;:]/)[0].slice(0, 90),
     level: l.level,
     lean_ref: { module, theorem, structure, commit: module ? (gitClean(module) ? HEAD : HEAD + '+dirty') : null, statement_sha256: stmt ? sha256(stmt) : null, content_hash: null },
     statement_en: l.statement,

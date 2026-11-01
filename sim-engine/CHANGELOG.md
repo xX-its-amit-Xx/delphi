@@ -20,6 +20,14 @@ versioned here. While the major version is 0, a minor bump may break callers; ea
     - P1b, P2b, P4, P4b and P5: no committed Q10 reference, Cd and A, CLmax, L/D or assimilation efficiency.
     - P3: the pressure scenario's real-hydrostatics Boyle volume exceeds the law's "1 atm per 10 m" bound by
       about 0.5–1 % at every depth. That is a convention mismatch, not a violation.
+- C15 (`glide_range_le`) is fed by the glide and altitude scenarios with ONLY `glide_range_lean_bound_m`, the
+  h·(L/D) steady descent, and only when the glide is feasible. `glide_range_total_m` adds a level kinetic phase
+  that the theorem's hypotheses do not cover, so it is never passed. C15 is therefore a consistency check of the
+  scenario's bound against the theorem, not an independent test.
+- Citations in `lib/state.mjs` fixed (constants audit). The standard-atmosphere constants now cite U.S. Standard
+  Atmosphere, 1976 (NASA-TM-X-74335, https://ntrs.nasa.gov/citations/19770009539; identical to ICAO/ISO 2533
+  below 11 km), with the equation; they were never in conditions/baseline.json. The swim-bladder 0.037–0.065 is
+  now labelled `mean_pm_sd` (Robertson 2008, mean ± 1 SD), not a range. Values unchanged.
 - Violation `severity` gains `candidate`: a law with status candidate, which the UI draws dashed. It sits
   alongside `red` (accepted) and `amber` (contested).
 

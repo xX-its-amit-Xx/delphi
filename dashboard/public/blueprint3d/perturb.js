@@ -89,6 +89,7 @@ async function loadSimEngine(urls, sm, st, om) {
     },
     stagesFor: doc => st.stageAges(bundle, doc).map(s => ({ age: s.ageDays, label: s.label, name: s.key, size: null })),
     leanSpec: st.leanSpec || null, inputParts: st.INPUT_PARTS || null,
+    mods: { sm, st, om },   // the raw modules: the optimiser worker builds spec.mjs makeRegistry from them
   };
   return E;
 }

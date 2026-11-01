@@ -37,7 +37,7 @@ const LAWS = [
 
 export function metas() {
   return LAWS.map(l => ({
-    law_id: l.law_id, kind: l.kind, class: 'theorem-from-hypothesis', statement_en: l.statement_en,
+    law_id: l.law_id, label: l.label, kind: l.kind, class: 'theorem-from-hypothesis', statement_en: l.statement_en,
     lean: l.witness ? { theorem: l.theorem, witness: l.witness, witness_file: l.witness_file } : { theorem: l.theorem, witness: W },
     hypotheses: [{ name: 'see theorem statement', statement: 'the named hypothesis structure(s) in the theorem statement; instantiated with fetched numbers in Delphi.Perturb.measured' }],
     scope: { taxa: l.taxa, life_stages: [], ranges: {}, basis: l.basis },

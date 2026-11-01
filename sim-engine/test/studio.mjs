@@ -375,6 +375,20 @@ await ok('the Lean spec never carries a convention-mismatched input (no finArea_
   for (const k of ['finArea_m2', 'bladder_volume_surface_ml', 'bladder_volume_at_depth_ml']) assert.ok(!(k in r.result.lean_inputs.spec), `${k} passed`);
 });
 
+await ok('regression (codesign-demo): approved winged-zebrafish fin, what-if 10 m/s launch from 1 m -> C15 holds on the Lean-covered part; the total is reported separately', async () => {
+  const ff = O.resolveParameters(b, O.docFor(b, 'flying-fish')).params.pectoral_area_over_SL2.value;
+  const doc = O.appendEdit(b, O.docFor(b, 'winged-zebrafish'), E({ level: 'body' }, 'pectoral_area_over_SL2', 'set', ff));
+  const r = await T.scenarioRun({ organism: doc, scenario: 'glide', params: { launch_height_m: 1, launch_airspeed_override_m_s: 10 } });
+  const m = k => r.result.run.metrics.find(x => x.key === k).value;
+  const total = m('glide_range_total_m'), lean = m('glide_range_lean_bound_m');
+  assert.ok(total > lean + 1, `total ${total} should exceed the Lean-covered ${lean} (kinetic phase)`);
+  const spec = M === 'c15' ? { ...r.result.lean_inputs.spec, glideDistance_m: total } : r.result.lean_inputs.spec;
+  assert.equal(spec.glideDistance_m, lean, 'C15 must be fed the Lean-covered part only');
+  assert.notEqual(spec.glideDistance_m, total);
+  assert.equal(r.result.verdicts.find(v => v.constraint === 'C15').verdict, 'holds');
+  assert.ok(/NOT covered/.test(r.result.run.metrics.find(x => x.key === 'glide_range_total_m').source));
+});
+
 console.log('\nserver and CLI');
 await ok('contract.json lists all twelve studio tools (regenerate with --dump-contract)', () => {
   const c = JSON.parse(fs.readFileSync(path.join(engine, 'contract.json'), 'utf8'));

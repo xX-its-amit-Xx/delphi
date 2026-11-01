@@ -1,16 +1,16 @@
 # Co-design session transcript
 
-Session `codesign-demo-winged-zebrafish-fin-a7f9f1` on `codesign-demo-wzf` (parent: winged-zebrafish). Spoken over MCP stdio to `delphisci-sim-engine 0.1.0`. The raw log is `session.jsonl`, and every MCP call with its full result is in `mcp-log.json`. Authors are role labels, not people.
+Session `codesign-demo-winged-zebrafish-fin-b9810a` on `codesign-demo-wzf` (parent: winged-zebrafish). Spoken over MCP stdio to `delphisci-sim-engine 0.1.0`. The raw log is `session.jsonl`, and every MCP call with its full result is in `mcp-log.json`. Authors are role labels, not people.
 
 ## seq 0 · open · human
 
-*2026-11-01T03:07:15.006Z, lawset 1.3.0*
+*2026-11-01T03:08:15.462Z, lawset 1.3.0*
 
 Opened "codesign demo winged zebrafish fin" on organism `codesign-demo-wzf`.
 
 ## seq 1 · proposal · agent:physics
 
-*2026-11-01T03:07:15.214Z, lawset 1.3.0*
+*2026-11-01T03:08:15.647Z, lawset 1.3.0*
 
 Enlarge the pectoral fin to the flying-fish area ratio.
 
@@ -33,13 +33,13 @@ Enlarge the pectoral fin to the flying-fish area ratio.
 
 ## seq 2 · comment · agent:genotype
 
-*2026-11-01T03:07:15.228Z, lawset 1.3.0*
+*2026-11-01T03:08:15.662Z, lawset 1.3.0*
 
 Genotype caveat for this edit. pectoral_area_over_SL2 is a morphology parameter: no causal chain in genotype/causal-chains.json maps any gene to a quantitative fin area, and gene-level edits are recorded-only in the studio (no model consumes them). The fin-size candidates closest to "a bigger pectoral fin" are kcnk5b (chain strength sufficiency, best link mechanism) and kcnh2a (chain strength sufficiency). For kcnk5b the chain breaks at molecular_function->process. Gaps include: "The clonal sufficiency experiments (transplantation, mosaic overexpression) were scored in caudal/dorsal fins and barbels, not in the pectoral fin." Dataset-wide constraint: "Every node below the pectoral fin is a zebrafish anatomy (ZFA) term, and every gene link is a zebrafish or medaka record. None of it is flying-fish data. A flying fish's wing is an enlarged pectoral fin." So approving this edit fixes a shape; it does not name a genotype that would produce it.
 
 ## seq 3 · decision · human
 
-*2026-11-01T03:07:15.234Z, lawset 1.3.0*
+*2026-11-01T03:08:15.667Z, lawset 1.3.0*
 
 **APPROVE** p1: Approved as a morphology experiment only: physics evidence shows lower wing loading and v_min, no new binding Lean violation; genotype caveat accepted (no genotype is claimed). The glide gain exists only under the assumed launch speed.
 
@@ -65,7 +65,7 @@ Shared inputs (SI): `{"taxon":"Danio rerio","life_stage":"adult","SL_m":0.0388,"
 | C8c | scaling-strength-law | out-of-scope | out-of-scope |  |
 | C15 | flight-climb-glide-law | holds | violated | Climb from excess power and the range of a steady glide: x ≤ h (L/D)max / (1 − δ) fails for the committed numbers (one steady unpowered glide; taxiing thrust, repeated touch-and-go and wind are outside the model) |
 | C16 | flight-climb-glide-law | cannot-evaluate | cannot-evaluate |  |
-| C14 | fick-principle | violated | violated | O2 delivered to tissue = cardiac output × (arterial − venous O2 content): η E_O2 Q Ca ≥ W v / (L/D) fails for the committed numbers (sustained (aerobic) mechanical ceiling eta E Q Ca against level-flight power W v/(L/D)  |
+| C14 | fick-principle | violated | violated | Fick principle: aerobic supply is at most eta E Q (Ca - Cv): η E_O2 Q Ca ≥ W v / (L/D) fails for the committed numbers (sustained (aerobic) mechanical ceiling eta E Q Ca against level-flight power W v/(L/D) plus W x clim |
 | E2 | E2 | out-of-scope | out-of-scope |  |
 | E3 | E3 | out-of-scope | out-of-scope |  |
 | E7 | E7 | out-of-scope | out-of-scope |  |
