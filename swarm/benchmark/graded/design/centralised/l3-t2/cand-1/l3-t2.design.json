@@ -1,0 +1,34 @@
+{
+ "design": {
+  "taxon": "Danio rerio",
+  "life_stage": "adult",
+  "SL_m": 0.035,
+  "standard_length_m": 0.035,
+  "mass_kg": 0.0008,
+  "body_temperature_C": 26,
+  "ct_min_C": 6.2,
+  "ct_max_C": 41.4,
+  "q10": 2.3,
+  "reference_temperature_C": 28,
+  "depth_m": 0.3,
+  "altitude_m": 0,
+  "critical_swimming_speed_m_s": 0.4,
+  "current_speed_m_s": 0.26,
+  "has_swimbladder": true,
+  "powered": false,
+  "flight_mode": "glide",
+  "rho": 1000
+ },
+ "assumptions": [
+  "critical_swimming_speed_m_s=0.4: about 11.4 BL/s, mid-range of the 0.3-0.5 m/s zebrafish adult Ucrit literature value (8-15 BL/s).",
+  "current_speed_m_s=0.26: 65% of Ucrit (about 7.4 BL/s), below Ucrit with margin and a sustainable aerobic speed.",
+  "has_swimbladder=true: zebrafish have a physostomous swimbladder. This is the true value and it lets any swimbladder law at 0.3 m depth be judged.",
+  "powered=false: explicit no-flight declaration, which takes the aerobic-demand laws C14 and E3 out of scope.",
+  "flight_mode='glide': a second explicit no-flight declaration, redundant with powered=false.",
+  "rho=1000 kg/m3: freshwater density, a standard value, included so any hydrodynamic law has its density input.",
+  "Flight keys (airspeed_m_s, climbRate_m_s, glideHeight_m, glideDistance_m, flight_duration_s, finArea_m2, CLmax, LD_max, powerAvailable_W, etc.) omitted rather than set to 0, because a 0 could be read as a real value and trigger a violation (for example 0 lift or 0 power). Omitted keys give cannot-evaluate or out-of-scope, not a violation.",
+  "drag_coefficient and drag_area_m2 omitted because I have no defensible measured values. A guessed value could create a violation, and the sponsor did not fix them.",
+  "bladder_volume_surface_ml and bladder_volume_at_depth_ml omitted. Without a measured bladder volume I could not set the pair consistently with Boyle's law (at 0.3 m the pressure ratio is about 1.03). Whoever owns the buoyancy and bladder keys should supply the pair if one exists."
+ ],
+ "notes": "I did not run lean_check, so none of these values has been checked against the laws. No law appears to block the brief. The remaining risk is trade-off: omitting the flight keys and the drag keys leaves those laws as cannot-evaluate, which lowers the count of evaluated laws but avoids a false violation. If the orchestrator wants more laws evaluated, it could add drag_coefficient and drag_area_m2 after checking them with lean_check. Setting flight keys to 0 is the riskier option, so I advise against it. current_speed_m_s/critical_swimming_speed_m_s is 0.65, so a law requiring a margin of up to about 35% should hold. If a law demands a larger margin, lower the current to about 0.2 m/s."
+}

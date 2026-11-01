@@ -18,6 +18,15 @@ const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ?
 const N = 3;
 const BUDGET_PER_CELL = 0.45;            // ARMS.md 1.1: equal TOTAL budget per cell, every arm
 const CAP = { single: BUDGET_PER_CELL / 1, decentralised: BUDGET_PER_CELL / N, centralised: BUDGET_PER_CELL / (N + 2) };
+// POST-HOC ONLY (--alloc uneven, always run under a --tag so it never lands in the pre-registered grading).
+// Same $0.45 total for the centralised arm, split unevenly: the merge call has to re-emit the whole artifact
+// after reading three worker reports, and under the even split it was killed by its own cap mid-answer on all
+// three level-1 cells. This variant exists to separate "the architecture cannot do it on this budget" from
+// "my allocation of that budget was wrong". Its numbers are reported separately and never mixed in.
+const UNEVEN = { 'orchestrator-plan': 0.05, worker: 0.09, 'orchestrator-merge': 0.13 };
+const ALLOC = arg('alloc', 'even');
+const capFor = label => (ARM === 'centralised' && ALLOC === 'uneven')
+  ? (UNEVEN[label.replace(/-retry$/, '').replace(/^worker-\d+$/, 'worker')] ?? CAP[ARM]) : CAP[ARM];
 
 const LEVEL = arg('level');
 const ARM = arg('arm');
@@ -69,7 +78,7 @@ for (const task of tasks) {
   const calls = [];
   let final = null, merge_note = null, candidates = null;
 
-  const go = (role, extra, label, maxTurns = 10, schema = L.schema, cap = CAP[ARM]) =>
+  const go = (role, extra, label, maxTurns = 10, schema = L.schema, cap = capFor(label)) =>
     runClaude({ prompt: `${role}\n\n${extra ? extra + '\n\n' : ''}${shared}`, schema, maxTurns, maxBudget: cap, label, logDir: dir });
 
   if (ARM === 'single') {
@@ -119,7 +128,7 @@ for (const task of tasks) {
   const cost = calls.reduce((a, c) => a + (c.cost_usd || 0), 0);
   const tok = calls.reduce((a, c) => ({ input: a.input + (c.usage?.input || 0), output: a.output + (c.usage?.output || 0), cache_read: a.cache_read + (c.usage?.cache_read || 0), cache_creation: a.cache_creation + (c.usage?.cache_creation || 0) }), { input: 0, output: 0, cache_read: 0, cache_creation: 0 });
   const cell = {
-    level: LEVEL, arm: ARM, task: task.id, model: MODEL, N, budget_total_usd: BUDGET_PER_CELL, cap_per_call_usd: CAP[ARM],
+    level: LEVEL, arm: ARM, task: task.id, model: MODEL, N, budget_total_usd: BUDGET_PER_CELL, cap_per_call_usd: CAP[ARM], allocation: ALLOC,
     started: new Date(t0).toISOString(), wall_ms: Date.now() - t0,
     calls: calls.length, cost_usd: +cost.toFixed(5), tokens: tok, tokens_total: tok.input + tok.output + tok.cache_read + tok.cache_creation,
     infra_failures: calls.filter(c => c.infra_failure).length,

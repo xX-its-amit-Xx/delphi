@@ -64,6 +64,16 @@ function gradeNanopubOne(art, task, outDir) {
   const NP_ALLOWED = [/^Unexpected graph uri: http:\/\/purl\.org\/nanopub\/temp\//, /^Nanopub has no signature element\.$/, /^Nanopub has no assertion template\.$/, FRESH];
   const unexpectedIssues = issues.filter(i => !NP_ALLOWED.some(re => re.test(i)));
   const parses = chk.status === 0 || (verdictValid && unexpectedIssues.length === 0) ? 1 : 0;
+  // POST-HOC SECONDARY (added after the first grading pass, disclosed in RESULTS.md). `parses` came out 0 for
+  // every arm on every task, and the reason is uniform and is MY task design, not the arms: the prompt never
+  // asked for nt:wasCreatedFromProvenanceTemplate, so every record draws "Nanopub has no provenance template",
+  // and the records are minutes old or seconds in the future, which draws a creation-time note. Neither is an
+  // RDF or nanopub-structure problem. `parses_valid_rdf` is the same check with those three notes tolerated,
+  // so it reads whether the arm produced a record the validator can actually parse and accept. It is reported
+  // BESIDE the pre-registered `parses`, never instead of it.
+  const TASK_DESIGN_NOTES = [/no provenance template/i, /no assertion template/i, /creation time is (older than one hour|in the future)/i];
+  const blockingIssues = issues.filter(i => ![...NP_ALLOWED, ...TASK_DESIGN_NOTES].some(re => re.test(i)));
+  const parses_valid_rdf = verdictValid && blockingIssues.length === 0 ? 1 : 0;
 
   // leak_clean: the repository's own leak checker, over this artifact's directory
   const leak = sh('node', [path.join(repo, 'holdout/check-leaks.mjs'), '--json', outDir], { cwd: repo });
@@ -99,7 +109,7 @@ function gradeNanopubOne(art, task, outDir) {
   const quotable_line = hasStatus && hasLimit ? 1 : 0;
 
   return {
-    task: t.id, parses, parse_stdout: norm(chk.stdout).slice(0, 400), leak_clean, leak_strong_hits: leakHits == null ? 'unparsed' : leakHits.length,
+    task: t.id, parses, parses_valid_rdf, blocking_issues: blockingIssues, all_issues: issues, parse_stdout: norm(chk.stdout).slice(0, 400), leak_clean, leak_strong_hits: leakHits == null ? 'unparsed' : leakHits.length,
     locator_traceability: +locator_traceability.toFixed(3), untraceable_assertions,
     unsupported_numeric_claims, unsupported_numbers: bad.slice(0, 12),
     quotable_line, has_status_word: hasStatus, has_limit_clause: hasLimit,
@@ -260,7 +270,7 @@ function designArmScore(per, maxEval) {
 
 // =============================================================== level 4: validation
 function gradeValidationOne(art, task) {
-  const t = task.meta, gt = t.report;
+  const t = { ...task.meta, id: task.id }, gt = t.report;
   const rep = String(art?.report || '');
   const st = art?.statuses || {};
   const low = rep.toLowerCase();
@@ -279,7 +289,11 @@ function gradeValidationOne(art, task) {
   const caHits = [];
   for (const k of cannotKeys) {
     const re = new RegExp(`${k.replace(/_/g, '[ _-]?')}[^.\\n]{0,160}`, 'gi');
-    for (const m of rep.match(re) || []) if (passWords.test(m) && !/not a pass|is not a pass|never a pass/i.test(m)) caHits.push(norm(m).slice(0, 120));
+    // GRADER DEFECT FOUND AFTER THE FIRST GRADING PASS (recorded in RESULTS.md): the negation guard only
+    // covered "not a pass", so the phrase "cannot-assess, not pass" -- which is exactly the right thing to
+    // write -- was scored as pass-flavoured language and failed a cell that had got it right. The guard now
+    // covers the article-less forms and "no(t) ... pass/clear/clean/ok" generally.
+    for (const m of rep.match(re) || []) if (passWords.test(m) && !/\b(not|never|no)\b[^.]{0,12}\b(a\s+)?(pass(ed|es)?|clear|clean|ok|satisf)/i.test(m)) caHits.push(norm(m).slice(0, 120));
   }
   const saysNotAPass = /cannot-?assess[^.]{0,80}(is )?not a pass|not a pass|is not a pass/i.test(rep);
   const cannot_assess_not_a_pass = !caHits.length && saysNotAPass ? 1 : 0;
@@ -370,6 +384,13 @@ function gradeLevel(levelName) {
       else if (levelName === 'design') g = gradeDesignOne(cell.final, task, od, L.lawset);
       else g = gradeValidationOne(cell.final, task);
       g.cell = cell.cell;
+      // POST-HOC CORRECTION (after the first grading pass; disclosed in RESULTS.md). An ABSENT artifact
+      // trivially satisfies the "0 is better" components (no invented number can be in a record that does not
+      // exist), which gave the centralised arm a floor of 0.5 on level 1 for producing nothing at all. A cell
+      // with no artifact now scores 0 and is flagged. Nothing else about the scoring changed, and the
+      // uncorrected component values are kept beside it.
+      g.artifact_absent = cell.cell.produced_artifact ? 0 : 1;
+      if (g.artifact_absent) { g.score_uncorrected = g.score ?? null; g.score = 0; }
       raw[arm].push(g);
 
       // diagnosis: grade every swarm candidate too (ARMS.md 3, labelled a property of the merge rule)
@@ -393,11 +414,11 @@ function gradeLevel(levelName) {
     const allEval = [...Object.values(raw).flat(), ...Object.values(out.candidate_diagnosis).flatMap(d => d.candidates)].map(g => g?.evaluable_binding_laws || 0);
     const maxEval = Math.max(1, ...allEval);
     out.max_evaluable_binding_laws = maxEval;
-    for (const arm of ARMS) designArmScore(raw[arm].filter(g => !g.missing), maxEval);
+    for (const arm of ARMS) { designArmScore(raw[arm].filter(g => !g.missing), maxEval); for (const g of raw[arm]) if (g.artifact_absent) { g.score_uncorrected = g.score; g.score = 0; } }
     for (const d of Object.values(out.candidate_diagnosis)) designArmScore(d.candidates.filter(c => !c.missing), maxEval);
   }
   if (levelName === 'nanopub') {
-    for (const arm of ARMS) nanopubArmScore(raw[arm].filter(g => !g.missing));
+    for (const arm of ARMS) { nanopubArmScore(raw[arm].filter(g => !g.missing)); for (const g of raw[arm]) if (g.artifact_absent) { g.score_uncorrected = g.score; g.score = 0; } }
     for (const d of Object.values(out.candidate_diagnosis)) nanopubArmScore(d.candidates.filter(c => !c.missing));
   }
 
@@ -419,6 +440,7 @@ function gradeLevel(levelName) {
       infra_failures: live.reduce((a, g) => a + (g.cell?.infra_failures || 0), 0),
       cap_stops: live.reduce((a, g) => a + (g.cell?.cap_stops || 0), 0),
       artifacts_missing: per.filter(g => g.missing).length,
+      artifacts_absent: live.filter(g => g.artifact_absent).length,
     };
   }
   fs.mkdirSync(gradeDir, { recursive: true });

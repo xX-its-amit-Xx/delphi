@@ -538,8 +538,8 @@ async function annotateGeneContext(sites, { network = true, limit = 25, alwaysBe
     // Ensembl REST returns a transient 500/503 under load often enough that a single attempt leaves holes in
     // the table. Retry twice with a back-off. A site whose annotation still fails says so; it is never
     // silently reported as intergenic, because "no genes returned" and "the request failed" are different facts.
-    for (let attempt = 0; attempt < 2 && s.gene_context?.error && /HTTP 5\d\d/.test(s.gene_context.error); attempt++) {
-      await new Promise(r2 => setTimeout(r2, 700 * (attempt + 1)));
+    for (let attempt = 0; attempt < 3 && s.gene_context?.error && /HTTP 5\d\d/.test(s.gene_context.error); attempt++) {
+      await new Promise(r2 => setTimeout(r2, 800 * Math.pow(2, attempt)));
       const again = await fetchCached({ url: `${ENS}/overlap/region/${SPECIES}/${s.chromosome}:${Math.max(1, s.hit_from - 2000)}-${s.hit_to + 2000}?feature=gene;content-type=application/json` }, { network });
       if (Array.isArray(again.value)) s.gene_context = again.value.map(g => ({ id: g.id, symbol: g.external_name || null, biotype: g.biotype, start: g.start, end: g.end }));
       else s.gene_context = { error: again.error, attempts: attempt + 2, note: 'Ensembl /overlap/region did not answer for this site. This is NOT a finding that the site is intergenic: the gene context here is UNKNOWN.' };
@@ -596,7 +596,16 @@ export async function offTargetsLocal(spacer, pam, { network = true, maxMismatch
     if (geneContext) { await annotateGeneContext(v.sites, { network }); annotationSummary(v); cachePut(key, v); }
     return { ...v, cached: false };
   }
-  if (geneContext && v.sites?.length && v.sites[0].gene_context === undefined) { await annotateGeneContext(v.sites, { network }); cachePut(key, v); }
+  // A cached site list whose annotation FAILED must be re-attempted on a later run, not left failed forever:
+  // Ensembl's 500s and 503s are transient, and caching a failure as though it were an answer would quietly
+  // shrink the exonic off-target list - the one number a lab most needs to be complete. So the cached path
+  // retries any site that carries an error, as well as a list that was never annotated at all.
+  const needsAnnotation = v.sites?.length && (v.sites[0].gene_context === undefined || v.sites.some(s => s.gene_context?.error));
+  if (geneContext && needsAnnotation) {
+    for (const s of v.sites) if (s.gene_context?.error) delete s.gene_context;   // so it is re-attempted
+    await annotateGeneContext(v.sites, { network });
+    cachePut(key, v);
+  }
   if (v.sites?.length) annotationSummary(v);   // also for a cache entry written before this summary existed
   return { ...v, cached: true };
 }
@@ -1091,6 +1100,10 @@ export const FEASIBILITY = {
       { finding: 'Anti-sense asymmetric ssODN design was the most successful optimisation; cut-site proximity to the mutation and phosphorothioate modifications also greatly improved knock-in efficiency; and there is a previously unrecognised risk of OFF-TARGET TRANS KNOCK-INS, needing a dedicated detection workflow.', quoted_from_abstract: true, citation: 'Prykhozhij et al. 2018, Nucleic Acids Res 46:e102, doi 10.1093/nar/gky512, PMID 29905858', kind: 'measured' },
       { finding: 'Prime editing with purified ribonucleoprotein reached somatic frequencies as high as 30 % in zebrafish embryos with demonstrated germline transmission, alongside unintended insertions, deletions and pegRNA scaffold incorporation. This is the only route in this plan that can make a transversion.', quoted_from_abstract: true, citation: 'Petri et al. 2022, Nat Biotechnol 40:189-193, doi 10.1038/s41587-021-00901-y, PMID 33927418', kind: 'measured' },
       { finding: 'non-homologous end joining dominates at the Cas9 break in zebrafish embryos, so most edited alleles are indels rather than the intended change', citation: 'Boel et al. 2018; Burger et al. 2016, Development 143:2025-2037, doi 10.1242/dev.134809', kind: 'measured-secondhand', caveat: 'the Burger reference was not re-read in this run' },
+      { finding: 'the NHEJ-over-HDR margin, with both numbers from the same experiment: at tp53 R143H and R217H the INDEL rates were 26.1 % and 28.4 % while the TOTAL knock-in rates were 1.04 % and 0.57 %, of which 83 % and 81 % were the correct knock-in. That is an order of magnitude and more, measured at the same sites.', quoted_from_full_text: true, citation: 'Prykhozhij et al. 2018, Nucleic Acids Res 46(17):e102, doi 10.1093/nar/gky512', kind: 'measured', caveat: 'an erratum exists (doi 10.1093/nar/gky674) and was NOT read in this run' },
+      { finding: 'FOUNDER TRANSMISSION, which is a different quantity from per-embryo HDR efficiency and must not be put in the same column: "Despite the low number of germline transmitting founders (1-5%), combining our screening methods with prioritization of founder fish by fin biopsies allowed us to establish stable knock-in lines by screening 12 or less fish per gene."', quoted_from_abstract: true, citation: 'Carrington et al. 2022, BMC Genomics 23:810, doi 10.1186/s12864-022-08971-1, PMID 36476416', kind: 'measured' },
+      { finding: 'CYTOSINE BASE EDITING in zebrafish reaches far higher efficiencies than HDR does, which is why the hhip iSTOP route is the better plan where a transition suffices: "up to 91% efficiency without unwanted mutations" with ancBE4max (rb1 W63*), 73 % at ctnnb1 S33L and 86 % at tp53 Q170* with BE4-gam, 64 % at sod2.', quoted_from_full_text: true, citation: 'Rosello et al. 2021, eLife 10:e65552, doi 10.7554/eLife.65552', kind: 'measured', caveat: 'these are PEAK SINGLE-EMBRYO values from its Table 2, not means. Quoting "up to 91 %" as a typical rate would be wrong. And it is irrelevant to both kcnk5b transversions, which no base editor can make.' },
+      { finding: 'an earlier zebrafish cytosine base-editing report, for the order of magnitude: "up to 28% of site-specific single-base mutations are achieved in multiple gene loci".', quoted_from_abstract: true, citation: 'Zhang et al. 2017, Nat Commun 8:118, doi 10.1038/s41467-017-00175-6, PMID 28740134', kind: 'measured' },
     ],
     what_we_could_not_source: 'We did not source a measured HDR or prime-editing rate for kcnk5b or hhip specifically, nor any rate for a guide listed here. The 1-4 % and 30 % figures are OTHER loci in OTHER papers; they bound the order of magnitude and nothing more.',
   },
@@ -1113,7 +1126,8 @@ export const FALSIFIERS = [
   { id: 'coordinate-wrong', what_would_falsify: 'Sanger or amplicon sequencing of the wild-type locus in the lab\'s own fish shows a different base at the stated chromosome coordinate, or the lab\'s genome build puts the codon elsewhere.', how: 'PCR the region and sequence it before ordering anything.', kills: 'the whole plan for that edit' },
   { id: 'polymorphism', what_would_falsify: 'The protospacer or the PAM is polymorphic in the lab\'s strain (AB, TU, WIK and Tübingen differ substantially; zebrafish strains carry high SNP density).', how: 'sequence the protospacer in the actual breeding fish.', kills: 'that guide (a PAM-disrupting SNP makes it dead)' },
   { id: 'no-cut', what_would_falsify: 'The guide does not cut: no indels detected at the target by T7 endonuclease assay, high-resolution melt or amplicon sequencing of injected embryos.', how: 'inject, pool 20 embryos at 2 dpf, amplicon-sequence the target.', kills: 'the on-target heuristic score for that guide (which was never a measurement)' },
-  { id: 'offtarget-missed', what_would_falsify: 'Whole-genome or targeted off-target sequencing finds cutting at a site this module did not list.', how: 'amplicon-sequence the top predicted sites, and ideally run GUIDE-seq or CIRCLE-seq on the RNP.', kills: 'the specificity number, which is a prediction from a heuristic aligner and is a floor, not a ceiling' },
+  { id: 'offtarget-missed', what_would_falsify: 'Whole-genome or targeted off-target sequencing finds cutting at a site this module did not list.', how: 'amplicon-sequence the listed sites, and ideally run GUIDE-seq or CIRCLE-seq on the RNP in the actual strain.',
+    kills: 'the specificity number - which is a PREDICTION, not a measurement, even though the site search is now exhaustive. The three ways this is expected to happen, in order of likelihood: (1) a BULGED off-target, which the substitution-only search cannot see; (2) a site that exists in the laboratory strain but not in the GRCz11 reference; (3) a listed site we ranked as negligible by its Hsu score and did not sequence.' },
   { id: 'no-hdr', what_would_falsify: 'No precise knock-in allele is recovered in F1 after screening the planned number of founders.', how: 'screen F1 by amplicon sequencing, not by restriction digest alone.', kills: 'the HDR route; switch to the base-editing route where the change is a transition, or to prime editing' },
   { id: 'template-integration', what_would_falsify: 'Founders carry fragments of the ssODN integrated at the locus, or a correct base alongside a nearby indel.', how: 'sequence the full amplicon, both alleles, in every candidate.', kills: 'the assumption that a positive genotype at the edited base means a clean allele (Boel 2018 says expect this)' },
   { id: 'no-phenotype', what_would_falsify: 'A clean homozygous F2 carrying the designed allele does not show the predicted morphology.', how: 'measure the fin length / SL on the F2, blind to genotype.', kills: 'the DESIGN, not the editing plan. This is the outcome our own design validation says we cannot predict either way.' },

@@ -10,6 +10,8 @@
 //        --no-offtarget --no-network --panel --json --methods
 import { editPlan, editPlansForDoc, panel, wrap, RANKING_RULE } from './plan.mjs';
 import * as E from './editplan.mjs';
+import * as LOCAL from './grcz11-local.mjs';
+import * as EVO2 from './evo2.mjs';
 
 const argv = process.argv.slice(2);
 const flag = n => argv.includes(`--${n}`);
@@ -45,7 +47,8 @@ function printPlan(r) {
     console.log(`  ${n.padEnd(9)} ${b.n_found} protospacer(s) found; ${b.search_window_bp}`);
     for (const g of b.guides) console.log(`      ${g.spacer} ${g.pam}  strand ${g.strand > 0 ? '+' : '-'}  cut ${L.chromosome}:${g.cut_site_chrom}` +
       (g.distance_cut_to_edit_bp != null ? `  ${g.distance_cut_to_edit_bp} bp from edit` : `  frameshift from codon ${g.frameshift_from_codon} (loses ${(100 * (g.protein_fraction_lost_if_frameshift_here ?? 0)).toFixed(1)} % of the protein)`) +
-      `  on-target ${g.on_target.score} [HEURISTIC]${g.on_target.flags.length ? '  !! ' + g.on_target.flags[0] : ''}`);
+      `  Doench2014 ${g.on_target_doench2014?.ran ? g.on_target_doench2014.score + ' [PUBLISHED MODEL, mouse/human cells]' : 'n/a'}` +
+      `  ours ${g.on_target.score} [OUR HEURISTIC, not fitted]${g.on_target.flags.length ? '  !! ' + g.on_target.flags[0] : ''}`);
   }
   const bp = pl.better_placed_alternative;
   if (bp?.not_applicable) console.log(`  better     n/a - ${bp.not_applicable}`);
@@ -54,10 +57,30 @@ function printPlan(r) {
   if (!ots.length) console.log(`  off-target NOT RUN (${pl.off_target?.reason || 'n/a'})`);
   for (const o of ots) {
     if (!o.search?.ran) { console.log(`  off-target ${o.spacer}: NOT RUN (${o.search?.reason})`); continue; }
-    console.log(`  off-target ${o.spacer}: ${o.search.n_sites_within_mismatch_limit} GRCz11 site(s) with <= ${o.search.max_mismatches} mismatches (${o.perfect_matches} perfect, incl. the on-target); MIT specificity ${o.mit_specificity?.specificity} [PREDICTION, A FLOOR]`);
-    for (const s of (o.search.sites || []).filter(x => x.n_mismatches > 0).slice(0, 6)) console.log(`      ${s.n_mismatches} mm at ${s.mismatch_positions.join(',')}  chr${s.chromosome}:${s.hit_from}-${s.hit_to}  ${Array.isArray(s.gene_context) && s.gene_context.length ? s.gene_context.map(g => (g.symbol || g.id) + ' (' + g.biotype + ')').join(', ') : 'no gene within 2 kb'}`);
-    if (o.exonic_off_targets?.length) console.log(`      !! ${o.exonic_off_targets.length} site(s) sit in or near a PROTEIN-CODING gene; sequence these in the founders`);
+    console.log(`  off-target ${o.spacer}: ${o.search.n_sites_within_mismatch_limit} GRCz11 site(s) with <= ${o.search.max_mismatches} mismatches ` +
+      `${JSON.stringify(o.search.sites_by_mismatch_count || {})}; ${o.perfect_matches} perfect` +
+      `${o.on_target_found ? ' (the intended on-target site - positive control OK)' : ' (!! the intended site was NOT among them)'}` +
+      `; MIT specificity ${o.mit_specificity?.specificity}` +
+      (o.search.method === 'local-exhaustive' ? '  [EXHAUSTIVE for substitutions; blind to bulges, to other loci and to YOUR strain]' : '  [PREDICTION, A FLOOR]'));
+    // "no gene within 2 kb" and "we could not find out" are DIFFERENT FACTS. Printing the second as the
+    // first is the exact conflation the data layer was fixed to avoid, so the print must not reintroduce it.
+    const ctx = s => Array.isArray(s.gene_context)
+      ? (s.gene_context.length ? s.gene_context.map(g => (g.symbol || g.id) + ' (' + g.biotype + ')').join(', ') : 'no gene within 2 kb')
+      : s.gene_context?.error ? 'gene context UNKNOWN - the Ensembl lookup failed (NOT a finding that it is intergenic)'
+      : s.gene_context?.not_attempted ? 'gene context UNKNOWN - not looked up (NOT a finding that it is intergenic)'
+      : 'gene context UNKNOWN';
+    for (const s of (o.search.sites || []).filter(x => x.n_mismatches > 0).slice(0, 6)) console.log(`      ${s.n_mismatches} mm at ${s.mismatch_positions.join(',')}  chr${s.chromosome || s.accession}:${s.hit_from}-${s.hit_to}  ${ctx(s)}`);
+    if (o.exonic_off_targets?.length) console.log(`      !! ${o.exonic_off_targets.length} site(s) sit in or near a PROTEIN-CODING gene; sequence these in the founders: ${o.exonic_off_targets.slice(0, 6).map(e => `${e.genes.join('/')} (${e.n_mismatches} mm)`).join(', ')}`);
+    const ann = o.search.gene_annotation;
+    if (ann && (ann.n_annotation_failed || ann.n_not_attempted)) console.log(`      gene context: ${ann.n_annotated} annotated, ${ann.n_annotation_failed} failed, ${ann.n_not_attempted} not attempted - those are UNKNOWN, not intergenic`);
   }
+  if (pl.evo2) {
+    const ev = pl.evo2;
+    console.log(`  Evo2       ${ev.edited_vs_reference?.ran ? `edited vs reference: delta ${ev.edited_vs_reference.delta_per_base}/base (${ev.edited_vs_reference.direction})`
+      : `NOT RUN (${ev.edited_vs_reference?.reason || ev.not_applicable || ev.reason || 'NVIDIA_API_KEY not set'})`}`);
+    console.log(`             [RANKS, NEVER GATES. A likelihood is not a phenotype prediction, not evidence of safety, and not evidence of specificity.]`);
+  }
+  if (pl.ranking) console.log(`  ranking    ${pl.ranking.orders.length} separate orders, never one blended score: ${pl.ranking.orders.map(o => o.id).join(', ')}`);
   for (const d of (Array.isArray(pl.hdr_donor) ? pl.hdr_donor : []).filter(x => x.ran)) {
     console.log(`  ssODN      ${d.style}, ${d.length_nt} nt, arms ${d.arms.left_nt}/${d.arms.right_nt} (${d.arms.asymmetry}); protein check: ${d.protein_check?.status}`);
     console.log(`             order 5'-${d.sequence_to_order_5to3}-3'`);
@@ -88,7 +111,13 @@ function printPlan(r) {
 
 const opts = { network: !flag('no-network'), offtarget: !flag('no-offtarget'), window: +val('window', 30), arms: val('arms', 'symmetric') };
 
-if (flag('methods')) { console.log(JSON.stringify({ species_limit: E.SPECIES_REFUSAL, on_target: E.ON_TARGET_RULE, ranking: RANKING_RULE, off_target_db: E.OFFTARGET_DB, mit: E.MIT_CITATION, feasibility: E.FEASIBILITY, falsifiers: E.FALSIFIERS }, null, 1)); process.exit(0); }
+if (flag('methods')) { console.log(JSON.stringify({ species_limit: E.SPECIES_REFUSAL,
+  on_target_published_model: { citation: E.DOENCH.CITATION, coefficient_source: E.DOENCH.COEFFICIENT_SOURCE_URL, self_test: E.DOENCH.selfTest(), what_it_is_not: E.DOENCH.RULE_SET_1_NOT },
+  rule_set_2: E.DOENCH.RULE_SET_2, on_target_our_heuristic: E.ON_TARGET_RULE, ranking: RANKING_RULE,
+  off_target_methods: E.OFFTARGET_METHODS, off_target_local_index: LOCAL.indexStatus(), ncbi_experience: E.NCBI_QUEUE_EXPERIENCE,
+  off_target_db_legacy: E.OFFTARGET_DB, mit: E.MIT_CITATION,
+  arm_length_evidence: E.ARM_LENGTH_EVIDENCE, cut_distance_evidence: E.CUT_DISTANCE_EVIDENCE,
+  evo2: EVO2.METHODS, feasibility: E.FEASIBILITY, falsifiers: E.FALSIFIERS }, null, 1)); process.exit(0); }
 
 const gene = val('gene'), change = val('change'), organism = val('organism');
 let plans;

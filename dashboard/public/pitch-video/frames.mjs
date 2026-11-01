@@ -41,21 +41,27 @@ if (process.argv.includes('--page')) {
   const { chromium } = require(process.env.PITCH_PW || 'C:/Temp/partedit-deps/node_modules/playwright-core');
   const EDGE = process.env.PITCH_BROWSER || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
   const server = await serve(pub);
-  const base = `http://127.0.0.1:${server.address().port}/pitch-video/index.html?rec=1&paused=1&t=`;
+  const base = `http://127.0.0.1:${server.address().port}/pitch-video/index.html?rec=1&paused=1`;
   const browser = await chromium.launch({ executablePath: EDGE, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--hide-scrollbars', '--autoplay-policy=no-user-gesture-required'] });
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1, colorScheme: 'dark' });
   const errors = [];
   page.on('pageerror', e => errors.push(String(e.message).slice(0, 200)));
+  page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text().slice(0, 160)); });
+  // Load ONCE, then seek per frame. The page's CSS animations run on the wall clock, so the gap
+  // between seeking and the screenshot is the only error; reloading per frame put every frame
+  // more than a second past its own label.
+  await page.goto(base, { waitUntil: 'networkidle', timeout: 120000 });
+  await page.waitForFunction(() => window.__pitch && window.__pitch.ready, null, { timeout: 90000 });
+  const LAG = 0.14;                       // seconds between the seek call and the shutter
   for (const { t, tag } of times) {
-    await page.goto(base + t.toFixed(2), { waitUntil: 'networkidle', timeout: 90000 });
-    await page.waitForFunction(() => window.__pitch && window.__pitch.ready, null, { timeout: 60000 });
-    await page.waitForTimeout(1200);              // let the paused CSS animations land on their frame
+    await page.evaluate(v => { window.__pitch.playing = false; window.__pitch.seek(v); }, Math.max(0, t - LAG));
+    await page.waitForTimeout(LAG * 1000);
     const f = path.join(framesDir, `${String(Math.round(t * 10)).padStart(4, '0')}-${tag}.jpg`);
     await page.screenshot({ path: f, type: 'jpeg', quality: 86 });
     console.log(`${tag.padEnd(12)} t=${t.toFixed(1).padStart(5)}  ${path.basename(f)}`);
   }
   await browser.close(); server.close();
-  if (errors.length) console.log('\nPAGE ERRORS:\n  ' + [...new Set(errors)].join('\n  '));
+  if (errors.length) console.log('PAGE ERRORS:\n  ' + [...new Set(errors)].join('\n  '));
 } else {
   const video = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2] : path.join(OUT, 'pitch-2min.mp4');
   if (!fs.existsSync(video)) { console.error('no video at ' + video + ' \u2014 run record.mjs, or pass --page'); process.exit(1); }
