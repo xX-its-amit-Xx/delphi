@@ -35,7 +35,10 @@ const WFILE = { '1.0.0': 'score-weights.json', '1.1.0': 'score-weights.v1.1.0.js
 if (!WFILE) throw new Error(`unknown scorer version ${VERSION}`);
 const WV = JSON.parse(fs.readFileSync(path.join(VAL, WFILE), 'utf8'));
 const THRESH = WV.plausible_threshold;
-const designFor = it => (VERSION === '1.2.0' ? it.bench : it.design);
+// EVAL_DESIGN=specimen forces the specimen mapping on v1.2.0 too (matched-input comparison with v1.0.0/v1.1.0).
+const DESIGN_MODE = process.env.EVAL_DESIGN || (VERSION === '1.2.0' ? 'bench' : 'specimen');
+const designFor = it => (DESIGN_MODE === 'bench' ? it.bench : it.design);
+const LABEL = VERSION + (DESIGN_MODE !== (VERSION === '1.2.0' ? 'bench' : 'specimen') ? ` (${DESIGN_MODE} input)` : '');
 const callScorer = (design, opts) => SC.designScore(design, { ...opts, version: VERSION });
 const SPLITS = ['specimen', 'species', 'family'];
 const norm = x => String(x ?? '').trim().toLowerCase().replace(/[_\s]+/g, ' ');
@@ -49,7 +52,7 @@ function versions() {
   return {
     run_id: RUN_ID, node: process.version, started: new Date().toISOString(),
     score_weights: { version: W.version, file: WFILE, sha256: sha(path.join(VAL, WFILE)), weights: W.weights, plausible_threshold: W.plausible_threshold, alpha: W.alpha },
-    scorer_version_requested: VERSION, design_input: VERSION === '1.2.0' ? '{params, lean_spec, doc} (raw benchmark fields)' : '{specimen} mapped from params (all this version reads) or the doc',
+    scorer_version_requested: VERSION, label: LABEL, design_input: DESIGN_MODE === 'bench' ? '{params, lean_spec, doc} (raw benchmark fields)' : '{specimen} mapped from params (the fields v1.0.0/v1.1.0 read) or the doc',
     scorer_files: Object.fromEntries(['score.mjs', 'score-v12.mjs', 'phenotype.mjs', 'sanity.mjs', 'genotype.mjs', 'lean-components.mjs', 'SCORER-PREREGISTRATION.md', 'SCORER-PREREGISTRATION-v1.1.0.md', 'SCORER-PREREGISTRATION-v1.1.1.md', 'SCORER-PREREGISTRATION-v1.2.0.md', 'data/trait-envelopes.v1.2.0.json'].map(f => [f, sha(path.join(VAL, f))])),
     benchmark: { prereg_sha256: sha(path.join(B, 'BENCHMARK-PREREGISTRATION.md')), prereg_sha256_declared: fs.existsSync(path.join(B, 'PREREG.sha256')) ? fs.readFileSync(path.join(B, 'PREREG.sha256'), 'utf8').trim().split(/\s+/)[0] : null,
       manifest_sha256: sha(path.join(B, 'manifest.json')), files: Object.fromEntries(files.map(f => [f, sha(path.join(B, f))])) },
@@ -195,12 +198,41 @@ function weightPerturbation(rows0) {
 function fullBlock(rows, label) { return { metrics: metricsFor(rows, label), baselines: baselines(rows), per_taxon: perTaxon(rows), weight_perturbation: weightPerturbation(rows),
   readable_only: (() => { const r = rows.filter(x => x.readable && (x.y === 1 || x.altered_read == null || x.altered_read > 0)); return { what: 'positives the scorer can read (>= 4 body features or a pectoral length) vs negatives whose altered traits include at least one the scorer reads', ...aucBlock(withWorstCase(r).filter(x => x.y === 1), withWorstCase(r).filter(x => x.y === 0), 300) }; })() }; }
 
+// AUC of the scorer vs nearest-neighbour distance alone on the same rows, with a paired family bootstrap of the difference.
+const nnScore = r => (r.nearest?.d != null ? -r.nearest.d : r.nearest_fin_d != null ? -r.nearest_fin_d : -1e9);
+function pairedVsNN(rows, B = 300) {
+  const pos = f => rows.filter(r => r.y === 1).map(f), neg = f => rows.filter(r => r.y === 0).map(f);
+  const groups = new Map(); rows.forEach((r, i) => { const c = clusterOf(r); if (!groups.has(c)) groups.set(c, []); groups.get(c).push(i); });
+  const keys = [...groups.keys()], rnd = S.mulberry32(7), diffs = [];
+  for (let b = 0; b < B; b++) { const idx = []; for (let i = 0; i < keys.length; i++) idx.push(...groups.get(keys[Math.floor(rnd() * keys.length)]));
+    const P = idx.filter(i => rows[i].y === 1), N = idx.filter(i => rows[i].y === 0);
+    diffs.push(S.rocAuc(P.map(i => rows[i].score), N.map(i => rows[i].score)) - S.rocAuc(P.map(i => nnScore(rows[i])), N.map(i => nnScore(rows[i])))); }
+  return { nn_auc: S.r4(S.rocAuc(pos(nnScore), neg(nnScore))), diff: { mean: S.r4(S.mean(diffs)), lo: S.r4(S.quantile(diffs, 0.025)), hi: S.r4(S.quantile(diffs, 0.975)) } };
+}
+// S6 controls: the build/lean-controls.json specs. With the raw design (v1.2.0) the control's realistic claims go in as
+// lean_spec beside its specimen's params; with the specimen mapping the claims cannot be passed, which is stated.
+async function scoreControls(BM, IDX) {
+  const all = [...BM.devLabelled, ...BM.heldoutLabelled];
+  const out = [];
+  for (const cn of BM.controls) {
+    const pid = cn.id === 'control-zf' ? 'mut-baseline-wt-adult' : cn.id.replace(/^control-/, '');
+    const it = all.find(x => x.id === pid);
+    if (!it) { out.push({ id: cn.id, specimen_item: pid, score: null, rank_score: null, note: 'no matching benchmark item' }); continue; }
+    const design = DESIGN_MODE === 'bench' ? { ...it.bench, lean_spec: cn.spec } : it.design;
+    let r; try { r = await callScorer(design, { reference_set_excluding: exclusionsFor(it, 'family'), network: false }); } catch (e) { r = { error: e.message }; }
+    out.push({ id: cn.id, specimen_item: pid, score: r.score ?? null, rank_score: r.rank_score ?? null, error: r.error,
+      note: DESIGN_MODE === 'bench' ? 'scored with the control spec (realistic claims) as lean_spec beside its specimen params' : 'this input cannot carry flight claims; the control is scored on its specimen params' });
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------- pre-registered endpoints (BENCHMARK-PREREGISTRATION.md sections 2-4)
 function endpoints(R, extra) {
   const H = withWorstCase(R.heldout.family), HS = withWorstCase(R.heldout.specimen);
   const pick = (rows, f) => rows.filter(f);
   const fsPos = r => r.subset === 'fishshapes_specimen', fsStd = r => (r.subset === 'decoy_shuffle_all' || r.subset === 'decoy_shuffle_shape') && r.src === 'fishshapes';
   const p1 = aucBlock(pick(H, fsPos), pick(H, fsStd));
+  const p1nn = pairedVsNN([...pick(H, fsPos), ...pick(H, fsStd)]);
   const p1loso = aucBlock(pick(HS, fsPos), pick(HS, fsStd), 300);
   const allPosH = H.filter(r => r.y === 1).map(r => r.score), q05 = S.quantile(allPosH, 0.05);
   const easyT = ['out_of_range_extrapolation', 'law_breaker', 'impossible_combo', 'organ_containment'];
@@ -220,9 +252,9 @@ function endpoints(R, extra) {
   const ont = ALL.filter(r => r.subset === 'ontogeny_stage');
   const fsP25 = S.quantile(ALL.filter(r => r.subset === 'fishshapes_specimen').map(r => r.score), 0.25);
   const s5 = ALL.filter(r => r.subset === 'specimen_with_fins' || r.subset === 'specimen_mass_length');
-  const lbs = ALL.filter(r => r.subset === 'law_breaker').map(r => r.score), ctrl = extra.controls;
+  const lbs = ALL.filter(r => r.subset === 'law_breaker').map(r => r.score), ctrlAll = extra.controls, ctrl = ctrlAll.filter(c => c.score != null);
   const crit = [
-    { id: 'P1', primary: true, text: 'held-out LOFO: FishShapes positives vs FishShapes standard decoys: AUC >= 0.75 and family-bootstrap lower 95 % bound > 0.50', value: { auc: p1.roc_auc, ci: [p1.ci_family.lo, p1.ci_family.hi], n_pos: p1.n_pos, n_neg: p1.n_neg }, pass: p1.roc_auc >= 0.75 && p1.ci_family.lo > 0.5 },
+    { id: 'P1', primary: true, text: 'held-out LOFO: FishShapes positives vs FishShapes standard decoys: AUC >= 0.75 and family-bootstrap lower 95 % bound > 0.50', value: { auc: p1.roc_auc, ci: [p1.ci_family.lo, p1.ci_family.hi], n_pos: p1.n_pos, n_neg: p1.n_neg, nn_auc: p1nn.nn_auc, minus_nn: p1nn.diff }, pass: p1.roc_auc >= 0.75 && p1.ci_family.lo > 0.5 },
     { id: 'P2', primary: true, text: 'held-out LOFO: >= 90 % of easy negatives (pooled) score below the 5th percentile of all held-out positive scores', value: { frac: S.r4(p2frac), n: easy.length, p05_of_positives: S.r4(q05), by_type: easyBy }, pass: p2frac >= 0.9 },
     { id: 'P3', primary: true, text: 'held-out LOFO: median FishShapes positive score > 75th percentile of standard decoys (both sources)', value: { median_positive: S.r4(medPos), p75_decoys: S.r4(q75d) }, pass: medPos > q75d },
     { id: 'S1', primary: false, text: 'held-out LOFO: FishBase positives vs FishBase standard decoys AUC >= 0.70', value: { auc: s1.roc_auc, ci: [s1.ci_family.lo, s1.ci_family.hi], n_pos: s1.n_pos, n_neg: s1.n_neg }, pass: s1.roc_auc >= 0.7 },
@@ -230,7 +262,7 @@ function endpoints(R, extra) {
     { id: 'S3', primary: false, text: 'memorisation: P1 AUC under LOSO minus under LOFO <= 0.10', value: { loso: p1loso.roc_auc, lofo: p1.roc_auc, gap: S.r4(s3gap) }, pass: s3gap <= 0.1 },
     { id: 'S4', primary: false, text: '>= 75 % of the 12 ontogeny stages score above the median of the standard decoys', value: { k: ont.filter(r => r.score > stdMedAll).length, n: ont.length, decoy_median: S.r4(stdMedAll), scores: ont.map(r => [r.id, S.r4(r.score)]) }, pass: ont.length && ont.filter(r => r.score > stdMedAll).length / ont.length >= 0.75 },
     { id: 'S5', primary: false, text: 'each Park & Choi / Makiguchi specimen scores above the 25th percentile of FishShapes positives', value: { p25_fishshapes: S.r4(fsP25), below: s5.filter(r => r.score <= fsP25).map(r => [r.id, S.r4(r.score)]), n: s5.length }, pass: s5.length > 0 && s5.every(r => r.score > fsP25) },
-    { id: 'S6', primary: false, text: 'Lean controls (real Park & Choi specimens, realistic claims) are not ranked below any law-breaker', value: { controls: ctrl.map(c => [c.id, S.r4(c.score)]), max_law_breaker: S.r4(Math.max(...lbs)), note: 'the scorer has no input for flight claims, so a control is scored on the same params as its specimen' }, pass: ctrl.length > 0 && ctrl.every(c => c.score >= Math.max(...lbs)) },
+    { id: 'S6', primary: false, text: 'Lean controls (real Park & Choi specimens, realistic claims) are not ranked below any law-breaker', value: { controls: ctrlAll.map(c => [c.id, S.r4(c.score)]), max_law_breaker: S.r4(Math.max(...lbs)), note: ctrlAll[0]?.note || '' }, pass: ctrl.length > 0 && ctrl.every(c => c.score >= Math.max(...lbs)) },
   ];
   const mut = ALL.filter(r => /^mutant_(quantified|qualitative)$/.test(r.subset)).map(r => { const b = ALL.find(x => x.id === r.paired_baseline); return { id: r.id, score: S.r4(r.score), baseline: r.paired_baseline, baseline_score: b ? S.r4(b.score) : null, diff: b ? S.r4(r.score - b.score) : null }; });
   const pctl = (arr, v) => S.r4(arr.filter(x => x < v).length / arr.length);
@@ -240,7 +272,22 @@ function endpoints(R, extra) {
 }
 
 // ---------------------------------------------------------------- main
-if (!process.env.EVAL_WORKER) await main();
+if (!process.env.EVAL_WORKER) await (process.env.EVAL_REANALYSE ? reanalyse(process.env.EVAL_REANALYSE) : main());
+// Re-run the analysis (not the scoring) of an earlier run from its rows file: used when an analysis bug is fixed.
+// Canary, audit, stability and attacks are carried over from the original run; controls are rescored (4 calls).
+async function reanalyse(file) {
+  const t0 = Date.now();
+  const old = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const rows = JSON.parse(zlib.gunzipSync(fs.readFileSync(old.rows_file)).toString());
+  if (old.versions.score_weights.version !== VERSION) throw new Error(`EVAL_VERSION ${VERSION} does not match the run's ${old.versions.score_weights.version}`);
+  await PH.loadReferences(); const IDX = await buildIndex(); const BM = await loadBenchmark();
+  const R = { heldout: rows.heldout, dev: rows.dev };
+  const controls = await scoreControls(BM, IDX);
+  const V = { ...old.versions, reanalysed: { at: new Date().toISOString(), evaluator_files: versions().evaluator_files, score_mjs_now: sha(path.join(VAL, 'score.mjs')), why: 'analysis fixes: S6 controls scored from lean-controls.json specs (control-zf mapped to the wild-type baseline), P1 nearest-neighbour baseline added; no item was rescored' } };
+  const results = analyse(R, rows.own, controls, BM, V, old.canary);
+  for (const k of ['exclusion_audit', 'stability', 'adversarial', 'seconds', 'rows_file']) results[k] = old[k];
+  await finish(results, R, rows.own, IDX, BM, t0, false);
+}
 async function main() {
   const t0 = Date.now();
   const V = versions();
@@ -273,8 +320,13 @@ async function main() {
   }
   const own = await scoreMany(BM.unlabelled, 'family', IDX);
   // S6 controls: the real Park & Choi specimens (their params; the scorer cannot read flight claims)
-  const allFam = [...(R.dev.family || []), ...R.heldout.family];
-  const controls = BM.controls.map(cn => { const pid = cn.id.replace(/^control-/, ''); const r = allFam.find(x => x.id === pid); return { id: cn.id, specimen_item: pid, score: r?.score ?? null }; });
+  const controls = await scoreControls(BM, IDX);
+  const results = analyse(R, own, controls, BM, V, canary);
+  results.exclusion_audit = { checked: audit.checked, nearest_reported: audit.nearest_reported, unknown_taxon_nearest: audit.unknown_taxon_nearest, n_violations: audit.violations.length, pass: audit.violations.length === 0, violations: audit.violations.slice(0, 50) };
+  await finish(results, R, own, IDX, BM, t0, true);
+}
+
+function analyse(R, own, controls, BM, V, canary) {
 
   const results = { versions: V, benchmark_source: BM.source, benchmark_notes: BM.notes, dev_note: R.dev_note, threshold: THRESH, canary,
     genus_split: 'NOT RUN: the scorer\'s leave-out options have no genus key (phenotype.mjs excludeMatcher accepts ids, species, family, order, organism groups). splits.json: report NOT RUN rather than substitute.',
@@ -288,14 +340,18 @@ async function main() {
   if (hasRank) {
     const toRank = rows => rows.map(r => ({ ...r, score: r.rank_score }));
     const RR = { heldout: Object.fromEntries(SPLITS.map(s => [s, toRank(R.heldout[s])])), dev: Object.fromEntries(Object.entries(R.dev).filter(([k]) => SPLITS.includes(k)).map(([k, v]) => [k, toRank(v)])) };
-    const ctrlR = BM.controls.map(cn => { const pid = cn.id.replace(/^control-/, ''); const r = [...(RR.dev.family || []), ...RR.heldout.family].find(x => x.id === pid); return { id: cn.id, specimen_item: pid, score: r?.score ?? null }; });
+    const ctrlR = controls.map(c => ({ ...c, score: c.rank_score }));
     const ER = endpoints(RR, { controls: ctrlR, own: toRank(own) });
     results.rank = { what: 'the same endpoints with rank_score as the score (the scorer designates rank_score for ranking; the 0.5 cut does not apply to it, so the threshold columns here are not meaningful)',
       criteria: ER.criteria, overall_primary_pass: ER.overall_primary_pass, heldout_family: { metrics: metricsFor(RR.heldout.family, 'held-out family-out, rank_score'), baselines: baselines(RR.heldout.family) } };
   }
-  results.exclusion_audit = { checked: audit.checked, nearest_reported: audit.nearest_reported, unknown_taxon_nearest: audit.unknown_taxon_nearest, n_violations: audit.violations.length, pass: audit.violations.length === 0, violations: audit.violations.slice(0, 50) };
+  results.controls = controls;
+  return results;
+}
 
-  if (!process.env.EVAL_SKIP_STABILITY) {
+async function finish(results, R, own, IDX, BM, t0, fresh) {
+  const V = results.versions;
+  if (fresh && !process.env.EVAL_SKIP_STABILITY) {
     const rnd = S.mulberry32(99), byT = {}; for (const i of BM.heldoutLabelled) (byT[i.subset] ||= []).push(i);
     const sub = []; for (const xs of Object.values(byT)) sub.push(...[...xs].sort(() => rnd() - 0.5).slice(0, Math.max(20, Math.round(xs.length * 0.08))));
     const runs = [];
@@ -308,21 +364,22 @@ async function main() {
     const a = runs.map(r => r.p1_auc);
     results.stability = { what: `a fixed stratified ${sub.length}-item sample of held-out items (LOFO) rescored under 5 seeds of the scorer's species split (phenotype.useSeed: changes its calibration and train pool)`, runs, p1_auc_range: S.r4(Math.max(...a) - Math.min(...a)) };
   }
-  if (!process.env.EVAL_SKIP_ADVERSARIAL) results.adversarial = await (await import('./adversarial.mjs')).run({ designScore: callScorer, quick: false, log });
-  results.seconds = Math.round((Date.now() - t0) / 1000);
+  if (fresh && !process.env.EVAL_SKIP_ADVERSARIAL) results.adversarial = await (await import('./adversarial.mjs')).run({ designScore: callScorer, quick: false, log });
+  if (fresh) results.seconds = Math.round((Date.now() - t0) / 1000);
 
   // ---- outputs
+  const RID = V.run_id;
   fs.mkdirSync(ROWS_DIR, { recursive: true });
-  const allRows = { heldout: R.heldout, dev: R.dev, own };
-  fs.writeFileSync(path.join(ROWS_DIR, `${RUN_ID}.rows.json.gz`), zlib.gzipSync(JSON.stringify(allRows)));
+  if (fresh) fs.writeFileSync(path.join(ROWS_DIR, `${RID}.rows.json.gz`), zlib.gzipSync(JSON.stringify({ heldout: R.heldout, dev: R.dev, own })));
+  if (!results.rows_file) results.rows_file = path.join(ROWS_DIR, `${RID}.rows.json.gz`).replace(/\\/g, '/');
   const outDir = path.join(DIR, 'results'); fs.mkdirSync(outDir, { recursive: true });
-  const slim = JSON.stringify({ ...results, rows_file: path.join(ROWS_DIR, `${RUN_ID}.rows.json.gz`).replace(/\\/g, '/') }, null, 1);
-  fs.writeFileSync(path.join(outDir, `${RUN_ID}.json`), slim); fs.writeFileSync(path.join(outDir, 'latest.json'), slim);
+  const slim = JSON.stringify(results, null, 1);
+  fs.writeFileSync(path.join(outDir, `${RID}${fresh ? '' : '_reanalysed'}.json`), slim); fs.writeFileSync(path.join(outDir, 'latest.json'), slim);
   (await import('./publish.mjs')).publish({ ...results, rows_file: undefined });
 
-  console.log(JSON.stringify({ run: RUN_ID, weights: V.score_weights.version, score_mjs: V.scorer_files['score.mjs'].slice(0, 12), prereg: V.benchmark.prereg_sha256, manifest: V.benchmark.manifest_sha256,
+  console.log(JSON.stringify({ run: RID, label: V.label, weights: V.score_weights.version, score_mjs: V.scorer_files['score.mjs'].slice(0, 12), prereg: V.benchmark.prereg_sha256, manifest: V.benchmark.manifest_sha256,
     heldout: Object.fromEntries(SPLITS.map(s => { const m = results.heldout[s].metrics; return [s, { auc: m.roc_auc, ci: [m.ci_family.lo, m.ci_family.hi], pr: m.pr_auc, real_above: m.real_above_threshold.frac, neg_below: m.negatives_below_threshold.frac }]; })),
     criteria: results.criteria.map(c => `${c.id}:${c.pass ? 'PASS' : 'FAIL'} ${JSON.stringify(c.value).slice(0, 160)}`), overall_primary_pass: results.overall_primary_pass,
-    audit: { pass: results.exclusion_audit.pass, n: results.exclusion_audit.n_violations, checked: audit.checked }, adversarial: results.adversarial?.headline, seconds: results.seconds }, null, 1));
-  if (!results.exclusion_audit.pass) { console.error(`EXCLUSION AUDIT FAILED: ${audit.violations.length} scored item(s) got a reference that should have been left out. First: ${JSON.stringify(audit.violations[0])}`); process.exit(2); }
+    audit: { pass: results.exclusion_audit.pass, n: results.exclusion_audit.n_violations, checked: results.exclusion_audit.checked }, rank: results.rank ? results.rank.criteria.map(c => `${c.id}:${c.pass ? 'PASS' : 'FAIL'}`) : null, adversarial: results.adversarial?.headline, seconds: results.seconds }, null, 1));
+  if (!results.exclusion_audit.pass) { console.error(`EXCLUSION AUDIT FAILED: ${results.exclusion_audit.n_violations} scored item(s) got a reference that should have been left out. First: ${JSON.stringify(audit.violations[0])}`); process.exit(2); }
 }

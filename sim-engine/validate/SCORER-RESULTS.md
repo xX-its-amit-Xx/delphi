@@ -173,6 +173,73 @@ v1.0.0 passed 4 of 8; v1.1.0 passes 5 of 8.
 whose validation was blind.
 <!-- V11:END -->
 
+## v1.3.0: shuffled synthetic organisms cannot be caught without a joint model
+
+Pre-registration: `SCORER-PREREGISTRATION-v1.3.0.md`, sha256 `bac949e8...`, hashed before the run. Weights:
+`score-weights.v1.3.0.json`. Model: `joint.mjs`, `data/joint-model.v1.3.0.json`,
+`data/joint-calibration.v1.3.0.json`. Dev only; `heldout/` not read. v1.2.0 is untouched and still frozen for the
+blind run.
+
+### The finding, stated plainly
+
+**Detecting a shuffled synthetic organism requires a joint model. No set of per-trait ranges can do it, however
+well tuned.**
+
+The benchmark's standard decoys take each trait from a specimen of a different family. Every marginal therefore
+sits exactly where real fish sit, and only the **correlations between traits** are broken. A scorer assembled from
+per-trait envelopes asks only "is each trait a value a real fish could have?", and for these decoys the answer is
+yes for every trait. v1.2.0 scored **AUC 0.498 against FishBase decoys**: a coin flip, from 25 envelopes and
+20 traits. That is a structural limit of marginal checks, not a tuning shortfall.
+
+This matters beyond the benchmark. A generative model that gets every trait distribution right and the
+*correlations* wrong produces organisms that a marginal scorer calls plausible. Scoring synthetic designs needs a
+term that reads the joint structure.
+
+### What v1.3.0 adds
+
+One term, `p_joint`: the Mahalanobis distance of the log10 trait vector under a Gaussian fitted on dev positives,
+with the design's **own family held out of the fit exactly** (by subtracting that family's sufficient statistics).
+Calibrated empirically against real fish under leave-own-family-out, because real fish have far fatter tails than a
+Gaussian implies (q99 about 5-7 against chi-square's 2.4). It reports **which trait pair** is in an impossible
+combination, with that pair's correlation among real fish, so a low score is explainable.
+
+Everything else is v1.2.0 unchanged, reached through injection points so v1.2.0's behaviour is untouched.
+
+### Dev results, leave-one-family-out, 5 410 items, `rank_score`
+
+| endpoint | threshold | v1.2.0 | **v1.3.0** |
+|---|---|---|---|
+| P1 FishShapes positives vs decoys, AUC | >= 0.75 | 0.871 | **0.897** |
+| P2 easy negatives below the positives' 5th percentile | >= 90 % | 100 % | **100 %** (all four types) |
+| P3 median positive above the decoy 75th percentile | pass | **fail** (0.860 vs 1.000) | **pass** (0.819 vs 0.655) |
+| S1 FishBase positives vs decoys, AUC | >= 0.70 | **0.498** | **0.823** |
+| S2 hard negatives, AUC | >= 0.60 | **0.538** | **0.641** |
+| S4 ontogeny stages above the decoy median | >= 75 % | 75 % | **100 %** |
+| distinct values among 5 410 rows | | 1 310 | **5 064** (94 %) |
+| real positives still scored plausible | | 99.2 % | 98.7 % |
+
+Every pre-registered threshold is met on dev. The cost is as predicted and small: 0.5 % of real positives lose
+plausible status, because a calibrated test puts about 5 % of real fish in its own tail and some of those fall
+below the cut.
+
+**My predictions, scored honestly.** S1, S2, P1 and the sensitivity cost came out as predicted.
+I predicted **P3 may still fail**; it passed, because the joint term moved the decoy 75th percentile down from
+1.000 to 0.655. The prediction was wrong in the favourable direction.
+
+### Limits that remain
+
+- **A Gaussian on log traits is a crude model of fish shape:** one mode, no allometric curvature. It catches these
+  decoys *because they break the linear correlation structure*. A decoy preserving that structure would pass.
+- **Hard negatives are still the weakest** (S2 0.641). A single swapped trait barely moves the vector. The corner
+  chimeras are caught; single swaps are caught poorly.
+- **Dev is optimistic for this term**, since the model is fitted on dev positives. Family-held-out fitting is the
+  defence, and the blind held-out run is the test.
+- **Fins and physiology are not in the joint model.** No large source measures paired-fin size, so fins keep their
+  small-sample envelopes.
+- **The flow-matching density was not used.** Its blockers are unchanged and real: head depth is in its joint
+  density but not in designs, its split is by species rather than family, and its likelihood tail is unstable.
+
+
 ### Deviation 3: a crash in the shipped entry point, and how the dev numbers were produced
 
 **The bug.** `threeResults` in `score.mjs` read `r.state_envelope.outside.map(...)` behind a truthiness check only.
