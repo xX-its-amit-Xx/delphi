@@ -335,8 +335,10 @@ The weakest number in the row is the 0.00927 cm-FL-to-m-SL scale factor, and the
 
 ### Rules observed
 
-No Aves data, comparisons or parents: the held-out clade is named nowhere in these laws, and the one law built on repo
-measurements uses Exocoetidae growth rows. No credentials, no human ORCID, no e-mail address anywhere in a law, meta
+No data, comparisons or parents from the frozen holdout clade (`holdout/README.md`), which this file deliberately does
+not name: no law, meta, witness or draft of this round refers to it, and the one law built on repo measurements uses
+Exocoetidae growth rows. No claim about that clade was adjudicated; had one reached the queue head it would have been
+refused with that reason. No credentials, no human ORCID, no e-mail address anywhere in a law, meta
 or draft. Nothing was published to any nanopub registry — the candidates are repo files and board tasks only. Nothing
 was committed or deployed. Every law stops at `candidate`; acceptance is a person's decision and no agent made it.
 

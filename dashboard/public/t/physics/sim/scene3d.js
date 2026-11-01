@@ -559,6 +559,7 @@ export async function mount(opts = {}) {
     if (st.fish) st.fish.holder.visible = true;
     syncInputs();
     renderLegend();
+    renderSeaNote();
     return tr;
   }
 
@@ -714,6 +715,30 @@ export async function mount(opts = {}) {
     el.style.display = bits.length ? 'block' : 'none';
   }
 
+  // The sea on screen is NOT the sea the numbers would meet. env3d reports both: the true
+  // Pierson-Moskowitz significant wave height for the wind, and the readability-scaled height it
+  // actually draws. Both go on screen, under the picture, because a viewer judging "could it really
+  // fly in that?" from a scaled sea would be reading a flattered sea.
+  function seaFacts() {
+    try {
+      const s = ocean && ocean.info && ocean.info.sea;
+      if (!s || s.drawn_H_s_m == null || s.true_H_s_m == null) return { ok: false };
+      return {
+        ok: true, drawn: s.drawn_H_s_m, trueHs: s.true_H_s_m, wind: s.wind_m_s,
+        windSource: s.wind_source, peakLambda: s.true_peak_wavelength_m,
+        peakPeriod: s.true_peak_period_s,
+        ratio: s.true_H_s_m > 0 ? s.true_H_s_m / s.drawn_H_s_m : null,
+      };
+    } catch (e) { return { ok: false }; }
+  }
+  function renderSeaNote() {
+    const el = $('#s3seaNote'); if (!el) return;
+    const s = seaFacts();
+    el.innerHTML = s.ok
+      ? `<b>The sea is drawn to scale for the fish, not for the wind.</b> Significant wave height drawn <b>${fx(s.drawn, 3)} m</b>; the true Pierson–Moskowitz height at ${fx(s.wind, 1)} m/s of wind is <b>${fx(s.trueHs, 3)} m</b>${s.peakLambda ? `, peak wavelength ${fx(s.peakLambda, 0)} m` : ''}. env3d scales it (<code>0.12 × H<sub>s</sub></code>, clamped to 0.06–0.45 m) so a 0.2 m fish is not swallowed by one wave. <b>Do not read the sea state off this picture</b> — and note the solver has no sea state at all, so no number here depends on either figure.`
+      : `The sea is decorative: ${esc((ocean && ocean.source) || 'a stand-in until env3d.js reports its sea')}. The solver has no sea state, so no number depends on it.`;
+  }
+
   // creatures.js is another thread's file and is still changing: never let a throw inside it take the
   // legend, and therefore the whole 3D view, down with it.
   const creaturesLegend = () => {
@@ -730,9 +755,9 @@ export async function mount(opts = {}) {
     const f = st.fish;
     const spec = st.fishSpec || {};
     const cLegend = creaturesLegend(), cScope = creaturesScope();
-    const oi = (ocean && ocean.info) || null;
-    const seaLine = oi
-      ? `env3d.js ocean: the wave SPEEDS are the real deep-water ones for their wavelengths, the wave HEIGHT drawn is ${oi.drawn_H_s_m != null ? fx(oi.drawn_H_s_m, 3) + ' m' : 'a readability-scaled'} against a Pierson–Moskowitz H<sub>s</sub> of ${oi.true_H_s_m != null ? fx(oi.true_H_s_m, 3) + ' m' : '?'} at ${oi.wind_m_s != null ? fx(oi.wind_m_s, 1) : '?'} m/s wind — so the shape and the height are DECORATIVE, and env3d.js says so itself. Tile ${fx(oceanSize, 0)} m, cell ${ocean.cellSize ? fx(ocean.cellSize, 2) : '?'} m.`
+    const sea = seaFacts();
+    const seaLine = sea.ok
+      ? `env3d.js ocean. The wave <b>speeds</b> are the real deep-water ones for their wavelengths (&omega; = &radic;(gk)). The wave <b>height and wavelengths are not</b>: env3d draws H<sub>s</sub> = <b>${fx(sea.drawn, 3)} m</b> where the Pierson–Moskowitz sea for ${fx(sea.wind, 1)} m/s of wind is <b>${fx(sea.trueHs, 3)} m</b> &mdash; a factor of ${sea.ratio != null ? fx(sea.ratio, 1) : '?'} &mdash; and a 13/7.3/4.1/2.3 m band of wavelengths in place of the true ${sea.peakLambda != null ? fx(sea.peakLambda, 0) + ' m' : '83 m'} spectral peak. <b>It is scaled so a 0.2 m fish stays visible</b>: at the true scale the fish would be swallowed by one wave. ${esc(sea.windSource || '')} Tile ${fx(oceanSize, 0)} m, cell ${ocean.cellSize ? fx(ocean.cellSize, 2) : '?'} m.`
       : esc((ocean && ocean.source) || 'the fallback ocean in scene3d.js');
     const ens = st.ensemble;
     $('#s3legend').innerHTML = `
@@ -828,7 +853,7 @@ ${cScope.length ? `<details style="margin:8px 0 0"><summary class="small"><b>Wha
       // is read from env3d's analytic surface, not from this mesh, so coarsening it changes no number).
       if (st.fps > 0 && now > 2500) {
         if (prSteps < 2 && st.fps < 42) { prSteps++; pr = prSteps === 1 ? Math.min(pr, 1) : 0.8; renderer.setPixelRatio(pr); resize(); }
-        else if (prSteps >= 2 && !oceanCut && st.fps < 34) { oceanCut = true; oceanSegments = 48; makeOceanOf(oceanSize || 64); renderLegend(); }
+        else if (prSteps >= 2 && !oceanCut && st.fps < 34) { oceanCut = true; oceanSegments = 48; makeOceanOf(oceanSize || 64); renderLegend(); renderSeaNote(); }
       }
     }
 
@@ -1023,6 +1048,7 @@ ${cScope.length ? `<details style="margin:8px 0 0"><summary class="small"><b>Wha
       if (ocean.setConditions) ocean.setConditions(st.seaWind == null ? COND : { wind_m_s: st.seaWind });
       else makeOceanOf(oceanSize || 64);
       renderLegend();
+      renderSeaNote();
     };
   }
 
@@ -1290,6 +1316,7 @@ function layoutHtml() {
   <button id="s3ens" class="small" title="run an ensemble of draws (needs creatures.js)">ensemble</button>
 </div>
 <div id="s3scrubRow"><span id="s3summary"></span></div>
+<p class="small" id="s3seaNote" style="margin:8px 0 0;padding:7px 10px;border-left:3px solid var(--warn);background:var(--soft);border-radius:0 8px 8px 0"></p>
 <div id="s3banner"></div>
 <div id="s3legend"></div>
 <div class="s3slot" id="s3paramsSlot"></div>

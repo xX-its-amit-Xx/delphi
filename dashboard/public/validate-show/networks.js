@@ -264,10 +264,24 @@ async function resolveSubject(data, base) {
 
   /* ---- genes in play */
   let genes = uniq((design.edits || []).map(e => e && e.gene).filter(Boolean));
-  let geneRule, geneSourceLabel;
+  const swept = uniq(((data && data.gene_set && data.gene_set.swept) || []).filter(Boolean));
+  let geneRule, geneSourceLabel, sweptSet = new Set(swept);
   if (genes.length) {
     geneRule = `the ${genes.length} gene${genes.length === 1 ? '' : 's'} this design edits, as listed by the validator`;
     geneSourceLabel = 'data.design.edits';
+  } else if (swept.length) {
+    /* The run says which genes it actually swept. Those lead, and the part index tops the picture
+       up to the cap so the swept genes are shown in the company of their neighbours rather than
+       floating alone. The coverage statement from the run is printed with it. */
+    const extra = [];
+    for (const p of parts) for (const g of (p.genes || [])) {
+      const sym = Array.isArray(g) ? g[0] : g;
+      if (sym && !sweptSet.has(sym)) extra.push(sym);
+    }
+    genes = swept.concat(uniq(extra));
+    geneRule = `the ${swept.length} gene${swept.length === 1 ? '' : 's'} this run swept${parts.length ? `, shown among the genes the part index records for ${parts.map(p => p.label).join(' / ')}` : ''}`
+      + (data.gene_set.coverage_statement ? `. ${data.gene_set.coverage_statement}` : '');
+    geneSourceLabel = `data.gene_set.swept (${data.gene_set.rule || 'the run’s own sweep rule'}), topped up from omics/parts.json`;
   } else {
     /* no gene-level edits: the design is a shape change. Bridge part -> genes through the real
        part index, which lists the genes with recorded evidence in that part. */
@@ -308,9 +322,9 @@ async function resolveSubject(data, base) {
 
   const scored = genes.map(sym => {
     const r = rowsBySym.get(sym) || { pathway: 0, tx: 0, all: 0 };
-    return { sym, ...r, hasChain: chainBySym.has(sym), file: fileBySym.get(sym) || sym };
+    return { sym, ...r, swept: sweptSet.has(sym), hasChain: chainBySym.has(sym), file: fileBySym.get(sym) || sym };
   }).sort((a, b) =>
-    (b.hasChain - a.hasChain) || (b.pathway - a.pathway) || (b.tx - a.tx) || a.sym.localeCompare(b.sym));
+    (b.swept - a.swept) || (b.hasChain - a.hasChain) || (b.pathway - a.pathway) || (b.tx - a.tx) || a.sym.localeCompare(b.sym));
 
   const shown = scored.slice(0, MAX_NODES);
   const hidden = Math.max(0, scored.length - shown.length);
