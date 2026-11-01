@@ -7,7 +7,7 @@ versioned here. While the major version is 0, a minor bump may break callers; ea
 
 ## 0.8.0 (2026-11-01)
 
-**Added** (14 tools; 40 -> 54. Nothing removed, no schema changed.)
+**Added** (18 tools; 40 -> 58. Nothing removed, no schema changed.)
 
 Every outstanding registration note under `tools/` is applied, so the stdio MCP server, the HTTP bridge, the
 CLI and `contract.json` now all list the same tools. Before this, ten of them existed only as `POST
@@ -31,8 +31,13 @@ could not run a design through the validation framework over MCP.
 - **`edit_plan`, `edit_plan_methods`** (`tools/editplan-tools.mjs`, EDITPLAN-REGISTER.md). Zebrafish only;
   a proposal, never a protocol.
 - **`lean_open_questions`, `lean_open_question`, `lean_open_question_guard`**
-  (`lean/registry/open-questions/openq-tools.mjs`). No register note was ever written for these; the module
-  already exported the tool table in the shape `TOOLS` expects.
+  (`lean/registry/open-questions/openq-tools.mjs`, OPENQ-REGISTER.md). What the project holds UNSETTLED and
+  what it tried and could not establish. The guard refuses a statement that asserts one arm of an open
+  question, so automation cannot settle what the evidence has not.
+- **`leanbio_personas`, `leanbio_use_cases`, `leanbio_grand_questions`, `leanbio_tool_gap`**
+  (`pipeline/leanbio/capability-map/tools.mjs`, CAPABILITY-REGISTER.md). Read-only, no network, no writes.
+  `leanbio_grand_questions` must keep its `formalisable_core` / `empirical_remainder` split visible: a client
+  that renders only the core half turns a map of what is formalisable into a claim about what is known.
 
 **Fixed**
 

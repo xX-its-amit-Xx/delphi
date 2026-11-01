@@ -2,10 +2,11 @@
 
 Versions follow `version` in the root `package.json` (the server's package) and `VERSION` in `mcp/server.mjs`.
 
-## 0.7.0 (2026-11-01)
+## 0.8.0 (2026-11-01)
 
-The validation framework reaches the hosted server. 20 tools -> 34 hosted (35 over local stdio; `lean_propose`
-is the difference). A collaborator with no clone can now run a generated design through it.
+The validation framework and the LeanBio capability map reach the hosted server. 20 tools -> **38 hosted**
+(39 over local stdio; `lean_propose` is the difference). A collaborator with no clone can now run a generated
+design through the validation framework.
 
 - Added **`validate_generation`** — the entry point: generated organism + base organism + the desired
   phenotype as text -> five named results, five gates, never summed, plus per-scale coverage and a verdict
@@ -36,10 +37,19 @@ is the difference). A collaborator with no clone can now run a generated design 
     files that are never read and do not exist. Design ids such as `winged-zebrafish` and `tff` resolve
     from `anatomy-model/parametric/resolved/*.json`, which was already shipped. Check that a traced path
     exists before adding it.
-- Could not be exposed: the four capability-map tools (`leanbio_personas`, `leanbio_use_cases`,
-  `leanbio_grand_questions`, `leanbio_tool_gap`). They are named in
-  `pipeline/leanbio/capability-map/lib.mjs` but no handler module exists and no register note landed, so
-  there is nothing to register.
+- Added the four capability-map tools, `leanbio_personas`, `leanbio_use_cases`,
+  `leanbio_grand_questions` and `leanbio_tool_gap` (`pipeline/leanbio/capability-map/tools.mjs`,
+  `mcp/CAPABILITY-PATCH.md`). Read-only, no outbound call, no writes and no Lean build, so they need no
+  hosted-mode override and none is applied. `pipeline/leanbio/capability-map/*.{mjs,json}` added to
+  `package.json` `files` and `.dockerignore`; the `pipeline/leanbio/**` deploy filter already covered them.
+  - Carry the caveat into any UI: `leanbio_grand_questions` exists **for** the split between
+    `formalisable_core` (about premises) and `empirical_remainder` (about the world). A client that renders
+    only the core half turns a map of what is formalisable into a claim about what is known. `the_line` at
+    the top of every response and the envelope's `scope` both say so; keep them visible.
+  - These were registered late: `CAPABILITY-REGISTER.md`, `mcp/CAPABILITY-PATCH.md` and
+    `capability-map/tools.mjs` all landed while this work was in progress, after an earlier pass had
+    recorded them as impossible to expose (only the four *names* existed then, in
+    `capability-map/lib.mjs`, with no handler module). Re-checked rather than trusted.
 
 ## 0.6.0 (2026-11-01)
 

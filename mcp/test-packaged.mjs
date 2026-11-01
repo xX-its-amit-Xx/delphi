@@ -51,6 +51,10 @@ const CALLS = [
   ['omics_gene', { symbol: 'kcnk5b' }, r => ok(r.layers || r.gene, 'omics card returned')],
   ['lean_check', { design: { SL_m: 0.04, mass_kg: 0.0007 } }, r => { ok(r.verdicts.length > 0, 'laws evaluated'); ok(r.lawset, 'a lawset version'); }],
   ['leanbio_queue', { limit: 3 }, r => ok(r.items.length > 0, 'queue items')],
+  ['leanbio_personas', {}, r => ok(r.personas.length > 0 && r.personas.every(x => (x.tools || []).length > 0), 'every persona has a non-empty tool list')],
+  ['leanbio_use_cases', { limit: 5 }, r => ok(r.use_cases.length > 0, 'use cases returned')],
+  ['leanbio_grand_questions', {}, r => { ok(r.grand_questions.length > 0, 'grand questions returned'); ok(r.the_line, 'the proof/measurement line is stated'); }],
+  ['leanbio_tool_gap', { limit: 5 }, r => ok(r.gaps.length > 0, 'gaps returned')],
 ];
 
 let bad = 0;

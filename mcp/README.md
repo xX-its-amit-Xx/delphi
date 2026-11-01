@@ -222,6 +222,10 @@ Use `local` while building; use `network` when citing something or checking what
 | `lean_open_question` | One open question, failed theorem or requirement record in full: arms, Lean references, verbatim evidence quotes, what would settle it, and what in the project rests on the answer. |
 | `lean_open_question_guard` | Would this statement be refused for asserting one arm of an open question? Ask before writing the Lean, not after. Nothing is written. |
 | `edit_plan` | **stdio only, never on the hosted server** — see the reasoning below. |
+| `leanbio_personas` | Who could use a formalised law registry over biology: who they are, what they do today, what they would ask, and the tools each needs marked EXISTS / PARTIAL / MISSING. |
+| `leanbio_use_cases` | One row per concrete job: the question in a user's words, the ordered tool sequence that answers it TODAY, what is missing with its gap id, a worked example from this repo, and the honest limit of the answer. |
+| `leanbio_grand_questions` | The grand questions of biology, each split into the **formalisable core** (about premises, with the Lean declaration where one exists) and the **empirical remainder** (what only measurement can settle). Render both halves or neither — see the caveat below. |
+| `leanbio_tool_gap` | The deduplicated gap list, ranked by how many personas, use cases and grand questions each unblocks, plus `not_gaps`: the things deliberately absent, so a missing feature is distinguishable from an unmade decision. |
 
 ### What is on the hosted server, and why — decided per tool
 
@@ -247,10 +251,10 @@ That leaves per-tool judgement, which is this:
 | `organism_create`, `organism_edit`, `session_open`, `session_post`, `session_decide`, `swarm_post_task`, `swarm_claim`, `swarm_submit`, `swarm_try_edits` | **no** | They write files (organism documents, co-design sessions, the swarm board). The hosted server is read-only. |
 | `generate_candidates`, `generative_backends_status` | **no** | They need backend credentials and outbound calls. |
 | `design_from_spec`, `optimize` | **no** | They can run the seeded optimiser with a caller-set budget — unbounded CPU for an anonymous caller on a shared host. |
-| `leanbio_personas`, `leanbio_use_cases`, `leanbio_grand_questions`, `leanbio_tool_gap` | **could not be exposed** | The four capability-map tools are **named** in `pipeline/leanbio/capability-map/lib.mjs` (`CAPABILITY_TOOL_NAMES`) but no handler module exists for them, and `sim-engine/tools/CAPABILITY-REGISTER.md` / `mcp/CAPABILITY-PATCH.md` never landed. There is nothing to register. Their owning thread has to export a tool table first. |
+| `leanbio_personas`, `leanbio_use_cases`, `leanbio_grand_questions`, `leanbio_tool_gap` | **yes** | The capability map. Read-only, no outbound call, no writes, no Lean build, so no hosted override is needed. **Keep the caveat visible**: `leanbio_grand_questions` exists *for* the split between `formalisable_core` (about premises) and `empirical_remainder` (about the world) — a client that renders only the core half turns a map of what is formalisable into a claim about what is known. `the_line` and the envelope's `scope` both say so. |
 
-Counts after this change: **54** tools on the sim-engine server (`sim-engine/contract.json`, contract
-`0.8.0`), **34** on the hosted server and **35** over local stdio (`lean_propose` is the difference).
+Counts after this change: **58** tools on the sim-engine server (`sim-engine/contract.json`, contract
+`0.8.0`), **38** on the hosted server and **39** over local stdio (`lean_propose` is the difference).
 
 ### Lean laws
 
@@ -326,8 +330,8 @@ such as `winged-zebrafish` and `tff` resolve from `anatomy-model/parametric/reso
 already shipped. Check a traced path exists before adding it.
 
 ```bash
-npm pack                                 # 36.1 MB packed, 78.0 MB unpacked, 6 977 files
-tar xzf delphisci-mcp-0.7.0.tgz -C /tmp/empty && cd /tmp/empty/package && npm i --omit=dev
+npm pack                                 # 36.2 MB packed, 78.5 MB unpacked, 6 993 files
+tar xzf delphisci-mcp-0.8.0.tgz -C /tmp/empty && cd /tmp/empty/package && npm i --omit=dev
 node mcp/test-packaged.mjs                 # the whole check, from this copy
 ```
 
@@ -345,7 +349,8 @@ Files added for the validation framework, all traced rather than guessed: `sim-e
 `dashboard/public/t/physics/sim/creatures.js` (the physics thread's ensemble distributions),
 `sim-engine/validation/studio-results.json` (the independent harness the `model_confidence` is read from),
 `physics/glide-data.csv`, `genotype/cache/daane2021_fin_ratios.json`, `sequences/genes.json`, `omics/genes.json`,
-`omics/*/MANIFEST.json`, and `lean/registry/open-questions/**`.
+`omics/*/MANIFEST.json`, `lean/registry/open-questions/**` and
+`pipeline/leanbio/capability-map/*.{mjs,json}`.
 
 ## Current gaps
 
