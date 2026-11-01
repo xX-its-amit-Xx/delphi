@@ -54,6 +54,7 @@ const GROUPS = [
   { key: 'results', label: 'Results', items: [
     { key: 'results',  href: 'results/',        text: 'Results' },
     { key: 'deck',     href: 'deck/',           text: 'Pitch deck' },
+    { key: 'print',    href: 'print/',          text: 'Printable kit' },
     { key: 'evolve',   href: 'evolve/',         text: 'Enzymes' }
   ]},
   { key: 'evidence', label: 'Evidence', items: [
