@@ -37,8 +37,8 @@ candidate with a new binding violation and says "no design meets the spec" when 
 
 Three ways in:
 
-- **In the browser:** [`/blueprint3d/perturb`](https://delphi-mission-control.ashenoy000.workers.dev/blueprint3d/perturb)
-  on the dashboard (being merged into the main 3D viewer). It runs the same engine code as the server, copied by
+- **In the browser:** [Open the Fish, Perturb & optimise mode](https://delphi-mission-control.ashenoy000.workers.dev/blueprint3d/explode.html?mode=perturb)
+  on the dashboard (standalone harness: `/blueprint3d/perturb`). It runs the same engine code as the server, copied by
   `dashboard/build-engine.mjs`.
 - **From your own agent or shell (local):** the `sim-engine` MCP server (`node sim-engine/server.mjs`, stdio), its CLI
   (`node sim-engine/cli.mjs`, `node sim-engine/lean-cli.mjs`) and its HTTP bridge (`node sim-engine/http.mjs`, localhost
