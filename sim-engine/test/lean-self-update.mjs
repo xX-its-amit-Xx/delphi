@@ -228,6 +228,39 @@ await ok('github mode (raw lean/registry/ files, lawsets found by walking previo
   } finally { gh.close(); delete process.env.LEANBIO_GITHUB_URL; remoteEnv(); }
 });
 
+// ── performance: one lean_check calls load() dozens of times; it must not walk and stat the tree each time ──
+await ok('perf: 200 warm checkDesign calls take < 1 s in total (local mode)', async () => {
+  delete process.env.LEANBIO_REMOTE;
+  const D = { SL_m: 0.2, mass_kg: 0.06, finArea_m2: 0.01, CLmax: 0.8, airspeed_m_s: 3 };
+  await src.checkDesign(D, 'current');
+  const t = performance.now();
+  for (let i = 0; i < 200; i++) await src.checkDesign(D, 'current');
+  const ms = performance.now() - t;
+  console.log(`          200 checkDesign: ${ms.toFixed(0)} ms`);
+  assert.ok(ms < 1000, `200 warm checkDesign calls took ${ms.toFixed(0)} ms`);
+});
+await ok('perf: 200 warm lean_check handler calls (with the source envelope) take < 1.5 s', async () => {
+  const D = { SL_m: 0.2, mass_kg: 0.06, finArea_m2: 0.01, CLmax: 0.8, airspeed_m_s: 3 };
+  await T.lean_check({ design: D });
+  const t = performance.now();
+  for (let i = 0; i < 200; i++) await T.lean_check({ design: D });
+  const ms = performance.now() - t;
+  console.log(`          200 lean_check: ${ms.toFixed(0)} ms`);
+  assert.ok(ms < 1500, `took ${ms.toFixed(0)} ms`);
+});
+await ok('local mode still reloads after a source file changes (within the 2 s re-check interval)', async () => {
+  const fs = await import('node:fs');
+  const f = path.join(src.REGISTRY_DIR, 'lawsets', 'current.json');
+  const st = fs.statSync(f);
+  const before = src.load();
+  assert.equal(src.load(), before, 'cached between checks');
+  try {
+    fs.utimesSync(f, st.atime, new Date(st.mtimeMs + 5000));
+    await sleep(2100);
+    assert.notEqual(src.load(), before, 'reloaded after the mtime changed');
+  } finally { fs.utimesSync(f, st.atime, st.mtime); }
+});
+
 server.close();
 delete process.env.LEANBIO_REMOTE;
 console.log(`\n${pass} passed, ${fail} failed`);

@@ -57,6 +57,14 @@ LeanBio self-update. Details and a recorded demo: `lean/registry/SELF-UPDATE.md`
   the dashboard. It needs the repo secret `CLOUDFLARE_API_TOKEN`; without it the deploy step is skipped.
   `check-exposed.mjs` now enforces the envelope source fields, `lean_changes` coverage, the publish
   workflow and `deploy-mcp.yml`'s path filters.
+- **Performance fix in `lib/lean-source.mjs`.** `load()` walked and stat-ed every source file on every call (about 10 ms
+  each), and `checkDesign` calls it many times per design. The walk now runs at most once per
+  `LEANBIO_LOCAL_RECHECK_MS` (default 2 s); `fresh: true` still forces a re-read. File hashes are now
+  cached by mtime and size.
+  - Warm `checkDesign`: 377 ms → 0.9 ms.
+  - Warm `scenario_run` (zebrafish-adult/glide): 736 ms → 5 ms.
+  - `design_from_spec` (example a, budget 60): 22.3 s → 0.18 s.
+  - Guarded by a test: 200 warm `checkDesign` calls must finish in under 1 s.
 - **Packaging.** `package.json` and `package-lock.json` are now version 0.4.0. No new runtime files: the remote
   code lives in `lib/lean-source.mjs`, which is already shipped.
 

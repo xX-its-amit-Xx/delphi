@@ -12,7 +12,34 @@ Live numbers are in `studio-results.json` and `STUDIO-RESULTS.md`, regenerated b
 file describes the run at about 03:02 UTC, after contract 0.3.0. **Re-check `STUDIO-RESULTS.md` for the
 current run.**
 
-## The one honest sentence
+## Update, final watcher run (2026-11-01T04:39 UTC): one regression
+
+The watcher ran until about 04:46 UTC. In the last run the scoreboard is:
+
+| status | pre-registered rule | after A1–A3 |
+|---|---|---|
+| pass | 19 | 21 |
+| pass-rests-on-assumed | 3 | 1 |
+| circular | 5 | 7 |
+| fail | 3 | **1** |
+| no-target | 1 | 1 |
+
+**The new fail is N2 (no fish below teleost depth limits), and no amendment applies to it.**
+`scenarios/pressure.mjs` (changed 23:06 local) now returns `survives: null` and `feasible: null` for
+zebrafish-adult, zebrafish-larva and winged-zebrafish at 9,000 m and 10,000 m. The stated reason: "the
+TMAO/osmolality ceiling was derived for MARINE teleosts … it does not set a limit for a freshwater fish, and
+no pressure-tolerance data for zebrafish were found". The note is honest about the missing data. But the
+pre-registered rule says survives must be false, and the observation it rests on covers all fish: no fish of
+any kind has been found below 8,400 m (Yancey 2014). A freshwater fish at 10 km is a design request outside
+teleost limits, and the studio withholds the verdict. The flying fish and the marine designs still die.
+
+Other changes in that run:
+- W9 now reads 36.5 m at 15 m/s for the flying fish. `glide.mjs` changed at 00:32 local, and the flying
+  fish's launch speed is again the 15 m/s field airspeed. The result is pass-rests-on-assumed, no longer
+  circular, and still in band.
+- W11 and N5 are unchanged: each fails as written and passes under its amendment (A2, A3).
+
+## The one honest sentence (at 03:02 UTC)
 
 **After the fixes, the studio fails nothing under the amended reading. But it passes nothing about the wild
 type on its own strength either: every numeric wild-type value that lands in band is now read straight from

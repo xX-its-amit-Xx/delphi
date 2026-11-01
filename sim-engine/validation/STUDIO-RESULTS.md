@@ -1,6 +1,6 @@
 # Design Studio: independent validation results
 
-Generated 2026-11-01T04:24:33.659Z by `sim-engine/validation/studio-harness.mjs` against the tests fixed in
+Generated 2026-11-01T04:39:33.255Z by `sim-engine/validation/studio-harness.mjs` against the tests fixed in
 `STUDIO-PREREGISTRATION.md` (sha256 `f2523da8529b998eea8ef9b9f165851f60d078a7ac5151a0dafa7bb4d324a66d`, integrity check: **hash matches**).
 Machine-readable: `studio-results.json`. Narrative and worst defects: `STUDIO-FINDINGS.md`. Post-results amendment: `STUDIO-AMENDMENTS.md`. Rows X* are observations added after results and are not counted. A pass that rests on a calibrated value is reported as `circular`, never as a pass.
 
@@ -13,9 +13,9 @@ Fixture run (deliberately wrong scenario modules under C:/Temp/studio-validation
 | status | pre-registered rule | after amendments A1–A3 (post-results, see STUDIO-AMENDMENTS.md) |
 |---|---|---|
 | circular | 5 | 7 |
-| fail | 2 | 0 |
+| fail | 3 | 1 |
 | no-target | 1 | 1 |
-| pass | 20 | 22 |
+| pass | 19 | 21 |
 | pass-rests-on-assumed | 3 | 1 |
 
 Modules found: organism `lib/organism.mjs`, state `lib/state.mjs`, data `lib/data-node.mjs`, spec `lib/spec.mjs`, parse `lib/parse-text.mjs`, optimizer —; scenarios: temperature, current, pressure, altitude, wind, predator, grip, sleep, daynight, digestion, glide.
@@ -36,7 +36,7 @@ Modules found: organism `lib/organism.mjs`, state `lib/state.mjs`, data `lib/dat
 | W10 | gut passage time | **no-target** | no passage metric | none fetched | n/a | no fetched wild-type gut passage time; the studio value is UNVALIDATED |
 | W11 | sustained current sign (pre-registered: 0.20 m/s survive, 1.10 m/s not; A2 reads feasible) | **fail** → A2: **pass** | survives: 0.20 m/s → null, 1.10 m/s → null; feasible: 0.20 → true, 1.10 → false (param current_m_s) | Uopt 0.396, Ucrit 0.548 m/s | n/a (sign test) | pre-registered reading (survives): not met, survives is null/null; A2 reading (feasible = can hold station): signs correct |
 | N1 | real zebrafish must not glide (< 1 m) | **pass** | 0.00 m (from glide, metric glide_range_total_m, survives=null, feasible=false) | ballistic leap ≈ 0.07 m | assumed | below 1 m or flagged not surviving |
-| N2 | no fish survives at 9,000 or 10,000 m | **pass** | all 14 runs survive=false | no fish below 8,400 m (Yancey 2014) | n/a (negative control) | all fish die |
+| N2 | no fish survives at 9,000 or 10,000 m | **fail** | zebrafish-adult at 9000 m survives=null; zebrafish-adult at 10000 m survives=null; zebrafish-larva at 9000 m survives=null; zebrafish-larva at 10000 m survives=null; winged-zebrafish at 9000 m survives=null; winged-zebrafish at 10000 m survives=null | no fish below 8,400 m (Yancey 2014) | n/a (negative control) | 6 organism/depth runs did not report death |
 | N3 | no grip force without a gripping organ (zebrafish) | **pass** | has_gripping_structure = false bool (derived); validity {"inRange":true,"notes":"nothing to model"} | zebrafish has no gripping organ | derived | no positive grip force |
 | N4 | flyable heights downward closed (Lean Altitude.feasible_downward_closed) | **pass** | flying-fish:111110; zebrafish-adult:000000; zebrafish-larva:000000; ff-zf-chimera:111110; tff:111111; winged-zebrafish:000000; wingless-flying-fish:000000 | proved: feasible at h ⇒ feasible below h | n/a (law control) | monotone for every organism |
 | N5 | glide range ≤ h·L/D/(1−δ) (Lean glide_range_le) | **fail** → A3: **pass** | A3: Lean-covered metric only: flying-fish: 4.37 ≤ 4.37? true; zebrafish-adult: 0.00 ≤ 4.37? true; zebrafish-larva: 0.00 ≤ 4.37? true; tff: 4.37 ≤ 4.37? true; winged-zebrafish: 0.00 ≤ 4.37? true; wingless-flying-fish: 0.00 ≤ 4.37? true; every total above the bound is labelled NOT covered by the theorem \|\| pre-registered (every reported distance): flying-fish: d=36.5 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? false; zebrafish-adult: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; zebrafish-larva: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; tff: d=48.9 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? false; winged-zebrafish: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true; wingless-flying-fish: d=0.00 ≤ h·L/D/(1−δ) = 1.00·4.37/(1−0.00) = 4.37? true |  | n/a (law control) | bound violated for flying-fish, tff |
@@ -65,7 +65,7 @@ Code literals only (strings and comments stripped; unit conversions and years ig
 | module | lines with constants | sourced | named-only | unsourced |
 |---|---|---|---|---|
 | scenarios/temperature.mjs | 17 | 6 | 5 | **6** |
-| scenarios/current.mjs | 22 | 6 | 8 | **8** |
+| scenarios/current.mjs | 23 | 6 | 9 | **8** |
 | scenarios/pressure.mjs | 13 | 5 | 1 | **7** |
 | scenarios/altitude.mjs | 13 | 5 | 1 | **7** |
 | scenarios/wind.mjs | 2 | 0 | 0 | **2** |
@@ -74,7 +74,7 @@ Code literals only (strings and comments stripped; unit conversions and years ig
 | scenarios/sleep.mjs | 16 | 0 | 14 | **2** |
 | scenarios/daynight.mjs | 10 | 0 | 10 | **0** |
 | scenarios/digestion.mjs | 18 | 0 | 17 | **1** |
-| scenarios/glide.mjs | 26 | 4 | 12 | **10** |
+| scenarios/glide.mjs | 30 | 7 | 13 | **10** |
 
 <details><summary>scenarios/temperature.mjs: 6 unsourced lines</summary>
 
@@ -83,7 +83,7 @@ Code literals only (strings and comments stripped; unit conversions and years ig
 - line 98: `if (Math.abs(Ta - 28) > 1) notes.push('The Ucrit curve was measured in 28 degC-reared fish; at another acclimation temperature it is borrowe`
 - line 99: `const smrOk = T >= Q10.range[0] - 0.01 && T <= Q10.range[1] + 0.01 && Math.abs(Ta - 28) <= 3;`
 - line 101: `if (T < 0 \|\| T > 45) inRange = false;`
-- line 131: `metric('ucrit_relative', METRICS[3].label, ur.value, '1', 'higher', zkind === 'measured' && Math.abs(Ta - 28) <= 1 ? 'calibrated' : 'borrowe`
+- line 134: `metric('ucrit_relative', METRICS[3].label, ur.value, '1', 'higher', zkind === 'measured' && Math.abs(Ta - 28) <= 1 ? 'calibrated' : 'borrowe`
 
 </details>
 
@@ -96,7 +96,7 @@ Code literals only (strings and comments stripped; unit conversions and years ig
 - line 98: `{ key: 'current_m_s', label: 'Current speed', unit: 'm/s', default: 0.2, min: 0, max: 3, kind: 'assumed', source: 'design input' },`
 - line 104: `const U = params.current_m_s ?? 0.2;`
 - line 107: `const T = val(state, 'temperature_C') ?? 25;`
-- line 139: `if (Re != null && Re > 5e5) notes.push('Re above 5e5: turbulent plate coefficient used.');`
+- line 143: `if (Re != null && Re > 5e5) notes.push('Re above 5e5: turbulent plate coefficient used.');`
 
 </details>
 
@@ -157,14 +157,14 @@ Code literals only (strings and comments stripped; unit conversions and years ig
 
 - line 20: `CL_at_zero_deg: 0.53,`
 - line 21: `L3: { mass_kg: 0.06, ref_area_m2: 0.012688, span_m: 0.261, pectoral_area_m2: 0.006377 },`
-- line 44: `if (r >= 0.97) return 1;`
-- line 45: `if (r <= 0.33) return 0.86;`
-- line 46: `return 0.86 + ((1 - 0.86) * (r - 0.33)) / (0.97 - 0.33);`
-- line 117: `: { value: 0.2095 * 101.325, kind: 'measured-secondhand', source: 'dry-air O2 fraction 0.2095 (20.95%, standard dry-air composition) x 101.3`
-- line 164: `const T = val(state, 'temperature_C') ?? 25;`
-- line 178: `export const LAUNCH_OVERRIDE_PARAM = { key: 'launch_airspeed_override_m_s', label: "What-if launch airspeed (0 = the organism's own sourced `
-- line 267: `if (m < 0.02 \|\| m > 0.4) { inRange = false; notes.push('Mass ${m} kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~`
-- line 268: `if (Re != null && (Re < 5e3 \|\| Re > 1e5)) { inRange = false; notes.push('Mean-chord Reynolds number ~${Re.toExponential(1)} is outside 5e3-1`
+- line 63: `if (r >= 0.97) return 1;`
+- line 64: `if (r <= 0.33) return 0.86;`
+- line 65: `return 0.86 + ((1 - 0.86) * (r - 0.33)) / (0.97 - 0.33);`
+- line 136: `: { value: 0.2095 * 101.325, kind: 'measured-secondhand', source: 'dry-air O2 fraction 0.2095 (20.95%, standard dry-air composition) x 101.3`
+- line 183: `const T = val(state, 'temperature_C') ?? 25;`
+- line 197: `export const LAUNCH_OVERRIDE_PARAM = { key: 'launch_airspeed_override_m_s', label: "What-if launch airspeed (0 = the organism's own sourced `
+- line 291: `if (m < 0.02 \|\| m > 0.4) { inRange = false; notes.push('Mass ${m} kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~`
+- line 292: `if (Re != null && (Re < 5e3 \|\| Re > 1e5)) { inRange = false; notes.push('Mean-chord Reynolds number ~${Re.toExponential(1)} is outside 5e3-1`
 
 </details>
 
