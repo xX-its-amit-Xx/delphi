@@ -109,8 +109,20 @@ scoped to Exocoetidae adults. A design that names no taxon is out of scope for e
 must stay in step. A taxon outside the small table (`SCOPE_PARENT` in browser-check-lawset.fragment.mjs) is
 treated as out of scope, never red.
 
-Sanity rule, enforced in test.mjs: no ACCEPTED law may be red for an unedited measured wild type within its own
-scope. If one is, the law or its constants is wrong and must be contested (`contest.mjs`).
+A law may also state WHAT KIND OF CLAIM it judges: `scope.applies_to` and `scope.excludes` (plain words). The
+aerobic laws (E3 2.1.0, fick-principle 1.2.0) use them to say they bound sustained aerobic power DEMAND — powered
+level or climbing flight, sustained swimming — and not unpowered descent or glide, whose work comes from potential
+and kinetic energy rather than metabolism, nor burst effort on white-muscle stores. The checker enforces that: a
+design declaring an unpowered glide (`flight_mode: 'glide'`, `powered: false`, or glide geometry with no power
+source or climb) gets `out-of-scope` on C14 and E3 instead of `violated`. When a design says nothing, those rows
+still evaluate and say so in the note, so an existing powered-flight elimination is not silently dropped.
+
+Sanity rule, enforced in test.mjs by a STANDING check over real organisms making realistic claims (the Park and
+Choi flying fish in an ordinary glide, the resolved zebrafish adult and larva, the adult holding station in a
+current): no ACCEPTED law may be violated by a real organism within its own scope. If one is, either the law or its
+constants is wrong (contest it with `contest.mjs`) or it is being applied outside its scope (fix the mapping and
+state the limit in `scope.excludes`). The fixtures use sourced numbers only. Its broken input is the defect it was
+written for: the same glide mapped as a sustained powered demand, which the check must report.
 
 ## Using it from the Design Studio (browser-check.mjs API)
 

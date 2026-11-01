@@ -43,6 +43,10 @@ const EMP_SLIM = { built: EMP.built, module: EMP.module, framing: EMP.framing, n
 const EMP_FRAGMENT = fs.readFileSync(path.join(here, 'browser-check-empirical.fragment.mjs'), 'utf8')
   .split('__EMPIRICAL__').join(JSON.stringify(EMP_SLIM, null, 1));
 
+// Declarative rows: every law whose file carries a `browser_check` block (filled in below, after DECLARED is
+// built from the registry, because the data comes from the law files themselves).
+const DECLARED_FRAGMENT_TEMPLATE = fs.readFileSync(path.join(here, 'browser-check-declared.fragment.mjs'), 'utf8');
+
 // The perturbation laws (lean/Delphi/Perturb.lean) and their sources (lean/perturb-sources.json).
 const PS = JSON.parse(fs.readFileSync(path.join(root, 'lean/perturb-sources.json'), 'utf8'));
 const PERTURB_SLIM = { module: PS.module, fetched: PS.fetched, rule: PS.rule, sources: Object.fromEntries(Object.entries(PS.sources).map(([k, v]) => [k, { pmid: v.pmid, doi: v.doi, authors: v.authors, year: v.year, title: v.title, quote: v.quote }])), notFormalised: PS.notFormalised };
@@ -58,9 +62,33 @@ const REG_LAWS = fs.readdirSync(path.join(REGDIR, 'laws')).filter(f => f.endsWit
 const LAWSETS = Object.fromEntries(fs.readdirSync(path.join(REGDIR, 'lawsets')).filter(f => /^lawset-\d+\.\d+\.\d+\.json$/.test(f)).map(f => JSON.parse(fs.readFileSync(path.join(REGDIR, 'lawsets', f), 'utf8')))
   .map(ls => [ls.version, { created: ls.created, laws: Object.fromEntries(ls.laws.map(l => [l.law_id, { version: l.version, status: l.status, kind: l.kind, content_hash: l.content_hash }])) }]));
 if (!LAWSETS[REG_CUR.version]) throw new Error('lean/registry/lawsets/current.json names a missing law set ' + REG_CUR.version);
+// Declarative checks: a law file may carry an optional `browser_check` block, and the row for it is generated
+// from that block instead of from a hand-written formula below. This is the ONLY way a new law reaches the
+// evaluator without a code edit, which is what a living law base needs; see
+// lean/eliminate/browser-check-declared.fragment.mjs and lean/registry/README.md.
+const DECLARED = [];
+for (const l of REG_LAWS) {
+  const d = l.browser_check;
+  if (!d) continue;
+  const cid = d.constraint;
+  if (!cid) throw new Error(`${l.law_id}: browser_check has no constraint id`);
+  if (meta[cid]) throw new Error(`${l.law_id}: browser_check.constraint "${cid}" is already a constraint of lean/constraints.json (hand-written row); pick a new id`);
+  if (DECLARED.some(x => x.constraint === cid)) throw new Error(`${l.law_id}: browser_check.constraint "${cid}" is already declared by ${DECLARED.find(x => x.constraint === cid).law_id}`);
+  if (!(l.constraints || []).includes(cid)) throw new Error(`${l.law_id}: browser_check.constraint "${cid}" is not listed in the law's own "constraints" array, so no caller would map the row back to the law`);
+  DECLARED.push({ ...d, law_id: l.law_id });
+}
+const DECLARED_IDS = DECLARED.map(d => d.constraint);
+for (const d of DECLARED) meta[d.constraint] = { constraint: d.constraint, theorem: null, law: d.law_id, module: null,
+  relation: d.relation || null, band: d.band || 'empirical', empirical: d.band !== 'proved' || null, constraintStatus: 'declared',
+  scope: null, hypotheses: d.note || null, faithfulness: null, canEliminate: null, declared: true };
+
 const CONSTRAINT_LAW = {};
-for (const l of REG_LAWS) for (const c of l.constraints || []) if (USED.includes(c)) CONSTRAINT_LAW[c] = l.law_id;
-const LAW_INFO = Object.fromEntries(REG_LAWS.filter(l => Object.values(CONSTRAINT_LAW).includes(l.law_id)).map(l => [l.law_id, { label: l.label || null, statement_en: l.statement_en, kind: l.kind, scope: { taxa: l.scope.taxa, life_stages: l.scope.life_stages || [], ranges: l.scope.ranges || {}, basis: l.scope.basis || null }, constraint_scopes: l.constraint_scopes || {} }]));
+for (const l of REG_LAWS) for (const c of l.constraints || []) if (USED.includes(c) || DECLARED_IDS.includes(c)) CONSTRAINT_LAW[c] = l.law_id;
+const LAW_INFO = Object.fromEntries(REG_LAWS.filter(l => Object.values(CONSTRAINT_LAW).includes(l.law_id)).map(l => [l.law_id, { label: l.label || null, statement_en: l.statement_en, kind: l.kind, scope: { taxa: l.scope.taxa, life_stages: l.scope.life_stages || [], ranges: l.scope.ranges || {}, basis: l.scope.basis || null, applies_to: l.scope.applies_to || [], excludes: l.scope.excludes || [] }, constraint_scopes: l.constraint_scopes || {} }]));
+const DECLARED_FRAGMENT = DECLARED_FRAGMENT_TEMPLATE
+  .split('__DECLARED__').join(JSON.stringify(DECLARED, null, 1))
+  .replace(/^\/\/ FRAGMENT[\s\S]*?a law file cannot run code in the Studio\.\n/m,
+    '// ---- declarative rows (generated from lean/eliminate/browser-check-declared.fragment.mjs; data from each law file\'s browser_check block) ----\n');
 const unlawed = USED.filter(u => !CONSTRAINT_LAW[u]);
 if (unlawed.length) console.warn('warning: constraints with no registry law (rows carry law: null and are judged as before): ' + unlawed.join(', '));
 const LAWSET_FRAGMENT = fs.readFileSync(path.join(here, 'browser-check-lawset.fragment.mjs'), 'utf8')
@@ -106,7 +134,7 @@ const out = `// GENERATED by lean/eliminate/build-browser-check.mjs on ${new Dat
 
 export const KERNEL_NOTE = 'evaluates the same formulas; not a kernel check: kernel certificates exist only for the recorded examples';
 export const REFERENCE = ${JSON.stringify(REF, null, 1)};
-export const META = ${JSON.stringify(Object.fromEntries(USED.map(u => [u, meta[u]])), null, 1)};
+export const META = ${JSON.stringify(Object.fromEntries([...USED, ...DECLARED_IDS].map(u => [u, meta[u]])), null, 1)};
 export const ENVIRONMENT = ${JSON.stringify(ENV, null, 1)};
 export const DEFAULTS = { rho: ${REF_RHO}, g: ${REF_G}, groundEffect: 0, exponentBand: ${JSON.stringify(EXP_BAND)} };
 // Design Studio field names (Viz): design = {SL_m, mass_kg, fin_length_over_SL, fin_area_m2, lower_lobe_over_SL, muscle_fraction, gill_area_m2, airspeed_m_s}.
@@ -120,6 +148,25 @@ export function liftingAreaNeeded(W_N, v, rho, CLmax) { return 2 * W_N / (rho * 
 export function vmin(W_N, S, rho, CLmax) { return Math.sqrt(2 * W_N / (rho * S * CLmax)); }
 
 const num = x => typeof x === 'number' && Number.isFinite(x);
+/**
+ * Does the design claim SUSTAINED POWERED flight? The aerobic bounds (C14, E3) cap the power an animal can supply
+ * from metabolism, so they apply to a METABOLIC demand: powered level or climbing flight, or sustained swimming.
+ * An unpowered glide spends potential and kinetic energy, not ATP, so W v / (L/D) computed for a descent is not a
+ * demand those laws bound, and firing them on a real gliding flying fish is an application error, not a violation
+ * (it happened: Park and Choi specimens making realistic glide claims came back red). Returns
+ * {powered, unpowered, reason}: powered only when the design says so, unpowered when it claims glide geometry
+ * (or flight_mode 'glide' / powered: false) and claims no power source or climb.
+ */
+function flightMode(s) {
+  const says = s.flight_mode || (s.powered === true ? 'powered' : s.powered === false ? 'glide' : null);
+  const poweredClaim = says === 'powered' || num(s.powerAvailable_W) || (num(s.climbRate_m_s) && s.climbRate_m_s > 0)
+    || num(s.musclePowerPerKg_W) || num(s.cardiacOutput) && says === 'powered';
+  const glideClaim = says === 'glide' || says === 'unpowered'
+    || (!poweredClaim && (num(s.glideHeight_m) || num(s.glideDistance_m)));
+  if (poweredClaim) return { powered: true, unpowered: false, reason: says === 'powered' ? 'flight_mode: powered' : num(s.powerAvailable_W) ? 'powerAvailable_W given' : num(s.climbRate_m_s) && s.climbRate_m_s > 0 ? 'a positive climb rate is claimed' : 'a muscle power source is given' };
+  if (glideClaim) return { powered: false, unpowered: true, reason: says ? ('flight_mode: ' + says) : 'glide geometry is given (glideHeight_m / glideDistance_m) and no power source or climb is claimed' };
+  return { powered: false, unpowered: false, reason: 'the design does not say whether the flight is powered; pass flight_mode: "powered" or "glide"' };
+}
 // Floating-point tolerance for comparisons against a COMPUTED bound: the same formula evaluated in a different
 // operation order can differ by an ulp, and a correct design must not turn red on rounding. Relative 1e-9 of the
 // larger magnitude (sign-safe, so negative bounds work). Comparisons of raw inputs with fixed constants or of
@@ -134,6 +181,7 @@ const result = (id, verdict, numbers, missing, note, sides) => ({ id, ...META[id
 ${FRAGMENT}
 ${EMP_FRAGMENT}
 ${PERTURB_FRAGMENT}
+${DECLARED_FRAGMENT}
 ${LAWSET_FRAGMENT}
 /** check(design, {lawset, includeCandidates}): every row judged against a law set (see judgeRows). checkRaw(design) is the formulas alone. */
 export function check(design, opts = {}) { return judgeRows(checkRaw(design), design, normalise(design), opts); }
@@ -142,6 +190,7 @@ export function checkRaw(design) {
   const out = [];
   const unconstrained = ['finLength_SL', 'lowerLobe_SL'].filter(k => num(s[k])).map(k => ({ field: k, value: s[k], note: 'accepted, reported, constrained by no theorem (fin length ratio and caudal lobe ratio are inputs the model carries; see lean/morphology-grounding.json)' }));
   if (unconstrained.length) out.push({ id: 'unconstrained-inputs', verdict: 'cannot-evaluate', needed: null, available: null, missing_inputs: [], missing: [], numbers: Object.fromEntries(unconstrained.map(u => [u.field, u.value])), note: unconstrained.map(u => u.note).join('; '), theorem: null, module: null, kernel: KERNEL_NOTE });
+  const mode = flightMode(s);
   const W = num(s.mass_kg) ? s.mass_kg * s.g : null;
   const S = num(s.finArea_m2) ? s.finArea_m2 : (num(s.pectoralFinArea_m2) ? s.pectoralFinArea_m2 + (s.pelvicFinArea_m2 || 0) + (s.bodyPlanformArea_m2 || 0) : null);
 
@@ -183,8 +232,10 @@ export function checkRaw(design) {
     if (miss.length) out.push(result('C16', 'cannot-evaluate', { powerRequired_W: Preq, powerAvailable_W: Pavail }, miss));
     else { const bound = (Pavail - Preq) / W; out.push(result('C16', leTol(s.climbRate_m_s, bound) ? 'holds' : 'violated', { powerRequired_W: Preq, powerAvailable_W: Pavail, W_N: W, climbBound_m_s: bound, climbRate_m_s: s.climbRate_m_s }, [], Pavail !== null && !num(s.powerAvailable_W) ? 'P_avail formed from the muscle premise (f, p constant), which is a named hypothesis, not a theorem' : null, { needed: { power_W: Preq + W * s.climbRate_m_s }, available: { power_W: Pavail } })); } }
   { const miss = []; for (const k of ['efficiency', 'oxycaloric_J_per_unit_O2', 'cardiacOutput', 'arterialO2']) if (!num(s[k])) miss.push(k); if (Preq === null) miss.push('airspeed_m_s and LD_max (or powerRequired_W)');
+    if (mode.unpowered) out.push(result('C14', 'out-of-scope', { powerRequired_W: Preq, flight_mode: 'glide' }, [], 'the Fick aerobic bound caps SUSTAINED AEROBIC power demand (powered level or climbing flight, sustained swimming). This design claims an unpowered glide (' + mode.reason + '), whose energy comes from potential and kinetic energy rather than metabolism, so W v / (L/D) here is not a metabolic demand and this law does not judge it. See fick-principle scope.excludes in lean/registry.'));
+    else
     if (miss.length) out.push(result('C14', 'cannot-evaluate', { powerRequired_W: Preq, gillArea_m2: num(s.gillArea_m2) ? s.gillArea_m2 : null }, miss, num(s.gillArea_m2) ? 'gillArea_m2 given, but the gill-to-blood link (water O2 and gill area to arterial content) is not formalised; commit arterialO2 directly' : null));
-    else { const supply = s.efficiency * s.oxycaloric_J_per_unit_O2 * s.cardiacOutput * s.arterialO2; const need = Preq + (num(s.climbRate_m_s) && W !== null ? W * s.climbRate_m_s : 0); out.push(result('C14', geTol(supply, need) ? 'holds' : 'violated', { aerobicCeiling_W: supply, powerRequired_W: Preq, climbPower_W: need - Preq, efficiency: s.efficiency }, [], s.efficiency > 1 ? 'efficiency above 1 violates the named hypothesis 0 <= eta <= 1; the result is not meaningful' : 'sustained (aerobic) mechanical ceiling eta E Q Ca against level-flight power W v/(L/D) plus W x climb rate if a climb is claimed (climb_le_aerobic); units must multiply to watts', { needed: { power_W: need }, available: { power_W: supply } })); } }
+    else { const supply = s.efficiency * s.oxycaloric_J_per_unit_O2 * s.cardiacOutput * s.arterialO2; const need = Preq + (num(s.climbRate_m_s) && W !== null ? W * s.climbRate_m_s : 0); out.push(result('C14', geTol(supply, need) ? 'holds' : 'violated', { aerobicCeiling_W: supply, powerRequired_W: Preq, climbPower_W: need - Preq, efficiency: s.efficiency }, [], s.efficiency > 1 ? 'efficiency above 1 violates the named hypothesis 0 <= eta <= 1; the result is not meaningful' : 'sustained (aerobic) mechanical ceiling eta E Q Ca against level-flight power W v/(L/D) plus W x climb rate if a climb is claimed (climb_le_aerobic); units must multiply to watts' + (mode.powered || mode.unpowered ? '' : ' | this row ASSUMES the power required is a sustained powered-flight demand (' + mode.reason + '): pass flight_mode: "glide" for a descent and the aerobic laws will not judge it)'), { needed: { power_W: need }, available: { power_W: supply } })); } }
 
   // C13 and C10 need exponents across sizes, which a single spec does not carry.
   out.push(result('C13', 'cannot-evaluate', {}, ['fitted exponents for weight, area and wing loading with intervals'], 'a single design has no exponents; see the audit for the measured Davenport triple'));
@@ -195,10 +246,13 @@ export function checkRaw(design) {
 
   // Empirical rows, in their own band: each is conditional on an observation the reader may reject.
   const impliedMassExponent = (out.find(r => r.id === 'C7b') || {}).numbers?.impliedMassExponent ?? null;
-  for (const r of checkEmpirical(s, { powerRequired_W: Preq, impliedMassExponent })) out.push(r);
+  for (const r of checkEmpirical(s, { powerRequired_W: Preq, impliedMassExponent, flightMode: mode })) out.push(r);
 
   // Perturbation rows (lean/Delphi/Perturb.lean): temperature, current, pressure, altitude and wind, daily energy. Sleep and day/night have no law.
   for (const r of checkPerturb(s, { W_N: W, S_m2: S })) out.push(r);
+
+  // Declarative rows: generated from the browser_check block of each law file, so a new law binds without a code edit.
+  for (const r of checkDeclared(s, { W_N: W, S_m2: S, powerRequired_W: Preq, powerAvailable_W: Pavail, liftingArea_m2: S, lengthRatio: lr, impliedMassExponent })) out.push(r);
   return out;
 }
 `;

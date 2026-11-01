@@ -5,6 +5,27 @@ the scenario interface. Its version is `CONTRACT_VERSION` in `lib/envelope.mjs`.
 as `contract_version`, and `contract.json` states it. The rule: anything may change, provided it is
 versioned here. While the major version is 0, a minor bump may break callers; each entry says what breaks.
 
+## 0.7.1 (2026-11-01)
+
+**Fixed** (correctness: an accepted law marked a real wild type as violating)
+
+- A glide claim no longer reaches the sustained-power laws. `scenario_run` now commits `flight_mode` in the spec:
+  `glide` for the unpowered-descent scenarios (glide, wind, altitude), `powered` when the caller claims level or
+  climbing flight. Since lawset 1.6.0 the evaluator scopes E3, C14, C16 and E4 out for a glide, so a real adult
+  flying fish making a realistic 40 m glide at 15 m/s now violates NO accepted law, while a claim of sustained
+  powered level flight still turns E3 red.
+  - The defect: browser-check derives P_req = W·v/(L/D) from any airspeed plus an L/D, and that is the cost of
+    LEVEL POWERED flight. A glide is paid for out of height and launch kinetic energy, so it is not a metabolic
+    demand for the aerobic ceiling to bound. Feeding it there scored Park & Choi specimens 0.258, level with
+    deliberate law-breakers. Same class of error as feeding C15 the kinetic-phase total (fixed in 0.3.1).
+- New claim `glide_total_distance_m`: the whole glide, launch kinetic phase included. No theorem covers the sum, so
+  it is reported under `lean_inputs.not_covered` and never fed to a law. `ground_distance_m` and `glideDistance_m`
+  remain the steady descent, which P4b and C15 do bound.
+- `scenario_run` returns `lean_inputs.flight_mode`, `lean_inputs.notes` and `lean_inputs.not_covered`.
+- Regression tests, each made to fail once: the real flying fish's 40 m glide violates no accepted law; a sustained
+  powered claim still turns E3 red; the TFF powered claim still fires; and no real wild type violates an accepted
+  law in any flight scenario.
+
 ## 0.7.0 (2026-11-01)
 
 **Added** (one tool)

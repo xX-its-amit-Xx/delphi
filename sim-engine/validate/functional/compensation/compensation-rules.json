@@ -1,0 +1,543 @@
+{
+  "schema_version": "1.0.0",
+  "name": "DELPHI functional-scoring compensation rule base",
+  "generated": "2026-11-01",
+  "owner": "functional/compensation (sim-engine/validate/functional/compensation)",
+  "purpose": "Decide, BY RULE and from cited evidence, whether a documented compensation mechanism can be invoked for a gene that is absent or broken in a designed organism. The default is refusal: a gap is only ever COMPENSATORY when a rule fires and names its source.",
+  "design_stance": {
+    "default": "not-expected",
+    "burden_of_proof": "on the compensation claim, never on the gap",
+    "never": "return a class asserting compensation without a rule_id and at least one source with a locator",
+    "missing_inputs": "yield 'unknown', never 'plausible-by-rule'",
+    "critical_separation": "A documented compensation mechanism is evidence that an ADAPTING GENE IS UPREGULATED. It is NOT evidence that the FUNCTIONAL REQUIREMENT IS MET. See rule TA-NOT-FUNCTIONAL-RESCUE (R07) and the vegfaa case."
+  },
+
+  "classes": {
+    "documented": "This gene, in this organism, has a published compensation outcome. The verdict is read off the case table, not inferred.",
+    "plausible-by-rule": "No published outcome for this gene, but every condition of a rule derived from primary evidence is satisfied. Weaker than 'documented' and must never be scored as equal to it.",
+    "not-expected": "A rule positively excludes compensation (not merely 'no evidence found'). Confident refusal.",
+    "unknown": "The inputs a rule needs are absent. Explicitly NOT a licence to assume compensation, and explicitly NOT evidence against it."
+  },
+
+  "mechanism_kinds": {
+    "transcriptional-adaptation": "Mutant-mRNA-decay-triggered, sequence-similarity-dependent upregulation of an adapting gene. Requires mRNA to be made AND degraded. Absent from knockdowns.",
+    "protein-feedback": "The lost protein normally represses a relative; losing it de-represses that relative. Mechanistically independent of mRNA decay, and therefore ALSO seen in knockdowns.",
+    "paralogue-buffering": "A paralogue already expressed in the right place and time carries the function, with no induced change required.",
+    "none": "No mechanism is applicable."
+  },
+
+  "allele_kinds": {
+    "comment": "Maps a design lesion onto the mRNA fate that the mechanism requires. 'mrna_made' and 'mrna_decayed' are what the rules actually test.",
+    "nonsense": {"mrna_made": true, "mrna_decayed": true, "aliases": ["ptc", "stop-gain", "stop_gained"]},
+    "frameshift": {"mrna_made": true, "mrna_decayed": true, "note": "introduces a downstream PTC; NMD substrate unless the PTC falls in the last exon"},
+    "splice-essential": {"mrna_made": true, "mrna_decayed": true, "aliases": ["splice-donor", "splice-acceptor", "essential-splice-site"], "note": "usually produces an NMD substrate; confidence lower than a direct PTC"},
+    "last-exon-deletion": {"mrna_made": true, "mrna_decayed": true, "note": "explicitly among the allele classes El-Brolosy 2019 analysed as showing transcriptional adaptation"},
+    "missense": {"mrna_made": true, "mrna_decayed": false, "aliases": ["substitution", "nonsynonymous"]},
+    "in-frame-deletion": {"mrna_made": true, "mrna_decayed": false, "aliases": ["in-frame-indel", "in-frame-insertion"]},
+    "synonymous": {"mrna_made": true, "mrna_decayed": false},
+    "start-loss": {"mrna_made": true, "mrna_decayed": false, "aliases": ["start_lost", "atg-loss"], "note": "mRNA is made but not translated; PTC recognition is translation-dependent, so it is not expected to be an NMD substrate. Mechanism-inferred, not directly tested."},
+    "promoter-deletion": {"mrna_made": false, "mrna_decayed": false, "aliases": ["promoterless", "promoter-less"]},
+    "full-locus-deletion": {"mrna_made": false, "mrna_decayed": false, "aliases": ["whole-gene-deletion", "locus-deletion", "rna-less", "rnaless"]},
+    "gene-absent": {"mrna_made": false, "mrna_decayed": false, "aliases": ["absent", "not-encoded", "no-ortholog", "never-present"], "note": "THE COMMON CASE for a designed organism: the design simply does not carry the gene. Behaves as an RNA-less allele."},
+    "knockdown-morpholino": {"mrna_made": true, "mrna_decayed": false, "knockdown": true, "aliases": ["morpholino", "morphant"], "note": "target mRNA is present and blocked, not degraded"},
+    "rnai": {"knockdown": true, "mrna_made": true, "mrna_decayed": true, "note": "mRNA IS degraded, but by the RNAi route; transcriptional adaptation was not demonstrated for RNAi in the sourced zebrafish work. Treated as knockdown, i.e. refused, and flagged as a known gap."},
+    "crispri": {"mrna_made": false, "mrna_decayed": false, "knockdown": true, "aliases": ["crispr-interference", "transcriptional-knockdown"], "note": "obstructs transcription, so no mutant mRNA is made to decay; Rossi 2015 and El-Brolosy 2026 both use it as the negative control"},
+    "hypomorph": {"mrna_made": true, "mrna_decayed": false, "knockdown": true, "aliases": ["reduced-function", "partial-loss"]},
+    "unknown": {"mrna_made": null, "mrna_decayed": null}
+  },
+
+  "sources": {
+    "rossi2015": {
+      "citation": "Rossi A, Kontarakis Z, Gerri C, Nolte H, Hölper S, Krüger M, Stainier DYR. Genetic compensation induced by deleterious mutations but not gene knockdowns. Nature 524:230-233 (2015).",
+      "pmid": "26168398", "doi": "10.1038/nature14580", "pmcid": null,
+      "access": "NOT open access and NOT in Europe PMC full text. ABSTRACT ONLY was read. All quotes below are from the abstract; figure-level locators could not be verified.",
+      "organism": "zebrafish"
+    },
+    "elbrolosy2019": {
+      "citation": "El-Brolosy MA, Kontarakis Z, Rossi A, Kuenne C, Günther S, Fukuda N, Kikhi K, Boezio GLM, Takacs CM, Lai S-L, Fukuda R, Gerri C, Giraldez AJ, Stainier DYR. Genetic compensation triggered by mutant mRNA degradation. Nature 568:193-197 (2019).",
+      "pmid": "30944477", "pmcid": "PMC6707827", "doi": "10.1038/s41586-019-1064-z",
+      "access": "Open access author manuscript; FULL TEXT read (abstract, results, methods, extended-data legends).",
+      "organism": "zebrafish and mouse cells"
+    },
+    "ma2019": {
+      "citation": "Ma Z, Zhu P, Shi H, Guo L, Zhang Q, Chen Y, Chen S, Zhang Z, Peng J, Chen J. PTC-bearing mRNA elicits a genetic compensation response via Upf3a and COMPASS components. Nature 568:259-263 (2019).",
+      "pmid": "30944473", "doi": "10.1038/s41586-019-1057-y", "pmcid": null,
+      "access": "NOT open access and NOT in Europe PMC full text. ABSTRACT ONLY was read.",
+      "organism": "zebrafish",
+      "caveat": "An Author Correction exists: 'Author Correction: PTC-bearing mRNA elicits a genetic compensation response via Upf3a and COMPASS components', Nature 2026, PMID 42265482, DOI 10.1038/s41586-026-10769-0. The CONTENT of that correction could not be retrieved (not open access, no abstract in Europe PMC). Rules resting on ma2019 alone are therefore capped at confidence 'medium' and must be corroborated by elbrolosy2019 or xie2025."
+    },
+    "kok2015": {
+      "citation": "Kok FO, Shin M, Ni C-W, Gupta A, Grosse AS, van Impel A, Kirchmaier BC, Peterson-Maduro J, Kourkoulis G, Male I, DeSantis DF, Sheppard-Tindell S, Ebarasi L, Betsholtz C, Schulte-Merker S, Wolfe SA, Lawson ND. Reverse genetic screening reveals poor correlation between morpholino-induced and mutant phenotypes in zebrafish. Dev Cell 32:97-108 (2015).",
+      "pmid": "25533206", "pmcid": "PMC4487878", "doi": "10.1016/j.devcel.2014.11.018",
+      "access": "In Europe PMC but the fullTextXML endpoint returned HTTP 500 on 2026-11-01. ABSTRACT ONLY was read. The ~80% figure below is quoted from the abstract, not from a table.",
+      "organism": "zebrafish"
+    },
+    "elbrolosy2017rev": {
+      "citation": "El-Brolosy MA, Stainier DYR. Genetic compensation: A phenomenon in search of mechanisms. PLoS Genet 13(7):e1006780 (2017).",
+      "pmid": "28704371", "pmcid": "PMC5509088", "doi": "10.1371/journal.pgen.1006780",
+      "access": "Open access; FULL TEXT read. This is a REVIEW: it is used only for mechanism taxonomy and for pointers to primary cases, never as primary evidence for a number.",
+      "organism": "multiple"
+    },
+    "welker2023": {
+      "citation": "Welker JM, Rossi A, Stainier DYR et al. Partial sequence identity in a 25-nucleotide long element is sufficient for transcriptional adaptation in the Caenorhabditis elegans act-5/act-3 model. PLoS Genet 19(6):e1010806 (2023).",
+      "pmid": "37384903", "pmcid": "PMC10310345", "doi": "10.1371/journal.pgen.1010806",
+      "access": "Open access; FULL TEXT read.",
+      "organism": "Caenorhabditis elegans",
+      "caveat": "SPECIES TRANSFER. This is the only source that localises the required similarity to a short defined element, and it is a nematode, not a fish. Any rule leaning on it is marked species_transfer: true and capped at 'medium' confidence."
+    },
+    "xie2025": {
+      "citation": "Xie L, Jakutis G, Dooley CM, Guenther S, Kontarakis Z, Howard SP, Juan T, Stainier DYR. Induction of a transcriptional adaptation response by RNA destabilization events. EMBO Rep (2025).",
+      "pmid": "40128410", "pmcid": "PMC12069562", "doi": "10.1038/s44319-025-00427-3",
+      "access": "Open access; abstract and introduction read in full.",
+      "organism": "mouse cells"
+    },
+    "elbrolosy2026": {
+      "citation": "El-Brolosy MA, Oak A, Hoang AT, Damergi Y, Fischer A, Saunders RA, Luo J, Balabaki A, Guez J, Whitfield TW, Goldman SR, Latifkar A, Lu YR, Stainier DYR, Karczewski KJ, Corradin O, Weissman JS. Mechanisms linking cytoplasmic decay of translation-defective mRNA to transcriptional adaptation. Science (2026).",
+      "pmid": "41678638", "pmcid": "PMC13286266", "doi": "10.1126/science.aea1272",
+      "access": "Open access author manuscript; FULL TEXT read.",
+      "organism": "human and mouse cell lines",
+      "importance": "Largest systematic survey available, and the strongest source of NEGATIVE evidence about paralogue buffering."
+    },
+    "howe2013": {
+      "citation": "Howe K, Clark MD, Torroja CF, Torrance J, Berthelot C, Muffato M, et al. The zebrafish reference genome sequence and its relationship to the human genome. Nature 496:498-503 (2013).",
+      "pmid": "23594743", "pmcid": "PMC3703927", "doi": "10.1038/nature12111",
+      "access": "Full text retrieved via NCBI efetch (Europe PMC fullTextXML returns HTTP 500 for this PMCID).",
+      "organism": "zebrafish"
+    },
+    "kettleborough2013": {
+      "citation": "Kettleborough RNW, Busch-Nentwich EM, Harvey SA, Dooley CM, de Bruijn E, van Eeden F, et al. A systematic genome-wide analysis of zebrafish protein-coding gene function. Nature 496:494-497 (2013).",
+      "pmid": "23594742", "pmcid": "PMC3743023", "doi": "10.1038/nature11992",
+      "access": "Open access; read.",
+      "organism": "zebrafish",
+      "importance": "The largest systematic zebrafish knockout phenotype screen, and it argues AGAINST paralogue redundancy as the explanation for silent nulls."
+    },
+    "mellis2024": {
+      "citation": "Mellis IA, Melzer ME, Bodkin N, Goyal Y. Prevalence of and gene regulatory constraints on transcriptional adaptation in single cells. Genome Biology 25:217 (2024).",
+      "pmid": "39135102", "pmcid": "PMC11320884", "doi": "10.1186/s13059-024-03351-2",
+      "access": "Open access; read.",
+      "organism": "human and mouse (bulk RNA-seq and Perturb-seq)",
+      "importance": "Best available genome-scale answer to 'how often does paralogue upregulation follow a knockout': 16/74."
+    },
+    "bailonzambrano2022": {
+      "citation": "Bailon-Zambrano R, Sucharov J, Mumme-Monheit A, Murry M, Stenzel A, Pulvino AT, Mitchell JM, Colborn KL, Nichols JT. Variable paralog expression underlies phenotype variation. eLife 11:e79247 (2022).",
+      "pmid": "36134886", "pmcid": "PMC9555865", "doi": "10.7554/eLife.79247",
+      "access": "Open access; read.",
+      "organism": "zebrafish",
+      "importance": "THE key source for R06: buffering strength tracks paralogue EXPRESSION LEVEL, in zebrafish, and the buffering paralogue has no phenotype of its own."
+    },
+    "chrystal2026": {
+      "citation": "Chrystal PW et al. Two zebrafish pcdh15 paralogs cooperate in sensory organ development. Communications Biology 9:1048 (2026).",
+      "pmid": "42151386", "pmcid": "PMC13443151", "doi": null,
+      "access": "Open access; read.",
+      "organism": "zebrafish",
+      "importance": "Same paralogue pair buffers in one tissue and not in another -- direct evidence that buffering is tissue-specific."
+    },
+    "ross2022": {
+      "citation": "Ross JA, Ren H, Zhang Y, Chi NC, Hamilton MK. Mutation of zebrafish Ankfn1 and Ankfn1-like paralogs. G3 12(3):jkab446 (2022).",
+      "pmid": "35100349", "pmcid": "PMC9210315", "doi": "10.1093/g3journal/jkab446",
+      "access": "Open access; read.",
+      "organism": "zebrafish",
+      "importance": "Quantified buffering by genotype class and showed it is ASYMMETRIC between the ancestral and derived copy."
+    },
+    "obrien2026": {
+      "citation": "O'Brien S, Fujimoto MH, Lowe AR, Berger AH. Transcriptional adaptation influences buffering among essential paralog gene families. Preprint (2026).",
+      "pmid": null, "pmcid": null, "doi": "10.64898/2026.09.24.754217", "epmc_id": "PPR1331733",
+      "access": "PREPRINT, ABSTRACT ONLY. Not open access in Europe PMC; bioRxiv returned HTTP 429 then Cloudflare 1015 on every attempt. NOT peer reviewed.",
+      "organism": "human cells",
+      "caveat": "Used for one rate only, clearly flagged as unverified."
+    },
+    "zfin_omics": {
+      "citation": "ZFIN phenotype and Ensembl Compara paralogue rows as integrated in this repo at omics/genomic/annotations.jsonl.gz (ZFIN release 2026-10-31, Ensembl release 116 / GRCz11).",
+      "access": "Local. 87,041 allele_phenotype rows (54,452 reagent='allele', 32,589 reagent='knockdown/crispant'); 2,263 paralog rows; 2,742 paralog_count rows.",
+      "licence": "ZFIN CC BY 4.0; Ensembl open",
+      "caveat": "ZFIN allele_phenotype rows are NOT a clean readout of 'this mutant has a phenotype'. Many rows for phenotypically wild-type genes are bookkeeping annotations such as 'whole organism increased amount' / 'decreased amount' / 'absent', which record Mendelian ratios and lethality rather than a morphological defect. Row counts are used here only as corroboration, never to decide a compensation verdict."
+    }
+  },
+
+  "rules": [
+    {
+      "rule_id": "R01-NO-MRNA-NO-ADAPTATION",
+      "name": "An allele that makes no mRNA cannot trigger transcriptional adaptation",
+      "mechanism_kind": "transcriptional-adaptation",
+      "condition": {"all": [{"allele_kind.mrna_made": false}]},
+      "applies_to_allele_kinds": ["promoter-deletion", "full-locus-deletion", "gene-absent", "crispri"],
+      "consequence": "not-expected",
+      "confidence": "high",
+      "basis": "literature-derived, directly tested",
+      "why": "Transcriptional adaptation is triggered by the decay of the mutant transcript. If the lesion removes the promoter or the whole locus, or blocks transcription, there is no transcript to decay, so the trigger does not exist. This was tested directly by building RNA-less alleles.",
+      "delphi_note": "THIS IS THE RULE THAT FIRES MOST OFTEN FOR A DESIGNED ORGANISM. When a design simply does not carry the required gene, that is an RNA-less state, and transcriptional adaptation is positively excluded, not merely unevidenced.",
+      "sources": [
+        {"src": "elbrolosy2019", "locator": "abstract", "quote": "Alleles that fail to transcribe the mutated gene do not exhibit transcriptional adaptation, and these alleles give rise to more severe phenotypes than alleles displaying mutant mRNA decay."},
+        {"src": "elbrolosy2019", "locator": "Results, 'Sequence similarity and transcriptional adaptation' preceding paragraph; Fig. 3a", "quote": "Indeed, RNA-less alleles of hbegfa, vegfaa and alcama fail to upregulate hbegfb, vegfab and alcamb, respectively (Fig. 3a)."},
+        {"src": "elbrolosy2019", "locator": "Results; Fig. 3f, Extended Data Fig. 6b-e", "quote": "Therefore, use of RNA-less alleles can uncover phenotypes not observed in alleles exhibiting mutant mRNA degradation."},
+        {"src": "rossi2015", "locator": "abstract", "quote": "Moreover, egfl7 CRISPR interference, which obstructs transcript elongation and causes severe vascular defects, does not cause the upregulation of these genes."},
+        {"src": "elbrolosy2026", "locator": "Results, Perturb-seq design", "quote": "By contrast, CRISPR-interference (CRISPRi) would repress transcription without inducing mRNA decay, and thereby fail to induce TA."}
+      ],
+      "counter_evidence": [
+        {"note": "El-Brolosy 2019 found the egfl7 RNA-less allele still showed SOME emilin upregulation, only milder. So 'no mRNA' abolishes the adaptation response incompletely in at least one case, rather than to zero.", "src": "elbrolosy2019", "locator": "Results; Extended Data Fig. 6b", "quote": "the mutants displayed pronounced vascular defects (Fig. 3f) as well as milder upregulation of the emilin genes"},
+        {"note": "This rule excludes TRANSCRIPTIONAL ADAPTATION only. A paralogue that is constitutively expressed in the right tissue and stage can still buffer an RNA-less or absent gene without any induced change. That path is R06, not this rule."}
+      ]
+    },
+    {
+      "rule_id": "R02-DECAY-TRIGGER-REQUIRED",
+      "name": "Transcriptional adaptation requires a lesion that destabilises the mutant mRNA",
+      "mechanism_kind": "transcriptional-adaptation",
+      "condition": {"all": [{"allele_kind.mrna_made": true}, {"allele_kind.mrna_decayed": true}, {"allele_kind.knockdown": "not true"}]},
+      "applies_to_allele_kinds": ["nonsense", "frameshift", "splice-essential", "last-exon-deletion"],
+      "consequence": "permits 'plausible-by-rule' IF R05 and R06 also pass",
+      "confidence": "high",
+      "basis": "literature-derived, directly tested",
+      "why": "The trigger is the destabilisation of the mutant transcript, shown three ways: blocking NMD (upf1 loss, pharmacological NMD inhibition, translation block) abolishes the response; inducing decay artificially with uncapped RNA creates the response in wild types; and protecting the same RNA from exonuclease decay abolishes it again.",
+      "sources": [
+        {"src": "elbrolosy2019", "locator": "Results, Fig. 2a, Extended Data Fig. 5a", "quote": "Inactivating upf1 in these mutants led to decreased levels of mutant mRNA decay (Extended Data Fig. 5a) and loss of transcriptional adaptation (Fig. 2a)."},
+        {"src": "elbrolosy2019", "locator": "Results, Extended Data Fig. 5j", "quote": "injection of uncapped hif1ab or vegfaa RNAs with an upstream sequence which renders them resistant to 5' to 3' exonuclease-mediated decay did not induce transcriptional adaptation"},
+        {"src": "elbrolosy2019", "locator": "Results, first paragraph; Extended Data Fig. 1", "quote": "We started by analyzing different zebrafish and mouse mutants that harbor a premature termination codon (PTC) or have their last exon deleted"},
+        {"src": "ma2019", "locator": "abstract", "quote": "we show that mRNA bearing a premature termination codon (PTC) promptly triggers a GCR that involves Upf3a and components of the COMPASS complex."},
+        {"src": "xie2025", "locator": "abstract", "quote": "Together, these data highlight the critical role of RNA destabilization events as a trigger for TA, or at least a TA-like response."}
+      ],
+      "counter_evidence": [
+        {"note": "The requirement is DESTABILISATION, not a PTC as such. Xie 2025 obtained the same adapting-gene upregulation with Cas13d mRNA cleavage and with ribozyme pre-mRNA cleavage, neither of which involves a PTC. So any lesion that destabilises the transcript qualifies, and conversely a PTC is not magic.", "src": "xie2025", "locator": "abstract", "quote": "We find that both types of perturbations are effective in degrading Actg1 mRNA, and that they both upregulate Actg2."},
+        {"note": "A PTC in the LAST exon typically escapes NMD, so 'nonsense' is not uniformly a decay trigger. Position within the transcript is not modelled here; this is a known gap."},
+        {"note": "DECISIVE LIMIT ON THIS RULE. A PTC is NOT sufficient. In the very same genes, El-Brolosy found two other PTC-bearing alleles that show no transcriptional adaptation at all, while the lab's own alleles do. So allele identity, not lesion class, determines the outcome -- and our classifier only ever sees a lesion class. This is the single biggest reason 'plausible-by-rule' must never be scored as equal to 'documented'.", "src": "elbrolosy2019", "locator": "Results; Fig. 1c-f, Extended Data Fig. 1", "quote": "while analyzing various mutant alleles, we found that unlike hbegfaΔ7 and vclaΔ13, two other PTC bearing alleles, hbegfasa18135 and vclasa14599, do not display transcriptional adaptation"},
+        {"note": "Transcriptional adaptation is dose-sensitive and dominant: heterozygotes show a weaker response. A design carrying one broken copy is therefore not equivalent to a homozygous null.", "src": "elbrolosy2019", "locator": "Results, first paragraph; Extended Data Fig. 2b", "quote": "we found that vcla, hif1ab and egfl7 heterozygous animals also display transcriptional adaptation, albeit less pronounced than that observed in the homozygous mutants"}
+      ]
+    },
+    {
+      "rule_id": "R03-MISSENSE-NOT-EXPECTED",
+      "name": "A missense, in-frame or synonymous allele must NOT be classed compensable",
+      "mechanism_kind": "transcriptional-adaptation",
+      "condition": {"all": [{"allele_kind.mrna_made": true}, {"allele_kind.mrna_decayed": false}, {"allele_kind.knockdown": "not true"}]},
+      "applies_to_allele_kinds": ["missense", "in-frame-deletion", "synonymous", "start-loss"],
+      "consequence": "not-expected",
+      "confidence": "medium-high",
+      "basis": "mechanism-inferred from directly tested premises. FLAGGED: the decisive experiment (a missense allele of a gene with documented transcriptional adaptation, shown to fail to adapt) was NOT found in the sources read.",
+      "why": "A missense transcript is translated normally and is not an NMD substrate, so it is not destabilised; by R02 the trigger is destabilisation; therefore no transcriptional adaptation is expected. Ma et al. make the same inference explicit in reverse when they propose CREATING a PTC as a way to bring missense alleles under the compensation response.",
+      "sources": [
+        {"src": "ma2019", "locator": "abstract, final sentence", "quote": "may help lead to the development of therapeutic strategies that treat missense mutations associated with genetic disorders by either creating a PTC in the mutated gene or introducing a transgene containing a PTC to trigger a GCR."},
+        {"src": "ma2019", "locator": "abstract", "quote": "we demonstrate that the GCR is dependent on both the presence of a PTC and the nucleotide sequence of the transgene mRNA, which is homologous to the compensatory endogenous genes."},
+        {"src": "elbrolosy2019", "locator": "abstract", "quote": "by analysing several models of transcriptional adaptation in zebrafish and mouse, we uncover a requirement for mutant mRNA degradation."}
+      ],
+      "counter_evidence": [
+        {"note": "IMPORTANT EXCEPTION. Because the real requirement is destabilisation (R02 counter-evidence), a missense allele whose transcript happens to be destabilised for some other reason -- a disrupted splice signal, a created destabilising element, altered secondary structure -- could in principle trigger adaptation. The classifier therefore downgrades this rule to 'unknown' whenever the caller explicitly reports that the missense transcript is destabilised (input mrnaDestabilised: true).", "src": "xie2025", "locator": "abstract"},
+        {"note": "'start-loss' is the weakest member of this group. The claim that PTC recognition is translation-dependent rests on El-Brolosy's use of a translation block as an NMD-inhibition proxy in mouse Rela K.O. cells, not on a start-loss allele.", "src": "elbrolosy2019", "locator": "Results, Extended Data Fig. 5f, g"},
+        {"note": "A missense allele may be compensated by a mechanism OTHER than transcriptional adaptation -- notably a protein feedback loop (R08) or constitutive paralogue buffering (R06). This rule refuses transcriptional adaptation only, and the classifier still consults those paths."}
+      ]
+    },
+    {
+      "rule_id": "R04-KNOCKDOWN-NOT-ADAPTATION",
+      "name": "Knockdown does not trigger transcriptional adaptation -- which is why morphants and mutants differ",
+      "mechanism_kind": "transcriptional-adaptation",
+      "condition": {"any": [{"allele_kind.knockdown": true}]},
+      "applies_to_allele_kinds": ["knockdown-morpholino", "rnai", "crispri", "hypomorph"],
+      "consequence": "not-expected",
+      "confidence": "high",
+      "basis": "literature-derived, directly tested; this is the founding observation of the field",
+      "why": "A morpholino blocks translation or splicing of a transcript that is still present and not degraded; CRISPRi stops the transcript being made at all. Neither produces the decay products that trigger adaptation. The resulting phenotype gap between knockdown and mutant is large and systematic.",
+      "scoring_consequence": "If a DELPHI design reduces a gene's dose rather than nulling it, the compensation class is refused. A knockdown-like design gap does not get to borrow the mutant literature.",
+      "sources": [
+        {"src": "rossi2015", "locator": "title", "quote": "Genetic compensation induced by deleterious mutations but not gene knockdowns."},
+        {"src": "rossi2015", "locator": "abstract, final sentence", "quote": "Taken together, these data reveal the activation of a compensatory network to buffer against deleterious mutations, which was not observed after translational or transcriptional knockdown."},
+        {"src": "rossi2015", "locator": "abstract", "quote": "Similarly, vegfaa mutants but not morphants show an upregulation of vegfab."},
+        {"src": "rossi2015", "locator": "abstract", "quote": "egfl7 mutants do not show any obvious phenotypes while animals injected with egfl7 morpholino (morphants) exhibit severe vascular defects."},
+        {"src": "ma2019", "locator": "abstract", "quote": "Unlike capn3a-knockdown embryos, which have small livers, and nid1a-knockdown embryos, which have short body lengths, capn3a-null and nid1a-null mutants appear normal."},
+        {"src": "kok2015", "locator": "abstract", "quote": "a comparison of published morphant defects with the Sanger Zebrafish Mutation Project revealed that approximately 80% of morphant phenotypes were not observed in mutant embryos, similar to our mutant collection."}
+      ],
+      "counter_evidence": [
+        {"note": "MAJOR AND UNRESOLVED. Kok et al. read the same morphant/mutant discrepancy as evidence that MORPHOLINOS ARE UNRELIABLE, not that mutants are compensated, and they report that they could not attribute the missing mutant phenotypes to maternal effects or incomplete loss of function. Under their reading the ~80% figure says nothing about compensation at all. Both readings are live in the literature; this rule base uses the discrepancy only to refuse compensation for knockdowns, which is the direction both readings support.", "src": "kok2015", "locator": "abstract", "quote": "The absence of phenotypes in mutant embryos was not likely due to maternal effects or failure to eliminate gene function."},
+        {"note": "RNAi is classed as knockdown here, yet RNAi DOES degrade the target mRNA, so by R02's logic it might trigger adaptation. No source read here tested RNAi for transcriptional adaptation in zebrafish. Classing it as a refusal is the CONSERVATIVE choice and is flagged as an unsourced decision, not a finding."},
+        {"note": "Protein-feedback compensation is NOT excluded by this rule and is in fact detectable in knockdowns -- that is the discriminator in R08.", "src": "elbrolosy2017rev", "locator": "section 'Upregulation of related genes following a gene knockout', paragraph 1", "quote": "Upregulation of related genes due to the loss of a negative feedback loop may be the first hypothesis to test when a mutant fails to show a phenotype, and a knockdown approach may help test it."}
+      ]
+    },
+    {
+      "rule_id": "R05-SEQUENCE-SIMILARITY-REQUIRED",
+      "name": "The compensating gene must share sequence similarity with the mutant mRNA",
+      "mechanism_kind": "transcriptional-adaptation",
+      "condition": {"all": [{"candidate_compensator.sequence_similarity_to_mutant_mrna": true}]},
+      "consequence": "necessary condition for 'plausible-by-rule'; its absence forces 'not-expected', its unknown-ness forces 'unknown'",
+      "confidence": "high for 'similarity is required'; medium for the location detail",
+      "basis": "literature-derived, directly tested",
+      "where_must_the_similarity_lie": {
+        "answer": "NOT the whole transcript. Similarity located in the adapting gene's EXONS or INTRONS induces adaptation; similarity in its 3'UTR does NOT; similarity in its promoter gives only a mild response. On the mutant-mRNA side, the one mapped element lies between the PTC and the next exon/exon junction. A 25 bp element at 60% identity was sufficient in the one model where this was mapped.",
+        "evidence_grade": "the exon/intron-vs-3'UTR result is from a single zebrafish model (hif1ab/epas1a); the 25 bp element is from a single C. elegans model (act-5/act-3)"
+      },
+      "operational_definition_used_by_the_source": {
+        "similar_gene": "a partial BLASTn match anywhere inside the target gene body or within 2 kb upstream of its TSS",
+        "blast_settings": "BLASTn word size 7, E-value up to 1,000,000",
+        "WARNING": "That E-value threshold is extraordinarily permissive. Almost any pair of genes will have SOME match at E=1e6. This rule therefore must NOT be implemented as 'ran BLAST, got a hit'. The classifier requires either (a) a named published adapting-gene relationship, or (b) a paralogue relationship with a stated percent identity, and it records the identity figure so a reader can judge it."
+      },
+      "sources": [
+        {"src": "elbrolosy2019", "locator": "Results, 'Sequence similarity and transcriptional adaptation'; Extended Data Fig. 8g", "quote": "those exhibiting sequence similarity to exons or introns induced transcriptional adaptation while those exhibiting sequence similarity to the 3'UTR did not; and the transcripts exhibiting sequence similarity to the promoter induced only a mild response (Extended Data Fig. 8g)"},
+        {"src": "elbrolosy2019", "locator": "Results; Fig. 4b, Extended Data Fig. 8f", "quote": "Using the hif1ab model, we observed that only transcripts containing sequences similar to epas1a led to an increase in epas1a mRNA levels"},
+        {"src": "elbrolosy2019", "locator": "Methods, 'Sequence similarity and subsampling analyses'", "quote": "Genes were defined to be similar to the mutated gene when a partial match was identified inside the target gene body or its promoter region (ie, 2 kb upstream of the TSS)."},
+        {"src": "elbrolosy2019", "locator": "Methods, in vitro transcription", "quote": "Similar sequences were identified using a highly sensitive BLASTn analysis with a word size of 7 and an E-value of up to 1,000,000."},
+        {"src": "elbrolosy2019", "locator": "Results; Fig. 4a (mouse K.O. cell lines, NOT zebrafish)", "quote": "we observed that at least 50% of them were significantly upregulated in the different K.O. cells, compared to a maximum of 21% of randomly selected non-similar genes (Fig. 4a, Extended Data Fig. 8a-c)."},
+        {"src": "welker2023", "locator": "abstract", "quote": "we identified, in the 5' regulatory region of the act-3 locus, a 25-base pair (bp) element which exhibits 60% identity with a sequence in the act-5 mRNA and which, in the context of a minimal promoter, is sufficient to induce ectopic expression of the fluorescent reporter."},
+        {"src": "welker2023", "locator": "abstract", "quote": "The 25 nucleotide (nt) element in the act-5 mRNA lies between the premature termination codon (PTC) and the next exon/exon junction, suggesting the importance of this region of the mutant mRNA for TA."},
+        {"src": "elbrolosy2026", "locator": "abstract", "quote": "Further functional dissection reveals critical role for homology between trigger and target sequences."}
+      ],
+      "counter_evidence": [
+        {"note": "The 50% / 21% figures are from MOUSE KNOCKOUT CELL LINES (Fermt2, Actg1, Actb), not from zebrafish. Transferring them to a fish design is a species transfer."},
+        {"note": "Similarity is far from sufficient even in the source's own data: in Actg1 K.O. cells 7 of the 12 upregulated similar genes lost their upregulation in the RNA-less control, and the remainder did not.", "src": "elbrolosy2019", "locator": "Results; Extended Data Fig. 8a-c", "quote": "7 of the 12 upregulated 'similar' genes in Actg1 K.O. cells were not upregulated in Actg1 RNA-less cells, and 4 of the 6 upregulated 'similar' genes in Actb K.O. cells were not upregulated in Actb RNA-less cells"},
+        {"note": "Welker 2023 is C. elegans. The 25 bp / 60% identity figure has not been reproduced in zebrafish and must not be used as a zebrafish threshold.", "species_transfer": true},
+        {"note": "Welker 2023 themselves warn that the similarity needed may be very low, which cuts BOTH ways: it makes the condition easy to satisfy spuriously.", "src": "welker2023", "locator": "abstract", "quote": "Our findings also suggest that RNA fragments can modulate the expression of loci exhibiting limited sequence similarity"}
+      ]
+    },
+    {
+      "rule_id": "R06-PARALOGUE-MUST-BE-EXPRESSED",
+      "name": "A paralogue can only buffer if it is actually expressed in the required tissue and stage",
+      "mechanism_kind": "paralogue-buffering",
+      "condition": {"all": [
+        {"paralogue_exists": true},
+        {"paralogue_expressed_in_required_anatomy": true},
+        {"paralogue_expressed_at_required_stage": true}
+      ]},
+      "consequence": "permits 'plausible-by-rule'. If expression evidence is ABSENT -> 'unknown'. If the omics layer asserts not_expressed_in for the required anatomy -> 'not-expected'.",
+      "confidence": "medium-high",
+      "basis": "literature-derived, in zebrafish, by two independent routes: buffering strength tracks paralogue expression LEVEL (Bailon-Zambrano 2022), and buffering is TISSUE-SPECIFIC for a single paralogue pair (Chrystal 2026). The remaining guard element is only that no source has validated this as a predictive rule across many genes.",
+      "why": "Paralogue EXISTENCE is close to uninformative in zebrafish: 26% of zebrafish genes sit in ohnologue pairs from the teleost genome duplication, while compensation is uncommon. The only version of this condition that discriminates asks whether the paralogue is expressed where and when the function is required. Two zebrafish studies make that the causal variable rather than a plausible one: in mef2ca, heritable variation in paralogue expression level is what varies buffering across wild-type populations; in pcdh15a/b, the same pair buffers in retina and not in the mechanosensory lineage. Our transcriptomic omics layer supplies exactly the needed inputs: expressed_in with anatomy and stages, not_expressed_in, and expression_level in TPM.",
+      "omics_link": {
+        "layer": "omics/transcriptomic",
+        "card_path": "omics/index/genes/<symbol>.json.gz -> layers.transcriptomic.features",
+        "features_used": ["expressed_in (anatomy {id,label,uberon} + stages[])", "not_expressed_in", "expression_level (TPM)"],
+        "paralogue_source": "omics/genomic feature 'paralog' (Ensembl Compara release 116, within_species_paralog, carries identity_pct)"
+      },
+      "sources": [
+        {"src": "elbrolosy2026", "locator": "Discussion / Supplementary note on paralogous pairs", "quote": "While our analysis identified only one paralogous pair among the TA-candidate pairs, this likely reflects the relatively lower sensitivity of scRNA-seq in detecting small expression changes, as well as the relatively strict thresholds used to define TA candidates."},
+        {"src": "elbrolosy2026", "locator": "same section", "quote": "For example, applying a very relaxed criterion of CRISPRn fold change > 1 and CRISPRn/CRISPRi ratio > 1 yields 156 of the 439 possible paralogous pairs. Although most of these are very unlikely to represent TA candidates"},
+        {"src": "elbrolosy2026", "locator": "Methods / note on NMD-vector screens", "quote": "These include HBB, which did not induce its paralogs HBG1/2 or itself in HUDEP-2 cells; PKD1 (split into 5 pieces), which did not induce its paralog PKD2 in HEK cells; Dmd (split into 4 pieces), which did not induce its paralog Utrn or itself in undifferentiated C2C12 cells; and ARG1, which did not induce its paralog ARG2 or itself in HepG2 cells."},
+        {"src": "elbrolosy2019", "locator": "Methods, qPCR", "quote": "qPCR was performed at the embryonic or larval stage when the wild-type version of the mutated gene exhibits its highest expression level.", "note": "cited for the fact that the authors treat stage as decisive for detecting the response at all"},
+        {"src": "bailonzambrano2022", "locator": "abstract", "quote": "selective breeding enriched for high and low mef2ca paralog expression in the low- and high-penetrance strains, respectively", "note": "ZEBRAFISH. Paralogue expression LEVEL, not paralogue presence, is what varies with buffering."},
+        {"src": "bailonzambrano2022", "locator": "Discussion", "quote": "mef2cb is no longer required for craniofacial development, yet traces of the original craniofacial expression remain. The amount of vestigial expression is variable among individuals, resulting in variable buffering against mef2ca mutant phenotypes across a population."},
+        {"src": "bailonzambrano2022", "locator": "Discussion", "quote": "with the exception of mef2ca, the mef2 paralog mutants we analyzed here do not have an overt single mutant skeletal phenotype but do modify mef2ca mutant phenotypes.", "note": "A buffering paralogue can be phenotypically silent itself, so its own phenotype is NOT a usable signal."},
+        {"src": "chrystal2026", "locator": "abstract", "quote": "The retinal phenotype is particularly illustrative of paralog cooperativity since pcdh15b single mutants have mild phenotypes even in aged animals, but severe retinal cell dysmorphology and cell death when both paralogs are mutated."},
+        {"src": "chrystal2026", "locator": "Results; Fig. 3E legend", "quote": "Genetic dosage experiments demonstrate that only Pcdh15a is necessary for dye uptake; pcdh15a+/-; pcdh15b-/- mutants shows no significant difference to WT controls", "note": "THE TISSUE-SPECIFICITY CASE: the same paralogue buffers in retina and contributes nothing in the mechanosensory lineage."},
+        {"src": "ross2022", "locator": "abstract", "quote": "Zebrafish with both paralogs disrupted showed vestibular defects and early lethality from swim bladder inflation failure. One intact copy at either locus was sufficient to prevent major phenotypes."},
+        {"src": "ross2022", "locator": "Results; Table 5", "quote": "Categorical phenotypes in double mutant animals showed 96% (54/56) penetrance after combining results from both Chr24 mutations. For Chr12 homozygotes with at least one wild-type allele at Chr24 penetrance was 7% (8/112)"},
+        {"src": "howe2013", "locator": "Results, double-conserved-synteny section; Fig. 3b", "quote": "We identified 3,440 pairs of such ohnologues (26% of the all genes), for a total of 8,083 genes when subsequent duplications are taken into account.", "note": "Why existence is uninformative: ohnologue pairs are ordinary. The authors exclude intrachromosomal pairs, so 26% is a floor."}
+      ],
+      "counter_evidence": [
+        {"note": "DECISIVE NEGATIVE EVIDENCE AGAINST PARALOGUE OPTIMISM. In the largest systematic survey read, 1 of 439 possible paralogous pairs met the strict criteria, and even a deliberately over-permissive criterion reached only 156 of 439 (35.5%), of which the authors say most are unlikely to be real. Paralogue existence therefore predicts buffering very poorly, and this rule must never be allowed to fire on existence alone.", "src": "elbrolosy2026"},
+        {"note": "Our paralogue data is ASYMMETRIC. Ensembl Compara rows in omics/genomic do not always appear on both members of a pair: vclb lists vcla as a paralogue at 85.7% identity, but vcla carries no paralog row; alcamb lists alcama, alcama carries none. The classifier must therefore accept paralogues passed in by the caller and must not read 'no paralog row' as 'no paralogue'. It returns 'unknown' in that situation, not 'not-expected'."},
+        {"note": "An expressed paralogue is still not a functional equivalent. Subfunctionalisation after the teleost duplication is the norm, so co-expression is necessary but nowhere near sufficient."},
+        {"note": "THE LARGEST SYSTEMATIC ZEBRAFISH SCREEN EXPLICITLY REJECTS PARALOGUE REDUNDANCY as the main explanation for silent nulls, and offers two competing explanations ahead of it (partially-disrupting point mutations, and a phenotyping window limited to morphology and behaviour in the first 5 dpf). This is the strongest single argument against letting R06 carry much weight.", "src": "kettleborough2013", "locator": "Discussion", "quote": "Finally, the teleost-specific genome duplication might cause paralogue redundancy. While this is possible there are few examples of paralogues being completely redundant. In contrast, there are numerous paralogue pairs where gene expression domains and functions have split between paralogues."},
+        {"note": "Buffering is ASYMMETRIC between the ancestral and derived copy of a pair: losing the derived Ankfn1 copy gave 7% penetrance, losing the ancestral copy gave 0/110. Our paralogue input carries no ancestral/derived annotation, so the classifier cannot express this and will treat the two directions alike. Known gap.", "src": "ross2022", "locator": "Discussion", "quote": "Inactivation of the Chr12 (derived) paralog alone was sufficient for weak penetrance of the larval and swim bladder phenotypes (7% of offspring), while inactivation of the Chr24 (ancestral) paralog had no detected effect on these phenotypes (0/110)."},
+        {"note": "Demonstrated paralogue buffering is RARE in the literature, not a background assumption.", "src": "ross2022", "locator": "Discussion", "quote": "Few examples of paralogous gene pairs in zebrafish for which disruption of both copies creates a phenotype that differs from knockout of either paralog alone have been published"}
+      ]
+    },
+    {
+      "rule_id": "R07-TA-NOT-FUNCTIONAL-RESCUE",
+      "name": "Documented adaptation is NOT a documented rescue -- the vegfaa rule",
+      "mechanism_kind": "transcriptional-adaptation",
+      "condition": {"all": [{"documented_adaptation": true}, {"documented_phenotypic_rescue": "false or unknown"}]},
+      "consequence": "class stays 'documented' but functional_rescue is set to false/unknown and the verdict MUST NOT be scored as a met requirement",
+      "confidence": "high",
+      "basis": "literature-derived plus local ZFIN corroboration",
+      "why": "This is the rule that stops the COMPENSATORY class quietly rescuing every gap. vegfaa is the clearest case in the field: vegfaa mutants demonstrably upregulate vegfab -- it is one of the founding examples of transcriptional adaptation -- and vegfaa mutants nevertheless have severe, well replicated vascular phenotypes. The adaptation is real and the requirement is still not met. Three states must be kept apart: transcript up, protein up, phenotype rescued. Most of the literature establishes only the first.",
+      "sources": [
+        {"src": "rossi2015", "locator": "abstract", "quote": "Similarly, vegfaa mutants but not morphants show an upregulation of vegfab."},
+        {"src": "elbrolosy2019", "locator": "Results, first paragraph; Fig. 1a", "quote": "hbegfa, vcla, hif1ab, vegfaa, egfl7 and alcama zebrafish mutants exhibit increased mRNA levels of a paralogue or family member (hereafter referred to as 'adapting gene'), namely hbegfb, vclb, epas1a and epas1b, vegfab, emilin3a and alcamb, respectively (Fig. 1a)."},
+        {"src": "zfin_omics", "locator": "omics/genomic annotations.jsonl.gz, gene vegfaa, feature allele_phenotype, reagent='allele'", "quote": "116 allele-reagent phenotype rows across 22 distinct ZFIN publications, including 'dorsal longitudinal anastomotic vessel hypoplastic', 'blood circulation disrupted', 'angiogenic sprout central artery decreased amount'."},
+        {"src": "elbrolosy2019", "locator": "Results; Extended Data Fig. 6c", "quote": "vegfaa promoter-less mutants displayed a stronger central artery (CtA) sprouting phenotype than vegfaaΔ10 mutants", "note": "adaptation modulates severity without abolishing the phenotype"}
+      ],
+      "counter_evidence": [
+        {"note": "In the egfl7 case adaptation DOES appear to rescue the phenotype: the decay-competent allele is phenotypically wild type while the RNA-less allele has pronounced vascular defects. So functional rescue is possible, just not implied.", "src": "elbrolosy2019", "locator": "Results; Fig. 3f"},
+        {"note": "Rossi 2015 showed the candidate compensating extracellular matrix genes could rescue egfl7 morphants, which is positive functional evidence for that one case.", "src": "rossi2015", "locator": "abstract", "quote": "Among them are extracellular matrix genes that can rescue egfl7 morphants, indicating that they could be compensating for the loss of Egfl7 function in the phenotypically wild-type egfl7 mutants."}
+      ]
+    },
+    {
+      "rule_id": "R08-PROTEIN-FEEDBACK-IS-A-DIFFERENT-MECHANISM",
+      "name": "Upregulation seen in knockdown too is a protein feedback loop, not transcriptional adaptation",
+      "mechanism_kind": "protein-feedback",
+      "condition": {"all": [{"upregulation_in_knockdown": true}, {"upregulation_in_mutant": true}]},
+      "consequence": "permits 'documented' with kind='protein-feedback'; this is the ONE mechanism that survives a knockdown-style design gap",
+      "confidence": "medium",
+      "basis": "literature-derived via review, with named primary cases in other species",
+      "why": "If the lost protein normally represses its relative, then any loss of the protein -- mutation or knockdown -- de-represses the relative. Concordance between mutant and knockdown is therefore the discriminator between the two mechanisms, and it runs the opposite way to R04.",
+      "sources": [
+        {"src": "elbrolosy2017rev", "locator": "section on loss of negative feedback, paragraph 1", "quote": "mice lacking the ribosomal gene Rpl22 show no defects in translation owing to the upregulation of its paralogue, Rpl22l1, the expression of which is normally inhibited by RPL22"},
+        {"src": "elbrolosy2017rev", "locator": "same paragraph", "quote": "Upregulation of related genes due to the loss of a negative feedback loop may be the first hypothesis to test when a mutant fails to show a phenotype, and a knockdown approach may help test it."},
+        {"src": "elbrolosy2019", "locator": "Results, first paragraph; Extended Data Fig. 2a", "quote": "Injection of wild-type (wt) hif1ab, vegfaa, egfl7 and alcama mRNA into the respective mutants did not have any effect on this transcriptional adaptation response (Extended Data Fig. 2a), suggesting that it is triggered upstream of the loss of protein function.", "note": "cited as the control that separates the two mechanisms in the zebrafish cases"}
+      ],
+      "counter_evidence": [
+        {"note": "The Rpl22/Rpl22l1 and RBL2/RBL1 cases are mouse and human, not zebrafish, and reach us through a review rather than from the primary papers, which were not read. This rule is the weakest in the base and no zebrafish instance of it was sourced."}
+      ]
+    },
+    {
+      "rule_id": "R09-DOCUMENTED-CASE-LOOKUP",
+      "name": "A published outcome for this gene overrides inference",
+      "mechanism_kind": "any",
+      "condition": {"all": [{"gene_in_case_table": true}, {"case.allele_kind_compatible": true}]},
+      "consequence": "'documented', with the case's own direction (compensated or not-rescued) and its sources",
+      "confidence": "inherits the case's confidence",
+      "basis": "case table, see compensation-cases.json",
+      "why": "Where the field has an answer for a gene, the rule base should report that answer rather than re-derive it. The case table carries BOTH directions, because a rule validated only on positives is useless.",
+      "sources": [{"src": "elbrolosy2019", "locator": "Fig. 1a"}, {"src": "ma2019", "locator": "abstract"}, {"src": "rossi2015", "locator": "abstract"}, {"src": "elbrolosy2026", "locator": "Methods note"}, {"src": "zfin_omics", "locator": "allele_phenotype rows"}],
+      "counter_evidence": [
+        {"note": "A documented case is documented for THAT GENE in THAT ORGANISM at THAT STAGE with THAT ALLELE. It does not generalise to a paralogue, to another tissue, or to a different allele of the same gene -- El-Brolosy's own RNA-less alleles of the very same genes behave oppositely to the decay-competent ones."}
+      ]
+    },
+    {
+      "rule_id": "R10-MISSING-INPUTS-ARE-UNKNOWN",
+      "name": "Absent inputs yield 'unknown', never 'plausible-by-rule'",
+      "mechanism_kind": "none",
+      "condition": {"any": [
+        {"alleleKind": "null or 'unknown'"},
+        {"paralogues": "undefined/null AND gene not in case table"},
+        {"expression": "undefined/null when R06 is the only remaining path"}
+      ]},
+      "consequence": "unknown",
+      "confidence": "high",
+      "basis": "design decision of this rule base, stated so it can be audited",
+      "why": "The failure mode this whole module exists to prevent is hope dressed as a rule. An unknown is the honest output when the evidence needed to apply a rule has not been supplied, and it must be scored as an unmet requirement with a flagged reason, not as a pass.",
+      "sources": [],
+      "counter_evidence": [
+        {"note": "'unknown' is NOT evidence that compensation does not occur. It records only that this rule base could not reach a verdict. The distinction between 'unknown' and 'not-expected' is load-bearing and the two must never be collapsed in downstream scoring."}
+      ]
+    },
+    {
+      "rule_id": "R11-NO-CANDIDATE-COMPENSATOR",
+      "name": "No similar, expressed gene means no compensation",
+      "mechanism_kind": "none",
+      "condition": {"all": [{"paralogues": "empty array (asserted, not merely absent)"}, {"named_adapting_gene": "none"}]},
+      "consequence": "not-expected",
+      "confidence": "medium",
+      "basis": "literature-derived by necessity from R05",
+      "why": "Both mechanisms need a target: transcriptional adaptation needs a sequence-similar adapting gene, paralogue buffering needs a paralogue. If the caller ASSERTS that there is none, neither mechanism has anything to act through.",
+      "sources": [{"src": "elbrolosy2019", "locator": "abstract", "quote": "Transcriptome analysis in alleles displaying mutant mRNA decay reveals the upregulation of a substantial proportion of the genes that exhibit sequence similarity with the mutated gene's mRNA, suggesting a sequence-dependent mechanism."}],
+      "counter_evidence": [
+        {"note": "Adapting genes need not be paralogues. El-Brolosy's egfl7 adapting genes are emilin family members, and El-Brolosy 2026 explicitly allows non-paralogous adapting genes. So an empty PARALOGUE list does not prove an empty ADAPTING-GENE list, and this rule requires the caller to assert the absence of both. An empty paralogue array that merely reflects our asymmetric Ensembl rows must route to R10 instead.", "src": "elbrolosy2026", "locator": "Discussion", "quote": "It allows the identification of non-paralogous adapting genes, where decay intermediates may hybridize to sense pre-mRNAs at their loci."}
+      ]
+    },
+    {
+      "rule_id": "R12-NO-EXPRESSION-DATA-AT-ALL",
+      "name": "An organism with no expression data cannot be assessed for compensation",
+      "mechanism_kind": "none",
+      "condition": {"any": [{"organism_has_no_transcriptomic_layer": true}]},
+      "consequence": "unknown",
+      "confidence": "high",
+      "basis": "design decision, stated for audit",
+      "why": "The flying fish (Hirundichthys speculiger and relatives) has no expression data in this repo or anywhere we could source. Every expression-dependent rule is therefore inapplicable to the designed organism itself, and compensation verdicts for a flying-fish design rest entirely on zebrafish transfer. That transfer must be visible in the output, not buried.",
+      "sources": [{"src": "zfin_omics", "locator": "omics/genes.json field 'flying_fish'", "quote": "null for vegfaa and for the great majority of the 3,860-gene universe"}],
+      "counter_evidence": []
+    }
+  ],
+
+  "evaluation_order": [
+    "R12-NO-EXPRESSION-DATA-AT-ALL (flag only, does not short-circuit)",
+    "R10-MISSING-INPUTS-ARE-UNKNOWN (alleleKind missing -> unknown immediately)",
+    "R09-DOCUMENTED-CASE-LOOKUP",
+    "R01-NO-MRNA-NO-ADAPTATION (then fall through to R06, since an absent gene may still be buffered)",
+    "R04-KNOCKDOWN-NOT-ADAPTATION (then fall through to R08)",
+    "R03-MISSENSE-NOT-EXPECTED (then fall through to R08 and R06)",
+    "R02-DECAY-TRIGGER-REQUIRED",
+    "R05-SEQUENCE-SIMILARITY-REQUIRED",
+    "R06-PARALOGUE-MUST-BE-EXPRESSED",
+    "R11-NO-CANDIDATE-COMPENSATOR",
+    "R07-TA-NOT-FUNCTIONAL-RESCUE (applied as a modifier to any 'documented' verdict)",
+    "default: unknown"
+  ],
+
+  "quantitative_statements": [
+    {
+      "claim": "Approximately 80% of published zebrafish morphant phenotypes were not observed in mutant embryos.",
+      "value": 0.80, "n": "comparison of published morphant defects against the Sanger Zebrafish Mutation Project",
+      "src": "kok2015", "locator": "abstract",
+      "quote": "a comparison of published morphant defects with the Sanger Zebrafish Mutation Project revealed that approximately 80% of morphant phenotypes were not observed in mutant embryos, similar to our mutant collection.",
+      "caveat": "This is the discrepancy rate, NOT the compensation rate. Kok et al. attribute it to morpholino unreliability. It must not be quoted as 'the fraction of zebrafish mutants that show compensation'."
+    },
+    {
+      "claim": "The '~80%' figure rests on 19 of 24 hand-curated genes, after filtering 98 candidates down to 24.",
+      "value": {"not_recapitulated": "19 / 24 = 0.792"},
+      "src": "kok2015", "locator": "Results, ZMP comparison; Figure 6, Table 1, Table S5",
+      "quote": "Mutations in only 5 of these genes resulted in observable phenotypes that were largely consistent with MO knockdown experiments, while the rest did not (Figure 6, Table 1; Table S5).",
+      "caveat": "SMALL n AND HEAVILY CURATED. 98 ZMP mutants with published morphant phenotypes were filtered to 24 by excluding lesions 'unlikely to affect protein function'. Kok et al. attribute the discrepancy primarily to morpholino off-target effects, and offer redundancy only as a secondary gloss. This number must NEVER be used as a compensation prior.",
+      "retrieved_by": "a second sweep obtained the full text via NCBI efetch after the Europe PMC fullTextXML endpoint returned HTTP 500"
+    },
+    {
+      "claim": "In Kok et al.'s own collection, mutations in only 3 of 24 genes caused defects.",
+      "value": {"with_phenotype": "3 / 24 = 0.125", "lesions": 32},
+      "src": "kok2015", "locator": "Results",
+      "quote": "In the course of phenotypic analysis, we observed defects caused by mutations in only three of the twenty-four genes. These included gata2a, ccbe1 and flt4 mutants"
+    },
+    {
+      "claim": "In the largest systematic zebrafish knockout screen, 1,065 of 1,216 disruptive alleles had no phenotype at 5 dpf (87.6%).",
+      "value": {"no_phenotype": "1065 / 1216 = 0.876", "phenotypic": "between 0.06 and 0.103"},
+      "src": "kettleborough2013", "locator": "Results and Discussion",
+      "quote": "We have performed a phenotypic analysis of 1216 nonsense and essential splice mutations. Of these, 48 mutations caused a phenotype within the first 5 dpf and 77 alleles were linked to a phenotype. Among the predicted disruptive mutations, 1065 were deemed to have no phenotype at 5 dpf and 26 are under further investigation.",
+      "caveat": "THE SOURCE IS INTERNALLY INCONSISTENT. Results gives 48 causal + 77 linked = 125 alleles (10.3%), while the Discussion says 'about 6% (74/1216) of alleles are phenotypic' -- the 6% excludes the 77 'linked' alleles. The honest figure is a RANGE of 6-10% phenotypic, and the range is reported rather than a point estimate. Note also that the phenotyping window was morphology and behaviour in the first 5 dpf only, so 'no phenotype' substantially means 'no early visible phenotype'.",
+      "use": "This is the correct answer to 'what fraction of zebrafish mutants are silent' -- about 88% -- but Kettleborough explicitly declines to attribute that silence to compensation."
+    },
+    {
+      "claim": "16 of 74 knockout targets showed significant upregulation of their paralogues.",
+      "value": {"fraction": "16 / 74 = 0.216"},
+      "src": "mellis2024", "locator": "Results; Fig. 1C,D",
+      "quote": "We found that 16 out of 74 knockout targets had significant upregulation of their paralogs (Fig. 1C,D, Additional File 2: Fig. S1A, Additional File 1: Table S2).",
+      "thresholds": "adj. p < 0.05 and log2(fold change) > 0.5",
+      "caveat": "HUMAN AND MOUSE, not zebrafish. But this is the best available genome-scale answer to 'how often', and it is ~22%, not ~80%.",
+      "use": "The closest thing to a defensible prior for paralogue upregulation after a null. Still only upregulation, not rescue."
+    },
+    {
+      "claim": "6 of 110 paralogue knockouts showed transcriptional adaptation; the authors call it recurrent but not pervasive.",
+      "value": {"fraction": "6 / 110 = 0.055 (UNVERIFIED -- pairs vs knockouts may not be commensurable)"},
+      "src": "obrien2026", "locator": "abstract",
+      "quote": "This analysis identified six paralog pairs that undergo a transcriptional adaptation following CRISPR-mediated loss of one paralog in the pair.",
+      "quote2": "These data provide a comprehensive evaluation of transcriptional adaptation and show that transcriptional adaptation is recurrent but not pervasive among paralogous human genes.",
+      "caveat": "PREPRINT, NOT PEER REVIEWED, ABSTRACT ONLY (bioRxiv rate-limited every retrieval attempt), and HUMAN cells. Reported for the direction of the estimate only."
+    },
+    {
+      "claim": "3,440 ohnologue pairs cover 26% of zebrafish genes.",
+      "value": {"pairs": 3440, "genes_in_pairs_fraction": 0.26, "genes_with_subsequent_duplications": 8083},
+      "src": "howe2013", "locator": "Results, double-conserved-synteny section; Fig. 3b",
+      "quote": "We identified 3,440 pairs of such ohnologues (26% of the all genes), for a total of 8,083 genes when subsequent duplications are taken into account.",
+      "caveat": "A FLOOR, not a point estimate: the authors excluded intrachromosomal ohnologue pairs because 'we cannot reliably distinguish them from segmental duplications'. Note also that the widely-quoted '~15% of human genes are single-copy in human and multi-copy in zebrafish' appears NOWHERE in Howe's text; it is computable from Howe Table 2 (3,105/20,479 = 15.2%) and must be cited as derived, not quoted.",
+      "use": "Establishes that a paralogue is an ordinary thing for a zebrafish gene to have, which is why existence cannot license compensation."
+    },
+    {
+      "claim": "At least 50% of genes sharing sequence similarity with the mutated gene were significantly upregulated in knockout cells, versus at most 21% of randomly chosen non-similar genes.",
+      "value": {"similar": 0.50, "random": 0.21},
+      "src": "elbrolosy2019", "locator": "Results; Fig. 4a, Extended Data Fig. 8a-c",
+      "quote": "we observed that at least 50% of them were significantly upregulated in the different K.O. cells, compared to a maximum of 21% of randomly selected non-similar genes (Fig. 4a, Extended Data Fig. 8a-c).",
+      "caveat": "MOUSE KNOCKOUT CELL LINES (Fermt2, Actg1, Actb), not zebrafish, and the 'similar' set was defined with BLASTn at an E-value up to 1,000,000."
+    },
+    {
+      "claim": "Only one paralogous pair met the strict TA-candidate criteria in a genome-scale CRISPRn-vs-CRISPRi Perturb-seq comparison; a deliberately over-permissive criterion reached 156 of 439 possible paralogous pairs.",
+      "value": {"strict": "1 / 439", "relaxed": "156 / 439 = 0.355"},
+      "n": "84 perturbed genes passing QC; 754 TA-candidate pairs overall; 439 possible paralogous pairs",
+      "src": "elbrolosy2026", "locator": "Discussion / Supplementary note on paralogous pairs",
+      "quote": "applying a very relaxed criterion of CRISPRn fold change > 1 and CRISPRn/CRISPRi ratio > 1 yields 156 of the 439 possible paralogous pairs. Although most of these are very unlikely to represent TA candidates",
+      "caveat": "Human K562 cells, not zebrafish. The authors attribute the low strict count partly to scRNA-seq sensitivity, so 1/439 is a LOWER bound and 156/439 an upper bound in which they do not believe. The honest reading is: the fraction of paralogue pairs showing adaptation is somewhere between ~0.2% and ~36%, and is not known.",
+      "use": "This is the single most important number in the base: it is why paralogue existence alone never licenses compensation."
+    },
+    {
+      "claim": "Among TA-candidate pairs, 54.3% of adapting genes were downregulated by at least 1.5-fold and 71.8% by at least 1.25-fold upon loss of ILF3.",
+      "value": {"ge_1.5_fold": 0.543, "ge_1.25_fold": 0.718},
+      "src": "elbrolosy2026", "locator": "Figure legend / statistics for the ILF3 dependency analysis",
+      "quote": "Among TA-candidate pairs, 54.3% of adapting genes were downregulated by at least 1.5-fold, and 71.8% by at least 1.25-fold upon ILF3 loss.",
+      "caveat": "This is the fraction of candidate responses that depend on ILF3, not an effect size of compensation. Human cells."
+    },
+    {
+      "claim": "A 25 bp element at 60% identity was sufficient to induce the adapting gene reporter.",
+      "value": {"length_bp": 25, "identity": 0.60},
+      "src": "welker2023", "locator": "abstract",
+      "quote": "a 25-base pair (bp) element which exhibits 60% identity with a sequence in the act-5 mRNA and which, in the context of a minimal promoter, is sufficient to induce ectopic expression of the fluorescent reporter.",
+      "caveat": "C. elegans, one gene pair. NOT a zebrafish threshold."
+    },
+    {
+      "claim": "Zebrafish genes carrying at least one within-species paralogue, as recorded in this repo.",
+      "value": "2,742 of 3,860 genes in the universe carry a paralog_count row; 2,263 paralog rows are present",
+      "src": "zfin_omics", "locator": "omics/genomic/annotations.jsonl.gz feature counts",
+      "caveat": "Ensembl Compara rows are ASYMMETRIC in this dataset, so these counts understate the true pairing. They are reported to show the scale of the problem -- paralogues are ordinary in zebrafish -- not as a genome statistic. The teleost-genome-duplication fraction itself was NOT sourced to a primary paper here; see COMPENSATION.md 'What I could not source'."
+    }
+  ],
+
+  "could_not_source": [
+    "The CONTENT of the 2026 Author Correction to Ma et al. 2019 (PMID 42265482). Not open access, no abstract in Europe PMC. Rules resting on ma2019 alone are capped at 'medium' confidence for this reason.",
+    "Full text of Rossi et al. 2015 and Ma et al. 2019 (neither is open access nor in Europe PMC full text). All their quotes here are from abstracts, so no figure-level locators are given for them.",
+    "Full text of Kok et al. 2015: in Europe PMC, but fullTextXML returned HTTP 500 on 2026-11-01. The 'small proportion' figure is therefore unquantified here.",
+    "NUMERIC FOLD-CHANGES / EFFECT SIZES for transcriptional adaptation. There is no quotable fold-change in El-Brolosy 2019's main text or figure legends: every magnitude lives in a qPCR bar panel or a heat map. The rule base therefore contains NO effect-size threshold, and must not acquire one without someone reading the figure panels or supplementary tables.",
+    "DOSAGE COMPENSATION in teleost paralogue pairs. Five distinct Europe PMC query formulations returned nothing with a quotable quantitative statement for zebrafish ohnologues. Treated as an open gap, not a negative result. Leads not retrieved: Diss et al. 2014 J Exp Zool B (PMID 24376223); Trends in Genetics 2022 'Retention of duplicated genes in evolution' (PMID 34294428, paywalled).",
+    "Full text of the O'Brien 2026 preprint (bioRxiv returned HTTP 429, then Cloudflare 1015, on every attempt). Its 6/110 rate is abstract-only and unverified.",
+    "A direct experiment showing that a MISSENSE allele of a gene with documented transcriptional adaptation fails to adapt. R03 is mechanism-inferred, and says so.",
+    "Any expression, phenotype or compensation data for a flying fish. There is none."
+  ]
+}

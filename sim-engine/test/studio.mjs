@@ -492,6 +492,40 @@ await ok('P4 reads the altitude scenario\'s numeric CLmax (no text parsing)', as
   assert.ok(/lean_inputs\.CLmax/.test(r.result.lean_inputs.sources.CLmax));
 });
 
+console.log('\nglide claims never reach the sustained-power laws (the E3 defect, 2026-11-01)');
+const accepted = r => r.result.violations.filter(v => v.status === 'accepted').map(v => v.lean_ref.constraint);
+await ok('(a) the real adult flying fish, realistic 40 m glide at 15 m/s, violates NO accepted law', async () => {
+  const r = await T.scenarioRun({ organism: 'flying-fish', scenario: 'glide', params: { launch_airspeed_override_m_s: 15 },
+    claims: { flight_mode: M === 'e3' ? 'powered' : 'glide', airspeed_m_s: 15, glide_total_distance_m: 40 } });
+  assert.deepEqual(accepted(r), [], `accepted laws violated: ${accepted(r).join(', ')}`);
+  // The power laws must say "not my business", not "holds" (a glide pays no sustained power at all).
+  for (const id of ['E3', 'C14']) assert.equal(verdict(r, id), 'out-of-scope', `${id} should be out of scope for a glide`);
+  assert.equal(r.result.lean_inputs.spec.flight_mode, 'glide');
+  // The whole-glide distance is reported, never ruled on: no theorem covers the kinetic phase.
+  assert.equal(r.result.lean_inputs.not_covered.glide_total_distance_m.value, 40);
+  assert.ok(!('glide_total_distance_m' in r.result.lean_inputs.spec));
+});
+await ok('(b) a claim of SUSTAINED POWERED level flight at 10 m/s still violates E3 (the headline result)', async () => {
+  const r = await T.scenarioRun({ organism: 'flying-fish', scenario: 'glide', claims: { flight_mode: M === 'e3b' ? 'glide' : 'powered', airspeed_m_s: 10 } });
+  assert.ok(accepted(r).includes('E3'), `E3 not violated; accepted violations: ${accepted(r).join(', ') || 'none'}`);
+  const v = r.result.violations.find(x => x.lean_ref.constraint === 'E3');
+  assert.equal(v.severity, 'red'); assert.equal(r.result.lean_inputs.spec.flight_mode, 'powered');
+});
+await ok('(c) the TFF powered-flight claim still fires', async () => {
+  const r = await T.scenarioRun({ organism: 'tff', scenario: 'glide', claims: { flight_mode: 'powered', airspeed_m_s: 10 } });
+  assert.ok(accepted(r).includes('E3'), `TFF powered claim: accepted violations ${accepted(r).join(', ') || 'none'}`);
+});
+await ok('no real wild type violates an accepted law in any flight scenario (standing rule)', async () => {
+  for (const organism of ['flying-fish', 'zebrafish-adult']) {
+    for (const [scenario, params] of [['glide', {}], ['wind', { headwind_m_s: 3 }], ['altitude', { altitude_m: 1000 }]]) {
+      // MUTATE=wild adds a powered-flight claim, which legitimately violates E3: the check must then FAIL,
+      // proving it can still see an accepted violation when there is one.
+      const r = await T.scenarioRun({ organism, scenario, params, ...(M === 'wild' ? { claims: { flight_mode: 'powered', airspeed_m_s: 10 } } : {}) });
+      assert.deepEqual(accepted(r), [], `${organism}/${scenario}: ${accepted(r).join(', ')}`);
+    }
+  }
+});
+
 console.log('\nserver and CLI');
 await ok('contract.json lists all twelve studio tools (regenerate with --dump-contract)', () => {
   const c = JSON.parse(fs.readFileSync(path.join(engine, 'contract.json'), 'utf8'));

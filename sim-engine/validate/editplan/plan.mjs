@@ -14,6 +14,9 @@ export const SCOPE =
 
 /** How many guides to report per nuclease. */
 const TOP = Number(process.env.EDITPLAN_TOP ?? 4);
+/** Cut-site distances are ranked in buckets of this many bp; see the ranking rule below. */
+export const RANK_BUCKET_BP = Number(process.env.EDITPLAN_RANK_BUCKET_BP ?? 10);
+export const RANKING_RULE = `point change: cut-site distance bucketed to ${RANK_BUCKET_BP} bp, then the on-target heuristic, then exact distance. knockout: the on-target heuristic alone. The bucket exists because 1 bp versus 2 bp of cut-site proximity is not a real difference while a poly-T guide is dead.`;
 
 /**
  * One editing plan for one gene edit.
@@ -30,15 +33,34 @@ export async function editPlan(gene, spec, { network = true, species = 'danio_re
 
   // --- guides, per nuclease
   const byNuclease = {};
+  const allEnumerated = [];   // every protospacer found, not just the reported top few: the base-editor and
+                              // prime-editing scans need the whole set, since the right guide for a base
+                              // editor is the one that puts the target base in the window, not the top-ranked one.
   for (const nuc of ['SpCas9', 'SaCas9', 'AsCas12a']) {
     const maxCutDistance = t.kind === 'knockout' ? Infinity : window;
     let gs = E.enumerateGuides(res.window, nuc, { targetPositions, maxCutDistance });
-    if (t.kind === 'knockout') gs = gs.filter(g => g.cut_site_chrom >= t.genomic_window[0] && g.cut_site_chrom <= t.genomic_window[1]);
+    if (t.kind === 'knockout') {
+      // A cut in an INTRON does not shift the frame. Keep only cuts inside a coding interval of the early CDS,
+      // and say which codon the frameshift would start at and how much protein it removes.
+      gs = gs.filter(g => (t.coding_intervals_in_window || []).some(iv => g.cut_site_chrom >= iv.start && g.cut_site_chrom <= iv.end))
+        .map(g => {
+          const cdsIdx = E.cdsIndexOfGenomic(res, g.cut_site_chrom);
+          return { ...g, cut_cds_position: cdsIdx, frameshift_from_codon: cdsIdx == null ? null : Math.ceil(cdsIdx / 3),
+            protein_fraction_lost_if_frameshift_here: cdsIdx == null ? null : +(1 - Math.ceil(cdsIdx / 3) / res.protein_length).toFixed(3),
+            distance_cut_to_edit_bp: null, cut_is_in_a_coding_exon: true };
+        });
+    }
     gs = gs.map(g => ({ ...g, on_target: E.onTargetHeuristic(g.spacer) }));
-    // Order: for a point edit, cut distance first (HDR falls off fast with distance); then the heuristic.
+    // Ranking rule, stated so it can be argued with:
+    //  * knockout: the on-target heuristic alone (any cut inside the early-CDS window frameshifts).
+    //  * point change: cut-site distance BUCKETED to 10 bp, then the heuristic. Bucketing because
+    //    Prykhozhij 2018 shows proximity matters, but 1 bp versus 2 bp is not a real difference, while
+    //    a guide with a poly-T run is simply dead. Without the bucket a 1-bp-closer dead guide wins.
+    const bucket = g => Math.floor((g.distance_cut_to_edit_bp ?? 0) / RANK_BUCKET_BP);
     gs.sort((a, b) => (t.kind === 'knockout'
-      ? b.on_target.score - a.on_target.score
-      : (a.distance_cut_to_edit_bp - b.distance_cut_to_edit_bp) || (b.on_target.score - a.on_target.score)));
+      ? (b.on_target.score - a.on_target.score) || ((b.protein_fraction_lost_if_frameshift_here ?? 0) - (a.protein_fraction_lost_if_frameshift_here ?? 0))
+      : (bucket(a) - bucket(b)) || (b.on_target.score - a.on_target.score) || (a.distance_cut_to_edit_bp - b.distance_cut_to_edit_bp)));
+    allEnumerated.push(...gs);
     byNuclease[nuc] = { n_found: gs.length, search_window_bp: t.kind === 'knockout' ? `the early-CDS window ${t.genomic_window[0]}-${t.genomic_window[1]}` : `cut site within ${window} bp of the edited codon`, guides: gs.slice(0, TOP) };
   }
   const spGuides = byNuclease.SpCas9.guides;
@@ -73,8 +95,9 @@ export async function editPlan(gene, spec, { network = true, species = 'danio_re
     }
   }
 
-  // --- base editor route
-  const be = E.baseEditorOption(res, allGuides);
+  // --- base editor route, and prime editing where the change is a transversion
+  const be = E.baseEditorOption(res, allEnumerated);
+  const pe = E.primeEditOption(res, allEnumerated);
 
   const plan = {
     organism: { species: 'Danio rerio (zebrafish)', assembly: E.ASSEMBLY, strain_note: 'coordinates are the GRCz11 reference. Laboratory strains (AB, TU, WIK) differ from the reference at high SNP density; the protospacer and PAM must be sequenced in the actual breeding fish before ordering (falsifier "polymorphism").', germline: 'one-cell-stage embryo injection, then F0 outcross -> F1 genotyping -> F2 if a homozygote is needed' },
@@ -107,8 +130,10 @@ export async function editPlan(gene, spec, { network = true, species = 'danio_re
     off_target: offt.length ? offt : { ran: false, reason: offtarget ? 'no guide to search' : 'offtarget:false' },
     hdr_donor: donors.length ? donors : { ran: false, reason: t.kind === 'knockout' ? 'a knockout needs no donor' : 'no guide to anchor a donor on' },
     base_editor_route: be,
+    prime_editor_route: pe,
     reagents: E.ZEBRAFISH_REAGENTS,
-    full_sequences_to_order: best ? orderSheet(res, best, donors, be) : null,
+    full_sequences_to_order: best ? orderSheet(res, best, donors, be, pe) : null,
+    ranking_rule: RANKING_RULE,
     screening: screening(res, t),
     feasibility_and_what_is_not_established: E.FEASIBILITY,
     what_would_falsify_this_plan: E.FALSIFIERS,
@@ -116,7 +141,7 @@ export async function editPlan(gene, spec, { network = true, species = 'danio_re
   return { gene: res.gene, edit: typeof spec === 'string' ? spec : res.target.kind, refused: false, plan, resolved: res };
 }
 
-function orderSheet(res, g, donors, be) {
+function orderSheet(res, g, donors, be, pe) {
   const sc = E.ZEBRAFISH_REAGENTS.scaffold;
   const needsG = g.spacer[0] !== 'G';
   return {
@@ -129,6 +154,9 @@ function orderSheet(res, g, donors, be) {
     ssODN_symmetric_5to3: donors.find(d => d.style === 'symmetric' && d.ran)?.sequence_to_order_5to3 || null,
     ssODN_asymmetric_5to3: donors.find(d => d.style === 'asymmetric' && d.ran)?.sequence_to_order_5to3 || null,
     base_editor_guide_5to3: be?.guides?.[0]?.spacer || null,
+    prime_editing_pegRNA_rna_5to3: pe?.designs?.[0]?.pegRNA_full_rna_5to3 || null,
+    prime_editing_pegRNA_3prime_extension_dna: pe?.designs?.[0]?.pegRNA_3prime_extension_dna_5to3 || null,
+    prime_editing_pe3_nicking_spacer: pe?.designs?.[0]?.pe3_nicking_guide?.spacer || null,
     genotyping_primers: 'NOT designed by this module. Design them outside the ssODN footprint (so the donor cannot template the PCR) and amplicon-sequence; do not rely on a restriction digest.',
   };
 }
@@ -152,7 +180,9 @@ export function provenanceFor(plans) {
     p('MIT specificity', null, 'derived', 'computed from the Hsu 2013 weights over the GRCz11 sites found by NCBI blastn-short; a PREDICTION, and a floor because the aligner is heuristic'),
     p('off-target site list', E.OFFTARGET_DB, 'derived', 'NCBI BLAST URL API, blastn-short word_size 7 against the zebrafish genome assembly; gene context from Ensembl /overlap/region'),
     p('ssODN arm lengths', '40/40 and 36/91 nt', 'borrowed', 'the symmetric design follows published zebrafish point-knock-in protocols; the 36/91 asymmetric design is Richardson 2016, measured in HUMAN cells and borrowed here'),
-    p('HDR efficiency in zebrafish', null, 'measured-secondhand', 'Boel 2018 (Dis Model Mech) and Prykhozhij 2018 (NAR); quoted as an order of magnitude, not re-read from the primary figures in this run'),
+    p('error-free HDR rate in zebrafish', '1-4 % of alleles', 'measured', 'Boel et al. 2018, Dis Model Mech 11:dmm035352, doi 10.1242/dmm.035352 - measured by NGS at THEIR loci, not ours. Borrowed to bound the order of magnitude.'),
+    p('prime-editing rate in zebrafish', 'up to 30 % somatic, germline transmission shown', 'measured', 'Petri et al. 2022, Nat Biotechnol 40:189-193, doi 10.1038/s41587-021-00901-y - at THEIR loci, not ours'),
+    p('pegRNA PBS and RTT lengths', '13 nt / edit-distance + 15 nt', 'assumed', 'the published defaults of Anzalone et al. 2019, Nature 576:149-157, doi 10.1038/s41586-019-1711-4; not optimised for this locus, and prime editing needs a length screen at every new site'),
     p('phenotype produced by the edit', null, 'assumed', 'NOT ESTABLISHED. design-validation/REPORT.md scored 1 of 10 phenotypic parameters, that one FAILED, and the joint verdict was (NOT CLOSE / largely UNSHOWN, Lean gate FAILS)'),
   ];
   return prov;
@@ -175,6 +205,8 @@ export function panel(plans) {
         ['off-target sites in GRCz11', ot?.search?.ran ? `${ot.search.n_sites_within_mismatch_limit} sites with <= ${ot.search.max_mismatches} mismatches (${ot.perfect_matches} perfect, including the on-target); MIT specificity ${ot.mit_specificity?.specificity}` : `not run: ${ot?.search?.reason || 'n/a'}`, 'derived - a floor, not a ceiling'],
         ['ssODN donor', d ? `${d.length_nt} nt, arms ${d.arms.left_nt}/${d.arms.right_nt}, ${d.blocking_mutations_applied} silent blocking mutation(s), protein check ${d.protein_check?.status}` : (r.edit === 'knockout' ? 'not needed (frameshift)' : 'none'), 'derived'],
         ['base editor', pl.base_editor_route?.reachable === true ? `${pl.base_editor_route.editor_class}: ${pl.base_editor_route.edit}` : `NOT reachable: ${pl.base_editor_route?.reason || pl.base_editor_route?.note || '-'}`, 'derived'],
+        ['prime editing', pl.prime_editor_route?.applicable ? `pegRNA designed: PBS ${pl.prime_editor_route.designs[0].pbs_length_nt} nt, RTT ${pl.prime_editor_route.designs[0].rtt_length_nt} nt, nick ${pl.prime_editor_route.designs[0].nick_to_edit_bp} bp from the edit (${pl.prime_editor_route.zebrafish_precedent})` : `not applicable: ${pl.prime_editor_route?.reason || '-'}`, 'derived - no efficiency predicted'],
+        ['HDR rate to expect', E.FEASIBILITY.hdr_in_zebrafish.headline_rate, 'measured in OTHER loci (Boel 2018)'],
         ['phenotype predicted?', 'NOT ESTABLISHED (design-validation/REPORT.md: 1 of 10 parameters scored, that one failed)', 'assumed'],
         ['approval', 'institutional animal-care approval (IACUC or equivalent) required before any injection', 'n/a'],
       ],

@@ -1,7 +1,7 @@
 {
  "meta": {
   "example": "b-impossible-spec",
-  "ran_at": "2026-11-01T04:46:13.737Z",
+  "ran_at": "2026-11-01T05:23:33.584Z",
   "node": "v24.13.0",
   "headline": "no design meets the spec: 57/57 rejected; C15 glide_range violated (bound 4.37 m from 1 m vs 1000 m), P1 thermal violated (CTmax 40.45 °C vs 45 °C)",
   "checks": [
@@ -69,7 +69,7 @@
  },
  "text": "a zebrafish-derived fish that glides at least 1000 m from a 1 m launch and survives 10–45 °C as an adult",
  "parse": {
-  "contract_version": "0.7.0",
+  "contract_version": "0.7.1",
   "result": {
    "spec": {
     "start_from": [
@@ -304,7 +304,7 @@
   }
  },
  "design": {
-  "contract_version": "0.7.0",
+  "contract_version": "0.7.1",
   "result": {
    "status": "no design meets the spec",
    "validation": {
@@ -1162,16 +1162,17 @@
   "sustained_power_W": 0.000001
  },
  "lean_check": {
-  "contract_version": "0.7.0",
+  "contract_version": "0.7.1",
   "result": {
-   "lawset": "1.6.0",
+   "lawset": "1.7.0",
    "kernel": "evaluates the same formulas; not a kernel check: kernel certificates exist only for the recorded examples",
    "summary": {
     "violated": 2,
     "binding_violations": 2,
     "holds": 0,
-    "out_of_scope": 7,
-    "cannot_evaluate": 20
+    "out_of_scope": 9,
+    "unknown_lawset": 0,
+    "cannot_evaluate": 18
    },
    "verdicts": [
     {
@@ -1294,19 +1295,22 @@
     },
     {
      "law_id": "fick-principle",
-     "version": "1.1.0",
+     "version": "1.2.0",
      "kind": "biological",
      "status": "accepted",
      "constraint": "C14",
      "band": "proved",
-     "verdict": "cannot-evaluate",
+     "verdict": "out-of-scope",
      "binding": true,
-     "missing": [
-      "efficiency",
-      "oxycaloric_J_per_unit_O2",
-      "cardiacOutput",
-      "arterialO2",
-      "airspeed_m_s and LD_max (or powerRequired_W)"
+     "missing": [],
+     "scope_reason": "the Fick aerobic bound caps SUSTAINED AEROBIC power demand (powered level or climbing flight, sustained swimming). This design claims an unpowered glide (glide geometry is given (glideHeight_m / glideDistance_m) and no power source or climb is claimed), whose energy comes from potential and kinetic energy rather than metabolism, so W v / (L/D) here is not a metabolic demand and this law does not judge it. See fick-principle scope.excludes in lean/registry.",
+     "evaluator_verdict": "out-of-scope",
+     "applies_to": [
+      "sustained aerobic power DEMAND: powered level flight, climbing flight, and sustained (aerobic) swimming — work the animal must pay for out of metabolism"
+     ],
+     "excludes": [
+      "unpowered descent or glide: the work comes from potential and kinetic energy, not from metabolism, so W v / (L/D) computed for a descent is NOT a demand this law bounds. A real gliding flying fish compared against this ceiling comes back \"violated\" only because the caller converted a glide into a level-powered-flight requirement; that is an application error, not a violation (it happened to Park and Choi specimens making realistic glide claims, 2026-11-01).",
+      "burst (anaerobic) effort paid out of white-muscle stores, which is what a flying fish is understood to use for take-off and taxiing"
      ]
     },
     {
@@ -1423,15 +1427,22 @@
     },
     {
      "law_id": "E3",
-     "version": "2.0.0",
+     "version": "2.1.0",
      "kind": "biological",
      "status": "accepted",
      "constraint": "E3",
      "band": "empirical",
-     "verdict": "cannot-evaluate",
+     "verdict": "out-of-scope",
      "binding": true,
-     "missing": [
-      "airspeed_m_s and LD_max (or powerRequired_W)"
+     "missing": [],
+     "scope_reason": "the aerobic ceiling bounds SUSTAINED AEROBIC power demand (powered level or climbing flight, sustained swimming). This design claims an unpowered glide (glide geometry is given (glideHeight_m / glideDistance_m) and no power source or climb is claimed), paid for out of potential and kinetic energy rather than metabolism, so this law does not judge it. See E3 scope.excludes in lean/registry.",
+     "evaluator_verdict": "out-of-scope",
+     "applies_to": [
+      "sustained aerobic power DEMAND: powered level flight, climbing flight, and sustained (aerobic) swimming — work the animal must pay for out of metabolism"
+     ],
+     "excludes": [
+      "unpowered descent or glide: the work comes from potential and kinetic energy, not from metabolism, so W v / (L/D) computed for a descent is NOT a demand this law bounds. A real gliding flying fish compared against this ceiling comes back \"violated\" only because the caller converted a glide into a level-powered-flight requirement; that is an application error, not a violation (it happened to Park and Choi specimens making realistic glide claims, 2026-11-01).",
+      "burst (anaerobic) effort paid out of white-muscle stores, which is what a flying fish is understood to use for take-off and taxiing"
      ]
     },
     {
@@ -1633,7 +1644,13 @@
      "message": "No sustained power outside the thermal window; Q10 bound inside: CTmin ≤ T ≤ CTmax whenever P > 0 fails for the committed numbers (outside the thermal window no positive sustained power exists (thermal_rules_out))"
     }
    ],
-   "excluded": [],
+   "excluded": [
+    {
+     "constraint": "TL1",
+     "law_id": "test-loop-only-density-sanity",
+     "why": "not in lawset 1.7.0"
+    }
+   ],
    "laws_without_browser_evaluation": [
     "E1",
     "E5",
@@ -1678,7 +1695,7 @@
    },
    {
     "quantity": "git commit",
-    "value": "1f7b433dcd7f2e40463dd65ef443f5b91a6b19d6",
+    "value": "e4444f69efad042de928731680b92a8f13ce044c",
     "kind": "derived",
     "source": "git rev-parse HEAD (or DELPHI_GIT_SHA) at load time."
    },
@@ -1695,7 +1712,7 @@
     "source": "Not a kernel check."
    }
   ],
-  "scope": "NOT A KERNEL CHECK. The formulas the Lean constraints encode are evaluated in floating point. \"holds\" means the design satisfies the relation under its named hypotheses, never that the design is feasible; \"violated\" means the committed numbers break the relation under those hypotheses; \"out-of-scope\" means the law or the comparison is scoped (taxa, life stage, ranges) away from this design and says nothing either way (pass taxon to evaluate flying-fish-scoped rows). Laws listed in laws_without_browser_evaluation were not evaluated at all. Kernel certificates exist only for the recorded examples under lean/Delphi/Certificates/.",
+  "scope": "NOT A KERNEL CHECK. The formulas the Lean constraints encode are evaluated in floating point. \"holds\" means the design satisfies the relation under its named hypotheses, never that the design is feasible; \"violated\" means the committed numbers break the relation under those hypotheses; \"out-of-scope\" means the law or the comparison is scoped (taxa, life stage, ranges) away from this design and says nothing either way (pass taxon to evaluate flying-fish-scoped rows); \"unknown-lawset\" means the generated checker does not embed this law set, so NOTHING was evaluated and no row may be read as either a pass or a failure. Laws listed in laws_without_browser_evaluation were not evaluated at all. Kernel certificates exist only for the recorded examples under lean/Delphi/Certificates/.",
   "weakest_input": "derived",
   "counts": {
    "derived": 4

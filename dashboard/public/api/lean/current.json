@@ -1,9 +1,9 @@
 {
- "version": "1.6.0",
- "created": "2026-11-01T04:37:40.476Z",
- "previous": "1.5.0",
- "commit": "7168d39c71fa426db3b1f1e94b9a30db9d086ddc",
- "note": "E3 1.0.0 -> 2.0.0: the Fick aerobic envelope widened after a measured zebrafish broke it (Palstra et al. 2010, PMC3013094: MO2max at Ucrit 2630 mg O2 kg^-1 h^-1, about 2x the per-kg delivery v1 allowed). v2 bounds eta <= 0.23 (Gladman and Askew 2024) and O2 delivery Q*Ca <= 0.0187 ml O2/s at 0.06 kg (1600 mg O2 kg^-1 h^-1), ceiling 0.0458 -> 0.0833 W, wording rescoped from every teleost to its sources; v1 stays compiled and pinned by law sets 1.0.0-1.5.0, and v2 is proved a weakening of v1 (TeleostAerobic.toV2). Flying-fish powered-flight shortfall: 16x on the new envelope, about 10 to 29x (central about 20x) across corrected inputs, 38x with the original snapper proxies; still ruled out by an order of magnitude. perturb-current 1.1.0 adds a P2b scope assumption (aerobic only below about 0.8 Ucrit; taxon-appropriate ceiling); fick-principle 1.1.0 adds a scope note (taxon-appropriate MO2max or Q). The three new versions carry approval role carried-forward-pending-review: no person has reviewed them yet. Report: physics/FICK-CEILING-CHECK.md.",
+ "version": "1.7.0",
+ "created": "2026-11-01T05:18:21.427Z",
+ "previous": "1.6.0",
+ "commit": "e4444f69efad042de928731680b92a8f13ce044c",
+ "note": "E3 2.0.0 -> 2.1.0 and fick-principle 1.1.0 -> 1.2.0, WORDING ONLY: scope.applies_to and scope.excludes now say the aerobic bound is on sustained aerobic power DEMAND (powered level or climbing flight, sustained swimming) and does NOT apply to unpowered descent or glide, where the work comes from potential and kinetic energy rather than metabolism, nor to burst effort on white-muscle stores. No Lean statement, hypothesis or number changed (statement hashes identical); v2.0.0 and v1.1.0 are archived in law-versions/ and stay pinned by law sets up to 1.6.0. Prompted by E3 and C14 firing red on real Park and Choi flying fish making ordinary glide claims: the checker now returns out-of-scope for a declared unpowered glide, and a standing registry test asserts no accepted law is violated by a real organism making a realistic claim.",
  "laws": [
   {
    "law_id": "E1",
@@ -61,7 +61,7 @@
   },
   {
    "law_id": "E3",
-   "version": "2.0.0",
+   "version": "2.1.0",
    "kind": "biological",
    "status": "accepted",
    "label": "Efficiency and O2 delivery lie in the ranges the cited sources support (widened after measured zebrafish)",
@@ -84,13 +84,20 @@
       "unit": "kg",
       "note": "the O2-delivery bound (1600 mg O2 kg^-1 h^-1) was converted to ml O2/s for a 0.06 kg fish; at any other mass the absolute bound 0.0187 ml/s is not the one the sources give"
      }
-    }
+    },
+    "applies_to": [
+     "sustained aerobic power DEMAND: powered level flight, climbing flight, and sustained (aerobic) swimming — work the animal must pay for out of metabolism"
+    ],
+    "excludes": [
+     "unpowered descent or glide: the work comes from potential and kinetic energy, not from metabolism, so W v / (L/D) computed for a descent is NOT a demand this law bounds. A real gliding flying fish compared against this ceiling comes back \"violated\" only because the caller converted a glide into a level-powered-flight requirement; that is an application error, not a violation (it happened to Park and Choi specimens making realistic glide claims, 2026-11-01).",
+     "burst (anaerobic) effort paid out of white-muscle stores, which is what a flying fish is understood to use for take-off and taxiing"
+    ]
    },
    "constraint_scopes": {},
    "constraints": [
     "E3"
    ],
-   "content_hash": "bfa804b9246fcefc4b0596de5a620b6debcf76b15a803e4f47c6be7e522ab686"
+   "content_hash": "1eea4e2760f44d835b32c3a65eadcb831131dd69b8ae03e0abbdc9dcb0f7b289"
   },
   {
    "law_id": "E4",
@@ -475,7 +482,7 @@
   },
   {
    "law_id": "fick-principle",
-   "version": "1.1.0",
+   "version": "1.2.0",
    "kind": "biological",
    "status": "accepted",
    "label": "Fick principle: aerobic supply is at most eta E Q (Ca - Cv)",
@@ -489,13 +496,20 @@
      "any"
     ],
     "life_stages": [],
-    "ranges": {}
+    "ranges": {},
+    "applies_to": [
+     "sustained aerobic power DEMAND: powered level flight, climbing flight, and sustained (aerobic) swimming — work the animal must pay for out of metabolism"
+    ],
+    "excludes": [
+     "unpowered descent or glide: the work comes from potential and kinetic energy, not from metabolism, so W v / (L/D) computed for a descent is NOT a demand this law bounds. A real gliding flying fish compared against this ceiling comes back \"violated\" only because the caller converted a glide into a level-powered-flight requirement; that is an application error, not a violation (it happened to Park and Choi specimens making realistic glide claims, 2026-11-01).",
+     "burst (anaerobic) effort paid out of white-muscle stores, which is what a flying fish is understood to use for take-off and taxiing"
+    ]
    },
    "constraint_scopes": {},
    "constraints": [
     "C14"
    ],
-   "content_hash": "7a255d60a81fb136bef08b2a15c8d5c749bb2753c297f68ade48edc202962bf2"
+   "content_hash": "77f9f993028e8e0b625073b6a37ccd0fc1ae13ee33a4f22745b97508dae86114"
   },
   {
    "law_id": "fin-length-ratio",
@@ -1411,7 +1425,7 @@
    "content_hash": "cc4fecaa7c6139dfe7dda4b373135f5cc8213630967dce0f62c6d9f204d0fd80"
   }
  ],
- "file": "lean/registry/lawsets/lawset-1.6.0.json",
+ "file": "lean/registry/lawsets/lawset-1.7.0.json",
  "is_current": true,
  "origin": "registry"
 }

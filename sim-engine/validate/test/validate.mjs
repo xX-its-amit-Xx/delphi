@@ -139,5 +139,27 @@ const doc = (base, edits, genotype) => { let d = { ...O.docFor(bundle, base), id
     `n ${all.n} -> ${out.n} with Cyprinidae held out`);
   check('joint-inverse', (() => { const A = [[2, 0.3], [0.3, 1]], I = inverse(A); const p = I[0][0] * A[0][0] + I[0][1] * A[1][0]; return Math.abs(p - (M('joint-inverse') ? 0 : 1)) < 1e-9; })());
 }
+// functional_resolution (the fourth named result): the interface must never let a COMPENSATORY hypothesis count as
+// a demonstrated resolution, must not silently accept a class outside the ladder, and must recompute the counts.
+{
+  const { normaliseLedger, LADDER } = await import('../functional-interface.mjs');
+  const stub = { ran: true, closest_functional_analogue: { id: 'flying-fish', name: 'flying fish', function: 'glide' },
+    requirement_set: [{ id: 'req-1', requirement: 'lifting area per mass', source: 'test', kind: 'measured' }],
+    counts: { SAME: 99 },  // deliberately wrong, to prove the counts are recomputed
+    ledger: [
+      { id: 'd1', difference: 'pectoral area', class: 'SAME', evidence: [{ claim: 'x', source: 'test', kind: 'measured' }] },
+      { id: 'd2', difference: 'lat4a residue', class: 'ALLELIC', evidence: [{ claim: 'x', source: 'test', kind: 'measured' }] },
+      { id: 'd3', difference: 'no flying-fish transcriptome', class: M('functional-hypothesis-not-a-resolution') ? 'SAME' : 'COMPENSATORY', evidence: [{ claim: 'could be compensated', source: 'test', kind: 'assumed' }] },
+      { id: 'd4', difference: 'girdle muscle', class: 'INVENTED_CLASS', evidence: [] },
+    ] };
+  const L = normaliseLedger(stub);
+  check('functional-hypothesis-not-a-resolution',
+    L.ran && L.resolution.demonstrated === 2 && L.resolution.hypothesised === 1 && L.resolution.unresolved === 1
+    && L.unknown_classes.length === 1 && L.counts_disagreed_with_module?.length > 0 && /^FAIL/.test(L.gate),
+    `demonstrated ${L.resolution.demonstrated}, hypothesised ${L.resolution.hypothesised}, unresolved ${L.resolution.unresolved}, unknown ${L.unknown_classes.length}`);
+  const absent = normaliseLedger({ ran: false, reason: 'not landed' });
+  check('functional-absent-is-not-a-pass', absent.ran === false && !!absent.reason && absent.resolution === undefined
+    && LADDER.length === (M('functional-absent-is-not-a-pass') ? 99 : 6));
+}
 console.log(`\n${n - fails}/${n} passed${MUT ? ` (MUTATE=${MUT})` : ''}`);
 process.exit(fails);

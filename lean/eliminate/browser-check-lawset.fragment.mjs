@@ -87,13 +87,22 @@ export function judgeRows(rows, design = {}, spec = {}, opts = {}) {
     if (!lid) return { ...r, lawset: ver, law: null, computed_verdict: r.verdict, scope_check: null, display: r.verdict === 'violated' ? 'red' : r.verdict === 'holds' ? 'green' : 'none' };
     const pin = ls.laws[lid];
     const law = { law_id: lid, version: pin ? pin.version : null, kind: pin ? pin.kind : LAW_INFO[lid].kind, status: pin ? pin.status : 'not-in-lawset' };
-    const sc = scopeCheck(r.id, design, spec);
+    let sc = scopeCheck(r.id, design, spec);
     // Version-dependent constant: E3 1.0.0 (law sets 1.0.0-1.5.0) ruled at 0.0458 W, E3 2.0.0 at 0.0833 W.
     // Re-applying the pinned version's ceiling keeps verdicts against older law sets reproducible.
     if (r.id === 'E3' && pin && pin.version === '1.0.0' && r.numbers && typeof r.numbers.powerRequired_W === 'number' && typeof r.numbers.ceiling_v1_W === 'number') {
       const P = r.numbers.powerRequired_W, c1 = r.numbers.ceiling_v1_W;
       r = { ...r, verdict: leTol(P, c1) ? 'holds' : 'violated', numbers: { ...r.numbers, ceiling_W: c1, shortfall_factor: P > 0 ? P / c1 : null, ceiling_pinned_by: 'E3@1.0.0' } };
     }
+    // A fragment may already have decided this row is out of scope BY CLAIM KIND (what the design claims, not which
+    // organism it is: an unpowered glide against an aerobic bound, say). Carry its reason into scope_check, with the
+    // law's applies_to/excludes, so a consumer never has to fall back to `note` to find out why. `kind` tells the two
+    // apart: 'claim-kind' (the caller asked the wrong law) vs 'organism' (taxon, life stage or range).
+    if (r.verdict === 'out-of-scope') {
+      const info = LAW_INFO[lid] || {};
+      sc = { in_scope: false, kind: 'claim-kind', reason: r.note || 'out of scope for what this design claims',
+        scope: { applies_to: (info.scope && info.scope.applies_to) || [], excludes: (info.scope && info.scope.excludes) || [] } };
+    } else if (!sc.in_scope) sc = { ...sc, kind: 'organism' };
     let verdict = r.verdict;
     if (!pin || law.status === 'proposed' || law.status === 'retired') verdict = 'not-in-lawset';
     else if (!sc.in_scope && (r.verdict === 'holds' || r.verdict === 'violated')) verdict = 'out-of-scope';

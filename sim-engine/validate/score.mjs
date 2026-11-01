@@ -29,6 +29,7 @@ import { loadReferences, rawFromState, closestPhenotype } from './phenotype.mjs'
 import { closestGenotype, STATE_NOT_PHENOTYPE } from './genotype.mjs';
 import { phenoSanity, genoSanity, stateEnvelope } from './sanity.mjs';
 import { leanByComponent } from './lean-components.mjs';
+import { functionalResolutionFor } from './functional-interface.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 // Weights, floor, alpha, cut and evidence map live in score-weights.json (versioned, frozen before validation).
@@ -176,6 +177,9 @@ export async function assess(args = {}) {
   out.score = { value: score == null ? null : +score.toFixed(4), plausible: score != null && score >= SC.plausible_threshold, components: C, version: SC.version, ...(rank ? { rank_score: rank.value, rank } : {}),
     formula: 'exp(sum w_i ln max(c_i,0.01) / sum w_i) over components that ran; w = P .35, L .25, G .15, S .15, E .10' };
   out.phenotype = pheno; out.genotype = geno; out.sanity = { phenotype: pSan, genotype: gSan }; out.lean = lean;
+  // The FOURTH named result. Built by another thread in validate/functional/; absent until it lands, and then
+  // reported as 'did not run' rather than assumed. It never moves the composite score (see SCORER-RESULTS.md).
+  out.functional = await functionalResolutionFor(args.design_for_functional ?? (args.specimen ? { specimen: args.specimen } : args.organism), args);
   out.raw = raw;
   out.ms = Date.now() - t0;
   return out;
@@ -196,7 +200,7 @@ function provOf(r) {
 
 /** The three separately reported results (Amit, 2026-11-01): genotype similarity, phenotype similarity, and Lean on
  *  the DESIGNED organism. Never merged into one another; the composite score is reported beside them, not instead. */
-export function threeResults(r, { claims = null } = {}) {
+export function namedResults(r, { claims = null } = {}) {
   const ge = r.genotype?.edits || [];
   const perGene = ge.map(e => {
     const c = e.comparison || {}, alt = c.alt_state_in_real_organisms || null;
@@ -234,8 +238,12 @@ export function threeResults(r, { claims = null } = {}) {
     claims: claims || null,
     gate: anyAccepted ? 'FAIL: an accepted law is violated by the designed organism; the design is not validated, whatever the similarity scores' : 'no accepted-law violation found (most laws may be cannot-evaluate or out-of-scope: see counts)',
     note: 'Floating-point evaluation of the Lean-backed formulas (lean/eliminate/browser-check.mjs), not a kernel check.' };
-  return { genotype_similarity, phenotype_similarity, lean_check, lean_gate_failed: anyAccepted };
+  const fr = r.functional || { ran: false, reason: 'the functional ledger was not computed' };
+  return { genotype_similarity, phenotype_similarity, lean_check, functional_resolution: fr,
+    lean_gate_failed: anyAccepted, functional_gate_failed: !!(fr.ran && fr.resolution?.unresolved > 0) };
 }
+/** Kept as the former name: callers that imported threeResults keep working, and now get the fourth result too. */
+export const threeResults = namedResults;
 
 /** Benchmark / design-schema trait name -> the specimen-record field phenotype.mjs reads. Shared with score-v12.mjs
  *  so one mapping serves every version. */
@@ -269,8 +277,8 @@ export async function designScore(design, opts = {}) {
   else args.organism = design;
   args.exclude = [...(opts.reference_set_excluding || []), ...(opts.exclude || []), ...(args.exclude || [])];
   const r = await assess(args);
-  const three = threeResults(r);
-  return { ...three, score: r.score.value, plausible: r.score.plausible, rank_score: r.score.rank_score ?? null, rank: r.score.rank ?? null, components: r.score.components, verdict: r.verdict, closest_real_relative: r.verdict.closest_real_relative,
+  const named = namedResults(r);
+  return { ...named, score: r.score.value, plausible: r.score.plausible, rank_score: r.score.rank_score ?? null, rank: r.score.rank ?? null, components: r.score.components, verdict: r.verdict, closest_real_relative: r.verdict.closest_real_relative,
     excluded: r.phenotype.excluded, scorer: r.scorer, design: r.design,
     genotype_summary: r.genotype.edits.map(e => ({ gene: e.edit.gene, edit: e.edit.raw, checks: e.checks, closest_species: e.comparison?.closest_species ? { species: e.comparison.closest_species.species, identity_after: e.comparison.closest_species.identity_after } : null,
       alt_state_exists_in_real_organism: e.comparison?.alt_state_in_real_organisms ?? null, annotations: e.annotations })),
@@ -286,8 +294,8 @@ export async function designScoreTool(args = {}) {
 
 export async function validateDesign(args = {}) {
   const r = await assess(args);
-  const three = threeResults(r);
-  const res = { design: r.design, results: { genotype_similarity: three.genotype_similarity, phenotype_similarity: three.phenotype_similarity, lean_check: three.lean_check }, lean_gate_failed: three.lean_gate_failed, verdict: r.verdict, score: r.score, closest_relative_phenotype: r.phenotype, closest_relative_genotype: r.genotype, sanity: r.sanity, lean_by_component: r.lean, scorer: r.scorer, ms: r.ms };
+  const named = namedResults(r);
+  const res = { design: r.design, results: { genotype_similarity: named.genotype_similarity, phenotype_similarity: named.phenotype_similarity, lean_check: named.lean_check, functional_resolution: named.functional_resolution }, lean_gate_failed: named.lean_gate_failed, functional_gate_failed: named.functional_gate_failed, verdict: r.verdict, score: r.score, closest_relative_phenotype: r.phenotype, closest_relative_genotype: r.genotype, sanity: r.sanity, lean_by_component: r.lean, scorer: r.scorer, ms: r.ms };
   if (args.swarm) res.swarm = swarmTasks(args, r);
   return envelope(res, provOf(r), SCOPE);
 }

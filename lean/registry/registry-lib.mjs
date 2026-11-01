@@ -29,7 +29,12 @@ export function hashedView(law) {
   return { law_id: law.law_id, version: law.version, kind: law.kind, class: law.class,
     lean_ref: { module: r.module ?? null, theorem: r.theorem ?? null, structure: r.structure ?? null, statement_sha256: r.statement_sha256 ?? null },
     statement_en: law.statement_en, hypotheses: law.hypotheses ?? [], scope: law.scope ?? null, shared_scope: law.shared_scope ?? null,
-    non_vacuity_witness: law.non_vacuity_witness ?? null };
+    non_vacuity_witness: law.non_vacuity_witness ?? null,
+    // The declarative check (lean/eliminate/browser-check-declared.fragment.mjs) IS part of what the law says
+    // about a design, so editing it must bump the version. Deliberately left `undefined` when the law has no
+    // block: canonical() drops undefined keys, so every law written before this field existed keeps its hash
+    // and every released lawset pin stays valid.
+    browser_check: law.browser_check };
 }
 export const contentHash = law => sha256(canonical(hashedView(law)));
 

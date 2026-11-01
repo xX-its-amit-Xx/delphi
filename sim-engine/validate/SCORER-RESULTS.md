@@ -173,6 +173,47 @@ v1.0.0 passed 4 of 8; v1.1.0 passes 5 of 8.
 whose validation was blind.
 <!-- V11:END -->
 
+## functional_resolution: the fourth named result, and why it stays out of the composite
+
+`functional_resolution` is exposed beside `genotype_similarity`, `phenotype_similarity` and `lean_check`, in
+`designScore` and in `validate_design` (`result.results`), and on the Validate panel. The ledger is built by
+another thread in `sim-engine/validate/functional/`; I consume it through `validate/functional-interface.mjs`,
+which states the shape, validates what comes back, recomputes the counts from the rows so a module summary cannot
+disagree with its own entries, and reports "did not run" when the module is absent. Nothing is assumed in its
+place.
+
+**Where I will not put it: inside the composite score or `rank_score`.** I agree with the coordinator, and the
+reasons are measurable rather than stylistic.
+
+1. **Thin-data terms have already cost real organisms in this scorer.** When I added the larval envelope from two
+   lineages in v1.1.0, C3 got *worse*, 83 % to 75 %. When I tightened the fin envelope, a real mutant (prdm1a tp39)
+   lost its plausible status. Both were honest attempts to add a signal from sparse data, and both produced false
+   negatives on real biology. The functional ledger is sparser still.
+2. **A sparse component breaks ranking in a way the number hides.** The composite renormalises the weights over the
+   components that actually ran. A design with a ledger would therefore be scored on a different weighting from one
+   without, so the two scores would not be comparable — and ranking synthetic designs is the whole purpose. This is
+   exactly why `S` is excluded when no spec is given.
+3. **It would let a hypothesis pay for a gap.** If a resolution raises the score, then asserting "this difference
+   could be compensated" raises the score, and a design with an unexplained gap scores *higher* by adding a
+   hypothesis. That is the v1.2.0 "absence = pass" failure in a worse form: not absence passing, but a claim paying
+   for absence. A compensation decision rule narrows this but cannot close it, because the rule's evidence base is
+   the transcriptional-adaptation literature in zebrafish, not in the analogue.
+4. **Coverage, not the resolved fraction, is the honest headline.** There is no flying-fish transcriptome or
+   proteome, and about 9 focal genes are mapped against 4 571 in the vetted map. A resolved fraction computed over
+   9 genes would be precise and close to meaningless.
+
+**Where it does belong:** beside the score, as a gate, exactly like the Lean gate. `functional_gate_failed` is true
+when any difference is UNRESOLVED, and the gate string says the design is not functionally accounted for whatever
+the similarity scores say. A gate changes the verdict's wording and not the ranking, so it cannot distort a
+comparison between designs.
+
+**What would change my mind,** and the conditions I would want on it: a new version with its own pre-registration
+hashed first; only demonstrated classes counted, never COMPENSATORY; a coverage floor below which the component
+does not run at all, so it cannot be gamed by classifying one easy difference; and a benchmark negative family that
+specifically exercises function, showing the term moves AUC without costing real organisms plausible status. Until
+there is a negative set it can be shown to catch, folding it in would be tuning against a hope.
+
+
 ## v1.3.0: shuffled synthetic organisms cannot be caught without a joint model
 
 Pre-registration: `SCORER-PREREGISTRATION-v1.3.0.md`, sha256 `bac949e8...`, hashed before the run. Weights:

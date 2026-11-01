@@ -1,0 +1,124 @@
+{
+ "law_id": "fick-principle",
+ "version": "1.1.0",
+ "kind": "biological",
+ "class": "named-hypothesis",
+ "status": "accepted",
+ "label": "Fick principle: aerobic supply is at most eta E Q (Ca - Cv)",
+ "level": "physiology",
+ "lean_ref": {
+  "module": "lean/Delphi/Flight.lean",
+  "theorem": null,
+  "structure": "Delphi.aerobicPower",
+  "commit": "09f1133caef5aff12ff07eaaeae343da57401d57+dirty",
+  "statement_sha256": "5eab0a2958a5824a6a6b98d3c34ca14bdb0e6cb583cd2153eed4444ca1ed8fc7",
+  "content_hash": "7a255d60a81fb136bef08b2a15c8d5c749bb2753c297f68ade48edc202962bf2"
+ },
+ "statement_en": "O2 delivered to tissue = cardiac output × (arterial − venous O2 content).",
+ "hypotheses": [
+  {
+   "name": "fick-principle#assumed-1",
+   "statement": "conservation of O2 in the circulation; aerobic power only"
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "a theorem about a model: it applies wherever the design supplies the quantities it uses and accepts the hypotheses in scope.assumed",
+  "kernelChecked": [],
+  "assumed": [
+   "conservation of O2 in the circulation; aerobic power only"
+  ],
+  "note": "Instantiations must use a taxon-appropriate MO2max or cardiac output Q: a borrowed snapper Qmax (58.48 ml min^-1 kg^-1) underestimates small cyprinids about 3x (measured zebrafish MO2max 2630 mg O2 kg^-1 h^-1 at Ucrit, Palstra et al. 2010, PMC3013094; physics/FICK-CEILING-CHECK.md). Oxycaloric equivalent 13.54 J/mg at 0.7 ml O2 per mg (1.429 mg/ml) = 19.34 J/ml."
+ },
+ "constraint_scopes": {},
+ "shared_scope": null,
+ "evidence": {
+  "sources": [],
+  "observations": [],
+  "faithfulness": null,
+  "flyingFishAudit": null,
+  "rejectable": null
+ },
+ "sources": [],
+ "non_vacuity_witness": {
+  "lean": "Delphi.Registry.fick_witness",
+  "file": "lean/registry/lean/Witnesses.lean",
+  "statement": "a positive power below the Fick supply with the measured teleost proxies"
+ },
+ "constraints": [
+  "C14"
+ ],
+ "introduced_in": "1.0.0",
+ "supersedes": "fick-principle@1.0.0",
+ "superseded_by": "fick-principle@1.2.0",
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": {
+  "approved_by_role": "carried-forward-pending-review",
+  "date": "2026-11-01",
+  "basis": "carried forward from the approved previous version (bootstrap-grandfathered, 2026-11-01) because the Lean statement and hypotheses are unchanged; only a scope note was added. No person has reviewed this version yet; a human approval should replace this role."
+ },
+ "origin": "lean/registry/law-versions/fick-principle@1.1.0.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "bootstrapped from lean/laws.json (status there: \"stated-not-proved (the aerobic bound takes it as its named hypothesis fick_aerobic_supply)\")"
+  },
+  {
+   "version": "1.1.0",
+   "date": "2026-11-01",
+   "change": "scope note: instantiations need a taxon-appropriate MO2max or Q (physics/FICK-CEILING-CHECK.md); the law itself is unchanged; lawset 1.6.0"
+  },
+  {
+   "version": "1.1.0",
+   "date": "2026-11-01",
+   "change": "superseded by 1.2.0 (wording only: scope.applies_to and scope.excludes added). Kept so earlier law sets stay reproducible; the Lean statement is unchanged."
+  }
+ ],
+ "content_hash": "7a255d60a81fb136bef08b2a15c8d5c749bb2753c297f68ade48edc202962bf2",
+ "archived": true,
+ "lean": {
+  "theorem": "Delphi.aerobicPower",
+  "module": "lean/Delphi/Flight.lean",
+  "line": 144,
+  "source": "/-- Mechanical power available from aerobic metabolism: efficiency `η`, oxycaloric equivalent `E` (J per unit\nO₂), cardiac output `Q`, arterial and venous O₂ contents `Ca`, `Cv` (Fick: O₂ delivered = `Q (Ca - Cv)`). -/\ndef aerobicPower (η E Q Ca Cv : ℝ) : ℝ := η * E * Q * (Ca - Cv)",
+  "named_hypotheses": []
+ },
+ "constraint_details": [
+  {
+   "id": "C14",
+   "relation": "η E_O2 Q Ca ≥ W v / (L/D)",
+   "lemma": "Delphi.Constraints.aerobic_flight_rules_out",
+   "law": "Delphi.sustained_flight_requires",
+   "module": "lean/Delphi/Flight.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "fick_aerobic_supply"
+   ],
+   "canEliminate": "a design claiming sustained powered flight its oxygen delivery cannot pay for",
+   "lemma_source": "/-- **C14, aerobic sustained flight.** A claim of sustained (aerobic) flight at power `P_req = W v/(L/D)` with\n`η E Q Ca < P_req` is ruled out. -/\ntheorem aerobic_flight_rules_out {W v LD P η E Q Ca Cv : ℝ} (hη : 0 ≤ η) (hE : 0 ≤ E) (hQ : 0 ≤ Q) (hCv : 0 ≤ Cv)\n    (hsus : P ≤ aerobicPower η E Q Ca Cv) (hflight : powerRequired W v LD ≤ P)\n    (h : η * E * Q * Ca < powerRequired W v LD) : False := by\n  have := sustained_flight_requires hη hE hQ hCv hsus hflight\n  linarith"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Flight.lean",
+  "decl": "Delphi.aerobicPower",
+  "commit": "09f1133caef5aff12ff07eaaeae343da57401d57+dirty",
+  "theorem_found": true,
+  "pinned_statement_sha256": "5eab0a2958a5824a6a6b98d3c34ca14bdb0e6cb583cd2153eed4444ca1ed8fc7",
+  "current_statement_sha256": "5eab0a2958a5824a6a6b98d3c34ca14bdb0e6cb583cd2153eed4444ca1ed8fc7",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.6.0"
+ ],
+ "other_versions": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

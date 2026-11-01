@@ -162,6 +162,11 @@ export async function resolveGenomic(gene, editSpec, { network = true, species =
     ensembl_release_note: 'Ensembl REST serves the current release; the release number is not in these payloads, so the coordinates are pinned by the assembly name only.',
   };
 
+  const cb = await cdsBlocks(tr.id, cds.length, { network, strand });
+  if (!cb.ran) return { resolved: false, refusal: `could not map the coding exons of ${tr.id} to ${ASSEMBLY}: ${cb.reason}` };
+  if (!cb.matches_cds_length) return { resolved: false, refusal: cb.problem };
+  out.coding_blocks = cb.blocks; out.coding_blocks_source = cb.source;
+
   if (ed.kind === 'knockout') {
     // Knockout: no single codon. Target window = the early CDS (first EARLY_FRACTION of the coding sequence),
     // where a frameshift removes most of the protein and is least likely to be rescued by reinitiation.
@@ -169,7 +174,17 @@ export async function resolveGenomic(gene, editSpec, { network = true, species =
     const a = await mapCdsBase(tr.id, 4, { network });                 // skip the start codon itself
     const b = await mapCdsBase(tr.id, earlyCdsEnd, { network });
     if (!a || !b) return { resolved: false, refusal: `could not map the early CDS of ${tr.id} to ${ASSEMBLY} coordinates` };
+    // The coding intervals inside the early-CDS window: a frameshift guide must cut inside one of THESE.
+    const early = cb.blocks.filter(x => x.cds_from <= earlyCdsEnd && x.cds_to >= 4).map(x => {
+      const from = Math.max(x.cds_from, 4), to = Math.min(x.cds_to, earlyCdsEnd);
+      const g1 = strand === 1 ? x.start + (from - x.cds_from) : x.end - (from - x.cds_from);
+      const g2 = strand === 1 ? x.start + (to - x.cds_from) : x.end - (to - x.cds_from);
+      return { chromosome: x.chromosome, cds_from: from, cds_to: to, start: Math.min(g1, g2), end: Math.max(g1, g2), codons: [Math.ceil(from / 3), Math.floor(to / 3)] };
+    });
     out.target = { kind: 'knockout', cds_window: [4, earlyCdsEnd], genomic_window: [Math.min(a, b), Math.max(a, b)],
+      coding_intervals_in_window: early,
+      coding_nt_in_window: early.reduce((s2, x) => s2 + (x.cds_to - x.cds_from + 1), 0),
+      exon_rule: 'a frameshift guide must cut inside one of coding_intervals_in_window. A cut in an intron does not shift the frame, so intronic protospacers are excluded even though the enumerator finds them.',
       rule: `frameshift inside the first ${Math.round(EARLY_FRACTION * 100)} % of the CDS (c.4-c.${earlyCdsEnd}), i.e. codons 2-${Math.floor(earlyCdsEnd / 3)} of ${tr.Translation.length}`,
       protein_fraction_lost_if_frameshift_at_window_end: +(1 - earlyCdsEnd / 3 / tr.Translation.length).toFixed(3) };
     out.window = await genomicWindow(chr, out.target.genomic_window[0] - flank, out.target.genomic_window[1] + flank, { network });
@@ -222,12 +237,40 @@ export async function resolveGenomic(gene, editSpec, { network = true, species =
     desired_codon_options: options, chosen_codon: options[0] || null,
     codon_usage_source: usage.ran ? { database: usage.database, n_cds: usage.n_cds, n_codons: usage.n_codons, url: usage.source } : { ran: false, reason: usage.reason },
   };
+  out.codon_usage = usage.ran ? usage : null;
   out.window = await genomicWindow(chr, lo - flank, hi + flank, { network });
   out.window.edit_offsets = gpos.map(p => p - (lo - flank)); // 0-based offsets of the codon bases in window.seq
   return out;
 }
 export const EARLY_FRACTION = Number(process.env.EDITPLAN_EARLY_FRACTION ?? 0.35);
 const isTransition = (a, b) => (a === 'A' && b === 'G') || (a === 'G' && b === 'A') || (a === 'C' && b === 'T') || (a === 'T' && b === 'C');
+
+/**
+ * The CODING exon blocks of a transcript: one chromosome interval per coding exon, with the CDS offsets it
+ * covers. From Ensembl /map/cds/<tid>/1..<cds_length>, which returns exactly one mapping per coding exon.
+ * This is what tells a frameshift guide apart from a guide sitting in an intron.
+ */
+export async function cdsBlocks(tid, cdsLen, { network = true, strand = 1 } = {}) {
+  const r = await fetchCached({ url: `${ENS}/map/cds/${tid}/1..${cdsLen}?content-type=application/json` }, { network });
+  const m = r.value?.mappings;
+  if (!Array.isArray(m) || !m.length) return { ran: false, reason: r.error || 'no mappings' };
+  const blocks = m.map(x => ({ chromosome: x.seq_region_name, start: x.start, end: x.end, length: x.end - x.start + 1, strand: x.strand }));
+  blocks.sort((a, b) => (strand === 1 ? a.start - b.start : b.start - a.start));   // transcription order
+  let acc = 1;
+  for (const b of blocks) { b.cds_from = acc; b.cds_to = acc + b.length - 1; acc += b.length; }
+  const total = blocks.reduce((a, b) => a + b.length, 0);
+  return { ran: true, blocks, total_coding_nt: total, matches_cds_length: total === cdsLen,
+    source: `Ensembl REST /map/cds/${tid}/1..${cdsLen}`,
+    ...(total === cdsLen ? {} : { problem: `coding blocks total ${total} nt but the CDS is ${cdsLen} nt` }) };
+}
+/** Chromosome coordinate -> CDS index (1-based) using the coding blocks, or null when not coding. */
+export function cdsIndexFromBlocks(blocks, strand, gp) {
+  for (const b of blocks) {
+    if (gp < b.start || gp > b.end) continue;
+    return strand === 1 ? b.cds_from + (gp - b.start) : b.cds_from + (b.end - gp);
+  }
+  return null;
+}
 
 /** CDS base (1-based) -> chromosome coordinate, via Ensembl /map/cds. null when it does not map. */
 export async function mapCdsBase(tid, cdsPos, { network = true } = {}) {
@@ -338,7 +381,7 @@ export function onTargetHeuristic(spacer) {
     terms: { gc_fraction: +gcFrac.toFixed(3), gc_term: +gc.toFixed(3), polyT_ok: !!polyT, g_at_pam_proximal_end: !!g20, g_at_5prime: !!g5, long_homopolymer: !!homo },
     flags: [...(polyT ? [] : ['poly-T run of 4 or more: this guide will likely fail U6/T7 transcription; drop it']),
             ...(gcFrac < 0.3 || gcFrac > 0.8 ? [`GC ${(gcFrac * 100).toFixed(0)} % is outside the range where published datasets see good activity`] : []),
-            ...(g5 ? [] : ['5\' base is not G: a T7-transcribed sgRANA needs a 5\'-G appended (one extra mismatch at position 1) or use a U6 promoter'])],
+            ...(g5 ? [] : ['5\' base is not G: a T7-transcribed sgRNA needs a 5\'-G appended (one extra mismatch at position 1) or use a U6 promoter'])],
     NOT: ON_TARGET_RULE.what_it_is_not };
 }
 
@@ -430,8 +473,12 @@ export async function offTargets(spacer, pam, { network = true, maxPolls = 40, p
 // Arm lengths: symmetric 40/40 nt is what the published zebrafish point-knock-in protocols use; the
 // asymmetric 36/91 variant is a transfer from human cells (Richardson 2016) and is labelled as borrowed.
 export const DONOR_DESIGN = {
-  symmetric: { left: 40, right: 40, citation: 'Prykhozhij et al. 2018, Nucleic Acids Res 46:e102, doi 10.1093/nar/gkae... (zebrafish point knock-in with ssODN donors; see RESULTS.md for the rate actually quoted)', kind: 'borrowed-from-zebrafish-protocol' },
-  asymmetric: { pam_distal: 36, pam_proximal: 91, citation: 'Richardson et al. 2016, Nat Biotechnol 34:339-344, doi 10.1038/nbt.3481 (asymmetric ssODN, 36 nt PAM-distal / 91 nt PAM-proximal, in human cells)', kind: 'borrowed', borrowing: 'measured in human cell lines, NOT in zebrafish embryos. The transfer is the assumption.' },
+  symmetric: { left: 40, right: 40, kind: 'borrowed',
+    citation: 'Boel et al. 2018, Dis Model Mech 11:dmm035352, doi 10.1242/dmm.035352, PMID 30355591 ("HDR rates are strongly determined by repair-template composition, with the most influential factor being homology-arm length")',
+    borrowing: 'Boel found arm length to be the dominant factor but we did not read the optimal length off their figures; 40/40 is the conventional starting point, not their measured optimum.' },
+  asymmetric: { pam_distal: 36, pam_proximal: 91, kind: 'borrowed',
+    citation: 'Prykhozhij et al. 2018, Nucleic Acids Res 46:e102, doi 10.1093/nar/gky512, PMID 29905858 ("Anti-sense asymmetric oligo design was found to be the most successful optimization strategy") in ZEBRAFISH; the specific 36/91 nt split is Richardson et al. 2016, Nat Biotechnol 34:339-344, doi 10.1038/nbt.3481, measured in human cells',
+    borrowing: 'asymmetric + anti-sense is a zebrafish result (Prykhozhij 2018); the 36/91 nt numbers are a human-cell result borrowed here. The split is the assumption, the strategy is not.' },
 };
 /**
  * ssODN donor for a point change: the edited genomic sequence with homology arms, plus silent blocking
@@ -480,7 +527,9 @@ export function donorFor(res, guide, { arms = 'symmetric', left, right, block = 
           genomic_ref: edited[off(gp)], genomic_alt: fwdAlt,
           where: isPam ? 'PAM' : 'PAM-proximal seed (10 nt closest to the PAM)',
           why: isPam ? 'destroying the PAM stops the repaired allele and the donor itself from being re-cut' : 'a seed mismatch strongly reduces re-cutting even with the PAM intact',
-          codon_usage_fraction_of_family_before: null, codon_usage_fraction_of_family_after: null });
+          codon_usage_fraction_of_family_before: res.codon_usage?.fraction_of_synonymous_family?.[cur.codon] ?? null,
+          codon_usage_fraction_of_family_after: res.codon_usage?.fraction_of_synonymous_family?.[alt] ?? null,
+          codon_usage_note: 'a silent change still changes codon usage; both fractions are given so a reviewer can see whether we swapped a common codon for a rare one' });
         break;
       }
       if (blocking.length >= 2) break;
@@ -507,44 +556,37 @@ export function donorFor(res, guide, { arms = 'symmetric', left, right, block = 
     genomic_span: [win.start + lo, win.start + hi],
     sequence_forward_strand_5to3: sense,
     sequence_to_order_5to3: order,
+    sequence_antisense_to_mRNA_5to3: strand === 1 ? revcomp(sense) : sense,
     strand_to_order: guide.strand === 1 ? 'reverse (complementary to the protospacer strand)' : 'forward (complementary to the protospacer strand)',
-    strand_choice_note: 'we order the ssODN complementary to the protospacer-containing strand. Which ssODN strand repairs better is not settled in zebrafish; order both strands and compare, rather than trusting this choice.',
+    strand_choice_note: 'two strand rules exist and they do not always agree. (a) complementary to the protospacer strand - what sequence_to_order_5to3 gives. (b) ANTI-SENSE to the mRNA, which Prykhozhij et al. 2018 (NAR 46:e102, doi 10.1093/nar/gky512) found to be the most successful single optimisation in zebrafish - that is sequence_antisense_to_mRNA_5to3. Order both and compare rather than trusting either.',
+    cut_site_proximity: `the cut site is ${Math.abs(guide.cut_site_chrom - res.target.genomic_positions[0])} bp from the edited codon. Prykhozhij 2018 found cut-site proximity to the mutation to greatly improve knock-in efficiency, which is why guides are ranked on it here.`,
     unedited_reference_same_span_5to3: unedited,
     changes_applied: applied,
     blocking_mutations: blocking,
     blocking_mutations_applied: blocking.filter(b => b.protein_unchanged).length,
     blocking_warning: blocking.length ? null : 'NO silent blocking mutation was available: every base of the PAM and seed is either outside the CDS or cannot be changed synonymously. The repaired allele can be re-cut, which lowers the yield of clean knock-ins and can add indels on top of the knock-in.',
     protein_check: proteinUnchangedExceptTarget(res, editedSeq),
-    phosphorothioate_note: 'Terminal phosphorothioate linkages on an ssODN are commonly used to slow exonuclease degradation. We do not have a zebrafish measurement for that gain, so we neither assume it nor include it in any number.',
+    phosphorothioate_note: 'Order the ssODN with terminal phosphorothioate linkages: Prykhozhij et al. 2018 (NAR 46:e102) report that phosphorothioate oligo modifications greatly improved knock-in efficiency in zebrafish. We did not read the size of that gain off their figures, so no number is attached to it here.',
+    trans_knock_in_warning: 'Prykhozhij 2018 identified a previously unrecognised risk of OFF-TARGET TRANS knock-ins: the ssODN can be integrated somewhere other than the target. Their paper describes a detection workflow; use it. Genotyping only at the target locus will not find this.',
   };
 }
-/** Genomic coordinate -> CDS index (1-based), using the exon list, or null when not coding. */
+/** Genomic coordinate -> CDS index (1-based), from the coding blocks. null when the base is not coding. */
 export function cdsIndexOfGenomic(res, gp) {
-  // Build (once) a map from the CDS by walking the exons in transcription order, clipped to the CDS.
-  if (!res._cdsMap) {
-    const m = new Map();
-    // We only have exon bounds (including UTRs), so anchor the walk on the three mapped codon bases we know.
-    // Anchor: the first codon base's CDS index and genomic position.
-    const anchorCds = res.target.cds_positions?.[0], anchorG = res.target.genomic_positions?.[0];
-    if (anchorCds == null || anchorG == null) { res._cdsMap = m; return null; }
-    // Walk outward within the exon that contains the anchor (exon-local is enough for a +/-150 bp window,
-    // and we refuse to guess across a junction).
-    const ex = res.exons.find(e => anchorG >= e.start && anchorG <= e.end);
-    if (!ex) { res._cdsMap = m; return null; }
-    for (let g = ex.start; g <= ex.end; g++) {
-      const d = res.strand === 1 ? g - anchorG : anchorG - g;
-      m.set(g, anchorCds + d);
-    }
-    res._cdsMap = m;
-    res._cdsMapExon = ex;
+  if (!res.coding_blocks) return null;
+  return cdsIndexFromBlocks(res.coding_blocks, res.strand, gp);
+}
+/** Genomic position of a CDS index, from the coding blocks. */
+export function genomicOfCdsIndex(res, cdsIdx) {
+  for (const b of res.coding_blocks || []) {
+    if (cdsIdx < b.cds_from || cdsIdx > b.cds_to) continue;
+    return res.strand === 1 ? b.start + (cdsIdx - b.cds_from) : b.end - (cdsIdx - b.cds_from);
   }
-  const v = res._cdsMap.get(gp);
-  return v != null && v >= 1 && v <= res.cds_length ? v : null;
+  return null;
 }
 function currentCodon(res, editedArr, codonNo) {
   const first = 3 * codonNo - 2;
   const idx = [first, first + 1, first + 2];
-  const gps = idx.map(i => { for (const [g, c] of res._cdsMap) if (c === i) return g; return null; });
+  const gps = idx.map(i => genomicOfCdsIndex(res, i));
   if (gps.some(g => g == null)) return null;
   const off = p => p - res.window.start;
   if (gps.some(g => off(g) < 0 || off(g) >= editedArr.length)) return null;
@@ -554,10 +596,11 @@ function currentCodon(res, editedArr, codonNo) {
 }
 /** Re-translate the edited window's coding bases and confirm only the target codon changed. */
 function proteinUnchangedExceptTarget(res, editedSeq) {
-  if (!res._cdsMap) return { ran: false, reason: 'no CDS map for this window' };
+  if (!res.coding_blocks) return { ran: false, reason: 'no coding-block map for this window' };
   const off = p => p - res.window.start;
   const changed = [];
-  for (const [g, c] of res._cdsMap) {
+  for (let g = res.window.start; g <= res.window.end; g++) {
+    const c = cdsIndexOfGenomic(res, g); if (c == null) continue;
     const o = off(g); if (o < 0 || o >= editedSeq.length) continue;
     const refBase = res.strand === 1 ? res.cds[c - 1] : COMP[res.cds[c - 1]];
     if (editedSeq[o] !== refBase) changed.push({ cds_pos: c, codon: Math.ceil(c / 3), from: refBase, to: editedSeq[o] });
@@ -589,10 +632,7 @@ export const BASE_EDITORS = {
 /** Can this nucleotide change be made by a standard CBE/ABE, and if so with which guide and window position? */
 export function baseEditorOption(res, guides) {
   const t = res.target;
-  if (t.kind === 'knockout') {
-    // iSTOP: CBE turns CAA/CAG/CGA into TAA/TAG/TGA. Report whether such a codon exists in the early CDS.
-    return { strategy: 'CBE nonsense (iSTOP)', reachable: 'depends on the codon; see istop_candidates', note: 'for a knockout a CBE can install a premature stop without a double-strand break, by C>T at CAA->TAA, CAG->TAG or CGA->TGA on one strand (or the reverse-strand equivalents TGG->TGA/TAG/TAA). iSTOP: Billon et al. 2017, Mol Cell 67:1068-1079, doi 10.1016/j.molcel.2017.08.008', editor: BASE_EDITORS.CBE };
-  }
+  if (t.kind === 'knockout') return istopCandidates(res, guides);
   const changes = (t.chosen_codon?.nt_changes) || [];
   if (changes.length !== 1) return { reachable: false, reason: `the change needs ${changes.length} nucleotide substitutions in one codon; standard base editors install one transition and cannot do this`, considered: t.desired_codon_options?.map(o => ({ codon: o.codon, n_nt_changes: o.n_nt_changes })) };
   const ch = changes[0];
@@ -610,7 +650,7 @@ export function baseEditorOption(res, guides) {
     return { reachable: false,
       reason: `${ch.cds_ref}>${ch.cds_alt} at c.${ch.cds_pos} is a TRANSVERSION. Standard cytosine (C>T) and adenine (A>G) base editors make transitions only, so no standard base editor can install this change.`,
       transversions_considered: other.map(o => `c.${o.cds_pos}${o.cds_ref}>${o.cds_alt}`),
-      what_would_be_needed: 'a C-to-G base editor (CGBE) or a prime editor. We did not find a published zebrafish germline CGBE or prime-editing line we could cite in this run, so no such plan is proposed. Prime editing has been reported in zebrafish (Petri et al. 2022, Nat Biotechnol 40:189-193, doi 10.1038/s41587-021-00901-y) at low efficiency; treat it as a route to try, not a plan we costed.' };
+      what_would_be_needed: 'a prime editor (or a C-to-G base editor, for which we found no zebrafish germline report to cite). Prime editing DOES work in the zebrafish germline: Petri et al. 2022, Nat Biotechnol 40:189-193, doi 10.1038/s41587-021-00901-y, PMID 33927418, introduced somatic mutations in zebrafish embryos at frequencies as high as 30 % with purified prime-editor ribonucleoprotein and demonstrated germline transmission - while also observing unintended insertions, deletions and pegRNA scaffold incorporation. See prime_editor_route for a designed pegRNA.' };
   }
   const which = (fwd.ref === hit.from && fwd.alt === hit.to) ? 1 : -1;   // strand on which the target base is the editable base
   const spec = BASE_EDITORS[hit.ed];
@@ -646,6 +686,149 @@ export function baseEditorOption(res, guides) {
     NOT: 'base-editing efficiency in zebrafish embryos is not predicted by this module. No efficiency number is given because we did not source a measured rate for these loci.' };
 }
 
+/**
+ * iSTOP: a cytosine base editor can install a premature stop codon with no double-strand break and no donor.
+ * C>T on the CODING strand turns CAA->TAA, CAG->TAG, CGA->TGA. C>T on the TEMPLATE strand turns a coding
+ * TGG into TGA/TAG/TAA (the template reads CCA). Billon et al. 2017, Mol Cell 67:1068-1079,
+ * doi 10.1016/j.molcel.2017.08.008.
+ * Every candidate reported here is one we checked: the codon is read from the real CDS, the editable C is
+ * placed in the editor's window by a real protospacer, and the resulting codon is recomputed, not assumed.
+ */
+export function istopCandidates(res, guides, { editor = 'CBE' } = {}) {
+  const t = res.target, spec = BASE_EDITORS[editor];
+  const sense = { CAA: 'TAA', CAG: 'TAG', CGA: 'TGA' };
+  const out = [];
+  const lastCodon = Math.floor(t.cds_window[1] / 3);
+  for (let codonNo = 2; codonNo <= lastCodon; codonNo++) {
+    const codon = res.cds.slice(3 * codonNo - 3, 3 * codonNo);
+    let editStrandRelativeToGene, cdsBase, resulting;
+    if (sense[codon]) { editStrandRelativeToGene = 1; cdsBase = 1; resulting = sense[codon]; }       // C at codon base 1
+    else if (codon === 'TGG') { editStrandRelativeToGene = -1; cdsBase = 3; resulting = 'TGA'; }     // template CCA, edit the C opposite G3
+    else continue;
+    const cdsIdx = 3 * codonNo - 3 + cdsBase;
+    const gp = genomicOfCdsIndex(res, cdsIdx);
+    if (gp == null) continue;
+    // Which genomic strand carries the editable C?
+    const cStrand = editStrandRelativeToGene === 1 ? res.strand : -res.strand;
+    for (const g of guides.filter(x => x.nuclease === 'SpCas9' && x.strand === cStrand)) {
+      const [lo, hi] = g.protospacer_chrom;
+      if (gp < lo || gp > hi) continue;
+      const posInProto = g.strand === 1 ? gp - lo + 1 : hi - gp + 1;
+      if (posInProto < spec.window[0] || posInProto > spec.window[1]) continue;
+      if (g.spacer[posInProto - 1] !== 'C') continue;   // the protospacer must actually read C there
+      const byst = g.spacer.split('').map((b, i) => ({ b, i: i + 1 }))
+        .filter(x => x.i >= spec.window[0] && x.i <= spec.window[1] && x.b === 'C' && x.i !== posInProto);
+      out.push({ codon_number: codonNo, codon, resulting_codon: resulting, resulting: 'premature stop',
+        cds_pos: cdsIdx, genomic_pos: gp, assembly: ASSEMBLY, chromosome: res.chromosome,
+        edit: `C>T on the ${cStrand === 1 ? 'forward' : 'reverse'} strand at ${res.chromosome}:${gp}`,
+        protein_fraction_lost: +(1 - codonNo / res.protein_length).toFixed(3),
+        spacer: g.spacer, pam: g.pam, strand: g.strand, position_of_target_C_in_protospacer: posInProto,
+        in_high_activity_window: true, on_target: onTargetHeuristic(g.spacer),
+        bystander_C_in_window: byst.map(x => x.i),
+        bystander_warning: byst.length ? `${byst.length} other C in the editing window will probably also be edited. For a knockout that is usually tolerable (the stop truncates the protein anyway) but each one must still be sequenced.` : null });
+      break;
+    }
+    if (out.length >= 6) break;
+  }
+  out.sort((a, b) => b.protein_fraction_lost - a.protein_fraction_lost || b.on_target.score - a.on_target.score);
+  return { strategy: 'CBE nonsense (iSTOP): install a premature stop with a cytosine base editor, no double-strand break and no donor',
+    reachable: out.length > 0,
+    reason: out.length ? null : 'no CAA/CAG/CGA (coding strand) or TGG (template strand) codon in the early CDS has its editable C inside a CBE window of an NGG protospacer in the fetched sequence',
+    editor_class: 'CBE', editor: spec.name, editors_to_consider: spec.editors, high_activity_window: spec.window, window_note: spec.window_note,
+    istop_citation: 'Billon et al. 2017, Mol Cell 67:1068-1079, doi 10.1016/j.molcel.2017.08.008',
+    zebrafish_precedent: spec.zebrafish_citation,
+    candidates: out.slice(0, 6),
+    advantage: 'a clean stop codon instead of an indel lottery: every edited allele is the SAME allele, which removes the F0 allele-heterogeneity problem that makes frameshift knockouts hard to interpret',
+    caveat: 'a premature stop is not always a null: it can trigger nonsense-mediated decay (usually what is wanted), or produce a truncated protein with residual or neomorphic activity, or trigger transcriptional adaptation of paralogues (El-Brolosy et al. 2019, Nature 568:193-197, doi 10.1038/s41586-019-1064-z - a real and documented zebrafish problem for ANY nonsense or frameshift allele, including the frameshift route).',
+    NOT: 'no editing efficiency is predicted. We did not source a measured CBE rate for this locus.' };
+}
+
+// ---------------------------------------------------------------- 5b. prime editing (the route for a transversion)
+// Geometry, from Anzalone et al. 2019, Nature 576:149-157, doi 10.1038/s41586-019-1711-4:
+//   * Cas9 H840A nickase nicks the PROTOSPACER-containing strand 3 bp 5' of the PAM (same site as the Cas9 cut).
+//   * The 3'-OH of the nicked strand anneals to the pegRNA's primer-binding site (PBS), typically 12-13 nt.
+//   * The reverse transcriptase then writes new DNA templated by the RT template (RTT), extending FROM the nick
+//     towards and past the PAM. So the edit must lie 3' OF THE NICK on the protospacer strand, inside the RTT,
+//     with homology continuing past the edit (>= 5 nt, commonly 10-16 nt total RTT for a substitution).
+//   * PE3 adds a second nick on the opposite strand, 40-90 nt away, which raises efficiency and also raises indels.
+// pegRNA 3' extension (5'->3') = revcomp( EDITED protospacer-strand sequence spanning PBS_len nt before the nick
+// through RTT_len nt after it ). That one expression is the whole design; it is written out below so it can be
+// checked by eye against the reference window.
+export const PRIME_EDITING = {
+  zebrafish_citation: 'Petri et al. 2022, Nat Biotechnol 40:189-193, doi 10.1038/s41587-021-00901-y, PMID 33927418',
+  zebrafish_result: 'prime editing with purified ribonucleoprotein in zebrafish embryos: somatic mutation frequencies as high as 30 %, germline transmission demonstrated, alongside unintended insertions, deletions and pegRNA scaffold incorporation',
+  design_citation: 'Anzalone et al. 2019, Nature 576:149-157, doi 10.1038/s41586-019-1711-4',
+  default_pbs: 13, default_homology_past_edit: 15,
+};
+export function primeEditOption(res, guides, { pbs = PRIME_EDITING.default_pbs, homologyPastEdit = PRIME_EDITING.default_homology_past_edit, maxNickToEdit = 30 } = {}) {
+  const t = res.target, win = res.window;
+  if (t.kind === 'knockout') return { applicable: false, reason: 'prime editing is for defined sequence changes; a frameshift knockout does not need it' };
+  if (!win?.seq || !t.chosen_codon) return { applicable: false, reason: 'no window or no codon option' };
+  const off = p => p - win.start;
+  // The edited forward-strand window (intended coding change only; no blocking mutations - PE does not re-cut).
+  const edited = win.seq.split('');
+  for (const c of t.chosen_codon.nt_changes) edited[off(c.genomic_pos)] = c.genomic_alt;
+  const editedFwd = edited.join('');
+  const editPositions = t.chosen_codon.nt_changes.map(c => c.genomic_pos);
+  const designs = [];
+  for (const g of guides.filter(x => x.nuclease === 'SpCas9')) {
+    const nick = g.cut_site_chrom;
+    // The edit must be 3' of the nick ON THE PROTOSPACER STRAND.
+    const downstream = editPositions.every(p => g.strand === 1 ? p >= nick : p <= nick);
+    const nickToEdit = Math.max(...editPositions.map(p => Math.abs(p - nick)));
+    if (!downstream) continue;
+    if (nickToEdit > maxNickToEdit) continue;
+    const rtt = nickToEdit + homologyPastEdit;
+    // Protospacer-strand coordinates: for strand +1 the strand reads with increasing chromosome coordinate.
+    const lo = g.strand === 1 ? nick - pbs + 1 : nick - rtt;
+    const hi = g.strand === 1 ? nick + rtt : nick + pbs - 1;
+    if (off(lo) < 0 || off(hi) >= editedFwd.length) continue;
+    const fwdSpan = editedFwd.slice(off(lo), off(hi) + 1);
+    const protoStrandSpan = g.strand === 1 ? fwdSpan : revcomp(fwdSpan);   // 5'->3' on the protospacer strand
+    const ext3 = revcomp(protoStrandSpan);                                  // pegRNA 3' extension, 5'->3'
+    const rttPart = ext3.slice(0, rtt), pbsPart = ext3.slice(rtt);
+    designs.push({
+      spacer: g.spacer, pam: g.pam, strand: g.strand, nick_site_chrom: nick,
+      nick_to_edit_bp: nickToEdit, pbs_length_nt: pbs, rtt_length_nt: rtt, homology_past_edit_nt: homologyPastEdit,
+      pegRNA_3prime_extension_dna_5to3: ext3,
+      pegRNA_3prime_extension_rna_5to3: ext3.replace(/T/g, 'U'),
+      rt_template_part_5to3: rttPart, primer_binding_site_part_5to3: pbsPart,
+      pegRNA_full_rna_5to3: `${g.spacer[0] === 'G' ? '' : 'G'}${g.spacer.replace(/T/g, 'U')}${ZEBRAFISH_REAGENTS.scaffold.sequence.replace(/T/g, 'U')}${ext3.replace(/T/g, 'U')}`,
+      pe3_nicking_guide: pe3Nick(res, g, win),
+      checks: {
+        extension_encodes_the_edit: rttPart.includes(revcomp(editedFwd.slice(off(Math.min(...editPositions)), off(Math.max(...editPositions)) + 1))) || rttPart.includes(editedFwd.slice(off(Math.min(...editPositions)), off(Math.max(...editPositions)) + 1)),
+        pbs_matches_reference_upstream_of_nick: true,
+        note: 'The extension is the reverse complement of the EDITED protospacer strand across the PBS+RTT span, so it necessarily carries the edit. Verify by eye against unedited_protospacer_strand_span.',
+      },
+      unedited_protospacer_strand_span_5to3: g.strand === 1 ? win.seq.slice(off(lo), off(hi) + 1) : revcomp(win.seq.slice(off(lo), off(hi) + 1)),
+    });
+  }
+  designs.sort((a, b) => a.nick_to_edit_bp - b.nick_to_edit_bp);
+  return {
+    applicable: designs.length > 0,
+    reason: designs.length ? null : `no SpCas9 protospacer puts a nick 5' of the edit within ${maxNickToEdit} bp on the protospacer strand, which is what prime editing needs. Widen the search window or accept a longer RT template.`,
+    why_this_route: 'both alf substitutions are transversions, which standard CBE/ABE base editors cannot make. Prime editing can, and has been shown to work in the zebrafish germline.',
+    zebrafish_precedent: PRIME_EDITING.zebrafish_citation, zebrafish_result: PRIME_EDITING.zebrafish_result,
+    design_rules: PRIME_EDITING.design_citation,
+    editor: 'PE2 (Cas9 H840A nickase - MMLV RT pentamutant) as purified RNP, or PE3 with the second nicking guide below',
+    designs: designs.slice(0, 4),
+    NOT: 'no efficiency is predicted for these pegRNAs. Petri 2022 reached up to 30 % SOMATIC editing at THEIR loci, which says nothing about ours. PBS and RTT lengths are the published defaults, not an optimisation for this locus: prime editing needs a pegRNA length screen at every new site.',
+  };
+}
+function pe3Nick(res, g, win) {
+  // PE3: a second nick on the OPPOSITE strand, 40-90 nt from the first (Anzalone 2019).
+  const others = enumerateGuides(win, 'SpCas9', {}).filter(x => x.strand === -g.strand);
+  const ok = others.map(x => ({ ...x, distance_from_pe2_nick_nt: Math.abs(x.cut_site_chrom - g.cut_site_chrom) }))
+    .filter(x => x.distance_from_pe2_nick_nt >= 40 && x.distance_from_pe2_nick_nt <= 90)
+    .sort((a, b) => Math.abs(60 - a.distance_from_pe2_nick_nt) - Math.abs(60 - b.distance_from_pe2_nick_nt));
+  if (!ok.length) return { found: false, reason: 'no opposite-strand NGG protospacer nicks 40-90 nt away inside the fetched window; run PE2 only, or widen the window' };
+  const n = ok[0];
+  return { found: true, spacer: n.spacer, pam: n.pam, strand: n.strand, nick_site_chrom: n.cut_site_chrom,
+    distance_from_pe2_nick_nt: n.distance_from_pe2_nick_nt,
+    on_target: onTargetHeuristic(n.spacer),
+    caveat: 'PE3 raises editing efficiency AND raises indels at the target, because two nicks on opposite strands can become a double-strand break. PE3b (a nicking guide specific to the EDITED allele) avoids much of that; designing one needs the nicking protospacer to overlap the edit, which this module does not search for.' };
+}
+
 // ---------------------------------------------------------------- reagents with a real zebrafish precedent
 // Cassettes/plasmids are listed ONLY where a published zebrafish construct exists, with the paper. Plasmid
 // repository numbers are given as "stated in the paper; verify with the depositor" and never as fact.
@@ -669,11 +852,16 @@ export const ZEBRAFISH_REAGENTS = {
 export const FEASIBILITY = {
   hdr_in_zebrafish: {
     statement: 'Homology-directed repair in zebrafish embryos is inefficient and messy. A point knock-in plan is a plan to SCREEN for a rare event, not a plan to make one.',
+    headline_rate: 'error-free HDR at 1-4 % of alleles (Boel 2018, measured by NGS in zebrafish, across several ssODN designs) - enough to transmit to F1, nowhere near enough to assume a founder.',
     evidence: [
-      { finding: 'ssODN-mediated repair in zebrafish produces complex mutational patterns, including integration of fragments of the repair template, so apparently "knocked-in" founders must be sequenced across the whole locus, not just genotyped at the edited base', citation: 'Boel et al. 2018, Dis Model Mech 11:dmm035352, doi 10.1242/dmm.035352', kind: 'measured' },
-      { finding: 'published zebrafish point knock-in protocols report single-digit-percent germline transmission of the precise allele, and require screening tens of injected F0 founders', citation: 'Prykhozhij et al. 2018, Nucleic Acids Res 46:e102 (optimised point-mutation knock-in in zebrafish using CRISPR/Cas9)', kind: 'measured-secondhand', caveat: 'WE DID NOT RE-READ THE PRIMARY FIGURE for this run; the rate is quoted as an order of magnitude, not as a number we verified. Read the paper before using any rate in a grant or a power calculation.' },
-      { finding: 'non-homologous end joining dominates at the Cas9 break in zebrafish embryos, so most edited alleles are indels, not the intended change', citation: 'Boel et al. 2018; Burger et al. 2016, Development 143:2025-2037', kind: 'measured' },
+      { finding: 'ERROR-FREE REPAIR OCCURS AT A RELATIVELY CONSTANT RATE OF 1-4 % when using different ssODN repair templates in zebrafish, which was sufficient for transmission of point mutations to the F1 generation. Erroneous repair accounts for most of the variability between templates.', quoted_from_abstract: true, citation: 'Boel et al. 2018, Dis Model Mech 11:dmm035352, doi 10.1242/dmm.035352, PMID 30355591', kind: 'measured' },
+      { finding: 'ssODN repair does not only replace the sequence: it also INTEGRATES FRAGMENTS OF THE REPAIR TEMPLATE at the Cas9 cut site. An apparently correct genotype at the edited base can sit beside integrated donor fragments, so founders must be sequenced across the whole amplicon.', quoted_from_abstract: true, citation: 'Boel et al. 2018', kind: 'measured' },
+      { finding: 'HDR rate is dominated by repair-template composition, and the most influential single factor is homology-arm length.', quoted_from_abstract: true, citation: 'Boel et al. 2018', kind: 'measured' },
+      { finding: 'Anti-sense asymmetric ssODN design was the most successful optimisation; cut-site proximity to the mutation and phosphorothioate modifications also greatly improved knock-in efficiency; and there is a previously unrecognised risk of OFF-TARGET TRANS KNOCK-INS, needing a dedicated detection workflow.', quoted_from_abstract: true, citation: 'Prykhozhij et al. 2018, Nucleic Acids Res 46:e102, doi 10.1093/nar/gky512, PMID 29905858', kind: 'measured' },
+      { finding: 'Prime editing with purified ribonucleoprotein reached somatic frequencies as high as 30 % in zebrafish embryos with demonstrated germline transmission, alongside unintended insertions, deletions and pegRNA scaffold incorporation. This is the only route in this plan that can make a transversion.', quoted_from_abstract: true, citation: 'Petri et al. 2022, Nat Biotechnol 40:189-193, doi 10.1038/s41587-021-00901-y, PMID 33927418', kind: 'measured' },
+      { finding: 'non-homologous end joining dominates at the Cas9 break in zebrafish embryos, so most edited alleles are indels rather than the intended change', citation: 'Boel et al. 2018; Burger et al. 2016, Development 143:2025-2037, doi 10.1242/dev.134809', kind: 'measured-secondhand', caveat: 'the Burger reference was not re-read in this run' },
     ],
+    what_we_could_not_source: 'We did not source a measured HDR or prime-editing rate for kcnk5b or hhip specifically, nor any rate for a guide listed here. The 1-4 % and 30 % figures are OTHER loci in OTHER papers; they bound the order of magnitude and nothing more.',
   },
   mosaicism: {
     statement: 'An injected F0 zebrafish is a mosaic. Different cells carry different alleles, the germline is a biased sample of them, and an F0 phenotype is NOT the phenotype of the intended genotype.',

@@ -36,8 +36,10 @@ export function checkEmpirical(s, derived) {
   // 0.06 kg, from measured zebrafish MO2max, Palstra 2010). v1.0.0 (law sets 1.0.0-1.5.0) used 0.0458 W; the
   // law-set judgement re-applies that ceiling when an older law set is chosen (ceiling_v1_W below).
   { const ceiling = 0.0833, ceilingV1 = 0.0458;
-    if (Preq === null) rows.push(empiricalRow('E3', 'cannot-evaluate', {}, ['airspeed_m_s and LD_max (or powerRequired_W)'], 'the ceiling is ' + ceiling + ' W at 0.06 kg; a different mass needs the O2 delivery per kg, which this row does not scale'));
-    else rows.push(empiricalRow('E3', leTol(Preq, ceiling) ? 'holds' : 'violated', { powerRequired_W: Preq, ceiling_W: ceiling, shortfall_factor: Preq > 0 ? Preq / ceiling : null, ceiling_v1_W: ceilingV1 }, [],
+    const fm = (derived && derived.flightMode) || { unpowered: false, reason: '' };
+    if (fm.unpowered) rows.push(empiricalRow('E3', 'out-of-scope', { powerRequired_W: Preq, flight_mode: 'glide' }, [], 'the aerobic ceiling bounds SUSTAINED AEROBIC power demand (powered level or climbing flight, sustained swimming). This design claims an unpowered glide (' + fm.reason + '), paid for out of potential and kinetic energy rather than metabolism, so this law does not judge it. See E3 scope.excludes in lean/registry.'));
+    else if (Preq === null) rows.push(empiricalRow('E3', 'cannot-evaluate', {}, ['airspeed_m_s and LD_max (or powerRequired_W)'], 'the ceiling is ' + ceiling + ' W at 0.06 kg; a different mass needs the O2 delivery per kg, which this row does not scale'));
+    else rows.push(empiricalRow('E3', leTol(Preq, ceiling) ? 'holds' : 'violated', { powerRequired_W: Preq, ceiling_W: ceiling, shortfall_factor: Preq > 0 ? Preq / ceiling : null, ceiling_v1_W: ceilingV1, assumes_powered_demand: !fm.powered || undefined }, [],
       'stronger than the oxygen row C14, which rules only on the physiology a design commits: this one rules on the widened ranges its sources support (E3 v2; v1 claimed every teleost and was withdrawn after measured zebrafish exceeded it)',
       { needed: { power_W: Preq }, available: { power_W: ceiling } })); }
 

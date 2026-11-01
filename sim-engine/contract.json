@@ -1,7 +1,7 @@
 {
  "server": "delphisci-sim-engine",
  "version": "0.1.0",
- "contract_version": "0.7.0",
+ "contract_version": "0.7.1",
  "changelog": "sim-engine/CHANGELOG.md",
  "transport": "stdio",
  "envelope": {
@@ -296,13 +296,13 @@
   {
    "name": "lean_check",
    "title": "Check a design against a lawset (NOT a kernel check)",
-   "description": "Evaluates a resolved state/design (SI units, fields documented at the top of lean/eliminate/browser-check.mjs) against one lawset. Evaluation is the generated browser-check (floating point); law_id, version, kind and status come from the registry. Returns per-law verdicts (holds, violated, cannot-evaluate, out-of-scope, unknown-lawset) and violations [{law_id, version, kind, status, inputs, message, binding}]. Violations of non-accepted laws are advisory (binding:false). A row is out-of-scope when the law scope (taxa, life stages, ranges) excludes the design, or when it compares the design with the single flying-fish reference specimen and the design is not a flying fish; give taxon (e.g. \"Danio rerio\") in the design.",
+   "description": "Evaluates a resolved state/design (SI units, fields documented at the top of lean/eliminate/browser-check.mjs) against one lawset. Evaluation is the generated browser-check (floating point); law_id, version, kind and status come from the registry. Returns per-law verdicts (holds, violated, cannot-evaluate, out-of-scope, unknown-lawset) and violations [{law_id, version, kind, status, inputs, message, binding}]. Violations of non-accepted laws are advisory (binding:false). A row is out-of-scope when the law scope (taxa, life stages, ranges) excludes the design, when the design declares a claim the law does not judge (scope.applies_to / scope.excludes: an unpowered glide is not a sustained aerobic demand, so flight_mode \"glide\" takes C14 and E3 out of scope), or when it compares the design with the single flying-fish reference specimen and the design is not a flying fish; give taxon (e.g. \"Danio rerio\") and flight_mode in the design.",
    "inputSchema": {
     "type": "object",
     "properties": {
      "design": {
       "type": "object",
-      "description": "SI-unit spec: taxon, life_stage, SL_m, mass_kg, finArea_m2, CLmax, LD_max, rho, airspeed_m_s, genotype_edits, ... (alias: spec)."
+      "description": "SI-unit spec: taxon, life_stage, flight_mode (\"glide\" or \"powered\"; or powered: false), SL_m, mass_kg, finArea_m2, CLmax, LD_max, rho, airspeed_m_s, genotype_edits, ... (alias: spec). Declaring an unpowered glide takes the aerobic-demand laws (C14, E3) out of scope instead of violating them."
      },
      "spec": {
       "type": "object",
@@ -720,7 +720,7 @@
      },
      "claims": {
       "type": "object",
-      "description": "Assertions the Lean laws check against the scenario's own physics, labelled as claims (e.g. {ground_distance_m: 10} for a glide claim, {mass_change: 'positive'} for a growth claim). Keys: ground_distance_m, glideDistance_m, mass_change, airspeed_m_s, climbRate_m_s, current_speed_m_s, body_temperature_C, depth_m, altitude_m, sustained_power_W, intake_J_per_day, glideHeight_m, wind_along_track_m_s."
+      "description": "Assertions the Lean laws check against the scenario's own physics, labelled as claims. {ground_distance_m} and {glideDistance_m} are the STEADY DESCENT that C15 and P4b bound; {glide_total_distance_m} is the whole glide (kinetic phase included), which no theorem covers, so it is reported and never ruled on. {flight_mode: 'powered'} says the claim is level or climbing flight, which pays a sustained power (E3, C14, C16 apply); an unpowered glide never reaches those laws. Keys: ground_distance_m, glideDistance_m, mass_change, airspeed_m_s, climbRate_m_s, current_speed_m_s, body_temperature_C, depth_m, altitude_m, sustained_power_W, intake_J_per_day, glideHeight_m, wind_along_track_m_s, glide_total_distance_m, flight_mode, powerRequired_W."
      }
     },
     "required": [
@@ -1296,7 +1296,7 @@
      },
      "version": {
       "type": "string",
-      "description": "Scorer version (score-weights*.json): 1.0.0 (default, the blind-validated one), 1.1.0, or 1.1.1 (adds rank_score for ranking)."
+      "description": "Scorer version (score-weights*.json): 1.0.0 (default, the blind-validated one), 1.1.0, 1.1.1 (adds rank_score), 1.2.0 (frozen for the blind benchmark run) or 1.3.0 (adds the joint correlation-aware term; see SCORER-RESULTS.md)."
      },
      "reference_set_excluding": {
       "type": "array",

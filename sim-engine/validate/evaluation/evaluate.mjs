@@ -31,14 +31,15 @@ const PH = await import('../phenotype.mjs');
 // {params, lean_spec, doc} (its own adapter); earlier versions read only the specimen record, so they get the
 // specimen mapping (benchmark-adapter.mjs), which is all they can read.
 const VERSION = process.env.EVAL_VERSION || '1.0.0';
-const WFILE = { '1.0.0': 'score-weights.json', '1.1.0': 'score-weights.v1.1.0.json', '1.1.1': 'score-weights.v1.1.1.json', '1.2.0': 'score-weights.v1.2.0.json' }[VERSION];
+const WFILE = { '1.0.0': 'score-weights.json', '1.1.0': 'score-weights.v1.1.0.json', '1.1.1': 'score-weights.v1.1.1.json', '1.2.0': 'score-weights.v1.2.0.json', '1.3.0': 'score-weights.v1.3.0.json' }[VERSION];
 if (!WFILE) throw new Error(`unknown scorer version ${VERSION}`);
 const WV = JSON.parse(fs.readFileSync(path.join(VAL, WFILE), 'utf8'));
 const THRESH = WV.plausible_threshold;
 // EVAL_DESIGN=specimen forces the specimen mapping on v1.2.0 too (matched-input comparison with v1.0.0/v1.1.0).
-const DESIGN_MODE = process.env.EVAL_DESIGN || (VERSION === '1.2.0' ? 'bench' : 'specimen');
+const RAW_INPUT = ['1.2.0', '1.3.0'].includes(VERSION);
+const DESIGN_MODE = process.env.EVAL_DESIGN || (RAW_INPUT ? 'bench' : 'specimen');
 const designFor = it => (DESIGN_MODE === 'bench' ? it.bench : it.design);
-const LABEL = VERSION + (DESIGN_MODE !== (VERSION === '1.2.0' ? 'bench' : 'specimen') ? ` (${DESIGN_MODE} input)` : '');
+const LABEL = VERSION + (DESIGN_MODE !== (RAW_INPUT ? 'bench' : 'specimen') ? ` (${DESIGN_MODE} input)` : '');
 const callScorer = (design, opts) => SC.designScore(design, { ...opts, version: VERSION });
 const SPLITS = ['specimen', 'species', 'family'];
 const norm = x => String(x ?? '').trim().toLowerCase().replace(/[_\s]+/g, ' ');
@@ -53,7 +54,7 @@ function versions() {
     run_id: RUN_ID, node: process.version, started: new Date().toISOString(),
     score_weights: { version: W.version, file: WFILE, sha256: sha(path.join(VAL, WFILE)), weights: W.weights, plausible_threshold: W.plausible_threshold, alpha: W.alpha },
     scorer_version_requested: VERSION, label: LABEL, design_input: DESIGN_MODE === 'bench' ? '{params, lean_spec, doc} (raw benchmark fields)' : '{specimen} mapped from params (the fields v1.0.0/v1.1.0 read) or the doc',
-    scorer_files: Object.fromEntries(['score.mjs', 'score-v12.mjs', 'phenotype.mjs', 'sanity.mjs', 'genotype.mjs', 'lean-components.mjs', 'SCORER-PREREGISTRATION.md', 'SCORER-PREREGISTRATION-v1.1.0.md', 'SCORER-PREREGISTRATION-v1.1.1.md', 'SCORER-PREREGISTRATION-v1.2.0.md', 'data/trait-envelopes.v1.2.0.json'].map(f => [f, sha(path.join(VAL, f))])),
+    scorer_files: Object.fromEntries(['score.mjs', 'score-v12.mjs', 'phenotype.mjs', 'sanity.mjs', 'genotype.mjs', 'lean-components.mjs', 'SCORER-PREREGISTRATION.md', 'SCORER-PREREGISTRATION-v1.1.0.md', 'SCORER-PREREGISTRATION-v1.1.1.md', 'SCORER-PREREGISTRATION-v1.2.0.md', 'data/trait-envelopes.v1.2.0.json', 'score-v13.mjs', 'joint.mjs', 'SCORER-PREREGISTRATION-v1.3.0.md', 'data/joint-model.v1.3.0.json', 'data/joint-calibration.v1.3.0.json'].map(f => [f, sha(path.join(VAL, f))])),
     benchmark: { prereg_sha256: sha(path.join(B, 'BENCHMARK-PREREGISTRATION.md')), prereg_sha256_declared: fs.existsSync(path.join(B, 'PREREG.sha256')) ? fs.readFileSync(path.join(B, 'PREREG.sha256'), 'utf8').trim().split(/\s+/)[0] : null,
       manifest_sha256: sha(path.join(B, 'manifest.json')), files: Object.fromEntries(files.map(f => [f, sha(path.join(B, f))])) },
     evaluator_files: Object.fromEntries(['evaluate.mjs', 'stats.mjs', 'benchmark-adapter.mjs', 'reference-index.mjs', 'adversarial.mjs'].map(f => [f, sha(path.join(DIR, f))])),
@@ -93,7 +94,7 @@ async function scoreItem(item, split, IDX) {
   return { ...rowBase(item, split), score: s, rank_score: rk, ...(s == null ? { error: res.error || 'no score returned' } : {}), ...(res.refused ? { refused: String(res.refused).slice(0, 120) } : {}),
     comp: Object.fromEntries(Object.entries(C).map(([k, c]) => [k, c?.ran ? S.r4(c.value) : null])), limiting: C.P?.limiting || null,
     nearest: (() => { const n = res.closest_real_relative || res.verdict?.closest_real_relative; return n ? { id: n.id, name: n.name, d: n.distance } : null; })(),
-    nearest_fin_d: res.verdict?.closest_real_relative_fins?.distance ?? null, failed_checks: res.verdict?.failed || [] };
+    nearest_fin_d: res.verdict?.closest_real_relative_fins?.distance ?? null, ...(res.joint ? { joint_q: res.joint.ran ? res.joint.q ?? null : null, joint_p: res.joint.ran ? res.joint.p_value ?? null : null } : {}), failed_checks: res.verdict?.failed || [] };
 }
 const rowBase = (it, split) => ({ id: it.id, label: it.label, y: it.y, type: it.type, subset: it.subset, src: it.source_ds, split, partition: it.partition, family: it.taxon?.family || null, order: it.taxon?.order || null,
   readable: it.scorer_readable, altered_read: it.altered_traits_read_by_scorer, paired_baseline: it.paired_baseline });
@@ -155,6 +156,7 @@ function metricsFor(rows0, label) {
 function baselines(rows0) {
   const rows = withWorstCase(rows0), rnd = S.mulberry32(11);
   const defs = { scorer: r => r.score, nn_distance_only: r => (r.nearest?.d != null ? -r.nearest.d : r.nearest_fin_d != null ? -r.nearest_fin_d : -1e9), P_only: r => r.comp?.P ?? 0, lean_only: r => r.comp?.L ?? 1, random: () => rnd() };
+  if (rows.some(r => r.joint_q != null)) defs.joint_term_only = jointScore;
   const vals = Object.fromEntries(Object.entries(defs).map(([k, f]) => [k, rows.map(r => ({ s: f(r), y: r.y, c: clusterOf(r) }))]));
   const out = {};
   for (const [k, v] of Object.entries(vals)) out[k] = { roc_auc: S.r4(S.rocAuc(v.filter(x => x.y).map(x => x.s), v.filter(x => !x.y).map(x => x.s))), ci_family: S.clusterBootstrap(v, S.rocAuc, { B: 300, seed: 1 }) };
@@ -200,7 +202,9 @@ function fullBlock(rows, label) { return { metrics: metricsFor(rows, label), bas
 
 // AUC of the scorer vs nearest-neighbour distance alone on the same rows, with a paired family bootstrap of the difference.
 const nnScore = r => (r.nearest?.d != null ? -r.nearest.d : r.nearest_fin_d != null ? -r.nearest_fin_d : -1e9);
-function pairedVsNN(rows, B = 300) {
+// v1.3.0 joint term alone: minus its Mahalanobis q = D2/d (higher = more typical); where it did not run, the worst rank.
+const jointScore = r => (r.joint_q != null ? -r.joint_q : -1e9);
+function pairedVsNN(rows, B = 300, base = nnScore) { const nnScore = base;
   const pos = f => rows.filter(r => r.y === 1).map(f), neg = f => rows.filter(r => r.y === 0).map(f);
   const groups = new Map(); rows.forEach((r, i) => { const c = clusterOf(r); if (!groups.has(c)) groups.set(c, []); groups.get(c).push(i); });
   const keys = [...groups.keys()], rnd = S.mulberry32(7), diffs = [];
@@ -233,6 +237,7 @@ function endpoints(R, extra) {
   const fsPos = r => r.subset === 'fishshapes_specimen', fsStd = r => (r.subset === 'decoy_shuffle_all' || r.subset === 'decoy_shuffle_shape') && r.src === 'fishshapes';
   const p1 = aucBlock(pick(H, fsPos), pick(H, fsStd));
   const p1nn = pairedVsNN([...pick(H, fsPos), ...pick(H, fsStd)]);
+  const p1joint = H.some(r => r.joint_q != null) ? pairedVsNN([...pick(H, fsPos), ...pick(H, fsStd)], 300, jointScore) : null;
   const p1loso = aucBlock(pick(HS, fsPos), pick(HS, fsStd), 300);
   const allPosH = H.filter(r => r.y === 1).map(r => r.score), q05 = S.quantile(allPosH, 0.05);
   const easyT = ['out_of_range_extrapolation', 'law_breaker', 'impossible_combo', 'organ_containment'];
@@ -254,7 +259,7 @@ function endpoints(R, extra) {
   const s5 = ALL.filter(r => r.subset === 'specimen_with_fins' || r.subset === 'specimen_mass_length');
   const lbs = ALL.filter(r => r.subset === 'law_breaker').map(r => r.score), ctrlAll = extra.controls, ctrl = ctrlAll.filter(c => c.score != null);
   const crit = [
-    { id: 'P1', primary: true, text: 'held-out LOFO: FishShapes positives vs FishShapes standard decoys: AUC >= 0.75 and family-bootstrap lower 95 % bound > 0.50', value: { auc: p1.roc_auc, ci: [p1.ci_family.lo, p1.ci_family.hi], n_pos: p1.n_pos, n_neg: p1.n_neg, nn_auc: p1nn.nn_auc, minus_nn: p1nn.diff }, pass: p1.roc_auc >= 0.75 && p1.ci_family.lo > 0.5 },
+    { id: 'P1', primary: true, text: 'held-out LOFO: FishShapes positives vs FishShapes standard decoys: AUC >= 0.75 and family-bootstrap lower 95 % bound > 0.50', value: { auc: p1.roc_auc, ci: [p1.ci_family.lo, p1.ci_family.hi], n_pos: p1.n_pos, n_neg: p1.n_neg, nn_auc: p1nn.nn_auc, minus_nn: p1nn.diff, ...(p1joint ? { joint_auc: p1joint.nn_auc, minus_joint: p1joint.diff } : {}) }, pass: p1.roc_auc >= 0.75 && p1.ci_family.lo > 0.5 },
     { id: 'P2', primary: true, text: 'held-out LOFO: >= 90 % of easy negatives (pooled) score below the 5th percentile of all held-out positive scores', value: { frac: S.r4(p2frac), n: easy.length, p05_of_positives: S.r4(q05), by_type: easyBy }, pass: p2frac >= 0.9 },
     { id: 'P3', primary: true, text: 'held-out LOFO: median FishShapes positive score > 75th percentile of standard decoys (both sources)', value: { median_positive: S.r4(medPos), p75_decoys: S.r4(q75d) }, pass: medPos > q75d },
     { id: 'S1', primary: false, text: 'held-out LOFO: FishBase positives vs FishBase standard decoys AUC >= 0.70', value: { auc: s1.roc_auc, ci: [s1.ci_family.lo, s1.ci_family.hi], n_pos: s1.n_pos, n_neg: s1.n_neg }, pass: s1.roc_auc >= 0.7 },
@@ -344,6 +349,15 @@ function analyse(R, own, controls, BM, V, canary) {
     const ER = endpoints(RR, { controls: ctrlR, own: toRank(own) });
     results.rank = { what: 'the same endpoints with rank_score as the score (the scorer designates rank_score for ranking; the 0.5 cut does not apply to it, so the threshold columns here are not meaningful)',
       criteria: ER.criteria, overall_primary_pass: ER.overall_primary_pass, heldout_family: { metrics: metricsFor(RR.heldout.family, 'held-out family-out, rank_score'), baselines: baselines(RR.heldout.family) } };
+  }
+  // v1.3.0: the same endpoints with the joint Mahalanobis term ALONE (minus q; where it did not run, worst case per the
+  // pre-registration). If this passes as well as the composite, the composite adds nothing to the ranking.
+  if (R.heldout.family.some(r => r.joint_q != null)) {
+    const toJ = rows => rows.map(r => ({ ...r, score: r.joint_q != null ? -r.joint_q : null }));
+    const RJ = { heldout: Object.fromEntries(SPLITS.map(s => [s, toJ(R.heldout[s])])), dev: Object.fromEntries(Object.entries(R.dev).filter(([k]) => SPLITS.includes(k)).map(([k, v]) => [k, toJ(v)])) };
+    const EJ = endpoints(RJ, { controls: controls.map(c => ({ ...c, score: null })), own: toJ(own) });
+    results.joint_only = { what: 'the pre-registered endpoints computed on the joint Mahalanobis term alone (-q); items where it did not run take the worst case', criteria: EJ.criteria, overall_primary_pass: EJ.overall_primary_pass,
+      coverage: Object.fromEntries([...new Set(R.heldout.family.map(r => r.subset))].map(t => { const g = R.heldout.family.filter(r => r.subset === t); return [t, `${g.filter(r => r.joint_q != null).length}/${g.length}`]; })) };
   }
   results.controls = controls;
   return results;

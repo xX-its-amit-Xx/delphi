@@ -86,11 +86,11 @@ export async function lawsetGet(args = {}) {
 // ── lean_check ─────────────────────────────────────────────────────────────
 export const checkSchema = {
   title: 'Check a design against a lawset (NOT a kernel check)',
-  description: 'Evaluates a resolved state/design (SI units, fields documented at the top of lean/eliminate/browser-check.mjs) against one lawset. Evaluation is the generated browser-check (floating point); law_id, version, kind and status come from the registry. Returns per-law verdicts (holds, violated, cannot-evaluate, out-of-scope, unknown-lawset) and violations [{law_id, version, kind, status, inputs, message, binding}]. Violations of non-accepted laws are advisory (binding:false). A row is out-of-scope when the law scope (taxa, life stages, ranges) excludes the design, or when it compares the design with the single flying-fish reference specimen and the design is not a flying fish; give taxon (e.g. "Danio rerio") in the design.',
+  description: 'Evaluates a resolved state/design (SI units, fields documented at the top of lean/eliminate/browser-check.mjs) against one lawset. Evaluation is the generated browser-check (floating point); law_id, version, kind and status come from the registry. Returns per-law verdicts (holds, violated, cannot-evaluate, out-of-scope, unknown-lawset) and violations [{law_id, version, kind, status, inputs, message, binding}]. Violations of non-accepted laws are advisory (binding:false). A row is out-of-scope when the law scope (taxa, life stages, ranges) excludes the design, when the design declares a claim the law does not judge (scope.applies_to / scope.excludes: an unpowered glide is not a sustained aerobic demand, so flight_mode "glide" takes C14 and E3 out of scope), or when it compares the design with the single flying-fish reference specimen and the design is not a flying fish; give taxon (e.g. "Danio rerio") and flight_mode in the design.',
   inputSchema: {
     type: 'object',
     properties: {
-      design: { type: 'object', description: 'SI-unit spec: taxon, life_stage, SL_m, mass_kg, finArea_m2, CLmax, LD_max, rho, airspeed_m_s, genotype_edits, ... (alias: spec).' },
+      design: { type: 'object', description: 'SI-unit spec: taxon, life_stage, flight_mode ("glide" or "powered"; or powered: false), SL_m, mass_kg, finArea_m2, CLmax, LD_max, rho, airspeed_m_s, genotype_edits, ... (alias: spec). Declaring an unpowered glide takes the aerobic-demand laws (C14, E3) out of scope instead of violating them.' },
       spec: { type: 'object', description: 'Alias of design, accepted for compatibility with the v1 lean_check.' },
       lawset: { type: 'string', default: 'current' },
     },
