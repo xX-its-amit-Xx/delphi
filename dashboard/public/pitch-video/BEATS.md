@@ -31,13 +31,13 @@ four together.
 | 3 | 0:20 | 10.0 | **The desk** | A desk piled with maths papers — 688 of them this year, counted here rather than quoted. Every one slides off. What mathematics built: **292,237** theorems in mathlib across 34 subject areas. Biology's share of it: **0 of 34**. | `facts.json` ← `deck/FACTS.md` §1.1, §1.2, §2.3 |
 | 4 | 0:30 | 7.0 | **Nine in ten** | Ten programme bars; nine go dark. "Nine in ten drug programmes that enter Phase 1 never get approved." Both sources on screen, and the unit of analysis — the programme, not the trial. | `facts.json` ← `deck/FACTS.md` §3.4 |
 | 5 | 0:37 | 11.0 | **LeanBio Forum** | Deliverable 1. Upload your own nanopub-backed theorem. Gate 1: Lean. Gate 2: agent debate on existing evidence. Both, or neither — then it enters as a biological axiom. | `shots/leanbio-capability.jpg` |
-| 6 | 0:48 | 12.0 | **The swarm expands the literature** | The longest beat. The real claim graph blooms out of four seed thinkers: 903 claims, 4,905 nanopub drafts, 16 tests, 57 Lean theorems, the real 387 links drawing between them, real theorem titles flashing past. | `tree.json`, built from `graph.json` |
-| 7 | 1:00 | 5.0 | **Three architectures** | Single / decentralised / centralised, each with its real call pattern and its real per-call budget from `ARMS.md`. On screen: "Pre-registered before the first call. 3 architectures × 4 stages × 3 tasks, every run logged. At n = 3 we claim no winner." | `facts.json` |
-| 8 | 1:05 | 5.0 | **MCP · API · CLI** | Deliverable 2. The counts, then a **real call with a real answer**: `node mcp/cli.mjs check …` returning `cannot-evaluate` and naming exactly what it is missing. "Thirty-five laws. It would not guess at one of them." | `cli-transcript.txt` |
-| 9 | 1:10 | 9.0 | **Text to organism** | Deliverable 3. "a fish, with wings" types itself into Design Studio (MorphoSwarm), marked **in development**, then cascades down nine layers to sequence and developmental time. | **clips** `studio`, `blueprint` |
-| 10 | 1:19 | 7.0 | **Wings, more than once** | Bat, insect, flying fish — three independent inventions, with real sourced numbers for each. States on screen that no bird appears, and why. | `facts.json` → `physics/flier/spec.json` |
-| 11 | 1:26 | 8.0 | **The same solver flies both** | Deliverable 4. The real flying fish and our winged zebrafish, side by side, both running in the live simulator. The right-hand page marks itself HYPOTHETICAL. | **clips** `sim-ff`, `sim-wz` |
-| 12 | 1:34 | 7.0 | **The validation harness** | Closest functional analogue → differences annotated → scored in LeanBio → physics on the mesh, beside the alignment expanding through every scale. | **clips** `gene`, `validate` |
+| 6 | 0:48 | 11.0 | **The swarm expands the literature** | The real claim graph blooms out of four seed thinkers: 903 claims, 4,905 nanopub drafts, 16 tests, 57 Lean theorems, the real 387 links drawing between them, real theorem titles flashing past. | `tree.json`, built from `graph.json` |
+| 7 | 0:59 | 8.0 | **Three architectures, and the result** | Single / decentralised / centralised, each carrying its real stage-4 score and its real cost multiple. "Quality did not separate. Neither did honesty." Both caveats on screen in amber. | `facts.json` ← `swarm/benchmark/RESULTS.md` |
+| 8 | 1:07 | 5.0 | **MCP · API · CLI** | Deliverable 2. The counts, then a **real call with a real answer**: `node mcp/cli.mjs check …` returning `cannot-evaluate` and naming exactly what it is missing. "Thirty-five laws. It would not guess at one of them." | `cli-transcript.txt` |
+| 9 | 1:12 | 9.0 | **Text to organism** | Deliverable 3. "a fish, with wings" types itself into Design Studio (MorphoSwarm), marked **in development**, then cascades down nine layers to sequence and developmental time. | **clips** `studio`, `blueprint` |
+| 10 | 1:21 | 6.0 | **Wings, more than once** | Bat, insect, flying fish — three independent inventions, with real sourced numbers for each. States on screen that no bird appears, and why. | `facts.json` → `physics/flier/spec.json` |
+| 11 | 1:27 | 8.0 | **The same solver flies both** | Deliverable 4. The real flying fish and our winged zebrafish, side by side, both running in the live simulator. The right-hand page marks itself HYPOTHETICAL. | **clips** `sim-ff`, `sim-wz` |
+| 12 | 1:35 | 6.0 | **The validation harness** | Closest functional analogue → differences annotated → scored in LeanBio → physics on the mesh, beside the alignment expanding through every scale. | **clips** `gene`, `validate` |
 | 13 | 1:41 | 12.0 | **The machine says no** | The validator's own gate text, unedited. 0.67 m/s against 8.64 required. Lifting area 166.37× too small. 22 of 73 requirements assessable, 19 unresolved. Composite **withheld**, with the numbers that prove why. "This is not a fish that works. It is a machine that can say no." | `shots/validate-gate.jpg` |
 | 14 | 1:53 | 7.0 | **Round trip, and the four** | Design studio + harness as a second MCP server. The round trip: the predicted sequence back into a fresh session — is it the phenotype we asked for? The close names all four deliverables. Founder slate B. | — |
 
@@ -62,13 +62,17 @@ four together.
 - **A real refusal from a real tool.** Beat 8 is an actual CLI call whose actual answer is
   "cannot-evaluate", listing the four inputs it would need. The system declining to guess is the
   point.
-- **A comparison announced, and a winner refused.** All 36 benchmark cells (3 arms × 4 stages ×
-  3 tasks) ran, every call logged with its prompt, raw output, tokens, cost and stop reason. Beat 7
-  says so and then says "at n = 3 we claim no winner", because n = 3 cannot support a significance
-  claim either way. One preliminary per-arm finding exists and is deliberately **not** in the film:
-  a post-hoc run is still testing whether it reflects the architecture or the budget allocation, and
-  the answer changes what it would mean. Announcing the comparison and refusing the verdict is the
-  same move as withholding the composite score.
+- **A comparison that mostly found no difference, reported as that.** The benchmark finished:
+  36 cells, 108 model calls, $8.35, every call logged. Beat 7 shows stage 4 — the cleanest cell and
+  the one `RESULTS.md` says "was expected to discriminate most. It did not." Single 1.000,
+  decentralised 1.000, centralised 0.952; the largest gap 0.048 sits inside the centralised arm's
+  own 0.143 spread. All three arms met the same trap case — nothing failed, four results
+  `cannot-assess`, composite 0.8449 flagged "plausible" — and all three refused to call it a pass.
+  `RESULTS.md`: "There is no architectural difference to report here, and that is the finding."
+  Both caveats are on screen in amber, not in a footnote: n = 3 with single draws and no
+  replicates, and **no arm had tools**, so this measures reasoning architectures rather than tool
+  coordination — and this project's own system is tool-coordinated. A null result reported as a null
+  result is the same move as withholding the composite score.
 - **The only zero this project owns, and it says what it is zero of.** Beat 3's biology side reads
   **"0 of 34"** — zero of mathlib's 34 subject areas — never a bare zero. A Lean formalisation of
   the central dogma was posted on 2026-10-26 (arXiv:2610.36343), so "nobody has formalised biology"
@@ -107,7 +111,7 @@ a place a transient belongs.
 **Cut markers** (seconds from the start; a transient on each): `0.0 · 5.0 · 13.0 · 20.0 · 30.0 ·
 37.0 · 48.0 · 60.0 · 65.0 · 70.0 · 79.0 · 86.0 · 94.0 · 101.0 · 113.0`
 
-**Intensity curve**: 0–5 hard open · 5–30 sparse · 30–48 pulse · 48–70 build · 70–101 full ·
+**Intensity curve**: 0–5 hard open · 5–30 sparse · 30–48 pulse · 48–72 build · 72–101 full ·
 101–113 drop to almost nothing (this is the beat where our own design fails) · 113–120 resolve.
 
 ## Founder footage
@@ -150,6 +154,9 @@ markup. Each entry in `facts.json` names its source file.
 | bat | 9.13 % flight muscle (7.8 % min); 6.5–14.25 N/m² | `physics/flier/spec.json` (Bullen & McKenzie 2004 via PMC10966098; `comparison-data.csv`) |
 | insect | 559 W/kg hovering; 7.3–14.7 % efficiency | `physics/flier/spec.json` (PMC12606204) |
 | flying fish | AR 10.7; L/D max 4.37 | `physics/flier/spec.json` (Park & Choi 2010) |
+| benchmark, stage 4 | single 1.000 · decentralised 1.000 · centralised 0.952; gap 0.048 inside the 0.143 spread | `swarm/benchmark/RESULTS.md` §2, `results.json` |
+| benchmark, scale | n = 3 per (arm, stage) · 36 cells · 108 calls · $8.35 | same file, header |
+| benchmark, cost | swarms 1.5x to 5.9x the single agent | same file, cost table |
 | clinical attrition | "Nine in ten drug programmes that enter **Phase 1** never get approved" | `deck/FACTS.md` §3.4, verbatim. BIO/Informa/QLS 2011–2020 (12,728 phase transitions, 7.9 %) and Wong, Siah & Lo 2019 (185,994 trials, 13.8 %), never averaged |
 | formal library size | 292,237 theorems across 34 subject areas | `deck/FACTS.md` §1.2 — `mathlib_stats`, 2026-11-01 02:07 UTC |
 | biology's share | 0 of 34 subject areas | `deck/FACTS.md` §2.3 — the only clean zero, and it names what it is zero of |
@@ -163,11 +170,16 @@ markup. Each entry in `facts.json` names its source file.
 - **`deck/FACTS.md` is at the repository root**, not under `dashboard/public/deck/`. That is why an
   earlier search missed it. It is read, and every number in beats 3 and 4 now carries its exact
   permitted wording from §1.1, §1.2, §2.3 and §3.4. Nothing in this film is left unsourced.
-- **The swarm benchmark had no graded result.** All 36 cells had executed and every call was logged,
-  but grading was still in flight and no `RESULTS.md` existed when this was cut. Beat 7 therefore
-  announces the comparison and refuses the verdict. If graded results land, set
-  `swarm_benchmark.has_results` true and write `result_line` with the metric, the direction and the
-  n; the beat switches on that flag alone. Do not write a winner this file has not read.
+- **Two benchmark results are deliberately left out of the film**, and `facts.json` →
+  `swarm_benchmark.not_shown` records why in writing:
+  - **Stage 3 (design studio) quality, at all.** `RESULTS.md` §6 records that the task briefs were
+    infeasible at the current lawset, so "accepted" was unreachable by construction and all three
+    arms violate the same five laws. A defective task cannot grade an architecture.
+  - **The centralised arm's stage-1 zero.** Its cause is a budget effect, not an architectural one:
+    the merge call was starved by the equal-split rule, and re-allocating the same $0.45 with more
+    at the join rescued it on all three cells. Shown without its rescue it reads as "centralisation
+    does not pay", which is false. Both halves will not fit legibly in eight seconds, so neither
+    half is in the film.
 - **No music.** This session cannot reach Suno. The prompt and the cue list are above.
 
 ## Files

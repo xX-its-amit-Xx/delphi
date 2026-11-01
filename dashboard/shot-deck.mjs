@@ -67,9 +67,19 @@ try {
         const sl = document.querySelectorAll('.slide')[n];
         const r = sl.getBoundingClientRect();
         let worstY = 0, worstX = 0, who = '';
+        // A wide table, diagram or code block may exceed the slide INSIDE its own scroll container:
+        // that is the sanctioned pattern, not a fault. Only what overflows the slide itself counts.
+        const inScroller = el => {
+          for (let n = el.parentElement; n && n !== sl; n = n.parentElement) {
+            const ox = getComputedStyle(n).overflowX;
+            if (ox === 'auto' || ox === 'scroll') return true;
+          }
+          return false;
+        };
         for (const el of sl.querySelectorAll('*')) {
           const b = el.getBoundingClientRect();
           if (!b.width && !b.height) continue;
+          if (inScroller(el)) continue;
           const dy = b.bottom - r.bottom, dx = b.right - r.right;
           if (dy > worstY) { worstY = dy; who = el.className || el.tagName; }
           if (dx > worstX) worstX = dx;

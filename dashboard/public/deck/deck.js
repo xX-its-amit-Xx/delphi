@@ -308,22 +308,61 @@ function build(D) {
       ${srcs(['swarm/PREREG.md', 'swarm/compare/results.json', 'swarm/compare/verify.mjs'])}`;
   };
 
-  // The one slide that is deliberately empty until an experiment that is running right now reports.
-  SL.bench4 = () => `${ribbon('anticipated')}
-    <h2 style="color:var(--ghost)">Single agent vs decentralised swarm vs centralised swarm, across four levels.</h2>
-    <div class="split">
-      <div class="ghostbox"><div class="gi">Running now. Ground truth is frozen
-        (<span class="prov">swarm/benchmark/fixtures/gt-l4-t1&hellip;t3</span>); no arm has reported.
-        This slide fills in or stays grey.</div></div>
-      <div class="scope"><h4>What it will and will not settle</h4><ul>
-        <li>Four task levels of increasing difficulty, the same three organisations on each.</li>
-        <li>Ground truth was written and frozen <b>before</b> any arm ran, so a late result cannot be fitted to it.</li>
-        <li>It is a comparison of organisations on one task family. It is not a claim about swarms in general.</li>
-      </ul></div>
-    </div>
-    <p class="caption">The deck reads the same whether or not this fills. We would rather hand you a grey slide than
-      a number we chose after seeing it.</p>
-    ${srcs(['swarm/benchmark/fixtures/', 'swarm/PREREG.md'])}`;
+  SL.bench4 = () => {
+    const B = N.benchmark;
+    if (!B) return ghost('bench4');
+    const ARMN = { single: 'One agent', decentralised: 'Decentralised swarm', centralised: 'Centralised swarm' };
+    const cell = (r, a) => r.noArtifact.includes(a)
+      ? '<span class="no">no artifact</span>'
+      : `<span class="${r[a] === Math.max(r.single, r.decentralised, r.centralised) ? 'top' : ''}">${r[a].toFixed(3)}</span>`;
+    return `${ribbon('live')}
+      <h2>Three architectures, one budget. Quality did not separate.</h2>
+      <p class="sub" style="max-width:66ch">Same total budget per task, byte-identical inputs. At every stage
+        shown, the spread <em>within</em> an arm is larger than the gap <em>between</em> arms. The swarms cost
+        ${esc(B.cost.range)} the dollars and ${esc(B.cost.tokens)} the tokens.</p>
+      <div class="tscroll"><table class="mini bench">
+        <tr><th>stage</th><th>one agent</th><th>decentralised</th><th>centralised</th><th>gap</th><th>within-arm spread</th><th></th></tr>
+        ${B.rows.map(r => `<tr>
+          <td><b>${esc(r.title)}</b></td>
+          <td>${cell(r, 'single')}</td><td>${cell(r, 'decentralised')}</td><td>${cell(r, 'centralised')}</td>
+          <td>${r.gap.toFixed(3)}</td><td>${r.spread.toFixed(3)}</td>
+          <td><span class="tag ${r.separates ? 'neg' : 'grey'}">${r.separates ? 'separates' : 'does not separate'}</span></td>
+        </tr>`).join('')}
+      </table></div>
+      <div class="split" style="margin-top:14px">
+        <div class="flag" style="margin-top:0"><b>The result is about our framework, not about swarms.</b>
+          All three arms were handed the same trap: a validation run where no gate failed, four of five were
+          <em>cannot-assess</em>, and the scorer&rsquo;s own composite read ${B.trapComposite} and called itself
+          plausible. ${B.allArmsHonest ? 'Every arm got all five statuses right, summed nothing, refused to read '
+          + 'cannot-assess as a pass, and named the composite only with its disclaimer.'
+          : 'The arms did not all handle it the same way.'}
+          <b>There is no architectural difference in honesty.</b> The guardrails hold whoever is driving.</div>
+        <div class="scope warn"><h4>Read these two before quoting us</h4><ul>
+          <li><b>n = ${B.N}</b> tasks per cell, no replicates. A difference smaller than the within-arm spread is
+            reported as not separating, and no significance is claimed.</li>
+          <li><b>No arm had tools.</b> This measures three <em>reasoning</em> architectures over fixed inputs.
+            Our own system is tool-coordinated, so this says nothing about it.</li>
+        </ul></div>
+      </div>
+      <div class="split" style="margin-top:10px">
+        <div class="scope"><h4>The one difference that replicated &mdash; and its answer</h4>
+          <p style="margin:0">The centralised arm produced <b>no artifact in ${B.merge.tasksWithNoArtifact} of
+          ${B.merge.tasks}</b> nanopub tasks. The equal-budget rule gave it a $${B.merge.capPerCall} cap per call
+          across 5 calls; ${B.merge.callsOverCap} of its ${B.merge.callsTotal} calls hit that cap. A post-hoc
+          re-allocation of the <b>same total</b>, spent unevenly, produced an artifact in
+          ${B.merge.rescued} of ${B.merge.rescueOf}. So: centralisation works here, and is budget-fragile at the
+          join. The rescue is post-hoc and was not pre-registered.</p></div>
+        <div class="scope warn"><h4>One stage is not shown</h4>
+          <p style="margin:0">The design stage is omitted. Its briefs are infeasible at lawset 1.8.1: all three
+          arms violate the same five binding laws, and changing one field drops the violations from five to zero.
+          &ldquo;Accepted&rdquo; was unreachable by construction, so that stage measures the brief, not the arms.
+          The benchmark printed that on its own figure rather than burying it.</p></div>
+      </div>
+      <p class="caption">Whole matrix: ${B.cost.cells} cells, ${B.cost.calls} logged calls, $${B.cost.dollars}.
+        Every bar on <a href="${esc(B.page)}">${esc(B.page)}</a> opens the run that produced it &mdash; the prompt
+        as sent, the raw output, tokens, cost, stop reason and the grader&rsquo;s reasoning.</p>
+      ${srcs(B.sources)}`;
+  };
 
   SL.mcp = () => `${ribbon(st('mcp'))}
     <h2>Served as an MCP server, so an agent can ask it things.</h2>

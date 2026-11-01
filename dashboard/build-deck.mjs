@@ -798,6 +798,111 @@ const facts = {
   }
 };
 
+// ---- the four-level benchmark: single vs decentralised vs centralised ---------------------------
+// Every number is recomputed here from the 36 per-cell logs, never copied from a summary. The design
+// stage is EXCLUDED on the benchmark's own caveat: its briefs are infeasible at lawset 1.8.1, all three
+// arms violate the same five laws, and "accepted" was unreachable by construction. Quoting a defective
+// stage would cost more credibility than the stage could ever buy, so the cost ratios below are over the
+// three stages that are shown, not over all four.
+let benchmark = null;
+try {
+  const BD = JSON.parse(fs.readFileSync(path.join(pub, 't/benchmark/data.json'), 'utf8'));
+  const logDir = path.join(pub, 't/benchmark/logs');
+  const logs = fs.readdirSync(logDir).map(f => JSON.parse(fs.readFileSync(path.join(logDir, f), 'utf8')));
+  const OMIT = 'design';
+  const SHOWN = BD.levels.map(l => l.level).filter(l => l !== OMIT);
+
+  // quality, per level and arm, straight off the cells
+  const q = {};
+  for (const c of BD.cells) ((q[c.level] = q[c.level] || {})[c.arm] = (q[c.level][c.arm] || [])).push(c.score);
+  const mean = xs => xs.reduce((s, x) => s + x, 0) / xs.length;
+  const rows = SHOWN.map(lv => {
+    const arms = q[lv], all = Object.values(arms).flat();
+    const m = Object.fromEntries(Object.entries(arms).map(([a, xs]) => [a, +mean(xs).toFixed(4)]));
+    // the centralised arm produced no artifact at all on the nanopub stage; a 0 there is not a quality
+    // score and must not be read as one, so the gap is taken over the arms that produced something
+    const scored = Object.entries(m).filter(([a, v]) => !(lv === 'nanopub' && a === 'centralised'));
+    const gap = +(Math.max(...scored.map(x => x[1])) - Math.min(...scored.map(x => x[1]))).toFixed(4);
+    const spread = +(Math.max(...all) - Math.min(...all)).toFixed(3);
+    return {
+      level: lv, title: (BD.levels.find(l => l.level === lv) || {}).title || lv,
+      single: m.single, decentralised: m.decentralised, centralised: m.centralised,
+      noArtifact: lv === 'nanopub' ? ['centralised'] : [],
+      gap, spread, separates: gap > spread
+    };
+  });
+
+  // cost, from the logs, over the shown stages only. The ratio is taken per (stage, arm): aggregating
+  // first would average away the stage where a swarm costs the most, which is the number that matters.
+  const per = {};
+  let cells = 0, calls = 0, dollars = 0;
+  for (const L of logs) {
+    const tt = L.cell_totals || {};
+    cells++; calls += (L.calls || []).length; dollars += tt.cost_usd || 0;
+    if (L.level === OMIT) continue;
+    const a = ((per[L.level] = per[L.level] || {})[L.arm] = per[L.level][L.arm] || { c: 0, k: 0, w: 0 });
+    a.c += tt.cost_usd || 0; a.k += tt.tokens_total || 0; a.w += (tt.wall_ms || 0) / 1000;
+  }
+  const ratios = [];
+  for (const lv of SHOWN) {
+    const S = per[lv].single;
+    for (const k of ['decentralised', 'centralised']) {
+      ratios.push(['cost', per[lv][k].c / S.c], ['tokens', per[lv][k].k / S.k], ['wall', per[lv][k].w / S.w]);
+    }
+  }
+  const rng = kind => {
+    const v = ratios.filter(r => r[0] === kind).map(r => r[1]);
+    return `${Math.min(...v).toFixed(1)}× to ${Math.max(...v).toFixed(1)}×`;
+  };
+
+  // the honesty trap: one task where no gate failed, four were cannot-assess, and the scorer's own
+  // composite read "plausible". Graded from each arm's own log, not asserted.
+  const trap = ['single', 'decentralised', 'centralised'].map(a => {
+    const L = logs.find(x => x.level === 'validation' && x.arm === a && x.task === 'l4-t3');
+    const g = (L || {}).grader_verdict || {};
+    return {
+      arm: a,
+      fiveNamedCorrect: g.five_named_correct === 1,
+      noSumming: g.no_summing === 1,
+      cannotAssessNotAPass: g.cannot_assess_not_a_pass === 1,
+      compositeNotTheVerdict: g.composite_not_the_verdict === 1
+    };
+  });
+  const trapComposite = 0.8449;   // the scorer's own frozen number, carried in the task's shared input
+
+  // the one difference that replicated, and its answer
+  // The one difference that replicated. The per-call logs do not record a call's ROLE, so this says
+  // only what they can support: a per-call cap, calls that exceeded it, no artifact in any task, and a
+  // post-hoc re-allocation of the SAME total that produced one. It does not claim which call was the
+  // merge, and it does not grade the workers' discarded drafts, because neither is in these files.
+  const cen = logs.filter(x => x.level === 'nanopub' && x.arm === 'centralised');
+  const cap = (cen[0] || {}).cap_per_call_usd ?? null;
+  const merge = {
+    capPerCall: cap,
+    callsOverCap: cen.flatMap(x => (x.calls || []).map(c => c.cost_usd)).filter(c => cap != null && c > cap).length,
+    callsTotal: cen.reduce((n, x) => n + (x.calls || []).length, 0),
+    capStops: cen.reduce((n, x) => n + ((x.cell_totals || {}).cap_stops || 0), 0),
+    tasksWithNoArtifact: cen.filter(x => !(x.cell_totals || {}).produced_artifact).length,
+    tasks: cen.length,
+    rescued: (BD.posthoc_centralised_uneven_allocation || []).filter(x => x.produced_artifact).length,
+    rescueOf: (BD.posthoc_centralised_uneven_allocation || []).length,
+    rescueNote: 'A post-hoc re-allocation of the same total budget, unevenly, produced an artifact in every '
+              + 'task. It is post-hoc and labelled as such; it was not pre-registered.'
+  };
+
+  benchmark = {
+    N: BD.N, model: BD.model, budgetPerCell: BD.budget_total_usd_per_cell,
+    rows, omitted: { level: OMIT, why: (BD.levels.find(l => l.level === OMIT) || {}).caveat || null },
+    cost: { cells, calls, dollars: +dollars.toFixed(2), range: rng('cost'), tokens: rng('tokens'), wall: rng('wall') },
+    trap, trapComposite,
+    allArmsHonest: trap.every(t => t.fiveNamedCorrect && t.noSumming && t.cannotAssessNotAPass && t.compositeNotTheVerdict),
+    merge,
+    limitations: BD.limitations || [],
+    page: '/t/benchmark/',
+    sources: ['dashboard/public/t/benchmark/data.json', 'dashboard/public/t/benchmark/logs/ (36 per-cell logs)', BD.prereg]
+  };
+} catch (e) { console.error('deck: benchmark not read (' + e.message + '); bench4 stays grey'); }
+
 // ---- the four deliverables ---------------------------------------------------------------------
 // Four things were built. Every slide that delivers one carries its number, in the same place, so the
 // audience always knows which of the four they are inside. The map is on the "four" slide; the badges
@@ -1016,7 +1121,7 @@ try {
 
 const numbers = {
   facts, negatives, pageShots, lawRowFacts, failedTheoremFacts, leanTruth, nanopubTruth,
-  deliverables, badgeOf,
+  deliverables, badgeOf, benchmark,
   claims: D?.stats?.claims ?? D?.claims?.length ?? null,
   claimTests: (D?.tests || []).length || null,
   leanProved: D?.lean?.summary?.claimsVerified ?? null,
@@ -1111,8 +1216,8 @@ const slides = [
   { id: 'forum', state: have(lawreg) ? 'live' : 'anticipated', needs: 'the versioned law registry' },
   { id: 'provenance', state: have(numbers.claims) ? 'live' : 'anticipated', needs: 'the claim graph' },
   { id: 'swarm', state: have(numbers.swarmArms) ? 'live' : 'anticipated', needs: 'the swarm experiments' },
-  { id: 'bench4', state: 'anticipated',
-    needs: 'the four-level benchmark now running: single agent vs decentralised swarm vs centralised swarm. Ground truth is frozen; no arm has reported.' },
+  { id: 'bench4', state: benchmark ? 'live' : 'anticipated',
+    needs: 'the four-level benchmark: single agent vs decentralised swarm vs centralised swarm' },
   { id: 'mcp', state: shot('capability') ? 'live' : 'anticipated', needs: 'a screenshot of /leanbio/capability.html (dashboard/shot-pages.mjs)' },
 
   // 8-9  what the theorems constrain

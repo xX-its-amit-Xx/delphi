@@ -566,29 +566,83 @@ else:
     ghostbox(s, M, Inches(2.4), W - 2 * M, Inches(2.6), "Not evidenced yet", STATE["swarm"].get("needs", ""))
 srcline(s, ["swarm/PREREG.md", "swarm/compare/results.json", "swarm/compare/verify.mjs"])
 
-# The one slide that is deliberately empty until an experiment that is running right now reports.
-s = new("Single agent vs decentralised swarm vs\ncentralised swarm, across four levels.", "anticipated", EB)
-ghostbox(s, M, Inches(2.5), Inches(6.0), Inches(2.4), "Running now",
-         "Ground truth is frozen (swarm/benchmark/fixtures/gt-l4-t1…t3). No arm has reported. "
-         "This slide fills in or stays grey.")
-note2 = s.shapes.add_textbox(W - M - Inches(5.6), Inches(2.5), Inches(5.6), Inches(2.4))
-note2.text_frame.word_wrap = True
-for i, ln in enumerate([
-        "What it will and will not settle",
-        "— Four task levels of increasing difficulty, the same three organisations on each.",
-        "— Ground truth was written and frozen BEFORE any arm ran, so a late result cannot be fitted to it.",
-        "— It compares organisations on one task family. It is not a claim about swarms in general."]):
-    p = note2.text_frame.paragraphs[0] if i == 0 else note2.text_frame.add_paragraph()
-    p.line_spacing = 1.15
-    r = p.add_run()
-    r.text = ln
-    r.font.size = Pt(11 if i else 10)
-    r.font.bold = i == 0
-    r.font.color.rgb = MUTE if i else GHOST
-    r.font.name = "Segoe UI"
-caption(s, "The deck reads the same whether or not this fills. We would rather hand you a grey slide than a "
-           "number we chose after seeing it.")
-srcline(s, ["swarm/benchmark/fixtures/", "swarm/PREREG.md"])
+B = N.get("benchmark")
+s = new("Three architectures, one budget.\nQuality did not separate.", STATE["bench4"]["state"], EB)
+if B:
+    tbox(s, M, Inches(2.12), W - 2 * M, Inches(0.7),
+         "Same total budget per task, byte-identical inputs. At every stage shown, the spread WITHIN an arm is "
+         f"larger than the gap BETWEEN arms. The swarms cost {B['cost']['range']} the dollars and "
+         f"{B['cost']['tokens']} the tokens.", 12, False, INK, spacing=1.16)
+    # quality and cost together, never quality alone
+    cols = [Inches(2.85), Inches(1.5), Inches(1.65), Inches(1.5), Inches(1.0), Inches(1.6), Inches(1.9)]
+    heads = ["stage", "one agent", "decentralised", "centralised", "gap", "within-arm spread", ""]
+    y = Inches(2.95)
+    x = M
+    for w, hd in zip(cols, heads):
+        tbox(s, x, y, w, Inches(0.26), hd, 9, False, MUTE)
+        x += w
+    y += Inches(0.3)
+    for r in B["rows"]:
+        x = M
+        best = max(r["single"], r["decentralised"], r["centralised"])
+        tbox(s, x, y, cols[0], Inches(0.3), r["title"], 11, True, INK)
+        x += cols[0]
+        for i, arm in enumerate(("single", "decentralised", "centralised")):
+            if arm in r["noArtifact"]:
+                tbox(s, x, y, cols[i + 1], Inches(0.3), "no artifact", 11, True, SERIOUS)
+            else:
+                tbox(s, x, y, cols[i + 1], Inches(0.3), f"{r[arm]:.3f}", 11, r[arm] == best, INK)
+            x += cols[i + 1]
+        tbox(s, x, y, cols[4], Inches(0.3), f"{r['gap']:.3f}", 11, False, MUTE)
+        x += cols[4]
+        tbox(s, x, y, cols[5], Inches(0.3), f"{r['spread']:.3f}", 11, False, MUTE)
+        x += cols[5]
+        tbox(s, x, y, cols[6], Inches(0.3), "separates" if r["separates"] else "does not separate",
+             9, True, SERIOUS if r["separates"] else GHOST)
+        y += Inches(0.4)
+
+    trap = ("The result is about our framework, not about swarms.  All three arms were handed the same trap: a "
+            f"validation run where no gate failed, four of five were cannot-assess, and the scorer's own composite "
+            f"read {B['trapComposite']} and called itself plausible. "
+            + ("Every arm got all five statuses right, summed nothing, refused to read cannot-assess as a pass, and "
+               "named the composite only with its disclaimer. There is no architectural difference in honesty."
+               if B.get("allArmsHonest") else "The arms did not all handle it the same way."))
+    nb = note(s, Inches(4.5), trap, SERIOUS, w=Inches(5.9))
+    cav = s.shapes.add_textbox(M + Inches(6.1), Inches(4.5), Inches(5.45), Inches(1.5))
+    cav.text_frame.word_wrap = True
+    for i, ln in enumerate([
+            "Read these two before quoting us",
+            f"— n = {B['N']} tasks per cell, no replicates. A difference smaller than the within-arm spread is "
+            "reported as not separating, and no significance is claimed.",
+            "— No arm had tools. This measures three REASONING architectures over fixed inputs. Our own system is "
+            "tool-coordinated, so this says nothing about it."]):
+        par = cav.text_frame.paragraphs[0] if i == 0 else cav.text_frame.add_paragraph()
+        par.line_spacing = 1.14
+        r_ = par.add_run()
+        r_.text = ln
+        r_.font.size, r_.font.bold = Pt(10 if i == 0 else 9), i == 0
+        r_.font.color.rgb, r_.font.name = (MUTE if i == 0 else INK), "Segoe UI"
+
+    mg = B["merge"]
+    tbox(s, M, Inches(6.0), Inches(5.9), Inches(0.9),
+         f"The one difference that replicated — and its answer.  The centralised arm produced no artifact in "
+         f"{mg['tasksWithNoArtifact']} of {mg['tasks']} nanopub tasks: the equal-budget rule gave it a "
+         f"\u0024{mg['capPerCall']} cap per call across 5 calls, and {mg['callsOverCap']} of its {mg['callsTotal']} "
+         f"calls hit it. A post-hoc re-allocation of the SAME total, spent unevenly, produced an artifact in "
+         f"{mg['rescued']} of {mg['rescueOf']}. Centralisation works here, and is budget-fragile at the join. The "
+         "rescue is post-hoc and was not pre-registered.", 8, False, MUTE, spacing=1.1)
+    tbox(s, M + Inches(6.1), Inches(6.0), Inches(5.45), Inches(0.9),
+         "One stage is not shown.  The design stage is omitted: its briefs are infeasible at lawset 1.8.1, all three "
+         "arms violate the same five binding laws, and changing one field drops the violations from five to zero. "
+         "\u201cAccepted\u201d was unreachable by construction, so that stage measures the brief, not the arms.",
+         8, False, MUTE, spacing=1.1)
+    tbox(s, M, H - Inches(1.0), W - 2 * M, Inches(0.34),
+         f"Whole matrix: {B['cost']['cells']} cells, {B['cost']['calls']} logged calls, "
+         f"\u0024{B['cost']['dollars']}. Every bar on {B['page']} opens the run that produced it — the prompt as "
+         "sent, the raw output, tokens, cost, stop reason and the grader's reasoning.", 9, False, MUTE, spacing=1.1)
+    srcline(s, B.get("sources", []))
+else:
+    ghostbox(s, M, Inches(2.5), Inches(6.0), Inches(2.4), "Running now", STATE["bench4"].get("needs", ""))
 
 s = new("Served as an MCP server,\nso an agent can ask it things.", STATE["mcp"]["state"], EB)
 pageshot(s, "capability", M, Inches(2.4), PICW,
