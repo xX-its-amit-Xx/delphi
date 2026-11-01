@@ -20,6 +20,9 @@ const STATUS = { type: 'string', enum: ['proposed', 'candidate', 'accepted', 'co
 
 function origin() {
   const reg = src.load();
+  const info = src.sourceInfo();
+  if (info.source.startsWith('remote:')) return p('law registry', info.url, 'derived',
+    `Published lawsets and law files fetched at runtime from ${info.url} (${info.source}), every pinned law checked against its lawset content_hash; fetched ${info.fetched_at}, last checked ${info.checked_at}.`);
   return reg.origin === 'registry'
     ? p('law registry', 'lean/registry/', 'derived', 'Versioned law registry in this repository (lean/registry/laws/*.json, lawsets/*.json).')
     : p('law registry', 'lean/laws.json + lean/constraints.json + lean/empirical.json', 'derived',
@@ -57,11 +60,12 @@ export async function lawsList(args = {}) {
 export const lawGetSchema = {
   title: 'One Lean-backed law, in full',
   description: 'The full registry entry for one law: statement, the Lean source text of its theorem and of the named hypotheses its signature uses, constraint lemmas, version history, sources, non-vacuity witness, and the pinned commit and content hash with a live drift flag.',
-  inputSchema: { type: 'object', properties: { id: { type: 'string', description: 'law_id from lean_laws_list' } }, required: ['id'] },
+  inputSchema: { type: 'object', properties: { id: { type: 'string', description: 'law_id from lean_laws_list' },
+    version: { type: 'string', description: 'A specific law version (e.g. one an older lawset pins, served from lean/registry/law-versions/). Omit for the current one.' } }, required: ['id'] },
 };
 export async function lawGet(args = {}) {
   if (!args.id) throw new Error('id is required');
-  const r = src.getLaw(args.id);
+  const r = src.getLaw(args.id, args.version || null);
   const prov = [origin(), commitP()];
   if (r.lean_ref?.module) prov.push(p('Lean module', r.lean_ref.module, 'derived', `Source text read from the file; module hash ${r.pin?.module_hash}, pin status ${r.pin?.status}.`));
   return envelope(r, prov,
@@ -138,6 +142,43 @@ export async function verifyLaws() {
     'Hash comparison only: no drift means the bytes match the pins, not that the proofs compile. Run the Lean build for that.');
 }
 
+// ── lean_source_status ─────────────────────────────────────────────────────
+export const sourceStatusSchema = {
+  title: 'Where the Lean laws come from, and how fresh they are',
+  description: 'Reports the law source this server is using: "local" (the files in this deployment), "remote:mirror" (the static /api/lean/ mirror) or "remote:github" (raw lean/registry/ on a git ref), selected by LEANBIO_REMOTE. For a remote it gives the URL, the current lawset, when it was fetched and last checked, the next check (TTL), request and 304 counts, how many law files matched their lawset content_hash, and the last error or rejected (tampered or inconsistent) fetch, which never replaces the last good set. refresh:true forces a check now (at most once per 30 s).',
+  inputSchema: { type: 'object', properties: { refresh: { type: 'boolean', description: 'Check the remote now instead of waiting for the TTL (rate-limited to once per 30 s).' } } },
+};
+export async function sourceStatus(args = {}) {
+  if (args.refresh) await src.ensureFresh({ force: true });
+  const r = src.sourceStatus();
+  return envelope(r, [origin(), commitP()],
+    'Freshness and integrity of the law source only. A verified remote set means every law file matches the content_hash its lawset pins; lawsets are not signed, so this does not authenticate the publisher. lean_check still evaluates with the browser-check shipped in this deployment.');
+}
+
+// ── lean_changes ───────────────────────────────────────────────────────────
+export const changesSchema = {
+  title: 'What changed in the Lean lawsets',
+  description: 'Lawset releases newer than since_version, newest first. Each entry has the CHANGELOG prose and bullets (lean/registry/CHANGELOG.md) and a machine diff computed from the lawset pins (laws added or removed, version changes, status changes). Poll with the lawset_version you last saw; up_to_date:true means nothing newer. The same feed is static at /api/lean/changes.json and /api/lean/changes.xml (Atom).',
+  inputSchema: { type: 'object', properties: { since_version: { type: 'string', description: 'A lawset version such as "1.3.0" (exclusive), or "current". Omit for every release.' } } },
+};
+export async function changes(args = {}) {
+  const r = src.getChanges(args.since_version || args.since || null);
+  return envelope(r, [origin(), p('changelog', 'lean/registry/CHANGELOG.md + lawsets/lawset-*.json', 'derived', 'Prose and bullets are the registry changelog; diff is computed from the lawset pins by lib/lean-source.mjs.')],
+    'A changelog entry describes a registry release; it does not re-establish any law. The diff covers law ids, versions and pinned statuses only; read a law with lean_law_get for its statement and Lean source.');
+}
+
+// Every lean_* envelope says where its laws came from: source (local | local-fallback | remote:mirror |
+// remote:github), lawset_version (the current lawset of that source) and fetched_at. Before each call the loader
+// re-checks a configured remote once its TTL has expired (lib/lean-source.mjs ensureFresh; never throws).
+function withSource(handler) {
+  return async (args = {}) => {
+    await src.ensureFresh();
+    const out = await handler(args);
+    const info = src.sourceInfo();
+    return { ...out, source: info.source, lawset_version: info.lawset_version, fetched_at: info.fetched_at, source_detail: info };
+  };
+}
+
 // One table, imported by server.mjs, http.mjs, lean-cli.mjs and mcp/. `local: true` marks tools that must
 // not be exposed on a hosted/public server (lean_propose runs a Lean build).
 export const LEAN_TOOLS = [
@@ -147,5 +188,7 @@ export const LEAN_TOOLS = [
   { name: 'lean_check', ...checkSchema, handler: check },
   { name: 'lean_propose', ...proposeSchema, handler: proposeLaw, local: true },
   { name: 'lean_verify', ...verifySchema, handler: verifyLaws },
-];
+  { name: 'lean_source_status', ...sourceStatusSchema, handler: sourceStatus },
+  { name: 'lean_changes', ...changesSchema, handler: changes },
+].map(t => ({ ...t, handler: withSource(t.handler) }));
 export const LEAN_TOOL_NAMES = LEAN_TOOLS.map(t => t.name);

@@ -14,6 +14,8 @@
 //   node mcp/cli.mjs check design.json --lawset current
 //   node mcp/cli.mjs propose Law.lean --meta meta.json
 //   node mcp/cli.mjs verify
+//   node mcp/cli.mjs source [--refresh]                         (Lean law source: local, or remote mirror/github)
+//   node mcp/cli.mjs changes 1.3.0                              (lawset releases after 1.3.0)
 
 import { browseClaims } from "./graph.mjs";
 import { getClaim, overview, rankClaims, searchClaims, sparql } from "./lib.mjs";

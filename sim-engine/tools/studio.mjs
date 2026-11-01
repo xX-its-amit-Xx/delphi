@@ -13,7 +13,7 @@ import { loadBundle } from '../lib/data-node.mjs';
 import * as O from '../lib/organism.mjs';
 import { resolveState, stageAges, STATE_FIELDS, STATE_FIELDS_OPTIONAL } from '../lib/state.mjs';
 import { leanVerdicts, lawsetVersion } from '../lib/lean.mjs';
-import { perturbInputs } from '../lib/perturb-map.mjs';
+import { perturbInputs, applyClaims, CLAIM_KEYS } from '../lib/perturb-map.mjs';
 import { loadScenarios, describeScenario, runScenario } from '../scenarios/index.mjs';
 
 export const SESSIONS_DIR = process.env.STUDIO_SESSIONS_DIR ? path.resolve(process.env.STUDIO_SESSIONS_DIR) : path.resolve(import.meta.dirname, '..', 'sessions');
@@ -96,7 +96,8 @@ export const SCHEMAS = {
   scenario_list: { title: 'List scenarios', description: 'Every scenario module in sim-engine/scenarios with params, required STATE fields, declared metrics and model card. Modules that fail the interface are listed under errors.',
     inputSchema: { type: 'object', properties: {} } },
   scenario_run: { title: 'Run a scenario', description: 'Run one scenario on an organism at one age. Never runs when a required STATE field is null.',
-    inputSchema: { type: 'object', properties: { organism: ORG, scenario: { type: 'string' }, params: { type: 'object' }, ageDays: AGE, conditions: COND, measured: MEASURED, lawset: LAWSET }, required: ['organism', 'scenario'] } },
+    inputSchema: { type: 'object', properties: { organism: ORG, scenario: { type: 'string' }, params: { type: 'object' }, ageDays: AGE, conditions: COND, measured: MEASURED, lawset: LAWSET,
+      claims: { type: 'object', description: `Assertions the Lean laws check against the scenario's own physics, labelled as claims (e.g. {ground_distance_m: 10} for a glide claim, {mass_change: 'positive'} for a growth claim). Keys: ${CLAIM_KEYS.join(', ')}.` } }, required: ['organism', 'scenario'] } },
   scenario_timecourse: { title: 'Run a scenario across development', description: 'The same scenario at every developmental stage in anatomy-model/parametric/stages.json for the organism\'s parents: per-stage metrics, survives, limiting, Lean violations.',
     inputSchema: { type: 'object', properties: { organism: ORG, scenario: { type: 'string' }, params: { type: 'object' }, conditions: COND, lawset: LAWSET }, required: ['organism', 'scenario'] } },
   optimize: { title: 'Optimise a design against a scenario metric', description: 'Seeded random-restart hill climb over decision variables [{target,param,min,max}]. A candidate is rejected if it creates a NEW binding Lean violation (strict: any binding violation) or breaks a hard constraint; every rejection is returned with the law or constraint it broke. If no candidate is feasible the result says "no design meets the spec".',
@@ -195,9 +196,9 @@ async function runOne(doc, bundle, s, args, ageDays) {
   const run = runScenario(s, state, args.params || {});
   const base = resolveState(baseOf(doc), ageDays, args.conditions || {}, bundle);
   // The P laws read the scenario's params and its own computed quantities (lib/perturb-map.mjs).
-  const pi = perturbInputs(state, s.key, run.params || args.params || {}, run);
-  const pb = perturbInputs(base, s.key, run.params || args.params || {}, runScenario(s, base, args.params || {}));
-  const lean = await leanVerdicts(state, { lawset: args.lawset, baselineState: base, extraSpec: pi.spec, baselineExtraSpec: pb.spec });
+  const pi = applyClaims(perturbInputs(state, s.key, run.params || args.params || {}, run), args.claims || {});
+  const pb = applyClaims(perturbInputs(base, s.key, run.params || args.params || {}, runScenario(s, base, args.params || {})), args.claims || {});
+  const lean = await leanVerdicts(state, { lawset: args.lawset, baselineState: base, extraSpec: pi.spec, baselineExtraSpec: pb.spec, scoped: pi.scoped });
   lean.perturb_input_sources = pi.sources;
   return { state, run, lean };
 }
@@ -257,7 +258,8 @@ export async function optimize(args = {}) {
   const conditions = obj.conditions || {};
   const baseState = resolveState(baseOf(doc), obj.ageDays, conditions, bundle);
   const baseRun = runScenario(s, baseState, obj.params || {});
-  const baseLean = await leanVerdicts(baseState, { lawset: args.lawset, extraSpec: perturbInputs(baseState, s.key, baseRun.params || obj.params || {}, baseRun).spec });
+  const bpi = perturbInputs(baseState, s.key, baseRun.params || obj.params || {}, baseRun);
+  const baseLean = await leanVerdicts(baseState, { lawset: args.lawset, extraSpec: bpi.spec, scoped: bpi.scoped });
   const baseViol = new Set(baseLean.violations.map(v => v.lean_ref.constraint));
   const others = new Map();
   for (const h of hard) if (h.scenario && !others.has(h.scenario)) others.set(h.scenario, await scenarioOrThrow(h.scenario));
@@ -271,7 +273,8 @@ export async function optimize(args = {}) {
     evals++;
     const state = resolveState(d, obj.ageDays, conditions, bundle);
     const pre = runScenario(s, state, obj.params || {});
-    const lean = await leanVerdicts(state, { lawset: args.lawset, extraSpec: perturbInputs(state, s.key, pre.params || obj.params || {}, pre).spec });
+    const ppi = perturbInputs(state, s.key, pre.params || obj.params || {}, pre);
+    const lean = await leanVerdicts(state, { lawset: args.lawset, extraSpec: ppi.spec, scoped: ppi.scoped });
     const binding = lean.violations.filter(v => v.binding && !v.contested);
     const broke = args.strict ? binding : binding.filter(v => !baseViol.has(v.lean_ref.constraint));
     if (broke.length) { rejected.push({ eval: evals, values, reason: 'lean', laws: broke.map(v => ({ law_id: v.law_id, law_version: v.law_version, constraint: v.lean_ref.constraint, theorem: v.lean_ref.theorem, message: v.message, parts: v.parts })) }); return null; }

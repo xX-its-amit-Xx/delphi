@@ -5,6 +5,56 @@ the scenario interface. Its version is `CONTRACT_VERSION` in `lib/envelope.mjs`.
 as `contract_version`, and `contract.json` states it. The rule: anything may change, provided it is
 versioned here. While the major version is 0, a minor bump may break callers; each entry says what breaks.
 
+## 0.3.4 (2026-11-01)
+
+**Added** (no breaking change): LeanBio self-update (lean/registry/SELF-UPDATE.md).
+
+- Two new tools: `lean_source_status` and `lean_changes`.
+  - `lean_source_status {refresh?}` says where the laws come from: local files, the `/api/lean/` mirror, or raw
+    `lean/registry/` on a git ref. It also reports freshness, the TTL, ETag/304 counts, integrity, and the last
+    error or rejected fetch.
+  - `lean_changes {since_version?}` lists lawset releases newer than a version. Each entry has the CHANGELOG
+    prose and a diff of the lawset pins.
+- **Every `lean_*` envelope gains four top-level fields:** `source` (`local` | `local-fallback` | `remote:mirror` |
+  `remote:github`), `lawset_version` (the current lawset of that source), `fetched_at`, and `source_detail`
+  (URL, ref, `checked_at`, integrity, `remote_error`). The fields `contract_version`, `result`, `provenance`,
+  `scope`, `weakest_input` and `counts` are unchanged.
+- With `LEANBIO_REMOTE=mirror|github`, the loader re-checks the remote at most once per `LEANBIO_TTL_S` (default
+  600 s) before a `lean_*` call. It verifies every pinned law against its lawset's `content_hash` and keeps the
+  last good set on any failure. The default is `off`, which keeps the current behaviour.
+
+## 0.3.3 (2026-11-01)
+
+**Added** (no breaking change)
+
+- **P4** (minimum airspeed at altitude) is fed from the altitude scenario: its `altitude_m`, `launch_airspeed_m_s`,
+  C_Lmax and lifting area.
+  - C_Lmax is parsed from its provenance string `"0.78 / 4.37"` with a strict pattern; the owner has been asked
+    for a number.
+  - The lifting area is evaluated in a second pass that is used **only** for P4 and C9 (the design against
+    itself). The reference-specimen rows (C2a, C8e, C9c) never see it, because their area convention differs
+    from STATE's mesh area.
+- **P4b** (glide ground range) is fed from the glide scenario in still air: its `glide_airspeed_m_s`, (L/D)max,
+  launch height, and the Lean-covered descent distance (never the total).
+- **P5** (energy balance) is fed from the digestion scenario:
+  - `energy_intake_J_day` and `routine_cost_J_day`;
+  - assimilation = 1 − `faecal_loss_fraction` and `sda_coefficient`, both scenario params;
+  - activity cost 0, because routine metabolic rate already includes spontaneous activity;
+  - `mass_change` = the sign of the scenario's own net energy.
+- `scenario_run` gains `claims`: designer assertions that the laws check, labelled `CLAIM` in `lean_inputs.sources`.
+  Unknown keys are refused. Tested: a claimed 10 m glide from 1 m turns P4b red; a mass-gain claim on a ration
+  below maintenance turns P5 red.
+- **Not fed yet; the module owners must add these output fields** (prose is never parsed and nothing is
+  defaulted):
+  - `current.mjs` (P2b): `drag_coefficient` (number, the Cd it uses at the current), `drag_area_m2` (the reference
+    area that Cd multiplies), `aerobic_ceiling_W` (the Fick or red-muscle sustained ceiling it compares against).
+  - `temperature.mjs` (P1b): `q10` as a number (which one: SMR 1.56 or MMR 1.34), `reference_temperature_C`,
+    `reference_sustained_power_W`, `sustained_power_W` at the test temperature.
+  - `wind.mjs` (P4b with wind): `descent_airspeed_m_s` (the horizontal airspeed during the h·L/D descent) and
+    `descent_ground_distance_m` (the descent-phase ground distance with the wind applied, excluding the kinetic
+    phase).
+  - `altitude.mjs` (P4): `CLmax` and `LD_max` as numbers rather than inside the provenance string.
+
 ## 0.3.2 (2026-11-01)
 
 **Changed** (no schema change)

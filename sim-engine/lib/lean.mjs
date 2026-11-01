@@ -22,7 +22,8 @@ const CONSTRAINT_INPUTS = {
   C16: ['mass_kg', 'flightMuscleFraction'], C14: ['mass_kg', 'gillArea_m2'], E5: ['finLength_SL'], E2: ['SL_m', 'mass_kg'],
   P1: ['body_temperature_C', 'ct_min_C', 'ct_max_C', 'sustained_power_W'], P1b: ['body_temperature_C', 'q10', 'reference_temperature_C', 'reference_sustained_power_W', 'sustained_power_W'],
   P2: ['current_speed_m_s', 'critical_swimming_speed_m_s'], P2b: ['current_speed_m_s', 'drag_coefficient', 'drag_area_m2', 'aerobicCeiling_W'],
-  P3: ['depth_m', 'bladder_volume_surface_ml', 'bladder_volume_at_depth_ml'], P3b: ['depth_m', 'teleost'], P4: ['altitude_m', 'airspeed_m_s'], P4b: ['wind_along_track_m_s', 'ground_distance_m'],
+  P3: ['depth_m', 'bladder_volume_surface_ml', 'bladder_volume_at_depth_ml'], P3b: ['depth_m', 'teleost'], P4: ['altitude_m', 'airspeed_m_s', 'CLmax', 'mass_kg'], P4b: ['wind_along_track_m_s', 'horizontal_airspeed_m_s', 'glideHeight_m', 'LD_max', 'ground_distance_m'],
+  P5: ['intake_J_per_day', 'routine_cost_J_per_day', 'activity_cost_J_per_day', 'assimilation_efficiency', 'mass_change'],
 };
 const BIO = /bio|genot|develop|ontog|physiol|empirical-bio/i;
 
@@ -30,9 +31,18 @@ export async function lawsetVersion(lawset = 'current') {
   try { return LS.resolveLawset(lawset).version; } catch (e) { throw new Error(`lawset: ${e.message}`); }
 }
 
-export async function leanVerdicts(state, { lawset = 'current', baselineState = null, extraSpec = {}, baselineExtraSpec = null } = {}) {
+export async function leanVerdicts(state, { lawset = 'current', baselineState = null, extraSpec = {}, baselineExtraSpec = null, scoped = null } = {}) {
   const spec = { ...leanSpec(state), ...extraSpec };
   const r = await LS.checkDesign(spec, lawset);
+  // Inputs valid only for some rows (e.g. a lifting area in a convention the reference-specimen rows do not share):
+  // evaluated in a second pass, and ONLY the named rows are taken from it.
+  if (scoped && scoped.only?.length && Object.keys(scoped.spec || {}).length) {
+    const r2 = await LS.checkDesign({ ...spec, ...scoped.spec }, lawset);
+    const only = new Set(scoped.only);
+    r.verdicts = [...r.verdicts.filter(v => !only.has(v.constraint)), ...r2.verdicts.filter(v => only.has(v.constraint)).map(v => ({ ...v, scoped_inputs: Object.keys(scoped.spec) }))];
+    r.violations = [...r.violations.filter(v => !only.has(v.constraint)), ...r2.violations.filter(v => only.has(v.constraint))];
+    Object.assign(spec, Object.fromEntries(Object.entries(scoped.spec).map(([k, v]) => [`${k} (only ${scoped.only.join(', ')})`, v])));
+  }
   let baseline = null;
   if (baselineState) baseline = new Set((await LS.checkDesign({ ...leanSpec(baselineState), ...(baselineExtraSpec || extraSpec) }, lawset)).violations.map(v => v.constraint));
   const idx = LS.constraintIndex();

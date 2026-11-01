@@ -77,7 +77,7 @@ implemented.
 
 ## Studio tools
 
-**Contract version 0.3.2** (`lib/envelope.mjs` `CONTRACT_VERSION`; every envelope carries `contract_version`,
+**Contract version 0.3.4** (`lib/envelope.mjs` `CONTRACT_VERSION`; every envelope carries `contract_version`,
 and `contract.json` states it). History: `CHANGELOG.md`. Anything may change, provided it is versioned there.
 
 The Design Studio wrapper: agents and humans create, edit and co-design organisms, then test them in
@@ -153,7 +153,7 @@ laws scoped to one clade come back `out-of-scope` for other organisms instead of
 
 **Perturbation laws (P1–P5)** read inputs that `lib/perturb-map.mjs` takes from STATE, the scenario's params and
 its own metrics, using the exact names `checkPerturb` reads. `scenario_run` returns them with their sources as
-`lean_inputs`. P1, P2, P3 (v2: with the scenario's own rho, g and surface pressure) and P3b are fed; the others stay cannot-evaluate (`CHANGELOG.md` 0.3.1 says why for each).
+`lean_inputs`. P1, P2, P3 (v2) and P3b are fed, and so are P4 (altitude), P4b (glide) and P5 (digestion). P1b and P2b stay cannot-evaluate until their scenarios expose the needed numbers (`CHANGELOG.md` 0.3.3). `scenario_run` also accepts `claims`: what a designer asserts (a glide distance, a mass gain). Claims are labelled as claims and checked by the laws against the scenario's physics.
 A violation's `severity` follows the law's registry status, which is read on every call, never hard-coded: `accepted` gives red, `contested` gives amber, and `candidate` gives dashed. As of lawset 1.5.0, P1, P2, P4 and P5 are accepted.
 
 Only the mass–length rows (C7b, E2) can be evaluated from STATE alone.

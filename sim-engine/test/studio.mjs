@@ -417,6 +417,39 @@ await ok('regression (codesign-demo): approved winged-zebrafish fin, what-if 10 
   assert.ok(/NOT covered/.test(r.result.run.metrics.find(x => x.key === 'glide_range_total_m').source));
 });
 
+console.log('\naccepted laws P4, P4b, P5 evaluate from their scenarios; designed violations show red');
+const sev = (r, id) => { const v = r.result.violations.find(x => x.lean_ref.constraint === id); return v ? v.severity : null; };
+const verdict = (r, id) => r.result.verdicts.find(x => x.constraint === id)?.verdict;
+await ok('P4 (minimum airspeed at altitude): holds for a flying fish at 1000 m; at 4500 m its 10 m/s launch is below v_min -> red', async () => {
+  const lo = await T.scenarioRun({ organism: 'flying-fish', scenario: 'altitude', params: { altitude_m: 1000 } });
+  const hi = await T.scenarioRun({ organism: 'flying-fish', scenario: 'altitude', params: { altitude_m: M === 'p4' ? 1000 : 4500 } });
+  assert.equal(verdict(lo, 'P4'), 'holds'); assert.equal(verdict(hi, 'P4'), 'violated');
+  const st = hi.result.verdicts.find(x => x.constraint === 'P4').status;
+  assert.equal(sev(hi, 'P4'), SEVERITY[st] || 'advisory');
+});
+await ok('the scoped lifting area reaches only P4 and C9, never the reference-specimen rows (C2a, C8e, C9c)', async () => {
+  const r = await T.scenarioRun({ organism: 'tff', scenario: 'altitude', params: { altitude_m: 1000 } });
+  for (const id of ['C2a', 'C8e', 'C9c']) assert.ok(!r.result.verdicts.find(x => x.constraint === id)?.scoped_inputs, `${id} saw the scoped area`);
+  assert.ok(r.result.verdicts.find(x => x.constraint === 'P4').scoped_inputs.includes('finArea_m2'));
+  assert.ok(!('finArea_m2' in r.result.lean_inputs.spec), 'finArea_m2 leaked into the global spec');
+});
+await ok('P4b (glide ground range): holds for the wild-type glide; a claimed 10 m glide from 1 m in still air -> red', async () => {
+  const ok1 = await T.scenarioRun({ organism: 'flying-fish', scenario: 'glide' });
+  assert.equal(verdict(ok1, 'P4b'), 'holds');
+  const bad = await T.scenarioRun({ organism: 'flying-fish', scenario: 'glide', claims: { ground_distance_m: M === 'p4b' ? 4 : 10 } });
+  assert.equal(verdict(bad, 'P4b'), 'violated'); assert.equal(sev(bad, 'P4b'), SEVERITY[bad.result.verdicts.find(x => x.constraint === 'P4b').status]);
+  assert.ok(/CLAIM/.test(bad.result.lean_inputs.sources.ground_distance_m));
+});
+await ok('P5 (energy balance): holds for a fed adult zebrafish; a mass-gain claim on 0.3 % BW/day (below maintenance) -> red', async () => {
+  const fed = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'digestion' });
+  assert.equal(verdict(fed, 'P5'), 'holds');
+  const lean = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'digestion', params: { ration_pct_bw_day: 0.3 }, claims: { mass_change: M === 'p5' ? 'negative' : 'positive' } });
+  assert.equal(verdict(lean, 'P5'), 'violated'); assert.equal(sev(lean, 'P5'), SEVERITY[lean.result.verdicts.find(x => x.constraint === 'P5').status]);
+});
+await ok('unknown claim keys are refused', async () => {
+  await assert.rejects(T.scenarioRun({ organism: 'flying-fish', scenario: 'glide', claims: { anything_goes: 1 } }), /unknown claim/);
+});
+
 console.log('\nserver and CLI');
 await ok('contract.json lists all twelve studio tools (regenerate with --dump-contract)', () => {
   const c = JSON.parse(fs.readFileSync(path.join(engine, 'contract.json'), 'utf8'));

@@ -1,7 +1,7 @@
 {
  "server": "delphisci-sim-engine",
  "version": "0.1.0",
- "contract_version": "0.3.2",
+ "contract_version": "0.3.4",
  "changelog": "sim-engine/CHANGELOG.md",
  "transport": "stdio",
  "envelope": {
@@ -347,6 +347,34 @@
    }
   },
   {
+   "name": "lean_source_status",
+   "title": "Where the Lean laws come from, and how fresh they are",
+   "description": "Reports the law source this server is using: \"local\" (the files in this deployment), \"remote:mirror\" (the static /api/lean/ mirror) or \"remote:github\" (raw lean/registry/ on a git ref), selected by LEANBIO_REMOTE. For a remote it gives the URL, the current lawset, when it was fetched and last checked, the next check (TTL), request and 304 counts, how many law files matched their lawset content_hash, and the last error or rejected (tampered or inconsistent) fetch, which never replaces the last good set. refresh:true forces a check now (at most once per 30 s).",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "refresh": {
+      "type": "boolean",
+      "description": "Check the remote now instead of waiting for the TTL (rate-limited to once per 30 s)."
+     }
+    }
+   }
+  },
+  {
+   "name": "lean_changes",
+   "title": "What changed in the Lean lawsets",
+   "description": "Lawset releases newer than since_version, newest first. Each entry has the CHANGELOG prose and bullets (lean/registry/CHANGELOG.md) and a machine diff computed from the lawset pins (laws added or removed, version changes, status changes). Poll with the lawset_version you last saw; up_to_date:true means nothing newer. The same feed is static at /api/lean/changes.json and /api/lean/changes.xml (Atom).",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "since_version": {
+      "type": "string",
+      "description": "A lawset version such as \"1.3.0\" (exclusive), or \"current\". Omit for every release."
+     }
+    }
+   }
+  },
+  {
    "name": "organism_create",
    "title": "Create an organism document",
    "description": "New organism document from weighted parents (reference organisms or designs; weights sum to 1). Saved under sim-engine/sessions/organisms/.",
@@ -599,6 +627,10 @@
      "lawset": {
       "type": "string",
       "description": "Lean lawset version (default 'current'). Read from the law registry via lib/lean-source.mjs."
+     },
+     "claims": {
+      "type": "object",
+      "description": "Assertions the Lean laws check against the scenario's own physics, labelled as claims (e.g. {ground_distance_m: 10} for a glide claim, {mass_change: 'positive'} for a growth claim). Keys: ground_distance_m, glideDistance_m, mass_change, airspeed_m_s, climbRate_m_s, current_speed_m_s, body_temperature_C, depth_m, altitude_m, sustained_power_W, intake_J_per_day, glideHeight_m, wind_along_track_m_s."
      }
     },
     "required": [

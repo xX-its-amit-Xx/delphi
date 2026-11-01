@@ -5,6 +5,7 @@ import { createServer as createHttpServer } from "node:http";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { browseClaims } from "./graph.mjs";
 import { localFileCount } from "./lib.mjs";
+import { ensureFresh, sourceInfo } from "../lib/lean-source.mjs";
 
 const RATE_LIMIT = Number(process.env.DELPHI_RATE_LIMIT ?? 120); // requests per IP per minute
 const MAX_BODY = 1 << 20;
@@ -63,10 +64,17 @@ Connect an MCP client to:  https://${host}/mcp   (Streamable HTTP, no auth)
 Cursor (.cursor/mcp.json):   { "mcpServers": { "delphisci": { "url": "https://${host}/mcp" } } }
 Claude Code:                 claude mcp add --transport http delphisci https://${host}/mcp
 
-Data: ${files} TriG files; claim graph built ${built}. Limit: ${RATE_LIMIT} requests/minute per IP.
+Data: ${files} TriG files; claim graph built ${built}. Lean laws: ${(i => `${i.source}, lawset ${i.lawset_version}`)(safeSourceInfo())} (tool lean_source_status). Limit: ${RATE_LIMIT} requests/minute per IP.
 `;
 
-export function serveHttp(createServer, port) {
+// The Lean law source (local, or the remote the loader self-updates from) and its current lawset, for /healthz.
+function safeSourceInfo() { try { return sourceInfo(); } catch (e) { return { error: e.message }; } }
+let serverVersion = null;
+
+export function serveHttp(createServer, port, version = null) {
+  serverVersion = version;
+  // Fetch the remote law source once at startup so the first lean_* call does not wait on it.
+  ensureFresh().then(i => console.log(`lean laws: ${i.source} lawset ${i.lawset_version}${i.url ? ` (${i.url})` : ""}${i.remote_error ? `; remote error: ${i.remote_error}` : ""}`)).catch(() => {});
   const files = localFileCount();
   const { built } = browseClaims({ limit: 1 });
 
@@ -75,7 +83,7 @@ export function serveHttp(createServer, port) {
     const ip = req.headers["fly-client-ip"] ?? req.headers["x-forwarded-for"]?.split(",")[0].trim() ?? req.socket.remoteAddress;
 
     if (req.method === "OPTIONS") { res.writeHead(204, CORS); return res.end(); }
-    if (path === "/healthz") return send(res, 200, { ok: true, files, built });
+    if (path === "/healthz") return send(res, 200, { ok: true, version: serverVersion, files, built, lean: safeSourceInfo() });
     if (path === "/" && req.method === "GET") return send(res, 200, landing(req.headers.host, files, built), "text/plain; charset=utf-8");
     if (path !== "/mcp") return send(res, 404, { error: "Not found. The MCP endpoint is /mcp." });
     if (req.method !== "POST") return rpcError(res, 405, "Method not allowed: this server is stateless, use POST /mcp.");

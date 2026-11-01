@@ -9,10 +9,10 @@
 //   P2b  drag_coefficient, drag_area_m2, aerobicCeiling_W                      (not supplied: scenarios report drag, not Cd and A)
 //   P3   depth_m, bladder_volume_surface_ml, bladder_volume_at_depth_ml, water_density_kg_m3, g, surface_pressure_Pa (v2.0.0)
 //   P3b  depth_m, teleost
-//   P4   altitude_m, CLmax, airspeed_m_s, finArea_m2                           (not supplied: CLmax and the Lean area convention are not exposed)
-//   P4b  wind_along_track_m_s, horizontal_airspeed_m_s, glideHeight_m, LD_max, ground_distance_m (not supplied: see below)
+//   P4   altitude_m, CLmax, airspeed_m_s, finArea_m2 (altitude scenario; the area is scoped to P4 and C9 only)
+//   P4b  wind_along_track_m_s, horizontal_airspeed_m_s, glideHeight_m, LD_max, ground_distance_m (glide scenario, still air)
 //   C15  glideHeight_m, LD_max, glideDistance_m, groundEffect (glide scenario: the Lean-covered part only, never the total)
-//   P5   intake_J_per_day, routine_cost_J_per_day, activity_cost_J_per_day, assimilation_efficiency, mass_change (not supplied)
+//   P5   intake_J_per_day, routine_cost_J_per_day, activity_cost_J_per_day, assimilation_efficiency, mass_change (digestion scenario)
 
 const num = x => typeof x === 'number' && Number.isFinite(x);
 // ontogeny.json units_note: 1 umol O2 g-1 h-1 = 0.1204 W/kg (13.54 J/mg O2, gerry2014 secondhand).
@@ -68,7 +68,6 @@ export function perturbInputs(state, scenarioKey = null, params = {}, run = null
       put('bladder_volume_at_depth_ml', V0 * gvf, 'bladder_volume_surface_ml x pressure scenario metric gas_volume_fraction_of_surface');
     }
   }
-  if (scenarioKey === 'altitude') put('altitude_m', params.altitude_m, 'altitude scenario param altitude_m');
   // C15 (glide_range_le, x <= h (L/D)max / (1 - ground effect)) bounds the STEADY glide only. The scenario's
   // glide_range_total_m adds a level kinetic-energy phase the theorem's hypotheses do not cover, so it is NEVER
   // passed; only glide_range_lean_bound_m (the h (L/D) descent, no ground effect in that phase) is. This makes C15 a
@@ -80,8 +79,62 @@ export function perturbInputs(state, scenarioKey = null, params = {}, run = null
     put('glideDistance_m', metric('glide_range_lean_bound_m'), `${scenarioKey} scenario metric glide_range_lean_bound_m (the Lean-covered part; glide_range_total_m is deliberately NOT passed: its kinetic phase is outside the theorem)`);
     put('groundEffect', 0, 'the Lean-covered h (L/D) descent carries no ground effect (glide.mjs applies it only in the level phase)');
   }
-  // P4 needs CLmax and the Lean lifting-area convention; P4b needs L/D and a ground distance that is not the
-  // scenario's own bound (checking a bound against itself proves nothing); P5 needs an assimilation efficiency
-  // and activity cost no scenario commits. They stay cannot-evaluate rather than being filled by guesses.
-  return { spec, sources };
+  // ---- P4: altitude. The altitude scenario's own launch airspeed, glide polar and lifting area.
+  // C_Lmax is reported only inside the provenance string "glide polar C_Lmax / (L/D)max" = "0.78 / 4.37"; it is read
+  // with a strict two-number pattern (anything else -> not passed). Owner asked to expose it as a number.
+  // The lifting area goes ONLY to the self-consistent rows (P4, C9: the design against itself), never to the rows that
+  // compare with the Lean reference specimen (C2a, C8e, C9c), whose area convention (pectoral + pelvic + body planform)
+  // differs from STATE's mesh area (pectoral + pelvic + caudal). lib/lean.mjs evaluates those rows separately.
+  const prov = q => (run && run.ok ? run.provenance?.find(x => x.quantity === q)?.value : undefined);
+  const polar = s => { const m = typeof s === 'string' && /^\s*([0-9]*\.?[0-9]+)\s*\/\s*([0-9]*\.?[0-9]+)\s*$/.exec(s); return m ? { CLmax: Number(m[1]), LD: Number(m[2]) } : null; };
+  const scoped = { spec: {}, only: [] };
+  if (scenarioKey === 'altitude' && run?.ok) {
+    const pol = polar(prov('glide polar C_Lmax / (L/D)max'));
+    const S = prov('lifting area (m2)'), v = metric('launch_airspeed_m_s');
+    put('altitude_m', params.altitude_m, 'altitude scenario param altitude_m');
+    if (pol && num(S) && num(v)) {
+      put('CLmax', pol.CLmax, "altitude scenario provenance 'glide polar C_Lmax / (L/D)max' (parsed: strict 'a / b' pattern)");
+      put('airspeed_m_s', v, 'altitude scenario metric launch_airspeed_m_s');
+      scoped.spec.finArea_m2 = S; scoped.only.push('P4', 'C9');
+      sources.finArea_m2 = "altitude scenario provenance 'lifting area (m2)'; passed ONLY to P4 and C9 (the design against itself)";
+    }
+  }
+  // ---- P4b: glide ground range. From the glide scenario (still air, w = 0): its own (L/D)max, descent airspeed,
+  // launch height and the Lean-covered ground distance. (The wind scenario does not report its descent airspeed or its
+  // descent-phase ground distance with wind, so P4b cannot yet be fed from it; owner asked.)
+  if (scenarioKey === 'glide' && run?.ok && run.feasible === true) {
+    put('wind_along_track_m_s', 0, 'glide scenario: still air (no wind parameter)');
+    put('horizontal_airspeed_m_s', metric('glide_airspeed_m_s'), 'glide scenario metric glide_airspeed_m_s');
+    put('ground_distance_m', metric('glide_range_lean_bound_m'), 'glide scenario metric glide_range_lean_bound_m (the descent; the kinetic phase is outside the theorem and is never passed)');
+  }
+  // ---- P5: daily energy balance, from the digestion scenario. assimilation = 1 - faecal loss (energy lost in faeces
+  // is the only loss the scenario models); activity cost 0 because the scenario's routine metabolic rate already
+  // includes routine spontaneous activity (routine = SMR + spontaneous activity, by definition); mass_change is the
+  // sign of the scenario's own net energy (so P5 checks the scenario against the theorem; a different claim can be
+  // made with `claims`).
+  if (scenarioKey === 'digestion' && run?.ok) {
+    put('intake_J_per_day', metric('energy_intake_J_day'), 'digestion scenario metric energy_intake_J_day (gross intake)');
+    put('routine_cost_J_per_day', metric('routine_cost_J_day'), 'digestion scenario metric routine_cost_J_day');
+    if (num(metric('routine_cost_J_day'))) put('activity_cost_J_per_day', 0, 'routine metabolic rate already includes routine spontaneous activity; the scenario has no extra activity');
+    if (num(params.faecal_loss_fraction)) put('assimilation_efficiency', 1 - params.faecal_loss_fraction, 'digestion scenario param: 1 - faecal_loss_fraction');
+    put('sda_coefficient', params.sda_coefficient, 'digestion scenario param sda_coefficient');
+    const net = metric('net_energy_J_day');
+    if (num(net)) { spec.mass_change = net > 0 ? 'positive' : net < 0 ? 'negative' : 'zero'; sources.mass_change = "sign of the digestion scenario's own net_energy_J_day"; }
+  }
+  // ---- P2b (current) and P1b (temperature) need numbers the modules do not report: current must expose its
+  // drag_coefficient, drag_area_m2 and an aerobic ceiling (W); temperature must expose q10 as a number, a
+  // reference_temperature_C and a reference_sustained_power_W. Requested from the module owners; until then they
+  // stay cannot-evaluate (never parsed out of prose, never defaulted).
+  return { spec, sources, scoped };
+}
+
+// Caller claims: what a designer ASSERTS about the organism (a glide distance, a mass gain, a climb), checked by the
+// laws against the scenario's own physics. Kept separate from the scenario's values and labelled as claims.
+export const CLAIM_KEYS = ['ground_distance_m', 'glideDistance_m', 'mass_change', 'airspeed_m_s', 'climbRate_m_s', 'current_speed_m_s',
+  'body_temperature_C', 'depth_m', 'altitude_m', 'sustained_power_W', 'intake_J_per_day', 'glideHeight_m', 'wind_along_track_m_s'];
+export function applyClaims(pi, claims = {}) {
+  const bad = Object.keys(claims).filter(k => !CLAIM_KEYS.includes(k));
+  if (bad.length) throw new Error(`unknown claim key(s) ${bad.join(', ')}; allowed: ${CLAIM_KEYS.join(', ')}`);
+  for (const [k, v] of Object.entries(claims)) { pi.spec[k] = v; pi.sources[k] = 'CLAIM by the caller (an assertion the laws check, not a scenario value)'; }
+  return pi;
 }

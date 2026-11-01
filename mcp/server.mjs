@@ -10,7 +10,7 @@ import { NETWORK_ENDPOINT, PREFIXES, getClaim, overview, rankClaims, searchClaim
 import { LEAN_TOOLS } from "../sim-engine/tools/lean-tools.mjs";
 
 const TOOLS = [];
-export const VERSION = "0.3.0";
+export const VERSION = "0.4.0";
 // Hosted (HTTP) mode never offers tools that run a Lean build or write files.
 const HOSTED = !!process.env.DELPHI_HTTP_PORT;
 
@@ -107,7 +107,10 @@ leanTool("lean_laws_list", {
   lawset: z.string().optional().describe("Only laws in this lawset version, or \"current\""),
   text: z.string().optional().describe("Substring of law_id, label or statement"),
 });
-leanTool("lean_law_get", { id: z.string().describe("law_id from lean_laws_list, e.g. \"kimura-substitution-rate\"") });
+leanTool("lean_law_get", {
+  id: z.string().describe("law_id from lean_laws_list, e.g. \"kimura-substitution-rate\""),
+  version: z.string().optional().describe("A specific (e.g. archived) law version; omit for the current one"),
+});
 leanTool("lean_lawset_get", { version: z.string().default("current").describe("Semver, or \"current\"") });
 leanTool("lean_check", {
   design: z.record(z.string(), z.any()).optional().describe("SI-unit design: SL_m, mass_kg, finArea_m2, CLmax, airspeed_m_s, genotype_edits, ..."),
@@ -115,6 +118,14 @@ leanTool("lean_check", {
   lawset: z.string().default("current"),
 });
 leanTool("lean_verify", {});
+// Self-update: where the laws come from (local files, or a remote mirror/github ref re-checked every TTL), and
+// what changed between lawsets. See lean/registry/SELF-UPDATE.md.
+leanTool("lean_source_status", {
+  refresh: z.boolean().optional().describe("Check the remote now instead of waiting for the TTL (at most once per 30 s)"),
+});
+leanTool("lean_changes", {
+  since_version: z.string().optional().describe("Lawset version you last saw, e.g. \"1.3.0\" (exclusive), or \"current\"; omit for all releases"),
+});
 if (!HOSTED) leanTool("lean_propose", {
   file: z.string().optional().describe("Path to a .lean file"),
   source: z.string().optional().describe("Lean source text, if no file"),
@@ -123,7 +134,7 @@ if (!HOSTED) leanTool("lean_propose", {
 
 if (process.env.DELPHI_HTTP_PORT) {
   const { serveHttp } = await import("./http.mjs");
-  serveHttp(createServer, Number(process.env.DELPHI_HTTP_PORT));
+  serveHttp(createServer, Number(process.env.DELPHI_HTTP_PORT), VERSION);
 } else {
   await createServer().connect(new StdioServerTransport());
 }
