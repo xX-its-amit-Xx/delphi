@@ -212,9 +212,10 @@ for (const [name, mod] of Object.entries(ALL)) {
 {
   const num = (li, k) => li && li[k] && typeof li[k].value === 'number' && Number.isFinite(li[k].value) && KINDS.includes(li[k].kind) && !!li[k].source;
   const c = current.run(zebrafish, { current_m_s: 0.2 });
-  check('lean_inputs current: drag_coefficient, drag_area_m2, aerobic_ceiling_W numeric with kind+source', ['drag_coefficient', 'drag_area_m2', 'aerobic_ceiling_W'].every(k => num(c.lean_inputs, k)), JSON.stringify(c.lean_inputs));
-  check('lean_inputs current: drag_area = C_D x S_wet', near(c.lean_inputs.drag_area_m2.value, c.lean_inputs.drag_coefficient.value * 4.0e-4, 1e-12));
-  check('lean_inputs current: drag = 0.5 rho C_D A U^2 consistent with drag_at_current_N', near(get(c, 'drag_at_current_N'), 0.5 * 996.2 * c.lean_inputs.drag_area_m2.value * 0.04, 2e-6));
+  check('lean_inputs current: drag_coefficient, drag_reference_area_m2, drag_area_CdA_m2, aerobic_ceiling_W numeric with kind+source', ['drag_coefficient', 'drag_reference_area_m2', 'drag_area_CdA_m2', 'aerobic_ceiling_W'].every(k => num(c.lean_inputs, k)), JSON.stringify(c.lean_inputs));
+  check('lean_inputs current: reference area is the wetted area (not CdA)', c.lean_inputs.drag_reference_area_m2.value === 4.0e-4 && !('drag_area_m2' in c.lean_inputs));
+  check('lean_inputs current: CdA = C_D x A_ref', near(c.lean_inputs.drag_area_CdA_m2.value, c.lean_inputs.drag_coefficient.value * c.lean_inputs.drag_reference_area_m2.value, 1e-15));
+  check('lean_inputs current: P2b form 0.5 rho C_D A_ref U^2 reproduces drag_at_current_N', near(get(c, 'drag_at_current_N'), 0.5 * 996.2 * c.lean_inputs.drag_coefficient.value * c.lean_inputs.drag_reference_area_m2.value * 0.04, 1e-7), `${get(c, 'drag_at_current_N')}`);
   const t = temperature.run(zebrafish, { water_temperature_C: 33, acclimation_temperature_C: 28 });
   check('lean_inputs temperature: q10, reference_temperature_C, reference_sustained_power_W, sustained_power_W numeric', ['q10', 'reference_temperature_C', 'reference_sustained_power_W', 'sustained_power_W'].every(k => num(t.lean_inputs, k)) && ['SMR', 'MMR'].includes(t.lean_inputs.q10_basis.value), JSON.stringify(t.lean_inputs));
   check('lean_inputs temperature: sustained = reference x q10^((T-Tref)/10)', near(t.lean_inputs.sustained_power_W.value, t.lean_inputs.reference_sustained_power_W.value * t.lean_inputs.q10.value ** 0.5, 1e-12));

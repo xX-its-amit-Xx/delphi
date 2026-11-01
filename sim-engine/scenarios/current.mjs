@@ -131,7 +131,8 @@ export default {
     const fk = m != null && pO2w != null ? fickPower({ mass_kg: m, pO2_kPa: pO2w, P50_kPa: val(state, 'hb_P50_kPa') ?? FICK.P50_kPa.value, Q_ml_s: val(state, 'cardiac_output_max_ml_s') }) : null;
     const lean_inputs = {
       drag_coefficient: LIN(Cd, '1', 'borrowed', 'flat-plate C_D on wetted area at the current speed: 1.33 Re^-0.5 (Re < 5e5) or 0.072 Re^-0.2 (Li et al. 2021 formulas; rigid plate, a lower bound for an undulating fish)', U === 0 ? 'current speed is 0' : 'SL_m is null'),
-      drag_area_m2: LIN(Cd != null && Swet != null ? Cd * Swet : null, 'm2', 'derived', 'drag_coefficient x wetted_area_m2 (STATE)', Swet == null ? 'wetted_area_m2 is null' : 'drag coefficient not computable'),
+      drag_reference_area_m2: LIN(Swet, 'm2', val(state, 'wetted_area_m2') != null ? (state.wetted_area_m2.kind || 'derived') : 'assumed', `wetted_area_m2 (STATE: ${state.wetted_area_m2 ? state.wetted_area_m2.source : 'none'}): the area drag_coefficient refers to; drag = 0.5 rho C_D A_ref U^2`, 'wetted_area_m2 is null'),
+      drag_area_CdA_m2: LIN(Cd != null && Swet != null ? Cd * Swet : null, 'm2', 'derived', 'C_D x A_ref (CdA). Do NOT multiply by drag_coefficient again', Swet == null ? 'wetted_area_m2 is null' : 'drag coefficient not computable'),
       aerobic_ceiling_W: LIN(fk ? fk.P_W : null, 'W', 'derived', fk ? `Fick bound eta E Q Ca: eta ${FICK.eta.value} (borrowed), E ${FICK.E_J_per_ml.value.toFixed(2)} J/ml, Q ${fk.Q_ml_s.toFixed(5)} ml/s (${val(state, 'cardiac_output_max_ml_s') != null ? 'STATE' : 'snapper 58.48 ml/min/kg, borrowed'}), Ca ${fk.Ca_ml_ml.toFixed(4)} ml/ml at water pO2 ${pO2w.toFixed(1)} kPa (PaO2 = water PO2, an upper bound; Hb capacity calibrated)` : 'none', m == null ? 'mass_kg is null' : 'state.ambient.pO2_kPa is null'),
     };
     const bound = Pred != null && Swet != null && SL != null ? speedBound(Pred, w.rho, w.mu, SL, Swet) : null;
