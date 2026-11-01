@@ -96,9 +96,11 @@ export const nullMetrics = (defs, why) => defs.map(d => metric(d.key, d.label, n
 
 /** Lifting (aerodynamic reference) area: state lifting_area_m2 if present (field listed in `needs`), else
  *  pectoral_area_both x 1.98965 (assumed transfer). */
+// STATE lifting_area_m2, when present, is pectoral + pelvic + caudal membrane area measured on the mesh (core lib/state.mjs),
+// NOT Park & Choi's pectoral + pelvic + body-planform reference area: a convention difference this module does not correct.
 export function liftingArea(state) {
   const direct = (state && (state.lifting_area_m2 || (state.parts && state.parts.lifting_area_m2))) || null;
-  if (direct && direct.value != null) return { value: direct.value, kind: direct.kind || 'derived', source: direct.source || 'state lifting_area_m2' };
+  if (direct && direct.value != null) return { value: direct.value, kind: direct.kind || 'derived', source: `${direct.source || 'state lifting_area_m2'} (pectoral + pelvic + caudal on the mesh; Park & Choi's reference area uses body planform instead of caudal)` };
   const pa = val(state, 'pectoral_area_both_m2');
   if (pa == null) return { value: null, kind: 'assumed', source: 'none', reason: 'no pectoral_area_both_m2 and no lifting_area_m2 in the state' };
   return { value: pa * LIFT_OVER_PECTORAL, kind: 'assumed', source: `pectoral_area_both_m2 (${state.pectoral_area_both_m2.kind}) x ${LIFT_OVER_PECTORAL.toFixed(5)}, the Park & Choi L3 total/pectoral area ratio (NOTES-FOR-HUB.md item 3): an assumed transfer` };
@@ -188,7 +190,7 @@ const METRICS = [
 ];
 
 export const needs = [
-  { field: 'lifting_area_m2', why: "aerodynamic reference area (pectoral + pelvic + body planform, Park & Choi convention). Absent, the pectoral area x 1.98965 (one specimen's ratio) is used and labelled assumed." },
+  { field: 'lifting_area_m2', why: "aerodynamic lifting area. The core STATE supplies pectoral + pelvic + caudal membrane area measured on the design mesh (not the body outline); Park & Choi's own reference area is pectoral + pelvic + body planform, so the two conventions differ by the caudal-vs-body term. Absent, the pectoral area x 1.98965 (one specimen's ratio) is used and labelled assumed." },
   { field: 'cardiac_output_max_ml_s', why: 'Q for the Fick bound. Absent, snapper Q_max 58.48 ml/min/kg x mass is borrowed.' },
   { field: 'launch_speed_m_s', why: 'a sourced leap/burst speed for any species other than flying fish and zebrafish (and for blends). Absent, the glide is not evaluated (null), never defaulted.' },
 ];

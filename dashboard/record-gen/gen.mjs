@@ -1,0 +1,41 @@
+import {execSync} from 'node:child_process';
+import {readFileSync, writeFileSync, mkdirSync} from 'node:fs';
+const REPO = 'D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci';
+const S = process.argv[2];
+const git = a => execSync(`git -C "${REPO}" ${a}`, {encoding: 'utf8', maxBuffer: 1 << 26});
+const fork = git('log fork/delphi-hack-2026-10-31 --not origin/main --no-merges --format=%h%x09%cI%x09%s').trim().split('\n')
+  .map(l => { const [h, t, s] = l.split('\t'); return {h, t: new Date(t), s}; });
+const up = git('log origin/main --since=2026-10-30 --no-merges --format=%cI').trim().split('\n').map(t => new Date(t));
+const area = s => { const t = s.toLowerCase();
+  if (/^(claim-tests|dashboard: claims|attestation)/.test(t)) return 'Claim tests';
+  if (/^holdout/.test(t)) return 'Holdout';
+  if (/^lean/.test(t)) return 'Lean';
+  if (/^(genotype|sequences|structures)/.test(t)) return 'Genotype, sequences, structures';
+  if (/^(physics|physiology|development|conditions)/.test(t)) return 'Physics, physiology, growth';
+  if (/^(viz|graph|blueprint3d|figures|claim book|dashboard: figures|shell|fix three)/.test(t)) return 'Visualisation';
+  if (/^(studio|sim-engine|engine|readme\/start)/.test(t)) return 'Studio and sim-engine';
+  if (/^(anatomy-model|print|md\/)/.test(t)) return 'Anatomy model, print, MD';
+  if (/^(design-validation|crosscheck|frontier|simulation-readiness|nanopubs-index|validation|results)/.test(t)) return 'Audits and collaboration';
+  return 'Hub (ideas, deck, docs, threads)'; };
+const ac = {}; fork.forEach(c => { const a = area(c.s); ac[a] = (ac[a] || 0) + 1; });
+const areas = Object.entries(ac).sort((a, b) => b[1] - a[1]);
+const all = [...fork.map(c => c.t), ...up];
+const t0 = new Date(Math.min(...all)); t0.setUTCMinutes(0, 0, 0);
+const t1 = new Date(Math.max(...all));
+const pf = new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', hourCycle: 'h23', hour: '2-digit', weekday: 'short'});
+const bins = [];
+for (let t = new Date(t0); t <= t1; t = new Date(t.getTime() + 3600e3)) {
+  const p = Object.fromEntries(pf.formatToParts(t).map(x => [x.type, x.value]));
+  const h = +p.hour % 24; const hh = h === 0 ? '12 am' : h < 12 ? h + ' am' : h === 12 ? '12 pm' : (h - 12) + ' pm';
+  bins.push({label: `${p.weekday} ${hh}`, tick: h % 6 === 0 ? (h === 0 ? p.weekday : hh) : '', fork: 0, upstream: 0});
+}
+const idx = d => Math.floor((d - t0) / 3600e3);
+fork.forEach(c => bins[idx(c.t)].fork++); up.forEach(d => bins[idx(d)].upstream++);
+const DATA = {counts: {fork: String(fork.length), upstream: String(up.length)}, areas, pace: bins};
+let shell = execSync(`node dashboard/build-shell.mjs --emit record/index.html`, {encoding: 'utf8', cwd: REPO});
+shell = shell.slice(shell.indexOf('<!-- delphi-shell:start'), shell.indexOf('<!-- delphi-shell:end -->') + '<!-- delphi-shell:end -->'.length);
+const built = new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'}).format(new Date()) + ' EDT';
+const html = readFileSync(S + '/record.template.html', 'utf8').replace('/*__SHELL__*/', shell).replace('/*__BUILT__*/', built).replace('/*__DATA__*/', JSON.stringify(DATA));
+mkdirSync(REPO + '/dashboard/public/record', {recursive: true});
+writeFileSync(REPO + '/dashboard/public/record/index.html', html);
+console.log('fork', fork.length, 'up', up.length, 'bins', bins.length, JSON.stringify(areas));

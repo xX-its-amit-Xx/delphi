@@ -54,9 +54,9 @@ export async function getLawset(version = 'current') {
   return either('lean_lawset_get', { version: v }, v === 'current' ? 'current.json' : `lawsets/${safe(v)}.json`);
 }
 
-export async function getLaw(id) {
+export async function getLaw(id, version = null) {
   if (!id) throw new Error('getLaw(id): id is required');
-  return either('lean_law_get', { id }, `laws/${safe(id)}.json`);
+  return either('lean_law_get', version ? { id, version } : { id }, version ? `laws/${safe(id)}@${safe(version)}.json` : `laws/${safe(id)}.json`);
 }
 
 export async function listLawsets() {

@@ -3,6 +3,9 @@
 // bound for any fish: the speed at which rigid-body skin-friction drag power equals the whole red-muscle
 // power. Pure ESM. Every constant fetched 2026-10-31 (modelCard.sources). No bird data.
 import { ucritRel } from './temperature.mjs';
+import { fickPower, FICK } from './glide.mjs'; // used only inside run(), so the glide <-> current import cycle is safe
+const LIN = (value, unit, kind, source, reason) => (value == null || (typeof value === 'number' && !Number.isFinite(value)) ? { value: null, unit, kind: 'assumed', source: 'none', reason: reason || 'not computable from the inputs given' } : { value, unit, kind, source });
+
 
 // Zebrafish Ucrit / Umax (Widrick et al. 2018, PLoS One 13:e0199712, which measured Umax and compiled the literature):
 const UCRIT_ADULT_SL_S = 15.5;   // Plaut 2000 adult Ucrit, 28 degC, as compiled in Widrick 2018 Table 2 (measured-secondhand)
@@ -122,6 +125,16 @@ export default {
     const Pred = red != null && m != null ? myo.value * red * m * RED_PMAX.value * RED_PMAX.Q10 ** ((T - RED_PMAX.Tref) / 10) : null;
     const Re = SL != null ? (w.rho * U * SL) / w.mu : null;
     const D = Re != null && Swet != null && U > 0 ? 0.5 * w.rho * cdPlate(Re) * Swet * U * U : U === 0 ? 0 : null;
+    const Cd = Re != null && Re > 0 ? cdPlate(Re) : null;
+    const amb = (state && state.ambient) || {};
+    const pO2w = amb.pO2_kPa && amb.pO2_kPa.value != null ? amb.pO2_kPa.value : null;
+    const fk = m != null && pO2w != null ? fickPower({ mass_kg: m, pO2_kPa: pO2w, P50_kPa: val(state, 'hb_P50_kPa') ?? FICK.P50_kPa.value, Q_ml_s: val(state, 'cardiac_output_max_ml_s') }) : null;
+    const lean_inputs = {
+      drag_coefficient: LIN(Cd, '1', 'borrowed', 'flat-plate C_D on wetted area at the current speed: 1.33 Re^-0.5 (Re < 5e5) or 0.072 Re^-0.2 (Li et al. 2021 formulas; rigid plate, a lower bound for an undulating fish)', U === 0 ? 'current speed is 0' : 'SL_m is null'),
+      drag_reference_area_m2: LIN(Swet, 'm2', val(state, 'wetted_area_m2') != null ? (state.wetted_area_m2.kind || 'derived') : 'assumed', `wetted_area_m2 (STATE: ${state.wetted_area_m2 ? state.wetted_area_m2.source : 'none'}): the area drag_coefficient refers to; drag = 0.5 rho C_D A_ref U^2`, 'wetted_area_m2 is null'),
+      drag_area_CdA_m2: LIN(Cd != null && Swet != null ? Cd * Swet : null, 'm2', 'derived', 'C_D x A_ref (CdA). Do NOT multiply by drag_coefficient again', Swet == null ? 'wetted_area_m2 is null' : 'drag coefficient not computable'),
+      aerobic_ceiling_W: LIN(fk ? fk.P_W : null, 'W', 'derived', fk ? `Fick bound eta E Q Ca: eta ${FICK.eta.value} (borrowed), E ${FICK.E_J_per_ml.value.toFixed(2)} J/ml, Q ${fk.Q_ml_s.toFixed(5)} ml/s (${val(state, 'cardiac_output_max_ml_s') != null ? 'STATE' : 'snapper 58.48 ml/min/kg, borrowed'}), Ca ${fk.Ca_ml_ml.toFixed(4)} ml/ml at water pO2 ${pO2w.toFixed(1)} kPa (PaO2 = water PO2, an upper bound; Hb capacity calibrated)` : 'none', m == null ? 'mass_kg is null' : 'state.ambient.pO2_kPa is null'),
+    };
     const bound = Pred != null && Swet != null && SL != null ? speedBound(Pred, w.rho, w.mu, SL, Swet) : null;
     if (Re != null && Re > 5e5) notes.push('Re above 5e5: turbulent plate coefficient used.');
     // Measured Ucrit (zebrafish only)
@@ -163,7 +176,7 @@ export default {
       metric('ucrit_upper_bound_m_s', METRICS[9].label, bound, 'm/s', 'higher', 'derived', 'speed at which 0.5 rho C_D S_wet U^3 = red-muscle power, propulsive efficiency 1: an upper bound, rests on an assumed myotomal fraction', Pred == null ? 'red-muscle power not computable' : 'wetted_area_m2 or SL_m is null'),
     ];
     return {
-      metrics, survives: null, feasible, feasibility_note: limiting, limiting: null, provenance: prov,
+      metrics, lean_inputs, survives: null, feasible, feasibility_note: limiting, limiting: null, provenance: prov,
       scope: 'Steady uniform current; holding station for the minutes of a Ucrit protocol, not hours. Ucrit is the measured wild-type zebrafish value (by stage, x SL, x the measured temperature curve); turbulence, shelter-seeking, schooling, hypoxia and training are not modelled. The drag figures are rigid flat-plate lower bounds and the speed bound is a true upper bound only if the assumed myotomal fraction is not too low. survives = null (being swept downstream is not modelled as lethal); feasible = can hold station: current <= Ucrit (zebrafish), or false if the current exceeds the physical upper bound (any species). Ucrit is a read-back of Plaut 2000 (kind calibrated), not an independent prediction.',
       validity: { inRange, notes: notes.join(' ') || 'within the measured ranges' },
     };

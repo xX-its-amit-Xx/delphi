@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../shared/shell.css">
+<script src="../shared/shell.js"></script>
+<title>Development Record &mdash; DELPHI</title>
+<meta name="description" content="How the DELPHI team built the system at the ScienceClaw hack: the team, the architecture, the multi-agent method, every major decision, the failures and retractions, and what is still open, with commits and source files.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M10 16h12M16 10v12' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--accent-ink:#fff;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--viol:#6b4fb3;--soft:#eef2ef;--shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05);
+  --series-1:#2a78d6;--series-2:#eb6834;--grid:#e6ebe8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3);
+  --series-1:#3987e5;--series-2:#d95926;--grid:#1f3331}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3);
+  --series-1:#3987e5;--series-2:#d95926;--grid:#1f3331}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--dsh-h,0px) + 64px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+h1,h2,h3{line-height:1.2;margin:0 0 .5em}
+h1{font-size:clamp(1.7rem,4.5vw,2.6rem)} h2{font-size:1.4rem} h3{font-size:1.05rem}
+p{margin:.4em 0 .8em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+header.top{position:sticky;top:var(--dsh-h,0px);z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;gap:12px;align-items:center;padding:8px 16px;flex-wrap:wrap}
+.brand{font-weight:700}
+nav a{display:inline-block;padding:4px 10px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.9rem}
+nav a:hover{background:var(--soft);color:var(--ink)}
+section{padding:30px 0;border-bottom:1px solid var(--line)}
+.lede{color:var(--mute);max-width:72ch;font-size:1.05rem}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.card.hero{border-color:var(--accent);border-width:2px}
+.card h3{margin-top:0}
+.kpi{font-size:1.9rem;font-weight:700;line-height:1}
+.kpi small{display:block;font-size:.78rem;font-weight:400;color:var(--mute);margin-top:6px}
+.chip{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;border:1px solid var(--line);background:var(--soft);color:var(--mute)}
+.chip.ok{color:var(--ok);border-color:var(--ok)} .chip.bad{color:var(--bad);border-color:var(--bad)}
+.chip.warn{color:var(--warn);border-color:var(--warn)} .chip.viol{color:var(--viol);border-color:var(--viol)}
+.small{font-size:.88rem} .mute{color:var(--mute)}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;font-size:.85rem}
+.note{background:var(--soft);border-left:3px solid var(--warn);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:.92rem}
+.note.ok{border-left-color:var(--ok)} .note.bad{border-left-color:var(--bad)}
+.tag{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85rem;background:var(--soft);padding:1px 6px;border-radius:6px;overflow-wrap:anywhere}
+footer{padding:26px 0;color:var(--mute);font-size:.9rem}
+.scroll{overflow-x:auto;max-width:100%}
+/* timeline */
+.tl{list-style:none;margin:0;padding:0;border-left:2px solid var(--line);margin-left:6px}
+.tl li{position:relative;padding:8px 0 10px 18px}
+.tl li::before{content:"";position:absolute;left:-7px;top:15px;width:12px;height:12px;border-radius:50%;background:var(--panel);border:2px solid var(--accent)}
+.tl li.bad::before{border-color:var(--bad)} .tl li.up::before{border-color:var(--series-2)}
+.tl .when{font-variant-numeric:tabular-nums;font-weight:600;font-size:.88rem;color:var(--mute);margin-right:6px}
+.tl .what{display:block;margin-top:2px}
+.sha{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.82rem}
+.phase{margin:22px 0 6px;font-size:1.05rem}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}
+.filters button{font:inherit;font-size:.82rem;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--mute);padding:3px 10px;border-radius:99px}
+.filters button[aria-pressed="true"]{border-color:var(--accent);color:var(--ink);background:var(--soft)}
+/* architecture flow */
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.flow .st{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-weight:600;font-size:.92rem}
+.flow .ar{color:var(--mute)}
+/* chart */
+.viz{position:relative}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.86rem;color:var(--mute);margin:4px 0 8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.viz svg{display:block;width:100%;height:auto;overflow:visible}
+.viz .axis text{fill:var(--mute);font-size:11px}
+.viz .gridline{stroke:var(--grid);stroke-width:1}
+.viz .baseline{stroke:var(--line);stroke-width:1}
+.tip{position:absolute;pointer-events:none;background:var(--panel);color:var(--ink);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:8px;padding:8px 10px;font-size:.84rem;min-width:170px;opacity:0;transition:opacity .08s;z-index:5}
+.tip b{display:block;margin-bottom:4px}
+.tip .row{display:flex;justify-content:space-between;gap:12px}
+.tip .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px}
+.hbar{display:grid;grid-template-columns:minmax(120px,240px) 1fr;gap:6px 10px;align-items:center;font-size:.88rem}
+.hbar .bar{height:16px;border-radius:0 4px 4px 0;background:var(--series-1);min-width:2px}
+.hbar .cell{display:flex;align-items:center;gap:8px}
+.hbar .v{font-variant-numeric:tabular-nums;color:var(--ink)}
+details summary{cursor:pointer;color:var(--accent);font-size:.9rem;margin-top:8px}
+ol.fx{padding-left:22px} ol.fx li{margin:.6em 0}
+</style>
+<style id="dsh-fit">@media (max-width:720px){body{overflow-wrap:break-word}main table,section table,.card table,.in table,.scroll table{display:block;overflow-x:auto;max-width:100%}code,pre,.mono{overflow-wrap:anywhere}}</style>
+</head>
+<body>
+<!-- delphi-shell:start  generated by dashboard/build-shell.mjs - do not edit by hand -->
+<a class="dsh-skip" href="#dsh-content">Skip the navigation</a>
+<header class="dsh">
+  <div class="dsh-bar"><a class="dsh-brand" href="../index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0e7c86"/><path d="M5 16c5-7 14-9 22-4-3 2-6 3-8 4 2 1 5 2 8 4-8 5-17 3-22-4z" fill="#fff"/></svg>DELPHI<span class="sub">laws of biology</span></a>
+    <nav class="dsh-nav" aria-label="Primary"><span class="dsh-grp"><span class="dsh-lab">Results</span><a class="dsh-link" href="../results/">Results</a><a class="dsh-link" href="../deck/">Pitch deck</a><a class="dsh-link" href="../print/">Printable kit</a><a class="dsh-link" href="../studio-api/">For agents</a><a class="dsh-link" href="../evolve/">Enzymes</a></span><span class="dsh-grp"><span class="dsh-lab">Evidence</span><a class="dsh-link" href="../proofs/">Claim book</a><a class="dsh-link" href="../graph/">Graph</a><a class="dsh-link" href="../figures/">Figures</a></span><span class="dsh-grp"><span class="dsh-lab">Threads</span><a class="dsh-link" href="../t/lean/">Lean proofs</a><a class="dsh-link" href="../t/claims/">Claim tests</a><a class="dsh-link" href="../t/genotype/">Genotype</a><a class="dsh-link" href="../t/physics/">Physics</a><a class="dsh-link" href="../t/physics/sim/">Simulator</a><a class="dsh-link" href="../t/organism/">Organism</a><a class="dsh-link" href="../t/holdout/">Holdout</a><a class="dsh-link" href="../t/swarm/">Swarm</a><a class="dsh-link" href="../t/validation/">Validation</a></span><span class="dsh-grp"><span class="dsh-lab">About</span><a class="dsh-link" href="../start/">Start here</a><a class="dsh-link" href="../index.html">Mission control</a></span></nav>
+    <button class="dsh-theme" id="themeBtn" data-dsh-theme type="button" title="Toggle light or dark">Theme</button></div>
+  <nav class="dsh-modes" aria-label="The 3D organism viewer"><span class="dsh-lab">The organism</span><a class="dsh-link" href="../blueprint3d/">Anatomy</a><a class="dsh-link" href="../blueprint3d/?mode=physiology">Circulation &amp; gills</a><a class="dsh-link" href="../blueprint3d/?mode=tissue">Tissue signals</a><a class="dsh-link" href="../blueprint3d/?mode=cell">Cell interactions</a><a class="dsh-link" href="../blueprint3d/?mode=physics">Flight simulator</a><a class="dsh-link" href="../blueprint3d/?mode=design">Design studio</a><a class="dsh-link" href="../blueprint3d/?mode=growth">Growth</a><a class="dsh-link" href="../blueprint3d/?mode=compare">Compare species</a><a class="dsh-link" href="../blueprint3d/?mode=sequences">Gene sequences</a><a class="dsh-link" href="../blueprint3d/?view=radial">Radial map</a></nav>
+</header>
+<span id="dsh-content"></span>
+<!-- delphi-shell:end -->
+<header class="top"><div class="wrap">
+  <span class="brand">Development record</span>
+  <nav><a href="#glance">At a glance</a><a href="#team">Team</a><a href="#arch">Architecture</a><a href="#method">Method</a><a href="#pace">Pace</a><a href="#timeline">Timeline</a><a href="#decisions">Decisions</a><a href="#failures">Failures</a><a href="#frontier">Collaboration</a><a href="#open">Open</a></nav>
+</div></header>
+
+<main class="wrap">
+
+<section id="topsec">
+  <h1>How DELPHI was built at the hack</h1>
+  <p class="lede">The ScienceClaw Hack @ MIT, Oct 30 to the data freeze on Sunday Nov 1 at 12:00 noon. This page gives the team, the
+  architecture, how parallel agents were coordinated, each major decision with the alternatives rejected, the failures
+  and retractions, and what is still open. Each item links to its commit or source file. Times are Boston time (EDT).
+  The same record as a file: <a href="https://github.com/xX-its-amit-Xx/delphi/blob/delphi-hack-2026-10-31/DEVELOPMENT-RECORD.md">DEVELOPMENT-RECORD.md</a>.</p>
+  <div class="note">Snapshot built Nov 1, 12:12 AM EDT from <span class="tag">git log</span> and repository files. Other agents were still landing work, so counts
+  will move until the freeze. Commit links go to the fork whose branch <span class="tag">delphi-hack-2026-10-31</span> is the head of PR #36 on
+  <a href="https://github.com/fractastical/delphi/pull/36">fractastical/delphi</a>; upstream commits resolve there too.</div>
+</section>
+
+<section id="glance">
+  <h2>At a glance</h2>
+  <div class="grid g4" id="kpis"></div>
+  <p class="small mute">Every tile names the file it comes from. The "headline negative" tiles are first on purpose: the repository's
+  <a href="../results/">results page</a> leads with them too.</p>
+</section>
+
+<section id="team">
+  <h2>The team</h2>
+  <p class="lede">Names and roles as the repository records them. Three sources use different titles (the dashboard's team card, issue #53,
+  and <span class="tag">decisions/ideas.json</span>, which writes "project lead (Amit)"); they are shown side by side, not reconciled.</p>
+  <div class="scroll"><table>
+    <tr><th>Person</th><th>Role as recorded</th><th>Owned at the hack (issue #53)</th></tr>
+    <tr><td><b>Kavita Kulkarni</b></td><td>Team lead (dashboard team card)</td><td>Presentation layer: claim graph site, demo flow and slides</td></tr>
+    <tr><td><b>Amit Shenoy</b></td><td>Project lead (<span class="tag">ideas.json</span>, <span class="tag">AGENTS.md</span>); "holds the publishing and commit decisions" (team card)</td><td>Genotype&ndash;phenotype links, downstream use cases, MCP testing. The hub session and the Claude threads worked on this row.</td></tr>
+    <tr><td><b>Joel Dietz</b></td><td>"Lead, integrator and publisher" (issue #53)</td><td>Merges, production nanopub publishing with his ORCID key, submission; ran the Cursor agent swarm</td></tr>
+    <tr><td><b>Ashley</b></td><td>Collaborator, software (Knowledge Pixels)</td><td>Nanopub checks (#37), claim grounding to external graphs (#34, PR #63 merged)</td></tr>
+    <tr><td><b>Kris</b> (card: "Chris")</td><td>Collaborator, more theoretical</td><td>Form simulator (#54), queryable open problems (#55)</td></tr>
+  </table></div>
+</section>
+
+<section id="arch">
+  <h2>Architecture</h2>
+  <p class="lede">One chain from a sentence in an old book to a checked design, with each layer writing files the next one reads.</p>
+  <div class="card">
+    <div class="flow">
+      <span class="st">Claims</span><span class="ar">&rarr;</span><span class="st">Assessments</span><span class="ar">&rarr;</span><span class="st">Pre-registered tests</span><span class="ar">&rarr;</span><span class="st">Nanopub drafts</span>
+    </div>
+    <div class="flow" style="margin-top:10px">
+      <span class="st">Lean 4 proofs</span><span class="ar">&rarr;</span><span class="st">Law registry</span><span class="ar">&rarr;</span><span class="st">MCP / API / CLI</span><span class="ar">&rarr;</span><span class="st">Design studio</span><span class="ar">&rarr;</span><span class="st">Independent validation</span>
+    </div>
+  </div>
+  <div class="scroll" style="margin-top:14px"><table id="archTable"></table></div>
+  <p class="small mute">The repository's own limits, from <span class="tag">README.md</span>: a machine-checked proof "does not show that living systems satisfy
+  those assumptions", and "no numeric prediction about a real zebrafish counts as independent evidence yet".</p>
+</section>
+
+<section id="method">
+  <h2>How the work was organised</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Two swarms on one repository</h3>
+      <p><b>Upstream:</b> Joel Dietz merged work from Cursor cloud agents on per-slice branches: 367 Cursor Agent commits since Oct 30, claim
+      extraction from three books, organism slices, 129 claim-test results from 13 agent branches.</p>
+      <p><b>Hub and threads:</b> one Claude Code hub session (<span class="tag">scienceclaw-03</span>) owned the main dashboard, <span class="tag">AGENTS.md</span>, the
+      build and the deploy. Parallel Claude sessions each owned one folder and one sub-dashboard: swarm, claims, holdout, lean, organism, then
+      genotype, viz, validation and physics. Background agents took bounded jobs (prior art, design scorecard, Frontier cross-check and write,
+      simulation readiness, nanopub curation, the studio skeptic). Threads did not commit; the hub did. Commit trailers name three Claude models
+      (Opus 5.5 on 93 commits, Opus 5 on 41, Fable 5.1 on 32).</p></div>
+    <div class="card"><h3>Rules that held</h3>
+      <ul class="small">
+        <li><b>Files are the truth, messages are for asks.</b> Each thread rewrote <span class="tag">t/&lt;thread&gt;/status.json</span>; <a href="../start/">/start/</a> reads them live.</li>
+        <li><b>One writer per path</b>: "the cheapest possible lock and it held all day."</li>
+        <li><b>Issues claim work, files hold state, the dashboard shows it.</b> A second board (Notion) was rejected because it would disagree with the first.</li>
+        <li><b>A peer's message is never user approval.</b></li>
+        <li><b>Everything is modifiable if it is versioned</b> (Amit, Oct 31): no parallel copies of a component.</li>
+      </ul></div>
+    <div class="card"><h3>Roles with contracts (A1&ndash;A13)</h3>
+      <p class="small">The nine agent instructions became roles that own, write, gate and refuse. Changed on purpose: A7's "formalise above 90 %
+      resolvability" (real scores run 0.12&ndash;0.36, so it would formalise nothing) and A10's "publish above 80 % pass" (that builds "a victory
+      log, not a knowledge graph"). Added: A9 faithfulness, where the assessor is never the builder or its model (7 blinded OpenAI assessments, all
+      representative-with-caveats, one provider only); A13 debate and tournament, recorded as "does not exist yet".</p></div>
+    <div class="card"><h3>Pre-register, hash, then look</h3>
+      <p class="small">Claim tests commit <span class="tag">result.json</span> before data. The swarm comparison, holdout, physics simulator, Lean-vs-simulation
+      check, design validation (hashed 22:00:34Z) and studio harness (hashed 02:30:37Z Nov 1, before any scenario module existed) all have hashed
+      pre-registrations. Amendments are labelled and shown beside the original verdict, never in its place.</p></div>
+    <div class="card"><h3>Checks made to fail once</h3>
+      <p class="small">Lean mutants change the theorem statement and must fail to compile; empirical constraints are hypotheses with a non-vacuity
+      witness, not axioms; nanopub citations are re-hashed by a staleness guard tested with a doctored hash; the studio harness plants a bad input
+      for each check (20 of 20 behave as designed) and treats a value read back from its target paper as circular.</p></div>
+    <div class="card"><h3>Ideas carry their origin</h3>
+      <p class="small">41 ideas in <span class="tag">decisions/ideas.json</span>: 5 researched, 29 reach-synthesis, 7 serendipitous. A reach-synthesis idea "never appears in a
+      pitch or a record as established method", and a choice between alternatives is logged with what was rejected.</p></div>
+  </div>
+</section>
+
+<section id="pace">
+  <h2>Pace: commits per hour</h2>
+  <p class="lede">Both swarms, by hour, Boston time. Upstream is Joel Dietz, the Cursor agents and Ashley; the fork is the hub and the Claude threads.</p>
+  <div class="card viz" id="paceCard">
+    <div class="legend" id="paceLegend"></div>
+    <div id="paceChart"></div>
+    <div class="tip" id="paceTip" role="status" aria-live="polite"></div>
+    <details><summary>Show as a table</summary><div class="scroll"><table id="paceTable"></table></div></details>
+    <p class="small mute">Source: <span class="tag">git log origin/main --since=2026-10-30 --no-merges</span> and
+    <span class="tag">git log fork/delphi-hack-2026-10-31 --not origin/main --no-merges</span>, committer time. Some fork commits were re-applied on the branch
+    later than they were written; author time is used for the timeline below.</p>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h3>Fork commits by area</h3>
+    <div class="hbar" id="areaBars"></div>
+    <p class="small mute">Area is assigned from each commit subject's prefix (for example <span class="tag">lean:</span>, <span class="tag">genotype:</span>, <span class="tag">viz:</span>). It is a folder grouping, not a record of which session wrote the commit.</p>
+  </div>
+</section>
+
+<section id="timeline">
+  <h2>Timeline</h2>
+  <div class="filters" id="tlFilters" role="group" aria-label="Filter the timeline"></div>
+  <div id="tl"></div>
+</section>
+
+<section id="decisions">
+  <h2>Decisions, their evidence and what was rejected</h2>
+  <div class="scroll"><table id="decTable"></table></div>
+</section>
+
+<section id="failures">
+  <h2>Failures, retractions and corrections</h2>
+  <p class="lede">Found by a check, a reader or a collaborator, and recorded where they were made.</p>
+  <ol class="fx" id="fx"></ol>
+  <h3 style="margin-top:20px">Process failures (from <span class="tag">AGENTS.md</span> and the reports)</h3>
+  <ul class="small" id="pfx"></ul>
+</section>
+
+<section id="held">
+  <h2>What held up, with its limits</h2>
+  <div class="grid g2" id="held"></div>
+</section>
+
+<section id="frontier">
+  <h2>Collaboration: Delphi Frontier, the upstream swarm, MorphoScale</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Delphi Frontier, read first</h3>
+      <p class="small">A collaborator graph over MCP at <span class="tag">frontier.morphoswarm.ai/mcp</span>. 240 anonymous reads, 33 claims compared: 6 agree, 4 partial,
+      1 disagree (lat4a identity), 15 only we have, 7 only they have. Nothing in their store is accepted, no artifact bytes are verifiable, and much
+      of their <span class="tag">node-a</span> namespace is a bulk import of our own registry, which is never counted as corroboration.
+      <a href="https://github.com/xX-its-amit-Xx/delphi/blob/delphi-hack-2026-10-31/crosscheck-frontier/REPORT.md">Report</a> &middot;
+      <a class="sha" href="https://github.com/xX-its-amit-Xx/delphi/commit/0eae0953">0eae0953</a></p></div>
+    <div class="card"><h3>Then 22 records written</h3>
+      <p class="small">7 corrections, 4 Lean results (with the shared Mathlib pin disclosed), 9 genotypic, 2 measurements; each read back; 2 schema refusals kept
+      verbatim. A shared identity forced the issuer, so attribution (repository path, commit, sha256) went into every payload. Ceiling: <span class="tag">proposed</span>.
+      <a href="https://github.com/xX-its-amit-Xx/delphi/blob/delphi-hack-2026-10-31/frontier-contrib/REPORT.md">Report</a> &middot;
+      <a class="sha" href="https://github.com/xX-its-amit-Xx/delphi/commit/83802250">83802250</a></p></div>
+    <div class="card"><h3>The upstream swarm</h3>
+      <p class="small">A cross-check source, not a duplicate: thompson1917-ch03-07 was compared (age range, not aggregation, explains 2.41 vs 2.74), and where both
+      swarms created the same claim folder both attempts were kept. Upstream also scored itself on the judging rubric with three blind assessors from other
+      providers (57&ndash;60/100, issue #61) and added a <span class="tag">delphi_morpholib</span> MCP tool for MorphoEval audits.</p></div>
+    <div class="card"><h3>MorphoScale</h3>
+      <p class="small">Named by the team lead in the brief for this record. The name appears nowhere in the repository, its commits, its issues or PR #36, so it is not
+      described here. Related names that do appear: MorphoSwarm (host of the Frontier MCP) and MorphoEval / morpholib.</p></div>
+  </div>
+</section>
+
+<section id="open">
+  <h2>What remains open</h2>
+  <ul id="openList"></ul>
+</section>
+
+<footer>
+  Built from repository files by a script; no count on this page was typed from memory. Sources: <span class="tag">AGENTS.md</span>, <span class="tag">README.md</span>,
+  <span class="tag">DATA.md</span>, <span class="tag">decisions/ideas.json</span>, thread status files, <span class="tag">results/results.json</span>, the reports named in each item,
+  issues #17, #36, #42, #53 and #61, and git history. No credentials, no Aves data.
+</footer>
+</main>
+
+<script>
+const DATA = {"counts":{"fork":"166","upstream":"489"},"areas":[["Claim tests",30],["Visualisation",26],["Hub (ideas, deck, docs, threads)",23],["Genotype, sequences, structures",22],["Physics, physiology, growth",20],["Lean",16],["Studio and sim-engine",9],["Anatomy model, print, MD",9],["Audits and collaboration",8],["Holdout",3]],"pace":[{"label":"Fri 6 pm","tick":"6 pm","fork":0,"upstream":3},{"label":"Fri 7 pm","tick":"","fork":0,"upstream":1},{"label":"Fri 8 pm","tick":"","fork":0,"upstream":2},{"label":"Fri 9 pm","tick":"","fork":0,"upstream":4},{"label":"Fri 10 pm","tick":"","fork":0,"upstream":2},{"label":"Fri 11 pm","tick":"","fork":0,"upstream":14},{"label":"Sat 12 am","tick":"Sat","fork":0,"upstream":204},{"label":"Sat 1 am","tick":"","fork":2,"upstream":152},{"label":"Sat 2 am","tick":"","fork":8,"upstream":12},{"label":"Sat 3 am","tick":"","fork":0,"upstream":5},{"label":"Sat 4 am","tick":"","fork":0,"upstream":0},{"label":"Sat 5 am","tick":"","fork":0,"upstream":0},{"label":"Sat 6 am","tick":"6 am","fork":0,"upstream":0},{"label":"Sat 7 am","tick":"","fork":0,"upstream":0},{"label":"Sat 8 am","tick":"","fork":0,"upstream":0},{"label":"Sat 9 am","tick":"","fork":1,"upstream":2},{"label":"Sat 10 am","tick":"","fork":19,"upstream":19},{"label":"Sat 11 am","tick":"","fork":4,"upstream":2},{"label":"Sat 12 pm","tick":"12 pm","fork":5,"upstream":0},{"label":"Sat 1 pm","tick":"","fork":8,"upstream":2},{"label":"Sat 2 pm","tick":"","fork":19,"upstream":4},{"label":"Sat 3 pm","tick":"","fork":9,"upstream":3},{"label":"Sat 4 pm","tick":"","fork":21,"upstream":5},{"label":"Sat 5 pm","tick":"","fork":23,"upstream":40},{"label":"Sat 6 pm","tick":"6 pm","fork":16,"upstream":7},{"label":"Sat 7 pm","tick":"","fork":8,"upstream":2},{"label":"Sat 8 pm","tick":"","fork":3,"upstream":0},{"label":"Sat 9 pm","tick":"","fork":0,"upstream":0},{"label":"Sat 10 pm","tick":"","fork":3,"upstream":2},{"label":"Sat 11 pm","tick":"","fork":9,"upstream":2},{"label":"Sun 12 am","tick":"Sun","fork":8,"upstream":0}]};
+const C = 'https://github.com/xX-its-amit-Xx/delphi/commit/';
+const F = 'https://github.com/xX-its-amit-Xx/delphi/blob/delphi-hack-2026-10-31/';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sha = s => `<a class="sha" href="${C}${s}">${s}</a>`;
+const file = p => `<a class="tag" href="${F}${p}">${esc(p)}</a>`;
+// Text fields below are trusted page content (may contain links built with sha()/file()).
+
+/* ---------- KPI tiles ---------- */
+const KPIS = [
+  ['1 of 74', 'loci of the designed organism known to differ in flying fishes (1.4 %); design claim dropped as unsupported', 'design-validation/REPORT.md'],
+  ['0 / 18,733', 'parameters held for a dynamical model of the 4,571 mapped genes', 'simulation-readiness/README.md'],
+  ['5', 'public corrections on the results page: gja5a, the genome claim, ray-interray, lat4a, the TFF aspect ratio', 'dashboard/public/results/results.json'],
+  [DATA.counts.upstream, 'upstream commits since Oct 30 (Joel Dietz, Cursor agents, Ashley)', null],
+  [DATA.counts.fork, 'fork commits from the hub and Claude threads (PR #36)', null],
+  ['152 / 0', 'Lean theorems compiling / sorry', 'dashboard/public/t/lean/status.json'],
+  ['157', 'unsigned nanopub drafts, all passing validation; none signed', 'nanopubs-index/README.md'],
+  ['41', 'ideas logged with origin: 5 researched, 29 reach-synthesis, 7 serendipitous', 'decisions/ideas.json']
+];
+document.getElementById('kpis').innerHTML = KPIS.map(([v,l,src]) =>
+  `<div class="card"><div class="kpi">${esc(v)}<small>${l}</small></div>${src?`<div class="small" style="margin-top:8px">${file(src)}</div>`:'<div class="small mute" style="margin-top:8px">git log</div>'}</div>`).join('');
+
+/* ---------- architecture table ---------- */
+const ARCH = [
+  ['Claims','Verbatim-quoted claims from Darwin 1859 (247), Thompson 1917 (291), Wolfram 2002 (321), math-bio thinkers and Levin; GPT and Grok resolvability assessments','docs/claims.json'],
+  ['Claim tests','result.json committed with pass and fail criteria before data; files recorded by URL and SHA-256','claim-tests/README.md'],
+  ['Holdout','Class Aves frozen as the exam before building; leak checker over the whole tree','holdout/README.md'],
+  ['Nanopubs','Delphi ontology v2.0 records; this team\'s are unsigned drafts','nanopubs-index/README.md'],
+  ['Lean 4','0 sorry, standard axioms, statement mutation, constraint checker and elimination ledgers','lean/AUDIT-FLYING-FISH.md'],
+  ['Law registry','One file per law, immutable lawsets; laws retired or contested, never deleted','lean/registry/CHANGELOG.md'],
+  ['MCP / API / CLI','delphisci MCP (hosted on Fly.io), sim-engine MCP and HTTP bridge, static /api/lean/, one loader lib/lean-source.mjs','mcp/CHANGELOG.md'],
+  ['Organism model','Ontology blueprint (536 terms), flying fish GLB (110 meshes), zebrafish adult (189) and larva (58), parents-plus-deltas builder','DATA.md'],
+  ['Genotype','Vetted proxy-fish map over 4,571 genes, pathways for 3,857, 42 causal chains, 92 interventions','genotype/nanopubs/DECISIONS.md'],
+  ['Physics and physiology','Glide table, Thompson envelope test, pre-registered simulator, circulation, gills, heart, muscle','physics/flier/tff/SPEC-MISMATCHES.md'],
+  ['Design studio','Text to spec, edits from body to gene, 11 perturbation scenarios, laws marked red, amber or dashed','sim-engine/CHANGELOG.md'],
+  ['Validation','Studio skeptic harness, design scorecard, MCP test, simulation check of Lean results','sim-engine/validation/STUDIO-FINDINGS.md']
+];
+document.getElementById('archTable').innerHTML = '<tr><th>Layer</th><th>What it is</th><th>Read more</th></tr>' +
+  ARCH.map(([a,b,c]) => `<tr><td><b>${a}</b></td><td>${esc(b)}</td><td>${file(c)}</td></tr>`).join('');
+
+/* ---------- pace chart: stacked columns, two series ---------- */
+(function(){
+  const bins = DATA.pace; // [{label, start, fork, upstream}]
+  const series = [
+    {key:'upstream', name:'Upstream (Joel Dietz, Cursor agents, Ashley)', color:'var(--series-2)'},
+    {key:'fork', name:'Fork (hub and Claude threads)', color:'var(--series-1)'}
+  ];
+  document.getElementById('paceLegend').innerHTML = series.map(s=>`<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join('');
+  const W = 1100, H = 300, m = {l:36, r:8, t:10, b:34};
+  const pw = W - m.l - m.r, ph = H - m.t - m.b;
+  const max = Math.max(1, ...bins.map(b => b.fork + b.upstream));
+  const step = max > 40 ? 20 : max > 20 ? 10 : 5;
+  const top = Math.ceil(max/step)*step;
+  const band = pw / bins.length, bw = Math.min(24, band * 0.7);
+  const y = v => m.t + ph - v/top*ph;
+  let g = '';
+  for (let v=0; v<=top; v+=step) g += `<line class="${v?'gridline':'baseline'}" x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}"/><text x="${m.l-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
+  let marks = '', hits = '';
+  bins.forEach((b,i) => {
+    const x = m.l + i*band + (band-bw)/2;
+    let base = 0; const segs = series.map(s => ({s, v:b[s.key]})).filter(o => o.v > 0);
+    segs.forEach((o, j) => {
+      const y0 = y(base), y1 = y(base + o.v); base += o.v;
+      const gap = j > 0 ? 2 : 0; // 2px surface gap between stacked segments
+      const h = Math.max(0, y0 - y1 - gap), yt = y1;
+      const isTop = j === segs.length - 1, r = Math.min(4, h, bw/2);
+      const d = isTop
+        ? `M${x},${yt+h} V${yt+r} Q${x},${yt} ${x+r},${yt} H${x+bw-r} Q${x+bw},${yt} ${x+bw},${yt+r} V${yt+h} Z`
+        : `M${x},${yt+h} V${yt} H${x+bw} V${yt+h} Z`;
+      marks += `<path d="${d}" fill="${o.s.color}"/>`;
+    });
+    hits += `<rect class="hit" data-i="${i}" x="${m.l+i*band}" y="${m.t}" width="${band}" height="${ph}" fill="transparent"/>`;
+    if (b.tick) marks += `<text x="${m.l+i*band+band/2}" y="${H-m.b+16}" text-anchor="middle">${esc(b.tick)}</text>`;
+  });
+  const svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Commits per hour for the upstream swarm and the fork, stacked, Boston time">
+    <g class="axis">${g}${marks}</g>${hits}</svg>`;
+  const host = document.getElementById('paceChart'); host.innerHTML = svg;
+  const tip = document.getElementById('paceTip'), card = document.getElementById('paceCard');
+  host.querySelectorAll('.hit').forEach(el => {
+    const show = ev => {
+      const b = bins[+el.dataset.i];
+      tip.innerHTML = `<b>${esc(b.label)}</b>` + series.slice().reverse().map(s=>`<div class="row"><span><span class="sw" style="background:${s.color}"></span>${s.key==='fork'?'Fork':'Upstream'}</span><span>${b[s.key]}</span></div>`).join('') + `<div class="row mute"><span>Total</span><span>${b.fork+b.upstream}</span></div>`;
+      const r = card.getBoundingClientRect(), er = el.getBoundingClientRect();
+      let left = er.left - r.left + er.width/2 + 10; if (left + 190 > r.width) left = er.left - r.left - 190;
+      tip.style.left = Math.max(4,left) + 'px'; tip.style.top = (er.top - r.top + 20) + 'px'; tip.style.opacity = 1;
+      el.setAttribute('fill','color-mix(in srgb, var(--ink) 6%, transparent)');
+    };
+    const hide = () => { tip.style.opacity = 0; el.setAttribute('fill','transparent'); };
+    el.addEventListener('mousemove', show); el.addEventListener('mouseleave', hide);
+    el.addEventListener('touchstart', show, {passive:true});
+  });
+  document.getElementById('paceTable').innerHTML = '<tr><th>Hour (EDT)</th><th>Upstream</th><th>Fork</th></tr>' +
+    bins.filter(b=>b.fork+b.upstream>0).map(b=>`<tr><td>${esc(b.label)}</td><td>${b.upstream}</td><td>${b.fork}</td></tr>`).join('');
+  // by area
+  const areas = DATA.areas, amax = Math.max(...areas.map(a=>a[1]));
+  document.getElementById('areaBars').innerHTML = areas.map(([n,v]) =>
+    `<div>${esc(n)}</div><div class="cell"><div class="bar" style="width:calc(${(v/amax*100).toFixed(1)}% - 40px)"></div><span class="v">${v}</span></div>`).join('');
+})();
+
+/* ---------- timeline ---------- */
+const AREAS = ['Upstream','Claim tests','Holdout','Lean','Genotype','Physics','Organism','Viz','Studio','Audits','Hub'];
+const TL = [
+ ['Friday Oct 30: upstream foundations', [
+  ['Oct 30 18:40','Upstream','Repository started for the hack; best practices adapted from the Project Delphi ontology; goal stated: find the fundamental theorems of biology.',['21f20173','adb32187']],
+  ['19:25','Upstream','247 Darwin claims extracted as nanopub drafts; promoted to production at 20:41.',['c8b4ec9b','fc982b2e']],
+  ['22:05','Upstream','291 Thompson claims.',['8ad9c204']],
+  ['23:12','Upstream','delphisci MCP server runnable with npx; AGENTS.md created.',['ace57697','1c94b052']],
+  ['23:46','Upstream','321 Wolfram NKS claims; GPT and Grok resolvability assessments published to the test registry through the night.',['b3f424ba','6339689d']],
+  ['Oct 31 00:32','Upstream','MCP hosted on Fly.io, deployed from main by GitHub Actions.',['d3933e21']],
+  ['00:28&ndash;01:40','Upstream','16 organism slices vendored by parallel agents and merged: 782 taxa, 1,372 datasets.',['0669dc11']]
+ ]],
+ ['Saturday, small hours to early afternoon: the first threads', [
+  ['01:52','Holdout','Holdout first frozen on class Aves, provisionally. '+file('holdout/README.md'),[]],
+  ['01:55&ndash;02:19','Claim tests','8 math-bio tests pre-registered, then run (3 supports, 1 refutes, 2 mixed, 2 data-unavailable); 2 amended to hold out Aves; 4 Darwin/Thompson tests (2 supports, 2 refutes).',['9b731287','6f5de706','c330f91d','cc65b2c0']],
+  ['10:05&ndash;10:27','Claim tests','15 unsigned evidence drafts; post-hoc power checks; cross-check of thompson1917-ch03-07 against the upstream swarm; four folders suffixed where both swarms tested the same claim, keeping both.',['bc0d8675','00ba7c56','2f752816','c364a3d8']],
+  ['10:00','Upstream','129 claim-test results from 13 agent branches merged; inventory at 22 slices, 938 taxa, 1,679 datasets.',['6295cab1']],
+  ['10:33','Hub','Hub, swarm, holdout, lean and organism thread work committed together.',['df9b6bdc']],
+  ['10:44','Holdout','Aves confirmed by Amit and re-frozen with the roster unchanged; the power table published as its own finding (13 vs 50, 8 vs 15).',['da7e271b','3521452b']],
+  ['10:49','Claim tests','SHA-256 attestation of every pre-registered result, draft record and frozen exam file.',['4b600686']],
+  ['10:59&ndash;11:03','Claim tests','A9 faithfulness package (#40); OpenResearch grounding for 6 tests (#16): 5 of 6 already answered by prior work.',['4f9b4546','c87bcde0']],
+  ['14:07','Upstream','Thompson and Wolfram claims and assessments published to production.',['c40415e8']],
+  ['14:17','Hub','PR #36 opened from the fork. <a href="https://github.com/fractastical/delphi/pull/36">PR #36</a>',[]]
+ ]],
+ ['Saturday midday to evening: the flying fish', [
+  ['11:52','Hub','Darwin\'s flying-fish sentence becomes the worked example: blueprint and six-step example (issue #42, work packages #43&ndash;#50).',['fb34a434']],
+  ['11:57','Lean','Substitution budget for the flying fish: inconclusive, with an honest refusal.',['46821aff']],
+  ['12:38','Lean','Kernel-checked well-formedness certificate for the generated blueprint: 536 terms, 674 part_of edges, acyclic.',['f68bf8b7']],
+  ['12:42','Viz','Three PBDB first-appearance dates corrected, a fourth flagged, all disclosed.',['ad640568']],
+  ['13:10&ndash;13:20','Lean','215 open problems and 80 candidate answers; theorems as constraints with a three-state checker.',['5fc1b801','380cd54c']],
+  ['14:08&ndash;14:14','Hub','Research standing order and idea log; prior-art search: "the parts exist, the whole does not; Phenoscape is the closest".',['153261d9','da329d5a']],
+  ['14:19&ndash;14:21','Audits','MCP server test: 93 of 100 pass, hosted equals upstream main; simulations agree with three Lean results.',['d65be856','8b618ee5']],
+  ['14:45&ndash;14:59','Genotype','Vetted genotype map; Daane 2021 fin ratios for 109 specimens; physics: the fish is inside Thompson\'s envelope, scaling inconclusive.',['695ee639','e49023dd','b1e6fc90']],
+  ['15:11&ndash;15:30','Lean','Scaling laws R2&ndash;R9 from physics proved: strength and bending complete the square-cube argument.',['4289b826','f089a1fa']],
+  ['16:01&ndash;16:11','Organism','Segmented flying-fish GLB (110 meshes) and the Open the Fish viewer.',['e629707e','5a039ef4']],
+  ['16:36','Lean','All 92 theorems audited against the real fish: 19 hold, 6 hypotheses violated, 67 cannot be evaluated.',['7769f0ce']],
+  ['16:42&ndash;17:22','Physics','Simulator v1&ndash;v3: test 4 fails under the bat-mean bound; launch unreachable on chain power until a zero-drag bound; TFF co-design map: the gap to altitude is oxygen delivery, not wings.',['639d38ea','5ae9de8a','718b0c99','0f95a22d','5b51ba4f']],
+  ['17:02&ndash;17:10','Lean','Flight module; sustained aerobic flight eliminated with kernel-checked certificates.',['1fcc5164','74ccf1df']],
+  ['17:36','Studio','sim-engine MCP server v1; its first pre-registered test (hhip) fails on axis.',['e2395540'],'bad'],
+  ['17:56','Genotype','Correction: an annotated flying-fish genome exists (23,611 genes); the gap is expression and phenotype.',['2ac2ee4d','467dc3bc'],'bad'],
+  ['18:01&ndash;18:05','Genotype','Sequences: gliders do not converge; the convergent-site ladder is inverted.',['72ab753e','de40f9a1']],
+  ['18:14','Audits','Design validation fails: 1 of 10 axes scorable, 1 of 74 loci; claim dropped as unsupported.',['da086ee0'],'bad'],
+  ['18:16&ndash;18:18','Audits','Frontier cross-check (33 claims); simulation readiness 0 of 18,733; curation of 157 drafts.',['0eae0953','ca1cb887','aeb248bd']],
+  ['18:27&ndash;18:28','Genotype','Four TFF spec mismatches (the flight muscle does not fit); ray-interray null withdrawn; lat4a identity split.',['b1f62e9a','27d21592'],'bad']
+ ]],
+ ['Saturday night: consolidation, studio, print', [
+  ['18:44&ndash;18:50','Hub','Deck: new evidence slides, 10 numbers corrected, a CSS bug that meant no bar ever rendered.',['caae50c2','fd2277a0']],
+  ['18:46','Holdout','Lean scaling theorem ruled eligible; leak checker widened to 7,276 files after the curator, not the checker, found a bird-titled draft.',['b1750b52']],
+  ['19:01','Audits','The <a href="../results/">results page</a>: the day\'s findings, 29 source files read at build time.',['5021e589']],
+  ['19:08','Audits','22 records written to Delphi Frontier.',['83802250']],
+  ['19:10','Genotype','Structures: 0 of 532 interface positions separate gliders from non-gliders.',['8e919b17']],
+  ['19:13&ndash;19:34','Viz','QA sweep fixes three page-breaking bugs; one header and nav across 13 pages.',['b135c060','c863ed77']],
+  ['20:02&ndash;22:38','Organism','Printable kit: 100 part STLs (11 flagged unprintable), 1:1 starter kit (10 parts, all pass), the <a href="../print/">print viewer</a>; kcnk5b MD systems built, zero ns production (GPU cap).',['1116f16d','e3a87210','7bc50a52','20b2d6f8']],
+  ['23:03&ndash;23:08','Studio','Design studio checkpoint; Perturb mode in Open the Fish; versioned law registry; lawset 1.3.0 records the depth cap as contested.',['8b701c7a','5bad0acb','6e2b7a85','bba92aa3']],
+  ['23:53&ndash;23:55','Lean','Lawset 1.5.0: five perturbation laws accepted by the project lead; engine 0.3.2.',['f5e5a991','d6d9e0d5']],
+  ['23:59&ndash;Nov 1 00:03','Studio','Genotype layer in Perturb mode; engine 0.3.3: accepted laws P4, P4b and P5 evaluate and go red on designed violations.',['f3c4ae43','e7a19cd9']],
+  ['Nov 1 00:06&ndash;00:11','Hub','An omics layer (a 3,860-gene zebrafish universe with a shared row schema and validator, transcriptomic and pathway rows); a swarm task board with leases over co-design sessions, proposals left for a human; MCP 0.4.0 with Lean laws that self-update at runtime, content-hash pinned.',['bccc3697','d769ec14','bd9982c3','dd014786']]
+ ]]
+];
+let tlFilter = 'All';
+function drawTL(){
+  document.getElementById('tl').innerHTML = TL.map(([ph, items]) => {
+    const rows = items.filter(it => tlFilter==='All' || it[1]===tlFilter);
+    if (!rows.length) return '';
+    return `<h3 class="phase">${ph}</h3><ul class="tl">` + rows.map(([t,a,txt,shas,cls]) =>
+      `<li class="${cls||''} ${a==='Upstream'?'up':''}"><span class="when">${t}</span><span class="chip ${cls==='bad'?'bad':''}">${a}</span>
+       <span class="what">${txt} ${shas.map(sha).join(' ')}</span></li>`).join('') + '</ul>';
+  }).join('');
+}
+document.getElementById('tlFilters').innerHTML = ['All', ...AREAS].map(a => `<button type="button" data-a="${a}" aria-pressed="${a==='All'}">${a}</button>`).join('');
+document.getElementById('tlFilters').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  tlFilter = b.dataset.a;
+  document.querySelectorAll('#tlFilters button').forEach(x => x.setAttribute('aria-pressed', x===b));
+  drawTL();
+});
+drawTL();
+
+/* ---------- decisions ---------- */
+const DEC = [
+ ['Hold out class Aves as the exam','Clean monophyletic class, full trait coverage; cost stated up front: 13 vs 50 and 8 vs 15 species, so the examined tests read inconclusive','Mammalia: 1 of 2 decisive, but 3 built tests would become post hoc','holdout/README.md'],
+ ['Replace A7\'s 90 % formalisation gate','Resolvability scores run 0.12&ndash;0.36; two assessors on one claim gave 0.118 and 0.362','A gate that formalises nothing; raising scores to clear it','AGENTS.md'],
+ ['Publish refuted and inconclusive results','A refuted claim is often the more valuable record','Publishing only passes above 80 %','AGENTS.md'],
+ ['Unsigned drafts, test registry only','Production signing is irreversible; a lead\'s request is not key-owner approval','Signing on request','AGENTS.md'],
+ ['Mutate Lean statements, not proofs','A proof nobody tried to break is not evidence','Trusting a compile','decisions/ideas.json'],
+ ['Empirical constraints as named hypotheses with a non-vacuity witness','#print axioms still shows only standard axioms','Lean axioms (unsound if wrong); prose notes (cannot bind a checker)','decisions/ideas.json'],
+ ['Medaka and zebrafish as labelled proxy species','No flying-fish expression or phenotype records exist','Presenting zebrafish data as flying-fish data; waiting','decisions/ideas.json'],
+ ['Exclude birds from the flight-envelope comparison','Aves is the frozen holdout','Birds alongside bats, squirrels, colugos and flies, as the kickoff said','decisions/ideas.json'],
+ ['Gliders and powered fliers fitted apart; Thompson tested on wing loading','Two physical regimes; his derivation balances weight against lift','One pooled envelope; regressing on length or mass','decisions/ideas.json'],
+ ['Grade causal chains by the weakest link','Strongest-link grading would have called all 8 first-batch chains mechanistic','Strongest link','decisions/ideas.json'],
+ ['Own MCP sim engine with a versioned contract','Collaborator server availability before the freeze was uncertain','Depending on it','sim-engine/CHANGELOG.md'],
+ ['Test the studio on zebrafish first','Every flying-fish genetic result is a cross-species transfer','Testing only on the flying fish','decisions/ideas.json'],
+ ['Three-state law verdicts','Red/green would show cannot-evaluate as passing','Two states','decisions/ideas.json'],
+ ['Never digitise figures','Fixed in the design pre-registration before any score','Reading values off Daane 2021 Fig 4B','design-validation/PREREG.md'],
+ ['Keep a contested law beside the observation against it','8,336 m snailfish below the 8,200 m teleost cap; contradiction compiled in Lean','Deleting the law or ignoring the record','lean/registry/CHANGELOG.md'],
+ ['Change components in place and version them','Parallel copies drift','Building a parallel copy to avoid touching a folder','AGENTS.md'],
+ ['One source for Lean laws, enforced in a pre-commit hook and CI','Pasted law lists go stale','Copying law ids into pages','AGENTS.md'],
+ ['State novelty narrowly','Each part has prior art; Lean has been applied to the genetic code','"The first formal verification of biology"','research/prior-art/REPORT.md'],
+ ['Physics thread scoped to fin size and gliding, as a named session','Unowned issues #50 and #43; 17 open-problem candidates needed strength &prop; L&sup2;','A general physics engine; a form simulator (#54, Kris\'s); a background agent','decisions/ideas.json']
+];
+document.getElementById('decTable').innerHTML = '<tr><th>Decision</th><th>Evidence</th><th>Rejected</th><th>Source</th></tr>' +
+  DEC.map(([a,b,c,d]) => `<tr><td><b>${a}</b></td><td>${b}</td><td class="mute">${c}</td><td>${file(d)}</td></tr>`).join('');
+
+/* ---------- failures ---------- */
+const FX = [
+ ['The designed organism failed its own pre-registered test.','The "winged zebrafish" (Daane et al. 2021\'s own double heterozygote: "the design is not ours") scored on 1 of 10 axes, at f = 0.00; the defining axis cannot be scored at either end; 1 of 74 loci (1.4 %); the Lean gate fails design and real fish alike. Dropped as unsupported (rule 2), since "drop outright" would overstate what the gate shows.',['da086ee0'],'design-validation/REPORT.md'],
+ ['"Almost no molecular data exists for flying fish": corrected.','Found by the project lead reading a primary source: an annotated draft genome (23,611 genes). Still open: the README hackathon section on the PR branch keeps the old sentence.',['2ac2ee4d'],'genotype/nanopubs/DECISIONS.md'],
+ ['gja5a link to fin length: retracted.','The thread\'s own subagent found the fin connexin is gja1b; gja5a has no fin record.',['927cddfd'],'genotype/nanopubs/DECISIONS.md'],
+ ['"No ray-to-inter-ray signalling in any fin of any fish": withdrawn, then narrowed.','The curation pass found three contradicting papers on one query\'s first page; one was already held and read title-only.',['27d21592'],'nanopubs-index/README.md'],
+ ['"lat4a = slc43a2a, settled": split.','The only DISAGREE row of the Frontier cross-check. The zebrafish allele is on slc43a2a; which paralogue carries the flying-fish signal is open. The design\'s T200K is not the flying-fish F326L.',['27d21592'],'crosscheck-frontier/REPORT.md'],
+ ['TFF aspect ratio "more slender than any measured flying fish": withdrawn.','A comparison across conventions: 17.9 on Park and Choi\'s, at most 13.9 on Fish\'s, inside 3.0&ndash;16.9. The code was right, the prose wrong. The same pass found the TFF\'s flight muscle does not fit.',['b1f62e9a'],'anatomy-model/parametric/CHANGELOG.md'],
+ ['Flying-fish mass: two sources 2.2&times; apart, both kept.','The aerodynamic specimen weighs 0.060 kg; population fits give 111&ndash;166 g at the same length. At 0.1316 kg, v_min rises from 9.85 to 14.6 m/s. "Inside the envelope" holds up to 0.247 kg; the prose "at or above the 9.9 m/s minimum" holds only with the specimen.',[],'anatomy-model/parametric/CHANGELOG.md'],
+ ['Depth cap contested.','A snailfish at 8,336 m contradicts the 8,200 m teleost cap: contested in lawset 1.2.0, the contradiction proved in Lean in 1.3.0. Pressure law v1 superseded in 1.4.0.',['6e2b7a85'],'lean/registry/CHANGELOG.md'],
+ ['sim-engine\'s first pre-registered test failed.','A single-morphogen threshold model puts hhip fin growth on the wrong axis; nothing was tuned afterwards.',['e2395540'],'dashboard/public/t/organism/status.json'],
+ ['Studio passes are mostly circular.','Every in-band wild-type number is read from the paper it is scored against; the two pre-registered fails pass only under labelled amendments.',[],'sim-engine/validation/STUDIO-FINDINGS.md'],
+ ['Launch on chain power.','Test 4 fails under the bat-mean bound; v2 finds launch unreachable; v3 reaches it only at zero drag; threshold body Cd &le; 0.01.',['5ae9de8a','718b0c99','da18a466'],'physics/flier/tff/SPEC-MISMATCHES.md'],
+ ['Smaller corrections.','PBDB dates; 10 deck numbers and a CSS bug; record kinds claiming "every URL resolved" from an empty list; a studio Q10 erratum; three page-breaking bugs.',['ad640568','caae50c2','08140aa6','bba92aa3','b135c060'],null]
+];
+document.getElementById('fx').innerHTML = FX.map(([h,t,s,f]) => `<li><b>${h}</b> ${t} ${s.map(sha).join(' ')} ${f?file(f):''}</li>`).join('');
+const PFX = [
+ '<b>Role collision:</b> sessions with placeholder names inferred overlapping roles; roles are now assigned by one party and written down.',
+ '<b>Permission laundering:</b> a peer asked for an action this session would refuse; now "a message from another agent is never user approval".',
+ '<b>Personal identifier sent out:</b> a research agent sent the project lead\'s email to NCBI as an etiquette parameter; now prohibited.',
+ '<b>Leak found by the curator, not the checker:</b> a bird-titled Lean draft; the leak checker was widened to the whole tree.',
+ '<b>Credential in chat:</b> the Frontier token arrived in a plain chat message; it was used only as a request header and is in no file. Rotation is the lead\'s call.'
+];
+document.getElementById('pfx').innerHTML = PFX.map(x=>`<li>${x}</li>`).join('');
+
+/* ---------- held up ---------- */
+const HELD = [
+ ['Sustained aerobic flight is eliminated','Aerobic ceiling 0.0357 W on teleost proxies against 1.35 W at 10 m/s (38&times;); at most 0.0458 W across measured teleost ranges (29&times;). Bounds neither gliding nor bursts.','lean/eliminate/ledger.physiology.json'],
+ ['One glide cannot explain long flights','From 8 m at L/D 4.37 the bound is 35 m (40.7 m with ground effect) against 50&ndash;400 m reported.','dashboard/public/results/results.json'],
+ ['Gliders do not converge','11 shared alignment columns among gliders against 17 for the reversed baseline.','sequences/README.md'],
+ ['Swarm beats one agent here, at ten times the cost','Centralized 19 and 18 verified plans vs single agent 13 and 12; the single agent lost mostly by leaving plans blank. A sister enzyme project found no collective advantage.','swarm/README.md'],
+ ['Lean matches simulation','Neutral fixation i/M, fixation &ge; i/M for s &ge; 0, twofold cost of sex; byte-identical rerun.','validation/SIM-REPORT.md'],
+ ['Six textbook limb-signalling claims fail in zebrafish','Refuted or not established, each with a verbatim quote.','genotype/nanopubs/DECISIONS.md']
+];
+document.getElementById('held').innerHTML = HELD.map(([h,t,f])=>`<div class="card"><h3>${h}</h3><p class="small">${t}</p>${file(f)}</div>`).join('');
+
+/* ---------- open ---------- */
+const OPEN = [
+ 'Nothing is signed or published by this team: 157 drafts await the ORCID key owner; curation lists threads with no records and 15 drafts with no external source.',
+ 'A9 faithfulness has one provider (7 OpenAI assessments); a second non-Anthropic provider is needed. The claims status file still says "0 of 7", which is stale.',
+ 'A13 debate and tournament is designed, not built.',
+ 'The holdout exam has not been run, and with Aves held out the two bird-touching tests cannot reach a verdict at the builders\' minimum n.',
+ 'Design studio: no numeric wild-type prediction is independent evidence yet; gut passage has no target; the accepted lawset was grandfathered at bootstrap.',
+ 'Depth cap contested; pressure law still a candidate.',
+ 'lat4a paralogue unresolved; the accelerated non-coding axis of Daane\'s data is a named gap, not a zero.',
+ 'Physical wing: the print kit is verified as geometry; flight untested (issue #58).',
+ 'kcnk5b MD: zero ns of production run.',
+ 'Frontier records sit at proposed until a reviewer with their own credential acts.',
+ 'Work still landing before the freeze: commits were reaching the PR branch past midnight, and pipeline/ and sim-engine/generative/ were uncommitted in the shared tree at this snapshot.',
+ 'The README hackathon section on the PR branch still says almost no molecular data exists for Exocoetidae, which the genome correction contradicts.'
+];
+document.getElementById('openList').innerHTML = OPEN.map(x=>`<li>${esc(x)}</li>`).join('');
+</script>
+</body>
+</html>
