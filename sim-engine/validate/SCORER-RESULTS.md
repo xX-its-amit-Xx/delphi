@@ -122,4 +122,53 @@ flight-muscle budget. Nothing else.**
 - **Birds** are excluded everywhere (frozen holdout).
 
 <!-- V11:BEGIN -->
+## v1.1.0, beside v1.0.0
+
+Pre-registration: `SCORER-PREREGISTRATION-v1.1.0.md`, sha256 on its last line, hashed before the run. The weights
+are in `score-weights.v1.1.0.json` and the data in `scorer-results.v1.1.0.json`. **This run is not blind.** v1.1.0
+was built after reading every v1.0.0 failure on these same sets, as the pre-registration discloses. The real test
+of v1.1.0 is the independent evaluator's run on the benchmark builder's frozen set, including
+`benchmark/heldout/`, which I have not read.
+
+| id | criterion | v1.0.0 | v1.1.0 |
+|---|---|---|---|
+| C1 | held-out test-species specimens plausible ≥ 90 % | PASS 98.7 % | PASS 98.7 % |
+| C2 | 3 real organisms plausible, own lineage excluded | FAIL 2/3 | **FAIL** 2/3 (zebrafish larva 0.45, was 0.14) |
+| C3 | ontogeny stages plausible ≥ 90 %, own lineage excluded | FAIL 83 % | **FAIL 75 %** (worse: flying fish at 10 d now fails too) |
+| C4 | real mutants plausible ≥ 80 % | PASS 92.9 % | PASS 85.7 % (worse: the prdm1a tp39 larva, pectoral length −30 %, now falls below the tighter fin envelope) |
+| C5 | negatives implausible ≥ 90 %, every family ≥ 80 % | FAIL 82.3 % | **PASS 91.5 %** (N1 100 %, N2 100 %, N3 87.5 %, N4 91.3 %) |
+| C6 | AUC ≥ 0.90 | PASS 0.937 | PASS **0.994** |
+| C7 | seed stability | PASS | PASS |
+| C8 | no clearly implausible adversarial design scores plausible | FAIL 120/121 | **FAIL 2/121** |
+
+v1.0.0 passed 4 of 8; v1.1.0 passes 5 of 8.
+
+**What v1.1.0 fixed:**
+- **Negatives.** C5 now passes, and AUC rose from 0.94 to 0.99.
+- **The top score bin is clean.** In v1.0.0 it held 318 positives and 37 negatives; now it holds 317 positives and
+  2 negatives.
+- **Adversarial designs.** These now nearly all fail, but by construction: the STATE envelopes bound exactly the
+  fields the C8 predicate uses.
+
+**What it did not fix, or made worse:**
+- **Larvae (C2, C3).** The uncalibrated larval envelope (two lineages, widened ×/÷1.5) is too tight. A zebrafish
+  hatchling judged only against flying-fish larvae scores 0.45. The flying fish at 10 d now fails as well.
+  - **The underlying problem is unchanged:** there is no real larval reference data beyond our own two lineages.
+  - A sourced larval morphometric set (Parichy 2009 stages for zebrafish, plus other species) is what is needed. A
+    wider factor would only be tuning to this set.
+- **Peduncle masking (N4) is only partly fixed.** 26 of 300 N4 negatives still pass, all peduncle features.
+  - A peduncle value beyond range costs z² ≈ (0.5 range / scale)², averaged over 6 features.
+  - For some specimens that stays under the 99th-percentile threshold.
+  - Tighter feature-wise range checks would catch them. The phenotype sanity check already flags them as failed;
+    it does not enter the score.
+- **Adversarial: 2 survivors.** Both are gill area ×0.08 (flying fish 0.65; zebrafish with section exponent ×1.13,
+  0.56). The gill envelope is widened ×/÷1.5 below the 7-species minimum, which is trout at 155 mm²/g. A ×0.08
+  gill lies only about 0.1 decade beyond it. The predicate's threshold (≤ 0.1×) is stricter than the envelope.
+- **A real fin mutant now fails (C4).** The tighter fin envelope rejects the prdm1a tp39 hypomorph larva.
+  **Tightening the fins traded one false negative for one false positive.**
+- **Zebrafish pectoral ×6 (0.93 SL) still scores 0.60.** The extended 0.823 bound leaves it only 0.05 decade
+  outside.
+
+**Both versions stay callable** (`designScore(design, {version})`). v1.0.0 is the default because it is the version
+whose validation was blind.
 <!-- V11:END -->

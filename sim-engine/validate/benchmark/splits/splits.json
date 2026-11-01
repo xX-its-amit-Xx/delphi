@@ -1,0 +1,17 @@
+{
+ "version": "v1",
+ "applies_to": ["dev/items.jsonl", "heldout/items.jsonl", "dev/own-models.jsonl"],
+ "how": "Every item carries exclusion = {specimen, species, genus, family}: the union over the item itself (positives) or over every real specimen used to build it (negatives: base specimen plus every trait donor). Under split S, when the scorer scores item i, its reference data must contain NO record whose S-key is listed in i.exclusion[S-key]. Pass these to designScore's leave-out options; if the scorer cannot honour a key, the evaluator reports that split as NOT RUN rather than substituting another.",
+ "splits": {
+  "leave_one_specimen_out": {"key": "specimen", "meaning": "exclude the item's own specimen record(s). FishShapes specimen keys are museum LOT ids (fishshapes-lot:<SpecimenID>) because one lot holds several near-identical fish; the whole lot is excluded. FishBase keys are picture names (fishbase-pic:<PicName>).", "reference_record_mapping": "FishShapes row r of FishShapes_specimensv1.csv <-> item source.record.row (1-based line number incl. header) and source.record.SpecimenID_lot"},
+  "leave_one_species_out": {"key": "species", "meaning": "exclude every record of any species in exclusion.species (binomial, space-separated; FishShapes Tree_name with '_' -> ' ')"},
+  "leave_one_genus_out": {"key": "genus", "meaning": "exclude every record of any genus in exclusion.genus"},
+  "leave_one_family_out": {"key": "family", "meaning": "exclude every record of any family in exclusion.family. Family names follow FishShapes v1; FishBase items whose genus occurs in FishShapes are mapped to the FishShapes family, and the FishBase family name and known alternates (e.g. Danionidae for Danio) are also listed so either naming is excluded."}
+ },
+ "heldout_test": {
+  "files": ["heldout/items.jsonl", "heldout/families.json"],
+  "rule": "30% of families (salted-hash order, fixed in build/build.py before any score existed). Positives of those families, decoys/extrapolations built ONLY from those families' specimens, and a 30% hash sample of the synthetic law-breaker / impossible-combo / containment items.",
+  "access": "The scorer author must never read heldout/. Only the blind evaluator opens it, once, after the scorer and its weights are frozen."
+ },
+ "unlabelled": "dev/own-models.jsonl: the repository's own parametric organisms and designs. Scored and reported; never counted as positive or negative."
+}

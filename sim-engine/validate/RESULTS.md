@@ -154,5 +154,17 @@ The MCP tools live in `sim-engine/tools/validate-tools.mjs`, with the registrati
 `dashboard/public/blueprint3d/validate-panel.js`; the hub's patch to add the Validate button to `perturb.js` is
 `dashboard/public/blueprint3d/VALIDATE-PANEL-PATCH.md`.
 
-Run the tests with `node sim-engine/validate/test/validate.mjs`: 21 checks. `MUTATE=<check>` perturbs one check's
+**Scorer versions.**
+- **v1.0.0** is the default. It is pre-registered and validated, and its weights are in `score-weights.json`. The
+  tables above use it.
+- **v1.1.0** is in `score-weights.v1.1.0.json` (pre-registration `SCORER-PREREGISTRATION-v1.1.0.md`). It adds:
+  - STATE-field envelopes;
+  - a missing-feature penalty;
+  - larval envelopes;
+  - tighter fin envelopes.
+
+  Select it with `designScore(design, {version: '1.1.0'})`. The two versions are compared side by side in
+  `SCORER-RESULTS.md`.
+
+Run the tests with `node sim-engine/validate/test/validate.mjs`: 24 checks. `MUTATE=<check>` perturbs one check's
 input, and each check was seen to fail under its mutation.
