@@ -29,14 +29,22 @@
     t.className = 'vtoggle';
     t.setAttribute('role', 'group');
     t.setAttribute('aria-label', 'Depth');
-    t.innerHTML = `<button data-view-btn="blog">Blog</button><button data-view-btn="tech">Technical report</button>`;
+    // THREE views. Blog is prose for a reader with no background; skim is the structured
+    // version with the four sections per product; deep is the full report with the runs.
+    t.innerHTML = `<button data-view-btn="blog">Blog</button>`
+      + `<button data-view-btn="skim">Technical &middot; skim</button>`
+      + `<button data-view-btn="deep">Technical &middot; deep</button>`;
     // The humans/agents switch belongs in BOTH views: "how each step works" has an agent form
     // whether or not the reader wants the deep technical body underneath it.
-    document.querySelector('.toggle')?.classList.add('keep-in-blog');
+    // (the humans/agents switch is hidden in prose view by CSS, shown in both technical views)
     bar.insertBefore(t, bar.querySelector('.toggle'));
     t.addEventListener('click', e => { const b = e.target.closest('[data-view-btn]'); if (b) setView(b.dataset.viewBtn); });
     let v = 'blog';
     try { v = localStorage.getItem(VIEW_KEY) || 'blog'; } catch { /* ignore */ }
+    // The views used to be blog/tech. Anyone carrying a stored 'tech' gets the deep report,
+    // and a stored 'blog' now means prose — which is what that reader asked for anyway.
+    if (v === 'tech') v = 'deep';
+    if (!['blog', 'skim', 'deep'].includes(v)) v = 'blog';
     setView(v === 'tech' ? 'tech' : 'blog');
   }
 

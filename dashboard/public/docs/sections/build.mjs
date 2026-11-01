@@ -182,24 +182,14 @@ for (const e of SPONSORS.entries) {
   must(STATUSES.has(e.status), `sponsor ${e.tool}: bad status ${e.status}`);
   must(e.evidence && e.limit, `sponsor ${e.tool}: needs evidence and a stated limit`);
 }
-const orx = SPONSORS.entries.find(e => /OpenResearch/i.test(e.tool));
-if (orx && orx.status === 'unavailable') {
-  // Walk the tree in-process rather than shelling out: a nested eval here needed four levels of
-  // escaping and broke on the first run. A recorded run id anywhere means the status is stale.
-  const hits = [];
-  (function walk(dir) {
-    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (e.name === 'node_modules' || e.name === '.git') continue;
-      const f = path.join(dir, e.name);
-      if (e.isDirectory()) walk(f);
-      else if (e.name.endsWith('.json')) {
-        try { if (/openresearch[_-]run[_-]id/i.test(fs.readFileSync(f, 'utf8'))) hits.push(f); } catch { /* unreadable */ }
-      }
-    }
-  })(root);
-  must(hits.length === 0,
-    `sponsors.json calls OpenResearch unavailable, but ${hits.length} file(s) now record a run id `
-    + `(${hits.slice(0, 2).map(h => path.relative(root, h)).join(', ')}) — update the status`);
+// The OpenResearch entry says USED, and the earlier guard here asserted the opposite. That guard
+// was built on a wrong finding: I searched only our own branch, which predates the restructure and
+// has no studio/ directory, and I probed the public REST API when orx is a CLI. The record is
+// sponsors/OPENRESEARCH.md on the central repo. Note that `orx discover` issues NO run identifier
+// by design, and every record carries run_identifier: null rather than an invented one - so the
+// ABSENCE of run ids is the project refusing to fabricate one, not evidence it never ran.
+for (const e of SPONSORS.entries) {
+  must(e.who, `sponsor ${e.tool}: needs a who field so the page credits the thread that did the work`);
 }
 const ENTRY = /^node (sim-engine|mcp|lean|holdout|dashboard)\//;
 for (const [k, steps] of Object.entries(AGENT)) {
