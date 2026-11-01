@@ -427,7 +427,7 @@ export async function mount(opts = {}) {
   host.innerHTML = layoutHtml();
   const $ = sel => host.querySelector(sel);
   const stage = $('#s3Stage');
-  stage.insertBefore(canvas, stage.firstChild);
+  stage.appendChild(canvas);
   canvas.id = 's3Canvas';
   canvas.style.cssText = 'display:block;width:100%;height:100%;touch-action:none';
 
@@ -503,6 +503,12 @@ export async function mount(opts = {}) {
   bandMesh.visible = false; bandMesh.frustumCulled = false;
   traj.add(bandMesh);
 
+  const medGeo = new THREE.BufferGeometry();
+  const medMat = new THREE.LineBasicMaterial({ color: 0xf2fbf7, transparent: true, opacity: 0.95 });
+  const medLine = new THREE.Line(medGeo, medMat);
+  medLine.visible = false; medLine.frustumCulled = false;
+  traj.add(medLine);
+
   const markGeo = new THREE.BufferGeometry();
   const markMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.8 });
   const markLines = new THREE.LineSegments(markGeo, markMat);
@@ -516,9 +522,11 @@ export async function mount(opts = {}) {
     speciesKey: 'flying-fish', playing: true, rate: 1, cam: 'follow',
     t: 0, T: 1, wall: 0, frames: 0, fps: 0, fpsAt: 0,
     fish: null, fishSpec: null, tr: null, d: null, solved: null,
-    ensemble: null, ensembleDraws: 24, seed: 1,
+    ensemble: null, ensembleDraws: 48, seed: null, seaWind: null, panelNote: '',
     notFlown: null, hudAt: 0, lastEmit: 0,
   };
+  // the ensemble seed travels in the URL, through creatures.js's own helpers, so a band is reproducible
+  st.seed = (creatures && creatures.seedFromUrl) ? creatures.seedFromUrl(location.search) : 'delphi-v1';
   let orbit = null;
   try {
     orbit = new OrbitControls(camera, renderer.domElement);
@@ -536,6 +544,9 @@ export async function mount(opts = {}) {
     st.t = clamp(st.t, 0, st.T);
     buildPath(tr, d);
     sizeOcean(tr);
+    // a new run makes any ensemble on screen stale: drop it rather than leave a band belonging to
+    // parameters that are no longer loaded
+    if (st.ensemble) { st.ensemble = null; bandMesh.visible = false; medLine.visible = false; pathMat.opacity = 0.95; }
     if (st.fish) st.fish.holder.visible = true;
     syncInputs();
     renderLegend();
@@ -592,7 +603,7 @@ export async function mount(opts = {}) {
 
     // text labels
     while (labels.children.length) { const c = labels.children.pop(); if (c.material && c.material.map) c.material.map.dispose(); if (c.material) c.material.dispose(); }
-    const addLabel = (text, x, y, z, h_m) => {
+    const addLabel = (text, x, y, z) => {
       const cv = document.createElement('canvas');
       const pad = 8, fontPx = 34;
       const ctx = cv.getContext('2d');
@@ -608,17 +619,20 @@ export async function mount(opts = {}) {
       const tex = new THREE.CanvasTexture(cv);
       tex.colorSpace = THREE.SRGBColorSpace;
       const sp2 = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
-      sp2.scale.set(h_m * cv.width / cv.height, h_m, 1);
+      // the scale is set every frame in sizeLabels() so a label keeps the same height in PIXELS whatever
+      // the camera distance is: a world-sized label is either invisible from far off or fills the screen.
+      sp2.userData.aspect = cv.width / cv.height;
+      sp2.renderOrder = 12;
       sp2.position.set(x, y, z);
       labels.add(sp2);
       return sp2;
     };
-    const lh = Math.max(0.16, tr.xmax * 0.016);
-    addLabel('1 m', -1.1, 0.26, 2.2, lh * 0.9);
-    if (tr.launch) addLabel('launch ' + fx(tr.launch.v, 1) + ' m/s', tr.launch.x, Math.max(0.7, tr.apex.z + 0.42), 0, lh);
-    if (tr.touchdown) addLabel('touchdown ' + fx(tr.touchdown.x, 1) + ' m', tr.touchdown.x, Math.max(0.7, tr.apex.z + 0.42), 0, lh);
-    if (tr.apex && tr.leanBound_m > 0) addLabel('Lean bound ' + fx(tr.leanBound_m, 2) + ' m', tr.glideFrom + tr.leanBound_m, Math.max(0.56, tr.apex.z + 0.16), 0, lh * 0.95);
-    addLabel('depth 0 → ' + fx(tr.zmin, 2) + ' m', -1.9, tr.zmin + 0.1, 0, lh * 0.9);
+    const top = tr.apex ? Math.max(0.5, tr.apex.z + 0.22) : 0.5;
+    addLabel('1 m', -1.1, 0.3, 2.2);
+    if (tr.launch) addLabel('launch ' + fx(tr.launch.v, 1) + ' m/s', tr.launch.x, top, 0);
+    if (tr.touchdown) addLabel('touchdown ' + fx(tr.touchdown.x, 1) + ' m', tr.touchdown.x, top, 0);
+    if (tr.apex && tr.leanBound_m > 0) addLabel('Lean bound ' + fx(tr.leanBound_m, 2) + ' m', tr.glideFrom + tr.leanBound_m, top * 0.72, 0);
+    addLabel('depth ' + fx(tr.zmin, 2) + ' m', -1.9, tr.zmin + 0.06, 0);
   }
 
   // ---- species
@@ -726,10 +740,14 @@ export async function mount(opts = {}) {
     </ul>
     <b style="display:block;margin-top:8px">Single run, or an ensemble</b>
     ${ens
-        ? `<b>Ensemble — physics, not decoration.</b> ${ens.draws} seeded draws (seed <code>${esc(ens.seed)}</code>) from creatures.js's stated distributions (${esc(ens.distributions.join('; '))}), and <b>every draw is a complete solve by this page's own solver</b> (creatures.js's <code>run</code> hook is pointed at <code>solveWith</code>, so no second model is involved). The shaded corridor is the 5–95 % band of height against distance; the solid line is still the deterministic run. ${ens.canGlideFraction != null ? `${(ens.canGlideFraction * 100).toFixed(0)} % of the draws are lift-supported at launch.` : ''} ${ens.gate ? esc(ens.gate.note) : ''} Drawn quantities this solver has <b>no input for</b>, so they were not applied: ${esc(ens.unmapped.join(', '))}.`
+        ? `<b>Ensemble — physics, not decoration.</b> ${ens.draws} seeded draws (seed <code>${esc(ens.seed)}</code>, carried in the URL as <code>?cseed=</code>) from creatures.js's stated distributions (${esc(ens.distributions.join('; '))}), and <b>every draw is a complete solve by this page's own solver</b>: creatures.js's <code>run</code> hook is pointed at <code>solveWith</code>, so the band and the line come from one set of equations, not two. The shaded corridor is the 5–95 % band of height against distance and the pale line is the median; the phase-coloured line is still the deterministic run, dimmed while the band is up. ${ens.canGlideFraction != null ? `${(ens.canGlideFraction * 100).toFixed(0)} % of the draws are lift-supported at launch.` : ''} ${ens.gate ? esc(ens.gate.note) : ''} Drawn quantities this solver has <b>no input for</b>, so they were not applied: ${esc(ens.unmapped.join(', '))}.`
         : `<b>Single deterministic run.</b> One solve, one line, no band: nothing on screen is sampled from a distribution, so none of it is an uncertainty estimate. ${creatures ? 'Press <b>ensemble</b> to draw from creatures.js’s stated distributions and solve each draw.' : '<code>creatures.js</code> is not available here.'}`}
+    ${st.seaWind != null ? `<p class="small" style="margin:6px 0 0"><b>The sea is drawn at a what-if ${fx(st.seaWind, 0)} m/s wind.</b> <code>conditions/baseline.json</code> locks the conditions to calm and this solver has no sea state at all, so this changed the picture and <b>not one number</b>.</p>` : ''}
   </div>
 </div>
+${creatures && creatures.legendHtml ? `<div style="margin:10px 0 0;border-top:1px solid var(--line);padding-top:8px">${creatures.legendHtml()}
+  <p class="small mute" style="margin:6px 0 0">In this 3D view the line styles are: the phase-coloured line is the deterministic run (dimmed while a band is up), the pale solid line is the ensemble median, the shaded corridor the 5–95 % band.</p></div>` : ''}
+${creatures && creatures.SCOPE_NOTES ? `<details style="margin:8px 0 0"><summary class="small"><b>What this ensemble cannot tell you</b> — ${creatures.SCOPE_NOTES.length} stated limits of the model, including that it does <b>not</b> reproduce the 50 m field glide and that its height band runs past the 8 m highest flight ever recorded</summary><ul class="small mute" style="margin:6px 0 0;padding-left:18px">${creatures.SCOPE_NOTES.map(n => `<li style="margin:0 0 6px">${esc(n)}</li>`).join('')}</ul><p class="small mute">Those figures are creatures.js's own, measured on its integrated ensemble. The band drawn here is solved by this page's solver instead, so its numbers differ; the two limits — a fixed angle of attack through the glide, and 50 m sitting above the band — are properties of the shared model and apply to both.</p></details>` : ''}
 <p class="small mute" style="margin:8px 0 0">${esc(spec.meshNote || '')} ${esc(st.panelNote || '')}</p>`;
   }
 
@@ -738,16 +756,19 @@ export async function mount(opts = {}) {
     const m = st.tr.metrics, d = st.d;
     const wind = d.wind || 0;
     const air = wind ? Math.hypot(s.vx + wind, s.vz) : s.v;
+    const inAir = phase === 'glide' || phase === 'taxi';
     const geR = d.b > 0 ? Math.max(0, s.z) / d.b : 99;
     const geF = B.groundEffectOn() ? (geR >= 0.97 ? 1 : geR <= 0.33 ? 0.86 : 1 - (0.97 - geR) / (0.97 - 0.33) * 0.14) : 1;
-    const ratio = (s.vz < -0.05) ? (s.vx / -s.vz) : null;
+    const ratio = (phase === 'glide' && s.vz < -0.05) ? (s.vx / -s.vz) : null;
     const past = Math.max(0, s.x - st.tr.glideFrom);
     const over = phase === 'glide' && past > st.tr.leanBound_m;
     hud().innerHTML =
       `<div><b>${esc(PHASE_LABEL[phase] || phase)}</b> &nbsp; t ${fx(s.t)} s &nbsp; x ${fx(s.x)} m &nbsp; ${s.z >= 0 ? 'height' : 'depth'} ${fx(Math.abs(s.z), 3)} m</div>
 <div>speed ${fx(s.v)} m/s${wind ? ` (airspeed ${fx(air)} with ${fx(wind, 1)} m/s headwind)` : ''} &nbsp; v<sub>min</sub> ${fx(m.v_min_m_s)} &nbsp; margin ${s.v - m.v_min_m_s >= 0 ? '+' : ''}${fx(s.v - m.v_min_m_s)} m/s</div>
-<div>glide ratio now ${ratio == null ? '—' : fx(ratio, 1)} &nbsp; (L/D)max ${fx(m.LD_max)} &nbsp; ground-effect drag ×${fx(geF, 3)}</div>
-<div>Lean-covered ${fx(m.glide_range_lean_bound_m, 2)} m${over ? ` — <b style="color:#ffbe6a">EXCEEDED</b> by ${fx(past - st.tr.leanBound_m, 2)} m (kinetic phase, outside the theorem)` : (phase === 'glide' ? ` — inside it (${fx(past, 2)} m flown)` : '')}</div>`;
+<div>${inAir ? `glide ratio now ${ratio == null ? '— (not descending)' : fx(ratio, 1)} &nbsp; (L/D)max ${fx(m.LD_max)} &nbsp; ground-effect drag ×${fx(geF, 3)}` : 'in the water: the glide ratio and the ground effect are aerodynamic and do not apply here'}</div>
+<div>${m.airborne
+          ? `Lean-covered ${fx(m.glide_range_lean_bound_m, 2)} m${over ? ` — <b style="color:#ffbe6a">EXCEEDED</b> by ${fx(past - st.tr.leanBound_m, 2)} m (kinetic phase, outside the theorem)` : (phase === 'glide' ? ` — inside it (${fx(past, 2)} m flown)` : '')}`
+          : 'no glide in this run, so there is no Lean-covered range'}</div>`;
   }
 
   // ---- sampling the solver's run at an arbitrary time (linear interpolation, nothing else)
@@ -869,17 +890,34 @@ export async function mount(opts = {}) {
       }
     }
 
+    sizeLabels();
     if (now - st.hudAt > 90) { st.hudAt = now; renderHud(s, s.ph); const fpsEl = $('#s3fps'); if (fpsEl) fpsEl.textContent = st.fps.toFixed(0) + ' fps'; }
     if (orbit && orbit.enabled) orbit.update();
     renderer.render(scene, camera);
   }
 
+  // Labels at a constant height in pixels (18 px), so they read at any camera distance and never blanket
+  // the scene. Six sprites at most; no allocation.
+  const LABEL_PX = 18;
+  function sizeLabels() {
+    const H = renderer.domElement.clientHeight || 1;
+    const k = 2 * Math.tan(camera.fov * Math.PI / 360) / H * LABEL_PX;
+    for (let i = 0; i < labels.children.length; i++) {
+      const sp = labels.children[i];
+      const d = camera.position.distanceTo(sp.position);
+      const h = d * k;
+      sp.scale.set(h * (sp.userData.aspect || 4), h, 1);
+      sp.visible = d < 260;
+    }
+  }
+
   function placeCamera(s, dt) {
     const f = st.fish;
     const L = f ? Math.max(0.05, f.length_m) : 0.25;
-    const D = Math.max(0.8, 7 * L);
+    const D = Math.max(0.55, 4.6 * L); // the fish is ~1/8 of the frame at this distance
     const px = f ? f.holder.position.x : 0, py = f ? f.holder.position.y : 0;
     const k = 1 - Math.exp(-dt * 6); // DECORATIVE smoothing
+    const submerged = !!(st.fishSpec && st.fishSpec.flown && s.z < -0.02);
     if (st.cam === 'orbit') {
       if (orbit) { orbit.target.set(px, py, 0); }
       return;
@@ -891,14 +929,17 @@ export async function mount(opts = {}) {
       camera.lookAt(_v2);
       return;
     }
+    // When the fish is under water the camera goes under with it: the sea surface is opaque from above,
+    // so keeping the camera in the air would hide the whole swim phase behind it.
+    const rise = submerged ? Math.min(0.30 * D, 0.25 * Math.abs(s.z)) : 0.34 * D;
     if (st.cam === 'side') {
-      _camWant.set(px, Math.max(0.25 + L, py + L * 0.4), D * 3.2);
-      _camLook.set(px, Math.max(0.1, py), 0);
-    } else { // follow
-      _v1.set(-1.55 * D, 0.52 * D, 1.25 * D);
+      _camWant.set(px + D * 0.35, py + rise, D * 3.0);
+      _camLook.set(px, py, 0);
+    } else { // follow: behind, a little above and to one side
+      _v1.set(-1.45 * D, rise, 1.15 * D);
       _camWant.set(px, py, 0).add(_v1);
-      if (_camWant.y < 0.12 + L) _camWant.y = 0.12 + L;
-      _camLook.set(px + D * 0.5, py, 0);
+      if (!submerged) _camWant.y = Math.max(_camWant.y, surfaceAt(px, 0) + L * 0.6);
+      _camLook.set(px + D * 0.9, py + L * 0.2, 0);
     }
     camera.position.lerp(_camWant, k);
     _v3.copy(_camLook);
@@ -957,6 +998,15 @@ export async function mount(opts = {}) {
     $('#s3alt').onchange = e => B.setParam('altitude_model', e.target.checked, { kind: 'assumed', source: 'switches the ISA density/PO2 model on; off in the committed non-altitude entries' });
     const ens = $('#s3ens');
     if (ens) ens.onclick = () => runEnsemble();
+    const sea = $('#s3sea');
+    if (sea) sea.onchange = e => {
+      // DECORATIVE ONLY. env3d recomputes its drawn sea; no solver number depends on it, and the legend
+      // keeps saying so. baseline.json stays the default and is what the page loads with.
+      st.seaWind = e.target.value === '' ? null : +e.target.value;
+      if (ocean.setConditions) ocean.setConditions(st.seaWind == null ? COND : { wind_m_s: st.seaWind });
+      else makeOceanOf(oceanSize || 64);
+      renderLegend();
+    };
   }
 
   // ---- ensemble: PHYSICS. creatures.js draws the parameter sets from its stated distributions; every draw
@@ -1019,25 +1069,27 @@ export async function mount(opts = {}) {
     return st.ensemble;
   }
 
-  // The corridor is drawn from the draws' own solved samples: a 5-95 % quantile band of z at each x bin.
+  // The corridor is drawn from the draws' own solved samples: the 5th-95th percentile of height at each
+  // distance bin, with the median as its own line. Each draw's points are {x, z} objects, the shape
+  // creatures.js's trajectories use, so a draw solved here and a draw solved there read the same way.
   function drawBand(runs) {
     const nb = 160;
     let xmax = 0;
     for (const r of runs) for (const s of r) if (s.x > xmax) xmax = s.x;
-    const lo = new Float32Array(nb), hi = new Float32Array(nb), seen = new Uint16Array(nb);
+    if (!(xmax > 0)) return;
     const bins = Array.from({ length: nb }, () => []);
     for (const r of runs) for (const s of r) { const b = Math.min(nb - 1, Math.floor(s.x / xmax * nb)); bins[b].push(s.z); }
+    const pos = [], idx = [], med = [];
+    let n = 0;
     for (let b = 0; b < nb; b++) {
       const a = bins[b]; if (!a.length) continue;
       a.sort((p, q) => p - q);
-      lo[b] = a[Math.floor(a.length * 0.05)]; hi[b] = a[Math.min(a.length - 1, Math.floor(a.length * 0.95))]; seen[b] = 1;
-    }
-    const pos = [], idx = [];
-    let n = 0;
-    for (let b = 0; b < nb; b++) {
-      if (!seen[b]) continue;
+      const lo = a[Math.floor(a.length * 0.05)];
+      const hi = a[Math.min(a.length - 1, Math.floor(a.length * 0.95))];
+      const mid = a[Math.floor(a.length * 0.5)];
       const x = (b + 0.5) / nb * xmax;
-      pos.push(x, lo[b], 0, x, hi[b], 0);
+      pos.push(x, lo, 0, x, hi, 0);
+      med.push(x, mid, 0);
       if (n > 0) { const a0 = (n - 1) * 2; idx.push(a0, a0 + 1, a0 + 2, a0 + 1, a0 + 3, a0 + 2); }
       n++;
     }
@@ -1045,6 +1097,10 @@ export async function mount(opts = {}) {
     bandGeo.setIndex(idx);
     bandGeo.computeBoundingSphere();
     bandMesh.visible = true;
+    medGeo.setAttribute('position', new THREE.Float32BufferAttribute(med, 3));
+    medGeo.computeBoundingSphere();
+    medLine.visible = true;
+    pathMat.opacity = 0.45; // the deterministic run steps back while an ensemble is on screen
   }
 
   // ---- optional panels
@@ -1164,9 +1220,9 @@ function layoutHtml() {
 #sim3d h3{margin:0 0 4px}
 #s3stageWrap{position:relative;margin:8px 0 0}
 #s3Stage{position:relative;width:100%;aspect-ratio:16/9;min-height:280px;max-height:62vh;border-radius:10px;overflow:hidden;background:#9ec4d8;border:1px solid var(--line)}
-#s3hud{position:absolute;left:8px;top:8px;max-width:min(430px,62%);padding:7px 9px;border-radius:8px;background:rgba(6,22,27,.62);color:#eaf6f8;font:500 11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;pointer-events:none;backdrop-filter:blur(3px)}
-#s3fps{position:absolute;right:8px;top:8px;padding:3px 7px;border-radius:7px;background:rgba(6,22,27,.55);color:#cfe8ee;font:500 11px ui-monospace,monospace;pointer-events:none}
-#s3msg{position:absolute;left:8px;right:8px;bottom:8px;padding:8px 10px;border-radius:8px;background:rgba(120,30,20,.88);color:#fff;font-size:12.5px;display:none}
+#s3hud{position:absolute;left:8px;top:8px;max-width:min(430px,60%);padding:7px 9px;border-radius:8px;background:rgba(6,22,27,.62);color:#eaf6f8;font:500 11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;pointer-events:none;backdrop-filter:blur(3px)}
+#s3fps{position:absolute;right:8px;top:8px;z-index:2;padding:3px 7px;border-radius:7px;background:rgba(6,22,27,.55);color:#cfe8ee;font:500 11px ui-monospace,monospace;pointer-events:none}
+#s3msg{position:absolute;left:8px;right:8px;bottom:8px;z-index:2;padding:8px 10px;border-radius:8px;background:rgba(120,30,20,.92);color:#fff;font-size:12.5px;display:none}
 #s3ctl{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:10px 0 0}
 #s3ctl label{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--mute);flex-wrap:wrap}
 #s3ctl input[type=range]{width:120px;max-width:38vw}
@@ -1178,21 +1234,23 @@ function layoutHtml() {
 #s3banner{margin:8px 0 0;padding:8px 10px;border:1px solid var(--bad);border-left-width:4px;border-radius:8px;font-size:13px;display:none}
 #s3legend{margin:10px 0 0;border-top:1px solid var(--line);padding-top:10px}
 .s3slot{display:none;margin:10px 0 0;border-top:1px solid var(--line);padding-top:10px}
-@media (max-width:560px){
-  #s3Stage{aspect-ratio:4/3;min-height:230px}
-  #s3hud{font-size:10.5px;max-width:74%;left:5px;top:5px;padding:5px 7px}
+/* On a narrow screen the readout moves OUT of the picture: overlaid, it covered most of the scene. */
+@media (max-width:620px){
+  #s3Stage{aspect-ratio:4/3;min-height:220px}
+  #s3hud{position:static;max-width:none;margin:6px 0 0;font-size:11px;background:var(--code);color:var(--ink);border:1px solid var(--line);backdrop-filter:none}
+  #s3msg{position:static;margin:6px 0 0}
   #s3ctl{gap:6px 10px}
-  #s3ctl input[type=range]{width:96px}
+  #s3ctl input[type=range]{width:92px}
+  #s3ctl .v{min-width:54px}
 }
 </style>
 <h3>3D view — the computed trajectory, flown by the anatomy meshes</h3>
 <p class="small mute" style="margin:0 0 2px">The meshes fly the run the solver on this page computed, sample by sample: no keyframes anywhere. The charts below are the same run in 2D. The legend under the controls separates what is computed from what is only there to look like the sea.</p>
 <div id="s3stageWrap">
-  <div id="s3Stage">
-    <div id="s3hud"></div>
-    <div id="s3fps"></div>
-    <div id="s3msg"></div>
-  </div>
+  <div id="s3Stage"></div>
+  <div id="s3fps"></div>
+  <div id="s3hud"></div>
+  <div id="s3msg"></div>
 </div>
 <div id="s3scrubRow">
   <button id="s3play" class="on">❚❚ Pause</button>
@@ -1210,6 +1268,8 @@ function layoutHtml() {
   <label title="uniform horizontal headwind, assumed; 0 reproduces the committed run exactly">headwind <input id="s3wind" type="range" min="-8" max="12" step="0.5"><span class="v" id="s3windOut"></span></label>
   <label title="the measured ground-effect drag curve, physics/ground-effect.json"><input id="s3ge" type="checkbox"> ground effect</label>
   <label title="the ISA density and PO2 model with height"><input id="s3alt" type="checkbox"> altitude model</label>
+  <label title="DRAWING ONLY. conditions/baseline.json locks the conditions to calm and the solver has no sea state at all, so this changes what the sea looks like and nothing else.">sea (drawn only) <select id="s3sea">
+    <option value="">baseline: calm</option><option value="3">what-if: 3 m/s wind</option><option value="6">what-if: 6 m/s wind</option><option value="9">what-if: 9 m/s wind</option></select></label>
   <button id="s3ens" class="small" title="run an ensemble of draws (needs creatures.js)">ensemble</button>
 </div>
 <div id="s3scrubRow"><span id="s3summary"></span></div>

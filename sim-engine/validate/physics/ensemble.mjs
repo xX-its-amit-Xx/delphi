@@ -144,7 +144,7 @@ export function baseParamsFromState(state, { launch_height_m = 1, launch_airspee
  *
  * Returns { source, file, seed, draws, distributions, note, species_gate, skipped, rows }.
  */
-export async function ensembleOverState({ state, draws = 200, seed = 'delphi-v1', launch_height_m = 1, launch_airspeed_m_s = null, runOne }) {
+export async function ensembleOverState({ state, draws = 200, seed = 'delphi-v1', launch_height_m = 1, launch_airspeed_m_s = null, allow_launch_draw = null, runOne }) {
   const c = await loadCreatures();
   const base = baseParamsFromState(state, { launch_height_m, launch_airspeed_m_s });
   const using = c.ok
@@ -155,10 +155,25 @@ export async function ensembleOverState({ state, draws = 200, seed = 'delphi-v1'
         isFlier: p => FF_RE.test([p.species, p.id, p.label].filter(Boolean).join(' ')), summarise: ownSummarise,
         source: 'own', file: 'sim-engine/validate/physics/ensemble.mjs OWN_DISTRIBUTIONS', sea: OWN_SEA_STATE, reason: c.reason };
 
+  // THE STAGE GATE. creatures.js's `isFlier` reads the SPECIES text only -- it was written for the
+  // adult simulator -- so without this gate a flying-fish LARVA would be handed the adult 15-20 m/s
+  // taxi band, which glide.mjs never gives it (`organismLaunchSpeed`: adults get the taxi end speed,
+  // earlier stages get min(10 m/s, 30 BL/s x SL) and no taxi). The caller passes
+  // `allow_launch_draw` false whenever the engine's own launch speed for this STATE is not a taxi
+  // speed, and the launch speed is then reported as NOT drawn with the reason.
+  const BAND_LOW = 15;
+  const allowLaunch = allow_launch_draw != null ? !!allow_launch_draw
+    : (launch_airspeed_m_s != null && launch_airspeed_m_s >= BAND_LOW);
+  const stageGateReason = `the 15-20 m/s taxi band is measured for ADULT flying fish only; the engine's own launch speed for this STATE is ${launch_airspeed_m_s == null ? 'not sourced' : `${launch_airspeed_m_s.toFixed(2)} m/s`} (scenarios/glide.mjs organismLaunchSpeed), so no launch-speed spread is drawn and none is invented`;
+
   const rows = []; let skipped = [];
   for (let i = 0; i < draws; i++) {
     const { params, draw, skipped: sk } = using.perturb(base, using.rng);
     skipped = sk || [];
+    if (!allowLaunch && draw.launch_airspeed_m_s && !draw.launch_airspeed_m_s.skipped) {
+      draw.launch_airspeed_m_s = { value: launch_airspeed_m_s ?? base.launch_airspeed_m_s, skipped: true, reason: stageGateReason };
+      if (!skipped.includes('launch_airspeed_m_s')) skipped = [...skipped, 'launch_airspeed_m_s'];
+    }
     const pv = k => { const x = params[k]; return x && typeof x === 'object' && 'value' in x ? x.value : x; };
     const drawnMass = pv('mass_kg'), drawnArea = pv('ref_area_m2'), drawnSpan = pv('span_m');
     const st = { ...state };
@@ -178,7 +193,11 @@ export async function ensembleOverState({ state, draws = 200, seed = 'delphi-v1'
   }
   return {
     source: using.source, file: using.file, ...(using.reason ? { fell_back_because: using.reason } : {}),
-    seed: String(seed), draws, species_gate: { is_flier: using.isFlier(base), note: using.isFlier(base) ? 'the 15-20 m/s taxi band applies to this animal' : 'the 15-20 m/s taxi band does NOT apply: no sourced launch-speed spread for this animal, so the launch speed is NOT drawn and stays at the engine\'s own value. The spread below therefore comes only from mass, area and the wave terms.' },
+    seed: String(seed), draws,
+    species_gate: { is_flier: using.isFlier(base) && allowLaunch, species_matches_flier: using.isFlier(base), launch_speed_drawn: allowLaunch,
+      note: using.isFlier(base) && allowLaunch ? 'the 15-20 m/s taxi band applies to this animal at this stage'
+        : using.isFlier(base) ? `the species matches the flier gate but the STAGE does not: ${stageGateReason}. The spread below comes only from mass, area and the wave terms.`
+          : 'the 15-20 m/s taxi band does NOT apply: no sourced launch-speed spread for this animal, so the launch speed is NOT drawn and stays at the engine\'s own value. The spread below therefore comes only from mass, area and the wave terms.' },
     not_drawn: skipped, note: using.note, sea_state: using.sea,
     distributions: using.dists.map(d => ({ key: d.key, label: d.label, unit: d.unit, shape: d.shape, band: d.band ?? null, sd: d.sd ?? null, cv: d.cv ?? null, band_kind: d.band_kind, shape_kind: d.shape_kind, applies: d.applies || 'all animals', source: d.source })),
     summarise: using.summarise, rows,

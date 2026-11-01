@@ -1,6 +1,6 @@
 {
  "law_id": "E2",
- "version": "1.0.0",
+ "version": "1.1.0",
  "kind": "biological",
  "class": "empirical-observation",
  "status": "accepted",
@@ -12,7 +12,7 @@
   "structure": "Delphi.Empirical.MassExponentBand",
   "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
   "statement_sha256": "8de2deb7f8f0456e037dc32d7fd942f7f6819c002b4b43f480627b571a65ac31",
-  "content_hash": "f3c88dec14a69dc55688f541c4776c0bb60bfe24ec920a941f4cb5e6d1f5cd26"
+  "content_hash": "c46c6aecc14045d9be4cae2ae77b45f9963b3cbdc9e0826e902a192f4077dfe6"
  },
  "statement_en": "2.90 <= b <= 3.02; hence for a weight following one power law, r^2.90 <= W(L2)/W(L1) <= r^3.02 when r = L2/L1 >= 1.",
  "hypotheses": [
@@ -98,7 +98,13 @@
   "basis": "physics/length-weight.csv: fitted field studies (n 117 to 2769) of fishery-caught flying fish, lengths about 15 to 30 cm",
   "kernelChecked": [],
   "assumed": [],
-  "note": "The 1 male-only row (Hirundichthys affinis, b = 2.208) is EXCLUDED and named: including it would widen the band to 2.21. Length types differ across rows (SL, FL, TL) and the FishBase page does not show the references. Eighteen further rows with b exactly 3.000 and n of 2 to 6 are unverified estimates and are not used."
+  "note": "The 1 male-only row (Hirundichthys affinis, b = 2.208) is EXCLUDED and named: including it would widen the band to 2.21. Length types differ across rows (SL, FL, TL) and the FishBase page does not show the references. Eighteen further rows with b exactly 3.000 and n of 2 to 6 are unverified estimates and are not used. When the mass exponent is IMPLIED against the reference specimen rather than committed from a fit, it is not evaluated at a length ratio inside [0.905, 1.105]: an implied exponent is ln(X/X_ref) / ln(L/L_ref) against the single reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3, SL 0.203 m), so the denominator approaches zero as L approaches L_ref and ordinary specimen variation is amplified without limit. About 1% relative uncertainty in L against the studio's 0.1 decision band means the comparison carries no information until |ln(L/L_ref)| >= 0.1, i.e. a length ratio outside [0.905, 1.105]. Measured in the real siblings: L1 (ratio 1.0099) implied a v_min exponent of -1.43 and L2 (1.0296) -3.86 against a target of 0.5, and model N (0.9951) -60.8, so accepted laws fired red on unedited wild-type flying fish (blind evaluator, 2026-11-01).",
+  "applies_to": [
+   "a mass exponent fitted over a size range: a length-weight regression, or a design that commits mass_exponent"
+  ],
+  "excludes": [
+   "an exponent IMPLIED against the single reference specimen at a length ratio inside [0.905, 1.105]: ln(L/L_ref) is then too small to carry an exponent (about 1% relative uncertainty in L against the studio's 0.1 band), so the number says nothing about the fitted band. Commit mass_exponent from a fit instead. The real Park and Choi siblings L1 (ratio 1.0099), L2 (1.0296) and model N (0.9951) fell here and came back red against this law (blind evaluator, 2026-11-01)."
+  ]
  },
  "constraint_scopes": {},
  "shared_scope": {
@@ -141,14 +147,14 @@
   "E2"
  ],
  "introduced_in": "1.0.0",
- "supersedes": null,
+ "supersedes": "E2@1.0.0",
  "superseded_by": null,
  "retired_reason": null,
  "contested_with": [],
  "approval": {
-  "approved_by_role": "bootstrap-grandfathered",
+  "approved_by_role": "carried-forward-pending-review",
   "date": "2026-11-01",
-  "basis": "in force in lean/constraints.json / lean/laws.json before the registry existed; no per-law human review recorded by the registry"
+  "basis": "carried forward from 1.0.0 (bootstrap-grandfathered): the Lean statement, hypotheses and numbers are unchanged and the scope only NARROWS (a near-singular implied exponent is no longer evaluated), so nothing previously ruled out becomes allowed. The threshold is a data judgement proposed by the engine thread and relayed by the hub; no person has reviewed this version."
  },
  "origin": "lean/registry/laws/E2.json",
  "history": [
@@ -156,9 +162,19 @@
    "version": "1.0.0",
    "date": "2026-11-01",
    "change": "bootstrapped from lean/laws.json (status there: \"empirical\")"
+  },
+  {
+   "version": "1.1.0",
+   "date": "2026-11-01",
+   "change": "1.0.0 -> 1.1.0, SCOPE ONLY: scope.note records that an exponent implied against the reference specimen is not evaluated at a near-unit length ratio. Prompted by accepted-law reds on the real Park and Choi siblings L1, L2 and model N."
+  },
+  {
+   "version": "1.1.0",
+   "date": "2026-11-01",
+   "change": "scope.applies_to and scope.excludes added alongside the scope.note, so the checker can attach them to the near-singular row"
   }
  ],
- "content_hash": "f3c88dec14a69dc55688f541c4776c0bb60bfe24ec920a941f4cb5e6d1f5cd26",
+ "content_hash": "c46c6aecc14045d9be4cae2ae77b45f9963b3cbdc9e0826e902a192f4077dfe6",
  "open_conflicts": [
   {
    "law_id": "disc-heterurus-mass-exponent",
@@ -208,15 +224,10 @@
   "status": "ok"
  },
  "in_lawsets": [
-  "1.0.0",
-  "1.1.0",
-  "1.2.0",
-  "1.3.0",
-  "1.4.0",
-  "1.5.0",
-  "1.6.0",
-  "1.7.0"
+  "1.8.0"
  ],
- "other_versions": [],
+ "other_versions": [
+  "1.0.0"
+ ],
  "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
 }

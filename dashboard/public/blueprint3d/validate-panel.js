@@ -55,6 +55,38 @@ function bar(label, c, weight) {
   return `<div class="vp-comp ${v >= 0.5 ? 'ok' : 'bad'}"><span class="vp-cl">${esc(label)}</span><span class="vp-bar"><i style="width:${(v * 100).toFixed(1)}%"></i></span><span class="vp-cv">${f(c.value)}</span><span class="vp-cw">w ${weight}</span></div>`;
 }
 
+/** Lean, re-checked against today's law base (sim-engine/validate/lean-rounds.mjs, another thread). Round 1 is the
+ *  law set the design was MADE under; round 2 is the set in force now. Shown only when the report carries it. */
+function leanRoundsHtml(report) {
+  const lr = report.lean_rounds;
+  if (!lr) return '';
+  if (lr.skipped || lr.error) return `<details><summary>Lean, re-checked against today's law base</summary><p class="vp-na">${esc(lr.skipped || lr.error)}</p></details>`;
+  if (!lr.round2) return '';
+  const r1 = lr.round1, r2 = lr.round2;
+  const list = (rows, cls, label, why) => rows && rows.length
+    ? `<p class="${cls}"><b>${esc(label)} (${rows.length})</b> <span class="vp-fine">${esc(why)}</span></p><ul>${rows.map(v => `<li class="${cls}"><b>${esc(v.law_id)}</b> ${esc(v.constraint)}${v.status ? ` [${esc(v.status)}]` : ''}${v.law_base_change ? ` · ${esc(v.law_base_change.kind)}` : ''}${v.message ? `: ${esc(String(v.message).slice(0, 160))}` : ''}</li>`).join('')}</ul>`
+    : '';
+  // A design that records no law set gets two identical rounds BY CONSTRUCTION. That must never read as
+  // "nothing has changed since it was made", so it is said explicitly.
+  const identical = lr.rounds_identical
+    ? `<p class="${r1.lawset_basis === 'unknown' ? 'warn' : 'vp-na'}">${r1.lawset_basis === 'unknown'
+        ? 'Both rounds used the CURRENT law set, because nothing on this design records the set it was made under. The two rounds are identical by construction, which is not evidence that the law base has not moved.'
+        : 'Both rounds used the same law set: the law base has not moved since this design was made.'}</p>`
+    : '';
+  const moved = lr.law_base_moved || {};
+  const rel = (moved.releases_between || []).length;
+  return `<details ${lr.verdict_changed ? 'open' : ''}><summary>Lean, re-checked against today's law base${lr.verdict_changed ? ' — <b class="bad">the verdict changed</b>' : ''}</summary>
+ <p>Round 1: law set <b>${esc(r1.lawset_version)}</b> <span class="vp-fine">(${esc(r1.lawset_basis)})</span> · Round 2: law set <b>${esc(r2.lawset_version)}</b> <span class="vp-fine">(in force now)</span>${rel ? ` · ${rel} release(s) between` : ''}</p>
+ ${identical}
+ ${list(lr.newly_violated_since, 'bad', 'Now broken, and was not when the design was made', 'a law admitted or changed since')}
+ ${list(lr.newly_binding_since, 'bad', 'Already broken, but only binding now', 'the law was raised to accepted: grey in the studio then, red today')}
+ ${list(lr.no_longer_violated_since, 'ok', 'No longer broken', 'a law was loosened, retired, re-scoped or superseded')}
+ ${list(lr.newly_unjudged_since, 'warn', 'No longer judged', 'a loss of coverage, not an improvement')}
+ ${list(lr.newly_violated_without_a_law_change, 'warn', 'Changed with no law change', 'the two rounds were not given the same numbers: a caller bug, not a law change')}
+ <p class="vp-fine">${esc(lr.summary || '')}</p>
+ <p class="vp-fine">${esc(lr.note || '')}</p></details>`;
+}
+
 /** The three separately reported results: genotype similarity, phenotype similarity, Lean on the designed organism. */
 function threeHtml(report) {
   const R = report.results; if (!R) return '';
@@ -106,6 +138,7 @@ export function renderValidate(report, { source = '' } = {}) {
  <p class="vp-fine">Weights and formula were fixed in sim-engine/validate/SCORER-PREREGISTRATION.md before the scorer was validated; how it did is in SCORER-RESULTS.md, failures included. Features the scorer does not read (ray and vertebra counts, gills, haemoglobin, density, internal organs beyond the flight-muscle budget) cannot lower it.</p>
 </div>
 ${threeHtml(report)}
+${leanRoundsHtml(report)}
 <details open><summary>Closest real relatives</summary>${nb(ph.body, 'Body shape (FishShapes v1 + our organisms and stages)')}${nb(ph.fin, 'Pectoral fin length (Daane 2021 + our organisms)')}
  ${ph.fin_envelope?.outside?.length ? `<p class="warn">Outside the real fin range (uncalibrated envelope): ${ph.fin_envelope.outside.map(o => `${esc(o.label)} ${f(o.design)} vs ${f(o.min)}–${f(o.max)}`).join('; ')}</p>` : ''}<p class="vp-fine">Distance is shape similarity, not relatedness. Birds excluded (frozen holdout).</p></details>
 <details open><summary>Checks (${checks.filter(c => c.status === 'passed').length} passed · ${checks.filter(c => c.status === 'failed').length} failed · ${checks.filter(c => c.status === 'flagged').length} flagged · ${checks.filter(c => c.status === 'could-not-run').length} not run)</summary><ul class="vp-checks">${checks.map(c => `<li class="${STATUS_CLS[c.status] || ''}"><b>${esc(c.status)}</b> <code>${esc(c.id)}</code> ${esc(c.detail)}</li>`).join('')}</ul></details>

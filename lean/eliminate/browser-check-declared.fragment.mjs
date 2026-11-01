@@ -106,7 +106,9 @@ export function declEval(tree, env) {
   const go = n => {
     switch (n.k) {
       case 'num': return n.v;
-      case 'name': { const v = env[n.v]; return typeof v === 'number' && Number.isFinite(v) ? v : null; }
+      // hasOwnProperty, so an identifier that happens to name a prototype member ('constructor',
+      // 'toString') reads as missing rather than reaching into the environment object.
+      case 'name': { const v = Object.prototype.hasOwnProperty.call(env, n.v) ? env[n.v] : undefined; return typeof v === 'number' && Number.isFinite(v) ? v : null; }
       case 'neg': { const a = go(n.a); return a === null ? null : -a; }
       case 'call': { const as = n.args.map(go); return as.some(x => x === null) ? null : DECL_FUNCS[n.f](...as); }
       default: { const a = go(n.a), b = go(n.b);
@@ -143,10 +145,35 @@ export function declCompile(d) {
   }
   const defaults = d.defaults || {};
   for (const [k, v] of Object.entries(defaults)) if (typeof v !== 'number' || !Number.isFinite(v)) throw new Error(`${where}.defaults.${k} is not a finite number`);
-  const read = [...new Set(parts.flatMap(p => p.names))].filter(n => !(n in defaults));
+  const lookups = d.lookups || [];
+  for (const k of lookups) { if (!k.name || !k.table) throw new Error(`${where}.lookups: each lookup needs a name and a resolved table (the generator fills these in)`); }
+  const lookupNames = lookups.map(k => k.name);
+  const read = [...new Set(parts.flatMap(p => p.names))].filter(n => !(n in defaults) && !lookupNames.includes(n));
   const inputs = d.inputs && d.inputs.length ? d.inputs : read;
-  for (const n of inputs) if (!read.includes(n)) throw new Error(`${where}.inputs names "${n}", which no expression reads`);
-  return { ...d, compiled: Object.fromEntries(parts.map(p => [p.key, p.tree])), defaults, inputs, reads: read };
+  for (const n of inputs) if (!read.includes(n)) throw new Error(`${where}.inputs names "${n}", which no expression reads (or is supplied by a default or a lookup)`);
+  for (const n of lookupNames) if (!parts.some(p => p.names.includes(n))) throw new Error(`${where}.lookups declares "${n}", which no expression reads`);
+  return { ...d, compiled: Object.fromEntries(parts.map(p => [p.key, p.tree])), defaults, lookups, inputs, reads: read };
+}
+
+/**
+ * Resolve one embedded reference table against a design. Returns {value, key, fallback, locator} or null.
+ *
+ * A law may bring its own reference data (lookups in its browser_check block), resolved at generation time into
+ * a plain {key: number} table. Which key the design matched is REPORTED in the row, and a fallback is always
+ * labelled as one: "which species' number decided this verdict" is part of the verdict, not an implementation
+ * detail. Matching is exact, then case-insensitive, then an explicit alias; nothing is inferred from a genus.
+ */
+export function declLookup(k, design) {
+  const want = design && (design[k.match] ?? null);
+  const keys = Object.keys(k.table);
+  const hit = want == null ? null
+    : (k.table[want] !== undefined ? want
+      : (k.aliases && k.aliases[want] !== undefined && k.table[k.aliases[want]] !== undefined) ? k.aliases[want]
+        : keys.find(x => String(x).toLowerCase() === String(want).toLowerCase()) ?? null);
+  if (hit != null) return { value: k.table[hit], key: hit, fallback: false, locator: (k.rows_used[hit] || {}).locator ?? null, matched_on: `${k.match} = ${want}` };
+  if (k.fallback_key) return { value: k.table[k.fallback_key], key: k.fallback_key, fallback: true, locator: (k.rows_used[k.fallback_key] || {}).locator ?? null,
+    matched_on: want == null ? `the design names no ${k.match}` : `no row for ${k.match} = ${want}` };
+  return null;
 }
 
 /** Compiled blocks, keyed by constraint id. Built once at module load so a bad block fails the first call, loudly. */
@@ -162,13 +189,29 @@ export const DECLARED_LAW = Object.fromEntries(DECLARED.map(d => [d.constraint, 
  * what the Studio shows instead of a colour), else 'holds' or 'violated'. A declared row NEVER guesses a
  * default for a missing input: an absent number means the law said nothing about this design.
  */
+const refNums = r => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, v.value]));
+
 export function checkDeclared(s, derived) {
   const env = { ...(derived || {}), ...s };
   const rows = [];
   for (const d of Object.values(DECL_COMPILED)) {
     const scope = { ...env, ...d.defaults };
-    const miss = d.inputs.filter(n => !(typeof scope[n] === 'number' && Number.isFinite(scope[n])));
+    // Reference values the law brings with it, keyed by a design field (usually taxon). A lookup that cannot be
+    // resolved is a MISSING input named in the row, never a silent zero and never a quiet default.
+    const resolved = {}, lookupMiss = [];
+    for (const k of d.lookups) {
+      const got = declLookup(k, s);
+      if (!got || !(typeof got.value === 'number' && Number.isFinite(got.value))) {
+        lookupMiss.push(`${k.name} (no row in ${k.source?.file || 'its reference table'} for ${k.match} = ${JSON.stringify(s[k.match] ?? null)}; ${Object.keys(k.table).length} key(s) available)`);
+        continue;
+      }
+      scope[k.name] = got.value;
+      resolved[k.name] = { value: got.value, unit: k.unit, from: k.source?.file ?? null, row: got.key, matched_on: got.matched_on,
+        fallback: got.fallback, locator: got.locator, select: k.select, ...(got.fallback ? { fallback_warning: `no row matched this design, so the ${got.key} row was used: the verdict rests on another population's number` } : {}) };
+    }
+    const miss = [...d.inputs.filter(n => !(typeof scope[n] === 'number' && Number.isFinite(scope[n]))), ...lookupMiss];
     const base = { band: d.band || 'empirical', declared: true, declared_by_law: d.law_id,
+      ...(Object.keys(resolved).length ? { reference_values: resolved } : {}),
       lawNote: 'row generated from the law file\'s own `browser_check` block (lean/registry/laws/' + d.law_id + '.json), not from a hand-written formula; the relation is evaluated in floating point and is NOT a kernel check',
       relation: d.relation || null, unit: d.unit || null };
     if (miss.length) { rows.push({ ...result(d.constraint, 'cannot-evaluate', {}, miss, d.note || null), ...base }); continue; }
@@ -179,7 +222,7 @@ export function checkDeclared(s, derived) {
       const lo = declEval(d.compiled.lo, scope), hi = declEval(d.compiled.hi, scope);
       if (lo === null || hi === null) { rows.push({ ...result(d.constraint, 'cannot-evaluate', { quantity: q }, d.inputs, 'a bound expression did not produce a finite number'), ...base }); continue; }
       const ok = exact ? (q >= lo && q <= hi) : (geTol(q, lo) && leTol(q, hi));
-      rows.push({ ...result(d.constraint, ok ? 'holds' : 'violated', { quantity: q, lo, hi, unit: d.unit || null }, [], d.note || null,
+      rows.push({ ...result(d.constraint, ok ? 'holds' : 'violated', { quantity: q, lo, hi, unit: d.unit || null, ...refNums(resolved) }, [], d.note || null,
         { needed: { quantity_between: [lo, hi] }, available: { quantity: q } }), ...base });
       continue;
     }
@@ -189,7 +232,7 @@ export function checkDeclared(s, derived) {
     const ok = exact ? op.exact(q, b)
       : d.op === 'le' ? leTol(q, b) : d.op === 'ge' ? geTol(q, b)
       : d.op === 'eq' ? (leTol(q, b) && geTol(q, b)) : op.exact(q, b);
-    rows.push({ ...result(d.constraint, ok ? 'holds' : 'violated', { quantity: q, bound: b, op: op.sym, unit: d.unit || null }, [], d.note || null,
+    rows.push({ ...result(d.constraint, ok ? 'holds' : 'violated', { quantity: q, bound: b, op: op.sym, unit: d.unit || null, ...refNums(resolved) }, [], d.note || null,
       { needed: { quantity: q }, available: { bound: b } }), ...base });
   }
   return rows;

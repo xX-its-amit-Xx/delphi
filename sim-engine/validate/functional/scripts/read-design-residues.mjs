@@ -30,11 +30,14 @@ fs.mkdirSync(path.join(CACHE, 'protein'), { recursive: true });
 async function protein(id) {
   const f = path.join(CACHE, 'protein', `${id}.json`);
   if (fs.existsSync(f)) return read(f);
-  const r = await fetch(`https://rest.ensembl.org/sequence/id/${id}?type=protein`, { headers: UA });
-  const v = r.ok ? await r.json() : { error: `HTTP ${r.status}` };
-  fs.writeFileSync(f, JSON.stringify(v));
-  await new Promise(s => setTimeout(s, 150));            // polite: well under the 15 req/s Ensembl limit
-  return v;
+  // Errors are NOT cached: a transient 500 must not freeze into a permanent "could not read".
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    const r = await fetch(`https://rest.ensembl.org/sequence/id/${id}?type=protein`, { headers: UA });
+    if (r.ok) { const v = await r.json(); fs.writeFileSync(f, JSON.stringify(v)); await new Promise(s => setTimeout(s, 200)); return v; }
+    if (r.status === 429 || r.status >= 500) { await new Promise(s => setTimeout(s, 2000 * attempt)); continue; }
+    return { error: `HTTP ${r.status}` };
+  }
+  return { error: 'HTTP 5xx after 4 attempts' };
 }
 
 // ---- BLOSUM62 (NCBI matrix, 20 standard residues; anything else scores as the minimum)
@@ -102,6 +105,26 @@ export function align(a, b, { open = 11, ext = 1 } = {}) {
   return { mapAtoB, score: bestv, aligned_pairs: aligned, percent_identity: aligned ? +(100 * ident / aligned).toFixed(2) : null };
 }
 
+/** CONFIDENCE GUARD. A whole-protein identity of 77 % says nothing about whether ONE column is trustworthy, and
+ *  a pairwise alignment can shift a site by a hundred residues across an indel (medaka ralb vs danio ralbb does
+ *  exactly that). So the residue read is only usable when its own +/-5-residue neighbourhood aligns: no gap at the
+ *  site, and at least 60 % identity in the window. Everything else is reported as LOW CONFIDENCE and is treated by
+ *  the ledger as "not read" rather than as evidence. */
+export const WINDOW_RULE = { half_width: 5, min_window_identity: 0.6, no_gap_at_site: true,
+  why: 'a global percent identity does not license one column; a site that sits beside an indel can be mapped tens or hundreds of residues away' };
+function localWindow(a, b, map, k, half = WINDOW_RULE.half_width) {
+  let n = 0, ident = 0, gaps = 0;
+  for (let i = Math.max(0, k - half); i <= Math.min(a.length - 1, k + half); i++) {
+    n++; const j = map[i];
+    if (j < 0) { gaps++; continue; }
+    if (a[i] === b[j]) ident++;
+  }
+  const identity = n ? +(ident / n).toFixed(3) : null;
+  const usable = map[k] >= 0 && identity != null && identity >= WINDOW_RULE.min_window_identity;
+  return { half_width: half, positions: n, identical: ident, gaps, identity, usable,
+    why_not: usable ? null : map[k] < 0 ? 'the design side is a gap at this site' : `window identity ${identity} is below the ${WINDOW_RULE.min_window_identity} rule` };
+}
+
 const out = {};
 for (const r of REQ.requirements) {
   if (r.level !== 'residue') continue;
@@ -130,6 +153,7 @@ for (const r of REQ.requirements) {
     gap: j === -1,
     reference_residue_matches_sheet: (src.seq[k] || null) === r.locus.ref,
     carries_derived_state: j >= 0 ? p.seq[j] === r.locus.alt : null,
+    local_window: localWindow(src.seq, p.seq, al.mapAtoB, k),
     method: 'Needleman-Wunsch global alignment, BLOSUM62, affine gaps 11/1 (functional/scripts/read-design-residues.mjs align())',
   };
   process.stderr.write(`${r.locus.source_symbol} ${r.locus.substitution}: danio ${out[r.id].danio_residue ?? 'GAP'} at ${out[r.id].danio_position ?? '-'} (pid ${al.percent_identity}%)\n`);
@@ -143,6 +167,8 @@ fs.writeFileSync(file, JSON.stringify({
   caveat: 'A pairwise alignment between proteins ~75-80 % identical is reliable in conserved blocks and much less so near indels. The percent identity and the aligned-pair count are given per locus so a reader can discount a weak one. This is a SEQUENCE STATE, never a phenotype.',
   source_proteins: 'C:/Temp/sequences/sheetG_proteins.json (sequences/ thread, Ensembl 116)',
   danio_proteins: 'Ensembl REST /sequence/id/<ENSDARP>?type=protein, cached in C:/Temp/functional-cache/protein/',
-  n: Object.keys(out).length, read: Object.values(out).filter(x => x.read).length, residues: out,
+  window_rule: WINDOW_RULE,
+  n: Object.keys(out).length, read: Object.values(out).filter(x => x.read).length,
+  usable: Object.values(out).filter(x => x.read && x.local_window?.usable).length, residues: out,
 }, null, 1));
 console.log('wrote', file, Object.values(out).filter(x => x.read).length, 'of', Object.keys(out).length, 'read');

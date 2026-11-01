@@ -301,11 +301,128 @@ export const UNCERTAINTY_NOTE =
   'ASSUMED -- the entire sea state (the repository has none, and wind.mjs says wave effects are not modelled), so both wave terms; the gust sd, which is half of wind.mjs\'s own assumed design input; and the glide angle-of-attack spread. ' +
   'Two further limits: mass and fin area are drawn INDEPENDENTLY because no source in the repository gives their correlation, and real fish correlate them, so the wing-loading spread here is WIDER than a real population\'s; and the shape of every distribution is assumed, so the 5th and 95th percentiles are much softer than the median.';
 
+// ---------------------------------------------------------------- what the field numbers measure
+/**
+ * The quoted field figures, and WHICH QUANTITY EACH ONE IS. This block exists because the
+ * simulator models ONE HOP -- one launch, one glide, one re-entry -- while flying fish string
+ * several hops together, taxiing between them. Comparing a single-hop model against a sequence
+ * total would make the model look wrong when the comparison was simply mismatched, so the sources
+ * were checked, in the copies already fetched under physics/prior-art/raw/.
+ *
+ * They draw the distinction themselves, and they put 50 m on the SINGLE-HOP side:
+ *
+ *   Deng, Wang, Zhang, Mao (2019) Bioinspir. Biomim. 14:046009, Introduction, verbatim:
+ *     "During the free flight (airspeed 15-20 m s-1), with a reachable flight distance of 50 m
+ *      and a peak height up to 8 m, the tail fin is held high and still. In the final stage of
+ *      free flight, the tail is lowered, re-enters the water, resumes beating and therefore
+ *      provides the impetus for A FURTHER FREE FLIGHT. A total flight distance of 400 m can be
+ *      achieved in 30 s by the REPEATED TAXIING before the fish submerges eventually into the water."
+ *   -> 50 m and 8 m are ONE free flight. 400 m in 30 s is the WHOLE SEQUENCE. Explicit.
+ *
+ *   Park & Choi (2010) J Exp Biol 213:3269, Introduction, verbatim:
+ *     "The flying fish glides over a total distance of as much as 400 m in 30 s by A SUCCESSIVE
+ *      SEQUENCE of taxiing and flight" ... "they use this taxiing to gain additional speed for
+ *      successive gliding flights" ... "when ... the gliding speed decreases at the END OF ONE
+ *      GLIDE, some flying fish dip the lower lobe of the caudal fin and beat the tail".
+ *   -> agrees: 400 m is the sequence, and a glide ends before the next taxi begins.
+ *
+ *   Davenport (1994) review summary, point 5, verbatim:
+ *     "...leap through the water surface at a shallow angle, accelerate to take-off speed by
+ *      taxiing ... and enter a free flight THAT MAY BE PROLONGED BY FURTHER TAXIING."
+ *   -> the hop structure, from the review itself. It gives no distance in the copy fetched here.
+ *
+ *   Makiguchi et al. (2013) Aquat Biol 18:105, Introduction, verbatim:
+ *     "flying fish leap from the water surface at a speed of about 10 m s-1 and GLIDE FOR UP TO
+ *      50 m ... at an air speed of 15 to 20 m s-1" (citing Edgerton & Breder 1941, Davenport 1990).
+ *   -> consistent with one glide, though it does not say so in as many words.
+ *
+ * So the single-hop ensemble was already comparing like with like against the 50 m. What WAS
+ * wrong is the statistic: "up to 50 m" and "reachable" are an UPPER ENVELOPE of observed glides,
+ * not a typical glide, so the thing to compare it against is the ensemble's upper tail, not its
+ * median or even its 95th percentile. See SCOPE_NOTES.
+ *
+ * None of these four is a primary observation. All of them restate Edgerton & Breder 1941,
+ * Davenport 1990 and Hertel 1966, none of which has been fetched, and none of which is quoted
+ * with a sample size or a distribution.
+ */
+export const FIELD_OBSERVATIONS = {
+  single_hop_range_m: { value: 50, measures: 'ONE free flight (one hop)', kind: 'measured-secondhand', source: 'Deng et al. 2019 Bioinspir. Biomim. 14:046009 Introduction, "a reachable flight distance of 50 m" during "the free flight", distinguished in the same paragraph from the 400 m sequence total; Makiguchi et al. 2013 doi:10.3354/ab00494 Introduction "glide for up to 50 m", citing Edgerton & Breder 1941 and Davenport 1990 (neither fetched)', statistic: 'an upper envelope ("up to", "reachable"), NOT a mean or a typical glide, and quoted with no sample size' },
+  single_hop_peak_height_m: { value: 8, measures: 'peak height within ONE free flight', kind: 'measured-secondhand', source: 'Deng et al. 2019 Introduction, "a peak height up to 8 m", in the same sentence as the 50 m single free flight (its ref. 6; not fetched)', statistic: 'a maximum recorded height, not a typical one' },
+  sequence_total_range_m: { value: 400, measures: 'the WHOLE SEQUENCE of hops, taxi included', kind: 'measured-secondhand', source: 'Park & Choi 2010 doi:10.1242/jeb.046052 Introduction, "a total distance of as much as 400 m in 30 s by a successive sequence of taxiing and flight" (citing Hertel 1966, Rayner 1986, Vogel 1994); Deng et al. 2019 Introduction, "A total flight distance of 400 m can be achieved in 30 s by the repeated taxiing"', statistic: 'a maximum ("as much as"), over an unstated number of hops' },
+  sequence_total_time_s: { value: 30, measures: 'the duration of that whole sequence', kind: 'measured-secondhand', source: 'as sequence_total_range_m' },
+  taxi_length_m: { value: 9, measures: 'the taxi run BETWEEN two hops', kind: 'measured-secondhand', source: 'Deng et al. 2019 Introduction, "an average taxiing length of 9 m for cypselurid flying fish" (its ref. 11; not fetched). The only taxi-length figure in the repository, and it is an average with no spread.' },
+  leap_speed_m_s: { value: 10, measures: 'speed leaving the water, before the taxi', kind: 'measured-secondhand', source: 'Makiguchi et al. 2013 Discussion citing Davenport 1994: "approached and leaped from the water surface at approximately 10 m s-1"' },
+};
+
+/**
+ * Multi-hop BOOKKEEPING, so the 400 m / 30 s sequence figure can be compared like with like.
+ *
+ * This is arithmetic on the single-hop ensemble, NOT a new model and NOT a hop-count prediction.
+ * Nothing in the repository gives a distribution of hop counts, and the taxi is not modelled at
+ * all: glide.mjs says the taxi distance is not added to the range and the taxi power (burst,
+ * anaerobic; Deng's CFD figure of 350 W to reach 16.5 m/s is a model result) is never checked
+ * against the animal's muscle. So this function does not predict how many hops a fish makes. It
+ * answers one question only: how many hops OF THE SIZE THIS ENSEMBLE PRODUCES would be needed to
+ * cover the quoted sequence, and how long they would take.
+ *
+ * The one assumption, stated: each hop is taken to start at the same drawn take-off airspeed,
+ * which is what the sources describe -- the fish taxis back up to 15-20 m/s for the next hop
+ * (Park & Choi: taxiing "to gain additional speed for successive gliding flights"). The taxi time
+ * is 9 m divided by the mean of the 10 m/s leap speed and the hop's take-off speed, i.e. a
+ * constant acceleration along the taxi run: that linearity is ASSUMED and is the weakest step here.
+ */
+export function sequenceStats(perHopRange_m, perHopTime_s, takeoffSpeed_m_s, obs = FIELD_OBSERVATIONS) {
+  const n = Math.min(perHopRange_m.length, perHopTime_s.length);
+  const hops = [], cycleT = [], d30 = [], seqT = [];
+  for (let i = 0; i < n; i++) {
+    const r = perHopRange_m[i], t = perHopTime_s[i];
+    const v = takeoffSpeed_m_s[i] ?? obs.leap_speed_m_s.value;
+    if (!(r > 0) || !(t > 0)) continue;
+    const taxiT = obs.taxi_length_m.value / Math.max(1e-6, (obs.leap_speed_m_s.value + v) / 2);
+    const cycleD = r + obs.taxi_length_m.value, cycleTime = t + taxiT;
+    hops.push(obs.sequence_total_range_m.value / cycleD);
+    cycleT.push(cycleTime);
+    seqT.push((obs.sequence_total_range_m.value / cycleD) * cycleTime);
+    d30.push((obs.sequence_total_time_s.value / cycleTime) * cycleD);
+  }
+  return {
+    hops_to_cover_400m: summarise(hops),
+    cycle_time_s: summarise(cycleT),
+    time_to_cover_400m_s: summarise(seqT),
+    distance_covered_in_30s_m: summarise(d30),
+    compare_with: { sequence_total_range_m: obs.sequence_total_range_m.value, sequence_total_time_s: obs.sequence_total_time_s.value },
+    is_prediction: false,
+    note: 'BOOKKEEPING, not a model. The hop COUNT is not predicted -- no source in the repository gives one -- and the taxi is not modelled: its 9 m length is an average quoted second-hand (Deng et al. 2019 ref. 11) and its power is never checked against the animal\'s muscle (glide.mjs says so explicitly). Each hop is taken to start at the same drawn take-off airspeed, which is what the sources describe; the taxi time assumes constant acceleration from the 10 m/s leap speed to that take-off speed over the 9 m, and that linearity is assumed. Read `distance_covered_in_30s_m` against the quoted 400 m in 30 s, and `time_to_cover_400m_s` against the quoted 30 s.',
+  };
+}
+
+/** Comparisons this module could not settle, for lean/registry/open-questions/. */
+export const OPEN_QUESTIONS = [
+  {
+    id: 'ff-50m-single-hop-vs-sequence',
+    question: 'Is the quoted 50 m flying-fish glide one hop or a sequence of hops, and what statistic is it?',
+    status: 'settled for the hop question, OPEN for the statistic',
+    settled: 'Single hop. Deng et al. 2019 (Bioinspir. Biomim. 14:046009, Introduction) draws the distinction in one paragraph: 50 m and a peak height of 8 m belong to "the free flight", while "a total flight distance of 400 m can be achieved in 30 s by the repeated taxiing". Park & Choi 2010 agrees that the 400 m is "a successive sequence of taxiing and flight". So a single-hop model should be compared against the 50 m, not against the 400 m.',
+    open: 'What statistic 50 m is. Both sources say "up to" / "reachable", so it is an upper envelope of observed glides, but neither gives a sample size, a mean or a spread, and both are second-hand: the primary observations (Edgerton & Breder 1941, Davenport 1990, Hertel 1966) are not fetched. Until one of them is read, there is no way to know whether 50 m is the largest of ten glides or of ten thousand, and therefore no way to say which percentile of a model distribution it should match.',
+    why_it_matters: 'It decides whether this ensemble reproduces the field observation. Against the median (37 m) it does not; against the upper tail (max 55 m over 1000 draws) it does. ENVIRONMENT.md already records that the 50 m "pass" was withdrawn as circular, because the 15-20 m/s launch band is taken from the same observations.',
+    to_resolve: 'Fetch Edgerton & Breder 1941 (stroboscopic film) or Davenport 1990 and read how many glides were measured and how the 50 m was reported.',
+  },
+  {
+    id: 'ff-sequence-not-reproduced',
+    question: 'Does the repository\'s glide model reproduce the 400 m in 30 s sequence?',
+    status: 'OPEN',
+    open: 'The single-hop ensemble\'s own bookkeeping (sequenceStats) falls short of 400 m in 30 s, in the same direction and by a similar factor as the single-hop shortfall. But the taxi between hops is not modelled anywhere in this repository -- glide.mjs does not add the taxi distance to the range and never checks the taxi power against the animal\'s muscle -- so the shortfall cannot be attributed between the glide model and the missing taxi.',
+    to_resolve: 'Model the taxi phase with a power budget, or state the sequence figure as out of scope.',
+  },
+];
+
 /** What this ensemble cannot tell you. Read these before quoting any number from it. They are
  *  findings about the model, not disclaimers: each one was found by running the ensemble. */
 export const SCOPE_NOTES = [
-  'MAX HEIGHT IS A MODEL ARTEFACT, NOT A PREDICTION. At the launch airspeed band and the simulator\'s assumed glide angle of attack (5 deg) the lift is about 1.8 times the weight, so the fixed-alpha trajectory climbs hard: the median max height is around 7.5 m and the 95th percentile is above 12 m, while the MAXIMUM FLIGHT HEIGHT EVER RECORDED for a flying fish is 8 m (Deng et al. 2019 Introduction, second-hand, physics/glide-data.csv). Real fish do not hold one angle of attack through a glide; index.html does, and this ensemble inherits that. Treat the height band as the spread of a model, and do not read it as a height distribution.',
-  'THE ENSEMBLE DOES NOT REPRODUCE THE 50 m FIELD GLIDE. Edgerton & Breder 1941, quoted second-hand in Makiguchi 2013: glides "up to 50 m" at 15-20 m/s. The integrated ensemble median is about 37 m and its 95th percentile about 47 m, so 50 m lies ABOVE the band. glide.mjs\'s analytic bound does reach 51 m, but only because it is a bound that cashes in all the launch kinetic energy. ENVIRONMENT.md already records that the 50 m "pass" was withdrawn as circular, because the 15-20 m/s comes from the same observation; this ensemble does not rescue it.',
+  'MAX HEIGHT IS A MODEL ARTEFACT, NOT A PREDICTION -- and this one IS a like-for-like comparison. Deng et al. 2019 puts the 8 m peak height in the same sentence as the single 50 m free flight, so it is the peak of ONE hop, which is exactly what this ensemble computes. At the launch airspeed band and the simulator\'s assumed glide angle of attack (5 deg) the lift is about 1.8 times the weight, so the fixed-alpha trajectory climbs hard: the median max height is about 7.8 m and the 95th percentile near 12 m, against a RECORD of 8 m. The median of a model should not sit at the highest value ever observed. Real fish do not hold one angle of attack through a glide; index.html does, and this ensemble inherits it. Treat the height band as the spread of a model, not as a height distribution. Fixing it means letting the angle of attack be trimmed, which is a change to the solver and not this module\'s call.',
+  'THE 50 m FIGURE IS ONE HOP, NOT A SEQUENCE -- CHECKED, because the opposite was suspected. Flying fish string several glides together, taxiing between them, so a single-hop model compared against a sequence total would look wrong for the wrong reason. The sources settle it, and they settle it against that worry: Deng et al. 2019 (Bioinspir. Biomim. 14:046009, Introduction) separates the two in one paragraph -- 50 m and 8 m belong to "the free flight", while "a total flight distance of 400 m can be achieved in 30 s by the repeated taxiing" -- and Park & Choi 2010 calls the 400 m "a successive sequence of taxiing and flight". FIELD_OBSERVATIONS carries the verbatim quotes. So this single-hop ensemble was already comparing like with like.',
+  'WHAT WAS WRONG WAS THE STATISTIC, NOT THE HOP COUNT. Both sources say "up to 50 m" and "a reachable flight distance of 50 m": an UPPER ENVELOPE of observed glides, not a typical one, and an upper envelope belongs against a model\'s upper tail rather than its median. The ensemble median is 37 m and its 95th percentile 47 m, but its MAXIMUM over 1000 draws is about 55 m, so the ensemble does bracket the quoted figure. The honest statement is therefore NOT "our model underestimates real glides" but: the ensemble is consistent with a quoted maximum of 50 m, and it does not reproduce it, because a figure given with no sample size and no spread, three sources removed from the observation, cannot be matched to a percentile. ENVIRONMENT.md already records that the 50 m "pass" was withdrawn as circular, since the 15-20 m/s launch band is taken from the same observations; nothing here rescues it. OPEN_QUESTIONS says what would settle it.',
+  'THE SEQUENCE FIGURE BEHAVES EXACTLY LIKE THE SINGLE-HOP ONE, WHICH IS THE REAL RESULT. stats.sequence is bookkeeping on the single-hop draws, not a model: it asks how many hops of this size would cover the quoted 400 m and how long that would take. It gives about 8.7 hops, 37 s to cover 400 m against the quoted 30 s, and 326 m covered in 30 s (5-95% 266-382 m, maximum 435 m) against the quoted 400 m. Note the pattern: the 400 m is also quoted as a maximum ("as much as 400 m in 30 s"), and here too the ensemble MEDIAN falls short while its upper tail BRACKETS the figure. Both quoted field numbers are maxima, both are bracketed by the ensemble maximum and missed by its median, and that is the consistent reading of all of it -- not that the model under-ranges, but that maxima quoted without a sample size cannot be matched to a percentile. The shortfall also cannot be split between the glide model and the taxi, because the taxi is modelled nowhere in this repository: glide.mjs does not add the 9 m taxi run to the range and never checks the taxi power -- burst and anaerobic -- against the animal\'s muscle. The hop COUNT is not predicted; no source gives one.',
   'FOR A SMALL ANIMAL THE ASSUMED GUST SWAMPS EVERYTHING. The gust sd is 1 m/s (half of wind.mjs\'s assumed +-2 m/s design input). The winged zebrafish\'s entire launch speed is 0.62 m/s, so its drawn ground range is sometimes NEGATIVE: it is blown backwards. That is arithmetically right and scientifically useless. An ensemble over an animal whose launch speed is below the assumed gust is a distribution of being blown about, not of gliding, and its only honest readout is the one reported: it never glides, at any seed.',
   'THE BAND IS NARROWER THAN THE TRUTH IN ONE WAY AND WIDER IN ANOTHER. Narrower: only eight inputs are drawn. The drag polar itself (C_Lmax 0.78, (L/D)max 4.37) is held fixed at one measurement of stuffed specimens at one wind speed, and C_L at 0 deg is the assumed 0.4 in params.json (glide.mjs has since derived 0.53), so polar uncertainty -- probably the largest single term -- is absent. Wider: mass and fin area are drawn independently because no source gives their correlation, and real fish correlate them.',
 ];
@@ -597,6 +714,11 @@ export function makeEnsemble(opts = {}) {
     analytic_total_m: summarise(col(r => r.analytic && r.analytic.total_m)),
     can_glide_fraction: runs.filter(r => r.result && r.result.can_glide).length / runs.length,
   };
+  // Multi-hop BOOKKEEPING, so the quoted 400 m / 30 s SEQUENCE can be read against a model that
+  // computes ONE hop. See FIELD_OBSERVATIONS for which quoted figure measures which quantity.
+  stats.sequence = stats.can_glide_fraction > 0
+    ? sequenceStats(col(r => r.result && r.result.range_m), col(r => r.result && r.result.time_s), col(r => r.result && r.result.launch_airspeed_m_s))
+    : { note: 'not computed: this animal cannot glide, so it makes no hops', is_prediction: false };
   return {
     seed: String(seed), draws, runs, deterministic, stats, sea,
     species_gate: { is_flier: isFlier(baseParams), note: isFlier(baseParams) ? 'the 15-20 m/s taxi band applies' : 'the 15-20 m/s taxi band does NOT apply: no sourced launch-speed spread for this animal, so the launch speed is left at the base value' },
@@ -607,6 +729,8 @@ export function makeEnsemble(opts = {}) {
     })),
     note: UNCERTAINTY_NOTE,
     scope: SCOPE_NOTES,
+    field_observations: FIELD_OBSERVATIONS,
+    open_questions: OPEN_QUESTIONS,
     solver: run === glideTrajectory
       ? "creatures.js glideTrajectory: the simulator's own glide-phase dynamics (index.html derive/CL/CD/fge/rk4) with power off, integrated to the water at a CONSTANT angle of attack. The trajectory phugoids and re-enters the water still travelling fast, so the residual kinetic energy is never converted into distance and the integrated range comes out SHORTER than glide.mjs's analytic bound (which assumes level flight decelerating all the way to v_min). Both are reported in stats."
       : 'a solver supplied by the host',

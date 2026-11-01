@@ -56,10 +56,17 @@ export function scopeCheck(constraintId, design = {}, spec = {}) {
   }
   const st = designStage(design);
   if (st && (sc.life_stages || []).length && !sc.life_stages.includes(st)) return { in_scope: false, reason: `scoped to life stages ${sc.life_stages.join(', ')}; the design is at ${st}.`, scope: sc };
+  // Quantities a scope may range over that the design does not carry directly.
+  const derivedQ = {};
+  if (typeof spec.SL_m === 'number' && REFERENCE && REFERENCE.SL_m) derivedQ.length_ratio_vs_reference = spec.SL_m / REFERENCE.SL_m;
   for (const [q, r] of Object.entries(sc.ranges || {})) {
-    const v = typeof spec[q] === 'number' ? spec[q] : design[q];
+    const v = typeof spec[q] === 'number' ? spec[q] : typeof design[q] === 'number' ? design[q] : derivedQ[q];
     if (typeof v !== 'number' || !r) continue;
     if ((r.min != null && v < r.min) || (r.max != null && v > r.max)) return { in_scope: false, reason: `${q} = ${v}${r.unit ? ' ' + r.unit : ''} is outside the law's range [${r.min ?? '-inf'}, ${r.max ?? 'inf'}]${r.note ? ': ' + r.note : ''}.`, scope: sc };
+    // exclude_between: the law is NOT evaluated inside this interval (a near-singular denominator, say).
+    if (Array.isArray(r.exclude_between) && v > r.exclude_between[0] && v < r.exclude_between[1]) {
+      return { in_scope: false, reason: `${q} = ${+v.toFixed(4)} lies inside [${r.exclude_between[0]}, ${r.exclude_between[1]}], where this law is not evaluated${r.note ? ': ' + r.note : ''}.`, scope: sc };
+    }
   }
   return { in_scope: true, reason: null, scope: sc };
 }

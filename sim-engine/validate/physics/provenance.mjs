@@ -102,7 +102,7 @@ export function modelConfidence({ scenario = null, run = null, metricKey = null,
   }
   if (validated === 'rests-on-assumed') bits.push(`The weakest input this check rests on is \`${wk}\`: it lands where it should, but not on measured ground.`);
   if (validated === 'unvalidated') bits.push('The scenario declares no validatedAgainst entry and the independent harness has no row for it: nothing says this model agrees with any measurement.');
-  if (validated === 'independent') bits.push(`Compared with a measurement that did not set its inputs: ${independentCard.map(v => `${v.organism}: predicted ${v.predicted} vs measured ${v.measured}`).join('; ')}`);
+  if (validated === 'independent' || validated === 'circular-in-part') bits.push(`Comparison(s) that did NOT set its inputs: ${independentCard.map(v => `${v.organism}: predicted ${v.predicted} vs measured ${v.measured} -- ${String(v.source).slice(0, 200)}`).join('; ')}`);
   for (const t of failedTests) bits.push(`independent harness ${t.id} FAILS for this module: ${t.why || ''}`.trim());
   if (extra.circular_note) bits.push(extra.circular_note);
   if (extra.assumed_inputs?.length) bits.push(`Assumed inputs: ${extra.assumed_inputs.join('; ')}.`);

@@ -27,6 +27,13 @@ export function checkEmpirical(s, derived) {
   // E2: the fitted mass-exponent band.
   { const b = num(s.mass_exponent) ? s.mass_exponent : (derived && num(derived.impliedMassExponent) ? derived.impliedMassExponent : null);
     const src = num(s.mass_exponent) ? 'committed mass_exponent' : 'the exponent implied against the reference specimen';
+    // An exponent IMPLIED against the single reference specimen carries no information at a near-unit length ratio
+    // (see SINGULARITY): the denominator ln(L/L_ref) approaches zero. A committed mass_exponent is unaffected.
+    const lrE2 = num(s.SL_m) && REFERENCE.SL_m ? s.SL_m / REFERENCE.SL_m : null;
+    const nearRefE2 = !num(s.mass_exponent) && lrE2 !== null && lrE2 > SINGULARITY.ratio_lo && lrE2 < SINGULARITY.ratio_hi;
+    if (nearRefE2) rows.push(empiricalRow('E2', 'out-of-scope', { length_ratio_vs_reference: +lrE2.toFixed(4), impliedExponent: b, excluded_between: [SINGULARITY.ratio_lo, SINGULARITY.ratio_hi] }, [],
+      'the mass exponent was implied against the reference specimen at a length ratio of ' + (+lrE2.toFixed(4)) + ', inside [' + SINGULARITY.ratio_lo + ', ' + SINGULARITY.ratio_hi + '] where ln(L/L_ref) is too small to carry an exponent (about ' + (SINGULARITY.sigma_rel * 100) + '% measurement uncertainty against a ' + SINGULARITY.band + ' band): commit mass_exponent from a fit instead'));
+    else
     if (b === null) rows.push(empiricalRow('E2', 'cannot-evaluate', {}, ['mass_exponent (or a length different from the reference specimen)'], 'the band is [2.90, 3.02] over the six fitted field rows of five species'));
     else rows.push(empiricalRow('E2', geTol(b, 2.9) && leTol(b, 3.02) ? 'holds' : 'violated', { exponent: b, from: src, band: [2.9, 3.02] }, [],
       'within the band every fitted flying-fish study spans; outside it, no fit in the project\'s table supports the design',

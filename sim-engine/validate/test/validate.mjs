@@ -161,5 +161,27 @@ const doc = (base, edits, genotype) => { let d = { ...O.docFor(bundle, base), id
   check('functional-absent-is-not-a-pass', absent.ran === false && !!absent.reason && absent.resolution === undefined
     && LADDER.length === (M('functional-absent-is-not-a-pass') ? 99 : 6));
 }
+// The second Lean round (another thread's lean-rounds.mjs, wired in at the tool layer). Two things are mine to
+// check: that it does not move a frozen score, and that the panel surfaces a changed verdict.
+{
+  const { leanRounds } = await import('../lean-rounds.mjs');
+  const { designScore } = await import('../score.mjs');
+  const thermal = { body_temperature_C: 41, ct_min_C: 6.2, ct_max_C: 38.6, sustained_power_W: 0.002 };
+  const lr = await leanRounds({ organism: 'zebrafish-adult', from: M('lean-round2-sees-law-decay') ? null : '1.0.0', extraSpec: thermal });
+  check('lean-round2-sees-law-decay',
+    lr.newly_violated_since.some(v => v.law_id === 'perturb-thermal') && lr.verdict_changed === true && lr.newly_violated_without_a_law_change.length === 0,
+    `${lr.round1.lawset_version} -> ${lr.round2.lawset_version}: newly violated ${lr.newly_violated_since.map(v => v.constraint).join(',') || 'none'}`);
+  // frozen scores must not move now that the tool layer runs a second round
+  const want = { 'zebrafish-adult': 0.9217, tff: 0.3492, 'ff-zf-chimera': 0.8201 };
+  const moved = [];
+  for (const [id, exp] of Object.entries(want)) { const r = await designScore(id, {}); if (r.score !== (M('lean-round2-no-score-change') ? exp + 1 : exp)) moved.push(`${id} ${r.score} != ${exp}`); }
+  check('lean-round2-no-score-change', moved.length === 0, moved.join('; ') || 'v1.0.0 scores for the published designs are unchanged');
+  // the envelope's counts must still summarise its own provenance list after the tool pushes rows onto it
+  const T = (await import('../../tools/validate-tools.mjs')).VALIDATE_TOOLS;
+  const out = await T.find(t => t.name === 'validate_design').handler({ organism: 'zebrafish-adult' });
+  const sum = Object.values(out.counts).reduce((a, b) => a + b, 0);
+  check('envelope-counts-match-provenance', sum === out.provenance.length - (M('envelope-counts-match-provenance') ? 1 : 0) && !!out.result.lean_rounds,
+    `${out.provenance.length} rows, counts sum ${sum}, weakest_input ${out.weakest_input}`);
+}
 console.log(`\n${n - fails}/${n} passed${MUT ? ` (MUTATE=${MUT})` : ''}`);
 process.exit(fails);

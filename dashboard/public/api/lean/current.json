@@ -1,9 +1,9 @@
 {
- "version": "1.7.0",
- "created": "2026-11-01T05:18:21.427Z",
- "previous": "1.6.0",
- "commit": "e4444f69efad042de928731680b92a8f13ce044c",
- "note": "E3 2.0.0 -> 2.1.0 and fick-principle 1.1.0 -> 1.2.0, WORDING ONLY: scope.applies_to and scope.excludes now say the aerobic bound is on sustained aerobic power DEMAND (powered level or climbing flight, sustained swimming) and does NOT apply to unpowered descent or glide, where the work comes from potential and kinetic energy rather than metabolism, nor to burst effort on white-muscle stores. No Lean statement, hypothesis or number changed (statement hashes identical); v2.0.0 and v1.1.0 are archived in law-versions/ and stay pinned by law sets up to 1.6.0. Prompted by E3 and C14 firing red on real Park and Choi flying fish making ordinary glide claims: the checker now returns out-of-scope for a declared unpowered glide, and a standing registry test asserts no accepted law is violated by a real organism making a realistic claim.",
+ "version": "1.8.0",
+ "created": "2026-11-01T05:36:46.212Z",
+ "previous": "1.7.0",
+ "commit": "23c95f790e6554abf6955ea1bcbae03954cdb153",
+ "note": "First release in which a new law BINDS without a code edit. Five laws enter the set carrying a declarative `browser_check` block (lean/registry/README.md \"Declarative browser check\"): the LeanBio discovery agent's four survivors fisher-kpp-speed 1.1.0 (KPP1), kimura-heterozygosity 1.1.0 (HET1), maynardsmith-hawk-dove 1.1.0 (HAWKDOVE1) and turing-ddi 1.1.0 (TURING1), plus test-loop-only-density-sanity 1.0.0 (TL1), which is a LOOP TEST and not a scientific claim and is retired in 1.8.1. ALL FIVE ARE candidate, SO NONE OF THEM IS BINDING: a candidate violation is advisory everywhere (binding:false), candidate is the automatic ceiling, and nothing here can reject a design on its own. What is new is that they evaluate at all -- before this release a law whose constraint id had no hand-written formula in lean/eliminate/build-browser-check.mjs produced no row and bound nothing, on any surface, silently. This release also carries five SCOPE-ONLY registry versions sitting unreleased in lean/registry/laws/: thompson1917-ch03-07 1.1.0, scaling-area-law 1.1.0, scaling-strength-law 1.1.0, thompson1917-ch02-10 1.1.0 and E2 1.1.0, all the same near-singular implied-exponent exclusion (|ln(L/L_ref)| < 0.1, i.e. a length ratio inside [0.905, 1.105]) that fixes the third wild-type false positive. No Lean statement, hypothesis or number changed in any of the five and the old versions are archived, so the narrowing only greys rows that were WRONGLY red: nothing previously ruled out becomes allowed. The reasoning for that narrowing belongs to the registry thread and is written up under the 1.9.0 entry. Also carried: aerobic-power-bound 1.1.0 and fick-principle 1.3.0, which move C14 and C14b to aerobic-power-bound and leave fick-principle owning no constraint, because aerobic-power-bound is the law whose theorem rules a design out while fick-principle is the named hypothesis it rests on -- until now both laws listed C14 and the generated checker broke the tie alphabetically, so a violation of the aerobic ceiling was reported under fick-principle for no better reason than the letter f.",
  "laws": [
   {
    "law_id": "E1",
@@ -32,7 +32,7 @@
   },
   {
    "law_id": "E2",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "kind": "biological",
    "status": "accepted",
    "label": "The fitted mass exponent lies in [2.90, 3.02]",
@@ -51,13 +51,19 @@
     "life_stages": [
      "adult"
     ],
-    "ranges": {}
+    "ranges": {},
+    "applies_to": [
+     "a mass exponent fitted over a size range: a length-weight regression, or a design that commits mass_exponent"
+    ],
+    "excludes": [
+     "an exponent IMPLIED against the single reference specimen at a length ratio inside [0.905, 1.105]: ln(L/L_ref) is then too small to carry an exponent (about 1% relative uncertainty in L against the studio's 0.1 band), so the number says nothing about the fitted band. Commit mass_exponent from a fit instead. The real Park and Choi siblings L1 (ratio 1.0099), L2 (1.0296) and model N (0.9951) fell here and came back red against this law (blind evaluator, 2026-11-01)."
+    ]
    },
    "constraint_scopes": {},
    "constraints": [
     "E2"
    ],
-   "content_hash": "f3c88dec14a69dc55688f541c4776c0bb60bfe24ec920a941f4cb5e6d1f5cd26"
+   "content_hash": "c46c6aecc14045d9be4cae2ae77b45f9963b3cbdc9e0826e902a192f4077dfe6"
   },
   {
    "law_id": "E3",
@@ -242,7 +248,7 @@
   },
   {
    "law_id": "aerobic-power-bound",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "kind": "biological",
    "status": "accepted",
    "label": "Sustained mechanical power is bounded by oxygen delivery (Fick) times efficiency",
@@ -258,14 +264,21 @@
      "any"
     ],
     "life_stages": [],
-    "ranges": {}
+    "ranges": {},
+    "applies_to": [
+     "sustained aerobic power DEMAND: powered level flight, climbing flight, and sustained (aerobic) swimming — work the animal must pay for out of metabolism"
+    ],
+    "excludes": [
+     "unpowered descent or glide: the work comes from potential and kinetic energy, not from metabolism, so W v / (L/D) computed for a descent is NOT a demand this law bounds. A real gliding flying fish compared against this ceiling comes back \"violated\" only because the caller converted a glide into a level-powered-flight requirement; that is an application error, not a violation (it happened to Park and Choi specimens making realistic glide claims, 2026-11-01).",
+     "burst (anaerobic) effort paid out of white-muscle stores, which is what a flying fish is understood to use for take-off and taxiing"
+    ]
    },
    "constraint_scopes": {},
    "constraints": [
     "C14",
     "C14b"
    ],
-   "content_hash": "e6399b6def1833018402551c3f0c01b8e260c09c01125bed8f9bbe04af3057c0"
+   "content_hash": "625196c223d44b8ea7ed1f09de7d8ada7b18d3591daf27bb8b27452d48df7249"
   },
   {
    "law_id": "altitude-coupling",
@@ -482,7 +495,7 @@
   },
   {
    "law_id": "fick-principle",
-   "version": "1.2.0",
+   "version": "1.3.0",
    "kind": "biological",
    "status": "accepted",
    "label": "Fick principle: aerobic supply is at most eta E Q (Ca - Cv)",
@@ -506,10 +519,8 @@
     ]
    },
    "constraint_scopes": {},
-   "constraints": [
-    "C14"
-   ],
-   "content_hash": "77f9f993028e8e0b625073b6a37ccd0fc1ae13ee33a4f22745b97508dae86114"
+   "constraints": [],
+   "content_hash": "a79daa373a3f7a6fbf3d549525aa69a70afb0891acd40a25e9fd0f9dff6fff4d"
   },
   {
    "law_id": "fin-length-ratio",
@@ -560,6 +571,31 @@
     "C4c"
    ],
    "content_hash": "43a0f4776a50c16a110d734ac69c580665ac245d1e75f62e2bf8c737347d48ec"
+  },
+  {
+   "law_id": "fisher-kpp-speed",
+   "version": "1.1.0",
+   "kind": "biological",
+   "status": "candidate",
+   "label": "Fisher-KPP: c^2 = 4sD is the minimum of the linear speed relation, attained at one decay rate",
+   "level": null,
+   "theorem": "Delphi.LeanBio.Round2.KppSpeed.kpp_min_speed",
+   "module": "lean/registry/proposals/fisher-kpp-speed/law.lean",
+   "statement": "For a Fisher-KPP gene wave with dispersal coefficient D > 0, selection coefficient s > 0 and minimal speed c > 0 satisfying c^2 = 4*s*D (a named hypothesis), the relation c*k <= D*k^2 + s holds at every exponential decay rate k, strictly except at the single minimiser 2*D*k = c, so c is the minimum of the family of linear spreading speeds and is attained at exactly one decay rate; and at fixed dispersal a larger selection coefficient gives a strictly larger minimal speed.",
+   "sources": [
+    "doi:10.1111/j.1469-1809.1937.tb02153.x"
+   ],
+   "scope": {
+    "taxa": [
+     "any"
+    ],
+    "life_stages": [],
+    "ranges": {}
+   },
+   "constraints": [
+    "KPP1"
+   ],
+   "content_hash": "ed316e1bc97dfa63d6e848d658bdb7e926c37331112e6fd6ef4057d2d0751b59"
   },
   {
    "law_id": "flight-allometry-law",
@@ -815,6 +851,31 @@
    "content_hash": "926e515291aad6b9e49a38ace2fd31ae1abd4ca314072484a8bbd535778c2467"
   },
   {
+   "law_id": "kimura-heterozygosity",
+   "version": "1.1.0",
+   "kind": "biological",
+   "status": "candidate",
+   "label": "Neutral equilibrium heterozygosity rises strictly with Ne times mu",
+   "level": null,
+   "theorem": "Delphi.LeanBio.Round2.KimuraHet.het_equilibrium",
+   "module": "lean/registry/proposals/kimura-heterozygosity/law.lean",
+   "statement": "Under the infinite-alleles equilibrium H*(1+4*Ne*mu) = 4*Ne*mu (a named hypothesis), equilibrium heterozygosity lies strictly between 0 and 1 for every positive effective size and neutral mutation rate, and of two populations the one with the larger product Ne*mu has strictly the larger equilibrium heterozygosity.",
+   "sources": [
+    "doi:10.1093/genetics/49.4.725"
+   ],
+   "scope": {
+    "taxa": [
+     "any"
+    ],
+    "life_stages": [],
+    "ranges": {}
+   },
+   "constraints": [
+    "HET1"
+   ],
+   "content_hash": "ef9c256e218b8ca259999726567be1a2e5b1f91e78a17acbeda8c578d2ac2483"
+  },
+  {
    "law_id": "kimura-substitution-rate",
    "version": "1.0.0",
    "kind": "biological",
@@ -840,6 +901,32 @@
     "C1b"
    ],
    "content_hash": "6bc6b5e1e0a6c9569405c2d3c9283adace02e6adad0d30e6b86440a1394fd38c"
+  },
+  {
+   "law_id": "maynardsmith-hawk-dove",
+   "version": "1.1.0",
+   "kind": "biological",
+   "status": "candidate",
+   "label": "Hawk-Dove: the escalation probability p*C = V is invaded from neither side and costs the population",
+   "level": null,
+   "theorem": "Delphi.LeanBio.Round2.HawkDove.hawk_dove_mixture",
+   "module": "lean/registry/proposals/maynardsmith-hawk-dove/law.lean",
+   "statement": "For a symmetric Hawk-Dove contest with resource value V > 0, injury cost C > V and escalation probability p fixed by p*C = V (a named hypothesis), p lies strictly inside (0,1); Hawk and Dove have equal payoff against a population escalating with probability p; a population escalating less often than p gives Hawk a strictly higher payoff and one escalating more often gives Dove a strictly higher payoff, so p is invaded from neither side; and the payoff at p is strictly below V/2, the all-Dove payoff, which is the cost of conflict.",
+   "sources": [
+    "doi:10.1038/246015a0",
+    "doi:10.1017/cbo9780511806292"
+   ],
+   "scope": {
+    "taxa": [
+     "any"
+    ],
+    "life_stages": [],
+    "ranges": {}
+   },
+   "constraints": [
+    "HAWKDOVE1"
+   ],
+   "content_hash": "a00c135e6030638fa84a7ac0bb8891485813789b43350e4ecacafe787a20a21a"
   },
   {
    "law_id": "maynardsmith-hitchhiking",
@@ -1147,7 +1234,7 @@
   },
   {
    "law_id": "scaling-area-law",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "kind": "physical",
    "status": "accepted",
    "label": "Area law and wing loading under isometry (R2, R3)",
@@ -1171,7 +1258,16 @@
       "Exocoetidae"
      ],
      "life_stages": [],
-     "ranges": {},
+     "ranges": {
+      "length_ratio_vs_reference": {
+       "exclude_between": [
+        0.905,
+        1.105
+       ],
+       "unit": "1",
+       "note": "an implied exponent is ln(X/X_ref) / ln(L/L_ref) against the single reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3, SL 0.203 m), so the denominator approaches zero as L approaches L_ref and ordinary specimen variation is amplified without limit. About 1% relative uncertainty in L against the studio's 0.1 decision band means the comparison carries no information until |ln(L/L_ref)| >= 0.1, i.e. a length ratio outside [0.905, 1.105]. Measured in the real siblings: L1 (ratio 1.0099) implied a v_min exponent of -1.43 and L2 (1.0296) -3.86 against a target of 0.5, and model N (0.9951) -60.8, so accepted laws fired red on unedited wild-type flying fish (blind evaluator, 2026-11-01)"
+      }
+     },
      "basis": "evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope"
     }
    },
@@ -1179,7 +1275,7 @@
     "C2a",
     "C2b"
    ],
-   "content_hash": "f1710658ab99e319ea9c11ef7f7caa44980a81f5fe997b2056f20b49a7f549a0"
+   "content_hash": "c3c1dcf4e433aa034b9633f2785573569a1cdccf96e2d00bb9b666d8972e58d1"
   },
   {
    "law_id": "scaling-bending-law",
@@ -1211,7 +1307,7 @@
   },
   {
    "law_id": "scaling-strength-law",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "kind": "physical",
    "status": "accepted",
    "label": "Strength scales as L^2: the missing half of Galileo's square-cube argument (R7)",
@@ -1243,7 +1339,16 @@
       "Exocoetidae"
      ],
      "life_stages": [],
-     "ranges": {},
+     "ranges": {
+      "length_ratio_vs_reference": {
+       "exclude_between": [
+        0.905,
+        1.105
+       ],
+       "unit": "1",
+       "note": "an implied exponent is ln(X/X_ref) / ln(L/L_ref) against the single reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3, SL 0.203 m), so the denominator approaches zero as L approaches L_ref and ordinary specimen variation is amplified without limit. About 1% relative uncertainty in L against the studio's 0.1 decision band means the comparison carries no information until |ln(L/L_ref)| >= 0.1, i.e. a length ratio outside [0.905, 1.105]. Measured in the real siblings: L1 (ratio 1.0099) implied a v_min exponent of -1.43 and L2 (1.0296) -3.86 against a target of 0.5, and model N (0.9951) -60.8, so accepted laws fired red on unedited wild-type flying fish (blind evaluator, 2026-11-01)"
+      }
+     },
      "basis": "evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope"
     }
    },
@@ -1254,7 +1359,7 @@
     "C8d",
     "C8e"
    ],
-   "content_hash": "2443ea6c9f63b5dff342618ebc6f979fe634e9216de7d6862d94541b5030717b"
+   "content_hash": "a78e7a018d056cbfd03eb725b3a03049c53c9c204a286491077430ae6521008f"
   },
   {
    "law_id": "taxiing-thrust",
@@ -1277,6 +1382,30 @@
    "constraint_scopes": {},
    "constraints": [],
    "content_hash": "bff5557299cabdecc61e3d1b9b6137e9097f620a93ee6596b163a582adfda00e"
+  },
+  {
+   "law_id": "test-loop-only-density-sanity",
+   "version": "1.0.0",
+   "kind": "physical",
+   "status": "candidate",
+   "label": "TEST-LOOP-ONLY: a teleost design's bulk density is at most a million times water",
+   "level": "body",
+   "theorem": null,
+   "module": null,
+   "statement": "For a teleost design that commits a standard length and a mass, mass_kg is at most 1e6 kg/m^3 times SL_m^3: the bulk density implied by the committed numbers is at most a million times that of water.",
+   "sources": [],
+   "scope": {
+    "taxa": [
+     "Teleostei"
+    ],
+    "life_stages": [],
+    "ranges": {}
+   },
+   "constraint_scopes": {},
+   "constraints": [
+    "TL1"
+   ],
+   "content_hash": "0dabd60665dd8cdd9328a1d7fe6b75fc91feaa1ece3e07b8bc7d44bdbb4d95d5"
   },
   {
    "law_id": "thompson1917-ch02-06",
@@ -1331,7 +1460,7 @@
   },
   {
    "law_id": "thompson1917-ch02-10",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "kind": "physical",
    "status": "accepted",
    "label": "Speed varies as the square root of linear size in swimming, flight and walking",
@@ -1355,7 +1484,16 @@
       "Exocoetidae"
      ],
      "life_stages": [],
-     "ranges": {},
+     "ranges": {
+      "length_ratio_vs_reference": {
+       "exclude_between": [
+        0.905,
+        1.105
+       ],
+       "unit": "1",
+       "note": "an implied exponent is ln(X/X_ref) / ln(L/L_ref) against the single reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3, SL 0.203 m), so the denominator approaches zero as L approaches L_ref and ordinary specimen variation is amplified without limit. About 1% relative uncertainty in L against the studio's 0.1 decision band means the comparison carries no information until |ln(L/L_ref)| >= 0.1, i.e. a length ratio outside [0.905, 1.105]. Measured in the real siblings: L1 (ratio 1.0099) implied a v_min exponent of -1.43 and L2 (1.0296) -3.86 against a target of 0.5, and model N (0.9951) -60.8, so accepted laws fired red on unedited wild-type flying fish (blind evaluator, 2026-11-01)"
+      }
+     },
      "basis": "evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope"
     }
    },
@@ -1364,11 +1502,11 @@
     "C9c",
     "C11"
    ],
-   "content_hash": "152c1cb5005e68997e372bed566853a44f48b63708db23b11c174062697ed1c4"
+   "content_hash": "00a49c1372521d60d2daa5797d5e1fb57b78c6665bf9c8bbf876ff13d681f541"
   },
   {
    "law_id": "thompson1917-ch03-07",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "kind": "physical",
    "status": "accepted",
    "label": "Weight tends to vary as the cube of linear dimensions during growth",
@@ -1392,7 +1530,16 @@
       "Exocoetidae"
      ],
      "life_stages": [],
-     "ranges": {},
+     "ranges": {
+      "length_ratio_vs_reference": {
+       "exclude_between": [
+        0.905,
+        1.105
+       ],
+       "unit": "1",
+       "note": "an implied exponent is ln(X/X_ref) / ln(L/L_ref) against the single reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3, SL 0.203 m), so the denominator approaches zero as L approaches L_ref and ordinary specimen variation is amplified without limit. About 1% relative uncertainty in L against the studio's 0.1 decision band means the comparison carries no information until |ln(L/L_ref)| >= 0.1, i.e. a length ratio outside [0.905, 1.105]. Measured in the real siblings: L1 (ratio 1.0099) implied a v_min exponent of -1.43 and L2 (1.0296) -3.86 against a target of 0.5, and model N (0.9951) -60.8, so accepted laws fired red on unedited wild-type flying fish (blind evaluator, 2026-11-01)"
+      }
+     },
      "basis": "evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope"
     }
    },
@@ -1400,7 +1547,35 @@
     "C7",
     "C7b"
    ],
-   "content_hash": "2e54b441d95290ca4e76eb543d1c79805e51ab50fbdd774b349e72d164a7a9ea"
+   "content_hash": "af67b96a6102ea2f76bf0dceeeddf2e2b51b6443c14a9a767548381351fbd116"
+  },
+  {
+   "law_id": "turing-ddi",
+   "version": "1.1.0",
+   "kind": "biological",
+   "status": "candidate",
+   "label": "Diffusion-driven instability exists, and equal diffusivities cannot produce it",
+   "level": null,
+   "theorem": "Delphi.LeanBio.Round2.TuringDDI.turing_instability",
+   "module": "lean/registry/proposals/turing-ddi/law.lean",
+   "statement": "For the linearisation of a two-morphogen reaction-diffusion system about a homogeneous steady state with positive diffusivities, negative Jacobian trace, positive Jacobian determinant and Turing's inequality 4*du*dv*detJ < (dv*fu + du*gv)^2 with dv*fu + du*gv > 0 (a named hypothesis), there is a strictly positive squared wavenumber at which the dispersion relation is negative, so the homogeneous state is linearly unstable to a spatial mode; and the two diffusivities are necessarily unequal, so no equal-diffusivity system stable without diffusion can pattern, whatever its kinetics.",
+   "sources": [
+    "doi:10.1098/rstb.1952.0012"
+   ],
+   "scope": {
+    "taxa": [
+     "any"
+    ],
+    "life_stages": [
+     "embryo",
+     "larva"
+    ],
+    "ranges": {}
+   },
+   "constraints": [
+    "TURING1"
+   ],
+   "content_hash": "90a7d5ef5876577fa13a42929f04e59ab35ed0345d0aec6ef52a7cced7bba780"
   },
   {
    "law_id": "walking-pendulum-speed",
@@ -1425,7 +1600,7 @@
    "content_hash": "cc4fecaa7c6139dfe7dda4b373135f5cc8213630967dce0f62c6d9f204d0fd80"
   }
  ],
- "file": "lean/registry/lawsets/lawset-1.7.0.json",
+ "file": "lean/registry/lawsets/lawset-1.8.0.json",
  "is_current": true,
  "origin": "registry"
 }

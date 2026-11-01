@@ -51,6 +51,7 @@ const INFRASTRUCTURE = {
 // Anything NOT on this list must reach the evaluator, which for a new law means a `browser_check` block in its
 // law file (lean/registry/README.md "Declarative browser check"); no code edit is needed for that.
 const NO_DESIGN_ROW = {
+  'fick-principle': 'DECIDED BY THE LAW OWNER (2026-11-01, fick-principle 1.3.0): it is the named HYPOTHESIS that aerobic-power-bound rests on, not the law that rules anything out, so it owns no constraint. C14 and C14b belong to aerobic-power-bound, whose Lean theorem does the eliminating. The law a user sees in a verdict should be the law that eliminated the design, and a premise should not own an eliminating constraint. Before this, both laws listed C14 and the generated checker broke the tie alphabetically, so a violation of the aerobic ceiling was reported under fick-principle for no better reason than the letter f',
   E5: 'DELIBERATE, and the law file says so (E5 scope.note): "It is deliberately NOT a constraint in the ledger, so that nothing is ever reported as eliminated by it; it is a flag in the Design Studio." The evaluator emits an E5 row, but as a provenance flag (verdictKind "provenance") whose verdict is only holds or cannot-evaluate, never violated',
   E1: 'an observation ABOUT the reference data (isometry fails within a species), not a relation over the numbers a design commits; it is the evidence behind the C2a/C8e exponent bands rather than a row of its own',
   E6: 'a convention about blueprint graph edge semantics ("required for" is not propagated down part_of); it constrains the graph builder in anatomy-model/, not a design\'s numbers',
@@ -183,7 +184,12 @@ if (rowIds) {
   }
   const curSet = reg.lawsets.find(s => s.version === reg.current);
   const binds = l => (l.constraints || []).some(c => rowIds.has(c) && claimed.get(c) === l.law_id);  // attributed to THIS law, not merely mentioned by it
-  for (const pin of curSet ? curSet.laws : []) {
+  // Every law the current release pins, PLUS every law file already marked accepted but not yet released: a
+  // law promoted to accepted in its file is claiming assurance from the moment of the promotion, so it has to
+  // be able to evaluate something before the release, not after.
+  const toCheck = [...(curSet ? curSet.laws : [])];
+  for (const l of reg.laws) if (l.status === 'accepted' && !toCheck.some(x => x.law_id === l.law_id)) toCheck.push({ law_id: l.law_id, version: l.version, status: l.status, unreleased: true });
+  for (const pin of toCheck) {
     const l = src.lawVersion(pin.law_id, pin.version) || reg.laws.find(x => x.law_id === pin.law_id);
     if (!l) continue;
     const status = pin.status || l.status;
@@ -201,6 +207,28 @@ if (rowIds) {
       : `${c}: the row exists but is attributed to law ${claimed.get(c)}`).join('; ') || 'it declares no constraint';
     fail('bind:accepted', l.law_id, `ACCEPTED law ${l.law_id} evaluates NOTHING (${why}), so lean_check, the Studio's verdicts, the optimizer's rejection rule and validate_design all report a design as checked against it while no arithmetic ran`,
       'give the law a declarative "browser_check" block (lean/registry/README.md "Declarative browser check"; data, no code edit) and bump its version, or add it to NO_DESIGN_ROW in lean/registry/check-exposed.mjs with the reason it cannot be a design row and what would make it bind');
+  }
+  // Two laws claiming ONE constraint id. The generated checker breaks the tie by file order (last writer wins,
+  // i.e. alphabetically), and lib/lean-source.mjs constraintIndex breaks it the other way (first wins), so a
+  // user reading a violation is told which law it came from for no better reason than a letter of the alphabet.
+  // Attribution of a violation to a law is user-facing: it must be explicit, not emergent. Retired laws are
+  // excluded (a retired law keeps its constraint list so old verdicts stay reproducible).
+  const claimants = new Map();
+  for (const l of reg.laws) { if (l.status === 'retired') continue; for (const c of l.constraints || []) (claimants.get(c) || claimants.set(c, []).get(c)).push(l.law_id); }
+  for (const [c, who] of claimants) {
+    if (who.length < 2) continue;
+    fail('bind:ambiguous', c, `constraint ${c} is claimed by ${who.length} laws (${who.join(', ')}), so which law a violation of it is reported under is decided by file order, not by a decision: the generated checker attributes it to ${claimed.get(c) || 'none'} and lib/lean-source.mjs constraintIndex would pick ${who[0]}`,
+      `make the constraint belong to exactly ONE law: remove it from the other law's "constraints" (constraints is not a hashed field), and if both laws really need to be evaluated give the second one its own constraint id with a "browser_check" block`);
+  }
+
+  // A law file that no law set pins is excluded by lean_check ("not in lawset <v>"), so it reaches the
+  // registry, the mirror, both MCP servers and both CLIs and still judges nothing. For an accepted law that is
+  // a release that was forgotten; for a candidate it is the normal state until the next release.
+  for (const l of reg.laws) {
+    if (['proposed', 'retired'].includes(l.status)) continue;
+    if (reg.lawsets.some(s => s.laws.some(x => x.law_id === l.law_id))) continue;
+    if (l.status === 'accepted') fail('a:unreleased', l.law_id, `${l.law_id} is ACCEPTED but no law set pins it, so lean_check excludes it ("not in lawset ${reg.current}") and no design is ever judged by it`, `cut a release: node lean/registry/release.mjs <next semver> "<note>"`);
+    else notes.push(`${l.law_id} (${l.status}) is in no law set yet, so lean_check excludes it and it judges no design until the next release (node lean/registry/release.mjs).`);
   }
   for (const id of Object.keys(NO_DESIGN_ROW)) {
     const l = reg.laws.find(x => x.law_id === id);

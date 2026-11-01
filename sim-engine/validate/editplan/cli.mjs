@@ -47,7 +47,9 @@ function printPlan(r) {
       (g.distance_cut_to_edit_bp != null ? `  ${g.distance_cut_to_edit_bp} bp from edit` : `  frameshift from codon ${g.frameshift_from_codon} (loses ${(100 * (g.protein_fraction_lost_if_frameshift_here ?? 0)).toFixed(1)} % of the protein)`) +
       `  on-target ${g.on_target.score} [HEURISTIC]${g.on_target.flags.length ? '  !! ' + g.on_target.flags[0] : ''}`);
   }
-  if (pl.better_placed_alternative) console.log(`  better     ${pl.better_placed_alternative.nuclease} is better placed: ${pl.better_placed_alternative.why}`);
+  const bp = pl.better_placed_alternative;
+  if (bp?.not_applicable) console.log(`  better     n/a - ${bp.not_applicable}`);
+  else if (bp) console.log(`  better     ${bp.nuclease} is better placed: ${bp.why}`);
   const ots = Array.isArray(pl.off_target) ? pl.off_target : [];
   if (!ots.length) console.log(`  off-target NOT RUN (${pl.off_target?.reason || 'n/a'})`);
   for (const o of ots) {

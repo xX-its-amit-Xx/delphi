@@ -249,6 +249,20 @@ const corrections = [
     ],
     paths: ['physics/FICK-CEILING-CHECK.md', 'lean/registry/laws/E3.json', 'lean/registry/law-versions/E3@1.0.0.json', 'lean/empirical.json (E3)', 'sim-engine/scenarios/current.mjs'],
   },
+  {
+    id: 'kcnk5b-attribution',
+    what: '"The papers disagree on sign" about the membrane-potential change caused by gain-of-function kcnk5b',
+    verdict: 'CORRECTED',
+    found_by: 'trying to FORMALISE the dispute in Lean: writing both arms as named hypotheses forced a check of which paper asserted which sign, and the attribution did not survive it',
+    why: 'Jiang 2024 proposes a RECONCILIATION of the two readings, not a contradiction of Perathoner 2014: the increased K+-channel activity first hyperpolarizes the membrane potential, and this increase immediately activates Na+ channels to depolarize the cells. Our own stored evidence held that sentence all along — it is in genotype/causal-chains.json with full-text provenance — but the prose summary built from it dropped the third position and recast a reconciliation as a dispute, putting a disagreement in a cited author’s mouth.',
+    caveat: 'The scientific gap is real and unchanged: no steady-state membrane potential of a wild-type versus alf zebrafish fin-bud cell exists in any source we have fetched, so the direction in the tissue that matters is unresolved. What changed is that it is now a three-arm open question rather than a two-sided dispute, and the two published readings are provably NOT formally contradictory — they conflict only under an added same-preparation premise, carried explicitly as a Lean hypothesis.',
+    metrics: [
+      ['arms, after formalisation', 3],
+      ['arms formally contradictory without a same-preparation premise', 0],
+      ['steady-state fin-bud membrane potentials in any fetched source', 0],
+    ],
+    paths: ['genotype/CAUSAL.md (kcnk5b row; unresolved-questions list)', 'lean/registry/open-questions/questions/oq-kcnk5b-vm-sign.json', 'lean/registry/open-questions/lean/KcnkSign.lean'],
+  },
 ];
 
 // ---------------------------------------------------------------- 2. design test

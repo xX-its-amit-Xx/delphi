@@ -269,6 +269,72 @@ ok(/No birds anywhere/.test(LEGEND.no_birds), 'the legend states there are no bi
   }
 }
 
+// ---------------------------------------------------------------- 9b. what the field numbers measure
+// The hub suspected the 50 m field figure might be a multi-hop SEQUENCE total, which would make
+// the single-hop comparison mismatched rather than the model wrong. The sources say otherwise, and
+// these checks pin the quotes so nobody has to re-litigate it.
+{
+  const F = FIELD_OBSERVATIONS;
+  ok(F.single_hop_range_m.value === 50 && /ONE free flight/.test(F.single_hop_range_m.measures),
+    'the 50 m figure is recorded as ONE free flight, not a sequence');
+  ok(/Deng et al\. 2019/.test(F.single_hop_range_m.source) && /reachable flight distance of 50 m/.test(F.single_hop_range_m.source),
+    'the 50 m is pinned to the Deng 2019 Introduction wording that separates it from the 400 m');
+  ok(F.sequence_total_range_m.value === 400 && /SEQUENCE/.test(F.sequence_total_range_m.measures),
+    'the 400 m figure is recorded as the whole sequence');
+  ok(/successive sequence of taxiing and flight/.test(F.sequence_total_range_m.source),
+    'the 400 m carries Park & Choi\'s own "successive sequence" wording');
+  ok(F.single_hop_peak_height_m.value === 8 && /ONE free flight/.test(F.single_hop_peak_height_m.measures),
+    'the 8 m peak height belongs to ONE hop, so the max-height comparison is like for like');
+  // Both field numbers are MAXIMA. That is the thing the first version of this got wrong.
+  for (const k of ['single_hop_range_m', 'single_hop_peak_height_m', 'sequence_total_range_m']) {
+    ok(/upper envelope|maximum|not a mean|not a typical/i.test(F[k].statistic || ''), `${k} records that it is a maximum, not a typical value`);
+  }
+  ok(Object.values(F).every(x => x.kind === 'measured-secondhand'), 'every field figure is labelled second-hand (no primary observation is fetched)');
+  ok(OPEN_QUESTIONS.length >= 2 && OPEN_QUESTIONS.every(q => q.id && q.question && q.to_resolve),
+    'the unresolved comparisons are recorded as open questions with a way to resolve them');
+  ok(/Edgerton & Breder 1941/.test(OPEN_QUESTIONS[0].to_resolve), 'the open question names the primary source that would settle it');
+  const sn = SCOPE_NOTES.join(' ');
+  ok(/ONE HOP, NOT A SEQUENCE/.test(sn), 'SCOPE_NOTES records that the 50 m is one hop');
+  ok(/WHAT WAS WRONG WAS THE STATISTIC/.test(sn), 'SCOPE_NOTES records that the error was the statistic, not the hop count');
+  ok(!/our model underestimates real glides/.test(sn) || /NOT "our model underestimates/.test(sn),
+    'SCOPE_NOTES does not assert the unsupported claim that the model underestimates real glides');
+}
+
+// ---------------------------------------------------------------- 9c. the multi-hop bookkeeping
+{
+  const F = FIELD_OBSERVATIONS;
+  // Hand-checked arithmetic on one hop: 40 m hop in 4 s, take-off at 18 m/s.
+  // taxi time = 9 m / ((10 + 18)/2) = 9/14 = 0.642857 s; cycle = 49 m in 4.642857 s.
+  const s = sequenceStats([40], [4], [18]);
+  near(s.hops_to_cover_400m.median, 400 / 49, 1e-9, 'hops to cover 400 m = 400 / (hop + taxi)');
+  near(s.cycle_time_s.median, 4 + 9 / 14, 1e-9, 'cycle time = hop time + 9 m at the mean of the leap and take-off speeds');
+  near(s.time_to_cover_400m_s.median, (400 / 49) * (4 + 9 / 14), 1e-9, 'time to cover 400 m = hops x cycle time');
+  near(s.distance_covered_in_30s_m.median, (30 / (4 + 9 / 14)) * 49, 1e-9, 'distance in 30 s = cycles in 30 s x cycle distance');
+  ok(s.is_prediction === false && /BOOKKEEPING, not a model/.test(s.note), 'the sequence statistics say plainly that they are not a prediction');
+  ok(/hop COUNT is not predicted/.test(s.note), 'the sequence statistics say the hop count is not predicted');
+  ok(s.compare_with.sequence_total_range_m === 400 && s.compare_with.sequence_total_time_s === 30, 'the quoted figures being compared against are carried alongside');
+  // A faster, longer hop must need fewer hops and cover more ground in 30 s.
+  const fast = sequenceStats([55], [4.2], [20]);
+  ok(fast.hops_to_cover_400m.median < s.hops_to_cover_400m.median, 'a longer hop needs fewer hops');
+  ok(fast.distance_covered_in_30s_m.median > s.distance_covered_in_30s_m.median, 'a longer hop covers more ground in 30 s');
+  ok(F.taxi_length_m.value === 9 && /average taxiing length of 9 m/.test(F.taxi_length_m.source), 'the 9 m taxi run is the one sourced taxi length, quoted second-hand');
+  // On the real ensemble: the MEDIAN falls short of both quoted maxima, the MAXIMUM brackets both.
+  const E = makeEnsemble({ draws: 600, seed: 'sequence', baseParams: L3, keepTrajectories: false });
+  const q = E.stats.sequence;
+  ok(q && q.distance_covered_in_30s_m.n === 600, 'the ensemble carries the sequence bookkeeping for every draw');
+  ok(E.stats.glide_range_m.median < 50 && E.stats.glide_range_m.max > 50,
+    `the single-hop median (${E.stats.glide_range_m.median.toFixed(1)} m) is below the quoted 50 m maximum and the ensemble maximum (${E.stats.glide_range_m.max.toFixed(1)} m) is above it`);
+  ok(q.distance_covered_in_30s_m.median < 400 && q.distance_covered_in_30s_m.max > 400,
+    `the sequence median (${q.distance_covered_in_30s_m.median.toFixed(0)} m in 30 s) is below the quoted 400 m maximum and the ensemble maximum (${q.distance_covered_in_30s_m.max.toFixed(0)} m) is above it`);
+  ok(E.stats.max_height_m.median < 8 && E.stats.max_height_m.p95 > 8,
+    `max height: the median (${E.stats.max_height_m.median.toFixed(1)} m) is under the 8 m record but the 95th percentile (${E.stats.max_height_m.p95.toFixed(1)} m) is over it -- the constant-alpha artefact`);
+  ok(E.field_observations === FIELD_OBSERVATIONS && E.open_questions === OPEN_QUESTIONS, 'the ensemble carries the field observations and the open questions');
+  // A zebrafish makes no hops, so no sequence is computed for it.
+  const z = makeEnsemble({ draws: 20, seed: 'zseq', baseParams: ZF, keepTrajectories: false });
+  ok(z.stats.sequence && /cannot glide/.test(z.stats.sequence.note) && !z.stats.sequence.hops_to_cover_400m,
+    'no sequence statistics for an animal that cannot glide');
+}
+
 // ---------------------------------------------------------------- 10. the seed in the URL state
 {
   ok(seedFromUrl('') === 'delphi-v1', 'an absent seed falls back to the default');

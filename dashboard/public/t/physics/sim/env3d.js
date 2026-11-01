@@ -54,10 +54,14 @@
 //
 //  P7. Spray ballistics. Droplets are integrated with g = 9.80665 m/s^2.
 //
-//  P8. Depth colour. Per-channel transmittance exp(-K_lambda * depth) with K taken from pure-water
+//  P8. Depth colour. Per-channel transmittance exp(-K_lambda * L) with K taken from pure-water
 //      absorption at 450/550/650 nm: 0.0092, 0.0565, 0.340 m^-1 (Pope & Fry 1997, Appl. Opt.
 //      36:8710, Table 1). This is why red goes first and blue-green survives. See D5 for the one
 //      decorative factor applied on top.
+//
+//  P9. The path length L in P8 is taken along the VIEW DIRECTION, not at a single depth:
+//      L = depth / d.y looking up, unbounded looking level or downward. That is why the sea
+//      darkens downward. The clamp L <= 90 m is decorative (D5), so the deep is not pure black.
 //
 // DECORATIVE (chosen so the scene reads; never to be quoted as a measurement):
 //
@@ -500,6 +504,7 @@ export function makeOcean({ THREE, scene, size = 48, segments, conditions } = {}
   const farRings = 26, farSectors = 96;
   const farVerts = (farRings + 1) * (farSectors + 1);
   const fpos = new Float32Array(farVerts * 3);
+  const fnrm = new Float32Array(farVerts * 3);
   const fcol = new Float32Array(farVerts * 3);
   const fidx = new Uint32Array(farRings * farSectors * 6);
   {
@@ -507,14 +512,18 @@ export function makeOcean({ THREE, scene, size = 48, segments, conditions } = {}
     const tmp = new THREE.Color();
     for (let j = 0, p = 0; j <= farRings; j++) {
       const r = r0 * Math.pow(r1 / r0, j / farRings);
-      // fade to the horizon colour over the first ~2 km (DECORATIVE)
-      const f = Math.pow(smoothstep(0, 1, clamp((r - r0) / 1800, 0, 1)), 0.7);
-      tmp.copy(WATER_DEEP).lerp(HORIZON, f * 0.92);
+      // A gentle long-range fade only; the exponential fog does most of the blend into the
+      // horizon, because fog is distance-from-the-camera and so stays right whether the viewer is
+      // at eye level or 300 m up. A short fade baked into the vertices looked correct from a
+      // raft and turned the whole sea pale from the air.
+      const f = Math.pow(smoothstep(0, 1, clamp((r - 300) / 8000, 0, 1)), 0.8);
+      tmp.copy(WATER_DEEP).lerp(HORIZON, f * 0.55);
       for (let i = 0; i <= farSectors; i++, p++) {
         const a = (i / farSectors) * Math.PI * 2;
         fpos[p * 3] = Math.cos(a) * r;
         fpos[p * 3 + 1] = 0;
         fpos[p * 3 + 2] = Math.sin(a) * r;
+        fnrm[p * 3] = 0; fnrm[p * 3 + 1] = 1; fnrm[p * 3 + 2] = 0;
         fcol[p * 3] = tmp.r; fcol[p * 3 + 1] = tmp.g; fcol[p * 3 + 2] = tmp.b;
       }
     }
@@ -529,11 +538,16 @@ export function makeOcean({ THREE, scene, size = 48, segments, conditions } = {}
   }
   const farGeo = new THREE.BufferGeometry();
   farGeo.setAttribute('position', new THREE.BufferAttribute(fpos, 3));
+  farGeo.setAttribute('normal', new THREE.BufferAttribute(fnrm, 3));
   farGeo.setAttribute('color', new THREE.BufferAttribute(fcol, 3));
   farGeo.setIndex(new THREE.BufferAttribute(fidx, 1));
   farGeo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), FAR_DISC_M * 1.05);
-  const farMat = new THREE.MeshBasicMaterial({
-    vertexColors: true, side: THREE.DoubleSide, depthWrite: false, fog: false
+  // Lit by the same lights as the detailed patch (Lambert, which is cheap and has no specular to
+  // give away that it is flat). An unlit disc read as a visible square of different colour around
+  // the patch from the air.
+  const farMat = new THREE.MeshLambertMaterial({
+    color: 0xffffff, vertexColors: true, emissive: new THREE.Color(0.012, 0.042, 0.060),
+    side: THREE.DoubleSide, depthWrite: false, fog: true
   });
   const far = new THREE.Mesh(farGeo, farMat);
   far.name = 'env3d.ocean.far';
@@ -1274,9 +1288,23 @@ export function makeUnderwater({ THREE, scene } = {}) {
   };
   const transmittance = new THREE.Color(1, 1, 1);
 
+  // The tint is Beer-Lambert along the VIEW PATH, not at a single depth: looking straight up the
+  // light has crossed `depth` metres of water, looking level or downward it has crossed far more
+  // (the ray never reaches the surface at all), so the sea must darken downward. Path length for a
+  // view direction d is L = depth / d.y when d.y > 0, and unbounded otherwise; we clamp it to
+  // L_MAX so the deep does not go absolutely black. The shell is centred on the origin rather than
+  // on the camera, which is exact only while the viewer is near the origin relative to its 400 m
+  // radius -- true for this scene, and stated rather than hidden.
+  const L_MAX_M = 90;          // DECORATIVE clamp (D5)
   const shellGeo = new THREE.SphereGeometry(400, 16, 12);
+  const shellDirY = new Float32Array(shellGeo.getAttribute('position').count);
+  {
+    const sp = shellGeo.getAttribute('position');
+    for (let i = 0; i < sp.count; i++) shellDirY[i] = sp.getY(i) / 400;
+    shellGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(sp.count * 3), 3));
+  }
   const absorbMat = new THREE.MeshBasicMaterial({
-    color: 0xffffff, side: THREE.BackSide, transparent: true,
+    color: 0xffffff, vertexColors: true, side: THREE.BackSide, transparent: true,
     blending: THREE.MultiplyBlending, depthWrite: false, depthTest: false, fog: false
   });
   const absorb = new THREE.Mesh(shellGeo, absorbMat);
@@ -1412,13 +1440,22 @@ export function makeUnderwater({ THREE, scene } = {}) {
     group.visible = depth > 0.001;
     if (!group.visible) return;
 
-    // PHYSICAL (P8), with the one DECORATIVE gain of D5:
+    // PHYSICAL (P8/P9), with the one DECORATIVE gain of D5. `transmittance` is the straight-up
+    // value, which is what the readout reports; the shell carries the per-direction version.
     transmittance.setRGB(
       Math.exp(-K.r * depth), Math.exp(-K.g * depth), Math.exp(-K.b * depth)
     );
-    absorbMat.color.copy(transmittance);
-    // fully opaque multiply shell: the transmittance IS the tint
-    absorbMat.opacity = 1;
+    absorbMat.opacity = 1;      // a multiply shell: the colour IS the tint
+    const cAttr = shellGeo.getAttribute('color');
+    const ca = cAttr.array;
+    for (let i = 0; i < shellDirY.length; i++) {
+      const dy = shellDirY[i];
+      const L = dy > 1e-3 ? Math.min(L_MAX_M, depth / dy) : L_MAX_M;
+      ca[i * 3] = Math.exp(-K.r * L);
+      ca[i * 3 + 1] = Math.exp(-K.g * L);
+      ca[i * 3 + 2] = Math.exp(-K.b * L);
+    }
+    cAttr.needsUpdate = true;
 
     // in-scatter grows as direct transmission falls (DECORATIVE shape, D5)
     const tAvg = (transmittance.r + transmittance.g + transmittance.b) / 3;
@@ -1497,12 +1534,15 @@ export function makeUnderwater({ THREE, scene } = {}) {
         model: 'multiply-blended transmittance shell + additive in-scatter + two scrolling caustic ' +
           'layers + swaying light shafts + a wrapped particulate cloud',
         physical: [
-          'P8 per-channel transmittance exp(-K*d) with K from pure-water absorption at 450/550/650 nm ' +
+          'P8 per-channel transmittance exp(-K*L) with K from pure-water absorption at 450/550/650 nm ' +
           '(0.0092, 0.0565, 0.340 m^-1; Pope & Fry 1997 Appl. Opt. 36:8710 Table 1) — this is why red ' +
-          'disappears first'
+          'disappears first',
+          'P9 L is the path length along the VIEW DIRECTION (depth/d.y looking up, unbounded looking ' +
+          'level or down), so the sea darkens downward for the right reason'
         ],
         decorative: [
-          'D5 the x3.0 gain applied to those absorption coefficients as a stand-in for clear-ocean K_d ' +
+          'D5 the 90 m clamp on the view path length; the x3.0 gain applied to those absorption ' +
+          'coefficients as a stand-in for clear-ocean K_d ' +
           '(real K_d exceeds absorption because scattering adds); the in-scatter colour and opacity; the ' +
           'caustic and shaft textures and their drift rates; the particulate density and sink speed'
         ],

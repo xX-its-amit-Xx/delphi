@@ -75,7 +75,54 @@ for (const l of REG_LAWS) {
   if (meta[cid]) throw new Error(`${l.law_id}: browser_check.constraint "${cid}" is already a constraint of lean/constraints.json (hand-written row); pick a new id`);
   if (DECLARED.some(x => x.constraint === cid)) throw new Error(`${l.law_id}: browser_check.constraint "${cid}" is already declared by ${DECLARED.find(x => x.constraint === cid).law_id}`);
   if (!(l.constraints || []).includes(cid)) throw new Error(`${l.law_id}: browser_check.constraint "${cid}" is not listed in the law's own "constraints" array, so no caller would map the row back to the law`);
-  DECLARED.push({ ...d, law_id: l.law_id });
+  DECLARED.push({ ...d, law_id: l.law_id, lookups: (d.lookups || []).map(k => resolveLookup(l.law_id, k)) });
+}
+
+/**
+ * A declarative check may bring its OWN data source: a reference table keyed by the design's taxon (or any
+ * other design field), resolved HERE, at generation time, and embedded in the generated module as plain data,
+ * so browser-check.mjs stays dependency-free and the browser never fetches anything. A law that needs a
+ * reference value no engine state carries (von Bertalanffy Linf per species, say) can then bind with no code
+ * edit, which is the point of the whole mechanism.
+ *
+ * The resolved table carries the file, the locator of every row it used and which row won, so the verdict can
+ * say WHOSE number decided it: a reference value chosen silently is the same false assurance as a law that
+ * evaluates nothing.
+ */
+function resolveLookup(lawId, k) {
+  const where = `${lawId} browser_check.lookups["${k.name || '?'}"]`;
+  for (const req of ['name', 'file', 'rows', 'match', 'row_key', 'value']) if (!k[req]) throw new Error(`${where}: ${req} is required`);
+  const dig = (o, p) => String(p).split('.').reduce((x, s) => (x == null ? x : x[s]), o);
+  let doc;
+  try { doc = JSON.parse(fs.readFileSync(path.join(root, k.file), 'utf8')); }
+  catch (e) { throw new Error(`${where}: cannot read ${k.file}: ${e.message}`); }
+  const raw = dig(doc, k.rows);
+  if (!raw) throw new Error(`${where}: ${k.file} has nothing at "${k.rows}"`);
+  const rows = Array.isArray(raw) ? raw : Object.entries(raw).map(([key, v]) => (v && typeof v === 'object' ? { ...v, [k.row_key]: v[k.row_key] ?? key } : { [k.row_key]: key, value: v }));
+  const scale = k.scale == null ? 1 : k.scale;
+  if (typeof scale !== 'number' || !Number.isFinite(scale)) throw new Error(`${where}: scale must be a finite number`);
+  const select = k.select || 'first';
+  if (!['first', 'min', 'max'].includes(select)) throw new Error(`${where}: select must be first, min or max`);
+  const table = {}, used = {};
+  for (const r of rows) {
+    const key = dig(r, k.row_key);
+    if (key == null) continue;
+    if (k.where && !Object.entries(k.where).every(([f, v]) => dig(r, f) === v)) continue;
+    const v = dig(r, k.value);
+    if (typeof v !== 'number' || !Number.isFinite(v)) continue;
+    const scaled = v * scale;
+    const prev = table[key];
+    if (prev === undefined || (select === 'max' && scaled > prev) || (select === 'min' && scaled < prev)) {
+      table[key] = scaled;
+      used[key] = { raw: v, scaled, locator: dig(r, k.locator || 'Linf.locator') ?? dig(r, 'locator') ?? null };
+    }
+  }
+  if (!Object.keys(table).length) throw new Error(`${where}: no row of ${k.file}:${k.rows} gave a finite ${k.value}${k.where ? ` under where ${JSON.stringify(k.where)}` : ''}`);
+  if (k.fallback_key && table[k.fallback_key] === undefined) throw new Error(`${where}: fallback_key "${k.fallback_key}" is not one of the resolved keys (${Object.keys(table).join(', ')})`);
+  return { name: k.name, match: k.match, unit: k.unit ?? null, select, scale, table, rows_used: used,
+    aliases: k.aliases || {}, fallback_key: k.fallback_key ?? null,
+    source: { file: k.file, rows: k.rows, row_key: k.row_key, value: k.value, where: k.where ?? null, n_keys: Object.keys(table).length },
+    note: k.note ?? null };
 }
 const DECLARED_IDS = DECLARED.map(d => d.constraint);
 for (const d of DECLARED) meta[d.constraint] = { constraint: d.constraint, theorem: null, law: d.law_id, module: null,
@@ -100,6 +147,17 @@ const LAWSET_FRAGMENT = fs.readFileSync(path.join(here, 'browser-check-lawset.fr
 
 const BASE = JSON.parse(fs.readFileSync(path.join(root, 'conditions/baseline.json'), 'utf8'));
 const REF_RHO = BASE.conditions.air_density_kg_m3.value, REF_G = 9.80665, EXP_BAND = 0.1;
+// NEAR-SINGULAR IMPLIED EXPONENTS. C7b, C2a, C8e, C9c and E2 divide by ln(L/L_ref) against the single reference
+// specimen, so as L approaches L_ref the denominator approaches zero and ordinary specimen variation is amplified
+// without limit: the real Park and Choi siblings L1 (length ratio 1.0099) and L2 (1.0296) came out at implied v_min
+// exponents of -1.43 and -3.86 against a target of 0.5 +/- 0.1, and model N (0.9951) at -60.8, so accepted laws
+// fired red on unedited wild-type flying fish. A relative measurement uncertainty sigma in L moves an implied
+// exponent by about sigma / |ln(L/L_ref)|, so the comparison carries no information until |ln(L/L_ref)| >=
+// sigma / band. With sigma 1% and the studio's 0.1 band that is a length ratio outside [0.905, 1.105]. The registry
+// states it per constraint (constraint_scopes[<id>].ranges.length_ratio_vs_reference.exclude_between) and the scope
+// check turns those rows grey; this constant only records the number beside them.
+const SINGULARITY = { sigma_rel: 0.01, band: EXP_BAND, ln_min: 0.01 / EXP_BAND,
+  ratio_lo: +Math.exp(-0.01 / EXP_BAND).toFixed(4), ratio_hi: +Math.exp(0.01 / EXP_BAND).toFixed(4) };
 const ENV = { source: 'conditions/baseline.json', decided: BASE.decided, air_density_kg_m3: REF_RHO, water_temperature_C: BASE.conditions.water_temperature_C.value, salinity_psu: BASE.conditions.salinity_psu.value, air_O2_fraction: BASE.conditions.air_O2_fraction.value, rule: BASE.rule };
 const out = `// GENERATED by lean/eliminate/build-browser-check.mjs on ${new Date().toISOString()} from lean/constraints.json (built ${C.built}).
 // Dependency-free ES module for the Design Studio. check(spec) evaluates the SAME formulas the Lean-backed
@@ -137,9 +195,11 @@ export const REFERENCE = ${JSON.stringify(REF, null, 1)};
 export const META = ${JSON.stringify(Object.fromEntries([...USED, ...DECLARED_IDS].map(u => [u, meta[u]])), null, 1)};
 export const ENVIRONMENT = ${JSON.stringify(ENV, null, 1)};
 export const DEFAULTS = { rho: ${REF_RHO}, g: ${REF_G}, groundEffect: 0, exponentBand: ${JSON.stringify(EXP_BAND)} };
+/** Why an implied exponent against the reference specimen is not evaluated near a unit length ratio. */
+export const SINGULARITY = ${JSON.stringify(SINGULARITY)};
 // Design Studio field names (Viz): design = {SL_m, mass_kg, fin_length_over_SL, fin_area_m2, lower_lobe_over_SL, muscle_fraction, gill_area_m2, airspeed_m_s}.
 // Aliases map them onto the spec fields; fin_length_over_SL and lower_lobe_over_SL are accepted and reported but no theorem constrains them.
-const ALIASES = { fin_area_m2: 'finArea_m2', muscle_fraction: 'flightMuscleFraction', gill_area_m2: 'gillArea_m2', fin_length_over_SL: 'finLength_SL', lower_lobe_over_SL: 'lowerLobe_SL', CL_max: 'CLmax', LD: 'LD_max', glide_height_m: 'glideHeight_m', glide_distance_m: 'glideDistance_m', ground_effect: 'groundEffect', climb_rate_m_s: 'climbRate_m_s', power_available_W: 'powerAvailable_W', power_required_W: 'powerRequired_W', cardiac_output: 'cardiacOutput', arterial_O2: 'arterialO2', oxycaloric: 'oxycaloric_J_per_unit_O2', reference_safety_factor: 'referenceSafetyFactor' };
+const ALIASES = { fin_area_m2: 'finArea_m2', muscle_fraction: 'flightMuscleFraction', gill_area_m2: 'gillArea_m2', fin_length_over_SL: 'finLength_SL', lower_lobe_over_SL: 'lowerLobe_SL', CL_max: 'CLmax', LD: 'LD_max', glide_height_m: 'glideHeight_m', glide_distance_m: 'glideDistance_m', ground_effect: 'groundEffect', climb_rate_m_s: 'climbRate_m_s', power_available_W: 'powerAvailable_W', power_required_W: 'powerRequired_W', aerobic_ceiling_W: 'aerobicCeiling_W', cardiac_output: 'cardiacOutput', arterial_O2: 'arterialO2', oxycaloric: 'oxycaloric_J_per_unit_O2', reference_safety_factor: 'referenceSafetyFactor' };
 export function normalise(design) { const s = {}; for (const [k, v] of Object.entries(design || {})) s[ALIASES[k] || k] = v; return s; }
 
 /** Lifting area a weight W (N) needs at airspeed v (m/s): S >= 2 W / (rho v^2 CLmax). Theorem Delphi.vmin_le, rearranged. */
@@ -191,8 +251,11 @@ export function checkRaw(design) {
   const unconstrained = ['finLength_SL', 'lowerLobe_SL'].filter(k => num(s[k])).map(k => ({ field: k, value: s[k], note: 'accepted, reported, constrained by no theorem (fin length ratio and caudal lobe ratio are inputs the model carries; see lean/morphology-grounding.json)' }));
   if (unconstrained.length) out.push({ id: 'unconstrained-inputs', verdict: 'cannot-evaluate', needed: null, available: null, missing_inputs: [], missing: [], numbers: Object.fromEntries(unconstrained.map(u => [u.field, u.value])), note: unconstrained.map(u => u.note).join('; '), theorem: null, module: null, kernel: KERNEL_NOTE });
   const mode = flightMode(s);
-  const W = num(s.mass_kg) ? s.mass_kg * s.g : null;
-  const S = num(s.finArea_m2) ? s.finArea_m2 : (num(s.pectoralFinArea_m2) ? s.pectoralFinArea_m2 + (s.pelvicFinArea_m2 || 0) + (s.bodyPlanformArea_m2 || 0) : null);
+  // Non-positive size inputs are treated as MISSING, not as zero: a zero mass, area or length makes a bound
+  // infinite and every row would silently "hold" (a false negative, the mirror of the near-singular false positive).
+  const pos = x => num(x) && x > 0;
+  const W = pos(s.mass_kg) ? s.mass_kg * s.g : null;
+  const S = pos(s.finArea_m2) ? s.finArea_m2 : (pos(s.pectoralFinArea_m2) ? s.pectoralFinArea_m2 + (s.pelvicFinArea_m2 || 0) + (s.bodyPlanformArea_m2 || 0) : null);
 
   // C9: minimum speed, exact and dimensional.
   { const miss = []; if (W === null) miss.push('mass_kg'); if (S === null) miss.push('finArea_m2'); if (!num(s.CLmax)) miss.push('CLmax'); if (!num(s.airspeed_m_s)) miss.push('airspeed_m_s');
@@ -201,18 +264,18 @@ export function checkRaw(design) {
       out.push(result('C9', geTol(s.airspeed_m_s, vm) ? 'holds' : 'violated', { W_N: W, S_m2: S, CLmax: s.CLmax, rho: s.rho, airspeed_m_s: s.airspeed_m_s, vmin_m_s: vm, liftingAreaNeeded_m2: need }, [], geTol(s.airspeed_m_s, vm) ? 'lift can equal weight at some C_L <= CLmax' : 'below the minimum speed: lift cannot reach the weight even at CLmax', { needed: { liftingArea_m2: need, or_airspeed_m_s: vm }, available: { liftingArea_m2: S, airspeed_m_s: s.airspeed_m_s } })); } }
 
   // Scaling relative to the reference specimen (implied exponents): C7b mass, C2a lifting area, C8e wing loading, C9c v_min.
-  const lr = num(s.SL_m) ? s.SL_m / REFERENCE.SL_m : null;
+  const lr = pos(s.SL_m) ? s.SL_m / REFERENCE.SL_m : null;
   const expo = (x, xref) => (lr && lr !== 1 && num(x) && x > 0) ? Math.log(x / xref) / Math.log(lr) : null;
   const band = (b, target) => b === null ? 'cannot-evaluate' : (leTol(Math.abs(b - target), s.exponentBand) ? 'holds' : 'violated');
   { const b = expo(W, REFERENCE.mass_kg * s.g);
-    out.push(result('C7b', lr === null ? 'cannot-evaluate' : lr === 1 ? 'cannot-evaluate' : band(b, 3), { lengthRatio: lr, impliedMassExponent: b, target: 3, band: s.exponentBand }, lr === null ? ['SL_m'] : lr === 1 ? ['a length different from the reference'] : W === null ? ['mass_kg'] : [], 'implied exponent log(W/W_ref)/log(SL/SL_ref) against the cube law; the band is the studio decision rule, not a theorem')); }
+    out.push(result('C7b', lr === null ? 'cannot-evaluate' : lr === 1 ? 'cannot-evaluate' : band(b, 3), { lengthRatio: lr, length_ratio_vs_reference: lr, impliedMassExponent: b, target: 3, band: s.exponentBand }, lr === null ? ['SL_m'] : lr === 1 ? ['a length different from the reference'] : W === null ? ['mass_kg'] : [], 'implied exponent log(W/W_ref)/log(SL/SL_ref) against the cube law; the band is the studio decision rule, not a theorem')); }
   { const b = expo(S, REFERENCE.liftingArea_m2);
-    out.push(result('C2a', lr === null || lr === 1 ? 'cannot-evaluate' : band(b, 2), { lengthRatio: lr, impliedAreaExponent: b, target: 2, band: s.exponentBand }, lr === null ? ['SL_m'] : lr === 1 ? ['a length different from the reference'] : S === null ? ['finArea_m2'] : [], 'implied lifting-area exponent against isometry (2); Davenport 1992 measured 1.834 within one species')); }
+    out.push(result('C2a', lr === null || lr === 1 ? 'cannot-evaluate' : band(b, 2), { lengthRatio: lr, length_ratio_vs_reference: lr, impliedAreaExponent: b, target: 2, band: s.exponentBand }, lr === null ? ['SL_m'] : lr === 1 ? ['a length different from the reference'] : S === null ? ['finArea_m2'] : [], 'implied lifting-area exponent against isometry (2); Davenport 1992 measured 1.834 within one species')); }
   { const b = (W !== null && S !== null) ? expo(W / S, REFERENCE.mass_kg * s.g / REFERENCE.liftingArea_m2) : null;
-    out.push(result('C8e', lr === null || lr === 1 ? 'cannot-evaluate' : band(b, 1), { lengthRatio: lr, impliedWingLoadingExponent: b, target: 1, band: s.exponentBand }, lr === null ? ['SL_m'] : lr === 1 ? ['a length different from the reference'] : [W === null ? 'mass_kg' : null, S === null ? 'finArea_m2' : null].filter(Boolean), 'implied wing-loading exponent against isometry (1); Davenport 1992 measured 1.236')); }
+    out.push(result('C8e', lr === null || lr === 1 ? 'cannot-evaluate' : band(b, 1), { lengthRatio: lr, length_ratio_vs_reference: lr, impliedWingLoadingExponent: b, target: 1, band: s.exponentBand }, lr === null ? ['SL_m'] : lr === 1 ? ['a length different from the reference'] : [W === null ? 'mass_kg' : null, S === null ? 'finArea_m2' : null].filter(Boolean), 'implied wing-loading exponent against isometry (1); Davenport 1992 measured 1.236')); }
   { const vm = (W !== null && S !== null && num(s.CLmax)) ? vmin(W, S, s.rho, s.CLmax) : null, vref = vmin(REFERENCE.mass_kg * s.g, REFERENCE.liftingArea_m2, s.rho, REFERENCE.CLmax);
     const b = vm === null ? null : expo(vm, vref);
-    out.push(result('C9c', lr === null || lr === 1 ? 'cannot-evaluate' : band(b, 0.5), { lengthRatio: lr, impliedVminExponent: b, target: 0.5, band: s.exponentBand, vmin_m_s: vm, vminReference_m_s: vref }, lr === null ? ['SL_m'] : lr === 1 ? ['a length different from the reference'] : vm === null ? ['mass_kg, finArea_m2, CLmax'] : [], 'implied v_min exponent against the isometric 1/2 (R4); with Davenport\\'s exponents the predicted value is 0.57')); }
+    out.push(result('C9c', lr === null || lr === 1 ? 'cannot-evaluate' : band(b, 0.5), { lengthRatio: lr, length_ratio_vs_reference: lr, impliedVminExponent: b, target: 0.5, band: s.exponentBand, vmin_m_s: vm, vminReference_m_s: vref }, lr === null ? ['SL_m'] : lr === 1 ? ['a length different from the reference'] : vm === null ? ['mass_kg, finArea_m2, CLmax'] : [], 'implied v_min exponent against the isometric 1/2 (R4); with Davenport\\'s exponents the predicted value is 0.57')); }
 
   // C8c: Galileo's giant, needs a reference safety factor.
   { if (lr === null) out.push(result('C8c', 'cannot-evaluate', {}, ['SL_m']));
@@ -222,6 +285,7 @@ export function checkRaw(design) {
   // C15: glide range.
   { const miss = []; for (const k of ['glideHeight_m', 'LD_max', 'glideDistance_m']) if (!num(s[k])) miss.push(k);
     if (miss.length) out.push(result('C15', 'cannot-evaluate', {}, miss));
+    else if (!(s.groundEffect < 1)) out.push(result('C15', 'cannot-evaluate', { groundEffect: s.groundEffect }, ['groundEffect < 1'], 'a ground-effect fraction of 1 or more makes the range bound infinite, so nothing could ever be ruled out; the glide model needs delta < 1'));
     else { const bound = s.glideHeight_m * s.LD_max / (1 - s.groundEffect); out.push(result('C15', leTol(s.glideDistance_m, bound) ? 'holds' : 'violated', { glideHeight_m: s.glideHeight_m, LD_max: s.LD_max, groundEffect: s.groundEffect, bound_m: bound, glideDistance_m: s.glideDistance_m }, [], 'one steady unpowered glide; taxiing thrust, repeated touch-and-go and wind are outside the model', { needed: { glideDistance_m: s.glideDistance_m }, available: { glideRange_m: bound } })); } }
 
   // Power required and available, C16 climb, C14 aerobic.
@@ -236,6 +300,21 @@ export function checkRaw(design) {
     else
     if (miss.length) out.push(result('C14', 'cannot-evaluate', { powerRequired_W: Preq, gillArea_m2: num(s.gillArea_m2) ? s.gillArea_m2 : null }, miss, num(s.gillArea_m2) ? 'gillArea_m2 given, but the gill-to-blood link (water O2 and gill area to arterial content) is not formalised; commit arterialO2 directly' : null));
     else { const supply = s.efficiency * s.oxycaloric_J_per_unit_O2 * s.cardiacOutput * s.arterialO2; const need = Preq + (num(s.climbRate_m_s) && W !== null ? W * s.climbRate_m_s : 0); out.push(result('C14', geTol(supply, need) ? 'holds' : 'violated', { aerobicCeiling_W: supply, powerRequired_W: Preq, climbPower_W: need - Preq, efficiency: s.efficiency }, [], s.efficiency > 1 ? 'efficiency above 1 violates the named hypothesis 0 <= eta <= 1; the result is not meaningful' : 'sustained (aerobic) mechanical ceiling eta E Q Ca against level-flight power W v/(L/D) plus W x climb rate if a climb is claimed (climb_le_aerobic); units must multiply to watts' + (mode.powered || mode.unpowered ? '' : ' | this row ASSUMES the power required is a sustained powered-flight demand (' + mode.reason + '): pass flight_mode: "glide" for a descent and the aerobic laws will not judge it)'), { needed: { power_W: need }, available: { power_W: supply } })); } }
+
+  // C14b: the SAME inequality as C14 with the aerobic ceiling committed as ONE number instead of its four factors,
+  // for a design whose own oxygen chain computed the ceiling (lean/eliminate/eliminate.mjs C14b, with a kernel
+  // certificate instantiating the theorem at eta = E = Q = 1 and Ca = the ceiling). It had no row here until
+  // 2026-11-01, so the generator's USED list advertised a constraint that could never fire.
+  { const ceil = num(s.aerobicCeiling_W) ? s.aerobicCeiling_W : null;
+    const preq = num(s.powerRequired_W) ? s.powerRequired_W : Preq;
+    if (mode.unpowered) out.push(result('C14b', 'out-of-scope', { aerobicCeiling_W: ceil, powerRequired_W: preq, flight_mode: 'glide' }, [], 'the aerobic bound caps SUSTAINED AEROBIC power demand; this design claims an unpowered glide (' + mode.reason + '), so the committed ceiling is not compared against it. See aerobic-power-bound scope.excludes in lean/registry.'));
+    else { const miss = [];
+      if (ceil === null) miss.push('aerobicCeiling_W (the ceiling as one number; C14 takes its four factors instead)');
+      if (preq === null) miss.push('powerRequired_W (or airspeed_m_s and LD_max)');
+      if (miss.length) out.push(result('C14b', 'cannot-evaluate', { aerobicCeiling_W: ceil, powerRequired_W: preq }, miss, 'commit the ceiling your own oxygen chain computed, and the power the flight needs'));
+      else if (ceil < 0) out.push(result('C14b', 'cannot-evaluate', { aerobicCeiling_W: ceil }, ['a nonnegative aerobicCeiling_W'], 'a negative aerobic ceiling is not a number this law can rule on'));
+      else out.push(result('C14b', geTol(ceil, preq) ? 'holds' : 'violated', { aerobicCeiling_W: ceil, powerRequired_W: preq, shortfall_factor: ceil > 0 ? preq / ceil : null }, [],
+        'the ceiling the design commits against the power its flight needs; the same inequality as C14 with eta E Q Ca given as one number', { needed: { power_W: preq }, available: { power_W: ceil } })); } }
 
   // C13 and C10 need exponents across sizes, which a single spec does not carry.
   out.push(result('C13', 'cannot-evaluate', {}, ['fitted exponents for weight, area and wing loading with intervals'], 'a single design has no exponents; see the audit for the measured Davenport triple'));

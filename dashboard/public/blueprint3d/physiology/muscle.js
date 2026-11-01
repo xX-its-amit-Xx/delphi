@@ -5,7 +5,7 @@
 // Equations
 //   Aerobic power:        P_aero = VO2 * Eox * eta
 //                         VO2 <= Q * (Ca - Cv_min)              (O2 delivery bound; contents in ml O2/ml blood)
-//                         Eox = 13.54 J per mg O2 = 13.54 / 0.7 J per ml O2 (STPD)
+//                         Eox = 13.54 J per mg O2 = 13.54 / 0.7 J per ml O2 (STPD; 0.7 ml O2 per mg, i.e. 1.429 mg/ml)
 //   Hill force-velocity:  F/F0 = (1 - v) / (1 + v/kappa),  v = V/Vmax  (rectangular hyperbola, Hill 1938 form)
 //                         power ratio  p(v) = v (1 - v) / (1 + v/kappa);  dp/dv = 0 at v_opt = sqrt(kappa(1+kappa)) - kappa
 //   Mass-specific power:  P/m = sigma0 * Vmax[L/s] * p(v) / rho        (W/kg; sigma0 in Pa, rho in kg/m^3)

@@ -1,6 +1,6 @@
 {
   "law_id": "turing-ddi",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "kind": "biological",
   "class": "theorem-from-hypothesis",
   "status": "candidate",
@@ -12,7 +12,7 @@
     "structure": null,
     "commit": "e4444f69efad042de928731680b92a8f13ce044c",
     "statement_sha256": "74c680f2b8b7bed7dfe99c4c907ff2db8d55d5d354f35d948cb43adca29fe459",
-    "content_hash": "eeb45cb0257b3c67a24472ef752ecf34d698bd448fae0415477f77b4f5c41561"
+    "content_hash": "90a7d5ef5876577fa13a42929f04e59ab35ed0345d0aec6ef52a7cced7bba780"
   },
   "statement_en": "For the linearisation of a two-morphogen reaction-diffusion system about a homogeneous steady state with positive diffusivities, negative Jacobian trace, positive Jacobian determinant and Turing's inequality 4*du*dv*detJ < (dv*fu + du*gv)^2 with dv*fu + du*gv > 0 (a named hypothesis), there is a strictly positive squared wavenumber at which the dispersion relation is negative, so the homogeneous state is linearly unstable to a spatial mode; and the two diffusivities are necessarily unequal, so no equal-diffusivity system stable without diffusion can pattern, whatever its kinetics.",
   "hypotheses": [
@@ -55,9 +55,11 @@
     "statement": "theorem witness : Nonempty Instance",
     "file": "lean/registry/proposals/turing-ddi/law.lean"
   },
-  "constraints": [],
-  "introduced_in": null,
-  "supersedes": null,
+  "constraints": [
+    "TURING1"
+  ],
+  "introduced_in": "1.8.0",
+  "supersedes": "turing-ddi@1.0.0",
   "superseded_by": null,
   "retired_reason": null,
   "contested_with": [],
@@ -71,7 +73,31 @@
       "version": "1.0.0",
       "date": "2026-11-01",
       "change": "propose.mjs against lawset 1.7.0: candidate"
+    },
+    {
+      "version": "1.1.0",
+      "date": "2026-11-01",
+      "change": "added a declarative browser_check block (constraint TURING1) so the law generates a row without a code edit; statement, hypotheses, scope and witness unchanged. Status stays candidate."
     }
   ],
-  "content_hash": "eeb45cb0257b3c67a24472ef752ecf34d698bd448fae0415477f77b4f5c41561"
+  "content_hash": "90a7d5ef5876577fa13a42929f04e59ab35ed0345d0aec6ef52a7cced7bba780",
+  "browser_check": {
+    "constraint": "TURING1",
+    "quantity": "Dv * f_u + Du * g_v",
+    "op": "gt",
+    "bound": "2 * sqrt(Du * Dv * (f_u * g_v - f_v * g_u))",
+    "inputs": [
+      "Du",
+      "Dv",
+      "f_u",
+      "f_v",
+      "g_u",
+      "g_v"
+    ],
+    "relation": "Dv f_u + Du g_v > 2 sqrt(Du Dv det J)  (diffusion-driven instability)",
+    "note": "The DDI condition for the linearisation about a homogeneous steady state, under the law's named hypotheses (positive diffusivities, trace J < 0, det J > 0). 'violated' here means the committed Jacobian and diffusivities do NOT give a Turing instability; it says nothing about whether any pattern forms in an organism.",
+    "unit": null,
+    "band": "hypothesis",
+    "tolerance": "relative"
+  }
 }

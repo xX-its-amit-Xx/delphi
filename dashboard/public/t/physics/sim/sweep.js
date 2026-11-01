@@ -402,8 +402,8 @@ function hatch(ctx, x, y, w, h, color, dir, gap = 6, halo = true) {
     }
     ctx.stroke();
   };
-  if (halo) { ctx.strokeStyle = css('--panel', '#fff'); ctx.lineWidth = 3.2; ctx.globalAlpha = 0.85; path(); }
-  ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.globalAlpha = 1; path();
+  if (halo) { ctx.strokeStyle = css('--panel', '#fff'); ctx.lineWidth = 2.6; ctx.globalAlpha = 0.5; path(); }
+  ctx.strokeStyle = color; ctx.lineWidth = 1.4; ctx.globalAlpha = 1; path();
   ctx.restore();
 }
 function axesFrame(F, x0, x1, y0, y1, xl, yl, xTicks, yTicks, fmtX, fmtY) {
@@ -502,21 +502,21 @@ export function drawHeatmap(c, o) {
     const r = rows[j * nx + i];
     const x = F.m.l + i * cw + 1, y = F.H - F.m.b - (j + 1) * ch + 1, w = Math.max(1, cw - 2), h = Math.max(1, ch - 2); // 2px surface gap
     if (!r) { ctx.fillStyle = css('--soft', '#eef2ef'); ctx.fillRect(x, y, w, h); continue; }
-    if (!r.feasible) { ctx.fillStyle = css('--panel', '#fff'); ctx.fillRect(x, y, w, h); hatch(ctx, x, y, w, h, css('--mute', '#898781'), 45, 5); }
+    if (!r.feasible) { ctx.fillStyle = css('--panel', '#fff'); ctx.fillRect(x, y, w, h); hatch(ctx, x, y, w, h, css('--mute', '#898781'), 45, 7, false); }
     else {
       const v = r[key];
       const t = (typeof v === 'number' && isFinite(v) && hi > lo) ? (v - lo) / (hi - lo) : 0;
       ctx.fillStyle = R[Math.max(0, Math.min(R.length - 1, Math.round(t * (R.length - 1))))];
       ctx.fillRect(x, y, w, h);
     }
-    if (r.lean_violating) hatch(ctx, x, y, w, h, css('--viol', '#6b4fb3'), 135, 5);
+    if (r.lean_violating) hatch(ctx, x, y, w, h, css('--viol', '#6b4fb3'), 135, 8);
   }
   return Object.assign(F, { lo, hi, nx, ny, cw, ch });
 }
 
 /** The scale legend for a heatmap, plus the two overlay keys with their written labels. */
 export function heatLegendHtml(metric, lo, hi, counts) {
-  const R = RAMP_LIGHT;
+  const R = ramp();   // the SAME ramp the cells were drawn with, so the key is not reversed in dark mode
   const sw = R.filter((_, i) => i % 2 === 0).map(h => '<i style="display:inline-block;width:16px;height:10px;background:' + h + '"></i>').join('');
   return '<div class="legend">' +
     '<span class="key"><b>' + metric.label + '</b> ' + sig(lo) + ' ' + sw + ' ' + sig(hi) + ' ' + (metric.unit && metric.unit !== '1' ? metric.unit : '') + '</span>' +

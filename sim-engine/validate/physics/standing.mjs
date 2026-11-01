@@ -55,7 +55,7 @@ const CHECK = (id, label, o) => ({ id, label, status: 'no model', measured: null
  *   scenarios   { glide, current }  the scenario modules, for model_confidence
  *   doc,bundle  for the mesh manifest (organ fit)
  */
-export function standingChecks({ state, runs = {}, scenarios = {}, doc = null, bundle = null } = {}) {
+export function standingChecks({ state, runs = {}, scenarios = {}, doc = null, bundle = null, flightMuscleFit = null } = {}) {
   const out = [];
   const g = runs.glide, c = runs.current;
   const gs = scenarios.glide || null, cs = scenarios.current || null;
@@ -112,7 +112,7 @@ export function standingChecks({ state, runs = {}, scenarios = {}, doc = null, b
   }
 
   // ---- 4. does the organ volume fit the body?
-  out.push(organFitCheck({ state, doc, bundle }));
+  out.push(organFitCheck({ state, doc, bundle, flightMuscleFit }));
 
   // ---- 5. stability
   out.push(CHECK('static_pitch_margin', 'Statically stable in pitch (static margin from the pectoral MAC quarter-chord)', {

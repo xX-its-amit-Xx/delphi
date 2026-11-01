@@ -38,7 +38,9 @@ const schemaErrs = ls => ls.flatMap(l => validate(schema, l).map(e => `${l.law_i
 check('schema: every law file validates', () => schemaErrs(laws), () => { const b = clone(laws); b[0].kind = 'chemical'; b[1].status = 'accepted'; b[1].approval = { approved_by_role: 'someone@example.org', date: 'x', basis: 'x' }; return schemaErrs(b); });
 
 // 2. content hashes
-const hashErrs = ls => ls.flatMap(l => [contentHash(l) !== l.content_hash ? `${l.law_id}: content_hash` : null, l.lean_ref.content_hash !== l.content_hash ? `${l.law_id}: lean_ref.content_hash` : null].filter(Boolean));
+// lean_ref.content_hash is a convenience mirror of content_hash for the loader; a law with no Lean module may
+// leave it null, so require null-or-equal rather than equal.
+const hashErrs = ls => ls.flatMap(l => [contentHash(l) !== l.content_hash ? `${l.law_id}: content_hash does not match its hashed fields` : null, l.lean_ref.content_hash != null && l.lean_ref.content_hash !== l.content_hash ? `${l.law_id}: lean_ref.content_hash is set but differs from content_hash` : null].filter(Boolean));
 check('hashes: content_hash matches the hashed fields', () => hashErrs(laws), () => { const b = clone(laws); b[3].statement_en += ' (edited without a version bump)'; return hashErrs(b); });
 
 // 3. statement drift against the Lean source now on disk
@@ -126,7 +128,26 @@ check('scope sanity: no ACCEPTED law is red for an unedited measured wild type w
 const REF = BC.REFERENCE;
 const o = id => readJson(path.join(ROOT, `anatomy-model/parametric/resolved/${id}.json`)).parameters;
 const zfa = o('zebrafish-adult'), zfl = o('zebrafish-larva');
+// Every Cypselurus hiraii specimen Park and Choi measured, not just the one the checker uses as its reference.
+// The sibling specimens are why this check exists: their length ratios sit within 1 to 3 percent of the reference,
+// which is exactly where an implied exponent is near-singular.
+const glideCsv = fs.readFileSync(path.join(ROOT, 'physics/glide-data.csv'), 'utf8').split(/\r?\n/).filter(Boolean);
+const glideHead = glideCsv[0].split(',');
+const glideRows = glideCsv.slice(1).map(l => { const c = []; let cur = '', q = false; for (const ch of l) { if (ch === '"') q = !q; else if (ch === ',' && !q) { c.push(cur); cur = ''; } else cur += ch; } c.push(cur); return Object.fromEntries(glideHead.map((h, i) => [h, c[i] ?? ''])); })
+  .filter(r => r.species === 'Cypselurus hiraii' && r.row_kind === 'specimen');
+const SPECIMENS = glideRows.map(r => {
+  const area = +r.pectoral_fin_area_m2 + (+r.pelvic_fin_area_m2 || 0) + (+r.body_planform_area_m2 || 0);
+  const winged = +r.pectoral_fin_area_m2 > 0;   // models M and N have fins folded; N is body only
+  const base = { taxon: 'Cypselurus hiraii', life_stage: 'adult', SL_m: +r.body_length_m, mass_kg: +r.body_mass_kg, fin_area_m2: area };
+  return { id: `park-choi-${r.source_locator.replace(/[^A-Za-z0-9]+/g, '-')}`,
+    note: `${r.source_locator}: measured morphometry, length ratio ${(+r.body_length_m / BC.REFERENCE.SL_m).toFixed(4)} against the checker's reference specimen` + (winged ? ', in an ordinary unpowered glide' : '; fins folded in this model, so no flight claim is attributed to it'),
+    design: winged
+      ? { ...base, CLmax: BC.REFERENCE.CLmax, LD_max: BC.REFERENCE.LD_max, airspeed_m_s: 12, flight_mode: 'glide', glideHeight_m: 8, glide_distance_m: 30,
+          efficiency: 0.15, oxycaloric_J_per_unit_O2: 19.34, cardiacOutput: 0.0656, arterialO2: 0.187 }
+      : base };
+});
 const FIXTURES = [
+  ...SPECIMENS,
   { id: 'flying-fish-glide', note: 'Park and Choi 2010 model L3 in an ordinary unpowered glide: 8 m launch height (deng-2019), 30 m over the ground, inside the L/D 4.37 bound of 34.96 m, at 12 m/s (field range 10 to 20 m/s)',
     design: { taxon: 'Cypselurus hiraii', life_stage: 'adult', SL_m: REF.SL_m, mass_kg: REF.mass_kg, fin_area_m2: REF.liftingArea_m2, CLmax: REF.CLmax, LD_max: REF.LD_max,
       airspeed_m_s: 12, flight_mode: 'glide', glideHeight_m: 8, glide_distance_m: 30,
@@ -141,7 +162,7 @@ const FIXTURES = [
 const acceptedRedIn = rows => rows.filter(r => r.law && r.law.status === 'accepted' && r.verdict === 'violated')
   .map(r => `${r.id} (${r.law.law_id}@${r.law.version}): ${JSON.stringify(r.numbers).slice(0, 160)}`);
 const standingErrs = (fixtures = FIXTURES) => fixtures.flatMap(f => acceptedRedIn(BC.check(f.design)).map(x => `${f.id}: ${x}`));
-check(`standing: no accepted law is violated by a real organism making a realistic claim (${FIXTURES.map(f => f.id).join(', ')}; law set ${BC.LAWSET_VERSION})`,
+check(`standing: no accepted law is violated by any of the ${FIXTURES.length} real organisms making realistic claims (${SPECIMENS.length} measured Park and Choi specimens, the reference glide, 2 zebrafish states and a swimming claim; law set ${BC.LAWSET_VERSION})`,
   () => standingErrs(),
   // The broken input is the defect this guards against: the SAME realistic glide mapped as a sustained powered
   // demand. The aerobic laws then fire (the flying fish cannot power level flight, a real finding), so the check

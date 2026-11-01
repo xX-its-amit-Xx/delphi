@@ -82,25 +82,45 @@ function thermalRecord() {
   };
 }
 
-/** "Fetch that genotype": the analogue's genotype, as this project actually holds it. */
+/** "Fetch that genotype": the analogue's genotype, as this project actually holds it.
+ *  NOTE on where it lives. sequences/genes.json keys `orthologues` by Ensembl species slug and carries NO
+ *  flying-fish entry there despite its own title; the flying-fish orthologue sits in a separate per-gene
+ *  `flying_fish` object, keyed by the annotation it came from. Reading only `orthologues` returns 0 of 9 called
+ *  orthologues, which would be wrong. This reads `flying_fish` and reports whether each call was a reciprocal
+ *  best hit or a tblastn projection, because those are not the same strength of evidence. */
 function focalGenotype() {
   const txt = rd('sequences/genes.json');
   if (!txt) return { ran: false, reason: 'sequences/genes.json is absent' };
   const g = JSON.parse(txt);
   const genes = Object.entries(g.genes || {}).map(([symbol, v]) => {
-    const ff = Object.entries(v.orthologues || {}).find(([k]) => /hirundichthys|exocoet|cheilopogon|cypselurus/i.test(k));
+    const ffBlock = v.flying_fish || {};
+    const hit = Object.entries(ffBlock).find(([k, o]) => o && typeof o === 'object' && (o.flyingfish_protein || o.protein));
+    const o = hit ? hit[1] : null;
+    const medaka = v.orthologues?.oryzias_latipes ?? null;
     return {
       symbol, zfin_id: v.zfin_id ?? null, zebrafish_gene: v.zebrafish_gene ?? null, location_GRCz11: v.location_GRCz11 ?? null,
-      analogue_orthologue: ff ? { species: ff[1].species, protein_id: ff[1].protein_id ?? ff[1].gene_id ?? null, msa_identity_vs_zebrafish: ff[1].msa_identity_vs_zebrafish ?? null, homology_type: ff[1].homology_type ?? null, length: ff[1].length ?? null } : null,
-      orthologue_called: !!ff,
+      analogue_orthologue: o ? {
+        species: 'Hirundichthys speculiger', source_annotation: hit[0],
+        protein_id: o.flyingfish_protein ?? o.protein ?? null, length: o.flyingfish_length ?? null,
+        msa_identity_vs_zebrafish: o.forward_pident ?? o.pident_vs_zebrafish ?? null,
+        reciprocal_best_hit: o.reciprocal_best_hit ?? null,
+        homology_type: o.reciprocal_best_hit === false ? 'tblastn projection on the unannotated assembly (NOT a reciprocal best hit)' : 'reciprocal best blastp hit',
+        used_in_alignment: ffBlock.used_in_alignment ?? null,
+      } : null,
+      closest_annotated_relative: medaka ? { species: medaka.species, msa_identity_vs_zebrafish: medaka.msa_identity_vs_zebrafish ?? null, note: 'medaka (Beloniformes) is the closest Ensembl-annotated relative of the flying fish and stands in wherever the flying-fish call is weak' } : null,
+      orthologue_called: !!o,
     };
   });
+  const rbh = genes.filter(x => x.analogue_orthologue?.reciprocal_best_hit === true).length;
+  const proj = genes.filter(x => x.analogue_orthologue?.reciprocal_best_hit === false).length;
   return {
     ran: true, file: 'sequences/genes.json', ensembl_release: g.ensembl_release ?? null,
     n_genes: genes.length, genes,
     orthologues_called: genes.filter(x => x.orthologue_called).length,
+    by_strength: { reciprocal_best_hit: rbh, tblastn_projection_only: proj,
+      note: proj ? `${proj} of ${genes.length} orthologue call(s) are tblastn projections on the assembly rather than reciprocal best hits (${genes.filter(x => x.analogue_orthologue?.reciprocal_best_hit === false).map(x => x.symbol).join(', ')}); those identities are weaker evidence than the rest.` : 'every call is a reciprocal best hit' },
     how: 'Reciprocal best blastp of the Hirundichthys speculiger annotated proteome (Xu et al. 2021, figshare 10.6084/m9.figshare.14600634.v1) against the zebrafish proteome; tblastn on the assembly where that failed.',
-    limit: `This is the whole of the analogue's genotype as this project holds it: ${genes.length} focal genes out of the 23,611 protein-coding genes Xu et al. annotated. It is a focal panel, not a genome comparison, and it carries NO expression, mutant, kinetic or regulatory record for the flying fish, because that paper reports none.`,
+    limit: `This is the whole of the analogue's genotype as this project holds it: ${genes.length} focal genes out of the 23,611 protein-coding genes Xu et al. annotated (${(genes.length / 23611 * 100).toFixed(3)} %). It is a focal panel, not a genome comparison, and it carries NO expression, mutant, kinetic or regulatory record for the flying fish, because that paper reports none.`,
   };
 }
 

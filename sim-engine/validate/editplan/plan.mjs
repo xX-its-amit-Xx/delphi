@@ -67,6 +67,7 @@ export async function editPlan(gene, spec, { network = true, species = 'danio_re
   const allGuides = [...spGuides, ...byNuclease.SaCas9.guides, ...byNuclease.AsCas12a.guides];
   const best = spGuides[0] || byNuclease.SaCas9.guides[0] || byNuclease.AsCas12a.guides[0] || null;
   const better_placed = (() => {
+    if (t.kind === 'knockout') return { not_applicable: 'a knockout has no single edited base, so "which nuclease cuts closest to the edit" is not a question. Compare the knockout guides on how early they frameshift (frameshift_from_codon / protein_fraction_lost_if_frameshift_here) instead.' };
     if (!best) return null;
     const alt = [...byNuclease.SaCas9.guides, ...byNuclease.AsCas12a.guides]
       .filter(g => g.distance_cut_to_edit_bp != null && best.distance_cut_to_edit_bp != null && g.distance_cut_to_edit_bp < best.distance_cut_to_edit_bp);
@@ -193,6 +194,12 @@ export function panel(plans) {
   const sections = plans.map(r => {
     if (r.refused) return { gene: r.gene, edit: r.edit, status: 'REFUSED', headline: r.refusal, rows: [] };
     const pl = r.plan, g = pl.recommended_guide, ot = Array.isArray(pl.off_target) ? pl.off_target[0] : null;
+    const otReason = ot?.search?.reason || (Array.isArray(pl.off_target) ? 'no guide to search' : pl.off_target?.reason) || 'n/a';
+    const be = pl.base_editor_route;
+    // A knockout's base-editor route is an iSTOP scan (candidates), a point change's is a single CBE/ABE edit.
+    const beCell = be?.candidates
+      ? (be.reachable ? `iSTOP: codon ${be.candidates[0].codon_number} ${be.candidates[0].codon}->${be.candidates[0].resulting_codon} removes ${(100 * be.candidates[0].protein_fraction_lost).toFixed(1)} % of the protein, guide ${be.candidates[0].spacer} (C at window position ${be.candidates[0].position_of_target_C_in_protospacer})` : `NOT reachable: ${be.reason}`)
+      : (be?.reachable === true ? `${be.editor_class}: ${be.edit}` : `NOT reachable: ${be?.reason || '-'}`);
     const d = Array.isArray(pl.hdr_donor) ? pl.hdr_donor.find(x => x.ran) : null;
     return {
       gene: r.gene, edit: r.edit, status: 'PROPOSED, NOT VALIDATED',
@@ -202,9 +209,9 @@ export function panel(plans) {
         ['exact change', r.edit === 'knockout' ? pl.exact_genomic_change.note : pl.exact_genomic_change.chosen?.changes?.join('; ') || '-', 'measured'],
         ['guide (SpCas9)', g ? `${g.spacer} + ${g.pam} (strand ${g.strand}), cut at ${pl.locus.chromosome}:${g.cut_site_chrom}${g.distance_cut_to_edit_bp != null ? `, ${g.distance_cut_to_edit_bp} bp from the edit` : ''}` : 'none found in the window', 'derived'],
         ['on-target score', g ? `${g.on_target.score} (${E.ON_TARGET_RULE.id})` : '-', 'heuristic - NOT a measured efficiency'],
-        ['off-target sites in GRCz11', ot?.search?.ran ? `${ot.search.n_sites_within_mismatch_limit} sites with <= ${ot.search.max_mismatches} mismatches (${ot.perfect_matches} perfect, including the on-target); MIT specificity ${ot.mit_specificity?.specificity}` : `not run: ${ot?.search?.reason || 'n/a'}`, 'derived - a floor, not a ceiling'],
+        ['off-target sites in GRCz11', ot?.search?.ran ? `${ot.search.n_sites_within_mismatch_limit} sites with <= ${ot.search.max_mismatches} mismatches (${ot.perfect_matches} perfect, including the on-target); MIT specificity ${ot.mit_specificity?.specificity}` : `NOT RUN (${otReason}) - absence of listed off-targets is NOT evidence of specificity`, 'derived - a floor, not a ceiling'],
         ['ssODN donor', d ? `${d.length_nt} nt, arms ${d.arms.left_nt}/${d.arms.right_nt}, ${d.blocking_mutations_applied} silent blocking mutation(s), protein check ${d.protein_check?.status}` : (r.edit === 'knockout' ? 'not needed (frameshift)' : 'none'), 'derived'],
-        ['base editor', pl.base_editor_route?.reachable === true ? `${pl.base_editor_route.editor_class}: ${pl.base_editor_route.edit}` : `NOT reachable: ${pl.base_editor_route?.reason || pl.base_editor_route?.note || '-'}`, 'derived'],
+        ['base editor', beCell, 'derived'],
         ['prime editing', pl.prime_editor_route?.applicable ? `pegRNA designed: PBS ${pl.prime_editor_route.designs[0].pbs_length_nt} nt, RTT ${pl.prime_editor_route.designs[0].rtt_length_nt} nt, nick ${pl.prime_editor_route.designs[0].nick_to_edit_bp} bp from the edit (${pl.prime_editor_route.zebrafish_precedent})` : `not applicable: ${pl.prime_editor_route?.reason || '-'}`, 'derived - no efficiency predicted'],
         ['HDR rate to expect', E.FEASIBILITY.hdr_in_zebrafish.headline_rate, 'measured in OTHER loci (Boel 2018)'],
         ['phenotype predicted?', 'NOT ESTABLISHED (design-validation/REPORT.md: 1 of 10 parameters scored, that one failed)', 'assumed'],
@@ -227,6 +234,13 @@ export async function editPlansForDoc(doc, opts = {}) {
   const { geneEdits } = await import('../genotype.mjs');
   const edits = geneEdits(doc);
   const out = [];
+  if (!edits.length) return [{ gene: null, edit: null, refused: true, plan: null,
+    refusal: `the document "${doc.id || 'inline'}" carries NO gene-level edits (no doc.edits at level "gene" and no doc.genotype), so there is nothing to plan. ` +
+      'This is a real and easy-to-miss case: the repository winged-zebrafish document holds only morphological parameters. ' +
+      'Its genotype is recorded elsewhere - sequences/engineered-diff.json and genotype/compare-2x2.json panel B - as ' +
+      'slc43a2a (lat4a nr21) p.T200K heterozygous PLUS a kcnh2a (longfin dt2) cis-regulatory inversion. Pass those as ' +
+      'doc.genotype [{gene, change}], or use gene + change directly. Note that the inversion is a construct problem this ' +
+      'module refuses to plan (see the kcnh2a refusal), so a complete plan for that genotype does not exist here.' }];
   for (const ed of edits) {
     const spec = ed.kind === 'knockout' ? 'knockout'
       : ed.kind === 'missense' || ed.kind === 'nonsense' ? `p.${ed.ref}${ed.pos}${ed.alt}`

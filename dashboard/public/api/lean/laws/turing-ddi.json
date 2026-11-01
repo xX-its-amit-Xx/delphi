@@ -1,0 +1,133 @@
+{
+ "law_id": "turing-ddi",
+ "version": "1.1.0",
+ "kind": "biological",
+ "class": "theorem-from-hypothesis",
+ "status": "candidate",
+ "label": "Diffusion-driven instability exists, and equal diffusivities cannot produce it",
+ "level": null,
+ "lean_ref": {
+  "module": "lean/registry/proposals/turing-ddi/law.lean",
+  "theorem": "Delphi.LeanBio.Round2.TuringDDI.turing_instability",
+  "structure": null,
+  "commit": "e4444f69efad042de928731680b92a8f13ce044c",
+  "statement_sha256": "74c680f2b8b7bed7dfe99c4c907ff2db8d55d5d354f35d948cb43adca29fe459",
+  "content_hash": "90a7d5ef5876577fa13a42929f04e59ab35ed0345d0aec6ef52a7cced7bba780"
+ },
+ "statement_en": "For the linearisation of a two-morphogen reaction-diffusion system about a homogeneous steady state with positive diffusivities, negative Jacobian trace, positive Jacobian determinant and Turing's inequality 4*du*dv*detJ < (dv*fu + du*gv)^2 with dv*fu + du*gv > 0 (a named hypothesis), there is a strictly positive squared wavenumber at which the dispersion relation is negative, so the homogeneous state is linearly unstable to a spatial mode; and the two diffusivities are necessarily unequal, so no equal-diffusivity system stable without diffusion can pattern, whatever its kinetics.",
+ "hypotheses": [
+  {
+   "name": "Delphi.LeanBio.Round2.TuringDDI.TuringHyp",
+   "statement": "The linearisation of u_t = f(u,v) + du*lap(u), v_t = g(u,v) + dv*lap(v) about a homogeneous steady state, with du > 0, dv > 0, fu + gv < 0 (stable without diffusion), fu*gv - fv*gu > 0, dv*fu + du*gv > 0, and 4*du*dv*(fu*gv - fv*gu) < (dv*fu + du*gv)^2. The last inequality is the squared, division-free form of Turing's condition dv*fu + du*gv > 2*sqrt(du*dv*detJ); with both sides positive the two are equivalent.",
+   "source": "Turing AM (1952) The chemical basis of morphogenesis. Phil Trans R Soc Lond B 237:37-72, doi:10.1098/rstb.1952.0012; claim notation in math-bio-theorems/claims/key-claims.json (turing-ddi)"
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [
+   "embryo",
+   "larva"
+  ],
+  "ranges": {},
+  "basis": "Two chemical species, smooth kinetics, linearisation about a homogeneous steady state, a fixed domain with no growth and no mechanics. Establishes linear instability of a spatial mode, not that a pattern forms, which pattern is selected, or that any developmental system in any organism is a two-morphogen reaction-diffusion system. Life stages are listed because the claim is about morphogenesis; the mathematics is stage-free."
+ },
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "doi:10.1098/rstb.1952.0012",
+   "doi:10.1103/PhysRevLett.64.2953 (see_also in the claim: experimental Turing patterns in the CIMA reaction)"
+  ],
+  "observations": [],
+  "leanbio": {
+   "pipeline": "pipeline/leanbio",
+   "round": "discovery round 2",
+   "belief_params": "leanbio-belief/0.1.0",
+   "note": "belief is an ordering heuristic for the formalization queue, not a probability"
+  }
+ },
+ "sources": [
+  "doi:10.1098/rstb.1952.0012"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.LeanBio.Round2.TuringDDI.witness",
+  "statement": "theorem witness : Nonempty Instance",
+  "file": "lean/registry/proposals/turing-ddi/law.lean"
+ },
+ "constraints": [
+  "TURING1"
+ ],
+ "introduced_in": "1.8.0",
+ "supersedes": "turing-ddi@1.0.0",
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": null,
+ "origin": "lean/registry/laws/turing-ddi.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "propose.mjs against lawset 1.7.0: candidate"
+  },
+  {
+   "version": "1.1.0",
+   "date": "2026-11-01",
+   "change": "added a declarative browser_check block (constraint TURING1) so the law generates a row without a code edit; statement, hypotheses, scope and witness unchanged. Status stays candidate."
+  }
+ ],
+ "content_hash": "90a7d5ef5876577fa13a42929f04e59ab35ed0345d0aec6ef52a7cced7bba780",
+ "browser_check": {
+  "constraint": "TURING1",
+  "quantity": "Dv * f_u + Du * g_v",
+  "op": "gt",
+  "bound": "2 * sqrt(Du * Dv * (f_u * g_v - f_v * g_u))",
+  "inputs": [
+   "Du",
+   "Dv",
+   "f_u",
+   "f_v",
+   "g_u",
+   "g_v"
+  ],
+  "relation": "Dv f_u + Du g_v > 2 sqrt(Du Dv det J)  (diffusion-driven instability)",
+  "note": "The DDI condition for the linearisation about a homogeneous steady state, under the law's named hypotheses (positive diffusivities, trace J < 0, det J > 0). 'violated' here means the committed Jacobian and diffusivities do NOT give a Turing instability; it says nothing about whether any pattern forms in an organism.",
+  "unit": null,
+  "band": "hypothesis",
+  "tolerance": "relative"
+ },
+ "lean": {
+  "theorem": "Delphi.LeanBio.Round2.TuringDDI.turing_instability",
+  "module": "lean/registry/proposals/turing-ddi/law.lean",
+  "line": 53,
+  "source": "/-- **Diffusion-driven instability.** Under `TuringHyp` there is a strictly positive squared\nwavenumber whose mode is unstable, and the two diffusivities are necessarily unequal. -/\ntheorem turing_instability {du dv fu fv gu gv : ℝ} (h : TuringHyp du dv fu fv gu gv) :\n    (∃ q : ℝ, 0 < q ∧ disp du dv fu fv gu gv q < 0) ∧ du ≠ dv := by\n  have hdu := h.du_pos\n  have hdv := h.dv_pos\n  have hc := h.cross_pos\n  have ht := h.trace_neg\n  have hT := h.turing\n  refine ⟨⟨(dv * fu + du * gv) / (2 * (du * dv)), ?_, ?_⟩, ?_⟩\n  · positivity\n  · have hA : (0:ℝ) < 4 * (du * dv) := by positivity\n    have key : (4 * (du * dv)) * disp du dv fu fv gu gv ((dv * fu + du * gv) / (2 * (du * dv)))\n        = 4 * (du * dv) * (fu * gv - fv * gu) - (dv * fu + du * gv) ^ 2 := by\n      unfold disp\n      field_simp\n      ring\n    nlinarith [key, hT, hA]\n  · intro hEq\n    rw [hEq] at hc\n    nlinarith [hc, ht, hdv]",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.LeanBio.Round2.TuringDDI.TuringHyp",
+    "keyword": "structure",
+    "module": "lean/registry/proposals/turing-ddi/law.lean",
+    "line": 43,
+    "source": "/-- Named hypothesis: the linearisation of a two-morphogen reaction-diffusion system about a\nhomogeneous steady state that is stable without diffusion, satisfying Turing's inequality. -/\nstructure TuringHyp (du dv fu fv gu gv : ℝ) : Prop where\n  du_pos : 0 < du\n  dv_pos : 0 < dv\n  trace_neg : fu + gv < 0\n  det_pos : 0 < fu * gv - fv * gu\n  cross_pos : 0 < dv * fu + du * gv\n  turing : 4 * (du * dv) * (fu * gv - fv * gu) < (dv * fu + du * gv) ^ 2"
+   }
+  ]
+ },
+ "constraint_details": [],
+ "pin": {
+  "module": "lean/registry/proposals/turing-ddi/law.lean",
+  "decl": "Delphi.LeanBio.Round2.TuringDDI.turing_instability",
+  "commit": "e4444f69efad042de928731680b92a8f13ce044c",
+  "theorem_found": true,
+  "pinned_statement_sha256": "74c680f2b8b7bed7dfe99c4c907ff2db8d55d5d354f35d948cb43adca29fe459",
+  "current_statement_sha256": "74c680f2b8b7bed7dfe99c4c907ff2db8d55d5d354f35d948cb43adca29fe459",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.8.0"
+ ],
+ "other_versions": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

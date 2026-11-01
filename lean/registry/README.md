@@ -154,6 +154,79 @@ The design should carry `taxon` (e.g. 'Danio rerio', 'Exocoetidae', 'Cypselurus 
 Only `display: 'red'` means "violates a law". A Studio page that still maps `/^viol/` to red keeps working:
 `contested` and `out-of-scope` do not match it, and `candidate-violated` does not either.
 
+## Declarative browser check (`browser_check`): how a new law comes to BIND anything
+
+A law can be accepted, released in a law set, served by every tool, shown in the Studio's law list — and
+evaluate **nothing**. That happened, and it is the worst failure this registry can have, because every surface
+then reports a design as checked against the law while no arithmetic ran. False assurance is worse than no law.
+
+The cause: every other row in `lean/eliminate/browser-check.mjs` is a **hand-written formula** keyed by a
+constraint id in the generator's `USED` list. A law whose constraint id has no formula there produces no row.
+It shows up only in `laws_without_browser_evaluation`, which used to fail nothing.
+
+So a law file may carry an optional **`browser_check`** block, and the row for it is generated from that block.
+The block is **data**: add it to the law file, run the two generators, cut a release, and the law binds on every
+surface with **no code edited anywhere**.
+
+```json
+"constraints": ["TL1"],
+"browser_check": {
+  "constraint": "TL1",
+  "quantity": "mass_kg",
+  "op": "le",
+  "bound": "rho_max * SL_m ^ 3",
+  "defaults": { "rho_max": 1000000 },
+  "inputs": ["mass_kg", "SL_m"],
+  "relation": "mass_kg <= 1e6 kg/m^3 x SL_m^3",
+  "note": "one line saying what this row does and does not mean",
+  "unit": "kg",
+  "band": "hypothesis",
+  "tolerance": "relative"
+}
+```
+
+| field | meaning |
+|---|---|
+| `constraint` | the row id. **Must also appear in this law's own `constraints` array**, or the row maps back to no law. It must not be a constraint id of `lean/constraints.json` (those have hand-written formulas); the generator refuses a collision. |
+| `quantity` | expression for the left-hand side |
+| `op` | `le` `lt` `ge` `gt` `eq` `between` |
+| `bound` | right-hand side (every `op` but `between`) |
+| `lo`, `hi` | the two ends (`op: "between"`) |
+| `defaults` | `{name: finite number}` constants the expressions may use |
+| `inputs` | spec fields that must be present; derived from the expressions when omitted. A missing input gives `cannot-evaluate` and names it — a declared row **never** defaults a number it was not given |
+| `relation`, `note` | required prose: the relation as a reader sees it, and what the row does not mean |
+| `band` | `proved` / `empirical` / `hypothesis` (which band the Studio draws it in; default `empirical`) |
+| `tolerance` | `relative` (default: the same ulp tolerance every computed-bound row uses) or `exact` |
+
+**Expressions** are arithmetic over spec field names: numbers, `+ - * / ^` (`**`), parentheses, unary minus, and
+`sqrt abs log log10 exp min max pow`. They are **parsed, never `eval`'d** (there is no property access and no
+call into anything else), so a law file cannot run code in anyone's browser. The field names are the ones at the
+top of `browser-check.mjs`, plus the derived quantities the hand-written rows compute and pass through:
+`W_N`, `S_m2`, `liftingArea_m2`, `powerRequired_W`, `powerAvailable_W`, `lengthRatio`, `impliedMassExponent`.
+
+`browser_check` **is inside `content_hash`**, because it is part of what the law says about a design: editing it
+needs a version bump, exactly like editing the statement. It is deliberately `undefined` rather than `null` when
+absent, so every law written before the field existed keeps its hash and every released law-set pin stays valid.
+
+**`check-exposed.mjs` enforces all of this:**
+
+| check | fails when |
+|---|---|
+| `bind:accepted` | an **accepted** law (pinned in the current set, or already marked accepted in its file) produces no row attributed to it. The only way out is an entry in `NO_DESIGN_ROW` in `check-exposed.mjs` **with the reason it cannot be a design row and what would make it bind** — and that entry itself fails (`bind:exempt-stale`) once it stops being true. |
+| `bind:unclaimed` | the evaluator emits a row no law claims, so `lean_check` drops it as unmapped and no surface shows it (provenance rows, which can never read as a violation, are exempt) |
+| `bind:declared` | a `browser_check` block is not wired to its law, or its row is not in the generated file |
+| `a:unreleased` | an accepted law is pinned by no law set, so `lean_check` excludes it |
+| `stale:page-checker` | the Studio page's bundled copy of the evaluator has forgotten the **current** law set, so anything importing it directly judges every row `unknown-lawset` |
+
+A candidate or proposed law that binds nothing is a **note**, not a failure: it binds nothing by status anyway.
+Give it a block before it is accepted.
+
+Per-law capture, hop by hop, for a release you want to be able to show rather than assert:
+
+```bash
+node lean/registry/law-surfaces.mjs <law_id> [--design '<json>']
+```
+
 ## Releasing: order matters
 
 A law set is only in force once `lawsets/current.json` names it, and the generated checker embeds the law sets it

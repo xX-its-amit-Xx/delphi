@@ -88,10 +88,12 @@
   .tag { display: inline-block; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em;
          padding: 1px 6px; border-radius: 4px; background: var(--code-bg); color: var(--mute); }
   @media (max-width: 860px) {
-    .wrap { grid-template-columns: 1fr; padding: 10px; gap: 10px; }
+    /* On a phone the panels cannot float over the canvas: they cover it completely. Pin the scene
+       to the top half of the viewport and let the cards scroll underneath it. */
+    #view { position: fixed; top: 0; left: 0; right: 0; bottom: auto; height: 46vh; border-bottom: 1px solid var(--panel-brd); }
+    .wrap { grid-template-columns: 1fr; padding: 10px; gap: 10px; margin-top: calc(46vh + 10px); min-height: 0; }
     .right { grid-column: 1; align-items: stretch; }
     .right .card { max-width: none; }
-    #view { position: fixed; inset: 0; }
   }
 </style>
 </head>
@@ -242,16 +244,28 @@ el.addEventListener('wheel', (e) => { e.preventDefault(); dist = Math.max(0.6, M
 const lookAt = new THREE.Vector3();
 function placeCamera(altitude, depth) {
   const underwater = depth > 0.001;
-  const baseY = underwater ? -depth : altitude;
-  // at altitude we want the horizon, not our feet: the look-at point rises with us.
-  lookAt.set(fish.position.x, baseY + (underwater ? 1.2 : altitude * 0.0), fish.position.z);
-  const d = underwater ? Math.max(dist, 2.4) : (altitude > 1 ? Math.max(dist, 4 + altitude * 0.25) : dist);
-  const p = underwater ? Math.min(pitch, 0.9) : pitch;
-  camera.position.set(
-    lookAt.x + Math.cos(p) * Math.sin(yaw) * d,
-    baseY + (underwater ? 0.6 : 0.55) + Math.sin(p) * d,
-    lookAt.z + Math.cos(p) * Math.cos(yaw) * d
-  );
+  if (underwater) {
+    lookAt.set(fish.position.x, -depth + 1.2, fish.position.z);
+    const d = Math.max(dist, 2.4);
+    const p = Math.min(pitch, 0.9);
+    camera.position.set(
+      lookAt.x + Math.cos(p) * Math.sin(yaw) * d,
+      -depth + 0.6 + Math.sin(p) * d,
+      lookAt.z + Math.cos(p) * Math.cos(yaw) * d
+    );
+  } else {
+    // Above water the look-at point stays ON the sea, and the standoff grows with altitude, so
+    // from a few hundred metres you look down at the water with the horizon near the top of the
+    // frame instead of straight up into empty sky. 2.6 x altitude puts the horizon ~6 deg inside
+    // the top edge at a 55 deg vertical FOV.
+    lookAt.set(fish.position.x, 0, fish.position.z);
+    const R = Math.cos(pitch) * dist + altitude * 2.6;
+    camera.position.set(
+      lookAt.x + Math.sin(yaw) * R,
+      altitude + 0.55 + Math.sin(pitch) * dist,
+      lookAt.z + Math.cos(yaw) * R
+    );
+  }
   camera.lookAt(lookAt);
 }
 
