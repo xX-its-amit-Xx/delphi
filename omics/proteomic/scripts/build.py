@@ -182,7 +182,7 @@ for g in genes:
             emit(gobj(g), TYPEF.get(e[1].lower(), e[1].lower()), e[2], None, 'inferred-electronic', 'ECO:0000259', 'InterPro',
                  f"https://www.ebi.ac.uk/interpro/entry/InterPro/{ipr}/", ipr, 'UniProt ' + UNIPROT_REL + ' cross-reference; names from InterPro entry.list',
                  interpro_type=e[1], protein_accession=canon['Entry'],
-                 note='InterPro API not reached for this protein (rate-limited); match from the UniProt InterPro cross-reference, no positions')
+                 note='the InterPro API returned no match set for this accession (HTTP 204); match from the UniProt InterPro cross-reference, no positions')
         for pf in canon['Pfam'].strip(';').split(';'):
             if pf:
                 emit(gobj(g), 'domain', pf, None, 'inferred-electronic', 'ECO:0000259', 'Pfam', f"https://www.ebi.ac.uk/interpro/entry/pfam/{pf}/", pf,
