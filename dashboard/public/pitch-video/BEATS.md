@@ -63,7 +63,7 @@ four together.
   "cannot-evaluate", listing the four inputs it would need. The system declining to guess is the
   point.
 - **A comparison that mostly found no difference, reported as that.** The benchmark finished:
-  36 cells, 108 model calls, $8.35, every call logged. Beat 7 shows stage 4 — the cleanest cell and
+  36 cells, 113 logged calls, $8.35. Beat 7 shows stage 4 — the cleanest cell and
   the one `RESULTS.md` says "was expected to discriminate most. It did not." Single 1.000,
   decentralised 1.000, centralised 0.952; the largest gap 0.048 sits inside the centralised arm's
   own 0.143 spread. All three arms met the same trap case — nothing failed, four results
@@ -155,8 +155,8 @@ markup. Each entry in `facts.json` names its source file.
 | insect | 559 W/kg hovering; 7.3–14.7 % efficiency | `physics/flier/spec.json` (PMC12606204) |
 | flying fish | AR 10.7; L/D max 4.37 | `physics/flier/spec.json` (Park & Choi 2010) |
 | benchmark, stage 4 | single 1.000 · decentralised 1.000 · centralised 0.952; gap 0.048 inside the 0.143 spread | `swarm/benchmark/RESULTS.md` §2, `results.json` |
-| benchmark, scale | n = 3 per (arm, stage) · 36 cells · 108 calls · $8.35 | same file, header |
-| benchmark, cost | swarms 1.5x to 5.9x the single agent | same file, cost table |
+| benchmark, scale | n = 3 per (arm, stage) · 36 cells · **113 logged calls** · $8.35 | the log files themselves, counted across all 36 cells. RESULTS.md's header says 108, the nominal 12+36+60; the extra five are retries |
+| benchmark, cost | swarms **1.5x to 4.0x** the single agent, over the three stages shown | `results.json`, recomputed per (stage, arm). The 5.94x in RESULTS.md's own range is the DESIGN stage, which this film omits |
 | clinical attrition | "Nine in ten drug programmes that enter **Phase 1** never get approved" | `deck/FACTS.md` §3.4, verbatim. BIO/Informa/QLS 2011–2020 (12,728 phase transitions, 7.9 %) and Wong, Siah & Lo 2019 (185,994 trials, 13.8 %), never averaged |
 | formal library size | 292,237 theorems across 34 subject areas | `deck/FACTS.md` §1.2 — `mathlib_stats`, 2026-11-01 02:07 UTC |
 | biology's share | 0 of 34 subject areas | `deck/FACTS.md` §2.3 — the only clean zero, and it names what it is zero of |
@@ -172,14 +172,19 @@ markup. Each entry in `facts.json` names its source file.
   permitted wording from §1.1, §1.2, §2.3 and §3.4. Nothing in this film is left unsourced.
 - **Two benchmark results are deliberately left out of the film**, and `facts.json` →
   `swarm_benchmark.not_shown` records why in writing:
-  - **Stage 3 (design studio) quality, at all.** `RESULTS.md` §6 records that the task briefs were
-    infeasible at the current lawset, so "accepted" was unreachable by construction and all three
-    arms violate the same five laws. A defective task cannot grade an architecture.
-  - **The centralised arm's stage-1 zero.** Its cause is a budget effect, not an architectural one:
-    the merge call was starved by the equal-split rule, and re-allocating the same $0.45 with more
-    at the join rescued it on all three cells. Shown without its rescue it reads as "centralisation
-    does not pay", which is false. Both halves will not fit legibly in eight seconds, so neither
-    half is in the film.
+  - **Stage 3 (design studio), its quality *and* its cost ratio.** `RESULTS.md` §6 records that the
+    task briefs were infeasible at the current lawset, so "accepted" was unreachable by construction
+    and all three arms violate the same five laws. A defective task cannot grade an architecture —
+    and a cost ratio cannot be quoted out of a stage whose result is suppressed. That stage is where
+    the 5.94x comes from, which is why the film's range stops at **4.0x**.
+  - **The centralised arm's stage-1 zero.** What the logs support: no artifact in 3 of 3 cells, 8 of
+    18 calls at the $0.09 cap, and a post-hoc re-allocation of the same total producing an artifact
+    in 3 of 3 — the cap starved the arm at the join. The per-call logs do not record a call's *role*,
+    so no call can be shown to be the merge and no dollar figure is attributed to one. Nothing
+    supports the claim that the workers' drafts graded better than any other arm's artifact: the
+    candidate grades show `parses` 0 and `parses_valid_rdf` 0, the same as the other arms. Shown
+    without its rescue the zero reads as "centralisation does not pay", which is false, and both
+    halves will not fit legibly in eight seconds.
 - **No music.** This session cannot reach Suno. The prompt and the cue list are above.
 
 ## Files
