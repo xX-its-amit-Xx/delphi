@@ -1,6 +1,6 @@
 # Design Studio: independent validation results
 
-Generated 2026-11-01T03:07:07.314Z by `sim-engine/validation/studio-harness.mjs` against the tests fixed in
+Generated 2026-11-01T04:09:56.856Z by `sim-engine/validation/studio-harness.mjs` against the tests fixed in
 `STUDIO-PREREGISTRATION.md` (sha256 `f2523da8529b998eea8ef9b9f165851f60d078a7ac5151a0dafa7bb4d324a66d`, integrity check: **hash matches**).
 Machine-readable: `studio-results.json`. Narrative and worst defects: `STUDIO-FINDINGS.md`. Post-results amendment: `STUDIO-AMENDMENTS.md`. Rows X* are observations added after results and are not counted. A pass that rests on a calibrated value is reported as `circular`, never as a pass.
 
@@ -12,11 +12,11 @@ Fixture run (deliberately wrong scenario modules under C:/Temp/studio-validation
 
 | status | pre-registered rule | after amendments A1–A3 (post-results, see STUDIO-AMENDMENTS.md) |
 |---|---|---|
-| circular | 5 | 7 |
+| circular | 6 | 8 |
 | fail | 2 | 0 |
 | no-target | 1 | 1 |
 | pass | 20 | 22 |
-| pass-rests-on-assumed | 3 | 1 |
+| pass-rests-on-assumed | 2 | 0 |
 
 Modules found: organism `lib/organism.mjs`, state `lib/state.mjs`, data `lib/data-node.mjs`, spec `lib/spec.mjs`, parse `lib/parse-text.mjs`, optimizer —; scenarios: temperature, current, pressure, altitude, wind, predator, grip, sleep, daynight, digestion, glide.
 
@@ -32,7 +32,7 @@ Modules found: organism `lib/organism.mjs`, state `lib/state.mjs`, data `lib/dat
 | W6 | adult day sleep fraction ≤ 7.7 % and below night | **circular** | 5.10 % | 5.1 ± 1.3 % (Yokogawa 2007) band [0, 7.7] | calibrated | in band, but rests on a calibrated quantity |
 | W7 | larval night sleep > adult, larval in [49.7, 66.7] % | **circular** | 58.2 (adult 33.4) | 58.17 % larva vs 33.37 % adult (Sorribes 2013) band [49.7, 66.7] | calibrated | in band, but rests on a calibrated quantity |
 | W8 | adult C-start peak speed | **pass-rests-on-assumed** → A1: **circular** | 0.951 m/s | ≈0.84 m/s derived from Re 27,800, TL 33 mm (Danos & Lauder 2012) band [0.42, 1.68] | assumed | in band; weakest input is assumed; AMENDMENT A1: the metric is an interpolation/fit of the target paper itself, so the pre-registered pass is not independent evidence |
-| W9 | flying fish glide distance and speed | **pass-rests-on-assumed** | 8.65 m at 10.0 m/s (from glide) | up to 50 m at 15–20 m/s (secondhand) band 5,75 m; 7.5,25 m/s | assumed | distance: in band; weakest input is assumed; speed: in band; weakest input is assumed |
+| W9 | flying fish glide distance and speed | **circular** | 8.65 m at 10.0 m/s (from glide) | up to 50 m at 15–20 m/s (secondhand) band 5,75 m; 7.5,25 m/s | assumed | distance: in band; weakest input is assumed; speed: in band, but the predicted value equals a constant in the module sourced to the target paper (echo) |
 | W10 | gut passage time | **no-target** | no passage metric | none fetched | n/a | no fetched wild-type gut passage time; the studio value is UNVALIDATED |
 | W11 | sustained current sign (pre-registered: 0.20 m/s survive, 1.10 m/s not; A2 reads feasible) | **fail** → A2: **pass** | survives: 0.20 m/s → null, 1.10 m/s → null; feasible: 0.20 → true, 1.10 → false (param current_m_s) | Uopt 0.396, Ucrit 0.548 m/s | n/a (sign test) | pre-registered reading (survives): not met, survives is null/null; A2 reading (feasible = can hold station): signs correct |
 | N1 | real zebrafish must not glide (< 1 m) | **pass** | 0.00 m (from glide, metric glide_range_total_m, survives=null, feasible=false) | ballistic leap ≈ 0.07 m | assumed | below 1 m or flagged not surviving |
@@ -78,25 +78,25 @@ Code literals only (strings and comments stripped; unit conversions and years ig
 
 <details><summary>scenarios/temperature.mjs: 6 unsourced lines</summary>
 
-- line 63: `const T = params.water_temperature_C ?? 25;`
-- line 64: `const Ta = params.acclimation_temperature_C ?? 25;`
-- line 95: `if (Math.abs(Ta - 28) > 1) notes.push('The Ucrit curve was measured in 28 degC-reared fish; at another acclimation temperature it is borrowe`
-- line 96: `const smrOk = T >= Q10.range[0] - 0.01 && T <= Q10.range[1] + 0.01 && Math.abs(Ta - 28) <= 3;`
-- line 98: `if (T < 0 \|\| T > 45) inRange = false;`
-- line 115: `metric('ucrit_relative', METRICS[3].label, ur.value, '1', 'higher', zkind === 'measured' && Math.abs(Ta - 28) <= 1 ? 'calibrated' : 'borrowe`
+- line 66: `const T = params.water_temperature_C ?? 25;`
+- line 67: `const Ta = params.acclimation_temperature_C ?? 25;`
+- line 98: `if (Math.abs(Ta - 28) > 1) notes.push('The Ucrit curve was measured in 28 degC-reared fish; at another acclimation temperature it is borrowe`
+- line 99: `const smrOk = T >= Q10.range[0] - 0.01 && T <= Q10.range[1] + 0.01 && Math.abs(Ta - 28) <= 3;`
+- line 101: `if (T < 0 \|\| T > 45) inRange = false;`
+- line 131: `metric('ucrit_relative', METRICS[3].label, ur.value, '1', 'higher', zkind === 'measured' && Math.abs(Ta - 28) <= 1 ? 'calibrated' : 'borrowe`
 
 </details>
 
 <details><summary>scenarios/current.mjs: 8 unsourced lines</summary>
 
-- line 50: `/** Zebrafish Ucrit at 28 degC by age (days post-fertilisation) and SL. Returns {value m/s, kind, source} or value null. */`
-- line 54: `if (dpf < 14) {`
-- line 55: `const u14 = (UMAX_14DPF_SL_S / UMAX_OVER_UCRIT) * SL_MM(14) / 1000;`
-- line 71: `for (let i = 0; i < 80; i++) { const mid = (lo + hi) / 2; if (pd(mid) < P_W) lo = mid; else hi = mid; }`
-- line 95: `{ key: 'current_m_s', label: 'Current speed', unit: 'm/s', default: 0.2, min: 0, max: 3, kind: 'assumed', source: 'design input' },`
-- line 101: `const U = params.current_m_s ?? 0.2;`
-- line 104: `const T = val(state, 'temperature_C') ?? 25;`
-- line 126: `if (Re != null && Re > 5e5) notes.push('Re above 5e5: turbulent plate coefficient used.');`
+- line 53: `/** Zebrafish Ucrit at 28 degC by age (days post-fertilisation) and SL. Returns {value m/s, kind, source} or value null. */`
+- line 57: `if (dpf < 14) {`
+- line 58: `const u14 = (UMAX_14DPF_SL_S / UMAX_OVER_UCRIT) * SL_MM(14) / 1000;`
+- line 74: `for (let i = 0; i < 80; i++) { const mid = (lo + hi) / 2; if (pd(mid) < P_W) lo = mid; else hi = mid; }`
+- line 98: `{ key: 'current_m_s', label: 'Current speed', unit: 'm/s', default: 0.2, min: 0, max: 3, kind: 'assumed', source: 'design input' },`
+- line 104: `const U = params.current_m_s ?? 0.2;`
+- line 107: `const T = val(state, 'temperature_C') ?? 25;`
+- line 139: `if (Re != null && Re > 5e5) notes.push('Re above 5e5: turbulent plate coefficient used.');`
 
 </details>
 
@@ -114,20 +114,20 @@ Code literals only (strings and comments stripped; unit conversions and years ig
 
 <details><summary>scenarios/altitude.mjs: 7 unsourced lines</summary>
 
-- line 43: `{ key: 'altitude_m', label: 'Altitude above sea level', unit: 'm', default: 2000, min: 0, max: 11000, kind: 'assumed', source: 'design input`
-- line 57: `const Tw = val(state, 'temperature_C') ?? 25;`
-- line 68: `let inRange = h >= 0 && h <= 11000;`
-- line 117: `metric('power_required_W', METRICS[11].label, Preq, 'W', 'lower', 'derived', 'W v_min(h)/(L/D)max'),`
-- line 118: `metric('aerobic_power_available_W', METRICS[12].label, fk.P_W, 'W', 'higher', 'derived', 'eta E Q Ca(PO2 ${pO2air.toFixed(1)} kPa)'),`
-- line 119: `metric('powered_flight_margin', METRICS[13].label, fk.P_W / Preq, '1', 'higher', 'derived', 'aerobic available / required'),`
-- line 120: `metric('arterial_O2_content_ratio', METRICS[14].label, fk.Ca_ml_ml / fk0.Ca_ml_ml, '1', 'higher', 'derived', 'Hill curve P50 ${P50.toFixed(2`
+- line 44: `{ key: 'altitude_m', label: 'Altitude above sea level', unit: 'm', default: 2000, min: 0, max: 11000, kind: 'assumed', source: 'design input`
+- line 58: `const Tw = val(state, 'temperature_C') ?? 25;`
+- line 69: `let inRange = h >= 0 && h <= 11000;`
+- line 118: `metric('power_required_W', METRICS[11].label, Preq, 'W', 'lower', 'derived', 'W v_min(h)/(L/D)max'),`
+- line 119: `metric('aerobic_power_available_W', METRICS[12].label, fk.P_W, 'W', 'higher', 'derived', 'eta E Q Ca(PO2 ${pO2air.toFixed(1)} kPa)'),`
+- line 120: `metric('powered_flight_margin', METRICS[13].label, fk.P_W / Preq, '1', 'higher', 'derived', 'aerobic available / required'),`
+- line 121: `metric('arterial_O2_content_ratio', METRICS[14].label, fk.Ca_ml_ml / fk0.Ca_ml_ml, '1', 'higher', 'derived', 'Hill curve P50 ${P50.toFixed(2`
 
 </details>
 
 <details><summary>scenarios/wind.mjs: 2 unsourced lines</summary>
 
-- line 27: `{ key: 'headwind_m_s', label: 'Steady headwind (negative = tailwind)', unit: 'm/s', default: 5, min: -20, max: 20, kind: 'assumed', source: `
-- line 69: `if (m < 0.02 \|\| m > 0.4) { inRange = false; notes.push('Mass ${m} kg is outside the 0.02-0.4 kg range of the glide polar (extrapolated).'); `
+- line 29: `{ key: 'headwind_m_s', label: 'Steady headwind (negative = tailwind)', unit: 'm/s', default: 5, min: -20, max: 20, kind: 'assumed', source: `
+- line 71: `if (m < 0.02 \|\| m > 0.4) { inRange = false; notes.push('Mass ${m} kg is outside the 0.02-0.4 kg range of the glide polar (extrapolated).'); `
 
 </details>
 
@@ -160,11 +160,11 @@ Code literals only (strings and comments stripped; unit conversions and years ig
 - line 44: `if (r >= 0.97) return 1;`
 - line 45: `if (r <= 0.33) return 0.86;`
 - line 46: `return 0.86 + ((1 - 0.86) * (r - 0.33)) / (0.97 - 0.33);`
-- line 115: `: { value: 0.2095 * 101.325, kind: 'measured-secondhand', source: 'dry-air O2 fraction 0.2095 (20.95%, standard dry-air composition) x 101.3`
-- line 146: `const T = val(state, 'temperature_C') ?? 25;`
-- line 160: `export const LAUNCH_OVERRIDE_PARAM = { key: 'launch_airspeed_override_m_s', label: "What-if launch airspeed (0 = the organism's own sourced `
-- line 249: `if (m < 0.02 \|\| m > 0.4) { inRange = false; notes.push('Mass ${m} kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~`
-- line 250: `if (Re != null && (Re < 5e3 \|\| Re > 1e5)) { inRange = false; notes.push('Mean-chord Reynolds number ~${Re.toExponential(1)} is outside 5e3-1`
+- line 117: `: { value: 0.2095 * 101.325, kind: 'measured-secondhand', source: 'dry-air O2 fraction 0.2095 (20.95%, standard dry-air composition) x 101.3`
+- line 148: `const T = val(state, 'temperature_C') ?? 25;`
+- line 162: `export const LAUNCH_OVERRIDE_PARAM = { key: 'launch_airspeed_override_m_s', label: "What-if launch airspeed (0 = the organism's own sourced `
+- line 251: `if (m < 0.02 \|\| m > 0.4) { inRange = false; notes.push('Mass ${m} kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~`
+- line 252: `if (Re != null && (Re < 5e3 \|\| Re > 1e5)) { inRange = false; notes.push('Mean-chord Reynolds number ~${Re.toExponential(1)} is outside 5e3-1`
 
 </details>
 
@@ -174,6 +174,10 @@ Code literals only (strings and comments stripped; unit conversions and years ig
 |---|---|---|---|---|
 | current | Plaut 2000 Ucrit 15.5 SL/s, compiled in Widrick 2018 | Europe PMC full text (PMC6019105) | {"15.5":true} | **confirmed** |
 | current | Umax exceeds Ucrit by ~15 % (Widrick 2018) | Europe PMC full text (PMC6019105) | {"15%":true} | **confirmed** |
+| predator | theta_thresh 10.3-15.8 deg (McKee & McHenry 2020) | Europe PMC full text (PMC7750966) | {"10.3°":true,"15.8°":true} | **confirmed** |
+| predator | visual latency 740-780 ms (McKee & McHenry 2020) | Europe PMC full text (PMC7750966) | {"740 ms":true,"780 ms":true} | **confirmed** |
+| predator | adult startle "modal latency to startle being 8 ms" (Burgess & Granato 2007, a paper titled "Sensorimotor gating in LARVAL zebrafish") | Europe PMC abstract (full text PMC6672105 not served) | {"modal latency":false,"8 ms":false} | **unverifiable (abstract only; full text not served)** |
+| predator | pike C-start below 11 BL/s, archerfish 24 BL/s (Schuster 2023) | Europe PMC full text (PMC10465633) | {"11 body lengths":true,"24 BL":true} | **confirmed** |
 | sleep | larval sleep 19.6 % day, 83.9 % night (Choudhary 2026) | Europe PMC full text (PMC13144723) | {"19.6":true,"83.9":true} | **confirmed** |
 | temperature | Q10 SMR 1.39, MMR 1.15 (Ripley 2022) | Europe PMC full text (PMC9845742) | {"1.39":true,"1.15":true} | **confirmed** |
 | pressure | TMAO 40 to 261 mmol/kg, osmolality 350 / 991 / 1,100 mOsm/kg, isosmotic 8,200 m (Yancey 2014) | Europe PMC abstract (full text PMC3970477 not served) | {"261":true,"991":true,"8,200":true} | **confirmed** |

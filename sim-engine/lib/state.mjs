@@ -508,6 +508,8 @@ export const INPUT_PARTS = {
   body_temperature_C: ['skin_L', 'skin_R'], sustained_power_W: ['muscle_L', 'muscle_R'], critical_swimming_speed_m_s: ['muscle_L', 'muscle_R', 'caudal_fin'],
   current_speed_m_s: ['skin_L', 'skin_R'], depth_m: ['skin_L', 'skin_R'], altitude_m: ['skin_L', 'skin_R'], airspeed_m_s: ['pectoral_fin_L', 'pectoral_fin_R'], CLmax: ['pectoral_fin_L', 'pectoral_fin_R'],
   ground_distance_m: ['pectoral_fin_L', 'pectoral_fin_R'], LD_max: ['pectoral_fin_L', 'pectoral_fin_R'], glideHeight_m: ['pectoral_fin_L', 'pectoral_fin_R'],
+  q10: ['muscle_L', 'muscle_R'], reference_sustained_power_W: ['muscle_L', 'muscle_R', 'heart', 'gills_L', 'gills_R'], drag_coefficient: ['skin_L', 'skin_R'], drag_area_m2: ['skin_L', 'skin_R'],
+  aerobicCeiling_W: ['heart', 'gills_L', 'gills_R'], wind_along_track_m_s: ['pectoral_fin_L', 'pectoral_fin_R'], horizontal_airspeed_m_s: ['pectoral_fin_L', 'pectoral_fin_R'],
   intake_J_per_day: ['intestine', 'oesophagus'], routine_cost_J_per_day: ['muscle_L', 'muscle_R'], assimilation_efficiency: ['intestine'], mass_change: ['skin_L', 'skin_R'], bladder_volume_surface_ml: ['swim_bladder'], bladder_volume_at_depth_ml: ['swim_bladder'],
 };
 export { mapKind };

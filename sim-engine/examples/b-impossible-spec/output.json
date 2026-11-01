@@ -1,7 +1,7 @@
 {
  "meta": {
   "example": "b-impossible-spec",
-  "ran_at": "2026-11-01T03:08:12.866Z",
+  "ran_at": "2026-11-01T04:14:21.645Z",
   "node": "v24.13.0",
   "headline": "no design meets the spec: 57/57 rejected; C15 glide_range violated (bound 4.37 m from 1 m vs 1000 m), P1 thermal violated (CTmax 40.45 °C vs 45 °C)",
   "checks": [
@@ -69,7 +69,7 @@
  },
  "text": "a zebrafish-derived fish that glides at least 1000 m from a 1 m launch and survives 10–45 °C as an adult",
  "parse": {
-  "contract_version": "0.3.1",
+  "contract_version": "0.4.0",
   "result": {
    "spec": {
     "start_from": [
@@ -304,7 +304,7 @@
   }
  },
  "design": {
-  "contract_version": "0.3.1",
+  "contract_version": "0.4.0",
   "result": {
    "status": "no design meets the spec",
    "validation": {
@@ -874,7 +874,7 @@
     "quantity": "lifting area (m2)",
     "value": 0.000084,
     "kind": "derived",
-    "source": "mesh-measured lifting area of dashboard/public/blueprint3d/model/zebrafish-dev-manifest.json (0.000084 m2 at SL 0.0388 m; pectoral 0.000034 m2 on the mesh, 1.412 x the parameter value): pectoral = STATE pectoral area x that ratio; pelvic + caudal scaled by (SL/0.0388)^2, isometric (assumed). Convention pectoral + pelvic + caudal (physics/flier), NOT the Lean reference's pectoral + pelvic + body planform."
+    "source": "mesh-measured lifting area of dashboard/public/blueprint3d/model/zebrafish-dev-manifest.json (0.000084 m2 at SL 0.0388 m; pectoral 0.000034 m2 on the mesh, 1.412 x the parameter value): pectoral = STATE pectoral area x that ratio; pelvic + caudal scaled by (SL/0.0388)^2, isometric (assumed). Convention pectoral + pelvic + caudal (physics/flier), NOT the Lean reference's pectoral + pelvic + body planform. (pectoral + pelvic + caudal on the mesh; Park & Choi's reference area uses body planform instead of caudal)"
    },
    {
     "quantity": "launch speed (m/s)",
@@ -989,6 +989,38 @@
     "source": "Q10 1.34 ^ ((T - T_acclimation)/10) (Correction: Thermal preference does not align with optimal temperature for aerobic scope in zebrafish (Danio rerio). J Exp Biol (2023) 226:jeb245488 (corrected Q10: SMR 1.56, MMR 1.34; correcting Ripley et al. 2022, J Exp Biol 225:jeb243774))"
    }
   ],
+  "lean_inputs": {
+   "q10": {
+    "value": 1.34,
+    "unit": "1",
+    "kind": "assumed",
+    "source": "MMR Q10 1.34 (Correction: Thermal preference does not align with optimal temperature for aerobic scope in zebrafish (Danio rerio). J Exp Biol (2023) 226:jeb245488 (corrected Q10: SMR 1.56, MMR 1.34; correcting Ripley et al. 2022, J Exp Biol 225:jeb243774)); 28 degC-acclimated fish, 23-35.5 degC"
+   },
+   "q10_basis": {
+    "value": "MMR",
+    "unit": null,
+    "kind": "calibrated",
+    "source": "the sustained-power ceiling follows maximum metabolic rate; SMR Q10 (1.56) is reported as smr_factor"
+   },
+   "reference_temperature_C": {
+    "value": 25,
+    "unit": "°C",
+    "kind": "assumed",
+    "source": "acclimation_temperature_C parameter"
+   },
+   "reference_sustained_power_W": {
+    "value": 0.0003722168094778689,
+    "unit": "W",
+    "kind": "derived",
+    "source": "Fick aerobic bound eta E Q Ca at the reference (acclimation) temperature: Q 0.00068 ml/s (snapper per kg, borrowed, unless STATE gives cardiac output), Ca 0.1896 ml/ml at water pO2 20.5 kPa; an upper bound resting on a calibrated Hb capacity"
+   },
+   "sustained_power_W": {
+    "value": 0.0006683525030984614,
+    "unit": "W",
+    "kind": "derived",
+    "source": "reference_sustained_power_W x q10^((T - T_ref)/10); the Q10 ignores the decline near CTmax"
+   }
+  },
   "survives": false,
   "feasible": null,
   "feasibility_note": "swimming capacity collapses: at 38 degC every fish failed to swim at 10 cm/s (Wakamatsu 2019), below CTmax",
@@ -1071,7 +1103,7 @@
   "thermal": {
    "law_id": "perturb-thermal",
    "version": "1.0.0",
-   "status": "candidate",
+   "status": "accepted",
    "lean_ref": {
     "module": "lean/Delphi/Perturb.lean",
     "theorem": "Delphi.Perturb.thermal_rules_out",
@@ -1124,13 +1156,13 @@
   "sustained_power_W": 0.000001
  },
  "lean_check": {
-  "contract_version": "0.3.1",
+  "contract_version": "0.4.0",
   "result": {
-   "lawset": "1.3.0",
+   "lawset": "1.5.0",
    "kernel": "evaluates the same formulas; not a kernel check: kernel certificates exist only for the recorded examples",
    "summary": {
     "violated": 2,
-    "binding_violations": 1,
+    "binding_violations": 2,
     "holds": 0,
     "out_of_scope": 7,
     "cannot_evaluate": 20
@@ -1432,22 +1464,22 @@
      "law_id": "perturb-thermal",
      "version": "1.0.0",
      "kind": "biological",
-     "status": "candidate",
+     "status": "accepted",
      "constraint": "P1",
      "band": "hypothesis",
      "verdict": "violated",
-     "binding": false,
+     "binding": true,
      "missing": []
     },
     {
      "law_id": "perturb-thermal",
      "version": "1.0.0",
      "kind": "biological",
-     "status": "candidate",
+     "status": "accepted",
      "constraint": "P1b",
      "band": "hypothesis",
      "verdict": "cannot-evaluate",
-     "binding": false,
+     "binding": true,
      "missing": [
       "q10",
       "reference_temperature_C",
@@ -1458,11 +1490,11 @@
      "law_id": "perturb-current",
      "version": "1.0.0",
      "kind": "biological",
-     "status": "candidate",
+     "status": "accepted",
      "constraint": "P2",
      "band": "hypothesis",
      "verdict": "cannot-evaluate",
-     "binding": false,
+     "binding": true,
      "missing": [
       "current_speed_m_s",
       "critical_swimming_speed_m_s"
@@ -1472,11 +1504,11 @@
      "law_id": "perturb-current",
      "version": "1.0.0",
      "kind": "biological",
-     "status": "candidate",
+     "status": "accepted",
      "constraint": "P2b",
      "band": "hypothesis",
      "verdict": "cannot-evaluate",
-     "binding": false,
+     "binding": true,
      "missing": [
       "current_speed_m_s",
       "drag_coefficient",
@@ -1486,7 +1518,7 @@
     },
     {
      "law_id": "perturb-pressure",
-     "version": "1.0.0",
+     "version": "2.0.0",
      "kind": "physical",
      "status": "candidate",
      "constraint": "P3",
@@ -1516,11 +1548,11 @@
      "law_id": "perturb-isa-vmin",
      "version": "1.0.0",
      "kind": "physical",
-     "status": "candidate",
+     "status": "accepted",
      "constraint": "P4",
      "band": "hypothesis",
      "verdict": "cannot-evaluate",
-     "binding": false,
+     "binding": true,
      "missing": [
       "altitude_m",
       "mass_kg",
@@ -1533,11 +1565,11 @@
      "law_id": "perturb-wind-glide",
      "version": "1.0.0",
      "kind": "physical",
-     "status": "candidate",
+     "status": "accepted",
      "constraint": "P4b",
      "band": "hypothesis",
      "verdict": "cannot-evaluate",
-     "binding": false,
+     "binding": true,
      "missing": [
       "wind_along_track_m_s (positive = tailwind)",
       "horizontal_airspeed_m_s (or airspeed_m_s)",
@@ -1548,11 +1580,11 @@
      "law_id": "perturb-energy-balance",
      "version": "1.0.0",
      "kind": "biological",
-     "status": "candidate",
+     "status": "accepted",
      "constraint": "P5",
      "band": "hypothesis",
      "verdict": "cannot-evaluate",
-     "binding": false,
+     "binding": true,
      "missing": [
       "intake_J_per_day",
       "routine_cost_J_per_day",
@@ -1583,16 +1615,16 @@
      "law_id": "perturb-thermal",
      "version": "1.0.0",
      "kind": "biological",
-     "status": "candidate",
+     "status": "accepted",
      "constraint": "P1",
-     "binding": false,
+     "binding": true,
      "inputs": {
       "body_temperature_C": 45,
       "ct_min_C": 8.4,
       "ct_max_C": 40.45,
       "sustained_power_W": 0.000001
      },
-     "message": "No sustained power outside the thermal window; Q10 bound inside: CTmin ≤ T ≤ CTmax whenever P > 0 fails for the committed numbers (outside the thermal window no positive sustained power exists (thermal_rules_out)) [advisory: law status is candidate, not accepted]"
+     "message": "No sustained power outside the thermal window; Q10 bound inside: CTmin ≤ T ≤ CTmax whenever P > 0 fails for the committed numbers (outside the thermal window no positive sustained power exists (thermal_rules_out))"
     }
    ],
    "excluded": [],
@@ -1639,7 +1671,7 @@
    },
    {
     "quantity": "git commit",
-    "value": "906b169a196017f413c2a406a46705a4f033d9a0",
+    "value": "60090eb8e29f28e326f1313e6539940f92cd6293",
     "kind": "derived",
     "source": "git rev-parse HEAD (or DELPHI_GIT_SHA) at load time."
    },

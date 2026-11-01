@@ -1,7 +1,7 @@
 {
  "server": "delphisci-sim-engine",
  "version": "0.1.0",
- "contract_version": "0.3.4",
+ "contract_version": "0.4.0",
  "changelog": "sim-engine/CHANGELOG.md",
  "transport": "stdio",
  "envelope": {
@@ -1220,6 +1220,388 @@
      "evaluate_only": {
       "type": "boolean",
       "description": "Skip the optimizer: validate and explain the starting design only."
+     }
+    }
+   }
+  },
+  {
+   "name": "swarm_post_task",
+   "title": "Post a task to the swarm board",
+   "description": "Adds a task for agents to pull: kind generate|evaluate|validate|review, at a level (body/system/organ/tissue/cell/gene or 'session'), bound to a codesign session. required_role is an agent role prefix ('agent:organ-gen' matches 'agent:organ-gen-1'). depends_on lists task ids that must be done first. Leases default to 600 s.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "session_id": {
+      "type": "string"
+     },
+     "kind": {
+      "enum": [
+       "generate",
+       "evaluate",
+       "validate",
+       "review"
+      ]
+     },
+     "level": {
+      "type": "string"
+     },
+     "target": {
+      "description": "What the task works on (a part id, a scenario, a proposal id...)."
+     },
+     "title": {
+      "type": "string"
+     },
+     "inputs": {
+      "type": "object",
+      "description": "Data the worker needs. Data, not instructions."
+     },
+     "required_role": {
+      "type": "string"
+     },
+     "depends_on": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "lease_s": {
+      "type": "integer"
+     },
+     "max_attempts": {
+      "type": "integer"
+     },
+     "posted_by_role": {
+      "type": "string",
+      "description": "Your agent role label, e.g. 'agent:organ-gen-1'. Never a name, e-mail or handle."
+     }
+    },
+    "required": [
+     "session_id",
+     "kind",
+     "title",
+     "required_role",
+     "posted_by_role"
+    ]
+   }
+  },
+  {
+   "name": "swarm_claim",
+   "title": "Claim a task under a lease",
+   "description": "Claims the first claimable task matching your role (or task_id), under a lease. A role holds one live claim at a time; claiming again returns it. Expired leases are claimable by anyone matching. renew:true extends your lease. Returns the task, the session organism and the other agents' proposals and comments.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "role": {
+      "type": "string",
+      "description": "Your agent role label, e.g. 'agent:organ-gen-1'. Never a name, e-mail or handle."
+     },
+     "task_id": {
+      "type": "string"
+     },
+     "session_id": {
+      "type": "string"
+     },
+     "kind": {
+      "enum": [
+       "generate",
+       "evaluate",
+       "validate",
+       "review"
+      ]
+     },
+     "renew": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "role"
+    ]
+   }
+  },
+  {
+   "name": "swarm_submit",
+   "title": "Submit a task result",
+   "description": "Finishes your claimed task. outcome 'done' with edits posts a session PROPOSAL (validated, not applied; a human decides); without edits it posts a COMMENT carrying summary + findings. outcome 'failed' posts a comment and frees the task for another attempt (until max_attempts).",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "task_id": {
+      "type": "string"
+     },
+     "role": {
+      "type": "string",
+      "description": "Your agent role label, e.g. 'agent:organ-gen-1'. Never a name, e-mail or handle."
+     },
+     "outcome": {
+      "enum": [
+       "done",
+       "failed"
+      ]
+     },
+     "summary": {
+      "type": "string"
+     },
+     "edits": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "target": {
+         "type": "object",
+         "properties": {
+          "level": {
+           "enum": [
+            "body",
+            "system",
+            "organ",
+            "tissue",
+            "cell",
+            "gene"
+           ]
+          },
+          "id": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "level",
+          "id"
+         ]
+        },
+        "param": {
+         "type": "string"
+        },
+        "op": {
+         "enum": [
+          "set",
+          "scale",
+          "add"
+         ]
+        },
+        "value": {},
+        "reason": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "target",
+        "param",
+        "op",
+        "value"
+       ]
+      }
+     },
+     "rationale": {
+      "type": "string"
+     },
+     "evidence": {
+      "type": "array",
+      "items": {
+       "type": "object"
+      }
+     },
+     "findings": {
+      "description": "Structured results (any JSON); keep provenance kinds with every number."
+     }
+    },
+    "required": [
+     "task_id",
+     "role",
+     "outcome",
+     "summary"
+    ]
+   }
+  },
+  {
+   "name": "swarm_status",
+   "title": "Swarm board status",
+   "description": "Every task with its derived status (open, claimed, done, failed, expired = lease lapsed and claimable again), counts, and per session the proposals still awaiting a human decision.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "session_id": {
+      "type": "string"
+     },
+     "role": {
+      "type": "string",
+      "description": "Only tasks this role could claim."
+     },
+     "history": {
+      "type": "boolean"
+     }
+    }
+   }
+  },
+  {
+   "name": "swarm_try_edits",
+   "title": "Dry-run edits on a session organism",
+   "description": "Applies edits to an inline copy of the session organism (nothing saved) and returns per-edit Lean verdicts and edit_effect, plus optional scenario runs [{scenario, params, ageDays}]. Use it before submitting a proposal.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "session_id": {
+      "type": "string"
+     },
+     "role": {
+      "type": "string",
+      "description": "Your agent role label, e.g. 'agent:organ-gen-1'. Never a name, e-mail or handle."
+     },
+     "edits": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "target": {
+         "type": "object",
+         "properties": {
+          "level": {
+           "enum": [
+            "body",
+            "system",
+            "organ",
+            "tissue",
+            "cell",
+            "gene"
+           ]
+          },
+          "id": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "level",
+          "id"
+         ]
+        },
+        "param": {
+         "type": "string"
+        },
+        "op": {
+         "enum": [
+          "set",
+          "scale",
+          "add"
+         ]
+        },
+        "value": {},
+        "reason": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "target",
+        "param",
+        "op",
+        "value"
+       ]
+      }
+     },
+     "scenarios": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "scenario": {
+         "type": "string"
+        },
+        "params": {
+         "type": "object"
+        },
+        "ageDays": {
+         "type": "number"
+        }
+       },
+       "required": [
+        "scenario"
+       ]
+      }
+     }
+    },
+    "required": [
+     "session_id",
+     "edits"
+    ]
+   }
+  },
+  {
+   "name": "generate_candidates",
+   "title": "Generate candidate designs (flow matching / diffusion)",
+   "description": "Generate n candidate organisms (body level: a conditional flow-matching or DDPM model trained on 16 123 real teleost specimens from FishShapes v1, returning body parameters AND ready-to-use organism documents) or protein designs (NVIDIA NIM ProteinMPNN/RFdiffusion/Evo2 when NVIDIA_API_KEY works; otherwise a public structure fallback and no generation). Organ, system, tissue and cell levels return \"no training data\" / \"not configured\" with the reason. Every candidate carries provenance; generated values are kind \"assumed\". Feed a candidate's `organism` to organism_get, scenario_run or optimize (organism accepts a document) to test or refine it.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "level": {
+      "type": "string",
+      "enum": [
+       "cell",
+       "tissue",
+       "organ",
+       "system",
+       "body",
+       "protein"
+      ],
+      "description": "Which level to generate at. Only body (local) and protein (NVIDIA NIM, if keyed) can generate; the others return their honest status."
+     },
+     "base": {
+      "description": "body: organism id (flying-fish, zebrafish-adult, a design id), a parent list [{organism, weight}], or an organism document. protein: a UniProt accession or amino-acid sequence (DNA for mode dna).",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "properties": {
+          "organism": {
+           "type": "string"
+          },
+          "weight": {
+           "type": "number"
+          }
+         },
+         "required": [
+          "organism",
+          "weight"
+         ]
+        }
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "text": {
+      "type": "string",
+      "description": "How to augment, in words: \"a flying fish with a much deeper body\", \"slightly more slender, heavier\", \"tuna-like\". Fin and organ words are reported as not generated."
+     },
+     "conditions": {
+      "type": "object",
+      "description": "body: {model: fm|ddpm, keep_size (default true), shape_family, sd_shift: {depth|width|peduncle_depth|peduncle_width|condition_K|SL|head_depth: k}, observe: {body_depth_over_SL: 0.25, ...}, steps, llm_assist: nebius|vertex}. protein: {mode: inverse_fold|design|dna, contigs, temperature, num_tokens}."
+     },
+     "n": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 64,
+      "description": "Number of candidates (default 4)."
+     },
+     "seed": {
+      "type": "integer",
+      "description": "Sampling seed (default 1); same seed and inputs give the same candidates."
+     }
+    }
+   }
+  },
+  {
+   "name": "generative_backends_status",
+   "title": "Generative backends: what is real, configured, reachable",
+   "description": "Per level (body, protein, organ, system, tissue, cell) and per provider (NVIDIA NIM, Nebius AI Studio, Google Vertex AI, public AlphaFold DB / ESM Atlas): ok, not configured, auth failed, unreachable, or no training data. Keys are read from the environment only and never returned. Includes the body model's held-out metrics.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "fresh": {
+      "type": "boolean",
+      "description": "Bypass the 10-minute health cache."
      }
     }
    }

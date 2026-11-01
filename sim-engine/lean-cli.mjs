@@ -2,11 +2,13 @@
 // Lean laws from the command line: the same handlers as the MCP tools, JSON out.
 //
 //   node sim-engine/lean-cli.mjs laws [--kind biological] [--status accepted] [--scope genotype] [--lawset current] [--text fixation]
-//   node sim-engine/lean-cli.mjs law <law_id>
+//   node sim-engine/lean-cli.mjs law <law_id> [--version 1.0.0]
 //   node sim-engine/lean-cli.mjs lawset [current|<semver>]
 //   node sim-engine/lean-cli.mjs check <design.json> [--lawset 1.2.0]
 //   node sim-engine/lean-cli.mjs propose <file.lean> --meta meta.json
 //   node sim-engine/lean-cli.mjs verify
+//   node sim-engine/lean-cli.mjs source [--refresh]      where the laws come from (LEANBIO_REMOTE=off|mirror|github)
+//   node sim-engine/lean-cli.mjs changes [<since_version>]  lawset releases newer than since_version
 //
 // Add --result to print only the `result` part of the envelope. Exit 1 on error; `verify` exits 2 on drift.
 
@@ -31,7 +33,7 @@ const readJson = f => JSON.parse(fs.readFileSync(f, 'utf8'));
 
 export const COMMANDS = {
   laws: ({ opts }) => T.lean_laws_list({ kind: opts.kind, status: opts.status, scope: opts.scope, lawset: opts.lawset, text: opts.text }),
-  law: ({ pos, opts }) => T.lean_law_get({ id: pos[0] ?? opts.id }),
+  law: ({ pos, opts }) => T.lean_law_get({ id: pos[0] ?? opts.id, ...(opts.version ? { version: opts.version } : {}) }),
   lawset: ({ pos, opts }) => T.lean_lawset_get({ version: pos[0] ?? opts.version ?? 'current' }),
   check: ({ pos, opts }) => {
     if (!pos[0]) throw new Error('usage: check <design.json> [--lawset <semver|current>]');
@@ -42,6 +44,8 @@ export const COMMANDS = {
     return T.lean_propose({ file: pos[0], meta: opts.meta ? readJson(opts.meta) : {} });
   },
   verify: () => T.lean_verify({}),
+  source: ({ opts }) => T.lean_source_status({ refresh: !!opts.refresh }),
+  changes: ({ pos, opts }) => T.lean_changes({ since_version: pos[0] ?? opts.since }),
 };
 
 export async function run(argv) {

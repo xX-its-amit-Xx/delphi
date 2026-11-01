@@ -21,7 +21,7 @@ const CONSTRAINT_INPUTS = {
   C8e: ['SL_m', 'mass_kg', 'pectoralFinArea_m2'], C9c: ['SL_m', 'mass_kg', 'pectoralFinArea_m2'], C8c: ['SL_m'],
   C16: ['mass_kg', 'flightMuscleFraction'], C14: ['mass_kg', 'gillArea_m2'], E5: ['finLength_SL'], E2: ['SL_m', 'mass_kg'],
   P1: ['body_temperature_C', 'ct_min_C', 'ct_max_C', 'sustained_power_W'], P1b: ['body_temperature_C', 'q10', 'reference_temperature_C', 'reference_sustained_power_W', 'sustained_power_W'],
-  P2: ['current_speed_m_s', 'critical_swimming_speed_m_s'], P2b: ['current_speed_m_s', 'drag_coefficient', 'drag_area_m2', 'aerobicCeiling_W'],
+  P2: ['current_speed_m_s', 'critical_swimming_speed_m_s'], P2b: ['current_speed_m_s', 'drag_coefficient', 'drag_area_m2', 'aerobicCeiling_W', 'water_density_kg_m3'],
   P3: ['depth_m', 'bladder_volume_surface_ml', 'bladder_volume_at_depth_ml'], P3b: ['depth_m', 'teleost'], P4: ['altitude_m', 'airspeed_m_s', 'CLmax', 'mass_kg'], P4b: ['wind_along_track_m_s', 'horizontal_airspeed_m_s', 'glideHeight_m', 'LD_max', 'ground_distance_m'],
   P5: ['intake_J_per_day', 'routine_cost_J_per_day', 'activity_cost_J_per_day', 'assimilation_efficiency', 'mass_change'],
 };

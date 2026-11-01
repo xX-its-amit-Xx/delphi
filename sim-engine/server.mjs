@@ -22,6 +22,8 @@ import { physiologySchema, physiologyChain, growthSchema, growthTrajectory } fro
 import { LEAN_TOOLS } from './tools/lean-tools.mjs';
 import { STUDIO_TOOLS } from './tools/studio.mjs';
 import { SPEC_TOOLS } from './tools/spec-tools.mjs';
+import { GENERATIVE_TOOLS } from './tools/generative-tools.mjs';
+import { SWARM_TOOLS } from './swarm/board.mjs';
 
 export const TOOLS = [
   { name: 'morphogen_diffusion', ...morphogen.schema, handler: args => morphogen.run(args) },
@@ -35,6 +37,11 @@ export const TOOLS = [
   ...STUDIO_TOOLS,
   // Functional criteria: parse_design_text, design_from_spec (tools/spec-tools.mjs, lib/spec.mjs, lib/parse-text.mjs).
   ...SPEC_TOOLS,
+  // Swarm task board on codesign sessions: swarm_post_task, swarm_claim, swarm_submit, swarm_status, swarm_try_edits
+  // (swarm/board.mjs). Results land in the session as proposals or comments; humans still decide with session_decide.
+  ...SWARM_TOOLS,
+  // Generative backends: generate_candidates, generative_backends_status (sim-engine/generative, README there).
+  ...GENERATIVE_TOOLS,
 ];
 
 // flight_sim is deliberately absent. It would wrap the physics simulation's equations, which are not

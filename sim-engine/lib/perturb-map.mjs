@@ -4,9 +4,9 @@
 // metric IS that quantity. Every value carries where it came from (returned in `sources`).
 //
 //   P1   body_temperature_C, water_temperature_C, ct_min_C, ct_max_C, sustained_power_W
-//   P1b  q10, reference_temperature_C, reference_sustained_power_W            (not supplied: no committed design values)
+//   P1b  q10, reference_temperature_C, reference_sustained_power_W, sustained_power_W (temperature scenario lean_inputs)
 //   P2   current_speed_m_s, critical_swimming_speed_m_s
-//   P2b  drag_coefficient, drag_area_m2, aerobicCeiling_W                      (not supplied: scenarios report drag, not Cd and A)
+//   P2b  drag_coefficient, drag_area_m2 (= the module's CdA / Cd), aerobicCeiling_W, water_density_kg_m3 (current scenario)
 //   P3   depth_m, bladder_volume_surface_ml, bladder_volume_at_depth_ml, water_density_kg_m3, g, surface_pressure_Pa (v2.0.0)
 //   P3b  depth_m, teleost
 //   P4   altitude_m, CLmax, airspeed_m_s, finArea_m2 (altitude scenario; the area is scoped to P4 and C9 only)
@@ -80,20 +80,18 @@ export function perturbInputs(state, scenarioKey = null, params = {}, run = null
     put('groundEffect', 0, 'the Lean-covered h (L/D) descent carries no ground effect (glide.mjs applies it only in the level phase)');
   }
   // ---- P4: altitude. The altitude scenario's own launch airspeed, glide polar and lifting area.
-  // C_Lmax is reported only inside the provenance string "glide polar C_Lmax / (L/D)max" = "0.78 / 4.37"; it is read
-  // with a strict two-number pattern (anything else -> not passed). Owner asked to expose it as a number.
+  // C_Lmax comes from the module's numeric lean_inputs.CLmax (no text parsing).
   // The lifting area goes ONLY to the self-consistent rows (P4, C9: the design against itself), never to the rows that
   // compare with the Lean reference specimen (C2a, C8e, C9c), whose area convention (pectoral + pelvic + body planform)
   // differs from STATE's mesh area (pectoral + pelvic + caudal). lib/lean.mjs evaluates those rows separately.
   const prov = q => (run && run.ok ? run.provenance?.find(x => x.quantity === q)?.value : undefined);
-  const polar = s => { const m = typeof s === 'string' && /^\s*([0-9]*\.?[0-9]+)\s*\/\s*([0-9]*\.?[0-9]+)\s*$/.exec(s); return m ? { CLmax: Number(m[1]), LD: Number(m[2]) } : null; };
   const scoped = { spec: {}, only: [] };
   if (scenarioKey === 'altitude' && run?.ok) {
-    const pol = polar(prov('glide polar C_Lmax / (L/D)max'));
+    const CL = run.lean_inputs?.CLmax?.value;
     const S = prov('lifting area (m2)'), v = metric('launch_airspeed_m_s');
     put('altitude_m', params.altitude_m, 'altitude scenario param altitude_m');
-    if (pol && num(S) && num(v)) {
-      put('CLmax', pol.CLmax, "altitude scenario provenance 'glide polar C_Lmax / (L/D)max' (parsed: strict 'a / b' pattern)");
+    if (num(CL) && num(S) && num(v)) {
+      put('CLmax', CL, `altitude scenario lean_inputs.CLmax (${run.lean_inputs.CLmax.kind}): ${String(run.lean_inputs.CLmax.source).slice(0, 120)}`);
       put('airspeed_m_s', v, 'altitude scenario metric launch_airspeed_m_s');
       scoped.spec.finArea_m2 = S; scoped.only.push('P4', 'C9');
       sources.finArea_m2 = "altitude scenario provenance 'lifting area (m2)'; passed ONLY to P4 and C9 (the design against itself)";
@@ -121,10 +119,42 @@ export function perturbInputs(state, scenarioKey = null, params = {}, run = null
     const net = metric('net_energy_J_day');
     if (num(net)) { spec.mass_change = net > 0 ? 'positive' : net < 0 ? 'negative' : 'zero'; sources.mass_change = "sign of the digestion scenario's own net_energy_J_day"; }
   }
-  // ---- P2b (current) and P1b (temperature) need numbers the modules do not report: current must expose its
-  // drag_coefficient, drag_area_m2 and an aerobic ceiling (W); temperature must expose q10 as a number, a
-  // reference_temperature_C and a reference_sustained_power_W. Requested from the module owners; until then they
-  // stay cannot-evaluate (never parsed out of prose, never defaulted).
+  // ---- Scenario `lean_inputs` blocks (round 6): numeric {value, unit, kind, source} fields the modules commit for
+  // the laws. Read by name; never parsed out of prose. Each source keeps the module's kind and source.
+  const li = run && run.ok && run.lean_inputs && typeof run.lean_inputs === 'object' ? run.lean_inputs : {};
+  const lv = k => (li[k] && num(li[k].value) ? li[k].value : undefined);
+  const ls = (k, extra = '') => `${scenarioKey} scenario lean_inputs.${k} (${li[k]?.kind}): ${String(li[k]?.source || '').slice(0, 160)}${extra}`;
+  const FICK = '; NOTE: the Fick upper bound (borrowed cardiac output, calibrated Hb capacity), not a measured power';
+  // P2b (drag power within the aerobic ceiling), current scenario.
+  if (scenarioKey === 'current' && num(lv('drag_coefficient'))) {
+    put('drag_coefficient', lv('drag_coefficient'), ls('drag_coefficient'));
+    // checkPerturb multiplies drag_coefficient by drag_area_m2, so drag_area_m2 must be the REFERENCE area Cd
+    // refers to (current.mjs lean_inputs.drag_reference_area_m2), never CdA. Fallback for an older module that
+    // reports only CdA (drag_area_CdA_m2, or the pre-rename drag_area_m2): A = CdA / Cd, exact.
+    const cdA = lv('drag_area_CdA_m2') ?? lv('drag_area_m2');
+    if (num(lv('drag_reference_area_m2'))) put('drag_area_m2', lv('drag_reference_area_m2'), ls('drag_reference_area_m2'));
+    else if (num(cdA)) put('drag_area_m2', cdA / lv('drag_coefficient'), `${scenarioKey} scenario: CdA / drag_coefficient (fallback: the module reports no drag_reference_area_m2)`);
+    put('aerobicCeiling_W', lv('aerobic_ceiling_W'), ls('aerobic_ceiling_W', FICK));
+    const rhoC = run.provenance?.find(x => x.quantity === 'water density (kg/m3)')?.value;
+    put('water_density_kg_m3', rhoC, "current scenario provenance: water density (kg/m3), the density its drag uses");
+  }
+  // P1b (sustained power within the Q10-scaled reference), temperature scenario. The module's sustained_power_W is
+  // itself reference x Q10^((T - T_ref)/10), so with its own numbers P1b holds by construction (a consistency check);
+  // a different sustained power is a claim.
+  if (scenarioKey === 'temperature') {
+    put('q10', lv('q10'), ls('q10', li.q10_basis ? ` [basis ${li.q10_basis.value}]` : ''));
+    put('reference_temperature_C', lv('reference_temperature_C'), ls('reference_temperature_C'));
+    put('reference_sustained_power_W', lv('reference_sustained_power_W'), ls('reference_sustained_power_W', FICK));
+    put('sustained_power_W', lv('sustained_power_W'), ls('sustained_power_W', FICK));
+  }
+  // P4b with wind, wind scenario: descent phase only, wind applied (w positive = tailwind, so w = -headwind).
+  if (scenarioKey === 'wind' && num(lv('descent_ground_distance_m'))) {
+    if (num(lv('headwind_m_s'))) put('wind_along_track_m_s', -lv('headwind_m_s'), ls('headwind_m_s', '; sign flipped: the law takes w positive for a tailwind'));
+    put('horizontal_airspeed_m_s', lv('descent_airspeed_m_s'), ls('descent_airspeed_m_s'));
+    put('glideHeight_m', lv('launch_height_m'), ls('launch_height_m'));
+    put('LD_max', lv('LD_max'), ls('LD_max'));
+    put('ground_distance_m', lv('descent_ground_distance_m'), ls('descent_ground_distance_m', '; descent only, the kinetic phase is never passed'));
+  }
   return { spec, sources, scoped };
 }
 

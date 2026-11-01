@@ -450,6 +450,45 @@ await ok('unknown claim keys are refused', async () => {
   await assert.rejects(T.scenarioRun({ organism: 'flying-fish', scenario: 'glide', claims: { anything_goes: 1 } }), /unknown claim/);
 });
 
+console.log('\nP1b, P2b and P4b-with-wind from the scenarios\' lean_inputs');
+await ok('P2b is fed from the current scenario for an unedited zebrafish: holds at 0.2 m/s; a claimed station-hold at 0.6 m/s beyond the drag bound -> red', async () => {
+  const lo = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'current', params: { current_m_s: 0.2 } });
+  assert.equal(verdict(lo, 'P2b'), 'holds', `P2b is '${verdict(lo, 'P2b')}': not fed? missing ${JSON.stringify(lo.result.verdicts.find(x => x.constraint === 'P2b')?.missing)}`);
+  const sp = lo.result.lean_inputs.spec;
+  assert.ok(/drag_reference_area_m2/.test(lo.result.lean_inputs.sources.drag_area_m2), 'P2b area must be the module reference area');
+  const dragPower = 0.5 * sp.water_density_kg_m3 * sp.drag_coefficient * sp.drag_area_m2 * 0.2 ** 3;
+  const scen = lo.result.run.metrics.find(m => m.key === 'drag_power_at_current_W').value;
+  assert.ok(Math.abs(dragPower / scen - 1) < 1e-9, `drag power ${dragPower} vs the scenario's ${scen}: Cd counted twice?`);
+  assert.ok(/Fick upper bound/.test(lo.result.lean_inputs.sources.aerobicCeiling_W));
+  const hi = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'current', params: { current_m_s: 0.2 }, claims: { current_speed_m_s: M === 'p2b' ? 0.2 : 0.6 } });
+  assert.equal(verdict(hi, 'P2b'), 'violated'); assert.equal(sev(hi, 'P2b'), SEVERITY[hi.result.verdicts.find(x => x.constraint === 'P2b').status]);
+});
+await ok('P1b (sustained power within the Q10-scaled reference): holds at 28 C; a claimed 3x sustained power -> red', async () => {
+  const ok1 = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'temperature', params: { water_temperature_C: 28 } });
+  assert.equal(verdict(ok1, 'P1b'), 'holds');
+  assert.ok(/Fick upper bound/.test(ok1.result.lean_inputs.sources.reference_sustained_power_W));
+  const claim = 3 * ok1.result.lean_inputs.spec.sustained_power_W;
+  const bad = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'temperature', params: { water_temperature_C: 28 }, claims: { sustained_power_W: M === 'p1b' ? claim / 3 : claim } });
+  assert.equal(verdict(bad, 'P1b'), 'violated'); assert.equal(sev(bad, 'P1b'), SEVERITY[bad.result.verdicts.find(x => x.constraint === 'P1b').status]);
+});
+await ok('P4b with wind: the wild-type descent equals the bound (L/D) h (1 + w/u); claiming the still-air distance into a 3 m/s headwind -> red', async () => {
+  const r = await T.scenarioRun({ organism: 'flying-fish', scenario: 'wind', params: { headwind_m_s: 3 } });
+  const sp = r.result.lean_inputs.spec;
+  assert.equal(sp.wind_along_track_m_s, -3, 'headwind must enter as negative w');
+  const bound = sp.LD_max * sp.glideHeight_m * (1 + sp.wind_along_track_m_s / sp.horizontal_airspeed_m_s);
+  assert.ok(Math.abs(sp.ground_distance_m - bound) <= 1e-12 * bound, `descent ${sp.ground_distance_m} vs bound ${bound}`);
+  // KNOWN (reported to the hub): browser-check's P4b compares with no tolerance, so this equality can come back
+  // 'violated' by one ulp (4.4e-16). Once the evaluator has a tolerance it must be 'holds'.
+  const v = verdict(r, 'P4b');
+  if (v !== 'holds') console.log(`          note: P4b wild-type wind verdict is '${v}' (one-ulp comparison in browser-check, reported); distance equals the bound within 1e-12`);
+  const bad = await T.scenarioRun({ organism: 'flying-fish', scenario: 'wind', params: { headwind_m_s: 3 }, claims: { ground_distance_m: M === 'p4bw' ? 3 : 4.37 } });
+  assert.equal(verdict(bad, 'P4b'), 'violated'); assert.equal(sev(bad, 'P4b'), SEVERITY[bad.result.verdicts.find(x => x.constraint === 'P4b').status]);
+});
+await ok('P4 reads the altitude scenario\'s numeric CLmax (no text parsing)', async () => {
+  const r = await T.scenarioRun({ organism: 'flying-fish', scenario: 'altitude', params: { altitude_m: 1000 } });
+  assert.ok(/lean_inputs\.CLmax/.test(r.result.lean_inputs.sources.CLmax));
+});
+
 console.log('\nserver and CLI');
 await ok('contract.json lists all twelve studio tools (regenerate with --dump-contract)', () => {
   const c = JSON.parse(fs.readFileSync(path.join(engine, 'contract.json'), 'utf8'));

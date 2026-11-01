@@ -1,7 +1,7 @@
 {
  "meta": {
   "example": "c-current-timecourse",
-  "ran_at": "2026-11-01T03:08:13.318Z",
+  "ran_at": "2026-11-01T04:14:24.944Z",
   "node": "v24.13.0",
   "headline": "winged zebrafish fails at 0d,3d,10d,25d and holds from 60d (Ucrit calibrated); flying fish ruled out only at 0d (physical bound), otherwise no Ucrit model (feasible null)",
   "checks": [
@@ -100,7 +100,9 @@
      "source": "none",
      "reason": "~2.0 dpf: before free swimming (5 dpf); no Ucrit measured"
     },
-    "violations": [],
+    "violations": [
+     "perturb-current"
+    ],
     "newBinding": []
    },
    {
@@ -142,6 +144,7 @@
      "source": "current / Ucrit"
     },
     "violations": [
+     "perturb-current",
      "perturb-current"
     ],
     "newBinding": []
@@ -185,6 +188,7 @@
      "source": "current / Ucrit"
     },
     "violations": [
+     "perturb-current",
      "perturb-current"
     ],
     "newBinding": []
@@ -228,6 +232,7 @@
      "source": "current / Ucrit"
     },
     "violations": [
+     "perturb-current",
      "perturb-current"
     ],
     "newBinding": []
@@ -356,7 +361,9 @@
      "source": "none",
      "reason": "no measured Ucrit for flying fish (Exocoetidae, generic; adult parameters from Cypselurus hiraii, Park & Choi 2010 L3; growth from Hirundichthys affinis) (Europe PMC search 2026-10-31 found none for flying fish); zebrafish values are not substituted"
     },
-    "violations": [],
+    "violations": [
+     "perturb-current"
+    ],
     "newBinding": []
    },
    {
@@ -399,7 +406,9 @@
      "source": "none",
      "reason": "no measured Ucrit for flying fish (Exocoetidae, generic; adult parameters from Cypselurus hiraii, Park & Choi 2010 L3; growth from Hirundichthys affinis) (Europe PMC search 2026-10-31 found none for flying fish); zebrafish values are not substituted"
     },
-    "violations": [],
+    "violations": [
+     "perturb-current"
+    ],
     "newBinding": []
    },
    {
@@ -442,7 +451,9 @@
      "source": "none",
      "reason": "no measured Ucrit for flying fish (Exocoetidae, generic; adult parameters from Cypselurus hiraii, Park & Choi 2010 L3; growth from Hirundichthys affinis) (Europe PMC search 2026-10-31 found none for flying fish); zebrafish values are not substituted"
     },
-    "violations": [],
+    "violations": [
+     "perturb-current"
+    ],
     "newBinding": []
    },
    {
@@ -555,7 +566,7 @@
     "upper": {
      "key": "ucrit_upper_bound_m_s",
      "label": "Physical upper bound on sustained speed (rigid drag = red-muscle power)",
-     "value": 2.198653515555618,
+     "value": 2.4418723447866046,
      "unit": "m/s",
      "better": "higher",
      "kind": "derived",
@@ -578,11 +589,11 @@
  },
  "timecourses": {
   "winged-zebrafish": {
-   "contract_version": "0.3.1",
+   "contract_version": "0.4.0",
    "result": {
     "scenario": "current",
     "organism": "winged-zebrafish",
-    "lawset_version": "1.3.0",
+    "lawset_version": "1.5.0",
     "stages": [
      {
       "ageDays": 0,
@@ -700,7 +711,49 @@
       },
       "error": null,
       "missing": null,
-      "violations": [],
+      "violations": [
+       {
+        "law_id": "perturb-current",
+        "law_version": "1.0.0",
+        "status": "accepted",
+        "lawset_version": "1.5.0",
+        "lean_ref": {
+         "constraint": "P2b",
+         "theorem": "Delphi.Perturb.no_station_above_ucrit",
+         "module": "lean/Delphi/Perturb.lean"
+        },
+        "kind": "biological",
+        "law_kind": "biological",
+        "inputs": {
+         "current_speed_m_s": 0.3,
+         "drag_coefficient": 0.041221084465106306,
+         "drag_area_m2": 0.000004763055324592361,
+         "aerobicCeiling_W": 1.0856100233223165e-7,
+         "water_density_kg_m3": 997.05
+        },
+        "numbers": {
+         "current_speed_m_s": 0.3,
+         "water_density_kg_m3": 997.05,
+         "drag_coefficient": 0.041221084465106306,
+         "drag_area_m2": 0.000004763055324592361,
+         "dragPower_W": 0.000002642747955904089,
+         "aerobicCeiling_W": 1.0856100233223165e-7,
+         "shortfall_factor": 24.343437322146574
+        },
+        "parts": [
+         "skin_L",
+         "skin_R",
+         "heart",
+         "gills_L",
+         "gills_R"
+        ],
+        "message": "No holding station in a current above U_crit or the aerobic drag bound: ρ_w C_d A U_current^3 / 2 ≤ η E_O2 Q Ca fails for the committed numbers (drag power rho Cd A U^3 / 2 against the Fick ceiling (no_station_above_drag_bound); burst swimming is outside it)",
+        "binding": true,
+        "contested": false,
+        "severity": "red",
+        "baseline_violated": true
+       }
+      ],
       "new_binding_violations": [],
       "flags": []
      },
@@ -819,8 +872,8 @@
        {
         "law_id": "perturb-current",
         "law_version": "1.0.0",
-        "status": "candidate",
-        "lawset_version": "1.3.0",
+        "status": "accepted",
+        "lawset_version": "1.5.0",
         "lean_ref": {
          "constraint": "P2",
          "theorem": "Delphi.Perturb.no_station_above_ucrit",
@@ -843,10 +896,51 @@
          "muscle_R",
          "caudal_fin"
         ],
-        "message": "No holding station in a current above U_crit or the aerobic drag bound: U_current ≤ U_crit fails for the committed numbers (no design holds station in a current faster than its U_crit (no_station_above_ucrit)) [advisory: law status is candidate, not accepted]",
-        "binding": false,
+        "message": "No holding station in a current above U_crit or the aerobic drag bound: U_current ≤ U_crit fails for the committed numbers (no design holds station in a current faster than its U_crit (no_station_above_ucrit))",
+        "binding": true,
         "contested": false,
-        "severity": "candidate",
+        "severity": "red",
+        "baseline_violated": true
+       },
+       {
+        "law_id": "perturb-current",
+        "law_version": "1.0.0",
+        "status": "accepted",
+        "lawset_version": "1.5.0",
+        "lean_ref": {
+         "constraint": "P2b",
+         "theorem": "Delphi.Perturb.no_station_above_ucrit",
+         "module": "lean/Delphi/Perturb.lean"
+        },
+        "kind": "biological",
+        "law_kind": "biological",
+        "inputs": {
+         "current_speed_m_s": 0.3,
+         "drag_coefficient": 0.03541405153556124,
+         "drag_area_m2": 0.00000619399330146699,
+         "aerobicCeiling_W": 2.886918506464531e-7,
+         "water_density_kg_m3": 997.05
+        },
+        "numbers": {
+         "current_speed_m_s": 0.3,
+         "water_density_kg_m3": 997.05,
+         "drag_coefficient": 0.03541405153556124,
+         "drag_area_m2": 0.00000619399330146699,
+         "dragPower_W": 0.000002952548583952572,
+         "aerobicCeiling_W": 2.886918506464531e-7,
+         "shortfall_factor": 10.227336093281048
+        },
+        "parts": [
+         "skin_L",
+         "skin_R",
+         "heart",
+         "gills_L",
+         "gills_R"
+        ],
+        "message": "No holding station in a current above U_crit or the aerobic drag bound: ρ_w C_d A U_current^3 / 2 ≤ η E_O2 Q Ca fails for the committed numbers (drag power rho Cd A U^3 / 2 against the Fick ceiling (no_station_above_drag_bound); burst swimming is outside it)",
+        "binding": true,
+        "contested": false,
+        "severity": "red",
         "baseline_violated": true
        }
       ],
@@ -968,8 +1062,8 @@
        {
         "law_id": "perturb-current",
         "law_version": "1.0.0",
-        "status": "candidate",
-        "lawset_version": "1.3.0",
+        "status": "accepted",
+        "lawset_version": "1.5.0",
         "lean_ref": {
          "constraint": "P2",
          "theorem": "Delphi.Perturb.no_station_above_ucrit",
@@ -992,10 +1086,51 @@
          "muscle_R",
          "caudal_fin"
         ],
-        "message": "No holding station in a current above U_crit or the aerobic drag bound: U_current ≤ U_crit fails for the committed numbers (no design holds station in a current faster than its U_crit (no_station_above_ucrit)) [advisory: law status is candidate, not accepted]",
-        "binding": false,
+        "message": "No holding station in a current above U_crit or the aerobic drag bound: U_current ≤ U_crit fails for the committed numbers (no design holds station in a current faster than its U_crit (no_station_above_ucrit))",
+        "binding": true,
         "contested": false,
-        "severity": "candidate",
+        "severity": "red",
+        "baseline_violated": true
+       },
+       {
+        "law_id": "perturb-current",
+        "law_version": "1.0.0",
+        "status": "accepted",
+        "lawset_version": "1.5.0",
+        "lean_ref": {
+         "constraint": "P2b",
+         "theorem": "Delphi.Perturb.no_station_above_ucrit",
+         "module": "lean/Delphi/Perturb.lean"
+        },
+        "kind": "biological",
+        "law_kind": "biological",
+        "inputs": {
+         "current_speed_m_s": 0.3,
+         "drag_coefficient": 0.028599426637952032,
+         "drag_area_m2": 0.000016359452312445958,
+         "aerobicCeiling_W": 0.0000011435092245661737,
+         "water_density_kg_m3": 997.05
+        },
+        "numbers": {
+         "current_speed_m_s": 0.3,
+         "water_density_kg_m3": 997.05,
+         "drag_coefficient": 0.028599426637952032,
+         "drag_area_m2": 0.000016359452312445958,
+         "dragPower_W": 0.000006297624948500252,
+         "aerobicCeiling_W": 0.0000011435092245661737,
+         "shortfall_factor": 5.507279533218854
+        },
+        "parts": [
+         "skin_L",
+         "skin_R",
+         "heart",
+         "gills_L",
+         "gills_R"
+        ],
+        "message": "No holding station in a current above U_crit or the aerobic drag bound: ρ_w C_d A U_current^3 / 2 ≤ η E_O2 Q Ca fails for the committed numbers (drag power rho Cd A U^3 / 2 against the Fick ceiling (no_station_above_drag_bound); burst swimming is outside it)",
+        "binding": true,
+        "contested": false,
+        "severity": "red",
         "baseline_violated": true
        }
       ],
@@ -1117,8 +1252,8 @@
        {
         "law_id": "perturb-current",
         "law_version": "1.0.0",
-        "status": "candidate",
-        "lawset_version": "1.3.0",
+        "status": "accepted",
+        "lawset_version": "1.5.0",
         "lean_ref": {
          "constraint": "P2",
          "theorem": "Delphi.Perturb.no_station_above_ucrit",
@@ -1141,10 +1276,51 @@
          "muscle_R",
          "caudal_fin"
         ],
-        "message": "No holding station in a current above U_crit or the aerobic drag bound: U_current ≤ U_crit fails for the committed numbers (no design holds station in a current faster than its U_crit (no_station_above_ucrit)) [advisory: law status is candidate, not accepted]",
-        "binding": false,
+        "message": "No holding station in a current above U_crit or the aerobic drag bound: U_current ≤ U_crit fails for the committed numbers (no design holds station in a current faster than its U_crit (no_station_above_ucrit))",
+        "binding": true,
         "contested": false,
-        "severity": "candidate",
+        "severity": "red",
+        "baseline_violated": true
+       },
+       {
+        "law_id": "perturb-current",
+        "law_version": "1.0.0",
+        "status": "accepted",
+        "lawset_version": "1.5.0",
+        "lean_ref": {
+         "constraint": "P2b",
+         "theorem": "Delphi.Perturb.no_station_above_ucrit",
+         "module": "lean/Delphi/Perturb.lean"
+        },
+        "kind": "biological",
+        "law_kind": "biological",
+        "inputs": {
+         "current_speed_m_s": 0.3,
+         "drag_coefficient": 0.021609549360675575,
+         "drag_area_m2": 0.000054791337219745276,
+         "aerobicCeiling_W": 0.000006942543112110617,
+         "water_density_kg_m3": 997.05
+        },
+        "numbers": {
+         "current_speed_m_s": 0.3,
+         "water_density_kg_m3": 997.05,
+         "drag_coefficient": 0.021609549360675575,
+         "drag_area_m2": 0.000054791337219745276,
+         "dragPower_W": 0.000015937063992102416,
+         "aerobicCeiling_W": 0.000006942543112110617,
+         "shortfall_factor": 2.2955657220625247
+        },
+        "parts": [
+         "skin_L",
+         "skin_R",
+         "heart",
+         "gills_L",
+         "gills_R"
+        ],
+        "message": "No holding station in a current above U_crit or the aerobic drag bound: ρ_w C_d A U_current^3 / 2 ≤ η E_O2 Q Ca fails for the committed numbers (drag power rho Cd A U^3 / 2 against the Fick ceiling (no_station_above_drag_bound); burst swimming is outside it)",
+        "binding": true,
+        "contested": false,
+        "severity": "red",
         "baseline_violated": true
        }
       ],
@@ -1573,11 +1749,11 @@
    }
   },
   "flying-fish": {
-   "contract_version": "0.3.1",
+   "contract_version": "0.4.0",
    "result": {
     "scenario": "current",
     "organism": "flying-fish",
-    "lawset_version": "1.3.0",
+    "lawset_version": "1.5.0",
     "stages": [
      {
       "ageDays": 0,
@@ -1695,7 +1871,49 @@
       },
       "error": null,
       "missing": null,
-      "violations": [],
+      "violations": [
+       {
+        "law_id": "perturb-current",
+        "law_version": "1.0.0",
+        "status": "accepted",
+        "lawset_version": "1.5.0",
+        "lean_ref": {
+         "constraint": "P2b",
+         "theorem": "Delphi.Perturb.no_station_above_ucrit",
+         "module": "lean/Delphi/Perturb.lean"
+        },
+        "kind": "biological",
+        "law_kind": "biological",
+        "inputs": {
+         "current_speed_m_s": 0.3,
+         "drag_coefficient": 0.03655494060738836,
+         "drag_area_m2": 0.0000059024139914513754,
+         "aerobicCeiling_W": 2.2589683295158953e-7,
+         "water_density_kg_m3": 997.05
+        },
+        "numbers": {
+         "current_speed_m_s": 0.3,
+         "water_density_kg_m3": 997.05,
+         "drag_coefficient": 0.03655494060738836,
+         "drag_area_m2": 0.0000059024139914513754,
+         "dragPower_W": 0.0000029041995668221103,
+         "aerobicCeiling_W": 2.2589683295158953e-7,
+         "shortfall_factor": 12.856309355361747
+        },
+        "parts": [
+         "skin_L",
+         "skin_R",
+         "heart",
+         "gills_L",
+         "gills_R"
+        ],
+        "message": "No holding station in a current above U_crit or the aerobic drag bound: ρ_w C_d A U_current^3 / 2 ≤ η E_O2 Q Ca fails for the committed numbers (drag power rho Cd A U^3 / 2 against the Fick ceiling (no_station_above_drag_bound); burst swimming is outside it)",
+        "binding": true,
+        "contested": false,
+        "severity": "red",
+        "baseline_violated": true
+       }
+      ],
       "new_binding_violations": [],
       "flags": []
      },
@@ -1815,7 +2033,49 @@
       },
       "error": null,
       "missing": null,
-      "violations": [],
+      "violations": [
+       {
+        "law_id": "perturb-current",
+        "law_version": "1.0.0",
+        "status": "accepted",
+        "lawset_version": "1.5.0",
+        "lean_ref": {
+         "constraint": "P2b",
+         "theorem": "Delphi.Perturb.no_station_above_ucrit",
+         "module": "lean/Delphi/Perturb.lean"
+        },
+        "kind": "biological",
+        "law_kind": "biological",
+        "inputs": {
+         "current_speed_m_s": 0.3,
+         "drag_coefficient": 0.027515266767280534,
+         "drag_area_m2": 0.00001838734762651911,
+         "aerobicCeiling_W": 0.000001249985288589514,
+         "water_density_kg_m3": 997.05
+        },
+        "numbers": {
+         "current_speed_m_s": 0.3,
+         "water_density_kg_m3": 997.05,
+         "drag_coefficient": 0.027515266767280534,
+         "drag_area_m2": 0.00001838734762651911,
+         "dragPower_W": 0.000006809943690898528,
+         "aerobicCeiling_W": 0.000001249985288589514,
+         "shortfall_factor": 5.448019071154735
+        },
+        "parts": [
+         "skin_L",
+         "skin_R",
+         "heart",
+         "gills_L",
+         "gills_R"
+        ],
+        "message": "No holding station in a current above U_crit or the aerobic drag bound: ρ_w C_d A U_current^3 / 2 ≤ η E_O2 Q Ca fails for the committed numbers (drag power rho Cd A U^3 / 2 against the Fick ceiling (no_station_above_drag_bound); burst swimming is outside it)",
+        "binding": true,
+        "contested": false,
+        "severity": "red",
+        "baseline_violated": true
+       }
+      ],
       "new_binding_violations": [],
       "flags": []
      },
@@ -1935,7 +2195,49 @@
       },
       "error": null,
       "missing": null,
-      "violations": [],
+      "violations": [
+       {
+        "law_id": "perturb-current",
+        "law_version": "1.0.0",
+        "status": "accepted",
+        "lawset_version": "1.5.0",
+        "lean_ref": {
+         "constraint": "P2b",
+         "theorem": "Delphi.Perturb.no_station_above_ucrit",
+         "module": "lean/Delphi/Perturb.lean"
+        },
+        "kind": "biological",
+        "law_kind": "biological",
+        "inputs": {
+         "current_speed_m_s": 0.3,
+         "drag_coefficient": 0.019394520166088655,
+         "drag_area_m2": 0.00007448997706570166,
+         "aerobicCeiling_W": 0.000010246261888477204,
+         "water_density_kg_m3": 997.05
+        },
+        "numbers": {
+         "current_speed_m_s": 0.3,
+         "water_density_kg_m3": 997.05,
+         "drag_coefficient": 0.019394520166088655,
+         "drag_area_m2": 0.00007448997706570166,
+         "dragPower_W": 0.00001944587931956866,
+         "aerobicCeiling_W": 0.000010246261888477204,
+         "shortfall_factor": 1.8978510925469523
+        },
+        "parts": [
+         "skin_L",
+         "skin_R",
+         "heart",
+         "gills_L",
+         "gills_R"
+        ],
+        "message": "No holding station in a current above U_crit or the aerobic drag bound: ρ_w C_d A U_current^3 / 2 ≤ η E_O2 Q Ca fails for the committed numbers (drag power rho Cd A U^3 / 2 against the Fick ceiling (no_station_above_drag_bound); burst swimming is outside it)",
+        "binding": true,
+        "contested": false,
+        "severity": "red",
+        "baseline_violated": true
+       }
+      ],
       "new_binding_violations": [],
       "flags": []
      },
@@ -2269,7 +2571,7 @@
        {
         "key": "red_muscle_power_W",
         "label": "Whole red-muscle maximal power (upper bound on aerobic swimming power)",
-        "value": 0.275597314936122,
+        "value": 0.5815103345152174,
         "unit": "W",
         "better": "higher",
         "kind": "derived",
@@ -2278,7 +2580,7 @@
        {
         "key": "ucrit_upper_bound_m_s",
         "label": "Physical upper bound on sustained speed (rigid drag = red-muscle power)",
-        "value": 2.198653515555618,
+        "value": 2.4418723447866046,
         "unit": "m/s",
         "better": "higher",
         "kind": "derived",

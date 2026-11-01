@@ -5,6 +5,23 @@ the scenario interface. Its version is `CONTRACT_VERSION` in `lib/envelope.mjs`.
 as `contract_version`, and `contract.json` states it. The rule: anything may change, provided it is
 versioned here. While the major version is 0, a minor bump may break callers; each entry says what breaks.
 
+## 0.4.0 (2026-11-01)
+
+**Added** (seven tools, nothing removed)
+
+- The swarm task board (`swarm/board.mjs`, `tools/SWARM-REGISTER.md`): `swarm_post_task`, `swarm_claim`,
+  `swarm_submit`, `swarm_status`, `swarm_try_edits`. Results land in codesign sessions as proposals or comments;
+  humans still decide with `session_decide`.
+- The generative backends (`tools/generative-tools.mjs`, `tools/GENERATIVE-REGISTER.md`): `generate_candidates`,
+  `generative_backends_status`. A candidate's `organism` is an organism document, so `optimize` accepts it
+  unchanged.
+
+**Changed**
+
+- P2b takes its area from the current scenario's `lean_inputs.drag_reference_area_m2`, the area Cd refers to, with
+  no division. CdA / Cd is kept only as a fallback for a module without that field. A studio test fails if P2b
+  stops being fed for an unedited zebrafish in the current scenario.
+
 ## 0.3.4 (2026-11-01)
 
 **Added** (no breaking change): LeanBio self-update (lean/registry/SELF-UPDATE.md).
