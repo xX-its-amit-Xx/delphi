@@ -1034,8 +1034,16 @@ export async function mountScene({ container, THREE, data, act, theme, reducedMo
        the organism, not the stage, so an id like "<organism>-<stage>" also has its last segment
        stripped. Generic: no organism name appears here. */
     const devCandidates = uniq([parentId, designId].filter(Boolean).flatMap(id => {
+      /* A growth-series manifest is per SPECIES, not per life stage: the only two that exist are
+         zebrafish-dev and flying-fish-dev. So for an id carrying a life-stage suffix (zebrafish-adult)
+         try the stripped form FIRST - probing `zebrafish-adult-dev` first is a guaranteed 404 and the
+         only console error left on the walkthrough page. Stripping first never costs a hit, because an
+         id with no suffix (flying-fish) yields the same single candidate either way. */
       const stripped = id.includes('-') ? id.slice(0, id.lastIndexOf('-')) : null;
-      return [`${id}-dev`, stripped ? `${stripped}-dev` : null].filter(Boolean);
+      const STAGE_SUFFIX = /-(adult|larva|larval|juvenile|embryo)$/;
+      return (STAGE_SUFFIX.test(id) && stripped
+        ? [`${stripped}-dev`, `${id}-dev`]
+        : [`${id}-dev`, stripped ? `${stripped}-dev` : null]).filter(Boolean);
     }));
     const [cir, gil, stagesJ] = await Promise.all([
       tryJSON(new URL('physiology/circulation.json', base)),

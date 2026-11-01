@@ -277,7 +277,7 @@ function record(q, g, seqInfo, w, S, strand, spOff, pamOff, P, L, codes, cap) {
 }
 
 // CLI -------------------------------------------------------------------------------------------
-if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}` || import.meta.filename === process.argv[1]) {
+if (process.argv[1] && import.meta.filename === path.resolve(process.argv[1])) {
   const cmd = process.argv[2];
   const log = m => process.stderr.write(m + '\n');
   if (cmd === 'build') buildIndex({ log }).then(s => console.log(JSON.stringify(s, null, 2))).catch(e => { log('FAILED: ' + e.message); process.exit(1); });

@@ -36,6 +36,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import * as LOCAL from './grcz11-local.mjs';
 
 const HERE = import.meta.dirname;
 const ROOT = path.resolve(HERE, '..', '..', '..');
@@ -485,6 +486,90 @@ async function offTargetsNCBI(spacer, pam, { network = true, maxPolls = 40, poll
     return { ...v, cached: false };
   }
   return { ran: false, reason: `BLAST did not finish in ${(maxPolls * pollMs / 60000).toFixed(0)} min`, rid };
+}
+
+/** Ensembl /overlap/region gene annotation for a list of sites, +/- 2 kb. Shared by both backends. */
+async function annotateGeneContext(sites, { network = true, limit = 40 } = {}) {
+  for (const s of sites.slice(0, limit)) {
+    if (!s.chromosome) { s.gene_context = { not_attempted: 'site is on an unplaced scaffold, not a chromosome' }; continue; }
+    const r = await fetchCached({ url: `${ENS}/overlap/region/${SPECIES}/${s.chromosome}:${Math.max(1, s.hit_from - 2000)}-${s.hit_to + 2000}?feature=gene;content-type=application/json` }, { network });
+    s.gene_context = Array.isArray(r.value) ? r.value.map(g => ({ id: g.id, symbol: g.external_name || null, biotype: g.biotype, start: g.start, end: g.end })) : { error: r.error };
+    s.gene_context_window = '+/- 2 kb around the site';
+  }
+  if (sites.length > limit) for (const s of sites.slice(limit)) s.gene_context = { not_attempted: `only the first ${limit} sites (sorted by mismatch count) were annotated, to bound the number of Ensembl calls` };
+  return sites;
+}
+
+/**
+ * LOCAL exhaustive search. Needs the one-time index (grcz11-local.mjs build). No network except the
+ * Ensembl gene annotation of the hits.
+ */
+export async function offTargetsLocal(spacer, pam, { network = true, maxMismatches = 4, geneContext = true, pamSide = '3prime', sequences = 'all' } = {}) {
+  const key = { tool: 'editplan-offtarget', method: 'local-exhaustive', assembly: ASSEMBLY, query: spacer, pam, pamSide, maxMismatches, sequences };
+  const c = cacheGet(key);
+  let v = c?.value;
+  if (!v) {
+    const st = LOCAL.indexStatus();
+    if (!st.built) return { ran: false, method: 'local-exhaustive', reason: 'the local GRCz11 index is not built', index: st };
+    const r = LOCAL.scanGenome([{ spacer, pam, pam_side: pamSide }], { maxMismatches, sequences });
+    if (!r.ran) return { ...r, method: 'local-exhaustive' };
+    const q = r.queries[0];
+    const sites = q.sites.map(s => ({
+      accession: s.sequence, sequence_kind: s.sequence_kind, chromosome: s.chromosome,
+      hit_strand: s.strand, hit_from: s.start, hit_to: s.end,
+      aligned_genome_sequence: s.protospacer_strand_sequence,
+      pam_at_site: s.pam_at_site, pam_compatible: true,
+      n_mismatches: s.n_mismatches, mismatch_positions: s.mismatch_positions,
+      mit_single_site_score: pamSide === '3prime' && spacer.length === 20 ? +mitSingleScore(s.mismatch_positions).toFixed(6) : null,
+    }));
+    sites.sort((a, b) => a.n_mismatches - b.n_mismatches || (b.mit_single_site_score ?? 0) - (a.mit_single_site_score ?? 0));
+    v = {
+      ran: true, method: 'local-exhaustive', assembly: ASSEMBLY,
+      database: `${ASSEMBLY} primary assembly, local index (${r.n_sequences_scanned} sequences, ${r.scanned_bp} bp), from ${LOCAL.FASTA_URL}`,
+      program: `exhaustive PAM-anchored substitution scan of both strands; every position tested, no seeding step. ${(r.elapsed_ms / 1000).toFixed(1)} s.`,
+      query: spacer, pam_motif: pam, pam_side: pamSide,
+      pam_note: `UNLIKE the BLAST path, the PAM IS CHECKED AT EVERY SITE: only positions carrying a ${pam}-compatible PAM in the right orientation are reported, so every site listed is cuttable in the PAM sense.`,
+      n_sites_within_mismatch_limit: sites.length, max_mismatches: maxMismatches,
+      sites_by_mismatch_count: sites.reduce((a, s) => (a[s.n_mismatches] = (a[s.n_mismatches] || 0) + 1, a), {}),
+      collection_truncated: q.truncated || false,
+      sites,
+      mismatch_position_convention: pamSide === '3prime'
+        ? 'position 1 is the PAM-DISTAL end of the spacer, which is the convention the Hsu 2013 weights are indexed in'
+        : 'position 1 is the 5\' end of the spacer, which for a 5\'-PAM nuclease (Cas12a) is the PAM-PROXIMAL end. The Hsu 2013 weights were fitted on SpCas9 and are NOT applied to these sites (mit_single_site_score is null).',
+      what_this_does_not_cover:
+        'EXHAUSTIVE for substitutions over the sequences indexed, and that is the only sense in which it is complete. It does NOT model BULGES ' +
+        '(DNA/RNA insertions or deletions at the target), which Cas9 tolerates, so a bulged off-target is invisible to it. It covers the GRCz11 ' +
+        'PRIMARY assembly only: no alternative loci, no patches, and - the one that matters at the bench - NOT the genome of the laboratory strain ' +
+        'being injected (AB/TU/WIK differ from the reference at high SNP density, so a site can exist in the fish that does not exist here and vice ' +
+        'versa). It says nothing about chromatin, expression or delivery: a matched site is a SEQUENCE match, not a cut. And it is not a measurement - ' +
+        'GUIDE-seq, CIRCLE-seq or amplicon sequencing of the actual fish is the measurement; this is the list of places to look.',
+    };
+    cachePut(key, v);
+    if (geneContext) { await annotateGeneContext(v.sites, { network }); cachePut(key, v); }
+    return { ...v, cached: false };
+  }
+  if (geneContext && v.sites?.length && v.sites[0].gene_context === undefined) { await annotateGeneContext(v.sites, { network }); cachePut(key, v); }
+  return { ...v, cached: true };
+}
+
+export const OFFTARGET_METHODS = {
+  local: 'exhaustive PAM-anchored substitution scan of the local GRCz11 primary-assembly index (grcz11-local.mjs). Complete for substitutions, bulges not modelled. ~22 s per guide for the whole assembly.',
+  ncbi: 'NCBI BLAST URL API, blastn-short word_size 7, against GPIPE/7955/current/all_top_level. A heuristic aligner (counts are a floor) and in practice it did not return: see NCBI_QUEUE_EXPERIENCE.',
+  auto: 'local if the index is built, otherwise ncbi. The default.',
+};
+
+/**
+ * Off-target search against GRCz11. Prefers the local exhaustive scan; falls back to NCBI BLAST.
+ * @param opts.method 'auto' (default) | 'local' | 'ncbi'
+ */
+export async function offTargets(spacer, pam, opts = {}) {
+  const method = opts.method || process.env.EDITPLAN_OFFTARGET_METHOD || 'auto';
+  if (method === 'ncbi') return { ...(await offTargetsNCBI(spacer, pam, opts)), method: 'ncbi-blast' };
+  const st = LOCAL.indexStatus();
+  if (st.built) return offTargetsLocal(spacer, pam, opts);
+  if (method === 'local') return { ran: false, method: 'local-exhaustive', reason: 'the local GRCz11 index is not built, and method:"local" was requested explicitly', index: st };
+  const r = await offTargetsNCBI(spacer, pam, opts);
+  return { ...r, method: 'ncbi-blast', why_this_backend: `the local index is not built (${st.how_to_build}), so the search fell back to NCBI BLAST. ${NCBI_QUEUE_EXPERIENCE}` };
 }
 
 // ---------------------------------------------------------------- 4. HDR donor (ssODN)

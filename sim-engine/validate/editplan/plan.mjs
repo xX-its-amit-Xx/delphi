@@ -23,7 +23,7 @@ export const RANKING_RULE = `point change: cut-site distance bucketed to ${RANK_
  * @param gene   zebrafish gene symbol (resolved through Ensembl; an unresolvable symbol is a refusal)
  * @param spec   'p.W169L', 'p.Y285*' or 'knockout'
  */
-export async function editPlan(gene, spec, { network = true, species = 'danio_rerio', window = 30, offtarget = true, offtargetGuides = 1, arms = 'symmetric', flank = 220 } = {}) {
+export async function editPlan(gene, spec, { network = true, species = 'danio_rerio', window = 30, offtarget = true, offtargetGuides = Number(process.env.EDITPLAN_OFFTARGET_GUIDES ?? 3), offtargetMethod = 'auto', arms = 'symmetric', flank = 220, evo2 = true } = {}) {
   const res = await E.resolveGenomic(gene, spec, { network, species, flank });
   if (!res.resolved) return { gene, edit: spec, refused: true, refusal: res.refusal, plan: null };
 
@@ -77,8 +77,15 @@ export async function editPlan(gene, spec, { network = true, species = 'danio_re
   // --- off-target search against GRCz11, for the guide(s) we would actually order
   const offt = [];
   if (offtarget) {
-    for (const g of (t.kind === 'knockout' ? spGuides : [best, better_placed?.guide].filter(Boolean)).slice(0, offtargetGuides)) {
-      const r = await E.offTargets(g.spacer, g.pam_motif, { network });
+    // The local exhaustive search costs ~22 s per guide, so the guides a lab would actually weigh against each
+    // other are all searched, not just the top one (the NCBI path could afford only one, when it returned at all).
+    const seen = new Set();
+    const candidates = (t.kind === 'knockout' ? spGuides : [best, better_placed?.guide, ...spGuides].filter(Boolean))
+      .filter(g => !seen.has(g.spacer) && seen.add(g.spacer));
+    for (const g of candidates.slice(0, offtargetGuides)) {
+      const nucDef = Object.values(E.NUCLEASES).find(n => n.name === g.nuclease);
+      const pamSide = nucDef?.pam_side === '5prime' ? '5prime' : '3prime';
+      const r = await E.offTargets(g.spacer, g.pam_motif, { network, pamSide, method: offtargetMethod });
       const spec = r.ran ? E.mitSpecificity(r.sites.filter(s => s.n_mismatches > 0)) : null;
       offt.push({ spacer: g.spacer, nuclease: g.nuclease, search: r, mit_specificity: spec,
         perfect_matches: r.ran ? r.sites.filter(s => s.n_mismatches === 0).length : null,
