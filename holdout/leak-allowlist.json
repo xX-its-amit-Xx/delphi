@@ -211,5 +211,108 @@
     ],
     "reason": "the decisions log records the idea to exclude birds from the flight-envelope comparison because thompson1917-ch02-06 is listed on the holdout side; it names the id to say the clade was kept out",
     "added_by": "holdout thread, 2026-10-31 (scope widened to the whole tree)"
+  },
+  {
+    "file": "omics/genes.json",
+    "taxa": [
+      "Charadriiformes",
+      "Cuculus canorus",
+      "Paradisaeidae",
+      "Serinus canaria",
+      "Strigiformes"
+    ],
+    "reason": "number collision, not a taxid: the five matches are NCBI Gene ids, not taxonomy ids. 8906 = human AP1G2, 55661 = human DDX27, 9149 = human DYRK1B, 9135 = human RABEP1 (all in human_ortholog.ncbi) and 30458 = zebrafish gata3 (ncbi_gene); checked against NCBI esummary db=gene on 2026-11-01. The file holds Danio rerio genes with human orthologues only; build-genes.mjs takes no bird orthologue source and states the Aves exclusion in its constraint field. The whole file is one JSON line, so this entry is scoped to these five taxa only: any other held-out name in it is still a leak.",
+    "added_by": "leak-resolution pass, 2026-11-01 (holdout/LEAK-RESOLUTION-2026-11-01.md)"
+  },
+  {
+    "file": "omics/proteomic/scripts/build.py",
+    "taxa": [
+      "Aquila",
+      "Falco"
+    ],
+    "pattern": "AVES = re.compile",
+    "reason": "filter code: the AVES regex (line 8) names bird genera only to drop them; scrub() removes sentences that match it, and the UniProt organism and subcellular-location loops skip matching records (lines 41, 98, 352). Output omics/proteomic/annotations.jsonl.gz has only Danio rerio and two flying-fish species in its species field (checked 2026-11-01).",
+    "added_by": "leak-resolution pass, 2026-11-01 (holdout/LEAK-RESOLUTION-2026-11-01.md)"
+  },
+  {
+    "file": "omics/validate.mjs",
+    "taxa": [
+      "Aquila",
+      "Falco",
+      "Gallus gallus"
+    ],
+    "reason": "filter code: the AVES regex (line 15) rejects any omics row whose species, gene object or ortholog value names a bird (line 52, error \"bird (Aves) data: frozen holdout\"); line 82 is its self-test, a fixture row with species Gallus gallus that must fail. No bird data is read.",
+    "added_by": "leak-resolution pass, 2026-11-01 (holdout/LEAK-RESOLUTION-2026-11-01.md)"
+  },
+  {
+    "file": "sim-engine/generative/body/prepare.py",
+    "taxa": [
+      "Accipitriformes",
+      "Galliformes",
+      "Charadriiformes",
+      "Strigiformes"
+    ],
+    "reason": "filter code: NON_FISH_MARKERS (lines 27-28) lists bird and other non-fish orders so that prepare.py aborts if any appears among the FishShapes orders (line 51); FishShapes v1 is actinopterygians only, and the check asserts it.",
+    "added_by": "leak-resolution pass, 2026-11-01 (holdout/LEAK-RESOLUTION-2026-11-01.md)"
+  },
+  {
+    "file": "sim-engine/generative/test/generative.mjs",
+    "taxa": [
+      "Accipitridae"
+    ],
+    "pattern": "bird taxon string in derived table",
+    "reason": "filter code: a test that fails if the derived FishShapes table contains a bird taxon string; names Accipitridae only to search for it.",
+    "added_by": "leak-resolution pass, 2026-11-01 (holdout/LEAK-RESOLUTION-2026-11-01.md)"
+  },
+  {
+    "file": "sim-engine/validate/phenotype.mjs",
+    "taxa": [
+      "Accipitriformes",
+      "Galliformes",
+      "Strigiformes",
+      "Gallus gallus"
+    ],
+    "pattern": "export const AVES_RE",
+    "reason": "filter code: AVES_RE drops any phenotype reference whose name or taxon matches (line 105, avesDropped) and genotype.mjs uses it to drop bird sequences and BLAST hits. Names the bird orders only to exclude them.",
+    "added_by": "leak-resolution pass, 2026-11-01 (holdout/LEAK-RESOLUTION-2026-11-01.md)"
+  },
+  {
+    "file": "sim-engine/validate/test/validate.mjs",
+    "taxa": [
+      "Gallus gallus"
+    ],
+    "pattern": "no-aves-in-references",
+    "reason": "filter code: the no-aves-in-references test asserts AVES_RE matches the string \"Gallus gallus (Aves)\" and that no loaded reference matches; the name is a test string, not data.",
+    "added_by": "leak-resolution pass, 2026-11-01 (holdout/LEAK-RESOLUTION-2026-11-01.md)"
+  },
+  {
+    "file": "sim-engine/validate/scorer-results.run1-aves-filter-bug.json",
+    "taxa": [
+      "Falco"
+    ],
+    "pattern": "Cirrhitichthys falco",
+    "reason": "homonym: Cirrhitichthys falco is the dwarf hawkfish (Cirrhitidae), a FishShapes specimen; \"falco\" is its species epithet, not the falcon genus. The file is the scorer run whose bird filter over-matched fish names (fixed in phenotype.mjs, 2026-11-01); it holds fish results only.",
+    "added_by": "leak-resolution pass, 2026-11-01 (holdout/LEAK-RESOLUTION-2026-11-01.md)"
+  },
+  {
+    "prefix": "sim-engine/",
+    "claims": [
+      "thompson1917-ch02-06",
+      "thompson1917-ch02-07"
+    ],
+    "reason": "Ruled not a leak by the holdout thread on 2026-10-31 (holdout/rulings.json, formal-statements-of-bird-linked-claims), extended here on the same reasoning: the simulation engine evaluates the Lean flight-scaling theorem (registry law thompson1917-ch02-06 v1.0.0, scope.taxa [\"any\"], constraints C9/C10) on non-bird designs (zebrafish, flying fish, the winged-zebrafish and predator examples) through lawset 1.5.0, and records the law id in each verdict; most verdicts are cannot-evaluate for missing fin area, CLmax or airspeed. No bird row, value or reference enters; the law predicts no number that bird data could score, so the exam is neither contaminated nor burned. A sim-engine file that reads a bird row would still be a leak.",
+    "added_by": "leak-resolution pass, 2026-11-01 (holdout/LEAK-RESOLUTION-2026-11-01.md)"
+  },
+  {
+    "file": "sim-engine/validate/benchmark/build/build.py",
+    "taxa": [
+      "Accipitriformes",
+      "Galliformes",
+      "Charadriiformes",
+      "Procellariiformes",
+      "Strigiformes"
+    ],
+    "reason": "filter code: AVES_ORDERS (lines 32-36) lists bird orders so is_bird() can drop any FishShapes or FishBase row with a bird order or class Aves (lines 88, 158, counted in dropped_aves and written to the manifest as aves_dropped) and assert that no benchmark taxon is a bird (lines 564-565). The sources are fish-only; the filter is explicit, as the builder rules ask.",
+    "added_by": "leak-resolution pass, 2026-11-01 (holdout/LEAK-RESOLUTION-2026-11-01.md)"
   }
 ]

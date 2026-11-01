@@ -18,8 +18,8 @@ const J = p => JSON.parse(rd(path.join(ROOT, p)));
 const universe = new Map(); // zfin_id -> {symbol, in:Set}
 const add = (z, s, why) => {
   if (!z || !z.startsWith('ZDB-GENE')) return;
-  const e = universe.get(z) || { symbol: s, in: new Set() };
-  e.in.add(why); if (!e.symbol) e.symbol = s; universe.set(z, e);
+  const e = universe.get(z) || { symbol: s, seen: new Set(), in: new Set() };
+  e.in.add(why); if (s && /^[A-Za-z0-9._:()-]+$/.test(s)) e.seen.add(s); if (!e.symbol) e.symbol = s; universe.set(z, e);
 };
 const pw = J('genotype/pathways.json');
 for (const [k, v] of Object.entries(pw.genes)) add(k.replace(/^ZF:/, ''), v.symbol, 'genotype/pathways.json');
@@ -46,8 +46,9 @@ src.uniprot_zf_reviewed.release = src.uniprot_hs_reviewed.release = 'UniProt 202
 
 const push = (m, k, v) => { if (!m.has(k)) m.set(k, []); if (!m.get(k).includes(v)) m.get(k).push(v); };
 const ncbi = new Map(), ens = new Map(), upAll = new Map(), hum = new Map();
-for (const r of tsv(files.zfin_gene_ncbi)) push(ncbi, r[0], r[3]);
-for (const r of tsv(files.zfin_ensembl_1_to_1)) push(ens, r[0], r[3]);
+const zfSym = new Map();
+for (const r of tsv(files.zfin_gene_ncbi)) { push(ncbi, r[0], r[3]); zfSym.set(r[0], r[2]); }
+for (const r of tsv(files.zfin_ensembl_1_to_1)) { push(ens, r[0], r[3]); if (!zfSym.has(r[0])) zfSym.set(r[0], r[2]); }
 for (const r of tsv(files.zfin_uniprot)) push(upAll, r[0], r[3]);
 const zfRev = new Map();
 for (const r of tsv(files.uniprot_zf_reviewed).slice(1)) zfRev.set(r[0], { zfin: (r[2] || '').split(';').filter(Boolean) });
@@ -69,7 +70,7 @@ try {
   const sg = J('sequences/genes.json');
   for (const g of Object.values(sg.genes)) {
     const f = g.flying_fish || {}; const a = f.Hirundichthys_speculiger_annotated_Xu2021;
-    ff.set(g.zfin_id, {
+    ff.set(g.zfin_id || 'sym:' + Object.keys(sg.genes).find(k => sg.genes[k] === g), {
       species: 'Hirundichthys speculiger',
       assembly: 'GCA_018398805.1 (Xu et al. 2021 annotation, figshare 10.6084/m9.figshare.14600634.v1)',
       protein: a?.flyingfish_protein || null, reciprocal_best_hit: a?.reciprocal_best_hit ?? null,
@@ -82,6 +83,7 @@ try {
 // ---- assemble
 const genes = [];
 const cov = { total: 0, ensembl_gene: 0, ncbi_gene: 0, uniprot_any: 0, uniprot_reviewed: 0, human_ortholog: 0, human_uniprot: 0, flying_fish: 0 };
+for (const [, u] of universe) { const cur = zfSym.get([...universe].find(([, v]) => v === u)[0]); if (cur) u.symbol = cur; }
 for (const [z, u] of [...universe].sort((a, b) => a[1].symbol.localeCompare(b[1].symbol))) {
   const rev = (revByZfin.get(z) || []).slice().sort();
   const all = (upAll.get(z) || []).slice().sort();
@@ -94,15 +96,15 @@ for (const [z, u] of [...universe].sort((a, b) => a[1].symbol.localeCompare(b[1]
     source: { symbol_hgnc_ncbi: 'zfin_human_orthos', uniprot: h.hgnc_id && hsByHgnc.get(h.hgnc_id) ? 'uniprot_hs_reviewed (HGNC xref)' : null },
   }));
   const e = {
-    symbol: u.symbol, zfin_id: z,
+    symbol: u.symbol, zfin_id: z, ...([...u.seen].some(x => x !== u.symbol) ? { symbols_in_genotype: [...u.seen] } : {}),
     ensembl_gene: (ens.get(z) || [])[0] || null,
     ncbi_gene: (ncbi.get(z) || [])[0] || null,
     uniprot, uniprot_status: rev[0] ? 'reviewed' : (trembl[0] ? 'unreviewed' : null),
     human_ortholog: humans[0] || null,
-    flying_fish: ff.get(z) || null,
+    flying_fish: ff.get(z) || [...u.seen, u.symbol].map(x => ff.get('sym:' + x)).find(Boolean) || null,
     in: [...u.in].sort(),
     source: {
-      symbol: 'genotype thread (ZFIN symbol)', ensembl_gene: ens.has(z) ? 'zfin_ensembl_1_to_1' : null,
+      symbol: zfSym.has(z) ? 'zfin_gene_ncbi (current ZFIN symbol)' : 'genotype thread', ensembl_gene: ens.has(z) ? 'zfin_ensembl_1_to_1' : null,
       ncbi_gene: ncbi.has(z) ? 'zfin_gene_ncbi' : null,
       uniprot: rev[0] ? 'uniprot_zf_reviewed (ZFIN xref)' : (trembl[0] ? 'zfin_uniprot' : null),
     },
