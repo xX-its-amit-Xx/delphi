@@ -1,10 +1,10 @@
 {
- "builtAt": "2026-10-31T16:14:07.146Z",
+ "builtAt": "2026-11-01T15:00:09.097Z",
  "note": "English explanations are the Lean author's own doc comments, extracted verbatim from the source. Nothing on this page is paraphrased by the dashboard.",
  "counts": {
-  "formalized": 5,
-  "withDataTest": 1,
-  "testedButNotFormalized": 15,
+  "formalized": 30,
+  "withDataTest": 2,
+  "testedButNotFormalized": 14,
   "declarationsExtracted": 100
  },
  "claims": [
@@ -145,13 +145,18 @@
     },
     "mutations": [
      {
+      "id": "kimura-fixation-one-wrong",
+      "description": "Statement changed to claim a single copy fixes with probability 1/(M+1) instead of 1/M.",
+      "outcome": "rejected"
+     },
+     {
       "id": "kimura-rate-doubled",
       "description": "Statement changed to claim the substitution rate is 2 mu instead of mu.",
       "outcome": "rejected"
      },
      {
-      "id": "kimura-fixation-one-wrong",
-      "description": "Statement changed to claim a single copy fixes with probability 1/(M+1) instead of 1/M.",
+      "id": "open-problems-certificate-ratio-one",
+      "description": "Certificate sabotaged: the ORX-20/C2 elimination is rewritten to claim that a substitution-rate ratio of exactly 1 at equal mutation rates is ruled out. It is not (that is the theorem), so norm_num must fail and the kernel must reject it.",
       "outcome": "rejected"
      }
     ],
@@ -299,13 +304,13 @@
     },
     "mutations": [
      {
-      "id": "kimura-limit-wrong",
-      "description": "Statement changed so the fixation probability of i copies tends to i/(M+1) instead of i/M.",
+      "id": "kimura-escape-dropped",
+      "description": "Model hypothesis removed: the chain no longer has to be able to leave interior states (escape := True). Fixation then need not happen, so the limit theorem must fail.",
       "outcome": "rejected"
      },
      {
-      "id": "kimura-escape-dropped",
-      "description": "Model hypothesis removed: the chain no longer has to be able to leave interior states (escape := True). Fixation then need not happen, so the limit theorem must fail.",
+      "id": "kimura-limit-wrong",
+      "description": "Statement changed so the fixation probability of i copies tends to i/(M+1) instead of i/M.",
       "outcome": "rejected"
      }
     ],
@@ -455,6 +460,11 @@
     },
     "mutations": [
      {
+      "id": "constraints-fisher-sign-flipped",
+      "description": "Lemma statement changed to rule out a RISE in mean fitness (0 < b) instead of a fall; the law says mean fitness never decreases, so this must fail.",
+      "outcome": "rejected"
+     },
+     {
       "id": "fisher-no-division",
       "description": "Statement changed to claim the change in mean fitness equals the variance itself, not the variance divided by mean fitness.",
       "outcome": "rejected"
@@ -543,6 +553,11 @@
      ]
     },
     "mutations": [
+     {
+      "id": "constraints-twofold-factor-three",
+      "description": "Lemma statement changed to rule out any odds factor other than 3 instead of 2; the law gives exactly 2, so this must fail.",
+      "outcome": "rejected"
+     },
      {
       "id": "maynardsmith-threefold",
       "description": "Statement changed to claim the odds triple each generation instead of doubling.",
@@ -693,11 +708,6 @@
     },
     "mutations": [
      {
-      "id": "favored-floor-strengthened",
-      "description": "Statement changed to claim a favored lineage of i copies fixes with probability at least (i+1)/M instead of i/M. Not true (the neutral chain is favored and fixes with exactly i/M), so the proof must fail.",
-      "outcome": "rejected"
-     },
-     {
       "id": "favored-budget-doubled",
       "description": "Statement changed to claim the expected substitutions over T generations are at least 2 mu T instead of mu T.",
       "outcome": "rejected"
@@ -705,6 +715,1360 @@
      {
       "id": "favored-drift-dropped",
       "description": "Model hypothesis removed: the chain no longer has to keep the expected copy number from falling (favored := True). Selection against the mutant is then allowed, so the lower bound i/M must fail.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "favored-floor-strengthened",
+      "description": "Statement changed to claim a favored lineage of i copies fixes with probability at least (i+1)/M instead of i/M. Not true (the neutral chain is favored and fixes with exactly i/M), so the proof must fail.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "blueprint-well-formedness",
+   "label": "An emitted anatomical blueprint graph is well-formed under its own rules",
+   "statement": "For a finite graph of ontology terms with a body root, a level per node and part_of edges (part, whole): if every edge goes strictly down in level, every edge joins two nodes, and every non-root node has a whole, then part_of is acyclic (its transitive closure is transitive and strictly decreases the level, so nothing is part of itself) and every node reaches the root. With pinned taxon statements: no never_in_taxon on a kept term, a superclass or a whole names a taxon containing the blueprint taxon, and every in_taxon or stated_in_taxon names a containing taxon. A Boolean checker decides all of this, and its truth implies the well-formedness (wellFormed_of_check); each emitted blueprint gets a certificate the kernel evaluates by decide.",
+   "notation": "LevelsDown ∧ Closed ∧ (∀ a ≠ root, ∃ b, a part_of b) ⟹ Acyclic ∧ Rooted ; check g D = true ⟹ WellFormed g D",
+   "context": "Built for the organism thread's text-to-blueprint tool (organism-design/blueprint.mjs). The certificate fixes the distinct-term counts per level, which is the count whose placement-versus-term confusion (343 placements against 257 distinct cell types) the organism thread fixed by hand on 2026-10-31.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.Blueprint.wellFormed_of_check",
+    "module": "lean/Delphi/Blueprint.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "Generic (any node type): edges strictly down in level ⟹ the part_of closure is transitive, strictly decreases the level, and is acyclic (Graph.acyclic_of_levelsDown, Graph.transGen_trans, Graph.transGen_level_lt).",
+      "Generic: edges closed and every non-root node has a whole ⟹ every node reaches the root (Graph.rooted_of, strong induction on level).",
+      "Generic: the Boolean checker is sound for LevelsDown, Closed, Acyclic, Rooted and the taxon conditions (wellFormed_of_check).",
+      "Per blueprint: the kernel evaluates the checker on the emitted graph and the pinned taxon rows (decide +kernel), and fixes the distinct-term counts per level and the graph size (lean/Delphi/Certificates/*.lean)."
+     ],
+     "assumed": [
+      "That Uberon and the Cell Ontology are correct and that Ubergraph served their part_of, subClassOf, never_in_taxon and in_taxon statements correctly and completely on the retrieval date: the graph and the taxon rows are data, pinned by hash and query.",
+      "That the five levels (body, organ system, organ, tissue, cell) are the right notion of depth; the theorems use only that edges strictly decrease it.",
+      "Nothing about any organism: not that it is real, that the anatomy is correct or complete, that any part was measured, or anything about a transition between forms."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "blueprint-certificate-cycle",
+      "description": "Data sabotaged: an edge making the body root part of node 1 is added to the certified edge list (an upward edge, closing a cycle through the root). The kernel-evaluated checker must reject it.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "blueprint-certificate-excluded-taxon",
+      "description": "Data sabotaged: a never_in_taxon row saying node 1 is never in Vertebrata (NCBITaxon 7742, an ancestor of Exocoetidae) is added. The checker must reject it.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "blueprint-closure-level-flipped",
+      "description": "Statement changed to claim the level INCREASES along the part_of closure (level a < level b) instead of decreasing; acyclicity rests on this lemma, so the proof must fail.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "thompson1917-ch03-07",
+   "label": "Weight tends to vary as the cube of linear dimensions during growth",
+   "statement": "Whatever the law of increase in a linear dimension, volume and therefore weight tend to vary as the cube of linear dimensions, which mainly (though not wholly) explains why the human weight curve differs in shape from the stature curve.",
+   "notation": "W \\propto L^3 whatever the law of growth L(t)",
+   "context": "whatever be the law of increment in a linear dimension, the law of increase in volume, and therefore in weight, will be that these latter magnitudes tend to vary as the cubes of the linear dimensions. (On Growth and Form, ch. III, \"Rate of growth in man\", lines 3061-3064)",
+   "paper": {
+    "title": "On Growth and Form",
+    "year": 1917,
+    "doi": null,
+    "author": "D'Arcy Wentworth Thompson"
+   },
+   "lean": {
+    "theorem": "Delphi.cubeLaw_loglog_exponent",
+    "module": "lean/Delphi/Thompson.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "If W L = k L^3 for all L > 0 with k > 0, then for L1 ≠ L2 the log-log slope (log W L2 − log W L1)/(log L2 − log L1) equals exactly 3 (cubeLaw_loglog_exponent) and W L2 / W L1 = (L2/L1)^3 (cubeLaw_ratio).",
+      "Contrapositive: two sizes with a log-log slope b ≠ 3 rule out W = k L^3 for every k (not_cubeLaw_of_exponent_ne_three)."
+     ],
+     "assumed": [
+      "A single linear dimension L and mass W of one body family; fixed shape and constant density are what W = k L^3 encodes.",
+      "Thompson's \"mainly (though not wholly)\" is not formalised: the theorem is exact, the law is approximate, and the tolerance band [2.5, 3.5] the claim test uses is a decision rule outside the module.",
+      "No data enters the module; the measured exponents are read from the claims thread's result files and pointed to."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "elimination-certificate-false-claim",
+      "description": "Certificate sabotaged: the giant-insect elimination is rewritten to claim that a weight ratio of exactly 10^6 at length ratio 100 is ruled out. It is not (10^6 = 100^3), so norm_num must fail and the kernel must reject the certificate.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "thompson-exponent-two",
+      "description": "Statement changed to claim the log-log exponent of a cube law is 2 instead of 3.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": [
+    {
+     "dir": "claim-tests/thompson-growth-form/thompson1917-ch03-07",
+     "claim_id": "thompson1917-ch03-07",
+     "verdict": "supports",
+     "status": "complete",
+     "hypothesis": "If weight varies as the cube of a linear dimension during growth, then across childhood and adolescence the population mean body weight scales with the population mean stature with a log-log exponent near 3, so the weight-for-age curve is approximately the cube of the stature-for-age curve.",
+     "pass": "Pre-registered. Data: US NHANES examination data, cycles 2013-2014, 2015-2016 and 2017-2018 (Body Measures BMX_H/I/J and Demographics DEMO_H/I/J XPT files), examined participants aged 2 to 19 years with measured standing height (BMXHT, cm) and weight (BMXWT, kg). For each sex, compute MEC-exam-weighted (WTMEC2YR) mean height and mean weight in 1-year age bins (18 bins), regress log(mean weight) on log(mean height) by ordinary least squares, and also fit the constrained model weight = k * height^3 with k estimated by least squares on the log scale. SUPPORTS if, for both sexes, the free exponent b lies in [2.5, 3.5] AND the cubic model reproduces the age-bin mean weights with R^2 >= 0.90 on the original scale.",
+     "fail": "Pre-registered. REFUTES if, for either sex, b lies outside [2.5, 3.5] OR the cubic model's R^2 on the age-bin weight curve is < 0.90. MIXED is not possible under this rule except as follows: if the two sexes disagree (one passes, the other fails) the verdict is MIXED. INCONCLUSIVE (data-unavailable) if the files cannot be downloaded.",
+     "measured": {
+      "value": 2.7420799020169984,
+      "unit": "log-log exponent of mean weight on mean height across ages 2-19, males (pre-registered band 2.5-3.5); females given in extra",
+      "n": "4905 males and 4810 females in 18 age bins each",
+      "uncertainty": "males 95% CI [2.59, 2.89]; females b = 2.86, CI [2.66, 3.06]",
+      "extra": {
+       "male_cubic_model_r2": 0.9905578803477098,
+       "female_cubic_model_r2": 0.97918410786246,
+       "female_free_exponent_b": 2.8606369468483357,
+       "male_height_range_cm": [
+        91.6548428956483,
+        175.2816641779385
+       ],
+       "female_height_range_cm": [
+        90.10482142878853,
+        162.94861252958128
+       ],
+       "cubic_k_kg_per_cm3": {
+        "male": 0.000014492782056210137,
+        "female": 0.000015046459489477242
+       },
+       "post_hoc_perturbation": {
+        "n_simulations_per_exponent": 2000,
+        "sexes": {
+         "male": {
+          "observed": {
+           "free_exponent_b": 2.7420799020169984,
+           "cubic_model_r2": 0.9905578803477098,
+           "passes": true,
+           "n_age_bins": 18,
+           "residual_sd_log_weight": 0.061401843299767125
+          },
+          "simulated": {
+           "3.0": {
+            "true_exponent": 3,
+            "pass_fraction": 1,
+            "mean_fitted_exponent": 3.0003139039424087,
+            "mean_cubic_r2": 0.982854958911395
+           },
+           "2.0": {
+            "true_exponent": 2,
+            "pass_fraction": 0,
+            "mean_fitted_exponent": 1.997920427163882,
+            "mean_cubic_r2": 0.6287244961398625
+           },
+           "2.5": {
+            "true_exponent": 2.5,
+            "pass_fraction": 0.49,
+            "mean_fitted_exponent": 2.500082955432895,
+            "mean_cubic_r2": 0.9202604912729514
+           },
+           "3.5": {
+            "true_exponent": 3.5,
+            "pass_fraction": 0.4945,
+            "mean_fitted_exponent": 3.500277739901454,
+            "mean_cubic_r2": 0.9515844795341976
+           },
+           "4.0": {
+            "true_exponent": 4,
+            "pass_fraction": 0,
+            "mean_fitted_exponent": 3.9976656315573234,
+            "mean_cubic_r2": 0.8783782613478972
+           }
+          }
+         },
+         "female": {
+          "observed": {
+           "free_exponent_b": 2.8606369468483357,
+           "cubic_model_r2": 0.97918410786246,
+           "passes": true,
+           "n_age_bins": 18,
+           "residual_sd_log_weight": 0.07671684266439144
+          },
+          "simulated": {
+           "3.0": {
+            "true_exponent": 3,
+            "pass_fraction": 0.9995,
+            "mean_fitted_exponent": 2.997924457828407,
+            "mean_cubic_r2": 0.9671462441663621
+           },
+           "2.0": {
+            "true_exponent": 2,
+            "pass_fraction": 0,
+            "mean_fitted_exponent": 2.0013906355602886,
+            "mean_cubic_r2": 0.6732374305880456
+           },
+           "2.5": {
+            "true_exponent": 2.5,
+            "pass_fraction": 0.466,
+            "mean_fitted_exponent": 2.5002502967139146,
+            "mean_cubic_r2": 0.9125358530569535
+           },
+           "3.5": {
+            "true_exponent": 3.5,
+            "pass_fraction": 0.4935,
+            "mean_fitted_exponent": 3.4997766138568487,
+            "mean_cubic_r2": 0.9441403543487251
+           },
+           "4.0": {
+            "true_exponent": 4,
+            "pass_fraction": 0,
+            "mean_fitted_exponent": 4.0003796719354066,
+            "mean_cubic_r2": 0.8836855223775872
+           }
+          }
+         }
+        },
+        "reading": "The rule passes under the cube law and under exponents inside the pre-registered band, and fails under an exponent of 2 (surface scaling) or 4 at the fractions shown, with the observed heights and the observed bin scatter. The band was pre-registered as a tolerance for Thompson's 'mainly (though not wholly)'; this check shows what it can and cannot reject."
+       },
+       "cross_check": {
+        "ours_individual_level": {
+         "ages": "2-19 completed years, standing stature, NHANES 2013-2018 (this test's sample)",
+         "pooled": {
+          "n_individuals": 9715,
+          "ols_exponent": 2.755198077482473,
+          "ci95": [
+           2.7355684426476894,
+           2.7748277123172564
+          ],
+          "r2": 0.8862795709963611,
+          "survey_weighted_exponent": 2.7611926881801017
+         },
+         "male": {
+          "n_individuals": 4905,
+          "ols_exponent": 2.716250868644738,
+          "ci95": [
+           2.6903049937293924,
+           2.7421967435600836
+          ],
+          "r2": 0.8957373344791765,
+          "survey_weighted_exponent": 2.7241728155211202
+         },
+         "female": {
+          "n_individuals": 4810,
+          "ols_exponent": 2.812436935724894,
+          "ci95": [
+           2.7827959018252395,
+           2.8420779696245484
+          ],
+          "r2": 0.8779986711816458,
+          "survey_weighted_exponent": 2.8191082022830547
+         }
+        },
+        "theirs": {
+         "source": "origin/main e6b25d4c6ab6 (c587bd47cb08dfc80be718c8d6c3583ede84c6ce 2026-10-31T04:35:02Z), claim-tests/thompson-growth-form/thompson1917-ch03-07/result.json",
+         "run": "cursor/claim-tests-thompson-efb7",
+         "verdict": "mixed",
+         "scope": "NHANES 2007-2018, ages 0 to 19.99, recumbent length under 24 months, individuals pooled",
+         "pooled_0_19_individuals": {
+          "ols_slope": 2.4076916540629516,
+          "ols_slope_ci95": [
+           2.3992683428055552,
+           2.416114965320348
+          ],
+          "ols_intercept": -3.5677394844224724,
+          "r2": 0.9302385181166233,
+          "rma_slope": 2.496339842087518,
+          "n": 23540
+         },
+         "slope_by_age_window": {
+          "0-2yr": {
+           "ols_slope": 2.0975315252406825,
+           "ols_slope_ci95": [
+            2.0751295739850537,
+            2.1199334764963114
+           ],
+           "ols_intercept": -2.946923856081076,
+           "r2": 0.8980344554712152,
+           "rma_slope": 2.213410658558297,
+           "n": 3826
+          },
+          "2-10yr": {
+           "ols_slope": 2.358272557215868,
+           "ols_slope_ci95": [
+            2.337935784384827,
+            2.378609330046909
+           ],
+           "ols_intercept": -3.5069780992661475,
+           "r2": 0.8394619638082076,
+           "rma_slope": 2.5739107619546817,
+           "n": 9881
+          },
+          "10-20yr": {
+           "ols_slope": 3.095255052906955,
+           "ols_slope_ci95": [
+            3.0372676262217726,
+            3.1532424795921377
+           ],
+           "ols_intercept": -5.060208366167421,
+           "r2": 0.5268221709129836,
+           "rma_slope": 4.264463675157318,
+           "n": 9833
+          },
+          "2-20yr": {
+           "ols_slope": 2.7364582069270176,
+           "ols_slope_ci95": [
+            2.7231001959757397,
+            2.7498162178782954
+           ],
+           "ols_intercept": -4.276832970519582,
+           "r2": 0.8910501478218595,
+           "rma_slope": 2.8989301184879293,
+           "n": 19714
+          }
+         },
+         "age_median_curve_0_19": {
+          "ols_slope": 2.457611504717952,
+          "ols_slope_ci95": [
+           2.4094881450524954,
+           2.5057348643834083
+          ],
+          "ols_intercept": -3.683371097125789,
+          "r2": 0.9767964568604828,
+          "rma_slope": 2.4866301413746332,
+          "n": 240
+         }
+        },
+        "reading": "Binning versus individuals is not the cause of the difference: on this test's own sample the individual-level exponent (2.755) is within 0.03 of the age-bin exponents. The cause is the age range. The collaborator's 2-20 year window gives 2.736, which reproduces this test, while their 0-2 year window gives 2.098 and pulls their pooled 0-19 exponent to 2.408, below the 2.5 edge of the band both tests pre-registered. The verdict is therefore conditional on the pre-registered scope (ages 2-19): including infancy makes it 'mixed'."
+       }
+      }
+     },
+     "datasets": [
+      {
+       "id": "nhanes-2013-2018-body-measures-demographics",
+       "url": null,
+       "retrieved": null,
+       "sha256": null
+      }
+     ],
+     "caveats": [
+      "The free exponent is below 3 in both sexes (2.74 and 2.86) and the male CI excludes 3, so weight grows a little slower than the cube of stature across childhood; Thompson's 'mainly (though not wholly)' is borne out literally: the cube reproduces the weight curve with R^2 of 0.98-0.99 but is not exact.",
+      "Cross-sectional population means from 2013-2018 US children, who are heavier at given height than Thompson's early-20th-century tables; the exponent, not the constant k, is what the claim concerns.",
+      "Binned means over 18 ages leave 16 degrees of freedom; the CI reflects bin-to-bin scatter, not individual variation.",
+      "Post-hoc discriminating-power check (perturbation.py, added 2026-10-31 after the result; simulation, not observation): with the observed mean heights and bin scatter, the pre-registered rule passes in 100% (males) and 99.95% (females) of 2000 simulations under the cube law, in 0% under an exponent of 2 or 4, and in about 47 to 49% at the band edges 2.5 and 3.5; so the rule rejects surface-law and fourth-power alternatives and is indifferent only at its own pre-registered boundaries.",
+      "Cross-check (cross_check.py, added 2026-10-31 after the result; verdict unchanged): the collaborator swarm's test of this claim (origin/main, run cursor/claim-tests-thompson-efb7, NHANES 2007-2018, ages 0 to 19.99 with recumbent length under 24 months) reports a pooled individual-level exponent of 2.408 (95% CI 2.399 to 2.416, n = 23540) and 'mixed'. On this test's own sample the individual-level exponent is 2.755 (CI 2.736 to 2.775, n = 9715; males 2.716, females 2.812), within 0.03 of the age-bin values, so the unit of analysis (bins versus individuals) is not the cause. The cause is the age range: the collaborator's own 2-20 year window gives 2.736 (CI 2.723 to 2.750, n = 19714), reproducing this test, while their 0-2 year window gives 2.098 and pulls the pooled exponent below the 2.5 edge of the band both tests pre-registered. The 'supports' verdict is therefore conditional on the scope fixed at pre-registration (ages 2 to 19, standing stature); including infancy in Thompson's 'during growth' makes it 'mixed'. Whether infancy is inside the claim is a reading of the claim, not a measurement."
+     ],
+     "interpretation": "Thompson's 'linear dimension' is measured standing stature and 'weight' is measured body mass, taken as proportional to volume at near-constant density. 'Tend to vary as the cube' is read as an ontogenetic allometric exponent near 3 with a tolerance band of 2.5 to 3.5 because he wrote 'mainly (though not wholly)'. The claim is tested on age-binned population means, which is how he compared the human weight and stature curves, using a modern cross-sectional survey in place of his Quetelet-era tables; survey weights make the means representative of the US population. This follows the swarm thread's draft plan with the cycles fixed in advance.",
+     "faithfulness": {
+      "role": "A9 faithfulness assessor",
+      "question": "Does this analysis measure what the claim asserts?",
+      "claim_id": "thompson1917-ch03-07",
+      "assessedAt": "2026-10-31T15:00:05.970Z",
+      "assessor": {
+       "provider": "openai",
+       "model": "gpt-5-2025-08-07",
+       "independent_of_builder": true,
+       "blinded_to": [
+        "verdict",
+        "confidence",
+        "interpretation",
+        "caveats"
+       ]
+      },
+      "verdict": "faithful-with-narrower-scope",
+      "scores": {
+       "same_quantity": 1,
+       "modality_fits": 1,
+       "assumptions_compatible": 0.75,
+       "scope_matches": 0.75
+      },
+      "reasoning": "They directly test the stated prediction: across ages, population mean weight vs mean stature should scale with an exponent near 3, and they also assess how well a cubic height curve reproduces the weight-for-age means. Height and weight are measured directly and appropriately weighted NHANES exam data are well-suited for this. Analytical choices (log-log regression on age-bin means; OLS) are reasonable, though uncertainty in bin means and minor NHANES multi-cycle weighting nuances are not detailed. The scope is narrower than the generic claim—limited to US children/adolescents in 2013–2018—so generality to other populations is not assured.",
+      "what_would_change_it": "Replicating with longitudinal growth data and/or multiple international populations would broaden scope and reduce ecological/aggregation concerns. Sensitivity checks for binning and survey-weight handling would strengthen assumptions compatibility.",
+      "biggest_risk": "Using cross-sectional age-bin means to infer a growth-scaling relation can conflate cohort effects and pubertal timing/composition changes with an individual-level cubic law.",
+      "builder_verdict_for_comparison": "supports",
+      "note": "The assessor did not see the builder verdict above; it is recorded here only so a reader can compare. A not-representative verdict means the evidence does not count, whatever the numbers said."
+     },
+     "openresearch": false
+    }
+   ]
+  },
+  {
+   "claim_id": "scaling-area-law",
+   "label": "Area law and wing loading under isometry (R2, R3)",
+   "statement": "In an isometric family an area scales as the square of the linear dimension, S(L2)/S(L1) = (L2/L1)^2, and with the cube law the weight per unit area (wing loading, or stress W/A) scales as L2/L1.",
+   "notation": "S ∝ L^2 ; W/S ∝ L",
+   "context": "physics/FORMAL-STATEMENTS.md R2 and R3; Thompson ch. II. Davenport 1992 measured fin area ∝ L^1.834 and wing loading ∝ L^1.236 within one flying-fish species, so isometry is an idealisation there.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.areaLaw_ratio",
+    "module": "lean/Delphi/Scaling.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "If S L = k L^2 for all L > 0 (AreaLaw) then S(L2)/S(L1) = (L2/L1)^2 and log S(L2)/S(L1) = 2 log(L2/L1) (areaLaw_ratio, areaLaw_log).",
+      "With CubeLaw W: (W/S)(L2)/(W/S)(L1) = L2/L1, exponent 1 (wingLoading_ratio, wingLoading_log)."
+     ],
+     "assumed": [
+      "Isometry of the area and of the mass (constant density): named hypotheses, measured to fail within one flying-fish species (Davenport 1992).",
+      "Nothing about which family is isometric; the theorems bound only families that are."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "scaling-area-exponent-three",
+      "description": "R2 mutant: area ratio claimed to be (L2/L1)^3.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "scaling-wingloading-exponent-two",
+      "description": "R3 mutant: wing loading claimed to scale as (L2/L1)^2.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "scaling-strength-law",
+   "label": "Strength scales as L^2: the missing half of Galileo's square-cube argument (R7)",
+   "statement": "A member of cross-section A made of material with breaking stress σ fails under axial load σ A. With isometric sections and the same material the breaking load scales as (L2/L1)^2, the static safety factor F_break/W equals σ k3/(k1 L) and falls as 1/L, stress W/A grows as L, and above L_max = σ k3/(k1 n) the member cannot carry n body weights.",
+   "notation": "F_break = σ A ∝ L^2 ; F_break/W ∝ 1/L ; L_max = σ k3/(k1 n)",
+   "context": "physics/FORMAL-STATEMENTS.md R7 (Galileo 1638, Two New Sciences). With R1 this lets the checker rule on \"a giant of unchanged proportions and material can stand\".",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.breakLoad_ratio",
+    "module": "lean/Delphi/Scaling.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "F_break = σ A: with AreaLaw A and σ > 0, F_break(L2)/F_break(L1) = (L2/L1)^2 (breakLoad_ratio).",
+      "With CubeLaw W: F_break/W = σ k3/(k1 L) (safetyFactor_eq); the safety factor of the scaled body is the reference one divided by the length ratio (safetyFactor_scaled); stress W/A scales as L2/L1 (stress_ratio).",
+      "Above L_max = σ k3/(k1 n) the member cannot carry n body weights (cannot_carry)."
+     ],
+     "assumed": [
+      "Axial loading (bending has the same L^2 dependence with a different constant; not formalised).",
+      "Isometric load-bearing sections and the same material (constant σ): real animals thicken bones with size.",
+      "Nothing about any real giant: the checker rules only on a candidate that commits to isometry, the same material and a safety factor."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "scaling-safety-factor-constant",
+      "description": "R7 mutant: safety factor claimed independent of L (σ k3 / k1), i.e. the 1/L fall removed.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "scaling-strength-exponent-three",
+      "description": "R7 mutant: breaking load claimed to scale as (L2/L1)^3 (then the safety factor would be constant and no L_max would exist).",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "scaling-bending-law",
+   "label": "Bending strength of an isometric member via the section modulus (R9)",
+   "statement": "For a slender linear-elastic beam the maximum bending stress is the moment over the section modulus, σ_b = F ℓ / Z. With similar sections (Z ∝ L^3) and a lever arm ∝ L: if the load scales as the body (F ∝ L^3, R9a) then σ_b scales as L, the bending safety factor σ_max/σ_b equals σ_max k_Z/(k_F k_ℓ L) and above L_max,b = σ_max k_Z/(k_F k_ℓ n) the member cannot carry n times its load; if the load scales as an area (a lamina of constant thickness, F ∝ L^2, R9b) then σ_b is independent of size and no size limit follows.",
+   "notation": "σ_b = F ℓ / Z ; R9a: σ_b ∝ L, L_max,b = σ_max k_Z/(k_F k_ℓ n) ; R9b: σ_b ∝ L^0",
+   "context": "physics/FORMAL-STATEMENTS.md R9, written for WP-077/C1 (leaf size): the load exponent is the empirical fork, and the two readings give opposite answers on whether a limit exists.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.bendingStress_ratio_body",
+    "module": "lean/Delphi/Scaling.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "R9a: with CubeLaw F, LeverLaw ℓ and SectionModulusLaw Z, σ_b(L2)/σ_b(L1) = L2/L1, log exponent 1 (bendingStress_ratio_body, bendingStress_log_body); σ_max/σ_b = σ_max k_Z/(k_F k_ℓ L) (bendingSafety_eq); above σ_max k_Z/(k_F k_ℓ n) the stress at n times the load exceeds σ_max (bending_cannot_carry).",
+      "R9b: with AreaLaw F instead, σ_b(L2)/σ_b(L1) = 1, log exponent 0 (bendingStress_ratio_sheet, bendingStress_log_sheet): no size limit follows."
+     ],
+     "assumed": [
+      "Slender linear-elastic (Euler-Bernoulli) beam; σ_b = M_b/Z with a point load at the free end (a distributed load changes the constant, not the L-dependence).",
+      "Geometrically similar sections (Z = k_Z d^3, d ∝ L) and lever arm ∝ L; elastic similarity (d ∝ ℓ^(3/2)) is a different hypothesis family, not formalised.",
+      "Constant σ_max; static loads only (wind on a leaf is outside the model); which load family applies (R9a or R9b) is empirical and must be committed by the candidate."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "bending-limit-without-sigma",
+      "description": "R9 mutant: the size limit stated without the material strength (threshold k_Z/(k_F k_l n)), conclusion 2 kept while sigma_max is dropped from the bound; it must fail.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "bending-section-modulus-squared",
+      "description": "R9 model mutant: the section modulus made to scale as d^2 instead of d^3 (then bending stress would scale as L^2 under a body-like load), so conclusion 1 must fail.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "bending-sheet-load-claims-body-conclusion",
+      "description": "R9 mutant: the load made sheet-like (AreaLaw F) while conclusion 1 (stress proportional to L) is kept; it must fail, since a sheet-like load gives size-independent stress.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "flight-allometry-law",
+   "label": "General allometry: measured exponents compose (W = a L^b)",
+   "statement": "For power laws f L = a L^b with real exponents: the ratio between two sizes is (L2/L1)^b, the log-log exponent is b, a quotient of power laws is a power law with exponent b1 − b2 (so wing loading W/S has exponent bW − bS), the cube law is the case b = 3, and under power laws for weight and lifting area with constant ρ and C_L,max the minimum-speed exponent is (bW − bS)/2.",
+   "notation": "f ∝ L^b ; W/S ∝ L^(bW−bS) ; v_min ∝ L^((bW−bS)/2)",
+   "context": "Replaces the isometric assumption where exponents are measured: Davenport 1992 (mass 2.981, fin area 1.834) and seven fitted FishBase length-weight studies for Exocoetidae (physics/length-weight.csv) give b between 2.908 and 3.011 for five species and 2.208 for Hirundichthys affinis males.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.vmin_powerLaw_log",
+    "module": "lean/Delphi/Flight.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "PowerLaw f a b ⇒ f(L2)/f(L1) = (L2/L1)^b and log exponent b (powerLaw_ratio, powerLaw_log).",
+      "Quotients: PowerLaw (f/g) (a1/a2) (b1 − b2) (powerLaw_div); CubeLaw is PowerLaw with b = 3 (cubeLaw_powerLaw).",
+      "Under PowerLaw W and PowerLaw S with constant ρ, C_L,max: the v_min log exponent is (bW − bS)/2 (vmin_powerLaw_log)."
+     ],
+     "assumed": [
+      "That weight and area follow single power laws over the size range in question with the exponents committed; the fitted exponents are separate regressions with their own errors.",
+      "Nothing measured for Exocoetidae enters a statement; the exponents are candidate inputs."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "allometry-quotient-sum",
+      "description": "Mutant: a quotient of power laws claimed to have the SUM of the exponents instead of the difference.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "flight-climb-glide-law",
+   "label": "Climb from excess power and the range of a steady glide",
+   "statement": "If available mechanical power is spent on level flight, on raising the weight at vertical speed c, and on non-negative losses, then c ≤ (P_avail − P_req)/W. A steady glide with no thrust, lift equal to weight and L/D ≤ (L/D)max from height h covers at most h (L/D)max horizontally; with drag reduced by a fraction δ near the surface and lift unaffected, at most h (L/D)max/(1 − δ).",
+   "notation": "c ≤ (P_avail − P_req)/W ; x ≤ h (L/D)max/(1−δ)",
+   "context": "Needed by the planned simulator and a powered variant. Ground-effect drag reductions of 0.09 to 0.14 were measured by Park and Choi 2010 (physics/ground-effect.json) and enter only as candidate inputs.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.glide_range_le",
+    "module": "lean/Delphi/Flight.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "Power balance P_avail = P_req + W c + loss with loss ≥ 0 ⇒ c ≤ (P_avail − P_req)/W (climbRate_le); 0 ≤ (P_avail − P_req)/W ⇔ P_req ≤ P_avail (climb_nonneg_iff).",
+      "Energy balance W h = D x + loss, loss ≥ 0, lift = W, L/D ≤ (L/D)max ⇒ x ≤ h (L/D)max (glide_range_le); with drag (1 − δ) D ⇒ x ≤ h (L/D)max/(1 − δ) (glide_range_le_groundEffect)."
+     ],
+     "assumed": [
+      "A single steady glide with no thrust and lift equal to weight; taxiing, repeated touch-and-go, wind and updrafts are outside the model.",
+      "Losses non-negative; the ground-effect fraction δ and (L/D)max are inputs."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "climb-bound-reversed",
+      "description": "Mutant: the climb bound reversed (the excess power over weight claimed to be at most the climb rate); false with positive losses, so the proof must fail.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "glide-range-halved",
+      "description": "Mutant: the glide range claimed to be at most half of h (L/D)max; the energy balance allows the full bound, so the proof must fail.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "aerobic-power-bound",
+   "label": "Sustained mechanical power is bounded by oxygen delivery (Fick) times efficiency",
+   "statement": "With cardiac output Q, arterial and venous O2 contents Ca ≥ Cv ≥ 0, oxycaloric equivalent E and muscular efficiency 0 ≤ η ≤ 1, aerobic mechanical power is η E Q (Ca − Cv) ≤ η E Q Ca ≤ E Q Ca. A sustained power supplied aerobically is at most η E Q Ca; sustained flight needing P_req = W v/(L/D) requires η E Q Ca ≥ P_req; climb under an aerobic supply is at most (η E Q Ca − P_req)/W. If demand and supply are power laws in size with the supply exponent below the demand exponent there is a size above which supply falls short (crossover), so Thompson's size limit holds for any supply exponent below 7/2 without the muscle premise.",
+   "notation": "P ≤ η E_O2 Q (Ca − Cv) ≤ η E_O2 Q Ca ; sustained flight ⇒ η E_O2 Q Ca ≥ P_req ; b_supply < 7/2 ⇒ ∃ L*",
+   "context": "The bridge theorem for the physics thread's coupled simulator (water O2 → gills → blood → muscle → flight). Replaces R6's bare muscle premise with a derived bound whose inputs sourced physiology can fill.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.sustained_flight_requires",
+    "module": "lean/Delphi/Flight.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "η E Q (Ca − Cv) ≤ η E Q Ca for Cv ≥ 0 (aerobic_le_Ca); ≤ E Q Ca for η ≤ 1 (aerobic_le_metabolic); P ≤ aerobicPower ⇒ P ≤ η E Q Ca (sustained_le).",
+      "P_req ≤ P ≤ aerobicPower ⇒ P_req ≤ η E Q Ca (sustained_flight_requires); climb under aerobic supply c ≤ (η E Q Ca − P_req)/W (climb_le_aerobic).",
+      "PowerLaw demand and supply with b_supply < b_demand ⇒ ∃ L* > 0, ∀ L > L*, supply < demand (powerLaw_crossover)."
+     ],
+     "assumed": [
+      "Fick: O2 delivered = Q (Ca − Cv); the oxycaloric equivalent E converts O2 to metabolic power; mechanical power is at most η times it; sustained power is aerobic (anaerobic bursts, oxygen debt, and the glide phase, which needs no muscle power, are outside).",
+      "0 ≤ Cv ≤ Ca, 0 ≤ η ≤ 1, Q, E ≥ 0; the supply exponent is whatever the physiology gives, not derived here."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "aerobic-efficiency-above-one",
+      "description": "Mutant: the hypothesis η ≤ 1 dropped (replaced by True) while the metabolic ceiling E Q Ca is kept; with η > 1 mechanical power could exceed metabolic power, so the proof must fail.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "aerobic-venous-term-wrong-way",
+      "description": "Mutant: the venous term dropped the wrong way, claiming aerobic power is at most η E Q Cv (the venous content) instead of η E Q Ca; false whenever Ca > 2 Cv, so the proof must fail.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "crossover-exponent-reversed",
+      "description": "Mutant: the crossover claimed when the supply exponent EXCEEDS the demand exponent (b₁ < b₂); then supply overtakes demand and no size limit exists, so the proof must fail.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "thompson1917-ch02-06",
+   "label": "Power needed for flight grows as length^3.5 while muscle power grows as length^3",
+   "statement": "A bird of fixed proportions must fly at a minimum speed proportional to the square root of its linear size, so the work needed for flight varies as the 3½ power of linear size while the work its muscles can supply varies only as the cube; flight thus becomes harder as birds get larger (about 1.4 times harder per doubling of length).",
+   "notation": "V_{min} \\propto L^{1/2}; W_{flight} = mV^2 \\propto L^{7/2}; W_{muscle} \\propto L^3; per doubling of L: 2^{7/2} : 2^3 \\approx 1.4 : 1",
+   "context": "The work requiring to be done, then, varies as the power 3½ of the bird’s linear dimensions, while the work of which the bird is capable depends on the mass of its muscles, and therefore varies as the cube of its linear dimensions. (On Growth and Form, ch. II, \"Flight and size\", lines 1768-1771)",
+   "paper": {
+    "title": "On Growth and Form",
+    "year": 1917,
+    "doi": null,
+    "author": "D'Arcy Wentworth Thompson"
+   },
+   "lean": {
+    "theorem": "Delphi.powerRequired_log",
+    "module": "lean/Delphi/Scaling.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "Exact: lift = ½ ρ v² S C_L equal to weight with 0 < C_L ≤ C_L,max implies v ≥ sqrt(2W/(ρ S C_L,max)) (vmin_le).",
+      "Under R1, R2, constant ρ and C_L,max: v_min(L2)/v_min(L1) = sqrt(L2/L1), log exponent 1/2 (vmin_ratio, vmin_log).",
+      "With constant L/D, power required at v_min: ratio (L2/L1)^3 sqrt(L2/L1), log exponent 7/2 (powerRequired_ratio, powerRequired_log).",
+      "Under MusclePowerLaw (named hypothesis) and R1: power available ratio (L2/L1)^3 (powerAvailable_ratio); P_req/P_avail = c sqrt(L) with an explicit c (powerRatio_eq)."
+     ],
+     "assumed": [
+      "Constant C_L,max across sizes (Reynolds effects change it), constant ρ, constant L/D, and flight at v_min rather than a faster, more efficient speed.",
+      "The muscle premise of Thompson (muscle fraction f and mass-specific power p constant) is contested: contraction frequency falls with size, so the modern expectation is an exponent below 3. It is carried as a hypothesis, never proved or asserted.",
+      "The physics thread found one Cypselurus hiraii specimen inside its v_min envelope (v_min 9.85 m/s against field speeds 10-20 m/s) but could not test the sqrt(W/S) scaling with its data; the theorems are statements about the model, not confirmed facts."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "scaling-power-available-three-and-a-half",
+      "description": "R6 mutant: power available claimed to scale as L^3.5 under the muscle premise (then the ratio would be constant and no L* would exist).",
+      "outcome": "rejected"
+     },
+     {
+      "id": "scaling-power-exponent-three",
+      "description": "R5 mutant: power required claimed to scale as L^3 (flight no harder with size).",
+      "outcome": "rejected"
+     },
+     {
+      "id": "scaling-vmin-hypothesis-dropped",
+      "description": "R4 mutant: the hypothesis C_L ≤ C_L,max dropped (replaced by True); then nothing bounds v below and the proof must fail.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "thompson1917-ch02-07",
+   "label": "Ostrich and moa have passed the size at which muscular flight is possible",
+   "statement": "The ostrich probably, and the moa certainly, reached a size at which flight by muscular action with ordinary bird anatomy became physiologically impossible, and a bird as large as a man could not fly.",
+   "context": "It is not improbable that the ostrich has already reached a magnitude, and we may take it for certain that the moa did so, at which flight by muscular action, according to the normal anatomy of a bird, has become physiologically impossible. (On Growth and Form, ch. II, \"Flight and size\", lines 1843-1846)",
+   "paper": {
+    "title": "On Growth and Form",
+    "year": 1917,
+    "doi": null,
+    "author": "D'Arcy Wentworth Thompson"
+   },
+   "lean": {
+    "theorem": "Delphi.exists_size_limit",
+    "module": "lean/Delphi/Scaling.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "Under R1, R2, constant ρ, C_L,max, L/D and MusclePowerLaw there is a size L* > 0 such that for every L > L*, P_avail(L) < P_req(L) at v_min (exists_size_limit, with L* = 1/c² for the explicit c of powerRatio_eq)."
+     ],
+     "assumed": [
+      "Everything in thompson1917-ch02-06, and that the family extends to the size in question with unchanged proportions.",
+      "The value of L* needs f, p, L/D, ρ and C_L,max; the proof supplies none, so nothing here places the ostrich, the moa or a man-sized bird above it."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "size-limit-at-every-size",
+      "description": "Statement changed from the EXISTENCE of a size above which power required exceeds power available to the claim that it holds at EVERY positive size. That is false for small L (power available wins there), so the proof must fail. Without this mutant the ch02-07 record had no mutation evidence at all.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "thompson1917-ch02-10",
+   "label": "Speed varies as the square root of linear size in swimming, flight and walking",
+   "statement": "Leaving aside differences in mechanical construction, swimming (Froude's law), flight (minimum stable speed) and walking (the leg swinging as a pendulum) all give the same result: an animal's velocity tends to vary as the square root of its linear dimensions.",
+   "notation": "V \\propto L^{1/2} for swimming (Froude), flight (minimum speed) and walking (pendulum leg)",
+   "context": "the general result, attained under very different conditions and arrived at by very different modes of reasoning, is in every case that the velocity tends to vary as the square root of the linear dimensions of the organism. (On Growth and Form, ch. II, \"Speed in locomotion\", lines 1985-1988)",
+   "paper": {
+    "title": "On Growth and Form",
+    "year": 1917,
+    "doi": null,
+    "author": "D'Arcy Wentworth Thompson"
+   },
+   "lean": {
+    "theorem": "Delphi.vmin_ratio",
+    "module": "lean/Delphi/Scaling.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "Flight: v_min(L2)/v_min(L1) = sqrt(L2/L1) under R1, R2, constant ρ and C_L,max (vmin_ratio).",
+      "Swimming: at equal Froude number v = sqrt(Fr g L), so v(L2)/v(L1) = sqrt(L2/L1) (froude_ratio)."
+     ],
+     "assumed": [
+      "That the compared animals move at equal Froude number, or fly at v_min with the same ρ and C_L,max.",
+      "The walking route (the leg as a pendulum) is not formalised."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "scaling-froude-exponent-one",
+      "description": "R8 mutant: Froude speed claimed to scale as L instead of sqrt(L).",
+      "outcome": "rejected"
+     },
+     {
+      "id": "scaling-vmin-exponent-one",
+      "description": "R4 scaling mutant: v_min claimed to scale as L (exponent 1) instead of sqrt(L).",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "genotype-genetic-code",
+   "label": "A claimed amino-acid change is impossible below the code distance",
+   "statement": "With the standard genetic code as a 64-codon table and minSubst a b the least number of positions in which a codon for a and a codon for b differ, no codon pair turns a into b in fewer than minSubst a b nucleotide substitutions. A claim of n substitutions with n < minSubst a b is therefore impossible. minSubst is computed over the table, so the kernel evaluates each instance: Phe to Leu takes 1, Trp to Stop 1, Met to Trp 2.",
+   "notation": "n < minSubst a b  =>  not exists codons c d, code c = a and code d = b and hamming c d <= n",
+   "context": "Needed by the Design Studio, where a genetic edit is shown as an amino-acid change. The flying-fish variant the project records, slc43a2a F326L (Daane et al. 2021), is reachable in one substitution.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.Genotype.claimed_substitutions_rules_out",
+    "module": "lean/Delphi/Genotype.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "The standard code as a 64-case table, hamming distance on codons, and minSubst as the least distance over the codons of the two amino acids.",
+      "That no codon pair realises a to b in fewer than minSubst a b substitutions, so a claim below that count is impossible.",
+      "Each instance by kernel evaluation of the table: Phe to Leu 1, Trp to Stop 1, Met to Trp 2."
+     ],
+     "assumed": [
+      "The standard genetic code. Mitochondrial and variant codes differ; selenocysteine insertion and RNA editing are outside the table.",
+      "One codon per position, substitutions within that codon; frameshifts, indels and multi-codon changes are not modelled.",
+      "That reachability in the code is only reachability: nothing here says a substitution occurred, was favoured, or had the claimed effect."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "genetic-code-distance-reversed",
+      "description": "Statement reversed: the code distance claimed to be at least the Hamming distance of any codon pair instead of at most it. False for any pair further apart than the nearest, so the proof must fail.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "genetic-code-distance-wrong",
+      "description": "Data claim changed: Phe to Leu said to need 2 substitutions when the table gives 1 (UUU to UUA). The kernel evaluates minSubst on the code table, so it must reject it.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "genotype-pleiotropy-closure",
+   "label": "An edit to a gene must be shown changing every node the map links that gene to",
+   "statement": "The Boolean check closureB mapped changed is true exactly when every node in the mapped list occurs in the changed list; its truth implies the inclusion (closure_of_check), and a single mapped node absent from the changed list makes it false (closure_violated). Applied to the genotype map: a view that shows an edit to a gene changing fewer nodes than the map links to that gene is ruled out.",
+   "notation": "closureB mapped changed = true  =>  forall n in mapped, n in changed",
+   "context": "The map (lean/genotype/gene-nodes.json, from the genotype thread's fin subtree) links tbx5a to 8 nodes, shha to 12, fgf24 to 8, kcnk5b and slc43a2a to the pectoral fin alone within that subtree.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.Genotype.closure_of_check",
+    "module": "lean/Delphi/Genotype.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "That the Boolean list-inclusion check is sound (its truth implies every mapped node is changed) and that a single missing node makes it false."
+     ],
+     "assumed": [
+      "That the nodes the genotype map links a gene to are the nodes an edit may change: a bound on what a picture may omit, not a model of development.",
+      "That an unstudied node is absent from the map: the closure is only as complete as the sources behind it (ZFIN, Bgee), and the fin subtree is zebrafish anatomy.",
+      "Nothing about magnitude: the check cannot say how much any node changes, or in which direction."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "pleiotropy-closure-reversed",
+      "description": "Statement changed to claim the closure check is TRUE when a mapped node is missing from the changed list, which is exactly when it is false.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "genotype-developmental-ordering",
+   "label": "No structure develops from a precursor that appears later than it does",
+   "statement": "Taking the developmental stage as the level of a blueprint graph whose edges are develops_from, the Boolean check devOrderedB is true exactly when every edge goes strictly down in stage; its truth implies that every derivative is staged strictly after its precursor and that develops_from is acyclic. The fin subtree's own edges are certified by a kernel evaluation of the checker on the recorded stages (lean/Delphi/Certificates/FinDevelopment.lean).",
+   "notation": "devOrderedB g = true  =>  (forall edges a b, level b < level a) and Acyclic",
+   "context": "The pectoral-fin subtree of the genotype thread: 8 develops_from edges with both stages recorded are certified, 4 more have an unknown stage and are not.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.Genotype.devOrdered_of_check",
+    "module": "lean/Delphi/Genotype.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "That a develops_from graph whose Boolean stage check passes has every derivative staged strictly after its precursor, and is acyclic.",
+      "The fin subtree's 8 edges with both stages recorded, by kernel evaluation of the checker on those stages."
+     ],
+     "assumed": [
+      "That the ZFIN stage-series ids order development (they are assigned in order for the main series).",
+      "That develops_from means the derivative appears no earlier than its precursor.",
+      "The 4 edges with an unknown stage are not certified, and nothing here concerns the flying fish."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "dev-certificate-self-edge",
+      "description": "Data sabotaged: a develops_from edge from a node to itself is added to the certified list, so something would develop from itself and no stage could be strictly earlier. The kernel-evaluated checker must reject it.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "genotype-substitution-time",
+   "label": "The time N independent substitutions need lies between N/(M mu) and N/mu",
+   "statement": "With M gene copies, mutation rate mu per copy per generation and fixation probability u, the expected time for N substitutions arriving at Kimura's rate M mu u is N/(M mu u); for 1/M <= u <= 1 it lies between N/(M mu) and N/mu, and equals N/mu in the neutral case u = 1/M. An available time below N/(M mu), the fastest the model allows because it assumes every single mutant fixes, is ruled out.",
+   "notation": "N/(M mu) <= N/(M mu u) <= N/mu ; T < N/(M mu) => False",
+   "context": "The time half of the Exocoetidae substitution budget (lean/bound/). The rate itself is Kimura's definition, proved in lean/Delphi/Kimura.lean and bounded below for favoured mutants in lean/Delphi/Favored.lean.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.Genotype.expectedWaitingTime_bounds",
+    "module": "lean/Delphi/Genotype.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "That the expected time for N substitutions at rate M mu u is N/(M mu u), and that for 1/M <= u <= 1 it lies between N/(M mu) and N/mu, with equality at N/mu for the neutral u = 1/M.",
+      "That an available time below N/(M mu) contradicts the model even with every mutant fixing."
+     ],
+     "assumed": [
+      "Independent sequential fixations at Kimura's definition rate with constant M, mu and u: no linkage, no standing variation, no recombination of partial solutions.",
+      "That the number of required substitutions is given. It is not defined for any wing claim here, which is why this bound eliminates nothing about the flying fish.",
+      "Nothing about whether the required substitutions exist, are favoured, or produce the trait."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "waiting-time-bounds-swapped",
+      "description": "Statement swapped: the waiting time claimed to be at most N/(M mu) and at least N/mu, the reverse of the bound. False for every u strictly between the ends, so the proof must fail.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "haldane-cost-of-selection",
+   "label": "From Haldane's cost accounting (a hypothesis, not proved here): N substitutions need at least c N / e generations",
+   "statement": "HaldaneCost N T e c is the NAMED HYPOTHESIS that N substitutions by selection in T generations cost at most e T / c, with reproductive excess e > 0 and cost per substitution c > 0. From it, T is at least c N / e, and a stated time below c N / e contradicts the hypothesis. The hypothesis itself is never proved.",
+   "notation": "HaldaneCost N T e c  =>  c N / e <= T",
+   "context": "Haldane 1957 (J. Genet. 55:511) put c at about 30 and read it as about one substitution per 300 generations. Carried here so that a candidate accepting the accounting can be checked against it.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.Genotype.haldane_time_lower",
+    "module": "lean/Delphi/Genotype.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "That the hypothesis HaldaneCost N T e c (N <= e T / c, c > 0, e >= 0) with e > 0 implies T >= c N / e, and that a time below c N / e contradicts it."
+     ],
+     "assumed": [
+      "Haldane 1957's cost accounting itself, which is NOT proved here and has been contested since publication (soft selection, truncation selection, standing variation and linked substitutions all change the cost).",
+      "A value for the cost per substitution c and the reproductive excess e; the project supplies neither for any real population.",
+      "That the candidate accepts the accounting: one that rejects it is not ruled on."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "haldane-bound-reversed",
+      "description": "Statement reversed: Haldane's accounting claimed to put a CEILING of c N / e on the generations instead of a floor, which would make the cost an argument for speed.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "physiology-q10",
+   "label": "Q10 temperature scaling: the ratio between two temperatures is Q10 raised to their difference over ten",
+   "statement": "For a rate X(T) = X0 Q10^((T - Tref)/10) with X0 nonzero and Q10 > 0, the ratio X(T2)/X(T1) is Q10^((T2 - T1)/10), and the log of that ratio is (T2 - T1)/10 times log Q10, so a Q10 fit is a straight line in log rate against temperature.",
+   "notation": "X(T2)/X(T1) = Q10^((T2-T1)/10)",
+   "context": "The form every physiological rate in the simulator chain uses for temperature; the project's conditions file fixes 25 C, so no instance is evaluated here.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.Physiology.q10_ratio",
+    "module": "lean/Delphi/Physiology.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "That X(T) = X0 Q10^((T - Tref)/10) gives ratio Q10^((T2-T1)/10) between two temperatures, and a straight line in log rate against temperature."
+     ],
+     "assumed": [
+      "That a rate follows a Q10 law at all, and a value of Q10: both are inputs. The project's conditions fix 25 C and no candidate commits a Q10, so no instance is evaluated."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "q10-exponent-undivided",
+      "description": "Statement changed to raise Q10 to the whole temperature difference instead of the difference over ten, which is the definition of Q10 (a factor per 10 degrees).",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "physiology-laplace",
+   "label": "Laplace wall stress: pressure in a thin-walled vessel is limited by wall strength, thickness and radius",
+   "statement": "For a thin-walled sphere the wall stress is P r / (2 t) and for a cylinder P r / t; at fixed pressure and thickness the stress grows with radius, and a wall that holds at most sigma_max limits the pressure to 2 sigma_max t / r (sphere) or sigma_max t / r (cylinder).",
+   "notation": "sigma = P r / (2 t) <= sigma_max  =>  P <= 2 sigma_max t / r",
+   "context": "The standard thin-wall relation, stated for the circulation (a bigger vessel at the same thickness bears more stress at the same pressure).",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.Physiology.laplace_pressure_limit",
+    "module": "lean/Delphi/Physiology.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "That thin-wall stress P r/(2t) (sphere) and P r/t (cylinder) grow with radius at fixed pressure and thickness, and that a wall strength sigma_max limits pressure to 2 sigma_max t/r and sigma_max t/r."
+     ],
+     "assumed": [
+      "The thin-wall idealisation, static loading, no bending or residual stress.",
+      "A radius, a wall thickness and a wall strength: none exists in this project for any fish, so the bound is proved with no instance."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "laplace-factor-dropped",
+      "description": "Statement strengthened by dropping the factor 2: a sphere claimed to hold at most sigma_max t / r, the cylinder bound. Stronger than the wall stress allows, so the proof must fail.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "altitude-coupling",
+   "label": "Demand rises and supply falls with height together, so the flyable heights reach down to the ground",
+   "statement": "In an atmosphere where air density and oxygen partial pressure both fall with height, the minimum speed of lift-supported flight and the power to fly at it are nondecreasing in height, while the aerobic supply (with arterial content nondecreasing in partial pressure, as a Hill curve gives) is nonincreasing. Hence sustained flight possible at a height is possible at every lower height; above an infeasible height every height is infeasible, so the flyable set is an interval from the ground up to a ceiling; and a design that cannot fly at the ground cannot fly at any height. A larger lifting area lowers the power required at a fixed height.",
+   "notation": "h1 ≤ h2 and feasible(h2) implies feasible(h1); not feasible(0) implies not feasible(h) for all h ≥ 0",
+   "context": "Written for the physics thread's truly-flying fish at 1000 m. The atmosphere is a named hypothesis with no numbers; the altitude profile used by the candidates is the physics thread's NASA Glenn troposphere fit (physics/flier/tff/tff.json), an explicit design parameter, while the project's conditions file stays at sea level.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.Altitude.feasible_downward_closed",
+    "module": "lean/Delphi/Altitude.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "That the minimum speed and the power required at it are nondecreasing in height, given only that air density falls with height.",
+      "That the aerobic supply is nonincreasing in height, given only that oxygen partial pressure falls with height and arterial content is nondecreasing in it.",
+      "That the feasible heights are downward closed, that infeasibility propagates upward (a ceiling in that sense), and that infeasibility at the ground forces infeasibility everywhere.",
+      "That a larger lifting area lowers the power required at a fixed height."
+     ],
+     "assumed": [
+      "A monotone atmosphere: both density and oxygen partial pressure fall with height. No profile, no numbers; the candidates' profile is the physics thread's NASA Glenn fit.",
+      "Arterial content nondecreasing in partial pressure (a Hill curve is, but the Hill equation, the Bohr shift and the Root effect are not formalised).",
+      "Everything else held fixed with height: the animal makes no compensation (haematocrit, ventilation, cardiac output), and temperature, humidity and wind are outside the model.",
+      "The size of the effect is NOT proved: it is gentle, and the binding constraint for the real fish is the aerobic ceiling at sea level."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "altitude-feasible-upward-closed",
+      "description": "Statement reversed: feasibility at a height claimed to carry UPWARD (to every greater height) instead of downward. That is the opposite of what thinning air and falling oxygen give, and it would turn a ceiling into a floor, so the proof must fail.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "perturb-thermal",
+   "label": "Thermal window and Q10: no sustained power outside [CTmin, CTmax], at most P_ref Q10^((T-T_ref)/10) inside",
+   "statement": "If sustained power is zero outside the thermal window and at most the Q10-scaled reference inside it, then at every temperature the sustained power is at most P_ref Q10^((T - T_ref)/10), and outside the window no positive power is sustained.",
+   "notation": "P <= sustained(T) implies P <= P_ref Q10^((T - T_ref)/10); T outside [CTmin, CTmax] implies P <= 0",
+   "context": "Perturbation law for the Design Studio; every constant and its quoted source in lean/perturb-sources.json.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.Perturb.sustained_power_le",
+    "module": "lean/Delphi/Perturb.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "The Q10 bound at every temperature, inside or outside the window.",
+      "No positive sustained power outside the window.",
+      "Non-vacuity: the scup numbers (Q10 1.88, 134 W/kg at 20 C, measured on [10, 20] C) satisfy the hypothesis."
+     ],
+     "assumed": [
+      "The thermal performance curve is zero outside [CTmin, CTmax] (Schulte 2015 describes the shape; the window of a designed animal is a design input).",
+      "The Q10 rule inside the window, with one Q10 for the whole window; Q10 is method-dependent (1.88 steady, 2.29 work-loop for the same muscle).",
+      "Body temperature equals water temperature (ectotherm), as conditions/baseline.json states."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "perturb-thermal-bound-halved",
+      "description": "Statement changed: sustained power at T claimed to be at most HALF the Q10-scaled reference. False for the witness at 20 C (134 W/kg against a claimed 67).",
+      "outcome": "rejected"
+     },
+     {
+      "id": "perturb-thermal-window-dropped",
+      "description": "Hypothesis weakened: outside the thermal window sustained power is only said to be at most P_ref instead of zero. The theorems that rule out performance outside [CTmin, CTmax] must then fail, showing the window is load-bearing.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "perturb-current",
+   "label": "No design holds station in a current above U_crit, or above the speed its aerobic supply can pay drag for",
+   "statement": "With ground speed U_swim - U_current not negative, sustained swimming at most U_crit, drag power rho C_d A U^3 / 2 paid by a sustained power that is aerobic (Fick), the current satisfies U_current <= U_crit and rho C_d A U_current^3 / 2 <= eta E Q Ca.",
+   "notation": "U_current <= U_crit and rho Cd A U_current^3 / 2 <= eta E Q Ca",
+   "context": "Perturbation law for the Design Studio; every constant and its quoted source in lean/perturb-sources.json.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.Perturb.station_requires",
+    "module": "lean/Delphi/Perturb.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "Both necessary conditions for holding station, composed with the Fick bound of lean/Delphi/Flight.lean.",
+      "Non-vacuity with U_crit 0.80 m/s (scup, red muscle, 20 C)."
+     ],
+     "assumed": [
+      "Steady swimming, quadratic drag with a constant C_d (a design input), drag area A (a design input).",
+      "Sustained swimming is aerobic; burst-and-coast and anaerobic sprinting are outside the bound.",
+      "U_crit as defined by the incremental-velocity protocol (Plaut 2001)."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "perturb-current-sign-flipped",
+      "description": "Ground speed taken as U_swim + U_current (the current helping instead of opposing). Holding station then implies nothing about the current, so the conclusion must fail.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "perturb-drag-bound-halved",
+      "description": "Statement changed: the drag power of the current claimed to be within HALF the aerobic ceiling. Not implied by the Fick bound.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "perturb-pressure",
+   "label": "Boyle's law for a closed swim bladder: volume at depth is the surface volume times p0 / P(d)",
+   "statement": "With absolute pressure p0 + k d and P(d) V(d) constant at every depth, V(d) = V(0) p0 / P(d); the volume falls with depth, and keeping the volume needs gas in proportion 1 + k d / p0.",
+   "notation": "V(d) = V(0) p0 / (p0 + k d)",
+   "context": "Perturbation law for the Design Studio; every constant and its quoted source in lean/perturb-sources.json.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.Perturb.bladder_volume_eq",
+    "module": "lean/Delphi/Perturb.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "The Boyle volume, its monotone decrease with depth, the secretion ratio.",
+      "Non-vacuity with 1 atm plus 0.1 atm/m (Yancey 2020)."
+     ],
+     "assumed": [
+      "Ideal gas, fixed amount and temperature, quasi-static pressure change (Kerr et al. 2023: fails for fast decompression).",
+      "Bladder wall compliance ignored (gas pressure equals ambient)."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "hydro-gradient-reversed",
+      "description": "Statement reversed: the sea-water pressure gradient claimed to EXCEED one atmosphere per 10 m. 1025 x 9.80665 = 10053 Pa/m < 10132.5, so the proof must fail.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "hydro-rho-dropped",
+      "description": "Statement changed: the density is dropped from the pressure in the Boyle bound (p0 + g d instead of p0 + rho g d). The bound no longer matches Boyle at the committed rho, so the proof must fail.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "hydro-v1-constant",
+      "description": "Statement changed back to the v1 constant: the volume at depth claimed to be V0 p0 / (p0 + 10132.5 d) (\"1 atm per 10 m\") for EVERY water column. False unless rho g = 10132.5, so the proof must fail.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "hydro-witness-negative-density",
+      "description": "Witness moved: sea-water density -1025 kg/m^3. The positivity hypothesis fails, so the non-vacuity witness must fail.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "perturb-boyle-reversed",
+      "description": "Statement reversed: a closed bladder claimed to GROW with depth. Boyle's law gives the opposite.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "perturb-depth-cap",
+   "label": "Osmolyte depth cap (CONTESTED): no teleost below 8200 m if it cannot be hyperosmotic to seawater; a fish has been recorded at 8336 m",
+   "statement": "If internal osmolality rises linearly with depth (TMAO), the isosmotic depth is at most 8200 m, and a teleost cannot be hyperosmotic to seawater, then no teleost lives below 8200 m.",
+   "notation": "osm(d) = a + b d <= sw and (sw - a)/b <= 8200 imply d <= 8200",
+   "context": "Perturbation law for the Design Studio; every constant and its quoted source in lean/perturb-sources.json.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.Perturb.no_teleost_below",
+    "module": "lean/Delphi/Perturb.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "The depth bound from the linear osmolality and the no-reversal hypothesis.",
+      "Non-vacuity: 350 mOsmol/kg shallow, 991 at 7000 m, seawater 1100 give 8190 m, inside the published 8200 m."
+     ],
+     "assumed": [
+      "Yancey et al. 2014's hypothesis that greater depths would require reversal of osmotic gradients; it is a prediction from extrapolation, not an observed limit (no fish has been found below 8400 m).",
+      "Linear osmolality in depth; teleosts only (not elasmobranchs or invertebrates).",
+      "CONTRADICTED BY OBSERVATION: a teleost (Pseudoliparis sp.) has been recorded at 8336 m (Jamieson et al. 2026, quoting Jamieson et al. 2023), below the 8200 m cap. Either the isosmotic depth is deeper than predicted for that species or the no-reversal premise fails; the crossing is a soft limit."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "perturb-depth-witness-outside-cap",
+      "description": "Witness moved: deep osmolality 900 instead of the measured 991 mOsmol/kg at 7000 m, so the two-point line meets seawater at 9545 m, outside the 8200 m cap. The non-vacuity witness must fail.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "perturb-altitude-wind",
+   "label": "Altitude and wind: v_min proportional to 1/sqrt(rho) with rho from the ISA troposphere; glide ground range (L/D) h (1 + w/u), w positive for a tailwind",
+   "statement": "In the barometric troposphere rho(h) = rho0 (1 - beta h/T0)^n density falls with height, v_min = sqrt(2W/(S C_L,max))/sqrt(rho) so the ratio of minimum speeds is sqrt(rho1/rho2), and v_min rises with height. A steady glide with horizontal airspeed u, sink s and along-track wind w (positive tailwind) covers (u/s) h (1 + w/u), at most (L/D)max h (1 + w/u) when w >= -u.",
+   "notation": "v_min(rho2)/v_min(rho1) = sqrt(rho1/rho2); x = (L/D) h (1 + w/u)",
+   "context": "Perturbation law for the Design Studio; every constant and its quoted source in lean/perturb-sources.json.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.Perturb.glide_ground_range_le",
+    "module": "lean/Delphi/Perturb.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "ISA density monotone in the troposphere; v_min inverse-square-root in density; the glide ground range identity and bound with the stated sign convention."
+     ],
+     "assumed": [
+      "The barometric (ISA) form with a constant lapse rate, valid below the tropopause (about 11 km); real atmospheres deviate (Narayanan and Osechas 2022).",
+      "Steady glide, constant wind, no updraft (a vertical wind component is not modelled)."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "perturb-isa-density-rises",
+      "description": "Statement reversed: ISA air density claimed to RISE with height.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "perturb-wind-sign-flipped",
+      "description": "Sign convention broken: range claimed to be (L/D) h (1 - w/u) with w positive for a tailwind. A tailwind would then shorten the glide.",
+      "outcome": "rejected"
+     }
+    ],
+    "faithfulness": "not assessed",
+    "verdicts": [],
+    "assessmentComplete": false
+   },
+   "dataTests": []
+  },
+  {
+   "claim_id": "perturb-energy-balance",
+   "label": "Daily energy balance: a I (1 - s) < R + Act means mass declines; holding mass needs I >= (R + Act)/(a (1 - s))",
+   "statement": "Under energy conservation over a day, eps dm = a I - (R + Act + s a I) with SDA a fraction s of the digestible energy, a deficit a I (1 - s) < R + Act forces dm < 0, and holding or gaining mass needs intake at least (R + Act)/(a (1 - s)).",
+   "notation": "eps dm = a I (1 - s) - (R + Act)",
+   "context": "Perturbation law for the Design Studio; every constant and its quoted source in lean/perturb-sources.json.",
+   "paper": null,
+   "lean": {
+    "theorem": "Delphi.Perturb.intake_needed",
+    "module": "lean/Delphi/Perturb.lean",
+    "status": "verified",
+    "header": null,
+    "named": null,
+    "supporting": [],
+    "proofScope": {
+     "kernelChecked": [
+      "Mass decline under a deficit; the minimum intake; non-vacuity with s = 0.06 (walleye)."
+     ],
+     "assumed": [
+      "Energy conservation with every cost listed (routine, activity, SDA) and no unlisted loss; excretory losses are inside the assimilation efficiency a.",
+      "SDA proportional to digestible intake (Bihun et al. 2024 found the coefficient constant across temperature, mass and ration)."
+     ]
+    },
+    "mutations": [
+     {
+      "id": "perturb-energy-nonstrict-deficit",
+      "description": "Boundary moved: an exactly balanced budget (a I (1 - s) = R + Act) claimed to make mass decline. At equality mass is constant, so the statement is false.",
+      "outcome": "rejected"
+     },
+     {
+      "id": "perturb-sda-unbounded",
+      "description": "Hypothesis weakened: the SDA coefficient allowed to reach 1 (digestion costing all the digestible energy). The minimum-intake formula divides by 1 - s and must fail.",
       "outcome": "rejected"
      }
     ],
@@ -1087,261 +2451,6 @@
     }
    },
    "faithfulness": null
-  },
-  {
-   "claim_id": "thompson1917-ch03-07",
-   "verdict": "supports",
-   "dir": "claim-tests/thompson-growth-form/thompson1917-ch03-07",
-   "measured": {
-    "value": 2.7420799020169984,
-    "unit": "log-log exponent of mean weight on mean height across ages 2-19, males (pre-registered band 2.5-3.5); females given in extra",
-    "n": "4905 males and 4810 females in 18 age bins each",
-    "uncertainty": "males 95% CI [2.59, 2.89]; females b = 2.86, CI [2.66, 3.06]",
-    "extra": {
-     "male_cubic_model_r2": 0.9905578803477098,
-     "female_cubic_model_r2": 0.97918410786246,
-     "female_free_exponent_b": 2.8606369468483357,
-     "male_height_range_cm": [
-      91.6548428956483,
-      175.2816641779385
-     ],
-     "female_height_range_cm": [
-      90.10482142878853,
-      162.94861252958128
-     ],
-     "cubic_k_kg_per_cm3": {
-      "male": 0.000014492782056210137,
-      "female": 0.000015046459489477242
-     },
-     "post_hoc_perturbation": {
-      "n_simulations_per_exponent": 2000,
-      "sexes": {
-       "male": {
-        "observed": {
-         "free_exponent_b": 2.7420799020169984,
-         "cubic_model_r2": 0.9905578803477098,
-         "passes": true,
-         "n_age_bins": 18,
-         "residual_sd_log_weight": 0.061401843299767125
-        },
-        "simulated": {
-         "3.0": {
-          "true_exponent": 3,
-          "pass_fraction": 1,
-          "mean_fitted_exponent": 3.0003139039424087,
-          "mean_cubic_r2": 0.982854958911395
-         },
-         "2.0": {
-          "true_exponent": 2,
-          "pass_fraction": 0,
-          "mean_fitted_exponent": 1.997920427163882,
-          "mean_cubic_r2": 0.6287244961398625
-         },
-         "2.5": {
-          "true_exponent": 2.5,
-          "pass_fraction": 0.49,
-          "mean_fitted_exponent": 2.500082955432895,
-          "mean_cubic_r2": 0.9202604912729514
-         },
-         "3.5": {
-          "true_exponent": 3.5,
-          "pass_fraction": 0.4945,
-          "mean_fitted_exponent": 3.500277739901454,
-          "mean_cubic_r2": 0.9515844795341976
-         },
-         "4.0": {
-          "true_exponent": 4,
-          "pass_fraction": 0,
-          "mean_fitted_exponent": 3.9976656315573234,
-          "mean_cubic_r2": 0.8783782613478972
-         }
-        }
-       },
-       "female": {
-        "observed": {
-         "free_exponent_b": 2.8606369468483357,
-         "cubic_model_r2": 0.97918410786246,
-         "passes": true,
-         "n_age_bins": 18,
-         "residual_sd_log_weight": 0.07671684266439144
-        },
-        "simulated": {
-         "3.0": {
-          "true_exponent": 3,
-          "pass_fraction": 0.9995,
-          "mean_fitted_exponent": 2.997924457828407,
-          "mean_cubic_r2": 0.9671462441663621
-         },
-         "2.0": {
-          "true_exponent": 2,
-          "pass_fraction": 0,
-          "mean_fitted_exponent": 2.0013906355602886,
-          "mean_cubic_r2": 0.6732374305880456
-         },
-         "2.5": {
-          "true_exponent": 2.5,
-          "pass_fraction": 0.466,
-          "mean_fitted_exponent": 2.5002502967139146,
-          "mean_cubic_r2": 0.9125358530569535
-         },
-         "3.5": {
-          "true_exponent": 3.5,
-          "pass_fraction": 0.4935,
-          "mean_fitted_exponent": 3.4997766138568487,
-          "mean_cubic_r2": 0.9441403543487251
-         },
-         "4.0": {
-          "true_exponent": 4,
-          "pass_fraction": 0,
-          "mean_fitted_exponent": 4.0003796719354066,
-          "mean_cubic_r2": 0.8836855223775872
-         }
-        }
-       }
-      },
-      "reading": "The rule passes under the cube law and under exponents inside the pre-registered band, and fails under an exponent of 2 (surface scaling) or 4 at the fractions shown, with the observed heights and the observed bin scatter. The band was pre-registered as a tolerance for Thompson's 'mainly (though not wholly)'; this check shows what it can and cannot reject."
-     },
-     "cross_check": {
-      "ours_individual_level": {
-       "ages": "2-19 completed years, standing stature, NHANES 2013-2018 (this test's sample)",
-       "pooled": {
-        "n_individuals": 9715,
-        "ols_exponent": 2.755198077482473,
-        "ci95": [
-         2.7355684426476894,
-         2.7748277123172564
-        ],
-        "r2": 0.8862795709963611,
-        "survey_weighted_exponent": 2.7611926881801017
-       },
-       "male": {
-        "n_individuals": 4905,
-        "ols_exponent": 2.716250868644738,
-        "ci95": [
-         2.6903049937293924,
-         2.7421967435600836
-        ],
-        "r2": 0.8957373344791765,
-        "survey_weighted_exponent": 2.7241728155211202
-       },
-       "female": {
-        "n_individuals": 4810,
-        "ols_exponent": 2.812436935724894,
-        "ci95": [
-         2.7827959018252395,
-         2.8420779696245484
-        ],
-        "r2": 0.8779986711816458,
-        "survey_weighted_exponent": 2.8191082022830547
-       }
-      },
-      "theirs": {
-       "source": "origin/main e6b25d4c6ab6 (c587bd47cb08dfc80be718c8d6c3583ede84c6ce 2026-10-31T04:35:02Z), claim-tests/thompson-growth-form/thompson1917-ch03-07/result.json",
-       "run": "cursor/claim-tests-thompson-efb7",
-       "verdict": "mixed",
-       "scope": "NHANES 2007-2018, ages 0 to 19.99, recumbent length under 24 months, individuals pooled",
-       "pooled_0_19_individuals": {
-        "ols_slope": 2.4076916540629516,
-        "ols_slope_ci95": [
-         2.3992683428055552,
-         2.416114965320348
-        ],
-        "ols_intercept": -3.5677394844224724,
-        "r2": 0.9302385181166233,
-        "rma_slope": 2.496339842087518,
-        "n": 23540
-       },
-       "slope_by_age_window": {
-        "0-2yr": {
-         "ols_slope": 2.0975315252406825,
-         "ols_slope_ci95": [
-          2.0751295739850537,
-          2.1199334764963114
-         ],
-         "ols_intercept": -2.946923856081076,
-         "r2": 0.8980344554712152,
-         "rma_slope": 2.213410658558297,
-         "n": 3826
-        },
-        "2-10yr": {
-         "ols_slope": 2.358272557215868,
-         "ols_slope_ci95": [
-          2.337935784384827,
-          2.378609330046909
-         ],
-         "ols_intercept": -3.5069780992661475,
-         "r2": 0.8394619638082076,
-         "rma_slope": 2.5739107619546817,
-         "n": 9881
-        },
-        "10-20yr": {
-         "ols_slope": 3.095255052906955,
-         "ols_slope_ci95": [
-          3.0372676262217726,
-          3.1532424795921377
-         ],
-         "ols_intercept": -5.060208366167421,
-         "r2": 0.5268221709129836,
-         "rma_slope": 4.264463675157318,
-         "n": 9833
-        },
-        "2-20yr": {
-         "ols_slope": 2.7364582069270176,
-         "ols_slope_ci95": [
-          2.7231001959757397,
-          2.7498162178782954
-         ],
-         "ols_intercept": -4.276832970519582,
-         "r2": 0.8910501478218595,
-         "rma_slope": 2.8989301184879293,
-         "n": 19714
-        }
-       },
-       "age_median_curve_0_19": {
-        "ols_slope": 2.457611504717952,
-        "ols_slope_ci95": [
-         2.4094881450524954,
-         2.5057348643834083
-        ],
-        "ols_intercept": -3.683371097125789,
-        "r2": 0.9767964568604828,
-        "rma_slope": 2.4866301413746332,
-        "n": 240
-       }
-      },
-      "reading": "Binning versus individuals is not the cause of the difference: on this test's own sample the individual-level exponent (2.755) is within 0.03 of the age-bin exponents. The cause is the age range. The collaborator's 2-20 year window gives 2.736, which reproduces this test, while their 0-2 year window gives 2.098 and pulls their pooled 0-19 exponent to 2.408, below the 2.5 edge of the band both tests pre-registered. The verdict is therefore conditional on the pre-registered scope (ages 2-19): including infancy makes it 'mixed'."
-     }
-    }
-   },
-   "faithfulness": {
-    "role": "A9 faithfulness assessor",
-    "question": "Does this analysis measure what the claim asserts?",
-    "claim_id": "thompson1917-ch03-07",
-    "assessedAt": "2026-10-31T15:00:05.970Z",
-    "assessor": {
-     "provider": "openai",
-     "model": "gpt-5-2025-08-07",
-     "independent_of_builder": true,
-     "blinded_to": [
-      "verdict",
-      "confidence",
-      "interpretation",
-      "caveats"
-     ]
-    },
-    "verdict": "faithful-with-narrower-scope",
-    "scores": {
-     "same_quantity": 1,
-     "modality_fits": 1,
-     "assumptions_compatible": 0.75,
-     "scope_matches": 0.75
-    },
-    "reasoning": "They directly test the stated prediction: across ages, population mean weight vs mean stature should scale with an exponent near 3, and they also assess how well a cubic height curve reproduces the weight-for-age means. Height and weight are measured directly and appropriately weighted NHANES exam data are well-suited for this. Analytical choices (log-log regression on age-bin means; OLS) are reasonable, though uncertainty in bin means and minor NHANES multi-cycle weighting nuances are not detailed. The scope is narrower than the generic claim—limited to US children/adolescents in 2013–2018—so generality to other populations is not assured.",
-    "what_would_change_it": "Replicating with longitudinal growth data and/or multiple international populations would broaden scope and reduce ecological/aggregation concerns. Sensitivity checks for binning and survey-weight handling would strengthen assumptions compatibility.",
-    "biggest_risk": "Using cross-sectional age-bin means to infer a growth-scaling relation can conflate cohort effects and pubertal timing/composition changes with an individual-level cubic law.",
-    "builder_verdict_for_comparison": "supports",
-    "note": "The assessor did not see the builder verdict above; it is recorded here only so a reader can compare. A not-representative verdict means the evidence does not count, whatever the numbers said."
-   }
   },
   {
    "claim_id": "thompson1917-ch03-10",

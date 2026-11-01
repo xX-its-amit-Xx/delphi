@@ -204,6 +204,9 @@ function applyTo(rel, cur, write) {
   // before the first paint.
   const cssTag = `<link rel="stylesheet" href="${prefix}shared/shell.css">`;
   const jsTag = `<script src="${prefix}shared/shell.js"></script>`;
+  // The site-wide assistant. Deferred so it never blocks a page, and self-contained: it injects
+  // its own markup and styles, and renders nothing at all until someone opens it.
+  const chatTag = `<script src="${prefix}shared/chat.js" defer></script>`;
   // head, late: narrow-screen repairs that have to beat the page's own rules.
   // Wide tables scroll inside their box instead of pushing the page sideways —
   // the same thing the 3D viewer does to its panel tables under 880px.
@@ -213,11 +216,12 @@ function applyTo(rel, cur, write) {
     `code,pre,.mono{overflow-wrap:anywhere}}</style>`;
   html = html.replace(/[ \t]*<link rel="stylesheet" href="[^"]*shared\/shell\.css">\r?\n?/g, '')
              .replace(/[ \t]*<script src="[^"]*shared\/shell\.js"><\/script>\r?\n?/g, '')
+             .replace(/[ \t]*<script src="[^"]*shared\/chat\.js"[^>]*><\/script>\r?\n?/g, '')
              .replace(/[ \t]*<style id="dsh-fit">[\s\S]*?<\/style>\r?\n?/g, '');
   if (!/<\/head>/.test(html)) return `no <head>  ${rel}`;
   const vp = html.match(/<meta name="viewport"[^>]*>/) || html.match(/<head[^>]*>/);
   if (!vp) return `no place for the head tags  ${rel}`;
-  html = html.replace(vp[0], `${vp[0]}\n${cssTag}\n${jsTag}`)
+  html = html.replace(vp[0], `${vp[0]}\n${cssTag}\n${jsTag}\n${chatTag}`)
              .replace('</head>', `${fitTag}\n</head>`);
 
   // body: the shell block, replacing any previous one
