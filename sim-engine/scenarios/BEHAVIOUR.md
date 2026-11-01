@@ -48,7 +48,7 @@ Zebrafish ages: STATE `ageDays` counts days post-hatching, and zebrafish hatch a
    - The fish survives if the closest approach stays outside a strike reach of 2 cm, about 0.56 SL.
    - The critical predator speed ratio is `K* = d_thr/(s + v t_lat)`.
 5. **Aerial escape.** This is the **same computation as `glide.mjs`**. The scenario imports its `launchSpeed`, `glidePath` and `glideParts`, uses the same 1 m launch height, and has ground effect on. `aerial_escape_distance_m` is therefore identical to glide's `glide_range_total_m`, and the tests check this at 0, 10, 15 and 20 m/s.
-   - **Launch speed.** Taken from glide's `launchSpeed`, and follows any change made there. At writing it is 10 m/s for adult flying fish and min(10 m/s, 30 BL/s) below adult size; for zebrafish it is Umax from `current.mjs`. The `launch_speed_m_s` parameter is a what-if override.
+   - **Launch speed.** Taken from glide's `launchSpeed`, and follows any change made there. At writing it is 15 m/s for adult flying fish, the sourced taxi-end airspeed (measured-secondhand: the lower end of the 15–20 m/s range, Davenport 1994 as quoted). Below adult size it is min(10 m/s, 30 BL/s). for zebrafish it is Umax from `current.mjs`. The `launch_speed_m_s` parameter is a what-if override.
    - **Takeoff check.** `aerial_escape_available = launch speed ≥ v_min`, which also sets `feasible`.
    - **On the real organisms.** The adult flying fish and the TFF can escape by air. The wingless flying fish and the winged zebrafish cannot.
    - **If evasion under water fails** but an aerial escape is available, survives becomes null. Leaving the water is the leading hypothesis for gliding (Davenport 1994; Makiguchi 2013 saw flying fish leap when blacktip sharks pursued them), but its effect on survival has never been measured.
@@ -59,7 +59,7 @@ Zebrafish ages: STATE `ageDays` counts days post-hatching, and zebrafish hatch a
 |---|---|---|---|
 | Adult zebrafish | K* = 2.11 at 26 °C | "more than twice" (McKee & McHenry 2020) | Agrees, but it is **not independent**: same model and same inputs, so it only checks the implementation |
 | Flying fish (*C. hiraii*, 60 g) | U_min = 9.85 m/s | Field launch "about 10 m/s" (secondhand) | **Consistent.** The captive 3.9–5.2 m/s estimates would not be enough to glide |
-| Flying fish | 32.9–71.8 m for a 15–20 m/s launch, 5.0 m at the 10 m/s adult default (identical to `glide.mjs`) | Glides "up to 50 m" at 15–20 m/s (secondhand) | **Inside the 15–20 m/s band, but partly circular.** The airspeed comes from the same observation, and real fish reach it by taxiing, which is not modelled. The earlier energy-height version (22 m) was replaced so the studio gives one number |
+| Flying fish | 32.9–71.8 m for a 15–20 m/s launch, 32.9 m at glide's 15 m/s adult default, 5.0 m for a 10 m/s leap with no taxi (identical to `glide.mjs`) | Glides "up to 50 m" at 15–20 m/s (secondhand) | **Inside the 15–20 m/s band, but partly circular.** The airspeed comes from the same observation, and real fish reach it by taxiing, which is not modelled. The earlier energy-height version (22 m) was replaced so the studio gives one number |
 | Adult zebrafish | C-start speed 0.84 m/s at 33 mm | Re 27,800 (Danos & Lauder 2012) | Read-back (A1), not a validation |
 | Larval zebrafish | Peak speed 0.2 m/s (input) | ~63 mm/s with DanioVision (van de Pol 2021) | A 3× spread between two measurements, set by frame rate; not a test |
 
@@ -190,7 +190,7 @@ Zebrafish ages: STATE `ageDays` counts days post-hatching, and zebrafish hatch a
 
 - **Adult zebrafish escape speed** is one lab's mean of 5 fish, applied per SL. Flying fish speed is a tail-beat estimate.
 - **The predator's survives** is a geometric threshold whose defaults come from one lab's modelled example.
-- **The aerial escape** is glide.mjs's model. It relies on the assumed 1.98965 lift-area bridge, aerodynamics from stuffed specimens and glide's launch-speed rule (10 m/s for adults, 30 BL/s below adult size).
+- **The aerial escape** is glide.mjs's model. It relies on the assumed 1.98965 lift-area bridge, aerodynamics from stuffed specimens and glide's launch-speed rule (15 m/s taxi-end for adults, 30 BL/s capped at 10 m/s below adult size). With the default 15 m/s, the 32.9 m glide lies inside the band defined by the very observation it is compared with, so that comparison is circular.
 - **Sleep and day/night** are lookup tables. Their only independent cross-checks disagree by 1.5–3×, because labs define sleep and activity differently.
 - **Digestion** uses a husbandry ration, not a measured intake, and borrows SDA and faecal loss from marine larvae. Its one real validation fails by 3×.
 - **Grip's only validation** is arithmetic. With no structure, the result is an anatomical inference.

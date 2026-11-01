@@ -7,7 +7,7 @@
 // Fixtures are hand-built STATE objects (zebrafish larva, zebrafish adult, flying fish adult); their
 // numbers are plausible test inputs, labelled 'assumed', not data.
 import { loadScenarios, runScenario, validateResult } from '../scenarios/index.mjs';
-import glideMod from '../scenarios/glide.mjs';
+import glideMod, { launchSpeed } from '../scenarios/glide.mjs';
 
 const F = (value, unit = null, kind = 'assumed', source = 'test fixture') => ({ value, unit, kind, source });
 const base = (o) => ({
@@ -66,8 +66,10 @@ console.log('predator');
   check('larval peak speed is the absolute 0.2 m/s at 26 C (secondhand; no assumed larval length), BL/s = U/SL', r => near(mv(r, 'peak_escape_speed_m_s'), 0.2, 1e-6) && near(mv(r, 'peak_escape_speed_BL_s'), 0.2 / 0.0045, 0.01), run('predator', withT(FIX.zebrafish_larva, 26)), L);
   check('flying fish: glide minimum speed 9.4-10.4 m/s (field launch ~10 m/s)', r => mv(r, 'aerial_glide_min_speed_m_s') > 9.4 && mv(r, 'aerial_glide_min_speed_m_s') < 10.4, FF, A);
   const FF10 = run('predator', FIX.flying_fish_adult, { launch_speed_m_s: 10 });
-  check('flying fish at the sourced 10 m/s leap: aerial escape available (feasible); adult zebrafish: not', ([f, z]) => mv(f, 'aerial_escape_available') === true && f.feasible === true && mv(z, 'aerial_escape_available') === false && z.feasible === false, [FF10, A], [A, FF10]);
-  check('default launch speed comes from glide.mjs (adult flying fish 10 m/s): same takeoff verdict as the explicit 10 m/s what-if', r => mv(r, 'aerial_escape_available') === mv(FF10, 'aerial_escape_available') && near(mv(r, 'aerial_escape_distance_m'), mv(FF10, 'aerial_escape_distance_m'), 1e-6), FF, run('predator', FIX.flying_fish_adult, { launch_speed_m_s: 6 }));
+  check('flying fish at a 10 m/s leap what-if: aerial escape available (feasible); adult zebrafish: not', ([f, z]) => mv(f, 'aerial_escape_available') === true && f.feasible === true && mv(z, 'aerial_escape_available') === false && z.feasible === false, [FF10, A], [A, FF10]);
+  const glideLaunch = launchSpeed(FIX.flying_fish_adult, 0).value; // read from glide.mjs, never hard-coded
+  const FFg = run('predator', FIX.flying_fish_adult, { launch_speed_m_s: glideLaunch });
+  check('default launch speed is glide.mjs launchSpeed (' + glideLaunch + ' m/s now): same verdict and distance as that explicit what-if', r => typeof glideLaunch === 'number' && mv(r, 'aerial_escape_available') === mv(FFg, 'aerial_escape_available') && near(mv(r, 'aerial_escape_distance_m'), mv(FFg, 'aerial_escape_distance_m'), 1e-6) && r.provenance.some(q => /launch/.test(q.quantity) && q.value === glideLaunch), FF, run('predator', FIX.flying_fish_adult, { launch_speed_m_s: 6 }));
   for (const v of [0, 10, 15, 20]) {
     const pr = run('predator', FIX.flying_fish_adult, { launch_speed_m_s: v });
     const gl = runScenario(glideMod, FIX.flying_fish_adult, { launch_airspeed_override_m_s: v });
