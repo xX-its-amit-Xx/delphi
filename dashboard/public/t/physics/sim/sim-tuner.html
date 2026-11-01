@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parameter tuner and sweep</title>
+<meta name="description" content="Every tunable parameter of the flying-fish flight solver in one panel, with its provenance kind and source, and exhaustive 1-D, 2-D and batch sweeps of the real solver with the infeasible and Lean-law-violating regions marked.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M7 22 L13 12 L19 17 L25 9' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--accent-ink:#fff;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--viol:#6b4fb3;--soft:#eef2ef;--code:#f0f3f1;--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--code:#0f1a19;--s1:#3987e5;--s2:#d95926;--s3:#199e70;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--code:#0f1a19;--s1:#3987e5;--s2:#d95926;--s3:#199e70;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;gap:12px;align-items:center;padding:8px 16px;flex-wrap:wrap}
+.brand{font-weight:700}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px;border-radius:8px}
+button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button[disabled]{opacity:.5;cursor:default}
+select,input[type=text],input[type=number]{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:4px 6px;max-width:100%;min-width:0}
+select{max-width:min(calc(100vw - 76px),340px);text-overflow:ellipsis}
+label.small{display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%}
+label.small select{flex:0 1 auto}
+h1{font-size:clamp(1.3rem,3vw,1.9rem);margin:18px 0 6px} h2{font-size:1.2rem;margin:0 0 .4em} h3{font-size:1.05rem;margin:0 0 .4em}
+.lede{color:var(--mute);max-width:80ch}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:12px 0}
+.grid{display:grid;gap:12px} .g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))}
+canvas{width:100%;height:auto;display:block;background:var(--panel);border:1px solid var(--line);border-radius:10px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.small{font-size:.83rem} .mute{color:var(--mute)}
+code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9em;background:var(--code);padding:0 4px;border-radius:4px;overflow-wrap:anywhere}
+.chip{display:inline-block;padding:0 8px;border-radius:99px;font-size:.75rem;border:1px solid var(--line);background:var(--soft);color:var(--mute)}
+.chip.m{color:var(--ok);border-color:var(--ok)} .chip.a{color:var(--warn);border-color:var(--warn)} .chip.h{color:var(--bad);border-color:var(--bad)} .chip.v{color:var(--viol);border-color:var(--viol)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:.8rem;color:var(--mute);margin:6px 0 0}
+.legend b{color:var(--ink);font-weight:600}
+.key{display:inline-flex;gap:6px;align-items:center;white-space:nowrap}
+.sw{width:16px;height:4px;border-radius:2px;display:inline-block;flex:0 0 16px}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:8px 0 0}
+.kpi div{border:1px solid var(--line);border-radius:10px;padding:7px 10px;background:var(--soft)}
+.kpi b{display:block;font-size:1.2rem;line-height:1.15}
+.kpi small{color:var(--mute);font-size:.74rem}
+.scroll{overflow-x:auto}
+table.sw-tab,table.rep{border-collapse:collapse;width:100%;font-size:.8rem}
+table.sw-tab th,table.sw-tab td,table.rep th,table.rep td{text-align:left;padding:3px 6px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap}
+table.sw-tab td.n,table.rep td.n{font-variant-numeric:tabular-nums}
+table.sw-tab th,table.rep th{color:var(--mute);font-weight:600;position:sticky;top:0;background:var(--panel)}
+table.rep td{white-space:normal}
+.tabwrap{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+.prog{height:8px;border-radius:99px;background:var(--soft);border:1px solid var(--line);overflow:hidden;margin:6px 0}
+.prog i{display:block;height:100%;background:var(--accent);width:0}
+.banner{border-left:5px solid var(--warn);background:color-mix(in srgb,var(--warn) 8%,transparent)}
+.err{border-left:5px solid var(--bad);background:color-mix(in srgb,var(--bad) 8%,transparent)}
+footer{padding:20px 0;color:var(--mute);font-size:.85rem}
+@media (max-width:560px){.wrap{padding:0 12px}.card{padding:10px 11px}table.sw-tab,table.rep{font-size:.74rem}.kpi{grid-template-columns:repeat(auto-fit,minmax(118px,1fr))}.kpi b{font-size:1rem}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <a href="index.html" style="text-decoration:none;color:var(--mute)">&larr; Simulator</a>
+  <span class="brand">Parameter tuner and sweep</span>
+  <span class="chip a" id="scopeChip">exploratory</span>
+  <button id="themeBtn" style="margin-left:auto">Theme</button>
+</div></header>
+
+<main class="wrap">
+<h1>Every parameter of the flight solver, and what happens when you move it</h1>
+<p class="lede">The panel below is generated from a declared schema, not hand-written, so no input of the simulator can be left out of it. Each row carries its provenance kind and its source, and a parameter moved off the value its source supports says so in words. The sweeps run the <b>real solver</b>: <code>sweep.js</code> fetches <code>index.html</code> and lifts its own integrator functions out of it by name, so there is no second copy of the equations here to drift from the first.</p>
+
+<div class="card banner" id="scopeCard">
+  <b>Scope.</b> A sweep moves parameters off the values <code>params.json</code> sources, so <b>no point in a sweep except the committed one is a pre-registered test</b> (see <a href="../data/sim/PREREG.md">PREREG.md</a>, <a href="../data/sim/RUNS.md">RUNS.md</a>). The comparison targets on the simulator page are second-hand field figures. The Lean verdicts shown here come from <code>/api/lean/</code> through <code>lean-client.js</code> and <b>evaluate the same formulas in floating point: they are not kernel checks</b>. The physiology chain is off in a sweep, as it is in the page's default run. No bird data anywhere (class Aves is the frozen holdout). This page never writes to <code>index.html</code>.
+</div>
+
+<div class="card err" id="errCard" hidden></div>
+
+<div class="card">
+  <h2>1 &middot; Parameters</h2>
+  <div id="panel"></div>
+</div>
+
+<div class="card">
+  <h2>2 &middot; This parameter set, run once through the real solver</h2>
+  <div class="row"><button id="runOne" class="on">Run this set</button><span class="small mute" id="oneSrc"></span></div>
+  <div class="kpi" id="oneKpi"></div>
+  <div class="small" id="oneLean" style="margin-top:8px"></div>
+</div>
+
+<div class="card">
+  <h2>3 &middot; Sweep</h2>
+  <div class="row" style="margin-bottom:8px">
+    <label class="small">kind <select id="swKind"><option value="1d">1-D (outcome curve)</option><option value="2d">2-D (heatmap)</option><option value="batch">batch (saved sets)</option></select></label>
+    <label class="small" data-k="1d 2d">x <select id="swX"></select></label>
+    <label class="small" data-k="1d 2d">from <input type="number" id="swXa" step="any" size="6"></label>
+    <label class="small" data-k="1d 2d">to <input type="number" id="swXb" step="any" size="6"></label>
+    <label class="small" data-k="1d 2d">steps <input type="number" id="swXn" value="41" min="2" max="400" style="width:7ch"></label>
+  </div>
+  <div class="row" style="margin-bottom:8px">
+    <label class="small" data-k="2d">y <select id="swY"></select></label>
+    <label class="small" data-k="2d">from <input type="number" id="swYa" step="any" size="6"></label>
+    <label class="small" data-k="2d">to <input type="number" id="swYb" step="any" size="6"></label>
+    <label class="small" data-k="2d">steps <input type="number" id="swYn" value="21" min="2" max="200" style="width:7ch"></label>
+    <label class="small">plot <select id="swMetric"></select></label>
+    <label class="small">cap <input type="number" id="swCap" value="900" min="1" max="20000" style="width:8ch"></label>
+  </div>
+  <div class="row">
+    <button id="swRun" class="on">Run sweep</button>
+    <button id="swCancel" disabled>Cancel</button>
+    <button id="swCsv" disabled>Export CSV</button>
+    <button id="swJson" disabled>Export JSON</button>
+    <span class="small mute" id="swStat">no sweep run yet</span>
+  </div>
+  <div class="prog"><i id="swBar"></i></div>
+  <div id="swCharts"></div>
+  <div class="small" id="swLean" style="margin-top:10px"></div>
+  <h3 style="margin-top:14px">Table view</h3>
+  <p class="small mute" style="margin:0 0 6px">The chart's WCAG-clean twin: every value the heatmap and the overlays encode is readable here as text.</p>
+  <div class="tabwrap scroll" id="swTable"></div>
+</div>
+
+<div class="card">
+  <h2>4 &middot; Constants that should be tunable but are hard-coded</h2>
+  <p class="small mute">Read out of <code>index.html</code>'s solver and listed, not changed: this page does not own that file. Each row is a number the model's answer depends on that has no field in <code>params.json</code> and no slider anywhere.</p>
+  <div class="scroll" id="hardTable"></div>
+</div>
+
+<div class="card">
+  <h2>5 &middot; The schema</h2>
+  <div class="small" id="schemaSummary"></div>
+  <div class="scroll" id="schemaTable" style="margin-top:8px"></div>
+</div>
+
+<footer>Physics thread of DELPHI. Modules: <code>params-panel.js</code>, <code>sweep.js</code>. Solver: <code>index.html</code> (not edited here). Laws: <code>/api/lean/</code> via <code>blueprint3d/lean-client.js</code>; law ids and statuses are read from the lawset, never written in this page.</footer>
+</main>
+
+<script type="module">
+import { buildSchema, mountParams, sourcedDefaults, decodeFromQuery, movedKeys, checkConstraints,
+         KINDS, GROUPS, CONSTRAINTS } from './params-panel.js';
+import { extractSolver, applyValues, outcomesOf, runSweep, planSweep, METRICS,
+         drawCurve, drawHeatmap, heatLegendHtml, tableHtml, toCSV, toJSON, download, leanCheck } from './sweep.js';
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const sig = v => v == null ? '—' : (typeof v === 'number' ? (Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 1 ? v.toFixed(2) : v.toFixed(3)) : String(v));
+
+(function () {
+  const root = document.documentElement, q = new URLSearchParams(location.search).get('theme');
+  if (q === 'dark' || q === 'light') root.setAttribute('data-theme', q);
+  else { try { const s = localStorage.getItem('theme'); if (s) root.setAttribute('data-theme', s); } catch (e) { } }
+  $('#themeBtn').onclick = () => {
+    const cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+    const nx = cur === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', nx);
+    try { localStorage.setItem('theme', nx); } catch (e) { }
+    redrawSweep();
+  };
+})();
+
+function fail(msg) { const c = $('#errCard'); c.hidden = false; c.innerHTML = '<b>Could not start.</b> ' + esc(msg); console.error(msg); }
+
+let SCHEMA = null, PANEL = null, SOLVER = null, BASE = null, LAST = null, CANCEL = false;
+const T = window.__tuner = { ready: false, errors: [] };
+addEventListener('error', e => T.errors.push(String(e.message)));
+
+// ---------------------------------------------------------------- boot
+try {
+  const [params, geJson, baseline, solver] = await Promise.all([
+    fetch('params.json').then(r => r.json()),
+    fetch('../data/ground-effect.json').then(r => r.json()),
+    fetch('../data/baseline.json').then(r => r.json()),
+    extractSolver('index.html'),
+  ]);
+  SOLVER = solver;
+  SCHEMA = buildSchema(params, baseline, geJson, 0);
+  BASE = { params, groundEffect: geJson, baselineConditions: baseline.conditions, fishIndex: 0 };
+  $('#oneSrc').textContent = 'solver lifted from ' + SOLVER.url.replace(/^.*\//, '') + ' (' + SOLVER.bytes.toLocaleString() + ' bytes read, ' + SOLVER.fns.length + ' functions: ' + SOLVER.fns.join(', ') + ')';
+
+  const start = decodeFromQuery(SCHEMA, location.search, sourcedDefaults(SCHEMA));
+  PANEL = mountParams($('#panel'), {
+    schema: SCHEMA, values: start.values,
+    onChange() { runOne(); updateScope(); },
+  });
+  T.schema = SCHEMA; T.panel = PANEL; T.solver = SOLVER; T.base = BASE;
+
+  renderSchemaCards();
+  fillSweepControls();
+  runOne();
+  updateScope();
+  T.ready = true;
+  document.body.dataset.ready = '1';
+} catch (e) { fail(e && e.message || String(e)); T.errors.push(String(e && e.message || e)); }
+
+function updateScope() {
+  const mv = movedKeys(SCHEMA, PANEL.get());
+  const broken = checkConstraints(PANEL.get());
+  const c = $('#scopeChip');
+  c.textContent = mv.length ? 'exploratory: ' + mv.length + ' moved off source' : 'the committed params.json set';
+  c.className = 'chip ' + (mv.length ? 'a' : 'm');
+  if (broken.length) { c.textContent += ', ' + broken.length + ' constraint broken'; c.className = 'chip h'; }
+}
+
+// ---------------------------------------------------------------- one run, in-thread
+function solveInThread(values) {
+  const z = applyValues(SCHEMA, values, BASE);
+  const flags = new URLSearchParams(Object.entries(z.flags));
+  const PRE = 'let CUR=null,physOn=false,physMod=null,BASE=null,GE_OFF=false;const location={search:""};\n';
+  const api = new Function('P', 'ge', 'FLAGS', 'fish', PRE + SOLVER.source + '\nreturn {derive:derive,solveWith:solveWith};')(z.P, z.ge, flags, z.fish);
+  const tmax = +z.flags.tmax || 60;
+  const S = api.solveWith({ fish: z.fish, groundEffect: z.geOn }, tmax);
+  return outcomesOf(S, { geOn: !!z.ge && z.geOn, tmax, SL_m: z.fish.standard_length_m.value, rho_air: z.P.constants.rho_air.value, g: z.P.constants.g.value });
+}
+
+async function runOne() {
+  let o;
+  try { o = solveInThread(PANEL.get()); }
+  catch (e) { $('#oneKpi').innerHTML = '<div style="grid-column:1/-1;color:var(--bad)">the solver threw: ' + esc(e.message) + '</div>'; return; }
+  T.one = o;
+  const K = [
+    ['glide range, Lean-covered', sig(o.range_glide_lean_m) + ' m', 'sum of the unpowered glides; what C15 is about'],
+    ['range, total', sig(o.range_total_m) + ' m', 'taxi + glides; outside the Lean model'],
+    ['longest single glide', sig(o.range_glide_longest_m) + ' m', 'C15 bound here: ' + sig(o.lean_glide_bound_m) + ' m'],
+    ['v_min', sig(o.v_min_m_s) + ' m/s', 'from C_L,max (C9)'],
+    ['launch speed', sig(o.v_takeoff_m_s) + ' m/s', o.v_takeoff_m_s == null ? 'never left the water' : (o.v_takeoff_m_s >= o.v_min_m_s ? 'clears v_min' : 'BELOW v_min')],
+    ['time aloft', sig(o.time_aloft_s) + ' s', 'of ' + sig(o.time_total_s) + ' s total'],
+    ['feasible', o.feasible ? 'yes' : 'no', o.feasible ? 'glides, launching at or above v_min' : o.infeasible_why.join('; ')],
+    ['glides', String(o.glides), 'stopped by ' + o.stopped_by],
+  ];
+  $('#oneKpi').innerHTML = K.map(k => '<div><small>' + esc(k[0]) + '</small><b>' + esc(k[1]) + '</b><small>' + esc(k[2]) + '</small></div>').join('');
+  try {
+    const row = { lean_state: o.lean_state, at: {} };
+    const sum = await leanCheck([row], {});
+    o.lean_violations = row.lean_violations; o.lean_violating = row.lean_violating;
+    $('#oneLean').innerHTML = '<b>Lean</b> lawset ' + esc(sum.lawset) + ' (' + sum.accepted_in_set + ' accepted laws of ' + sum.laws_in_set + '), from ' + esc(sum.source) + '. ' +
+      (row.lean_violating
+        ? row.lean_violations.map(v => '<span class="chip v">' + esc(v.law_id) + ' / ' + esc(v.constraint) + '</span> ' + esc(v.message)).join('<br>')
+        : '<span class="chip m">no accepted law violated by this state</span>') +
+      '<br><span class="mute">The state names no taxon, so the taxon-scoped laws (E2&ndash;E7, P1&ndash;P5, C2a, C7b, C8*, C9c, G1&ndash;G5) are out of scope and only the taxon-free flight laws are evaluated. That is a narrowing, stated rather than hidden: naming the taxon would evaluate a sustained-aerobic-power law on a fish that does not fly under power.</span>';
+  } catch (e) { $('#oneLean').innerHTML = '<span class="mute">law check unavailable: ' + esc(e.message) + ' (the sweep still runs; only the law column is empty)</span>'; }
+}
+$('#runOne').onclick = runOne;
+
+// ---------------------------------------------------------------- sweep controls
+function fillSweepControls() {
+  const opts = SCHEMA.filter(p => p.settable && p.type === 'number')
+    .map(p => '<option value="' + esc(p.key) + '">' + esc(p.group) + ' &middot; ' + esc(p.label) + (p.unit !== '1' ? ' (' + esc(p.unit) + ')' : '') + '</option>').join('');
+  $('#swX').innerHTML = opts; $('#swY').innerHTML = opts;
+  $('#swMetric').innerHTML = METRICS.map(m => '<option value="' + esc(m.key) + '">' + esc(m.label) + (m.unit !== '1' ? ' (' + esc(m.unit) + ')' : '') + '</option>').join('');
+  $('#swX').value = 'approach_speed_m_s'; $('#swY').value = 'CL_max';
+  const sync = (sel, a, b) => { const p = SCHEMA.find(x => x.key === $(sel).value); if (p) { $(a).value = p.min; $(b).value = p.max; } };
+  $('#swX').onchange = () => sync('#swX', '#swXa', '#swXb');
+  $('#swY').onchange = () => sync('#swY', '#swYa', '#swYb');
+  sync('#swX', '#swXa', '#swXb'); sync('#swY', '#swYa', '#swYb');
+  $('#swKind').onchange = kindVis; kindVis();
+}
+function kindVis() {
+  const k = $('#swKind').value;
+  for (const el of document.querySelectorAll('[data-k]')) el.style.display = el.dataset.k.split(' ').includes(k) ? '' : 'none';
+}
+
+function sweepDecl() {
+  const k = $('#swKind').value;
+  if (k === '1d') return { kind: '1d', key: $('#swX').value, from: +$('#swXa').value, to: +$('#swXb').value, steps: +$('#swXn').value };
+  if (k === '2d') return { kind: '2d', x: { key: $('#swX').value, from: +$('#swXa').value, to: +$('#swXb').value, steps: +$('#swXn').value }, y: { key: $('#swY').value, from: +$('#swYa').value, to: +$('#swYb').value, steps: +$('#swYn').value } };
+  let names = []; try { names = Object.keys(JSON.parse(localStorage.getItem('delphi.sim.paramsets.v1') || '{}')); } catch (e) { }
+  const store = (() => { try { return JSON.parse(localStorage.getItem('delphi.sim.paramsets.v1') || '{}'); } catch (e) { return {}; } })();
+  const sets = [{ name: 'sourced defaults', values: sourcedDefaults(SCHEMA) }, { name: 'current panel', values: PANEL.get() }]
+    .concat(names.map(n => ({ name: n, values: store[n].values })));
+  return { kind: 'batch', sets };
+}
+
+$('#swCancel').onclick = () => { CANCEL = true; $('#swStat').textContent = 'cancelling…'; };
+$('#swRun').onclick = async () => {
+  CANCEL = false;
+  $('#swRun').disabled = true; $('#swCancel').disabled = false;
+  $('#swCsv').disabled = true; $('#swJson').disabled = true;
+  const bar = $('#swBar');
+  try {
+    const decl = sweepDecl();
+    const plan = planSweep(SCHEMA, PANEL.get(), decl);
+    $('#swStat').textContent = plan.jobs.length + ' points planned…';
+    const res = await runSweep({
+      schema: SCHEMA, values: PANEL.get(), sweep: decl, solve: SOLVER, base: BASE,
+      cap: +$('#swCap').value || 900,
+      onProgress: p => {
+        if (CANCEL) throw new Error('cancelled');
+        bar.style.width = Math.round(100 * p.done / Math.max(1, p.total)) + '%';
+        $('#swStat').textContent = (p.phase === 'lean' ? 'checking laws ' : 'solving ') + p.done + ' / ' + p.total;
+      },
+    });
+    LAST = res; T.lastSweep = res;
+    bar.style.width = '100%';
+    const nInf = res.rows.filter(r => r && !r.feasible).length, nV = res.rows.filter(r => r && r.lean_violating).length;
+    $('#swStat').textContent = res.rows.length + ' points in ' + (res.ms / 1000).toFixed(1) + ' s — ' +
+      (res.rows.length - nInf) + ' feasible, ' + nInf + ' infeasible, ' + nV + ' violating an accepted law' +
+      (res.capped ? ' (' + res.capped + ' points past the cap were not run)' : '');
+    redrawSweep();
+    $('#swCsv').disabled = false; $('#swJson').disabled = false;
+    document.body.dataset.sweepDone = '1';
+  } catch (e) {
+    $('#swStat').textContent = (e.message === 'cancelled' ? 'cancelled' : 'sweep failed: ' + e.message);
+    if (e.message !== 'cancelled') { console.error(e); T.errors.push(String(e.message)); }
+  } finally { $('#swRun').disabled = false; $('#swCancel').disabled = true; }
+};
+
+function redrawSweep() {
+  if (!LAST) return;
+  const res = LAST, metric = METRICS.find(m => m.key === $('#swMetric').value) || METRICS[0];
+  const box = $('#swCharts');
+  const nInf = res.rows.filter(r => r && !r.feasible).length, nV = res.rows.filter(r => r && r.lean_violating).length;
+  if (res.plan.kind === '1d') {
+    box.innerHTML =
+      '<h3 style="margin-top:12px">Distance against ' + esc(res.plan.axes[0].label) + '</h3><canvas id="c1" height="260"></canvas><div class="legend" id="l1"></div>' +
+      '<h3 style="margin-top:14px">Speed against ' + esc(res.plan.axes[0].label) + '</h3><canvas id="c2" height="230"></canvas><div class="legend" id="l2"></div>' +
+      '<p class="small mute">Two charts, one quantity each: metres and metres per second never share an axis.</p>';
+    drawCurve($('#c1'), { rows: res.rows, axis: res.plan.axes[0], yLabel: 'distance (m)', height: 260, series: [{ key: 'range_glide_lean_m' }, { key: 'range_total_m' }, { key: 'lean_glide_bound_m' }] });
+    drawCurve($('#c2'), { rows: res.rows, axis: res.plan.axes[0], yLabel: 'speed (m/s)', height: 230, series: [{ key: 'v_takeoff_m_s' }, { key: 'v_min_m_s' }] });
+    const ov = '<span class="key"><svg width="18" height="12" aria-hidden="true"><path d="M0 12 L12 0 M6 12 L18 0" stroke="currentColor" stroke-width="1.4" fill="none"/></svg> infeasible (' + nInf + ' points)</span>' +
+      '<span class="key" style="color:var(--viol)"><svg width="18" height="12" aria-hidden="true"><path d="M0 0 L12 12 M6 0 L18 12" stroke="currentColor" stroke-width="1.4" fill="none"/></svg> violates an accepted Lean law (' + nV + ')</span>';
+    $('#l1').innerHTML = '<span class="key" style="color:var(--s1)"><i class="sw" style="background:var(--s1)"></i>glide range, Lean-covered</span>' +
+      '<span class="key" style="color:var(--s2)"><i class="sw" style="background:var(--s2)"></i>range, total (taxi + glides)</span>' +
+      '<span class="key" style="color:var(--s3)"><i class="sw" style="background:var(--s3)"></i>C15 bound h(L/D)max/(1-ge)</span>' + ov;
+    $('#l2').innerHTML = '<span class="key" style="color:var(--s1)"><i class="sw" style="background:var(--s1)"></i>launch speed</span>' +
+      '<span class="key" style="color:var(--s2)"><i class="sw" style="background:var(--s2)"></i>v_min</span>' + ov;
+  } else if (res.plan.kind === '2d') {
+    box.innerHTML = '<h3 style="margin-top:12px">' + esc(metric.label) + '</h3><canvas id="c1" height="360"></canvas><div id="l1"></div>';
+    const F = drawHeatmap($('#c1'), { rows: res.rows, axes: res.plan.axes, metric, height: 360 });
+    $('#l1').innerHTML = heatLegendHtml(metric, F.lo, F.hi, { infeasible: nInf, violating: nV });
+  } else {
+    box.innerHTML = '<p class="small mute" style="margin-top:12px">Batch mode: ' + res.rows.length + ' named parameter sets. Read the results in the table below; a bar chart of one metric across named sets would hide the other columns.</p>';
+  }
+  const L = res.lean;
+  $('#swLean').innerHTML = !L ? '' : L.error ? '<span class="mute">law check unavailable: ' + esc(L.error) + '</span>' :
+    '<b>Lean</b> lawset ' + esc(L.lawset) + ', ' + L.accepted_in_set + ' accepted laws of ' + L.laws_in_set + ', from ' + esc(L.source) + '. ' +
+    L.violating_points + ' of ' + L.checked + ' points violate an accepted law.' +
+    (L.laws_violated.length ? '<ul style="margin:5px 0 0 18px">' + L.laws_violated.map(l => '<li><span class="chip v">' + esc(l.law_id) + ' / ' + esc(l.constraint) + '</span> ' + l.n + ' points &mdash; ' + esc(l.message) + '</li>').join('') + '</ul>' : '') +
+    '<p class="small mute" style="margin:6px 0 0">Law ids, versions and statuses come from the lawset; none is written in this page. Only the taxon-free flight laws are in scope here (see section 2).</p>';
+  $('#swTable').innerHTML = tableHtml(res);
+}
+$('#swMetric').onchange = redrawSweep;
+addEventListener('resize', () => { clearTimeout(window.__rz); window.__rz = setTimeout(redrawSweep, 120); });
+
+$('#swCsv').onclick = () => download('sim-sweep.csv', toCSV(LAST), 'text/csv');
+$('#swJson').onclick = () => download('sim-sweep.json', toJSON(LAST, { solver: { url: SOLVER.url, bytes: SOLVER.bytes, functions: SOLVER.fns } }), 'application/json');
+
+// ---------------------------------------------------------------- schema + hard-coded report
+function renderSchemaCards() {
+  const hard = SCHEMA.filter(p => !p.settable);
+  $('#hardTable').innerHTML = '<table class="rep"><thead><tr><th>what</th><th>value</th><th>where in index.html</th><th>why it matters</th></tr></thead><tbody>' +
+    hard.map(p => '<tr><td>' + esc(p.label) + '</td><td class="n">' + esc(String(p.default)) + (p.unit !== '1' && p.unit !== '-' ? ' ' + esc(p.unit) : '') + '</td><td><code>' + esc(p.path.where) + '</code></td><td>' + esc(p.source) + '</td></tr>').join('') +
+    '</tbody></table><p class="small mute">' + hard.length + ' hard-coded constants. Also recorded: <code>pitch_at_leap_deg</code> is a measured input that <code>derive()</code> turns into <code>d.pitch</code> and no equation reads, and <code>phaseOf()</code> is dead code (already in NOTES-FOR-HUB.md item 5).</p>';
+
+  const set = SCHEMA.filter(p => p.settable);
+  const byKind = {}; for (const p of set) byKind[p.kind] = (byKind[p.kind] || 0) + 1;
+  $('#schemaSummary').innerHTML = '<b>' + SCHEMA.length + '</b> parameters: ' + set.length + ' tunable, ' + (SCHEMA.length - set.length) + ' hard-coded. ' +
+    'Tunable by kind: ' + KINDS.filter(k => byKind[k]).map(k => byKind[k] + ' ' + k).join(', ') + '. ' +
+    'By group: ' + GROUPS.map(g => SCHEMA.filter(p => p.group === g.id).length + ' ' + g.id).join(', ') + '. ' +
+    CONSTRAINTS.length + ' declared cross-parameter constraints the solver does not enforce.';
+  $('#schemaTable').innerHTML = '<table class="rep"><thead><tr><th>key</th><th>group</th><th>kind</th><th>params.json word</th><th>default</th><th>range</th><th>read by</th></tr></thead><tbody>' +
+    SCHEMA.map(p => '<tr><td><code>' + esc(p.key) + '</code></td><td>' + esc(p.group) + '</td><td>' + esc(p.settable ? p.kind : 'hard-coded') + '</td><td>' + esc(p.raw_kind) + '</td><td class="n">' + esc(String(p.default)) + '</td><td class="n">' + (p.settable && p.type === 'number' ? esc(sig(p.min) + ' – ' + sig(p.max)) + ' <span class="mute">' + (p.range_kind === 'sourced-range' ? '(params.json)' : '(panel)') + '</span>' : '—') + '</td><td>' + esc(p.used_by || '') + '</td></tr>').join('') +
+    '</tbody></table>';
+}
+
+// hooks the headless check drives
+T.solveInThread = solveInThread;
+T.runSweepNow = async decl => {
+  const res = await runSweep({ schema: SCHEMA, values: PANEL.get(), sweep: decl, solve: SOLVER, base: BASE, cap: 2000 });
+  LAST = res; T.lastSweep = res; redrawSweep();
+  $('#swCsv').disabled = false; $('#swJson').disabled = false;
+  document.body.dataset.sweepDone = '1';
+  return res.rows.map(r => ({ at: r.at, feasible: r.feasible, v_min: r.v_min_m_s, v_takeoff: r.v_takeoff_m_s, glide: r.range_glide_lean_m, total: r.range_total_m, aloft: r.time_aloft_s, violating: r.lean_violating, why: r.infeasible_why }));
+};
+T.setKind = k => { $('#swKind').value = k; kindVis(); };
+</script>
+</body>
+</html>

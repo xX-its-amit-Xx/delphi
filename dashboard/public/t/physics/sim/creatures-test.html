@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Creatures harness</title>
+<meta name="description" content="Standalone harness for creatures.js: the stochastic ensemble that drives the modelled flying fish (physics) and the decorative ambient school, predator and distant gliders, kept visibly apart.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M6 20 Q16 6 26 20' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+<!-- same three.js build and addon host as blueprint3d/explode.html and sim/index.html, so every page shares one cache -->
+<script type="importmap">{"imports":{"three":"https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<style>
+/* Tokens copied verbatim from sim/index.html so this harness and the simulator read as one page. */
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--accent-ink:#fff;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--soft:#eef2ef;--code:#f0f3f1;--water:#cfe6ec;--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--soft:#192b29;--code:#0f1a19;--water:#173a43;--s1:#3987e5;--s2:#d95926;--s3:#199e70}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--soft:#192b29;--code:#0f1a19;--water:#173a43;--s1:#3987e5;--s2:#d95926;--s3:#199e70}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+h1{font-size:clamp(1.25rem,3vw,1.8rem);margin:16px 0 4px}
+h2{font-size:1.1rem;margin:0 0 .35em}
+.lede{color:var(--mute);max-width:80ch;margin:.2em 0 1em}
+.grid{display:grid;gap:12px}.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px;min-width:0}
+canvas{width:100%;height:auto;display:block;background:var(--panel);border:1px solid var(--line);border-radius:10px;max-width:100%}
+.chip{display:inline-block;padding:0 8px;border-radius:99px;font-size:.75rem;border:1px solid var(--line);background:var(--soft);color:var(--mute);vertical-align:middle}
+.chip.m{color:var(--ok);border-color:var(--ok)}.chip.s{color:var(--s1);border-color:var(--s1)}
+.chip.a{color:var(--warn);border-color:var(--warn)}.chip.h{color:var(--bad);border-color:var(--bad)}
+.small{font-size:.86rem}.mute{color:var(--mute)}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+table{width:100%;border-collapse:collapse;font-size:.84rem;display:block;overflow-x:auto}
+th,td{text-align:left;padding:4px 7px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;white-space:nowrap}
+td.n{text-align:right;font-family:ui-monospace,Consolas,monospace;white-space:nowrap}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:5px 11px;border-radius:8px}
+button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+input{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:4px 8px;border-radius:7px;max-width:11rem}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.banner{border-left:4px solid var(--accent);background:var(--soft);padding:8px 12px;border-radius:0 8px 8px 0;margin:0 0 12px}
+.banner.decor{border-left-color:var(--warn)}
+.creature-legend-item{border-top:1px solid var(--line);padding-top:8px;margin-top:8px}
+.creature-legend-item:first-child{border-top:0;margin-top:0;padding-top:0}
+.creature-legend ul{padding-left:1.1em;margin:.3em 0}
+#scene{width:100%;height:min(52vh,420px);border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--water)}
+#scene canvas{border:0;border-radius:0;height:100%!important}
+.pass{color:var(--ok)}.fail{color:var(--bad);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>creatures.js harness</h1>
+<p class="lede">Standalone test page for <span class="mono">creatures.js</span>. It does not load
+<span class="mono">scene3d.js</span>, <span class="mono">env3d.js</span> or
+<span class="mono">index.html</span> &mdash; the 3D view below is a bare camera, one light and a flat water
+plane, only enough to exercise the module. The two things the module does are kept apart on this page
+on purpose, and must stay apart wherever either appears.</p>
+
+<div id="legend" class="card"></div>
+
+<!-- ============================ SECTION A ============================ -->
+<div class="card">
+  <p class="banner"><span class="chip s">physics</span> <b>A. Stochastic driving of the modelled fish.</b>
+  Every random input is drawn from a stated distribution with a source. Seeded: the seed is in the URL
+  (<span class="mono">?cseed=</span>), and the same seed gives the same ensemble.</p>
+  <div class="row">
+    <label class="small mute">seed <input id="seed" class="mono" size="12"></label>
+    <label class="small mute">draws <input id="draws" class="mono" type="number" min="10" max="2000" step="10" value="300" style="max-width:6rem"></label>
+    <button id="rerun">Run ensemble</button>
+    <button id="newseed">New seed</button>
+    <span id="etime" class="small mute"></span>
+  </div>
+  <canvas id="plot" width="1100" height="440"></canvas>
+  <p class="small mute" id="plotcap"></p>
+  <h2 class="small" style="margin-top:12px">Ensemble statistics</h2><div id="stats"></div>
+  <h2 class="small" style="margin-top:12px">What was drawn, and from where</h2><div id="dists"></div>
+  <h2 class="small" style="margin-top:12px">What this ensemble cannot tell you</h2>
+  <ul class="small mute" id="scope"></ul>
+</div>
+
+<!-- ============================ SECTION B ============================ -->
+<div class="card">
+  <p class="banner decor"><span class="chip a">decorative</span> <b>B. Ambient creatures.</b>
+  The school, the predator and the distant gliding fish are scene dressing with invented motion.
+  Not evidence, no metric, not citable. <b>No birds:</b> Aves is the frozen holdout, so there is
+  nothing in the sky but flying fish.</p>
+  <div class="row">
+    <button id="pred">Predator: off</button>
+    <button id="glb">Reuse the real GLB mesh</button>
+    <span id="fps" class="small mute mono"></span>
+    <span id="glbinfo" class="small mute"></span>
+  </div>
+  <div id="scene"></div>
+  <p class="small mute" id="scenecap"></p>
+</div>
+
+<!-- ============================ CHECKS ============================ -->
+<div class="card">
+  <h2>Self-checks <span id="verdict" class="chip"></span></h2>
+  <p class="small mute">Browser-side checks. The ensemble arithmetic has its own node suite,
+  <span class="mono">creatures-test.mjs</span> (158 checks; <span class="mono">CREATURES_TEST_SABOTAGE=1</span>
+  fails all 158, so none is vacuous).</p>
+  <div id="checks"></div>
+</div>
+<p class="small mute" style="padding-bottom:24px">Console errors are a failure of this page. Open the console; it should be empty.</p>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import {
+  mountCreatures, makeSchool, makeEnsemble, makeRng, glideTrajectory, analyticBound,
+  perturbRun, DISTRIBUTIONS, SCOPE_NOTES, LEGEND, legendHtml, seedFromUrl, seedToUrl,
+  SPECIES_SCALE, glbScale, metresPerUnit, isFlier,
+} from './creatures.js';
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const f2 = x => (x == null ? '--' : (Math.abs(x) >= 100 ? x.toFixed(0) : Math.abs(x) >= 1 ? x.toFixed(2) : x.toFixed(3)));
+
+$('#seed').value = seedFromUrl();
+$('#legend').innerHTML = legendHtml();
+$('#scope').innerHTML = SCOPE_NOTES.map(s => `<li>${esc(s)}</li>`).join('');
+
+// Park & Choi 2010 specimen L3, the simulator's reference animal (params.json fish[0]).
+const L3 = {
+  id: 'cypselurus-hiraii-L3', species: 'Cypselurus hiraii',
+  mass_kg: { value: 0.06, kind: 'measured', source: 'park-choi-2010 Table 1 model L3' },
+  ref_area_m2: { value: 0.012688, kind: 'measured', source: 'park-choi-2010 Table 1 model L3: A1+A2+A3' },
+  span_m: { value: 0.261, kind: 'measured', source: 'park-choi-2010 Table 1 model L3' },
+  CL_max: { value: 0.78, kind: 'measured' }, LD_max: { value: 4.37, kind: 'measured' },
+  CD_min: { value: 0.055, kind: 'measured' }, CL_at_zero_deg: { value: 0.4, kind: 'assumed' },
+  stall_alpha_deg: { value: 35, kind: 'measured' }, glide_alpha_deg: { value: 5, kind: 'assumed' },
+  approach_angle_deg: { value: 10, kind: 'assumed' },
+  takeoff_speed_target_m_s: { value: 17.5, kind: 'assumed', source: 'params.json: the midpoint of the 15-20 m/s band' },
+};
+const ZF = {
+  id: 'zebrafish-winged-hypothetical', species: 'Danio rerio',
+  mass_kg: { value: 0.00051 }, ref_area_m2: { value: 0.000277 }, span_m: { value: 0.0386 },
+  CL_max: { value: 0.78 }, LD_max: { value: 4.37 }, CD_min: { value: 0.055 },
+  CL_at_zero_deg: { value: 0.4 }, stall_alpha_deg: { value: 35 }, glide_alpha_deg: { value: 5 },
+  approach_angle_deg: { value: 10 }, launch_airspeed_m_s: { value: 0.617, kind: 'calibrated' },
+};
+
+// ---------------------------------------------------------------- Section A: run and draw
+let E = null;
+function runEnsemble() {
+  const seed = $('#seed').value || 'delphi-v1';
+  const draws = Math.max(10, Math.min(2000, +$('#draws').value || 300));
+  const t0 = performance.now();
+  E = makeEnsemble({ draws, seed, baseParams: L3 });
+  const ms = performance.now() - t0;
+  $('#etime').textContent = `${draws} draws in ${ms.toFixed(0)} ms`;
+  history.replaceState(null, '', seedToUrl(location.href, seed));
+  drawPlot(); renderStats(); renderDists();
+  return E;
+}
+function renderDists() {
+  $('#dists').innerHTML = '<table><tr><th>quantity</th><th>shape</th><th>spread</th><th>kind of the spread</th><th>kind of the shape</th><th>where it comes from</th></tr>'
+    + E.distributions.map(d => {
+      const k = c => `<span class="chip ${c === 'measured' ? 'm' : c === 'measured-secondhand' ? 's' : c === 'borrowed' ? 's' : 'a'}">${esc(c)}</span>`;
+      const sp = d.band ? `${d.band[0]}&ndash;${d.band[1]} ${esc(d.unit)}` : d.cv != null ? `CV ${(d.cv * 100).toFixed(2)}%` : d.sd != null ? `sd ${d.sd} ${esc(d.unit)}` : 'derived from the sea state';
+      return `<tr><td style="min-width:16rem"><b>${esc(d.label)}</b><div class="small mute">${esc(d.unit)}${d.applies && d.applies !== 'all animals' ? ' &middot; ' + esc(d.applies) : ''}</div></td><td class="small">${esc(d.shape)}</td><td class="small">${sp}</td><td>${k(d.band_kind)}</td><td>${k(d.shape_kind)}</td><td style="min-width:22rem"><details><summary class="small mute">source</summary><div class="small mute">${esc(d.source)}</div></details></td></tr>`;
+    }).join('') + '</table>';
+}
+function renderStats() {
+  const row = (label, s, det, unit) => `<tr><td>${esc(label)} <span class="mute small">(${esc(unit)})</span></td><td class="n">${f2(s.p5)}</td><td class="n"><b>${f2(s.median)}</b></td><td class="n">${f2(s.p95)}</td><td class="n">${det == null ? '--' : f2(det)}</td><td class="n">${det != null && det >= s.p5 && det <= s.p95 ? '<span class="pass">in band</span>' : '<span class="fail">outside</span>'}</td></tr>`;
+  const d = E.deterministic;
+  $('#stats').innerHTML = '<table><tr><th>quantity</th><th>5th</th><th>median</th><th>95th</th><th>single run</th><th></th></tr>'
+    + row('glide range', E.stats.glide_range_m, d.range_m, 'm')
+    + row('time aloft', E.stats.time_aloft_s, d.time_s, 's')
+    + row('max height', E.stats.max_height_m, d.max_height_m, 'm')
+    + row('launch airspeed', E.stats.launch_airspeed_m_s, d.launch_airspeed_m_s, 'm/s')
+    + row('v_min', E.stats.v_min_m_s, d.v_min_m_s, 'm/s')
+    + row('wing loading', E.stats.wing_loading_N_m2, d.wing_loading_N_m2, 'N/m2')
+    + row("glide.mjs analytic bound, total", E.stats.analytic_total_m, d.analytic.total_m, 'm')
+    + `<tr><td>draws that can glide</td><td class="n" colspan="4">${(E.stats.can_glide_fraction * 100).toFixed(0)}%</td><td></td></tr>`
+    + '</table>';
+}
+function drawPlot() {
+  const c = $('#plot'), ctx = c.getContext('2d');
+  const W = c.width, H = c.height, m = { l: 56, r: 14, t: 14, b: 42 };
+  ctx.fillStyle = css('--panel'); ctx.fillRect(0, 0, W, H);
+  const xs = E.stats.glide_range_m, hs = E.stats.max_height_m;
+  const x1 = Math.max(10, xs.max * 1.05), y1 = Math.max(2, hs.max * 1.12);
+  const X = v => m.l + (v / x1) * (W - m.l - m.r), Y = v => H - m.b - (v / y1) * (H - m.t - m.b);
+  // axes
+  ctx.strokeStyle = css('--line'); ctx.fillStyle = css('--mute'); ctx.font = '12px system-ui'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(m.l, m.t); ctx.lineTo(m.l, H - m.b); ctx.lineTo(W - m.r, H - m.b); ctx.stroke();
+  for (let i = 0; i <= 6; i++) { const v = (x1 * i) / 6; ctx.beginPath(); ctx.moveTo(X(v), H - m.b); ctx.lineTo(X(v), H - m.b + 4); ctx.stroke(); ctx.fillText(v.toFixed(0), X(v) - 7, H - m.b + 18); }
+  for (let i = 0; i <= 5; i++) { const v = (y1 * i) / 5; ctx.beginPath(); ctx.moveTo(m.l, Y(v)); ctx.lineTo(m.l - 4, Y(v)); ctx.stroke(); ctx.fillText(v.toFixed(0), 18, Y(v) + 4); }
+  ctx.fillText('ground distance (m)', W / 2 - 50, H - 6);
+  ctx.save(); ctx.translate(14, H / 2 + 40); ctx.rotate(-Math.PI / 2); ctx.fillText('height above mean sea level (m)', 0, 0); ctx.restore();
+  // every draw, faint
+  ctx.lineWidth = 1; ctx.strokeStyle = css('--s1') + '33';
+  for (const r of E.runs) {
+    const p = r.result.pts; if (!p) continue;
+    ctx.beginPath(); for (let i = 0; i < p.length; i++) { const fx = X(p[i][0]), fy = Y(Math.max(0, p[i][1])); i ? ctx.lineTo(fx, fy) : ctx.moveTo(fx, fy); } ctx.stroke();
+  }
+  // the 5-95% band of the RANGE, marked on the surface line, plus the median
+  const band = (a, b, col) => { ctx.fillStyle = col; ctx.fillRect(X(a), H - m.b - 7, Math.max(1, X(b) - X(a)), 7); };
+  band(xs.p5, xs.p95, css('--s1') + '55');
+  ctx.strokeStyle = css('--s1'); ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(X(xs.median), H - m.b - 9); ctx.lineTo(X(xs.median), H - m.b); ctx.stroke();
+  // the deterministic single run, dashed
+  const dp = E.deterministic.pts;
+  if (dp) { ctx.setLineDash([6, 4]); ctx.strokeStyle = css('--s2'); ctx.lineWidth = 2; ctx.beginPath(); for (let i = 0; i < dp.length; i++) { const fx = X(dp[i][0]), fy = Y(Math.max(0, dp[i][1])); i ? ctx.lineTo(fx, fy) : ctx.moveTo(fx, fy); } ctx.stroke(); ctx.setLineDash([]); }
+  // the 8 m recorded maximum flight height, and the 50 m quoted glide
+  ctx.setLineDash([2, 4]); ctx.strokeStyle = css('--mute'); ctx.lineWidth = 1;
+  if (8 < y1) { ctx.beginPath(); ctx.moveTo(m.l, Y(8)); ctx.lineTo(W - m.r, Y(8)); ctx.stroke(); ctx.fillStyle = css('--mute'); ctx.fillText('8 m: the highest flight ever recorded', m.l + 6, Y(8) - 5); }
+  if (50 < x1) { ctx.beginPath(); ctx.moveTo(X(50), m.t); ctx.lineTo(X(50), H - m.b); ctx.stroke(); ctx.fillText('50 m quoted glide', X(50) + 5, m.t + 12); }
+  ctx.setLineDash([]);
+  $('#plotcap').innerHTML = `Every one of the ${E.draws} draws (thin blue), the 5&ndash;95% band of the range on the surface line with the median tick, and the old single deterministic run (dashed orange). `
+    + `The two grey references are measured: the 8 m maximum recorded flight height and the 50 m quoted single glide, both second-hand (physics/glide-data.csv). `
+    + `A spread computed from assumed distributions is an uncertainty illustration, not a measured distribution of real glides.`;
+}
+
+// ---------------------------------------------------------------- Section B: the bare 3D harness
+const host = $('#scene');
+const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'low-power' });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+host.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#0b2b36');   // harness only; env3d.js owns the real sky
+const camera = new THREE.PerspectiveCamera(55, 16 / 9, 0.1, 500);
+camera.position.set(5.5, 1.4, 8.5); camera.lookAt(0, -1.6, 0);
+scene.add(new THREE.HemisphereLight(0xdff1ff, 0x204050, 1.1));
+const dir = new THREE.DirectionalLight(0xffffff, 0.7); dir.position.set(6, 14, 4); scene.add(dir);
+// A flat water plane at y = 0, only so "below the surface" means something. env3d.js owns the real one.
+const water = new THREE.Mesh(new THREE.PlaneGeometry(220, 220),
+  new THREE.MeshBasicMaterial({ color: 0x9fd4e2, transparent: true, opacity: 0.22, side: THREE.DoubleSide }));
+water.rotation.x = -Math.PI / 2; water.name = 'harness-water-plane'; water.userData.decorative = true; scene.add(water);
+
+let creatures = mountCreatures({ THREE, scene, rng: seedFromUrl(), schoolCount: 28, gliders: 2,
+  schoolSizeMultiplier: 9, schoolBounds: { x: [-7, 7], y: [-4.2, -0.6], z: [-5, 5] },
+  ambient: { predatorRadius_m: 5, predatorDepth_m: -2, gliderColour: 0xdfe9ef } });
+$('#scenecap').innerHTML = `School: ${creatures.info.school.count} instanced ${esc(creatures.info.school.species)}, one draw call, scale ${creatures.info.school.scale.toExponential(3)} m per model unit. `
+  + `<span class="mute">${esc(creatures.info.school.scale_source)}</span> Seed <span class="mono">${esc(creatures.info.seed)}</span>. All of it decorative.`;
+
+let predOn = false;
+$('#pred').onclick = () => { predOn = !predOn; creatures.setPredator(predOn); $('#pred').textContent = 'Predator: ' + (predOn ? 'on' : 'off'); $('#pred').classList.toggle('on', predOn); };
+
+// Optional: reuse the real GLB mesh for the school, instanced. Opt-in because the GLB is ~3.9 MB.
+let glbGeo = null, glbManifest = null;
+async function loadGlb() {
+  const btn = $('#glb'); btn.disabled = true; btn.textContent = 'loading GLB...';
+  const sp = SPECIES_SCALE['flying-fish'];
+  glbManifest = await (await fetch(sp.manifest)).json();
+  const gltf = await new GLTFLoader().loadAsync(sp.glb);
+  // The cheapest real geometry: the outer skin halves. One of them is enough for a decorative school.
+  let best = null;
+  gltf.scene.traverse(o => { if (o.isMesh && /^skin/.test(o.name) && (!best || o.geometry.attributes.position.count < best.geometry.attributes.position.count)) best = o; });
+  if (!best) gltf.scene.traverse(o => { if (o.isMesh && !best) best = o; });
+  glbGeo = best.geometry;
+  const sc = glbScale(glbManifest, sp.SL_m);
+  // useGeometry swaps the school in one step: the new one is in the scene before the old one is
+  // disposed, so no frame can render a disposed mesh.
+  const school = creatures.useGeometry(glbGeo, glbManifest, { species: 'flying-fish', count: 18, sizeMultiplier: 2.2, bounds: { x: [-7, 7], y: [-4.2, -0.6], z: [-5, 5] } });
+  const morphs = Object.keys(glbGeo.morphAttributes || {}).length;
+  $('#glbinfo').innerHTML = `GLB geometry reused, instanced ${school.count}x in one draw call: ${glbGeo.attributes.position.count} vertices, scale ${sc.scale.toFixed(5)} m/unit`
+    + (morphs ? `, ${morphs} morph attribute set(s) stripped (a growth-series GLB; an InstancedMesh cannot carry morph targets)` : '')
+    + `. <span class="mute">${esc(sc.source)}</span>`;
+  btn.textContent = 'GLB mesh in use'; btn.classList.add('on');
+  return { geo: glbGeo, manifest: glbManifest, sc, school };
+}
+$('#glb').onclick = () => loadGlb().catch(e => { $('#glbinfo').innerHTML = `<span class="fail">GLB load failed: ${esc(e.message)}</span>`; $('#glb').disabled = false; $('#glb').textContent = 'Reuse the real GLB mesh'; });
+
+function resize() {
+  const w = host.clientWidth || 640, h = host.clientHeight || 360;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+let last = performance.now(), frames = 0, fpsT = 0, fpsVal = 0;
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now;
+  creatures.update(dt, now / 1000);
+  renderer.render(scene, camera);
+  frames++; fpsT += dt;
+  if (fpsT > 0.6) { fpsVal = frames / fpsT; $('#fps').textContent = `${fpsVal.toFixed(0)} fps`; frames = 0; fpsT = 0; }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// ---------------------------------------------------------------- self-checks
+const checks = [];
+const chk = (name, cond, detail) => checks.push({ name, ok: !!cond, detail: detail == null ? '' : String(detail) });
+
+runEnsemble();
+
+// -- the documented interface ---------------------------------------------------------------
+chk('mountCreatures returns the documented interface',
+  creatures.school && creatures.ambient && typeof creatures.update === 'function'
+  && typeof creatures.setPredator === 'function' && typeof creatures.dispose === 'function'
+  && typeof creatures.getPredatorState === 'function' && creatures.legend === LEGEND,
+  'school, ambient, update, setPredator, getPredatorState, dispose, legend');
+chk('the school is a single InstancedMesh (one draw call)',
+  creatures.school.mesh.isInstancedMesh === true && creatures.school.mesh.count === creatures.school.count,
+  `${creatures.school.count} instances`);
+chk('every ambient object is flagged decorative in userData', (() => {
+  let bad = [];
+  for (const o of [creatures.school.mesh, creatures.ambient.group, creatures.ambient.predatorMesh, ...creatures.ambient.gliders.map(g => g.mesh)])
+    if (!o.userData || o.userData.decorative !== true) bad.push(o.name);
+  return bad.length === 0 ? true : bad;
+})(), 'school, ambient group, predator and every glider');
+
+// -- NO AVES -------------------------------------------------------------------------------
+chk('no bird anywhere in the scene graph', (() => {
+  const bad = [];
+  scene.traverse(o => { const t = (o.name + ' ' + JSON.stringify(o.userData || {})).toLowerCase();
+    if (/\baves\b|\bbird\b|gull|tern|petrel|booby|frigate|albatross|seabird/.test(t) && !/not a bird|no bird|NOT a bird/i.test(o.userData && o.userData.note || '')) bad.push(o.name); });
+  return bad.length === 0 ? true : bad;
+})(), 'the only aerial creatures are flying fish; Aves is the frozen holdout');
+chk('nothing decorative sits above the surface except the distant flying fish', (() => {
+  const bad = []; scene.updateMatrixWorld(true);
+  scene.traverse(o => { if (o === scene || o === water || o.isLight || o.isCamera) return;
+    if (o.position.y > 0.05 && !/glider/.test(o.name)) bad.push(o.name + '@y=' + o.position.y.toFixed(2)); });
+  return bad.length === 0 ? true : bad;
+})());
+
+// -- the flocking actually runs, stays bounded, and stays below the surface -----------------
+(() => {
+  for (let i = 0; i < 400; i++) creatures.update(1 / 60, i / 60);
+  const p = creatures.school.positions; let out = 0, above = 0, moved = 0;
+  for (let i = 0; i < creatures.school.count; i++) {
+    const y = p[i * 3 + 1];
+    if (y > 0) above++;
+    if (Math.abs(p[i * 3]) > 40 || Math.abs(p[i * 3 + 2]) > 40 || y < -30) out++;
+    if (Number.isFinite(p[i * 3])) moved++;
+  }
+  chk('the school stays bounded after 400 updates', out === 0, `${out} fish outside the box`);
+  chk('the school never crosses the water surface', above === 0, `${above} fish above y = 0`);
+  chk('every instance position stays finite', moved === creatures.school.count);
+})();
+
+// -- the school is seeded and reproducible --------------------------------------------------
+(() => {
+  const mk = () => {
+    const s = makeSchool({ THREE, species: 'zebrafish', count: 12, rng: makeRng('repro-school') });
+    for (let i = 0; i < 90; i++) s.update(1 / 60);
+    const out = Array.from(s.positions); s.dispose(); return out;
+  };
+  const a = mk(), b = mk();
+  chk('the same seed gives the same school, fish for fish', a.every((v, i) => v === b[i]));
+  const c = (() => { const s = makeSchool({ THREE, species: 'zebrafish', count: 12, rng: makeRng('other-school') }); for (let i = 0; i < 90; i++) s.update(1 / 60); const o = Array.from(s.positions); s.dispose(); return o; })();
+  chk('a different seed gives a different school', a.some((v, i) => v !== c[i]));
+  // the decorative stream must not be able to move a published ensemble
+  const e1 = makeEnsemble({ draws: 25, seed: 'shared', baseParams: L3, keepTrajectories: false });
+  const burn = makeSchool({ THREE, species: 'zebrafish', count: 30, rng: makeRng('shared').fork('school') });
+  for (let i = 0; i < 200; i++) burn.update(1 / 60); burn.dispose();
+  const e2 = makeEnsemble({ draws: 25, seed: 'shared', baseParams: L3, keepTrajectories: false });
+  chk('running the decorative school cannot shift the published ensemble',
+    e1.runs.every((r, i) => r.result.range_m === e2.runs[i].result.range_m), 'the streams are forked by label');
+})();
+
+// -- the predator ---------------------------------------------------------------------------
+(() => {
+  const st0 = creatures.getPredatorState({ x: 0, y: 0, z: 0 }, 0.203);
+  chk('the predator reports a sourced looming threshold, not an invented distance',
+    st0.threshold_deg === 14 && /McKee/.test(st0.source) && st0.path_is_decorative === true,
+    `14 deg visual angle; response distance ${st0.response_distance_m.toFixed(3)} m`);
+  const w = 0.69 * 0.203, expect = w / (2 * Math.tan(7 * Math.PI / 180));
+  chk('the response distance is 0.69 SL over 2 tan(7 deg), as predator.mjs sets it',
+    Math.abs(st0.response_distance_m - expect) < 1e-9, `${st0.response_distance_m.toFixed(4)} m`);
+  chk('a predator that is off never triggers an escape', creatures.getPredatorState({ x: 0, y: 0, z: 0 }).triggers_escape === false);
+  // Does the school actually flee? Compare two IDENTICAL schools (same seed, same start) against a
+  // predator pinned at the same point, one with the flee term on and one off. Comparing a single
+  // school before and after is confounded, because the predator itself closes on the origin while
+  // it is active, so the mean distance falls even as the fish flee. That version of this check
+  // failed, which is how the confound was found.
+  const Q = { x: 0, y: -2, z: 0 };
+  const trial = flee => {
+    const s = makeSchool({ THREE, species: 'zebrafish', count: 20, rng: makeRng('flee-trial'), bounds: { x: [-8, 8], y: [-5, -0.8], z: [-8, 8] } });
+    s.predatorAt(Q.x, Q.y, Q.z); s.setPredator(flee);
+    for (let i = 0; i < 180; i++) { s.predatorAt(Q.x, Q.y, Q.z); s.update(1 / 60); }
+    const p = s.positions; let d = 0;
+    for (let i = 0; i < s.count; i++) d += Math.hypot(p[i * 3] - Q.x, p[i * 3 + 1] - Q.y, p[i * 3 + 2] - Q.z);
+    s.dispose(); return d / s.count;
+  };
+  const withFlee = trial(true), without = trial(false);
+  chk('the school flees the predator', withFlee > without * 1.05,
+    `mean distance from a pinned predator after 3 s: ${withFlee.toFixed(2)} m with the flee term, ${without.toFixed(2)} m without`);
+})();
+
+// -- per-frame garbage ----------------------------------------------------------------------
+(() => {
+  const mat = creatures.school.mesh.instanceMatrix.array;
+  for (let i = 0; i < 300; i++) creatures.update(1 / 60, 200 + i / 60);
+  chk('update() reuses the instance matrix buffer, never reallocates it', creatures.school.mesh.instanceMatrix.array === mat);
+  const pm = performance.memory;
+  if (pm) {
+    const a = pm.usedJSHeapSize;
+    for (let i = 0; i < 1200; i++) creatures.update(1 / 60, 300 + i / 60);
+    const per = (performance.memory.usedJSHeapSize - a) / 1200;
+    chk('no measurable per-frame allocation', per < 256, `${per.toFixed(0)} bytes per update over 1200 updates (heap can also shrink under GC)`);
+  } else chk('per-frame allocation (performance.memory unavailable)', true, 'skipped: this engine does not expose the heap size');
+})();
+
+// -- Section A, in the browser ---------------------------------------------------------------
+(() => {
+  const d = E.deterministic;
+  for (const [k, v] of [['glide_range_m', d.range_m], ['time_aloft_s', d.time_s], ['max_height_m', d.max_height_m]]) {
+    const s = E.stats[k];
+    chk(`the 5-95% band of ${k} covers the deterministic single run`, v >= s.p5 && v <= s.p95, `${f2(v)} in [${f2(s.p5)}, ${f2(s.p95)}]`);
+  }
+  const z = makeEnsemble({ draws: 200, seed: $('#seed').value || 'delphi-v1', baseParams: ZF, keepTrajectories: false });
+  chk('a winged-zebrafish ensemble still never glides', z.stats.can_glide_fraction === 0 && z.runs.every(r => r.result.can_glide === false),
+    `v_min ${f2(z.stats.v_min_m_s.median)} m/s vs launch ${f2(z.stats.launch_airspeed_m_s.median)} m/s, in all 200 draws`);
+  chk('the zebrafish does not get the flying-fish taxi band', isFlier(ZF) === false && perturbRun(ZF, makeRng('x')).skipped.includes('launch_airspeed_m_s'));
+  const a = makeEnsemble({ draws: 30, seed: 'url-seed', baseParams: L3, keepTrajectories: false });
+  const b = makeEnsemble({ draws: 30, seed: seedFromUrl(new URL(seedToUrl(location.href, 'url-seed')).search), baseParams: L3, keepTrajectories: false });
+  chk('a seed carried in the URL reproduces the ensemble exactly', a.runs.every((r, i) => r.result.range_m === b.runs[i].result.range_m));
+  chk('every distribution is labelled and sourced on the page',
+    E.distributions.length === DISTRIBUTIONS.length && E.distributions.every(x => x.source.length > 60 && x.band_kind && x.shape_kind === 'assumed'));
+})();
+
+// -- the GLB path, exercised once -----------------------------------------------------------
+if (new URLSearchParams(location.search).get('glb') !== '0') {
+  try {
+    const r = await loadGlb();
+    const g = r.school.mesh.geometry, hadMorphs = Object.keys(r.geo.morphAttributes || {}).length > 0;
+    chk('the real GLB geometry can be reused, instanced',
+      r.school.mesh.isInstancedMesh && g.attributes.position.count === r.geo.attributes.position.count
+      && Object.keys(g.morphAttributes || {}).length === 0,
+      `${r.geo.attributes.position.count} vertices, ${r.school.count} instances, one draw call`
+      + (hadMorphs ? '; the growth-series morph targets were stripped, which is what an InstancedMesh needs' : '; the geometry is used as handed in'));
+    chk('a growth-series GLB does not kill the render loop',
+      !hadMorphs || g !== r.geo, hadMorphs ? 'morph attributes present on the source, so the geometry was cloned without them' : 'this GLB carries no morph targets');
+    chk('the GLB scale comes from the manifest via partedit.js metresPerUnit',
+      Math.abs(r.sc.scale - metresPerUnit(r.manifest).m_per_unit) < 1e-12 && /metresPerUnit/.test(r.sc.source),
+      `${r.sc.scale.toFixed(6)} m per model unit`);
+  } catch (e) { chk('the real GLB geometry can be reused, instanced', false, e.message); }
+}
+
+// -- frame rate -----------------------------------------------------------------------------
+await new Promise(r => setTimeout(r, 2200));
+chk('the scene runs at an interactive frame rate', fpsVal >= 24, `${fpsVal.toFixed(0)} fps (software WebGL headless; the target on real hardware is 60)`);
+
+// -- render the checks ----------------------------------------------------------------------
+const bad = checks.filter(c => !c.ok);
+$('#checks').innerHTML = '<table><tr><th></th><th>check</th><th>detail</th></tr>'
+  + checks.map(c => `<tr><td>${c.ok ? '<span class="pass">pass</span>' : '<span class="fail">FAIL</span>'}</td><td>${esc(c.name)}</td><td class="small mute">${esc(c.detail)}</td></tr>`).join('')
+  + '</table>';
+$('#verdict').textContent = `${checks.length - bad.length}/${checks.length} pass`;
+$('#verdict').className = 'chip ' + (bad.length ? 'h' : 'm');
+document.body.dataset.checks = String(checks.length);
+document.body.dataset.failed = String(bad.length);
+document.body.dataset.fps = fpsVal.toFixed(1);
+document.body.dataset.done = '1';
+
+$('#rerun').onclick = runEnsemble;
+$('#newseed').onclick = () => { $('#seed').value = 'seed-' + Math.random().toString(36).slice(2, 8); runEnsemble(); };
+</script>
+</body>
+</html>

@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>env3d test harness</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230a6ea8'/%3E%3Cpath d='M0 10c2-2 3 2 5 0s3 2 5 0 3 2 6 0v6H0z' fill='%23bde0f0'/%3E%3C/svg%3E">
+<meta name="description" content="Standalone test page for env3d.js: ocean, sky, spray and underwater, with the heightAt-vs-drawn-surface agreement assertion.">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f5f7f9;
+    --panel: rgba(255,255,255,0.90);
+    --panel-brd: rgba(14,32,48,0.14);
+    --fg: #16222e;
+    --mute: #566875;
+    --rule: rgba(14,32,48,0.10);
+    --accent: #0a6ea8;
+    --pass-bg: #dff3e4; --pass-fg: #155c2c; --pass-brd: #9bd3ad;
+    --fail-bg: #fde3e1; --fail-fg: #8c1d13; --fail-brd: #eda9a2;
+    --code-bg: rgba(14,32,48,0.055);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1419;
+      --panel: rgba(16,25,32,0.90);
+      --panel-brd: rgba(170,200,220,0.20);
+      --fg: #e4edf3;
+      --mute: #9fb2bf;
+      --rule: rgba(170,200,220,0.16);
+      --accent: #58b6e8;
+      --pass-bg: #123222; --pass-fg: #8fe0ad; --pass-brd: #2d6b45;
+      --fail-bg: #3a1613; --fail-fg: #f6a9a0; --fail-brd: #7d3028;
+      --code-bg: rgba(170,200,220,0.09);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1419; --panel: rgba(16,25,32,0.90); --panel-brd: rgba(170,200,220,0.20);
+    --fg: #e4edf3; --mute: #9fb2bf; --rule: rgba(170,200,220,0.16); --accent: #58b6e8;
+    --pass-bg: #123222; --pass-fg: #8fe0ad; --pass-brd: #2d6b45;
+    --fail-bg: #3a1613; --fail-fg: #f6a9a0; --fail-brd: #7d3028;
+    --code-bg: rgba(170,200,220,0.09);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--fg); overflow-x: hidden;
+    font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  #view { position: fixed; inset: 0; display: block; }
+  #view canvas { display: block; width: 100%; height: 100%; }
+
+  .wrap { position: relative; z-index: 2; display: grid; grid-template-columns: 340px 1fr; gap: 16px; padding: 16px; min-height: 100%; pointer-events: none; }
+  .wrap > * { pointer-events: auto; }
+  .card {
+    background: var(--panel); border: 1px solid var(--panel-brd); border-radius: 12px;
+    padding: 14px 15px; box-shadow: 0 6px 22px rgba(0,0,0,0.13);
+  }
+  h1 { font-size: 15px; margin: 0 0 2px; letter-spacing: 0.01em; }
+  h2 { font-size: 12px; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mute); }
+  h2:first-of-type { margin-top: 10px; }
+  p.sub { margin: 0 0 8px; font-size: 12px; color: var(--mute); }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 12px 0; }
+  label.row { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; font-size: 12px; margin: 9px 0 0; }
+  label.row > .k { color: var(--mute); }
+  label.row > .v { font-variant-numeric: tabular-nums; font-weight: 600; }
+  label.row > input[type=range] { grid-column: 1 / -1; width: 100%; margin: 2px 0 0; accent-color: var(--accent); }
+  .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  button {
+    font: inherit; font-size: 12px; padding: 5px 10px; border-radius: 7px; cursor: pointer;
+    border: 1px solid var(--panel-brd); background: var(--code-bg); color: var(--fg);
+  }
+  button:hover { border-color: var(--accent); }
+  button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chk { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; margin-top: 10px; }
+  .chk input { margin: 2px 0 0; accent-color: var(--accent); }
+  .verdict { display: inline-block; font-weight: 700; font-size: 12px; padding: 2px 9px; border-radius: 999px; border: 1px solid; }
+  .verdict.pass { background: var(--pass-bg); color: var(--pass-fg); border-color: var(--pass-brd); }
+  .verdict.fail { background: var(--fail-bg); color: var(--fail-fg); border-color: var(--fail-brd); }
+  table.num { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  table.num th, table.num td { text-align: left; padding: 3px 6px 3px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  table.num th { color: var(--mute); font-weight: 500; }
+  table.num td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11.5px; }
+  .note { font-size: 11.5px; color: var(--mute); margin: 7px 0 0; }
+  .right { grid-column: 2; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+  .right .card { max-width: 400px; }
+  .tag { display: inline-block; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em;
+         padding: 1px 6px; border-radius: 4px; background: var(--code-bg); color: var(--mute); }
+  @media (max-width: 860px) {
+    .wrap { grid-template-columns: 1fr; padding: 10px; gap: 10px; }
+    .right { grid-column: 1; align-items: stretch; }
+    .right .card { max-width: none; }
+    #view { position: fixed; inset: 0; }
+  }
+</style>
+</head>
+<body>
+<div id="view"></div>
+
+<div class="wrap">
+  <div>
+    <div class="card">
+      <h1>env3d.js test harness</h1>
+      <p class="sub">All four environment pieces mounted on one scene. Everything procedural &mdash; no texture files.</p>
+
+      <h2>Controls</h2>
+      <label class="row"><span class="k">time</span><span class="v" id="vTime">0.00 s</span>
+        <input type="range" id="sTime" min="0" max="60" step="0.01" value="0"></label>
+      <label class="row"><span class="k">wind U<sub>19.5</sub></span><span class="v" id="vWind">0.0 m/s</span>
+        <input type="range" id="sWind" min="0" max="18" step="0.1" value="0"></label>
+      <label class="row"><span class="k">altitude</span><span class="v" id="vAlt">0 m</span>
+        <input type="range" id="sAlt" min="0" max="400" step="1" value="0"></label>
+      <label class="row"><span class="k">depth</span><span class="v" id="vDep">0.0 m</span>
+        <input type="range" id="sDep" min="0" max="40" step="0.2" value="0"></label>
+      <div class="btns">
+        <button id="bPlay" aria-pressed="true">pause</button>
+        <button id="bSplash">splash</button>
+        <button id="bTaxi" aria-pressed="true">taxi wake</button>
+        <button id="bTheme">theme</button>
+      </div>
+      <p class="note">Drag to orbit, wheel to zoom. Raise <b>depth</b> above 0 to put the camera under the surface.</p>
+
+      <h2>Assertion &mdash; heightAt vs the drawn surface</h2>
+      <div id="verdict"></div>
+      <table class="num" id="tCheck"></table>
+      <div class="chk">
+        <input type="checkbox" id="cDetune">
+        <label for="cDetune">Detune <span class="mono">heightAt</span> by +3&nbsp;mm &mdash; the assertion must go red. This is the harness failing on purpose, so a green result means something.</label>
+      </div>
+      <p class="note" id="method"></p>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="card">
+      <h2>Frame</h2>
+      <table class="num" id="tPerf"></table>
+    </div>
+    <div class="card">
+      <h2>Sea &mdash; <span class="tag">physical</span> vs <span class="tag">drawn</span></h2>
+      <table class="num" id="tSea"></table>
+      <p class="note" id="seaNote"></p>
+    </div>
+    <div class="card">
+      <h2>Drawn waves</h2>
+      <table class="num" id="tWaves"></table>
+      <p class="note">Each phase speed is <span class="mono">sqrt(g&middot;&lambda;/2&pi;)</span>, the deep-water
+      dispersion relation &mdash; physical. The amplitudes are readability-scaled, so they are scenery.</p>
+    </div>
+    <div class="card">
+      <h2>Sky &amp; water</h2>
+      <table class="num" id="tEnv"></table>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { makeOcean, makeSky, makeSpray, makeUnderwater, checkOceanAgreement, readConditions, RECOMMENDED_CAMERA_FAR } from './env3d.js';
+
+const errors = [];
+window.addEventListener('error', (e) => errors.push(String(e.message || e)));
+window.addEventListener('unhandledrejection', (e) => errors.push('unhandled rejection: ' + String(e.reason)));
+
+// ---------------------------------------------------------------- renderer / scene
+const host = document.getElementById('view');
+const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+host.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(55, 1, 0.05, RECOMMENDED_CAMERA_FAR);
+
+// baseline.json is fetched so the page really reads it; if the fetch fails we fall back to the
+// same locked values, and say so.
+let baseline = null, baselineSource = 'fallback (baseline.json not reachable from this path)';
+try {
+  const r = await fetch('../data/baseline.json', { cache: 'no-store' });
+  if (r.ok) { baseline = await r.json(); baselineSource = '../data/baseline.json'; }
+} catch (_) { /* reported below */ }
+
+const conditions = Object.assign({}, baseline, { wind_m_s: 0 });
+
+// ---------------------------------------------------------------- the four pieces
+const sky = makeSky({ THREE, scene, conditions });
+const ocean = makeOcean({ THREE, scene, size: 48, conditions });
+const spray = makeSpray({ THREE, scene });
+const water = makeUnderwater({ THREE, scene });
+
+// ---------------------------------------------------------------- a 20 cm scale reference
+// Not the real GLB (that belongs to the scene module): a procedural 0.20 m flying-fish stand-in,
+// here only to prove the default sea does not swallow a fish that size, and that heightAt puts it
+// on the surface exactly.
+const fish = new THREE.Group();
+{
+  const body = new THREE.Mesh(
+    new THREE.SphereGeometry(0.5, 14, 10),
+    new THREE.MeshPhongMaterial({ color: 0x2b3a46, specular: 0xbfd8e6, shininess: 70 })
+  );
+  body.scale.set(0.20, 0.052, 0.040);
+  const wingGeo = new THREE.PlaneGeometry(0.135, 0.105, 1, 1);
+  const wingMat = new THREE.MeshPhongMaterial({
+    color: 0x7fb4cf, specular: 0xffffff, shininess: 40,
+    side: THREE.DoubleSide, transparent: true, opacity: 0.86
+  });
+  const wl = new THREE.Mesh(wingGeo, wingMat);
+  wl.rotation.set(-Math.PI / 2 + 0.22, 0, 0.14);
+  wl.position.set(0.012, 0.012, 0.055);
+  const wr = new THREE.Mesh(wingGeo, wingMat);
+  wr.rotation.set(-Math.PI / 2 - 0.22, 0, -0.14);
+  wr.position.set(0.012, 0.012, -0.055);
+  const tail = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 0.07, 1, 1), wingMat);
+  tail.position.set(-0.10, 0.012, 0);
+  tail.rotation.y = Math.PI / 2;
+  fish.add(body, wl, wr, tail);
+}
+scene.add(fish);
+const fishNormal = new THREE.Vector3();
+const fishVel = new THREE.Vector3();
+const fishPrev = new THREE.Vector3();
+
+// ---------------------------------------------------------------- camera rig (no addons)
+let yaw = -0.5, pitch = 0.16, dist = 3.2;
+let dragging = false, lx = 0, ly = 0;
+const el = renderer.domElement;
+el.style.touchAction = 'none';
+el.addEventListener('pointerdown', (e) => { dragging = true; lx = e.clientX; ly = e.clientY; el.setPointerCapture(e.pointerId); });
+el.addEventListener('pointerup', (e) => { dragging = false; try { el.releasePointerCapture(e.pointerId); } catch (_) {} });
+el.addEventListener('pointermove', (e) => {
+  if (!dragging) return;
+  yaw -= (e.clientX - lx) * 0.005;
+  pitch = Math.max(-1.25, Math.min(1.3, pitch + (e.clientY - ly) * 0.004));
+  lx = e.clientX; ly = e.clientY;
+});
+el.addEventListener('wheel', (e) => { e.preventDefault(); dist = Math.max(0.6, Math.min(140, dist * (1 + Math.sign(e.deltaY) * 0.12))); }, { passive: false });
+
+const lookAt = new THREE.Vector3();
+function placeCamera(altitude, depth) {
+  const underwater = depth > 0.001;
+  const baseY = underwater ? -depth : altitude;
+  // at altitude we want the horizon, not our feet: the look-at point rises with us.
+  lookAt.set(fish.position.x, baseY + (underwater ? 1.2 : altitude * 0.0), fish.position.z);
+  const d = underwater ? Math.max(dist, 2.4) : (altitude > 1 ? Math.max(dist, 4 + altitude * 0.25) : dist);
+  const p = underwater ? Math.min(pitch, 0.9) : pitch;
+  camera.position.set(
+    lookAt.x + Math.cos(p) * Math.sin(yaw) * d,
+    baseY + (underwater ? 0.6 : 0.55) + Math.sin(p) * d,
+    lookAt.z + Math.cos(p) * Math.cos(yaw) * d
+  );
+  camera.lookAt(lookAt);
+}
+
+function resize() {
+  const w = host.clientWidth || window.innerWidth;
+  const h = host.clientHeight || window.innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / Math.max(1, h);
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ---------------------------------------------------------------- UI
+const $ = (id) => document.getElementById(id);
+const sTime = $('sTime'), sWind = $('sWind'), sAlt = $('sAlt'), sDep = $('sDep');
+const state = { t: 0, wind: 0, alt: 0, depth: 0, playing: true, taxi: true, detune: false };
+
+function fmt(v, d = 2) { return (v === null || v === undefined || !isFinite(v)) ? '--' : (+v).toFixed(d); }
+function sci(v) {
+  if (!isFinite(v)) return '--';
+  if (v === 0) return '0';
+  if (Math.abs(v) >= 1e-3) return v.toFixed(Math.abs(v) >= 1 ? 3 : 5);
+  return v.toExponential(2);
+}
+function rows(tbl, pairs) {
+  let h = '';
+  for (const [k, v, cls] of pairs) h += `<tr><th>${k}</th><td class="n ${cls || ''}">${v}</td></tr>`;
+  tbl.innerHTML = h;
+}
+
+$('bPlay').addEventListener('click', (e) => {
+  state.playing = !state.playing;
+  e.currentTarget.setAttribute('aria-pressed', String(state.playing));
+  e.currentTarget.textContent = state.playing ? 'pause' : 'play';
+});
+$('bTaxi').addEventListener('click', (e) => {
+  state.taxi = !state.taxi;
+  e.currentTarget.setAttribute('aria-pressed', String(state.taxi));
+});
+$('bSplash').addEventListener('click', () => splash(1.0));
+$('bTheme').addEventListener('click', () => {
+  const now = document.documentElement.getAttribute('data-theme');
+  const dark = now ? now === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
+});
+$('cDetune').addEventListener('change', (e) => { state.detune = e.currentTarget.checked; runCheck(); });
+
+sTime.addEventListener('input', () => { state.t = +sTime.value; state.playing = false;
+  $('bPlay').setAttribute('aria-pressed', 'false'); $('bPlay').textContent = 'play'; });
+sWind.addEventListener('input', () => setWind(+sWind.value));
+sAlt.addEventListener('input', () => setAltitude(+sAlt.value));
+sDep.addEventListener('input', () => setDepth(+sDep.value));
+
+function setWind(u) {
+  state.wind = u;
+  sWind.value = String(u);
+  ocean.setConditions(Object.assign({}, conditions, { wind_m_s: u }));
+  paintSea();
+  runCheck();
+}
+function setAltitude(m) { state.alt = m; sAlt.value = String(m); sky.setAltitude(m); paintEnv(); }
+function setDepth(m) { state.depth = m; sDep.value = String(m); water.setDepth(m); paintEnv(); }
+function setTime(t) { state.t = t; sTime.value = String(t); }
+
+// ---------------------------------------------------------------- the assertion
+let lastCheck = null;
+function runCheck() {
+  // The detune wraps heightAt only. Everything else the checker reads (the mesh position buffer,
+  // the segment count, the curvature bound) is untouched, so a detuned run isolates exactly the
+  // thing under test: does heightAt return the height the mesh draws?
+  const subject = state.detune
+    ? { segments: ocean.segments, discretisationBound: () => ocean.discretisationBound(),
+        sampleDrawnSurface: (a, b, c, d) => ocean.sampleDrawnSurface(a, b, c, d),
+        heightAt: (x, z) => ocean.heightAt(x, z) + 0.003 }
+    : ocean;
+  const r = checkOceanAgreement(subject, { samples: 400 });
+  lastCheck = r;
+
+  $('verdict').innerHTML =
+    `<span class="verdict ${r.pass ? 'pass' : 'fail'}">${r.pass ? 'AGREES' : 'DISAGREES'}</span>` +
+    (state.detune ? ' <span class="tag">detuned +3 mm</span>' : '');
+  rows($('tCheck'), [
+    ['at a vertex (exact)', `${sci(r.vertex.max_error_m)} m`],
+    ['vertex tolerance', `${sci(r.vertex.tolerance_m)} m`, r.vertex.pass ? '' : ''],
+    ['vertex verdict', r.vertex.pass ? 'pass' : 'FAIL'],
+    ['inside a cell', `${sci(r.interior.max_error_m)} m`],
+    ['cell tolerance (2&times;bound)', `${sci(r.interior.tolerance_m)} m`],
+    ['cell verdict', r.interior.pass ? 'pass' : 'FAIL'],
+    ['chord&ndash;curve bound', `${sci(r.bound_m)} m`],
+    ['samples', `${r.vertex.n} + ${r.interior.n}`],
+    ['inversion residual', `${sci(ocean.inversion.residual_m)} m`],
+    ['inversion steps', String(ocean.inversion.iterations)]
+  ]);
+  $('method').innerHTML = 'Method: a point is taken from the mesh’s own <span class="mono">position</span> ' +
+    'buffer by linear interpolation inside one cell &mdash; exactly what the rasteriser draws &mdash; then ' +
+    '<span class="mono">heightAt</span> is asked for the height at that point’s world (x,&nbsp;z). ' +
+    'At a vertex the two must agree to the Newton residual; inside a cell the flat triangle departs ' +
+    'from the curved surface by at most &Sigma;a<sub>i</sub>k<sub>i</sub><sup>2</sup>h<sup>2</sup>/8, and ' +
+    'that bound sets the tolerance, so raising the wind widens it honestly.';
+}
+
+function paintSea() {
+  const s = ocean.info.sea;
+  rows($('tSea'), [
+    ['<span class="tag">physical</span> true H<sub>s</sub> (P&ndash;M)', `${fmt(s.true_H_s_m, 3)} m`],
+    ['<span class="tag">physical</span> true T<sub>p</sub>', `${fmt(s.true_peak_period_s, 2)} s`],
+    ['<span class="tag">physical</span> true &lambda;<sub>p</sub>', `${fmt(s.true_peak_wavelength_m, 1)} m`],
+    ['<span class="tag">drawn</span> H<sub>s</sub> on screen', `${fmt(s.drawn_H_s_m, 3)} m`],
+    ['<span class="tag">drawn</span> readability factor', `&times;${fmt(s.readability_scale, 2)}`],
+    ['fish length for scale', '0.200 m'],
+    ['H<sub>s</sub> / fish length', `${fmt(s.drawn_H_s_m / 0.2, 2)}`],
+    ['wind source', s.wind_source]
+  ]);
+  $('seaNote').textContent = s.drawn_note;
+
+  const w = ocean.waves;
+  let h = '<tr><th>&lambda; (m)</th><th>a (m)</th><th>c (m/s)</th><th>T (s)</th><th>dir</th></tr>';
+  for (const x of w) {
+    h += `<tr><td class="n">${fmt(x.wavelength_m, 1)}</td><td class="n">${fmt(x.amplitude_m, 4)}</td>` +
+         `<td class="n">${fmt(x.phase_speed_m_s, 2)}</td><td class="n">${fmt(x.period_s, 2)}</td>` +
+         `<td class="n">${fmt(x.direction_deg, 0)}&deg;</td></tr>`;
+  }
+  $('tWaves').innerHTML = h;
+}
+
+function paintEnv() {
+  const si = sky.info, wi = water.info;
+  const tr = wi.transmittance_rgb;
+  rows($('tEnv'), [
+    ['sky model', 'gradient, not physical'],
+    ['altitude', `${fmt(si.altitude_m, 0)} m`],
+    ['haze = exp(&minus;h/8500&nbsp;m)', fmt(si.haze_fraction, 4)],
+    ['sun elevation / diameter', `${fmt(si.sun_elevation_deg, 0)}&deg; / 0.53&deg;`],
+    ['depth', `${fmt(wi.depth_m, 1)} m`],
+    ['transmittance R / G / B', `${fmt(tr[0], 3)} / ${fmt(tr[1], 3)} / ${fmt(tr[2], 3)}`],
+    ['K used (R,&nbsp;m<sup>&minus;1</sup>)', fmt(wi.K_used_per_m.r, 3)],
+    ['spray droplets live', String(spray.active)],
+    ['baseline.json', baselineSource]
+  ]);
+}
+
+// ---------------------------------------------------------------- spray drivers
+const burstPos = new THREE.Vector3();
+function splash(strength) {
+  burstPos.set(fish.position.x, fish.position.y, fish.position.z);
+  spray.burst(burstPos, fishVel, strength);
+}
+
+// ---------------------------------------------------------------- loop
+let last = performance.now();
+let fpsAcc = 0, fpsN = 0, fps = 0, msAcc = 0;
+let frames = 0;
+let taxiAcc = 0;
+let checkAcc = 0;
+
+function frame(now) {
+  const dtReal = Math.min(0.1, (now - last) / 1000) || 0;
+  last = now;
+  if (state.playing) {
+    state.t += dtReal;
+    if (state.t > 60) state.t -= 60;
+    sTime.value = state.t.toFixed(2);
+  }
+  const t0 = performance.now();
+
+  ocean.update(state.t);
+  sky.update(state.t);
+  water.update(state.t);
+
+  // the fish taxis across the patch, riding the surface exactly as heightAt reports it
+  fishPrev.copy(fish.position);
+  const speed = 1.5;
+  const fx = ((state.t * speed) % 20) - 10;
+  const fz = Math.sin(state.t * 0.21) * 4.0;
+  fish.position.set(fx, ocean.heightAt(fx, fz) + 0.028, fz);
+  ocean.normalAt(fx, fz, fishNormal);
+  fish.rotation.set(0, Math.atan2(speed, Math.cos(state.t * 0.21) * 0.84), 0);
+  fish.rotateZ(-Math.asin(Math.max(-1, Math.min(1, fishNormal.x))) * 0.8);
+  fish.rotateX(Math.asin(Math.max(-1, Math.min(1, fishNormal.z))) * 0.8);
+  if (dtReal > 0) fishVel.subVectors(fish.position, fishPrev).multiplyScalar(1 / dtReal);
+
+  if (state.taxi) {
+    taxiAcc += dtReal;
+    while (taxiAcc > 0.055) { taxiAcc -= 0.055; splash(0.30); }
+  }
+  spray.update(dtReal);
+
+  placeCamera(state.alt, state.depth);
+  renderer.render(scene, camera);
+
+  const ms = performance.now() - t0;
+  msAcc += ms; fpsAcc += dtReal; fpsN++; frames++;
+  if (fpsAcc >= 0.5) {
+    fps = fpsN / fpsAcc;
+    rows($('tPerf'), [
+      ['fps', fmt(fps, 1)],
+      ['frame work (JS + submit)', `${fmt(msAcc / fpsN, 2)} ms`],
+      ['ocean vertices', String(ocean.info.vertices)],
+      ['ocean cell', `${fmt(ocean.cellSize, 3)} m`],
+      ['ocean patch', `${ocean.size} m`],
+      ['renderer calls', String(renderer.info.render.calls)],
+      ['triangles', String(renderer.info.render.triangles)],
+      ['console errors', String(errors.length), errors.length ? 'fail' : '']
+    ]);
+    fpsAcc = 0; fpsN = 0; msAcc = 0;
+  }
+
+  $('vTime').textContent = fmt(state.t, 2) + ' s';
+  $('vWind').textContent = fmt(state.wind, 1) + ' m/s';
+  $('vAlt').textContent = fmt(state.alt, 0) + ' m';
+  $('vDep').textContent = fmt(state.depth, 1) + ' m';
+
+  // re-run the agreement assertion a few times a second against the live surface
+  checkAcc += dtReal;
+  if (checkAcc > 0.33) { checkAcc = 0; runCheck(); paintEnv(); }
+
+  requestAnimationFrame(frame);
+}
+
+paintSea();
+paintEnv();
+runCheck();
+requestAnimationFrame(frame);
+
+// ---------------------------------------------------------------- headless hooks
+window.__env3d = {
+  ready: true,
+  errors,
+  baselineSource,
+  get fps() { return fps; },
+  get frames() { return frames; },
+  get check() { return lastCheck; },
+  get sprayActive() { return spray.active; },
+  get info() { return { ocean: ocean.info, sky: sky.info, spray: spray.info, water: water.info }; },
+  THREE, scene, camera, renderer, ocean, sky, spray, water, fish,
+  setView(y, p, d) { if (y !== undefined) yaw = y; if (p !== undefined) pitch = p; if (d !== undefined) dist = d; },
+  runCheck, setWind, setAltitude, setDepth, setTime,
+  setDetune(v) { state.detune = !!v; document.getElementById('cDetune').checked = !!v; runCheck(); return lastCheck; },
+  setPlaying(v) { state.playing = !!v; },
+  step(t) { setTime(t); ocean.update(t); return runCheck(); },
+  THREE_REVISION: THREE.REVISION
+};
+</script>
+</body>
+</html>

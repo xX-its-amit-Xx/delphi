@@ -58,17 +58,32 @@ function bar(label, c, weight) {
 /** The three separately reported results: genotype similarity, phenotype similarity, Lean on the designed organism. */
 function threeHtml(report) {
   const R = report.results; if (!R) return '';
-  const g = R.genotype_similarity, p = R.phenotype_similarity, l = R.lean_check;
+  const g = R.genotype_similarity, p = R.phenotype_similarity, l = R.lean_check, fr = R.functional_resolution;
   const gA = g.aggregate || {};
   const gHtml = g.n_edits ? `<table class="vp-t"><tr><th>gene</th><th>edit</th><th>closest real orthologue</th><th>identity to reference</th><th>state in a real organism</th><th>site conservation</th></tr>${g.per_gene.map(x => `<tr><td>${esc(x.gene)}</td><td><code>${esc(x.edit)}</code></td><td>${x.closest_real_orthologue ? `${esc(x.closest_real_orthologue.species)} (${f(x.closest_real_orthologue.percent_identity_after_edit, 2)} %)` : '–'}</td><td>${f(x.percent_identity_to_unedited_reference, 2)} %</td><td>${x.edited_state_exists_in_real_organism == null ? '–' : x.edited_state_exists_in_real_organism ? `yes: ${esc([...x.in_natural_orthologues, ...x.known_alleles].join(', '))}` : 'no'}</td><td>${x.site_conservation ? `${Math.round(x.site_conservation.fraction_of_orthologues_with_reference_residue * 100)} % of ${x.site_conservation.n_rows}${x.site_conservation.conserved ? ' (conserved)' : ''}` : '–'}</td></tr>`).join('')}</table><p class="vp-fine">Aggregate: min identity ${f(gA.min_percent_identity_to_reference, 2)} % · ${gA.edits_whose_state_exists_in_a_real_organism}/${gA.edits_assessed} edited states exist in a real organism · ${gA.conserved_sites_changed} conserved site(s) changed. ${esc(g.rule)}</p>` : `<p class="vp-na">${esc(gA.note || 'no gene edits')}</p>`;
   const cr = p.closest_real_relative;
   const pHtml = `<p>${cr ? `Closest real relative: <b>${esc(cr.name)}</b> (${esc(cr.taxon)}), distance ${f(cr.distance)}; dominant: ${cr.dominant_features.map(d => `${esc(d.label)} ${Math.round(d.share * 100)} %`).join(', ')}` : 'No body comparison ran.'}${p.body && p.body.p_value != null ? ` · body p ${f(p.body.p_value)}${p.body.ood ? ' · <b class="bad">out of distribution</b>' : ''}` : ''}</p>${p.fins && p.fins.closest_on_pectoral_length ? `<p>Pectoral length: closest ${esc(p.fins.closest_on_pectoral_length.name)} (p ${f(p.fins.p_value)})${p.fins.envelope_outside.length ? ` · outside the real fin range: ${p.fins.envelope_outside.map(o => esc(o.feature)).join(', ')}` : ''}</p>` : ''}${p.physiology_envelope_outside && p.physiology_envelope_outside.length ? `<p class="warn">Physiology outside its sourced envelope: ${p.physiology_envelope_outside.map(o => `${esc(o.field)} ${f(o.value)} (range ${f(o.lo)}–${f(o.hi)})`).join('; ')}</p>` : ''}`;
   const c = l.counts || {};
   const lHtml = `<p class="${l.accepted_violations.length ? 'bad' : 'ok'}"><b>${esc(l.gate)}</b></p><p>On the designed organism (${esc(l.lawset || '')}): holds ${c.holds ?? '–'} · violated ${c.violated ?? '–'} · out of scope ${c.out_of_scope ?? '–'} · cannot evaluate ${c.cannot_evaluate ?? '–'}</p>${l.accepted_violations.length ? `<ul>${l.accepted_violations.map(v => `<li class="bad"><b>${esc(v.law_id)}</b> ${esc(v.constraint)}: ${esc(v.message || '')} <code>${esc(JSON.stringify(v.inputs))}</code></li>`).join('')}</ul>` : ''}`;
-  return `<div class="vp-card"><b>Three results, reported separately</b>
+  // 4 · functional resolution: the ledger from sim-engine/validate/functional/ (another thread). Absent until it
+  // lands, and then said so plainly; a hypothesis is never shown as a demonstrated resolution.
+  let frHtml;
+  if (!fr) frHtml = '<p class="vp-na">not reported by this scorer version</p>';
+  else if (!fr.ran) frHtml = `<p class="vp-na">${esc(fr.reason || 'did not run')}</p>`;
+  else {
+    const rs = fr.resolution || {}, an = fr.closest_functional_analogue;
+    frHtml = `<p class="${rs.unresolved > 0 ? 'bad' : rs.hypothesised > 0 ? 'warn' : 'ok'}"><b>${esc(fr.gate)}</b></p>
+  ${an ? `<p>Closest functional analogue: <b>${esc(an.name || an.id)}</b>${an.function ? ` (by function: ${esc(an.function)})` : ''}${an.basis ? ` · basis: ${esc(an.basis)}` : ''}</p>` : ''}
+  <p>${rs.differences} difference(s): <b>${rs.demonstrated}</b> demonstrated · <b class="warn">${rs.hypothesised}</b> hypothesised (compensation) · <b class="bad">${rs.unresolved}</b> unresolved. <span class="vp-fine">Demonstrated and hypothesised are never summed.</span></p>
+  <table class="vp-t"><tr><th>difference</th><th>class</th><th>evidence</th></tr>${fr.entries.map(e => `<tr><td>${esc(e.difference || e.id)}${e.gene ? ` <code>${esc(e.gene)}</code>` : ''}</td><td class="${e.hypothesis ? 'warn' : e.class === 'UNRESOLVED' ? 'bad' : 'ok'}">${esc(e.class)}${e.hypothesis ? ' (hypothesis)' : ''}${e.class_recognised === false ? ` <span class="bad">[class "${esc(e.class_as_given)}" is not in the ladder]</span>` : ''}</td><td class="vp-fine">${e.evidence.map(v => esc(v.claim || '') + (v.kind ? ` [${esc(v.kind)}]` : '')).join('; ') || '–'}</td></tr>`).join('')}</table>
+  ${fr.coverage ? `<p class="vp-fine">Coverage: ${esc(JSON.stringify(fr.coverage))}</p>` : ''}
+  <p class="vp-fine">${esc(fr.scope || '')}</p>`;
+  }
+  return `<div class="vp-card"><b>Four results, reported separately</b>
  <details open><summary>1 · Genotype similarity</summary>${gHtml}</details>
  <details open><summary>2 · Phenotype similarity</summary>${pHtml}</details>
- <details open><summary>3 · Lean check on the designed organism</summary>${lHtml}</details></div>`;
+ <details open><summary>3 · Lean check on the designed organism</summary>${lHtml}</details>
+ <details open><summary>4 · Functional resolution (closest functional analogue)</summary>${frHtml}</details></div>`;
 }
 
 /** Pure: report -> HTML (no DOM access), so it can be tested in node. */

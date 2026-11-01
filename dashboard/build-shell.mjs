@@ -53,6 +53,7 @@ const MODES = {
 const GROUPS = [
   { key: 'results', label: 'Results', items: [
     { key: 'results',  href: 'results/',        text: 'Results' },
+    { key: 'scorer',   href: 'scorer/',         text: 'Design scorer' },
     { key: 'deck',     href: 'deck/',           text: 'Pitch deck' },
     { key: 'print',    href: 'print/',          text: 'Printable kit' },
     { key: 'agents',   href: 'studio-api/',     text: 'For agents' },
