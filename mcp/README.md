@@ -94,6 +94,8 @@ Use `local` while building; use `network` when citing something or checking what
 | `lean_lawset_get` | A lawset release (`law_id`, version, content hash, pinned status), or `current`. |
 | `lean_check` | Evaluate a design (SI units) against a lawset: per-law verdicts and violations `{law_id, version, kind, status, inputs, message, binding}`. Floating point, **not a kernel check**. |
 | `lean_verify` | Re-hash pinned Lean statements; report drift, missing theorems and a stale `/api/lean/` mirror. |
+| `lean_source_status` | Where the laws come from (`local`, `remote:mirror`, `remote:github`; env `LEANBIO_REMOTE`), the current lawset, when it was fetched and last checked, the TTL, 304 counts, integrity, and the last error or rejected (tampered) fetch. `refresh: true` checks now. |
+| `lean_changes` | Lawset releases newer than `since_version`, newest first: CHANGELOG prose plus a diff of the pins (laws added or removed, version and status changes). Same feed at `/api/lean/changes.json` and `changes.xml` (Atom). |
 | `lean_propose` | **stdio only, never on the hosted server** (runs a Lean build): hand a new statement to `lean/registry/propose.mjs`; returns candidate / contested / rejected, never accepted. |
 
 ### Lean laws
@@ -112,6 +114,15 @@ static mirror `GET /api/lean/{index,current}.json`, `/api/lean/laws/<law_id>.jso
 A new law must be reachable through all of these; `node lean/registry/check-exposed.mjs` fails otherwise
 (pre-commit hook in `.githooks/`, CI in `.github/workflows/lean-exposed.yml`). A change under `lean/`
 redeploys the hosted server.
+
+**Self-update (0.4.0).** The hosted server reads laws from the published `/api/lean/` mirror by default
+(`LEANBIO_REMOTE=mirror`; `github` follows raw `lean/registry/` on `LEANBIO_REF`; `off` uses the files in
+the image, which is the default for local stdio use). It re-checks the source every `LEANBIO_TTL_S` (600 s)
+with ETag caching, accepts a new lawset only when every law file matches the content hash its lawset pins, and
+otherwise keeps the last good set. Every `lean_*` envelope carries `source`, `lawset_version` and
+`fetched_at`, and `/healthz` shows them too. The mirror republishes on every `lean/**` change on main
+(`.github/workflows/leanbio-publish.yml`; it needs the `CLOUDFLARE_API_TOKEN` repo secret). Details and a recorded
+demo: [`lean/registry/SELF-UPDATE.md`](../lean/registry/SELF-UPDATE.md).
 
 ### How ranking works
 

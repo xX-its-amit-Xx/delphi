@@ -1,0 +1,84 @@
+name: LeanBio publish (/api/lean mirror)
+
+# CI self-update for the static LeanBio mirror. When a law, lawset or the loader changes on main, rebuild
+# dashboard/public/api/lean/ (laws, lawsets, current.json, changes.json, changes.xml) from the same loader the
+# MCP tools use, refuse to publish unless check-exposed is green, then deploy the dashboard (Cloudflare Workers
+# static assets, dashboard/wrangler.jsonc). Servers running with LEANBIO_REMOTE=mirror pick the new lawset up
+# within their TTL without a restart (lean/registry/SELF-UPDATE.md).
+#
+# REQUIRED REPOSITORY SECRETS (Settings -> Secrets and variables -> Actions). Never commit a token.
+#   CLOUDFLARE_API_TOKEN   an API token with "Workers Scripts: Edit" for the account that owns the
+#                          delphi-mission-control worker (template "Edit Cloudflare Workers")
+#   CLOUDFLARE_ACCOUNT_ID  that account's id (optional when the token can see exactly one account)
+# Without CLOUDFLARE_API_TOKEN the build and checks still run and the deploy step is skipped with a warning.
+# The hosted MCP server redeploys separately (deploy-mcp.yml, same lean/registry/** path filters).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "lean/**"
+      - "lib/lean-*.mjs"
+      - "sim-engine/tools/lean-tools.mjs"
+      - "dashboard/build-lean-api.mjs"
+      - ".github/workflows/leanbio-publish.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: leanbio-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LEANBIO_REMOTE: "off" # build and check the checked-out tree, never a remote
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # sim-engine has its own package (the MCP SDK for --dump-contract, which check-exposed compares).
+      - run: npm ci
+        working-directory: sim-engine
+      - name: Rebuild /api/lean (dashboard/build-lean-api.mjs)
+        run: node dashboard/build-lean-api.mjs
+      - name: check-exposed (every law on every surface, nothing stale)
+        run: node lean/registry/check-exposed.mjs
+      - name: Self-update tests
+        run: node sim-engine/test/lean-self-update.mjs
+      - name: Report the lawset being published
+        run: |
+          node -e "const i=require('./dashboard/public/api/lean/index.json');console.log('lawset', i.current_lawset, '-', i.count, 'laws, lawsets', i.lawsets.join(', '))"
+      - name: Deploy dashboard (wrangler)
+        working-directory: dashboard
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::warning::CLOUDFLARE_API_TOKEN is not set; /api/lean was rebuilt and checked but NOT deployed. Add the secret (see the header of this workflow)."
+            exit 0
+          fi
+          npx --yes wrangler@4 deploy
+      - name: Verify the live mirror serves the new lawset
+        if: ${{ success() }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          LEANBIO_SITE_URL: ${{ vars.LEANBIO_SITE_URL }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then exit 0; fi
+          base="${LEANBIO_SITE_URL:-https://delphi-mission-control.ashenoy000.workers.dev/api/lean/}"
+          want=$(node -e "console.log(require('./dashboard/public/api/lean/index.json').current_lawset)")
+          for i in 1 2 3 4 5 6; do
+            got=$(curl -fsS "${base}index.json" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).current_lawset))" || true)
+            [ "$got" = "$want" ] && { echo "live mirror serves lawset $got"; exit 0; }
+            sleep 10
+          done
+          echo "::error::live mirror serves lawset '$got', expected '$want'"; exit 1

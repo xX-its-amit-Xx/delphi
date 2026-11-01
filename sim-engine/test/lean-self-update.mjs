@@ -80,7 +80,11 @@ await ok('mirror mode: first call fetches, verifies every pinned law, and serves
   assert.equal(r.result.version, LOCAL.current);
   assert.match(r.source_detail.integrity, /^verified: \d+ law files/);
   first = await status();
-  assert.equal(first.remote.laws_verified, LOCAL.laws.length + Object.keys(LOCAL.versions || {}).length);
+  const pinnedKeys = new Set(LOCAL.lawsets.flatMap(ls => ls.laws.map(x => `${x.law_id}@${x.version}`)));
+  assert.equal(first.remote.laws_verified, pinnedKeys.size);
+  // laws no lawset pins yet (a candidate added after the last release) are served but labelled unpinned
+  const unpinned = LOCAL.laws.filter(l => !pinnedKeys.has(`${l.law_id}@${l.version}`)).map(l => l.law_id);
+  assert.deepEqual(first.remote.unpinned_laws, unpinned);
   assert.equal(first.remote.last_error, null);
   assert.ok(first.remote.stats.requests > LOCAL.laws.length);
   assert.ok(r.provenance.some(p => p.value === BASE), 'provenance names the remote URL');

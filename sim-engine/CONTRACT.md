@@ -53,6 +53,7 @@ unlabelled one.
 | `growth_trajectory` | Wraps `development/trajectory.mjs`. |
 | `lean_check` | Wraps `lean/eliminate/browser-check.mjs`. **Not a kernel check** — it evaluates the same formulas in floating point. |
 | `lean_laws_list`, `lean_law_get`, `lean_lawset_get`, `lean_propose`, `lean_verify` (and the current `lean_check`) | The versioned Lean law registry, from `tools/lean-tools.mjs`; see `lean/registry/README.md`. `lean_check` now returns registry-tagged verdicts. |
+| `lean_source_status`, `lean_changes` | Self-update (0.3.4): the law source in use (local, or a remote mirror/github ref re-checked every TTL and verified against lawset content hashes) and the lawset change feed. Every `lean_*` envelope also carries `source`, `lawset_version`, `fetched_at`, `source_detail`; see `lean/registry/SELF-UPDATE.md`. |
 
 Parameter lists are in `contract.json`; they are not duplicated here, for the drift reason above.
 
@@ -153,7 +154,7 @@ laws scoped to one clade come back `out-of-scope` for other organisms instead of
 
 **Perturbation laws (P1–P5)** read inputs that `lib/perturb-map.mjs` takes from STATE, the scenario's params and
 its own metrics, using the exact names `checkPerturb` reads. `scenario_run` returns them with their sources as
-`lean_inputs`. P1, P2, P3 (v2) and P3b are fed, and so are P4 (altitude), P4b (glide) and P5 (digestion). P1b and P2b stay cannot-evaluate until their scenarios expose the needed numbers (`CHANGELOG.md` 0.3.3). `scenario_run` also accepts `claims`: what a designer asserts (a glide distance, a mass gain). Claims are labelled as claims and checked by the laws against the scenario's physics.
+`lean_inputs`. P1, P2, P3 (v2) and P3b are fed, and so are P4 (altitude), P4b (glide) and P5 (digestion). P1b, P2b and P4b-with-wind are fed from the scenarios' numeric `lean_inputs` blocks (`CHANGELOG.md` 0.3.4). `scenario_run` also accepts `claims`: what a designer asserts (a glide distance, a mass gain). Claims are labelled as claims and checked by the laws against the scenario's physics.
 A violation's `severity` follows the law's registry status, which is read on every call, never hard-coded: `accepted` gives red, `contested` gives amber, and `candidate` gives dashed. As of lawset 1.5.0, P1, P2, P4 and P5 are accepted.
 
 Only the mass–length rows (C7b, E2) can be evaluated from STATE alone.
