@@ -150,7 +150,9 @@ export function declCompile(d) {
   const lookupNames = lookups.map(k => k.name);
   const read = [...new Set(parts.flatMap(p => p.names))].filter(n => !(n in defaults) && !lookupNames.includes(n));
   const inputs = d.inputs && d.inputs.length ? d.inputs : read;
-  for (const n of inputs) if (!read.includes(n)) throw new Error(`${where}.inputs names "${n}", which no expression reads (or is supplied by a default or a lookup)`);
+  // `inputs` may name a value a lookup supplies: the lookup fills it, and if the lookup cannot be resolved the
+  // row reports it as missing anyway, so naming it is harmless and is what a law author naturally writes.
+  for (const n of inputs) if (!read.includes(n) && !lookupNames.includes(n)) throw new Error(`${where}.inputs names "${n}", which no expression reads`);
   for (const n of lookupNames) if (!parts.some(p => p.names.includes(n))) throw new Error(`${where}.lookups declares "${n}", which no expression reads`);
   return { ...d, compiled: Object.fromEntries(parts.map(p => [p.key, p.tree])), defaults, lookups, inputs, reads: read };
 }

@@ -160,12 +160,14 @@ async function mountOne(id, data, label) {
     <h5>Notes pushed (${notes.length})</h5><ul>${notes.map((n) => `<li><span class="k">${n.severity}</span> <b>${n.title}</b> — ${n.text}</li>`).join('')}</ul>`;
   say(`  ${id}: ok, ${(p.items || []).length} provenance items, ${notes.length} notes`);
   live.push({ id, handle });
+  (window.__HANDLES ||= {})[id] = handle;
   return handle;
 }
 
 async function mountAll() {
   for (const { handle } of live) { try { handle.dispose(); } catch (e) { errors.push('dispose: ' + e.message); } }
   live.length = 0;
+  window.__HANDLES = {};
   document.getElementById('mounts').innerHTML = '';
   logEl.innerHTML = '';
   for (const id of CASES) {

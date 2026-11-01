@@ -531,8 +531,11 @@ export function makeOcean({ THREE, scene, size = 48, segments, conditions } = {}
     for (let j = 0, o = 0; j < farRings; j++) {
       for (let i = 0; i < farSectors; i++) {
         const a = j * stride + i, b = a + 1, c2 = a + stride, d2 = c2 + 1;
-        fidx[o++] = a; fidx[o++] = c2; fidx[o++] = b;
-        fidx[o++] = b; fidx[o++] = c2; fidx[o++] = d2;
+        // Wound the SAME way round as the patch. With the other winding the disc was back-facing
+        // from above, three flipped its normal for DoubleSide, and the sea around the patch was
+        // lit from underneath: a bright tile of water sitting on a dark one, obvious from the air.
+        fidx[o++] = a; fidx[o++] = b; fidx[o++] = c2;
+        fidx[o++] = b; fidx[o++] = d2; fidx[o++] = c2;
       }
     }
   }

@@ -90,7 +90,7 @@ function leanRoundsHtml(report) {
 /** The three separately reported results: genotype similarity, phenotype similarity, Lean on the designed organism. */
 function threeHtml(report) {
   const R = report.results; if (!R) return '';
-  const g = R.genotype_similarity, p = R.phenotype_similarity, l = R.lean_check, fr = R.functional_resolution;
+  const g = R.genotype_similarity, p = R.phenotype_similarity, l = R.lean_check, fr = R.functional_resolution, ps = R.physics_simulation;
   const gA = g.aggregate || {};
   const gHtml = g.n_edits ? `<table class="vp-t"><tr><th>gene</th><th>edit</th><th>closest real orthologue</th><th>identity to reference</th><th>state in a real organism</th><th>site conservation</th></tr>${g.per_gene.map(x => `<tr><td>${esc(x.gene)}</td><td><code>${esc(x.edit)}</code></td><td>${x.closest_real_orthologue ? `${esc(x.closest_real_orthologue.species)} (${f(x.closest_real_orthologue.percent_identity_after_edit, 2)} %)` : '–'}</td><td>${f(x.percent_identity_to_unedited_reference, 2)} %</td><td>${x.edited_state_exists_in_real_organism == null ? '–' : x.edited_state_exists_in_real_organism ? `yes: ${esc([...x.in_natural_orthologues, ...x.known_alleles].join(', '))}` : 'no'}</td><td>${x.site_conservation ? `${Math.round(x.site_conservation.fraction_of_orthologues_with_reference_residue * 100)} % of ${x.site_conservation.n_rows}${x.site_conservation.conserved ? ' (conserved)' : ''}` : '–'}</td></tr>`).join('')}</table><p class="vp-fine">Aggregate: min identity ${f(gA.min_percent_identity_to_reference, 2)} % · ${gA.edits_whose_state_exists_in_a_real_organism}/${gA.edits_assessed} edited states exist in a real organism · ${gA.conserved_sites_changed} conserved site(s) changed. ${esc(g.rule)}</p>` : `<p class="vp-na">${esc(gA.note || 'no gene edits')}</p>`;
   const cr = p.closest_real_relative;
@@ -111,11 +111,33 @@ function threeHtml(report) {
   ${fr.coverage ? `<p class="vp-fine">Coverage: ${esc(JSON.stringify(fr.coverage))}</p>` : ''}
   <p class="vp-fine">${esc(fr.scope || '')}</p>`;
   }
-  return `<div class="vp-card"><b>Four results, reported separately</b>
+  // 5 · physics: does it actually DO the thing? A hard criterion with NO MODEL does not fail the gate; it makes
+  // the result INCOMPLETE, because "we could not check it" is not "it failed".
+  let psHtml;
+  if (!ps) psHtml = '<p class="vp-na">not reported by this scorer version</p>';
+  else if (!ps.ran) psHtml = `<p class="vp-na">${esc(ps.reason || 'did not run')}</p>`;
+  else {
+    const S = ps.summary || {}, unchecked = ps.unchecked_requirements || [];
+    const cls = ps.function_achieved ? 'ok' : ps.gate_status === 'incomplete' ? 'warn' : 'bad';
+    const crit = (ps.criteria || []).map(c => `<tr><td>${esc(c.scenario || '')} <span class="vp-fine">${esc(c.metric || '')} ${esc(c.op || '')} ${f(c.value)} ${esc(c.unit || '')}</span>${c.hard ? ' <b>[hard]</b>' : ''}${c.inferred ? ' <span class="vp-fine">(inferred)</span>' : ''}</td><td class="${c.status === 'met' ? 'ok' : c.status === 'not met' ? 'bad' : 'warn'}">${esc(c.status)}</td><td class="vp-fine">${esc(c.model_confidence?.validated || '')}</td></tr>`).join('');
+    const stand = (ps.standing_checks || []).map(c => `<tr><td>${esc(c.id)}</td><td class="${c.status === 'met' ? 'ok' : c.status === 'not met' ? 'bad' : 'warn'}">${esc(c.status)}</td><td class="vp-fine">${esc(c.statement || '')}</td></tr>`).join('');
+    psHtml = `<p class="${cls}"><b>function achieved: ${ps.function_achieved ? 'yes' : 'no'}</b> · gate ${esc(ps.gate_status)}${ps.function_achieved ? '' : ps.gate_status === 'incomplete' ? ' — a hard requirement could not be checked, which is not the same as failing' : ''}</p>
+  <p>${esc(ps.gate || '')}</p>
+  ${ps.target_function ? `<p class="vp-fine">Target function: ${esc(ps.target_function.inferred_function || ps.target_function.source)} — ${esc(ps.target_function.statement || '')}</p>` : ''}
+  <p>Hard criteria: ${S.met ?? '–'} met · ${S.not_met ?? '–'} not met · ${S.no_model ?? '–'} no model${unchecked.length ? ` · <b class="warn">${unchecked.length} unchecked</b>` : ''}</p>
+  ${unchecked.length ? `<p class="warn"><b>Unchecked requirements</b> <span class="vp-fine">(not failures: no model could decide them)</span></p><ul>${unchecked.map(u => `<li class="warn">${esc(u.criterion || u.metric || '')}${u.scenario ? ` <span class="vp-fine">(${esc(u.scenario)})</span>` : ''}${u.why ? `: ${esc(u.why)}` : ''}</li>`).join('')}</ul>` : ''}
+  ${crit ? `<table class="vp-t"><caption>Criteria</caption><tr><th>criterion</th><th>status</th><th>model confidence</th></tr>${crit}</table>` : ''}
+  ${stand ? `<table class="vp-t"><caption>Standing checks (run whether or not the spec asked; never summed into one number)</caption><tr><th>check</th><th>status</th><th></th></tr>${stand}</table>` : ''}
+  ${ps.model_honesty ? `<p class="vp-fine"><b>Model honesty.</b> ${esc(ps.model_honesty.statement || '')}${ps.model_honesty.circular_checks?.length ? ` Glide-based checks report <b>model_confidence: circular</b> (${ps.model_honesty.circular_checks.length} of them), read at call time from each scenario's model card and the studio validation run, not hard-coded.` : ''} The non-circular part of this result is the negative controls: each turns on an inequality between independently sourced quantities rather than on a fitted number.</p>` : ''}
+  ${ps.scenario_errors?.length ? `<p class="warn">Scenario modules that failed to load (a visible gap, not a pass): ${ps.scenario_errors.map(esc).join('; ')}</p>` : ''}`;
+  }
+  return `<div class="vp-card"><b>Five results, reported separately</b>
+ <p class="vp-rule"><b>lean_check</b> says the design <b>breaks no law</b> — necessary, not sufficient. <b>physics_simulation</b> says whether it <b>actually does the thing</b>. Neither substitutes for the other, and neither is folded into the score.</p>
  <details open><summary>1 · Genotype similarity</summary>${gHtml}</details>
  <details open><summary>2 · Phenotype similarity</summary>${pHtml}</details>
  <details open><summary>3 · Lean check on the designed organism</summary>${lHtml}</details>
- <details open><summary>4 · Functional resolution (closest functional analogue)</summary>${frHtml}</details></div>`;
+ <details open><summary>4 · Functional resolution (closest functional analogue)</summary>${frHtml}</details>
+ <details open><summary>5 · Physics: does it actually do the thing?</summary>${psHtml}</details></div>`;
 }
 
 /** Pure: report -> HTML (no DOM access), so it can be tested in node. */
