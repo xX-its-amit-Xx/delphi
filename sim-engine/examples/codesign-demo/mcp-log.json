@@ -31,6 +31,10 @@
   "session_post",
   "session_decide",
   "session_read",
+  "omics_gene",
+  "omics_part",
+  "omics_search",
+  "design_score",
   "parse_design_text",
   "design_from_spec",
   "swarm_post_task",
@@ -57,7 +61,7 @@
    },
    "isError": false,
    "result": {
-    "contract_version": "0.5.0",
+    "contract_version": "0.7.0",
     "result": {
      "doc": {
       "id": "codesign-demo-wzf",
@@ -100,23 +104,23 @@
    },
    "isError": false,
    "result": {
-    "contract_version": "0.5.0",
+    "contract_version": "0.7.0",
     "result": {
-     "session": "codesign-demo-winged-zebrafish-fin-9ea150",
+     "session": "codesign-demo-winged-zebrafish-fin-3eeeb8",
      "entry": {
       "seq": 0,
       "type": "open",
-      "ts": "2026-11-01T04:21:12.046Z",
+      "ts": "2026-11-01T04:40:31.033Z",
       "title": "codesign demo winged zebrafish fin",
       "organism": "codesign-demo-wzf",
       "author": "human",
-      "lawset_version": "1.5.0"
+      "lawset_version": "1.6.0"
      }
     },
     "provenance": [
      {
       "quantity": "session",
-      "value": "codesign-demo-winged-zebrafish-fin-9ea150",
+      "value": "codesign-demo-winged-zebrafish-fin-3eeeb8",
       "kind": "assumed",
       "source": "opened by the caller"
      }
@@ -136,7 +140,7 @@
    },
    "isError": false,
    "result": {
-    "contract_version": "0.5.0",
+    "contract_version": "0.7.0",
     "result": {
      "doc": {
       "id": "codesign-demo-wzf",
@@ -177,8 +181,8 @@
         "medium": "water",
         "depth_m": 0,
         "altitude_m": 0,
-        "salinity_psu": 35,
-        "water_density_kg_m3": 1023.4,
+        "salinity_psu": 0,
+        "water_density_kg_m3": 997.05,
         "air_density_kg_m3": 1.225,
         "pressure_kPa": 101.325,
         "pO2_kPa": 20.51612216853939,
@@ -912,16 +916,16 @@
      },
      {
       "quantity": "ambient.salinity_psu",
-      "value": 35,
+      "value": 0,
       "kind": "assumed",
-      "source": "conditions/baseline.json salinity_psu (35, assumed)",
+      "source": "freshwater organism default: Danio rerio is a freshwater species (0 psu); conditions/baseline.json 35 psu is the marine baseline and does not apply",
       "unit": "psu"
      },
      {
       "quantity": "ambient.water_density_kg_m3",
-      "value": 1023.4,
+      "value": 997.05,
       "kind": "assumed",
-      "source": "physiology/index.js o2sat_mg_l: density 1.0234 kg/l for salinity > 0 (assumed there, not fetched); 1000 for fresh water",
+      "source": "fresh water: NIST Chemistry WebBook pure-water density at 0.101325 MPa, interpolated at the water temperature (https://webbook.nist.gov/chemistry/fluid/)",
       "unit": "kg/m3"
      },
      {
@@ -1049,7 +1053,7 @@
    },
    "isError": false,
    "result": {
-    "contract_version": "0.5.0",
+    "contract_version": "0.7.0",
     "result": {
      "doc": {
       "id": "flying-fish",
@@ -2068,7 +2072,7 @@
    },
    "isError": false,
    "result": {
-    "contract_version": "0.5.0",
+    "contract_version": "0.7.0",
     "result": {
      "scenario": "glide",
      "run": {
@@ -2183,16 +2187,16 @@
        {
         "key": "aerobic_power_available_W",
         "label": "Fick aerobic power bound eta E Q Ca",
-        "value": 0.0003722168094778689,
+        "value": 0.0007787347074896219,
         "unit": "W",
         "better": "higher",
         "kind": "derived",
-        "source": "eta E Q Ca, Ca 0.1896 ml/ml at PO2 20.5 kPa (Hill P50 3.31 kPa, n 1.34), Q 0.0007 ml/s"
+        "source": "eta 0.15 (borrowed) x 13.54 J/mg x MO2max 1988 mg O2/kg/h x mass: MO2max measured 2630 mg/kg/h at 28 degC, 0.43 g (Palstra AP, Tudorache C, Rovira M, et al. (2010) Establishing zebrafish as a novel exercise model. PLoS One 5:e14483, doi:10.1371/journal.pone.0014483, PMC3013094, Results \"Swimming economy\": maximal O2 consumption at Ucrit 82.18 +/- 6.50 umol g-1 h-1 (= 2630 mg O2 kg-1 h-1); wild-type adults 3.05 cm BL, 0.43 g, 28 degC, n = 10 (Methods)), scaled x 0.756 to 0.6943 g and 25 degC (mass-specific MO2max exponent -0.15 and Q10 2 (assumed; physics/FICK-CEILING-CHECK.md section 3 brackets -0.1 to -0.2 and 2 to 2.5)); unscaled ceiling 1.030e-3 W"
        },
        {
         "key": "powered_flight_margin",
         "label": "Aerobic power available / power required",
-        "value": 0.02764204640187386,
+        "value": 0.057831404630471615,
         "unit": "1",
         "better": "higher",
         "kind": "derived",
@@ -2256,13 +2260,19 @@
         "quantity": "Fick E_O2 (J/ml)",
         "value": 19.34285714285714,
         "kind": "measured-secondhand",
-        "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 mg O2 per ml (STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
+        "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 ml O2 per mg (1.429 mg/ml, STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
        },
        {
         "quantity": "Hb O2 capacity (ml/ml)",
         "value": 0.206,
         "kind": "calibrated",
         "source": "physiology/index.js warmHbCapacity: set so the snapper maximal O2 extraction (durnford2026) fits the trout Hill curve. Calibrated, not measured"
+       },
+       {
+        "quantity": "aerobic ceiling from measured MO2max (W)",
+        "value": 0.0007787347074896219,
+        "kind": "derived",
+        "source": "eta 0.15 (borrowed) x 13.54 J/mg x MO2max 1988 mg O2/kg/h x mass: MO2max measured 2630 mg/kg/h at 28 degC, 0.43 g (Palstra AP, Tudorache C, Rovira M, et al. (2010) Establishing zebrafish as a novel exercise model. PLoS One 5:e14483, doi:10.1371/journal.pone.0014483, PMC3013094, Results \"Swimming economy\": maximal O2 consumption at Ucrit 82.18 +/- 6.50 umol g-1 h-1 (= 2630 mg O2 kg-1 h-1); wild-type adults 3.05 cm BL, 0.43 g, 28 degC, n = 10 (Methods)), scaled x 0.756 to 0.6943 g and 25 degC (mass-specific MO2max exponent -0.15 and Q10 2 (assumed; physics/FICK-CEILING-CHECK.md section 3 brackets -0.1 to -0.2 and 2 to 2.5)); unscaled ceiling 1.030e-3 W"
        },
        {
         "quantity": "cardiac output (ml/s)",
@@ -2307,8 +2317,8 @@
         "medium": "water",
         "depth_m": 0,
         "altitude_m": 0,
-        "salinity_psu": 35,
-        "water_density_kg_m3": 1023.4,
+        "salinity_psu": 0,
+        "water_density_kg_m3": 997.05,
         "air_density_kg_m3": 1.225,
         "pressure_kPa": 101.325,
         "pO2_kPa": 20.51612216853939,
@@ -2342,7 +2352,7 @@
       "flags": [],
       "taxon": "Danio rerio"
      },
-     "lawset_version": "1.5.0",
+     "lawset_version": "1.6.0",
      "verdicts": [
       {
        "law_id": "thompson1917-ch02-06",
@@ -2358,7 +2368,7 @@
         "CLmax",
         "airspeed_m_s"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "thompson1917-ch03-07",
@@ -2372,7 +2382,7 @@
        "missing": [],
        "scope_reason": "scoped to Exocoetidae (constraint C7b scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "violated",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "scaling-area-law",
@@ -2388,7 +2398,7 @@
        ],
        "scope_reason": "scoped to Exocoetidae (constraint C2a scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "scaling-strength-law",
@@ -2404,7 +2414,7 @@
        ],
        "scope_reason": "scoped to Exocoetidae (constraint C8e scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "thompson1917-ch02-10",
@@ -2420,7 +2430,7 @@
        ],
        "scope_reason": "scoped to Exocoetidae (constraint C9c scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "scaling-strength-law",
@@ -2436,7 +2446,7 @@
        ],
        "scope_reason": "scoped to Exocoetidae (constraint C8c scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "flight-climb-glide-law",
@@ -2452,7 +2462,7 @@
         "LD_max",
         "glideDistance_m"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "flight-climb-glide-law",
@@ -2468,11 +2478,11 @@
         "powerAvailable_W (or flightMuscleFraction and musclePowerPerKg_W: the muscle premise R6, a named hypothesis)",
         "climbRate_m_s"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "fick-principle",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "C14",
@@ -2486,7 +2496,7 @@
         "arterialO2",
         "airspeed_m_s and LD_max (or powerRequired_W)"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "flight-allometry-law",
@@ -2500,7 +2510,7 @@
        "missing": [
         "fitted exponents for weight, area and wing loading with intervals"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "thompson1917-ch02-06",
@@ -2514,7 +2524,7 @@
        "missing": [
         "the power-required exponent across sizes"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "genotype-genetic-code",
@@ -2528,7 +2538,7 @@
        "missing": [
         "genotype_edits"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "genotype-pleiotropy-closure",
@@ -2542,7 +2552,7 @@
        "missing": [
         "genotype_edits"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "genotype-developmental-ordering",
@@ -2556,7 +2566,7 @@
        "missing": [
         "developmental_claims"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "genotype-substitution-time",
@@ -2573,7 +2583,7 @@
         "substitution_budget.mutation_rate",
         "substitution_budget.generations_T"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "haldane-cost-of-selection",
@@ -2590,7 +2600,7 @@
         "substitution_budget.reproductive_excess",
         "substitution_budget.cost_per_substitution"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "E2",
@@ -2604,11 +2614,11 @@
        "missing": [],
        "scope_reason": "scoped to Exocoetidae (law E2 scope); the design is Danio rerio.",
        "evaluator_verdict": "violated",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "E3",
-       "version": "1.0.0",
+       "version": "2.0.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "E3",
@@ -2620,7 +2630,7 @@
        ],
        "scope_reason": "mass_kg = 0.0006943 kg is outside the law's range [0.06, 0.06].",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "E4",
@@ -2637,7 +2647,7 @@
         "oxycaloric_J_per_unit_O2",
         "airspeed_m_s and LD_max (or powerRequired_W)"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "E7",
@@ -2654,7 +2664,7 @@
        ],
        "scope_reason": "scoped to life stages embryo, larva; the design is at adult.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-thermal",
@@ -2669,7 +2679,7 @@
         "ct_min_C",
         "ct_max_C"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-thermal",
@@ -2685,11 +2695,11 @@
         "reference_temperature_C",
         "reference_sustained_power_W"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-current",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "P2",
@@ -2699,11 +2709,11 @@
        "missing": [
         "current_speed_m_s"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-current",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "P2b",
@@ -2716,7 +2726,7 @@
         "drag_area_m2",
         "aerobicCeiling_W (or efficiency, oxycaloric, cardiacOutput, arterialO2)"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-pressure",
@@ -2732,7 +2742,7 @@
         "bladder_volume_surface_ml",
         "bladder_volume_at_depth_ml"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-depth-cap",
@@ -2746,7 +2756,7 @@
        "missing": [
         "depth_m"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-isa-vmin",
@@ -2763,7 +2773,7 @@
         "CLmax",
         "airspeed_m_s"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-wind-glide",
@@ -2781,7 +2791,7 @@
         "LD_max",
         "ground_distance_m"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-energy-balance",
@@ -2799,7 +2809,7 @@
         "assimilation_efficiency",
         "mass_change"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       }
      ],
      "violations": [],
@@ -2814,7 +2824,7 @@
        "life_stage": "adult",
        "body_temperature_C": 25,
        "water_temperature_C": 25,
-       "water_density_kg_m3": 1023.4,
+       "water_density_kg_m3": 997.05,
        "critical_swimming_speed_m_s": 0.56,
        "teleost": true,
        "sustained_power_W": 0.00399160013
@@ -2887,13 +2897,19 @@
       "quantity": "Fick E_O2 (J/ml)",
       "value": 19.34285714285714,
       "kind": "measured-secondhand",
-      "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 mg O2 per ml (STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
+      "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 ml O2 per mg (1.429 mg/ml, STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
      },
      {
       "quantity": "Hb O2 capacity (ml/ml)",
       "value": 0.206,
       "kind": "calibrated",
       "source": "physiology/index.js warmHbCapacity: set so the snapper maximal O2 extraction (durnford2026) fits the trout Hill curve. Calibrated, not measured"
+     },
+     {
+      "quantity": "aerobic ceiling from measured MO2max (W)",
+      "value": 0.0007787347074896219,
+      "kind": "derived",
+      "source": "eta 0.15 (borrowed) x 13.54 J/mg x MO2max 1988 mg O2/kg/h x mass: MO2max measured 2630 mg/kg/h at 28 degC, 0.43 g (Palstra AP, Tudorache C, Rovira M, et al. (2010) Establishing zebrafish as a novel exercise model. PLoS One 5:e14483, doi:10.1371/journal.pone.0014483, PMC3013094, Results \"Swimming economy\": maximal O2 consumption at Ucrit 82.18 +/- 6.50 umol g-1 h-1 (= 2630 mg O2 kg-1 h-1); wild-type adults 3.05 cm BL, 0.43 g, 28 degC, n = 10 (Methods)), scaled x 0.756 to 0.6943 g and 25 degC (mass-specific MO2max exponent -0.15 and Q10 2 (assumed; physics/FICK-CEILING-CHECK.md section 3 brackets -0.1 to -0.2 and 2 to 2.5)); unscaled ceiling 1.030e-3 W"
      },
      {
       "quantity": "cardiac output (ml/s)",
@@ -3063,16 +3079,16 @@
      },
      {
       "quantity": "ambient.salinity_psu",
-      "value": 35,
+      "value": 0,
       "kind": "assumed",
-      "source": "conditions/baseline.json salinity_psu (35, assumed)",
+      "source": "freshwater organism default: Danio rerio is a freshwater species (0 psu); conditions/baseline.json 35 psu is the marine baseline and does not apply",
       "unit": "psu"
      },
      {
       "quantity": "ambient.water_density_kg_m3",
-      "value": 1023.4,
+      "value": 997.05,
       "kind": "assumed",
-      "source": "physiology/index.js o2sat_mg_l: density 1.0234 kg/l for salinity > 0 (assumed there, not fetched); 1000 for fresh water",
+      "source": "fresh water: NIST Chemistry WebBook pure-water density at 0.101325 MPa, interpolated at the water temperature (https://webbook.nist.gov/chemistry/fluid/)",
       "unit": "kg/m3"
      },
      {
@@ -3185,7 +3201,7 @@
     "weakest_input": "assumed",
     "counts": {
      "borrowed": 9,
-     "derived": 17,
+     "derived": 18,
      "assumed": 13,
      "calibrated": 2,
      "measured-secondhand": 3,
@@ -3231,7 +3247,7 @@
    },
    "isError": false,
    "result": {
-    "contract_version": "0.5.0",
+    "contract_version": "0.7.0",
     "result": {
      "scenario": "glide",
      "run": {
@@ -3346,16 +3362,16 @@
        {
         "key": "aerobic_power_available_W",
         "label": "Fick aerobic power bound eta E Q Ca",
-        "value": 0.0003722168094778689,
+        "value": 0.0007787347074896219,
         "unit": "W",
         "better": "higher",
         "kind": "derived",
-        "source": "eta E Q Ca, Ca 0.1896 ml/ml at PO2 20.5 kPa (Hill P50 3.31 kPa, n 1.34), Q 0.0007 ml/s"
+        "source": "eta 0.15 (borrowed) x 13.54 J/mg x MO2max 1988 mg O2/kg/h x mass: MO2max measured 2630 mg/kg/h at 28 degC, 0.43 g (Palstra AP, Tudorache C, Rovira M, et al. (2010) Establishing zebrafish as a novel exercise model. PLoS One 5:e14483, doi:10.1371/journal.pone.0014483, PMC3013094, Results \"Swimming economy\": maximal O2 consumption at Ucrit 82.18 +/- 6.50 umol g-1 h-1 (= 2630 mg O2 kg-1 h-1); wild-type adults 3.05 cm BL, 0.43 g, 28 degC, n = 10 (Methods)), scaled x 0.756 to 0.6943 g and 25 degC (mass-specific MO2max exponent -0.15 and Q10 2 (assumed; physics/FICK-CEILING-CHECK.md section 3 brackets -0.1 to -0.2 and 2 to 2.5)); unscaled ceiling 1.030e-3 W"
        },
        {
         "key": "powered_flight_margin",
         "label": "Aerobic power available / power required",
-        "value": 0.0377475259262339,
+        "value": 0.07897361917065825,
         "unit": "1",
         "better": "higher",
         "kind": "derived",
@@ -3419,13 +3435,19 @@
         "quantity": "Fick E_O2 (J/ml)",
         "value": 19.34285714285714,
         "kind": "measured-secondhand",
-        "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 mg O2 per ml (STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
+        "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 ml O2 per mg (1.429 mg/ml, STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
        },
        {
         "quantity": "Hb O2 capacity (ml/ml)",
         "value": 0.206,
         "kind": "calibrated",
         "source": "physiology/index.js warmHbCapacity: set so the snapper maximal O2 extraction (durnford2026) fits the trout Hill curve. Calibrated, not measured"
+       },
+       {
+        "quantity": "aerobic ceiling from measured MO2max (W)",
+        "value": 0.0007787347074896219,
+        "kind": "derived",
+        "source": "eta 0.15 (borrowed) x 13.54 J/mg x MO2max 1988 mg O2/kg/h x mass: MO2max measured 2630 mg/kg/h at 28 degC, 0.43 g (Palstra AP, Tudorache C, Rovira M, et al. (2010) Establishing zebrafish as a novel exercise model. PLoS One 5:e14483, doi:10.1371/journal.pone.0014483, PMC3013094, Results \"Swimming economy\": maximal O2 consumption at Ucrit 82.18 +/- 6.50 umol g-1 h-1 (= 2630 mg O2 kg-1 h-1); wild-type adults 3.05 cm BL, 0.43 g, 28 degC, n = 10 (Methods)), scaled x 0.756 to 0.6943 g and 25 degC (mass-specific MO2max exponent -0.15 and Q10 2 (assumed; physics/FICK-CEILING-CHECK.md section 3 brackets -0.1 to -0.2 and 2 to 2.5)); unscaled ceiling 1.030e-3 W"
        },
        {
         "quantity": "cardiac output (ml/s)",
@@ -3470,8 +3492,8 @@
         "medium": "water",
         "depth_m": 0,
         "altitude_m": 0,
-        "salinity_psu": 35,
-        "water_density_kg_m3": 1023.4,
+        "salinity_psu": 0,
+        "water_density_kg_m3": 997.05,
         "air_density_kg_m3": 1.225,
         "pressure_kPa": 101.325,
         "pO2_kPa": 20.51612216853939,
@@ -3505,7 +3527,7 @@
       "flags": [],
       "taxon": "Danio rerio"
      },
-     "lawset_version": "1.5.0",
+     "lawset_version": "1.6.0",
      "verdicts": [
       {
        "law_id": "thompson1917-ch02-06",
@@ -3521,7 +3543,7 @@
         "CLmax",
         "airspeed_m_s"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "thompson1917-ch03-07",
@@ -3535,7 +3557,7 @@
        "missing": [],
        "scope_reason": "scoped to Exocoetidae (constraint C7b scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "violated",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "scaling-area-law",
@@ -3551,7 +3573,7 @@
        ],
        "scope_reason": "scoped to Exocoetidae (constraint C2a scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "scaling-strength-law",
@@ -3567,7 +3589,7 @@
        ],
        "scope_reason": "scoped to Exocoetidae (constraint C8e scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "thompson1917-ch02-10",
@@ -3583,7 +3605,7 @@
        ],
        "scope_reason": "scoped to Exocoetidae (constraint C9c scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "scaling-strength-law",
@@ -3599,7 +3621,7 @@
        ],
        "scope_reason": "scoped to Exocoetidae (constraint C8c scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "flight-climb-glide-law",
@@ -3615,7 +3637,7 @@
         "LD_max",
         "glideDistance_m"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "flight-climb-glide-law",
@@ -3631,11 +3653,11 @@
         "powerAvailable_W (or flightMuscleFraction and musclePowerPerKg_W: the muscle premise R6, a named hypothesis)",
         "climbRate_m_s"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "fick-principle",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "C14",
@@ -3649,7 +3671,7 @@
         "arterialO2",
         "airspeed_m_s and LD_max (or powerRequired_W)"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "flight-allometry-law",
@@ -3663,7 +3685,7 @@
        "missing": [
         "fitted exponents for weight, area and wing loading with intervals"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "thompson1917-ch02-06",
@@ -3677,7 +3699,7 @@
        "missing": [
         "the power-required exponent across sizes"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "genotype-genetic-code",
@@ -3691,7 +3713,7 @@
        "missing": [
         "genotype_edits"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "genotype-pleiotropy-closure",
@@ -3705,7 +3727,7 @@
        "missing": [
         "genotype_edits"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "genotype-developmental-ordering",
@@ -3719,7 +3741,7 @@
        "missing": [
         "developmental_claims"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "genotype-substitution-time",
@@ -3736,7 +3758,7 @@
         "substitution_budget.mutation_rate",
         "substitution_budget.generations_T"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "haldane-cost-of-selection",
@@ -3753,7 +3775,7 @@
         "substitution_budget.reproductive_excess",
         "substitution_budget.cost_per_substitution"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "E2",
@@ -3767,11 +3789,11 @@
        "missing": [],
        "scope_reason": "scoped to Exocoetidae (law E2 scope); the design is Danio rerio.",
        "evaluator_verdict": "violated",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "E3",
-       "version": "1.0.0",
+       "version": "2.0.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "E3",
@@ -3783,7 +3805,7 @@
        ],
        "scope_reason": "mass_kg = 0.0006943 kg is outside the law's range [0.06, 0.06].",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "E4",
@@ -3800,7 +3822,7 @@
         "oxycaloric_J_per_unit_O2",
         "airspeed_m_s and LD_max (or powerRequired_W)"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "E7",
@@ -3817,7 +3839,7 @@
        ],
        "scope_reason": "scoped to life stages embryo, larva; the design is at adult.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-thermal",
@@ -3832,7 +3854,7 @@
         "ct_min_C",
         "ct_max_C"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-thermal",
@@ -3848,11 +3870,11 @@
         "reference_temperature_C",
         "reference_sustained_power_W"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-current",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "P2",
@@ -3862,11 +3884,11 @@
        "missing": [
         "current_speed_m_s"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-current",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "P2b",
@@ -3879,7 +3901,7 @@
         "drag_area_m2",
         "aerobicCeiling_W (or efficiency, oxycaloric, cardiacOutput, arterialO2)"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-pressure",
@@ -3895,7 +3917,7 @@
         "bladder_volume_surface_ml",
         "bladder_volume_at_depth_ml"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-depth-cap",
@@ -3909,7 +3931,7 @@
        "missing": [
         "depth_m"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-isa-vmin",
@@ -3926,7 +3948,7 @@
         "CLmax",
         "airspeed_m_s"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-wind-glide",
@@ -3944,7 +3966,7 @@
         "LD_max",
         "ground_distance_m"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-energy-balance",
@@ -3962,7 +3984,7 @@
         "assimilation_efficiency",
         "mass_change"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       }
      ],
      "violations": [],
@@ -3977,7 +3999,7 @@
        "life_stage": "adult",
        "body_temperature_C": 25,
        "water_temperature_C": 25,
-       "water_density_kg_m3": 1023.4,
+       "water_density_kg_m3": 997.05,
        "critical_swimming_speed_m_s": 0.56,
        "teleost": true,
        "sustained_power_W": 0.00399160013
@@ -4050,13 +4072,19 @@
       "quantity": "Fick E_O2 (J/ml)",
       "value": 19.34285714285714,
       "kind": "measured-secondhand",
-      "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 mg O2 per ml (STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
+      "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 ml O2 per mg (1.429 mg/ml, STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
      },
      {
       "quantity": "Hb O2 capacity (ml/ml)",
       "value": 0.206,
       "kind": "calibrated",
       "source": "physiology/index.js warmHbCapacity: set so the snapper maximal O2 extraction (durnford2026) fits the trout Hill curve. Calibrated, not measured"
+     },
+     {
+      "quantity": "aerobic ceiling from measured MO2max (W)",
+      "value": 0.0007787347074896219,
+      "kind": "derived",
+      "source": "eta 0.15 (borrowed) x 13.54 J/mg x MO2max 1988 mg O2/kg/h x mass: MO2max measured 2630 mg/kg/h at 28 degC, 0.43 g (Palstra AP, Tudorache C, Rovira M, et al. (2010) Establishing zebrafish as a novel exercise model. PLoS One 5:e14483, doi:10.1371/journal.pone.0014483, PMC3013094, Results \"Swimming economy\": maximal O2 consumption at Ucrit 82.18 +/- 6.50 umol g-1 h-1 (= 2630 mg O2 kg-1 h-1); wild-type adults 3.05 cm BL, 0.43 g, 28 degC, n = 10 (Methods)), scaled x 0.756 to 0.6943 g and 25 degC (mass-specific MO2max exponent -0.15 and Q10 2 (assumed; physics/FICK-CEILING-CHECK.md section 3 brackets -0.1 to -0.2 and 2 to 2.5)); unscaled ceiling 1.030e-3 W"
      },
      {
       "quantity": "cardiac output (ml/s)",
@@ -4226,16 +4254,16 @@
      },
      {
       "quantity": "ambient.salinity_psu",
-      "value": 35,
+      "value": 0,
       "kind": "assumed",
-      "source": "conditions/baseline.json salinity_psu (35, assumed)",
+      "source": "freshwater organism default: Danio rerio is a freshwater species (0 psu); conditions/baseline.json 35 psu is the marine baseline and does not apply",
       "unit": "psu"
      },
      {
       "quantity": "ambient.water_density_kg_m3",
-      "value": 1023.4,
+      "value": 997.05,
       "kind": "assumed",
-      "source": "physiology/index.js o2sat_mg_l: density 1.0234 kg/l for salinity > 0 (assumed there, not fetched); 1000 for fresh water",
+      "source": "fresh water: NIST Chemistry WebBook pure-water density at 0.101325 MPa, interpolated at the water temperature (https://webbook.nist.gov/chemistry/fluid/)",
       "unit": "kg/m3"
      },
      {
@@ -4348,7 +4376,7 @@
     "weakest_input": "assumed",
     "counts": {
      "borrowed": 9,
-     "derived": 17,
+     "derived": 18,
      "assumed": 13,
      "calibrated": 2,
      "measured-secondhand": 3,
@@ -4369,7 +4397,7 @@
    },
    "isError": false,
    "result": {
-    "contract_version": "0.5.0",
+    "contract_version": "0.7.0",
     "result": {
      "scenario": "glide",
      "run": {
@@ -4483,16 +4511,16 @@
        {
         "key": "aerobic_power_available_W",
         "label": "Fick aerobic power bound eta E Q Ca",
-        "value": 0.0003722168094778689,
+        "value": 0.0007787347074896219,
         "unit": "W",
         "better": "higher",
         "kind": "derived",
-        "source": "eta E Q Ca, Ca 0.1896 ml/ml at PO2 20.5 kPa (Hill P50 3.31 kPa, n 1.34), Q 0.0007 ml/s"
+        "source": "eta 0.15 (borrowed) x 13.54 J/mg x MO2max 1988 mg O2/kg/h x mass: MO2max measured 2630 mg/kg/h at 28 degC, 0.43 g (Palstra AP, Tudorache C, Rovira M, et al. (2010) Establishing zebrafish as a novel exercise model. PLoS One 5:e14483, doi:10.1371/journal.pone.0014483, PMC3013094, Results \"Swimming economy\": maximal O2 consumption at Ucrit 82.18 +/- 6.50 umol g-1 h-1 (= 2630 mg O2 kg-1 h-1); wild-type adults 3.05 cm BL, 0.43 g, 28 degC, n = 10 (Methods)), scaled x 0.756 to 0.6943 g and 25 degC (mass-specific MO2max exponent -0.15 and Q10 2 (assumed; physics/FICK-CEILING-CHECK.md section 3 brackets -0.1 to -0.2 and 2 to 2.5)); unscaled ceiling 1.030e-3 W"
        },
        {
         "key": "powered_flight_margin",
         "label": "Aerobic power available / power required",
-        "value": 0.02764204640187386,
+        "value": 0.057831404630471615,
         "unit": "1",
         "better": "higher",
         "kind": "derived",
@@ -4501,7 +4529,7 @@
       ],
       "survives": null,
       "feasible": true,
-      "feasibility_note": "glide only: the aerobic O2 supply cannot pay for level powered flight (Fick bound)",
+      "feasibility_note": "glide only: the aerobic O2 supply cannot pay for level powered flight (ceiling from measured MO2max; 17.3x short)",
       "limiting": null,
       "provenance": [
        {
@@ -4556,13 +4584,19 @@
         "quantity": "Fick E_O2 (J/ml)",
         "value": 19.34285714285714,
         "kind": "measured-secondhand",
-        "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 mg O2 per ml (STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
+        "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 ml O2 per mg (1.429 mg/ml, STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
        },
        {
         "quantity": "Hb O2 capacity (ml/ml)",
         "value": 0.206,
         "kind": "calibrated",
         "source": "physiology/index.js warmHbCapacity: set so the snapper maximal O2 extraction (durnford2026) fits the trout Hill curve. Calibrated, not measured"
+       },
+       {
+        "quantity": "aerobic ceiling from measured MO2max (W)",
+        "value": 0.0007787347074896219,
+        "kind": "derived",
+        "source": "eta 0.15 (borrowed) x 13.54 J/mg x MO2max 1988 mg O2/kg/h x mass: MO2max measured 2630 mg/kg/h at 28 degC, 0.43 g (Palstra AP, Tudorache C, Rovira M, et al. (2010) Establishing zebrafish as a novel exercise model. PLoS One 5:e14483, doi:10.1371/journal.pone.0014483, PMC3013094, Results \"Swimming economy\": maximal O2 consumption at Ucrit 82.18 +/- 6.50 umol g-1 h-1 (= 2630 mg O2 kg-1 h-1); wild-type adults 3.05 cm BL, 0.43 g, 28 degC, n = 10 (Methods)), scaled x 0.756 to 0.6943 g and 25 degC (mass-specific MO2max exponent -0.15 and Q10 2 (assumed; physics/FICK-CEILING-CHECK.md section 3 brackets -0.1 to -0.2 and 2 to 2.5)); unscaled ceiling 1.030e-3 W"
        },
        {
         "quantity": "cardiac output (ml/s)",
@@ -4607,8 +4641,8 @@
         "medium": "water",
         "depth_m": 0,
         "altitude_m": 0,
-        "salinity_psu": 35,
-        "water_density_kg_m3": 1023.4,
+        "salinity_psu": 0,
+        "water_density_kg_m3": 997.05,
         "air_density_kg_m3": 1.225,
         "pressure_kPa": 101.325,
         "pO2_kPa": 20.51612216853939,
@@ -4642,7 +4676,7 @@
       "flags": [],
       "taxon": "Danio rerio"
      },
-     "lawset_version": "1.5.0",
+     "lawset_version": "1.6.0",
      "verdicts": [
       {
        "law_id": "thompson1917-ch02-06",
@@ -4658,7 +4692,7 @@
         "CLmax",
         "airspeed_m_s"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "thompson1917-ch03-07",
@@ -4672,7 +4706,7 @@
        "missing": [],
        "scope_reason": "scoped to Exocoetidae (constraint C7b scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "violated",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "scaling-area-law",
@@ -4688,7 +4722,7 @@
        ],
        "scope_reason": "scoped to Exocoetidae (constraint C2a scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "scaling-strength-law",
@@ -4704,7 +4738,7 @@
        ],
        "scope_reason": "scoped to Exocoetidae (constraint C8e scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "thompson1917-ch02-10",
@@ -4720,7 +4754,7 @@
        ],
        "scope_reason": "scoped to Exocoetidae (constraint C9c scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "scaling-strength-law",
@@ -4736,7 +4770,7 @@
        ],
        "scope_reason": "scoped to Exocoetidae (constraint C8c scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "flight-climb-glide-law",
@@ -4748,7 +4782,7 @@
        "verdict": "holds",
        "binding": true,
        "missing": [],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "flight-climb-glide-law",
@@ -4764,11 +4798,11 @@
         "powerAvailable_W (or flightMuscleFraction and musclePowerPerKg_W: the muscle premise R6, a named hypothesis)",
         "climbRate_m_s"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "fick-principle",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "C14",
@@ -4782,7 +4816,7 @@
         "arterialO2",
         "airspeed_m_s and LD_max (or powerRequired_W)"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "flight-allometry-law",
@@ -4796,7 +4830,7 @@
        "missing": [
         "fitted exponents for weight, area and wing loading with intervals"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "thompson1917-ch02-06",
@@ -4810,7 +4844,7 @@
        "missing": [
         "the power-required exponent across sizes"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "genotype-genetic-code",
@@ -4824,7 +4858,7 @@
        "missing": [
         "genotype_edits"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "genotype-pleiotropy-closure",
@@ -4838,7 +4872,7 @@
        "missing": [
         "genotype_edits"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "genotype-developmental-ordering",
@@ -4852,7 +4886,7 @@
        "missing": [
         "developmental_claims"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "genotype-substitution-time",
@@ -4869,7 +4903,7 @@
         "substitution_budget.mutation_rate",
         "substitution_budget.generations_T"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "haldane-cost-of-selection",
@@ -4886,7 +4920,7 @@
         "substitution_budget.reproductive_excess",
         "substitution_budget.cost_per_substitution"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "E2",
@@ -4900,11 +4934,11 @@
        "missing": [],
        "scope_reason": "scoped to Exocoetidae (law E2 scope); the design is Danio rerio.",
        "evaluator_verdict": "violated",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "E3",
-       "version": "1.0.0",
+       "version": "2.0.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "E3",
@@ -4916,7 +4950,7 @@
        ],
        "scope_reason": "mass_kg = 0.0006943 kg is outside the law's range [0.06, 0.06].",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "E4",
@@ -4933,7 +4967,7 @@
         "oxycaloric_J_per_unit_O2",
         "airspeed_m_s and LD_max (or powerRequired_W)"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "E7",
@@ -4950,7 +4984,7 @@
        ],
        "scope_reason": "scoped to life stages embryo, larva; the design is at adult.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-thermal",
@@ -4965,7 +4999,7 @@
         "ct_min_C",
         "ct_max_C"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-thermal",
@@ -4981,11 +5015,11 @@
         "reference_temperature_C",
         "reference_sustained_power_W"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-current",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "P2",
@@ -4995,11 +5029,11 @@
        "missing": [
         "current_speed_m_s"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-current",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "P2b",
@@ -5012,7 +5046,7 @@
         "drag_area_m2",
         "aerobicCeiling_W (or efficiency, oxycaloric, cardiacOutput, arterialO2)"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-pressure",
@@ -5028,7 +5062,7 @@
         "bladder_volume_surface_ml",
         "bladder_volume_at_depth_ml"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-depth-cap",
@@ -5042,7 +5076,7 @@
        "missing": [
         "depth_m"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-isa-vmin",
@@ -5059,7 +5093,7 @@
         "CLmax",
         "airspeed_m_s"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-wind-glide",
@@ -5071,7 +5105,7 @@
        "verdict": "holds",
        "binding": true,
        "missing": [],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-energy-balance",
@@ -5089,7 +5123,7 @@
         "assimilation_efficiency",
         "mass_change"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       }
      ],
      "violations": [],
@@ -5104,7 +5138,7 @@
        "life_stage": "adult",
        "body_temperature_C": 25,
        "water_temperature_C": 25,
-       "water_density_kg_m3": 1023.4,
+       "water_density_kg_m3": 997.05,
        "critical_swimming_speed_m_s": 0.56,
        "teleost": true,
        "sustained_power_W": 0.00399160013,
@@ -5191,13 +5225,19 @@
       "quantity": "Fick E_O2 (J/ml)",
       "value": 19.34285714285714,
       "kind": "measured-secondhand",
-      "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 mg O2 per ml (STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
+      "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 ml O2 per mg (1.429 mg/ml, STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
      },
      {
       "quantity": "Hb O2 capacity (ml/ml)",
       "value": 0.206,
       "kind": "calibrated",
       "source": "physiology/index.js warmHbCapacity: set so the snapper maximal O2 extraction (durnford2026) fits the trout Hill curve. Calibrated, not measured"
+     },
+     {
+      "quantity": "aerobic ceiling from measured MO2max (W)",
+      "value": 0.0007787347074896219,
+      "kind": "derived",
+      "source": "eta 0.15 (borrowed) x 13.54 J/mg x MO2max 1988 mg O2/kg/h x mass: MO2max measured 2630 mg/kg/h at 28 degC, 0.43 g (Palstra AP, Tudorache C, Rovira M, et al. (2010) Establishing zebrafish as a novel exercise model. PLoS One 5:e14483, doi:10.1371/journal.pone.0014483, PMC3013094, Results \"Swimming economy\": maximal O2 consumption at Ucrit 82.18 +/- 6.50 umol g-1 h-1 (= 2630 mg O2 kg-1 h-1); wild-type adults 3.05 cm BL, 0.43 g, 28 degC, n = 10 (Methods)), scaled x 0.756 to 0.6943 g and 25 degC (mass-specific MO2max exponent -0.15 and Q10 2 (assumed; physics/FICK-CEILING-CHECK.md section 3 brackets -0.1 to -0.2 and 2 to 2.5)); unscaled ceiling 1.030e-3 W"
      },
      {
       "quantity": "cardiac output (ml/s)",
@@ -5367,16 +5407,16 @@
      },
      {
       "quantity": "ambient.salinity_psu",
-      "value": 35,
+      "value": 0,
       "kind": "assumed",
-      "source": "conditions/baseline.json salinity_psu (35, assumed)",
+      "source": "freshwater organism default: Danio rerio is a freshwater species (0 psu); conditions/baseline.json 35 psu is the marine baseline and does not apply",
       "unit": "psu"
      },
      {
       "quantity": "ambient.water_density_kg_m3",
-      "value": 1023.4,
+      "value": 997.05,
       "kind": "assumed",
-      "source": "physiology/index.js o2sat_mg_l: density 1.0234 kg/l for salinity > 0 (assumed there, not fetched); 1000 for fresh water",
+      "source": "fresh water: NIST Chemistry WebBook pure-water density at 0.101325 MPa, interpolated at the water temperature (https://webbook.nist.gov/chemistry/fluid/)",
       "unit": "kg/m3"
      },
      {
@@ -5489,7 +5529,7 @@
     "weakest_input": "assumed",
     "counts": {
      "borrowed": 9,
-     "derived": 17,
+     "derived": 18,
      "assumed": 14,
      "measured-secondhand": 3,
      "calibrated": 1,
@@ -5536,7 +5576,7 @@
    },
    "isError": false,
    "result": {
-    "contract_version": "0.5.0",
+    "contract_version": "0.7.0",
     "result": {
      "scenario": "glide",
      "run": {
@@ -5650,16 +5690,16 @@
        {
         "key": "aerobic_power_available_W",
         "label": "Fick aerobic power bound eta E Q Ca",
-        "value": 0.0003722168094778689,
+        "value": 0.0007787347074896219,
         "unit": "W",
         "better": "higher",
         "kind": "derived",
-        "source": "eta E Q Ca, Ca 0.1896 ml/ml at PO2 20.5 kPa (Hill P50 3.31 kPa, n 1.34), Q 0.0007 ml/s"
+        "source": "eta 0.15 (borrowed) x 13.54 J/mg x MO2max 1988 mg O2/kg/h x mass: MO2max measured 2630 mg/kg/h at 28 degC, 0.43 g (Palstra AP, Tudorache C, Rovira M, et al. (2010) Establishing zebrafish as a novel exercise model. PLoS One 5:e14483, doi:10.1371/journal.pone.0014483, PMC3013094, Results \"Swimming economy\": maximal O2 consumption at Ucrit 82.18 +/- 6.50 umol g-1 h-1 (= 2630 mg O2 kg-1 h-1); wild-type adults 3.05 cm BL, 0.43 g, 28 degC, n = 10 (Methods)), scaled x 0.756 to 0.6943 g and 25 degC (mass-specific MO2max exponent -0.15 and Q10 2 (assumed; physics/FICK-CEILING-CHECK.md section 3 brackets -0.1 to -0.2 and 2 to 2.5)); unscaled ceiling 1.030e-3 W"
        },
        {
         "key": "powered_flight_margin",
         "label": "Aerobic power available / power required",
-        "value": 0.0377475259262339,
+        "value": 0.07897361917065825,
         "unit": "1",
         "better": "higher",
         "kind": "derived",
@@ -5668,7 +5708,7 @@
       ],
       "survives": null,
       "feasible": true,
-      "feasibility_note": "glide only: the aerobic O2 supply cannot pay for level powered flight (Fick bound)",
+      "feasibility_note": "glide only: the aerobic O2 supply cannot pay for level powered flight (ceiling from measured MO2max; 12.7x short)",
       "limiting": null,
       "provenance": [
        {
@@ -5723,13 +5763,19 @@
         "quantity": "Fick E_O2 (J/ml)",
         "value": 19.34285714285714,
         "kind": "measured-secondhand",
-        "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 mg O2 per ml (STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
+        "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 ml O2 per mg (1.429 mg/ml, STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
        },
        {
         "quantity": "Hb O2 capacity (ml/ml)",
         "value": 0.206,
         "kind": "calibrated",
         "source": "physiology/index.js warmHbCapacity: set so the snapper maximal O2 extraction (durnford2026) fits the trout Hill curve. Calibrated, not measured"
+       },
+       {
+        "quantity": "aerobic ceiling from measured MO2max (W)",
+        "value": 0.0007787347074896219,
+        "kind": "derived",
+        "source": "eta 0.15 (borrowed) x 13.54 J/mg x MO2max 1988 mg O2/kg/h x mass: MO2max measured 2630 mg/kg/h at 28 degC, 0.43 g (Palstra AP, Tudorache C, Rovira M, et al. (2010) Establishing zebrafish as a novel exercise model. PLoS One 5:e14483, doi:10.1371/journal.pone.0014483, PMC3013094, Results \"Swimming economy\": maximal O2 consumption at Ucrit 82.18 +/- 6.50 umol g-1 h-1 (= 2630 mg O2 kg-1 h-1); wild-type adults 3.05 cm BL, 0.43 g, 28 degC, n = 10 (Methods)), scaled x 0.756 to 0.6943 g and 25 degC (mass-specific MO2max exponent -0.15 and Q10 2 (assumed; physics/FICK-CEILING-CHECK.md section 3 brackets -0.1 to -0.2 and 2 to 2.5)); unscaled ceiling 1.030e-3 W"
        },
        {
         "quantity": "cardiac output (ml/s)",
@@ -5774,8 +5820,8 @@
         "medium": "water",
         "depth_m": 0,
         "altitude_m": 0,
-        "salinity_psu": 35,
-        "water_density_kg_m3": 1023.4,
+        "salinity_psu": 0,
+        "water_density_kg_m3": 997.05,
         "air_density_kg_m3": 1.225,
         "pressure_kPa": 101.325,
         "pO2_kPa": 20.51612216853939,
@@ -5809,7 +5855,7 @@
       "flags": [],
       "taxon": "Danio rerio"
      },
-     "lawset_version": "1.5.0",
+     "lawset_version": "1.6.0",
      "verdicts": [
       {
        "law_id": "thompson1917-ch02-06",
@@ -5825,7 +5871,7 @@
         "CLmax",
         "airspeed_m_s"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "thompson1917-ch03-07",
@@ -5839,7 +5885,7 @@
        "missing": [],
        "scope_reason": "scoped to Exocoetidae (constraint C7b scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "violated",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "scaling-area-law",
@@ -5855,7 +5901,7 @@
        ],
        "scope_reason": "scoped to Exocoetidae (constraint C2a scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "scaling-strength-law",
@@ -5871,7 +5917,7 @@
        ],
        "scope_reason": "scoped to Exocoetidae (constraint C8e scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "thompson1917-ch02-10",
@@ -5887,7 +5933,7 @@
        ],
        "scope_reason": "scoped to Exocoetidae (constraint C9c scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "scaling-strength-law",
@@ -5903,7 +5949,7 @@
        ],
        "scope_reason": "scoped to Exocoetidae (constraint C8c scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "flight-climb-glide-law",
@@ -5915,7 +5961,7 @@
        "verdict": "holds",
        "binding": true,
        "missing": [],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "flight-climb-glide-law",
@@ -5931,11 +5977,11 @@
         "powerAvailable_W (or flightMuscleFraction and musclePowerPerKg_W: the muscle premise R6, a named hypothesis)",
         "climbRate_m_s"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "fick-principle",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "C14",
@@ -5949,7 +5995,7 @@
         "arterialO2",
         "airspeed_m_s and LD_max (or powerRequired_W)"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "flight-allometry-law",
@@ -5963,7 +6009,7 @@
        "missing": [
         "fitted exponents for weight, area and wing loading with intervals"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "thompson1917-ch02-06",
@@ -5977,7 +6023,7 @@
        "missing": [
         "the power-required exponent across sizes"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "genotype-genetic-code",
@@ -5991,7 +6037,7 @@
        "missing": [
         "genotype_edits"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "genotype-pleiotropy-closure",
@@ -6005,7 +6051,7 @@
        "missing": [
         "genotype_edits"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "genotype-developmental-ordering",
@@ -6019,7 +6065,7 @@
        "missing": [
         "developmental_claims"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "genotype-substitution-time",
@@ -6036,7 +6082,7 @@
         "substitution_budget.mutation_rate",
         "substitution_budget.generations_T"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "haldane-cost-of-selection",
@@ -6053,7 +6099,7 @@
         "substitution_budget.reproductive_excess",
         "substitution_budget.cost_per_substitution"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "E2",
@@ -6067,11 +6113,11 @@
        "missing": [],
        "scope_reason": "scoped to Exocoetidae (law E2 scope); the design is Danio rerio.",
        "evaluator_verdict": "violated",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "E3",
-       "version": "1.0.0",
+       "version": "2.0.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "E3",
@@ -6083,7 +6129,7 @@
        ],
        "scope_reason": "mass_kg = 0.0006943 kg is outside the law's range [0.06, 0.06].",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "E4",
@@ -6100,7 +6146,7 @@
         "oxycaloric_J_per_unit_O2",
         "airspeed_m_s and LD_max (or powerRequired_W)"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "E7",
@@ -6117,7 +6163,7 @@
        ],
        "scope_reason": "scoped to life stages embryo, larva; the design is at adult.",
        "evaluator_verdict": "cannot-evaluate",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-thermal",
@@ -6132,7 +6178,7 @@
         "ct_min_C",
         "ct_max_C"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-thermal",
@@ -6148,11 +6194,11 @@
         "reference_temperature_C",
         "reference_sustained_power_W"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-current",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "P2",
@@ -6162,11 +6208,11 @@
        "missing": [
         "current_speed_m_s"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-current",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "P2b",
@@ -6179,7 +6225,7 @@
         "drag_area_m2",
         "aerobicCeiling_W (or efficiency, oxycaloric, cardiacOutput, arterialO2)"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-pressure",
@@ -6195,7 +6241,7 @@
         "bladder_volume_surface_ml",
         "bladder_volume_at_depth_ml"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-depth-cap",
@@ -6209,7 +6255,7 @@
        "missing": [
         "depth_m"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-isa-vmin",
@@ -6226,7 +6272,7 @@
         "CLmax",
         "airspeed_m_s"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-wind-glide",
@@ -6238,7 +6284,7 @@
        "verdict": "holds",
        "binding": true,
        "missing": [],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "law_id": "perturb-energy-balance",
@@ -6256,7 +6302,7 @@
         "assimilation_efficiency",
         "mass_change"
        ],
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       }
      ],
      "violations": [],
@@ -6271,7 +6317,7 @@
        "life_stage": "adult",
        "body_temperature_C": 25,
        "water_temperature_C": 25,
-       "water_density_kg_m3": 1023.4,
+       "water_density_kg_m3": 997.05,
        "critical_swimming_speed_m_s": 0.56,
        "teleost": true,
        "sustained_power_W": 0.00399160013,
@@ -6358,13 +6404,19 @@
       "quantity": "Fick E_O2 (J/ml)",
       "value": 19.34285714285714,
       "kind": "measured-secondhand",
-      "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 mg O2 per ml (STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
+      "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 ml O2 per mg (1.429 mg/ml, STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
      },
      {
       "quantity": "Hb O2 capacity (ml/ml)",
       "value": 0.206,
       "kind": "calibrated",
       "source": "physiology/index.js warmHbCapacity: set so the snapper maximal O2 extraction (durnford2026) fits the trout Hill curve. Calibrated, not measured"
+     },
+     {
+      "quantity": "aerobic ceiling from measured MO2max (W)",
+      "value": 0.0007787347074896219,
+      "kind": "derived",
+      "source": "eta 0.15 (borrowed) x 13.54 J/mg x MO2max 1988 mg O2/kg/h x mass: MO2max measured 2630 mg/kg/h at 28 degC, 0.43 g (Palstra AP, Tudorache C, Rovira M, et al. (2010) Establishing zebrafish as a novel exercise model. PLoS One 5:e14483, doi:10.1371/journal.pone.0014483, PMC3013094, Results \"Swimming economy\": maximal O2 consumption at Ucrit 82.18 +/- 6.50 umol g-1 h-1 (= 2630 mg O2 kg-1 h-1); wild-type adults 3.05 cm BL, 0.43 g, 28 degC, n = 10 (Methods)), scaled x 0.756 to 0.6943 g and 25 degC (mass-specific MO2max exponent -0.15 and Q10 2 (assumed; physics/FICK-CEILING-CHECK.md section 3 brackets -0.1 to -0.2 and 2 to 2.5)); unscaled ceiling 1.030e-3 W"
      },
      {
       "quantity": "cardiac output (ml/s)",
@@ -6534,16 +6586,16 @@
      },
      {
       "quantity": "ambient.salinity_psu",
-      "value": 35,
+      "value": 0,
       "kind": "assumed",
-      "source": "conditions/baseline.json salinity_psu (35, assumed)",
+      "source": "freshwater organism default: Danio rerio is a freshwater species (0 psu); conditions/baseline.json 35 psu is the marine baseline and does not apply",
       "unit": "psu"
      },
      {
       "quantity": "ambient.water_density_kg_m3",
-      "value": 1023.4,
+      "value": 997.05,
       "kind": "assumed",
-      "source": "physiology/index.js o2sat_mg_l: density 1.0234 kg/l for salinity > 0 (assumed there, not fetched); 1000 for fresh water",
+      "source": "fresh water: NIST Chemistry WebBook pure-water density at 0.101325 MPa, interpolated at the water temperature (https://webbook.nist.gov/chemistry/fluid/)",
       "unit": "kg/m3"
      },
      {
@@ -6656,7 +6708,7 @@
     "weakest_input": "assumed",
     "counts": {
      "borrowed": 9,
-     "derived": 17,
+     "derived": 18,
      "assumed": 14,
      "measured-secondhand": 3,
      "calibrated": 1,
@@ -6668,7 +6720,7 @@
    "role": "agent:physics",
    "tool": "session_post",
    "arguments": {
-    "session": "codesign-demo-winged-zebrafish-fin-9ea150",
+    "session": "codesign-demo-winged-zebrafish-fin-3eeeb8",
     "author": "agent:physics",
     "kind": "proposal",
     "body": "Enlarge the pectoral fin to the flying-fish area ratio.",
@@ -6809,7 +6861,7 @@
        "ground_effect": 1
       },
       "feasible": true,
-      "note": "glide only: the aerobic O2 supply cannot pay for level powered flight (Fick bound)",
+      "note": "glide only: the aerobic O2 supply cannot pay for level powered flight (ceiling from measured MO2max; 17.3x short)",
       "v_min_m_s": {
        "key": "v_min_m_s",
        "label": "Minimum lift-supported airspeed",
@@ -6866,7 +6918,7 @@
        "ground_effect": 1
       },
       "feasible": true,
-      "note": "glide only: the aerobic O2 supply cannot pay for level powered flight (Fick bound)",
+      "note": "glide only: the aerobic O2 supply cannot pay for level powered flight (ceiling from measured MO2max; 12.7x short)",
       "v_min_m_s": {
        "key": "v_min_m_s",
        "label": "Minimum lift-supported airspeed",
@@ -6918,16 +6970,16 @@
    },
    "isError": false,
    "result": {
-    "contract_version": "0.5.0",
+    "contract_version": "0.7.0",
     "result": {
-     "session": "codesign-demo-winged-zebrafish-fin-9ea150",
+     "session": "codesign-demo-winged-zebrafish-fin-3eeeb8",
      "entry": {
       "seq": 1,
       "type": "proposal",
-      "ts": "2026-11-01T04:21:12.989Z",
+      "ts": "2026-11-01T04:40:34.044Z",
       "author": "agent:physics",
       "body": "Enlarge the pectoral fin to the flying-fish area ratio.",
-      "lawset_version": "1.5.0",
+      "lawset_version": "1.6.0",
       "proposal_id": "p1",
       "edits": [
        {
@@ -7067,7 +7119,7 @@
          "ground_effect": 1
         },
         "feasible": true,
-        "note": "glide only: the aerobic O2 supply cannot pay for level powered flight (Fick bound)",
+        "note": "glide only: the aerobic O2 supply cannot pay for level powered flight (ceiling from measured MO2max; 17.3x short)",
         "v_min_m_s": {
          "key": "v_min_m_s",
          "label": "Minimum lift-supported airspeed",
@@ -7124,7 +7176,7 @@
          "ground_effect": 1
         },
         "feasible": true,
-        "note": "glide only: the aerobic O2 supply cannot pay for level powered flight (Fick bound)",
+        "note": "glide only: the aerobic O2 supply cannot pay for level powered flight (ceiling from measured MO2max; 12.7x short)",
         "v_min_m_s": {
          "key": "v_min_m_s",
          "label": "Minimum lift-supported airspeed",
@@ -7195,7 +7247,7 @@
    "role": "agent:physics",
    "tool": "session_post",
    "arguments": {
-    "session": "codesign-demo-winged-zebrafish-fin-9ea150",
+    "session": "codesign-demo-winged-zebrafish-fin-3eeeb8",
     "author": "agent:physics",
     "kind": "edit",
     "body": "trying to apply directly",
@@ -7222,23 +7274,23 @@
    "role": "agent:genotype",
    "tool": "session_post",
    "arguments": {
-    "session": "codesign-demo-winged-zebrafish-fin-9ea150",
+    "session": "codesign-demo-winged-zebrafish-fin-3eeeb8",
     "author": "agent:genotype",
     "kind": "comment",
     "body": "Genotype caveat for this edit. pectoral_area_over_SL2 is a morphology parameter: no causal chain in genotype/causal-chains.json maps any gene to a quantitative fin area, and gene-level edits are recorded-only in the studio (no model consumes them). The fin-size candidates closest to \"a bigger pectoral fin\" are kcnk5b (chain strength sufficiency, best link mechanism) and kcnh2a (chain strength sufficiency). For kcnk5b the chain breaks at molecular_function->process. Gaps include: \"The clonal sufficiency experiments (transplantation, mosaic overexpression) were scored in caudal/dorsal fins and barbels, not in the pectoral fin.\" Dataset-wide constraint: \"Every node below the pectoral fin is a zebrafish anatomy (ZFA) term, and every gene link is a zebrafish or medaka record. None of it is flying-fish data. A flying fish's wing is an enlarged pectoral fin.\" So approving this edit fixes a shape; it does not name a genotype that would produce it."
    },
    "isError": false,
    "result": {
-    "contract_version": "0.5.0",
+    "contract_version": "0.7.0",
     "result": {
-     "session": "codesign-demo-winged-zebrafish-fin-9ea150",
+     "session": "codesign-demo-winged-zebrafish-fin-3eeeb8",
      "entry": {
       "seq": 2,
       "type": "comment",
-      "ts": "2026-11-01T04:21:13.001Z",
+      "ts": "2026-11-01T04:40:34.077Z",
       "author": "agent:genotype",
       "body": "Genotype caveat for this edit. pectoral_area_over_SL2 is a morphology parameter: no causal chain in genotype/causal-chains.json maps any gene to a quantitative fin area, and gene-level edits are recorded-only in the studio (no model consumes them). The fin-size candidates closest to \"a bigger pectoral fin\" are kcnk5b (chain strength sufficiency, best link mechanism) and kcnh2a (chain strength sufficiency). For kcnk5b the chain breaks at molecular_function->process. Gaps include: \"The clonal sufficiency experiments (transplantation, mosaic overexpression) were scored in caudal/dorsal fins and barbels, not in the pectoral fin.\" Dataset-wide constraint: \"Every node below the pectoral fin is a zebrafish anatomy (ZFA) term, and every gene link is a zebrafish or medaka record. None of it is flying-fish data. A flying fish's wing is an enlarged pectoral fin.\" So approving this edit fixes a shape; it does not name a genotype that would produce it.",
-      "lawset_version": "1.5.0"
+      "lawset_version": "1.6.0"
      }
     },
     "provenance": [
@@ -7260,7 +7312,7 @@
    "role": "human",
    "tool": "session_decide",
    "arguments": {
-    "session": "codesign-demo-winged-zebrafish-fin-9ea150",
+    "session": "codesign-demo-winged-zebrafish-fin-3eeeb8",
     "proposal_id": "p1",
     "decision": "approve",
     "decided_by_role": "human",
@@ -7268,18 +7320,18 @@
    },
    "isError": false,
    "result": {
-    "contract_version": "0.5.0",
+    "contract_version": "0.7.0",
     "result": {
-     "session": "codesign-demo-winged-zebrafish-fin-9ea150",
+     "session": "codesign-demo-winged-zebrafish-fin-3eeeb8",
      "entry": {
       "seq": 3,
       "type": "decision",
-      "ts": "2026-11-01T04:21:13.005Z",
+      "ts": "2026-11-01T04:40:34.091Z",
       "proposal_id": "p1",
       "decision": "approve",
       "decided_by_role": "human",
       "reason": "Approved as a morphology experiment only: physics evidence shows lower wing loading and v_min, no new binding Lean violation; genotype caveat accepted (no genotype is claimed). The glide gain exists only under the assumed launch speed.",
-      "lawset_version": "1.5.0",
+      "lawset_version": "1.6.0",
       "applied": [
        {
         "target": {
@@ -7291,8 +7343,8 @@
         "value": 0.15475,
         "author": "agent:physics",
         "reason": "raise pectoral area/SL^2 from 0.07126436858246527 to the reference flying-fish value 0.15475 (organism_get flying-fish); the value is a morphology target, not a measured zebrafish phenotype",
-        "ts": "2026-11-01T04:21:13.009Z",
-        "lawset_version": "1.5.0",
+        "ts": "2026-11-01T04:40:34.105Z",
+        "lawset_version": "1.6.0",
         "proposal_id": "p1",
         "approved_by": "human"
        }
@@ -7319,7 +7371,7 @@
    "role": "human",
    "tool": "session_decide",
    "arguments": {
-    "session": "codesign-demo-winged-zebrafish-fin-9ea150",
+    "session": "codesign-demo-winged-zebrafish-fin-3eeeb8",
     "proposal_id": "p1",
     "decision": "reject",
     "decided_by_role": "human",
@@ -7339,7 +7391,7 @@
    },
    "isError": false,
    "result": {
-    "contract_version": "0.5.0",
+    "contract_version": "0.7.0",
     "result": {
      "doc": {
       "id": "codesign-demo-wzf",
@@ -7362,8 +7414,8 @@
         "value": 0.15475,
         "author": "agent:physics",
         "reason": "raise pectoral area/SL^2 from 0.07126436858246527 to the reference flying-fish value 0.15475 (organism_get flying-fish); the value is a morphology target, not a measured zebrafish phenotype",
-        "ts": "2026-11-01T04:21:13.009Z",
-        "lawset_version": "1.5.0",
+        "ts": "2026-11-01T04:40:34.105Z",
+        "lawset_version": "1.6.0",
         "proposal_id": "p1",
         "approved_by": "human"
        }
@@ -7396,8 +7448,8 @@
         "medium": "water",
         "depth_m": 0,
         "altitude_m": 0,
-        "salinity_psu": 35,
-        "water_density_kg_m3": 1023.4,
+        "salinity_psu": 0,
+        "water_density_kg_m3": 997.05,
         "air_density_kg_m3": 1.225,
         "pressure_kPa": 101.325,
         "pO2_kPa": 20.51612216853939,
@@ -8132,16 +8184,16 @@
      },
      {
       "quantity": "ambient.salinity_psu",
-      "value": 35,
+      "value": 0,
       "kind": "assumed",
-      "source": "conditions/baseline.json salinity_psu (35, assumed)",
+      "source": "freshwater organism default: Danio rerio is a freshwater species (0 psu); conditions/baseline.json 35 psu is the marine baseline and does not apply",
       "unit": "psu"
      },
      {
       "quantity": "ambient.water_density_kg_m3",
-      "value": 1023.4,
+      "value": 997.05,
       "kind": "assumed",
-      "source": "physiology/index.js o2sat_mg_l: density 1.0234 kg/l for salinity > 0 (assumed there, not fetched); 1000 for fresh water",
+      "source": "fresh water: NIST Chemistry WebBook pure-water density at 0.101325 MPa, interpolated at the water temperature (https://webbook.nist.gov/chemistry/fluid/)",
       "unit": "kg/m3"
      },
      {
@@ -8287,9 +8339,9 @@
    },
    "isError": false,
    "result": {
-    "contract_version": "0.5.0",
+    "contract_version": "0.7.0",
     "result": {
-     "lawset": "1.5.0",
+     "lawset": "1.6.0",
      "kernel": "evaluates the same formulas; not a kernel check: kernel certificates exist only for the recorded examples",
      "summary": {
       "violated": 1,
@@ -8404,7 +8456,7 @@
       },
       {
        "law_id": "fick-principle",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "C14",
@@ -8525,7 +8577,7 @@
       },
       {
        "law_id": "E3",
-       "version": "1.0.0",
+       "version": "2.0.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "E3",
@@ -8601,7 +8653,7 @@
       },
       {
        "law_id": "perturb-current",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "P2",
@@ -8615,7 +8667,7 @@
       },
       {
        "law_id": "perturb-current",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "P2b",
@@ -8704,7 +8756,7 @@
      "violations": [
       {
        "law_id": "fick-principle",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "C14",
@@ -8740,6 +8792,7 @@
       "gill-o2-uptake",
       "kimura-fixation-probability",
       "kimura-substitution-rate",
+      "maynardsmith-hitchhiking",
       "maynardsmith-twofold-cost",
       "muscle-power-premise",
       "physiology-laplace",
@@ -8763,7 +8816,7 @@
      },
      {
       "quantity": "git commit",
-      "value": "36a9ea36161a10d004dd7e038dd244acca76996e",
+      "value": "7168d39c71fa426db3b1f1e94b9a30db9d086ddc",
       "kind": "derived",
       "source": "git rev-parse HEAD (or DELPHI_GIT_SHA) at load time."
      },
@@ -8786,12 +8839,12 @@
      "derived": 4
     },
     "source": "local",
-    "lawset_version": "1.5.0",
-    "fetched_at": "2026-11-01T04:21:12.062Z",
+    "lawset_version": "1.6.0",
+    "fetched_at": "2026-11-01T04:40:31.063Z",
     "source_detail": {
      "source": "local",
-     "lawset_version": "1.5.0",
-     "fetched_at": "2026-11-01T04:21:12.062Z"
+     "lawset_version": "1.6.0",
+     "fetched_at": "2026-11-01T04:40:31.063Z"
     }
    }
   },
@@ -8821,9 +8874,9 @@
    },
    "isError": false,
    "result": {
-    "contract_version": "0.5.0",
+    "contract_version": "0.7.0",
     "result": {
-     "lawset": "1.5.0",
+     "lawset": "1.6.0",
      "kernel": "evaluates the same formulas; not a kernel check: kernel certificates exist only for the recorded examples",
      "summary": {
       "violated": 2,
@@ -8938,7 +8991,7 @@
       },
       {
        "law_id": "fick-principle",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "C14",
@@ -9059,7 +9112,7 @@
       },
       {
        "law_id": "E3",
-       "version": "1.0.0",
+       "version": "2.0.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "E3",
@@ -9135,7 +9188,7 @@
       },
       {
        "law_id": "perturb-current",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "P2",
@@ -9149,7 +9202,7 @@
       },
       {
        "law_id": "perturb-current",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "P2b",
@@ -9254,7 +9307,7 @@
       },
       {
        "law_id": "fick-principle",
-       "version": "1.0.0",
+       "version": "1.1.0",
        "kind": "biological",
        "status": "accepted",
        "constraint": "C14",
@@ -9290,6 +9343,7 @@
       "gill-o2-uptake",
       "kimura-fixation-probability",
       "kimura-substitution-rate",
+      "maynardsmith-hitchhiking",
       "maynardsmith-twofold-cost",
       "muscle-power-premise",
       "physiology-laplace",
@@ -9313,7 +9367,7 @@
      },
      {
       "quantity": "git commit",
-      "value": "36a9ea36161a10d004dd7e038dd244acca76996e",
+      "value": "7168d39c71fa426db3b1f1e94b9a30db9d086ddc",
       "kind": "derived",
       "source": "git rev-parse HEAD (or DELPHI_GIT_SHA) at load time."
      },
@@ -9336,12 +9390,12 @@
      "derived": 4
     },
     "source": "local",
-    "lawset_version": "1.5.0",
-    "fetched_at": "2026-11-01T04:21:12.062Z",
+    "lawset_version": "1.6.0",
+    "fetched_at": "2026-11-01T04:40:31.063Z",
     "source_detail": {
      "source": "local",
-     "lawset_version": "1.5.0",
-     "fetched_at": "2026-11-01T04:21:12.062Z"
+     "lawset_version": "1.6.0",
+     "fetched_at": "2026-11-01T04:40:31.063Z"
     }
    }
   },
@@ -9349,31 +9403,31 @@
    "role": "human",
    "tool": "session_read",
    "arguments": {
-    "session": "codesign-demo-winged-zebrafish-fin-9ea150"
+    "session": "codesign-demo-winged-zebrafish-fin-3eeeb8"
    },
    "isError": false,
    "result": {
-    "contract_version": "0.5.0",
+    "contract_version": "0.7.0",
     "result": {
-     "session": "codesign-demo-winged-zebrafish-fin-9ea150",
+     "session": "codesign-demo-winged-zebrafish-fin-3eeeb8",
      "title": "codesign demo winged zebrafish fin",
      "entries": [
       {
        "seq": 0,
        "type": "open",
-       "ts": "2026-11-01T04:21:12.046Z",
+       "ts": "2026-11-01T04:40:31.033Z",
        "title": "codesign demo winged zebrafish fin",
        "organism": "codesign-demo-wzf",
        "author": "human",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "seq": 1,
        "type": "proposal",
-       "ts": "2026-11-01T04:21:12.989Z",
+       "ts": "2026-11-01T04:40:34.044Z",
        "author": "agent:physics",
        "body": "Enlarge the pectoral fin to the flying-fish area ratio.",
-       "lawset_version": "1.5.0",
+       "lawset_version": "1.6.0",
        "proposal_id": "p1",
        "edits": [
         {
@@ -9513,7 +9567,7 @@
           "ground_effect": 1
          },
          "feasible": true,
-         "note": "glide only: the aerobic O2 supply cannot pay for level powered flight (Fick bound)",
+         "note": "glide only: the aerobic O2 supply cannot pay for level powered flight (ceiling from measured MO2max; 17.3x short)",
          "v_min_m_s": {
           "key": "v_min_m_s",
           "label": "Minimum lift-supported airspeed",
@@ -9570,7 +9624,7 @@
           "ground_effect": 1
          },
          "feasible": true,
-         "note": "glide only: the aerobic O2 supply cannot pay for level powered flight (Fick bound)",
+         "note": "glide only: the aerobic O2 supply cannot pay for level powered flight (ceiling from measured MO2max; 12.7x short)",
          "v_min_m_s": {
           "key": "v_min_m_s",
           "label": "Minimum lift-supported airspeed",
@@ -9624,20 +9678,20 @@
       {
        "seq": 2,
        "type": "comment",
-       "ts": "2026-11-01T04:21:13.001Z",
+       "ts": "2026-11-01T04:40:34.077Z",
        "author": "agent:genotype",
        "body": "Genotype caveat for this edit. pectoral_area_over_SL2 is a morphology parameter: no causal chain in genotype/causal-chains.json maps any gene to a quantitative fin area, and gene-level edits are recorded-only in the studio (no model consumes them). The fin-size candidates closest to \"a bigger pectoral fin\" are kcnk5b (chain strength sufficiency, best link mechanism) and kcnh2a (chain strength sufficiency). For kcnk5b the chain breaks at molecular_function->process. Gaps include: \"The clonal sufficiency experiments (transplantation, mosaic overexpression) were scored in caudal/dorsal fins and barbels, not in the pectoral fin.\" Dataset-wide constraint: \"Every node below the pectoral fin is a zebrafish anatomy (ZFA) term, and every gene link is a zebrafish or medaka record. None of it is flying-fish data. A flying fish's wing is an enlarged pectoral fin.\" So approving this edit fixes a shape; it does not name a genotype that would produce it.",
-       "lawset_version": "1.5.0"
+       "lawset_version": "1.6.0"
       },
       {
        "seq": 3,
        "type": "decision",
-       "ts": "2026-11-01T04:21:13.005Z",
+       "ts": "2026-11-01T04:40:34.091Z",
        "proposal_id": "p1",
        "decision": "approve",
        "decided_by_role": "human",
        "reason": "Approved as a morphology experiment only: physics evidence shows lower wing loading and v_min, no new binding Lean violation; genotype caveat accepted (no genotype is claimed). The glide gain exists only under the assumed launch speed.",
-       "lawset_version": "1.5.0",
+       "lawset_version": "1.6.0",
        "applied": [
         {
          "target": {
@@ -9649,8 +9703,8 @@
          "value": 0.15475,
          "author": "agent:physics",
          "reason": "raise pectoral area/SL^2 from 0.07126436858246527 to the reference flying-fish value 0.15475 (organism_get flying-fish); the value is a morphology target, not a measured zebrafish phenotype",
-         "ts": "2026-11-01T04:21:13.009Z",
-         "lawset_version": "1.5.0",
+         "ts": "2026-11-01T04:40:34.105Z",
+         "lawset_version": "1.6.0",
          "proposal_id": "p1",
          "approved_by": "human"
         }
@@ -9689,8 +9743,8 @@
         "value": 0.15475,
         "author": "agent:physics",
         "reason": "raise pectoral area/SL^2 from 0.07126436858246527 to the reference flying-fish value 0.15475 (organism_get flying-fish); the value is a morphology target, not a measured zebrafish phenotype",
-        "ts": "2026-11-01T04:21:13.009Z",
-        "lawset_version": "1.5.0",
+        "ts": "2026-11-01T04:40:34.105Z",
+        "lawset_version": "1.6.0",
         "proposal_id": "p1",
         "approved_by": "human"
        }
@@ -9704,7 +9758,7 @@
       "quantity": "session log",
       "value": 4,
       "kind": "assumed",
-      "source": "sim-engine/sessions/codesign-demo-winged-zebrafish-fin-9ea150.jsonl"
+      "source": "sim-engine/sessions/codesign-demo-winged-zebrafish-fin-3eeeb8.jsonl"
      }
     ],
     "scope": "A co-design log. Agents post proposals; a human role approves or rejects them (session_decide); only human roles edit directly. Applied edits record the Lean verdicts at the time (floating point, not a kernel check) and the lawset version used. Authors are role labels, not people.",
