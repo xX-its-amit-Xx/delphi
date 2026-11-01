@@ -328,8 +328,12 @@ already shipped. Check a traced path exists before adding it.
 ```bash
 npm pack                                 # 36.1 MB packed, 78.0 MB unpacked, 6 977 files
 tar xzf delphisci-mcp-0.7.0.tgz -C /tmp/empty && cd /tmp/empty/package && npm i --omit=dev
-node mcp/cli.mjs tool validate_generation --json '{...}'
+node mcp/test-packaged.mjs                 # the whole check, from this copy
 ```
+
+`node mcp/test-packaged.mjs [dir]` runs every validation tool under the hosted policy and asserts on the
+*content* of each answer. Run it in the working tree and then in the unpacked package: the byte counts it
+prints must match.
 
 Under ~50 MB packed, so the heavy data (`sim-engine/validate/data/fishshapes-features.json`,
 `omics/index/**`, `structures/` is **not** read by any of these tools) stays in the npm package as well as

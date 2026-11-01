@@ -27,10 +27,15 @@ is the difference). A collaborator with no clone can now run a generated design 
   an unpacked `npm pack` tarball and asserting on the content of every answer. The byte sizes from the package
   match the working tree exactly. 36.1 MB packed, 78.0 MB unpacked, 6 977 files — still under the ~50 MB line,
   so everything ships in the npm package as well as the image and there is no npx fallback.
-  - The first pass of that tracing missed `omics/genes.json`, and the result was a **silent** degradation:
-    `validate/functional/index.mjs` never throws, so the missing file came back as `{ran: false}` -> a
-    `cannot-assess` gate -> a 200, and `functional_resolution` returned 2.4 KB from the package against
-    130 KB from the tree. "It answered" is not the test; the content assertions are.
+  - Two traps the tracing sets. (a) The first pass missed `omics/genes.json`, and the result was a
+    **silent** degradation: `validate/functional/index.mjs` never throws, so the missing file came back as
+    `{ran: false}` -> a `cannot-assess` gate -> a 200, and `functional_resolution` returned 2.4 KB from the
+    package against 130 KB from the tree. "It answered" is not the test; the content assertions are.
+    (b) An `existsSync` miss looks identical to a read: `getDoc` probes the gitignored, empty
+    `sim-engine/sessions/organisms/` before falling through to the repository bundle, so the trace named
+    files that are never read and do not exist. Design ids such as `winged-zebrafish` and `tff` resolve
+    from `anatomy-model/parametric/resolved/*.json`, which was already shipped. Check that a traced path
+    exists before adding it.
 - Could not be exposed: the four capability-map tools (`leanbio_personas`, `leanbio_use_cases`,
   `leanbio_grand_questions`, `leanbio_tool_gap`). They are named in
   `pipeline/leanbio/capability-map/lib.mjs` but no handler module exists and no register note landed, so
