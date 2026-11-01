@@ -195,7 +195,13 @@ function onDisk() {
 export function diff() {
   const want = generate(), have = onDisk();
   const d = [];
-  for (const f of Object.keys(want)) if (have[f] === undefined) d.push({ file: f, why: 'missing' }); else if (have[f].replace(/\r\n/g, '\n') !== want[f]) d.push({ file: f, why: 'stale' });
+  // Normalise BOTH sides. Only the on-disk side used to be normalised, which is wrong whenever a
+  // generated file is passed through from a source file rather than serialised here: on a Windows
+  // checkout git hands that source CRLF, the CRLF travels into `want`, and the gate reports the
+  // mirror permanently stale while write() keeps rewriting a byte-identical file. Caught on the PR
+  // clone, where capability/schema.json pinned check-exposed red. Line endings are not content.
+  const lf = t => String(t).replace(/\r\n/g, '\n');
+  for (const f of Object.keys(want)) if (have[f] === undefined) d.push({ file: f, why: 'missing' }); else if (lf(have[f]) !== lf(want[f])) d.push({ file: f, why: 'stale' });
   for (const f of Object.keys(have)) if (want[f] === undefined) d.push({ file: f, why: 'orphan (no such law/lawset any more)' });
   return d;
 }
