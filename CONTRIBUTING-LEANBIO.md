@@ -2,9 +2,9 @@
 
 > ### The two names
 >
-> **LeanBio Forum** and **DELPHI** are the same system. `DELPHI` is the name used throughout
+> **MorphoLemma** and **DELPHI** are the same system. `DELPHI` is the name used throughout
 > this repository — every path, module, URL and record id uses it, and none of that is being
-> renamed. **LeanBio Forum** is the name the project is presented under: the pitch deck at
+> renamed. **MorphoLemma** is the name the project is presented under: the pitch deck at
 > `dashboard/public/deck/`, and the public pages under `/leanbio/`. If you see one name in a file
 > and the other on a slide, they refer to the same thing.
 

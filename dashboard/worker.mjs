@@ -45,7 +45,7 @@ const PROVIDERS = [
 const MAX_TURNS = 16;
 const MAX_CHARS = 4000;
 
-const SYSTEM = `You are the guide to LeanBio Forum (the repository calls itself DELPHI; they are the
+const SYSTEM = `You are the guide to MorphoLemma (the repository calls itself DELPHI; they are the
 same system). You answer questions about this project for people reading its site.
 
 THE ONE RULE THAT MATTERS. This project's entire argument is that it does not state numbers it

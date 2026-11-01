@@ -113,7 +113,7 @@ function build(D) {
   // ════════ 1-4 · the fire ════════
 
   SL.title = () => `
-    <div class="eyebrow">LeanBio Forum &middot; ScienceClaw &middot; MIT Media Lab</div>
+    <div class="eyebrow">MorphoLemma &middot; ScienceClaw &middot; MIT Media Lab</div>
     <h1>Biology has never built<br>the thing you check a<br>design against.</h1>
     <p class="sub" style="max-width:40ch">Mathematics has mathlib. Biology has papers, protocols, and the
       people who know how to make them work.</p>
@@ -238,7 +238,7 @@ function build(D) {
     const L = N.lawreg;
     const accepted = (L?.inLawset || []).find(r => r.status === 'accepted');
     return `${ribbon(st('forum'))}
-      <h2>LeanBio Forum: a theorem becomes an axiom only if it survives both gates.</h2>
+      <h2>MorphoLemma: a theorem becomes an axiom only if it survives both gates.</h2>
       ${delOf(1) ? `<p class="sub" style="max-width:68ch;margin-bottom:.7em"><b>The way in is the
         deliverable.</b> ${esc(delOf(1).how)}</p>` : ''}
       <div class="chain" data-anim="chain">
@@ -649,7 +649,7 @@ function build(D) {
       ${rrow('<b>One functional assay on a non-model organism.</b>', '', 'Zero of the 73 requirements in our ledger have functional data of any kind. One real assay would move more rows than another year of sequence.')}
       ${rrow('<b>A second kernel, and a second debate.</b>', '', 'We will not let the system that wrote a proof grade it. Run the registry against your own checker and tell us where it disagrees.')}
     </div>
-    <p class="sub" style="margin-top:22px">LeanBio Forum &mdash; the system this repository still calls DELPHI.</p>
+    <p class="sub" style="margin-top:22px">MorphoLemma &mdash; the system this repository still calls DELPHI.</p>
     <p class="tiny">delphi-mission-control.ashenoy000.workers.dev</p>`;
 
   // ---------------- assemble ----------------

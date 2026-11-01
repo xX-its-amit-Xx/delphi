@@ -20,7 +20,7 @@
   window.__delphiChat = true;
 
   const SUGGESTIONS = [
-    'What is LeanBio Forum?',
+    'What is MorphoLemma?',
     'Why does your own design fail?',
     'What does cannot-evaluate mean?',
     'Did the agent swarms beat a single agent?',

@@ -60,7 +60,7 @@ const ctx = {
   generated_at: new Date().toISOString(),
   generated_by: 'dashboard/build-chat-context.mjs',
   what_this_is:
-    'LeanBio Forum (the repository is named DELPHI) is five surfaces for stating a biological claim '
+    'MorphoLemma (the repository is named DELPHI) is five surfaces for stating a biological claim '
     + 'precisely enough that a machine can check it, and far more often refuse it.',
   the_five_surfaces: [
     { tab: 'Nanopubs', url: '/docs/#nanopubs', does: 'One claim, its evidence and its provenance as four named RDF graphs a validator either accepts or does not. Documents the errors that actually happen and the three validator complaints that are NOT errors on an unsigned draft.' },
