@@ -691,17 +691,45 @@ const facts = {
       + 'renders as a claim with no number and greys its slide.',
   tacit: {
     verified: true,
+    citationsFetched: true,   // checked 2026-11-01; one of the three first given to us was wrong
     sentence: 'Biology design knowledge lives primarily as tacit knowledge: the know-how that makes an '
             + 'experiment work demonstrably does not transfer through publication alone.',
+    // These are not three people saying the same thing. One names the idea, one shows an instrument
+    // failing to transfer, and one documents the same failure inside molecular biology without ever
+    // reaching for the word -- which is itself the point.
     literature: [
-      { cite: 'Michael Polanyi, The Tacit Dimension (1966)', what: '"we can know more than we can tell" — the origin of the term' },
-      { cite: 'Harry Collins, on replicating the TEA laser', what: 'no team built a working laser from the published papers alone; it took personal contact with a team that already had one' },
-      { cite: 'Kathleen Jordan & Michael Lynch, on the "Minipreps" plasmid prep', what: 'a protocol everyone supposedly shares, which in practice every lab performs differently' }
+      {
+        role: 'names it',
+        cite: 'Michael Polanyi, The Tacit Dimension, Doubleday 1966 / Routledge 1967, p. 4',
+        what: '“We can know more than we can tell.” The origin of the term.',
+        caveat: null
+      },
+      {
+        role: 'demonstrates it',
+        cite: 'H. M. Collins (1974), “The TEA Set”, Science Studies 4:165–186, doi:10.1177/030631277400400203',
+        what: 'No laboratory built a working TEA laser from the published sources. Only people with '
+            + 'substantial social contact with a successful builder succeeded — phone calls and visits, '
+            + 'not papers. Companion: Collins & Harrison (1975), Social Studies of Science.',
+        caveat: 'Later work (Philosophia Scientiae, 2013) reads the TEA case as RELATIONAL tacit knowledge: '
+              + 'knowledge that could in principle be made explicit. That is our claim exactly — the '
+              + 'explicit artefact was never built, not that it cannot be.'
+      },
+      {
+        role: 'documents it in biology, without ever naming it',
+        cite: 'Kathleen Jordan & Michael Lynch (1992, 1993, 1998) on the plasmid prep, '
+            + 'Social Studies of Science 28(5), doi:10.1177/030631298028005005',
+        what: 'A protocol every molecular biology lab supposedly shares, and which in practice every lab '
+            + 'performs differently — persistent, unresolvable variation in how a shared technique is '
+            + 'actually carried out.',
+        caveat: 'Collins (2001) notes that Jordan & Lynch never use the term “tacit knowledge” and do '
+              + 'not engage that literature. Cite them for the PHENOMENON, never as authorities on the term.'
+      }
     ],
-    caveat: 'These three works are named from knowledge, not fetched: the claim is standard and the '
-          + 'literature is well established, but the exact citations were not verified against the '
-          + 'sources in this build.',
-    locator: 'deck/FACTS.md (pending) · Polanyi 1966 · Collins, TEA laser · Jordan & Lynch, Minipreps'
+    // The bridge into the next beat, and the reason the third caveat is on the slide rather than buried.
+    punchline: 'Biology observed the phenomenon for thirty years and never built the vocabulary for it, '
+             + 'let alone the formal object.',
+    locator: 'deck/FACTS.md · Polanyi 1966 p. 4 · Collins 1974 doi:10.1177/030631277400400203 · '
+           + 'Jordan & Lynch 1998 doi:10.1177/030631298028005005 · Collins 2001 on the Q of Sapphire'
   },
   mathlib: {
     verified: true,
@@ -1022,8 +1050,8 @@ const shot = key => pageShots.some(p => p.file === `fig/page_${key}.png`);
 const slides = [
   // 1-4  the fire
   { id: 'title', state: 'live' },
-  { id: 'tacit', state: facts.tacit.verified ? 'partial' : 'anticipated',
-    needs: 'the three citations fetched and checked; the claim is standard, the exact references are named from knowledge' },
+  { id: 'tacit', state: facts.tacit.citationsFetched ? 'live' : facts.tacit.verified ? 'partial' : 'anticipated',
+    needs: 'the three citations fetched and checked against their sources' },
   { id: 'noobject', state: 'live' },
   { id: 'contrast', state: facts.mathlib.verified && facts.biologyFormal.verified ? 'live' : 'partial',
     needs: 'deck/FACTS.md: the narrow, defensible wording for the biology side of the contrast' },

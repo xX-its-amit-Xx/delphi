@@ -596,7 +596,8 @@ export async function offTargetsLocal(spacer, pam, { network = true, maxMismatch
     if (geneContext) { await annotateGeneContext(v.sites, { network }); annotationSummary(v); cachePut(key, v); }
     return { ...v, cached: false };
   }
-  if (geneContext && v.sites?.length && v.sites[0].gene_context === undefined) { await annotateGeneContext(v.sites, { network }); annotationSummary(v); cachePut(key, v); }
+  if (geneContext && v.sites?.length && v.sites[0].gene_context === undefined) { await annotateGeneContext(v.sites, { network }); cachePut(key, v); }
+  if (v.sites?.length) annotationSummary(v);   // also for a cache entry written before this summary existed
   return { ...v, cached: true };
 }
 

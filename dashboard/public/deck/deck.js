@@ -118,12 +118,18 @@ function build(D) {
     if (!t || !t.verified) return ghost('tacit');
     return `${ribbon(st('tacit'))}
       <h2>The knowledge that makes biology work is not written down.</h2>
-      <p class="sub" style="max-width:54ch">${esc(t.sentence)}</p>
+      <p class="sub" style="max-width:56ch">${esc(t.sentence)}</p>
       <div class="rows">
-        ${t.literature.map(l => rrow(`<b>${esc(l.cite)}</b>`, '', esc(l.what))).join('')}
+        ${t.literature.map(l => `<div class="rrow" style="grid-template-columns:1fr">
+          <span><b>${esc(l.cite)}</b>
+            <small><em style="color:var(--accent);font-style:normal;font-weight:650">${esc(l.role)}</em>
+              &nbsp;&mdash;&nbsp; ${esc(l.what)}${l.caveat
+                ? ` <span style="color:var(--serious)"><b>Caveat:</b> ${esc(l.caveat)}</span>` : ''}</small>
+          </span></div>`).join('')}
       </div>
-      <div class="flag">${esc(t.caveat)}</div>
-      <p class="caption">This is a claim about biology&rsquo;s own literature, not about agents. The gap is not that
+      ${t.punchline ? `<div class="flag"><b>${esc(t.punchline)}</b> That third line is not a footnote on the
+        other two. It is the finding: the discipline that lives on this problem never even named it.</div>` : ''}
+      <p class="caption">A claim about biology&rsquo;s own literature, not about agents. The gap is not that
         agents are weak at biology. It is that biology has never produced the formal artefact that would let
         anything &mdash; human or agent &mdash; check a design.</p>
       ${srcs([t.locator])}`;

@@ -334,16 +334,22 @@ caption(s, "Everything in this deck runs. Where a result does not exist, the sli
 TA = FACTS.get("tacit") or {}
 s = new("The knowledge that makes biology work\nis not written down.", STATE["tacit"]["state"], EB)
 if TA.get("verified"):
-    tbox(s, M, Inches(2.4), W - 2 * M, Inches(0.7), TA["sentence"], 15, False, INK, spacing=1.2)
-    y = Inches(3.2)
+    tbox(s, M, Inches(2.3), W - 2 * M, Inches(0.6), TA["sentence"], 14, False, INK, spacing=1.18)
+    y = Inches(3.0)
     for lit in TA.get("literature", []):
-        tbox(s, M, y, W - 2 * M, Inches(0.3), lit["cite"], 13, True, INK)
-        tbox(s, M, y + Inches(0.27), W - 2 * M - Inches(0.6), Inches(0.42), lit["what"], 10, False, MUTE, spacing=1.1)
-        y += Inches(0.76)
-    note(s, y + Inches(0.1), TA["caveat"], SERIOUS)
-    caption(s, "A claim about biology's own literature, not about agents. The gap is not that agents are "
-               "weak at biology. It is that biology has never produced the formal artefact that would let "
-               "anything — human or agent — check a design.")
+        tbox(s, M, y, W - 2 * M, Inches(0.28), lit["cite"], 12, True, INK)
+        tbox(s, M, y + Inches(0.25), Inches(2.4), Inches(0.26), lit["role"], 9, True, ACCENT)
+        tbox(s, M + Inches(2.5), y + Inches(0.25), W - 2 * M - Inches(2.6), Inches(0.42),
+             lit["what"], 9, False, MUTE, spacing=1.1)
+        if lit.get("caveat"):
+            tbox(s, M + Inches(2.5), y + Inches(0.68), W - 2 * M - Inches(2.6), Inches(0.42),
+                 "Caveat: " + lit["caveat"], 9, False, SERIOUS, spacing=1.1)
+            y += Inches(1.36)
+        else:
+            y += Inches(0.76)
+    if TA.get("punchline"):
+        note(s, y + Inches(0.05), TA["punchline"] + "  That third line is not a footnote on the other two. "
+             "It is the finding: the discipline that lives on this problem never even named it.", SERIOUS)
     srcline(s, [TA.get("locator")])
 else:
     ghostbox(s, M, Inches(2.4), W - 2 * M, Inches(2.4), "Not evidenced yet", STATE["tacit"].get("needs", ""))

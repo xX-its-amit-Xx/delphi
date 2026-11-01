@@ -154,6 +154,20 @@ function readSeq(fd, s) {
 /** Decode a slice of codes to letters. */
 const decode = (a, from, to) => { let s = ''; for (let i = from; i < to; i++) s += BASE[a[i]]; return s; };
 
+/**
+ * One indexed sequence as letters. Exists so a test can brute-force a naive reference scan over a small
+ * sequence and compare it with scanGenome's output - which is the only way to check the exhaustiveness
+ * claim rather than assert it in a comment.
+ */
+export function getSequence(name) {
+  const st = indexStatus();
+  if (!st.built) return null;
+  const s = manifest().sequences.find(x => x.name === name);
+  if (!s) return null;
+  const fd = fs.openSync(BIN_FILE, 'r');
+  try { return decode(readSeq(fd, s), 0, s.length); } finally { fs.closeSync(fd); }
+}
+
 // search ------------------------------------------------------------------------------------------
 /**
  * One query = one spacer with its nuclease geometry.

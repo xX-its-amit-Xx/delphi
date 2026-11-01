@@ -339,7 +339,16 @@ function readCell(level, arm, task, tag = '') {
   const dir = path.join(here, 'runs', level, arm, task + (tag ? '-' + tag : ''));
   const f = path.join(dir, 'final.json');
   if (!fs.existsSync(f)) return null;
-  return { dir, ...JSON.parse(fs.readFileSync(f, 'utf8')) };
+  const j = JSON.parse(fs.readFileSync(f, 'utf8'));
+  // Reclassify from the saved per-call meta: a call killed by its own --max-budget-usd reports
+  // terminal_reason budget_exhausted with a non-zero cost and zero tokens. That is a cap stop, not an
+  // infrastructure failure (ARMS.md 5). The first run of the matrix wrote the two conflated; recomputing
+  // here means no run has to be repeated to fix the attribution.
+  const cm = j.cell?.call_meta || [];
+  const isCap = c => /budget/i.test(String(c.terminal_reason || c.stop_reason || ''));
+  j.cell.cap_stops = cm.filter(isCap).length;
+  j.cell.infra_failures = cm.filter(c => c.tokens_total === 0 && !isCap(c) && !(c.cost_usd > 0)).length;
+  return { dir, ...j };
 }
 
 function gradeLevel(levelName) {

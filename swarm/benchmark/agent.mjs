@@ -47,7 +47,12 @@ export function runClaude({ prompt, schema, maxTurns = 8, maxBudget = 0.15, labe
         duration_ms: t1 - t0, cost_usd: r?.total_cost_usd ?? null, num_turns: r?.num_turns ?? null,
         stop_reason: r?.stop_reason ?? null, terminal_reason: r?.terminal_reason ?? null,
         is_error: !!r?.is_error, error_text: r?.is_error ? String(r.result || '').slice(0, 400) : null,
-        usage, tokens_total: total, infra_failure: total === 0,
+        // A call killed by its own --max-budget-usd reports terminal_reason budget_exhausted, a non-zero
+        // cost and ZERO tokens in the result event. That is a CAP STOP (a budget consequence of the arm's
+        // call count), not an infrastructure failure, and the two must not be conflated.
+        usage, tokens_total: total,
+        cap_stop: /budget/i.test(String(r?.terminal_reason || '')),
+        infra_failure: total === 0 && !/budget/i.test(String(r?.terminal_reason || '')) && !(r?.total_cost_usd > 0),
         stderr: err.slice(0, 600),
       };
       let parsed = r?.structured_output ?? null;
