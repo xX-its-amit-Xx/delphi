@@ -84,7 +84,9 @@ must(clips.length > 5, `expected clips in pitch-video/clips, found ${clips.lengt
 const artDir = path.join(here, 'art');
 const ART = ['planes.jpg', 'fish.jpg', 'graph.jpg', 'form.jpg', 'blueprint.webm', 'lab.webm',
   // placed at the use case each one illustrates, not as decoration at the top of a tab
-  'uc-locator.jpg', 'uc-layers.jpg', 'uc-diff.jpg', 'uc-physics.jpg', 'uc-gate.jpg'];
+  'uc-locator.jpg', 'uc-layers.jpg', 'uc-diff.jpg', 'uc-physics.jpg', 'uc-gate.jpg',
+  // one bright hero per product tab, growing in from the right
+  'hero-nanopubs.jpg', 'hero-leanbio.jpg', 'hero-mcp.jpg', 'hero-studio.jpg', 'hero-harness.jpg'];
 const art = fs.existsSync(artDir) ? fs.readdirSync(artDir) : [];
 for (const f of ART) must(art.includes(f), `docs/art/${f} is referenced by the page but is not on disk`);
 // And every art reference in the page must be one of those files, so a typo cannot ship.
