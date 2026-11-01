@@ -6,6 +6,16 @@
 The hosted server and a local run of `origin/main` gave identical answers on all 100 cases. The local server in the shared
 working tree fails on Windows (F1).**
 
+> **Status, 2026-11-01 (added after the run; the measurements above are left exactly as taken).** F1 to F6 are fixed
+> in the working tree and released as MCP server **0.8.1** (`mcp/CHANGELOG.md`); issue #56. F1 was already fixed
+> here when the triage started. The six cases that failed below and are reproducible in this tree
+> (`claim-space-in-id`, `claim-iri-injection`, `sparql-PREFIX-in-literal`, `sparql-ask`, `sparql-construct`,
+> `graph-source-network`) were replayed against a local stdio server with this file's own verdict rule and all pass,
+> along with 15 controls; the 413 of F6 was confirmed over HTTP on port 8799. `delphi_organisms` and
+> `delphi_get_organism` are not registered in this tree, so `org-source-network` (the other half of F5) could not be
+> replayed here. **These numbers have not been re-measured against the hosted server**, which still runs 0.8.0, so
+> the 93/100 above stands as the last full hosted run.
+
 - Server: `https://delphisci-mcp.fly.dev/mcp` (Streamable HTTP, no auth). `/healthz` at test time:
   `{"ok":true,"files":2608,"built":"2026-10-31 17:42"}`.
 - Run: 2026-10-31, about 18:05 to 18:15 UTC, from the Windows hackathon box. Calls were spaced at least 1.1 s apart

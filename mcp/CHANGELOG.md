@@ -2,6 +2,33 @@
 
 Versions follow `version` in the root `package.json` (the server's package) and `VERSION` in `mcp/server.mjs`.
 
+## 0.8.1 (2026-11-01)
+
+Five of the six defects in the 100-case MCP test report (issue #56, report in
+`dashboard/public/t/validation/MCP-TEST-REPORT.md`) fixed. F1 — the Windows backslash in the local base IRI —
+was already fixed in this tree, so this release closes F2 to F6. The harness rows that cover each one are named
+below; verified case by case through `mcp/cli.mjs` and through a local HTTP server on port 8799.
+
+- **`delphi_get_claim` no longer splices an unvalidated id into the query text** (F2, `claim-space-in-id`,
+  `claim-iri-injection`). An id carrying a character a SPARQL IRIREF cannot hold now answers
+  `found: false` with a `note` saying why, which is what an unknown id already answered. Before, the caller got
+  the store's parser error (`expected IRI parsing failed`).
+- **`delphi_sparql` answers `ASK`, `CONSTRUCT` and `DESCRIBE`** (F3, `sparql-ask`, `sparql-construct`). `ASK`
+  returned a JavaScript `TypeError` from `simplify()`, which assumed SELECT bindings; `CONSTRUCT` returned
+  `Not supported RDF format media type`. `ASK` now returns `{ form, boolean }` and the graph forms
+  `{ form, triples }` as N-Triples, local and network alike. Anything that is not one of the four read-only
+  forms is refused by name, so an update statement no longer reaches the store.
+- **The default prefixes are added unless the query declares its own** (F4, `sparql-PREFIX-in-literal`). The
+  test was `query.includes("PREFIX")`, so a query with the word `PREFIX` inside a string literal got no
+  prefixes and failed to parse. A prologue can only precede the query form, so that is where it is now read.
+- **`delphi_graph` no longer accepts `source` silently** (F5, `graph-source-network`). It reads one local
+  `docs/claims.json` snapshot, drafts included; `source: "network"` was dropped by the input schema and the
+  caller was served unpublished data without being told. The schema now admits only `"local"`, `browseClaims`
+  refuses anything else with the alternatives named, and every answer carries `source: "local-snapshot"`.
+- **An oversized request body returns 413 with a body** (F6). `readJson` destroyed the request as soon as the
+  limit was passed, so the 413 never reached the client: locally a reset, on Fly a 502 with an empty body. It
+  now stops buffering, keeps draining, and the socket closes once the reply is out.
+
 ## 0.8.0 (2026-11-01)
 
 The validation framework and the LeanBio capability map reach the hosted server. 20 tools -> **38 hosted**

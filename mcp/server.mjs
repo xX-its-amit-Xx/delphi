@@ -23,7 +23,7 @@ const TOOLS = [];
 // Exported so mcp/cli.mjs can call any registered tool by name without duplicating the policy above
 // (hosted network/BLAST forcing, the local-only exclusions). [name, description, inputSchema, fn].
 export { TOOLS };
-export const VERSION = "0.8.0";
+export const VERSION = "0.8.1";
 // Hosted (HTTP) mode never offers tools that run a Lean build or write files.
 const HOSTED = !!process.env.DELPHI_HTTP_PORT;
 
@@ -96,11 +96,13 @@ tool("delphi_graph",
     sort: z.enum(SORT_KEYS).default("truth").describe("truth (high first), truth-asc, disagreement, testability, year"),
     groupBy: z.enum(GROUP_KEYS).optional().describe("Return per-group counts and means instead of claims"),
     limit: z.number().int().min(1).max(500).default(20),
+    source: z.enum(["local"]).default("local").describe(
+      "Only \"local\": this tool reads the docs/claims.json snapshot in the repo, drafts included. It has no network source; use `published` to filter by registry."),
   },
   browseClaims);
 
 tool("delphi_sparql",
-  `Run a read-only SPARQL SELECT. Nanopubs are named graphs: join GRAPH ?h { ?np np:hasAssertion ?a } with GRAPH ?a { ... }. These prefixes are added if the query has none:\n${PREFIXES}`,
+  `Run a read-only SPARQL query: SELECT (rows), ASK ({ boolean }), CONSTRUCT or DESCRIBE ({ triples } as N-Triples). Nanopubs are named graphs: join GRAPH ?h { ?np np:hasAssertion ?a } with GRAPH ?a { ... }. These prefixes are added when the query declares none of its own:\n${PREFIXES}`,
   { query: z.string(), source },
   ({ query, source }) => sparql(query, source));
 
