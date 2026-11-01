@@ -26,7 +26,22 @@ const targets = args.filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--
 
 const SECTION = /^(LABEL|TYPES|DESCRIPTION|AUTHORS|AUTHOR LIST|CREATORS|ISSUES):\s*$/;
 // Issues that only say "this file is an unsigned draft with a temp URI", and the one taken by decision (DECISIONS.md 9a, 10).
-const EXPECTED_ISSUES = [/^Unexpected graph uri: http:\/\/purl\.org\/nanopub\/temp\//, /^Nanopub has no signature element\.$/, /^Nanopub has no assertion template\.$/];
+//
+// `creation time is older than one hour` belongs here and was missing, which made this checker a
+// TIME BOMB: a draft passed when it was written and failed from one hour later, so the gate went
+// red on every unsigned record in the tree for a reason that has nothing to do with the records.
+// All of them are reported `valid` by the validator; they are simply old. The check exists to catch
+// a BACKDATED SIGNED publication, where the creation time is a claim someone is making; on an
+// unsigned draft with a temp URI there is no such claim to police. swarm/nanopubs/check.mjs and its
+// published mirror already allowed it; this copy never got the fix. Found 2026-11-01 by running the
+// checker as a documented use case, which is the whole argument for running them.
+//
+// `has no provenance template` was missing for the same reason and is the same kind of thing: this
+// list already allowed `no assertion template` because a hand-authored draft declares no template,
+// and a draft that declares no ASSERTION template does not declare a PROVENANCE one either. The
+// half-allowance failed every physics draft while passing the holdout ones, purely because the two
+// generators differ in which templates they omit.
+const EXPECTED_ISSUES = [/^Unexpected graph uri: http:\/\/purl\.org\/nanopub\/temp\//, /^Nanopub has no signature element\.$/, /^Nanopub has no (assertion|provenance) template\.$/, /^Nanopub creation time is older than one hour\.$/];
 
 function checkOne(file) {
   const r = spawnSync('java', ['-jar', JAR, 'check', '-v', file], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
