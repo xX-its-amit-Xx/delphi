@@ -87,6 +87,7 @@ for (const lv of LEVEL_ORDER) {
     };
     // one traceable log per cell
     for (const p of per) {
+      if (!p.task) { console.warn(`skipping an ungraded cell in ${lv}/${arm}: no task id`); continue; }
       const dir = path.join(here, 'runs', lv, arm, p.task);
       const fin = readJSON(path.join(dir, 'final.json'));
       if (!fin) continue;

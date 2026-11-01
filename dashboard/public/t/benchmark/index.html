@@ -61,7 +61,8 @@ section{padding-block:32px;border-bottom:1px solid var(--line)}
 .legend b{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--ink)}
 .sw{width:12px;height:12px;border-radius:3px;display:inline-block}
 .fig{min-width:0}
-.fig svg{display:block;width:100%;height:auto;max-width:100%;overflow:visible}
+.figscroll{overflow-x:auto;overflow-y:hidden;min-width:0;-webkit-overflow-scrolling:touch}
+.fig svg{display:block;width:100%;height:auto;min-width:660px}
 .figcap{font-size:.85rem;color:var(--mute);margin-top:6px}
 .bar-hit{cursor:pointer}
 .bar-hit:hover rect.b{filter:brightness(1.12)}
@@ -173,7 +174,7 @@ function svgEl(t,a){const e=document.createElementNS('http://www.w3.org/2000/svg
 
 // One stage figure: quality panel (left) and cost panel (right), one scale each, no dual axis.
 function figure(level){
-  const W=760,H=260,padL=46,padR=14,padT=26,padB=56;
+  const W=760,H=276,padL=46,padR=14,padT=26,padB=72;
   const half=(W-padL-padR-28)/2, x0=padL, x1=padL+half+28;
   const svg=svgEl('svg',{viewBox:`0 0 ${W} ${H}`,role:'img','aria-label':`${level.title}: quality and cost by arm, n=${level.n_tasks}`});
   const plotH=H-padT-padB;
@@ -224,14 +225,18 @@ function figure(level){
       g.appendChild(svgEl('line',{x1:cx,x2:cx,y1:yLo,y2:yHi,stroke:'var(--ink)','stroke-width':2,opacity:.55}));
       g.appendChild(svgEl('line',{x1:cx-6,x2:cx+6,y1:yHi,y2:yHi,stroke:'var(--ink)','stroke-width':2,opacity:.55}));
       g.appendChild(svgEl('line',{x1:cx-6,x2:cx+6,y1:yLo,y2:yLo,stroke:'var(--ink)','stroke-width':2,opacity:.55}));
-      a.per_task.forEach((p,k)=>{
+      if(!absent) a.per_task.forEach((p,k)=>{
         const dy=padT+plotH-(p.score||0)*plotH;
         const dx=cx+(k-1)*9;
-        const c=svgEl('circle',{cx:dx,cy:dy,r:4,fill:p.artifact_absent?'none':'var(--panel)',stroke:p.artifact_absent?'var(--bad)':col,'stroke-width':2});
+        const c=svgEl('circle',{cx:dx,cy:dy,r:4,fill:'var(--panel)',stroke:col,'stroke-width':2});
         c.appendChild(svgEl('title')).textContent=`${p.task}: ${p.score}`;
         g.appendChild(c);
       });
-      g.appendChild(txt(cx,padT+plotH-(a.mean_score||0)*plotH-10,(a.mean_score??0).toFixed(2),{anchor:'middle',fs:11,fill:'var(--ink)',w:700}));
+      // the mean sits above the highest thing in the group (the max dot / whisker cap), never on top of it
+      const ly=Math.max(padT+22,yHi-11);
+      // when the group reaches the top of the plot the label has to sit on the bar: switch it to white there
+      const onBar=ly>padT+plotH-h+2;
+      g.appendChild(txt(cx,ly,(a.mean_score??0).toFixed(2),{anchor:'middle',fs:12,fill:onBar?'#fff':'var(--ink)',w:700}));
     }
     svg.appendChild(g);
     // cost bar, same arm hue, own panel
@@ -241,8 +246,9 @@ function figure(level){
     g2.addEventListener('click',()=>openLevelArm(level.level,arm));
     g2.appendChild(svgEl('rect',{class:'b',x:cx2,y:padT+plotH-ch,width:bw,height:ch,fill:col,rx:4,ry:4}));
     g2.appendChild(svgEl('rect',{class:'b2',x:cx2,y:padT+plotH-5,width:bw,height:5,fill:col}));
-    g2.appendChild(txt(cx2+bw/2,padT+plotH-ch-6,'$'+a.cost_usd.toFixed(2),{anchor:'middle',fs:11,fill:'var(--ink)',w:700}));
-    g2.appendChild(txt(cx2+bw/2,padT+plotH-ch-18,(a.tokens_total/1000).toFixed(0)+'k tok',{anchor:'middle',fs:9}));
+    const inside=ch>44;
+    g2.appendChild(txt(cx2+bw/2,inside?padT+plotH-ch+17:padT+plotH-ch-6,'$'+a.cost_usd.toFixed(2),{anchor:'middle',fs:12,fill:inside?'#fff':'var(--ink)',w:700}));
+    g2.appendChild(txt(cx2+bw/2,inside?padT+plotH-ch+31:padT+plotH-ch-18,(a.tokens_total/1000).toFixed(0)+'k tok',{anchor:'middle',fs:9,fill:inside?'#fff':'var(--mute)'}));
     svg.appendChild(g2);
     // shared x labels under both panels
     [bx,cx2].forEach(xx=>{
@@ -250,7 +256,7 @@ function figure(level){
       svg.appendChild(txt(xx+bw/2,padT+plotH+28,arm==='single'?'1 call':(arm==='decentralised'?'3 calls':'5 calls'),{anchor:'middle',fs:9}));
     });
     if(a.cap_stops||a.infra_failures){
-      [bx,cx2].forEach(xx=>svg.appendChild(txt(xx+bw/2,padT+plotH+40,(a.cap_stops?a.cap_stops+' cap stop'+(a.cap_stops>1?'s':''):'')+(a.cap_stops&&a.infra_failures?', ':'')+(a.infra_failures?a.infra_failures+' harness':''),{anchor:'middle',fs:9,fill:'var(--bad)'})));
+      [bx,cx2].forEach(xx=>svg.appendChild(txt(xx+bw/2,padT+plotH+42,(a.cap_stops?a.cap_stops+' cap stop'+(a.cap_stops>1?'s':''):'')+(a.cap_stops&&a.infra_failures?', ':'')+(a.infra_failures?a.infra_failures+' harness':''),{anchor:'middle',fs:9,fill:'var(--bad)'})));
     }
   });
   // baselines
@@ -278,10 +284,13 @@ function renderFigs(){
     const costRatio=(lv.arms.centralised.cost_usd/Math.max(1e-9,lv.arms.single.cost_usd)).toFixed(1);
     card.innerHTML=`<h3>${esc(lv.title)}</h3>
       <p class="small mute" style="margin-top:-.3em">Score: ${esc(lv.metric)}.<br>Ground truth: ${esc(lv.ground_truth)}.</p>`;
-    card.appendChild(figure(lv));
+    const fs=document.createElement('div');fs.className='figscroll';fs.appendChild(figure(lv));card.appendChild(fs);
     const cap=document.createElement('p');cap.className='figcap';
+    const absentArm=ARMS.find(a=>lv.arms[a].artifacts_absent>0&&lv.arms[a].mean_score===0);
     cap.innerHTML = s.separates
-      ? `<span class="chip warn">separates</span> largest gap ${s.diff} (${esc(ARM_LABEL[s.best.a])} over ${esc(ARM_LABEL[s.worst.a])}), which is larger than the widest within-arm spread (${s.maxSpread}). At n = ${lv.n_tasks} this is still not a significance claim.`
+      ? (absentArm
+        ? `<span class="chip warn">separates, but on an absence</span> the gap of ${s.diff} exists because the ${esc(ARM_LABEL[absentArm])} produced <strong>no artifact at all</strong> on all ${lv.arms[absentArm].n} tasks &mdash; its merge call was stopped by its own budget cap. That is a cost effect, not a measured quality difference. Among the arms that did produce artifacts the gap is ${(Math.max(...ARMS.filter(a=>a!==absentArm).map(a=>lv.arms[a].mean_score))-Math.min(...ARMS.filter(a=>a!==absentArm).map(a=>lv.arms[a].mean_score))).toFixed(3)}, inside the widest spread (${s.maxSpread}).`
+        : `<span class="chip warn">separates</span> largest gap ${s.diff} (${esc(ARM_LABEL[s.best.a])} over ${esc(ARM_LABEL[s.worst.a])}), which is larger than the widest within-arm spread (${s.maxSpread}). At n = ${lv.n_tasks} this is still not a significance claim.`)
       : `<span class="chip">does not separate</span> largest gap ${s.diff} (${esc(ARM_LABEL[s.best.a])} over ${esc(ARM_LABEL[s.worst.a])}) is <em>inside</em> the widest within-arm spread (${s.maxSpread}), so the arms do not separate at this stage. Centralised cost is ${costRatio}&times; single.`;
     card.appendChild(cap);
     host.appendChild(card);

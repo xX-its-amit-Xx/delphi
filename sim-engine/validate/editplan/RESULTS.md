@@ -57,10 +57,12 @@ break.
 primary assembly**: 1,373,471,384 bp, both strands, every position, no seeding step, ~22 s per guide, no
 credentials. All six guides a lab would order now have real counts, and **every one of them finds exactly one
 perfect match, at its own intended locus** — which independently confirms the coordinates above. It also found
-things worth knowing: the `kcnk5b` W169L HDR guide has a **2-mismatch off-target** (intergenic, chr24), the
-F241Y HDR guide has a **3-mismatch off-target inside `mbnl1`**, and the W169L pegRNA spacer is the least
-specific guide of the six by a wide margin (138 sites, MIT 73.5) while the F241Y pegRNA spacer is the most
-specific (8 sites, MIT 98.9). See §5.
+things worth knowing. **All three of the `kcnk5b` F241Y HDR guide's closest off-targets — its only three sites
+at 3 mismatches — are inside protein-coding genes** (`gfra2a`, `mbnl1`, `ythdf1`), and the W169L **pegRNA**
+spacer has a **2-mismatch site inside `slc17a5`** plus two separate 3-mismatch sites in `nfe2l2a`. The W169L
+**HDR** guide's 2-mismatch site, by contrast, is intergenic. Specificity does not follow the route here; it
+follows the individual guide. See §5 — including a bug in that section's first numbers, where cached Ensembl
+failures were being printed as "no gene within 2 kb" and were hiding two of those three genes.
 
 **The on-target score is no longer only ours.** Doench 2016 Rule Set 2 was pursued first and **cannot** be
 reimplemented from published numbers — the Azimuth model is a pickled 100-tree gradient-boosted ensemble, so no
@@ -450,40 +452,67 @@ Sites are counted at ≤4 mismatches **with a compatible PAM**. MIT specificity 
 (doi [10.1038/nbt.2647](https://doi.org/10.1038/nbt.2647)) over the mismatched sites. "Exonic" means the site
 falls within ±2 kb of a protein-coding gene per Ensembl `/overlap/region`.
 
-| guide | edit | total ≤4 mm | 2 mm | 3 mm | 4 mm | MIT specificity | exonic |
-|---|---|---|---|---|---|---|---|
-| `GGATCTACCTGGGCCTTGCT` | F241Y pegRNA | **8** | 0 | 0 | 7 | **98.86** | 2 |
-| `TTCCCAAAAATTGGCCGCGA` | hhip iSTOP c.17 | **16** | 0 | 0 | 15 | **98.61** | 9 |
-| `GAGAATTAAGTCCAAGGAGG` | hhip frameshift | **23** | 0 | 1 | 21 | **95.59** | 12 |
-| `GAACCAAGAAGCCCCATAAA` | W169L HDR | **23** | **1** | 1 | 20 | 90.82 | 1 |
-| `GGTTGTCATTGTTCTTCAGT` | F241Y HDR | **79** | 0 | 3 | 75 | 86.69 | 14 |
-| `ACAATTGTGTTCCTTTTATG` | W169L pegRNA | **138** | **2** | 9 | 126 | **73.49** | 15 |
+| guide | edit | total ≤4 mm | 2 mm | 3 mm | 4 mm | MIT specificity | exonic (all mm) | **exonic at ≤3 mm** |
+|---|---|---|---|---|---|---|---|---|
+| `GGATCTACCTGGGCCTTGCT` | F241Y pegRNA | **8** | 0 | 0 | 7 | **98.86** | 6 | **0** |
+| `TTCCCAAAAATTGGCCGCGA` | hhip iSTOP c.17 | **16** | 0 | 0 | 15 | **98.61** | 9 | **0** |
+| `GAGAATTAAGTCCAAGGAGG` | hhip frameshift | **23** | 0 | 1 | 21 | **95.59** | 13 | 1 (`rnf220b`) |
+| `GAACCAAGAAGCCCCATAAA` | W169L HDR | **23** | **1** | 1 | 20 | 90.82 | 15 | **0** |
+| `GGTTGTCATTGTTCTTCAGT` | F241Y HDR | **79** | 0 | 3 | 75 | 86.69 | 17 | **3 — all three** |
+| `ACAATTGTGTTCCTTTTATG` | W169L pegRNA | **138** | **2** | 9 | 126 | **73.49** | 11 | **4** |
 
-**The three findings a wet lab would act on:**
+The last column is the one that matters, and the table is sorted by MIT specificity rather than by it — note
+that the two do not agree.
 
-1. **The `kcnk5b` W169L HDR guide has a 2-mismatch off-target** — `AAACCAAGAAGCCCCACAAA|GGG` at
-   chr24:10,727,912 (−), mismatches at spacer positions 1 and 17, Hsu single-site score 0.059. Position 1 is
-   PAM-distal and so the most tolerated position there is, which means this site is plausibly cuttable. It is
-   **intergenic** — no gene within ±2 kb — which is the good news. Amplicon-sequence it in any founder anyway.
-2. **The `kcnk5b` F241Y HDR guide has a 3-mismatch off-target inside a protein-coding gene** —
-   `GCTTGTCATTTTTCTTCACT|AGG` at chr2:47,771,797 (−), in **`mbnl1`**. That is the single most consequential
-   number produced in this run: `mbnl1` is a splicing regulator, and it is exactly the kind of site that could
-   confound a fin-morphology phenotype. The `hhip` frameshift guide likewise has a 3-mismatch site in
-   **`rnf220b`** (chr8:18,282,059), though with a far lower Hsu score (0.0005).
-3. **The pegRNA spacer for W169L is the worst guide of the six, and the pegRNA spacer for F241Y is the best.**
-   `ACAATTGTGTTCCTTTTATG` has 138 sites, two at 2 mismatches, nine at 3, and one 3-mismatch hit in `nfe2l2a`
-   (the Nrf2 orthologue) — MIT 73.49. `GGATCTACCTGGGCCTTGCT` has eight sites in the whole genome, none closer
-   than 4 mismatches — MIT 98.86. These are the two guides §4 asks you to order for prime editing, and they sit
-   at opposite ends of the specificity range. Order both, but screen the W169L pegRNA much harder.
+**The four findings a wet lab would act on:**
+
+1. **Every one of the `kcnk5b` F241Y HDR guide's three closest off-targets is inside a protein-coding gene.**
+   `GGTTGTCATTGTTCTTCAGT` has exactly three sites at 3 mismatches, and they fall in **`gfra2a`**
+   (chr8:42,233,505, Hsu 0.0148), **`mbnl1`** (chr2:47,771,797, Hsu 0.0061) and **`ythdf1`**
+   (chr8:23,110,409, Hsu 0.0027). `mbnl1` is a splicing regulator and `gfra2a` a GDNF-family receptor; both are
+   exactly the kind of site that could confound a fin-morphology phenotype. **This is the single most
+   consequential result in the run**, and it argues for using the pegRNA spacer or screening this guide's three
+   sites in every founder.
+2. **The `kcnk5b` W169L pegRNA spacer has a 2-mismatch off-target inside a protein-coding gene** —
+   `ACAATTGTGCTCCTTTCATG|AGG` at chr13:27,300,031 (+), in **`slc17a5`**, Hsu 0.025. At 3 mismatches it adds
+   `herc3` and **two separate sites in `nfe2l2a`** (the Nrf2 orthologue, chr9:1,678,545 and chr9:1,681,251).
+   With 138 sites and MIT 73.49 it is the least specific guide of the six by a wide margin.
+3. **The `kcnk5b` W169L HDR guide's 2-mismatch site is intergenic, which is the good news in this table.**
+   `AAACCAAGAAGCCCCACAAA|GGG` at chr24:10,727,912 (−), mismatches at spacer positions 1 and 17, Hsu 0.059 — the
+   highest single-site score anywhere in this run, because position 1 is PAM-distal and so the most tolerated
+   position there is. **No gene within ±2 kb**, and its 3-mismatch site is intergenic too. Sequence it anyway.
+4. **The two cleanest guides are the F241Y pegRNA spacer and the `hhip` iSTOP guide.** `GGATCTACCTGGGCCTTGCT`
+   has eight sites in the entire genome and `TTCCCAAAAATTGGCCGCGA` sixteen — in both cases **nothing closer
+   than 4 mismatches**, MIT 98.86 and 98.61. Note the pair this produces: for F241Y the HDR guide is the one
+   with three exonic 3-mismatch sites and the pegRNA spacer is nearly clean, while for W169L it is the other
+   way round. **Specificity does not follow the route; it follows the guide.**
+
+### A bug this section had, and what it was hiding
+
+The first version of these numbers reported the F241Y HDR guide as having **two** exonic sites at ≤3 mismatches
+and the F241Y pegRNA spacer as having **two** exonic sites in total. Both were wrong, and in the dangerous
+direction. Ensembl's `/overlap/region` endpoint returns transient 500s and 503s under load, those failures were
+being **cached as though they were answers**, and the CLI was printing a failed lookup as "no gene within 2 kb".
+So `gfra2a` and `ythdf1` — two of the three genes in finding 1 — were invisible.
+
+Three changes fixed it, and all three are the same principle: **a failure must not be able to masquerade as a
+negative result.** Failed annotations are no longer cached as answers and are re-attempted on the next run; the
+retry budget is three attempts with exponential back-off; and both the data and the printed output now
+distinguish **"no gene within ±2 kb"** from **"gene context UNKNOWN"**. All six guides now annotate with
+**zero failures**. This is worth stating plainly because it was not a cosmetic bug: it was silently shortening
+the list of genes a lab would be told to sequence.
 
 ### Gene annotation is prioritised, and says when it does not know
 
 An exhaustive search finds 100–200 sites at 4 mismatches for some guides, and annotating all of them would be
 hundreds of Ensembl calls per guide for sites whose Hsu score is ~0.001. So **every site at ≤3 mismatches is
-annotated however many there are**, then others up to a budget of 25. Each search carries a `gene_annotation`
-summary with `n_annotated`, `n_annotation_failed` and `n_not_attempted`. A site that was not annotated, or whose
-Ensembl call failed (the REST endpoint returned transient 500s and 503s under load; each site is retried twice),
-is reported as **`UNKNOWN` — never as intergenic**. Those are different facts and the output keeps them apart.
+annotated however many there are** — those are the only ones a lab would act on — then others up to a budget of
+25. Each search carries a `gene_annotation` summary with `n_annotated`, `n_annotation_failed` and
+`n_not_attempted`; for the six guides above these now read 23/0/0, 24/0/114, 25/0/54, 8/0/0, 23/0/0 and 16/0/0.
+A site that was not annotated, or whose Ensembl call failed, is reported as **`UNKNOWN` — never as
+intergenic.** Those are different facts and both the data and the printed output keep them apart. This is why
+the `exonic (all mm)` column above should be read as a floor: for the two guides with 100+ sites, most
+4-mismatch sites were never looked up.
 
 ### What a filled table still does NOT establish
 

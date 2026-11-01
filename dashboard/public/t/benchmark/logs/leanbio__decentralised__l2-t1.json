@@ -1,0 +1,407 @@
+{
+ "level": "leanbio",
+ "level_title": "LeanBio formalisation",
+ "arm": "decentralised",
+ "task": "l2-t1",
+ "arm_definition": "3 agents work the same task independently, no shared state, no orchestrator; merged at the end by a fixed oracle-free medoid vote. 3 parallel calls at a third of the budget each.",
+ "model": "claude-sonnet-5-5",
+ "N": 3,
+ "budget_total_usd": 0.45,
+ "cap_per_call_usd": 0.15,
+ "allocation": "even",
+ "metric": "mean of 5 checks (compiles, no cheats, witness proved, hypotheses load-bearing, says what the claim says)",
+ "ground_truth": "lake env lean with Mathlib v4.35.0 (compilation is the ground truth), one process at a time",
+ "shared_input_bytes": 2146,
+ "shared_input": "TASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.\n\nTHE CLAIM IN ENGLISH\nFor a body in steady gliding flight, lift balances weight only at or above the minimum airspeed v_min = sqrt(2 * m * g / (rho * S * CLmax)), where m is mass, g gravitational acceleration, rho air density, S lifting area and CLmax the maximum lift coefficient. It follows that of two gliders with the same CLmax and the same air density, the one with the greater wing loading m/S strictly requires the greater minimum airspeed.\n\nREQUIRED CONTENT. A statement that compiles but does not carry these is a failure:\n  [1] a square root appears\n  [2] the factor 2 appears\n  [3] air density is hypothesised positive\n  [4] lifting area is hypothesised positive\n  [5] the lift coefficient is hypothesised positive\n  [6] a STRICT inequality is the conclusion (not a non-strict one)\n  [7] two gliders are compared, or wing loading m/S is formed\n\nKNOWN TRAP: A statement that merely defines v_min and proves 0 <= v_min is TRUE and VACUOUS. The strict monotonicity in m/S is the content.\n\nHARD REQUIREMENTS ON THE FILE\n- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.\n- The main theorem is named exactly `l2_t1`.\n- A second declaration named exactly `l2_t1_witness` proves that the hypotheses of `l2_t1` are\n  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`\n  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.\n- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.\n- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the\n  formalization is worthless and will be scored as a failure.\n- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,\n  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.\n\nOutput the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.",
+ "merge": {
+  "rule": "medoid",
+  "kept": 1,
+  "mean_similarity": [
+   {
+    "i": 1,
+    "s": 0.9117647058823529
+   },
+   {
+    "i": 2,
+    "s": 0.9117647058823529
+   },
+   {
+    "i": 0,
+    "s": 0.8235294117647058
+   }
+  ],
+  "n_live": 3
+ },
+ "cell_totals": {
+  "calls": 3,
+  "cost_usd": 0.17211,
+  "tokens_total": 115654,
+  "wall_ms": 19110,
+  "cap_stops": 0,
+  "infra_failures": 0,
+  "produced_artifact": true
+ },
+ "calls": [
+  {
+   "label": "worker-0",
+   "prompt_sent": "You are one of 3 agents working on this task INDEPENDENTLY and in parallel.\nYou cannot see the other agents and they cannot see you. There is no shared state and no coordinator.\nYour answer will be compared with theirs and the one most agreed-with will be kept, so do the whole task\nyourself and do it the way you believe is right. Do not hedge and do not leave anything for someone else.\n\nYou are agent 0 of 3.\n\nTASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.\n\nTHE CLAIM IN ENGLISH\nFor a body in steady gliding flight, lift balances weight only at or above the minimum airspeed v_min = sqrt(2 * m * g / (rho * S * CLmax)), where m is mass, g gravitational acceleration, rho air density, S lifting area and CLmax the maximum lift coefficient. It follows that of two gliders with the same CLmax and the same air density, the one with the greater wing loading m/S strictly requires the greater minimum airspeed.\n\nREQUIRED CONTENT. A statement that compiles but does not carry these is a failure:\n  [1] a square root appears\n  [2] the factor 2 appears\n  [3] air density is hypothesised positive\n  [4] lifting area is hypothesised positive\n  [5] the lift coefficient is hypothesised positive\n  [6] a STRICT inequality is the conclusion (not a non-strict one)\n  [7] two gliders are compared, or wing loading m/S is formed\n\nKNOWN TRAP: A statement that merely defines v_min and proves 0 <= v_min is TRUE and VACUOUS. The strict monotonicity in m/S is the content.\n\nHARD REQUIREMENTS ON THE FILE\n- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.\n- The main theorem is named exactly `l2_t1`.\n- A second declaration named exactly `l2_t1_witness` proves that the hypotheses of `l2_t1` are\n  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`\n  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.\n- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.\n- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the\n  formalization is worthless and will be scored as a failure.\n- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,\n  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.\n\nOutput the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.",
+   "prompt_chars": 2557,
+   "model_output_parsed": {
+    "lean_file": "import Mathlib\n\ntheorem l2_t1 (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CLmax)\n    (hload : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CLmax)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CLmax)) := by\n  have h1 : ρ ≠ 0 := hρ.ne'\n  have h2 : CLmax ≠ 0 := hCL.ne'\n  have h3 : S₁ ≠ 0 := hS₁.ne'\n  have h4 : S₂ ≠ 0 := hS₂.ne'\n  have e1 : 2 * m₁ * g / (ρ * S₁ * CLmax) = (2 * g / (ρ * CLmax)) * (m₁ / S₁) := by\n    first | (field_simp; done) | (field_simp; ring)\n  have e2 : 2 * m₂ * g / (ρ * S₂ * CLmax) = (2 * g / (ρ * CLmax)) * (m₂ / S₂) := by\n    first | (field_simp; done) | (field_simp; ring)\n  have hc : 0 < 2 * g / (ρ * CLmax) := by positivity\n  have hlt : 2 * m₁ * g / (ρ * S₁ * CLmax) < 2 * m₂ * g / (ρ * S₂ * CLmax) := by\n    rw [e1, e2]\n    exact mul_lt_mul_of_pos_left hload hc\n  have hnn : 0 ≤ 2 * m₁ * g / (ρ * S₁ * CLmax) := by positivity\n  exact Real.sqrt_lt_sqrt hnn hlt\n\ntheorem l2_t1_witness :\n    ∃ (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ),\n      0 < m₁ ∧ 0 < m₂ ∧ 0 < S₁ ∧ 0 < S₂ ∧ 0 < g ∧ 0 < ρ ∧ 0 < CLmax ∧\n      m₁ / S₁ < m₂ / S₂ := by\n  refine ⟨1, 1, 2, 1, 10, 1, 1, ?_⟩\n  norm_num\n",
+    "statement_only": "theorem l2_t1 (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CLmax)\n    (hload : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CLmax)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CLmax))",
+    "notes": "States that for two gliders sharing g, air density rho and CLmax (all positive), with positive masses and areas, strictly greater wing loading m/S gives strictly greater v_min = sqrt(2 m g/(rho S CLmax)). The witness gives concrete numbers satisfying all hypotheses. It does not model the lift-weight balance dynamics, drag, or the physical derivation of v_min; v_min is taken as the given formula. I have not compiled this file, so the field_simp steps are untested."
+   },
+   "model_output_raw": "{\"lean_file\":\"import Mathlib\\n\\ntheorem l2_t1 (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ)\\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CLmax)\\n    (hload : m₁ / S₁ < m₂ / S₂) :\\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CLmax)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CLmax)) := by\\n  have h1 : ρ ≠ 0 := hρ.ne'\\n  have h2 : CLmax ≠ 0 := hCL.ne'\\n  have h3 : S₁ ≠ 0 := hS₁.ne'\\n  have h4 : S₂ ≠ 0 := hS₂.ne'\\n  have e1 : 2 * m₁ * g / (ρ * S₁ * CLmax) = (2 * g / (ρ * CLmax)) * (m₁ / S₁) := by\\n    first | (field_simp; done) | (field_simp; ring)\\n  have e2 : 2 * m₂ * g / (ρ * S₂ * CLmax) = (2 * g / (ρ * CLmax)) * (m₂ / S₂) := by\\n    first | (field_simp; done) | (field_simp; ring)\\n  have hc : 0 < 2 * g / (ρ * CLmax) := by positivity\\n  have hlt : 2 * m₁ * g / (ρ * S₁ * CLmax) < 2 * m₂ * g / (ρ * S₂ * CLmax) := by\\n    rw [e1, e2]\\n    exact mul_lt_mul_of_pos_left hload hc\\n  have hnn : 0 ≤ 2 * m₁ * g / (ρ * S₁ * CLmax) := by positivity\\n  exact Real.sqrt_lt_sqrt hnn hlt\\n\\ntheorem l2_t1_witness :\\n    ∃ (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ),\\n      0 < m₁ ∧ 0 < m₂ ∧ 0 < S₁ ∧ 0 < S₂ ∧ 0 < g ∧ 0 < ρ ∧ 0 < CLmax ∧\\n      m₁ / S₁ < m₂ / S₂ := by\\n  refine ⟨1, 1, 2, 1, 10, 1, 1, ?_⟩\\n  norm_num\\n\",\"statement_only\":\"theorem l2_t1 (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ)\\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CLmax)\\n    (hload : m₁ / S₁ < m₂ / S₂) :\\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CLmax)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CLmax))\",\"notes\":\"States that for two gliders sharing g, air density rho and CLmax (all positive), with positive masses and areas, strictly greater wing loading m/S gives strictly greater v_min = sqrt(2 m g/(rho S CLmax)). The witness gives concrete numbers satisfying all hypotheses. It does not model the lift-weight balance dynamics, drag, or the physical derivation of v_min; v_min is taken as the given formula. I have not compiled this file, so the field_simp steps are untested.\"}",
+   "tokens": {
+    "input": 2,
+    "output": 2210,
+    "cache_read": 40950,
+    "cache_creation": 9120
+   },
+   "tokens_total": 52282,
+   "cost_usd": 0.062679,
+   "duration_ms": 18680,
+   "num_turns": 2,
+   "stop_reason": "tool_use",
+   "terminal_reason": "completed",
+   "is_error": false,
+   "error_text": null,
+   "cap_stop": false,
+   "failure_class": "ok"
+  },
+  {
+   "label": "worker-1",
+   "prompt_sent": "You are one of 3 agents working on this task INDEPENDENTLY and in parallel.\nYou cannot see the other agents and they cannot see you. There is no shared state and no coordinator.\nYour answer will be compared with theirs and the one most agreed-with will be kept, so do the whole task\nyourself and do it the way you believe is right. Do not hedge and do not leave anything for someone else.\n\nYou are agent 1 of 3.\n\nTASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.\n\nTHE CLAIM IN ENGLISH\nFor a body in steady gliding flight, lift balances weight only at or above the minimum airspeed v_min = sqrt(2 * m * g / (rho * S * CLmax)), where m is mass, g gravitational acceleration, rho air density, S lifting area and CLmax the maximum lift coefficient. It follows that of two gliders with the same CLmax and the same air density, the one with the greater wing loading m/S strictly requires the greater minimum airspeed.\n\nREQUIRED CONTENT. A statement that compiles but does not carry these is a failure:\n  [1] a square root appears\n  [2] the factor 2 appears\n  [3] air density is hypothesised positive\n  [4] lifting area is hypothesised positive\n  [5] the lift coefficient is hypothesised positive\n  [6] a STRICT inequality is the conclusion (not a non-strict one)\n  [7] two gliders are compared, or wing loading m/S is formed\n\nKNOWN TRAP: A statement that merely defines v_min and proves 0 <= v_min is TRUE and VACUOUS. The strict monotonicity in m/S is the content.\n\nHARD REQUIREMENTS ON THE FILE\n- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.\n- The main theorem is named exactly `l2_t1`.\n- A second declaration named exactly `l2_t1_witness` proves that the hypotheses of `l2_t1` are\n  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`\n  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.\n- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.\n- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the\n  formalization is worthless and will be scored as a failure.\n- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,\n  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.\n\nOutput the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.",
+   "prompt_chars": 2557,
+   "model_output_parsed": {
+    "lean_file": "import Mathlib\n\ntheorem l2_t1 (g ρ CL m₁ S₁ m₂ S₂ : ℝ)\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CL)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\n    (h : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CL)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CL)) := by\n  have key : ∀ m S : ℝ, 0 < S → 2 * m * g / (ρ * S * CL) = (2 * g / (ρ * CL)) * (m / S) := by\n    intro m S hS\n    first\n      | (field_simp; done)\n      | (field_simp; ring)\n  rw [key m₁ S₁ hS₁, key m₂ S₂ hS₂]\n  apply Real.sqrt_lt_sqrt (by positivity)\n  exact mul_lt_mul_of_pos_left h (by positivity)\n\ntheorem l2_t1_witness :\n    ∃ g ρ CL m₁ S₁ m₂ S₂ : ℝ, 0 < g ∧ 0 < ρ ∧ 0 < CL ∧ 0 < m₁ ∧ 0 < m₂ ∧\n      0 < S₁ ∧ 0 < S₂ ∧ m₁ / S₁ < m₂ / S₂ := by\n  refine ⟨10, 1, 1, 1, 1, 2, 1, ?_⟩\n  norm_num\n",
+    "statement_only": "theorem l2_t1 (g ρ CL m₁ S₁ m₂ S₂ : ℝ)\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CL)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\n    (h : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CL)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CL))",
+    "notes": "The theorem compares two gliders with the same g, air density ρ and CLmax. All of these are positive, and so are both masses and lifting areas. If m₁/S₁ < m₂/S₂, then v_min = sqrt(2 m g/(ρ S CLmax)) is strictly smaller for glider 1 than for glider 2. The proof factors v_min² as (2g/(ρ CL))·(m/S) and applies strict monotonicity of sqrt. It does not model the lift-weight balance itself beyond the v_min formula, and it does not prove the non-strict bound 0 ≤ v_min. l2_t1_witness gives concrete numbers (g=10, ρ=1, CL=1, m₁=S₁=S₂=1, m₂=2) that satisfy every hypothesis. I could not compile the file in this session (no Lean available), so it is untested. I wrote the proof defensively, using a `first` combinator after field_simp."
+   },
+   "model_output_raw": "{\"lean_file\":\"import Mathlib\\n\\ntheorem l2_t1 (g ρ CL m₁ S₁ m₂ S₂ : ℝ)\\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CL)\\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\\n    (h : m₁ / S₁ < m₂ / S₂) :\\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CL)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CL)) := by\\n  have key : ∀ m S : ℝ, 0 < S → 2 * m * g / (ρ * S * CL) = (2 * g / (ρ * CL)) * (m / S) := by\\n    intro m S hS\\n    first\\n      | (field_simp; done)\\n      | (field_simp; ring)\\n  rw [key m₁ S₁ hS₁, key m₂ S₂ hS₂]\\n  apply Real.sqrt_lt_sqrt (by positivity)\\n  exact mul_lt_mul_of_pos_left h (by positivity)\\n\\ntheorem l2_t1_witness :\\n    ∃ g ρ CL m₁ S₁ m₂ S₂ : ℝ, 0 < g ∧ 0 < ρ ∧ 0 < CL ∧ 0 < m₁ ∧ 0 < m₂ ∧\\n      0 < S₁ ∧ 0 < S₂ ∧ m₁ / S₁ < m₂ / S₂ := by\\n  refine ⟨10, 1, 1, 1, 1, 2, 1, ?_⟩\\n  norm_num\\n\",\"statement_only\":\"theorem l2_t1 (g ρ CL m₁ S₁ m₂ S₂ : ℝ)\\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CL)\\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\\n    (h : m₁ / S₁ < m₂ / S₂) :\\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CL)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CL))\",\"notes\":\"The theorem compares two gliders with the same g, air density ρ and CLmax. All of these are positive, and so are both masses and lifting areas. If m₁/S₁ < m₂/S₂, then v_min = sqrt(2 m g/(ρ S CLmax)) is strictly smaller for glider 1 than for glider 2. The proof factors v_min² as (2g/(ρ CL))·(m/S) and applies strict monotonicity of sqrt. It does not model the lift-weight balance itself beyond the v_min formula, and it does not prove the non-strict bound 0 ≤ v_min. l2_t1_witness gives concrete numbers (g=10, ρ=1, CL=1, m₁=S₁=S₂=1, m₂=2) that satisfy every hypothesis. I could not compile the file in this session (no Lean available), so it is untested. I wrote the proof defensively, using a `first` combinator after field_simp.\"}",
+   "tokens": {
+    "input": 2,
+    "output": 2202,
+    "cache_read": 40950,
+    "cache_creation": 9226
+   },
+   "tokens_total": 52380,
+   "cost_usd": 0.063023,
+   "duration_ms": 19096,
+   "num_turns": 2,
+   "stop_reason": "tool_use",
+   "terminal_reason": "completed",
+   "is_error": false,
+   "error_text": null,
+   "cap_stop": false,
+   "failure_class": "ok"
+  },
+  {
+   "label": "worker-2",
+   "prompt_sent": "You are one of 3 agents working on this task INDEPENDENTLY and in parallel.\nYou cannot see the other agents and they cannot see you. There is no shared state and no coordinator.\nYour answer will be compared with theirs and the one most agreed-with will be kept, so do the whole task\nyourself and do it the way you believe is right. Do not hedge and do not leave anything for someone else.\n\nYou are agent 2 of 3.\n\nTASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.\n\nTHE CLAIM IN ENGLISH\nFor a body in steady gliding flight, lift balances weight only at or above the minimum airspeed v_min = sqrt(2 * m * g / (rho * S * CLmax)), where m is mass, g gravitational acceleration, rho air density, S lifting area and CLmax the maximum lift coefficient. It follows that of two gliders with the same CLmax and the same air density, the one with the greater wing loading m/S strictly requires the greater minimum airspeed.\n\nREQUIRED CONTENT. A statement that compiles but does not carry these is a failure:\n  [1] a square root appears\n  [2] the factor 2 appears\n  [3] air density is hypothesised positive\n  [4] lifting area is hypothesised positive\n  [5] the lift coefficient is hypothesised positive\n  [6] a STRICT inequality is the conclusion (not a non-strict one)\n  [7] two gliders are compared, or wing loading m/S is formed\n\nKNOWN TRAP: A statement that merely defines v_min and proves 0 <= v_min is TRUE and VACUOUS. The strict monotonicity in m/S is the content.\n\nHARD REQUIREMENTS ON THE FILE\n- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.\n- The main theorem is named exactly `l2_t1`.\n- A second declaration named exactly `l2_t1_witness` proves that the hypotheses of `l2_t1` are\n  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`\n  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.\n- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.\n- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the\n  formalization is worthless and will be scored as a failure.\n- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,\n  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.\n\nOutput the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.",
+   "prompt_chars": 2557,
+   "model_output_parsed": {
+    "lean_file": "import Mathlib\n\ntheorem l2_t1 (m₁ m₂ S₁ S₂ g ρ CL : ℝ)\n    (hg : 0 < g) (hρ : 0 < ρ) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (hCL : 0 < CL)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (h : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CL)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CL)) := by\n  have key : ∀ m S : ℝ, 0 < S → 2 * m * g / (ρ * S * CL) = 2 * g / (ρ * CL) * (m / S) := by\n    intro m S hS\n    have h1 := hρ.ne'\n    have h2 := hS.ne'\n    have h3 := hCL.ne'\n    field_simp\n  apply Real.sqrt_lt_sqrt\n  · positivity\n  · rw [key m₁ S₁ hS₁, key m₂ S₂ hS₂]\n    exact mul_lt_mul_of_pos_left h (by positivity)\n\ntheorem l2_t1_witness : ∃ (m₁ m₂ S₁ S₂ g ρ CL : ℝ),\n    0 < g ∧ 0 < ρ ∧ 0 < S₁ ∧ 0 < S₂ ∧ 0 < CL ∧ 0 < m₁ ∧ 0 < m₂ ∧ m₁ / S₁ < m₂ / S₂ := by\n  refine ⟨1, 2, 1, 1, 10, 1, 1, ?_⟩\n  norm_num\n",
+    "statement_only": "theorem l2_t1 (m₁ m₂ S₁ S₂ g ρ CL : ℝ)\n    (hg : 0 < g) (hρ : 0 < ρ) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (hCL : 0 < CL)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (h : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CL)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CL))",
+    "notes": "The theorem says that for two gliders with the same g, air density rho and CLmax, all positive, and with positive masses and areas, a strictly greater wing loading m/S gives a strictly greater v_min = sqrt(2 m g / (rho S CLmax)). The conclusion is a strict inequality between the two square roots. The proof rewrites each radicand as (2g/(rho CLmax)) * (m/S) and applies Real.sqrt_lt_sqrt. The witness l2_t1_witness gives concrete numbers that satisfy every hypothesis. I did not compile the file, because no Lean tool was available in this session. The `field_simp` step in `key` is the most likely place for a compile failure. The statement does not model the lift-weight balance itself, only the formula for v_min and its strict monotonicity in wing loading. It does not cover gliders with different CLmax or rho."
+   },
+   "model_output_raw": "{\"lean_file\":\"import Mathlib\\n\\ntheorem l2_t1 (m₁ m₂ S₁ S₂ g ρ CL : ℝ)\\n    (hg : 0 < g) (hρ : 0 < ρ) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (hCL : 0 < CL)\\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (h : m₁ / S₁ < m₂ / S₂) :\\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CL)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CL)) := by\\n  have key : ∀ m S : ℝ, 0 < S → 2 * m * g / (ρ * S * CL) = 2 * g / (ρ * CL) * (m / S) := by\\n    intro m S hS\\n    have h1 := hρ.ne'\\n    have h2 := hS.ne'\\n    have h3 := hCL.ne'\\n    field_simp\\n  apply Real.sqrt_lt_sqrt\\n  · positivity\\n  · rw [key m₁ S₁ hS₁, key m₂ S₂ hS₂]\\n    exact mul_lt_mul_of_pos_left h (by positivity)\\n\\ntheorem l2_t1_witness : ∃ (m₁ m₂ S₁ S₂ g ρ CL : ℝ),\\n    0 < g ∧ 0 < ρ ∧ 0 < S₁ ∧ 0 < S₂ ∧ 0 < CL ∧ 0 < m₁ ∧ 0 < m₂ ∧ m₁ / S₁ < m₂ / S₂ := by\\n  refine ⟨1, 2, 1, 1, 10, 1, 1, ?_⟩\\n  norm_num\\n\",\"statement_only\":\"theorem l2_t1 (m₁ m₂ S₁ S₂ g ρ CL : ℝ)\\n    (hg : 0 < g) (hρ : 0 < ρ) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (hCL : 0 < CL)\\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (h : m₁ / S₁ < m₂ / S₂) :\\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CL)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CL))\",\"notes\":\"The theorem says that for two gliders with the same g, air density rho and CLmax, all positive, and with positive masses and areas, a strictly greater wing loading m/S gives a strictly greater v_min = sqrt(2 m g / (rho S CLmax)). The conclusion is a strict inequality between the two square roots. The proof rewrites each radicand as (2g/(rho CLmax)) * (m/S) and applies Real.sqrt_lt_sqrt. The witness l2_t1_witness gives concrete numbers that satisfy every hypothesis. I did not compile the file, because no Lean tool was available in this session. The `field_simp` step in `key` is the most likely place for a compile failure. The statement does not model the lift-weight balance itself, only the formula for v_min and its strict monotonicity in wing loading. It does not cover gliders with different CLmax or rho.\"}",
+   "tokens": {
+    "input": 2,
+    "output": 2225,
+    "cache_read": 2797,
+    "cache_creation": 5968
+   },
+   "tokens_total": 10992,
+   "cost_usd": 0.0464057,
+   "duration_ms": 17014,
+   "num_turns": 2,
+   "stop_reason": "tool_use",
+   "terminal_reason": "completed",
+   "is_error": false,
+   "error_text": null,
+   "cap_stop": false,
+   "failure_class": "ok"
+  }
+ ],
+ "final_artifact": {
+  "lean_file": "import Mathlib\n\ntheorem l2_t1 (g ρ CL m₁ S₁ m₂ S₂ : ℝ)\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CL)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\n    (h : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CL)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CL)) := by\n  have key : ∀ m S : ℝ, 0 < S → 2 * m * g / (ρ * S * CL) = (2 * g / (ρ * CL)) * (m / S) := by\n    intro m S hS\n    first\n      | (field_simp; done)\n      | (field_simp; ring)\n  rw [key m₁ S₁ hS₁, key m₂ S₂ hS₂]\n  apply Real.sqrt_lt_sqrt (by positivity)\n  exact mul_lt_mul_of_pos_left h (by positivity)\n\ntheorem l2_t1_witness :\n    ∃ g ρ CL m₁ S₁ m₂ S₂ : ℝ, 0 < g ∧ 0 < ρ ∧ 0 < CL ∧ 0 < m₁ ∧ 0 < m₂ ∧\n      0 < S₁ ∧ 0 < S₂ ∧ m₁ / S₁ < m₂ / S₂ := by\n  refine ⟨10, 1, 1, 1, 1, 2, 1, ?_⟩\n  norm_num\n",
+  "statement_only": "theorem l2_t1 (g ρ CL m₁ S₁ m₂ S₂ : ℝ)\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CL)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\n    (h : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CL)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CL))",
+  "notes": "The theorem compares two gliders with the same g, air density ρ and CLmax. All of these are positive, and so are both masses and lifting areas. If m₁/S₁ < m₂/S₂, then v_min = sqrt(2 m g/(ρ S CLmax)) is strictly smaller for glider 1 than for glider 2. The proof factors v_min² as (2g/(ρ CL))·(m/S) and applies strict monotonicity of sqrt. It does not model the lift-weight balance itself beyond the v_min formula, and it does not prove the non-strict bound 0 ≤ v_min. l2_t1_witness gives concrete numbers (g=10, ρ=1, CL=1, m₁=S₁=S₂=1, m₂=2) that satisfy every hypothesis. I could not compile the file in this session (no Lean available), so it is untested. I wrote the proof defensively, using a `first` combinator after field_simp."
+ },
+ "swarm_candidates": [
+  {
+   "index": 0,
+   "ok": true,
+   "subtask": null,
+   "parsed": {
+    "lean_file": "import Mathlib\n\ntheorem l2_t1 (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CLmax)\n    (hload : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CLmax)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CLmax)) := by\n  have h1 : ρ ≠ 0 := hρ.ne'\n  have h2 : CLmax ≠ 0 := hCL.ne'\n  have h3 : S₁ ≠ 0 := hS₁.ne'\n  have h4 : S₂ ≠ 0 := hS₂.ne'\n  have e1 : 2 * m₁ * g / (ρ * S₁ * CLmax) = (2 * g / (ρ * CLmax)) * (m₁ / S₁) := by\n    first | (field_simp; done) | (field_simp; ring)\n  have e2 : 2 * m₂ * g / (ρ * S₂ * CLmax) = (2 * g / (ρ * CLmax)) * (m₂ / S₂) := by\n    first | (field_simp; done) | (field_simp; ring)\n  have hc : 0 < 2 * g / (ρ * CLmax) := by positivity\n  have hlt : 2 * m₁ * g / (ρ * S₁ * CLmax) < 2 * m₂ * g / (ρ * S₂ * CLmax) := by\n    rw [e1, e2]\n    exact mul_lt_mul_of_pos_left hload hc\n  have hnn : 0 ≤ 2 * m₁ * g / (ρ * S₁ * CLmax) := by positivity\n  exact Real.sqrt_lt_sqrt hnn hlt\n\ntheorem l2_t1_witness :\n    ∃ (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ),\n      0 < m₁ ∧ 0 < m₂ ∧ 0 < S₁ ∧ 0 < S₂ ∧ 0 < g ∧ 0 < ρ ∧ 0 < CLmax ∧\n      m₁ / S₁ < m₂ / S₂ := by\n  refine ⟨1, 1, 2, 1, 10, 1, 1, ?_⟩\n  norm_num\n",
+    "statement_only": "theorem l2_t1 (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CLmax)\n    (hload : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CLmax)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CLmax))",
+    "notes": "States that for two gliders sharing g, air density rho and CLmax (all positive), with positive masses and areas, strictly greater wing loading m/S gives strictly greater v_min = sqrt(2 m g/(rho S CLmax)). The witness gives concrete numbers satisfying all hypotheses. It does not model the lift-weight balance dynamics, drag, or the physical derivation of v_min; v_min is taken as the given formula. I have not compiled this file, so the field_simp steps are untested."
+   }
+  },
+  {
+   "index": 1,
+   "ok": true,
+   "subtask": null,
+   "parsed": {
+    "lean_file": "import Mathlib\n\ntheorem l2_t1 (g ρ CL m₁ S₁ m₂ S₂ : ℝ)\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CL)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\n    (h : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CL)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CL)) := by\n  have key : ∀ m S : ℝ, 0 < S → 2 * m * g / (ρ * S * CL) = (2 * g / (ρ * CL)) * (m / S) := by\n    intro m S hS\n    first\n      | (field_simp; done)\n      | (field_simp; ring)\n  rw [key m₁ S₁ hS₁, key m₂ S₂ hS₂]\n  apply Real.sqrt_lt_sqrt (by positivity)\n  exact mul_lt_mul_of_pos_left h (by positivity)\n\ntheorem l2_t1_witness :\n    ∃ g ρ CL m₁ S₁ m₂ S₂ : ℝ, 0 < g ∧ 0 < ρ ∧ 0 < CL ∧ 0 < m₁ ∧ 0 < m₂ ∧\n      0 < S₁ ∧ 0 < S₂ ∧ m₁ / S₁ < m₂ / S₂ := by\n  refine ⟨10, 1, 1, 1, 1, 2, 1, ?_⟩\n  norm_num\n",
+    "statement_only": "theorem l2_t1 (g ρ CL m₁ S₁ m₂ S₂ : ℝ)\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CL)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\n    (h : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CL)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CL))",
+    "notes": "The theorem compares two gliders with the same g, air density ρ and CLmax. All of these are positive, and so are both masses and lifting areas. If m₁/S₁ < m₂/S₂, then v_min = sqrt(2 m g/(ρ S CLmax)) is strictly smaller for glider 1 than for glider 2. The proof factors v_min² as (2g/(ρ CL))·(m/S) and applies strict monotonicity of sqrt. It does not model the lift-weight balance itself beyond the v_min formula, and it does not prove the non-strict bound 0 ≤ v_min. l2_t1_witness gives concrete numbers (g=10, ρ=1, CL=1, m₁=S₁=S₂=1, m₂=2) that satisfy every hypothesis. I could not compile the file in this session (no Lean available), so it is untested. I wrote the proof defensively, using a `first` combinator after field_simp."
+   }
+  },
+  {
+   "index": 2,
+   "ok": true,
+   "subtask": null,
+   "parsed": {
+    "lean_file": "import Mathlib\n\ntheorem l2_t1 (m₁ m₂ S₁ S₂ g ρ CL : ℝ)\n    (hg : 0 < g) (hρ : 0 < ρ) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (hCL : 0 < CL)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (h : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CL)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CL)) := by\n  have key : ∀ m S : ℝ, 0 < S → 2 * m * g / (ρ * S * CL) = 2 * g / (ρ * CL) * (m / S) := by\n    intro m S hS\n    have h1 := hρ.ne'\n    have h2 := hS.ne'\n    have h3 := hCL.ne'\n    field_simp\n  apply Real.sqrt_lt_sqrt\n  · positivity\n  · rw [key m₁ S₁ hS₁, key m₂ S₂ hS₂]\n    exact mul_lt_mul_of_pos_left h (by positivity)\n\ntheorem l2_t1_witness : ∃ (m₁ m₂ S₁ S₂ g ρ CL : ℝ),\n    0 < g ∧ 0 < ρ ∧ 0 < S₁ ∧ 0 < S₂ ∧ 0 < CL ∧ 0 < m₁ ∧ 0 < m₂ ∧ m₁ / S₁ < m₂ / S₂ := by\n  refine ⟨1, 2, 1, 1, 10, 1, 1, ?_⟩\n  norm_num\n",
+    "statement_only": "theorem l2_t1 (m₁ m₂ S₁ S₂ g ρ CL : ℝ)\n    (hg : 0 < g) (hρ : 0 < ρ) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (hCL : 0 < CL)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (h : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CL)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CL))",
+    "notes": "The theorem says that for two gliders with the same g, air density rho and CLmax, all positive, and with positive masses and areas, a strictly greater wing loading m/S gives a strictly greater v_min = sqrt(2 m g / (rho S CLmax)). The conclusion is a strict inequality between the two square roots. The proof rewrites each radicand as (2g/(rho CLmax)) * (m/S) and applies Real.sqrt_lt_sqrt. The witness l2_t1_witness gives concrete numbers that satisfy every hypothesis. I did not compile the file, because no Lean tool was available in this session. The `field_simp` step in `key` is the most likely place for a compile failure. The statement does not model the lift-weight balance itself, only the formula for v_min and its strict monotonicity in wing loading. It does not cover gliders with different CLmax or rho."
+   }
+  }
+ ],
+ "grader_verdict": {
+  "task": "l2-t1",
+  "compiles": 1,
+  "compile_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\decentralised\\l2-t1\\l2_t1.lean:5:20: warning: Variable name `hm₂` is not explicitly referenced. Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning: [apply] _hm₂ Note: This linter can be disabled with `set_option linter.unusedVariables false` D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\decentralised\\l2-t1\\l2_t1.lean:12:8: warning: this tactic is never executed Note:",
+  "no_cheats": 1,
+  "witness_present_and_proved": 1,
+  "hypotheses_load_bearing": 1,
+  "probe": {
+   "dropped": 8,
+   "kept_binders": [
+    "(g ρ CL m₁ S₁ m₂ S₂ : ℝ)"
+   ],
+   "probe_compiles": false,
+   "probe_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\decentralised\\l2-t1\\l2_t1_probe.lean:4:130: error: unsolved goals g ρ CL m₁ S₁ m₂ S₂ : ℝ ⊢ √(2 * m₁ * g / (ρ * S₁ * CL)) < √(2 * m₂ * g / (ρ * S₂ * CL))"
+  },
+  "says_what_the_claim_says": 1,
+  "content_elements": [
+   {
+    "what": "a square root appears",
+    "re": "Real\\.sqrt|√",
+    "present": true
+   },
+   {
+    "what": "the factor 2 appears",
+    "re": "2\\s*\\*",
+    "present": true
+   },
+   {
+    "what": "air density is hypothesised positive",
+    "re": "0\\s*<\\s*(rho|ρ)|(rho|ρ)\\s*(>|≥)\\s*0",
+    "present": true
+   },
+   {
+    "what": "lifting area is hypothesised positive",
+    "re": "0\\s*<\\s*(S|area)|\\b(S|area)\\s*(>|≥)\\s*0",
+    "present": true
+   },
+   {
+    "what": "the lift coefficient is hypothesised positive",
+    "re": "0\\s*<\\s*(CLmax|cLmax|CL|clMax)|\\b(CLmax|cLmax|clMax)\\s*(>|≥)\\s*0",
+    "present": true
+   },
+   {
+    "what": "a STRICT inequality is the conclusion (not a non-strict one)",
+    "re": "<",
+    "present": true
+   },
+   {
+    "what": "two gliders are compared, or wing loading m/S is formed",
+    "re": "(m1|mA|m₁)[\\s\\S]*?(m2|mB|m₂)|/\\s*S",
+    "present": true
+   }
+  ],
+  "level_pass": 1,
+  "score": 1,
+  "statement": "theorem l2_t1 (g ρ CL m₁ S₁ m₂ S₂ : ℝ) (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CL) (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (h : m₁ / S₁ < m₂ / S₂) : Real.sqrt (2 * m₁ * g / (ρ * S₁ * CL)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CL))",
+  "file": "swarm/benchmark/graded/leanbio/decentralised/l2-t1/l2_t1.lean",
+  "artifact_absent": 0
+ },
+ "candidate_grades": {
+  "kept": 1,
+  "rule": "medoid",
+  "candidates": [
+   {
+    "index": 0,
+    "task": "l2-t1",
+    "compiles": 1,
+    "compile_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\decentralised\\l2-t1\\cand-0\\l2_t1.lean:13:33: warning: this tactic is never executed Note: This linter can be disabled with `set_option linter.unreachableTactic false` D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\decentralised\\l2-t1\\cand-0\\l2_t1.lean:15:33: warning: this tactic is never executed Note: This linter can be disabled with `set_option linter.unreachableTactic false` D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\grade",
+    "no_cheats": 1,
+    "witness_present_and_proved": 1,
+    "hypotheses_load_bearing": 1,
+    "probe": {
+     "dropped": 8,
+     "kept_binders": [
+      "(m₁ S₁ m₂ S₂ g ρ CLmax : ℝ)"
+     ],
+     "probe_compiles": false,
+     "probe_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\decentralised\\l2-t1\\cand-0\\l2_t1_probe.lean:4:139: error: unsolved goals m₁ S₁ m₂ S₂ g ρ CLmax : ℝ ⊢ √(2 * m₁ * g / (ρ * S₁ * CLmax)) < √(2 * m₂ * g / (ρ * S₂ * CLmax))"
+    },
+    "says_what_the_claim_says": 1,
+    "content_elements": [
+     {
+      "what": "a square root appears",
+      "re": "Real\\.sqrt|√",
+      "present": true
+     },
+     {
+      "what": "the factor 2 appears",
+      "re": "2\\s*\\*",
+      "present": true
+     },
+     {
+      "what": "air density is hypothesised positive",
+      "re": "0\\s*<\\s*(rho|ρ)|(rho|ρ)\\s*(>|≥)\\s*0",
+      "present": true
+     },
+     {
+      "what": "lifting area is hypothesised positive",
+      "re": "0\\s*<\\s*(S|area)|\\b(S|area)\\s*(>|≥)\\s*0",
+      "present": true
+     },
+     {
+      "what": "the lift coefficient is hypothesised positive",
+      "re": "0\\s*<\\s*(CLmax|cLmax|CL|clMax)|\\b(CLmax|cLmax|clMax)\\s*(>|≥)\\s*0",
+      "present": true
+     },
+     {
+      "what": "a STRICT inequality is the conclusion (not a non-strict one)",
+      "re": "<",
+      "present": true
+     },
+     {
+      "what": "two gliders are compared, or wing loading m/S is formed",
+      "re": "(m1|mA|m₁)[\\s\\S]*?(m2|mB|m₂)|/\\s*S",
+      "present": true
+     }
+    ],
+    "level_pass": 1,
+    "score": 1,
+    "statement": "theorem l2_t1 (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ) (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CLmax) (hload : m₁ / S₁ < m₂ / S₂) : Real.sqrt (2 * m₁ * g / (ρ * S₁ * CLmax)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CLmax))",
+    "file": "swarm/benchmark/graded/leanbio/decentralised/l2-t1/cand-0/l2_t1.lean"
+   },
+   {
+    "index": 1,
+    "task": "l2-t1",
+    "compiles": 1,
+    "compile_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\decentralised\\l2-t1\\cand-1\\l2_t1.lean:5:20: warning: Variable name `hm₂` is not explicitly referenced. Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning: [apply] _hm₂ Note: This linter can be disabled with `set_option linter.unusedVariables false` D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\decentralised\\l2-t1\\cand-1\\l2_t1.lean:12:8: warning: this tactic is never ",
+    "no_cheats": 1,
+    "witness_present_and_proved": 1,
+    "hypotheses_load_bearing": 1,
+    "probe": {
+     "dropped": 8,
+     "kept_binders": [
+      "(g ρ CL m₁ S₁ m₂ S₂ : ℝ)"
+     ],
+     "probe_compiles": false,
+     "probe_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\decentralised\\l2-t1\\cand-1\\l2_t1_probe.lean:4:130: error: unsolved goals g ρ CL m₁ S₁ m₂ S₂ : ℝ ⊢ √(2 * m₁ * g / (ρ * S₁ * CL)) < √(2 * m₂ * g / (ρ * S₂ * CL))"
+    },
+    "says_what_the_claim_says": 1,
+    "content_elements": [
+     {
+      "what": "a square root appears",
+      "re": "Real\\.sqrt|√",
+      "present": true
+     },
+     {
+      "what": "the factor 2 appears",
+      "re": "2\\s*\\*",
+      "present": true
+     },
+     {
+      "what": "air density is hypothesised positive",
+      "re": "0\\s*<\\s*(rho|ρ)|(rho|ρ)\\s*(>|≥)\\s*0",
+      "present": true
+     },
+     {
+      "what": "lifting area is hypothesised positive",
+      "re": "0\\s*<\\s*(S|area)|\\b(S|area)\\s*(>|≥)\\s*0",
+      "present": true
+     },
+     {
+      "what": "the lift coefficient is hypothesised positive",
+      "re": "0\\s*<\\s*(CLmax|cLmax|CL|clMax)|\\b(CLmax|cLmax|clMax)\\s*(>|≥)\\s*0",
+      "present": true
+     },
+     {
+      "what": "a STRICT inequality is the conclusion (not a non-strict one)",
+      "re": "<",
+      "present": true
+     },
+     {
+      "what": "two gliders are compared, or wing loading m/S is formed",
+      "re": "(m1|mA|m₁)[\\s\\S]*?(m2|mB|m₂)|/\\s*S",
+      "present": true
+     }
+    ],
+    "level_pass": 1,
+    "score": 1,
+    "statement": "theorem l2_t1 (g ρ CL m₁ S₁ m₂ S₂ : ℝ) (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CL) (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (h : m₁ / S₁ < m₂ / S₂) : Real.sqrt (2 * m₁ * g / (ρ * S₁ * CL)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CL))",
+    "file": "swarm/benchmark/graded/leanbio/decentralised/l2-t1/cand-1/l2_t1.lean"
+   },
+   {
+    "index": 2,
+    "task": "l2-t1",
+    "compiles": 1,
+    "compile_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\decentralised\\l2-t1\\cand-2\\l2_t1.lean:5:20: warning: Variable name `hm₂` is not explicitly referenced. Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning: [apply] _hm₂ Note: This linter can be disabled with `set_option linter.unusedVariables false`",
+    "no_cheats": 1,
+    "witness_present_and_proved": 1,
+    "hypotheses_load_bearing": 1,
+    "probe": {
+     "dropped": 8,
+     "kept_binders": [
+      "(m₁ m₂ S₁ S₂ g ρ CL : ℝ)"
+     ],
+     "probe_compiles": false,
+     "probe_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\decentralised\\l2-t1\\cand-2\\l2_t1_probe.lean:4:130: error: unsolved goals m₁ m₂ S₁ S₂ g ρ CL : ℝ ⊢ √(2 * m₁ * g / (ρ * S₁ * CL)) < √(2 * m₂ * g / (ρ * S₂ * CL))"
+    },
+    "says_what_the_claim_says": 1,
+    "content_elements": [
+     {
+      "what": "a square root appears",
+      "re": "Real\\.sqrt|√",
+      "present": true
+     },
+     {
+      "what": "the factor 2 appears",
+      "re": "2\\s*\\*",
+      "present": true
+     },
+     {
+      "what": "air density is hypothesised positive",
+      "re": "0\\s*<\\s*(rho|ρ)|(rho|ρ)\\s*(>|≥)\\s*0",
+      "present": true
+     },
+     {
+      "what": "lifting area is hypothesised positive",
+      "re": "0\\s*<\\s*(S|area)|\\b(S|area)\\s*(>|≥)\\s*0",
+      "present": true
+     },
+     {
+      "what": "the lift coefficient is hypothesised positive",
+      "re": "0\\s*<\\s*(CLmax|cLmax|CL|clMax)|\\b(CLmax|cLmax|clMax)\\s*(>|≥)\\s*0",
+      "present": true
+     },
+     {
+      "what": "a STRICT inequality is the conclusion (not a non-strict one)",
+      "re": "<",
+      "present": true
+     },
+     {
+      "what": "two gliders are compared, or wing loading m/S is formed",
+      "re": "(m1|mA|m₁)[\\s\\S]*?(m2|mB|m₂)|/\\s*S",
+      "present": true
+     }
+    ],
+    "level_pass": 1,
+    "score": 1,
+    "statement": "theorem l2_t1 (m₁ m₂ S₁ S₂ g ρ CL : ℝ) (hg : 0 < g) (hρ : 0 < ρ) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (hCL : 0 < CL) (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (h : m₁ / S₁ < m₂ / S₂) : Real.sqrt (2 * m₁ * g / (ρ * S₁ * CL)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CL))",
+    "file": "swarm/benchmark/graded/leanbio/decentralised/l2-t1/cand-2/l2_t1.lean"
+   }
+  ]
+ },
+ "run_dir": "swarm/benchmark/runs/leanbio/decentralised/l2-t1"
+}

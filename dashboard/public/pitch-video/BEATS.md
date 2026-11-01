@@ -28,8 +28,8 @@ four together.
 | 0 | 0:00 | 5.0 | **COLD OPEN** | No title. Three full-bleed live pages, hard-cut: our winged zebrafish failing to leave the water (`launch 0.67 m/s · required 8.64`, then **FAIL** stamped in red), the gene alignment (`74 loci differ · 1 reproduced`), the organism opened (`13 systems · 67 organs · 257 cell types`). | **clips** `cold-sim`, `cold-gene`, `cold-blueprint` |
 | 1 | 0:05 | 8.0 | **The fire: tacit knowledge** | Only now the title. "Biology design knowledge lives primarily as **TACIT** knowledge." A construction drawing starts and dissolves before it resolves. Founder slate A. | type + generative SVG |
 | 2 | 0:13 | 7.0 | **The asymmetry** | A Lean proof closes, kernel-checked. The same shape of claim in biology gets a dashed empty box: no check exists. | — |
-| 3 | 0:20 | 10.0 | **The desk** | A desk piled with maths papers. Every one slides off. The maths side counts what fell; the biology side stays empty. | `facts.json` |
-| 4 | 0:30 | 7.0 | **Nine in ten** | Ten programme bars; nine go dark. Both sources on screen, the unit of analysis called out. Then: return focus to **theoretical biology**. | `facts.json` |
+| 3 | 0:20 | 10.0 | **The desk** | A desk piled with maths papers — 688 of them this year, counted here rather than quoted. Every one slides off. What mathematics built: **292,237** theorems in mathlib across 34 subject areas. Biology's share of it: **0 of 34**. | `facts.json` ← `deck/FACTS.md` §1.1, §1.2, §2.3 |
+| 4 | 0:30 | 7.0 | **Nine in ten** | Ten programme bars; nine go dark. "Nine in ten drug programmes that enter Phase 1 never get approved." Both sources on screen, and the unit of analysis — the programme, not the trial. | `facts.json` ← `deck/FACTS.md` §3.4 |
 | 5 | 0:37 | 11.0 | **LeanBio Forum** | Deliverable 1. Upload your own nanopub-backed theorem. Gate 1: Lean. Gate 2: agent debate on existing evidence. Both, or neither — then it enters as a biological axiom. | `shots/leanbio-capability.jpg` |
 | 6 | 0:48 | 12.0 | **The swarm expands the literature** | The longest beat. The real claim graph blooms out of four seed thinkers: 903 claims, 4,905 nanopub drafts, 16 tests, 57 Lean theorems, the real 387 links drawing between them, real theorem titles flashing past. | `tree.json`, built from `graph.json` |
 | 7 | 1:00 | 5.0 | **Three architectures** | Single / decentralised / centralised, each with its real call pattern and its real per-call budget from `ARMS.md`. On screen: "Pre-registered before the first call. 3 architectures × 4 stages × 3 tasks, every run logged. At n = 3 we claim no winner." | `facts.json` |
@@ -69,8 +69,10 @@ four together.
   a post-hoc run is still testing whether it reflects the architecture or the budget allocation, and
   the answer changes what it would mean. Announcing the comparison and refusing the verdict is the
   same move as withholding the composite score.
-- **No bald zero for biology.** Beat 3's biology side of the desk carries no numeral unless
-  `deck/FACTS.md` supplies a defensible one.
+- **The only zero this project owns, and it says what it is zero of.** Beat 3's biology side reads
+  **"0 of 34"** — zero of mathlib's 34 subject areas — never a bare zero. A Lean formalisation of
+  the central dogma was posted on 2026-10-26 (arXiv:2610.36343), so "nobody has formalised biology"
+  is refutable from memory by anyone in the room who follows the field. The film does not go near it.
 - **The counters never show a zero.** A counter that has not started yet reads as a dash, because a
   zero on that screen would be a claim.
 
@@ -148,22 +150,19 @@ markup. Each entry in `facts.json` names its source file.
 | bat | 9.13 % flight muscle (7.8 % min); 6.5–14.25 N/m² | `physics/flier/spec.json` (Bullen & McKenzie 2004 via PMC10966098; `comparison-data.csv`) |
 | insect | 559 W/kg hovering; 7.3–14.7 % efficiency | `physics/flier/spec.json` (PMC12606204) |
 | flying fish | AR 10.7; L/D max 4.37 | `physics/flier/spec.json` (Park & Choi 2010) |
-| clinical attrition | "roughly nine in ten drug programmes" | cleared wording; BIO/Informa/QLS 2011–2020 and Wong, Siah & Lo 2019 |
-| formal library size | see `facts.json` → `maths_side` | `deck/FACTS.md` when it lands |
+| clinical attrition | "Nine in ten drug programmes that enter **Phase 1** never get approved" | `deck/FACTS.md` §3.4, verbatim. BIO/Informa/QLS 2011–2020 (12,728 phase transitions, 7.9 %) and Wong, Siah & Lo 2019 (185,994 trials, 13.8 %), never averaged |
+| formal library size | 292,237 theorems across 34 subject areas | `deck/FACTS.md` §1.2 — `mathlib_stats`, 2026-11-01 02:07 UTC |
+| biology's share | 0 of 34 subject areas | `deck/FACTS.md` §2.3 — the only clean zero, and it names what it is zero of |
+| papers this year | 688 | `deck/FACTS.md` §1.1 — measured here, 2026-01-01 to 2026-10-31 |
 
 ## Could not source
 
-- **The "700"** suggested for the maths side has no source and is used nowhere in this film.
-- **`deck/FACTS.md` did not exist when this was cut.** It is owned by another agent. Two entries in
-  `facts.json` behave safely without it:
-  - `maths_side` uses the independently checked mathlib figure (250,000+ machine-checked theorems,
-    December 2025 survey figure) relayed by the session coordinator.
-  - `biology_side` has **no numeral at all**. The desk's biology side renders an empty dashed slot.
-    A bald "0 novel proven biology theorems" is not shipped on this project's own authority, because
-    prior formal-methods-in-biology work exists — systems-biology model checking, process calculi
-    for biochemistry, formalised phylogenetics — and a flat zero may simply be false. When FACTS.md
-    lands, set `biology_side.verified` true and copy its exact permissible wording into
-    `biology_side.value` / `.label`. Nothing else changes.
+- **The "700"** suggested for the maths side has no source and is used nowhere. Its grounded
+  replacement is on screen: **688** papers in 2026 so far whose abstracts talk about formalising
+  mathematics in Lean, measured by this project (`deck/FACTS.md` §1.1), not quoted from anyone.
+- **`deck/FACTS.md` is at the repository root**, not under `dashboard/public/deck/`. That is why an
+  earlier search missed it. It is read, and every number in beats 3 and 4 now carries its exact
+  permitted wording from §1.1, §1.2, §2.3 and §3.4. Nothing in this film is left unsourced.
 - **The swarm benchmark had no graded result.** All 36 cells had executed and every call was logged,
   but grading was still in flight and no `RESULTS.md` existed when this was cut. Beat 7 therefore
   announces the comparison and refuses the verdict. If graded results land, set

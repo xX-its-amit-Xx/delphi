@@ -1,0 +1,461 @@
+{
+ "level": "leanbio",
+ "level_title": "LeanBio formalisation",
+ "arm": "centralised",
+ "task": "l2-t2",
+ "arm_definition": "An orchestrator splits the task into 3 subtasks, 3 workers each do one, and a second orchestrator call sees all three and decides the final artifact. 5 calls at a fifth of the budget each.",
+ "model": "claude-sonnet-5-5",
+ "N": 3,
+ "budget_total_usd": 0.45,
+ "cap_per_call_usd": 0.09,
+ "allocation": "even",
+ "metric": "mean of 5 checks (compiles, no cheats, witness proved, hypotheses load-bearing, says what the claim says)",
+ "ground_truth": "lake env lean with Mathlib v4.35.0 (compilation is the ground truth), one process at a time",
+ "shared_input_bytes": 2370,
+ "shared_input": "TASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.\n\nTHE CLAIM IN ENGLISH\nThe aerobic power a fish can supply is bounded above by the Fick product P_avail = eta * E * Q * (Ca - Cv), where eta is the mechanical efficiency, E the oxycaloric equivalent, Q the cardiac output and (Ca - Cv) the arterio-venous oxygen difference. Therefore if the power a sustained activity demands strictly exceeds P_avail, that activity cannot be sustained aerobically.\n\nREQUIRED CONTENT. A statement that compiles but does not carry these is a failure:\n  [1] efficiency enters as a multiplicative factor\n  [2] the arterio-venous difference appears as a difference\n  [3] cardiac output enters as a multiplicative factor\n  [4] efficiency is constrained (positive or in a band), so the premise is not vacuous\n  [5] a demanded power is named separately from the available power\n  [6] the conclusion is a negation: the activity cannot be sustained\n  [7] the arterio-venous difference is hypothesised non-negative, which is what stops the bound being vacuous\n\nKNOWN TRAP: If the hypotheses are mutually contradictory the theorem is vacuously true and compiles. The witness declaration is what catches this, and `hypotheses_load_bearing` is what catches a conclusion that needs no hypotheses at all.\n\nHARD REQUIREMENTS ON THE FILE\n- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.\n- The main theorem is named exactly `l2_t2`.\n- A second declaration named exactly `l2_t2_witness` proves that the hypotheses of `l2_t2` are\n  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`\n  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.\n- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.\n- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the\n  formalization is worthless and will be scored as a failure.\n- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,\n  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.\n\nOutput the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.",
+ "merge": {
+  "rule": "orchestrator decides",
+  "subtasks": [
+   "Draft statement and main theorem l2_t2",
+   "Write witness l2_t2_witness",
+   "Review compile risks and write notes"
+  ]
+ },
+ "cell_totals": {
+  "calls": 5,
+  "cost_usd": 0.33222,
+  "tokens_total": 228644,
+  "wall_ms": 52465,
+  "cap_stops": 0,
+  "infra_failures": 0,
+  "produced_artifact": true
+ },
+ "calls": [
+  {
+   "label": "orchestrator-merge",
+   "prompt_sent": "You are the ORCHESTRATOR of a 3-agent team. Your 3 agents have reported. You decide what is kept and\nyou emit the FINAL answer. You may take, correct, combine or discard any part of what they produced.\nWhere they disagree, decide, and say in your notes why. The final answer is yours and is what is scored.\n\nTHE SPLIT YOU CHOSE\n0: Draft statement and main theorem l2_t2 -- Write the Lean 4 (Mathlib, first line exactly `import Mathlib`, nothing else imported, no project-namespace `open`) main theorem `l2_t2`. Suggested form: theorem l2_t2 (eta E Q Ca Cv Pdem : ℝ) (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q) (hCv : 0 ≤ Ca - Cv) (hdem : eta * E * Q * (Ca - Cv) < Pdem) : ¬ (Pdem ≤ eta * E * Q * (Ca - Cv)). Alternatively model sustainability as a predicate-free statement: for any aerobic supply P_aer with P_aer ≤ eta*E*Q*(Ca-Cv) (hypothesis), conclude ¬ (Pdem ≤ P_aer). Choose a version where eta, Q appear as multiplicative factors, (Ca - Cv) appears literally as a difference, Pdem is a separate named variable from the available power (consider a `let`-free explicit expression or a separate variable Pavail with hypothesis hP : Pavail = eta*E*Q*(Ca-Cv)), eta is constrained (0<eta, eta≤1), Ca-Cv is hypothesised ≥ 0, and the conclusion is a negation (¬ sustained). Ensure hypotheses are load-bearing (conclusion is false if they are dropped) and not contradictory. Prove it briefly (e.g. `not_le.mpr`, `linarith`). Output the full theorem with proof and the exact signature, with no sorry/axiom/native_decide. Mentally check it compiles in Lean 4 / Mathlib.\n1: Write witness l2_t2_witness -- Given the main theorem `l2_t2` with hypotheses: eta E Q Ca Cv Pdem : ℝ, 0<eta, eta≤1, 0<E, 0<Q, 0 ≤ Ca - Cv, and Pdem > eta*E*Q*(Ca-Cv) (also possibly Pavail = eta*E*Q*(Ca-Cv) and a sustained-power hypothesis Paer ≤ Pavail if used). Write `theorem l2_t2_witness : ∃ (eta E Q Ca Cv Pdem : ℝ), <exactly the same hypotheses conjoined with ∧> := by` followed by a proof of the form `refine ⟨0.5, 20, 10, 8, 3, 1000, ?_⟩; norm_num` (or `exact ⟨..., by norm_num⟩`) using concrete numbers where Pdem strictly exceeds eta*E*Q*(Ca-Cv) (e.g. 0.25*20*10*5=250<1000). The final proof must be `by norm_num` shaped (existential over concrete values). Also write a short `hypotheses_load_bearing` check in notes: explain a concrete counterexample (e.g. Pdem=0 with the same numbers, or drop heta) showing the conclusion fails without the hypotheses. Provide the Lean code and verify the arithmetic by hand. Keep imports out (file begins with `import Mathlib` supplied by the assembler). Tell the orchestrator exactly which hypothesis list the witness mirrors so it can be aligned with l2_t2.\n2: Review compile risks and write notes -- Act as Lean 4 / Mathlib (v4.35.0) reviewer for a file with `import Mathlib`, main theorem `l2_t2` (Fick bound: eta*E*Q*(Ca-Cv) < Pdem implies ¬ sustainable aerobically) and `l2_t2_witness` (∃ concrete reals satisfying the hypotheses, by norm_num). Produce: (1) a checklist mapping each required item [1]-[7] (eta multiplicative, Ca-Cv difference, Q multiplicative, eta constrained, Pdem named separately from available power, negated conclusion, Ca-Cv ≥ 0 hypothesis) to where it appears in the statement; (2) a list of pitfalls to avoid (unused-variable linter fine, `0.5` literals under norm_num, using `Real` explicitly with `(x : ℝ)`, no `open` of project namespaces, no sorry/axiom/native_decide/implemented_by, theorem names exactly l2_t2 and l2_t2_witness, witness hypothesis list must match main theorem order and form); (3) a draft of the `notes` text explaining the non-vacuity argument (witness) and load-bearing argument (drop the strict-exceed hypothesis and the conclusion is false: if Pdem ≤ P_avail the activity is sustainable) in 4-6 sentences. Also propose a robust fallback proof for l2_t2 in case the primary one fails (e.g. `intro h; linarith` or `not_le.mpr hdem`).\n\nWHAT YOUR AGENTS REPORTED\n--- AGENT 0 (Draft statement and main theorem l2_t2) REPORTED ---\n{\n \"lean_file\": \"import Mathlib\\n\\ntheorem l2_t2 (eta E Q Ca Cv Pdem Pavail Paer : ℝ)\\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\\n    (hCv : 0 ≤ Ca - Cv)\\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\\n    (hsup : Paer ≤ Pavail)\\n    (hdem : Pavail < Pdem) :\\n    ¬ (Pdem ≤ Paer) := by\\n  intro h\\n  linarith\\n\\ntheorem l2_t2_witness :\\n    ∃ (eta E Q Ca Cv Pdem Pavail Paer : ℝ),\\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧ 0 ≤ Ca - Cv ∧\\n      Pavail = eta * E * Q * (Ca - Cv) ∧ Paer ≤ Pavail ∧ Pavail < Pdem := by\\n  refine ⟨1/2, 1, 1, 3, 1, 2, 1, 1, ?_⟩\\n  norm_num\\n\",\n \"statement_only\": \"theorem l2_t2 (eta E Q Ca Cv Pdem Pavail Paer : ℝ)\\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\\n    (hCv : 0 ≤ Ca - Cv)\\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\\n    (hsup : Paer ≤ Pavail)\\n    (hdem : Pavail < Pdem) :\\n    ¬ (Pdem ≤ Paer)\",\n \"notes\": \"The theorem says this. Pavail is the Fick product eta*E*Q*(Ca-Cv), with eta in (0,1], E>0, Q>0 and Ca-Cv ≥ 0. Any aerobic supply Paer is at most Pavail. If the demanded power Pdem strictly exceeds Pavail, then Pdem ≤ Paer is false, so the activity cannot be sustained aerobically. Required items: [1] eta and [3] Q are multiplicative factors; [2] (Ca - Cv) appears literally as a difference; [4] eta is constrained by 0<eta≤1; [5] Pdem is separate from Pavail and Paer; [6] the conclusion is a negation; [7] hCv gives Ca-Cv ≥ 0. The witness uses eta=1/2, E=Q=1, Ca=3, Cv=1, which gives Pavail=1, with Paer=1 and Pdem=2. It shows the hypotheses are jointly satisfiable. The proof (`intro h; linarith`) only uses hsup and hdem. Dropping hdem or hsup makes the conclusion false, so those two are load-bearing. heta, heta1, hE, hQ, hCv and hP are not needed by the proof. They are there for physical content and to cover the required items. The only one that fixes Pavail is hP, which links it to the Fick expression. The statement does not derive the bound on Paer from physiology. It takes it as hypothesis hsup. It also says nothing about anaerobic supply or about the units of E. I could not compile it here, so the orchestrator should check that it builds.\"\n}\n\n--- AGENT 1 (Write witness l2_t2_witness) REPORTED ---\n{\n \"lean_file\": \"import Mathlib\\n\\ntheorem l2_t2 (eta E Q Ca Cv Pdem Paer : ℝ)\\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\\n    (hAV : 0 ≤ Ca - Cv)\\n    (hdem : Pdem > eta * E * Q * (Ca - Cv))\\n    (hbound : Paer ≤ eta * E * Q * (Ca - Cv)) :\\n    ¬ (Pdem ≤ Paer) := by\\n  intro h\\n  linarith\\n\\ntheorem l2_t2_witness :\\n    ∃ (eta E Q Ca Cv Pdem Paer : ℝ),\\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧ 0 ≤ Ca - Cv ∧\\n      Pdem > eta * E * Q * (Ca - Cv) ∧\\n      Paer ≤ eta * E * Q * (Ca - Cv) := by\\n  refine ⟨1/2, 20, 10, 8, 3, 1000, 500, ?_⟩\\n  norm_num\",\n \"statement_only\": \"theorem l2_t2 (eta E Q Ca Cv Pdem Paer : ℝ)\\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\\n    (hAV : 0 ≤ Ca - Cv)\\n    (hdem : Pdem > eta * E * Q * (Ca - Cv))\\n    (hbound : Paer ≤ eta * E * Q * (Ca - Cv)) :\\n    ¬ (Pdem ≤ Paer)\",\n \"notes\": \"Not compiled: no Lean toolchain was available to me, so the arithmetic was checked by hand. The proofs are only `linarith` and `norm_num`.\\n\\n**Hypothesis list the witness mirrors (align l2_t2 to it, or tell me to change it).** Variables: eta E Q Ca Cv Pdem Paer : ℝ. Conjuncts, in order:\\n1. `0 < eta`\\n2. `eta ≤ 1`\\n3. `0 < E`\\n4. `0 < Q`\\n5. `0 ≤ Ca - Cv`\\n6. `Pdem > eta*E*Q*(Ca-Cv)`\\n7. `Paer ≤ eta*E*Q*(Ca-Cv)`\\n\\nThe `l2_t2` in my file is a stand-in with exactly these hypotheses. Its conclusion is `¬ (Pdem ≤ Paer)`. If the real l2_t2 has a different hypothesis list (for example no `Paer`), delete the `Paer` variable and conjunct 7 from the witness.\\n\\n**Witness values:** eta=1/2, E=20, Q=10, Ca=8, Cv=3, Pdem=1000, Paer=500.\\n- Ca−Cv = 5 ≥ 0.\\n- Bound = (1/2)·20·10·5 = 500.\\n- 1000 > 500, so `Pdem` exceeds the bound.\\n- 500 ≤ 500, so `Paer` is at the bound.\\n- 0 < 1/2 ≤ 1, E > 0 and Q > 0.\\n\\nAll hypotheses hold together, so the theorem is not vacuous.\\n\\n**Load-bearing check.**\\n- If the demand hypothesis is dropped, take Pdem=400 and Paer=500 with the same numbers. Then Pdem ≤ Paer holds, so the conclusion `¬ (Pdem ≤ Paer)` fails.\\n- If the supply bound `Paer ≤ bound` is dropped, take Paer=2000 and Pdem=1000. Then Pdem ≤ Paer holds, so the conclusion fails again.\\n- The proof uses only `hdem` and `hbound`. The positivity, `eta ≤ 1` and `0 ≤ Ca−Cv` hypotheses are not needed for it. They are there to make the premise realistic (required items 4 and 7).\\n\\n**What the statement asserts.** It says that if the demanded power strictly exceeds the Fick product eta·E·Q·(Ca−Cv) and the aerobic power supplied is at most that product, then the demand cannot be met aerobically.\\n\\n**What it does not assert.** It does not model oxygen-extraction limits or time dependence. It also does not prove that the Fick bound itself holds for real fish.\"\n}\n\n--- AGENT 2 (Review compile risks and write notes) REPORTED ---\n{\n \"lean_file\": \"import Mathlib\\n\\n/-- Fick bound: if the demanded power strictly exceeds the Fick product\\n`eta * E * Q * (Ca - Cv)`, and the aerobic power actually supplied `Pa` is bounded above by that\\nproduct, then the activity cannot be sustained aerobically (demand `Pdem` is not covered by `Pa`). -/\\ntheorem l2_t2 (eta E Q Ca Cv Pa Pdem : ℝ)\\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\\n    (hdiff : 0 ≤ Ca - Cv)\\n    (hPa : Pa ≤ eta * E * Q * (Ca - Cv))\\n    (hdem : eta * E * Q * (Ca - Cv) < Pdem) :\\n    ¬ (Pdem ≤ Pa) := by\\n  intro h\\n  linarith\\n\\ntheorem l2_t2_witness :\\n    ∃ (eta E Q Ca Cv Pa Pdem : ℝ),\\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧\\n      0 ≤ Ca - Cv ∧\\n      Pa ≤ eta * E * Q * (Ca - Cv) ∧\\n      eta * E * Q * (Ca - Cv) < Pdem := by\\n  refine ⟨1/4, 20, 2, 8, 3, 50, 60, ?_⟩\\n  norm_num\\n\",\n \"statement_only\": \"theorem l2_t2 (eta E Q Ca Cv Pa Pdem : ℝ)\\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\\n    (hdiff : 0 ≤ Ca - Cv)\\n    (hPa : Pa ≤ eta * E * Q * (Ca - Cv))\\n    (hdem : eta * E * Q * (Ca - Cv) < Pdem) :\\n    ¬ (Pdem ≤ Pa)\",\n \"notes\": \"I could not compile this file here (no Lean toolchain was run), so it is unchecked. The reviewer checklist and fallbacks below are from reading it.\\n\\nWhat the statement asserts: Pa is the aerobic power actually supplied, and it is bounded above by the Fick product eta*E*Q*(Ca-Cv). If the demand Pdem strictly exceeds that product, then Pdem ≤ Pa is false, i.e. the activity cannot be sustained aerobically. It does not model physiology beyond this inequality chain: \\\"sustainable\\\" is defined as Pdem ≤ Pa, and E, Q and the concentrations are plain reals with only the sign constraints listed.\\n\\nChecklist:\\n[1] eta is a multiplicative factor in `eta * E * Q * (Ca - Cv)`, which appears in both hPa and hdem.\\n[2] The arterio-venous difference is the subterm `(Ca - Cv)`.\\n[3] Q is a multiplicative factor in the same product.\\n[4] eta is constrained by heta : 0 < eta and heta1 : eta ≤ 1. E>0 and Q>0 are also assumed.\\n[5] Pdem is a separate variable from Pa, the available power.\\n[6] The conclusion is `¬ (Pdem ≤ Pa)`.\\n[7] hdiff : 0 ≤ Ca - Cv.\\n\\nNon-vacuity: `l2_t2_witness` is an existential over concrete reals (eta=1/4, E=20, Q=2, Ca=8, Cv=3, Pa=50, Pdem=60) that satisfies every hypothesis in the same order and form as `l2_t2`. The Fick product is 50, so Pa ≤ 50 < 60 = Pdem. The proof is `refine ⟨...⟩; norm_num`, because `norm_num` alone cannot pick the witnesses.\\n\\nLoad-bearing: the strict-exceed hypothesis hdem and the bound hPa are both needed. Without hdem, Pdem ≤ Pa is perfectly possible, e.g. Pdem=Pa=50 in the witness numbers, so the activity is sustainable and the conclusion is false. Without hPa, Pa could be arbitrarily large and the conclusion fails. The other hypotheses (heta, hE, hQ, hdiff) are not needed by the linarith proof. They are kept as the required physiological constraints and for non-vacuity. The linter may flag them as unused variables, which is only a warning.\\n\\nPitfalls checked: no `open`, no sorry/axiom/native_decide/implemented_by, explicit ℝ typing, and fractions (1/4) rather than 0.5 literals. Fallback proof if `intro h; linarith` fails: `exact not_le.mpr (lt_of_le_of_lt hPa hdem)`, or `intro h; exact absurd (lt_of_le_of_lt h (lt_of_lt_of_le hdem le_rfl)) (not_lt.mpr hPa)`. The first one is the more robust.\"\n}\n\nTASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.\n\nTHE CLAIM IN ENGLISH\nThe aerobic power a fish can supply is bounded above by the Fick product P_avail = eta * E * Q * (Ca - Cv), where eta is the mechanical efficiency, E the oxycaloric equivalent, Q the cardiac output and (Ca - Cv) the arterio-venous oxygen difference. Therefore if the power a sustained activity demands strictly exceeds P_avail, that activity cannot be sustained aerobically.\n\nREQUIRED CONTENT. A statement that compiles but does not carry these is a failure:\n  [1] efficiency enters as a multiplicative factor\n  [2] the arterio-venous difference appears as a difference\n  [3] cardiac output enters as a multiplicative factor\n  [4] efficiency is constrained (positive or in a band), so the premise is not vacuous\n  [5] a demanded power is named separately from the available power\n  [6] the conclusion is a negation: the activity cannot be sustained\n  [7] the arterio-venous difference is hypothesised non-negative, which is what stops the bound being vacuous\n\nKNOWN TRAP: If the hypotheses are mutually contradictory the theorem is vacuously true and compiles. The witness declaration is what catches this, and `hypotheses_load_bearing` is what catches a conclusion that needs no hypotheses at all.\n\nHARD REQUIREMENTS ON THE FILE\n- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.\n- The main theorem is named exactly `l2_t2`.\n- A second declaration named exactly `l2_t2_witness` proves that the hypotheses of `l2_t2` are\n  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`\n  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.\n- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.\n- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the\n  formalization is worthless and will be scored as a failure.\n- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,\n  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.\n\nOutput the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.",
+   "prompt_chars": 14788,
+   "model_output_parsed": {
+    "lean_file": "import Mathlib\n\ntheorem l2_t2 (eta E Q Ca Cv Pdem Pavail Paer : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hCv : 0 ≤ Ca - Cv)\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\n    (hsup : Paer ≤ Pavail)\n    (hdem : Pavail < Pdem) :\n    ¬ (Pdem ≤ Paer) := by\n  intro h\n  linarith\n\ntheorem l2_t2_witness :\n    ∃ (eta E Q Ca Cv Pdem Pavail Paer : ℝ),\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧ 0 ≤ Ca - Cv ∧\n      Pavail = eta * E * Q * (Ca - Cv) ∧ Paer ≤ Pavail ∧ Pavail < Pdem := by\n  refine ⟨1/2, 1, 1, 3, 1, 2, 1, 1, ?_⟩\n  norm_num\n",
+    "statement_only": "theorem l2_t2 (eta E Q Ca Cv Pdem Pavail Paer : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hCv : 0 ≤ Ca - Cv)\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\n    (hsup : Paer ≤ Pavail)\n    (hdem : Pavail < Pdem) :\n    ¬ (Pdem ≤ Paer)",
+    "notes": "I could not compile the file here, so it is unchecked. The witness arithmetic was verified by hand. The theorem says: Pavail is the Fick product eta*E*Q*(Ca-Cv), with 0<eta≤1, E>0, Q>0 and Ca-Cv≥0. Any aerobic supply Paer is at most Pavail. If the demanded power Pdem strictly exceeds Pavail, then Pdem ≤ Paer is false, so the activity cannot be sustained aerobically. Required items: [1] eta and [3] Q are multiplicative factors in hP; [2] (Ca - Cv) appears literally as a difference; [4] eta is constrained by heta and heta1; [5] Pdem is a separate variable from Pavail and Paer; [6] the conclusion is a negation; [7] hCv gives Ca-Cv ≥ 0. Non-vacuity: l2_t2_witness is an existential over concrete reals (eta=1/2, E=Q=1, Ca=3, Cv=1, Pavail=1, Paer=1, Pdem=2) satisfying every hypothesis in the same order and form as l2_t2, proved by refine plus norm_num. Load-bearing: the proof uses only hsup and hdem. Dropping hdem makes the conclusion false (take Pdem=Paer=1 with the witness numbers). Dropping hsup also makes it false (take Paer=5, Pdem=2). The remaining hypotheses (heta, heta1, hE, hQ, hCv, hP) are not used by the proof. They supply physical content and the required structure, and hP is what ties Pavail to the Fick expression. The linter may report them as unused variables, which is only a warning. Where the agents differed: Agents 1 and 2 stated the bound directly on the product without a named Pavail. I chose Agent 0's version because it keeps P_avail as its own named quantity with hP, matching the claim's wording. The statement does not derive the bound on Paer from physiology; it takes it as the hypothesis hsup. It also says nothing about anaerobic supply, time dependence, or the units of E. Fallback proof if linarith fails: exact not_le.mpr (lt_of_le_of_lt hsup hdem)."
+   },
+   "model_output_raw": "{\"lean_file\":\"import Mathlib\\n\\ntheorem l2_t2 (eta E Q Ca Cv Pdem Pavail Paer : ℝ)\\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\\n    (hCv : 0 ≤ Ca - Cv)\\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\\n    (hsup : Paer ≤ Pavail)\\n    (hdem : Pavail < Pdem) :\\n    ¬ (Pdem ≤ Paer) := by\\n  intro h\\n  linarith\\n\\ntheorem l2_t2_witness :\\n    ∃ (eta E Q Ca Cv Pdem Pavail Paer : ℝ),\\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧ 0 ≤ Ca - Cv ∧\\n      Pavail = eta * E * Q * (Ca - Cv) ∧ Paer ≤ Pavail ∧ Pavail < Pdem := by\\n  refine ⟨1/2, 1, 1, 3, 1, 2, 1, 1, ?_⟩\\n  norm_num\\n\",\"statement_only\":\"theorem l2_t2 (eta E Q Ca Cv Pdem Pavail Paer : ℝ)\\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\\n    (hCv : 0 ≤ Ca - Cv)\\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\\n    (hsup : Paer ≤ Pavail)\\n    (hdem : Pavail < Pdem) :\\n    ¬ (Pdem ≤ Paer)\",\"notes\":\"I could not compile the file here, so it is unchecked. The witness arithmetic was verified by hand. The theorem says: Pavail is the Fick product eta*E*Q*(Ca-Cv), with 0<eta≤1, E>0, Q>0 and Ca-Cv≥0. Any aerobic supply Paer is at most Pavail. If the demanded power Pdem strictly exceeds Pavail, then Pdem ≤ Paer is false, so the activity cannot be sustained aerobically. Required items: [1] eta and [3] Q are multiplicative factors in hP; [2] (Ca - Cv) appears literally as a difference; [4] eta is constrained by heta and heta1; [5] Pdem is a separate variable from Pavail and Paer; [6] the conclusion is a negation; [7] hCv gives Ca-Cv ≥ 0. Non-vacuity: l2_t2_witness is an existential over concrete reals (eta=1/2, E=Q=1, Ca=3, Cv=1, Pavail=1, Paer=1, Pdem=2) satisfying every hypothesis in the same order and form as l2_t2, proved by refine plus norm_num. Load-bearing: the proof uses only hsup and hdem. Dropping hdem makes the conclusion false (take Pdem=Paer=1 with the witness numbers). Dropping hsup also makes it false (take Paer=5, Pdem=2). The remaining hypotheses (heta, heta1, hE, hQ, hCv, hP) are not used by the proof. They supply physical content and the required structure, and hP is what ties Pavail to the Fick expression. The linter may report them as unused variables, which is only a warning. Where the agents differed: Agents 1 and 2 stated the bound directly on the product without a named Pavail. I chose Agent 0's version because it keeps P_avail as its own named quantity with hP, matching the claim's wording. The statement does not derive the bound on Paer from physiology; it takes it as the hypothesis hsup. It also says nothing about anaerobic supply, time dependence, or the units of E. Fallback proof if linarith fails: exact not_le.mpr (lt_of_le_of_lt hsup hdem).\"}",
+   "tokens": {
+    "input": 2,
+    "output": 2181,
+    "cache_read": 40950,
+    "cache_creation": 15612
+   },
+   "tokens_total": 58745,
+   "cost_usd": 0.088357,
+   "duration_ms": 16827,
+   "num_turns": 2,
+   "stop_reason": "tool_use",
+   "terminal_reason": "completed",
+   "is_error": false,
+   "error_text": null,
+   "cap_stop": false,
+   "failure_class": "ok"
+  },
+  {
+   "label": "orchestrator-plan",
+   "prompt_sent": "You are the ORCHESTRATOR of a 3-agent team. You will not do the task yourself.\nSplit the task below into exactly 3 subtasks that can be worked in parallel by 3 agents who each see the\nsame shared input but only their own subtask instruction. Later you will see all 3 of their outputs and\nassemble the final answer yourself, so split the work where the pieces will recombine.\n\nTASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.\n\nTHE CLAIM IN ENGLISH\nThe aerobic power a fish can supply is bounded above by the Fick product P_avail = eta * E * Q * (Ca - Cv), where eta is the mechanical efficiency, E the oxycaloric equivalent, Q the cardiac output and (Ca - Cv) the arterio-venous oxygen difference. Therefore if the power a sustained activity demands strictly exceeds P_avail, that activity cannot be sustained aerobically.\n\nREQUIRED CONTENT. A statement that compiles but does not carry these is a failure:\n  [1] efficiency enters as a multiplicative factor\n  [2] the arterio-venous difference appears as a difference\n  [3] cardiac output enters as a multiplicative factor\n  [4] efficiency is constrained (positive or in a band), so the premise is not vacuous\n  [5] a demanded power is named separately from the available power\n  [6] the conclusion is a negation: the activity cannot be sustained\n  [7] the arterio-venous difference is hypothesised non-negative, which is what stops the bound being vacuous\n\nKNOWN TRAP: If the hypotheses are mutually contradictory the theorem is vacuously true and compiles. The witness declaration is what catches this, and `hypotheses_load_bearing` is what catches a conclusion that needs no hypotheses at all.\n\nHARD REQUIREMENTS ON THE FILE\n- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.\n- The main theorem is named exactly `l2_t2`.\n- A second declaration named exactly `l2_t2_witness` proves that the hypotheses of `l2_t2` are\n  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`\n  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.\n- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.\n- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the\n  formalization is worthless and will be scored as a failure.\n- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,\n  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.\n\nOutput the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.",
+   "prompt_chars": 2744,
+   "model_output_parsed": {
+    "subtasks": [
+     {
+      "title": "Draft statement and main theorem l2_t2",
+      "instruction": "Write the Lean 4 (Mathlib, first line exactly `import Mathlib`, nothing else imported, no project-namespace `open`) main theorem `l2_t2`. Suggested form: theorem l2_t2 (eta E Q Ca Cv Pdem : ℝ) (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q) (hCv : 0 ≤ Ca - Cv) (hdem : eta * E * Q * (Ca - Cv) < Pdem) : ¬ (Pdem ≤ eta * E * Q * (Ca - Cv)). Alternatively model sustainability as a predicate-free statement: for any aerobic supply P_aer with P_aer ≤ eta*E*Q*(Ca-Cv) (hypothesis), conclude ¬ (Pdem ≤ P_aer). Choose a version where eta, Q appear as multiplicative factors, (Ca - Cv) appears literally as a difference, Pdem is a separate named variable from the available power (consider a `let`-free explicit expression or a separate variable Pavail with hypothesis hP : Pavail = eta*E*Q*(Ca-Cv)), eta is constrained (0<eta, eta≤1), Ca-Cv is hypothesised ≥ 0, and the conclusion is a negation (¬ sustained). Ensure hypotheses are load-bearing (conclusion is false if they are dropped) and not contradictory. Prove it briefly (e.g. `not_le.mpr`, `linarith`). Output the full theorem with proof and the exact signature, with no sorry/axiom/native_decide. Mentally check it compiles in Lean 4 / Mathlib."
+     },
+     {
+      "title": "Write witness l2_t2_witness",
+      "instruction": "Given the main theorem `l2_t2` with hypotheses: eta E Q Ca Cv Pdem : ℝ, 0<eta, eta≤1, 0<E, 0<Q, 0 ≤ Ca - Cv, and Pdem > eta*E*Q*(Ca-Cv) (also possibly Pavail = eta*E*Q*(Ca-Cv) and a sustained-power hypothesis Paer ≤ Pavail if used). Write `theorem l2_t2_witness : ∃ (eta E Q Ca Cv Pdem : ℝ), <exactly the same hypotheses conjoined with ∧> := by` followed by a proof of the form `refine ⟨0.5, 20, 10, 8, 3, 1000, ?_⟩; norm_num` (or `exact ⟨..., by norm_num⟩`) using concrete numbers where Pdem strictly exceeds eta*E*Q*(Ca-Cv) (e.g. 0.25*20*10*5=250<1000). The final proof must be `by norm_num` shaped (existential over concrete values). Also write a short `hypotheses_load_bearing` check in notes: explain a concrete counterexample (e.g. Pdem=0 with the same numbers, or drop heta) showing the conclusion fails without the hypotheses. Provide the Lean code and verify the arithmetic by hand. Keep imports out (file begins with `import Mathlib` supplied by the assembler). Tell the orchestrator exactly which hypothesis list the witness mirrors so it can be aligned with l2_t2."
+     },
+     {
+      "title": "Review compile risks and write notes",
+      "instruction": "Act as Lean 4 / Mathlib (v4.35.0) reviewer for a file with `import Mathlib`, main theorem `l2_t2` (Fick bound: eta*E*Q*(Ca-Cv) < Pdem implies ¬ sustainable aerobically) and `l2_t2_witness` (∃ concrete reals satisfying the hypotheses, by norm_num). Produce: (1) a checklist mapping each required item [1]-[7] (eta multiplicative, Ca-Cv difference, Q multiplicative, eta constrained, Pdem named separately from available power, negated conclusion, Ca-Cv ≥ 0 hypothesis) to where it appears in the statement; (2) a list of pitfalls to avoid (unused-variable linter fine, `0.5` literals under norm_num, using `Real` explicitly with `(x : ℝ)`, no `open` of project namespaces, no sorry/axiom/native_decide/implemented_by, theorem names exactly l2_t2 and l2_t2_witness, witness hypothesis list must match main theorem order and form); (3) a draft of the `notes` text explaining the non-vacuity argument (witness) and load-bearing argument (drop the strict-exceed hypothesis and the conclusion is false: if Pdem ≤ P_avail the activity is sustainable) in 4-6 sentences. Also propose a robust fallback proof for l2_t2 in case the primary one fails (e.g. `intro h; linarith` or `not_le.mpr hdem`)."
+     }
+    ]
+   },
+   "model_output_raw": "{\"subtasks\":[{\"title\":\"Draft statement and main theorem l2_t2\",\"instruction\":\"Write the Lean 4 (Mathlib, first line exactly `import Mathlib`, nothing else imported, no project-namespace `open`) main theorem `l2_t2`. Suggested form: theorem l2_t2 (eta E Q Ca Cv Pdem : ℝ) (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q) (hCv : 0 ≤ Ca - Cv) (hdem : eta * E * Q * (Ca - Cv) < Pdem) : ¬ (Pdem ≤ eta * E * Q * (Ca - Cv)). Alternatively model sustainability as a predicate-free statement: for any aerobic supply P_aer with P_aer ≤ eta*E*Q*(Ca-Cv) (hypothesis), conclude ¬ (Pdem ≤ P_aer). Choose a version where eta, Q appear as multiplicative factors, (Ca - Cv) appears literally as a difference, Pdem is a separate named variable from the available power (consider a `let`-free explicit expression or a separate variable Pavail with hypothesis hP : Pavail = eta*E*Q*(Ca-Cv)), eta is constrained (0<eta, eta≤1), Ca-Cv is hypothesised ≥ 0, and the conclusion is a negation (¬ sustained). Ensure hypotheses are load-bearing (conclusion is false if they are dropped) and not contradictory. Prove it briefly (e.g. `not_le.mpr`, `linarith`). Output the full theorem with proof and the exact signature, with no sorry/axiom/native_decide. Mentally check it compiles in Lean 4 / Mathlib.\"},{\"title\":\"Write witness l2_t2_witness\",\"instruction\":\"Given the main theorem `l2_t2` with hypotheses: eta E Q Ca Cv Pdem : ℝ, 0<eta, eta≤1, 0<E, 0<Q, 0 ≤ Ca - Cv, and Pdem > eta*E*Q*(Ca-Cv) (also possibly Pavail = eta*E*Q*(Ca-Cv) and a sustained-power hypothesis Paer ≤ Pavail if used). Write `theorem l2_t2_witness : ∃ (eta E Q Ca Cv Pdem : ℝ), <exactly the same hypotheses conjoined with ∧> := by` followed by a proof of the form `refine ⟨0.5, 20, 10, 8, 3, 1000, ?_⟩; norm_num` (or `exact ⟨..., by norm_num⟩`) using concrete numbers where Pdem strictly exceeds eta*E*Q*(Ca-Cv) (e.g. 0.25*20*10*5=250<1000). The final proof must be `by norm_num` shaped (existential over concrete values). Also write a short `hypotheses_load_bearing` check in notes: explain a concrete counterexample (e.g. Pdem=0 with the same numbers, or drop heta) showing the conclusion fails without the hypotheses. Provide the Lean code and verify the arithmetic by hand. Keep imports out (file begins with `import Mathlib` supplied by the assembler). Tell the orchestrator exactly which hypothesis list the witness mirrors so it can be aligned with l2_t2.\"},{\"title\":\"Review compile risks and write notes\",\"instruction\":\"Act as Lean 4 / Mathlib (v4.35.0) reviewer for a file with `import Mathlib`, main theorem `l2_t2` (Fick bound: eta*E*Q*(Ca-Cv) < Pdem implies ¬ sustainable aerobically) and `l2_t2_witness` (∃ concrete reals satisfying the hypotheses, by norm_num). Produce: (1) a checklist mapping each required item [1]-[7] (eta multiplicative, Ca-Cv difference, Q multiplicative, eta constrained, Pdem named separately from available power, negated conclusion, Ca-Cv ≥ 0 hypothesis) to where it appears in the statement; (2) a list of pitfalls to avoid (unused-variable linter fine, `0.5` literals under norm_num, using `Real` explicitly with `(x : ℝ)`, no `open` of project namespaces, no sorry/axiom/native_decide/implemented_by, theorem names exactly l2_t2 and l2_t2_witness, witness hypothesis list must match main theorem order and form); (3) a draft of the `notes` text explaining the non-vacuity argument (witness) and load-bearing argument (drop the strict-exceed hypothesis and the conclusion is false: if Pdem ≤ P_avail the activity is sustainable) in 4-6 sentences. Also propose a robust fallback proof for l2_t2 in case the primary one fails (e.g. `intro h; linarith` or `not_le.mpr hdem`).\"}]}",
+   "tokens": {
+    "input": 2,
+    "output": 1777,
+    "cache_read": 2735,
+    "cache_creation": 6022
+   },
+   "tokens_total": 10536,
+   "cost_usd": 0.0421355,
+   "duration_ms": 14874,
+   "num_turns": 2,
+   "stop_reason": "tool_use",
+   "terminal_reason": "completed",
+   "is_error": false,
+   "error_text": null,
+   "cap_stop": false,
+   "failure_class": "ok"
+  },
+  {
+   "label": "worker-0",
+   "prompt_sent": "You are one of 3 agents on a team led by an orchestrator. You do ONLY your assigned subtask.\nThe orchestrator will see your output beside the other two agents' and will assemble the final answer.\nDo your part completely and state plainly anything you could not settle, so the orchestrator can.\n\nYOUR SUBTASK (1 of 3): Draft statement and main theorem l2_t2\nWrite the Lean 4 (Mathlib, first line exactly `import Mathlib`, nothing else imported, no project-namespace `open`) main theorem `l2_t2`. Suggested form: theorem l2_t2 (eta E Q Ca Cv Pdem : ℝ) (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q) (hCv : 0 ≤ Ca - Cv) (hdem : eta * E * Q * (Ca - Cv) < Pdem) : ¬ (Pdem ≤ eta * E * Q * (Ca - Cv)). Alternatively model sustainability as a predicate-free statement: for any aerobic supply P_aer with P_aer ≤ eta*E*Q*(Ca-Cv) (hypothesis), conclude ¬ (Pdem ≤ P_aer). Choose a version where eta, Q appear as multiplicative factors, (Ca - Cv) appears literally as a difference, Pdem is a separate named variable from the available power (consider a `let`-free explicit expression or a separate variable Pavail with hypothesis hP : Pavail = eta*E*Q*(Ca-Cv)), eta is constrained (0<eta, eta≤1), Ca-Cv is hypothesised ≥ 0, and the conclusion is a negation (¬ sustained). Ensure hypotheses are load-bearing (conclusion is false if they are dropped) and not contradictory. Prove it briefly (e.g. `not_le.mpr`, `linarith`). Output the full theorem with proof and the exact signature, with no sorry/axiom/native_decide. Mentally check it compiles in Lean 4 / Mathlib.\n\nTASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.\n\nTHE CLAIM IN ENGLISH\nThe aerobic power a fish can supply is bounded above by the Fick product P_avail = eta * E * Q * (Ca - Cv), where eta is the mechanical efficiency, E the oxycaloric equivalent, Q the cardiac output and (Ca - Cv) the arterio-venous oxygen difference. Therefore if the power a sustained activity demands strictly exceeds P_avail, that activity cannot be sustained aerobically.\n\nREQUIRED CONTENT. A statement that compiles but does not carry these is a failure:\n  [1] efficiency enters as a multiplicative factor\n  [2] the arterio-venous difference appears as a difference\n  [3] cardiac output enters as a multiplicative factor\n  [4] efficiency is constrained (positive or in a band), so the premise is not vacuous\n  [5] a demanded power is named separately from the available power\n  [6] the conclusion is a negation: the activity cannot be sustained\n  [7] the arterio-venous difference is hypothesised non-negative, which is what stops the bound being vacuous\n\nKNOWN TRAP: If the hypotheses are mutually contradictory the theorem is vacuously true and compiles. The witness declaration is what catches this, and `hypotheses_load_bearing` is what catches a conclusion that needs no hypotheses at all.\n\nHARD REQUIREMENTS ON THE FILE\n- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.\n- The main theorem is named exactly `l2_t2`.\n- A second declaration named exactly `l2_t2_witness` proves that the hypotheses of `l2_t2` are\n  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`\n  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.\n- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.\n- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the\n  formalization is worthless and will be scored as a failure.\n- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,\n  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.\n\nOutput the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.",
+   "prompt_chars": 3935,
+   "model_output_parsed": {
+    "lean_file": "import Mathlib\n\ntheorem l2_t2 (eta E Q Ca Cv Pdem Pavail Paer : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hCv : 0 ≤ Ca - Cv)\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\n    (hsup : Paer ≤ Pavail)\n    (hdem : Pavail < Pdem) :\n    ¬ (Pdem ≤ Paer) := by\n  intro h\n  linarith\n\ntheorem l2_t2_witness :\n    ∃ (eta E Q Ca Cv Pdem Pavail Paer : ℝ),\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧ 0 ≤ Ca - Cv ∧\n      Pavail = eta * E * Q * (Ca - Cv) ∧ Paer ≤ Pavail ∧ Pavail < Pdem := by\n  refine ⟨1/2, 1, 1, 3, 1, 2, 1, 1, ?_⟩\n  norm_num\n",
+    "statement_only": "theorem l2_t2 (eta E Q Ca Cv Pdem Pavail Paer : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hCv : 0 ≤ Ca - Cv)\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\n    (hsup : Paer ≤ Pavail)\n    (hdem : Pavail < Pdem) :\n    ¬ (Pdem ≤ Paer)",
+    "notes": "The theorem says this. Pavail is the Fick product eta*E*Q*(Ca-Cv), with eta in (0,1], E>0, Q>0 and Ca-Cv ≥ 0. Any aerobic supply Paer is at most Pavail. If the demanded power Pdem strictly exceeds Pavail, then Pdem ≤ Paer is false, so the activity cannot be sustained aerobically. Required items: [1] eta and [3] Q are multiplicative factors; [2] (Ca - Cv) appears literally as a difference; [4] eta is constrained by 0<eta≤1; [5] Pdem is separate from Pavail and Paer; [6] the conclusion is a negation; [7] hCv gives Ca-Cv ≥ 0. The witness uses eta=1/2, E=Q=1, Ca=3, Cv=1, which gives Pavail=1, with Paer=1 and Pdem=2. It shows the hypotheses are jointly satisfiable. The proof (`intro h; linarith`) only uses hsup and hdem. Dropping hdem or hsup makes the conclusion false, so those two are load-bearing. heta, heta1, hE, hQ, hCv and hP are not needed by the proof. They are there for physical content and to cover the required items. The only one that fixes Pavail is hP, which links it to the Fick expression. The statement does not derive the bound on Paer from physiology. It takes it as hypothesis hsup. It also says nothing about anaerobic supply or about the units of E. I could not compile it here, so the orchestrator should check that it builds."
+   },
+   "model_output_raw": "{\"lean_file\":\"import Mathlib\\n\\ntheorem l2_t2 (eta E Q Ca Cv Pdem Pavail Paer : ℝ)\\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\\n    (hCv : 0 ≤ Ca - Cv)\\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\\n    (hsup : Paer ≤ Pavail)\\n    (hdem : Pavail < Pdem) :\\n    ¬ (Pdem ≤ Paer) := by\\n  intro h\\n  linarith\\n\\ntheorem l2_t2_witness :\\n    ∃ (eta E Q Ca Cv Pdem Pavail Paer : ℝ),\\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧ 0 ≤ Ca - Cv ∧\\n      Pavail = eta * E * Q * (Ca - Cv) ∧ Paer ≤ Pavail ∧ Pavail < Pdem := by\\n  refine ⟨1/2, 1, 1, 3, 1, 2, 1, 1, ?_⟩\\n  norm_num\\n\",\"statement_only\":\"theorem l2_t2 (eta E Q Ca Cv Pdem Pavail Paer : ℝ)\\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\\n    (hCv : 0 ≤ Ca - Cv)\\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\\n    (hsup : Paer ≤ Pavail)\\n    (hdem : Pavail < Pdem) :\\n    ¬ (Pdem ≤ Paer)\",\"notes\":\"The theorem says this. Pavail is the Fick product eta*E*Q*(Ca-Cv), with eta in (0,1], E>0, Q>0 and Ca-Cv ≥ 0. Any aerobic supply Paer is at most Pavail. If the demanded power Pdem strictly exceeds Pavail, then Pdem ≤ Paer is false, so the activity cannot be sustained aerobically. Required items: [1] eta and [3] Q are multiplicative factors; [2] (Ca - Cv) appears literally as a difference; [4] eta is constrained by 0<eta≤1; [5] Pdem is separate from Pavail and Paer; [6] the conclusion is a negation; [7] hCv gives Ca-Cv ≥ 0. The witness uses eta=1/2, E=Q=1, Ca=3, Cv=1, which gives Pavail=1, with Paer=1 and Pdem=2. It shows the hypotheses are jointly satisfiable. The proof (`intro h; linarith`) only uses hsup and hdem. Dropping hdem or hsup makes the conclusion false, so those two are load-bearing. heta, heta1, hE, hQ, hCv and hP are not needed by the proof. They are there for physical content and to cover the required items. The only one that fixes Pavail is hP, which links it to the Fick expression. The statement does not derive the bound on Paer from physiology. It takes it as hypothesis hsup. It also says nothing about anaerobic supply or about the units of E. I could not compile it here, so the orchestrator should check that it builds.\"}",
+   "tokens": {
+    "input": 2,
+    "output": 2214,
+    "cache_read": 40950,
+    "cache_creation": 9878
+   },
+   "tokens_total": 53044,
+   "cost_usd": 0.065751,
+   "duration_ms": 19363,
+   "num_turns": 2,
+   "stop_reason": "tool_use",
+   "terminal_reason": "completed",
+   "is_error": false,
+   "error_text": null,
+   "cap_stop": false,
+   "failure_class": "ok"
+  },
+  {
+   "label": "worker-1",
+   "prompt_sent": "You are one of 3 agents on a team led by an orchestrator. You do ONLY your assigned subtask.\nThe orchestrator will see your output beside the other two agents' and will assemble the final answer.\nDo your part completely and state plainly anything you could not settle, so the orchestrator can.\n\nYOUR SUBTASK (2 of 3): Write witness l2_t2_witness\nGiven the main theorem `l2_t2` with hypotheses: eta E Q Ca Cv Pdem : ℝ, 0<eta, eta≤1, 0<E, 0<Q, 0 ≤ Ca - Cv, and Pdem > eta*E*Q*(Ca-Cv) (also possibly Pavail = eta*E*Q*(Ca-Cv) and a sustained-power hypothesis Paer ≤ Pavail if used). Write `theorem l2_t2_witness : ∃ (eta E Q Ca Cv Pdem : ℝ), <exactly the same hypotheses conjoined with ∧> := by` followed by a proof of the form `refine ⟨0.5, 20, 10, 8, 3, 1000, ?_⟩; norm_num` (or `exact ⟨..., by norm_num⟩`) using concrete numbers where Pdem strictly exceeds eta*E*Q*(Ca-Cv) (e.g. 0.25*20*10*5=250<1000). The final proof must be `by norm_num` shaped (existential over concrete values). Also write a short `hypotheses_load_bearing` check in notes: explain a concrete counterexample (e.g. Pdem=0 with the same numbers, or drop heta) showing the conclusion fails without the hypotheses. Provide the Lean code and verify the arithmetic by hand. Keep imports out (file begins with `import Mathlib` supplied by the assembler). Tell the orchestrator exactly which hypothesis list the witness mirrors so it can be aligned with l2_t2.\n\nTASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.\n\nTHE CLAIM IN ENGLISH\nThe aerobic power a fish can supply is bounded above by the Fick product P_avail = eta * E * Q * (Ca - Cv), where eta is the mechanical efficiency, E the oxycaloric equivalent, Q the cardiac output and (Ca - Cv) the arterio-venous oxygen difference. Therefore if the power a sustained activity demands strictly exceeds P_avail, that activity cannot be sustained aerobically.\n\nREQUIRED CONTENT. A statement that compiles but does not carry these is a failure:\n  [1] efficiency enters as a multiplicative factor\n  [2] the arterio-venous difference appears as a difference\n  [3] cardiac output enters as a multiplicative factor\n  [4] efficiency is constrained (positive or in a band), so the premise is not vacuous\n  [5] a demanded power is named separately from the available power\n  [6] the conclusion is a negation: the activity cannot be sustained\n  [7] the arterio-venous difference is hypothesised non-negative, which is what stops the bound being vacuous\n\nKNOWN TRAP: If the hypotheses are mutually contradictory the theorem is vacuously true and compiles. The witness declaration is what catches this, and `hypotheses_load_bearing` is what catches a conclusion that needs no hypotheses at all.\n\nHARD REQUIREMENTS ON THE FILE\n- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.\n- The main theorem is named exactly `l2_t2`.\n- A second declaration named exactly `l2_t2_witness` proves that the hypotheses of `l2_t2` are\n  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`\n  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.\n- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.\n- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the\n  formalization is worthless and will be scored as a failure.\n- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,\n  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.\n\nOutput the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.",
+   "prompt_chars": 3792,
+   "model_output_parsed": {
+    "lean_file": "import Mathlib\n\ntheorem l2_t2 (eta E Q Ca Cv Pdem Paer : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hAV : 0 ≤ Ca - Cv)\n    (hdem : Pdem > eta * E * Q * (Ca - Cv))\n    (hbound : Paer ≤ eta * E * Q * (Ca - Cv)) :\n    ¬ (Pdem ≤ Paer) := by\n  intro h\n  linarith\n\ntheorem l2_t2_witness :\n    ∃ (eta E Q Ca Cv Pdem Paer : ℝ),\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧ 0 ≤ Ca - Cv ∧\n      Pdem > eta * E * Q * (Ca - Cv) ∧\n      Paer ≤ eta * E * Q * (Ca - Cv) := by\n  refine ⟨1/2, 20, 10, 8, 3, 1000, 500, ?_⟩\n  norm_num",
+    "statement_only": "theorem l2_t2 (eta E Q Ca Cv Pdem Paer : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hAV : 0 ≤ Ca - Cv)\n    (hdem : Pdem > eta * E * Q * (Ca - Cv))\n    (hbound : Paer ≤ eta * E * Q * (Ca - Cv)) :\n    ¬ (Pdem ≤ Paer)",
+    "notes": "Not compiled: no Lean toolchain was available to me, so the arithmetic was checked by hand. The proofs are only `linarith` and `norm_num`.\n\n**Hypothesis list the witness mirrors (align l2_t2 to it, or tell me to change it).** Variables: eta E Q Ca Cv Pdem Paer : ℝ. Conjuncts, in order:\n1. `0 < eta`\n2. `eta ≤ 1`\n3. `0 < E`\n4. `0 < Q`\n5. `0 ≤ Ca - Cv`\n6. `Pdem > eta*E*Q*(Ca-Cv)`\n7. `Paer ≤ eta*E*Q*(Ca-Cv)`\n\nThe `l2_t2` in my file is a stand-in with exactly these hypotheses. Its conclusion is `¬ (Pdem ≤ Paer)`. If the real l2_t2 has a different hypothesis list (for example no `Paer`), delete the `Paer` variable and conjunct 7 from the witness.\n\n**Witness values:** eta=1/2, E=20, Q=10, Ca=8, Cv=3, Pdem=1000, Paer=500.\n- Ca−Cv = 5 ≥ 0.\n- Bound = (1/2)·20·10·5 = 500.\n- 1000 > 500, so `Pdem` exceeds the bound.\n- 500 ≤ 500, so `Paer` is at the bound.\n- 0 < 1/2 ≤ 1, E > 0 and Q > 0.\n\nAll hypotheses hold together, so the theorem is not vacuous.\n\n**Load-bearing check.**\n- If the demand hypothesis is dropped, take Pdem=400 and Paer=500 with the same numbers. Then Pdem ≤ Paer holds, so the conclusion `¬ (Pdem ≤ Paer)` fails.\n- If the supply bound `Paer ≤ bound` is dropped, take Paer=2000 and Pdem=1000. Then Pdem ≤ Paer holds, so the conclusion fails again.\n- The proof uses only `hdem` and `hbound`. The positivity, `eta ≤ 1` and `0 ≤ Ca−Cv` hypotheses are not needed for it. They are there to make the premise realistic (required items 4 and 7).\n\n**What the statement asserts.** It says that if the demanded power strictly exceeds the Fick product eta·E·Q·(Ca−Cv) and the aerobic power supplied is at most that product, then the demand cannot be met aerobically.\n\n**What it does not assert.** It does not model oxygen-extraction limits or time dependence. It also does not prove that the Fick bound itself holds for real fish."
+   },
+   "model_output_raw": "{\"lean_file\":\"import Mathlib\\n\\ntheorem l2_t2 (eta E Q Ca Cv Pdem Paer : ℝ)\\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\\n    (hAV : 0 ≤ Ca - Cv)\\n    (hdem : Pdem > eta * E * Q * (Ca - Cv))\\n    (hbound : Paer ≤ eta * E * Q * (Ca - Cv)) :\\n    ¬ (Pdem ≤ Paer) := by\\n  intro h\\n  linarith\\n\\ntheorem l2_t2_witness :\\n    ∃ (eta E Q Ca Cv Pdem Paer : ℝ),\\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧ 0 ≤ Ca - Cv ∧\\n      Pdem > eta * E * Q * (Ca - Cv) ∧\\n      Paer ≤ eta * E * Q * (Ca - Cv) := by\\n  refine ⟨1/2, 20, 10, 8, 3, 1000, 500, ?_⟩\\n  norm_num\",\"statement_only\":\"theorem l2_t2 (eta E Q Ca Cv Pdem Paer : ℝ)\\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\\n    (hAV : 0 ≤ Ca - Cv)\\n    (hdem : Pdem > eta * E * Q * (Ca - Cv))\\n    (hbound : Paer ≤ eta * E * Q * (Ca - Cv)) :\\n    ¬ (Pdem ≤ Paer)\",\"notes\":\"Not compiled: no Lean toolchain was available to me, so the arithmetic was checked by hand. The proofs are only `linarith` and `norm_num`.\\n\\n**Hypothesis list the witness mirrors (align l2_t2 to it, or tell me to change it).** Variables: eta E Q Ca Cv Pdem Paer : ℝ. Conjuncts, in order:\\n1. `0 < eta`\\n2. `eta ≤ 1`\\n3. `0 < E`\\n4. `0 < Q`\\n5. `0 ≤ Ca - Cv`\\n6. `Pdem > eta*E*Q*(Ca-Cv)`\\n7. `Paer ≤ eta*E*Q*(Ca-Cv)`\\n\\nThe `l2_t2` in my file is a stand-in with exactly these hypotheses. Its conclusion is `¬ (Pdem ≤ Paer)`. If the real l2_t2 has a different hypothesis list (for example no `Paer`), delete the `Paer` variable and conjunct 7 from the witness.\\n\\n**Witness values:** eta=1/2, E=20, Q=10, Ca=8, Cv=3, Pdem=1000, Paer=500.\\n- Ca−Cv = 5 ≥ 0.\\n- Bound = (1/2)·20·10·5 = 500.\\n- 1000 > 500, so `Pdem` exceeds the bound.\\n- 500 ≤ 500, so `Paer` is at the bound.\\n- 0 < 1/2 ≤ 1, E > 0 and Q > 0.\\n\\nAll hypotheses hold together, so the theorem is not vacuous.\\n\\n**Load-bearing check.**\\n- If the demand hypothesis is dropped, take Pdem=400 and Paer=500 with the same numbers. Then Pdem ≤ Paer holds, so the conclusion `¬ (Pdem ≤ Paer)` fails.\\n- If the supply bound `Paer ≤ bound` is dropped, take Paer=2000 and Pdem=1000. Then Pdem ≤ Paer holds, so the conclusion fails again.\\n- The proof uses only `hdem` and `hbound`. The positivity, `eta ≤ 1` and `0 ≤ Ca−Cv` hypotheses are not needed for it. They are there to make the premise realistic (required items 4 and 7).\\n\\n**What the statement asserts.** It says that if the demanded power strictly exceeds the Fick product eta·E·Q·(Ca−Cv) and the aerobic power supplied is at most that product, then the demand cannot be met aerobically.\\n\\n**What it does not assert.** It does not model oxygen-extraction limits or time dependence. It also does not prove that the Fick bound itself holds for real fish.\"}",
+   "tokens": {
+    "input": 2,
+    "output": 2468,
+    "cache_read": 40950,
+    "cache_creation": 9708
+   },
+   "tokens_total": 53128,
+   "cost_usd": 0.067611,
+   "duration_ms": 20750,
+   "num_turns": 2,
+   "stop_reason": "tool_use",
+   "terminal_reason": "completed",
+   "is_error": false,
+   "error_text": null,
+   "cap_stop": false,
+   "failure_class": "ok"
+  },
+  {
+   "label": "worker-2",
+   "prompt_sent": "You are one of 3 agents on a team led by an orchestrator. You do ONLY your assigned subtask.\nThe orchestrator will see your output beside the other two agents' and will assemble the final answer.\nDo your part completely and state plainly anything you could not settle, so the orchestrator can.\n\nYOUR SUBTASK (3 of 3): Review compile risks and write notes\nAct as Lean 4 / Mathlib (v4.35.0) reviewer for a file with `import Mathlib`, main theorem `l2_t2` (Fick bound: eta*E*Q*(Ca-Cv) < Pdem implies ¬ sustainable aerobically) and `l2_t2_witness` (∃ concrete reals satisfying the hypotheses, by norm_num). Produce: (1) a checklist mapping each required item [1]-[7] (eta multiplicative, Ca-Cv difference, Q multiplicative, eta constrained, Pdem named separately from available power, negated conclusion, Ca-Cv ≥ 0 hypothesis) to where it appears in the statement; (2) a list of pitfalls to avoid (unused-variable linter fine, `0.5` literals under norm_num, using `Real` explicitly with `(x : ℝ)`, no `open` of project namespaces, no sorry/axiom/native_decide/implemented_by, theorem names exactly l2_t2 and l2_t2_witness, witness hypothesis list must match main theorem order and form); (3) a draft of the `notes` text explaining the non-vacuity argument (witness) and load-bearing argument (drop the strict-exceed hypothesis and the conclusion is false: if Pdem ≤ P_avail the activity is sustainable) in 4-6 sentences. Also propose a robust fallback proof for l2_t2 in case the primary one fails (e.g. `intro h; linarith` or `not_le.mpr hdem`).\n\nTASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.\n\nTHE CLAIM IN ENGLISH\nThe aerobic power a fish can supply is bounded above by the Fick product P_avail = eta * E * Q * (Ca - Cv), where eta is the mechanical efficiency, E the oxycaloric equivalent, Q the cardiac output and (Ca - Cv) the arterio-venous oxygen difference. Therefore if the power a sustained activity demands strictly exceeds P_avail, that activity cannot be sustained aerobically.\n\nREQUIRED CONTENT. A statement that compiles but does not carry these is a failure:\n  [1] efficiency enters as a multiplicative factor\n  [2] the arterio-venous difference appears as a difference\n  [3] cardiac output enters as a multiplicative factor\n  [4] efficiency is constrained (positive or in a band), so the premise is not vacuous\n  [5] a demanded power is named separately from the available power\n  [6] the conclusion is a negation: the activity cannot be sustained\n  [7] the arterio-venous difference is hypothesised non-negative, which is what stops the bound being vacuous\n\nKNOWN TRAP: If the hypotheses are mutually contradictory the theorem is vacuously true and compiles. The witness declaration is what catches this, and `hypotheses_load_bearing` is what catches a conclusion that needs no hypotheses at all.\n\nHARD REQUIREMENTS ON THE FILE\n- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.\n- The main theorem is named exactly `l2_t2`.\n- A second declaration named exactly `l2_t2_witness` proves that the hypotheses of `l2_t2` are\n  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`\n  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.\n- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.\n- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the\n  formalization is worthless and will be scored as a failure.\n- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,\n  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.\n\nOutput the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.",
+   "prompt_chars": 3912,
+   "model_output_parsed": {
+    "lean_file": "import Mathlib\n\n/-- Fick bound: if the demanded power strictly exceeds the Fick product\n`eta * E * Q * (Ca - Cv)`, and the aerobic power actually supplied `Pa` is bounded above by that\nproduct, then the activity cannot be sustained aerobically (demand `Pdem` is not covered by `Pa`). -/\ntheorem l2_t2 (eta E Q Ca Cv Pa Pdem : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hdiff : 0 ≤ Ca - Cv)\n    (hPa : Pa ≤ eta * E * Q * (Ca - Cv))\n    (hdem : eta * E * Q * (Ca - Cv) < Pdem) :\n    ¬ (Pdem ≤ Pa) := by\n  intro h\n  linarith\n\ntheorem l2_t2_witness :\n    ∃ (eta E Q Ca Cv Pa Pdem : ℝ),\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧\n      0 ≤ Ca - Cv ∧\n      Pa ≤ eta * E * Q * (Ca - Cv) ∧\n      eta * E * Q * (Ca - Cv) < Pdem := by\n  refine ⟨1/4, 20, 2, 8, 3, 50, 60, ?_⟩\n  norm_num\n",
+    "statement_only": "theorem l2_t2 (eta E Q Ca Cv Pa Pdem : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hdiff : 0 ≤ Ca - Cv)\n    (hPa : Pa ≤ eta * E * Q * (Ca - Cv))\n    (hdem : eta * E * Q * (Ca - Cv) < Pdem) :\n    ¬ (Pdem ≤ Pa)",
+    "notes": "I could not compile this file here (no Lean toolchain was run), so it is unchecked. The reviewer checklist and fallbacks below are from reading it.\n\nWhat the statement asserts: Pa is the aerobic power actually supplied, and it is bounded above by the Fick product eta*E*Q*(Ca-Cv). If the demand Pdem strictly exceeds that product, then Pdem ≤ Pa is false, i.e. the activity cannot be sustained aerobically. It does not model physiology beyond this inequality chain: \"sustainable\" is defined as Pdem ≤ Pa, and E, Q and the concentrations are plain reals with only the sign constraints listed.\n\nChecklist:\n[1] eta is a multiplicative factor in `eta * E * Q * (Ca - Cv)`, which appears in both hPa and hdem.\n[2] The arterio-venous difference is the subterm `(Ca - Cv)`.\n[3] Q is a multiplicative factor in the same product.\n[4] eta is constrained by heta : 0 < eta and heta1 : eta ≤ 1. E>0 and Q>0 are also assumed.\n[5] Pdem is a separate variable from Pa, the available power.\n[6] The conclusion is `¬ (Pdem ≤ Pa)`.\n[7] hdiff : 0 ≤ Ca - Cv.\n\nNon-vacuity: `l2_t2_witness` is an existential over concrete reals (eta=1/4, E=20, Q=2, Ca=8, Cv=3, Pa=50, Pdem=60) that satisfies every hypothesis in the same order and form as `l2_t2`. The Fick product is 50, so Pa ≤ 50 < 60 = Pdem. The proof is `refine ⟨...⟩; norm_num`, because `norm_num` alone cannot pick the witnesses.\n\nLoad-bearing: the strict-exceed hypothesis hdem and the bound hPa are both needed. Without hdem, Pdem ≤ Pa is perfectly possible, e.g. Pdem=Pa=50 in the witness numbers, so the activity is sustainable and the conclusion is false. Without hPa, Pa could be arbitrarily large and the conclusion fails. The other hypotheses (heta, hE, hQ, hdiff) are not needed by the linarith proof. They are kept as the required physiological constraints and for non-vacuity. The linter may flag them as unused variables, which is only a warning.\n\nPitfalls checked: no `open`, no sorry/axiom/native_decide/implemented_by, explicit ℝ typing, and fractions (1/4) rather than 0.5 literals. Fallback proof if `intro h; linarith` fails: `exact not_le.mpr (lt_of_le_of_lt hPa hdem)`, or `intro h; exact absurd (lt_of_le_of_lt h (lt_of_lt_of_le hdem le_rfl)) (not_lt.mpr hPa)`. The first one is the more robust."
+   },
+   "model_output_raw": "{\"lean_file\":\"import Mathlib\\n\\n/-- Fick bound: if the demanded power strictly exceeds the Fick product\\n`eta * E * Q * (Ca - Cv)`, and the aerobic power actually supplied `Pa` is bounded above by that\\nproduct, then the activity cannot be sustained aerobically (demand `Pdem` is not covered by `Pa`). -/\\ntheorem l2_t2 (eta E Q Ca Cv Pa Pdem : ℝ)\\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\\n    (hdiff : 0 ≤ Ca - Cv)\\n    (hPa : Pa ≤ eta * E * Q * (Ca - Cv))\\n    (hdem : eta * E * Q * (Ca - Cv) < Pdem) :\\n    ¬ (Pdem ≤ Pa) := by\\n  intro h\\n  linarith\\n\\ntheorem l2_t2_witness :\\n    ∃ (eta E Q Ca Cv Pa Pdem : ℝ),\\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧\\n      0 ≤ Ca - Cv ∧\\n      Pa ≤ eta * E * Q * (Ca - Cv) ∧\\n      eta * E * Q * (Ca - Cv) < Pdem := by\\n  refine ⟨1/4, 20, 2, 8, 3, 50, 60, ?_⟩\\n  norm_num\\n\",\"statement_only\":\"theorem l2_t2 (eta E Q Ca Cv Pa Pdem : ℝ)\\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\\n    (hdiff : 0 ≤ Ca - Cv)\\n    (hPa : Pa ≤ eta * E * Q * (Ca - Cv))\\n    (hdem : eta * E * Q * (Ca - Cv) < Pdem) :\\n    ¬ (Pdem ≤ Pa)\",\"notes\":\"I could not compile this file here (no Lean toolchain was run), so it is unchecked. The reviewer checklist and fallbacks below are from reading it.\\n\\nWhat the statement asserts: Pa is the aerobic power actually supplied, and it is bounded above by the Fick product eta*E*Q*(Ca-Cv). If the demand Pdem strictly exceeds that product, then Pdem ≤ Pa is false, i.e. the activity cannot be sustained aerobically. It does not model physiology beyond this inequality chain: \\\"sustainable\\\" is defined as Pdem ≤ Pa, and E, Q and the concentrations are plain reals with only the sign constraints listed.\\n\\nChecklist:\\n[1] eta is a multiplicative factor in `eta * E * Q * (Ca - Cv)`, which appears in both hPa and hdem.\\n[2] The arterio-venous difference is the subterm `(Ca - Cv)`.\\n[3] Q is a multiplicative factor in the same product.\\n[4] eta is constrained by heta : 0 < eta and heta1 : eta ≤ 1. E>0 and Q>0 are also assumed.\\n[5] Pdem is a separate variable from Pa, the available power.\\n[6] The conclusion is `¬ (Pdem ≤ Pa)`.\\n[7] hdiff : 0 ≤ Ca - Cv.\\n\\nNon-vacuity: `l2_t2_witness` is an existential over concrete reals (eta=1/4, E=20, Q=2, Ca=8, Cv=3, Pa=50, Pdem=60) that satisfies every hypothesis in the same order and form as `l2_t2`. The Fick product is 50, so Pa ≤ 50 < 60 = Pdem. The proof is `refine ⟨...⟩; norm_num`, because `norm_num` alone cannot pick the witnesses.\\n\\nLoad-bearing: the strict-exceed hypothesis hdem and the bound hPa are both needed. Without hdem, Pdem ≤ Pa is perfectly possible, e.g. Pdem=Pa=50 in the witness numbers, so the activity is sustainable and the conclusion is false. Without hPa, Pa could be arbitrarily large and the conclusion fails. The other hypotheses (heta, hE, hQ, hdiff) are not needed by the linarith proof. They are kept as the required physiological constraints and for non-vacuity. The linter may flag them as unused variables, which is only a warning.\\n\\nPitfalls checked: no `open`, no sorry/axiom/native_decide/implemented_by, explicit ℝ typing, and fractions (1/4) rather than 0.5 literals. Fallback proof if `intro h; linarith` fails: `exact not_le.mpr (lt_of_le_of_lt hPa hdem)`, or `intro h; exact absurd (lt_of_le_of_lt h (lt_of_lt_of_le hdem le_rfl)) (not_lt.mpr hPa)`. The first one is the more robust.\"}",
+   "tokens": {
+    "input": 2,
+    "output": 2551,
+    "cache_read": 40950,
+    "cache_creation": 9688
+   },
+   "tokens_total": 53191,
+   "cost_usd": 0.068361,
+   "duration_ms": 20394,
+   "num_turns": 2,
+   "stop_reason": "tool_use",
+   "terminal_reason": "completed",
+   "is_error": false,
+   "error_text": null,
+   "cap_stop": false,
+   "failure_class": "ok"
+  }
+ ],
+ "final_artifact": {
+  "lean_file": "import Mathlib\n\ntheorem l2_t2 (eta E Q Ca Cv Pdem Pavail Paer : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hCv : 0 ≤ Ca - Cv)\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\n    (hsup : Paer ≤ Pavail)\n    (hdem : Pavail < Pdem) :\n    ¬ (Pdem ≤ Paer) := by\n  intro h\n  linarith\n\ntheorem l2_t2_witness :\n    ∃ (eta E Q Ca Cv Pdem Pavail Paer : ℝ),\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧ 0 ≤ Ca - Cv ∧\n      Pavail = eta * E * Q * (Ca - Cv) ∧ Paer ≤ Pavail ∧ Pavail < Pdem := by\n  refine ⟨1/2, 1, 1, 3, 1, 2, 1, 1, ?_⟩\n  norm_num\n",
+  "statement_only": "theorem l2_t2 (eta E Q Ca Cv Pdem Pavail Paer : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hCv : 0 ≤ Ca - Cv)\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\n    (hsup : Paer ≤ Pavail)\n    (hdem : Pavail < Pdem) :\n    ¬ (Pdem ≤ Paer)",
+  "notes": "I could not compile the file here, so it is unchecked. The witness arithmetic was verified by hand. The theorem says: Pavail is the Fick product eta*E*Q*(Ca-Cv), with 0<eta≤1, E>0, Q>0 and Ca-Cv≥0. Any aerobic supply Paer is at most Pavail. If the demanded power Pdem strictly exceeds Pavail, then Pdem ≤ Paer is false, so the activity cannot be sustained aerobically. Required items: [1] eta and [3] Q are multiplicative factors in hP; [2] (Ca - Cv) appears literally as a difference; [4] eta is constrained by heta and heta1; [5] Pdem is a separate variable from Pavail and Paer; [6] the conclusion is a negation; [7] hCv gives Ca-Cv ≥ 0. Non-vacuity: l2_t2_witness is an existential over concrete reals (eta=1/2, E=Q=1, Ca=3, Cv=1, Pavail=1, Paer=1, Pdem=2) satisfying every hypothesis in the same order and form as l2_t2, proved by refine plus norm_num. Load-bearing: the proof uses only hsup and hdem. Dropping hdem makes the conclusion false (take Pdem=Paer=1 with the witness numbers). Dropping hsup also makes it false (take Paer=5, Pdem=2). The remaining hypotheses (heta, heta1, hE, hQ, hCv, hP) are not used by the proof. They supply physical content and the required structure, and hP is what ties Pavail to the Fick expression. The linter may report them as unused variables, which is only a warning. Where the agents differed: Agents 1 and 2 stated the bound directly on the product without a named Pavail. I chose Agent 0's version because it keeps P_avail as its own named quantity with hP, matching the claim's wording. The statement does not derive the bound on Paer from physiology; it takes it as the hypothesis hsup. It also says nothing about anaerobic supply, time dependence, or the units of E. Fallback proof if linarith fails: exact not_le.mpr (lt_of_le_of_lt hsup hdem)."
+ },
+ "swarm_candidates": [
+  {
+   "index": 0,
+   "ok": true,
+   "subtask": "Draft statement and main theorem l2_t2",
+   "parsed": {
+    "lean_file": "import Mathlib\n\ntheorem l2_t2 (eta E Q Ca Cv Pdem Pavail Paer : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hCv : 0 ≤ Ca - Cv)\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\n    (hsup : Paer ≤ Pavail)\n    (hdem : Pavail < Pdem) :\n    ¬ (Pdem ≤ Paer) := by\n  intro h\n  linarith\n\ntheorem l2_t2_witness :\n    ∃ (eta E Q Ca Cv Pdem Pavail Paer : ℝ),\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧ 0 ≤ Ca - Cv ∧\n      Pavail = eta * E * Q * (Ca - Cv) ∧ Paer ≤ Pavail ∧ Pavail < Pdem := by\n  refine ⟨1/2, 1, 1, 3, 1, 2, 1, 1, ?_⟩\n  norm_num\n",
+    "statement_only": "theorem l2_t2 (eta E Q Ca Cv Pdem Pavail Paer : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hCv : 0 ≤ Ca - Cv)\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\n    (hsup : Paer ≤ Pavail)\n    (hdem : Pavail < Pdem) :\n    ¬ (Pdem ≤ Paer)",
+    "notes": "The theorem says this. Pavail is the Fick product eta*E*Q*(Ca-Cv), with eta in (0,1], E>0, Q>0 and Ca-Cv ≥ 0. Any aerobic supply Paer is at most Pavail. If the demanded power Pdem strictly exceeds Pavail, then Pdem ≤ Paer is false, so the activity cannot be sustained aerobically. Required items: [1] eta and [3] Q are multiplicative factors; [2] (Ca - Cv) appears literally as a difference; [4] eta is constrained by 0<eta≤1; [5] Pdem is separate from Pavail and Paer; [6] the conclusion is a negation; [7] hCv gives Ca-Cv ≥ 0. The witness uses eta=1/2, E=Q=1, Ca=3, Cv=1, which gives Pavail=1, with Paer=1 and Pdem=2. It shows the hypotheses are jointly satisfiable. The proof (`intro h; linarith`) only uses hsup and hdem. Dropping hdem or hsup makes the conclusion false, so those two are load-bearing. heta, heta1, hE, hQ, hCv and hP are not needed by the proof. They are there for physical content and to cover the required items. The only one that fixes Pavail is hP, which links it to the Fick expression. The statement does not derive the bound on Paer from physiology. It takes it as hypothesis hsup. It also says nothing about anaerobic supply or about the units of E. I could not compile it here, so the orchestrator should check that it builds."
+   }
+  },
+  {
+   "index": 1,
+   "ok": true,
+   "subtask": "Write witness l2_t2_witness",
+   "parsed": {
+    "lean_file": "import Mathlib\n\ntheorem l2_t2 (eta E Q Ca Cv Pdem Paer : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hAV : 0 ≤ Ca - Cv)\n    (hdem : Pdem > eta * E * Q * (Ca - Cv))\n    (hbound : Paer ≤ eta * E * Q * (Ca - Cv)) :\n    ¬ (Pdem ≤ Paer) := by\n  intro h\n  linarith\n\ntheorem l2_t2_witness :\n    ∃ (eta E Q Ca Cv Pdem Paer : ℝ),\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧ 0 ≤ Ca - Cv ∧\n      Pdem > eta * E * Q * (Ca - Cv) ∧\n      Paer ≤ eta * E * Q * (Ca - Cv) := by\n  refine ⟨1/2, 20, 10, 8, 3, 1000, 500, ?_⟩\n  norm_num",
+    "statement_only": "theorem l2_t2 (eta E Q Ca Cv Pdem Paer : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hAV : 0 ≤ Ca - Cv)\n    (hdem : Pdem > eta * E * Q * (Ca - Cv))\n    (hbound : Paer ≤ eta * E * Q * (Ca - Cv)) :\n    ¬ (Pdem ≤ Paer)",
+    "notes": "Not compiled: no Lean toolchain was available to me, so the arithmetic was checked by hand. The proofs are only `linarith` and `norm_num`.\n\n**Hypothesis list the witness mirrors (align l2_t2 to it, or tell me to change it).** Variables: eta E Q Ca Cv Pdem Paer : ℝ. Conjuncts, in order:\n1. `0 < eta`\n2. `eta ≤ 1`\n3. `0 < E`\n4. `0 < Q`\n5. `0 ≤ Ca - Cv`\n6. `Pdem > eta*E*Q*(Ca-Cv)`\n7. `Paer ≤ eta*E*Q*(Ca-Cv)`\n\nThe `l2_t2` in my file is a stand-in with exactly these hypotheses. Its conclusion is `¬ (Pdem ≤ Paer)`. If the real l2_t2 has a different hypothesis list (for example no `Paer`), delete the `Paer` variable and conjunct 7 from the witness.\n\n**Witness values:** eta=1/2, E=20, Q=10, Ca=8, Cv=3, Pdem=1000, Paer=500.\n- Ca−Cv = 5 ≥ 0.\n- Bound = (1/2)·20·10·5 = 500.\n- 1000 > 500, so `Pdem` exceeds the bound.\n- 500 ≤ 500, so `Paer` is at the bound.\n- 0 < 1/2 ≤ 1, E > 0 and Q > 0.\n\nAll hypotheses hold together, so the theorem is not vacuous.\n\n**Load-bearing check.**\n- If the demand hypothesis is dropped, take Pdem=400 and Paer=500 with the same numbers. Then Pdem ≤ Paer holds, so the conclusion `¬ (Pdem ≤ Paer)` fails.\n- If the supply bound `Paer ≤ bound` is dropped, take Paer=2000 and Pdem=1000. Then Pdem ≤ Paer holds, so the conclusion fails again.\n- The proof uses only `hdem` and `hbound`. The positivity, `eta ≤ 1` and `0 ≤ Ca−Cv` hypotheses are not needed for it. They are there to make the premise realistic (required items 4 and 7).\n\n**What the statement asserts.** It says that if the demanded power strictly exceeds the Fick product eta·E·Q·(Ca−Cv) and the aerobic power supplied is at most that product, then the demand cannot be met aerobically.\n\n**What it does not assert.** It does not model oxygen-extraction limits or time dependence. It also does not prove that the Fick bound itself holds for real fish."
+   }
+  },
+  {
+   "index": 2,
+   "ok": true,
+   "subtask": "Review compile risks and write notes",
+   "parsed": {
+    "lean_file": "import Mathlib\n\n/-- Fick bound: if the demanded power strictly exceeds the Fick product\n`eta * E * Q * (Ca - Cv)`, and the aerobic power actually supplied `Pa` is bounded above by that\nproduct, then the activity cannot be sustained aerobically (demand `Pdem` is not covered by `Pa`). -/\ntheorem l2_t2 (eta E Q Ca Cv Pa Pdem : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hdiff : 0 ≤ Ca - Cv)\n    (hPa : Pa ≤ eta * E * Q * (Ca - Cv))\n    (hdem : eta * E * Q * (Ca - Cv) < Pdem) :\n    ¬ (Pdem ≤ Pa) := by\n  intro h\n  linarith\n\ntheorem l2_t2_witness :\n    ∃ (eta E Q Ca Cv Pa Pdem : ℝ),\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧\n      0 ≤ Ca - Cv ∧\n      Pa ≤ eta * E * Q * (Ca - Cv) ∧\n      eta * E * Q * (Ca - Cv) < Pdem := by\n  refine ⟨1/4, 20, 2, 8, 3, 50, 60, ?_⟩\n  norm_num\n",
+    "statement_only": "theorem l2_t2 (eta E Q Ca Cv Pa Pdem : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hdiff : 0 ≤ Ca - Cv)\n    (hPa : Pa ≤ eta * E * Q * (Ca - Cv))\n    (hdem : eta * E * Q * (Ca - Cv) < Pdem) :\n    ¬ (Pdem ≤ Pa)",
+    "notes": "I could not compile this file here (no Lean toolchain was run), so it is unchecked. The reviewer checklist and fallbacks below are from reading it.\n\nWhat the statement asserts: Pa is the aerobic power actually supplied, and it is bounded above by the Fick product eta*E*Q*(Ca-Cv). If the demand Pdem strictly exceeds that product, then Pdem ≤ Pa is false, i.e. the activity cannot be sustained aerobically. It does not model physiology beyond this inequality chain: \"sustainable\" is defined as Pdem ≤ Pa, and E, Q and the concentrations are plain reals with only the sign constraints listed.\n\nChecklist:\n[1] eta is a multiplicative factor in `eta * E * Q * (Ca - Cv)`, which appears in both hPa and hdem.\n[2] The arterio-venous difference is the subterm `(Ca - Cv)`.\n[3] Q is a multiplicative factor in the same product.\n[4] eta is constrained by heta : 0 < eta and heta1 : eta ≤ 1. E>0 and Q>0 are also assumed.\n[5] Pdem is a separate variable from Pa, the available power.\n[6] The conclusion is `¬ (Pdem ≤ Pa)`.\n[7] hdiff : 0 ≤ Ca - Cv.\n\nNon-vacuity: `l2_t2_witness` is an existential over concrete reals (eta=1/4, E=20, Q=2, Ca=8, Cv=3, Pa=50, Pdem=60) that satisfies every hypothesis in the same order and form as `l2_t2`. The Fick product is 50, so Pa ≤ 50 < 60 = Pdem. The proof is `refine ⟨...⟩; norm_num`, because `norm_num` alone cannot pick the witnesses.\n\nLoad-bearing: the strict-exceed hypothesis hdem and the bound hPa are both needed. Without hdem, Pdem ≤ Pa is perfectly possible, e.g. Pdem=Pa=50 in the witness numbers, so the activity is sustainable and the conclusion is false. Without hPa, Pa could be arbitrarily large and the conclusion fails. The other hypotheses (heta, hE, hQ, hdiff) are not needed by the linarith proof. They are kept as the required physiological constraints and for non-vacuity. The linter may flag them as unused variables, which is only a warning.\n\nPitfalls checked: no `open`, no sorry/axiom/native_decide/implemented_by, explicit ℝ typing, and fractions (1/4) rather than 0.5 literals. Fallback proof if `intro h; linarith` fails: `exact not_le.mpr (lt_of_le_of_lt hPa hdem)`, or `intro h; exact absurd (lt_of_le_of_lt h (lt_of_lt_of_le hdem le_rfl)) (not_lt.mpr hPa)`. The first one is the more robust."
+   }
+  }
+ ],
+ "grader_verdict": {
+  "task": "l2-t2",
+  "compiles": 1,
+  "compile_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\centralised\\l2-t2\\l2_t2.lean:4:5: warning: Variable name `heta` is not explicitly referenced. Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning: [apply] _heta Note: This linter can be disabled with `set_option linter.unusedVariables false` D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\centralised\\l2-t2\\l2_t2.lean:4:22: warning: Variable name `heta1` is not explicitl",
+  "no_cheats": 1,
+  "witness_present_and_proved": 1,
+  "hypotheses_load_bearing": 1,
+  "probe": {
+   "dropped": 8,
+   "kept_binders": [
+    "(eta E Q Ca Cv Pdem Pavail Paer : ℝ)"
+   ],
+   "probe_compiles": false,
+   "probe_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\centralised\\l2-t2\\l2_t2_probe.lean:4:78: error: unsolved goals eta E Q Ca Cv Pdem Pavail Paer : ℝ ⊢ Paer < Pdem"
+  },
+  "says_what_the_claim_says": 1,
+  "content_elements": [
+   {
+    "what": "efficiency enters as a multiplicative factor",
+    "re": "(eta|η)\\s*\\*",
+    "present": true
+   },
+   {
+    "what": "the arterio-venous difference appears as a difference",
+    "re": "(Ca|ca)\\s*-\\s*(Cv|cv)",
+    "present": true
+   },
+   {
+    "what": "cardiac output enters as a multiplicative factor",
+    "re": "(Q|q)\\s*\\*|\\*\\s*(Q|q)\\b",
+    "present": true
+   },
+   {
+    "what": "efficiency is constrained (positive or in a band), so the premise is not vacuous",
+    "re": "0\\s*<\\s*(eta|η)|(eta|η)\\s*(>|≥)\\s*0|0\\s*(<|≤)\\s*(eta|η)",
+    "present": true
+   },
+   {
+    "what": "a demanded power is named separately from the available power",
+    "re": "(demand|P_?dem|Pdemand|required|P_?req)",
+    "present": true
+   },
+   {
+    "what": "the conclusion is a negation: the activity cannot be sustained",
+    "re": "¬|Not\\b|→\\s*False|¬\\s*\\(",
+    "present": true
+   },
+   {
+    "what": "the arterio-venous difference is hypothesised non-negative, which is what stops the bound being vacuous",
+    "re": "(Cv|cv)\\s*(<|≤)\\s*(Ca|ca)|0\\s*(<|≤)\\s*(Ca|ca)\\s*-\\s*(Cv|cv)",
+    "present": true
+   }
+  ],
+  "level_pass": 1,
+  "score": 1,
+  "statement": "theorem l2_t2 (eta E Q Ca Cv Pdem Pavail Paer : ℝ) (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q) (hCv : 0 ≤ Ca - Cv) (hP : Pavail = eta * E * Q * (Ca - Cv)) (hsup : Paer ≤ Pavail) (hdem : Pavail < Pdem) : ¬ (Pdem ≤ Paer)",
+  "file": "swarm/benchmark/graded/leanbio/centralised/l2-t2/l2_t2.lean",
+  "artifact_absent": 0
+ },
+ "candidate_grades": {
+  "kept": null,
+  "rule": "orchestrator decides",
+  "candidates": [
+   {
+    "index": 0,
+    "task": "l2-t2",
+    "compiles": 1,
+    "compile_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\centralised\\l2-t2\\cand-0\\l2_t2.lean:4:5: warning: Variable name `heta` is not explicitly referenced. Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning: [apply] _heta Note: This linter can be disabled with `set_option linter.unusedVariables false` D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\centralised\\l2-t2\\cand-0\\l2_t2.lean:4:22: warning: Variable name `heta1` is",
+    "no_cheats": 1,
+    "witness_present_and_proved": 1,
+    "hypotheses_load_bearing": 1,
+    "probe": {
+     "dropped": 8,
+     "kept_binders": [
+      "(eta E Q Ca Cv Pdem Pavail Paer : ℝ)"
+     ],
+     "probe_compiles": false,
+     "probe_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\centralised\\l2-t2\\cand-0\\l2_t2_probe.lean:4:78: error: unsolved goals eta E Q Ca Cv Pdem Pavail Paer : ℝ ⊢ Paer < Pdem"
+    },
+    "says_what_the_claim_says": 1,
+    "content_elements": [
+     {
+      "what": "efficiency enters as a multiplicative factor",
+      "re": "(eta|η)\\s*\\*",
+      "present": true
+     },
+     {
+      "what": "the arterio-venous difference appears as a difference",
+      "re": "(Ca|ca)\\s*-\\s*(Cv|cv)",
+      "present": true
+     },
+     {
+      "what": "cardiac output enters as a multiplicative factor",
+      "re": "(Q|q)\\s*\\*|\\*\\s*(Q|q)\\b",
+      "present": true
+     },
+     {
+      "what": "efficiency is constrained (positive or in a band), so the premise is not vacuous",
+      "re": "0\\s*<\\s*(eta|η)|(eta|η)\\s*(>|≥)\\s*0|0\\s*(<|≤)\\s*(eta|η)",
+      "present": true
+     },
+     {
+      "what": "a demanded power is named separately from the available power",
+      "re": "(demand|P_?dem|Pdemand|required|P_?req)",
+      "present": true
+     },
+     {
+      "what": "the conclusion is a negation: the activity cannot be sustained",
+      "re": "¬|Not\\b|→\\s*False|¬\\s*\\(",
+      "present": true
+     },
+     {
+      "what": "the arterio-venous difference is hypothesised non-negative, which is what stops the bound being vacuous",
+      "re": "(Cv|cv)\\s*(<|≤)\\s*(Ca|ca)|0\\s*(<|≤)\\s*(Ca|ca)\\s*-\\s*(Cv|cv)",
+      "present": true
+     }
+    ],
+    "level_pass": 1,
+    "score": 1,
+    "statement": "theorem l2_t2 (eta E Q Ca Cv Pdem Pavail Paer : ℝ) (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q) (hCv : 0 ≤ Ca - Cv) (hP : Pavail = eta * E * Q * (Ca - Cv)) (hsup : Paer ≤ Pavail) (hdem : Pavail < Pdem) : ¬ (Pdem ≤ Paer)",
+    "file": "swarm/benchmark/graded/leanbio/centralised/l2-t2/cand-0/l2_t2.lean"
+   },
+   {
+    "index": 1,
+    "task": "l2-t2",
+    "compiles": 1,
+    "compile_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\centralised\\l2-t2\\cand-1\\l2_t2.lean:4:5: warning: Variable name `heta` is not explicitly referenced. Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning: [apply] _heta Note: This linter can be disabled with `set_option linter.unusedVariables false` D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\centralised\\l2-t2\\cand-1\\l2_t2.lean:4:22: warning: Variable name `heta1` is",
+    "no_cheats": 1,
+    "witness_present_and_proved": 1,
+    "hypotheses_load_bearing": 1,
+    "probe": {
+     "dropped": 7,
+     "kept_binders": [
+      "(eta E Q Ca Cv Pdem Paer : ℝ)"
+     ],
+     "probe_compiles": false,
+     "probe_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\centralised\\l2-t2\\cand-1\\l2_t2_probe.lean:4:71: error: unsolved goals eta E Q Ca Cv Pdem Paer : ℝ ⊢ Paer < Pdem"
+    },
+    "says_what_the_claim_says": 1,
+    "content_elements": [
+     {
+      "what": "efficiency enters as a multiplicative factor",
+      "re": "(eta|η)\\s*\\*",
+      "present": true
+     },
+     {
+      "what": "the arterio-venous difference appears as a difference",
+      "re": "(Ca|ca)\\s*-\\s*(Cv|cv)",
+      "present": true
+     },
+     {
+      "what": "cardiac output enters as a multiplicative factor",
+      "re": "(Q|q)\\s*\\*|\\*\\s*(Q|q)\\b",
+      "present": true
+     },
+     {
+      "what": "efficiency is constrained (positive or in a band), so the premise is not vacuous",
+      "re": "0\\s*<\\s*(eta|η)|(eta|η)\\s*(>|≥)\\s*0|0\\s*(<|≤)\\s*(eta|η)",
+      "present": true
+     },
+     {
+      "what": "a demanded power is named separately from the available power",
+      "re": "(demand|P_?dem|Pdemand|required|P_?req)",
+      "present": true
+     },
+     {
+      "what": "the conclusion is a negation: the activity cannot be sustained",
+      "re": "¬|Not\\b|→\\s*False|¬\\s*\\(",
+      "present": true
+     },
+     {
+      "what": "the arterio-venous difference is hypothesised non-negative, which is what stops the bound being vacuous",
+      "re": "(Cv|cv)\\s*(<|≤)\\s*(Ca|ca)|0\\s*(<|≤)\\s*(Ca|ca)\\s*-\\s*(Cv|cv)",
+      "present": true
+     }
+    ],
+    "level_pass": 1,
+    "score": 1,
+    "statement": "theorem l2_t2 (eta E Q Ca Cv Pdem Paer : ℝ) (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q) (hAV : 0 ≤ Ca - Cv) (hdem : Pdem > eta * E * Q * (Ca - Cv)) (hbound : Paer ≤ eta * E * Q * (Ca - Cv)) : ¬ (Pdem ≤ Paer)",
+    "file": "swarm/benchmark/graded/leanbio/centralised/l2-t2/cand-1/l2_t2.lean"
+   },
+   {
+    "index": 2,
+    "task": "l2-t2",
+    "compiles": 1,
+    "compile_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\centralised\\l2-t2\\cand-2\\l2_t2.lean:7:5: warning: Variable name `heta` is not explicitly referenced. Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning: [apply] _heta Note: This linter can be disabled with `set_option linter.unusedVariables false` D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\centralised\\l2-t2\\cand-2\\l2_t2.lean:7:22: warning: Variable name `heta1` is",
+    "no_cheats": 1,
+    "witness_present_and_proved": 1,
+    "hypotheses_load_bearing": 1,
+    "probe": {
+     "dropped": 7,
+     "kept_binders": [
+      "(eta E Q Ca Cv Pa Pdem : ℝ)"
+     ],
+     "probe_compiles": false,
+     "probe_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\centralised\\l2-t2\\cand-2\\l2_t2_probe.lean:4:67: error: unsolved goals eta E Q Ca Cv Pa Pdem : ℝ ⊢ Pa < Pdem"
+    },
+    "says_what_the_claim_says": 1,
+    "content_elements": [
+     {
+      "what": "efficiency enters as a multiplicative factor",
+      "re": "(eta|η)\\s*\\*",
+      "present": true
+     },
+     {
+      "what": "the arterio-venous difference appears as a difference",
+      "re": "(Ca|ca)\\s*-\\s*(Cv|cv)",
+      "present": true
+     },
+     {
+      "what": "cardiac output enters as a multiplicative factor",
+      "re": "(Q|q)\\s*\\*|\\*\\s*(Q|q)\\b",
+      "present": true
+     },
+     {
+      "what": "efficiency is constrained (positive or in a band), so the premise is not vacuous",
+      "re": "0\\s*<\\s*(eta|η)|(eta|η)\\s*(>|≥)\\s*0|0\\s*(<|≤)\\s*(eta|η)",
+      "present": true
+     },
+     {
+      "what": "a demanded power is named separately from the available power",
+      "re": "(demand|P_?dem|Pdemand|required|P_?req)",
+      "present": true
+     },
+     {
+      "what": "the conclusion is a negation: the activity cannot be sustained",
+      "re": "¬|Not\\b|→\\s*False|¬\\s*\\(",
+      "present": true
+     },
+     {
+      "what": "the arterio-venous difference is hypothesised non-negative, which is what stops the bound being vacuous",
+      "re": "(Cv|cv)\\s*(<|≤)\\s*(Ca|ca)|0\\s*(<|≤)\\s*(Ca|ca)\\s*-\\s*(Cv|cv)",
+      "present": true
+     }
+    ],
+    "level_pass": 1,
+    "score": 1,
+    "statement": "theorem l2_t2 (eta E Q Ca Cv Pa Pdem : ℝ) (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q) (hdiff : 0 ≤ Ca - Cv) (hPa : Pa ≤ eta * E * Q * (Ca - Cv)) (hdem : eta * E * Q * (Ca - Cv) < Pdem) : ¬ (Pdem ≤ Pa)",
+    "file": "swarm/benchmark/graded/leanbio/centralised/l2-t2/cand-2/l2_t2.lean"
+   }
+  ]
+ },
+ "run_dir": "swarm/benchmark/runs/leanbio/centralised/l2-t2"
+}

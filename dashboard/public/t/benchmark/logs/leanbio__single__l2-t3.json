@@ -1,0 +1,122 @@
+{
+ "level": "leanbio",
+ "level_title": "LeanBio formalisation",
+ "arm": "single",
+ "task": "l2-t3",
+ "arm_definition": "One agent does the whole task end to end. 1 call at the whole cell budget.",
+ "model": "claude-sonnet-5-5",
+ "N": 3,
+ "budget_total_usd": 0.45,
+ "cap_per_call_usd": 0.45,
+ "allocation": "even",
+ "metric": "mean of 5 checks (compiles, no cheats, witness proved, hypotheses load-bearing, says what the claim says)",
+ "ground_truth": "lake env lean with Mathlib v4.35.0 (compilation is the ground truth), one process at a time",
+ "shared_input_bytes": 2041,
+ "shared_input": "TASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.\n\nTHE CLAIM IN ENGLISH\nFor a morphogen with diffusion coefficient D and first-order degradation rate constant k, the characteristic gradient length is lambda = sqrt(D/k). Therefore halving the degradation rate constant (equivalently, doubling the degradation half-life) multiplies lambda by exactly sqrt 2.\n\nREQUIRED CONTENT. A statement that compiles but does not carry these is a failure:\n  [1] a square root appears\n  [2] the ratio D/k appears\n  [3] the rate constant is hypothesised positive (so D/k is defined)\n  [4] the diffusion coefficient is hypothesised non-negative\n  [5] the factor sqrt 2 appears explicitly\n  [6] the halved (or doubled) rate constant appears\n  [7] the conclusion is an equality, not an inequality\n\nKNOWN TRAP: Proving lambda >= 0, or proving the statement only for one numeric D and k, is not the claim. The claim is an exact equality for all admissible D and k.\n\nHARD REQUIREMENTS ON THE FILE\n- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.\n- The main theorem is named exactly `l2_t3`.\n- A second declaration named exactly `l2_t3_witness` proves that the hypotheses of `l2_t3` are\n  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`\n  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.\n- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.\n- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the\n  formalization is worthless and will be scored as a failure.\n- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,\n  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.\n\nOutput the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.",
+ "merge": null,
+ "cell_totals": {
+  "calls": 1,
+  "cost_usd": 0.21395,
+  "tokens_total": 51361,
+  "wall_ms": 14410,
+  "cap_stops": 0,
+  "infra_failures": 0,
+  "produced_artifact": true
+ },
+ "calls": [
+  {
+   "label": "single",
+   "prompt_sent": "You are a single agent working alone. You do the whole task, end to end, yourself.\nYou have no colleagues, no tools and no second pass: what you output is final.\n\nTASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.\n\nTHE CLAIM IN ENGLISH\nFor a morphogen with diffusion coefficient D and first-order degradation rate constant k, the characteristic gradient length is lambda = sqrt(D/k). Therefore halving the degradation rate constant (equivalently, doubling the degradation half-life) multiplies lambda by exactly sqrt 2.\n\nREQUIRED CONTENT. A statement that compiles but does not carry these is a failure:\n  [1] a square root appears\n  [2] the ratio D/k appears\n  [3] the rate constant is hypothesised positive (so D/k is defined)\n  [4] the diffusion coefficient is hypothesised non-negative\n  [5] the factor sqrt 2 appears explicitly\n  [6] the halved (or doubled) rate constant appears\n  [7] the conclusion is an equality, not an inequality\n\nKNOWN TRAP: Proving lambda >= 0, or proving the statement only for one numeric D and k, is not the claim. The claim is an exact equality for all admissible D and k.\n\nHARD REQUIREMENTS ON THE FILE\n- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.\n- The main theorem is named exactly `l2_t3`.\n- A second declaration named exactly `l2_t3_witness` proves that the hypotheses of `l2_t3` are\n  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`\n  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.\n- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.\n- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the\n  formalization is worthless and will be scored as a failure.\n- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,\n  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.\n\nOutput the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.",
+   "prompt_chars": 2202,
+   "model_output_parsed": {
+    "lean_file": "import Mathlib\n\ntheorem l2_t3 (D k : ℝ) (hD : 0 ≤ D) (hk : 0 < k) :\n    Real.sqrt (D / (k / 2)) = Real.sqrt 2 * Real.sqrt (D / k) := by\n  have h : D / (k / 2) = 2 * (D / k) := by\n    rw [div_div_eq_mul_div]; ring\n  rw [h, Real.sqrt_mul (by norm_num)]\n\ntheorem l2_t3_witness : ∃ D k : ℝ, 0 ≤ D ∧ 0 < k := by\n  exact ⟨1, 1, by norm_num, by norm_num⟩\n",
+    "statement_only": "theorem l2_t3 (D k : ℝ) (hD : 0 ≤ D) (hk : 0 < k) :\n    Real.sqrt (D / (k / 2)) = Real.sqrt 2 * Real.sqrt (D / k)",
+    "notes": "The theorem says that for every D ≥ 0 and k > 0, the gradient length with the halved degradation rate, sqrt(D/(k/2)), equals sqrt 2 times the original length sqrt(D/k). That is an exact equality over all admissible D and k, not a bound and not a single numeric case. Halving k is the same as doubling the degradation half-life, so the theorem covers both phrasings. The proof rewrites D/(k/2) as 2*(D/k) and applies Real.sqrt_mul. I have not compiled the file. Both hypotheses are required by the task but are not used in the proof. Real.sqrt returns 0 on negatives and k = 0 gives 0 on both sides, so the equality holds without them. They matter only for the physical reading, where D/k is a meaningful ratio. The witness gives concrete values D = 1, k = 1 that satisfy the hypotheses, so the theorem is not vacuous. I proved it with an explicit anonymous constructor rather than a bare `norm_num`, because norm_num cannot pick the witnesses itself."
+   },
+   "model_output_raw": "{\"lean_file\":\"import Mathlib\\n\\ntheorem l2_t3 (D k : ℝ) (hD : 0 ≤ D) (hk : 0 < k) :\\n    Real.sqrt (D / (k / 2)) = Real.sqrt 2 * Real.sqrt (D / k) := by\\n  have h : D / (k / 2) = 2 * (D / k) := by\\n    rw [div_div_eq_mul_div]; ring\\n  rw [h, Real.sqrt_mul (by norm_num)]\\n\\ntheorem l2_t3_witness : ∃ D k : ℝ, 0 ≤ D ∧ 0 < k := by\\n  exact ⟨1, 1, by norm_num, by norm_num⟩\\n\",\"statement_only\":\"theorem l2_t3 (D k : ℝ) (hD : 0 ≤ D) (hk : 0 < k) :\\n    Real.sqrt (D / (k / 2)) = Real.sqrt 2 * Real.sqrt (D / k)\",\"notes\":\"The theorem says that for every D ≥ 0 and k > 0, the gradient length with the halved degradation rate, sqrt(D/(k/2)), equals sqrt 2 times the original length sqrt(D/k). That is an exact equality over all admissible D and k, not a bound and not a single numeric case. Halving k is the same as doubling the degradation half-life, so the theorem covers both phrasings. The proof rewrites D/(k/2) as 2*(D/k) and applies Real.sqrt_mul. I have not compiled the file. Both hypotheses are required by the task but are not used in the proof. Real.sqrt returns 0 on negatives and k = 0 gives 0 on both sides, so the equality holds without them. They matter only for the physical reading, where D/k is a meaningful ratio. The witness gives concrete values D = 1, k = 1 that satisfy the hypotheses, so the theorem is not vacuous. I proved it with an explicit anonymous constructor rather than a bare `norm_num`, because norm_num cannot pick the witnesses itself.\"}",
+   "tokens": {
+    "input": 2,
+    "output": 1419,
+    "cache_read": 0,
+    "cache_creation": 49940
+   },
+   "tokens_total": 51361,
+   "cost_usd": 0.213954,
+   "duration_ms": 14409,
+   "num_turns": 2,
+   "stop_reason": "tool_use",
+   "terminal_reason": "completed",
+   "is_error": false,
+   "error_text": null,
+   "cap_stop": false,
+   "failure_class": "ok"
+  }
+ ],
+ "final_artifact": {
+  "lean_file": "import Mathlib\n\ntheorem l2_t3 (D k : ℝ) (hD : 0 ≤ D) (hk : 0 < k) :\n    Real.sqrt (D / (k / 2)) = Real.sqrt 2 * Real.sqrt (D / k) := by\n  have h : D / (k / 2) = 2 * (D / k) := by\n    rw [div_div_eq_mul_div]; ring\n  rw [h, Real.sqrt_mul (by norm_num)]\n\ntheorem l2_t3_witness : ∃ D k : ℝ, 0 ≤ D ∧ 0 < k := by\n  exact ⟨1, 1, by norm_num, by norm_num⟩\n",
+  "statement_only": "theorem l2_t3 (D k : ℝ) (hD : 0 ≤ D) (hk : 0 < k) :\n    Real.sqrt (D / (k / 2)) = Real.sqrt 2 * Real.sqrt (D / k)",
+  "notes": "The theorem says that for every D ≥ 0 and k > 0, the gradient length with the halved degradation rate, sqrt(D/(k/2)), equals sqrt 2 times the original length sqrt(D/k). That is an exact equality over all admissible D and k, not a bound and not a single numeric case. Halving k is the same as doubling the degradation half-life, so the theorem covers both phrasings. The proof rewrites D/(k/2) as 2*(D/k) and applies Real.sqrt_mul. I have not compiled the file. Both hypotheses are required by the task but are not used in the proof. Real.sqrt returns 0 on negatives and k = 0 gives 0 on both sides, so the equality holds without them. They matter only for the physical reading, where D/k is a meaningful ratio. The witness gives concrete values D = 1, k = 1 that satisfy the hypotheses, so the theorem is not vacuous. I proved it with an explicit anonymous constructor rather than a bare `norm_num`, because norm_num cannot pick the witnesses itself."
+ },
+ "swarm_candidates": null,
+ "grader_verdict": {
+  "task": "l2-t3",
+  "compiles": 1,
+  "compile_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\single\\l2-t3\\l2_t3.lean:3:25: warning: Variable name `hD` is not explicitly referenced. Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning: [apply] _hD Note: This linter can be disabled with `set_option linter.unusedVariables false` D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\single\\l2-t3\\l2_t3.lean:3:38: warning: Variable name `hk` is not explicitly referenced. Hi",
+  "no_cheats": 1,
+  "witness_present_and_proved": 1,
+  "hypotheses_load_bearing": 1,
+  "probe": {
+   "dropped": 2,
+   "kept_binders": [
+    "(D k : ℝ)"
+   ],
+   "probe_compiles": false,
+   "probe_out": "D:\\Users\\ashenoy00000\\.antigravity-ide\\ScienceClaw\\delphisci\\swarm\\benchmark\\graded\\leanbio\\single\\l2-t3\\l2_t3_probe.lean:4:93: error: unsolved goals D k : ℝ ⊢ √(D / (k / 2)) = √2 * √(D / k)"
+  },
+  "says_what_the_claim_says": 1,
+  "content_elements": [
+   {
+    "what": "a square root appears",
+    "re": "Real\\.sqrt|√",
+    "present": true
+   },
+   {
+    "what": "the ratio D/k appears",
+    "re": "(D|d)\\s*/\\s*(k|K)",
+    "present": true
+   },
+   {
+    "what": "the rate constant is hypothesised positive (so D/k is defined)",
+    "re": "0\\s*<\\s*(k|K)|\\b(k|K)\\s*(>|≥)\\s*0",
+    "present": true
+   },
+   {
+    "what": "the diffusion coefficient is hypothesised non-negative",
+    "re": "0\\s*(<|≤)\\s*(D|d)\\b|\\b(D|d)\\s*(>|≥)\\s*0",
+    "present": true
+   },
+   {
+    "what": "the factor sqrt 2 appears explicitly",
+    "re": "Real\\.sqrt\\s*2|√\\s*2|sqrt 2",
+    "present": true
+   },
+   {
+    "what": "the halved (or doubled) rate constant appears",
+    "re": "(k|K)\\s*/\\s*2|2\\s*\\*\\s*(k|K)|(k|K)\\s*\\*\\s*2",
+    "present": true
+   },
+   {
+    "what": "the conclusion is an equality, not an inequality",
+    "re": "=",
+    "present": true
+   }
+  ],
+  "level_pass": 1,
+  "score": 1,
+  "statement": "theorem l2_t3 (D k : ℝ) (hD : 0 ≤ D) (hk : 0 < k) : Real.sqrt (D / (k / 2)) = Real.sqrt 2 * Real.sqrt (D / k)",
+  "file": "swarm/benchmark/graded/leanbio/single/l2-t3/l2_t3.lean",
+  "artifact_absent": 0
+ },
+ "candidate_grades": null,
+ "run_dir": "swarm/benchmark/runs/leanbio/single/l2-t3"
+}

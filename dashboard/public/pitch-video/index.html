@@ -441,16 +441,17 @@ body.rec #hud{display:none}
   <div class="deskface"></div><div class="desk"></div>
   <div class="pad">
     <div class="eyebrow"><b>03</b><i></i><span>the desk</span></div>
-    <h1 class="r" style="--d:.1s;max-width:21ch;position:absolute;top:36px;left:0;width:1000px">Everything on this desk is mathematics.</h1>
+    <h1 class="r" style="--d:.1s;max-width:21ch;position:absolute;top:30px;left:0;width:1000px">Everything on this desk is mathematics.</h1>
+    <p class="mono f" style="--d:1.4s;position:absolute;top:218px;left:0;width:1180px;font-size:26px;line-height:1.45" id="papersLine"></p>
     <div class="side maths">
-      <div class="lbl f" style="--d:5.2s">what came off the desk</div>
-      <div class="num" id="mathNum" data-count data-to="250000" data-suffix="+" data-start="2.0" data-end="4.9">0</div>
-      <p class="body f" style="--d:5.3s;font-size:27px;margin-top:10px" id="mathSub">machine&#8209;checked theorems</p>
+      <div class="lbl f" style="--d:5.2s">what mathematics built</div>
+      <div class="num" id="mathNum" data-count data-to="292237" data-suffix="" data-start="1.9" data-end="4.4">0</div>
+      <p class="body f" style="--d:5.3s;font-size:27px;margin-top:10px" id="mathSub"></p>
     </div>
     <div class="side bio">
-      <div class="lbl f" style="--d:6.0s">what is left on it</div>
+      <div class="lbl f" style="--d:6.0s">biology&rsquo;s share of it</div>
       <div class="slot f" id="bioSlot" style="--d:6.1s">&nbsp;</div>
-      <p class="body f" style="--d:6.3s;font-size:27px;margin-top:14px;margin-left:auto;max-width:36ch" id="bioSub"></p>
+      <p class="body f" style="--d:6.3s;font-size:27px;margin-top:14px;margin-left:auto;max-width:34ch" id="bioSub"></p>
     </div>
   </div>
 </section>
@@ -461,7 +462,7 @@ body.rec #hud{display:none}
   <div class="rowten" id="tenRow"></div>
   <div class="st f" style="--d:3.0s">
     <div class="tiny" style="margin-bottom:10px">unit of analysis</div>
-    <p class="body fgc" style="font-size:31px">programmes and drugs,<br>not individual trials</p>
+    <p class="body fgc" style="font-size:31px">the programme,<br>not the trial</p>
   </div>
   <div class="mid">
     <h1 class="r" style="--d:.5s;font-size:74px;max-width:44ch" id="attrLine"></h1>
@@ -820,16 +821,24 @@ function paint(f){
   if (f.maths_side && f.maths_side.verified){
     mn.dataset.to = String(f.maths_side.value).replace(/[^\d]/g,'') || '0';
     mn.dataset.suffix = /\+/.test(f.maths_side.value) ? '+' : '';
-    document.getElementById('mathSub').innerHTML = esc(f.maths_side.label) + '<br><span class="tiny">' + esc(f.maths_side.sub) + '</span>';
+    document.getElementById('mathSub').innerHTML = esc(f.maths_side.label) +
+      '<br><span class="tiny">' + esc(f.maths_side.sub) + ' &middot; ' + esc(f.maths_side.asof) + '</span>';
   } else { mn.style.display = 'none'; }
   var slot = document.getElementById('bioSlot');
   if (f.biology_side && f.biology_side.verified && f.biology_side.value != null){
+    // Never a bare zero: the value itself carries what the zero is zero OF.
     slot.textContent = f.biology_side.value;
-    slot.style.color = 'var(--fg)'; slot.style.fontSize = '96px'; slot.style.letterSpacing = '0';
+    slot.style.color = 'var(--fg)'; slot.style.fontSize = '88px'; slot.style.letterSpacing = '-.01em';
+    slot.style.borderColor = 'var(--amber)'; slot.style.fontWeight = '500';
   } else {
     slot.innerHTML = '<span style="letter-spacing:.34em">&mdash;&mdash;&mdash;</span>';   // deliberately no numeral
   }
   document.getElementById('bioSub').textContent = f.biology_side.label;
+  if (f.papers_2026 && f.papers_2026.verified){
+    document.getElementById('papersLine').innerHTML =
+      '<span class="fgc" style="font-size:34px">' + f.papers_2026.value + '</span> ' +
+      esc(f.papers_2026.label) + ' &mdash; counted here, not quoted.';
+  }
 
   /* 4 — ten programmes, nine go out */
   var row = document.getElementById('tenRow'); row.innerHTML = '';
