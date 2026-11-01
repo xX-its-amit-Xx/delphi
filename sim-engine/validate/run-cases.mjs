@@ -26,6 +26,15 @@ for (const [label, organism] of CASES) {
   out.push({ label, result: r });
 }
 fs.writeFileSync(path.join(DIR, 'results.json'), JSON.stringify(out.map(o => ({ label: o.label, ...o.result })), null, 1));
+// Static fallback for the Validate panel (dashboard/public/blueprint3d/validate-panel.js) when no live bridge runs:
+// unedited repository designs only, keyed by id. Identity tables trimmed to the closest 5 rows to keep it small.
+const reports = [];
+for (const id of ['zebrafish-adult', 'zebrafish-larva', 'flying-fish', 'winged-zebrafish', 'tff', 'ff-zf-chimera', 'wingless-flying-fish']) {
+  const r = (await validateDesign({ organism: id })).result;
+  for (const e of r.closest_relative_genotype.edits) if (e.comparison?.identity_table) e.comparison.identity_table = e.comparison.identity_table.slice(0, 5);
+  reports.push({ design_key: id, report: r });
+}
+fs.writeFileSync(path.resolve(DIR, '../../dashboard/public/blueprint3d/validate-static.json'), JSON.stringify({ built: new Date().toISOString(), by: 'sim-engine/validate/run-cases.mjs', reports }));
 
 const f = (x, d = 3) => (x == null ? '-' : typeof x === 'number' ? (Math.abs(x) < 1e-3 && x !== 0 ? x.toExponential(2) : x.toFixed(d)) : String(x));
 let md = '';

@@ -1,7 +1,7 @@
 {
  "server": "delphisci-sim-engine",
  "version": "0.1.0",
- "contract_version": "0.6.0",
+ "contract_version": "0.7.0",
  "changelog": "sim-engine/CHANGELOG.md",
  "transport": "stdio",
  "envelope": {
@@ -1239,6 +1239,83 @@
     "required": [
      "term"
     ]
+   }
+  },
+  {
+   "name": "design_score",
+   "title": "Design score (pre-registered, validated)",
+   "description": "One number with its components: phenotype plausibility vs closest real relatives (P), accepted-law Lean violations newly caused (L), genotype sequence sanity (G), spec performance if a spec is given (S) and evidence strength (E). Formula and weights fixed in sim-engine/validate/SCORER-PREREGISTRATION.md before validation; results of that validation in sim-engine/validate/SCORER-RESULTS.md.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "organism": {
+      "description": "Organism: a saved document id, a repository organism/design id (zebrafish-adult, flying-fish, winged-zebrafish, tff, ff-zf-chimera, ...), or an inline organism document. Gene edits: target {level:\"gene\", id}, param \"allele\" with an HGVS-like value (p.W169L, p.Y285*, c.505del, p.T200K/+), \"knockout\" or \"expression_fold\"; genes outside the vetted map go in doc.genotype [{gene, change}].",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "specimen": {
+      "type": "object",
+      "description": "Instead of an organism: a raw specimen record {SL_m, mass_kg, depth_SL, width_SL, ped_depth_frac, ped_width_frac, pectoral_len_SL, ...} (e.g. a museum specimen)."
+     },
+     "ageDays": {
+      "type": "number"
+     },
+     "conditions": {
+      "type": "object"
+     },
+     "exclude": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "Reference ids or groups to leave out of the nearest-neighbour search (e.g. \"organism:zebrafish\" for a leave-lineage-out check)."
+     },
+     "containment": {
+      "type": "array",
+      "items": {
+       "type": "object"
+      },
+      "description": "partedit.js containment results from the browser: [{part, refused}] (refused = reason string or false)."
+     },
+     "network": {
+      "type": "boolean",
+      "description": "Allow cached network calls (UniProt, Ensembl). Default true; results are cached in sim-engine/validate/cache/."
+     },
+     "blast": {
+      "type": "boolean",
+      "description": "For genes not in sequences/alignments: run NCBI BLAST (blastp nr, NOT Aves[Organism]; minutes; cached). Default false."
+     },
+     "lawset": {
+      "type": "string"
+     },
+     "version": {
+      "type": "string",
+      "description": "Scorer version (score-weights*.json): 1.0.0 (default, the pre-registered and validated one) or 1.1.0."
+     },
+     "reference_set_excluding": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "Leave-out scoring: ids, species:Genus_species, family:Name, order:Name, organism:zebrafish|flying-fish. Use it whenever the design IS a real organism, or real-organism scores are trivially high (distance 0)."
+     },
+     "taxon": {
+      "type": "string"
+     },
+     "label": {
+      "type": "string"
+     },
+     "spec": {
+      "type": "object",
+      "description": "Optional DesignSpec (design_from_spec format) for the S component."
+     }
+    }
    }
   },
   {

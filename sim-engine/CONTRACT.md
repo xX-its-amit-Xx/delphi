@@ -78,7 +78,7 @@ implemented.
 
 ## Studio tools
 
-**Contract version 0.6.0** (`lib/envelope.mjs` `CONTRACT_VERSION`; every envelope carries `contract_version`,
+**Contract version 0.7.0** (`lib/envelope.mjs` `CONTRACT_VERSION`; every envelope carries `contract_version`,
 and `contract.json` states it). History: `CHANGELOG.md`. Anything may change, provided it is versioned there.
 
 The Design Studio wrapper: agents and humans create, edit and co-design organisms, then test them in

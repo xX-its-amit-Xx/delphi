@@ -128,6 +128,13 @@ export async function generateBody({ base, text = '', conditions = {}, n = 4, se
       const j = FIELD.indexOf(field); if (j < 0 || !(v > 0)) { notes.push(`observe.${field} ignored (unknown field or non-positive)`); continue; }
       x[j] = Math.log(j === 0 ? v * 1000 : v); mask[j] = 1; condLog.push({ feature: M.features[j], value: x[j], why: `observe.${field} = ${v}` });
     }
+    // Conditioning outside what the family was measured at is extrapolation: say so per candidate group.
+    const extrapolated = [];
+    for (let j = 0; j < M.arch.D; j++) if (mask[j] && famRows.length) {
+      const vals = famRows.map(r => r.x[j]); const lo = Math.min(...vals), hi = Math.max(...vals);
+      if (x[j] < lo || x[j] > hi) extrapolated.push(`${M.features[j]} = ${Math.exp(x[j]).toPrecision(4)} is outside the ${famRows.length} measured ${fam} specimens (${Math.exp(lo).toPrecision(4)} to ${Math.exp(hi).toPrecision(4)}): extrapolation`);
+    }
+    if (extrapolated.length) notes.push(...extrapolated);
     const shifted = new Set(Object.keys(shifts).map(f => FEATURE_INDEX[f]).filter(j => j !== undefined));
     const jitter = conditions.jitter_sd ?? 0.25;
     for (let c = 0; c < count; c++, i++) {
@@ -163,7 +170,7 @@ export async function generateBody({ base, text = '', conditions = {}, n = 4, se
       candidates.push({
         params: Object.fromEntries(Object.entries(v).map(([k, x]) => [k, +x.toPrecision(5)])),
         organism: doc,
-        conditioned_on: { family: fam, leaf_parent: leaf, observed: condLog },
+        conditioned_on: { family: fam, leaf_parent: leaf, observed: condLog, extrapolated },
         diagnostics: { percentile_in_family: pct, family_n: famRows.length, observed_feature_drift_sd: drift,
           nearest_real_specimen: { species: best.r.species, family: best.r.family, SpecimenID: best.r.SpecimenID, distance_sd_units: +Math.sqrt(best.d).toFixed(3) } },
         provenance: [

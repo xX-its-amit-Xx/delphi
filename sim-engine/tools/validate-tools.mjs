@@ -10,7 +10,7 @@ import { rawFromState, closestPhenotype, loadReferences } from '../validate/phen
 import { closestGenotype, STATE_NOT_PHENOTYPE } from '../validate/genotype.mjs';
 import { phenoSanity, genoSanity } from '../validate/sanity.mjs';
 import { leanByComponent } from '../validate/lean-components.mjs';
-import { designScore, validateDesign, swarmTasks, assess, SCORER } from '../validate/score.mjs';
+import { designScoreTool, validateDesign, swarmTasks, assess, SCORER } from '../validate/score.mjs';
 
 const ORG = { description: 'Organism: a saved document id, a repository organism/design id (zebrafish-adult, flying-fish, winged-zebrafish, tff, ff-zf-chimera, ...), or an inline organism document. Gene edits: target {level:"gene", id}, param "allele" with an HGVS-like value (p.W169L, p.Y285*, c.505del, p.T200K/+), "knockout" or "expression_fold"; genes outside the vetted map go in doc.genotype [{gene, change}].', anyOf: [{ type: 'string' }, { type: 'object' }] };
 const SPECIMEN = { type: 'object', description: 'Instead of an organism: a raw specimen record {SL_m, mass_kg, depth_SL, width_SL, ped_depth_frac, ped_width_frac, pectoral_len_SL, ...} (e.g. a museum specimen).' };
@@ -21,6 +21,7 @@ const COMMON = {
   network: { type: 'boolean', description: 'Allow cached network calls (UniProt, Ensembl). Default true; results are cached in sim-engine/validate/cache/.' },
   blast: { type: 'boolean', description: 'For genes not in sequences/alignments: run NCBI BLAST (blastp nr, NOT Aves[Organism]; minutes; cached). Default false.' },
   lawset: { type: 'string' },
+  version: { type: 'string', description: 'Scorer version (score-weights*.json): 1.0.0 (default, the pre-registered and validated one) or 1.1.0.' },
 };
 const SCOPE_PH = 'Nearest real relatives in a 6-feature body space (FishShapes v1, 16 377 teleost specimens, measured; our 3 real organisms and their ontogeny stages) and on pectoral fin length (Daane 2021 sheet A, 9 beloniform species, measured). The other fin features have only our own two lineages as references, so they get an uncalibrated envelope rule. Distance is not relatedness: a nearest neighbour is the most similar shape, not an ancestor. Birds (Aves) excluded: frozen holdout.';
 
@@ -68,8 +69,8 @@ export const VALIDATE_TOOLS = [
     } },
   { name: 'design_score', title: 'Design score (pre-registered, validated)',
     description: `One number with its components: phenotype plausibility vs closest real relatives (P), accepted-law Lean violations newly caused (L), genotype sequence sanity (G), spec performance if a spec is given (S) and evidence strength (E). Formula and weights fixed in ${SCORER.preregistration} before validation; results of that validation in sim-engine/validate/SCORER-RESULTS.md.`,
-    inputSchema: { type: 'object', properties: { ...COMMON, spec: { type: 'object', description: 'Optional DesignSpec (design_from_spec format) for the S component.' } } },
-    handler: args => designScore(args) },
+    inputSchema: { type: 'object', properties: { ...COMMON, reference_set_excluding: { type: 'array', items: { type: 'string' }, description: 'Leave-out scoring: ids, species:Genus_species, family:Name, order:Name, organism:zebrafish|flying-fish. Use it whenever the design IS a real organism, or real-organism scores are trivially high (distance 0).' }, taxon: { type: 'string' }, label: { type: 'string' }, spec: { type: 'object', description: 'Optional DesignSpec (design_from_spec format) for the S component.' } } },
+    handler: args => designScoreTool(args) },
   { name: 'validate_design', title: 'Validate a design (one call)',
     description: 'Closest real relatives (phenotype and genotype), sanity checks, Lean by component and the design score in one report. The verdict never says "valid": it lists checks passed, failed, flagged and not run, and names the closest real relative. swarm:true adds validation sub-tasks for the swarm board.',
     inputSchema: { type: 'object', properties: { ...COMMON, spec: { type: 'object' }, swarm: { type: 'boolean' } } },

@@ -3,7 +3,7 @@
 
 // The version of the sim-engine contract (tool names, schemas, envelope, scenario interface). Semver; see
 // sim-engine/CHANGELOG.md. Every envelope carries it, and contract.json states it.
-export const CONTRACT_VERSION = '0.6.0';
+export const CONTRACT_VERSION = '0.7.0';
 
 // Ordered weakest-to-strongest claim on reality. Anything not on this list is rejected at runtime,
 // so a typo cannot quietly downgrade into an unlabelled number.

@@ -22,6 +22,14 @@ import * as O from '../lib/organism.mjs';
 import { resolveState, stageAges } from '../lib/state.mjs';
 
 export const SEED = 20261101;
+export const MISSING_PENALTY = 1;   // v1.1
+export const MIN_SHARED_V11 = 3;   // v1.1
+export const ENVELOPE_DECADE = 0.05; // v1.1: p = exp(-excess_in_log10 / 0.05) outside an envelope
+export const LARVAL_STAGES = new Set(['embryo', 'hatching', 'larva']);
+export const LARVAL_WIDEN = Math.log10(1.5); // v1.1: larval body envelope widened by x/÷1.5
+// v1.1 extra pectoral-length bound: the flying-fish specimen range 0.406-0.823 (Daane 2021, n = 49) quoted in
+// design-validation/REPORT.md part 1 row 1; the reference medians stop at 0.705.
+export const PECTORAL_SPECIMEN_MAX = 0.823;
 export const HOLDOUT_FRACTION = 0.2;
 export const FIN_OFFSET = 0.005;
 export const BODY = ['log_SL', 'log_K', 'log_depth_SL', 'log_width_SL', 'log_ped_depth', 'log_ped_width'];
@@ -32,7 +40,9 @@ export const FEATURE_LABEL = {
   pectoral_len_SL: 'pectoral fin length / SL', pectoral_area_SL2: 'pectoral area (both) / SL^2', pectoral_span_SL: 'pectoral span / SL', pelvic_len_SL: 'pelvic fin length / SL',
   dorsal_h_SL: 'dorsal fin height / SL', anal_h_SL: 'anal fin height / SL', caudal_upper_SL: 'caudal upper lobe / SL', caudal_lower_SL: 'caudal lower lobe / SL',
 };
-export const AVES_RE = /\b(aves|bird|birds|avian|passeri\w*|columb\w*|gallus|anas|aquila|strigi\w*|psittac\w*|apodi\w*|taeniopygia|corvus)\b/i;
+// Matches the class and bird ORDER names only. An earlier version also matched genus stems (strigi-, psittac-, apodi-,
+// columb-), which dropped 17 real fish specimens (Scarus psittacus, Catostomus columbianus, ...); fixed 2026-11-01.
+export const AVES_RE = /\b(aves|birds?|avian|passeriformes|columbiformes|galliformes|anseriformes|accipitriformes|strigiformes|psittaciformes|apodiformes|gallus gallus|taeniopygia)\b/i;
 
 const L10 = Math.log10;
 const finT = x => (typeof x === 'number' && Number.isFinite(x) && x >= 0 ? L10(x + FIN_OFFSET) : null);
@@ -104,7 +114,8 @@ export async function loadReferences({ fresh = false, seed = ACTIVE_SEED } = {})
   const fsSpecies = new Set(fsj.rows.map(r => r[1]));
   for (const [sp, fin] of Object.entries(finBySpecies)) if (!fsSpecies.has(sp)) {
     const raw = { pectoral_len_SL: fin.v };
-    push({ id: `daane2021:${sp}`, name: sp.replace(/_/g, ' '), group: `species:${sp}`, taxon: 'Beloniformes', source: `sequences/progression.json (Daane 2021 sheet A, ${fin.basis}; n ${fin.n})`, kind: 'measured', raw, ...featuresFromRaw(raw) });
+    const famOf = { Hirundichthys: 'Exocoetidae', Cheilopogon: 'Exocoetidae', Exocoetus: 'Exocoetidae', Oxyporhamphus: 'Hemiramphidae', Euleptorhamphus: 'Hemiramphidae', Hemiramphus: 'Hemiramphidae', Hyporhamphus: 'Hemiramphidae', Belone: 'Belonidae', Strongylura: 'Belonidae' }[sp.split('_')[0]] || null;
+    push({ id: `daane2021:${sp}`, name: sp.replace(/_/g, ' '), group: `species:${sp}`, taxon: famOf ? `${famOf} (Beloniformes)` : 'Beloniformes', family: famOf, order: 'Beloniformes', source: `sequences/progression.json (Daane 2021 sheet A, ${fin.basis}; n ${fin.n})`, kind: 'measured', raw, ...featuresFromRaw(raw) });
   }
   // Our real organisms, at their reference age and at every ontogeny stage age (STATE from resolveState).
   for (const oid of REAL_ORGANISMS) {
@@ -117,7 +128,8 @@ export async function loadReferences({ fresh = false, seed = ACTIVE_SEED } = {})
       const isRef = age === refAge;
       push({ id: isRef ? oid : `${oid}@${age}d`, name: isRef ? `${bundle.organisms[oid].name || oid} (repository reference organism)` : `${oid} at ${age} d (${raw.stage}; ontogeny STATE)`,
         group: `organism:${bundle.organisms[oid].track}`, taxon: bundle.organisms[oid].taxon, source: isRef ? `anatomy-model/parametric/organisms/${oid}.json` : 'sim-engine/lib/state.mjs resolveState at a stage age (params/ontogeny.json, development/)',
-        kind: 'mixed (see raw.kinds; many fin and width parameters are assumed)', raw, ...featuresFromRaw(raw), organism: oid, ageDays: age });
+        kind: 'mixed (see raw.kinds; many fin and width parameters are assumed)', raw, ...featuresFromRaw(raw), organism: oid, ageDays: age,
+        family: bundle.organisms[oid].track === 'zebrafish' ? 'Cyprinidae' : 'Exocoetidae', order: bundle.organisms[oid].track === 'zebrafish' ? 'Cypriniformes' : 'Beloniformes' });
     }
   }
   // Calibration split: hold out HOLDOUT_FRACTION of FishShapes SPECIES (seeded), so a held-out specimen's nearest
@@ -168,19 +180,22 @@ function packed(pool, keys) {
   pool.forEach((r, i) => keys.forEach((k, j) => { a[i * m + j] = r.body[k] == null ? NaN : r.body[k]; }));
   p = { a, m }; _packed.set(pool, p); return p;
 }
-export function nearest(q, pool, block, scale, { k = 5, exclude = () => false, minShared = block === 'body' ? 4 : 1 } = {}) {
+// missingPenalty (v1.1): a reference that lacks a feature the design has is not skipped over that feature; each
+// missing feature adds missingPenalty to the summed z^2 and the RMS is over the DESIGN's feature count.
+export function nearest(q, pool, block, scale, { k = 5, exclude = () => false, minShared = block === 'body' ? 4 : 1, missingPenalty = null } = {}) {
   const keys = block === 'body' ? BODY : FIN;
   if (block === 'body') {
     const { a, m } = packed(pool, keys); const qv = keys.map(f => (q.body[f] == null ? NaN : q.body[f])); const sc = keys.map(f => scale[f]);
+    const mq = qv.filter(v => v === v).length;
     const best = [];
     for (let i = 0; i < pool.length; i++) {
       let s = 0, n = 0;
       for (let j = 0; j < m; j++) { const x = a[i * m + j], y = qv[j]; if (x !== x || y !== y) continue; const z = (y - x) / sc[j]; s += z * z; n++; }
       if (n < minShared) continue;
-      const d = Math.sqrt(s / n);
+      const d = missingPenalty == null ? Math.sqrt(s / n) : Math.sqrt((s + (mq - n) * missingPenalty) / mq);
       if (best.length < k || d < best[best.length - 1].d) { if (exclude(pool[i])) continue; best.push({ i, d }); best.sort((u, v) => u.d - v.d); if (best.length > k) best.pop(); }
     }
-    return best.map(({ i }) => ({ r: pool[i], ...dist(q.body, pool[i].body, scale, keys) }));
+    return best.map(({ i, d }) => ({ r: pool[i], ...dist(q.body, pool[i].body, scale, keys), d }));
   }
   const out = [];
   for (const r of pool) {
@@ -198,6 +213,8 @@ function calibrate(R) {
   const poolBody = R.refs.filter(r => r.split === 'train');
   const bodyD = [];
   for (const q of calBody) { const nn = nearest(q, poolBody, 'body', R.bodyScale, { k: 1 }); if (nn.length) bodyD.push(nn[0].d); }
+  const bodyD11 = [];
+  for (const q of calBody) { const nn = nearest(q, poolBody, 'body', R.bodyScale, { k: 1, minShared: MIN_SHARED_V11, missingPenalty: MISSING_PENALTY }); if (nn.length) bodyD11.push(nn[0].d); }
   // fin block: leave-one-GROUP-out over the fin references (a real organism's own ontogeny stages are its group)
   const finD = [];
   for (const q0 of R.finRefs) {
@@ -210,20 +227,41 @@ function calibrate(R) {
   return {
     body: { n: bodyD.length, held_out_species: R.held_species, distances_sorted: [...bodyD].sort((a, b) => a - b), p50: bodyQ(0.5), p90: bodyQ(0.9), p95: bodyQ(0.95), p99: bodyQ(0.99), max: Math.max(...bodyD),
       threshold: bodyQ(0.99), threshold_rule: '99th percentile of nearest-neighbour distances of held-out-species FishShapes specimens to the train pool' },
+    body_v11: { n: bodyD11.length, distances_sorted: [...bodyD11].sort((a, b) => a - b), threshold: quantile(bodyD11, 0.99), p50: quantile(bodyD11, 0.5),
+      threshold_rule: `v1.1: as body, with each missing feature counted as z^2 = ${MISSING_PENALTY} (not skipped); 99th percentile` },
     fin: { n: finD.length, rows: finD, distances_sorted: finD.map(x => x.d).sort((a, b) => a - b), max: Math.max(...finD.map(x => x.d)), threshold: Math.max(...finD.map(x => x.d)),
       threshold_rule: 'pectoral length/SL only: maximum leave-one-group-out nearest-neighbour distance among the fin references (n is small; see n)' },
     ms: Date.now() - t0,
   };
 }
 
+/** Leave-out matcher: ids, 'species:Genus_species' (also matches our organisms by taxon, so 'species:Danio_rerio'
+ *  removes zebrafish refs), 'family:Name', 'order:Name', 'organism:<track>' groups, or a bare organism id. */
+export function excludeMatcher(list = []) {
+  const norm = x => String(x).trim().toLowerCase().replace(/[_\s]+/g, ' ');
+  const ids = new Set(), sp = new Set(), fam = new Set(), ord = new Set();
+  for (const e of list) {
+    const m = String(e).match(/^(species|family|order):(.+)$/i);
+    if (!m) { ids.add(String(e)); continue; }
+    ({ species: sp, family: fam, order: ord })[m[1].toLowerCase()].add(norm(m[2]));
+  }
+  return r => {
+    if (ids.has(r.id) || ids.has(r.group) || (r.organism && ids.has(r.organism))) return true;
+    const species = norm(r.organism ? r.taxon : r.name), t = String(r.taxon || '');
+    const family = norm(r.family || (t.match(/^([A-Za-z]+idae)/) || [])[1] || ''), order = norm(r.order || (t.match(/\(([A-Za-z]+formes)\)/) || [])[1] || '');
+    return sp.has(species) || (family && fam.has(family)) || (order && ord.has(order));
+  };
+}
+
 export const pValue = (sorted, d) => { let c = 0; for (let i = sorted.length - 1; i >= 0 && sorted[i] >= d - 1e-12; i--) c++; return (1 + c) / (sorted.length + 1); };
 
 /** Nearest real relatives for a raw feature record (from rawFromState or a specimen). */
-export async function closestPhenotype(raw, { k = 5, exclude = [] } = {}) {
+export async function closestPhenotype(raw, { k = 5, exclude = [], version = '1.0.0' } = {}) {
+  const v11 = version !== '1.0.0';
   const R = await loadReferences();
   const q = featuresFromRaw(raw);
   const ex = new Set(exclude);
-  const excl = r => ex.has(r.id) || ex.has(r.group) || (r.organism && ex.has(r.organism));
+  const excl = excludeMatcher(exclude);
   const fmt = (nn, block) => nn.map(x => {
     const tot = Object.values(x.contrib).reduce((s, v) => s + v, 0);
     return { id: x.r.id, name: x.r.name, taxon: x.r.taxon, source: x.r.source, kind: x.r.kind, distance: +x.d.toFixed(4), shared_features: x.n,
@@ -234,12 +272,27 @@ export async function closestPhenotype(raw, { k = 5, exclude = [] } = {}) {
     const keys = name === 'body' ? BODY : FIN;
     const have = keys.filter(f => q[name][f] != null);
     if (!have.length) return { ran: false, reason: `the design has none of the ${name} features` };
-    const nn = nearest(q, pool, name, scale, { k, exclude: excl });
+    const nn = nearest(q, pool, name, scale, { k, exclude: excl, ...(v11 && name === 'body' ? { minShared: MIN_SHARED_V11, missingPenalty: MISSING_PENALTY } : {}) });
     if (!nn.length) return { ran: false, reason: 'no reference shares enough features' };
     const d = nn[0].d;
     return { ran: true, features_present: have, nearest: fmt(nn, name), distance: +d.toFixed(4), p_value: +pValue(cal.distances_sorted, d).toFixed(4), threshold: +cal.threshold.toFixed(4), ood: d > cal.threshold, calibration_n: cal.n, threshold_rule: cal.threshold_rule };
   };
-  const body = block('body', R.refs, R.bodyScale, R.calibration.body);
+  let body = block('body', R.refs, R.bodyScale, v11 ? R.calibration.body_v11 : R.calibration.body);
+  // v1.1: a larval design is not judged against adult museum specimens. Its body block becomes an envelope over the
+  // larval ontogeny-stage references (every lineage not excluded), widened x/÷1.5; p = exp(-excess/0.05 decades).
+  if (v11 && LARVAL_STAGES.has(raw.stage)) {
+    const lar = R.refs.filter(r => r.ageDays != null && LARVAL_STAGES.has(r.raw.stage) && !excl(r));
+    const rows = []; let worst = 0;
+    for (const f of BODY) {
+      const x = q.body[f]; const xs = lar.map(r => r.body[f]).filter(v => v != null);
+      if (x == null || !xs.length) continue;
+      const lo = Math.min(...xs) - LARVAL_WIDEN, hi = Math.max(...xs) + LARVAL_WIDEN;
+      const e = Math.max(0, x - hi, lo - x); worst = Math.max(worst, e);
+      rows.push({ feature: f, design: +x.toFixed(4), lo: +lo.toFixed(4), hi: +hi.toFixed(4), excess_decades: +e.toFixed(4) });
+    }
+    if (rows.length) body = { ...body, ran: true, larval: true, p_value: +Math.exp(-worst / ENVELOPE_DECADE).toFixed(4), ood: worst > 0, larval_envelope: { n_refs: lar.length, refs: lar.map(r => r.id), rows,
+      rule: 'v1.1 larval envelope: range of larval ontogeny-stage references (not excluded), widened x/÷1.5 in log10; p = exp(-excess/0.05). UNCALIBRATED (two lineages).' } };
+  }
   // Fin block, pectoral length only: the one fin feature with measured references across species (Daane 2021).
   const qp = { body: q.body, fin: { pectoral_len_SL: q.fin.pectoral_len_SL } };
   let fin;
@@ -249,7 +302,7 @@ export async function closestPhenotype(raw, { k = 5, exclude = [] } = {}) {
     const d = nn[0].d, cal = R.calibration.fin;
     fin = { ran: true, features_present: ['pectoral_len_SL'], nearest: fmt(nn, 'fin'), distance: +d.toFixed(4), p_value: +pValue(cal.distances_sorted, d).toFixed(4), threshold: +cal.threshold.toFixed(4), ood: d > cal.threshold, calibration_n: cal.n, threshold_rule: cal.threshold_rule };
   }
-  const envelope = finEnvelope(q.fin, R);
+  const envelope = finEnvelope(q.fin, R, { version });
   return { query: { body: q.body, fin: q.fin }, body, fin, fin_envelope: envelope,
     closest_real_relative: body.ran ? body.nearest[0] : (fin.ran ? fin.nearest[0] : null),
     closest_real_relative_fins: fin.ran ? fin.nearest[0] : null,
@@ -261,16 +314,20 @@ export async function closestPhenotype(raw, { k = 5, exclude = [] } = {}) {
 // assumed), so no distance threshold can be calibrated for them. Instead an ENVELOPE rule, fixed in advance:
 // excess_k = how far the design lies outside [min, max] of the references for feature k, in units of that feature's
 // scale (0 inside). p_envelope = exp(-max excess). UNCALIBRATED: stated as such wherever it is reported.
-export function finEnvelope(fin, R) {
+export function finEnvelope(fin, R, { version = '1.0.0' } = {}) {
+  const v11 = version !== '1.0.0';
   const rows = []; let worst = 0;
   for (const k of FIN) {
-    const x = fin[k], rg = R.range[k];
+    const x = fin[k]; let rg = R.range[k];
     if (x == null || !rg) continue;
-    const e = Math.max(0, (x - rg.max) / R.finScale[k], (rg.min - x) / R.finScale[k]);
+    if (v11 && k === 'pectoral_len_SL') rg = { ...rg, max: Math.max(rg.max, Math.log10(PECTORAL_SPECIMEN_MAX + FIN_OFFSET)) };
+    // v1.0: excess in units of the feature's cross-reference scale; v1.1: in units of 0.05 decades (tighter, fixed).
+    const unit = v11 ? ENVELOPE_DECADE : R.finScale[k];
+    const e = Math.max(0, (x - rg.max) / unit, (rg.min - x) / unit);
     const un = t => +(10 ** t - FIN_OFFSET).toPrecision(3); // back from log10(x + 0.005) to x (a ratio to SL or SL^2)
     rows.push({ feature: k, label: FEATURE_LABEL[k], design: un(x), min: un(rg.min), max: un(rg.max), n_refs: rg.n, excess: +e.toFixed(3) });
     worst = Math.max(worst, e);
   }
-  return { rule: 'p = exp(-max excess); excess = distance outside the real-reference range in scale units (log10(x+0.005)); UNCALIBRATED (references: 2 lineages + 9 measured beloniform species for pectoral length)',
+  return { rule: v11 ? 'v1.1: p = exp(-max excess); excess = distance outside the real-reference range in units of 0.05 log10 (x+0.005); pectoral length upper bound extended to the 0.823 flying-fish specimen maximum (Daane 2021, n 49); UNCALIBRATED' : 'p = exp(-max excess); excess = distance outside the real-reference range in scale units (log10(x+0.005)); UNCALIBRATED (references: 2 lineages + 9 measured beloniform species for pectoral length)',
     p_value: +Math.exp(-worst).toFixed(4), max_excess: +worst.toFixed(3), outside: rows.filter(r => r.excess > 0), features: rows };
 }

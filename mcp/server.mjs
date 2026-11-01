@@ -9,9 +9,11 @@ import { GROUP_KEYS, SORT_KEYS, browseClaims } from "./graph.mjs";
 import { NETWORK_ENDPOINT, PREFIXES, getClaim, overview, rankClaims, searchClaims, sparql } from "./lib.mjs";
 import { LEAN_TOOLS } from "../sim-engine/tools/lean-tools.mjs";
 import { LEANBIO_TOOLS } from "../pipeline/leanbio/tools.mjs";
+import { OMICS_TOOLS } from "../sim-engine/tools/omics-tools.mjs";
+import { VALIDATE_TOOLS } from "../sim-engine/tools/validate-tools.mjs";
 
 const TOOLS = [];
-export const VERSION = "0.5.0";
+export const VERSION = "0.6.0";
 // Hosted (HTTP) mode never offers tools that run a Lean build or write files.
 const HOSTED = !!process.env.DELPHI_HTTP_PORT;
 
@@ -154,6 +156,48 @@ tool("leanbio_claim", lb.leanbio_claim.description, {
   id: z.string().describe("Claim id (docs/claims.json), e.g. \"maynardsmith-hitchhiking\", or \"draft:<repo path>\""),
   draft: z.boolean().default(true).describe("Include the unsigned nanopub draft (TriG)"),
 }, args => lb.leanbio_claim.handler(args));
+
+// Multi-omics cards (sim-engine/tools/omics-tools.mjs over omics/index/, shipped in the image and the npm package).
+// Proxy-species data, kind borrowed; absence means not recorded.
+const om = Object.fromEntries(OMICS_TOOLS.map(t => [t.name, t]));
+const omicsLayer = z.enum(["genomic", "transcriptomic", "proteomic", "pathway", "ptm"]);
+tool("omics_gene", om.omics_gene.description, {
+  symbol: z.string().optional().describe("ZFIN symbol (e.g. kcnk5b), ZDB-GENE id, or human orthologue symbol (e.g. KCNK5)"),
+  id: z.string().optional().describe("Alias of symbol"),
+  layers: z.array(omicsLayer).optional().describe("Only these layers (default all)"),
+  features: z.array(z.string()).optional().describe("Only these features, e.g. allele_phenotype, expressed_in"),
+}, args => om.omics_gene.handler(args));
+tool("omics_part", om.omics_part.description, {
+  part_id: z.string().describe("UBERON:xxxxxxx or CL:xxxxxxx (underscore form accepted)"),
+  layer: omicsLayer.optional(),
+  limit: z.number().optional().describe("Max genes returned (default 100)"),
+}, args => om.omics_part.handler(args));
+tool("omics_search", om.omics_search.description, {
+  term: z.string().describe("e.g. \"pectoral fin\", \"GO:0030326\", \"Wnt signaling\""),
+  feature: z.string().optional(),
+  layer: omicsLayer.optional(),
+  limit: z.number().optional().describe("Max matching terms (default 25)"),
+}, args => om.omics_search.handler(args));
+
+// The design score (scorer v1.0.0, weights frozen: sim-engine/validate/score-weights.json and
+// SCORER-PREREGISTRATION.md). In hosted mode network and BLAST are forced off: the public server answers from its
+// shipped data and cache, makes no outbound calls for anonymous clients, and never runs minutes-long BLAST jobs.
+const dsc = VALIDATE_TOOLS.find(t => t.name === "design_score");
+tool("design_score", dsc.description, {
+  organism: z.union([z.string(), z.record(z.string(), z.any())]).optional().describe("A repository organism/design id (zebrafish-adult, flying-fish, winged-zebrafish, tff, ...) or an inline organism document"),
+  specimen: z.record(z.string(), z.any()).optional().describe("Instead of an organism: a raw specimen record {SL_m, mass_kg, depth_SL, ...}"),
+  ageDays: z.number().optional(),
+  conditions: z.record(z.string(), z.any()).optional(),
+  exclude: z.array(z.string()).optional().describe("Reference ids or groups to leave out of the nearest-neighbour search"),
+  reference_set_excluding: z.array(z.string()).optional().describe("Leave-out scoring (e.g. organism:zebrafish); use it whenever the design IS a real organism"),
+  containment: z.array(z.record(z.string(), z.any())).optional().describe("partedit.js containment results [{part, refused}]"),
+  network: z.boolean().optional().describe("Allow cached network calls (forced off on the hosted server)"),
+  blast: z.boolean().optional().describe("Run NCBI BLAST for genes without an alignment (forced off on the hosted server)"),
+  lawset: z.string().optional(),
+  taxon: z.string().optional(),
+  label: z.string().optional(),
+  spec: z.record(z.string(), z.any()).optional().describe("Optional DesignSpec for the S component"),
+}, args => dsc.handler(HOSTED ? { ...args, network: false, blast: false } : args));
 
 if (process.env.DELPHI_HTTP_PORT) {
   const { serveHttp } = await import("./http.mjs");

@@ -17,6 +17,7 @@ import Delphi.Physiology
 import Delphi.Empirical
 import Delphi.Altitude
 import Delphi.Perturb
+import Delphi.Hydrostatics
 import Delphi.Constraints
 
 #print axioms Delphi.NeutralChain.fixedBy_tendsto
@@ -190,3 +191,11 @@ import Delphi.Constraints
 #print axioms Delphi.Perturb.energy_rules_out
 #print axioms Delphi.Perturb.perturb_nonvacuous
 #print axioms Delphi.Perturb.measured_no_teleost_below
+-- perturb-pressure v2.0.0 (lean/Delphi/Hydrostatics.lean): pressure from rho and g
+#print axioms Delphi.Hydro.bladder_volume_eq
+#print axioms Delphi.Hydro.bladder_volume_anti
+#print axioms Delphi.Hydro.secretion_ratio
+#print axioms Delphi.Hydro.closed_bladder_rules_out
+#print axioms Delphi.Hydro.oneAtmPer10m_k
+#print axioms Delphi.Hydro.seaWater_gradient_lt_oneAtmPer10m
+#print axioms Delphi.Hydro.waterColumn_nonvacuous

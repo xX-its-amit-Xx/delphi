@@ -2,6 +2,19 @@
 
 Versions follow `version` in the root `package.json` (the server's package) and `VERSION` in `mcp/server.mjs`.
 
+## 0.6.0 (2026-11-01)
+
+- Added the multi-omics tools `omics_gene`, `omics_part`, `omics_search` (`sim-engine/tools/omics-tools.mjs`).
+  `omics/index/` (31 MB, already gzip) ships in BOTH the Docker image and the npm package. The packed npm tarball
+  stays under the ~50 MB line (about 34 MB), so the npx variant answers from local files and needs no fetch
+  fallback.
+- Added `design_score` (scorer v1.0.0, weights frozen in `sim-engine/validate/score-weights.json`, pre-registered in
+  `SCORER-PREREGISTRATION.md`). On the hosted server `network` and `blast` are forced off: no outbound calls and no
+  BLAST jobs for anonymous clients.
+- Packaging: the files these tools read at run time were traced, then checked by running the server from a copy
+  holding only the packaged files. They are listed in `package.json` `files` and `.dockerignore`, and
+  `deploy-mcp.yml` redeploys when they change.
+
 ## 0.5.0 (2026-11-01)
 
 - Added the LeanBio tools:

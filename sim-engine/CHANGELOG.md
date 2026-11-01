@@ -5,6 +5,15 @@ the scenario interface. Its version is `CONTRACT_VERSION` in `lib/envelope.mjs`.
 as `contract_version`, and `contract.json` states it. The rule: anything may change, provided it is
 versioned here. While the major version is 0, a minor bump may break callers; each entry says what breaks.
 
+## 0.7.0 (2026-11-01)
+
+**Added** (one tool)
+
+- `design_score` (`tools/validate-tools.mjs`; scorer v1.0.0 with frozen weights in `validate/score-weights.json`,
+  pre-registered in `validate/SCORER-PREREGISTRATION.md`). It is registered from the module's exports ahead of
+  VALIDATE-REGISTER.md because the weights are frozen; the other validate tools wait for that file. The hosted
+  delphisci MCP (`mcp/` 0.6.0) carries it too, with `network` and `blast` forced off.
+
 ## 0.6.0 (2026-11-01)
 
 **Added** (three tools, nothing removed)

@@ -1,16 +1,16 @@
 # Co-design session transcript
 
-Session `codesign-demo-winged-zebrafish-fin-6f3ff3` on `codesign-demo-wzf` (parent: winged-zebrafish). Spoken over MCP stdio to `delphisci-sim-engine 0.1.0`. The raw log is `session.jsonl`, and every MCP call with its full result is in `mcp-log.json`. Authors are role labels, not people.
+Session `codesign-demo-winged-zebrafish-fin-9ea150` on `codesign-demo-wzf` (parent: winged-zebrafish). Spoken over MCP stdio to `delphisci-sim-engine 0.1.0`. The raw log is `session.jsonl`, and every MCP call with its full result is in `mcp-log.json`. Authors are role labels, not people.
 
 ## seq 0 · open · human
 
-*2026-11-01T04:14:44.752Z, lawset 1.5.0*
+*2026-11-01T04:21:12.046Z, lawset 1.5.0*
 
 Opened "codesign demo winged zebrafish fin" on organism `codesign-demo-wzf`.
 
 ## seq 1 · proposal · agent:physics
 
-*2026-11-01T04:14:45.854Z, lawset 1.5.0*
+*2026-11-01T04:21:12.989Z, lawset 1.5.0*
 
 Enlarge the pectoral fin to the flying-fish area ratio.
 
@@ -33,13 +33,13 @@ Enlarge the pectoral fin to the flying-fish area ratio.
 
 ## seq 2 · comment · agent:genotype
 
-*2026-11-01T04:14:45.868Z, lawset 1.5.0*
+*2026-11-01T04:21:13.001Z, lawset 1.5.0*
 
 Genotype caveat for this edit. pectoral_area_over_SL2 is a morphology parameter: no causal chain in genotype/causal-chains.json maps any gene to a quantitative fin area, and gene-level edits are recorded-only in the studio (no model consumes them). The fin-size candidates closest to "a bigger pectoral fin" are kcnk5b (chain strength sufficiency, best link mechanism) and kcnh2a (chain strength sufficiency). For kcnk5b the chain breaks at molecular_function->process. Gaps include: "The clonal sufficiency experiments (transplantation, mosaic overexpression) were scored in caudal/dorsal fins and barbels, not in the pectoral fin." Dataset-wide constraint: "Every node below the pectoral fin is a zebrafish anatomy (ZFA) term, and every gene link is a zebrafish or medaka record. None of it is flying-fish data. A flying fish's wing is an enlarged pectoral fin." So approving this edit fixes a shape; it does not name a genotype that would produce it.
 
 ## seq 3 · decision · human
 
-*2026-11-01T04:14:45.874Z, lawset 1.5.0*
+*2026-11-01T04:21:13.005Z, lawset 1.5.0*
 
 **APPROVE** p1: Approved as a morphology experiment only: physics evidence shows lower wing loading and v_min, no new binding Lean violation; genotype caveat accepted (no genotype is claimed). The glide gain exists only under the assumed launch speed.
 

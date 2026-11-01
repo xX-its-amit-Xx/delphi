@@ -79,6 +79,7 @@ was not touched.
   - "deeper body" therefore also changes mass and peduncle shape, as they co-vary in real fish
 - **Shape family.** "tuna-like" switches the family condition to Scombridae, at the base's size.
 - **Size.** By default the base's SL is observed (`keep_size`), and the output carries it.
+- **Extrapolation.** A condition outside the values measured for the family (for example a 38.8 mm "tuna-like" fish, when Scombridae run 137–1 330 mm) is flagged in `notes` and in `conditioned_on.extrapolated`.
 - **Not generated.** Fin words, head or jaw words and organ words are returned under `not_generated` with the reason.
 
 **Output.** Each candidate has:

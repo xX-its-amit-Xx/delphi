@@ -12,16 +12,18 @@ import crypto from 'node:crypto';
 import { loadBundle } from '../lib/data-node.mjs';
 import * as O from '../lib/organism.mjs';
 import { stageAges } from '../lib/state.mjs';
-import { assess, SCORER } from './score.mjs';
+import { assess, SCORERS } from './score.mjs';
+const SCORER_FOR = () => SCORERS[process.env.SCORER_VERSION || '1.0.0'];
 import { loadReferences, useSeed, mulberry32, SEED, BODY } from './phenotype.mjs';
 
 const DIR = import.meta.dirname;
 const QUICK = !!process.env.QUICK;
+const VERSION = process.env.SCORER_VERSION || '1.0.0';
 const N_TEST = QUICK ? 40 : 300, N_SYN = QUICK ? 40 : 300, N_ADV = QUICK ? 40 : 300, N_STAB = QUICK ? 30 : 100;
 const STAB_SEEDS = [SEED, 11, 22, 33, 44];
 
 // ---------------------------------------------------------------- pre-registration guard
-const PRE = path.join(DIR, 'SCORER-PREREGISTRATION.md');
+const PRE = path.join(DIR, VERSION === '1.0.0' ? 'SCORER-PREREGISTRATION.md' : `SCORER-PREREGISTRATION-v${VERSION}.md`);
 function checkPrereg() {
   const txt = fs.readFileSync(PRE, 'utf8').replace(/\r\n/g, '\n');
   const lines = txt.trimEnd().split('\n');
@@ -40,11 +42,11 @@ const frac = (xs, f) => (xs.length ? xs.filter(f).length / xs.length : null);
 const r4 = x => (x == null ? null : +x.toFixed(4));
 
 async function scoreSpecimen(ref, raw, label) {
-  const r = await assess({ specimen: raw, exclude: [ref.group], label, taxon: 'Teleostei' });
+  const r = await assess({ specimen: raw, exclude: [ref.group], label, taxon: 'Teleostei', version: VERSION });
   return { label, score: r.score.value, plausible: r.score.plausible, P: r.score.components.P.value, L: r.score.components.L.value, limiting: r.score.components.P.limiting, nearest: r.verdict.closest_real_relative?.name };
 }
 async function scoreDoc(doc, label, extra = {}) {
-  const r = await assess({ organism: doc, ...extra });
+  const r = await assess({ organism: doc, ...extra, version: VERSION });
   const C = r.score.components;
   return { label, score: r.score.value, plausible: r.score.plausible, P: C.P.ran ? r4(C.P.value) : null, L: C.L.value, G: C.G.value, E: C.E.value, limiting: C.P.limiting,
     nearest: r.verdict.closest_real_relative?.name, nearest_distance: r.verdict.closest_real_relative?.distance, failed: r.verdict.failed, lean_new: (r.lean?.accepted?.newly_caused || []).map(v => v.constraint), g_why: C.G.why };
@@ -210,7 +212,7 @@ for (const s of STAB_SEEDS) {
   const pos = [], neg = [];
   for (const r of pick(N_STAB)) pos.push((await scoreSpecimen(r, r.raw, r.name)).score);
   for (const r of pick(N_STAB)) { const raw = { ...r.raw, mass_kg: r.raw.mass_kg * (rnd() < 0.5 ? 12 : 1 / 12) }; neg.push((await scoreSpecimen(r, raw, r.name)).score); }
-  stab.push({ seed: s, threshold_body: r4(R.calibration.body.threshold), auc: r4(auc(pos, neg)), sensitivity: r4(frac(pos, x => x >= SCORER.plausible_threshold)), specificity: r4(frac(neg, x => x < SCORER.plausible_threshold)) });
+  stab.push({ seed: s, threshold_body: r4(R.calibration.body.threshold), auc: r4(auc(pos, neg)), sensitivity: r4(frac(pos, x => x >= SCORER_FOR().plausible_threshold)), specificity: r4(frac(neg, x => x < SCORER_FOR().plausible_threshold)) });
 }
 useSeed(SEED); await loadReferences({ fresh: true, seed: SEED });
 const adv = await adversarial(bundle);
@@ -228,9 +230,9 @@ const crit = [
   { id: 'C7', text: 'across 5 species-split seeds: AUC range <= 0.05 and body-threshold relative SD <= 10 %', value: { auc_range: r4(Math.max(...aucs) - Math.min(...aucs)), threshold_rel_sd: r4(sd(thr) / mean(thr)) }, pass: Math.max(...aucs) - Math.min(...aucs) <= 0.05 && sd(thr) / mean(thr) <= 0.1 },
   { id: 'C8', text: 'adversarial search finds no clearly-implausible design (pre-registered predicate) that scores plausible', value: { searched: adv.searched, clearly_implausible: adv.clearly_implausible, scored_plausible_anyway: adv.scored_plausible_anyway }, pass: adv.scored_plausible_anyway === 0 },
 ];
-const res = { prereg_sha256: hash, scorer: SCORER, quick: QUICK, ran: new Date().toISOString(), seconds: Math.round((Date.now() - t0) / 1000), criteria: crit,
+const res = { prereg_sha256: hash, scorer: SCORER_FOR(), quick: QUICK, ran: new Date().toISOString(), seconds: Math.round((Date.now() - t0) / 1000), criteria: crit,
   auc_by_family: Object.fromEntries(Object.entries(negatives).map(([k, v]) => [k, r4(auc(posScores, v.map(x => x.score)))])),
   sensitivity_by_family: Object.fromEntries(Object.entries(positives).map(([k, v]) => [k, r4(plausibleRate(v))])), calibration: calib, stability: stab, adversarial: adv, positives, negatives };
-fs.writeFileSync(path.join(DIR, QUICK ? 'scorer-results.quick.json' : 'scorer-results.json'), JSON.stringify(res, null, 1));
+fs.writeFileSync(path.join(DIR, QUICK ? `scorer-results.quick.v${VERSION}.json` : VERSION === '1.0.0' ? 'scorer-results.json' : `scorer-results.v${VERSION}.json`), JSON.stringify(res, null, 1));
 for (const c of crit) console.log(c.id, c.pass ? 'PASS' : 'FAIL', JSON.stringify(c.value), '-', c.text);
 console.log('seconds', res.seconds);

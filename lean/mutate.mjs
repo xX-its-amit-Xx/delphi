@@ -163,7 +163,26 @@ const mutations = [
   { id: 'perturb-sda-unbounded', file: 'Delphi/Perturb.lean', theorem: 'Delphi.Perturb.intake_needed', claim_id: 'perturb-energy-balance',
     description: 'Hypothesis weakened: the SDA coefficient allowed to reach 1 (digestion costing all the digestible energy). The minimum-intake formula divides by 1 - s and must fail.',
     find: '  s_lt_one : s < 1', replace: '  s_lt_one : s ≤ 1' },
+  // perturb-pressure v2.0.0 (lean/Delphi/Hydrostatics.lean): pressure from rho and g.
+  { id: 'hydro-rho-dropped', file: 'Delphi/Hydrostatics.lean', theorem: 'Delphi.Hydro.closed_bladder_rules_out', claim_id: 'perturb-pressure',
+    description: 'Statement changed: the density is dropped from the pressure in the Boyle bound (p0 + g d instead of p0 + rho g d). The bound no longer matches Boyle at the committed rho, so the proof must fail.',
+    find: '    (hbig : V 0 * W.p0 / (W.p0 + W.rho * W.g * d) < claimed) : False :=', replace: '    (hbig : V 0 * W.p0 / (W.p0 + W.g * d) < claimed) : False :=' },
+  { id: 'hydro-v1-constant', file: 'Delphi/Hydrostatics.lean', theorem: 'Delphi.Hydro.bladder_volume_eq', claim_id: 'perturb-pressure',
+    description: 'Statement changed back to the v1 constant: the volume at depth claimed to be V0 p0 / (p0 + 10132.5 d) ("1 atm per 10 m") for EVERY water column. False unless rho g = 10132.5, so the proof must fail.',
+    find: '    V d = V 0 * W.p0 / (W.p0 + W.rho * W.g * d) :=', replace: '    V d = V 0 * W.p0 / (W.p0 + 10132.5 * d) :=' },
+  { id: 'hydro-gradient-reversed', file: 'Delphi/Hydrostatics.lean', theorem: 'Delphi.Hydro.seaWater_gradient_lt_oneAtmPer10m', claim_id: 'perturb-pressure',
+    description: 'Statement reversed: the sea-water pressure gradient claimed to EXCEED one atmosphere per 10 m. 1025 x 9.80665 = 10053 Pa/m < 10132.5, so the proof must fail.',
+    find: 'theorem seaWater_gradient_lt_oneAtmPer10m : seaWater.rho * seaWater.g < oneAtmPer10m.rho * oneAtmPer10m.g := by', replace: 'theorem seaWater_gradient_lt_oneAtmPer10m : oneAtmPer10m.rho * oneAtmPer10m.g < seaWater.rho * seaWater.g := by' },
+  { id: 'hydro-witness-negative-density', file: 'Delphi/Hydrostatics.lean', theorem: 'Delphi.Hydro.waterColumn_nonvacuous', claim_id: 'perturb-pressure',
+    description: 'Witness moved: sea-water density -1025 kg/m^3. The positivity hypothesis fails, so the non-vacuity witness must fail.',
+    find: '  rho := 1025\n', replace: '  rho := -1025\n' },
 ];
+
+// MUTANT_ONLY=<regex on id>: rerun only the matching mutants (plus the controls of their files) and MERGE the results
+// into the existing lean/mutations.json, replacing entries with the same id. The summary is recomputed over the
+// merged list and records the partial rerun.
+const ONLY = process.env.MUTANT_ONLY ? new RegExp(process.env.MUTANT_ONLY) : null;
+if (ONLY) { const keep = mutations.filter(m => ONLY.test(m.id)); mutations.length = 0; mutations.push(...keep); console.log('MUTANT_ONLY: ' + keep.map(m => m.id).join(', ')); }
 
 // ---- runner: the compiles are independent, so they run in a bounded pool ----
 // Each compile gets its own directory under the scratch root so nothing two of them write can collide.
@@ -251,7 +270,16 @@ const summary = { run: new Date().toISOString(), command: 'lake env lean <mutant
   concurrency: JOBS, leanThreadsPerCompile: LEAN_THREADS, cores: CPUS, wallClockSeconds: wallSeconds, compileSecondsSummed: compileSeconds, speedup: wallSeconds > 0 ? +(compileSeconds / wallSeconds).toFixed(2) : null,
   order: 'controls first, then mutants, each sorted by id; the pool\'s completion order does not reach this file',
   parallelNote: `The compiles are independent, so they run in a pool of ${JOBS}. The cap is memory, not cores: each lean process holds several GB with Mathlib imported. lake env lean type-checks a copy outside the package, writing no .olean, and each compile also has its own directory under the scratch root, so none can clobber another. lean's own elaboration threads are capped at ${LEAN_THREADS} per compile (LEAN_NUM_THREADS) so the pool does not oversubscribe ${CPUS} cores; wall clock against summed compile time is the speedup.` };
-fs.writeFileSync(path.join(here, 'mutations.json'), JSON.stringify({ summary, results }, null, 1));
+if (ONLY) {
+  const prev = JSON.parse(fs.readFileSync(path.join(here, 'mutations.json'), 'utf8'));
+  const fresh = new Map(results.map(r => [r.id, r]));
+  const merged = [...prev.results.filter(r => !fresh.has(r.id)), ...results].sort((a, b) => rank(a) - rank(b) || String(a.id).localeCompare(String(b.id)));
+  const ms = merged.filter(r => r.kind === 'mutation'), cs = merged.filter(r => r.kind === 'control');
+  const mergedSummary = { ...prev.summary, mutations: ms.length, rejected: ms.filter(r => r.outcome === 'rejected').length, controls: cs.length, controlsPassed: cs.filter(r => r.asExpected).length, allAsExpected: merged.every(r => r.asExpected),
+    partialRerun: { run: summary.run, pattern: process.env.MUTANT_ONLY, ids: results.map(r => r.id), wallClockSeconds: summary.wallClockSeconds, note: 'only these entries were recompiled; every other entry is from the full run at summary.run' } };
+  fs.writeFileSync(path.join(here, 'mutations.json'), JSON.stringify({ summary: mergedSummary, results: merged }, null, 1));
+  Object.assign(summary, { merged: mergedSummary });
+} else fs.writeFileSync(path.join(here, 'mutations.json'), JSON.stringify({ summary, results }, null, 1));
 fs.rmSync(ROOT_TMP, { recursive: true, force: true });
 console.log(JSON.stringify(summary));
 if (!summary.allAsExpected) process.exitCode = 1;

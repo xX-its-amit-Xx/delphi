@@ -99,3 +99,44 @@ export function genoSanity(genoResult) {
   }
   return out;
 }
+
+// ---------------------------------------------------------------- v1.1: STATE-field envelopes
+// Every STATE field the scorer can bound from a sourced cross-species (or cross-stage) value set, so that an
+// implausibility cannot hide in a field the scorer ignores. Each envelope: [lo, hi] from the cited values, widened
+// by a factor fixed here BEFORE validation; excess in log10 beyond it; p = exp(-max excess / 0.05).
+// Width of the evidence differs per field and is stated: several anchors are one or two species only.
+export const STATE_ENVELOPES = {
+  gill_area_per_kg: { lo: 0.1548, hi: 1.773, widen: 1.5, unit: 'm2/kg', read: (s, r) => (s.gill_area_m2?.value != null && r.mass_kg ? s.gill_area_m2.value / r.mass_kg : null),
+    source: 'physiology/gills.json gill_area_per_body_mass: 7 species, 154.8-1773 mm2/g (bigman2021 compilation; Gray 1954, Muir & Hughes 1969, Niimi & Morgan 1980, ...)' },
+  hb_P50_kPa: { lo: 3.31, hi: 3.31, widen: 3, unit: 'kPa', read: s => s.hb_P50_kPa?.value ?? null, source: 'physiology/haemoglobin.js: ONE species anchor (rainbow trout, Rummer 2015, 24.8 mmHg); widened x/÷3 by assumption' },
+  body_density_kg_m3: { lo: 998, hi: 1050, widen: 1.1, unit: 'kg/m3', read: s => s.body_density_kg_m3?.value ?? null, source: 'STATE across zebrafish stages (params/ontogeny.json) 998-1050; widened x/÷1.1' },
+  red_muscle_fraction: { lo: 0.05, hi: 0.1055, widen: 2, unit: '-', read: s => s.red_muscle_fraction?.value ?? null, source: 'physiology/muscle.js (0.05, borrowed) and C. hiraii 0.104-0.107 (Shimane 1987, ontogeny additions); widened x/÷2' },
+  routine_metabolic_rate: { lo: 29.4, hi: 87.5, widen: 2, unit: 'umol/g/h', read: s => s.routine_metabolic_rate_umol_g_h?.value ?? null, source: 'params/ontogeny.json zebrafish stages 29.4-87.5; widened x/÷2' },
+  vertebra_count: { lo: 32, hi: 40, widen: 1.5, unit: 'count', param: 'vertebra_count', source: 'anatomy-model/parametric organisms: zebrafish 32 (measured), flying fish 40; widened x/÷1.5 (real teleosts span far wider; an eel would be flagged)' },
+  pectoral_ray_count: { lo: 12, hi: 14, widen: 1.5, unit: 'count', param: 'pectoral_ray_count', adultOnly: true, source: 'parametric organisms 12 (zebrafish), 14 (flying fish); widened x/÷1.5' },
+  pelvic_ray_count: { lo: 6, hi: 6, widen: 1.5, unit: 'count', param: 'pelvic_ray_count', adultOnly: true, source: 'parametric organisms 6, 6; widened x/÷1.5' },
+  dorsal_ray_count: { lo: 8, hi: 12, widen: 1.5, unit: 'count', param: 'dorsal_ray_count', adultOnly: true, source: 'parametric organisms 8, 12; widened x/÷1.5' },
+  anal_ray_count: { lo: 11, hi: 13, widen: 1.5, unit: 'count', param: 'anal_ray_count', adultOnly: true, source: 'parametric organisms 13, 11; widened x/÷1.5' },
+  caudal_ray_count: { lo: 18, hi: 19, widen: 1.5, unit: 'count', param: 'caudal_ray_count', adultOnly: true, source: 'parametric organisms 18, 19; widened x/÷1.5' },
+  head_fraction_SL: { lo: 0.2, hi: 0.2511, widen: 1.5, unit: '-', param: 'head_fraction_SL', source: 'parametric organisms 0.2-0.251; widened x/÷1.5' },
+  body_section_exponent: { lo: 2.0, hi: 2.3, widen: 1.5, unit: '-', param: 'body_section_exponent', source: 'parametric organisms 2.0-2.3 (assumed values); widened x/÷1.5' },
+  flight_muscle_fraction: { lo: 0.002, hi: 0.04, widen: 1.5, unit: '-', param: 'flight_muscle_fraction', source: 'parametric organisms 0.002-0.04 (assumed values); widened x/÷1.5; organ fit is checked separately' },
+};
+export function stateEnvelope(state, raw) {
+  if (!state) return { ran: false, reason: 'specimen record: no STATE' };
+  const P = state._meta?.parameters || {};
+  const larval = ['embryo', 'hatching', 'larva'].includes(state.stage?.value);
+  const rows = []; let worst = 0;
+  for (const [k, E] of Object.entries(STATE_ENVELOPES)) {
+    if (E.adultOnly && state.stage?.value !== 'adult') continue;
+    const x = E.param ? P[E.param]?.value : E.read(state, raw);
+    if (typeof x !== 'number' || !Number.isFinite(x)) continue;
+    const w = Math.log10(E.widen), lo = Math.log10(E.lo) - w, hi = Math.log10(E.hi) + w;
+    const lx = x > 0 ? Math.log10(x) : -Infinity;
+    const e = Math.max(0, lx - hi, lo - lx); const ex = Number.isFinite(e) ? e : 10;
+    worst = Math.max(worst, ex);
+    rows.push({ field: k, value: x, unit: E.unit, lo: +(10 ** lo).toPrecision(4), hi: +(10 ** hi).toPrecision(4), excess_decades: +ex.toFixed(4), source: E.source });
+  }
+  return { ran: rows.length > 0, p_value: +Math.exp(-worst / 0.05).toFixed(4), outside: rows.filter(r => r.excess_decades > 0), rows,
+    rule: 'v1.1: each bounded STATE field against its sourced envelope widened by a pre-stated factor; p = exp(-max excess in log10 / 0.05). Envelopes from one or two species are narrow by construction.' };
+}

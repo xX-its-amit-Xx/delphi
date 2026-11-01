@@ -9,7 +9,7 @@
 - `generative_backends_status`: per level and per provider, `ok` / `not configured` / `auth failed` / `unreachable` /
   `no training data`, plus the body model's held-out metrics.
 
-This work does not edit `server.mjs`. Until the hub applies the patch, `http.mjs` already serves both tools (it
+**Status: applied by the hub in commit 36a9ea36 (engine 0.4.0).** The diff is kept for the record. This work did not edit `server.mjs`; before the patch, `http.mjs` already serves both tools (it
 discovers every tool array exported from `tools/*.mjs`; they show under `http_only_tools` in `GET /contract`).
 
 ```diff

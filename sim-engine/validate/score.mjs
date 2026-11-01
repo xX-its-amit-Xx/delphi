@@ -27,24 +27,23 @@ import * as LS from '../lib/lean-source.mjs';
 import { getDoc } from '../tools/studio.mjs';
 import { loadReferences, rawFromState, closestPhenotype } from './phenotype.mjs';
 import { closestGenotype, STATE_NOT_PHENOTYPE } from './genotype.mjs';
-import { phenoSanity, genoSanity } from './sanity.mjs';
+import { phenoSanity, genoSanity, stateEnvelope } from './sanity.mjs';
 import { leanByComponent } from './lean-components.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
-export const SCORER = Object.freeze({
-  version: '1.0.0',
-  weights: Object.freeze({ P: 0.35, L: 0.25, G: 0.15, S: 0.15, E: 0.10 }),
-  floor: 0.01,
-  alpha: 0.05,
-  plausible_threshold: 0.5,
-  evidence: Object.freeze({ measured: 1, derived: 0.9, 'measured-secondhand': 0.8, calibrated: 0.7, borrowed: 0.6, assumed: 0.5 }),
-  preregistration: 'sim-engine/validate/SCORER-PREREGISTRATION.md',
-});
+// Weights, floor, alpha, cut and evidence map live in score-weights.json (versioned, frozen before validation).
+const loadW = f => JSON.parse(fs.readFileSync(path.join(import.meta.dirname, f), 'utf8'));
+const mkScorer = (W, file) => Object.freeze({ version: W.version, weights: Object.freeze({ ...W.weights }), floor: W.floor, alpha: W.alpha, plausible_threshold: W.plausible_threshold,
+  evidence: Object.freeze({ ...W.evidence }), preregistration: W.preregistration, weights_file: `sim-engine/validate/${file}`, changes: W['changes_from_1.0.0'] || null });
+/** Every frozen scorer version. v1.0.0 stays callable forever (opts.version), so its published results reproduce. */
+export const SCORERS = Object.freeze({ '1.0.0': mkScorer(loadW('score-weights.json'), 'score-weights.json'), '1.1.0': mkScorer(loadW('score-weights.v1.1.0.json'), 'score-weights.v1.1.0.json') });
+export const DEFAULT_VERSION = '1.0.0';
+export const SCORER = SCORERS[DEFAULT_VERSION];
 const KIND_ORDER = ['assumed', 'borrowed', 'measured-secondhand', 'calibrated', 'derived', 'measured'];
 
-export function composite(components) {
+export function composite(components, SC = SCORER) {
   let s = 0, w = 0;
-  for (const [k, c] of Object.entries(components)) if (c && c.ran && typeof c.value === 'number') { s += SCORER.weights[k] * Math.log(Math.max(c.value, SCORER.floor)); w += SCORER.weights[k]; }
+  for (const [k, c] of Object.entries(components)) if (c && c.ran && typeof c.value === 'number') { s += SC.weights[k] * Math.log(Math.max(c.value, SC.floor)); w += SC.weights[k]; }
   return w ? Math.exp(s / w) : null;
 }
 
@@ -83,7 +82,10 @@ export async function assess(args = {}) {
   const t0 = Date.now();
   await loadReferences();
   const bundle = await loadBundle();
-  const out = { scorer: SCORER };
+  const version = args.version || DEFAULT_VERSION;
+  const SC = SCORERS[version]; if (!SC) throw new Error(`unknown scorer version ${version}; known: ${Object.keys(SCORERS).join(', ')}`);
+  const v11 = version !== '1.0.0';
+  const out = { scorer: SC };
   let raw, state = null, doc = null, geno = { n_edits: 0, edits: [] }, lean = null, ev;
   if (args.specimen) {
     raw = { ...args.specimen };
@@ -104,7 +106,8 @@ export async function assess(args = {}) {
     lean = await leanByComponent(doc, bundle, { ageDays: args.ageDays, conditions: args.conditions || {}, lawset: args.lawset || 'current', genotypeEdits: gEdits });
     out.design = { kind: 'organism', id: doc.id, parents: doc.base.parents, n_edits: doc.edits.length, ageDays: state.ageDays?.value, stage: state.stage?.value, origin: g.origin };
   }
-  const pheno = await closestPhenotype(raw, { exclude: args.exclude || [] });
+  const pheno = await closestPhenotype(raw, { exclude: args.exclude || [], version });
+  const stEnv = v11 ? stateEnvelope(state, raw) : null;
   const manifestFit = doc ? manifestFitFor(doc, bundle) : null;
   const pSan = await phenoSanity(raw, { state, bundle, doc, manifestFit, containment: args.containment });
   const gSan = genoSanity(geno);
@@ -114,8 +117,9 @@ export async function assess(args = {}) {
   const ps = [];
   // Calibrated blocks enter as min(1, p / alpha): a real held-out specimen is in the upper (1 - alpha) of the
   // calibration distribution with probability 1 - alpha, so it gets full credit; the tail decays linearly.
-  if (pheno.body.ran) ps.push({ part: 'p_body', p: pheno.body.p_value, value: Math.min(1, pheno.body.p_value / SCORER.alpha) });
-  if (pheno.fin.ran) ps.push({ part: 'p_fin_pectoral', p: pheno.fin.p_value, value: Math.min(1, pheno.fin.p_value / SCORER.alpha) });
+  if (pheno.body.ran) ps.push(pheno.body.larval ? { part: 'p_body_larval_envelope (uncalibrated)', p: pheno.body.p_value, value: pheno.body.p_value } : { part: 'p_body', p: pheno.body.p_value, value: Math.min(1, pheno.body.p_value / SC.alpha) });
+  if (pheno.fin.ran) ps.push({ part: 'p_fin_pectoral', p: pheno.fin.p_value, value: Math.min(1, pheno.fin.p_value / SC.alpha) });
+  if (stEnv && stEnv.ran) ps.push({ part: 'p_state_envelope', value: stEnv.p_value, outside: stEnv.outside.map(o => o.field) });
   if (pheno.fin_envelope.features.length) ps.push({ part: 'p_fin_envelope (uncalibrated)', value: pheno.fin_envelope.p_value });
   const fit = pSan.find(c => c.id === 'organ_fit:flight_muscle');
   if (fit && typeof fit.value === 'number') ps.push({ part: 'organ_fit:flight_muscle', value: fit.value });
@@ -137,22 +141,23 @@ export async function assess(args = {}) {
   } else C.G = { ran: true, value: 1, why: ['no gene-level edits'], note: STATE_NOT_PHENOTYPE };
   if (args.spec && doc) { try { C.S = await specComponent(args.spec, doc); } catch (e) { C.S = { ran: false, reason: e.message }; } }
   else C.S = { ran: false, reason: args.spec ? 'a spec needs an organism document, not a specimen' : 'no spec given' };
-  C.E = { ran: true, value: SCORER.evidence[ev.weakest] ?? 0.5, weakest_kind: ev.weakest };
-  const score = composite(C);
+  C.E = { ran: true, value: SC.evidence[ev.weakest] ?? 0.5, weakest_kind: ev.weakest };
+  const score = composite(C, SC);
 
   // ---- verdict (never "valid")
   const all = [...pSan.map(c => ({ ...c, family: 'phenotype' })), ...gSan.map(c => ({ ...c, family: 'genotype' }))];
   const by = s => all.filter(c => c.status === s).map(c => c.id);
   const closest = pheno.closest_real_relative;
   out.verdict = {
-    statement: `Not a validity claim. Score ${score == null ? 'n/a' : score.toFixed(3)} (${score >= SCORER.plausible_threshold ? 'plausible' : 'implausible'} by the pre-registered 0.5 cut on what was checked). `
+    statement: `Not a validity claim. Score ${score == null ? 'n/a' : score.toFixed(3)} (${score >= SC.plausible_threshold ? 'plausible' : 'implausible'} by the pre-registered 0.5 cut on what was checked; scorer v${SC.version}). `
       + `Closest real relative: ${closest ? `${closest.name} (distance ${closest.distance}${pheno.body.ran ? `, body p ${pheno.body.p_value}` : ''})` : 'none'}. `
       + `Checks passed ${by('passed').length}, failed ${by('failed').length}, flagged ${by('flagged').length}, could not run ${by('could-not-run').length}. `
       + `Lean: ${newly.length} accepted-law violation(s) newly caused; ${lean?.candidate?.length || 0} candidate and ${lean?.contested?.length || 0} contested listed separately.`,
     passed: by('passed'), failed: by('failed'), flagged: by('flagged'), could_not_run: [...by('could-not-run'), ...Object.entries(C).filter(([, c]) => !c.ran).map(([k, c]) => `component ${k}: ${c.reason}`)],
     closest_real_relative: closest, closest_real_relative_fins: pheno.closest_real_relative_fins, ood: pheno.ood,
   };
-  out.score = { value: score == null ? null : +score.toFixed(4), plausible: score != null && score >= SCORER.plausible_threshold, components: C,
+  out.state_envelope = stEnv;
+  out.score = { value: score == null ? null : +score.toFixed(4), plausible: score != null && score >= SC.plausible_threshold, components: C, version: SC.version,
     formula: 'exp(sum w_i ln max(c_i,0.01) / sum w_i) over components that ran; w = P .35, L .25, G .15, S .15, E .10' };
   out.phenotype = pheno; out.genotype = geno; out.sanity = { phenotype: pSan, genotype: gSan }; out.lean = lean;
   out.ms = Date.now() - t0;
@@ -171,11 +176,33 @@ function provOf(r) {
   return R;
 }
 
-export async function designScore(args = {}) {
+/** STABLE ENTRY POINT for scoring a design.
+ *    designScore(design, opts) -> { score, plausible, components, verdict, closest_real_relative, scorer, design }
+ *  design: repository id | organism document | { specimen: {SL_m, mass_kg, depth_SL, width_SL, ped_depth_frac,
+ *          ped_width_frac, pectoral_len_SL, ...}, taxon?, label? } | { organism, ageDays?, conditions? }
+ *  opts:   { reference_set_excluding: [ids | 'species:Genus_species' | 'family:Name' | 'order:Name' |
+ *            'organism:zebrafish' | 'organism:flying-fish'], ageDays, conditions, spec, containment, network, blast, lawset }
+ *  Leave-out scoring: everything named in reference_set_excluding is removed from the nearest-neighbour search, so a
+ *  real organism is never scored against itself (see phenotype.mjs excludeMatcher). Weights: score-weights.json. */
+export async function designScore(design, opts = {}) {
+  const args = { ...opts };
+  if (design && typeof design === 'object' && 'specimen' in design) Object.assign(args, design);
+  else if (design && typeof design === 'object' && 'organism' in design) Object.assign(args, design);
+  else args.organism = design;
+  args.exclude = [...(opts.reference_set_excluding || []), ...(opts.exclude || []), ...(args.exclude || [])];
   const r = await assess(args);
-  return envelope({ design: r.design, score: r.score, verdict: r.verdict, scorer: r.scorer,
+  return { score: r.score.value, plausible: r.score.plausible, components: r.score.components, verdict: r.verdict, closest_real_relative: r.verdict.closest_real_relative,
+    excluded: r.phenotype.excluded, scorer: r.scorer, design: r.design,
     genotype_summary: r.genotype.edits.map(e => ({ gene: e.edit.gene, edit: e.edit.raw, checks: e.checks, closest_species: e.comparison?.closest_species ? { species: e.comparison.closest_species.species, identity_after: e.comparison.closest_species.identity_after } : null,
-      alt_state_exists_in_real_organism: e.comparison?.alt_state_in_real_organisms ?? null, annotations: e.annotations })) }, provOf(r), SCOPE);
+      alt_state_exists_in_real_organism: e.comparison?.alt_state_in_real_organisms ?? null, annotations: e.annotations })),
+    _prov: provOf(r) };
+}
+/** MCP/HTTP wrapper: the same, in the provenance envelope. */
+export async function designScoreTool(args = {}) {
+  const { organism, specimen, ...opts } = args;
+  const r = await designScore(specimen ? { specimen, taxon: args.taxon, label: args.label } : organism, opts);
+  const { _prov, ...res } = r;
+  return envelope(res, _prov, SCOPE);
 }
 
 export async function validateDesign(args = {}) {
