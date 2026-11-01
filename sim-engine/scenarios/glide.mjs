@@ -27,12 +27,31 @@ export const LIFT_OVER_PECTORAL = 0.012688 / 0.006377;
 // Fick aerobic bound; constants as in physics/flier/tff/design.py and the physiology chain.
 export const FICK = {
   eta: { value: 0.15, kind: 'borrowed', source: 'gamperl2021 via physiology/muscle.js: ventricular muscle efficiency ~15% in Atlantic salmon (no fetched value for fish skeletal muscle)' },
-  E_J_per_ml: { value: 13.54 / 0.7, kind: 'measured-secondhand', source: 'oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 mg O2 per ml (STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js' },
-  Qmax_ml_min_kg: { value: 58.48, kind: 'borrowed', source: 'durnford2026 Table 1 (schoolmaster snapper, Ucrit group, 28 degC) maximum cardiac output 58.48 ml/min/kg (physiology/cardiac.js), x body mass. Lean C14 and physics/flier/tff/design.py use 0.0656 ml/s for 0.06 kg (65.6 ml/min/kg) instead' },
+  E_J_per_ml: { value: 13.54 / 0.7, kind: 'measured-secondhand', source: 'oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 ml O2 per mg (1.429 mg/ml, STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js' },
+  Qmax_ml_min_kg: { value: 58.48, kind: 'borrowed', source: 'FALLBACK for species with no measured MO2max (it underestimates small cyprinids about 3x: physics/FICK-CEILING-CHECK.md). durnford2026 Table 1 (schoolmaster snapper, Ucrit group, 28 degC) maximum cardiac output 58.48 ml/min/kg (physiology/cardiac.js), x body mass. Lean C14 and physics/flier/tff/design.py use 0.0656 ml/s for 0.06 kg (65.6 ml/min/kg) instead' },
   hb_cap_ml_ml: { value: 0.206, kind: 'calibrated', source: 'physiology/index.js warmHbCapacity: set so the snapper maximal O2 extraction (durnford2026) fits the trout Hill curve. Calibrated, not measured' },
   P50_kPa: { value: 24.8 / 7.50062, kind: 'borrowed', source: 'rummer2015 Table 1: rainbow trout P50 24.8 mmHg (borrowed) / 7.50062 mmHg per kPa (standard unit conversion)' },
   n_H: { value: 1.34, kind: 'borrowed', source: 'rummer2015 Results text: rainbow trout Hill n 1.34 (Table 1 shows 1.3 +/- 0.1)' },
 };
+// Measured maximal O2 uptake (MO2max), used in place of the Fick product Q Ca where a species has one.
+// Ceiling = eta x 13.54 J/mg x MO2max x mass. physics/FICK-CEILING-CHECK.md: the snapper-Q Fick bound (950 mg O2/kg/h for
+// the zebrafish fixture) lies below the measured zebrafish MO2 at Ucrit (2630) and even its SMR (1401).
+export const OXY_J_PER_MG = { value: 13.54, kind: 'measured-secondhand', source: 'gerry2014 (Fig. 1 legend): oxycaloric value 13.54 J/mg O2, citing their ref. 89; physiology/muscle.js' };
+export const MO2MAX = {
+  zebrafish: { re: /danio rerio|zebrafish/i, value_mg_kg_h: 2630, T_C: 28, mass_kg: 0.00043, kind: 'measured', source: 'Palstra AP, Tudorache C, Rovira M, et al. (2010) Establishing zebrafish as a novel exercise model. PLoS One 5:e14483, doi:10.1371/journal.pone.0014483, PMC3013094, Results "Swimming economy": maximal O2 consumption at Ucrit 82.18 +/- 6.50 umol g-1 h-1 (= 2630 mg O2 kg-1 h-1); wild-type adults 3.05 cm BL, 0.43 g, 28 degC, n = 10 (Methods)' },
+};
+export const MO2_SCALING = { mass_exponent: -0.15, Q10: 2, kind: 'assumed', source: 'mass-specific MO2max exponent -0.15 and Q10 2 (assumed; physics/FICK-CEILING-CHECK.md section 3 brackets -0.1 to -0.2 and 2 to 2.5)' };
+/** Aerobic mechanical ceiling from a measured MO2max, scaled to this mass and temperature; null if the species has none. */
+export function measuredAerobicCeiling(species, mass_kg, T_C) {
+  const r = Object.values(MO2MAX).find(x => x.re.test(String(species || '')));
+  if (!r || !(mass_kg > 0)) return null;
+  const T = T_C ?? r.T_C;
+  const factor = (mass_kg / r.mass_kg) ** MO2_SCALING.mass_exponent * MO2_SCALING.Q10 ** ((T - r.T_C) / 10);
+  const mo2 = r.value_mg_kg_h * factor;
+  const P = mo2_ => FICK.eta.value * OXY_J_PER_MG.value * mo2_ * mass_kg / 3600;
+  return { P_W: P(mo2), P_W_unscaled: P(r.value_mg_kg_h), MO2max_mg_kg_h: mo2, MO2max_measured_mg_kg_h: r.value_mg_kg_h, factor, T_C: T, kind: 'derived', measured_kind: r.kind,
+    source: `eta ${FICK.eta.value} (borrowed) x ${OXY_J_PER_MG.value} J/mg x MO2max ${mo2.toFixed(0)} mg O2/kg/h x mass: MO2max measured ${r.value_mg_kg_h} mg/kg/h at ${r.T_C} degC, ${r.mass_kg * 1000} g (${r.source}), scaled x ${factor.toFixed(3)} to ${(mass_kg * 1000).toPrecision(4)} g and ${T} degC (${MO2_SCALING.source}); unscaled ceiling ${P(r.value_mg_kg_h).toExponential(3)} W` };
+}
 export const hillSat = (P, P50, n) => (P > 0 ? P ** n / (P ** n + P50 ** n) : 0);
 
 // Breakpoints 0.33 / 0.86 / 0.97: physics/ground-effect.json (park-choi-2010, Results 'Ground effect', model L3 over water).
@@ -258,6 +277,11 @@ export default {
     const Preq = (W * gp.vmin) / PARK_CHOI.LD_max;
     const Qs = val(state, 'cardiac_output_max_ml_s');
     const fk = fickPower({ mass_kg: m, pO2_kPa: po2.value, P50_kPa: P50, Q_ml_s: Qs });
+    // A species with a measured MO2max (zebrafish) uses it (measured in water: a generous bound for air, where gills do not ventilate);
+    // others keep the Fick product with the snapper-Q fallback, labelled.
+    const mc = measuredAerobicCeiling(val(state, 'species'), m, val(state, 'temperature_C'));
+    const Pav = mc ? mc.P_W : fk.P_W;
+    if (mc) prov.push({ quantity: 'aerobic ceiling from measured MO2max (W)', value: mc.P_W, kind: mc.kind, source: mc.source });
     prov.push({ quantity: 'cardiac output (ml/s)', value: fk.Q_ml_s, kind: Qs != null ? state.cardiac_output_max_ml_s.kind || 'assumed' : FICK.Qmax_ml_min_kg.kind, source: Qs != null ? state.cardiac_output_max_ml_s.source || 'state' : FICK.Qmax_ml_min_kg.source });
     prov.push({ quantity: 'arterial PO2 = inspired air PO2 (kPa, upper bound)', value: po2.value, kind: po2.kind, source: po2.source });
     const notes = [];
@@ -271,10 +295,17 @@ export default {
     notes.push('glide_range_total_m exceeds the Lean bound whenever the kinetic phase is non-zero; only glide_range_lean_bound_m is covered by glide_range_le.');
     notes.push('Fick bound: arterial PO2 taken equal to air PO2 and gills taken to work in air; gills do not ventilate in air (physiology chain), so for a gill-breather this is a generous upper bound.');
     notes.push('TFF: NOTES-FOR-HUB.md item 2 says only 29.5% of the flight muscle the simulator charges fits in the body. This module uses no muscle power (the Fick bound is the cap), so the issue does not enter here; any muscle-based claim for the TFF must take it into account.');
-    const margin = fk.P_W / Preq;
+    const margin = Pav / Preq;
+    // Cross-taxon correction of the snapper-Q Fick fallback (physics/FICK-CEILING-CHECK.md section 5): O2 supply x1.3 to x2.5
+    // (zebrafish MO2max, Palstra 2010, allometric to unscaled) and eta 0.15 to 0.23 (Gladman & Askew 2024): factor 1.3 (low),
+    // 1.4 x 0.19/0.15 = 1.77 (central), 2.5 x 0.23/0.15 = 3.83 (extreme). Applied only where no measured MO2max is used.
+    const CORR = { low: 1.3, central: 1.4 * 0.19 / 0.15, high: 2.5 * 0.23 / 0.15 };
+    const short = margin > 0 && margin < 1 ? 1 / margin : null;
+    const corrected = short != null && !mc ? { high: short / CORR.low, central: short / CORR.central, low: short / CORR.high } : null;
+    if (corrected) notes.push(`Aerobic shortfall for level powered flight: ${short.toFixed(1)}x on the snapper-Q Fick fallback; with cross-taxon corrected O2 supply and efficiency (physics/FICK-CEILING-CHECK.md section 5) about ${corrected.low.toFixed(0)}-${corrected.high.toFixed(0)}x, central ${corrected.central.toFixed(0)}x. Either way an order of magnitude short.`);
     const limiting = !known ? `glide not evaluated: ${ls.reason}`
       : !canGlide ? `cannot glide: the reachable launch speed ${v0.toFixed(2)} m/s is below v_min ${gp.vmin.toFixed(2)} m/s, so lift cannot carry the weight`
-      : margin < 1 ? 'glide only: the aerobic O2 supply cannot pay for level powered flight (Fick bound)' : null;
+      : margin < 1 ? `glide only: the aerobic O2 supply cannot pay for level powered flight (${mc ? 'ceiling from measured MO2max' : 'Fick bound'}; ${corrected ? `about ${corrected.low.toFixed(0)}-${corrected.high.toFixed(0)}x short with corrected O2 supply and efficiency, central ${corrected.central.toFixed(0)}x; ${short.toFixed(0)}x on the snapper-Q fallback` : `${short.toFixed(1)}x short`})` : null;
     const why = known ? null : ls.reason;
     const metrics = [
       metric('glide_range_lean_bound_m', METRICS[0].label, known ? parts.lean : null, 'm', 'higher', 'derived', canGlide ? LEAN_SRC : 'cannot glide: 0', why),
@@ -288,8 +319,8 @@ export default {
       metric('glide_time_s', METRICS[8].label, known ? (canGlide ? gp.time_s : 0) : null, 's', 'higher', 'derived', '(L/D)_eff (v0 - v_min)/g + h (L/D)/v_LD; v_LD uses C_L(0 deg) 0.53 (approximate)', why),
       metric('glide_ratio', METRICS[9].label, PARK_CHOI.LD_max, '1', 'higher', polar.kind, polar.source),
       metric('power_required_W', METRICS[10].label, Preq, 'W', 'lower', 'derived', 'physics/results.json interpretation C formula'),
-      metric('aerobic_power_available_W', METRICS[11].label, fk.P_W, 'W', 'higher', 'derived', `eta E Q Ca, Ca ${fk.Ca_ml_ml.toFixed(4)} ml/ml at PO2 ${po2.value.toFixed(1)} kPa (Hill P50 ${P50.toFixed(2)} kPa, n 1.34), Q ${fk.Q_ml_s.toFixed(4)} ml/s`),
-      metric('powered_flight_margin', METRICS[12].label, margin, '1', 'higher', 'derived', '>= 1 would mean the O2 budget does not forbid level flight (necessary, not sufficient)'),
+      metric('aerobic_power_available_W', METRICS[11].label, Pav, 'W', 'higher', 'derived', mc ? mc.source : `eta E Q Ca, Ca ${fk.Ca_ml_ml.toFixed(4)} ml/ml at PO2 ${po2.value.toFixed(1)} kPa (Hill P50 ${P50.toFixed(2)} kPa, n 1.34), Q ${fk.Q_ml_s.toFixed(4)} ml/s (${Qs != null ? 'STATE' : 'snapper-Q FALLBACK: no measured MO2max for this species; it underestimates small cyprinids about 3x'})`),
+      metric('powered_flight_margin', METRICS[12].label, margin, '1', 'higher', 'derived', '>= 1 would mean the O2 budget does not forbid level flight (necessary, not sufficient)' + (corrected ? `; corrected O2 supply and efficiency raise it about x${CORR.low}-x${CORR.high.toFixed(2)} (central x${CORR.central.toFixed(2)}): shortfall ${corrected.low.toFixed(0)}-${corrected.high.toFixed(0)}x, central ${corrected.central.toFixed(0)}x` : '')),
     ];
     return {
       metrics, survives: null, feasible: canGlide, feasibility_note: limiting, limiting: null, provenance: prov,

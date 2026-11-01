@@ -1,0 +1,42 @@
+{
+ "version": "1.1.1",
+ "frozen": "2026-11-01T04:37:10.851Z (sha256 of SCORER-PREREGISTRATION-v1.1.1.md 67c3cd947c00aed1e2ea233d181293e203d2d4786413779c61bbd6bee0dbc640)",
+ "rule": "Never edit these values in place. A change is a new version (new file content with a bumped version and a CHANGELOG line in SCORER-RESULTS.md); results are always reported with the version they used.",
+ "weights": {
+  "P": 0.35,
+  "L": 0.25,
+  "G": 0.15,
+  "S": 0.15,
+  "E": 0.1
+ },
+ "floor": 0.01,
+ "alpha": 0.05,
+ "plausible_threshold": 0.5,
+ "evidence": {
+  "measured": 1,
+  "derived": 0.9,
+  "measured-secondhand": 0.8,
+  "calibrated": 0.7,
+  "borrowed": 0.6,
+  "assumed": 0.5
+ },
+ "formula": "score = exp( sum_i w_i ln max(c_i, floor) / sum_i w_i ); P = min(body term, min(1,p_fin_pectoral/alpha), p_fin_envelope_v11, organ_fit, p_state); body term = min(1, p_body_v11/alpha) for non-larval designs, p_larval_envelope for larval designs",
+ "preregistration": "sim-engine/validate/SCORER-PREREGISTRATION-v1.1.1.md",
+ "changes_from_1.0.0": [
+  "body block: a reference missing a feature the design has adds z^2 = 1 per missing feature (RMS over the design feature count) instead of being matched on the shared subset; minShared 3; calibration recomputed the same way",
+  "larval designs (stage embryo/hatching/larva): body block is an envelope over larval ontogeny-stage references (excluded lineages removed), widened x/1.5, p = exp(-excess/0.05 decades), used directly (no alpha)",
+  "fin envelope: excess in units of 0.05 log10 (was the cross-reference scale, ~0.3); pectoral length upper bound extended to the 0.823 flying-fish specimen maximum (Daane 2021 n 49, design-validation/REPORT.md)",
+  "P gains p_state: every bounded STATE field (gill area per kg, Hb P50, body density, red muscle fraction, routine metabolic rate, vertebra and ray counts, head fraction, section exponent, flight-muscle fraction) against sourced envelopes (sanity.mjs STATE_ENVELOPES), p = exp(-max excess/0.05 decades)",
+  "weights, floor, alpha, cut and evidence map unchanged"
+ ],
+ "changes_from_1.1.0": [
+  "NEW rank_score for RANKING plausible designs; the score, its components and the plausible cut are IDENTICAL to v1.1.0 (so C1-C8 cannot change)",
+  "Why: v1.0.0/v1.1.0 P = min(min(1,p/alpha), ...) saturates at 1 for any design whose nearest-neighbour p-value exceeds 0.05, and E is the WEAKEST input kind (assumed for every repository organism), so all typical designs collapse to 1 (specimens) or 0.9217 (our organisms): 60 distinct scores among 646 validation rows, 9 among 300 held-out specimens",
+  "rank_score = exp( sum_i w_i ln max(r_i, 1e-4) / sum_i w_i ) with the same weights; r_P = geometric mean of the RAW P parts (empirical p-values not divided by alpha, envelopes, organ fit, state envelope); r_L, r_G, r_S as in v1.1.0; r_E = MEAN evidence value over the kinds of the inputs read (not the weakest)"
+ ],
+ "rank": {
+  "floor": 0.0001,
+  "P": "geometric mean of raw P parts",
+  "E": "mean evidence value over the kinds of inputs read"
+ }
+}

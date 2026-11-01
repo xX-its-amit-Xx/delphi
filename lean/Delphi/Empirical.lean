@@ -35,6 +35,10 @@ A reader who rejects an observation rejects the structure and loses its theorems
   `E <= 19.35 J/ml` (13.54 J/mg over 0.7 ml/mg, muscle.js). Consequence proved here: the aerobic ceiling of
   ANY animal inside those ranges is at most 0.0458 W, so C14's eliminations are not arbitrary - they hold
   for every teleost the measured record allows, not just for one choice of proxies.
+  **Superseded (law set 1.6.0) by E3 v2 `TeleostAerobicV2`**: measured zebrafish (Palstra 2010, 2630 mg O2
+  kg^-1 h^-1) exceed v1's delivery envelope about 2x per kg, so "every teleost" was wrong. v2 bounds O2
+  delivery Q*Ca <= 0.0187 ml/s at 0.06 kg (1600 mg O2 kg^-1 h^-1) and eta <= 0.23, giving <= 0.0833 W,
+  scoped to its sources. v1 stays compiled so older law sets reproduce.
 * **E4 `NoAerialUptake`** - gills do not ventilate in air: uptake is zero while airborne (physiology/index.js
   and its self-test, where the store drains). Consequence proved here: over a flight of duration `t` the mean
   aerobic power is at most `E S / t` for an O2 store `S`, so airborne aerobic power is time-limited.
@@ -164,6 +168,72 @@ theorem no_aerobic_flight_above_ceiling (T : TeleostAerobic) {W v LD P Cv : ℝ}
   have h := sustained_flight_requires T.eta_nonneg T.oxy_nonneg T.q_nonneg hCv hsus hflight
   have := aerobicCeiling_le T
   linarith
+
+/-! ### E3 version 2.0.0 (law set 1.6.0): widened after a measured zebrafish broke version 1
+
+Version 1 (`TeleostAerobic`, above, kept compiled so law sets 1.0.0 to 1.5.0 stay reproducible) bounded cardiac
+output by a trout range (75 ml/min/kg) and arterial O2 by a calibrated capacity. Their product allows at most
+1350 mg O2 kg⁻¹ h⁻¹, and wild-type adult zebrafish were measured at 2630 mg O2 kg⁻¹ h⁻¹ at Ucrit (Palstra et al.
+2010, PLoS One 5:e14483, PMC3013094), so "no teleost above 0.0458 W" does not hold per kilogram
+(physics/FICK-CEILING-CHECK.md). Version 2 bounds the O2 delivery `Q·Ca` directly, in ml O2/s for a 0.06 kg fish:
+at most 0.0187 ml/s, i.e. 1600 mg O2 kg⁻¹ h⁻¹ (Palstra's zebrafish value scaled to 60 g with a mass-specific
+exponent of -0.10 to -0.13), and efficiency by the skeletal-muscle upper value 0.23 (Gladman and Askew 2024,
+PMC11583979: contractile 0.37 × oxidative recovery 0.61). It is scoped to those sources, not to every teleost. -/
+structure TeleostAerobicV2 where
+  eta : ℝ
+  oxycaloric : ℝ
+  o2Delivery : ℝ
+  eta_nonneg : 0 ≤ eta
+  eta_le : eta ≤ 0.23
+  oxy_nonneg : 0 ≤ oxycaloric
+  oxy_le : oxycaloric ≤ 19.35
+  del_nonneg : 0 ≤ o2Delivery
+  del_le : o2Delivery ≤ 0.0187
+
+/-- **v2 is a weakening of v1**: every animal inside the v1 ranges is inside the v2 ranges (0.15 ≤ 0.23 and
+0.075 × 0.21 = 0.01575 ≤ 0.0187). So nothing v1 admitted is excluded by v2; v2 only admits more. -/
+def TeleostAerobic.toV2 (T : TeleostAerobic) : TeleostAerobicV2 where
+  eta := T.eta
+  oxycaloric := T.oxycaloric
+  o2Delivery := T.cardiacOutput * T.arterialO2
+  eta_nonneg := T.eta_nonneg
+  eta_le := le_trans T.eta_le (by norm_num)
+  oxy_nonneg := T.oxy_nonneg
+  oxy_le := T.oxy_le
+  del_nonneg := mul_nonneg T.q_nonneg T.ca_nonneg
+  del_le := le_trans (mul_le_mul T.q_le T.ca_le T.ca_nonneg (by norm_num)) (by norm_num)
+
+/-- **E3 v2: the aerobic ceiling inside the widened ranges is at most 0.0833 W** (0.23 × 19.35 × 0.0187 =
+0.08322). -/
+theorem aerobicCeilingV2_le (T : TeleostAerobicV2) :
+    T.eta * T.oxycaloric * T.o2Delivery ≤ 0.0833 := by
+  have hA : T.eta * T.oxycaloric ≤ 0.23 * 19.35 :=
+    mul_le_mul T.eta_le T.oxy_le T.oxy_nonneg (by norm_num)
+  have := mul_le_mul hA T.del_le T.del_nonneg (by norm_num : (0:ℝ) ≤ 0.23 * 19.35)
+  calc T.eta * T.oxycaloric * T.o2Delivery ≤ 0.23 * 19.35 * 0.0187 := this
+    _ ≤ 0.0833 := by norm_num
+
+/-- **E3 v2 composed with the Fick bound**: a sustained flight needing more than 0.0833 W is ruled out for any
+animal whose O2 delivery `Q·Ca` and efficiency lie inside the widened ranges. -/
+theorem no_aerobic_flight_above_ceiling_v2 (T : TeleostAerobicV2) {W v LD P Q Ca Cv : ℝ} (hQ : 0 ≤ Q)
+    (hCv : 0 ≤ Cv) (hdel : Q * Ca ≤ T.o2Delivery)
+    (hsus : P ≤ aerobicPower T.eta T.oxycaloric Q Ca Cv)
+    (hflight : powerRequired W v LD ≤ P) (hbig : 0.0833 < powerRequired W v LD) : False := by
+  have h := sustained_flight_requires T.eta_nonneg T.oxy_nonneg hQ hCv hsus hflight
+  have hAnn : 0 ≤ T.eta * T.oxycaloric := mul_nonneg T.eta_nonneg T.oxy_nonneg
+  have h2 : T.eta * T.oxycaloric * (Q * Ca) ≤ T.eta * T.oxycaloric * T.o2Delivery :=
+    mul_le_mul_of_nonneg_left hdel hAnn
+  have h3 := aerobicCeilingV2_le T
+  have e : T.eta * T.oxycaloric * Q * Ca = T.eta * T.oxycaloric * (Q * Ca) := by ring
+  linarith
+
+/-- **E3 v2 is non-vacuous**: the physiology chain's own values (η 0.15, 19.342857 J/ml, Q·Ca =
+0.06564129 × 0.18723338 ml/s) lie inside the widened ranges. -/
+theorem teleostAerobicV2_nonvacuous : Nonempty TeleostAerobicV2 :=
+  ⟨{ eta := 0.15, oxycaloric := 19.342857, o2Delivery := 0.06564129 * 0.18723338
+     eta_nonneg := by norm_num, eta_le := by norm_num
+     oxy_nonneg := by norm_num, oxy_le := by norm_num
+     del_nonneg := by norm_num, del_le := by norm_num }⟩
 
 /-! ### E4: gills do not ventilate in air -/
 

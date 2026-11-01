@@ -72,6 +72,12 @@ export function judgeRows(rows, design = {}, spec = {}, opts = {}) {
     const pin = ls.laws[lid];
     const law = { law_id: lid, version: pin ? pin.version : null, kind: pin ? pin.kind : LAW_INFO[lid].kind, status: pin ? pin.status : 'not-in-lawset' };
     const sc = scopeCheck(r.id, design, spec);
+    // Version-dependent constant: E3 1.0.0 (law sets 1.0.0-1.5.0) ruled at 0.0458 W, E3 2.0.0 at 0.0833 W.
+    // Re-applying the pinned version's ceiling keeps verdicts against older law sets reproducible.
+    if (r.id === 'E3' && pin && pin.version === '1.0.0' && r.numbers && typeof r.numbers.powerRequired_W === 'number' && typeof r.numbers.ceiling_v1_W === 'number') {
+      const P = r.numbers.powerRequired_W, c1 = r.numbers.ceiling_v1_W;
+      r = { ...r, verdict: leTol(P, c1) ? 'holds' : 'violated', numbers: { ...r.numbers, ceiling_W: c1, shortfall_factor: P > 0 ? P / c1 : null, ceiling_pinned_by: 'E3@1.0.0' } };
+    }
     let verdict = r.verdict;
     if (!pin || law.status === 'proposed' || law.status === 'retired') verdict = 'not-in-lawset';
     else if (!sc.in_scope && (r.verdict === 'holds' || r.verdict === 'violated')) verdict = 'out-of-scope';

@@ -2,8 +2,8 @@
  "summary": {
   "run": "2026-11-01T03:04:36.640Z",
   "command": "lake env lean <mutant copy>",
-  "mutations": 61,
-  "rejected": 61,
+  "mutations": 63,
+  "rejected": 63,
   "controlsPassed": 19,
   "controls": 19,
   "allAsExpected": true,
@@ -16,16 +16,15 @@
   "order": "controls first, then mutants, each sorted by id; the pool's completion order does not reach this file",
   "parallelNote": "The compiles are independent, so they run in a pool of 4. The cap is memory, not cores: each lean process holds several GB with Mathlib imported. lake env lean type-checks a copy outside the package, writing no .olean, and each compile also has its own directory under the scratch root, so none can clobber another. lean's own elaboration threads are capped at 8 per compile (LEAN_NUM_THREADS) so the pool does not oversubscribe 32 cores; wall clock against summed compile time is the speedup.",
   "partialRerun": {
-   "run": "2026-11-01T03:12:57.154Z",
-   "pattern": "^hydro-",
+   "run": "2026-11-01T04:32:44.951Z",
+   "pattern": "e3v2|empirical-witness-outside-band",
    "ids": [
-    "control-hydrostatics",
-    "hydro-gradient-reversed",
-    "hydro-rho-dropped",
-    "hydro-v1-constant",
-    "hydro-witness-negative-density"
+    "control-empirical",
+    "empirical-e3v2-old-ceiling",
+    "empirical-e3v2-witness-outside-band",
+    "empirical-witness-outside-band"
    ],
-   "wallClockSeconds": 26.1,
+   "wallClockSeconds": 18.7,
    "note": "only these entries were recompiled; every other entry is from the full run at summary.run"
   }
  },
@@ -565,6 +564,42 @@
    "firstError": "Empirical.lean:114:45: error: Application type mismatch: The argument"
   },
   {
+   "id": "empirical-e3v2-old-ceiling",
+   "kind": "mutation",
+   "file": "lean/Delphi/Empirical.lean",
+   "theorem": "Delphi.Empirical.aerobicCeilingV2_le",
+   "claim_id": "empirical-E3",
+   "description": "E3 v2 (law set 1.6.0): the widened ranges (eta <= 0.23, Q*Ca <= 0.0187 ml/s) claimed to give the OLD v1 ceiling 0.0458 W. 0.23 x 19.35 x 0.0187 = 0.0832, so the proof must fail: the widening is real, not a relabelling.",
+   "find": "    T.eta * T.oxycaloric * T.o2Delivery ≤ 0.0833 := by",
+   "replace": "    T.eta * T.oxycaloric * T.o2Delivery ≤ 0.0458 := by",
+   "also": [],
+   "expected": "rejected",
+   "outcome": "rejected",
+   "asExpected": true,
+   "exit": 1,
+   "seconds": 18.6,
+   "errors": 1,
+   "firstError": "Empirical.lean:196:52: error: unsolved goals"
+  },
+  {
+   "id": "empirical-e3v2-witness-outside-band",
+   "kind": "mutation",
+   "file": "lean/Delphi/Empirical.lean",
+   "theorem": "Delphi.Empirical.teleostAerobicV2_nonvacuous",
+   "claim_id": "empirical-E3",
+   "description": "E3 v2 (law set 1.6.0): the widened efficiency band moved so the witness falls outside it (cap 0.1 while the witness commits the chain’s 0.15). The v2 non-vacuity witness must then fail to compile.",
+   "find": "  eta_le : eta ≤ 0.23",
+   "replace": "  eta_le : eta ≤ 0.1",
+   "also": [],
+   "expected": "rejected",
+   "outcome": "rejected",
+   "asExpected": true,
+   "exit": 1,
+   "seconds": 18.3,
+   "errors": 2,
+   "firstError": "Empirical.lean:198:15: error: Application type mismatch: The argument"
+  },
+  {
    "id": "empirical-witness-outside-band",
    "kind": "mutation",
    "file": "lean/Delphi/Empirical.lean",
@@ -578,9 +613,9 @@
    "outcome": "rejected",
    "asExpected": true,
    "exit": 1,
-   "seconds": 14.3,
+   "seconds": 18.3,
    "errors": 2,
-   "firstError": "Empirical.lean:148:15: error: Application type mismatch: The argument"
+   "firstError": "Empirical.lean:152:15: error: Application type mismatch: The argument"
   },
   {
    "id": "favored-budget-doubled",

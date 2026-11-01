@@ -1,9 +1,9 @@
 {
- "version": "1.5.0",
- "created": "2026-11-01T03:49:46.727Z",
- "previous": "1.4.0",
- "commit": "b18ef062300f4ec804b79590e8aba1988fd91096",
- "note": "Five perturbation laws promoted from candidate to accepted by human approval (approved_by_role human:project-lead, 2026-11-01: approved by the project lead in the hub session after review of sources and mutation results): perturb-thermal (P1, P1b), perturb-current (P2, P2b), perturb-isa-vmin (P4), perturb-wind-glide (P4b), perturb-energy-balance (P5). Their violations are now red. Not approved and unchanged: perturb-pressure 2.0.0 (candidate) and perturb-depth-cap (contested).",
+ "version": "1.6.0",
+ "created": "2026-11-01T04:37:40.476Z",
+ "previous": "1.5.0",
+ "commit": "7168d39c71fa426db3b1f1e94b9a30db9d086ddc",
+ "note": "E3 1.0.0 -> 2.0.0: the Fick aerobic envelope widened after a measured zebrafish broke it (Palstra et al. 2010, PMC3013094: MO2max at Ucrit 2630 mg O2 kg^-1 h^-1, about 2x the per-kg delivery v1 allowed). v2 bounds eta <= 0.23 (Gladman and Askew 2024) and O2 delivery Q*Ca <= 0.0187 ml O2/s at 0.06 kg (1600 mg O2 kg^-1 h^-1), ceiling 0.0458 -> 0.0833 W, wording rescoped from every teleost to its sources; v1 stays compiled and pinned by law sets 1.0.0-1.5.0, and v2 is proved a weakening of v1 (TeleostAerobic.toV2). Flying-fish powered-flight shortfall: 16x on the new envelope, about 10 to 29x (central about 20x) across corrected inputs, 38x with the original snapper proxies; still ruled out by an order of magnitude. perturb-current 1.1.0 adds a P2b scope assumption (aerobic only below about 0.8 Ucrit; taxon-appropriate ceiling); fick-principle 1.1.0 adds a scope note (taxon-appropriate MO2max or Q). The three new versions carry approval role carried-forward-pending-review: no person has reviewed them yet. Report: physics/FICK-CEILING-CHECK.md.",
  "laws": [
   {
    "law_id": "E1",
@@ -61,17 +61,16 @@
   },
   {
    "law_id": "E3",
-   "version": "1.0.0",
+   "version": "2.0.0",
    "kind": "biological",
    "status": "accepted",
-   "label": "Efficiency, cardiac output and arterial O2 lie in the measured teleost ranges",
+   "label": "Efficiency and O2 delivery lie in the ranges the cited sources support (widened after measured zebrafish)",
    "level": "empirical observation",
-   "theorem": "Delphi.Empirical.aerobicCeiling_le",
+   "theorem": "Delphi.Empirical.aerobicCeilingV2_le",
    "module": "lean/Delphi/Empirical.lean",
-   "statement": "eta <= 0.15, oxycaloric <= 19.35 J/ml, cardiac output <= 0.075 ml/s and arterial O2 <= 0.21 ml/ml imply an aerobic ceiling of at most 0.0458 W.",
+   "statement": "eta <= 0.23, oxycaloric <= 19.35 J/ml and O2 delivery Q*Ca <= 0.0187 ml O2/s (1600 mg O2 kg^-1 h^-1 at 0.06 kg) imply an aerobic ceiling of at most 0.0833 W.",
    "sources": [
-    "physiology/muscle.js (efficiency, oxycaloric), physiology/cardiac.js (cardiac output range), physiology/haemoglobin.js (blood O2 capacity), as cited in lean/eliminate/physiology-candidates.json",
-    "physiology/muscle.js (efficiency, oxycaloric), physiology/cardiac.js (cardiac output range), physiology/haemoglobin.js (blood O2 capacity), as cited in lean/eliminate/physiology-candidates.json"
+    "Palstra AP et al. (2010) PLoS One 5:e14483, doi:10.1371/journal.pone.0014483, PMC3013094, Results \"Swimming economy\" (MO2max at Ucrit 82.18 umol g^-1 h^-1 = 2630 mg O2 kg^-1 h^-1; 0.43 g, 28 C); Gladman NW, Askew GN (2024) J Exp Biol 227, PMC11583979 (contractile efficiency 0.37 x oxidative recovery 0.61 = 0.23); physiology/muscle.js (oxycaloric 13.54 J/mg at 0.7 ml O2 per mg). Analysis: physics/FICK-CEILING-CHECK.md section 5."
    ],
    "scope": {
     "taxa": [
@@ -83,7 +82,7 @@
       "min": 0.06,
       "max": 0.06,
       "unit": "kg",
-      "note": "the cardiac-output ceiling (75 ml/min/kg) was converted to ml/s for a 0.06 kg fish; at any other mass the absolute bound 0.075 ml/s is not the measured one"
+      "note": "the O2-delivery bound (1600 mg O2 kg^-1 h^-1) was converted to ml O2/s for a 0.06 kg fish; at any other mass the absolute bound 0.0187 ml/s is not the one the sources give"
      }
     }
    },
@@ -91,7 +90,7 @@
    "constraints": [
     "E3"
    ],
-   "content_hash": "a0a18bd9d63b17d78bd4090b47736bd50d35ac958aadbb444ec2fa429544f1c4"
+   "content_hash": "bfa804b9246fcefc4b0596de5a620b6debcf76b15a803e4f47c6be7e522ab686"
   },
   {
    "law_id": "E4",
@@ -476,7 +475,7 @@
   },
   {
    "law_id": "fick-principle",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "kind": "biological",
    "status": "accepted",
    "label": "Fick principle: aerobic supply is at most eta E Q (Ca - Cv)",
@@ -496,7 +495,7 @@
    "constraints": [
     "C14"
    ],
-   "content_hash": "153f36c6ff9f83371aca89a7708d71f59a33ab9a1068085fd94ec1846fd09cbc"
+   "content_hash": "7a255d60a81fb136bef08b2a15c8d5c749bb2753c297f68ade48edc202962bf2"
   },
   {
    "law_id": "fin-length-ratio",
@@ -829,6 +828,29 @@
    "content_hash": "6bc6b5e1e0a6c9569405c2d3c9283adace02e6adad0d30e6b86440a1394fd38c"
   },
   {
+   "law_id": "maynardsmith-hitchhiking",
+   "version": "1.0.0",
+   "kind": "biological",
+   "status": "candidate",
+   "label": "Genetic hitchhiking: a sweep's reduction of linked variation grows as c/s falls",
+   "level": null,
+   "theorem": "Delphi.LeanBio.Hitchhiking.hitchhiking_relHet",
+   "module": "lean/registry/proposals/maynardsmith-hitchhiking/law.lean",
+   "statement": "Under the deterministic-sweep approximation relHet = 1 - K^(-a c/s) with K > 1 and a > 0 (a named hypothesis), a selective sweep leaves no variation at a neutral site with c/s = 0, the variation left rises strictly with c/s (so the reduction is larger the tighter the linkage relative to selection), and for c/s > 0 the sweep removes some but not all variation.",
+   "sources": [
+    "doi:10.1017/S0016672300014634"
+   ],
+   "scope": {
+    "taxa": [
+     "any"
+    ],
+    "life_stages": [],
+    "ranges": {}
+   },
+   "constraints": [],
+   "content_hash": "b51aa2313e0efafa331758a8059255ab9135e1bfacbedcc08b76c366ed5b9b7c"
+  },
+  {
    "law_id": "maynardsmith-twofold-cost",
    "version": "1.0.0",
    "kind": "biological",
@@ -879,7 +901,7 @@
   },
   {
    "law_id": "perturb-current",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "kind": "biological",
    "status": "accepted",
    "label": "No holding station in a current above U_crit or the aerobic drag bound",
@@ -902,7 +924,7 @@
     "P2",
     "P2b"
    ],
-   "content_hash": "f4702e881b21df060be5408b4944aa33060883165bcb641db413dc7bf4bf2ec4"
+   "content_hash": "3bd9fc384da4b16e6ae8d3dd1745abdd3f72125ad5d24f499cb819e39a1f9f06"
   },
   {
    "law_id": "perturb-depth-cap",
@@ -1389,7 +1411,7 @@
    "content_hash": "cc4fecaa7c6139dfe7dda4b373135f5cc8213630967dce0f62c6d9f204d0fd80"
   }
  ],
- "file": "lean/registry/lawsets/lawset-1.5.0.json",
+ "file": "lean/registry/lawsets/lawset-1.6.0.json",
  "is_current": true,
  "origin": "registry"
 }

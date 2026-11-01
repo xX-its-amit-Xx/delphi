@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../shared/shell.css">
+<script src="../shared/shell.js"></script>
+<title>Scorer Evaluation &mdash; DELPHI</title>
+<meta name="description" content="Independent evaluation of the DELPHI design scorer: do real organisms score high, do impossible designs score low, and can the scorer be fooled?">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M9 20l5-6 4 3 5-7' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--accent-ink:#fff;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--viol:#6b4fb3;--soft:#eef2ef;--shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05);
+  --real:#2a78d6;--neg:#eb6834;--grid:#e6e9e6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3);
+  --real:#3987e5;--neg:#d95926;--grid:#21332f}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3);
+  --real:#3987e5;--neg:#d95926;--grid:#21332f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+h1,h2,h3{line-height:1.2;margin:0 0 .5em}
+h1{font-size:clamp(1.7rem,4.5vw,2.6rem)} h2{font-size:1.4rem} h3{font-size:1.05rem}
+p{margin:.4em 0 .8em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+section{padding:28px 0;border-bottom:1px solid var(--line)}
+.lede{color:var(--mute);max-width:72ch;font-size:1.05rem}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.card h3{margin-top:0}
+.kpi{font-size:2.1rem;font-weight:650;line-height:1.05}
+.kpi.hero{font-size:3.2rem}
+.kpi small{display:block;font-size:.8rem;font-weight:400;color:var(--mute);margin-top:6px}
+.chip{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;border:1px solid var(--line);background:var(--soft);color:var(--mute)}
+.chip.ok{color:var(--ok);border-color:var(--ok)} .chip.bad{color:var(--bad);border-color:var(--bad)} .chip.warn{color:var(--warn);border-color:var(--warn)}
+.small{font-size:.88rem} .mute{color:var(--mute)}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;font-size:.84rem}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.note{background:var(--soft);border-left:3px solid var(--warn);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:.92rem}
+.note.ok{border-left-color:var(--ok)} .note.bad{border-left-color:var(--bad)}
+.tag{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.82rem;background:var(--soft);padding:1px 6px;border-radius:6px;overflow-wrap:anywhere}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0 4px}
+.filters button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:5px 12px;border-radius:99px;font-size:.9rem}
+.filters button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:600}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.85rem;color:var(--mute);margin:4px 0 8px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{fill:var(--mute);font-size:11px;font-family:inherit}
+svg .ax{stroke:var(--line);stroke-width:1}
+svg .gr{stroke:var(--grid);stroke-width:1}
+svg .thr{stroke:var(--ink);stroke-width:1;opacity:.55}
+svg .hit{fill:transparent;cursor:default}
+svg .mk:hover,svg .mk:focus{opacity:.75;outline:none}
+#tip{position:fixed;pointer-events:none;z-index:50;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:.82rem;box-shadow:var(--shadow);display:none;max-width:320px}
+#tip b{font-size:.95rem}
+details{margin-top:8px} summary{cursor:pointer;color:var(--accent);font-size:.9rem}
+.scroll{overflow-x:auto;max-width:100%}
+footer{padding:26px 0;color:var(--mute);font-size:.88rem}
+</style>
+<style id="dsh-fit">@media (max-width:720px){body{overflow-wrap:break-word}.kpi.hero{font-size:2.4rem}}</style>
+</head>
+<body>
+<div id="tip" role="tooltip"></div>
+<main class="wrap">
+<section>
+  <h1>Does the design scorer work?</h1>
+  <p class="lede">An independent check of <span class="tag">designScore</span>, the scorer that rates synthetic organism designs. The test: real organisms should score high, designs that real biology rules out should score low, and nobody should be able to fool the scorer easily. The evaluator did not build the scorer or the benchmark. Every number below is recomputed from the run file, and every failure is kept.</p>
+  <div id="banner"></div>
+  <div class="grid g4" id="kpis"></div>
+  <p class="small mute" id="ver"></p>
+</section>
+
+<section>
+  <h2>Scorer versions side by side</h2>
+  <p class="small mute">Each version was frozen before the held-out families were opened, and each was scored blind once with the same protocol. The headline column is held-out, family-out.</p>
+  <div class="filters" id="verbtns" role="group" aria-label="scorer version"></div>
+  <div class="card"><div class="scroll" id="vertable"></div></div>
+</section>
+
+<section>
+  <h2>Pick a split</h2>
+  <p class="small mute">Every item is scored with its own references taken out. Specimen-out removes the specimen itself. Species-out removes every specimen of its species. Family-out removes its whole family. The held-out set was never used to build or tune the scorer. Your choice applies to every chart below.</p>
+  <div class="filters" id="splitbtns" role="group" aria-label="split"></div>
+</section>
+
+<section>
+  <h2>Score distributions: real organisms vs each kind of negative</h2>
+  <p class="small mute">Each row is a histogram of scores from 0 to 1, with 20 bins. The vertical rule is the pre-registered plausible cut at 0.5. Real organisms should pile up on the right, and negatives on the left.</p>
+  <div class="legend"><span><i style="background:var(--real)"></i>real organisms (positives)</span><span><i style="background:var(--neg)"></i>negatives</span></div>
+  <div class="card"><div id="dists"></div></div>
+</section>
+
+<section>
+  <h2>Separation, with 95 % bootstrap intervals</h2>
+  <div class="grid g2">
+    <div class="card"><h3>ROC-AUC by split</h3><p class="small mute">1.0 means perfect separation and 0.5 means chance.</p><div id="aucsplits"></div></div>
+    <div class="card"><h3>Does the scorer beat simple baselines?</h3><p class="small mute">The same items, ranked by simpler rules. If a baseline matches the scorer, the scorer's extra complexity buys nothing.</p><div id="baselines"></div></div>
+  </div>
+</section>
+
+<section>
+  <h2>Which real families score low?</h2>
+  <p class="small mute">Real organisms grouped by family, showing the share that scored at or above the cut. The chart lists the families with at least 2 items scored, lowest first. A low family is either a scorer failure or a gap in the reference data.</p>
+  <div class="card"><div id="families"></div>
+  <details><summary>Lowest-scoring real organisms (inspect)</summary><div class="scroll" id="lowitems"></div></details></div>
+</section>
+
+<section>
+  <h2>Calibration and stability</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Calibration</h3><p class="small mute">Bars show the fraction of items in each score bin that are real. The diagonal marks what a calibrated probability would give. The benchmark's mix of real and negative items moves this, so read it as a shape, not as a probability.</p><div id="calib"></div></div>
+    <div class="card"><h3>Weight perturbation (each weight ±20 %)</h3><p class="small mute">Each component weight is moved ±20 % on its own, and the items are recomputed from the scorer's own component values. Do the conclusions hold?</p><div id="wpert"></div><div id="stab" class="small"></div></div>
+  </div>
+</section>
+
+<section>
+  <h2>Trying to break it</h2>
+  <p class="small mute">Two searches for designs that score as plausible although they are impossible. The first runs over the seven numbers the body block reads, restricted to designs that break a hard geometric or physical rule. The second runs over edits to traits the scorer never reads (gills, hemoglobin, ray counts, density).</p>
+  <div class="grid g2" id="advkpis"></div>
+  <div class="card" style="margin-top:14px"><h3>Best attacks</h3><div class="scroll" id="advtable"></div></div>
+</section>
+
+<section>
+  <h2>Verdict against the benchmark pre-registration</h2>
+  <div class="card"><div class="scroll" id="criteria"></div></div>
+  <div class="card" style="margin-top:14px"><h3>Exclusion audit</h3><div id="audit" class="small"></div></div>
+</section>
+<footer>Method and caveats: <span class="tag">sim-engine/validate/evaluation/SCORER-EVALUATION.md</span>. Data: <a href="data.json">data.json</a>. No bird data is used anywhere (Aves is the frozen holdout).</footer>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const el = (t, a = {}, kids = []) => { const e = document.createElementNS(/^(svg|rect|line|text|g|path|circle|title)$/.test(t) ? 'http://www.w3.org/2000/svg' : 'http://www.w3.org/1999/xhtml', t); for (const [k, v] of Object.entries(a)) k === 'text' ? (e.textContent = v) : e.setAttribute(k, v); for (const c of kids) e.appendChild(c); return e; };
+const f3 = x => (x == null ? 'n/a' : (+x).toFixed(3)), pct = x => (x == null ? 'n/a' : (100 * x).toFixed(1) + ' %');
+const tip = $('#tip');
+function hover(node, lines) {
+  const show = ev => { tip.replaceChildren(...lines.map((l, i) => { const d = el('div'); if (i === 0) { const b = el('b'); b.textContent = l; d.appendChild(b); } else d.textContent = l; return d; })); tip.style.display = 'block'; const r = ev.clientX != null ? { x: ev.clientX, y: ev.clientY } : (() => { const b = node.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top }; })(); tip.style.left = Math.min(r.x + 12, innerWidth - 330) + 'px'; tip.style.top = (r.y + 12) + 'px'; };
+  node.addEventListener('pointermove', show); node.addEventListener('focus', show);
+  node.addEventListener('pointerleave', () => (tip.style.display = 'none')); node.addEventListener('blur', () => (tip.style.display = 'none'));
+  node.setAttribute('tabindex', '0');
+}
+function table(head, rows, numeric = []) {
+  const t = el('table'), tr = el('tr');
+  head.forEach((h, i) => tr.appendChild(el('th', numeric.includes(i) ? { class: 'n', text: h } : { text: h })));
+  t.appendChild(el('thead', {}, [tr])); const tb = el('tbody');
+  for (const r of rows) { const x = el('tr'); r.forEach((c, i) => x.appendChild(el('td', numeric.includes(i) ? { class: 'n', text: String(c) } : { text: String(c) }))); tb.appendChild(x); }
+  t.appendChild(tb); return t;
+}
+let D, cur;
+let VERS = [];
+fetch('versions.json', { cache: 'no-store' }).then(r => r.json()).then(v => { VERS = v; renderVersions(); }).catch(() => {});
+fetch('data.json', { cache: 'no-store' }).then(r => r.json()).then(d => { D = d; init(); }).catch(e => { $('#banner').innerHTML = '<div class="note bad">No evaluation run has been published yet (data.json missing).</div>'; });
+function renderVersions() {
+  if (!VERS.length) return;
+  const ids = ['P1', 'P2', 'P3', 'S1', 'S2', 'S3', 'S4', 'S5', 'S6'];
+  const rows = VERS.map(v => [`v${v.version}`, v.overall_primary_pass ? 'PASS' : 'FAIL', `${f3(v.heldout_lofo.auc)} (${f3(v.heldout_lofo.ci[0])} to ${f3(v.heldout_lofo.ci[1])})`, pct(v.heldout_lofo.real_above), pct(v.heldout_lofo.neg_below),
+    ...ids.map(id => { const c = v.criteria.find(x => x.id === id); return c ? `${c.pass ? 'PASS' : 'FAIL'}${c.value != null ? ' ' + f3(c.value) : ''}` : ''; }), v.adversarial ? `${v.adversarial.specimen_space} · ${v.adversarial.document_space_C8}` : '', `${v.run_id.slice(0, 16)} · score.mjs ${v.score_mjs}`]);
+  $('#vertable').replaceChildren(table(['version', 'primary verdict', 'AUC, all real vs all negatives (95 % CI)', 'real organisms at or above 0.5', 'negatives below 0.5', ...ids, 'attacks that score plausible (specimen space · unread traits)', 'run'], rows));
+  $('#verbtns').replaceChildren(...VERS.map(v => { const b = el('button', { 'aria-pressed': 'false', text: `show v${v.version}` }); b.onclick = () => fetch(v.file, { cache: 'no-store' }).then(r => r.json()).then(d => { D = d; document.querySelectorAll('#verbtns button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); $('#splitbtns').replaceChildren(); init(); }); return b; }));
+}
+
+function view(k) { const [part, sp] = k.split(':'); return D[part][sp]; }
+function init() {
+  const V = D.versions;
+  $('#banner').innerHTML = '';
+  const prim = D.criteria.filter(c => c.primary), sec = D.criteria.filter(c => !c.primary);
+  const b = el('div', { class: 'note ' + (D.overall_primary_pass ? 'ok' : 'bad') });
+  b.textContent = `Verdict on the pre-registered benchmark (weights v${V.score_weights.version}): ${D.overall_primary_pass ? 'PASS' : 'FAIL'}. ${prim.filter(c => c.pass).length} of ${prim.length} primary endpoints pass (P1 to P3, held-out families, family-out), and ${sec.filter(c => c.pass).length} of ${sec.length} secondary endpoints pass. ${D.benchmark_source}.`;
+  $('#banner').appendChild(b);
+  $('#ver').textContent = `Run ${V.run_id} · score-weights v${V.score_weights.version} (sha256 ${V.score_weights.sha256.slice(0, 12)}) · score.mjs ${V.scorer_files['score.mjs']?.slice(0, 12)} · benchmark pre-registration ${V.benchmark.prereg_sha256?.slice(0, 12)} · manifest ${V.benchmark.manifest_sha256?.slice(0, 12)} · ${D.seconds}s. Genus-out: ${D.genus_split}`;
+  const keys = [...['family', 'species', 'specimen'].map(s => `heldout:${s}`), ...Object.keys(D.dev || {}).map(s => `dev:${s}`)];
+  const names = Object.fromEntries(keys.map(k => { const [p, s] = k.split(':'); return [k, `${p === 'heldout' ? 'held-out' : 'dev'} · ${s}-out`]; }));
+  cur = 'heldout:family';
+  for (const k of keys) { const bt = el('button', { 'aria-pressed': String(k === cur), text: names[k] || k }); bt.onclick = () => { cur = k; document.querySelectorAll('#splitbtns button').forEach(x => x.setAttribute('aria-pressed', String(x === bt))); render(); }; $('#splitbtns').appendChild(bt); }
+  render(); renderAdv(); renderCriteria(); renderAuc(keys, names);
+}
+function render() {
+  const v = view(cur), M = v.metrics;
+  $('#kpis').replaceChildren(
+    kpi(f3(M.roc_auc), `ROC-AUC, all real vs all negatives, ${cur.replace(':', ' · ')}-out (family-bootstrap 95 % CI ${f3(M.ci_family.lo)} to ${f3(M.ci_family.hi)})`, true),
+    kpi(pct(M.real_above_threshold.frac), `of real organisms score at or above ${D.threshold} (${M.real_above_threshold.k}/${M.real_above_threshold.n}; CI ${pct(M.real_above_threshold.lo)} to ${pct(M.real_above_threshold.hi)})`),
+    kpi(pct(M.negatives_below_threshold.frac), `of negatives score below ${D.threshold} (${M.negatives_below_threshold.k}/${M.negatives_below_threshold.n})`),
+    kpi(f3(M.pr_auc), `PR-AUC (chance ${f3(M.pr_chance)}; CI ${f3(M.pr_ci_family.lo)} to ${f3(M.pr_ci_family.hi)}). Restricted to items the scorer can read: AUC ${f3(v.readable_only.roc_auc)} (${v.readable_only.n_pos} real / ${v.readable_only.n_neg} negative)`));
+  renderDists(M); renderBaselines(v.baselines); renderFamilies(v.per_taxon); renderCalib(M.calibration); renderWpert(v.weight_perturbation);
+}
+function kpi(v, label, hero) { const c = el('div', { class: 'card' }); const k = el('div', { class: 'kpi' + (hero ? ' hero' : ''), text: v }); k.appendChild(el('small', { text: label })); c.appendChild(k); return c; }
+
+function renderDists(M) {
+  const groups = Object.entries(M.by_type).map(([k, g]) => ({ k, g: { ...g, frac_above_threshold: g.frac_correct_side, frac_below_threshold: g.frac_correct_side, roc_auc: g.auc_vs_all_real }, pos: g.y === 1 })).sort((a, b) => b.pos - a.pos || b.g.n - a.g.n);
+  const W = 760, rowH = 70, L = 230, R = 20, top = 8;
+  const svg = el('svg', { viewBox: `0 0 ${W} ${groups.length * rowH + 30}`, role: 'img', 'aria-label': 'score histograms per item type' });
+  const x = s => L + s * (W - L - R);
+  groups.forEach(({ k, g, pos }, i) => {
+    const y0 = top + i * rowH, h = rowH - 18, max = Math.max(...g.hist, 1), bw = (W - L - R) / 20;
+    svg.appendChild(el('line', { class: 'ax', x1: L, x2: W - R, y1: y0 + h, y2: y0 + h }));
+    svg.appendChild(el('text', { x: 0, y: y0 + h / 2, text: k.replace(/^(real|negative): /, ''), style: 'fill:var(--ink);font-size:12px' }));
+    const share = pos ? `${pct(g.frac_above_threshold)} at or above cut` : `${pct(g.frac_below_threshold)} below cut · AUC vs real ${f3(g.roc_auc)}`;
+    svg.appendChild(el('text', { x: 0, y: y0 + h / 2 + 15, text: `n ${g.n} · ${share}` }));
+    svg.appendChild(el('text', { x: 0, y: y0 + h / 2 + 28, text: `scorer can read ${pct(g.scorer_readable_frac)}` }));
+    g.hist.forEach((c, j) => {
+      if (!c) return; const bh = Math.max(2, (c / max) * (h - 4));
+      const r = el('rect', { class: 'mk', x: x(j / 20) + 1, y: y0 + h - bh, width: Math.min(24, bw - 2), height: bh, rx: Math.min(4, bh / 2), fill: pos ? 'var(--real)' : 'var(--neg)' });
+      hover(r, [`${c} item${c > 1 ? 's' : ''}`, k, `score ${(j / 20).toFixed(2)} to ${((j + 1) / 20).toFixed(2)}`]); svg.appendChild(r);
+    });
+  });
+  const yb = groups.length * rowH + 4;
+  svg.appendChild(el('line', { class: 'thr', x1: x(D.threshold), x2: x(D.threshold), y1: 0, y2: yb }));
+  [0, 0.25, 0.5, 0.75, 1].forEach(t => svg.appendChild(el('text', { x: x(t), y: yb + 16, 'text-anchor': 'middle', text: t })));
+  $('#dists').replaceChildren(svg, details('Table', table(['type', 'n', 'median', 'q10', 'q90', 'share on the correct side of 0.5'], groups.map(({ k, g, pos }) => [k, g.n, f3(g.dist.median), f3(g.dist.q10), f3(g.dist.q90), pct(pos ? g.frac_above_threshold : g.frac_below_threshold)]), [1, 2, 3, 4, 5])));
+}
+function details(s, node) { const d = el('details'); d.appendChild(el('summary', { text: s })); d.appendChild(node); return d; }
+function dotWhisker(rows, { lo = 0.4, hi = 1, ref = 0.5, color = 'var(--real)' } = {}) {
+  const W = 520, L = 170, R = 40, rowH = 30;
+  const svg = el('svg', { viewBox: `0 0 ${W} ${rows.length * rowH + 28}`, role: 'img' });
+  const x = v => L + (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo) * (W - L - R);
+  for (let t = lo; t <= hi + 1e-9; t += 0.1) { svg.appendChild(el('line', { class: 'gr', x1: x(t), x2: x(t), y1: 0, y2: rows.length * rowH })); svg.appendChild(el('text', { x: x(t), y: rows.length * rowH + 16, 'text-anchor': 'middle', text: t.toFixed(1) })); }
+  svg.appendChild(el('line', { class: 'thr', x1: x(ref), x2: x(ref), y1: 0, y2: rows.length * rowH }));
+  rows.forEach((r, i) => {
+    const y = i * rowH + rowH / 2;
+    svg.appendChild(el('text', { x: 0, y: y + 4, text: r.label, style: 'fill:var(--ink);font-size:12px' + (r.bold ? ';font-weight:700' : '') }));
+    if (r.v == null) return;
+    if (r.lo != null) svg.appendChild(el('line', { x1: x(r.lo), x2: x(r.hi), y1: y, y2: y, stroke: r.color || color, 'stroke-width': 2, 'stroke-linecap': 'round' }));
+    const g = el('g', { class: 'mk' }); g.appendChild(el('circle', { cx: x(r.v), cy: y, r: 12, class: 'hit' })); g.appendChild(el('circle', { cx: x(r.v), cy: y, r: 5, fill: r.color || color, stroke: 'var(--panel)', 'stroke-width': 2 }));
+    svg.appendChild(el('text', { x: W - R + 6, y: y + 4, text: f3(r.v) }));
+    hover(g, [f3(r.v), r.label, ...(r.lo != null ? [`95 % CI ${f3(r.lo)} to ${f3(r.hi)}`] : []), ...(r.extra || [])]); svg.appendChild(g);
+  });
+  return svg;
+}
+function renderAuc(keys, names) {
+  const rows = keys.map(k => { const M = view(k).metrics; return { label: names[k] || k, v: M.roc_auc, lo: M.ci_family.lo, hi: M.ci_family.hi, extra: [`n ${M.n_pos} real / ${M.n_neg} negative`] }; });
+  const p1 = D.criteria.find(c => c.id === 'P1');
+  rows.unshift({ label: 'P1: FishShapes real vs decoys', v: p1.value.auc, lo: p1.value.ci[0], hi: p1.value.ci[1], bold: true, extra: ['held-out, family-out (primary endpoint)'] });
+  $('#aucsplits').replaceChildren(dotWhisker(rows, { lo: 0.3 }));
+}
+function renderBaselines(Bl) {
+  const lab = { scorer: 'designScore (full)', nn_distance_only: 'nearest-neighbour distance', P_only: 'phenotype component P only', lean_only: 'Lean component only', random: 'random' };
+  const rows = Object.entries(Bl).map(([k, b]) => ({ label: lab[k] || k, v: b.roc_auc, lo: b.ci_family?.lo, hi: b.ci_family?.hi, bold: k === 'scorer', color: k === 'scorer' ? 'var(--real)' : 'var(--mute)', extra: b.scorer_minus_baseline ? [`scorer minus this: ${f3(b.scorer_minus_baseline.mean)} (CI ${f3(b.scorer_minus_baseline.lo)} to ${f3(b.scorer_minus_baseline.hi)})`] : [] }));
+  $('#baselines').replaceChildren(dotWhisker(rows, { lo: 0.3 }), details('Table', table(['rule', 'ROC-AUC', 'PR-AUC', 'scorer minus rule (95 % CI)'], Object.entries(Bl).map(([k, b]) => [lab[k] || k, f3(b.roc_auc), f3(b.pr_auc), b.scorer_minus_baseline ? `${f3(b.scorer_minus_baseline.mean)} (${f3(b.scorer_minus_baseline.lo)} to ${f3(b.scorer_minus_baseline.hi)})` : '']), [1, 2])));
+}
+function renderFamilies(T) {
+  const fam = T.low_families.slice(0, 20);
+  const W = 760, L = 200, R = 60, rowH = 24;
+  const svg = el('svg', { viewBox: `0 0 ${W} ${fam.length * rowH + 26}`, role: 'img' });
+  const x = v => L + v * (W - L - R);
+  [0, 0.5, 1].forEach(t => { svg.appendChild(el('line', { class: 'gr', x1: x(t), x2: x(t), y1: 0, y2: fam.length * rowH })); svg.appendChild(el('text', { x: x(t), y: fam.length * rowH + 16, 'text-anchor': 'middle', text: pct(t) })); });
+  fam.forEach((f, i) => {
+    const y = i * rowH;
+    svg.appendChild(el('text', { x: 0, y: y + 15, text: `${f.family} (${f.order || '?'})`, style: 'fill:var(--ink);font-size:12px' }));
+    const w = Math.max(2, f.frac_above * (W - L - R));
+    const r = el('rect', { class: 'mk', x: L, y: y + 4, width: w, height: 16, rx: 4, fill: 'var(--real)' });
+    hover(r, [`${pct(f.frac_above)} at or above cut`, `${f.family}: n ${f.n}, mean score ${f3(f.mean)}`, ...f.worst.map(w => `lowest: ${w.label} ${f3(w.score)} (limiting ${w.limiting || '?'})`)]);
+    svg.appendChild(r); svg.appendChild(el('text', { x: L + w + 6, y: y + 16, text: `${pct(f.frac_above)} · n ${f.n}` }));
+  });
+  $('#families').replaceChildren(el('p', { class: 'small mute', text: `${T.n_families} families scored. ${T.n_low_families} families with at least 3 real items have fewer than 80 % of them above the cut. Orders with at least 30 real items, lowest AUC first: ${T.by_order.slice(0, 6).map(o => `${o.order} ${f3(o.auc_vs_all_negatives)}`).join(', ')}.` }), svg,
+    details('All families (table)', table(['family', 'order', 'n', 'share above cut', 'mean score'], T.all.map(f => [f.family, f.order || '', f.n, pct(f.frac_above), f3(f.mean)]), [2, 3, 4])));
+  $('#lowitems').replaceChildren(table(['item', 'type', 'family', 'score', 'P', 'L', 'E', 'limiting term', 'nearest real relative', 'failed checks'], T.lowest_real_items.map(r => [r.id, r.type, r.family, f3(r.score), f3(r.comp?.P), r.comp?.L, r.comp?.E, r.limiting || '', r.nearest ? `${r.nearest.name} (d ${r.nearest.d})` : '', (r.failed_checks || []).join(', ')]), [3, 4, 5, 6]));
+}
+function renderCalib(C) {
+  const W = 460, H = 240, L = 40, B = 30, T = 8, R = 10;
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img' });
+  const x = v => L + v * (W - L - R), y = v => T + (1 - v) * (H - T - B);
+  [0, 0.5, 1].forEach(t => { svg.appendChild(el('line', { class: 'gr', x1: L, x2: W - R, y1: y(t), y2: y(t) })); svg.appendChild(el('text', { x: L - 6, y: y(t) + 4, 'text-anchor': 'end', text: t })); svg.appendChild(el('text', { x: x(t), y: H - 10, 'text-anchor': 'middle', text: t })); });
+  svg.appendChild(el('line', { class: 'thr', x1: x(0), y1: y(0), x2: x(1), y2: y(1) }));
+  for (const b of C.bins) {
+    if (!b.n) continue; const x0 = x(b.bin[0]) + 2, w = Math.min(24, x(b.bin[1]) - x(b.bin[0]) - 4), h = Math.max(2, y(0) - y(b.fraction_real));
+    const r = el('rect', { class: 'mk', x: x0 + (x(b.bin[1]) - x(b.bin[0]) - 4 - w) / 2, y: y(0) - h, width: w, height: h, rx: Math.min(4, h / 2), fill: 'var(--real)' });
+    hover(r, [`${pct(b.fraction_real)} real`, `score ${b.bin[0]} to ${b.bin[1]}: n ${b.n}, mean score ${f3(b.mean_score)}`, `95 % CI ${pct(b.lo)} to ${pct(b.hi)}`]); svg.appendChild(r);
+  }
+  $('#calib').replaceChildren(svg, el('p', { class: 'small mute', text: `Expected calibration error ${f3(C.ece)} · Brier ${f3(C.brier)} · n ${C.n}` }));
+}
+function renderWpert(P) {
+  const rows = [{ label: 'frozen weights', v: P.base.roc_auc, bold: true }, ...P.one_at_a_time.map(o => ({ label: `${o.weight} ×${o.factor}`, v: o.roc_auc, color: 'var(--mute)', extra: [`real above cut ${pct(o.real_above)}`, `negatives below cut ${pct(o.neg_below)}`] }))];
+  const all = rows.map(r => r.v), lo = Math.max(0, Math.floor((Math.min(...all) - 0.05) * 10) / 10);
+  $('#wpert').replaceChildren(dotWhisker(rows, { lo, hi: Math.min(1, lo + 0.6), ref: P.base.roc_auc }),
+    el('p', { class: 'small mute', text: `Joint random ±20 % on all weights (${P.joint_random_pm20.n} draws): AUC ${f3(P.joint_random_pm20.roc_auc.min)} to ${f3(P.joint_random_pm20.roc_auc.max)}; real above cut ${pct(P.joint_random_pm20.real_above.min)} to ${pct(P.joint_random_pm20.real_above.max)}; negatives below cut ${pct(P.joint_random_pm20.neg_below.min)} to ${pct(P.joint_random_pm20.neg_below.max)}. Recomputing with the frozen weights reproduces the scorer to within ${P.recompose_max_abs_deviation}.` }));
+  const S = D.stability; $('#stab').textContent = S ? `Seeds of the scorer's species split: ${S.runs.map(r => `${r.seed}: P1 AUC ${f3(r.p1_auc)}, all ${f3(r.roc_auc_all)}`).join(' · ')} (P1 range ${f3(S.p1_auc_range)}). ${S.what}.` : '';
+}
+function renderAdv() {
+  const A = D.adversarial; if (!A) return;
+  const s = A.specimen_space, d = A.document_space;
+  $('#advkpis').replaceChildren(
+    kpi(`${s.scored_plausible} of ${s.hard_violating_scored}`, `specimen-space designs that break a hard rule but still score at or above 0.5 (best score ${f3(s.best[0]?.score)})`),
+    kpi(`${d.scored_plausible} of ${d.clearly_implausible}`, 'documents with a clearly impossible unread trait (the SCORER-PREREGISTRATION C8 predicate) that still score at or above 0.5'));
+  $('#advtable').replaceChildren(table(['score', 'why it is impossible', 'design', 'nearest real relative', 'sanity checks that failed but do not enter the score'],
+    [...s.best.slice(0, 6).map(a => [f3(a.score), a.why.join('; '), Object.entries(a.raw).map(([k, v]) => `${k} ${v}`).join(', '), `${a.nearest} (d ${a.d})`, (a.sanity_checks_failed_but_unscored || []).join(', ')]),
+     ...d.examples.filter(e => e.why.length).slice(0, 4).map(e => [f3(e.score), e.why.join('; '), `${e.base}: ${e.edits.join(', ')}`, '', ''])], [0]));
+}
+function renderCriteria() {
+  const C = D.criteria || [];
+  const show = v => Object.entries(v).filter(([k]) => !['scores', 'by_type', 'controls', 'below', 'note'].includes(k)).map(([k, x]) => `${k} ${Array.isArray(x) ? x.join(' to ') : typeof x === 'number' ? +(+x).toFixed(3) : x}`).join('; ');
+  $('#criteria').replaceChildren(table(['id', 'endpoint', 'what was measured', 'result'], C.map(c => [`${c.id}${c.primary ? ' (primary)' : ''}`, c.text, show(c.value), c.pass ? 'PASS' : 'FAIL'])));
+  const A = D.exclusion_audit;
+  $('#audit').textContent = `${A.pass ? 'PASS' : 'FAIL'}: ${A.checked} nearest-reference returns checked against the evaluator's own taxon index; ${A.n_violations} returned a reference that should have been left out; ${A.unknown_taxon_nearest} could not be resolved. Canary: scoring ${D.canary?.item} with no exclusion returns ${D.canary?.nearest_without_exclusion} at distance ${D.canary?.distance}, and the audit ${D.canary?.audit_tripped ? 'caught it, so the check is live' : 'DID NOT catch it'}.`;
+}
+</script>
+</body>
+</html>

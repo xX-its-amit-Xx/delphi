@@ -21,7 +21,7 @@ const COMMON = {
   network: { type: 'boolean', description: 'Allow cached network calls (UniProt, Ensembl). Default true; results are cached in sim-engine/validate/cache/.' },
   blast: { type: 'boolean', description: 'For genes not in sequences/alignments: run NCBI BLAST (blastp nr, NOT Aves[Organism]; minutes; cached). Default false.' },
   lawset: { type: 'string' },
-  version: { type: 'string', description: 'Scorer version (score-weights*.json): 1.0.0 (default, the pre-registered and validated one) or 1.1.0.' },
+  version: { type: 'string', description: 'Scorer version (score-weights*.json): 1.0.0 (default, the blind-validated one), 1.1.0, or 1.1.1 (adds rank_score for ranking).' },
 };
 const SCOPE_PH = 'Nearest real relatives in a 6-feature body space (FishShapes v1, 16 377 teleost specimens, measured; our 3 real organisms and their ontogeny stages) and on pectoral fin length (Daane 2021 sheet A, 9 beloniform species, measured). The other fin features have only our own two lineages as references, so they get an uncalibrated envelope rule. Distance is not relatedness: a nearest neighbour is the most similar shape, not an ancestor. Birds (Aves) excluded: frozen holdout.';
 

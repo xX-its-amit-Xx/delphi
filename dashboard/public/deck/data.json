@@ -1,5 +1,5 @@
 {
- "builtAt": "2026-11-01T03:06:39.622Z",
+ "builtAt": "2026-11-01T04:48:02.029Z",
  "deadline": "2026-11-01T18:00:00Z",
  "slides": [
   {
@@ -171,7 +171,7 @@
   "claims": 880,
   "claimTests": 16,
   "leanProved": 8,
-  "leanTheorems": 152,
+  "leanTheorems": 192,
   "leanAssessors": [
    "openai / gpt-5-2025-08-07"
   ],
@@ -581,14 +581,14 @@
     "file": "lean/Delphi/Certificates/EliminationsPhysiology.lean",
     "ok": true,
     "exit": 0,
-    "seconds": 14.5,
+    "seconds": 15.3,
     "errors": [],
     "theorems": 3
    },
    "kernelChecked": 3,
    "eliminated": 3,
    "candidates": 3,
-   "cannotRule": 41,
+   "cannotRule": 50,
    "cases": [
     {
      "id": "real-fish-sustained-aerobic-flight",
@@ -622,23 +622,33 @@
     }
    ],
    "envelope": {
-    "ceilingW": 0.0458,
-    "shortBy": 29,
+    "ceilingW": 0.0833,
+    "shortBy": 16,
     "bounds": {
-     "eta": 0.15,
+     "eta": 0.23,
      "oxycaloric_J_per_ml": 19.35,
-     "cardiacOutput_ml_per_s": 0.075,
-     "arterialO2_ml_per_ml": 0.21
+     "o2Delivery_ml_O2_per_s": 0.0187
+    },
+    "boundsText": "η ≤ 0.23, E ≤ 19.35 J/ml, o2Delivery ≤ 0.0187 ml O2/s",
+    "version": "2.0.0",
+    "corrected": {
+     "range": "about 10 to 30×",
+     "central": "about 20×",
+     "chainShortBy": 38,
+     "previousEnvelopeW": 0.0458,
+     "previousEnvelopeShortBy": 29,
+     "text": "Corrected 2026-11-01: the proxies borrowed a snapper cardiac output, and a measured zebrafish at U_crit takes up 2.8× the O2 that ceiling allows (Palstra et al. 2010, PLoS One 5:e14483). With a zebrafish-derived O2 delivery and a skeletal-muscle efficiency the shortfall is about 10 to 30× (central about 20×), not 29 to 38×; 38× is what the original snapper-based proxies give. Sustained aerobic flight is still ruled out by an order of magnitude.",
+     "source": "physics/FICK-CEILING-CHECK.md"
     },
     "theorems": [
-     "Delphi.Empirical.aerobicCeiling_le",
-     "Delphi.Empirical.no_aerobic_flight_above_ceiling",
-     "Delphi.Empirical.measured_ceiling_le"
+     "Delphi.Empirical.aerobicCeilingV2_le",
+     "Delphi.Empirical.no_aerobic_flight_above_ceiling_v2",
+     "Delphi.Empirical.teleostAerobicV2_nonvacuous"
     ],
-    "title": "Efficiency, cardiac output and arterial O2 lie in the measured teleost ranges",
-    "why": "No teleost in the ranges the physiology chain cites has a sustained aerobic ceiling above 0.0458 W at the measured mass (0.06 kg). This is what makes the C14 eliminations binding: they hold for every animal the measured record allows, not only for one choice of proxies.",
-    "scope": "The bound is an upper bound at one mass, and the cardiac output ceiling is the maximum of a secondary range (20 to 75 ml/min/kg, gerry2014 Discussion). It bounds SUSTAINED AEROBIC power only: burst power on white-muscle stores is outside it, and that is what a flying fish is understood to use. Scaling it to another mass requires the cardiac output per kg, not this number.",
-    "rejectable": "Reject it and C14 still rules, but only on the particular proxies a candidate commits, not on every teleost."
+    "title": "Efficiency and O2 delivery lie in the ranges the cited sources allow (widened after measured zebrafish, v2)",
+    "why": "Within the ranges the cited sources support (skeletal-muscle aerobic efficiency up to 0.23, Gladman and Askew 2024; O2 delivery up to the measured adult zebrafish MO2max at Ucrit, Palstra et al. 2010, scaled allometrically to 0.06 kg), the sustained aerobic ceiling at 0.06 kg is at most 0.0833 W. Version 1 claimed \"no teleost above 0.0458 W\"; measured zebrafish (2630 mg O2 kg^-1 h^-1) exceed v1’s delivery envelope (1350 mg O2 kg^-1 h^-1) about 2x per kg, so that wording was withdrawn. Powered flight at 10 m/s needs 1.346 W, about 16x this ceiling, so the C14 elimination survives.",
+    "scope": "Scoped to the sources named, not to every teleost: high-performance pelagic teleosts (tunas) were not fetched and may exceed it. The bound is at one mass (0.06 kg). It bounds SUSTAINED AEROBIC power only: burst power on white-muscle stores is outside it, and that is what a flying fish is understood to use.",
+    "rejectable": "Reject it and C14 still rules, but only on the particular proxies a candidate commits."
    },
    "proxies": [
     {
@@ -662,7 +672,8 @@
     "lean/eliminate/ledger.physiology.json",
     "lean/Delphi/Certificates/EliminationsPhysiology.lean",
     "lean/empirical.json (E3)",
-    "lean/AUDIT-FLYING-FISH.md"
+    "lean/AUDIT-FLYING-FISH.md",
+    "physics/FICK-CEILING-CHECK.md"
    ]
   },
   "flier": {
@@ -1032,9 +1043,9 @@
    ]
   },
   "lawreg": {
-   "lawset": "1.3.0",
-   "lawsetCreated": "2026-11-01T03:06:16.287Z",
-   "lawsetCommit": "6aefa3d0811fe44f6f7a7e08c2eee4881e3bc1c8",
+   "lawset": "1.6.0",
+   "lawsetCreated": "2026-11-01T04:37:40.476Z",
+   "lawsetCommit": "7168d39c71fa426db3b1f1e94b9a30db9d086ddc",
    "inLawset": [
     {
      "status": "proposed",
@@ -1044,15 +1055,15 @@
     },
     {
      "status": "candidate",
-     "n": 9,
-     "physical": 3,
-     "biological": 6
+     "n": 5,
+     "physical": 1,
+     "biological": 4
     },
     {
      "status": "accepted",
-     "n": 31,
-     "physical": 11,
-     "biological": 20
+     "n": 36,
+     "physical": 13,
+     "biological": 23
     },
     {
      "status": "contested",
@@ -1067,7 +1078,7 @@
      "biological": 2
     }
    ],
-   "inLawsetTotal": 52,
+   "inLawsetTotal": 53,
    "onDisk": [
     {
      "status": "proposed",
@@ -1077,15 +1088,15 @@
     },
     {
      "status": "candidate",
-     "n": 9,
-     "physical": 3,
-     "biological": 6
+     "n": 5,
+     "physical": 1,
+     "biological": 4
     },
     {
      "status": "accepted",
-     "n": 31,
-     "physical": 11,
-     "biological": 20
+     "n": 36,
+     "physical": 13,
+     "biological": 23
     },
     {
      "status": "contested",
@@ -1100,23 +1111,23 @@
      "biological": 2
     }
    ],
-   "onDiskTotal": 52,
+   "onDiskTotal": 53,
    "mirror": {
-    "lawset": "1.3.0",
-    "count": 52
+    "lawset": "1.6.0",
+    "count": 53
    },
-   "mcpVersion": "0.3.0",
+   "mcpVersion": "0.6.0",
    "discovered": 4,
    "sources": [
     "lean/registry/lawsets/current.json",
-    "lean/registry/lawsets/lawset-1.3.0.json",
+    "lean/registry/lawsets/lawset-1.6.0.json",
     "lean/registry/laws/*.json",
     "dashboard/public/api/lean/index.json",
     "mcp/server.mjs"
    ]
   },
   "studioval": {
-   "generatedAt": "2026-11-01T03:06:37.022Z",
+   "generatedAt": "2026-11-01T04:39:33.255Z",
    "preregHashOk": true,
    "preregSha": "f2523da8529b998eea8ef9b9f165851f60d078a7ac5151a0dafa7bb4d324a66d",
    "selftest": {
@@ -1124,18 +1135,18 @@
     "total": 20
    },
    "tally": {
-    "pass-rests-on-assumed": 1,
-    "circular": 6,
+    "pass-rests-on-assumed": 3,
+    "circular": 5,
     "pass": 19,
-    "not-available": 2,
     "no-target": 1,
-    "fail": 2
+    "fail": 3
    },
    "tallyA1": {
     "circular": 7,
     "pass": 21,
-    "not-available": 2,
-    "no-target": 1
+    "pass-rests-on-assumed": 1,
+    "no-target": 1,
+    "fail": 1
    },
    "scored": 31,
    "groups": [
@@ -1145,7 +1156,7 @@
      "n": 11,
      "counts": {
       "pass": 2,
-      "pass-rests-on-assumed": 0,
+      "pass-rests-on-assumed": 1,
       "circular": 7,
       "fail": 0,
       "no-target": 1
@@ -1196,14 +1207,14 @@
       {
        "id": "W8",
        "name": "adult C-start peak speed",
-       "status": "not-available",
-       "preregistered": "not-available"
+       "status": "circular",
+       "preregistered": "pass-rests-on-assumed"
       },
       {
        "id": "W9",
        "name": "flying fish glide distance and speed",
-       "status": "circular",
-       "preregistered": "circular"
+       "status": "pass-rests-on-assumed",
+       "preregistered": "pass-rests-on-assumed"
       },
       {
        "id": "W10",
@@ -1224,10 +1235,10 @@
      "label": "Negative and law controls",
      "n": 5,
      "counts": {
-      "pass": 5,
+      "pass": 4,
       "pass-rests-on-assumed": 0,
       "circular": 0,
-      "fail": 0,
+      "fail": 1,
       "no-target": 0
      },
      "rows": [
@@ -1240,8 +1251,8 @@
       {
        "id": "N2",
        "name": "no fish survives at 9,000 or 10,000 m",
-       "status": "pass",
-       "preregistered": "pass"
+       "status": "fail",
+       "preregistered": "fail"
       },
       {
        "id": "N3",
@@ -1306,7 +1317,7 @@
      "label": "Contract and determinism, per scenario",
      "n": 11,
      "counts": {
-      "pass": 10,
+      "pass": 11,
       "pass-rests-on-assumed": 0,
       "circular": 0,
       "fail": 0,
@@ -1346,8 +1357,8 @@
       {
        "id": "N7-predator",
        "name": "contract + determinism: predator",
-       "status": "not-available",
-       "preregistered": "not-available"
+       "status": "pass",
+       "preregistered": "pass"
       },
       {
        "id": "N7-grip",
@@ -1382,28 +1393,42 @@
      ]
     }
    ],
-   "wildNumeric": 6,
+   "wildNumeric": 7,
    "wildIndependentPasses": 0,
-   "controlsHeld": true,
-   "fails": [],
+   "controlsHeld": false,
+   "fails": [
+    {
+     "id": "N2",
+     "name": "no fish survives at 9,000 or 10,000 m",
+     "why": "6 organism/depth runs did not report death"
+    }
+   ],
    "tallyPre": {
     "pass": 19,
-    "pass-rests-on-assumed": 1,
-    "circular": 6,
-    "fail": 2,
+    "pass-rests-on-assumed": 3,
+    "circular": 5,
+    "fail": 3,
     "no-target": 1
    },
    "tallyFinal": {
     "pass": 21,
-    "pass-rests-on-assumed": 0,
+    "pass-rests-on-assumed": 1,
     "circular": 7,
-    "fail": 0,
+    "fail": 1,
     "no-target": 1
    },
    "changes": [
     {
      "id": "W1",
      "name": "adult zebrafish Ucrit",
+     "from": "pass-rests-on-assumed",
+     "to": "circular",
+     "amendment": "A1",
+     "why": "in band; weakest input is assumed; AMENDMENT A1: the metric is an interpolation/fit of the target paper itself, so the pre-registered pass is not independent evidence"
+    },
+    {
+     "id": "W8",
+     "name": "adult C-start peak speed",
      "from": "pass-rests-on-assumed",
      "to": "circular",
      "amendment": "A1",
@@ -1433,7 +1458,7 @@
     "W5",
     "W6",
     "W7",
-    "W9"
+    "W8"
    ],
    "sources": [
     "sim-engine/validation/studio-results.json",

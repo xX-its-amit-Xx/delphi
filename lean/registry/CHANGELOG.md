@@ -4,6 +4,18 @@ Newest first. Each release is an immutable file `lawsets/lawset-<version>.json` 
 content hash, status and kind. `lawsets/current.json` names the current one. Laws are never deleted: a retired
 or contested law keeps its file, so a verdict computed against an older law set can be reproduced exactly.
 
+## 1.6.0 (2026-11-01)
+
+E3 1.0.0 -> 2.0.0: the Fick aerobic envelope widened after a measured zebrafish broke it (Palstra et al. 2010, PMC3013094: MO2max at Ucrit 2630 mg O2 kg^-1 h^-1, about 2x the per-kg delivery v1 allowed). v2 bounds eta <= 0.23 (Gladman and Askew 2024) and O2 delivery Q*Ca <= 0.0187 ml O2/s at 0.06 kg (1600 mg O2 kg^-1 h^-1), ceiling 0.0458 -> 0.0833 W, wording rescoped from every teleost to its sources; v1 stays compiled and pinned by law sets 1.0.0-1.5.0, and v2 is proved a weakening of v1 (TeleostAerobic.toV2). Flying-fish powered-flight shortfall: 16x on the new envelope, about 10 to 29x (central about 20x) across corrected inputs, 38x with the original snapper proxies; still ruled out by an order of magnitude. perturb-current 1.1.0 adds a P2b scope assumption (aerobic only below about 0.8 Ucrit; taxon-appropriate ceiling); fick-principle 1.1.0 adds a scope note (taxon-appropriate MO2max or Q). The three new versions carry approval role carried-forward-pending-review: no person has reviewed them yet. Report: physics/FICK-CEILING-CHECK.md.
+
+### Added
+- added `maynardsmith-hitchhiking` 1.0.0 (biological, candidate)
+
+### Changed
+- `E3` 1.0.0 -> 2.0.0
+- `fick-principle` 1.0.0 -> 1.1.0
+- `perturb-current` 1.0.0 -> 1.1.0
+
 ## Checker note (2026-11-01, no law set change)
 
 Floating-point tolerance in lean/eliminate/browser-check.mjs (generator and fragments), not a law change: no law

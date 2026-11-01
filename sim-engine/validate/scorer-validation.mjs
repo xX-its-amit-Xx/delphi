@@ -42,13 +42,13 @@ const frac = (xs, f) => (xs.length ? xs.filter(f).length / xs.length : null);
 const r4 = x => (x == null ? null : +x.toFixed(4));
 
 async function scoreSpecimen(ref, raw, label) {
-  const r = await assess({ specimen: raw, exclude: [ref.group], label, taxon: 'Teleostei', version: VERSION });
-  return { label, score: r.score.value, plausible: r.score.plausible, P: r.score.components.P.value, L: r.score.components.L.value, limiting: r.score.components.P.limiting, nearest: r.verdict.closest_real_relative?.name };
+  const r = await assess({ specimen: raw, exclude: [ref.group], label, taxon: 'Teleostei', version: VERSION, lawset: process.env.LAWSET || 'current' });
+  return { label, score: r.score.value, rank_score: r.score.rank_score ?? null, nearest_distance: r.verdict.closest_real_relative?.distance ?? null, plausible: r.score.plausible, P: r.score.components.P.value, L: r.score.components.L.value, limiting: r.score.components.P.limiting, nearest: r.verdict.closest_real_relative?.name };
 }
 async function scoreDoc(doc, label, extra = {}) {
-  const r = await assess({ organism: doc, ...extra, version: VERSION });
+  const r = await assess({ organism: doc, ...extra, version: VERSION, lawset: process.env.LAWSET || 'current' });
   const C = r.score.components;
-  return { label, score: r.score.value, plausible: r.score.plausible, P: C.P.ran ? r4(C.P.value) : null, L: C.L.value, G: C.G.value, E: C.E.value, limiting: C.P.limiting,
+  return { label, score: r.score.value, rank_score: r.score.rank_score ?? null, plausible: r.score.plausible, P: C.P.ran ? r4(C.P.value) : null, L: C.L.value, G: C.G.value, E: C.E.value, limiting: C.P.limiting,
     nearest: r.verdict.closest_real_relative?.name, nearest_distance: r.verdict.closest_real_relative?.distance, failed: r.verdict.failed, lean_new: (r.lean?.accepted?.newly_caused || []).map(v => v.constraint), g_why: C.G.why };
 }
 function mk(bundle, base, edits, id = 'v', genotype = null) {
@@ -230,6 +230,21 @@ const crit = [
   { id: 'C7', text: 'across 5 species-split seeds: AUC range <= 0.05 and body-threshold relative SD <= 10 %', value: { auc_range: r4(Math.max(...aucs) - Math.min(...aucs)), threshold_rel_sd: r4(sd(thr) / mean(thr)) }, pass: Math.max(...aucs) - Math.min(...aucs) <= 0.05 && sd(thr) / mean(thr) <= 0.1 },
   { id: 'C8', text: 'adversarial search finds no clearly-implausible design (pre-registered predicate) that scores plausible', value: { searched: adv.searched, clearly_implausible: adv.clearly_implausible, scored_plausible_anyway: adv.scored_plausible_anyway }, pass: adv.scored_plausible_anyway === 0 },
 ];
+// v1.1.1 resolution criteria (rank_score)
+if (SCORER_FOR().rank) {
+  const all = [...Object.values(positives).flat(), ...Object.values(negatives).flat()];
+  const distinct = new Set(all.map(x => x.rank_score)).size / all.length;
+  const rp = Object.values(positives).flat().map(x => x.rank_score), rn = Object.values(negatives).flat().map(x => x.rank_score);
+  const a1 = positives.A1_fishshapes_test.filter(x => x.nearest_distance != null);
+  const rk = a => { const o = a.map((v, i) => [v, i]).sort((x, y) => x[0] - y[0]); const r = new Array(a.length); o.forEach(([, i], k) => { r[i] = k; }); return r; };
+  const sp = (x, y) => { const rx = rk(x), ry = rk(y), n = x.length, mx = (n - 1) / 2; let s1 = 0, s2 = 0, s3 = 0; for (let i = 0; i < n; i++) { s1 += (rx[i] - mx) * (ry[i] - mx); s2 += (rx[i] - mx) ** 2; s3 += (ry[i] - mx) ** 2; } return s1 / Math.sqrt(s2 * s3); };
+  const rho = sp(a1.map(x => x.rank_score), a1.map(x => x.nearest_distance));
+  const v110 = (() => { try { return JSON.parse(fs.readFileSync(path.join(DIR, 'scorer-results.v1.1.0.json'), 'utf8')).criteria.find(c => c.id === 'C6').value; } catch { return null; } })();
+  crit.push(
+    { id: 'R1', text: '>= 90 % of validation rows have a distinct rank_score', value: r4(distinct), pass: distinct >= 0.9 },
+    { id: 'R2', text: 'rank_score AUC (all positives vs all negatives) >= the v1.1.0 score AUC', value: { rank_auc: r4(auc(rp, rn)), v110_auc: v110 }, pass: v110 != null && auc(rp, rn) >= v110 },
+    { id: 'R3', text: 'among A1 held-out specimens, Spearman(rank_score, nearest-real-neighbour distance) <= -0.5', value: r4(rho), pass: rho <= -0.5 });
+}
 const res = { prereg_sha256: hash, scorer: SCORER_FOR(), quick: QUICK, ran: new Date().toISOString(), seconds: Math.round((Date.now() - t0) / 1000), criteria: crit,
   auc_by_family: Object.fromEntries(Object.entries(negatives).map(([k, v]) => [k, r4(auc(posScores, v.map(x => x.score)))])),
   sensitivity_by_family: Object.fromEntries(Object.entries(positives).map(([k, v]) => [k, r4(plausibleRate(v))])), calibration: calib, stability: stab, adversarial: adv, positives, negatives };

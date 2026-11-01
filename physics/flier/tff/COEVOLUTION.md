@@ -30,3 +30,11 @@ as O₂-side evidence only.
 narrower and is stated as such in `tff.json`: under the real fin polar and the trout haemoglobin curve, flight at a given
 altitude needs either lower wing loading or higher O₂ delivery, with a square-root trade between them; that is a consequence of
 the lift equation and the Hill curve, not an observation about evolution.
+
+## Correction (2026-11-01)
+
+`tff.json` and `map.svg` place the real fish at an aerobic capacity of 0.0357 W ("below the boundary by more than 30x"). That
+capacity uses a snapper cardiac output that under-states a measured teleost about 2.8x (zebrafish MO2 at U_crit, Palstra et al.
+2010, PMC3013094; `physics/FICK-CEILING-CHECK.md`). With corrected inputs the real fish's sustained aerobic capacity is about
+0.05 to 0.14 W (central about 0.063 W), still about 10 to 30x short of powered flight (central about 20x). The files are left as
+generated; the conclusion (no wing enlargement alone reaches it) stands.

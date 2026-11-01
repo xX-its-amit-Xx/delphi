@@ -462,8 +462,8 @@ function build(D) {
       <div class="heroes">
         <div class="hero s3"><div class="n">${P.ceilingW}<span style="font-size:.4em"> W</span></div><div class="l">aerobic ceiling on the proxy values we commit to</div></div>
         <div class="hero s2"><div class="n">${lead.requiredW}<span style="font-size:.4em"> W</span></div><div class="l">needed for level flight at ${lead.speed}&thinsp;m/s at the measured L/D of ${lead.ld}</div></div>
-        <div class="hero"><div class="n" style="color:var(--serious)">${lead.shortBy}&times;${E ? ` <span style="font-size:.62em">/ ${E.shortBy}&times;</span>` : ''}</div>
-          <div class="l" style="max-width:32ch">short on those proxies${E ? ', and on the widest combination the measured record allows' : ''} &mdash; both checked by the Lean kernel</div></div>
+        <div class="hero"><div class="n" style="color:var(--serious)">${E && E.corrected ? '10&ndash;30&times;' : lead.shortBy + '&times;'}</div>
+          <div class="l" style="max-width:32ch">${E && E.corrected ? `short (central about 20&times;; ${E.shortBy}&times; on the widened envelope, ${lead.shortBy}&times; with the original snapper-based proxies)` : 'short on those proxies'} &mdash; checked by the Lean kernel</div></div>
       </div>
       <div class="split" style="margin-top:14px">
         <div>
@@ -489,14 +489,13 @@ function build(D) {
             <li><b>Aerobic power, not burst power.</b></li>
             <li><b>Teleost proxy values</b> &mdash; no flying-fish physiology exists, so the proxies, not the fish, are what the
               elimination rests on.</li></ul></div>
-          ${E ? `<div class="scope"><h4>Two ceilings; the smaller multiplier is the stronger claim</h4>
-            <b>${P.ceilingW}&thinsp;W</b> is the product of the four proxy values this candidate commits to, so
-            <b>${lead.shortBy}&times;</b> rules flight out for <em>that one parameterisation</em>.
-            <b>${E.ceilingW}&thinsp;W</b> takes the <em>maximum</em> of each measured teleost range
-            (&eta;&nbsp;&le;&nbsp;${E.bounds.eta}, E&nbsp;&le;&nbsp;${E.bounds.oxycaloric_J_per_ml}, Q&nbsp;&le;&nbsp;${E.bounds.cardiacOutput_ml_per_s},
-            C<sub>a</sub>&nbsp;&le;&nbsp;${E.bounds.arterialO2_ml_per_ml}), so it is necessarily the larger ceiling and the smaller
-            multiplier &mdash; and <b>${E.shortBy}&times; rules it out for every animal the measured record allows</b>. Neither
-            supersedes the other: different quantities, both kernel-checked. ${esc(E.rejectable)}</div>` : ''}
+          ${E ? `<div class="scope"><h4>Two ceilings, and a correction</h4>
+            <b>${P.ceilingW}&thinsp;W</b> is the product of the four proxy values this candidate commits to (a snapper cardiac
+            output), so <b>${lead.shortBy}&times;</b> rules flight out for <em>that one parameterisation</em>.
+            <b>${E.ceilingW}&thinsp;W</b> is the widened envelope (${esc(E.boundsText || '')}), and on it flight is
+            <b>${E.shortBy}&times;</b> short. ${E.corrected ? `<b>${esc(E.corrected.text)}</b> The earlier envelope, ${E.corrected.previousEnvelopeW}&thinsp;W
+            (${E.corrected.previousEnvelopeShortBy}&times;), claimed to cover every teleost; it is kept as a superseded version.` : ''}
+            ${esc(E.rejectable || '')}</div>` : ''}
           <div class="scope warn"><h4>What it does not bound</h4><ul>
             <li><b>Gliding.</b> Nothing here says a flying fish cannot glide; it is a glider.</li>
             <li><b>Short burst flight.</b> The certificates bound sustained aerobic power only.</li></ul></div>

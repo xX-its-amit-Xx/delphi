@@ -1,6 +1,6 @@
 {
  "summary": {
-  "run": "2026-10-31T21:52:53.572Z",
+  "run": "2026-11-01T04:43:14.405Z",
   "illustrative": false,
   "label": "candidates for the empirical layer: what the project's own measurements rule out, each conditional on a stated observation",
   "candidates": 9,
@@ -11,7 +11,7 @@
   "untranslatable": 0,
   "candidatesWithNotFormalisedClaims": 0,
   "cannotRuleReasonCounts": {
-   "missing-input": 365,
+   "missing-input": 446,
    "assumption-not-accepted": 4
   },
   "rankingNote": "Rank nothing by elimination count: a problem with more eliminated candidates is not more solved; it only had more candidates these theorems happen to touch.",
@@ -21,13 +21,13 @@
    "file": "lean/Delphi/Certificates/EliminationsEmpirical.lean",
    "ok": true,
    "exit": 0,
-   "seconds": 13,
+   "seconds": 17.7,
    "errors": [],
    "theorems": 5
   },
-  "constraintsBuilt": "2026-10-31T21:50:23.137Z",
+  "constraintsBuilt": "2026-11-01T04:42:04.218Z",
   "input": "lean/empirical/empirical-candidates.json",
-  "inputSha256": "266fb702de3a31c1852dc087e1bb09c8afe3485199f534479e06ffad880aeb9b"
+  "inputSha256": "425441921d69f331824160582e92c6e6befa9c8569002e6872b3bf7a553d3618"
  },
  "ledger": [
   {
@@ -60,7 +60,7 @@
      "E2"
     ],
     "consistent": [],
-    "cannotRule": 41,
+    "cannotRule": 50,
     "notFormalised": 0
    },
    "verdict": "eliminated",
@@ -600,8 +600,8 @@
     {
      "constraint": "E3",
      "claim_id": "empirical-E3",
-     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling",
-     "relation": "P_req ≤ 0.0458 W",
+     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling_v2",
+     "relation": "P_req ≤ 0.0833 W",
      "under": [
       "teleost_measured_ranges"
      ],
@@ -654,6 +654,125 @@
      "state": "cannot-rule",
      "reason": "cannot rule: the candidate does not commit to the model assumption isometric_constant_density (the same body family scaled without change of shape or density, so W = k L^3 (lean/Delphi/Thompson.lean header))",
      "reasonCode": "assumption-not-accepted"
+    },
+    {
+     "constraint": "P1",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_rules_out",
+     "relation": "CTmin ≤ T ≤ CTmax whenever P > 0",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input body_temperature_C (T, body temperature, C (ectotherm: equal to water temperature))",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P1b",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_power_rules_out",
+     "relation": "P ≤ P_ref Q10^((T − T_ref)/10)",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input sustained_power_claimed_W (P, sustained (aerobic) power the design claims at body_temperature_C, W)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_ucrit",
+     "relation": "U_current ≤ U_crit",
+     "under": [
+      "station_holding_drag_fick"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input current_speed_m_s (U_current, speed of the water current the design holds station against, m/s)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2b",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_drag_bound",
+     "relation": "ρ_w C_d A U_current^3 / 2 ≤ η E_O2 Q Ca",
+     "under": [
+      "station_holding_drag_fick",
+      "fick_aerobic_supply"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input water_density_kg_m3 (ρ_w, water density, kg m^-3)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3",
+     "claim_id": "perturb-pressure",
+     "lemma": "Delphi.Hydro.closed_bladder_rules_out",
+     "relation": "V(d) = V(0) p0 / (p0 + ρ_w g d)",
+     "under": [
+      "boyle_closed_bladder"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input bladder_volume_at_depth_ml (V(d), swim-bladder volume the design claims at depth_m with no gas secreted, ml)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3b",
+     "claim_id": "perturb-depth-cap",
+     "lemma": "Delphi.Perturb.no_teleost_below",
+     "relation": "d ≤ 8200 m",
+     "under": [
+      "osmolyte_depth_cap"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input depth_m (d, depth below the surface, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.vmin_isa_mono",
+     "relation": "v ≥ v_min(ρ(h)) = sqrt(2 W / (ρ(h) S C_L,max)), ρ(h) = 1.225 (1 − 0.0065 h / 288.15)^4.2559",
+     "under": [
+      "lift_supported_flight",
+      "isa_troposphere"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input airspeed_m_s (v, airspeed relative to the air, m s^-1)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4b",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.wind_glide_rules_out",
+     "relation": "x ≤ (L/D)max h (1 + w/u), w positive for a tailwind, w ≥ −u",
+     "under": [
+      "steady_glide_constant_wind"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input ground_distance_m (x, ground distance claimed for one steady glide in wind, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P5",
+     "claim_id": "perturb-energy-balance",
+     "lemma": "Delphi.Perturb.energy_rules_out",
+     "relation": "mass held or gained only if I ≥ (R + Act) / (a (1 − s))",
+     "under": [
+      "daily_energy_conservation"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input intake_J_per_day (I, ingested energy per day, J)",
+     "reasonCode": "missing-input"
     }
    ]
   },
@@ -682,7 +801,7 @@
     "consistent": [
      "E2"
     ],
-    "cannotRule": 41,
+    "cannotRule": 50,
     "notFormalised": 0
    },
    "verdict": "consistent (not ruled out by these theorems; not shown feasible)",
@@ -1219,8 +1338,8 @@
     {
      "constraint": "E3",
      "claim_id": "empirical-E3",
-     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling",
-     "relation": "P_req ≤ 0.0458 W",
+     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling_v2",
+     "relation": "P_req ≤ 0.0833 W",
      "under": [
       "teleost_measured_ranges"
      ],
@@ -1273,13 +1392,132 @@
      "state": "cannot-rule",
      "reason": "cannot rule: the candidate does not commit to the model assumption isometric_constant_density (the same body family scaled without change of shape or density, so W = k L^3 (lean/Delphi/Thompson.lean header))",
      "reasonCode": "assumption-not-accepted"
+    },
+    {
+     "constraint": "P1",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_rules_out",
+     "relation": "CTmin ≤ T ≤ CTmax whenever P > 0",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input body_temperature_C (T, body temperature, C (ectotherm: equal to water temperature))",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P1b",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_power_rules_out",
+     "relation": "P ≤ P_ref Q10^((T − T_ref)/10)",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input sustained_power_claimed_W (P, sustained (aerobic) power the design claims at body_temperature_C, W)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_ucrit",
+     "relation": "U_current ≤ U_crit",
+     "under": [
+      "station_holding_drag_fick"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input current_speed_m_s (U_current, speed of the water current the design holds station against, m/s)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2b",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_drag_bound",
+     "relation": "ρ_w C_d A U_current^3 / 2 ≤ η E_O2 Q Ca",
+     "under": [
+      "station_holding_drag_fick",
+      "fick_aerobic_supply"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input water_density_kg_m3 (ρ_w, water density, kg m^-3)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3",
+     "claim_id": "perturb-pressure",
+     "lemma": "Delphi.Hydro.closed_bladder_rules_out",
+     "relation": "V(d) = V(0) p0 / (p0 + ρ_w g d)",
+     "under": [
+      "boyle_closed_bladder"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input bladder_volume_at_depth_ml (V(d), swim-bladder volume the design claims at depth_m with no gas secreted, ml)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3b",
+     "claim_id": "perturb-depth-cap",
+     "lemma": "Delphi.Perturb.no_teleost_below",
+     "relation": "d ≤ 8200 m",
+     "under": [
+      "osmolyte_depth_cap"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input depth_m (d, depth below the surface, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.vmin_isa_mono",
+     "relation": "v ≥ v_min(ρ(h)) = sqrt(2 W / (ρ(h) S C_L,max)), ρ(h) = 1.225 (1 − 0.0065 h / 288.15)^4.2559",
+     "under": [
+      "lift_supported_flight",
+      "isa_troposphere"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input airspeed_m_s (v, airspeed relative to the air, m s^-1)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4b",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.wind_glide_rules_out",
+     "relation": "x ≤ (L/D)max h (1 + w/u), w positive for a tailwind, w ≥ −u",
+     "under": [
+      "steady_glide_constant_wind"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input ground_distance_m (x, ground distance claimed for one steady glide in wind, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P5",
+     "claim_id": "perturb-energy-balance",
+     "lemma": "Delphi.Perturb.energy_rules_out",
+     "relation": "mass held or gained only if I ≥ (R + Act) / (a (1 − s))",
+     "under": [
+      "daily_energy_conservation"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input intake_J_per_day (I, ingested energy per day, J)",
+     "reasonCode": "missing-input"
     }
    ]
   },
   {
    "id": "real-fish-sustained-flight-any-teleost",
    "problem": "Could ANY teleost in the measured ranges sustain the real fish's flight?",
-   "description": "Level flight of the Park and Choi specimen at its measured maximum lift-to-drag ratio needs 1.3473 W (W 0.5886 N at 10 m/s with L/D 4.37, the most generous reading). The question is not whether the chain's particular proxies can pay for it, but whether any teleost inside the measured ranges can.",
+   "description": "Level flight of the Park and Choi specimen at its measured maximum lift-to-drag ratio needs 1.3473 W (W 0.5886 N at 10 m/s with L/D 4.37, the most generous reading). The question is not whether the chain's particular proxies can pay for it, but whether any animal inside the E3 v2 ranges (efficiency up to 0.23, O2 delivery up to the measured zebrafish MO2max scaled to 60 g) can. Under E3 v1 this read “any teleost”; measured zebrafish broke that wording (physics/FICK-CEILING-CHECK.md).",
    "source": "physics/glide-data.csv (Park and Choi 2010 model L3) for the power required; physiology/ for the ranges",
    "accepts": [
     "teleost_measured_ranges"
@@ -1306,7 +1544,7 @@
      "E3"
     ],
     "consistent": [],
-    "cannotRule": 41,
+    "cannotRule": 50,
     "notFormalised": 0
    },
    "verdict": "eliminated",
@@ -1834,18 +2072,18 @@
     {
      "constraint": "E3",
      "claim_id": "empirical-E3",
-     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling",
-     "relation": "P_req ≤ 0.0458 W",
+     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling_v2",
+     "relation": "P_req ≤ 0.0833 W",
      "under": [
       "teleost_measured_ranges"
      ],
      "faithfulness": "not assessed (no paper states this form)",
      "state": "eliminated",
-     "reason": "above the sustained aerobic ceiling of EVERY teleost the measured ranges allow at this mass, not only of the proxies a candidate happens to commit",
-     "violated": "P_req = 13473/10000 W > 0.0458 W",
+     "reason": "above the sustained aerobic ceiling of every animal inside the E3 v2 ranges at this mass (efficiency up to 0.23, O2 delivery up to the measured zebrafish MO2max scaled to 60 g), not only of the proxies a candidate happens to commit",
+     "violated": "P_req = 13473/10000 W > 0.0833 W",
      "numbers": {
       "power required (W)": "13473/10000",
-      "ceiling of every teleost in the measured ranges at 0.06 kg (W)": "0.0458"
+      "ceiling inside the widened E3 v2 ranges at 0.06 kg (W)": "0.0833"
      },
      "certificateTheorem": "Delphi.Constraints.Eliminations.elim_real_fish_sustained_flight_any_teleost_E3",
      "conditionalOn": "E3",
@@ -1894,13 +2132,132 @@
      "state": "cannot-rule",
      "reason": "cannot rule: missing input loglog_exponent (d log W / d log L between the two sizes)",
      "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P1",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_rules_out",
+     "relation": "CTmin ≤ T ≤ CTmax whenever P > 0",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input body_temperature_C (T, body temperature, C (ectotherm: equal to water temperature))",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P1b",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_power_rules_out",
+     "relation": "P ≤ P_ref Q10^((T − T_ref)/10)",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input sustained_power_claimed_W (P, sustained (aerobic) power the design claims at body_temperature_C, W)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_ucrit",
+     "relation": "U_current ≤ U_crit",
+     "under": [
+      "station_holding_drag_fick"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input current_speed_m_s (U_current, speed of the water current the design holds station against, m/s)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2b",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_drag_bound",
+     "relation": "ρ_w C_d A U_current^3 / 2 ≤ η E_O2 Q Ca",
+     "under": [
+      "station_holding_drag_fick",
+      "fick_aerobic_supply"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input water_density_kg_m3 (ρ_w, water density, kg m^-3)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3",
+     "claim_id": "perturb-pressure",
+     "lemma": "Delphi.Hydro.closed_bladder_rules_out",
+     "relation": "V(d) = V(0) p0 / (p0 + ρ_w g d)",
+     "under": [
+      "boyle_closed_bladder"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input bladder_volume_at_depth_ml (V(d), swim-bladder volume the design claims at depth_m with no gas secreted, ml)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3b",
+     "claim_id": "perturb-depth-cap",
+     "lemma": "Delphi.Perturb.no_teleost_below",
+     "relation": "d ≤ 8200 m",
+     "under": [
+      "osmolyte_depth_cap"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input depth_m (d, depth below the surface, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.vmin_isa_mono",
+     "relation": "v ≥ v_min(ρ(h)) = sqrt(2 W / (ρ(h) S C_L,max)), ρ(h) = 1.225 (1 − 0.0065 h / 288.15)^4.2559",
+     "under": [
+      "lift_supported_flight",
+      "isa_troposphere"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input airspeed_m_s (v, airspeed relative to the air, m s^-1)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4b",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.wind_glide_rules_out",
+     "relation": "x ≤ (L/D)max h (1 + w/u), w positive for a tailwind, w ≥ −u",
+     "under": [
+      "steady_glide_constant_wind"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input ground_distance_m (x, ground distance claimed for one steady glide in wind, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P5",
+     "claim_id": "perturb-energy-balance",
+     "lemma": "Delphi.Perturb.energy_rules_out",
+     "relation": "mass held or gained only if I ≥ (R + Act) / (a (1 − s))",
+     "under": [
+      "daily_energy_conservation"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input intake_J_per_day (I, ingested energy per day, J)",
+     "reasonCode": "missing-input"
     }
    ]
   },
   {
    "id": "hovering-insect-scale-power-within-ceiling",
    "problem": "Control: a claim small enough to pass the ceiling",
-   "description": "A sustained aerobic power of 0.04 W, below the 0.0458 W ceiling the measured ranges allow at 0.06 kg. Consistent, which says only that the oxygen budget is not what rules it out.",
+   "description": "A sustained aerobic power of 0.04 W, below the 0.0833 W ceiling the E3 v2 ranges allow at 0.06 kg (0.0458 W under E3 v1). Consistent, which says only that the oxygen budget is not what rules it out.",
    "source": "lean thread control",
    "accepts": [
     "teleost_measured_ranges"
@@ -1923,7 +2280,7 @@
     "consistent": [
      "E3"
     ],
-    "cannotRule": 41,
+    "cannotRule": 50,
     "notFormalised": 0
    },
    "verdict": "consistent (not ruled out by these theorems; not shown feasible)",
@@ -2451,17 +2808,17 @@
     {
      "constraint": "E3",
      "claim_id": "empirical-E3",
-     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling",
-     "relation": "P_req ≤ 0.0458 W",
+     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling_v2",
+     "relation": "P_req ≤ 0.0833 W",
      "under": [
       "teleost_measured_ranges"
      ],
      "faithfulness": "not assessed (no paper states this form)",
      "state": "consistent",
-     "reason": "within the ceiling the measured ranges allow; nothing about burst power or about whether this animal exists",
+     "reason": "within the ceiling the E3 v2 ranges allow; nothing about burst power or about whether this animal exists",
      "numbers": {
       "power required (W)": "1/25",
-      "ceiling of every teleost in the measured ranges at 0.06 kg (W)": "0.0458"
+      "ceiling inside the widened E3 v2 ranges at 0.06 kg (W)": "0.0833"
      },
      "conditionalOn": "E3",
      "conditionalNote": "conditional on the observation E3 of lean/empirical.json, which a reader may reject; the arithmetic is kernel-checked either way"
@@ -2508,6 +2865,125 @@
      "state": "cannot-rule",
      "reason": "cannot rule: missing input loglog_exponent (d log W / d log L between the two sizes)",
      "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P1",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_rules_out",
+     "relation": "CTmin ≤ T ≤ CTmax whenever P > 0",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input body_temperature_C (T, body temperature, C (ectotherm: equal to water temperature))",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P1b",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_power_rules_out",
+     "relation": "P ≤ P_ref Q10^((T − T_ref)/10)",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input sustained_power_claimed_W (P, sustained (aerobic) power the design claims at body_temperature_C, W)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_ucrit",
+     "relation": "U_current ≤ U_crit",
+     "under": [
+      "station_holding_drag_fick"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input current_speed_m_s (U_current, speed of the water current the design holds station against, m/s)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2b",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_drag_bound",
+     "relation": "ρ_w C_d A U_current^3 / 2 ≤ η E_O2 Q Ca",
+     "under": [
+      "station_holding_drag_fick",
+      "fick_aerobic_supply"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input water_density_kg_m3 (ρ_w, water density, kg m^-3)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3",
+     "claim_id": "perturb-pressure",
+     "lemma": "Delphi.Hydro.closed_bladder_rules_out",
+     "relation": "V(d) = V(0) p0 / (p0 + ρ_w g d)",
+     "under": [
+      "boyle_closed_bladder"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input bladder_volume_at_depth_ml (V(d), swim-bladder volume the design claims at depth_m with no gas secreted, ml)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3b",
+     "claim_id": "perturb-depth-cap",
+     "lemma": "Delphi.Perturb.no_teleost_below",
+     "relation": "d ≤ 8200 m",
+     "under": [
+      "osmolyte_depth_cap"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input depth_m (d, depth below the surface, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.vmin_isa_mono",
+     "relation": "v ≥ v_min(ρ(h)) = sqrt(2 W / (ρ(h) S C_L,max)), ρ(h) = 1.225 (1 − 0.0065 h / 288.15)^4.2559",
+     "under": [
+      "lift_supported_flight",
+      "isa_troposphere"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input airspeed_m_s (v, airspeed relative to the air, m s^-1)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4b",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.wind_glide_rules_out",
+     "relation": "x ≤ (L/D)max h (1 + w/u), w positive for a tailwind, w ≥ −u",
+     "under": [
+      "steady_glide_constant_wind"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input ground_distance_m (x, ground distance claimed for one steady glide in wind, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P5",
+     "claim_id": "perturb-energy-balance",
+     "lemma": "Delphi.Perturb.energy_rules_out",
+     "relation": "mass held or gained only if I ≥ (R + Act) / (a (1 − s))",
+     "under": [
+      "daily_energy_conservation"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input intake_J_per_day (I, ingested energy per day, J)",
+     "reasonCode": "missing-input"
     }
    ]
   },
@@ -2545,7 +3021,7 @@
      "E4"
     ],
     "consistent": [],
-    "cannotRule": 41,
+    "cannotRule": 50,
     "notFormalised": 0
    },
    "verdict": "eliminated",
@@ -3073,14 +3549,14 @@
     {
      "constraint": "E3",
      "claim_id": "empirical-E3",
-     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling",
-     "relation": "P_req ≤ 0.0458 W",
+     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling_v2",
+     "relation": "P_req ≤ 0.0833 W",
      "under": [
       "teleost_measured_ranges"
      ],
      "faithfulness": "not assessed (no paper states this form)",
      "state": "cannot-rule",
-     "reason": "cannot rule: the candidate does not commit to the model assumption teleost_measured_ranges (empirical entry E3: efficiency, oxycaloric equivalent, cardiac output and arterial O2 content lie inside the measured teleost ranges the physiology chain cites, so the sustained aerobic ceiling at 0.06 kg is at most 0.0458 W)",
+     "reason": "cannot rule: the candidate does not commit to the model assumption teleost_measured_ranges (empirical entry E3 (v2.0.0): efficiency (<= 0.23) and O2 delivery Q*Ca (<= 0.0187 ml O2/s at 0.06 kg, the measured zebrafish MO2max of Palstra 2010 scaled to 60 g) lie inside the ranges the cited sources support, so the sustained aerobic ceiling at 0.06 kg is at most 0.0833 W (v1.0.0 said 0.0458 W for every teleost; withdrawn, physics/FICK-CEILING-CHECK.md))",
      "reasonCode": "assumption-not-accepted",
      "conditionalOn": "E3",
      "conditionalNote": "conditional on the observation E3 of lean/empirical.json, which a reader may reject; the arithmetic is kernel-checked either way"
@@ -3136,6 +3612,125 @@
      "state": "cannot-rule",
      "reason": "cannot rule: missing input loglog_exponent (d log W / d log L between the two sizes)",
      "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P1",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_rules_out",
+     "relation": "CTmin ≤ T ≤ CTmax whenever P > 0",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input body_temperature_C (T, body temperature, C (ectotherm: equal to water temperature))",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P1b",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_power_rules_out",
+     "relation": "P ≤ P_ref Q10^((T − T_ref)/10)",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input sustained_power_claimed_W (P, sustained (aerobic) power the design claims at body_temperature_C, W)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_ucrit",
+     "relation": "U_current ≤ U_crit",
+     "under": [
+      "station_holding_drag_fick"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input current_speed_m_s (U_current, speed of the water current the design holds station against, m/s)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2b",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_drag_bound",
+     "relation": "ρ_w C_d A U_current^3 / 2 ≤ η E_O2 Q Ca",
+     "under": [
+      "station_holding_drag_fick",
+      "fick_aerobic_supply"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input water_density_kg_m3 (ρ_w, water density, kg m^-3)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3",
+     "claim_id": "perturb-pressure",
+     "lemma": "Delphi.Hydro.closed_bladder_rules_out",
+     "relation": "V(d) = V(0) p0 / (p0 + ρ_w g d)",
+     "under": [
+      "boyle_closed_bladder"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input bladder_volume_at_depth_ml (V(d), swim-bladder volume the design claims at depth_m with no gas secreted, ml)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3b",
+     "claim_id": "perturb-depth-cap",
+     "lemma": "Delphi.Perturb.no_teleost_below",
+     "relation": "d ≤ 8200 m",
+     "under": [
+      "osmolyte_depth_cap"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input depth_m (d, depth below the surface, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.vmin_isa_mono",
+     "relation": "v ≥ v_min(ρ(h)) = sqrt(2 W / (ρ(h) S C_L,max)), ρ(h) = 1.225 (1 − 0.0065 h / 288.15)^4.2559",
+     "under": [
+      "lift_supported_flight",
+      "isa_troposphere"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input airspeed_m_s (v, airspeed relative to the air, m s^-1)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4b",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.wind_glide_rules_out",
+     "relation": "x ≤ (L/D)max h (1 + w/u), w positive for a tailwind, w ≥ −u",
+     "under": [
+      "steady_glide_constant_wind"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input ground_distance_m (x, ground distance claimed for one steady glide in wind, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P5",
+     "claim_id": "perturb-energy-balance",
+     "lemma": "Delphi.Perturb.energy_rules_out",
+     "relation": "mass held or gained only if I ≥ (R + Act) / (a (1 − s))",
+     "under": [
+      "daily_energy_conservation"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input intake_J_per_day (I, ingested energy per day, J)",
+     "reasonCode": "missing-input"
     }
    ]
   },
@@ -3168,7 +3763,7 @@
     "consistent": [
      "E4"
     ],
-    "cannotRule": 41,
+    "cannotRule": 50,
     "notFormalised": 0
    },
    "verdict": "consistent (not ruled out by these theorems; not shown feasible)",
@@ -3696,14 +4291,14 @@
     {
      "constraint": "E3",
      "claim_id": "empirical-E3",
-     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling",
-     "relation": "P_req ≤ 0.0458 W",
+     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling_v2",
+     "relation": "P_req ≤ 0.0833 W",
      "under": [
       "teleost_measured_ranges"
      ],
      "faithfulness": "not assessed (no paper states this form)",
      "state": "cannot-rule",
-     "reason": "cannot rule: the candidate does not commit to the model assumption teleost_measured_ranges (empirical entry E3: efficiency, oxycaloric equivalent, cardiac output and arterial O2 content lie inside the measured teleost ranges the physiology chain cites, so the sustained aerobic ceiling at 0.06 kg is at most 0.0458 W)",
+     "reason": "cannot rule: the candidate does not commit to the model assumption teleost_measured_ranges (empirical entry E3 (v2.0.0): efficiency (<= 0.23) and O2 delivery Q*Ca (<= 0.0187 ml O2/s at 0.06 kg, the measured zebrafish MO2max of Palstra 2010 scaled to 60 g) lie inside the ranges the cited sources support, so the sustained aerobic ceiling at 0.06 kg is at most 0.0833 W (v1.0.0 said 0.0458 W for every teleost; withdrawn, physics/FICK-CEILING-CHECK.md))",
      "reasonCode": "assumption-not-accepted",
      "conditionalOn": "E3",
      "conditionalNote": "conditional on the observation E3 of lean/empirical.json, which a reader may reject; the arithmetic is kernel-checked either way"
@@ -3756,6 +4351,125 @@
      "state": "cannot-rule",
      "reason": "cannot rule: missing input loglog_exponent (d log W / d log L between the two sizes)",
      "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P1",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_rules_out",
+     "relation": "CTmin ≤ T ≤ CTmax whenever P > 0",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input body_temperature_C (T, body temperature, C (ectotherm: equal to water temperature))",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P1b",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_power_rules_out",
+     "relation": "P ≤ P_ref Q10^((T − T_ref)/10)",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input sustained_power_claimed_W (P, sustained (aerobic) power the design claims at body_temperature_C, W)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_ucrit",
+     "relation": "U_current ≤ U_crit",
+     "under": [
+      "station_holding_drag_fick"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input current_speed_m_s (U_current, speed of the water current the design holds station against, m/s)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2b",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_drag_bound",
+     "relation": "ρ_w C_d A U_current^3 / 2 ≤ η E_O2 Q Ca",
+     "under": [
+      "station_holding_drag_fick",
+      "fick_aerobic_supply"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input water_density_kg_m3 (ρ_w, water density, kg m^-3)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3",
+     "claim_id": "perturb-pressure",
+     "lemma": "Delphi.Hydro.closed_bladder_rules_out",
+     "relation": "V(d) = V(0) p0 / (p0 + ρ_w g d)",
+     "under": [
+      "boyle_closed_bladder"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input bladder_volume_at_depth_ml (V(d), swim-bladder volume the design claims at depth_m with no gas secreted, ml)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3b",
+     "claim_id": "perturb-depth-cap",
+     "lemma": "Delphi.Perturb.no_teleost_below",
+     "relation": "d ≤ 8200 m",
+     "under": [
+      "osmolyte_depth_cap"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input depth_m (d, depth below the surface, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.vmin_isa_mono",
+     "relation": "v ≥ v_min(ρ(h)) = sqrt(2 W / (ρ(h) S C_L,max)), ρ(h) = 1.225 (1 − 0.0065 h / 288.15)^4.2559",
+     "under": [
+      "lift_supported_flight",
+      "isa_troposphere"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input airspeed_m_s (v, airspeed relative to the air, m s^-1)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4b",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.wind_glide_rules_out",
+     "relation": "x ≤ (L/D)max h (1 + w/u), w positive for a tailwind, w ≥ −u",
+     "under": [
+      "steady_glide_constant_wind"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input ground_distance_m (x, ground distance claimed for one steady glide in wind, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P5",
+     "claim_id": "perturb-energy-balance",
+     "lemma": "Delphi.Perturb.energy_rules_out",
+     "relation": "mass held or gained only if I ≥ (R + Act) / (a (1 − s))",
+     "under": [
+      "daily_energy_conservation"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input intake_J_per_day (I, ingested energy per day, J)",
+     "reasonCode": "missing-input"
     }
    ]
   },
@@ -3790,7 +4504,7 @@
      "E7"
     ],
     "consistent": [],
-    "cannotRule": 41,
+    "cannotRule": 50,
     "notFormalised": 0
    },
    "verdict": "eliminated",
@@ -4318,8 +5032,8 @@
     {
      "constraint": "E3",
      "claim_id": "empirical-E3",
-     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling",
-     "relation": "P_req ≤ 0.0458 W",
+     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling_v2",
+     "relation": "P_req ≤ 0.0833 W",
      "under": [
       "teleost_measured_ranges"
      ],
@@ -4378,6 +5092,125 @@
      "state": "cannot-rule",
      "reason": "cannot rule: missing input loglog_exponent (d log W / d log L between the two sizes)",
      "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P1",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_rules_out",
+     "relation": "CTmin ≤ T ≤ CTmax whenever P > 0",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input body_temperature_C (T, body temperature, C (ectotherm: equal to water temperature))",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P1b",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_power_rules_out",
+     "relation": "P ≤ P_ref Q10^((T − T_ref)/10)",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input sustained_power_claimed_W (P, sustained (aerobic) power the design claims at body_temperature_C, W)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_ucrit",
+     "relation": "U_current ≤ U_crit",
+     "under": [
+      "station_holding_drag_fick"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input current_speed_m_s (U_current, speed of the water current the design holds station against, m/s)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2b",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_drag_bound",
+     "relation": "ρ_w C_d A U_current^3 / 2 ≤ η E_O2 Q Ca",
+     "under": [
+      "station_holding_drag_fick",
+      "fick_aerobic_supply"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input water_density_kg_m3 (ρ_w, water density, kg m^-3)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3",
+     "claim_id": "perturb-pressure",
+     "lemma": "Delphi.Hydro.closed_bladder_rules_out",
+     "relation": "V(d) = V(0) p0 / (p0 + ρ_w g d)",
+     "under": [
+      "boyle_closed_bladder"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input bladder_volume_at_depth_ml (V(d), swim-bladder volume the design claims at depth_m with no gas secreted, ml)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3b",
+     "claim_id": "perturb-depth-cap",
+     "lemma": "Delphi.Perturb.no_teleost_below",
+     "relation": "d ≤ 8200 m",
+     "under": [
+      "osmolyte_depth_cap"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input depth_m (d, depth below the surface, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.vmin_isa_mono",
+     "relation": "v ≥ v_min(ρ(h)) = sqrt(2 W / (ρ(h) S C_L,max)), ρ(h) = 1.225 (1 − 0.0065 h / 288.15)^4.2559",
+     "under": [
+      "lift_supported_flight",
+      "isa_troposphere"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input airspeed_m_s (v, airspeed relative to the air, m s^-1)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4b",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.wind_glide_rules_out",
+     "relation": "x ≤ (L/D)max h (1 + w/u), w positive for a tailwind, w ≥ −u",
+     "under": [
+      "steady_glide_constant_wind"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input ground_distance_m (x, ground distance claimed for one steady glide in wind, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P5",
+     "claim_id": "perturb-energy-balance",
+     "lemma": "Delphi.Perturb.energy_rules_out",
+     "relation": "mass held or gained only if I ≥ (R + Act) / (a (1 − s))",
+     "under": [
+      "daily_energy_conservation"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input intake_J_per_day (I, ingested energy per day, J)",
+     "reasonCode": "missing-input"
     }
    ]
   },
@@ -4412,7 +5245,7 @@
      "E7"
     ],
     "consistent": [],
-    "cannotRule": 41,
+    "cannotRule": 50,
     "notFormalised": 0
    },
    "verdict": "eliminated",
@@ -4940,8 +5773,8 @@
     {
      "constraint": "E3",
      "claim_id": "empirical-E3",
-     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling",
-     "relation": "P_req ≤ 0.0458 W",
+     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling_v2",
+     "relation": "P_req ≤ 0.0833 W",
      "under": [
       "teleost_measured_ranges"
      ],
@@ -5000,6 +5833,125 @@
      "state": "cannot-rule",
      "reason": "cannot rule: missing input loglog_exponent (d log W / d log L between the two sizes)",
      "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P1",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_rules_out",
+     "relation": "CTmin ≤ T ≤ CTmax whenever P > 0",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input body_temperature_C (T, body temperature, C (ectotherm: equal to water temperature))",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P1b",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_power_rules_out",
+     "relation": "P ≤ P_ref Q10^((T − T_ref)/10)",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input sustained_power_claimed_W (P, sustained (aerobic) power the design claims at body_temperature_C, W)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_ucrit",
+     "relation": "U_current ≤ U_crit",
+     "under": [
+      "station_holding_drag_fick"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input current_speed_m_s (U_current, speed of the water current the design holds station against, m/s)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2b",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_drag_bound",
+     "relation": "ρ_w C_d A U_current^3 / 2 ≤ η E_O2 Q Ca",
+     "under": [
+      "station_holding_drag_fick",
+      "fick_aerobic_supply"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input water_density_kg_m3 (ρ_w, water density, kg m^-3)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3",
+     "claim_id": "perturb-pressure",
+     "lemma": "Delphi.Hydro.closed_bladder_rules_out",
+     "relation": "V(d) = V(0) p0 / (p0 + ρ_w g d)",
+     "under": [
+      "boyle_closed_bladder"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input bladder_volume_at_depth_ml (V(d), swim-bladder volume the design claims at depth_m with no gas secreted, ml)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3b",
+     "claim_id": "perturb-depth-cap",
+     "lemma": "Delphi.Perturb.no_teleost_below",
+     "relation": "d ≤ 8200 m",
+     "under": [
+      "osmolyte_depth_cap"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input depth_m (d, depth below the surface, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.vmin_isa_mono",
+     "relation": "v ≥ v_min(ρ(h)) = sqrt(2 W / (ρ(h) S C_L,max)), ρ(h) = 1.225 (1 − 0.0065 h / 288.15)^4.2559",
+     "under": [
+      "lift_supported_flight",
+      "isa_troposphere"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input airspeed_m_s (v, airspeed relative to the air, m s^-1)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4b",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.wind_glide_rules_out",
+     "relation": "x ≤ (L/D)max h (1 + w/u), w positive for a tailwind, w ≥ −u",
+     "under": [
+      "steady_glide_constant_wind"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input ground_distance_m (x, ground distance claimed for one steady glide in wind, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P5",
+     "claim_id": "perturb-energy-balance",
+     "lemma": "Delphi.Perturb.energy_rules_out",
+     "relation": "mass held or gained only if I ≥ (R + Act) / (a (1 − s))",
+     "under": [
+      "daily_energy_conservation"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input intake_J_per_day (I, ingested energy per day, J)",
+     "reasonCode": "missing-input"
     }
    ]
   },
@@ -5030,7 +5982,7 @@
     "consistent": [
      "E7"
     ],
-    "cannotRule": 41,
+    "cannotRule": 50,
     "notFormalised": 0
    },
    "verdict": "consistent (not ruled out by these theorems; not shown feasible)",
@@ -5558,8 +6510,8 @@
     {
      "constraint": "E3",
      "claim_id": "empirical-E3",
-     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling",
-     "relation": "P_req ≤ 0.0458 W",
+     "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling_v2",
+     "relation": "P_req ≤ 0.0833 W",
      "under": [
       "teleost_measured_ranges"
      ],
@@ -5614,6 +6566,125 @@
      "faithfulness": "not assessed",
      "state": "cannot-rule",
      "reason": "cannot rule: missing input loglog_exponent (d log W / d log L between the two sizes)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P1",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_rules_out",
+     "relation": "CTmin ≤ T ≤ CTmax whenever P > 0",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input body_temperature_C (T, body temperature, C (ectotherm: equal to water temperature))",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P1b",
+     "claim_id": "perturb-thermal",
+     "lemma": "Delphi.Perturb.thermal_power_rules_out",
+     "relation": "P ≤ P_ref Q10^((T − T_ref)/10)",
+     "under": [
+      "thermal_window_q10"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input sustained_power_claimed_W (P, sustained (aerobic) power the design claims at body_temperature_C, W)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_ucrit",
+     "relation": "U_current ≤ U_crit",
+     "under": [
+      "station_holding_drag_fick"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input current_speed_m_s (U_current, speed of the water current the design holds station against, m/s)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P2b",
+     "claim_id": "perturb-current",
+     "lemma": "Delphi.Perturb.no_station_above_drag_bound",
+     "relation": "ρ_w C_d A U_current^3 / 2 ≤ η E_O2 Q Ca",
+     "under": [
+      "station_holding_drag_fick",
+      "fick_aerobic_supply"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input water_density_kg_m3 (ρ_w, water density, kg m^-3)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3",
+     "claim_id": "perturb-pressure",
+     "lemma": "Delphi.Hydro.closed_bladder_rules_out",
+     "relation": "V(d) = V(0) p0 / (p0 + ρ_w g d)",
+     "under": [
+      "boyle_closed_bladder"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input bladder_volume_at_depth_ml (V(d), swim-bladder volume the design claims at depth_m with no gas secreted, ml)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P3b",
+     "claim_id": "perturb-depth-cap",
+     "lemma": "Delphi.Perturb.no_teleost_below",
+     "relation": "d ≤ 8200 m",
+     "under": [
+      "osmolyte_depth_cap"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input depth_m (d, depth below the surface, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.vmin_isa_mono",
+     "relation": "v ≥ v_min(ρ(h)) = sqrt(2 W / (ρ(h) S C_L,max)), ρ(h) = 1.225 (1 − 0.0065 h / 288.15)^4.2559",
+     "under": [
+      "lift_supported_flight",
+      "isa_troposphere"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input airspeed_m_s (v, airspeed relative to the air, m s^-1)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P4b",
+     "claim_id": "perturb-altitude-wind",
+     "lemma": "Delphi.Perturb.wind_glide_rules_out",
+     "relation": "x ≤ (L/D)max h (1 + w/u), w positive for a tailwind, w ≥ −u",
+     "under": [
+      "steady_glide_constant_wind"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input ground_distance_m (x, ground distance claimed for one steady glide in wind, m)",
+     "reasonCode": "missing-input"
+    },
+    {
+     "constraint": "P5",
+     "claim_id": "perturb-energy-balance",
+     "lemma": "Delphi.Perturb.energy_rules_out",
+     "relation": "mass held or gained only if I ≥ (R + Act) / (a (1 − s))",
+     "under": [
+      "daily_energy_conservation"
+     ],
+     "faithfulness": "not assessed",
+     "state": "cannot-rule",
+     "reason": "cannot rule: missing input intake_J_per_day (I, ingested energy per day, J)",
      "reasonCode": "missing-input"
     }
    ]

@@ -240,18 +240,36 @@ if (physLedger?.ledger?.length && physLedger.summary?.compile?.ok) {
         what: /flier/.test(e.id) ? 'the hypothetical flier' : /vmin/.test(e.id) ? 'the measured specimen at its minimum flying speed' : 'the measured specimen at the low end of the field speeds'
       };
     }),
-    // The SECOND, stronger ceiling. 0.0357 W is the product of the four proxy values this candidate
-    // commits to; observation E3 instead takes the MAXIMUM of each measured teleost range, so its
-    // ceiling is necessarily the larger of the two and rules out every animal the record allows,
-    // not just one parameterisation. Both are kernel-checked; neither supersedes the other.
+    // The SECOND, wider ceiling. 0.0357 W is the product of the four proxy values this candidate
+    // commits to (snapper-based cardiac output: 38x). Observation E3 takes an upper envelope instead. E3 1.0.0
+    // (0.0458 W, 29x) claimed to cover every teleost; a measured zebrafish broke it per kg, so E3 2.0.0 widens it
+    // (zebrafish-derived O2 delivery, skeletal-muscle efficiency) and scopes it to its sources. See FICK-CEILING-CHECK.md.
     envelope: (() => {
       const E = ((rj('lean/empirical.json') || {}).entries || []).find(o => o && o.id === 'E3');
       if (!E?.value?.ceiling_W) return null;
       const req = frac(physLedger.ledger[0].results.find(x => x.constraint === 'C14').numbers['P_req = W v/(L/D)']);
+      // bounds rendered generically: E3 2.0.0 bounds O2 delivery (Q x Ca) as one quantity, 1.0.0 bounded Q and Ca apart
+      const UNIT = { eta: '', oxycaloric_J_per_ml: ' J/ml', cardiacOutput_ml_per_s: ' ml/s', arterialO2_ml_per_ml: ' ml/ml' };
+      const SYM = { eta: 'η', oxycaloric_J_per_ml: 'E', cardiacOutput_ml_per_s: 'Q', arterialO2_ml_per_ml: 'Ca' };
+      const boundsText = Object.entries(E.value.bounds || {}).filter(([, v]) => typeof v === 'number')
+        .map(([k, v]) => {
+          const m = k.match(/^(.*?)_((?:ml|mg|J)_.*)$/);
+          const sym = SYM[k] || (m ? m[1] : k), unit = UNIT[k] ?? (m ? ' ' + m[2].replace(/_per_/g, '/').replace(/_/g, ' ') : '');
+          return `${sym} ≤ ${v}${unit}`;
+        }).join(', ');
       return {
         ceilingW: E.value.ceiling_W,
         shortBy: Math.round(req / E.value.ceiling_W),
         bounds: E.value.bounds,
+        boundsText,
+        version: E.version || null,
+        // the 2026-11-01 correction (physics/FICK-CEILING-CHECK.md): the snapper cardiac output under-states a measured
+        // teleost; zebrafish MO2 at Ucrit (Palstra 2010, PMC3013094) is 2.8x the old ceiling. The headline is a range.
+        corrected: {
+          range: 'about 10 to 30×', central: 'about 20×', chainShortBy: Math.round(req / sup), previousEnvelopeW: 0.0458, previousEnvelopeShortBy: 29,
+          text: 'Corrected 2026-11-01: the proxies borrowed a snapper cardiac output, and a measured zebrafish at U_crit takes up 2.8× the O2 that ceiling allows (Palstra et al. 2010, PLoS One 5:e14483). With a zebrafish-derived O2 delivery and a skeletal-muscle efficiency the shortfall is about 10 to 30× (central about 20×), not 29 to 38×; 38× is what the original snapper-based proxies give. Sustained aerobic flight is still ruled out by an order of magnitude.',
+          source: 'physics/FICK-CEILING-CHECK.md'
+        },
         theorems: E.lean.theorems,
         title: E.title,
         why: E.observation,
@@ -263,7 +281,7 @@ if (physLedger?.ledger?.length && physLedger.summary?.compile?.ok) {
     proxies: Object.entries(physLedger.ledger[0].commits)
       .filter(([k]) => /efficiency|oxycaloric|cardiac|arterial/.test(k))
       .map(([k, v]) => ({ k, v: r2(+v, 5) })),
-    sources: ['lean/eliminate/ledger.physiology.json', 'lean/Delphi/Certificates/EliminationsPhysiology.lean', 'lean/empirical.json (E3)', 'lean/AUDIT-FLYING-FISH.md']
+    sources: ['lean/eliminate/ledger.physiology.json', 'lean/Delphi/Certificates/EliminationsPhysiology.lean', 'lean/empirical.json (E3)', 'lean/AUDIT-FLYING-FISH.md', 'physics/FICK-CEILING-CHECK.md']
   };
 }
 

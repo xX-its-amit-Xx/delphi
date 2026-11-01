@@ -239,17 +239,18 @@ function calibrate(R) {
  *  removes zebrafish refs), 'family:Name', 'order:Name', 'organism:<track>' groups, or a bare organism id. */
 export function excludeMatcher(list = []) {
   const norm = x => String(x).trim().toLowerCase().replace(/[_\s]+/g, ' ');
-  const ids = new Set(), sp = new Set(), fam = new Set(), ord = new Set();
+  const ids = new Set(), sp = new Set(), fam = new Set(), ord = new Set(), gen = new Set();
   for (const e of list) {
-    const m = String(e).match(/^(species|family|order):(.+)$/i);
+    const m = String(e).match(/^(species|genus|family|order):(.+)$/i);
     if (!m) { ids.add(String(e)); continue; }
-    ({ species: sp, family: fam, order: ord })[m[1].toLowerCase()].add(norm(m[2]));
+    ({ species: sp, genus: gen, family: fam, order: ord })[m[1].toLowerCase()].add(norm(m[2]));
   }
   return r => {
     if (ids.has(r.id) || ids.has(r.group) || (r.organism && ids.has(r.organism))) return true;
     const species = norm(r.organism ? r.taxon : r.name), t = String(r.taxon || '');
     const family = norm(r.family || (t.match(/^([A-Za-z]+idae)/) || [])[1] || ''), order = norm(r.order || (t.match(/\(([A-Za-z]+formes)\)/) || [])[1] || '');
-    return sp.has(species) || (family && fam.has(family)) || (order && ord.has(order));
+    const genus = species.split(' ')[0] || '';
+    return sp.has(species) || (genus && gen.has(genus)) || (family && fam.has(family)) || (order && ord.has(order));
   };
 }
 
@@ -304,7 +305,7 @@ export async function closestPhenotype(raw, { k = 5, exclude = [], version = '1.
   }
   const envelope = finEnvelope(q.fin, R, { version });
   return { query: { body: q.body, fin: q.fin }, body, fin, fin_envelope: envelope,
-    closest_real_relative: body.ran ? body.nearest[0] : (fin.ran ? fin.nearest[0] : null),
+    closest_real_relative: body.ran && body.nearest ? body.nearest[0] : (fin.ran ? fin.nearest[0] : null),
     closest_real_relative_fins: fin.ran ? fin.nearest[0] : null,
     ood: [body, fin].some(b => b.ran && b.ood) || envelope.outside.length > 0, excluded: [...ex],
     aves_excluded: { rule: 'explicit Aves filter on every reference name and taxon (frozen holdout); FishShapes and Daane 2021 are fish-only', dropped: R.aves_dropped.length } };

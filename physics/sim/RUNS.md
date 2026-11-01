@@ -155,6 +155,12 @@ power exceeded 0.5 W (availability), while the thrust applied was aerobic only; 
 flier at 7 m/s, from the chain's own numbers: aerobic ceiling eta E Q C_a = 0.0357 W against 1.35, 1.33 and 0.94 W required,
 short by 38, 37 and 26 times. The certificates do not bound burst flight or gliding. The sim's arm C and the certificate agree.
 
+> **Correction (2026-11-01, `physics/FICK-CEILING-CHECK.md`).** The 0.0357 W ceiling uses a snapper cardiac output that is far
+> too low for a measured teleost: zebrafish MO2 at U_crit (Palstra et al. 2010, PMC3013094: 2630 mg O2/kg/h) is 2.8x what the
+> ceiling allows. With a zebrafish-derived O2 delivery and a skeletal-muscle efficiency (0.16 to 0.23) the aerobic shortfall for
+> powered flight is **about 10 to 30x (central about 20x)**, not 29 to 38x; 38x is what the original snapper-based proxies give.
+> Sustained aerobic flight is still ruled out by an order of magnitude. The numbers above are kept as run at the time.
+
 ### Derived bound (not a test): how much drag the chain's power can carry to lift-off
 
 Sweep at the hub's request (2026-10-31 ~21:25 UTC), v2 launch, real fish, fmf 0, 40 s, body water drag coefficient `cdw` on the

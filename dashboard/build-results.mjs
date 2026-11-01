@@ -231,6 +231,23 @@ const corrections = [
       ['measured specimen, Park & Choi convention', 10.68],
     ],
     paths: ['anatomy-model/parametric/CHANGELOG.md', 'physics/flier/tff/SPEC-MISMATCHES.md (item 1)', 'physics/results.json (overall.sentence)'],
+  },  {
+    id: 'fick-ceiling',
+    what: '"Sustained aerobic powered flight is 29 to 38 times short; no teleost the measured record allows has an aerobic ceiling above 0.0458 W" (E3)',
+    verdict: 'CORRECTED',
+    found_by: 'the studio engine, when a real zebrafish broke our own aerobic bound',
+    why: 'Run on an unedited adult zebrafish, the studio flagged the fish red for swimming at speeds it was measured to sustain. The Fick ceiling (efficiency × oxycaloric × cardiac output × arterial O2) used a cardiac output borrowed from schoolmaster snapper, 58.48 ml/min/kg. A measured zebrafish at U_crit takes up 2630 mg O2/kg/h (Palstra et al. 2010, PLoS One 5:e14483, PMC3013094), 2.8 times the 950 the ceiling allowed; even its standard metabolic rate is 1.5 times over. The same proxies set the flying-fish numbers. With a zebrafish-derived O2 delivery (1600 mg/kg/h scaled to 60 g) and a skeletal-muscle efficiency (0.23, Gladman & Askew 2024) the envelope becomes 0.0833 W, and the flying-fish shortfall is about 10 to 30 times (central about 20), not 29 to 38. E3 is now version 2.0.0, scoped to its sources; version 1.0.0 is kept. What survives: sustained aerobic flight is still ruled out by an order of magnitude.',
+    caveat: 'No flying-fish respirometry exists in the project, so the correction is a cross-taxon transfer like the original proxies. No zebrafish cardiac output during exercise was found; which of cardiac output or blood O2 content is low is inferred through Fick. Every case keeps propulsive efficiency at 1 and the best L/D, so the real shortfall is larger than each figure.',
+    metrics: [
+      ['zebrafish MO2 at U_crit, measured (mg O2/kg/h)', 2630],
+      ['O2 uptake the old ceiling allowed (mg O2/kg/h)', 950],
+      ['old E3 envelope at 0.06 kg (W)', 0.0458],
+      ['new E3 envelope at 0.06 kg (W)', 0.0833],
+      ['flying-fish shortfall, original snapper proxies (×)', 38],
+      ['flying-fish shortfall, new E3 envelope (×)', 16],
+      ['flying-fish shortfall, corrected central (×)', 20],
+    ],
+    paths: ['physics/FICK-CEILING-CHECK.md', 'lean/registry/laws/E3.json', 'lean/registry/law-versions/E3@1.0.0.json', 'lean/empirical.json (E3)', 'sim-engine/scenarios/current.mjs'],
   },
 ];
 
@@ -1015,7 +1032,7 @@ const html = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DELPHI results</title>
-<meta name="description" content="Today's DELPHI findings in one page: four corrections, a pre-registered design test that failed, how far a simulation is from runnable, what held up, an independent cross-check, and the unsigned corpus. Every number is read from a committed file at build time.">
+<meta name="description" content="Today's DELPHI findings in one page: six corrections, a pre-registered design test that failed, how far a simulation is from runnable, what held up, an independent cross-check, and the unsigned corpus. Every number is read from a committed file at build time.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M9 16l5 5 9-10' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E">
 <style>${CSS}</style>
 </head>

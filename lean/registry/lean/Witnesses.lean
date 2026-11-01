@@ -55,6 +55,15 @@ theorem bridge_E3 (η E Q Ca : ℝ) :
      ⟨T.eta_nonneg, T.eta_le, T.oxy_nonneg, T.oxy_le, T.q_nonneg, T.q_le, T.ca_nonneg, T.ca_le⟩⟩
 
 open Delphi.Empirical in
+/-- E3 v2.0.0 (law set 1.6.0): the shared-scope atoms are exactly the widened `TeleostAerobicV2`. -/
+theorem bridge_E3_v2 (η E D : ℝ) :
+    (0 ≤ η ∧ η ≤ 0.23 ∧ 0 ≤ E ∧ E ≤ 19.35 ∧ 0 ≤ D ∧ D ≤ 0.0187) ↔
+      ∃ T : TeleostAerobicV2, T.eta = η ∧ T.oxycaloric = E ∧ T.o2Delivery = D :=
+  ⟨fun ⟨a, b, c, d, e, f⟩ => ⟨⟨η, E, D, a, b, c, d, e, f⟩, rfl, rfl, rfl⟩,
+   fun ⟨T, h1, h2, h3⟩ => h1 ▸ h2 ▸ h3 ▸
+     ⟨T.eta_nonneg, T.eta_le, T.oxy_nonneg, T.oxy_le, T.del_nonneg, T.del_le⟩⟩
+
+open Delphi.Empirical in
 theorem bridge_E4 (u : ℝ) : u = 0 ↔ ∃ U : NoAerialUptake, U.uptakeInAir = u :=
   ⟨fun h => ⟨⟨u, h⟩, rfl⟩, fun ⟨U, hU⟩ => hU ▸ U.zero_in_air⟩
 
@@ -82,6 +91,7 @@ end Delphi.Registry
 #print axioms Delphi.Registry.bridge_E1
 #print axioms Delphi.Registry.bridge_E2
 #print axioms Delphi.Registry.bridge_E3
+#print axioms Delphi.Registry.bridge_E3_v2
 #print axioms Delphi.Registry.bridge_E4
 #print axioms Delphi.Registry.bridge_E5
 #print axioms Delphi.Registry.lawset_shared_scope_witness

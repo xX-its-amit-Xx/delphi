@@ -1,0 +1,45 @@
+{
+ "version": "1.2.0",
+ "frozen": "2026-11-01T04:44:26.996Z (sha256 of SCORER-PREREGISTRATION-v1.2.0.md 5c1b3ce148d7c0c1a126ceab2e5d829cd864f4c8621115c4c89954bbccab50ee; trait envelopes data/trait-envelopes.v1.2.0.json sha256 2a0f968eb85c01d868274f1835651cc2469e178f17a22ad46cb2a30cfdb3ce6f)",
+ "weights": {
+  "P": 0.35,
+  "L": 0.25,
+  "G": 0.15,
+  "S": 0.15,
+  "E": 0.1
+ },
+ "floor": 0.01,
+ "alpha": 0.05,
+ "plausible_threshold": 0.5,
+ "evidence": {
+  "measured": 1,
+  "derived": 0.9,
+  "measured-secondhand": 0.8,
+  "calibrated": 0.7,
+  "borrowed": 0.6,
+  "assumed": 0.5
+ },
+ "decay_decades": 0.05,
+ "coverage_target": 4,
+ "no_evidence_P": 0.25,
+ "sanity_failed_value": 0.05,
+ "refused_score": 0.01,
+ "rank": {
+  "floor": 0.0001
+ },
+ "changes_from_1.1.0": [
+  "P = min(v1.1.0 P parts, worst per-trait envelope p, definitional and organ-fraction checks, 0.05 for each FAILED phenotype sanity check) x coverage factor (0.5 + 0.5 min(1, checked/4)); P always runs; with nothing checkable P = 0.25 (absence never passes)",
+  "per-trait envelopes: [min, max] of log10 over benchmark DEV positives (data/trait-envelopes.v1.2.0.json; n >= 20 per trait); p = exp(-excess/0.05 decades)",
+  "definitional: peduncle fraction > 1 -> 0; non-positive size/ratio -> 0. Organ volume fractions: swim bladder 0.051 x/2 (ontogeny.json); any other single organ >= 0.5 -> 0 (assumption); listed organs summing >= 0.8 -> 0",
+  "lean_spec / flight claims accepted (design.lean_spec or opts.lean_spec) and run through lean_check; any accepted binding violation sets L = 0",
+  "invalid or refused designs (edits partedit/organism.mjs rejects) score 0.01, plausible false, never throw",
+  "genus:Name leave-out",
+  "rank_score: geometric mean of raw P parts x coverage factor, mean evidence; same weights; floor 1e-4",
+  "weights, floor, alpha, cut, evidence map unchanged",
+  "L from claims counts only accepted binding violations caused by the claim fields (full lean_spec minus the same spec without claim fields); morphology-only exponent rows that real specimens already violate against the single reference specimen do not count",
+  "specimens with SL below the FishShapes 0.5th percentile are treated as larval (v1.1 larval envelope)",
+  "range:* phenotype sanity failures are superseded by the per-trait envelopes; other failed sanity checks (mass fits body, organ fit, stage) feed P at 0.05",
+  "the v1.1 fin envelope is kept only for fin traits without a dev-positive envelope (pectoral area and span now use the dev envelope)"
+ ],
+ "preregistration": "sim-engine/validate/SCORER-PREREGISTRATION-v1.2.0.md"
+}

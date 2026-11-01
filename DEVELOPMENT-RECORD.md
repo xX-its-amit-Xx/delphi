@@ -354,7 +354,11 @@ a collaborator, and each is recorded where it was made.
 
 - **Sustained aerobic flight is eliminated for a flying fish** with kernel-checked certificates: aerobic ceiling
   0.0357 W on the committed teleost proxies against 1.35 W for level flight at 10 m/s (38×); 0.0458 W at most across
-  the measured teleost ranges (29×). It does not bound gliding or burst flight. `lean/eliminate/ledger.physiology.json`; [fd2277a0](https://github.com/xX-its-amit-Xx/delphi/commit/fd2277a0).
+  the measured teleost ranges (29×). **Corrected 2026-11-01:** those proxies borrowed a snapper cardiac output, and a
+  measured zebrafish at U_crit takes up 2.8× the O2 the ceiling allowed (Palstra et al. 2010, PMC3013094). With a
+  zebrafish-derived O2 delivery and a skeletal-muscle efficiency the shortfall is about 10 to 30× (central about 20×; 16× on
+  the widened E3 2.0.0 envelope of 0.0833 W); 38× is what the original snapper-based proxies give. Still ruled out by an
+  order of magnitude (`physics/FICK-CEILING-CHECK.md`). It does not bound gliding or burst flight. `lean/eliminate/ledger.physiology.json`; [fd2277a0](https://github.com/xX-its-amit-Xx/delphi/commit/fd2277a0).
 - **One glide cannot explain the long flights:** from 8 m at the measured L/D 4.37 the bound is 35 m (40.7 m with
   ground effect) against 50–400 m reported. `results.json` `single_glide`.
 - **Gliders do not converge** in the 9 genes compared: 11 shared columns among gliders against 17 for the reversed

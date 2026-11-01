@@ -89,12 +89,14 @@ const rules = {
     return { state: 'consistent', reason: 'the committed exponent interval meets the measured band', numbers };
   },
   E3(c, cand, tn) {
+    // E3 v2.0.0 (law set 1.6.0): eta <= 0.23, Q*Ca <= 0.0187 ml O2/s at 0.06 kg (measured zebrafish MO2max, Palstra 2010,
+    // scaled to 60 g), ceiling 0.0833 W. v1.0.0 (0.0458 W, "every teleost") was withdrawn: physics/FICK-CEILING-CHECK.md.
     if (!isPoint(cand.commits.power_required_W)) return { state: 'cannot-rule', reason: 'cannot rule: E3 needs an exact power required' };
-    const preq = parseQ(cand.commits.power_required_W), ceil = Q(458n, 10000n);
-    const numbers = { 'power required (W)': str(preq), 'ceiling of every teleost in the measured ranges at 0.06 kg (W)': '0.0458' };
-    if (cmp(ceil, preq) < 0) return { state: 'eliminated', reason: 'above the sustained aerobic ceiling of EVERY teleost the measured ranges allow at this mass, not only of the proxies a candidate happens to commit', violated: `P_req = ${str(preq)} W > 0.0458 W`, numbers,
-      cert: `theorem ${tn} (T : Delphi.Empirical.TeleostAerobic) (W v LD P Cv : \u211d) (hCv : 0 \u2264 Cv)\n    (hsus : P \u2264 Delphi.aerobicPower T.eta T.oxycaloric T.cardiacOutput T.arterialO2 Cv)\n    (hfl : Delphi.powerRequired W v LD \u2264 P) (hval : Delphi.powerRequired W v LD = ${lean(preq)}) : False :=\n  Delphi.Empirical.no_aerobic_flight_above_ceiling T hCv hsus hfl (by rw [hval]; norm_num)` };
-    return { state: 'consistent', reason: 'within the ceiling the measured ranges allow; nothing about burst power or about whether this animal exists', numbers };
+    const preq = parseQ(cand.commits.power_required_W), ceil = Q(833n, 10000n);
+    const numbers = { 'power required (W)': str(preq), 'ceiling inside the widened E3 v2 ranges at 0.06 kg (W)': '0.0833' };
+    if (cmp(ceil, preq) < 0) return { state: 'eliminated', reason: 'above the sustained aerobic ceiling of every animal inside the E3 v2 ranges at this mass (efficiency up to 0.23, O2 delivery up to the measured zebrafish MO2max scaled to 60 g), not only of the proxies a candidate happens to commit', violated: `P_req = ${str(preq)} W > 0.0833 W`, numbers,
+      cert: `theorem ${tn} (T : Delphi.Empirical.TeleostAerobicV2) (W v LD P Q Ca Cv : \u211d) (hQ : 0 \u2264 Q) (hCv : 0 \u2264 Cv)\n    (hdel : Q * Ca \u2264 T.o2Delivery)\n    (hsus : P \u2264 Delphi.aerobicPower T.eta T.oxycaloric Q Ca Cv)\n    (hfl : Delphi.powerRequired W v LD \u2264 P) (hval : Delphi.powerRequired W v LD = ${lean(preq)}) : False :=\n  Delphi.Empirical.no_aerobic_flight_above_ceiling_v2 T hQ hCv hdel hsus hfl (by rw [hval]; norm_num)` };
+    return { state: 'consistent', reason: 'within the ceiling the E3 v2 ranges allow; nothing about burst power or about whether this animal exists', numbers };
   },
   E4(c, cand, tn) {
     const q = ['power_required_W', 'oxycaloric_equivalent_J_per_unit_O2', 'o2_store_ml', 'flight_duration_s'];

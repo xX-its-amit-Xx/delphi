@@ -32,11 +32,13 @@ export function checkEmpirical(s, derived) {
       'within the band every fitted flying-fish study spans; outside it, no fit in the project\'s table supports the design',
       { needed: { exponent_between: [2.9, 3.02] }, available: { exponent: b } })); }
 
-  // E3: the ceiling of every teleost in the measured ranges.
-  { const ceiling = 0.0458;
-    if (Preq === null) rows.push(empiricalRow('E3', 'cannot-evaluate', {}, ['airspeed_m_s and LD_max (or powerRequired_W)'], 'the ceiling is ' + ceiling + ' W at 0.06 kg; a different mass needs the cardiac output per kg, which this row does not scale'));
-    else rows.push(empiricalRow('E3', leTol(Preq, ceiling) ? 'holds' : 'violated', { powerRequired_W: Preq, ceiling_W: ceiling, shortfall_factor: Preq > 0 ? Preq / ceiling : null }, [],
-      'stronger than the oxygen row C14, which rules only on the physiology a design commits: this one rules on every teleost the measured ranges allow',
+  // E3 (v2.0.0, law set 1.6.0): the ceiling inside the widened ranges (eta <= 0.23, Q*Ca <= 0.0187 ml O2/s at
+  // 0.06 kg, from measured zebrafish MO2max, Palstra 2010). v1.0.0 (law sets 1.0.0-1.5.0) used 0.0458 W; the
+  // law-set judgement re-applies that ceiling when an older law set is chosen (ceiling_v1_W below).
+  { const ceiling = 0.0833, ceilingV1 = 0.0458;
+    if (Preq === null) rows.push(empiricalRow('E3', 'cannot-evaluate', {}, ['airspeed_m_s and LD_max (or powerRequired_W)'], 'the ceiling is ' + ceiling + ' W at 0.06 kg; a different mass needs the O2 delivery per kg, which this row does not scale'));
+    else rows.push(empiricalRow('E3', leTol(Preq, ceiling) ? 'holds' : 'violated', { powerRequired_W: Preq, ceiling_W: ceiling, shortfall_factor: Preq > 0 ? Preq / ceiling : null, ceiling_v1_W: ceilingV1 }, [],
+      'stronger than the oxygen row C14, which rules only on the physiology a design commits: this one rules on the widened ranges its sources support (E3 v2; v1 claimed every teleost and was withdrawn after measured zebrafish exceeded it)',
       { needed: { power_W: Preq }, available: { power_W: ceiling } })); }
 
   // E4: the O2 store carried into the air.

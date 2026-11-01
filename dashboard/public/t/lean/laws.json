@@ -1,10 +1,10 @@
 {
- "built": "2026-10-31T22:58:17.754Z",
+ "built": "2026-11-01T04:43:53.148Z",
  "tool": "lean/laws/build-laws.mjs",
- "leanReport": "2026-10-31T22:58:17.622Z",
- "constraintsBuilt": "2026-10-31T22:01:50.885Z",
+ "leanReport": "2026-11-01T04:41:03.531Z",
+ "constraintsBuilt": "2026-11-01T04:42:04.218Z",
  "coverage": {
-  "proved": 23,
+  "proved": 29,
   "proved from a named hypothesis": 1,
   "stated-not-proved (a named hypothesis)": 2,
   "not formalised": 7,
@@ -852,6 +852,206 @@
    }
   },
   {
+   "id": "perturb-thermal",
+   "level": "phenotype",
+   "statement": "If sustained power is zero outside the thermal window and at most the Q10-scaled reference inside it, then at every temperature the sustained power is at most P_ref Q10^((T - T_ref)/10), and outside the window no positive power is sustained.",
+   "label": "Thermal window and Q10: no sustained power outside [CTmin, CTmax], at most P_ref Q10^((T-T_ref)/10) inside",
+   "status": "proved",
+   "module": "lean/Delphi/Perturb.lean",
+   "theorem": "Delphi.Perturb.sustained_power_le",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "P1",
+    "P1b"
+   ],
+   "studioFields": [
+    "body_temperature_C: (no Studio field)",
+    "ct_min_C: (no Studio field)",
+    "ct_max_C: (no Studio field)",
+    "sustained_power_claimed_W: (no Studio field)",
+    "reference_sustained_power_W: (no Studio field)",
+    "q10: (no Studio field)",
+    "reference_temperature_C: (no Studio field)"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "The Q10 bound at every temperature, inside or outside the window.",
+     "No positive sustained power outside the window.",
+     "Non-vacuity: the scup numbers (Q10 1.88, 134 W/kg at 20 C, measured on [10, 20] C) satisfy the hypothesis."
+    ],
+    "assumed": [
+     "The thermal performance curve is zero outside [CTmin, CTmax] (Schulte 2015 describes the shape; the window of a designed animal is a design input).",
+     "The Q10 rule inside the window, with one Q10 for the whole window; Q10 is method-dependent (1.88 steady, 2.29 work-loop for the same muscle).",
+     "Body temperature equals water temperature (ectotherm), as conditions/baseline.json states."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {}
+  },
+  {
+   "id": "perturb-current",
+   "level": "phenotype",
+   "statement": "With ground speed U_swim - U_current not negative, sustained swimming at most U_crit, drag power rho C_d A U^3 / 2 paid by a sustained power that is aerobic (Fick), the current satisfies U_current <= U_crit and rho C_d A U_current^3 / 2 <= eta E Q Ca.",
+   "label": "No design holds station in a current above U_crit, or above the speed its aerobic supply can pay drag for",
+   "status": "proved",
+   "module": "lean/Delphi/Perturb.lean",
+   "theorem": "Delphi.Perturb.station_requires",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "P2",
+    "P2b"
+   ],
+   "studioFields": [
+    "current_speed_m_s: (no Studio field)",
+    "critical_swimming_speed_m_s: (no Studio field)",
+    "water_density_kg_m3: (no Studio field)",
+    "drag_coefficient: (no Studio field)",
+    "drag_area_m2: (no Studio field)",
+    "aerobic_ceiling_W: computed from cardiacOutput, arterialO2, efficiency and oxycaloric, or committed directly"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "Both necessary conditions for holding station, composed with the Fick bound of lean/Delphi/Flight.lean.",
+     "Non-vacuity with U_crit 0.80 m/s (scup, red muscle, 20 C)."
+    ],
+    "assumed": [
+     "Steady swimming, quadratic drag with a constant C_d (a design input), drag area A (a design input).",
+     "Sustained swimming is aerobic; burst-and-coast and anaerobic sprinting are outside the bound.",
+     "U_crit as defined by the incremental-velocity protocol (Plaut 2001)."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {}
+  },
+  {
+   "id": "perturb-pressure",
+   "level": "phenotype",
+   "statement": "With absolute pressure p0 + k d and P(d) V(d) constant at every depth, V(d) = V(0) p0 / P(d); the volume falls with depth, and keeping the volume needs gas in proportion 1 + k d / p0.",
+   "label": "Boyle's law for a closed swim bladder: volume at depth is the surface volume times p0 / P(d)",
+   "status": "proved",
+   "module": "lean/Delphi/Perturb.lean",
+   "theorem": "Delphi.Perturb.bladder_volume_eq",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "P3"
+   ],
+   "studioFields": [
+    "bladder_volume_at_depth_ml: (no Studio field)",
+    "bladder_volume_surface_ml: (no Studio field)",
+    "depth_m: (no Studio field)"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "The Boyle volume, its monotone decrease with depth, the secretion ratio.",
+     "Non-vacuity with 1 atm plus 0.1 atm/m (Yancey 2020)."
+    ],
+    "assumed": [
+     "Ideal gas, fixed amount and temperature, quasi-static pressure change (Kerr et al. 2023: fails for fast decompression).",
+     "Bladder wall compliance ignored (gas pressure equals ambient)."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {}
+  },
+  {
+   "id": "perturb-depth-cap",
+   "level": "phenotype",
+   "statement": "If internal osmolality rises linearly with depth (TMAO), the isosmotic depth is at most 8200 m, and a teleost cannot be hyperosmotic to seawater, then no teleost lives below 8200 m.",
+   "label": "Osmolyte depth cap (CONTESTED): no teleost below 8200 m if it cannot be hyperosmotic to seawater; a fish has been recorded at 8336 m",
+   "status": "proved",
+   "module": "lean/Delphi/Perturb.lean",
+   "theorem": "Delphi.Perturb.no_teleost_below",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "P3b"
+   ],
+   "studioFields": [
+    "depth_m: (no Studio field)"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "The depth bound from the linear osmolality and the no-reversal hypothesis.",
+     "Non-vacuity: 350 mOsmol/kg shallow, 991 at 7000 m, seawater 1100 give 8190 m, inside the published 8200 m."
+    ],
+    "assumed": [
+     "Yancey et al. 2014's hypothesis that greater depths would require reversal of osmotic gradients; it is a prediction from extrapolation, not an observed limit (no fish has been found below 8400 m).",
+     "Linear osmolality in depth; teleosts only (not elasmobranchs or invertebrates).",
+     "CONTRADICTED BY OBSERVATION: a teleost (Pseudoliparis sp.) has been recorded at 8336 m (Jamieson et al. 2026, quoting Jamieson et al. 2023), below the 8200 m cap. Either the isosmotic depth is deeper than predicted for that species or the no-reversal premise fails; the crossing is a soft limit."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {}
+  },
+  {
+   "id": "perturb-altitude-wind",
+   "level": "phenotype",
+   "statement": "In the barometric troposphere rho(h) = rho0 (1 - beta h/T0)^n density falls with height, v_min = sqrt(2W/(S C_L,max))/sqrt(rho) so the ratio of minimum speeds is sqrt(rho1/rho2), and v_min rises with height. A steady glide with horizontal airspeed u, sink s and along-track wind w (positive tailwind) covers (u/s) h (1 + w/u), at most (L/D)max h (1 + w/u) when w >= -u.",
+   "label": "Altitude and wind: v_min proportional to 1/sqrt(rho) with rho from the ISA troposphere; glide ground range (L/D) h (1 + w/u), w positive for a tailwind",
+   "status": "proved",
+   "module": "lean/Delphi/Perturb.lean",
+   "theorem": "Delphi.Perturb.glide_ground_range_le",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "P4",
+    "P4b"
+   ],
+   "studioFields": [
+    "airspeed_m_s: airspeed_m_s",
+    "weight_N: mass_kg",
+    "lifting_area_m2: fin_area_m2",
+    "max_lift_coefficient: CL_max",
+    "altitude_m: (no Studio field)",
+    "ground_distance_m: (no Studio field)",
+    "lift_to_drag_max: LD_max",
+    "glide_height_m: glideHeight_m",
+    "wind_along_track_m_s: (no Studio field)",
+    "horizontal_airspeed_m_s: (no Studio field)"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "ISA density monotone in the troposphere; v_min inverse-square-root in density; the glide ground range identity and bound with the stated sign convention."
+    ],
+    "assumed": [
+     "The barometric (ISA) form with a constant lapse rate, valid below the tropopause (about 11 km); real atmospheres deviate (Narayanan and Osechas 2022).",
+     "Steady glide, constant wind, no updraft (a vertical wind component is not modelled)."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {}
+  },
+  {
+   "id": "perturb-energy-balance",
+   "level": "phenotype",
+   "statement": "Under energy conservation over a day, eps dm = a I - (R + Act + s a I) with SDA a fraction s of the digestible energy, a deficit a I (1 - s) < R + Act forces dm < 0, and holding or gaining mass needs intake at least (R + Act)/(a (1 - s)).",
+   "label": "Daily energy balance: a I (1 - s) < R + Act means mass declines; holding mass needs I >= (R + Act)/(a (1 - s))",
+   "status": "proved",
+   "module": "lean/Delphi/Perturb.lean",
+   "theorem": "Delphi.Perturb.intake_needed",
+   "source": "proved in this project; no paper states it in this form",
+   "constraints": [
+    "P5"
+   ],
+   "studioFields": [
+    "intake_J_per_day: (no Studio field)",
+    "routine_cost_J_per_day: (no Studio field)",
+    "activity_cost_J_per_day: (no Studio field)",
+    "assimilation_efficiency: (no Studio field)",
+    "sda_coefficient: (no Studio field)",
+    "mass_change_sign: (no Studio field)"
+   ],
+   "scope": {
+    "kernelChecked": [
+     "Mass decline under a deficit; the minimum intake; non-vacuity with s = 0.06 (walleye)."
+    ],
+    "assumed": [
+     "Energy conservation with every cost listed (routine, activity, SDA) and no unlisted loss; excretory losses are inside the assimilation efficiency a.",
+     "SDA proportional to digestible intake (Bihun et al. 2024 found the coefficient constant across temperature, mass and ration)."
+    ]
+   },
+   "faithfulness": "not assessed",
+   "flyingFishAudit": {}
+  },
+  {
    "id": "muscle-power-premise",
    "level": "physiology",
    "statement": "Power available = f p M with muscle fraction f and mass-specific power p constant (Thompson 1917, ch. II).",
@@ -1014,12 +1214,12 @@
   {
    "id": "E3",
    "level": "empirical observation",
-   "statement": "eta <= 0.15, oxycaloric <= 19.35 J/ml, cardiac output <= 0.075 ml/s and arterial O2 <= 0.21 ml/ml imply an aerobic ceiling of at most 0.0458 W.",
-   "label": "Efficiency, cardiac output and arterial O2 lie in the measured teleost ranges",
+   "statement": "eta <= 0.23, oxycaloric <= 19.35 J/ml and O2 delivery Q*Ca <= 0.0187 ml O2/s (1600 mg O2 kg^-1 h^-1 at 0.06 kg) imply an aerobic ceiling of at most 0.0833 W.",
+   "label": "Efficiency and O2 delivery lie in the ranges the cited sources allow (widened after measured zebrafish, v2)",
    "status": "empirical",
    "module": "lean/Delphi/Empirical.lean",
-   "theorem": "Delphi.Empirical.aerobicCeiling_le",
-   "source": "physiology/muscle.js (efficiency, oxycaloric), physiology/cardiac.js (cardiac output range), physiology/haemoglobin.js (blood O2 capacity), as cited in lean/eliminate/physiology-candidates.json",
+   "theorem": "Delphi.Empirical.aerobicCeilingV2_le",
+   "source": "Palstra AP et al. (2010) PLoS One 5:e14483, doi:10.1371/journal.pone.0014483, PMC3013094, Results \"Swimming economy\" (82.18 umol g^-1 h^-1 = 2630 mg O2 kg^-1 h^-1 at Ucrit, 0.43 g, 28 C); Gladman NW and Askew GN (2024) J Exp Biol 227, PMC11583979 (contractile efficiency 0.27 to 0.37 x oxidative recovery 0.61); physiology/muscle.js (oxycaloric 13.54 J/mg). Analysis: physics/FICK-CEILING-CHECK.md section 5.",
    "constraints": [
     "E3"
    ],
@@ -1027,10 +1227,10 @@
     "E3"
    ],
    "scope": null,
-   "observation": "No teleost in the ranges the physiology chain cites has a sustained aerobic ceiling above 0.0458 W at the measured mass (0.06 kg). This is what makes the C14 eliminations binding: they hold for every animal the measured record allows, not only for one choice of proxies.",
-   "taxa": "Every value is a PROXY from another teleost: Salmo salar ventricular muscle (efficiency), Lutjanus apodus and Oncorhynchus mykiss (cardiac output), Oncorhynchus mykiss (blood O2). No Exocoetidae physiology exists in this project.",
-   "why": "The bound is an upper bound at one mass, and the cardiac output ceiling is the maximum of a secondary range (20 to 75 ml/min/kg, gerry2014 Discussion). It bounds SUSTAINED AEROBIC power only: burst power on white-muscle stores is outside it, and that is what a flying fish is understood to use. Scaling it to another mass requires the cardiac output per kg, not this number.",
-   "rejectable": "Reject it and C14 still rules, but only on the particular proxies a candidate commits, not on every teleost."
+   "observation": "Within the ranges the cited sources support (skeletal-muscle aerobic efficiency up to 0.23, Gladman and Askew 2024; O2 delivery up to the measured adult zebrafish MO2max at Ucrit, Palstra et al. 2010, scaled allometrically to 0.06 kg), the sustained aerobic ceiling at 0.06 kg is at most 0.0833 W. Version 1 claimed \"no teleost above 0.0458 W\"; measured zebrafish (2630 mg O2 kg^-1 h^-1) exceed v1’s delivery envelope (1350 mg O2 kg^-1 h^-1) about 2x per kg, so that wording was withdrawn. Powered flight at 10 m/s needs 1.346 W, about 16x this ceiling, so the C14 elimination survives.",
+   "taxa": "Bounds are cross-taxon transfers: Danio rerio (measured MO2max, scaled to 60 g), Sepia/Scyliorhinus muscle (efficiency), and the physiology chain’s oxycaloric value. No Exocoetidae respirometry exists in this project.",
+   "why": "Scoped to the sources named, not to every teleost: high-performance pelagic teleosts (tunas) were not fetched and may exceed it. The bound is at one mass (0.06 kg). It bounds SUSTAINED AEROBIC power only: burst power on white-muscle stores is outside it, and that is what a flying fish is understood to use.",
+   "rejectable": "Reject it and C14 still rules, but only on the particular proxies a candidate commits."
   },
   {
    "id": "E4",

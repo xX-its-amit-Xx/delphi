@@ -526,9 +526,10 @@ if PH:
     EV = PH.get("envelope")
     hero(s, [(f"{PH['ceilingW']} W", "aerobic ceiling on the proxy values we commit to", S3),
              (f"{ld['requiredW']} W", f"needed for level flight at {ld['speed']} m/s at the measured L/D of {ld['ld']}", S2),
-             (f"{ld['shortBy']}x" + (f"  /  {EV['shortBy']}x" if EV else ""),
-              "short on those proxies, and on the widest combination the measured record allows — both checked by the Lean "
-              "kernel" if EV else "short — and the gap is checked by the Lean kernel, not by us", SERIOUS)],
+             (("10-30x" if EV and EV.get("corrected") else f"{ld['shortBy']}x"),
+              (f"short (central about 20x; {EV['shortBy']}x on the widened envelope, {ld['shortBy']}x with the original "
+               "snapper-based proxies), checked by the Lean kernel") if EV and EV.get("corrected") else
+              "short, and the gap is checked by the Lean kernel, not by us", SERIOUS)],
          y=Inches(2.25))
     y = Inches(4.15)
     for c in PH["cases"]:
@@ -538,15 +539,12 @@ if PH:
              f"{c['requiredW']} W needed  ·  {c['shortBy']}x short", 11, True, SERIOUS, align=PP_ALIGN.RIGHT)
         y += Inches(0.34)
     if EV:
-        b = EV["bounds"]
+        cor = EV.get("corrected") or {}
         note(s, Inches(5.3),
-             f"TWO CEILINGS, AND THE SMALLER MULTIPLIER IS THE STRONGER CLAIM. {PH['ceilingW']} W is the product of the four "
-             f"proxy values this candidate commits to, so {ld['shortBy']}x rules flight out for THAT ONE PARAMETERISATION. "
-             f"{EV['ceilingW']} W instead takes the MAXIMUM of each measured teleost range (eta <= {b['eta']}, "
-             f"E <= {b['oxycaloric_J_per_ml']} J/ml, Q <= {b['cardiacOutput_ml_per_s']} ml/s, Ca <= {b['arterialO2_ml_per_ml']} "
-             f"ml/ml), so it is necessarily the larger ceiling and the smaller multiplier — and {EV['shortBy']}x rules it out for "
-             "EVERY animal the measured record allows. Neither supersedes the other: different quantities, both kernel-checked. "
-             + EV["rejectable"], ACCENT)
+             f"TWO CEILINGS, AND A CORRECTION. {PH['ceilingW']} W is the product of the four proxy values this candidate "
+             f"commits to (a snapper cardiac output), so {ld['shortBy']}x rules flight out for THAT ONE PARAMETERISATION. "
+             f"{EV['ceilingW']} W is the widened envelope ({EV.get('boundsText', '')}), {EV['shortBy']}x short. "
+             + (cor.get("text", "") + " ") + (EV.get("rejectable") or ""), ACCENT)
     caption(s, "What it rests on: Fick's principle, aerobic power rather than burst power, and teleost proxy values — no "
                "flying-fish physiology exists, so the proxies are what the elimination rests on. What it does NOT bound: gliding "
                f"(a flying fish is a glider), and short burst flight. {PH['kernelChecked']} of {PH['candidates']} candidates "

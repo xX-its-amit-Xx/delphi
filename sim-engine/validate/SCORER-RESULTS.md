@@ -172,3 +172,77 @@ v1.0.0 passed 4 of 8; v1.1.0 passes 5 of 8.
 **Both versions stay callable** (`designScore(design, {version})`). v1.0.0 is the default because it is the version
 whose validation was blind.
 <!-- V11:END -->
+
+## v1.1.1: a ranking score (`rank_score`); the score is unchanged
+
+Pre-registration: `SCORER-PREREGISTRATION-v1.1.1.md`. Weights: `score-weights.v1.1.1.json`. Data:
+`scorer-results.v1.1.1.json`.
+
+**The defect.** Under leave-lineage-out scoring, zebrafish, flying fish and the winged zebrafish all score exactly
+0.9217. The cause:
+- P = min(1, p/0.05) is capped at 1 whenever p > 0.05. The raw p-values were 0.45, 0.24 and 0.45 under v1.0.0, and
+  0.06, 0.08 and 0.06 under v1.1.0.
+- L, G and S are all 1: no law evaluates, there are no gene edits, and no spec is given.
+- E is the *weakest* input kind, which is "assumed" = 0.5 for every repository organism.
+
+Hence 0.9217 = exp(0.1 ln 0.5 / 0.85). There were only 60 distinct scores across the 646 v1.0.0 rows, and 9 among
+the 300 held-out specimens, 290 of which scored exactly 1. **The score is a pass/fail classifier, not a ranker.**
+
+**The fix.** `rank_score` uses the raw P parts (geometric mean, no alpha cap, no min) and the *mean* evidence kind.
+Leave-out examples: zebrafish 0.70, flying fish 0.77, winged zebrafish 0.75, chimera 0.69, TFF 0.20.
+
+| id | criterion | result |
+|---|---|---|
+| C1–C8 | must equal v1.1.0 | identical (checked) |
+| R1 | ≥ 90 % of rows have a distinct `rank_score` | **FAIL**, 51 % |
+| R2 | rank AUC ≥ the v1.1.0 score AUC | **FAIL**, 0.991 vs 0.994 |
+| R3 | Spearman(rank_score, nearest-neighbour distance) ≤ −0.5 on held-out specimens | PASS, −1.0 |
+
+**On R1.** Many negatives sit at the 1e-4 floor, and the repository designs repeat.
+
+**On R3.** The −1.0 is exact because, for a specimen, the raw body p-value is the only term that varies. **A ranking
+by typicality alone.**
+
+## v1.2.0: the evaluator's defects fixed; dev-benchmark results
+
+Pre-registration: `SCORER-PREREGISTRATION-v1.2.0.md`, sha256 `5c1b3ce1…`. Code: `score-v12.mjs`. Weights:
+`score-weights.v1.2.0.json`. Envelopes: `data/trait-envelopes.v1.2.0.json`, built from dev positives only. The
+held-out run belongs to the independent evaluator. **I have not read `heldout/`.**
+
+Dev partition, leave-one-family-out, 1 000 items per group, every easy negative and every ontogeny stage
+(`dev-benchmark-v1.2.0.json`, 5 410 items). Thresholds are the benchmark's own (`BENCHMARK-PREREGISTRATION.md`).
+
+| endpoint | threshold | v1.0.0 score | v1.2.0 score | v1.2.0 **rank_score** |
+|---|---|---|---|---|
+| P1 FishShapes positives vs decoys, AUC | ≥ 0.75 | 0.747 | 0.738 | **0.871** |
+| P2 easy negatives below the 5th percentile of positives | ≥ 90 % | 31.6 % (organ_containment 0 %, impossible_combo 0 %) | 100 %* | **100 %** (all four types) |
+| P3 median positive above the decoy 75th percentile | pass | fail | fail | **fail** (0.86 vs 1.0) |
+| S1 FishBase positives vs decoys, AUC | ≥ 0.70 | 0.50 | 0.50 | **0.50** |
+| S2 hard negatives, AUC | ≥ 0.60 | 0.557 | 0.555 | 0.538 |
+| S4 ontogeny stages above the decoy median | ≥ 75 % | 0 % | 0 % | 75 % |
+| distinct values in 5 410 rows | | 118 | 128 | 1 310 |
+
+\* Under `score` the positives' 5th percentile is 1.0, so "below p5" only means "not exactly 1".
+
+**Fixed:**
+- **Absence passing.** Easy negatives (2×/3×/5× extrapolations, flight claims that break laws, organs that cannot
+  fit, impossible combinations) all rank below the 5th percentile of positives. Before, 32 % did.
+- **Refused edits.** These now score 0.01. Four organ-containment docs were refused this way.
+- **Leave-out.** genus leave-out is available.
+- **Flight claims.** They reach Lean. Only claim-caused accepted violations count, so real Park & Choi specimens
+  score 1.0 and the same specimens with impossible claims score 0.26.
+
+**Not fixed:**
+- **FishBase decoys (S1 = 0.50).** The scorer sees FishBase traits only through per-trait envelopes. A shuffled
+  decoy keeps every marginal inside its envelope, and the scorer has no joint model of FishBase traits, so it is
+  blind there.
+- **P3.** Pooled decoys reach rank_score 1.0 at the 75th percentile: the FishBase decoys again.
+- **Hard negatives (S2 ≈ 0.54).** One swapped trait, or a percentile-corner chimera, is close to invisible.
+- **Next step: a joint model for FishBase traits** (nearest neighbour or density on the 10 MORPHMET ratios, built
+  from dev positives with family leave-out). That is v1.3 work.
+- **Envelopes and dev positives.** Dev positives sit inside their own envelopes by construction, so dev P2 and P3
+  are optimistic for the envelope terms. The blind held-out run is the test.
+
+**Deviation.** Before the full dev run, a 20-per-group crash test of `dev-benchmark-v12.mjs` printed numbers. It was
+kept, not used, and is in the session scratchpad.
+

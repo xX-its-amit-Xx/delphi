@@ -148,6 +148,10 @@ import Delphi.Constraints
 #print axioms Delphi.Empirical.weight_ratio_rules_out
 #print axioms Delphi.Empirical.aerobicCeiling_le
 #print axioms Delphi.Empirical.no_aerobic_flight_above_ceiling
+#print axioms Delphi.Empirical.aerobicCeilingV2_le
+#print axioms Delphi.Empirical.no_aerobic_flight_above_ceiling_v2
+#print axioms Delphi.Empirical.teleostAerobicV2_nonvacuous
+#print axioms Delphi.Empirical.TeleostAerobic.toV2
 #print axioms Delphi.Empirical.stored_power_le
 #print axioms Delphi.Empirical.finRatio_outside
 #print axioms Delphi.Empirical.requiredFor_not_propagated_of_check

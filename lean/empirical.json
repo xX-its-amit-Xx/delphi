@@ -1,5 +1,5 @@
 {
- "built": "2026-10-31T21:53:49.844Z",
+ "built": "2026-11-01T04:42:04.096Z",
  "tool": "lean/empirical/build-empirical.mjs",
  "module": "lean/Delphi/Empirical.lean",
  "leanNumbersChecked": [
@@ -194,33 +194,46 @@
   {
    "id": "E3",
    "status": "empirical",
-   "title": "Efficiency, cardiac output and arterial O2 lie in the measured teleost ranges",
+   "title": "Efficiency and O2 delivery lie in the ranges the cited sources allow (widened after measured zebrafish, v2)",
    "lean": {
-    "structure": "Delphi.Empirical.TeleostAerobic",
+    "structure": "Delphi.Empirical.TeleostAerobicV2",
     "theorems": [
-     "Delphi.Empirical.aerobicCeiling_le",
-     "Delphi.Empirical.no_aerobic_flight_above_ceiling",
-     "Delphi.Empirical.measured_ceiling_le"
-    ]
+     "Delphi.Empirical.aerobicCeilingV2_le",
+     "Delphi.Empirical.no_aerobic_flight_above_ceiling_v2",
+     "Delphi.Empirical.teleostAerobicV2_nonvacuous"
+    ],
+    "superseded": {
+     "structure": "Delphi.Empirical.TeleostAerobic",
+     "theorems": [
+      "Delphi.Empirical.aerobicCeiling_le",
+      "Delphi.Empirical.no_aerobic_flight_above_ceiling",
+      "Delphi.Empirical.measured_ceiling_le"
+     ]
+    }
    },
-   "statement": "eta <= 0.15, oxycaloric <= 19.35 J/ml, cardiac output <= 0.075 ml/s and arterial O2 <= 0.21 ml/ml imply an aerobic ceiling of at most 0.0458 W.",
-   "observation": "No teleost in the ranges the physiology chain cites has a sustained aerobic ceiling above 0.0458 W at the measured mass (0.06 kg). This is what makes the C14 eliminations binding: they hold for every animal the measured record allows, not only for one choice of proxies.",
-   "source": "physiology/muscle.js (efficiency, oxycaloric), physiology/cardiac.js (cardiac output range), physiology/haemoglobin.js (blood O2 capacity), as cited in lean/eliminate/physiology-candidates.json",
+   "statement": "eta <= 0.23, oxycaloric <= 19.35 J/ml and O2 delivery Q*Ca <= 0.0187 ml O2/s (1600 mg O2 kg^-1 h^-1 at 0.06 kg) imply an aerobic ceiling of at most 0.0833 W.",
+   "observation": "Within the ranges the cited sources support (skeletal-muscle aerobic efficiency up to 0.23, Gladman and Askew 2024; O2 delivery up to the measured adult zebrafish MO2max at Ucrit, Palstra et al. 2010, scaled allometrically to 0.06 kg), the sustained aerobic ceiling at 0.06 kg is at most 0.0833 W. Version 1 claimed \"no teleost above 0.0458 W\"; measured zebrafish (2630 mg O2 kg^-1 h^-1) exceed v1’s delivery envelope (1350 mg O2 kg^-1 h^-1) about 2x per kg, so that wording was withdrawn. Powered flight at 10 m/s needs 1.346 W, about 16x this ceiling, so the C14 elimination survives.",
+   "source": "Palstra AP et al. (2010) PLoS One 5:e14483, doi:10.1371/journal.pone.0014483, PMC3013094, Results \"Swimming economy\" (82.18 umol g^-1 h^-1 = 2630 mg O2 kg^-1 h^-1 at Ucrit, 0.43 g, 28 C); Gladman NW and Askew GN (2024) J Exp Biol 227, PMC11583979 (contractile efficiency 0.27 to 0.37 x oxidative recovery 0.61); physiology/muscle.js (oxycaloric 13.54 J/mg). Analysis: physics/FICK-CEILING-CHECK.md section 5.",
    "value": {
-    "bounds": {
-     "eta": 0.15,
-     "oxycaloric_J_per_ml": 19.35,
-     "cardiacOutput_ml_per_s": 0.075,
-     "arterialO2_ml_per_ml": 0.21
-    },
-    "ceiling_W": 0.0458,
-    "from": {
-     "efficiency": "efficiency: { value: 0.15, kind: 'proxy', species: 'Salmo salar (ventricular muscle)', source: 'gamperl2021: efficiency of ventricular muscle ~15% in salmon (7% in char); trout ventricle 15-25% (Harwood et al. 2002, cited there). No fetched value for fish skeletal muscle, so cardiac muscle is used.'",
-     "oxycaloric": "oxycalorific_J_per_mgO2: { value: 13.54, kind: 'secondary', source: 'gerry2014 (Fig. 1 legend): \"oxycaloric value of 13.54 J mg-1 O2\" citing their ref. 89' }",
-     "cardiacRange": "Q_range_ml_min_kg: { value: [20, 75], kind: 'secondary', species: 'O. mykiss', source: 'gerry2014 Discussion: ventral aortic flow-cuff values ~20 at rest to ~75 ml/min/kg maximum (citing refs)' }",
-     "haemoglobinCapacity": "cap_ml_per_ml: { value: (4 * 0.9 * 22.4) / 1000, kind: 'proxy', species: 'Oncorhynchus mykiss', source: 'derived from rummer2015 Table 1 [Hb] 0.9 mM per tetramer (Hct standardised to ~25%): 4 x 0.9 mmol/l x 22.4 ml/mmol = 0.0806 ml O2/ml' }"
-    },
+    "derivation": "1600 mg O2 kg^-1 h^-1 x 0.06 kg / 3600 s / 1.429 mg/ml = 0.01867 ml O2/s, rounded up to 0.0187; 0.23 x 19.35 x 0.0187 = 0.0832 W, stated as 0.0833",
     "massUsed_kg": 0.06,
+    "shortfall_at_10_m_s": {
+     "power_required_W": 1.346,
+     "factor": 16.2
+    },
+    "corrected_range": {
+     "low": 10,
+     "central": 20,
+     "high": 29,
+     "unit": "x",
+     "basis": "physics/FICK-CEILING-CHECK.md section 5 table: O2 x1.4 to x2.5, eta 0.15 to 0.23; 38x with the original snapper-based chain proxies"
+    },
+    "bounds": {
+     "eta": 0.23,
+     "oxycaloric_J_per_ml": 19.35,
+     "o2Delivery_ml_O2_per_s": 0.0187
+    },
+    "ceiling_W": 0.0833,
     "chainValues": {
      "cardiac_output_ml_per_s": "0.06564129",
      "arterial_O2_content_ml_per_ml": "0.18723338",
@@ -231,12 +244,53 @@
      "lift_to_drag_max": "4.37"
     }
    },
-   "taxa": "Every value is a PROXY from another teleost: Salmo salar ventricular muscle (efficiency), Lutjanus apodus and Oncorhynchus mykiss (cardiac output), Oncorhynchus mykiss (blood O2). No Exocoetidae physiology exists in this project.",
-   "scope": "The bound is an upper bound at one mass, and the cardiac output ceiling is the maximum of a secondary range (20 to 75 ml/min/kg, gerry2014 Discussion). It bounds SUSTAINED AEROBIC power only: burst power on white-muscle stores is outside it, and that is what a flying fish is understood to use. Scaling it to another mass requires the cardiac output per kg, not this number.",
+   "taxa": "Bounds are cross-taxon transfers: Danio rerio (measured MO2max, scaled to 60 g), Sepia/Scyliorhinus muscle (efficiency), and the physiology chain’s oxycaloric value. No Exocoetidae respirometry exists in this project.",
+   "scope": "Scoped to the sources named, not to every teleost: high-performance pelagic teleosts (tunas) were not fetched and may exceed it. The bound is at one mass (0.06 kg). It bounds SUSTAINED AEROBIC power only: burst power on white-muscle stores is outside it, and that is what a flying fish is understood to use.",
    "constraints": [
     "E3"
    ],
-   "rejectable": "Reject it and C14 still rules, but only on the particular proxies a candidate commits, not on every teleost."
+   "rejectable": "Reject it and C14 still rules, but only on the particular proxies a candidate commits.",
+   "version": "2.0.0",
+   "history": [
+    {
+     "version": "1.0.0",
+     "date": "2026-11-01",
+     "ceiling_W": 0.0458,
+     "statement": "eta <= 0.15, oxycaloric <= 19.35 J/ml, cardiac output <= 0.075 ml/s and arterial O2 <= 0.21 ml/ml imply an aerobic ceiling of at most 0.0458 W.",
+     "observation": "No teleost in the ranges the physiology chain cites has a sustained aerobic ceiling above 0.0458 W at the measured mass (0.06 kg). This is what makes the C14 eliminations binding: they hold for every animal the measured record allows, not only for one choice of proxies.",
+     "value": {
+      "bounds": {
+       "eta": 0.15,
+       "oxycaloric_J_per_ml": 19.35,
+       "cardiacOutput_ml_per_s": 0.075,
+       "arterialO2_ml_per_ml": 0.21
+      },
+      "ceiling_W": 0.0458,
+      "from": {
+       "efficiency": "efficiency: { value: 0.15, kind: 'proxy', species: 'Salmo salar (ventricular muscle)', source: 'gamperl2021: efficiency of ventricular muscle ~15% in salmon (7% in char); trout ventricle 15-25% (Harwood et al. 2002, cited there). No fetched value for fish skeletal muscle, so cardiac muscle is used.'",
+       "oxycaloric": "oxycalorific_J_per_mgO2: { value: 13.54, kind: 'secondary', source: 'gerry2014 (Fig. 1 legend): \"oxycaloric value of 13.54 J mg-1 O2\" citing their ref. 89' }",
+       "cardiacRange": "Q_range_ml_min_kg: { value: [20, 75], kind: 'secondary', species: 'O. mykiss', source: 'gerry2014 Discussion: ventral aortic flow-cuff values ~20 at rest to ~75 ml/min/kg maximum (citing refs)' }",
+       "haemoglobinCapacity": "cap_ml_per_ml: { value: (4 * 0.9 * 22.4) / 1000, kind: 'proxy', species: 'Oncorhynchus mykiss', source: 'derived from rummer2015 Table 1 [Hb] 0.9 mM per tetramer (Hct standardised to ~25%): 4 x 0.9 mmol/l x 22.4 ml/mmol = 0.0806 ml O2/ml' }"
+      },
+      "massUsed_kg": 0.06,
+      "chainValues": {
+       "cardiac_output_ml_per_s": "0.06564129",
+       "arterial_O2_content_ml_per_ml": "0.18723338",
+       "muscular_efficiency": "0.15",
+       "oxycaloric_J_per_ml_O2": "19.342857",
+       "aerobic_ceiling_W": "0.0357",
+       "weight_N": "0.5886",
+       "lift_to_drag_max": "4.37"
+      }
+     },
+     "withdrawn_because": "measured adult zebrafish MO2max at Ucrit (Palstra 2010, 2630 mg O2 kg^-1 h^-1) is about 2x the per-kg delivery envelope v1 allowed (Q <= 75 ml/min/kg x Ca <= 0.21 = 1350 mg O2 kg^-1 h^-1); see physics/FICK-CEILING-CHECK.md"
+    },
+    {
+     "version": "2.0.0",
+     "date": "2026-11-01",
+     "change": "widened: eta <= 0.23, Q*Ca <= 0.0187 ml O2/s at 0.06 kg; ceiling 0.0458 -> 0.0833 W; wording rescoped to its sources (law set 1.6.0)"
+    }
+   ]
   },
   {
    "id": "E4",
