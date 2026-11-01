@@ -103,17 +103,25 @@ const CSS = `
 .nw-warn{border-left:3px solid var(--nw-warning); background:var(--nw-surface); border-radius:0 8px 8px 0; margin:8px 16px; padding:8px 11px;}
 .nw-warn .nw-gh{font-size:11px; font-weight:650; letter-spacing:.05em; text-transform:uppercase; color:var(--nw-ink2); display:flex; align-items:center; gap:6px; margin-bottom:3px;}
 .nw-warn p{margin:0; font-size:12px; line-height:1.45; color:var(--nw-ink2);}
-.nw-tbl{width:100%; border-collapse:collapse; font-size:11.5px;}
-.nw-tbl th{text-align:left; font-weight:600; color:var(--nw-muted); border-bottom:1px solid var(--nw-grid); padding:4px 6px 4px 0; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em;}
-.nw-tbl td{padding:4px 6px 4px 0; border-bottom:1px solid var(--nw-grid); color:var(--nw-ink2); vertical-align:top; line-height:1.35;}
+.nw-tbl{width:100%; max-width:100%; table-layout:fixed; border-collapse:collapse; font-size:11.5px;}
+.nw-tbl th{text-align:left; font-weight:600; color:var(--nw-muted); border-bottom:1px solid var(--nw-grid); padding:4px 6px 4px 0; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; overflow-wrap:anywhere;}
+.nw-tbl td{padding:4px 6px 4px 0; border-bottom:1px solid var(--nw-grid); color:var(--nw-ink2); vertical-align:top; line-height:1.35; overflow-wrap:anywhere;}
+.nw-tbl th.nw-num,.nw-tbl td.nw-num{width:3.4em;}
+.nw-tbl th.nw-wide,.nw-tbl td.nw-wide{width:5.2em; text-align:right; font-variant-numeric:tabular-nums; color:var(--nw-ink);}
 .nw-tbl td.nw-num{font-variant-numeric:tabular-nums; text-align:right; color:var(--nw-ink);}
 .nw-tbl tr:last-child td{border-bottom:none;}
-.nw-pill{display:inline-block; font-size:10px; padding:1px 6px; border-radius:99px; border:1px solid var(--nw-ring); color:var(--nw-ink2); white-space:nowrap;}
+.nw-pill{display:inline-block; max-width:100%; font-size:10px; padding:1px 6px; border-radius:99px; border:1px solid var(--nw-ring); color:var(--nw-ink2); white-space:normal; overflow-wrap:anywhere; box-sizing:border-box;}
+.nw-clkey{list-style:none; margin:0; padding:6px 16px 0; display:grid; gap:3px 12px; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); font-size:11px; color:var(--nw-ink2);}
+.nw-clkey li{display:flex; gap:6px; align-items:baseline;}
+.nw-clkey b{flex:0 0 auto; font-variant-numeric:tabular-nums; font-weight:650; color:var(--nw-ink); min-width:1.1em;}
 .nw-anat{cursor:pointer; background:none; border:none; padding:0; font:inherit; color:inherit; text-align:left; text-decoration:underline; text-decoration-style:dotted; text-underline-offset:2px;}
 .nw-anat:hover,.nw-anat:focus-visible{color:var(--nw-ink); outline:2px solid var(--nw-ev2); outline-offset:2px; border-radius:3px;}
 .nw-anat[aria-pressed="true"]{color:var(--nw-ink); font-weight:650;}
-.nw-note{padding:2px 16px 0; font-size:11px; line-height:1.45; color:var(--nw-muted); max-width:70ch;}
-.nw-src{padding:6px 16px 0; font-size:10.5px; line-height:1.45; color:var(--nw-muted); max-width:74ch;}
+.nw-note{padding:2px 16px 0; font-size:11px; line-height:1.45; color:var(--nw-muted); max-width:70ch; overflow-wrap:anywhere;}
+.nw-src{padding:6px 16px 0; font-size:10.5px; line-height:1.45; color:var(--nw-muted); max-width:74ch; overflow-wrap:anywhere;}
+.nw-root *{min-width:0;}
+.nw-sub,.nw-gap p,.nw-warn p,.nw-title{overflow-wrap:anywhere;}
+.nw-stat b{overflow-wrap:anywhere;}
 .nw-loading{padding:26px 16px; font-size:13px; color:var(--nw-ink2);}
 @container (max-width:430px){
   .nw-head{padding:10px 12px 5px;} .nw-card,.nw-svgwrap,.nw-gap,.nw-warn{margin:7px 12px;}
@@ -490,9 +498,17 @@ function buildExpression(subject, cards) {
   }
   const list = [...rows.values()].sort((a, b) => b.nGenes - a.nGenes || a.label.localeCompare(b.label));
 
-  /* put the parts the design actually changed first — they are the point of the act */
+  /* Put the parts the design actually changed first — they are the point of the act.
+     Token matching alone is not enough: a token like "fin" is shared by half the structures here,
+     so matching on it would stamp "this design changed it" on structures the design never touched.
+     A token only counts if it is DISCRIMINATING in this set — present in under a quarter of the
+     labels. Derived from the labels in play, so it holds for any anatomy. */
   const wantedU = new Set(subject.parts.map(p => p.id));
-  const wantedTok = subject.parts.flatMap(p => tokens(p.label));
+  const df = new Map();
+  for (const R of rows.values()) for (const t of uniq(tokens(R.label))) df.set(t, (df.get(t) || 0) + 1);
+  const nLabels = Math.max(1, rows.size);
+  const discriminating = t => (df.get(t) || 0) / nLabels <= 0.25;
+  const wantedTok = uniq(subject.parts.flatMap(p => tokens(p.label))).filter(discriminating);
   const isSubject = R => (R.uberon && wantedU.has(R.uberon)) || (R.zfa && wantedU.has(R.zfa))
     || (wantedTok.length > 0 && tokens(R.label).some(t => wantedTok.includes(t)));
   list.sort((a, b) => (isSubject(b) - isSubject(a)) || (b.nGenes - a.nGenes));
@@ -694,21 +710,31 @@ function renderNetwork(subject, net, W) {
     .sort((a, b) => b.genes.length - a.genes.length || a.label.localeCompare(b.label));
 
   const narrow = W < 430;
-  const H = narrow ? 460 : 400;
-  const cx = W / 2, cy = H / 2 - (narrow ? 4 : 0);
-  const Rring = Math.min(W, H) * (narrow ? 0.33 : 0.31);
+  const H = narrow ? Math.max(420, 300 + clusters.length * 18) : Math.max(420, 330 + clusters.length * 14);
+  const cx = W / 2, cy = H / 2;
+  /* an ELLIPTICAL ring, so a wide desktop canvas is actually used instead of packing every cluster
+     into a circle the height of the shortest side */
+  const Rx = (W / 2) * (narrow ? 0.60 : 0.66);
+  const Ry = (H / 2) * 0.60;
   const pos = new Map();
   clusters.forEach((C, ci) => {
     const ang = (-Math.PI / 2) + (ci / Math.max(1, clusters.length)) * Math.PI * 2;
-    const ccx = cx + Math.cos(ang) * (clusters.length === 1 ? 0 : Rring);
-    const ccy = cy + Math.sin(ang) * (clusters.length === 1 ? 0 : Rring);
+    const solo = clusters.length === 1;
+    const ccx = solo ? cx : cx + Math.cos(ang) * Rx;
+    const ccy = solo ? cy : cy + Math.sin(ang) * Ry;
     C.cx = ccx; C.cy = ccy; C.ang = ang;
+    const n = C.genes.length;
+    /* genes evenly spaced on their own circle, no random radius: random radii stack labels on top
+       of each other, which is exactly the hairball this layout is meant to avoid. The seed only
+       rotates the ring, so the picture stays stable and clusters do not all start at the same angle. */
     const rnd = mulberry32(hashStr(C.label));
-    const inner = clusters.length === 1 ? Math.min(W, H) * 0.3 : Math.max(16, Math.min(52, 11 * C.genes.length));
+    const spin = rnd() * Math.PI * 2;
+    const inner = solo ? Math.min(W, H) * 0.3
+      : n === 1 ? 0 : clamp(18 + 8 * n, 30, Math.min(Rx, Ry) * 0.78);
+    C.inner = inner;
     C.genes.forEach((g, gi) => {
-      const a2 = (gi / Math.max(1, C.genes.length)) * Math.PI * 2 + rnd() * 0.5;
-      const rr = C.genes.length === 1 ? 0 : inner * (0.62 + rnd() * 0.38);
-      pos.set(g.sym, { x: ccx + Math.cos(a2) * rr, y: ccy + Math.sin(a2) * rr });
+      const a2 = spin + (gi / Math.max(1, n)) * Math.PI * 2;
+      pos.set(g.sym, { x: ccx + Math.cos(a2) * inner, y: ccy + Math.sin(a2) * inner, a: a2 });
     });
   });
 
@@ -742,21 +768,51 @@ function renderNetwork(subject, net, W) {
       ? `<rect x="${(p.x - r).toFixed(1)}" y="${(p.y - r).toFixed(1)}" width="${(r * 2).toFixed(1)}" height="${(r * 2).toFixed(1)}" rx="1.2" fill="var(--nw-node)" stroke="var(--nw-ink)" stroke-width="1.5"><title>${esc(title)}</title></rect>`
       : `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r.toFixed(1)}" fill="var(--nw-node)" stroke="var(--nw-axis)" stroke-width="1.2"><title>${esc(title)}</title></circle>`;
     if (!narrow || nodes.length <= 16) {
-      const left = p.x < cx;
-      nBody += `<text x="${(p.x + (left ? -r - 3 : r + 3)).toFixed(1)}" y="${(p.y + 3.2).toFixed(1)}" font-size="9.5" fill="var(--nw-ink)" text-anchor="${left ? 'end' : 'start'}" paint-order="stroke" stroke="var(--nw-surface)" stroke-width="2.6">${esc(n.sym)}</text>`;
+      /* the label radiates OUTWARD from its own cluster centre, so labels fan out instead of
+         piling on top of one another in the middle of a dense cluster */
+      const left = typeof p.a === 'number' ? Math.cos(p.a) < 0 : p.x < cx;
+      const lx = clamp(p.x + (left ? -r - 3 : r + 3), 3, W - 3);
+      nBody += `<text x="${lx.toFixed(1)}" y="${(p.y + 3.2).toFixed(1)}" font-size="9.5" fill="var(--nw-ink)" text-anchor="${left ? 'end' : 'start'}" paint-order="stroke" stroke="var(--nw-surface)" stroke-width="2.6">${esc(n.sym)}</text>`;
     }
   }
 
-  /* cluster labels, with the honest "how many sources agree here" on the label itself */
+  /* Cluster labels. Long pathway names placed on a ring run straight off the canvas and get
+     clipped, so when the canvas is narrow or there are many clusters the SVG carries a numbered
+     badge and the names go in a key below, where they can wrap. Positions are clamped inside the
+     viewBox either way. */
+  const keyMode = narrow || clusters.length > 6;
   let cBody = '';
-  clusters.forEach(C => {
+  const clusterKey = [];
+  clusters.forEach((C, ci) => {
     const ag = net.agreement.find(a => a.label === C.label);
+    const srcTxt = ag && ag.sourcesPresent.length
+      ? `${ag.sourcesPresent.length}/${net.coreSources.length} public sources`
+      : 'no public source agreement recorded';
+    clusterKey.push({ n: ci + 1, label: C.label, genes: C.genes.length, srcTxt, allThree: ag ? ag.allThree.length : null });
     const out = Math.cos(C.ang), outY = Math.sin(C.ang);
-    const lx = clusters.length === 1 ? cx : C.cx + out * (narrow ? 44 : 64);
-    const ly = clusters.length === 1 ? 16 : C.cy + outY * (narrow ? 40 : 54);
-    const anchor = clusters.length === 1 ? 'middle' : (out < -0.3 ? 'end' : out > 0.3 ? 'start' : 'middle');
-    const short = C.label.length > (narrow ? 20 : 30) ? C.label.slice(0, narrow ? 19 : 29) + '…' : C.label;
-    const srcTxt = ag ? `${ag.sourcesPresent.length}/${net.coreSources.length} sources` : 'no source agreement recorded';
+    const single = clusters.length === 1;
+    /* sit the marker just outside the cluster's OWN gene ring, not a fixed distance from the
+       canvas centre — otherwise a one-gene cluster's badge floats in empty space */
+    const off = (C.inner || 0) + (keyMode ? 15 : 20);
+    /* a one-gene cluster has no ring to sit outside, and its gene's label radiates sideways, so
+       the marker goes ABOVE the node where nothing else is */
+    const lone = C.genes.length === 1;
+    let lx = single ? cx : lone ? C.cx : C.cx + out * off;
+    let ly = single ? 16 : lone ? C.cy - 17 : C.cy + outY * off;
+    if (keyMode) {
+      lx = clamp(lx, 12, W - 12); ly = clamp(ly, 14, H - 8);
+      cBody += `<circle cx="${lx.toFixed(1)}" cy="${(ly - 3).toFixed(1)}" r="8" fill="var(--nw-surface)" stroke="var(--nw-ink2)" stroke-width="1.2"/>`
+        + `<text x="${lx.toFixed(1)}" y="${(ly + 0.5).toFixed(1)}" font-size="9.5" font-weight="650" fill="var(--nw-ink)" text-anchor="middle">${ci + 1}<title>${esc(C.label)} — ${C.genes.length} gene${C.genes.length === 1 ? '' : 's'}, ${esc(srcTxt)}</title></text>`;
+      return;
+    }
+    const anchor = single ? 'middle' : (out < -0.3 ? 'end' : out > 0.3 ? 'start' : 'middle');
+    const maxChars = 30;
+    const short = C.label.length > maxChars ? C.label.slice(0, maxChars - 1) + '…' : C.label;
+    /* keep the whole run of text inside the canvas for the anchor we picked */
+    const estW = short.length * 5.6;
+    lx = clamp(lx, anchor === 'end' ? estW + 4 : anchor === 'middle' ? estW / 2 + 4 : 4,
+                   anchor === 'start' ? W - estW - 4 : anchor === 'middle' ? W - estW / 2 - 4 : W - 4);
+    ly = clamp(ly, 14, H - 16);
     cBody += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="10.5" font-weight="650" fill="var(--nw-ink2)" text-anchor="${anchor}" paint-order="stroke" stroke="var(--nw-surface)" stroke-width="3">${esc(short)}<title>${esc(C.label)}</title></text>`
       + `<text x="${lx.toFixed(1)}" y="${(ly + 11).toFixed(1)}" font-size="9" fill="var(--nw-muted)" text-anchor="${anchor}" paint-order="stroke" stroke="var(--nw-surface)" stroke-width="3">${esc(C.genes.length + ' gene' + (C.genes.length === 1 ? '' : 's') + ' · ' + srcTxt)}</text>`;
   });
@@ -764,7 +820,10 @@ function renderNetwork(subject, net, W) {
   const defs = `<defs><marker id="nwArrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 1 L7 4 L0 7 z" fill="var(--nw-ev4)"/></marker></defs>`;
   const svg = svgEl(W, H, defs + `<g data-l="edges">${eBody}</g><g data-l="nodes">${nBody}</g><g data-l="clabels">${cBody}</g>`,
     `Gene network: ${nodes.length} genes in ${clusters.length} pathway clusters, ${net.edges.length} edges classified by evidence provenance.`);
-  return { html: `<div class="nw-svgwrap">${svg}</div>`, clusters, H };
+  const key = keyMode
+    ? `<ol class="nw-clkey">${clusterKey.map(k => `<li><b>${k.n}</b><span>${esc(k.label)} — ${k.genes} gene${k.genes === 1 ? '' : 's'}, ${esc(k.srcTxt)}${k.allThree === 0 ? ', none confirmed in all' : ''}</span></li>`).join('')}</ol>`
+    : '';
+  return { html: `<div class="nw-svgwrap">${svg}</div>${key}`, clusters, H };
 }
 
 /* --------------------------------------------- the expression matrix (SVG) */
@@ -773,9 +832,12 @@ function renderExpression(subject, exp, W) {
   if (!anat.length) return { html: '' };
   const narrow = W < 430;
   const labelW = narrow ? 112 : 150;
-  const colW = Math.max(9, Math.min(22, (W - labelW - 56) / Math.max(1, genes.length)));
+  const colW = Math.max(9, Math.min(34, (W - labelW - 20) / Math.max(1, genes.length)));
   const rowH = narrow ? 19 : 21;
   const H = anat.length * rowH + 46;
+  /* the viewBox is sized to the CONTENT, not to the container: the svg is width:100%, so a grid
+     narrower than the card scales up to fill it instead of leaving half the card empty */
+  const VW = Math.max(labelW + genes.length * colW + 8, narrow ? W : Math.min(W, labelW + 120));
   let body = '';
   /* column headings: gene symbols, rotated */
   genes.forEach((g, i) => {
@@ -785,7 +847,7 @@ function renderExpression(subject, exp, W) {
   const seqVar = n => n >= 4 ? '--nw-seq5' : n === 3 ? '--nw-seq4' : n === 2 ? '--nw-seq3' : '--nw-seq2';
   anat.forEach((R, ri) => {
     const y = 46 + ri * rowH;
-    body += `<line x1="0" y1="${(y - 4).toFixed(1)}" x2="${W}" y2="${(y - 4).toFixed(1)}" stroke="var(--nw-grid)" stroke-width="1"/>`;
+    body += `<line x1="0" y1="${(y - 4).toFixed(1)}" x2="${VW}" y2="${(y - 4).toFixed(1)}" stroke="var(--nw-grid)" stroke-width="1"/>`;
     const lbl = R.label.length > (narrow ? 17 : 23) ? R.label.slice(0, narrow ? 16 : 22) + '…' : R.label;
     body += `<text x="2" y="${(y + rowH / 2 - 3).toFixed(1)}" font-size="10" font-weight="${R.isSubject ? 650 : 400}" fill="var(--nw-ink${R.isSubject ? '' : '2'})">${esc(lbl)}<title>${esc(R.label)}${R.uberon ? ' · ' + R.uberon : ''}${R.zfa ? ' · ' + R.zfa : ''}</title></text>`;
     genes.forEach((g, gi) => {
@@ -804,7 +866,7 @@ function renderExpression(subject, exp, W) {
     });
   });
   return {
-    html: `<div class="nw-svgwrap">${svgEl(W, H, body, `Expression matrix: ${genes.length} genes across ${anat.length} anatomical structures, shaded by number of recording sources.`)}</div>`,
+    html: `<div class="nw-svgwrap">${svgEl(VW, H, body, `Expression matrix: ${genes.length} genes across ${anat.length} anatomical structures, shaded by number of recording sources.`)}</div>`,
   };
 }
 
@@ -858,14 +920,19 @@ function renderTrajectory(dev, W) {
   let body = `<line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" stroke="var(--nw-axis)" stroke-width="1"/>`
     + `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H - padB}" stroke="var(--nw-axis)" stroke-width="1"/>`;
   const pts = st.map((s, i) => ({ x: X(s.age), y: Y(hasSL ? (s.SL || 0) : i), s }));
+  let lastTickX = -1e9;
   body += `<path d="${pts.map((p, i) => (i ? 'L' : 'M') + p.x.toFixed(1) + ' ' + p.y.toFixed(1)).join('')}" fill="none" stroke="var(--nw-ev2)" stroke-width="2" stroke-linecap="round"/>`;
   pts.forEach((p, i) => {
     const absent = p.s.hasAbsent;
     body += absent
       ? `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5" fill="none" stroke="var(--nw-critical)" stroke-width="1.8" stroke-dasharray="3 2"><title>${esc(p.s.label)} — carries a field with no source</title></circle>`
       : `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="var(--nw-ev1)" stroke="var(--nw-surface)" stroke-width="2"><title>${esc(p.s.label)}</title></circle>`;
-    if (i === 0 || i === pts.length - 1 || st.length <= 6) {
+    /* label the ends always, and an interior tick only when it clears the last label drawn —
+       early stages bunch up against the origin and would otherwise overprint each other */
+    const isEnd = i === 0 || i === pts.length - 1;
+    if (isEnd || p.x - lastTickX >= 24) {
       body += `<text x="${p.x.toFixed(1)}" y="${(H - padB + 13).toFixed(1)}" font-size="8.5" fill="var(--nw-muted)" text-anchor="${i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle'}">${esc(String(p.s.age))}</text>`;
+      lastTickX = p.x;
     }
   });
   body += `<text x="2" y="${padT + 4}" font-size="8.5" fill="var(--nw-muted)">${esc(hasSL ? 'SL (m)' : 'stage')}</text>`;
@@ -935,22 +1002,25 @@ export async function mountScene({ container, THREE, data, act, theme, reducedMo
     /* candidate growth-series manifests for this design's lineage. A dev manifest is named after
        the organism, not the stage, so an id like "<organism>-<stage>" also has its last segment
        stripped. Generic: no organism name appears here. */
-    const devCandidates = uniq([designId, parentId].filter(Boolean).flatMap(id => {
+    const devCandidates = uniq([parentId, designId].filter(Boolean).flatMap(id => {
       const stripped = id.includes('-') ? id.slice(0, id.lastIndexOf('-')) : null;
       return [`${id}-dev`, stripped ? `${stripped}-dev` : null].filter(Boolean);
     }));
-    const [cir, gil, stagesJ, ...dms] = await Promise.all([
+    const [cir, gil, stagesJ] = await Promise.all([
       tryJSON(new URL('physiology/circulation.json', base)),
       tryJSON(new URL('physiology/gills.json', base)),
       tryJSON(new URL('development/stages.json', base)),
-      ...devCandidates.map(n => tryJSON(new URL(`model/${n}-manifest.json`, base))),
     ]);
-    const hitIdx = dms.findIndex(Boolean);
+    /* probed SEQUENTIALLY and stopped at the first hit: a growth-series manifest is optional, and
+       probing all candidates in parallel means guaranteed 404s on the ones that do not exist. */
+    let devManifest = null, devManifestName = null;
+    for (const n of devCandidates) {
+      const m = await tryJSON(new URL(`model/${n}-manifest.json`, base));
+      if (m) { devManifest = m; devManifestName = n; break; }
+    }
     physio = { circulation: cir, gills: gil };
     devRaw = {
-      stages: stagesJ,
-      devManifest: hitIdx >= 0 ? dms[hitIdx] : null,
-      devManifestName: hitIdx >= 0 ? devCandidates[hitIdx] : null,
+      stages: stagesJ, devManifest, devManifestName,
       lineageTokens: uniq([designId, parentId].filter(Boolean).flatMap(id => tokens(id.replace(/-/g, ' ')))),
     };
     net = buildNetwork(subject, cards);
@@ -1037,21 +1107,22 @@ export async function mountScene({ container, THREE, data, act, theme, reducedMo
       }
       /* the measured agreement, for THESE genes */
       if (net.agreement.length) {
-        h += `<div class="nw-card"><table class="nw-tbl"><thead><tr><th>pathway cluster</th><th class="nw-num">genes</th><th>public sources present</th><th class="nw-num">pairwise Jaccard</th><th class="nw-num">in all ${net.coreSources.length}</th></tr></thead><tbody>`
+        h += `<div class="nw-card"><table class="nw-tbl"><thead><tr><th>pathway cluster</th><th class="nw-num">genes</th><th>public sources present</th><th class="nw-wide">Jaccard</th><th class="nw-wide">in all ${net.coreSources.length}</th></tr></thead><tbody>`
           + net.agreement.slice(0, 7).map(a => `<tr><td>${esc(a.label)}</td><td class="nw-num">${a.nGenes}</td>`
             + `<td>${a.sourcesPresent.length ? esc(a.sourcesPresent.join(', ')) : '<span style="color:var(--nw-critical)">none</span>'}`
             + `${a.sourcesMissing.length ? `<br><span class="nw-pill">no rows from ${esc(a.sourcesMissing.join(', '))}</span>` : ''}</td>`
-            + `<td class="nw-num">${a.pairs.length ? esc(num(a.jMin) + '–' + num(a.jMax)) : '—'}</td>`
-            + `<td class="nw-num" style="${a.allThree.length === 0 ? 'color:var(--nw-critical);font-weight:650' : ''}">${a.allThree.length}</td></tr>`).join('')
+            + `<td class="nw-wide">${a.pairs.length ? esc(num(a.jMin) + '–' + num(a.jMax)) : '—'}</td>`
+            + `<td class="nw-wide" style="${a.allThree.length === 0 ? 'color:var(--nw-critical);font-weight:650' : ''}">${a.allThree.length}</td></tr>`).join('')
           + `</tbody></table></div>`;
         h += `<p class="nw-note">Jaccard is computed here, over the genes in this picture only, between the public sources that actually have rows for each cluster. KEGG is excluded everywhere: its rows are licence-restricted and local-only, so only its pathway names could ever be cited.</p>`;
         if (noConfirm.length) {
+          const silent = noConfirm.filter(a => a.sourcesMissing.length).length;
           h += gapBlock(`${noConfirm.length} of ${net.agreement.length} clusters have no gene confirmed across all public sources`,
-            `${esc(noConfirm.slice(0, 4).map(a => a.label).join(', '))}${noConfirm.length > 4 ? `, and ${noConfirm.length - 4} more` : ''}. For ${noConfirm.filter(a => a.sourcesMissing.length).length} of them that is because at least one public source has <em>no pathway of that kind at all</em> for this species, so agreement there is not low — it is impossible.`);
+            `${esc(noConfirm.slice(0, 4).map(a => a.label).join(', '))}${noConfirm.length > 4 ? `, and ${noConfirm.length - 4} more` : ''}. For ${silent} of them at least one public source records <em>none of these genes</em> in that cluster at all, so for those the agreement is not low — there is nothing to agree with. Whether that source carries no such pathway for this species, or simply places these particular genes elsewhere, is not something this view can tell you.`);
         }
         if (jAll.length) {
           const jm = jAll.reduce((a, b) => a + b, 0) / jAll.length;
-          h += `<p class="nw-note">Mean pairwise agreement across every cluster drawn here: <strong>${esc(num(jm))}</strong> (Jaccard, 1.0 would be perfect agreement). The sources are also not independent of one another: orthology-inferred and cross-species rows largely descend from the same human annotation, so even this much agreement is partly an echo.</p>`;
+          h += `<p class="nw-note">Mean pairwise agreement across every cluster drawn here: <strong>${esc(num(jm))}</strong> (Jaccard, 1.0 would be perfect agreement). Read it carefully: it is computed over <strong>${subject.genesShown.length} well-studied genes</strong>, not genome-wide, and a small, heavily-annotated gene set is the most favourable case there is — across the whole gene universe these same sources agree far less. The sources are also not independent of one another: orthology-inferred and cross-species rows largely descend from the same human annotation, so even this much agreement is partly an echo.</p>`;
         }
       }
       if (net.regDropped > 0) {
@@ -1082,9 +1153,9 @@ export async function mountScene({ container, THREE, data, act, theme, reducedMo
           + [1, 2, 3, 4].map(n => `<span class="nw-lg"><svg width="14" height="10" aria-hidden="true"><rect x="1" y="1" width="12" height="8" rx="2" fill="var(--nw-seq${n >= 4 ? 5 : n + 1})"/></svg>${n}${n === 4 ? '+' : ''} source${n === 1 ? '' : 's'}</span>`).join('')
           + `<span class="nw-lg"><svg width="14" height="10" aria-hidden="true"><rect x="1" y="1" width="12" height="8" rx="2" fill="none" stroke="var(--nw-grid)"/></svg>not recorded</span>`
           + `<span class="nw-lg"><svg width="14" height="10" aria-hidden="true"><rect x="1" y="1" width="12" height="8" rx="2" fill="var(--nw-seq4)"/><line x1="2" y1="8" x2="12" y2="2" stroke="var(--nw-surface)" stroke-width="1.3"/></svg>tick = an independent assay</span></div>`;
-        h += `<div class="nw-card"><table class="nw-tbl"><thead><tr><th>structure</th><th class="nw-num">genes</th><th class="nw-num">independent</th><th>sources recording it</th></tr></thead><tbody>`
+        h += `<div class="nw-card"><table class="nw-tbl"><thead><tr><th>structure</th><th class="nw-num">genes</th><th class="nw-wide" title="genes with support from an assay independent of the curated in-situ record">indep. assay</th><th>sources recording it</th></tr></thead><tbody>`
           + exp.shown.slice(0, 8).map(r => `<tr><td><button class="nw-anat" type="button" data-uberon="${esc(r.uberon || '')}" data-zfa="${esc(r.zfa || '')}" data-label="${esc(r.label)}" aria-pressed="false">${esc(r.label)}</button>${r.isSubject ? ' <span class="nw-pill">this design changed it</span>' : ''}</td>`
-            + `<td class="nw-num">${r.nGenes}</td><td class="nw-num" style="${r.independent.length === 0 ? 'color:var(--nw-critical);font-weight:650' : ''}">${r.independent.length}</td>`
+            + `<td class="nw-num">${r.nGenes}</td><td class="nw-wide" style="${r.independent.length === 0 ? 'color:var(--nw-critical);font-weight:650' : ''}">${r.independent.length}</td>`
             + `<td>${esc(r.allSources.join(', '))}</td></tr>`).join('')
           + `</tbody></table></div>`;
         /* the independence caveat, computed */
@@ -1202,8 +1273,14 @@ export async function mountScene({ container, THREE, data, act, theme, reducedMo
         h += stats([
           { v: `${ch.chains.length} of ${subject.genesShown.length}`, k: 'genes drawn that have any chain' },
           { v: weakest.length, k: 'chains whose weakest link is association or worse' },
-          { v: ch.withoutChain.length, k: 'genes with no chain at all' },
+          { v: `${subject.chainBySym.size} of ${subject.genesAll.length}`, k: 'genes resolved to this design that have a chain anywhere' },
         ]);
+        /* Do not let the first stat read as a coverage result: the drawn set was RANKED by having
+           a chain, so a high number there is the selection, not the evidence. */
+        if (subject.hiddenGenes > 0) {
+          h += warnBlock('that first number is a selection effect, not a coverage figure',
+            `The ${subject.genesShown.length} genes drawn were ranked partly on <em>whether a chain exists</em>, so of course most of them have one. Across all <strong>${subject.genesAll.length}</strong> genes this design resolves to, only <strong>${subject.chainBySym.size}</strong> have a gene-to-phenotype chain anywhere in this repo — that is the coverage figure, and it is the honest one.`);
+        }
         h += renderLadder(ch, W);
         h += `<div class="nw-legend">`
           + ['missing', 'association', 'necessity', 'sufficiency', 'mechanism'].map(g => {

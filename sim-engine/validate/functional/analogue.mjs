@@ -105,8 +105,15 @@ export function registry() {
       operational: 'level or climbing flight produced by flapping, sustained beyond a ballistic or gliding trajectory, with an aerobic power supply',
       threshold: null,
       taxa: [
-        { id: null, name: 'bats', taxon: 'Chiroptera', satisfies: true,
-          evidence: [{ claim: 'the only extant non-avian powered fliers whose sequences we may read; three bat genomes are already in our focal-gene alignments (Myotis lucifugus, Pteropus vampyrus, Rhinolophus ferrumequinum)', source: 'sequences/genes.json, sequences/gliders.json panel', kind: 'curated' }] },
+        { id: null, name: 'bats', taxon: 'Chiroptera', satisfies: true, partial: true,
+          supplies: 'powered flapping flight itself, with an aerobic power supply, in an animal whose sequences we may read',
+          does_not_supply: 'anything transferable to a fin. There is no pectoral fin, no lepidotrichium and no fin fold in a bat, and our own glider analysis finds NO sequence convergence between gliding mammals and gliding fishes at the focal sites (the lat4a 326 state is F in all three bats, in mouse and in human - the same as in zebrafish and medaka).',
+          evidence: [{ claim: 'the only extant non-avian powered fliers whose sequences we may read; three bat genomes are already in our focal-gene alignments (Myotis lucifugus, Pteropus vampyrus, Rhinolophus ferrumequinum)', source: 'sequences/genes.json, sequences/gliders.json panel', kind: 'curated' },
+            { claim: '0 of 532 interface positions are shared across gliding taxa; lat4a F326L is 20.1 A from the substrate', source: 'sequences/gliders.json (our own convergence analysis)', kind: 'measured' }] },
+        { id: 'flying-fish', name: 'flying fishes', taxon: 'Exocoetidae', satisfies: false, partial: true,
+          supplies: 'the airborne half: a teleost that leaves the water and travels through air, with the enlarged pectoral fin that makes it possible, and a sequenced genome',
+          does_not_supply: 'power. A flying fish glides; it does not flap. Nothing in its requirement set speaks to sustained powered flight, so borrowing that set for a powered-flight design would answer a question nobody asked.',
+          evidence: [{ claim: 'Exocoetidae glide; no flapping-powered flight is reported for any fish in any source we fetched', source: DAANE, kind: 'curated' }] },
       ],
       refuse: AVES_REFUSAL,
       pterosaurs: PTEROSAUR_NOTE,
@@ -252,17 +259,23 @@ export function closestFunctionalAnalogue(design, target, { designFinSL = null }
     signal = `INFERRED, not specified: no desired-phenotype text reached this module, so the function was taken from the design's identity (${base.id || 'unknown'}). A different desired phenotype would change the requirement set and so the whole ledger.`;
   }
   const fn = R[fnKey];
-  const satisfying = fn.taxa.filter(t => t.satisfies);
+  const satisfying = fn.taxa.filter(t => t.satisfies && !t.partial);
   const chosen = satisfying.find(t => t.id) || satisfying[0] || null;
+  // NO ANALOGUE is the loud case: nothing is dressed up as one. The nearest PARTIAL analogues are listed with
+  // what each one does and does not supply, which is the useful answer when the real one does not exist.
+  const partials = fn.taxa.filter(t => t.partial).map(t => ({ name: t.name, taxon: t.taxon, performs_the_function: !!t.satisfies, supplies: t.supplies || null, does_not_supply: t.does_not_supply || null, evidence: t.evidence }));
   return {
     function: { id: fn.id, label: fn.label, operational: fn.operational, threshold: fn.threshold, threshold_note: fn.threshold_note || null },
     function_signal: signal, function_text_match: matched,
     base: base,
     id: chosen?.id ?? null, name: chosen?.name ?? null, taxon: chosen?.taxon ?? null,
-    basis: chosen ? `satisfies the operational definition of "${fn.label}"` : 'NO analogue is available for this function',
+    no_analogue: !chosen,
+    nearest_partial_analogues: partials,
+    basis: chosen ? `satisfies the operational definition of "${fn.label}"`
+      : `NO ORGANISM WE MAY READ SATISFIES "${fn.label}". ${partials.length ? `The nearest partial analogues are ${partials.map(p => `${p.name} (supplies: ${p.supplies})`).join('; ')} - each named with what it does NOT supply, so neither is mistaken for the analogue.` : 'There is not even a partial analogue.'} The closest RELATIVE is not offered in its place: relatedness is not function, which is the whole premise of this module.`,
     source: chosen ? chosen.evidence.map(e => e.source).join('; ') : null,
     evidence: chosen?.evidence ?? [],
-    other_satisfying_taxa: satisfying.filter(t => t !== chosen).map(t => ({ name: t.name, taxon: t.taxon, evidence: t.evidence })),
+    other_satisfying_taxa: fn.taxa.filter(t => t.satisfies && t !== chosen).map(t => ({ name: t.name, taxon: t.taxon, partial: !!t.partial, evidence: t.evidence })),
     non_satisfying_taxa_listed: fn.taxa.filter(t => !t.satisfies).map(t => ({ name: t.name, taxon: t.taxon, why_not: t.evidence[0]?.claim || null })),
     refused: fn.refuse || null,
     pterosaurs: fn.pterosaurs || null,

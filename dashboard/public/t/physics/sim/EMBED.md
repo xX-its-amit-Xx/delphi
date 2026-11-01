@@ -289,6 +289,10 @@ points at `t/physics/sim/`, and the 3D view mounts itself there. Two things are 
   the computed trajectory flown in 3D by the anatomy meshes, with the same run as 2D charts below"**.
 * the viewer may want to pass `&theme=` as it already does. Nothing else.
 
+**When the page detects it is in an iframe it moves the 3D block up itself**, to just above the `<h1>`
+and immediately below the pre-registration banner, so the viewer opens on the scene rather than on a
+screen of prose. The banner stays first: it is the record and nothing is allowed to push it down.
+
 If WebGL is unavailable the 3D block replaces itself with one sentence saying so and the page is the
 2D charts exactly as before, so an embedder never has to test for it.
 

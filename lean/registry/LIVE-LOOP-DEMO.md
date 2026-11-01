@@ -369,13 +369,36 @@ whether the proofs compile is the separate `lake build` check, and every verdict
 evaluation of the Lean-backed formulas, not a kernel check**. No Aves data is read or emitted anywhere in the
 chain, and no credential is involved at any hop.
 
-## 8. Known open link
+## 8. The one link that went stale during this work, and what caught it
 
 `dashboard/public/blueprint3d/browser-check.mjs`, the Studio page's own bundled copy of the evaluator, is
-maintained by another thread's `dashboard/build-graph.mjs` and currently embeds law sets up to 1.7.0, not the
-current 1.8.1. `check-exposed` **fails** on this (`stale:page-checker`) rather than noting it. Law verdicts in
-the Studio are unaffected, because `lean-client.js` prefers `/api/lean/browser-check.mjs`, which
-`dashboard/build-lean-api.mjs` regenerates on every release; what is affected is anything importing the page
-copy directly, such as `perturb.js`'s fallback, which would judge every row `unknown-lawset`. The fix is one
-command, `node dashboard/build-graph.mjs`, owned by the Viz thread. It is listed here rather than silently left
-because the whole point of this work is that a stale link should be loud.
+maintained by another thread's `dashboard/build-graph.mjs`. Immediately after law set 1.8.1 was cut it still
+embedded law sets only up to 1.7.0, and `check-exposed` went **red** on it:
+
+```
+  FAIL stale:page-checker (1)
+    - dashboard/public/blueprint3d/browser-check.mjs does not embed the current law set 1.8.1 (it knows 1.0.0,
+      1.1.0, 1.2.0, 1.3.0, 1.4.0, 1.5.0, 1.6.0, 1.7.0): every page importing it directly (perturb.js fallback)
+      judges every row 'unknown-lawset' and evaluates no law at all
+```
+
+Law verdicts in the Studio itself were never affected, because `lean-client.js` prefers
+`/api/lean/browser-check.mjs`, which `dashboard/build-lean-api.mjs` regenerates on every release. What was
+affected is anything importing the page copy directly, such as `perturb.js`'s fallback. The Viz thread ran
+`node dashboard/build-graph.mjs` and the page copy is now byte-identical to the generated evaluator and knows
+every law set through 1.8.1, so the final state is:
+
+```bash
+node lean/registry/check-exposed.mjs
+```
+```
+check-exposed: 60 laws (registry), 51 constraints, 16 Lean modules,
+  lawsets 1.0.0, 1.1.0, 1.2.0, 1.3.0, 1.4.0, 1.5.0, 1.6.0, 1.7.0, 1.8.0, 1.8.1 (current 1.8.1)
+  OK: every law is in the registry, the handlers, the static mirror, both CLIs, the MCP servers and the
+      contract; nothing is stale.
+```
+
+This is worth recording as the real test of the §5 guards: before them, that copy had gone stale by seven hours
+and nothing said so. It is a lagging copy maintained by a different build step in a different thread — exactly
+the kind of link that cannot be held in anyone's head — and the guard turned it from something to remember into
+a red build with the command to fix it.

@@ -380,9 +380,48 @@ if (has('package.json')) {
   }
 }
 
+// ── (g) open questions: no ACCEPTED or CANDIDATE law may assert one arm ──────
+// The enforcement half of lean/registry/open-questions/. Without it, "we hold this question open" is a note in a
+// file that nothing checks, and the next clean proposal settles by automation a question the evidence has not
+// settled. propose.mjs applies the same guard at proposal time; this catches a law that was already in the
+// registry when a question was opened, or hand-edited past propose.mjs. The ONLY ways past it are to settle the
+// question (recording which evidence settled it) or to register a scoped exemption on BOTH sides.
+let openQuestionsExposed = null;
+try {
+  const openq = await imp('lean/registry/open-questions/openq-lib.mjs');
+  const oqreg = openq.load();
+  const open = openq.openQuestions(oqreg);
+  for (const bad of openq.guardAllLaws({ laws: reg.laws, questions: open, statuses: ['accepted', 'candidate'] })) {
+    for (const v of bad.violations) {
+      fail('g:open-question', bad.law_id,
+        `law ${bad.law_id} (${bad.status}) asserts arm "${v.arm_id}" of OPEN question ${v.question_id}: ${v.statement_en}`,
+        `settle ${v.question_id} (status 'settled' with the arm, the evidence that settled it and an approving role), or narrow the law and register a scoped exemption in BOTH ${v.question_id}'s guard.scoped_exemptions and the law's open_question_scoped, or restate the law so it takes no side. Arms and what would settle it: lean/registry/open-questions/questions/${v.question_id}.json`);
+    }
+  }
+  // the records themselves must be well formed, in step with open-disputes.json, and not drifted from the Lean
+  for (const rec of oqreg.all) for (const e of openq.validateRecord(rec)) fail('g:open-question', rec.question_id || rec.failure_id || rec.requirement_id || rec.request_id, e, 'fix the record in lean/registry/open-questions/');
+  for (const e of openq.disputeDrift({ reg: oqreg })) fail('g:open-question', 'open-disputes', e, 'keep lean/registry/open-questions/ and pipeline/leanbio/debate/open-disputes.json in step');
+  for (const e of openq.armDrift({ reg: oqreg })) fail('g:open-question', 'arm-drift', e, 'bump the question version and re-pin the arm statement_sha256');
+  // every open question must be reachable from the static mirror, like a law
+  const mirror = 'dashboard/public/api/lean/open-questions.json';
+  if (!has(mirror)) fail('g:open-question', 'mirror', `${mirror} is missing, so the open questions are not in the static API`, 'node dashboard/build-lean-api.mjs');
+  else {
+    const m = readJson(mirror);
+    const served = new Set((m.result?.questions || m.questions || []).map(q => q.question_id));
+    for (const q of oqreg.questions) if (!served.has(q.question_id)) fail('g:open-question', q.question_id, `open question ${q.question_id} is not in ${mirror}`, 'node dashboard/build-lean-api.mjs');
+  }
+  openQuestionsExposed = { questions: oqreg.questions.length, open: open.length, failed_theorems: oqreg.failed.length,
+    requirements: oqreg.requirements.length, formalised_arms: oqreg.questions.flatMap(q => q.arms || []).filter(a => a.lean_ref && a.lean_ref.theorem).length };
+  notes.push(`open questions: ${open.length} open of ${oqreg.questions.length}, ${openQuestionsExposed.formalised_arms} arms formalised in Lean, ${oqreg.failed.length} failed theorems; no accepted or candidate law asserts an open arm`);
+} catch (e) {
+  if (!/Cannot find module|ERR_MODULE_NOT_FOUND/.test(String(e && e.message))) fail('g:open-question', 'openq-lib', `the open-question guard could not run: ${e && e.message}`, 'fix lean/registry/open-questions/openq-lib.mjs; a guard that cannot run is not a guard');
+  else notes.push('lean/registry/open-questions/ is absent: the open-question guard did not run');
+}
+
 // ── report ───────────────────────────────────────────────────────────────────
 const summary = { ok: failures.length === 0, origin: reg.origin, laws: ids.size, constraints: reg.constraints.length,
-  lean_modules: allModules.length, lawsets: reg.lawsets.map(s => s.version), current: reg.current, failures, notes };
+  lean_modules: allModules.length, lawsets: reg.lawsets.map(s => s.version), current: reg.current,
+  open_questions: openQuestionsExposed, failures, notes };
 if (JSON_OUT) console.log(JSON.stringify(summary, null, 1));
 else {
   console.log(`check-exposed: ${ids.size} laws (${reg.origin}), ${reg.constraints.length} constraints, ${allModules.length} Lean modules, lawsets ${summary.lawsets.join(', ') || 'none'} (current ${reg.current})`);

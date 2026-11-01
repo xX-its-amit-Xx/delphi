@@ -18,6 +18,10 @@ const p = (...s) => L.push(...s);
 const esc = s => String(s ?? '').replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim();
 const trunc = (s, n) => { const t = esc(s); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
 const VERDICT_ORDER = ['REJECT', 'CONTESTED', 'NEEDS-WORK', 'PROMOTE-TO-CANDIDATE'];
+const allWorkers = R.rulings.flatMap(r => Object.values(r.worker_meta || {})).filter(m => m && !m.skipped && m.code != null);
+const totalInvocations = allWorkers.length;
+const totalCost = allWorkers.reduce((a, m) => a + (m.cost_usd || 0), 0);
+const webCalls = allWorkers.filter(m => m.role === 'critic' || m.role === 'evidence-checker').reduce((a, m) => a + (m.tool_calls || []).length, 0);
 const rulings = [...R.rulings].sort((a, b) => VERDICT_ORDER.indexOf(a.verdict) - VERDICT_ORDER.indexOf(b.verdict) || a.law_id.localeCompare(b.law_id));
 
 p('# DEBATE-RESULTS: what the debate decided, per law', '',
@@ -32,8 +36,9 @@ p('## The run', '',
   '| | |', '|---|---|',
   `| laws ruled on | ${rulings.length} |`,
   `| verdicts | ${Object.entries(R.counts).map(([k, v]) => `${v} ${k}`).join(', ')} |`,
-  `| headless \`claude -p\` invocations | ${run.invocations ?? '?'} (cap ${run.max_invocations ?? '?'}, at most ${run.concurrency ?? '?'} at once) |`,
-  `| cost reported by the CLI | $${(run.spent ?? 0).toFixed(2)} |`,
+  // run.json holds the LAST run only; the rulings hold every worker that actually ran, which is the honest total.
+  `| headless \`claude -p\` invocations | ${totalInvocations} across every run (at most ${run.concurrency ?? '?'} at once; the last run's cap was ${run.max_invocations ?? '?'}) |`,
+  `| cost reported by the CLI | $${totalCost.toFixed(2)} across every run |`,
   `| model | ${run.model ?? '?'} |`,
   `| stopped because | ${run.stopped ?? 'the queue emptied'} |`,
   `| criteria locked at | ${lock.locked_at}${lock.locked_before_any_debate ? ', before any debate ran' : ''} |`,
@@ -129,7 +134,17 @@ for (const r of rulings) {
 // ---------------------------------------------------------------- the queue
 p('## The promotion queue', '');
 const reqs = q.filter(e => e.ev === 'request');
-if (!reqs.length) p('Empty: no law reached PROMOTE-TO-CANDIDATE or CONTESTED in this run, so there is nothing for a human to decide yet.', '');
+if (!reqs.length) p('**Empty: no law reached PROMOTE-TO-CANDIDATE or CONTESTED, so there is nothing for a human to decide yet.**', '',
+  'Two consequences, stated rather than glossed:', '',
+  '- The automatic half of the pipeline (a survivor written to the registry as `candidate`, served by the MCP and',
+  '  drawn dashed in the studio) was **not exercised on a real law in this run**, because no real law survived. It is',
+  '  exercised by `test.mjs` end to end — the fixture law reaches PROMOTE-TO-CANDIDATE, a request is queued carrying',
+  '  the ruling and the criteria hash, `approve` refuses an agent role, refuses an unqueued law and refuses a law that',
+  '  is not in the registry, and `refuse` requires a reason — and the runs here were additionally given `--no-write`,',
+  '  since every candidate debated was already in the registry or not promotable.',
+  '- A debate that promotes nothing is not evidence that the pipeline promotes nothing. It is evidence about this',
+  '  round: eleven of twelve candidates are correct theorems with no mapping from their quantities to anything a',
+  '  design carries, and the criteria refuse to promote a constraint that no real organism can test.', '');
 else {
   p('| law | verdict | asks | status |', '|---|---|---|---|');
   for (const e of reqs) {
@@ -168,7 +183,10 @@ p('What the debate did NOT establish:', '',
   '- **The critic mostly did not fetch.** It had `WebFetch` and `WebSearch`; the per-law transcripts record how many',
   '  calls it actually made (`transcripts/<law>/critic.json`, `tool_calls`). Where that count is 0, its',
   '  `fires-on-real-organism` attack is reasoning from the candidate, not a search of the literature, and the',
-  '  criteria correctly refuse to let an unsourced counterexample decide a verdict.',
+  `  criteria correctly refuse to let an unsourced counterexample decide a verdict. Across this whole run the critic`,
+  `  and evidence-checker workers made **${webCalls} web tool calls in total**: every counterexample offered was`,
+  '  reasoning, not a literature search, and the one law that was rejected for firing on real animals was caught by',
+  '  the mechanical wild-type check, not by a critic.',
   '- **C6 is only as broad as `wildtype.json`.** 34 organisms, drawn from this repository\'s own measured CSVs. A law',
   '  whose scope contains none of them is `unclear`, not safe.',
   '- **No Lean kernel ran here.** `propose.mjs` did that before the candidate arrived; the gates evaluate the',

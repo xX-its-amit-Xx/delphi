@@ -263,16 +263,21 @@ def main():
     for cf in chains_man["files"]:
         chain_files[cf["target"]] = cf
 
-    # functional sites: residue sets measured on deposited coordinates
-    functional_sites = defaultdict(list)
-    ims = json.dumps(imap)
-    # LAT4 substrate contacts, read from interface-mapping.json rather than retyped
-    for key, node in (imap.items() if isinstance(imap, dict) else []):
-        if not isinstance(node, dict):
-            continue
-        res = node.get("substrate_site_residues") or node.get("interface_residues")
-        if res:
-            functional_sites[key].append({"label": key, "residues": res})
+
+    # ---- the convergence test, joined to a gene by its own variant notation (no gene named here)
+    conv_struct = conv.get("the_structure") or {}
+    conv_sub = conv.get("the_substitution") or {}
+    conv_site = conv.get("the_substrate_site") or {}
+    conv_ans = conv.get("the_answer") or {}
+    conv_sum = conv.get("summary") or {}
+    conv_gene = None
+    for sym_, vs in var_by_gene.items():
+        for v in vs:
+            if v.get("notation") and v["notation"].lower() in str(conv_sub.get("id", "")).lower():
+                conv_gene = sym_
+                break
+        if conv_gene:
+            break
 
     index = {"built": BUILT, "n_genes": 0, "genes": {}, "parts": {}, "experimental": {},
              "global": {}, "sources": [], "decimation": "CA-only, xyz rounded to 0.1 A, pLDDT to 0.1"}
@@ -460,6 +465,43 @@ def main():
                                  "reason": "no AlphaFold DB model for any UniProt entry of this gene; nothing to draw",
                                  "source": "omics/proteomic/MANIFEST.json + structures/models.json"})
             totals["no_structure"] += 1
+
+        # ---- the functional site and the convergence test, when this gene is the one
+        if conv_gene == sym:
+            card["functional_site"] = {
+                "label": conv_site.get("definition"),
+                "pdb_id": conv_struct.get("pdb_id"), "title": conv_struct.get("title"),
+                "method": conv_struct.get("method"), "resolution_A": conv_struct.get("resolution_A"),
+                "ligand": conv_struct.get("ligand"), "url": conv_struct.get("url"),
+                "identity_to_zebrafish": conv_struct.get("identity_to_zebrafish_slc43a2a")
+                                         or conv_struct.get("identity_to_zebrafish"),
+                "reference_uniprot": conv_struct.get("reference_uniprot"),
+                "positions": conv_site.get("positions"),
+                "residues": conv_site.get("residues"),
+                "why_this_structure": conv_struct.get("why_this_is_the_right_structure"),
+            }
+            card["convergence"] = {
+                "substitution": conv_sub.get("id"), "numbering": conv_sub.get("numbering"),
+                "what": conv_sub.get("what"), "source": conv_sub.get("source"),
+                "position_on_the_structure": conv_ans.get("convergent_site_in_human_LAT4_numbering")
+                                             or conv_ans.get("convergent_site_position"),
+                "residue_there": conv_ans.get("residue_there"),
+                "is_a_functional_site_residue": conv_ans.get("is_it_a_substrate_site_residue"),
+                "distance_to_the_functional_site_A": conv_ans.get("min_distance_from_the_convergent_site_to_the_bound_substrate_A"),
+                "nearest_transmembrane_segment": conv_ans.get("nearest_transmembrane_segment"),
+                "geometry": conv_ans.get("geometry_of_every_position_examined"),
+                "headline": conv_sum.get("headline"),
+                "functional_site_invariant": conv_sum.get("substrate_site_is_invariant_between_gliders_and_nongliders"),
+                "positions_that_separate_gliders": conv_sum.get("substrate_site_positions_that_separate_gliders"),
+                "caveat": conv_sum.get("caveat"),
+                "residue_in_each_group": conv_sub.get("residue_in_each_group"),
+                "source_file": "structures/convergence-test.json",
+            }
+            card["gaps"].append({
+                "id": "no-functional-assay",
+                "what": "any measurement of what this substitution does",
+                "reason": conv_sum.get("caveat") or "no functional assay exists for this substitution in any species",
+                "source": "structures/convergence-test.json"})
 
         # ---- experimental structures
         exp_rows = by_feat.get("experimental_structure", [])
@@ -665,6 +707,8 @@ def main():
             "why_in_pack": reasons.get(sym, []),
             "our_structures": [e["pdb_id"] for e in gene_exp.get(sym, [])],
             "accession_disagreement": bool(disagreement),
+            "has_functional_site": "functional_site" in card,
+            "has_convergence": "convergence" in card,
         }
         totals["genes"] += 1
 

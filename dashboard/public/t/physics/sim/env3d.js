@@ -12,6 +12,39 @@
 //   // the fish sits on the surface exactly:
 //   fish.position.y = ocean.heightAt(fish.position.x, fish.position.z);
 //
+// INTERFACE (the scene module codes to this; extensions are additive only)
+//   makeOcean({THREE, scene, size, segments, conditions})
+//       -> { mesh, update(tSeconds), heightAt(x, z), normalAt(x, z[, out]), dispose() }
+//          extras: group, far, setConditions(c), sampleDrawnSurface(ix, iz, bu, bv),
+//                  discretisationBound(), cellSize, size, segments, waves, info, inversion
+//   makeSky({THREE, scene, conditions})
+//       -> { update(tSeconds), setAltitude(m), dispose() }
+//          extras: group, sun, sunLight, hemiLight, sunDirection, setSun(el, az), altitude,
+//                  horizonColor, info
+//   makeSpray({THREE, scene[, capacity]})
+//       -> { burst(positionVec3, velocityVec3, strength), update(dtSeconds), dispose() }
+//          extras: points, group, clear(), capacity, active, info
+//   makeUnderwater({THREE, scene})
+//       -> { setDepth(m), update(tSeconds), dispose() }
+//          extras: group, depth, transmittance, info
+//   also: checkOceanAgreement(ocean), readConditions(c), piersonMoskowitz(U), G,
+//         RECOMMENDED_CAMERA_FAR
+//
+// THINGS THE HOST MUST KNOW
+//   - normalAt(x, z, out) writes into `out` and returns it; called without `out` it allocates a
+//     new Vector3, so pass one from the render loop.
+//   - makeSky OWNS scene.fog and scene.background while it is mounted, and provides the scene's
+//     DirectionalLight (the sun) and HemisphereLight. dispose() restores the previous fog and
+//     background. makeUnderwater never touches either.
+//   - The camera's far plane must be at least RECOMMENDED_CAMERA_FAR (60000) or the 30 km water
+//     disc that sets the horizon is clipped away. Near plane 0.05 is fine: the sky, the far disc
+//     and all of the underwater layers are drawn with depthWrite off, so depth precision at the
+//     far end never matters.
+//   - setDepth(m) takes the depth of the VIEWER below the surface. <= 0 turns the underwater
+//     layers off entirely (no draw calls).
+//   - setAltitude(m) only repaints when the altitude has moved more than 4 m, so it is safe to
+//     call every frame.
+//
 // =====================================================================================
 // README — WHICH NUMBERS ARE MEASUREMENTS AND WHICH ARE SCENERY
 // The project rule: a decorative number is never presented as a measurement. Everything
@@ -54,14 +87,21 @@
 //
 //  P7. Spray ballistics. Droplets are integrated with g = 9.80665 m/s^2.
 //
-//  P8. Depth colour. Per-channel transmittance exp(-K_lambda * L) with K taken from pure-water
-//      absorption at 450/550/650 nm: 0.0092, 0.0565, 0.340 m^-1 (Pope & Fry 1997, Appl. Opt.
-//      36:8710, Table 1). This is why red goes first and blue-green survives. See D5 for the one
-//      decorative factor applied on top.
+//  P8. Depth colour. Per-channel transmittance exp(-K_lambda * L) with K the diffuse attenuation
+//      coefficient of clear ocean water (Jerlov optical water type I): 0.023 / 0.072 / 0.350 m^-1
+//      at representative blue / green / red wavelengths. Absorption alone would be lower
+//      (0.0092 / 0.0565 / 0.340, Pope & Fry 1997, Appl. Opt. 36:8710, Table 1); K_d is larger
+//      because scattering also removes light from the beam. This is why red goes first and
+//      blue-green survives. No fudge factor is applied to these numbers.
 //
 //  P9. The path length L in P8 is taken along the VIEW DIRECTION, not at a single depth:
 //      L = depth / d.y looking up, unbounded looking level or downward. That is why the sea
 //      darkens downward. The clamp L <= 90 m is decorative (D5), so the deep is not pure black.
+//
+//  P10. Snell's window. From under water the whole sky arrives through a cone of half-angle
+//      asin(1/n) = 48.3 deg (seawater n = 1.34), so the bright shimmering surface is a circle of
+//      radius 1.123 * depth directly overhead, and outside it the surface mirrors. The underwater
+//      shimmer is clipped to exactly that radius; the softness of its edge is decorative.
 //
 // DECORATIVE (chosen so the scene reads; never to be quoted as a measurement):
 //
@@ -82,13 +122,18 @@
 //  D3. Crest foam: whitening driven by surface height and by the Gerstner compression (Jacobian
 //      determinant). A readability cue, not a whitecap model (no Monahan-style coverage law).
 //  D4. Spray droplet counts, sizes, lifetimes, cone angles and the linear drag coefficient.
-//  D5. Underwater: the tint shell's in-scattering colour and opacity, the caustic and light-shaft
-//      textures and their drift rates, the particulate density, and a gain of 3.0 applied to the
-//      P8 absorption coefficients to stand in for real clear-ocean diffuse attenuation K_d (which
-//      is larger than absorption alone because scattering adds to it). The gain is a convenience,
-//      so the colour shift reads over tens of metres rather than hundreds.
+//  D5. Underwater: the backdrop colour (the light arriving at the surface), the in-scattering
+//      colour and opacity, the caustic and light-shaft textures and their drift rates, the
+//      softness of the Snell-window edge, the particulate density and sink speed, and the 90 m
+//      clamp on the view path length so the deep is not absolutely black. The attenuation
+//      coefficients themselves carry no fudge factor.
 //  D6. Water body colour, derived from the baseline 25 C warm surface water only as a mood, not a
 //      calculation.
+//  D7. The sea's specular colour (0x2a323c) and shininess (900). The GLITTER PATH'S POSITION is
+//      not decorative -- it is wherever the sun mirrors off the real wave normals, which is why a
+//      low camera sees a wide one and a high camera a narrow streak -- but its brightness and
+//      tightness are hand-set. Blinn-Phong normalises by (shininess+2)/8pi, so these two numbers
+//      trade off against each other and neither means anything on its own.
 //
 // FROM conditions/baseline.json (read, reported, locked): water 25 C, salinity 35 psu, air
 // 1.225 kg/m^3, wind/waves "calm". "Calm" maps to wind_m_s = 0, which yields the calm_floor sea of
@@ -104,6 +149,13 @@
 //  - No external texture files: every texture is painted into a canvas here.
 //  - dispose() frees geometries, materials and textures, removes what it added from the scene, and
 //    restores scene.fog / scene.background.
+//  - Measured headless in Edge with --use-gl=swiftshader (software rasteriser, no GPU), all four
+//    mounted, 48 m patch at 114 segments (13225 vertices, ~32k triangles) plus a taxi wake:
+//      1440 x 860  56-60 fps above water, 52-54 fps from 260 m, 38-40 fps underwater
+//       390 x 844  60 fps everywhere
+//    Frame work measured inside the page (JS + the render submit) is 0.8-1.1 ms; the rest is the
+//    software rasteriser's fill. Underwater costs more because the shimmer, the shafts and the
+//    two tint shells are near-full-screen blends; each one that fades out is switched off.
 
 'use strict';
 
@@ -117,11 +169,17 @@ export const G = 9.80665;
 /** Atmospheric scale height, m (US Standard Atmosphere 1976). PHYSICAL (P5). */
 const SCALE_HEIGHT_M = 8500;
 
-/** Pure-water absorption at 450/550/650 nm, m^-1 (Pope & Fry 1997 Table 1). PHYSICAL (P8). */
+/**
+ * Diffuse attenuation coefficient K_d of CLEAR OCEAN water (Jerlov optical water type I) at
+ * representative blue/green/red wavelengths, m^-1. PHYSICAL (P8). These are the measured
+ * attenuation of downwelling irradiance, absorption plus scattering, which is what a viewer
+ * actually loses. For reference the absorption-only floor is Pope & Fry 1997 Appl. Opt. 36:8710
+ * Table 1: 0.0092 / 0.0565 / 0.340 m^-1 at 450 / 550 / 650 nm. No fudge factor is applied to
+ * either set; an earlier version of this file multiplied the absorption floor by 3 to stand in
+ * for K_d, and that multiplier is gone.
+ */
+const CLEAR_OCEAN_KD = { b: 0.023, g: 0.072, r: 0.350 };
 const PURE_WATER_ABSORPTION = { b: 0.0092, g: 0.0565, r: 0.340 };
-
-/** Stand-in gain from absorption to clear-ocean K_d. DECORATIVE (D5). */
-const KD_GAIN = 3.0;
 
 /** Drawn wavelengths, m. DECORATIVE band choice (D1a); their speeds are physical (P1). */
 const DRAWN_WAVELENGTHS_M = [13.0, 7.3, 4.1, 2.3];
@@ -552,7 +610,7 @@ export function makeOcean({ THREE, scene, size = 48, segments, conditions } = {}
     color: 0xffffff, vertexColors: true,
     specular: 0x2a323c, shininess: 900,
     emissive: new THREE.Color(0.012, 0.042, 0.060),
-    side: THREE.DoubleSide, depthWrite: false, fog: true
+    side: THREE.FrontSide, depthWrite: false, fog: true
   });
   const far = new THREE.Mesh(farGeo, farMat);
   far.name = 'env3d.ocean.far';
@@ -1286,11 +1344,7 @@ export function makeUnderwater({ THREE, scene } = {}) {
   group.visible = false;
 
   // ---- 1. depth tint: multiply by exp(-K*d), plus a decorative in-scatter -------------
-  const K = {
-    r: PURE_WATER_ABSORPTION.r * KD_GAIN,
-    g: PURE_WATER_ABSORPTION.g * KD_GAIN,
-    b: PURE_WATER_ABSORPTION.b * KD_GAIN
-  };
+  const K = { r: CLEAR_OCEAN_KD.r, g: CLEAR_OCEAN_KD.g, b: CLEAR_OCEAN_KD.b };
   const transmittance = new THREE.Color(1, 1, 1);
 
   // The tint is Beer-Lambert along the VIEW PATH, not at a single depth: looking straight up the
@@ -1354,7 +1408,8 @@ export function makeUnderwater({ THREE, scene } = {}) {
       uB: { value: new THREE.Vector4(1.3, 1.3, 0, 0) },
       uCA: { value: new THREE.Color(0.804, 0.941, 1.0) },
       uCB: { value: new THREE.Color(0.659, 0.894, 1.0) },
-      uOpacity: { value: 0.0 }
+      uOpacity: { value: 0.0 },
+      uWindow: { value: 0.2 }      // Snell's window radius, in units of the plane's half-width
     },
     vertexShader: [
       'varying vec2 vUv;',
@@ -1362,13 +1417,20 @@ export function makeUnderwater({ THREE, scene } = {}) {
     ].join('\n'),
     fragmentShader: [
       'uniform sampler2D uMap; uniform vec4 uA; uniform vec4 uB;',
-      'uniform vec3 uCA; uniform vec3 uCB; uniform float uOpacity;',
+      'uniform vec3 uCA; uniform vec3 uCB; uniform float uOpacity; uniform float uWindow;',
       'varying vec2 vUv;',
       'void main(){',
       '  float a = texture2D(uMap, vUv * uA.xy + uA.zw).a;',
       '  float b = texture2D(uMap, vUv * uB.xy + uB.zw).a;',
       '  vec3 c = uCA * a + uCB * b * 0.72;',
-      '  gl_FragColor = vec4(c * uOpacity, 1.0);',
+      // Snell's window: from under water the whole sky is compressed into a cone of half-angle
+      // asin(1/n) = 48.3 deg for seawater (n = 1.34); outside it the surface mirrors instead of
+      // transmitting. uWindow is that cone's radius on this plane. The soft edge is decorative;
+      // the radius is not. A second fade near rr = 1 keeps the plane's own edge from ever showing.
+      '  float rr = length(vUv - 0.5) * 2.0;',
+      '  float win = 1.0 - smoothstep(uWindow * 0.86, uWindow * 1.30, rr);',
+      '  float edge = 1.0 - smoothstep(0.78, 1.0, rr);',
+      '  gl_FragColor = vec4(c * uOpacity * win * edge, 1.0);',
       csChunkUW,
       '}'
     ].join('\n'),
@@ -1433,7 +1495,20 @@ export function makeUnderwater({ THREE, scene } = {}) {
   motes.frustumCulled = false;
   motes.renderOrder = 906;
 
-  group.add(absorb, scatter, ceil, motes);
+  // Drawn before everything the viewer can see, under the sky: the light arriving at the water
+  // surface, undimmed. The multiply shell then attenuates it by exp(-K*L) per direction, so what
+  // the viewer sees is determined by P8/P9 alone and not by whatever the sky dome happens to be
+  // showing below its horizon. DECORATIVE colour (D5), physical attenuation.
+  const backdropMat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(0.74, 0.86, 0.95), side: THREE.BackSide,
+    depthWrite: false, depthTest: false, fog: false
+  });
+  const backdrop = new THREE.Mesh(shellGeo, backdropMat);
+  backdrop.name = 'env3d.underwater.backdrop';
+  backdrop.renderOrder = -990;          // over the sky dome, under everything solid
+  backdrop.frustumCulled = false;
+
+  group.add(backdrop, absorb, scatter, ceil, motes);
   for (const s of shafts) group.add(s);
   if (scene) scene.add(group);
 
@@ -1472,6 +1547,9 @@ export function makeUnderwater({ THREE, scene } = {}) {
     // with no shimmer overhead does not read as underwater. DECORATIVE (D5).
     const lightCue = Math.sqrt(lightLeft);
     ceilMat.uniforms.uOpacity.value = clamp(0.62 * lightCue + 0.06, 0, 0.70);
+    // PHYSICAL (P10): the window's radius on the surface is depth * tan(asin(1/1.34)) = 1.123 * depth.
+    // 130 is the plane's half-width in metres.
+    ceilMat.uniforms.uWindow.value = clamp(1.123 * depth / 130, 0.02, 1.0);
     shaftMat.opacity = clamp(0.26 * lightCue, 0, 0.26);
     pmat.opacity = clamp(0.20 + 0.45 * (1 - lightLeft), 0, 0.68);
 
@@ -1539,21 +1617,23 @@ export function makeUnderwater({ THREE, scene } = {}) {
         model: 'multiply-blended transmittance shell + additive in-scatter + two scrolling caustic ' +
           'layers + swaying light shafts + a wrapped particulate cloud',
         physical: [
-          'P8 per-channel transmittance exp(-K*L) with K from pure-water absorption at 450/550/650 nm ' +
-          '(0.0092, 0.0565, 0.340 m^-1; Pope & Fry 1997 Appl. Opt. 36:8710 Table 1) — this is why red ' +
-          'disappears first',
+          'P8 per-channel transmittance exp(-K*L) with K = clear-ocean diffuse attenuation ' +
+          '(Jerlov type I: 0.023 / 0.072 / 0.350 m^-1 blue/green/red) — this is why red disappears first',
           'P9 L is the path length along the VIEW DIRECTION (depth/d.y looking up, unbounded looking ' +
-          'level or down), so the sea darkens downward for the right reason'
+          'level or down), so the sea darkens downward for the right reason',
+          "P10 the surface shimmer is confined to Snell's window, half-angle asin(1/1.34) = 48.3 deg " +
+          'for seawater, i.e. a circle of radius 1.123 * depth on the surface'
         ],
         decorative: [
-          'D5 the 90 m clamp on the view path length; the x3.0 gain applied to those absorption ' +
-          'coefficients as a stand-in for clear-ocean K_d ' +
-          '(real K_d exceeds absorption because scattering adds); the in-scatter colour and opacity; the ' +
-          'caustic and shaft textures and their drift rates; the particulate density and sink speed'
+          'D5 the 90 m clamp on the view path length; the backdrop colour (the light arriving at the ' +
+          'surface); the in-scatter colour and opacity; the caustic and shaft textures and their drift ' +
+          'rates; the softness of the Snell-window edge; the particulate density and sink speed'
         ],
         depth_m: depth,
         K_used_per_m: { r: K.r, g: K.g, b: K.b },
-        K_source: 'pure-water absorption (Pope & Fry 1997) x 3.0 (the x3.0 is decorative)',
+        K_source: 'clear-ocean diffuse attenuation K_d, Jerlov optical water type I; ' +
+          'absorption-only floor for comparison (Pope & Fry 1997): ' +
+          PURE_WATER_ABSORPTION.b + ' / ' + PURE_WATER_ABSORPTION.g + ' / ' + PURE_WATER_ABSORPTION.r,
         transmittance_rgb: [transmittance.r, transmittance.g, transmittance.b],
         particulate_count: PN,
         does_not_touch: ['scene.fog', 'scene.background']

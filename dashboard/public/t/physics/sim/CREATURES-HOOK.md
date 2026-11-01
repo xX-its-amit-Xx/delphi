@@ -178,6 +178,21 @@ subsampled at 50 ms — the same shape `scene3d.js`'s band renderer already read
 `hostRun` solver and the default one are interchangeable. Pass `keepTrajectories: false` when you
 only want statistics.
 
+### What the field numbers measure
+
+`FIELD_OBSERVATIONS` records each quoted figure with a verbatim source and **which quantity it is**,
+because flying fish make several hops per flight and a single-hop model compared against a sequence
+total would look wrong for the wrong reason. The sources settle it: Deng et al. 2019
+(Bioinspir. Biomim. 14:046009, Introduction) puts **50 m and 8 m inside one free flight** and says
+separately that *"a total flight distance of 400 m can be achieved in 30 s by the repeated
+taxiing"*; Park & Choi 2010 calls the 400 m *"a successive sequence of taxiing and flight"*. So a
+single-hop ensemble compares like with like against the 50 m, not against the 400 m.
+
+All of them are **maxima** ("up to", "reachable", "as much as") quoted with no sample size, and all
+are second-hand. `stats.sequence` (`sequenceStats`) is multi-hop **bookkeeping** so the 400 m / 30 s
+figure can be read against a single-hop model — it is not a model and does not predict the hop
+count, which no source gives. `OPEN_QUESTIONS` carries what is still unresolved.
+
 ### Drawing it
 
 Draw the **band**, not a line. Every draw thin and faint, the 5–95% band of the range, the median,
@@ -202,19 +217,81 @@ breach + taxi + glide run per draw, pass:
 run: (params) => { /* your sim */ return { range_m, time_s, max_height_m, can_glide, pts }; }
 ```
 
+### Two ensembles, two different quantities — do not read them as disagreeing
+
+`sim-engine/validate/physics/ensemble.mjs` imports this module's distributions and runs them
+through `glide.mjs`. Its `RESULTS.md` reports, for the adult flying fish,
+`glide/glide_range_total_m` median **53.79 m**, 5–95 % 37.55–72.90 m. That metric is `glide.mjs`'s
+**analytic two-phase bound**, not an integrated trajectory.
+
+| quantity | here | validate/physics |
+|---|---|---|
+| analytic two-phase bound | `stats.analytic_total_m` — median 51.0, 5–95 % 33.8–69.8 | `glide_range_total_m` — median 53.8, 5–95 % 37.6–72.9 |
+| integrated constant-α trajectory | `stats.glide_range_m` — median 37.1, 5–95 % 28.1–46.5 | not computed |
+
+The two bound figures are the same quantity and agree to about 5 %; the residual is the
+lifting-area convention (`STATE` measures pectoral+pelvic+caudal on the mesh, `params.json` carries
+Park & Choi's pectoral+pelvic+planform — `glide.mjs`'s own `liftingArea()` documents the
+difference). **Do not compare 53.8 against 37.1.** Also note `glide.mjs`'s deterministic run is
+36.5 m only because it takes 15 m/s, the band's lower end; its near-match with this module's
+integrated median of 37 m is a coincidence of two models at two speeds.
+
+One consequence worth stating: a band on an **upper bound** straddling the 50 m field figure is not
+a validation. A bound should sit *above* the observation, and a 5th percentile of 37.6 m means that
+in about 5 % of draws the bound falls under it.
+
 `analyticBound(params)` additionally reproduces `glide.mjs`'s published two-phase bound
 (`lean_bound_m` = h·(L/D)max, the only part the Lean theorem covers, plus the kinetic phase), and
 every run carries it, so the plot can show the bound next to the integrated trajectory. The
 integrated range comes out **below** the bound (about three quarters of it) because a fixed-alpha
 glide re-enters the water still travelling fast and never cashes in the residual kinetic energy.
 
-### The species gate
+### The stage gate — read this before calling `perturbRun` across life stages
 
-The 15–20 m/s launch band applies **only** to flying fish and the flying-fish-derived designed
-fliers, matching `glide.mjs`'s own regex. For any other animal the launch speed is **not drawn at
-all** — the draw records `skipped: true` and the reason, because no measured launch-speed spread
-exists for it and this module invents none. A winged-zebrafish ensemble therefore never glides, at
-any seed, and `stats.can_glide_fraction` is 0.
+**The species is not enough, and getting this wrong resurrects validation defect D1.**
+
+The 15–20 m/s band is measured for **adult** flying fish. `glide.mjs`'s `organismLaunchSpeed` gives
+adults the taxi end speed and every earlier stage `min(10 m/s, 30 BL/s × SL)`, with the comment
+*"no taxiing speed is measured for juveniles, so none is added"*. An earlier version of this module
+gated on the species text alone, so a flying-fish **larva** was handed the adult band: a 1.55 mg,
+6 mm larva drew a median launch speed of **17.5 m/s** against the 0.18 m/s its own stage reaches,
+and "glided" 5.7 m with `can_glide_fraction` 1. That is D1 — the defect the harness caught when a
+default 15 m/s launch made a 0.5 mg zebrafish larva glide 42.8 m — coming back wearing a
+distribution. A wider band hides this kind of error rather than exposing it.
+
+The rule now, matching `sim-engine/validate/physics/ensemble.mjs` so the two cannot drift apart:
+
+> Draw the band only when **the engine's own launch speed for this state is already a taxi speed**,
+> i.e. at or above the band's lower end of 15 m/s.
+
+```js
+import { launchDrawGate, TAXI_BAND_LOW_M_S } from './creatures.js';
+launchDrawGate(params, engineLaunchSpeed)   // -> {allow, species_matches, reason}
+```
+
+If you already asked the engine, state the answer and skip the inference — this is the call
+`validate/physics` makes, and with it that module no longer needs to patch the draw afterwards:
+
+```js
+makeEnsemble({ ..., allow_launch_draw: v0 != null && v0 >= 15 });
+perturbRun(base, rng, { allow_launch_draw: false });
+```
+
+Either way the result reports it:
+
+```
+species_gate: { is_flier, species_matches_flier, launch_speed_drawn, note }
+```
+
+`species_matches_flier` and `launch_speed_drawn` are separate on purpose: a larva matches the
+species and is still refused, and the `note` says it was the stage. When the band is withheld the
+draw record carries `skipped: true` with the reason, the launch speed stays at the engine's own
+value, and the parameter's `source` says `NOT DRAWN`. A flying-fish larva, a juvenile capped at the
+10 m/s leap speed, and the winged zebrafish all get `can_glide_fraction` 0 at every seed.
+
+**Anyone consuming `perturbRun` across life stages needs this gate.** It is inside the module now,
+so calling `perturbRun` plainly is safe; pass `allow_launch_draw` only when you have already asked
+the engine and want to be explicit.
 
 ---
 

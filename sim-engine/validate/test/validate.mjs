@@ -183,5 +183,27 @@ const doc = (base, edits, genotype) => { let d = { ...O.docFor(bundle, base), id
   check('envelope-counts-match-provenance', sum === out.provenance.length - (M('envelope-counts-match-provenance') ? 1 : 0) && !!out.result.lean_rounds,
     `${out.provenance.length} rows, counts sum ${sum}, weakest_input ${out.weakest_input}`);
 }
+// physics_simulation (the fifth named result). What is MINE to guarantee is the wiring: a hard criterion with NO
+// MODEL must NOT raise the gate ("we could not check it" is not "it failed"), and the result must still surface.
+{
+  const { namedResults } = await import('../score.mjs');
+  const base = { genotype: { edits: [] }, phenotype: { body: { ran: false }, fin: { ran: false }, ood: false },
+    lean: { counts: null, components: [] }, verdict: { closest_real_relative: null } };
+  const incomplete = namedResults({ ...base, physics: { ran: true, physics_gate_failed: M('physics-no-model-is-not-a-failure'), gate_status: 'incomplete', function_achieved: false, unchecked_requirements: [{ criterion: 'c1', why: 'no model' }], summary: { hard_criteria: 2, met: 1, no_model: 1 } } });
+  check('physics-no-model-is-not-a-failure',
+    incomplete.physics_gate_failed === false && incomplete.physics_simulation.gate_status === 'incomplete'
+    && incomplete.physics_simulation.unchecked_requirements.length === 1 && incomplete.physics_simulation.function_achieved === false,
+    'an unchecked hard requirement leaves the gate down and function_achieved false');
+  const failed = namedResults({ ...base, physics: { ran: true, physics_gate_failed: !M('physics-gate-only-on-not-met'), gate_status: 'fail', function_achieved: false } });
+  const absent = namedResults({ ...base, physics: { ran: false, reason: 'no STATE' } });
+  check('physics-gate-only-on-not-met', failed.physics_gate_failed === true && absent.physics_gate_failed === false
+    && /breaks no law/i.test(failed.gates_note) && /actually does the thing/i.test(failed.gates_note), 'gate true only on a hard criterion not met');
+  // the real controls: the winged zebrafish is scored plausible AND cannot glide. Both must be reported.
+  const { designScore } = await import('../score.mjs');
+  const wz = await designScore('winged-zebrafish', {});
+  check('physics-separates-plausible-from-functional',
+    wz.score === 0.9217 && wz.physics_simulation.ran && wz.physics_gate_failed === true && wz.physics_simulation.function_achieved === false,
+    `winged zebrafish: score ${wz.score} (plausible) but function_achieved ${wz.physics_simulation.function_achieved}`);
+}
 console.log(`\n${n - fails}/${n} passed${MUT ? ` (MUTATE=${MUT})` : ''}`);
 process.exit(fails);

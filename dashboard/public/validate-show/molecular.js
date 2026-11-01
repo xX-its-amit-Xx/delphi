@@ -56,6 +56,8 @@ const PART_KINDS = { 'required for': 'required for', 'sufficient for': 'sufficie
 const EDIT_RE = /\b([ACDEFGHIKLMNPQRSTVWY])(\d{1,5})([ACDEFGHIKLMNPQRSTVWY*])\b/;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const humanKey = (k) => String(k).replace(/_A$/, '').replace(/^min_dist_to_/, 'nearest ').replace(/^dist(ance)?_to_/, 'to the ')
+  .replace(/_/g, ' ').replace(/auth seq id/, 'residue number in the entry').replace(/residue name/, 'residue').trim();
 const norm = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const fmt = (n, d = 1) => (n == null || Number.isNaN(n) ? '—' : Number(n).toFixed(d));
 const trim = (s, n) => { s = String(s ?? ''); if (s.length <= n) return s;
@@ -173,15 +175,17 @@ function chainTube(THREE, xyz, radius, hex) {
   return { geo, hex, pts };
 }
 
-function centreAndScale(THREE, group, target) {
-  const box = new THREE.Box3().setFromObject(group);
+/* Put the molecule's own centroid at the pivot. The offset goes on an INNER group so that the
+ * outer group's rotation turns the molecule about its middle instead of orbiting it. */
+function centreAndScale(THREE, outer, inner, target) {
+  const box = new THREE.Box3().setFromObject(inner);
   if (box.isEmpty()) return 1;
   const c = box.getCenter(new THREE.Vector3());
   const s = box.getSize(new THREE.Vector3());
   const span = Math.max(s.x, s.y, s.z) || 1;
   const k = target / span;
-  group.position.set(-c.x * k, -c.y * k, -c.z * k);
-  group.scale.setScalar(k);
+  inner.position.set(-c.x, -c.y, -c.z);
+  outer.scale.setScalar(k);
   return k;
 }
 
@@ -249,6 +253,14 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
   }
 
   /* ---- 5. the edited residue, and what the repo measured about it */
+  /* A measured finding about one of the subject genes that is bigger than the focus gene:
+   * a convergent substitution placed on a deposited structure, with its distance to the part of
+   * the protein that does the work. Found by scanning the loaded cards, not by naming a gene. */
+  const convEntry = known.map((s) => [s.gene, cards[s.gene]]).find(([, c]) => c?.convergence) || null;
+  const conv = convEntry ? convEntry[1].convergence : null;
+  const convGene = convEntry ? convEntry[0] : null;
+  const convSite = convEntry ? convEntry[1].functional_site : null;
+
   const sub = focusSub.substitution;
   const gate = perGeneGate(data, focusSub.gene);
   const siteRecords = focus.sites || [];
@@ -307,6 +319,24 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
   .molsc .tag{font:600 10px/1.5 var(--m-mono);letter-spacing:.06em;text-transform:uppercase;
     background:var(--m-panel);border:1px solid var(--m-line);border-radius:999px;padding:2px 8px;
     color:var(--m-dim)}
+  .molsc .slots{position:absolute;inset:0;display:grid;gap:7px;padding:38px 10px 10px;align-content:start;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));overflow:auto;background:var(--m-stage)}
+  .molsc .slots[hidden]{display:none}
+  /* On the gaps beat the stage stops being a viewport and becomes the gap board, so every
+     slot is visible instead of scrolling out of sight inside a short 3D frame. */
+  /* three.js puts display:block inline on its own canvas, which no selector can beat, so the
+     gaps beat hides it from script instead; this rule is only the fallback. */
+  .molsc .stage.gapmode canvas{display:none}
+  .molsc .stage.gapmode .slots{position:static;inset:auto;overflow:visible}
+  .molsc .slot{border:1.5px dashed var(--m-gap);border-radius:7px;padding:7px 9px;min-width:0;
+    background:var(--m-gap-bg)}
+  .molsc .slot b{display:block;font:600 10px/1.35 var(--m-mono);letter-spacing:.05em;
+    text-transform:uppercase;color:var(--m-gap);margin-bottom:2px;overflow-wrap:anywhere}
+  .molsc .slot span{font:400 11px/1.4 var(--m-sans);color:var(--m-ink);display:block;
+    overflow-wrap:anywhere}
+  @container (max-width:520px){.molsc .slots{grid-template-columns:minmax(0,1fr);padding-top:62px}}
+  .molsc .slots .hdr{grid-column:1/-1;font:600 11px/1.4 var(--m-sans);color:var(--m-dim);
+    letter-spacing:.06em;text-transform:uppercase;border:0;background:none;padding:0 2px}
   .molsc .ruler{padding:6px 8px 8px;background:var(--m-panel);border-top:1px solid var(--m-line)}
   .molsc .ruler svg{display:block;width:100%;height:auto;overflow:visible}
   .molsc .col{display:flex;flex-direction:column;gap:10px;min-width:0}
@@ -360,6 +390,9 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
   </div>`;
   container.appendChild(root);
   const stageEl = root.querySelector('#ms-stage');
+  const slotsEl = document.createElement('div');
+  slotsEl.className = 'slots';
+  slotsEl.hidden = true;
   const hudEl = root.querySelector('#ms-hud');
   const rulerEl = root.querySelector('#ms-ruler');
   const panelsEl = root.querySelector('#ms-panels');
@@ -413,11 +446,13 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
 
       /* --- the predicted model, painted with its own pLDDT */
       molGroup = new THREE.Group();
+      const molInner = new THREE.Group();
+      molGroup.add(molInner);
       const bb = backboneMesh(THREE, st.xyz, st.plddt, 1.45);
       disposables.push(bb.geo);
       const bbMat = new THREE.MeshLambertMaterial({ vertexColors: true });
       disposables.push(bbMat);
-      molGroup.add(new THREE.Mesh(bb.geo, bbMat));
+      molInner.add(new THREE.Mesh(bb.geo, bbMat));
 
       /* residue index -> point, so markers land on the real atom */
       caKeyed = new Map();
@@ -442,14 +477,16 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
       markers.ptm = instanced(ptmPts, 2.4, 0x00a3a3, 0.95);
       const ffPts = ffDiffs.map((d) => caKeyed.get(d.zf_position)).filter(Boolean);
       markers.ff = instanced(ffPts, 3.0, 0xc038a8, 0.95);
-      for (const k of ['edit', 'ptm', 'ff']) if (markers[k]) molGroup.add(markers[k]);
+      for (const k of ['edit', 'ptm', 'ff']) if (markers[k]) molInner.add(markers[k]);
 
       scene.add(molGroup);
-      scaleK = centreAndScale(THREE, molGroup, 100);
+      scaleK = centreAndScale(THREE, molGroup, molInner, 108);
 
       /* --- the one real experimental complex, if we have one */
       if (complex?.chains) {
         cplxGroup = new THREE.Group();
+        const cplxInner = new THREE.Group();
+        cplxGroup.add(cplxInner);
         const keys = Object.keys(complex.chains);
         /* chain hues walk a single hue ramp — subunit identity, not a measurement */
         keys.forEach((k, i) => {
@@ -460,18 +497,44 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
           if (!t) return;
           const m = new THREE.MeshLambertMaterial({ color: hex });
           disposables.push(t.geo, m);
-          cplxGroup.add(new THREE.Mesh(t.geo, m));
+          cplxInner.add(new THREE.Mesh(t.geo, m));
         });
+        /* the residues that make the functional site, read off these same coordinates */
+        if (convSite?.pdb_id && convSite.pdb_id === complexMeta.pdb_id && convSite.positions?.length) {
+          const first = complex.chains[keys[0]];
+          const want = new Set(convSite.positions);
+          const pos = [];
+          first.res.forEach((r, i) => { if (want.has(r)) pos.push([first.xyz[i * 3], first.xyz[i * 3 + 1], first.xyz[i * 3 + 2]]); });
+          if (conv?.position_on_the_structure != null) {
+            const i = first.res.indexOf(conv.position_on_the_structure);
+            if (i >= 0) {
+              const g = new THREE.IcosahedronGeometry(3.2, 1);
+              const m = new THREE.MeshLambertMaterial({ color: 0xe8362f });
+              disposables.push(g, m);
+              const sph = new THREE.Mesh(g, m);
+              sph.position.set(first.xyz[i * 3], first.xyz[i * 3 + 1], first.xyz[i * 3 + 2]);
+              cplxInner.add(sph);
+            }
+          }
+          for (const p of pos) {
+            const g = new THREE.IcosahedronGeometry(2.4, 1);
+            const m = new THREE.MeshLambertMaterial({ color: 0x00a3a3 });
+            disposables.push(g, m);
+            const sph = new THREE.Mesh(g, m);
+            sph.position.set(p[0], p[1], p[2]);
+            cplxInner.add(sph);
+          }
+        }
         for (const L of complex.ligands || []) {
           const g = new THREE.IcosahedronGeometry(2.6, 1);
           const m = new THREE.MeshLambertMaterial({ color: 0xff5f1f });
           disposables.push(g, m);
           const s = new THREE.Mesh(g, m);
           s.position.set(L.centroid[0], L.centroid[1], L.centroid[2]);
-          cplxGroup.add(s);
+          cplxInner.add(s);
         }
         scene.add(cplxGroup);
-        centreAndScale(THREE, cplxGroup, 104);
+        centreAndScale(THREE, cplxGroup, cplxInner, 118);
         cplxGroup.visible = false;
       }
 
@@ -510,7 +573,7 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
           const nodes = new THREE.InstancedMesh(ng, nm, mine.length);
           const mx = new THREE.Matrix4();
           mine.forEach((e, i) => {
-            const s = 2.6 + 3.4 * (e.score || 0.7);
+            const s = 2.2 + 3.0 * (e.score || 0.7);
             mx.makeScale(s, s, s).setPosition(e.v.x, e.v.y, e.v.z);
             nodes.setMatrixAt(i, mx);
           });
@@ -663,21 +726,46 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
       const ex = siteRec?.on_experimental_structure;
       if (ex?.measured) {
         const m = ex.measured;
-        const dist = m.distance_to_substrate_A ?? m.distance_A ?? m.nearest_partner_A ?? null;
         h += `<p class="big">${esc(ex.pdb_id)} · ${fmt(ex.resolution_A, 2)} Å · ${fmt(ex.identity_to_zebrafish, 1)}% identical to the zebrafish protein</p>
-        <p>${ex.is_an_interface_residue ? '<span class="warn">At the interface.</span>' : 'Not an interface residue.'} ${esc(JSON.stringify(m).slice(0, 300))}</p>
-        <p>${esc(ex.note || '')}</p>`;
-        if (dist != null) h += `<p class="big">${fmt(dist, 1)} Å from the functional site</p>`;
+        <p>${ex.is_an_interface_residue ? '<span class="warn">It is an interface residue.</span>' : '<b>It is not an interface residue.</b>'}</p>`;
+        const dRows = Object.entries(m).filter(([k, v]) => typeof v === 'number' && /_A$/.test(k));
+        const near = dRows.length ? dRows.reduce((a, b) => (b[1] < a[1] ? b : a)) : null;
+        if (near) h += `<p class="big">${fmt(near[1], 1)} Å ${esc(humanKey(near[0]))}</p>`;
+        if (dRows.length > 1) h += `<dl class="kv">${dRows.map(([k, v]) => `<dt>${esc(humanKey(k))}</dt><dd>${fmt(v, 1)} Å</dd>`).join('')}</dl>`;
+        const rest = Object.entries(m).filter(([k, v]) => !(typeof v === 'number' && /_A$/.test(k)) && v != null && typeof v !== 'object');
+        if (rest.length) h += `<dl class="kv">${rest.map(([k, v]) => `<dt>${esc(humanKey(k))}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`;
+        h += `<p>${esc(ex.note || '')}</p>`;
       } else if (ex?.pdb_id) {
         h += `<p>Placed on <b>${esc(ex.pdb_id)}</b> (${fmt(ex.resolution_A, 2)} Å, ${fmt(ex.identity_to_zebrafish, 1)}% identity) at position ${esc(ex.mapped_position)} — residue ${esc(ex.residue_in_structure)}. ${ex.is_an_interface_residue ? '<span class="warn">It is an interface residue.</span>' : '<b>It is not an interface residue.</b>'}</p>
         <p>${esc(ex.note || '')}</p>`;
       }
-      if (siteRec?.source?.quote) h += `<p class="quote">“${esc(siteRec.source.quote)}” — ${esc(siteRec.source.first_author)} ${esc(siteRec.source.year)}, PMID ${esc(siteRec.source.pmid)}</p>`;
+      if (siteRec?.source?.quote) {
+        const cite = [siteRec.source.first_author, siteRec.source.year, siteRec.source.pmid ? `PMID ${siteRec.source.pmid}` : null,
+          siteRec.source.doi ? `doi:${siteRec.source.doi}` : null].filter(Boolean).join(', ');
+        h += `<p class="quote">“${esc(siteRec.source.quote)}”${cite ? ` — ${esc(cite)}` : ''}</p>`;
+      }
+      if (siteRec?.source?.what) h += `<p>${esc(siteRec.source.what)}</p>`;
       if (gate) {
         const cks = gate.checks || gate.edit?.checks || null;
         h += `<dl class="kv"><dt>validator, this edit</dt><dd>${esc(JSON.stringify(cks ?? gate).slice(0, 180))}</dd></dl>`;
       }
       h += `<p><span class="chip">geometry, not function</span>${esc(siteRec?.label || 'A distance is where a residue sits, not what changing it does.')}</p>`;
+    }
+    if (conv) {
+      const sep = conv.positions_that_separate_gliders || [];
+      h += `<div class="card" style="border:0;padding:0;margin-top:10px"><h4>And one measurement that quietly kills a hypothesis</h4>
+      <p><b>${esc(convGene)}</b> carries the one convergent substitution this project's sources name: <b>${esc(conv.substitution)}</b>. ${esc(conv.what || '')}</p>
+      <p class="big">${fmt(conv.distance_to_the_functional_site_A, 1)} Å from the part of the protein that does the work</p>
+      <dl class="kv">
+        <dt>measured on</dt><dd>${esc(conv.position_on_the_structure)} in ${esc(convSite?.pdb_id || '')}${convSite?.resolution_A ? `, ${fmt(convSite.resolution_A, 2)} Å` : ''}</dd>
+        <dt>is it in the site?</dt><dd>${conv.is_a_functional_site_residue ? '<span class="warn">yes</span>' : '<span class="fail">no</span>'}</dd>
+        <dt>nearest helix</dt><dd>${conv.nearest_transmembrane_segment ? `${conv.nearest_transmembrane_segment.start}–${conv.nearest_transmembrane_segment.end}` : '—'}</dd>
+        <dt>site residues</dt><dd>${(convSite?.positions || []).join(', ') || '—'}</dd>
+        <dt>site positions that separate gliders</dt><dd>${sep.length ? sep.join(', ') : `<span class="fail">0 of ${(convSite?.positions || []).length}</span>`}</dd>
+      </dl>
+      <p>${esc(conv.headline || '')}</p>
+      ${gapBox({ what: 'what the substitution does', reason: conv.caveat, source: conv.source_file })}
+      ${srcLine('measured', `${conv.source_file} — numbering: ${trim(conv.numbering, 170)}`)}</div>`;
     }
     if (domainsNoPos) h += gapBox({ what: `${domainsNoPos} domain annotation${domainsNoPos > 1 ? 's' : ''} cannot be placed`, reason: 'they come from the UniProt cross-reference, not the InterPro API, and carry no residue positions', source: 'omics/proteomic/SOURCES.md' });
     h += srcLine('measured', 'structures/variants/variants.json + structures/interface-mapping.json; domains from InterPro 110.0');
@@ -769,6 +857,12 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
     panels.push({ act: 4, html: h, gaps });
   }
 
+  {
+    const gaps = panels.find((p) => p.gaps)?.gaps || [];
+    slotsEl.innerHTML = `<div class="hdr">${gaps.length} things this act would have shown and could not</div>`
+      + gaps.map((g) => `<div class="slot"><b>${esc(g.what || g.id)}</b><span>${esc(trim(g.reason, 150))}</span></div>`).join('');
+    stageEl.insertBefore(slotsEl, hudEl);
+  }
   panelsEl.innerHTML = panels.map((p, i) => `<div data-p="${i}">${p.html}</div>`).join('');
   const panelEls = [...panelsEl.querySelectorAll('[data-p]')];
   const allGaps = panels.find((p) => p.gaps)?.gaps || [];
@@ -780,17 +874,24 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
       ? `${noEdits ? 'This design changes no residue. The red ball is a substitution the literature reports in this gene, placed here by our own structural work.' : 'The changed residue is the red ball.'} ${siteRec?.position_check?.ok === false ? 'Our own check that the residue number matches the sequence failed, and we kept the failure on screen.' : 'Its domain context and its distance to the working part of the protein are measured, not assumed.'}`
       : 'No residue was changed and none is marked. The protein above belongs to a gene the design needs, which is a weaker claim.' },
     { t: 12, act: 2, label: 'Modifications', say: ptmAll.length ? `Teal marks are modification sites; magenta marks are residues that differ in the gliding fish. ${focus.ptm.n_zebrafish ? '' : 'Every one of them was measured in a human or a mouse, not in a fish.'}` : 'No modification site is recorded for this protein, in any species. The slot stays empty.' },
-    { t: 18, act: 3, label: 'Partners', say: nPartners ? `${nZf === 0 ? 'None' : nZf} of ${nPartners} partners rest on an experiment done in zebrafish. Solid lines are experiments, dashes are experiments borrowed from another animal, dots are guesses from text.` : 'No partner passes the confidence cut for this protein, so there is no network to draw.' },
-    { t: 24, act: 4, label: 'The holes', say: `${allGaps.length} things we would have shown and cannot, each with the reason it is missing.` },
+    { t: 18, act: 3, label: complex ? 'A measured complex' : 'No measured complex',
+      say: complex
+        ? `This is the one complex containing this protein that somebody actually solved: ${complexMeta.pdb_id}, ${(complexMeta.method || []).join(', ').toLowerCase()} at ${fmt(complexMeta.resolution_A, 2)} ångström, ${complexMeta.n_chains} chains. It is not the fish protein — it is a ${complexMeta.identity_to_zebrafish != null ? `${fmt(complexMeta.identity_to_zebrafish, 1)}% identical ` : ''}stand-in, because no fish protein in this project has ever been solved.`
+        : 'Nobody has solved a structure of this protein bound to anything. The slot where that complex would go stays empty.' },
+    { t: 24, act: 4, label: 'Partners', say: nPartners ? `${nZf === 0 ? 'None' : nZf} of ${nPartners} partners rest on an experiment done in this animal. Solid lines are experiments, dashes are experiments borrowed from another animal, dots are guesses from text.` : 'No partner passes the confidence cut for this protein, so there is no network to draw.' },
+    { t: 29, act: 5, label: 'The holes', say: `${allGaps.length} things we would have shown and cannot, each with the reason it is missing.` },
   ];
-  const duration = 30;
+  const duration = 34;
+  /* panel 3 (interactions) carries both the complex beat and the partner beat */
+  const PANEL_FOR_ACT = [0, 1, 2, 3, 3, 4];
 
   const CAM = [
     { t: 0, pos: [0, 18, 158], look: [0, 0, 0] },
     { t: 6, pos: [56, 22, 118], look: [0, 0, 0] },
     { t: 12, pos: [0, 54, 132], look: [0, 0, 0] },
-    { t: 18, pos: [26, 16, 196], look: [0, 0, 0] },
-    { t: 24, pos: [0, 8, 178], look: [0, 0, 0] },
+    { t: 18, pos: [0, 16, 150], look: [0, 0, 0] },
+    { t: 24, pos: [26, 14, 215], look: [0, 0, 0] },
+    { t: 29, pos: [0, 8, 190], look: [0, 0, 0] },
   ];
   const lerp = (a, b, k) => a + (b - a) * k;
 
@@ -812,7 +913,10 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
     () => [`${focus.symbol}`, `AlphaFold ${st.model || 'none'}`, `pLDDT mean ${fmt(st.mean_plddt)}`, 'colour = confidence, not chemistry'],
     () => [`${focus.symbol}`, sitePos ? `residue ${sub ? `${sub.wt}${sub.position}${sub.alt}` : sitePos}` : 'no residue changed', siteDomains.length ? siteDomains[0].name : 'no domain here'],
     () => [`${focus.symbol}`, `${ptmPlaceable.length} modification sites placed`, `${ffDiffs.length} differ in the gliding fish`],
-    () => [complexMeta ? `${complexMeta.pdb_id} — measured complex` : 'no measured complex', `${nZf}/${nPartners} partners with zebrafish experiment`],
+    () => complexMeta
+      ? [`${complexMeta.pdb_id} — measured`, `${complexMeta.n_chains} chains · ${fmt(complexMeta.resolution_A, 2)} Å`, `proxy protein, ${fmt(complexMeta.identity_to_zebrafish, 1)}% identity`]
+      : ['no measured complex for this protein'],
+    () => [`${nZf}/${nPartners} partners with an experiment in this animal`, 'line style = evidence kind', 'node positions are decorative'],
     () => [`${allGaps.length} stated absences`],
   ];
 
@@ -821,11 +925,15 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
     const a = actAt(t);
     if (a !== lastAct) {
       lastAct = a;
-      panelEls.forEach((el, i) => el.classList.toggle('off', i !== a));
+      const panel = PANEL_FOR_ACT[a] ?? a;
+      panelEls.forEach((el, i) => el.classList.toggle('off', i !== panel));
       hudEl.innerHTML = (HUD[a]?.() || []).map((s) => `<span class="tag">${esc(s)}</span>`).join('');
-      if (molGroup) molGroup.visible = a <= 2 || (a === 3 && !complex);
+      if (molGroup) molGroup.visible = a <= 2 || (a === 3 && !cplxGroup);
       if (cplxGroup) cplxGroup.visible = a === 3;
-      if (netGroup) netGroup.visible = a === 3;
+      if (netGroup) netGroup.visible = a === 4;
+      slotsEl.hidden = a !== 5;
+      stageEl.classList.toggle('gapmode', a === 5);
+      if (renderer) renderer.domElement.style.display = a === 5 ? 'none' : 'block';
       if (markers.edit) markers.edit.visible = a >= 1 && a <= 2;
       if (markers.ptm) markers.ptm.visible = a === 2;
       if (markers.ff) markers.ff.visible = a === 2;
@@ -862,6 +970,10 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
       text: `All ${nPartners} partners drawn for ${focus.symbol} come from another species, a database or text mining. ${inter.honesty}`,
       source: 'STRING v12.0 interaction_class' });
   }
+  if (conv) {
+    note({ severity: 'note', title: `${conv.substitution} is ${fmt(conv.distance_to_the_functional_site_A, 1)} Å from the working part of the protein`,
+      text: `${conv.headline} ${conv.caveat}`, source: conv.source_file });
+  }
   if (siteRec?.position_check?.ok === false) {
     note({ severity: 'mismatch', title: 'The residue numbering does not check out',
       text: `${siteRec.notation}: the source says ${siteRec.position_check.expected} at position ${siteRec.position}, the UniProt entry behind the model carries ${siteRec.position_check.found}. Nothing was renumbered to make the check pass, so the red marker is at the number the source gave, on a sequence that disagrees with it.`,
@@ -878,7 +990,9 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
     { label: 'domain bars on the ruler', kind: 'inferred-electronic', source: `InterPro 110.0 / Pfam signature matches with residue positions (${domains.length} placed, ${domainsNoPos} without positions)` },
   ];
   if (sitePos) provItems.push({ label: `residue ${sub ? `${sub.wt}${sub.position}${sub.alt}` : sitePos} marker`, kind: siteRec?.position_check?.ok === false ? 'assumed' : 'derived', source: siteRec?.position_check?.ok === false ? `position check FAILED against ${siteRec.numbered_against}; drawn at the number the source states, which that sequence contradicts` : `position from ${siteRec?.source?.first_author || data?.design?.name || 'the design'}${siteRec?.source?.pmid ? `, PMID ${siteRec.source.pmid}` : ''}` });
-  if (siteRec?.on_experimental_structure?.pdb_id) provItems.push({ label: 'distance to the functional site', kind: 'measured', source: `read off deposited coordinates, PDB ${siteRec.on_experimental_structure.pdb_id} at ${fmt(siteRec.on_experimental_structure.resolution_A, 2)} Å; the structure is a ${fmt(siteRec.on_experimental_structure.identity_to_zebrafish, 1)}%-identical proxy protein, not the fish one` });
+  const measuredKeys = Object.entries(siteRec?.on_experimental_structure?.measured || {})
+    .filter(([k, v]) => typeof v === 'number' && /_A$/.test(k)).map(([k]) => humanKey(k));
+  if (siteRec?.on_experimental_structure?.pdb_id) provItems.push({ label: measuredKeys.length ? `distance: ${measuredKeys.join(', ')}` : 'residue placement on a deposited structure', kind: 'measured', source: `read off deposited coordinates, PDB ${siteRec.on_experimental_structure.pdb_id} at ${fmt(siteRec.on_experimental_structure.resolution_A, 2)} Å; the structure is a ${fmt(siteRec.on_experimental_structure.identity_to_zebrafish, 1)}%-identical proxy protein, not the fish one` });
   if (ptmPlaceable.length) provItems.push({ label: 'modification site markers', kind: focus.ptm.n_zebrafish ? 'curated' : 'borrowed-ortholog', source: focus.ptm.n_zebrafish ? 'UniProt/iPTMnet, including sites recorded on the zebrafish protein' : 'every site is the human or mouse orthologue\'s, carried over by alignment' });
   if (ffDiffs.length) provItems.push({ label: 'gliding-fish residue differences', kind: 'observed', source: `${ffDiffs.length} residue states in the Xu et al. 2021 assembly; a residue state, never a measured modification and never a phenotype` });
   if (complex) provItems.push({ label: `complex ${complexMeta.pdb_id}`, kind: 'measured', source: `${(complexMeta.method || []).join(', ')} at ${fmt(complexMeta.resolution_A, 2)} Å, ${complexMeta.n_chains} chains, CA-only; a proxy protein at ${complexMeta.identity_to_zebrafish != null ? `${fmt(complexMeta.identity_to_zebrafish, 1)}%` : 'unstated'} identity`, url: complexMeta.url });
@@ -886,6 +1000,11 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
   for (const cls of ICLASS) {
     const n = iCounts[cls.key] || 0;
     if (n) provItems.push({ label: `${n} ${cls.label.toLowerCase()} edge${n > 1 ? 's' : ''}`, kind: cls.kind, source: `${cls.note}; drawn ${cls.dash ? 'dashed' : 'solid'} at width ${cls.width}` });
+  }
+  if (conv) {
+    provItems.push({ label: `${conv.substitution}: ${fmt(conv.distance_to_the_functional_site_A, 1)} Å to the functional site`, kind: 'measured',
+      source: `read off deposited coordinates in ${convSite?.pdb_id}; numbered against ${trim(conv.numbering, 120)}` });
+    provItems.push({ label: 'what that substitution does', kind: 'absent', source: conv.caveat });
   }
   provItems.push({ label: 'partner node positions', kind: 'decorative', source: 'laid on a sphere by index so the lines do not overlap; the geometry carries no information and affects no number' });
   provItems.push({ label: 'camera path and rotation', kind: 'decorative', source: 'chosen to show the molecule; affects no number' });
@@ -895,7 +1014,7 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
   const provenance = {
     summary: st.absent
       ? `No structure exists for ${focus.symbol}: ${st.reason}. Everything shown is an absence with its reason.`
-      : `${focus.symbol} backbone from AlphaFold DB ${st.model} (predicted, mean pLDDT ${fmt(st.mean_plddt)}), coloured by its own confidence. ${sitePos ? `The changed residue is placed at ${sitePos}${siteRec?.position_check?.ok === false ? ' although our own position check for it failed' : ''}${siteRec?.on_experimental_structure?.pdb_id ? `, and its distance to the functional site is measured on ${siteRec.on_experimental_structure.pdb_id}` : ''}. ` : ''}${nPartners ? `${nZf} of ${nPartners} interaction partners have zebrafish experimental evidence; the rest are transferred, database-asserted or text-mined and are drawn differently. ` : 'No interaction partner passes the confidence cut. '}${allGaps.length} absences are rendered as gaps.`,
+      : `${focus.symbol} backbone from AlphaFold DB ${st.model} (predicted, mean pLDDT ${fmt(st.mean_plddt)}), coloured by its own confidence. ${sitePos ? `${noEdits ? 'This design changes no residue; the residue marked' : 'The changed residue'} is placed at ${sitePos}${siteRec?.position_check?.ok === false ? ' although our own position check for it failed' : ''}${siteRec?.on_experimental_structure?.pdb_id && measuredKeys.length ? `, and ${measuredKeys.join(', ')} is measured on ${siteRec.on_experimental_structure.pdb_id}` : ''}. ` : ''}${nPartners ? `${nZf} of ${nPartners} interaction partners have zebrafish experimental evidence; the rest are transferred, database-asserted or text-mined and are drawn differently. ` : 'No interaction partner passes the confidence cut. '}${allGaps.length} absences are rendered as gaps.`,
     verdict, items: provItems,
   };
 

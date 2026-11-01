@@ -1,0 +1,231 @@
+{
+ "record_type": "open-question",
+ "question_id": "oq-pathway-membership",
+ "version": "1.0.0",
+ "statement_en": "Which zebrafish genes are \"in\" a signalling pathway? Four curated sources disagree so strongly that pairwise agreement for Wnt, the best-studied case, is a Jaccard index of only 0.12 to 0.28.",
+ "status": "open",
+ "found_by": "Harvested from omics/pathway/SOURCES.md, which reports the agreement statistics and the reasons for them as a method finding.",
+ "origin": {
+  "by_role": "open-questions-thread",
+  "kind": "agent"
+ },
+ "arms": [
+  {
+   "arm_id": "pathway-membership-is-well-defined",
+   "position": "for",
+   "statement_en": "Pathway membership is a well-defined gene set that a curated source reports, so a pathway-level claim can be made by choosing a source and citing it.",
+   "formalisable": false,
+   "not_formalisable_because": "Membership in a curated set is a fact about a database release, not a relation over quantities a design or an observation could carry. There is nothing to state as a named hypothesis over real-valued fields.",
+   "lean_ref": null,
+   "evidence": [
+    {
+     "claim": "A textbook core does exist and is agreed by all four sources.",
+     "source": "GO GO:0016055, KEGG dre04310, Reactome R-DRE-195721, WikiPathways WP1349/WP215/WP1344/WP4021/WP4231",
+     "locator": "omics/pathway/SOURCES.md:112-117",
+     "quote": "only 27 are in all four, and those 27 are the textbook core (ligands, Frizzleds, Lrp5/6, Axin, Apc, beta-catenin, Lef/Tcf, PCP Vangl)",
+     "kind": "computed intersection over four curated sources",
+     "belief_class": "repo-evidence",
+     "belief_key": "SOURCES.md#core-27"
+    },
+    {
+     "claim": "Some pathways DO show high agreement, so low agreement is not an inevitable property of the method.",
+     "source": "the same four sources, other pathways",
+     "locator": "omics/pathway/SOURCES.md:145-151",
+     "quote": "PPAR 0.62, Citrate cycle 0.58, TLR 0.56, Mismatch repair 0.55, MAPK 0.47",
+     "kind": "computed metric, high-agreement controls",
+     "belief_class": "repo-evidence",
+     "belief_key": "SOURCES.md#controls"
+    },
+    {
+     "claim": "For the signalling pathways this project actually uses, agreement is low enough that the choice of source changes the gene set, which counts against this arm.",
+     "source": "the four curated sources",
+     "locator": "omics/pathway/SOURCES.md:112-117",
+     "quote": "For Wnt, 174 universe members are in exactly one core source and only 27 are in all four ... Genome-wide pairwise Jaccard for Wnt is 0.12 to 0.28 (KEGG~WP 0.28, GO~KEGG 0.26, KEGG~Reactome 0.19). For Bmp/TGF-beta it is 0.08 to 0.24, and for Notch GO~KEGG is 0.27 while Reactome~anything is <= 0.08.",
+     "kind": "computed metric over curated sets",
+     "belief_class": "repo-evidence",
+     "belief_key": "SOURCES.md#jaccard",
+     "side": "contradict"
+    }
+   ],
+   "belief": 0.293,
+   "belief_basis": {
+    "E": 0.838,
+    "R": 0.65,
+    "n": {
+     "support": {
+      "repo-evidence": 2
+     },
+     "contradict": {
+      "repo-evidence": 1
+     }
+    },
+    "params": "leanbio-belief/0.1.0"
+   }
+  },
+  {
+   "arm_id": "membership-is-source-relative",
+   "position": "against",
+   "statement_en": "There is no source-independent fact about which genes are in a pathway: agreement is 0.12-0.28 even for Wnt, the sources are not independent so even that agreement is partly inherited annotation, and names disagree with gene sets. Any pathway-level claim must name its source and cannot be generalised across sources.",
+   "formalisable": false,
+   "not_formalisable_because": "Same reason: a statement about curated-set agreement is not a relation over design quantities.",
+   "lean_ref": null,
+   "evidence": [
+    {
+     "claim": "Agreement is low even for the best-studied pathway, and worse for others.",
+     "source": "GO, KEGG, Reactome, WikiPathways",
+     "locator": "omics/pathway/SOURCES.md:112-117",
+     "quote": "Genome-wide pairwise Jaccard for Wnt is 0.12 to 0.28 (KEGG~WP 0.28, GO~KEGG 0.26, KEGG~Reactome 0.19). For Bmp/TGF-beta it is 0.08 to 0.24, and for Notch GO~KEGG is 0.27 while Reactome~anything is <= 0.08.",
+     "kind": "computed metric over curated sets",
+     "belief_class": "repo-evidence",
+     "belief_key": "SOURCES.md#jaccard"
+    },
+    {
+     "claim": "The sources are not independent, so the agreement that does exist overstates real concordance.",
+     "source": "Reactome dre, KEGG KO, WikiPathways homology conversion, GO IBA",
+     "locator": "omics/pathway/SOURCES.md point 5",
+     "quote": "**The sources are not independent.** Reactome dre is wholly orthology-inferred, KEGG assigns by KO, 30 of 55 WP dre pathways are homology-converted from human, and GO IBA rows are phylogenetic transfers. Agreement among them partly reflects shared human-derived annotation. GO experimental membership (the number in parentheses) is the one strand of zebrafish-specific evidence.",
+     "kind": "provenance analysis of the four sources",
+     "belief_class": "repo-evidence",
+     "belief_key": "SOURCES.md#independence"
+    },
+    {
+     "claim": "Pathway NAME and gene set disagree, so even matching by name is unsafe.",
+     "source": "KEGG and WikiPathways",
+     "locator": "omics/pathway/SOURCES.md:156-158",
+     "quote": "WP1349 \"Wnt signaling pathway\" matches KEGG *Melanogenesis* best (0.17, a Wnt-containing map), so name and gene overlap disagree there.",
+     "kind": "computed best-match crosswalk",
+     "belief_class": "repo-evidence",
+     "belief_key": "SOURCES.md#name-vs-genes"
+    }
+   ],
+   "belief": 0.884,
+   "belief_basis": {
+    "E": 0.884,
+    "R": 0,
+    "n": {
+     "support": {
+      "repo-evidence": 3
+     },
+     "contradict": {}
+    },
+    "params": "leanbio-belief/0.1.0"
+   }
+  }
+ ],
+ "exclusivity": {
+  "kind": "stated-not-proved",
+  "statement": "The arms are opposed but no contradiction is proved, and none is available in Lean: both are claims about curated database releases rather than about quantities a theorem could range over. The evidence is strongly one-sided -- the measured agreement statistics support arm `membership-is-source-relative` -- but \"strongly one-sided\" is not the same as proved, and the record says so rather than asserting a proof it does not have.",
+  "premise": null,
+  "lean_ref": null
+ },
+ "what_would_settle_it": [
+  {
+   "observation": "A zebrafish-specific, experimentally grounded pathway membership set.",
+   "how": "Restrict to GO experimental evidence codes in zebrafish (the one strand SOURCES.md identifies as zebrafish-specific rather than transferred) and report agreement among sources on that subset alone.",
+   "why_decisive": "It separates genuine disagreement about zebrafish biology from disagreement inherited with human annotation, which is the confound that makes the current numbers hard to interpret in either direction.",
+   "feasible_today": true,
+   "feasibility_note": "The data is in hand: SOURCES.md already carries GO experimental counts in parentheses alongside the totals.",
+   "settles_in_favour_of": "either"
+  },
+  {
+   "observation": "Whether the disagreement matters for the claims this project makes.",
+   "how": "Recompute every pathway-level conclusion in omics/ under each of the four sources and report which conclusions flip.",
+   "why_decisive": "A conclusion that holds under all four does not need this question settled. One that flips does, and should carry its source. This converts an unsettled methodological question into a per-claim sensitivity, which is actionable where the general question is not.",
+   "feasible_today": true,
+   "settles_in_favour_of": "membership-is-source-relative"
+  }
+ ],
+ "touches": {
+  "law_ids": [
+   "gene-regulatory-dynamics"
+  ],
+  "design_properties": [
+   "pathway membership of edited genes"
+  ],
+  "scenario_keys": [],
+  "files": [
+   "omics/pathway/SOURCES.md",
+   "omics/pathway/pathway-crosswalk.json"
+  ]
+ },
+ "guard": {
+  "dispute_id": null,
+  "keywords": [
+   "pathway membership",
+   "Jaccard",
+   "KEGG",
+   "Reactome",
+   "WikiPathways",
+   "GO:0016055"
+  ],
+  "arm_signatures": {
+   "pathway-membership-is-well-defined": {
+    "all_of": [
+     "pathway",
+     "membership",
+     "well-defined"
+    ]
+   },
+   "membership-is-source-relative": {
+    "all_of": [
+     "pathway",
+     "source-relative"
+    ]
+   }
+  },
+  "scoped_exemptions": []
+ },
+ "known_gaps": [
+  "HONESTY NOTE on the headline range: the prose \"0.12 to 0.28\" is not itself a stored field. The three pairs SOURCES.md cites are 0.28, 0.26 and 0.19, none of which is 0.12, so 0.12 is presumably the minimum over all pairs in omics/pathway/pathway-crosswalk.json but has NOT been reproduced from that file by this thread. Treat 0.28 as verified and 0.12 as unverified-as-the-minimum until recomputed.",
+  "pathway-crosswalk.json stores TWO Jaccard values per pair (jaccard_genome and jaccard_universe; e.g. 0.257 vs 0.32). The prose quotes the genome one. A recomputation must say which."
+ ],
+ "proportion": {
+  "computed_by": "lean/registry/open-questions/openq-lib.mjs proportionOf() -> pipeline/leanbio/belief.mjs belief()",
+  "params_version": "leanbio-belief/0.1.0",
+  "shares": {
+   "pathway-membership-is-well-defined": 0.249,
+   "membership-is-source-relative": 0.751
+  },
+  "beliefs": {
+   "pathway-membership-is-well-defined": 0.293,
+   "membership-is-source-relative": 0.884
+  },
+  "bases": {
+   "pathway-membership-is-well-defined": {
+    "E": 0.838,
+    "R": 0.65,
+    "n": {
+     "support": {
+      "repo-evidence": 2
+     },
+     "contradict": {
+      "repo-evidence": 1
+     }
+    },
+    "params": "leanbio-belief/0.1.0"
+   },
+   "membership-is-source-relative": {
+    "E": 0.884,
+    "R": 0,
+    "n": {
+     "support": {
+      "repo-evidence": 3
+     },
+     "contradict": {}
+    },
+    "params": "leanbio-belief/0.1.0"
+   }
+  },
+  "note": "share = this arm's belief / the sum over arms. Belief is E*(1-R) from the INDRA SimpleScorer form over the arm's OWN evidence; belief-params.json says plainly that its rand/syst values are hand-set and NOT fitted, so treat a share as an ordering of the arms, not a probability that an arm is true.",
+  "computed_at": "2026-11-01T05:45:38.241Z"
+ },
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "harvested from the sourced prose already in this repository by the open-questions thread; arms, evidence with verbatim quotes, computed belief proportion and what-would-settle-it recorded"
+  }
+ ],
+ "content_hash": "5cbebec5add717cf7d8119a4f27a7bf862164271a37ca036a6c62eb452f55d1a",
+ "scope_note": "Static mirror of lean/registry/open-questions/. An OPEN QUESTION is a question this project holds unsettled, with an arm per live position, each arm's evidence quoted from its primary source, and a belief `proportion` COMPUTED by pipeline/leanbio/belief.mjs rather than asserted. A proportion orders the arms; it is NOT a probability that an arm is true, and belief-params.json says plainly that its parameters are hand-set and not fitted. No arm of an open question is in any law set, and the guard in openq-lib.mjs refuses to accept a law that asserts one. A FAILED THEOREM is a statement this project tried and could not establish, kept with its reason so nobody reproposes it; `what_survives` says what is still true after the failure. Arms formalised in Lean are proved internally consistent and are NOT proved true of any organism."
+}

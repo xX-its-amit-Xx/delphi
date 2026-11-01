@@ -424,6 +424,15 @@ export async function mount(opts = {}) {
   const COND = B.baselineConditions || null; // conditions/baseline.json: locked, so env3d draws the stated sea
 
   // ---- DOM
+  // Inside the viewer's iframe the page opens on the banners and the prose, which pushes the 3D view
+  // below the fold. Move it up to just above the <h1>, leaving the pre-registration banner first: that
+  // banner is the record and must not be pushed down by anything.
+  try {
+    if (window.parent && window.parent !== window) {
+      const h1 = document.querySelector('main.wrap h1');
+      if (h1 && h1.parentNode && host.parentNode) h1.parentNode.insertBefore(host, h1);
+    }
+  } catch (e) { /* cross-origin parent: leave the layout alone */ }
   host.innerHTML = layoutHtml();
   const $ = sel => host.querySelector(sel);
   const stage = $('#s3Stage');
@@ -705,10 +714,22 @@ export async function mount(opts = {}) {
     el.style.display = bits.length ? 'block' : 'none';
   }
 
+  // creatures.js is another thread's file and is still changing: never let a throw inside it take the
+  // legend, and therefore the whole 3D view, down with it.
+  const creaturesLegend = () => {
+    if (!creatures || typeof creatures.legendHtml !== 'function') return '';
+    try { return String(creatures.legendHtml()); } catch (e) { console.warn('creatures.legendHtml threw:', e); return ''; }
+  };
+  const creaturesScope = () => {
+    try { return (creatures && Array.isArray(creatures.SCOPE_NOTES)) ? creatures.SCOPE_NOTES : []; }
+    catch (e) { return []; }
+  };
+
   function renderLegend() {
     const m = st.tr ? st.tr.metrics : {};
     const f = st.fish;
     const spec = st.fishSpec || {};
+    const cLegend = creaturesLegend(), cScope = creaturesScope();
     const oi = (ocean && ocean.info) || null;
     const seaLine = oi
       ? `env3d.js ocean: the wave SPEEDS are the real deep-water ones for their wavelengths, the wave HEIGHT drawn is ${oi.drawn_H_s_m != null ? fx(oi.drawn_H_s_m, 3) + ' m' : 'a readability-scaled'} against a Pierson–Moskowitz H<sub>s</sub> of ${oi.true_H_s_m != null ? fx(oi.true_H_s_m, 3) + ' m' : '?'} at ${oi.wind_m_s != null ? fx(oi.wind_m_s, 1) : '?'} m/s wind — so the shape and the height are DECORATIVE, and env3d.js says so itself. Tile ${fx(oceanSize, 0)} m, cell ${ocean.cellSize ? fx(ocean.cellSize, 2) : '?'} m.`
@@ -746,9 +767,9 @@ export async function mount(opts = {}) {
     ${st.seaWind != null ? `<p class="small" style="margin:6px 0 0"><b>The sea is drawn at a what-if ${fx(st.seaWind, 0)} m/s wind.</b> <code>conditions/baseline.json</code> locks the conditions to calm and this solver has no sea state at all, so this changed the picture and <b>not one number</b>.</p>` : ''}
   </div>
 </div>
-${creatures && creatures.legendHtml ? `<div style="margin:10px 0 0;border-top:1px solid var(--line);padding-top:8px">${creatures.legendHtml()}
+${cLegend ? `<div style="margin:10px 0 0;border-top:1px solid var(--line);padding-top:8px">${cLegend}
   <p class="small mute" style="margin:6px 0 0">In this 3D view the line styles are: the phase-coloured line is the deterministic run (dimmed while a band is up), the pale solid line is the ensemble median, the shaded corridor the 5–95 % band.</p></div>` : ''}
-${creatures && creatures.SCOPE_NOTES ? `<details style="margin:8px 0 0"><summary class="small"><b>What this ensemble cannot tell you</b> — ${creatures.SCOPE_NOTES.length} stated limits of the model, including that it does <b>not</b> reproduce the 50 m field glide and that its height band runs past the 8 m highest flight ever recorded</summary><ul class="small mute" style="margin:6px 0 0;padding-left:18px">${creatures.SCOPE_NOTES.map(n => `<li style="margin:0 0 6px">${esc(n)}</li>`).join('')}</ul><p class="small mute">Those figures are creatures.js's own, measured on its integrated ensemble. The band drawn here is solved by this page's solver instead, so its numbers differ; the two limits — a fixed angle of attack through the glide, and 50 m sitting above the band — are properties of the shared model and apply to both.</p></details>` : ''}
+${cScope.length ? `<details style="margin:8px 0 0"><summary class="small"><b>What this ensemble cannot tell you</b> — ${cScope.length} stated limits of the model, including that it does <b>not</b> reproduce the 50 m field glide and that its height band runs past the 8 m highest flight ever recorded</summary><ul class="small mute" style="margin:6px 0 0;padding-left:18px">${cScope.map(n => `<li style="margin:0 0 6px">${esc(n)}</li>`).join('')}</ul><p class="small mute">Those figures are creatures.js's own, measured on its integrated ensemble. The band drawn here is solved by this page's solver instead, so its numbers differ; the two limits — a fixed angle of attack through the glide, and 50 m sitting above the band — are properties of the shared model and apply to both.</p></details>` : ''}
 <p class="small mute" style="margin:8px 0 0">${esc(spec.meshNote || '')} ${esc(st.panelNote || '')}</p>`;
   }
 

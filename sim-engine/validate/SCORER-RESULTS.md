@@ -173,6 +173,72 @@ v1.0.0 passed 4 of 8; v1.1.0 passes 5 of 8.
 whose validation was blind.
 <!-- V11:END -->
 
+## physics_simulation and the second Lean round: five named results, and what each licenses
+
+Two more results landed from other threads and are wired in as **gates beside the composite**, never into
+`rank_score`, on the same reasoning as `functional_resolution` above.
+
+### The five results, and the distinction that justifies having five
+
+| result | what it licenses |
+|---|---|
+| `genotype_similarity` | sequence-level STATE: identity to real orthologues, whether an edited state exists in a real organism |
+| `phenotype_similarity` | shape similarity to real specimens, and how far out the design sits |
+| `lean_check` | **the design breaks no law — necessary, and not sufficient** |
+| `functional_resolution` | how each difference from the closest functional analogue is accounted for |
+| `physics_simulation` | **whether the design actually does the thing** |
+
+Those two sentences are kept together wherever the two results appear, including in the panel. A design can break
+no law and still be unable to fly.
+
+**The case that makes this concrete, and which is now a test:** the winged zebrafish scores **0.9217 and is called
+plausible**, breaks no accepted law, and **fails the physics gate** — launch 0.67 m/s against a minimum flight
+speed of 8.64, with a lifting area 166x too small. One number could not have said that. Five results can.
+
+### Gate semantics I was asked to preserve, and did
+
+`physics_gate_failed` is true **only when a hard criterion is NOT MET**. A hard criterion with **no model** does
+not raise it: that sets `gate_status: 'incomplete'` and lists the criterion under `unchecked_requirements`, because
+*"we could not check it" is not "it failed"*. The field to read is `function_achieved`, true only when every hard
+criterion is met **and** none is unchecked. A test asserts exactly this, and fails when the wiring is flipped.
+
+Controls reproduced independently here: flying-fish glide **pass** (`function_achieved: true`), zebrafish asked
+only to swim **pass**, TFF powered flight **fail**, winged zebrafish **fail**, wingless flying fish **fail**.
+
+### Model honesty, stated as the module states it
+
+Every glide-based check returns `model_confidence: circular`, read at call time from each scenario's model card and
+the studio validation run rather than hard-coded. **The non-circular part of this result is the negative controls:**
+each turns on an inequality between independently sourced quantities rather than on a fitted number. That is the
+honest claim for this result, and it is what the panel says.
+
+### The second Lean round
+
+`validate_design` now reports Lean **twice**: round 1 against the law set the design was made under (read off the
+`lawset_version` its edits record), round 2 against the set in force now. I verified both the claim that scores are
+unaffected and the history it reports, rather than taking either on trust:
+
+- Published scores are **unchanged** (zebrafish 0.9217, winged zebrafish 0.9217, TFF 0.3492, chimera 0.8201), and a
+  test now asserts this so a future change to the tool layer cannot move them silently.
+- A thermal design made under law set 1.0.0 comes back with **`newly_violated_since: perturb-thermal/P1`** — a law
+  admitted after the design was made, which the design now breaks.
+- The same design across **1.4.0 to 1.5.0** comes back under **`newly_binding_since`**, because 1.5.0 raised
+  perturb-thermal from candidate to accepted: **grey in the studio then, red today, with no change to the design.**
+- `newly_violated_without_a_law_change` is empty, which is the module's own check for a caller bug reporting clean.
+
+A design recording no law set gets two identical rounds **by construction**, and the panel says so explicitly,
+because that must never read as "nothing has changed since it was made".
+
+### One fix in my own layer
+
+The tool layer pushes two provenance rows (the two law sets) onto the envelope after `lib/envelope.mjs` has
+already computed `counts` and `weakest_input`, which left `counts` under-reporting by 2. Both are honesty fields,
+so they are recomputed after the push. While fixing it I first derived the order by reversing `KINDS`, which is
+**not** the weakest-to-strongest order `envelope.mjs` uses — it ranks `borrowed` below `derived`, and would have
+reported `derived` where `envelope.mjs` reports `borrowed`. The order is now repeated verbatim with a comment
+saying why it is not derived, and the mistake is recorded here because it was mine.
+
+
 ## functional_resolution: the fourth named result, and why it stays out of the composite
 
 `functional_resolution` is exposed beside `genotype_similarity`, `phenotype_similarity` and `lean_check`, in

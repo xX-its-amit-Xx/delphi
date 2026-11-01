@@ -1,0 +1,240 @@
+{
+ "record_type": "open-question",
+ "question_id": "oq-flying-fish-adult-mass",
+ "version": "1.0.0",
+ "statement_en": "What adult mass should stand for a flying fish at standard length 0.203 m: the one specimen the aerodynamics were measured on (0.060 kg), or a typical adult on the population length-weight curve (0.100-0.132 kg)?",
+ "status": "open",
+ "found_by": "Harvested from anatomy-model/parametric/CHANGELOG.md, which records the two values as \"two sources, both kept, each for its own purpose\" after checking and excluding units, length definitions and preservation state as explanations for the 2.2x gap.",
+ "origin": {
+  "by_role": "open-questions-thread",
+  "kind": "agent"
+ },
+ "arms": [
+  {
+   "arm_id": "specimen-mass",
+   "position": "for",
+   "statement_en": "For any claim about the measured aerodynamics, 0.060 kg at SL 0.203 m is the right mass: it is the one fish whose wing areas, lift coefficient and tunnel lift were measured, and its tunnel lift at zero incidence matched that weight.",
+   "formalisable": true,
+   "not_formalisable_because": null,
+   "lean_ref": null,
+   "evidence": [
+    {
+     "claim": "The base parameter set is one weighed specimen whose own aerodynamic measurements are internally consistent with that mass.",
+     "source": "Park H, Choi H 2010, Table 1, model L3 (one Cypselurus hiraii)",
+     "locator": "anatomy-model/parametric/CHANGELOG.md:48",
+     "quote": "Park & Choi 2010 Table 1, model L3: ONE *Cypselurus hiraii*, weighed fresh before stuffing, mass given to 0.01 kg | base mesh scale, flight-muscle volume, wing loading; the mass `physics/analysis.py` uses for v_min = 9.85 m/s. W, the areas and C_L,max all come from that one fish, and its tunnel lift at 0 degrees matched its weight (Fig. 4)",
+     "kind": "single-specimen measurement, internally consistent with its own wind-tunnel lift",
+     "belief_class": "repo-evidence",
+     "belief_key": "CHANGELOG.md#adult_mass/base"
+    },
+    {
+     "claim": "Five independent population fits put a typical fish of this length 1.9-2.8x heavier, which counts against using the specimen mass as a population value.",
+     "source": "FishBase length-weight fits for five exocoetid species (physics/length-weight.csv)",
+     "locator": "anatomy-model/parametric/CHANGELOG.md:55-58",
+     "quote": "The species differ, but every fitted exocoetid length-weight relation in `physics/length-weight.csv` gives 111-166 g at SL 0.203 m: *Cheilopogon atrisignis* n=570 130 g, *C. unicolor* n=1640 115 g, *Cypselurus poecilopterus* n=2769 166 g, *H. oxycephalus* n=682 111 g, *H. affinis* 126 g.",
+     "kind": "five population regressions with large n",
+     "belief_class": "repo-evidence",
+     "belief_key": "CHANGELOG.md#population-fits",
+     "side": "contradict"
+    }
+   ],
+   "belief": 0.227,
+   "belief_basis": {
+    "E": 0.65,
+    "R": 0.65,
+    "n": {
+     "support": {
+      "repo-evidence": 1
+     },
+     "contradict": {
+      "repo-evidence": 1
+     }
+    },
+    "params": "leanbio-belief/0.1.0"
+   }
+  },
+  {
+   "arm_id": "population-mass",
+   "position": "against",
+   "statement_en": "A typical adult of that length is 0.100-0.132 kg: six independent length-weight relations say so, the specimen has condition factor 0.72 against a population value near 1.5, and any claim about a representative flying fish should use the population mass.",
+   "formalisable": true,
+   "not_formalisable_because": null,
+   "lean_ref": null,
+   "evidence": [
+    {
+     "claim": "The repository's own 365-day stage target uses the population fit, giving 0.1316 kg.",
+     "source": "development/trajectory.mjs with the Hirundichthys affinis FishBase fit",
+     "locator": "anatomy-model/parametric/CHANGELOG.md:49",
+     "quote": "`development/trajectory.mjs`: von Bertalanffy SL, then W = 0.0116 FL^3.01 with FL = SL/0.927 (*Hirundichthys affinis*, Barbados, FishBase; `physics/length-weight.csv`) | the stage targets only. It is a typical adult on the population curve, so the series is smooth",
+     "kind": "population regression applied through the repo growth curve",
+     "belief_class": "repo-evidence",
+     "belief_key": "CHANGELOG.md#adult_mass/stage_365d"
+    },
+    {
+     "claim": "A sixth, independent source gives 0.100 kg at the same length.",
+     "source": "Fish FE 1990, J Zool 221:391, Table I, Cypselurus, n=113, ethanol-preserved",
+     "locator": "anatomy-model/parametric/CHANGELOG.md:59-60",
+     "quote": "Fish 1990 (J Zool 221:391), Table I, *Cypselurus*, n=113, ethanol-preserved: SL = 0.460 M^0.355, which gives 0.100 kg at SL 0.203 m.",
+     "kind": "independent published length-mass relation, n=113",
+     "belief_class": "literature",
+     "belief_key": "Fish1990"
+    },
+    {
+     "claim": "The specimen is genuinely light for its length, and the repository excluded the bookkeeping explanations.",
+     "source": "this repository (anatomy-model thread), checked against the sources",
+     "locator": "anatomy-model/parametric/CHANGELOG.md:50-64",
+     "quote": "The 2.2x gap is **not** a units or definitions issue. I checked it against the sources: Both lengths are standard length. FL > SL, so the SL/FL 0.927 conversion lowers the predicted mass; it cannot raise it. Both masses are fresh wet mass in kg. So the L3 specimen really is light for its length. Its condition factor 100*W/SL(cm)^3 is 0.72; the population fits give about 1.5. The paper does not give a cause.",
+     "kind": "reconciliation attempt that excluded units, length definition and preservation as explanations",
+     "belief_class": "repo-evidence",
+     "belief_key": "CHANGELOG.md#reconciliation"
+    }
+   ],
+   "belief": 0.935,
+   "belief_basis": {
+    "E": 0.935,
+    "R": 0,
+    "n": {
+     "support": {
+      "repo-evidence": 2,
+      "literature": 1
+     },
+     "contradict": {}
+    },
+    "params": "leanbio-belief/0.1.0"
+   }
+  }
+ ],
+ "exclusivity": {
+  "kind": "not-contradictory",
+  "statement": "The arms are NOT contradictory: both masses are correct, for different referents. One is a measured property of a particular fish, the other a property of the population at that length, and the specimen is simply light (condition factor 0.72 against about 1.5). The question is live not because a fact is disputed but because the CHOICE changes a conclusion, which the repository quantifies: wing loading 46.4 vs 101.7 N/m2 and v_min 9.85 vs 14.6 m/s. Treating this as a factual dispute would misdescribe it; what it needs is a rule about which referent a claim is making, not more data about mass.",
+  "premise": null,
+  "lean_ref": null
+ },
+ "what_would_settle_it": [
+  {
+   "observation": "The condition factor of the Park and Choi specimen explained, or more specimens with both mass and measured aerodynamics.",
+   "how": "Measure mass and wing areas on several fresh Cypselurus hiraii of the same standard length and report the aerodynamic coefficients per specimen, so the aerodynamic and population masses can be compared on the same animals.",
+   "why_decisive": "It would show whether the light specimen is representative of fish whose aerodynamics have been measured, or an outlier whose coefficients should not be paired with a population mass.",
+   "feasible_today": true,
+   "feasibility_note": "Requires fresh specimens and a wind tunnel; both exist, but no such series has been published.",
+   "settles_in_favour_of": "either"
+  },
+  {
+   "observation": "Nothing, in the factual sense: this question is settled by a CONVENTION rather than a measurement.",
+   "how": "State, as a reviewed rule, that a claim about measured aerodynamics uses the specimen mass and a claim about a representative adult uses the population fit, and require every mass-dependent claim to say which it is.",
+   "why_decisive": "Both numbers are already established. The error this question guards against is using one referent's mass in the other referent's claim, which the repository has already caught once: \"The prose '10-20 m/s at or above the 9.9 m/s minimum' is true only with the specimen mass.\"",
+   "feasible_today": true,
+   "settles_in_favour_of": "either"
+  }
+ ],
+ "touches": {
+  "law_ids": [
+   "E2",
+   "E3",
+   "flight-allometry-law"
+  ],
+  "design_properties": [
+   "adult_mass",
+   "wing loading",
+   "v_min"
+  ],
+  "scenario_keys": [
+   "glide"
+  ],
+  "constraints": [
+   "C7b",
+   "C2a",
+   "C8e",
+   "C9c",
+   "C8c"
+  ],
+  "files": [
+   "anatomy-model/parametric/CHANGELOG.md",
+   "anatomy-model/parametric/README.md",
+   "physics/length-weight.csv"
+  ]
+ },
+ "guard": {
+  "dispute_id": null,
+  "keywords": [
+   "adult mass",
+   "condition factor",
+   "0.060",
+   "0.1316",
+   "wing loading",
+   "v_min"
+  ],
+  "arm_signatures": {
+   "specimen-mass": {
+    "all_of": [
+     "0.060 kg",
+     "flying fish"
+    ],
+    "none_of": [
+     "specimen only",
+     "one specimen"
+    ]
+   },
+   "population-mass": {
+    "all_of": [
+     "0.1316",
+     "typical adult"
+    ]
+   }
+  },
+  "scoped_exemptions": []
+ },
+ "known_gaps": [
+  "The pre-registered glide envelope verdict is unaffected: CHANGELOG.md records \"The pre-registered verdict B (\\\"inside\\\") holds for any mass up to 0.247 kg.\" So this question changes prose and derived numbers, not that verdict."
+ ],
+ "proportion": {
+  "computed_by": "lean/registry/open-questions/openq-lib.mjs proportionOf() -> pipeline/leanbio/belief.mjs belief()",
+  "params_version": "leanbio-belief/0.1.0",
+  "shares": {
+   "specimen-mass": 0.195,
+   "population-mass": 0.805
+  },
+  "beliefs": {
+   "specimen-mass": 0.227,
+   "population-mass": 0.935
+  },
+  "bases": {
+   "specimen-mass": {
+    "E": 0.65,
+    "R": 0.65,
+    "n": {
+     "support": {
+      "repo-evidence": 1
+     },
+     "contradict": {
+      "repo-evidence": 1
+     }
+    },
+    "params": "leanbio-belief/0.1.0"
+   },
+   "population-mass": {
+    "E": 0.935,
+    "R": 0,
+    "n": {
+     "support": {
+      "repo-evidence": 2,
+      "literature": 1
+     },
+     "contradict": {}
+    },
+    "params": "leanbio-belief/0.1.0"
+   }
+  },
+  "note": "share = this arm's belief / the sum over arms. Belief is E*(1-R) from the INDRA SimpleScorer form over the arm's OWN evidence; belief-params.json says plainly that its rand/syst values are hand-set and NOT fitted, so treat a share as an ordering of the arms, not a probability that an arm is true.",
+  "computed_at": "2026-11-01T05:45:38.238Z"
+ },
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "harvested from the sourced prose already in this repository by the open-questions thread; arms, evidence with verbatim quotes, computed belief proportion and what-would-settle-it recorded"
+  }
+ ],
+ "content_hash": "c08d61a9bc9f2e23cc7cc0e82abd96346458206eef3421f6c43e6d0d925fd3f8",
+ "scope_note": "Static mirror of lean/registry/open-questions/. An OPEN QUESTION is a question this project holds unsettled, with an arm per live position, each arm's evidence quoted from its primary source, and a belief `proportion` COMPUTED by pipeline/leanbio/belief.mjs rather than asserted. A proportion orders the arms; it is NOT a probability that an arm is true, and belief-params.json says plainly that its parameters are hand-set and not fitted. No arm of an open question is in any law set, and the guard in openq-lib.mjs refuses to accept a law that asserts one. A FAILED THEOREM is a statement this project tried and could not establish, kept with its reason so nobody reproposes it; `what_survives` says what is still true after the failure. Arms formalised in Lean are proved internally consistent and are NOT proved true of any organism."
+}

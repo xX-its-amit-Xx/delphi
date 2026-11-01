@@ -70,6 +70,27 @@ export const DOCUMENTED = {
   'zebrafish-larva': { label: 'the real zebrafish larva, unedited', source: 'sim-engine organism document (reference organism)', kind: 'measured', edits: [] },
 };
 
+/** Which reference genome the design's sequence actually comes from. The ledger needs this, because the design's
+ *  state at an unedited locus IS its base's state - and that is a different answer for a zebrafish-based design, a
+ *  flying-fish-based design, and a design with no genome at all. */
+export const BASE_GENOME = {
+  'zebrafish-adult': { kind: 'danio_reference', species: 'Danio rerio', assembly: 'GRCz11', source: 'sim-engine organism document (reference organism)' },
+  'zebrafish-larva': { kind: 'danio_reference', species: 'Danio rerio', assembly: 'GRCz11', source: 'sim-engine organism document (reference organism)' },
+  'winged-zebrafish': { kind: 'danio_reference', species: 'Danio rerio', assembly: 'GRCz11', source: 'the design is the zebrafish reference plus 2 edited loci (sequences/engineered-diff.json: "Not a full genome. It is a short list of edits to the zebrafish reference (GRCz11)")' },
+  'flying-fish': { kind: 'analogue', species: 'Exocoetidae (Hirundichthys speculiger for sequence)', assembly: 'GCA_018398805.1', source: 'sim-engine organism document (reference organism); the analogue itself' },
+  tff: { kind: 'analogue', species: 'Exocoetidae', assembly: 'GCA_018398805.1', source: 'sim-engine organism document: parent flying-fish at weight 1',
+    incoherence_note: "the TFF's parent is the flying fish, but the four edits recorded for it are ZEBRAFISH alleles (hhip uki hu418B, kcnk5b alf, Cx43 T154A transgene) with zebrafish coordinates. The record is internally inconsistent about which genome is being edited, and that inconsistency is reported rather than resolved here." },
+  'wingless-flying-fish': { kind: 'analogue', species: 'Exocoetidae', assembly: 'GCA_018398805.1', source: 'sim-engine organism document: parent flying-fish at weight 1' },
+  'ff-zf-chimera': { kind: 'undefined', species: null, source: 'sim-engine organism document: parents [{flying-fish, 0.5}, {zebrafish-adult, 0.5}]',
+    why: 'a 50:50 WEIGHTED AVERAGE OF SHAPE PARAMETERS is not a genome. The document does not say which allele the chimera carries at any locus, and there is no coherent way to average two genomes, so the design side of every locus-level requirement is unreadable. That is a property of the design, not a gap in the data.' },
+};
+export function baseGenome(design) {
+  const id = typeof design === 'string' ? design : (design?.organism && typeof design.organism === 'string' ? design.organism : design?.doc?.id || design?.id || null);
+  if (id && BASE_GENOME[id]) return { id, ...BASE_GENOME[id] };
+  if (design && typeof design === 'object' && 'specimen' in design) return { id: null, kind: 'undefined', species: null, why: 'a specimen record is a set of body measurements and carries no genome at all' };
+  return { id, kind: 'undefined', species: null, why: `no base genome is recorded for "${id}" in designs.mjs BASE_GENOME, and none is assumed` };
+}
+
 const ALIAS_TO_SYMBOL = { lat4a: 'slc43a2a', lat4b: 'slc43a2b', longfin: 'kcnh2a', cx43: 'gja1b', prdm1: 'prdm1a' };
 export const canonicalSymbol = s => (s ? (ALIAS_TO_SYMBOL[String(s).toLowerCase()] || String(s).toLowerCase()) : s);
 

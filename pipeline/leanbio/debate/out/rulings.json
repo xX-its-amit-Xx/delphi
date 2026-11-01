@@ -1,17 +1,17 @@
 {
  "version": "leanbio-debate-rulings/1.0.0",
- "generated": "2026-11-01T05:38:04.433Z",
+ "generated": "2026-11-01T05:44:19.865Z",
  "criteria_version": "leanbio-debate-criteria/1.2.0",
  "criteria_sha256": "13ee79891caebd62799dc8947b73de041c9488c39a395861d34cf157a0f10169",
  "counts": {
   "REJECT": 1,
-  "NEEDS-WORK": 7
+  "NEEDS-WORK": 11
  },
  "rulings": [
   {
    "law_id": "disc-heterurus-mass-exponent",
    "fingerprint": "bbd7bbd389c185dd",
-   "decided_at": "2026-11-01T05:34:19.942Z",
+   "decided_at": "2026-11-01T05:44:12.815Z",
    "criteria_version": "leanbio-debate-criteria/1.2.0",
    "criteria_sha256": "13ee79891caebd62799dc8947b73de041c9488c39a395861d34cf157a0f10169",
    "verdict": "REJECT",
@@ -65,7 +65,7 @@
     "C5_consistent": {
      "verdict": "contested",
      "from_gate": true,
-     "gate_why": "propose.mjs proved a contradiction with [object Object], [object Object] in Lean; the accepted law is not demoted and this candidate is not promoted",
+     "gate_why": "propose.mjs proved a contradiction with E1, E2 in Lean; the accepted law is not demoted and this candidate is not promoted",
      "referee_reason": "Gate reports 'contested': Lean proves contradictions with E1 and E2 (contra_P_E1, contra_P_E2) on the shared quantity massExponent. By the 1.2.0 precedence rule the C6 failure settles this contest against the candidate, so the contest is recorded but not left open."
     },
     "C6_wild_type_survives": {
@@ -149,16 +149,10 @@
    "needs_work": [],
    "reject_because": "Fires on five wild-type Exocoetidae in its own declared scope (C6). In addition, the bound is a sample CI circular with the fit it came from (C7), and it is declared at family scope on single-subspecies evidence (C3). Do not resubmit unchanged. Narrowing the scope to the subspecies would remove the C6 hits and the E1/E2 contradiction, but it would leave a CI of a fit presented as a law, which cannot constrain a design.",
    "contested_with": [
-    {
-     "law_id": "E1",
-     "reason": "contradiction proved in Lean against lawset 1.0.0 (theorem contra_P_E1 in the generated joint file)"
-    },
-    {
-     "law_id": "E2",
-     "reason": "contradiction proved in Lean against lawset 1.0.0 (theorem contra_P_E2 in the generated joint file)"
-    }
+    "E1",
+    "E2"
    ],
-   "contest_settled_against_the_candidate": "propose.mjs had this contested with [object Object], [object Object], but a hard gate fails: the candidate is wrong, so the contest is settled against it rather than left open (CRITERIA.md 1.2.0 precedence)",
+   "contest_settled_against_the_candidate": "propose.mjs had this contested with E1, E2, but a hard gate fails: the candidate is wrong, so the contest is settled against it rather than left open (CRITERIA.md 1.2.0 precedence)",
    "what_a_human_should_check": "Recompute the slope and CI from the 14 makiguchi-2013 mass and length rows in physics/glide-data.csv. A slope of about 1 is implausible for fish mass against length, so check for mixed length kinds, a unit or column error, or mass and length swapped in the CSV. Also fix the 0-decimal rounding fallback in the evidence matcher, which can pass any numeric CSV.",
    "roles": {
     "proponent": {
@@ -416,6 +410,17 @@
     }
    },
    "registry": null,
+   "corrections": [
+    {
+     "at": "2026-11-01T05:44:12.815Z",
+     "kind": "the ruling was re-decided after a gate bug was fixed; no new worker invocation was spent",
+     "previous_verdict": "REJECT",
+     "new_verdict": "REJECT",
+     "what_was_wrong": "gates.mjs consistency() reported a MISSING propose.mjs status as C5 `fail`, which is a hard gate, so a law whose board task had not been posted yet was REJECTED. A metadata gap is not a proved inconsistency and must not read as a scientific verdict.",
+     "fix": "a missing or unrecognised status is now C5 `unclear`: it still blocks promotion and says what to run, but it does not reject the law. A status propose.mjs itself refused is still a fail.",
+     "roles_reused": "the proponent and critic cases are the ones argued in the original run, read back from transcripts/disc-heterurus-mass-exponent/"
+    }
+   ],
    "record": {
     "type": "failed-theorem",
     "file": "pipeline/leanbio/debate/out/records/disc-heterurus-mass-exponent.json",
@@ -1086,7 +1091,7 @@
     "why": [
      "Narrow scope to the 3 sampled species, named, with life_stages covering larva/juvenile/adult as pooled, ranges SL 1.68-24 cm, and state 'preserved specimens, pooled across species and ontogeny'. Do not declare Exocoetidae.",
      "State in statement_en and evidence.caveats that this is a record bound: the CI of a pooled OLS slope in a single sample of 49 specimens, with no held-back data and about 3 independent species-level observations. It is not an impossibility.",
-     "Fix the provenance: reconcile the cited sha256 (9c941299f5869e56) with the repo file (4f654c701f6196dc), then recompute the OLS slope and CI from the correctly hashed Data S1A. Declare 1.017 and 1.099 as derived with the stated derivation (the recomputation script and its rounding), not found by string match.",
+     "Fix the provenance: reconcile the cited sha256 (9c941299f5869e56) with the repo file (4f654c701f6196dc), then recompute the OLS slope and CI from the correctly hashed Data S1A. Declare 1.017 and 1.099 as derived with the stated derivation (the recomputation script and its rounding), not found by string match.  [WITHDRAWN: the cited hash is correct; the hash check itself was the bug - see corrections]",
      "Make C6 evaluable: add a finLengthExponent to wildtype.json for in-scope organisms. Compute it only from within-species size series where such data exist (for example, per-species slopes from the same Data S1A rows), or else keep the law out of the Studio.",
      "Consider reporting the exponent per species, or an RMA slope, so that the pooled Simpson-type artefact the proponent flags can be checked."
     ]
@@ -1419,7 +1424,7 @@
     "file": "pipeline/leanbio/debate/out/records/disc-flying-fish-fin-ratio-gap.json",
     "why": [
      "Narrow scope to taxa: [Exocoetidae, Hemiramphidae, Belonidae, as sampled in Daane 2021 Data S1A], life_stages: [adult], and state it is museum specimens (n = 109). Drop the claim over Beloniformes as an order.",
-     "Fix the source citation: re-fetch Data S1A, record its true sha256 (the cached file hashes to 4f654c701f6196dc, not the cited 9c941299f5869e56), and cite a table or column locator plus a DOI/PMID for Daane 2021.",
+     "Fix the source citation: re-fetch Data S1A, record its true sha256 (the cached file hashes to 4f654c701f6196dc, not the cited 9c941299f5869e56), and cite a table or column locator plus a DOI/PMID for Daane 2021.  [WITHDRAWN: the cited hash is correct; the hash check itself was the bug - see corrections]",
      "Declare meta.constants explicitly with kind 'derived' (not an inferred 'cited'), stating the derivation: min/max of pectoral length over standard length across the 49 flying-fish and 60 other rows. Give the unrounded values 0.40625 and 0.38842975, and note the rounding is conservative (0.406 < 0.40625 and 0.389 > 0.38843, so the stated gap is slightly narrower than the measured one).",
      "Make the law checkable per organism by declaring a per-animal quantity (pectoralOverSL) and a group-membership input, so the atoms read 'flying fish: pectoralOverSL ≥ 0.406; non-flying beloniform: pectoralOverSL ≤ 0.389'. Add measured pectoral/SL values to wildtype.json for the in-scope species so C6 can evaluate. Alternatively supply held-out specimens, which also addresses C7.",
      "Keep the record-bound wording in statement_en and caveats, and add that the 0.389 to 0.406 band is an unobserved gap in the sample, not a forbidden region (transitional or juvenile forms are not excluded)."
@@ -2314,6 +2319,844 @@
    "board": {
     "submitted": false,
     "why": "Only URLs with a scheme in: file, data, and node are supported by the default ESM loader. On Windows, absolute paths must be valid file:// URLs. Received protocol 'd:'"
+   }
+  },
+  {
+   "law_id": "development-growth-asymptote",
+   "fingerprint": "4e1ba674e2987dc0",
+   "decided_at": "2026-11-01T05:41:18.616Z",
+   "criteria_version": "leanbio-debate-criteria/1.2.0",
+   "criteria_sha256": "13ee79891caebd62799dc8947b73de041c9488c39a395861d34cf157a0f10169",
+   "verdict": "NEEDS-WORK",
+   "how_the_verdict_was_reached": "the referee worker returned no parseable verdict; the gates decide and the ruling is recorded as unrefereed",
+   "allowed_by_gates": [
+    "NEEDS-WORK",
+    "REJECT"
+   ],
+   "open_disputes": {
+    "criterion": "disputes",
+    "verdict": "pass",
+    "why": "the candidate matches no known open dispute",
+    "checked": [
+     "kcnk5b-membrane-potential-sign",
+     "teleost-depth-cap",
+     "lat4a-paralogue-identity"
+    ]
+   },
+   "referee_said": null,
+   "gate_disagreement": null,
+   "criteria": {
+    "C1_binds_something_real": {
+     "verdict": "unclear",
+     "from_gate": true,
+     "gate_why": "the candidate declares no shared_scope.atoms, so the studio has nothing to evaluate and the law binds no design today. The proposer did not say whether this is deliberate; declare shared_scope.atoms over quantities a design carries, or declare browser_check_absent with missing_inputs",
+     "referee_reason": null,
+     "rejecting_design": null
+    },
+    "C2_constants_sourced": {
+     "verdict": "pass",
+     "from_gate": true,
+     "gate_why": "the statement carries no empirical constant (structural literals only), so there is nothing to source",
+     "referee_reason": null
+    },
+    "C3_scope_honest": {
+     "verdict": "unclear",
+     "from_gate": false,
+     "referee_reason": "the referee gave no reason"
+    },
+    "C4_independent": {
+     "verdict": "unclear",
+     "from_gate": false,
+     "referee_reason": "the referee gave no reason"
+    },
+    "C5_consistent": {
+     "verdict": "pass",
+     "from_gate": true,
+     "gate_why": "propose.mjs constructed a joint witness with every accepted law whose scope overlaps",
+     "referee_reason": null
+    },
+    "C6_wild_type_survives": {
+     "verdict": "unclear",
+     "from_gate": true,
+     "gate_why": "the candidate declares no shared_scope.atoms, so there is no formula to evaluate against a wild-type organism: C6 is untested, not satisfied",
+     "referee_reason": null,
+     "evaluated": 0,
+     "in_scope": 0,
+     "fired": [],
+     "held": []
+    },
+    "C7_not_circular": {
+     "verdict": "unclear",
+     "from_gate": false,
+     "referee_reason": "the referee gave no reason"
+    }
+   },
+   "ruling": null,
+   "needs_work": [],
+   "reject_because": null,
+   "contested_with": [],
+   "contest_settled_against_the_candidate": null,
+   "what_a_human_should_check": null,
+   "roles": {
+    "proponent": {
+     "strongest_sentence": "Given a declared von Bertalanffy curve with Linf > 0 and K > 0, the Lean theorem proves that no age yields a length at or above Linf, that length rises strictly with age, and that same-K cohorts reach identical fractions of their own asymptote at identical ages since t0, so a design pairing a length with a curve that cannot produce it is malformed.",
+     "weakest_point": "The theorem is algebra that follows from the hypothesis: the biology lives entirely in the assumption that the cohort follows VB, which rests on 12 secondary FishBase rows for 7 of 75 species and one validated row whose paper was not seen. The critic will say this is a tautology about a functional form, not a biological law, and that Linf is a fitted mean that real individuals exceed, so the browser check would flag real fish. In addition, growth_Linf_m is not an engine state field, so the check mostly returns cannot-evaluate.",
+     "bound_kind": "impossibility",
+     "rules_out": {
+      "design": {
+       "standard_length_m": 0.25,
+       "growth_Linf_m": 0.233
+      },
+      "why_rejected": "Under the fitted Hirundichthys affinis curve (Linf = 23.3 cm FL, K = 3.12/yr, t0 = 0.01 yr), length is strictly below Linf at every age, so a cohort claiming a length of 25 cm against a 23.3 cm asymptote is malformed: no age on that curve produces it. The same holds for any design whose length equals Linf exactly. The second clause also rejects a design that gives two cohorts the same K but different fractions of their own asymptote at equal age from their own t0.",
+      "buildable": true,
+      "buildable_note": "A designer can type SL = 0.25 m next to Linf = 0.233 m. Whether the animal can be 25 cm long is a separate matter: individuals routinely exceed a fitted Linf, because Linf is a mean asymptote, not a ceiling for individuals. The law rejects the pairing of that length with that curve, not the animal. The candidate's own browser_check note says this. Also, growth_Linf_m is not an engine state field today, so the check returns cannot-evaluate unless the design supplies it."
+     },
+     "scope_supported": {
+      "taxa": [
+       "Hirundichthys affinis (validated row, NW Barbados)",
+       "the 7 Exocoetidae species with a FishBase VB row, as compiled fits only"
+      ],
+      "why": "The strict bound is a theorem about a curve, so it holds for any VB cohort. The evidence that Exocoetidae follow VB is 12 secondary compilation rows over 7 of 75 species; only one is marked validated, and the paper itself was not seen. Nothing is established for the 68 species with no row or for embryos. Larva and juvenile coverage is thin, and the claimed 'larva' stage is supported mainly by the lab-rearing component of the one validated row. The honest scope is: conditional on the VB hypothesis, with that hypothesis supported for 7 species in the fitted locality and year."
+     },
+     "independence": {
+      "closest_accepted_law": "E2",
+      "what_this_forbids_that_one_permits": "E2 bounds the length-weight exponent b in [2.90, 3.02], so it constrains how mass scales with length for adults in a fitted size range. It says nothing about how length changes with age or about a ceiling. This law forbids a length at or above the fitted Linf, forbids non-monotone length-at-age, and forbids two same-K cohorts from differing in fractional attainment at equal age from t0. E2 permits all three. E5 (fin ratio) shares no quantity either."
+     }
+    },
+    "critic": {
+     "worst_attack": "vacuity",
+     "one_sentence": "The Lean statement is a tautology of the von Bertalanffy formula that no organism can falsify, and the only operational content, SL < a fitted Linf, treats a mean curve parameter from a secondary compilation as a hard maximum length.",
+     "would_allow": false,
+     "attacks": [
+      {
+       "attack": "vacuity",
+       "verdict": "fatal",
+       "finding": "The statement is a theorem about the functional form. Under the hypothesis Linf>0, K>0, Linf*(1-exp(-K(t-t0))) < Linf always holds, since exp>0. It is strictly increasing in t since K>0. The shared-K claim is an algebraic identity: 1-exp(-K(t-t0)) does not depend on Linf. No assignment of the law's own quantities can make it false. The conclusion is conditional on the hypothesis, and the hypothesis is part of the statement, so the statement cannot be falsified by any organism. The only content that could constrain a design is the hidden bridge (length < fitted Linf of the taxon), and that is not what the Lean theorem proves.",
+       "tried": "Tried t -> infinity, t < t0 (length goes negative but still < Linf), very large K, very small K, and Linf vs Linf' with the same K. Every case satisfies all three conjuncts. Did not need any external data.",
+       "evidence": "Algebraic: exp(x) > 0 for all real x, so 1 - exp(.) < 1. No fetch was needed."
+      },
+      {
+       "attack": "constants",
+       "verdict": "serious",
+       "finding": "The statement has no constants, but the scope ranges and the default curve have numbers: Linf 23.3 cm, K 3.12/yr, t0 0.01 yr, and ranges Linf 13.5 to 30.5 and K 0.86 to 3.65. They come from a FishBase compilation (kind secondary). The source record says the Oxenford 1994 paper itself was not seen and that the parameters come from a FishBase row. A DOI with no table, page or column is not a source. The browser_check bound, growth_Linf_m, is not an engine field at all. I did not fetch FishBase or the paper, so I did not check these values against their source.",
+       "unsourced": [
+        "23.3",
+        "3.12",
+        "0.01",
+        "13.5",
+        "30.5",
+        "0.86",
+        "3.65"
+       ],
+       "kinds": {
+        "23.3": "cited",
+        "3.12": "cited",
+        "0.01": "cited",
+        "13.5": "cited",
+        "30.5": "cited",
+        "0.86": "cited",
+        "3.65": "cited"
+       }
+      },
+      {
+       "attack": "scope",
+       "verdict": "serious",
+       "finding": "Declared taxa is the whole family Exocoetidae, but the evidence is 12 rows over 7 of 75 species. 68 species have no growth row. The rows come from different localities, years and length types (FL or TL). Only one row is marked validated. The curve is a fit to a locality, not a property of the family. The theorem itself is taxon-free, so the honest scope is either 'any von Bertalanffy fit' (a mathematical statement) or, for the biological claim, the 7 named species, with the validated claim restricted to Hirundichthys affinis off Barbados.",
+       "narrowest_honest_scope": {
+        "taxa": [
+         "Hirundichthys affinis (NW Barbados, Oxenford 1994 row only)"
+        ]
+       }
+      },
+      {
+       "attack": "definition-restatement",
+       "verdict": "fatal",
+       "finding": "The law restates the definition of the von Bertalanffy function as a theorem. 'Below the asymptote' and 'K sets the shape' are properties of the formula's algebra, not of an organism. None of E1, E2 or E5 covers growth in time, so the candidate does not duplicate them. But it also adds no biology: the only thing it forbids is a length at or above a fitted Linf, which is a property of a fit and not of a species. Real fish are regularly measured above their fitted Linf, because Linf is a fitted parameter, not a maximum.",
+       "closest_accepted_law": null
+      },
+      {
+       "attack": "fires-on-real-organism",
+       "verdict": "serious",
+       "finding": "I did not search for or fetch a specific measurement, so I cannot name an animal and numbers. Structurally, the browser check (SL < Linf) is known to misfire for any VB fit: Linf is the mean asymptote of a fitted curve, and individuals above it are expected in any fitted cohort, since individual Linf varies around the mean. The bound also compares SL against a Linf that may be FL or TL, so a length-type mismatch alone could trip it. The Lean theorem itself cannot fire. I have no measurement to report, so this is not a counterexample.",
+       "organism": null,
+       "numbers": {},
+       "source": null,
+       "confidence": "low",
+       "fetched": []
+      },
+      {
+       "attack": "circularity",
+       "verdict": "serious",
+       "finding": "The scope ranges (Linf, K) are the min and max of the same 12 rows that make up the evidence, so nothing was held back. There is no independent test. Because the Lean statement is a theorem, no data test it either way. The 12 rows are also not independent: they are FishBase fits from several studies and may share underlying otolith or length-frequency data. n_independent is at most 7 species and probably fewer than 12 studies; I did not check.",
+       "n_independent": 7,
+       "any_held_back": false
+      },
+      {
+       "attack": "designer-cost",
+       "verdict": "serious",
+       "finding": "As wired to the browser check, a design whose SL is at or above the Linf of its fitted taxon turns RED. A designer who wants a larger-than-average flying fish, which individuals within the wild population can be, would be blocked by a mean fitted parameter. Linf also has no engine field, so the check would be cannot-evaluate for most designs. I cannot name a specific lineage whose measurements exceed the bound, as I did not find a measurement.",
+       "organism_it_would_forbid": "Any exocoetid individual larger than its taxon's fitted Linf, e.g. an unusually large Hirundichthys affinis above 23.3 cm FL. Not shown with a measurement."
+      }
+     ]
+    },
+    "evidence_checker": null,
+    "evidence_fetch": {
+     "verdict": "nothing-to-check",
+     "summary": {
+      "constants": 0,
+      "found": 0,
+      "not_in_text": 0,
+      "text_not_retrievable": 0,
+      "unreachable": 0
+     },
+     "method": "GET (never HEAD) against Europe PMC REST, Crossref and the repository bytes"
+    }
+   },
+   "independence_probes": [
+    {
+     "law_id": "E1",
+     "reading": "no shared quantity to probe"
+    },
+    {
+     "law_id": "E2",
+     "reading": "no shared quantity to probe"
+    },
+    {
+     "law_id": "E5",
+     "reading": "no shared quantity to probe"
+    }
+   ],
+   "worker_meta": {
+    "proponent": {
+     "role": "proponent",
+     "law_id": "development-growth-asymptote",
+     "code": 0,
+     "model": "claude-sonnet-5-5",
+     "duration_s": 16,
+     "cost_usd": 0.0644261,
+     "num_turns": 1,
+     "is_error": false,
+     "tools_given": [],
+     "tool_calls": [],
+     "fetched_urls": [],
+     "parsed_ok": true,
+     "prompt_chars": 13522,
+     "prompt_sha256": "38d602e37ef45163",
+     "stderr": "",
+     "final_text": "```json\n{\n  \"role\": \"proponent\",\n  \"law_id\": \"development-growth-asymptote\",\n  \"rules_out\": {\n    \"design\": {\n      \"standard_length_m\": 0.25,\n      \"growth_Linf_m\": 0.233\n    },\n    \"why_rejected\": \"Under the fitted Hirundichthys affinis curve (Linf = 23.3 cm FL, K = 3.12/yr, t0 = 0.01 yr), length is strictly below Linf at every age, so a cohort claiming a length of 25 cm against a 23.3 cm asymptote is malformed: no age on that curve produces it. The same holds for any design whose length equals Linf exactly. The second clause also rejects a design that gives two cohorts the same K but different fractions of their own asymptote at equal age from their own t0.\",\n    \"buildable\": true,\n    \"buildable_note\": \"A designer can type SL = 0.25 m next to Linf = 0.233 m. Whether the animal can be 25 cm long is a separate matter: individuals routinely exceed a fitted Linf, because Linf is a mean asymptote, not a ceiling for individuals. The law rejects the pairing of that length with that curve, not the animal. The candidate's own browser_check note says this. Also, growth_Linf_m is not an engine state field today, so the check returns cannot-evaluate unless the design supplies it.\"\n  },\n  \"",
+     "at": "2026-11-01T05:41:17.710Z"
+    },
+    "critic": {
+     "role": "critic",
+     "law_id": "development-growth-asymptote",
+     "code": 0,
+     "model": "claude-sonnet-5-5",
+     "duration_s": 17,
+     "cost_usd": 0.0671254,
+     "num_turns": 1,
+     "is_error": false,
+     "tools_given": [
+      "WebFetch",
+      "WebSearch"
+     ],
+     "tool_calls": [],
+     "fetched_urls": [],
+     "parsed_ok": true,
+     "prompt_chars": 15090,
+     "prompt_sha256": "cfb322a569c89dac",
+     "stderr": "",
+     "final_text": "```json\n{\n  \"role\": \"critic\",\n  \"law_id\": \"development-growth-asymptote\",\n  \"attacks\": [\n    {\n      \"attack\": \"vacuity\",\n      \"verdict\": \"fatal\",\n      \"finding\": \"The statement is a theorem about the functional form. Under the hypothesis Linf>0, K>0, Linf*(1-exp(-K(t-t0))) < Linf always holds, since exp>0. It is strictly increasing in t since K>0. The shared-K claim is an algebraic identity: 1-exp(-K(t-t0)) does not depend on Linf. No assignment of the law's own quantities can make it false. The conclusion is conditional on the hypothesis, and the hypothesis is part of the statement, so the statement cannot be falsified by any organism. The only content that could constrain a design is the hidden bridge (length < fitted Linf of the taxon), and that is not what the Lean theorem proves.\",\n      \"tried\": \"Tried t -> infinity, t < t0 (length goes negative but still < Linf), very large K, very small K, and Linf vs Linf' with the same K. Every case satisfies all three conjuncts. Did not need any external data.\",\n      \"evidence\": \"Algebraic: exp(x) > 0 for all real x, so 1 - exp(.) < 1. No fetch was needed.\"\n    },\n    {\n      \"attack\": \"constants\",\n      \"verdict\": \"serious\",\n      \"",
+     "at": "2026-11-01T05:41:18.614Z"
+    },
+    "evidence_checker": {
+     "role": "evidence-checker",
+     "law_id": "development-growth-asymptote",
+     "skipped": "every constant was found verbatim in its cited source by the GET, with no rounding, so there was nothing for the checker to overturn"
+    },
+    "referee": {
+     "role": "referee",
+     "law_id": "development-growth-asymptote",
+     "skipped": "invocation cap 3 reached"
+    }
+   },
+   "registry": null,
+   "record": {
+    "type": "candidate-with-requirements",
+    "file": "pipeline/leanbio/debate/out/records/development-growth-asymptote.json",
+    "why": [
+     "C1_binds_something_real is unclear: the candidate declares no shared_scope.atoms, so the studio has nothing to evaluate and the law binds no design today. The proposer did not say whether this is deliberate; declare shared_scope.atoms over quantities a design carries, or declare browser_check_absent with missing_inputs"
+    ]
+   },
+   "board": {
+    "submitted": true
+   }
+  },
+  {
+   "law_id": "fisher-sex-ratio",
+   "fingerprint": "2fe07c618ae0f1b9",
+   "decided_at": "2026-11-01T05:42:36.742Z",
+   "criteria_version": "leanbio-debate-criteria/1.2.0",
+   "criteria_sha256": "13ee79891caebd62799dc8947b73de041c9488c39a395861d34cf157a0f10169",
+   "verdict": "NEEDS-WORK",
+   "how_the_verdict_was_reached": "the referee worker returned no parseable verdict; the gates decide and the ruling is recorded as unrefereed",
+   "allowed_by_gates": [
+    "NEEDS-WORK",
+    "REJECT"
+   ],
+   "open_disputes": {
+    "criterion": "disputes",
+    "verdict": "pass",
+    "why": "the candidate matches no known open dispute",
+    "checked": [
+     "kcnk5b-membrane-potential-sign",
+     "teleost-depth-cap",
+     "lat4a-paralogue-identity"
+    ]
+   },
+   "referee_said": null,
+   "gate_disagreement": null,
+   "criteria": {
+    "C1_binds_something_real": {
+     "verdict": "unclear",
+     "from_gate": true,
+     "gate_why": "the candidate declares no shared_scope.atoms, so the studio has nothing to evaluate and the law binds no design today. The proposer did not say whether this is deliberate; declare shared_scope.atoms over quantities a design carries, or declare browser_check_absent with missing_inputs",
+     "referee_reason": null,
+     "rejecting_design": null
+    },
+    "C2_constants_sourced": {
+     "verdict": "pass",
+     "from_gate": true,
+     "gate_why": "the statement carries no empirical constant (structural literals only), so there is nothing to source",
+     "referee_reason": null
+    },
+    "C3_scope_honest": {
+     "verdict": "unclear",
+     "from_gate": false,
+     "referee_reason": "the referee gave no reason"
+    },
+    "C4_independent": {
+     "verdict": "unclear",
+     "from_gate": false,
+     "referee_reason": "the referee gave no reason"
+    },
+    "C5_consistent": {
+     "verdict": "pass",
+     "from_gate": true,
+     "gate_why": "propose.mjs constructed a joint witness with every accepted law whose scope overlaps",
+     "referee_reason": null
+    },
+    "C6_wild_type_survives": {
+     "verdict": "unclear",
+     "from_gate": true,
+     "gate_why": "the candidate declares no shared_scope.atoms, so there is no formula to evaluate against a wild-type organism: C6 is untested, not satisfied",
+     "referee_reason": null,
+     "evaluated": 0,
+     "in_scope": 0,
+     "fired": [],
+     "held": []
+    },
+    "C7_not_circular": {
+     "verdict": "unclear",
+     "from_gate": false,
+     "referee_reason": "the referee gave no reason"
+    }
+   },
+   "ruling": null,
+   "needs_work": [],
+   "reject_because": null,
+   "contested_with": [],
+   "contest_settled_against_the_candidate": null,
+   "what_a_human_should_check": null,
+   "roles": {
+    "proponent": {
+     "strongest_sentence": "Given the Shaw-Mohler fitness function, kernel-checked arithmetic shows that any sex allocation with cs*Nm ≠ cd*Nd is strictly invadable by a more biased rare mutant, so a design claiming evolutionary stability for unequal total investment is refuted, with 1:1 as the special case cs = cd.",
+     "weakest_point": "The theorem is linear algebra on wAlloc, which is an assumed hypothesis that already encodes the Fisher argument (reproductive value inversely proportional to sex number). Nm and Nd are held fixed rather than responding to the population's mean allocation, and no observation tests anything. The critic will say the Lean proof adds rigor to an assumption and not to biology, and that the declared 'any' taxa scope is much wider than the model's panmictic, autosomal, no-LMC conditions.",
+     "bound_kind": "impossibility",
+     "rules_out": {
+      "design": {
+       "R": 1,
+       "cs": 1,
+       "cd": 1,
+       "Nm": 100,
+       "Nd": 50
+      },
+      "why_rejected": "Here cs*Nm = 100 > cd*Nd = 50. Then wAlloc(x) = (1-x)*1 + x*50/100 = 1 - 0.5x, which strictly decreases in x. A more female-biased rare mutant therefore strictly invades, so a design that claims this allocation (2 males per female at equal cost) is evolutionarily stable is refuted. The browser check SEXALLOC1 (cs*Nm = cd*Nd) flags it as violated.",
+      "buildable": true,
+      "buildable_note": "The organism is buildable. A population with 100 males, 50 females and equal per-offspring costs exists, and such populations can persist for a long time. What the law rejects is the claim that this allocation is uninvadable. It does not reject the organism. The candidate's own browser_check note says the same: 'violated' means the stability claim is refuted, not that the organism is impossible."
+     },
+     "scope_supported": {
+      "taxa": [
+       "Sexual, panmictic species with autosomal sex-ratio control, one father and one mother per offspring, no local mate competition and no sex-specific resource competition, in the formal model only"
+      ],
+      "why": "The candidate has no observations. The evidence is a formal derivation from a named, assumed fitness function. So the supported scope is 'the model's own hypotheses', and 'any' taxa overclaims. The candidate's scope.basis already excludes local mate competition (Hamilton's LMC), and the law does not show that any real population sits at equal investment. It is a design-stability check, not an empirical regularity."
+     },
+     "independence": {
+      "closest_accepted_law": "fisher-ftns",
+      "what_this_forbids_that_one_permits": "fisher-ftns says mean fitness rises at a rate equal to the variance in fitness, for fixed fitnesses at one locus. It is silent on sex allocation and permits any unequal-investment allocation to be a fixed point of selection. This law forbids a claim that any allocation with cs*Nm ≠ cd*Nd is uninvadable, because it exhibits a strictly invading mutant. None of the accepted laws mentions cost-weighted sex investment, so there is no near-duplicate."
+     }
+    },
+    "critic": {
+     "worst_attack": "definition-restatement",
+     "one_sentence": "The theorem is the sign of the slope of a linear function whose form (Fisher's whole argument) is assumed as a hypothesis, and the browser row maps it onto adult counts and an 'any' taxon scope that its own basis contradicts, so it would flag stable-but-unequal designs without having been tested against any organism.",
+     "would_allow": false,
+     "attacks": [
+      {
+       "attack": "vacuity",
+       "verdict": "serious",
+       "finding": "As a Lean theorem it is vacuous. Under SexRatioHyp, wAlloc is affine in x with slope R(cd*Nd - cs*Nm)/(cd*cs*Nm). Every positive assignment of R, cs, cd, Nm, Nd satisfies exactly one of the three cases, so the theorem cannot be false for any input. The browser row (cs*Nm = cd*Nd) can come back 'violated', but only because the candidate's own note says a population may sit off equal investment for many reasons. A violation therefore refutes only a design's claim of stability, not the biology.",
+       "tried": "Searched for positive reals that satisfy the hypothesis and falsify one of the three conjuncts. By trichotomy of the order on cs*Nm versus cd*Nd and the sign of the slope, none exists. The theorem also quantifies x, y over all reals, not [0,1], so it constrains no extra case.",
+       "evidence": "Algebra of the stated wAlloc. No external source needed."
+      },
+      {
+       "attack": "constants",
+       "verdict": "minor",
+       "finding": "The law declares no constants, so nothing is miscalibrated. The substantive input, the Shaw-Mohler fitness form, is a named hypothesis. It is cited to Fisher (1930, a book with no DOI) and to Shaw & Mohler 1953, with no page, table or equation number given. It is 'cited', not 'derived'. The browser check also takes Nm and Nd as adult counts, while the hypothesis needs the numbers of sons and daughters at the end of parental investment. That mapping is assumed.",
+       "unsourced": [
+        "Shaw-Mohler fitness form (no equation or page named)",
+        "mapping of Nm, Nd to adult_males, adult_females"
+       ],
+       "kinds": {
+        "Shaw-Mohler wAlloc": "cited",
+        "Nm/Nd as adult counts": "assumed"
+       }
+      },
+      {
+       "attack": "scope",
+       "verdict": "serious",
+       "finding": "taxa ['any'] with an empty observations list claims every organism. The basis then excludes most of them: it requires panmixia, autosomal control, no LMC and no local resource competition or enhancement. Sex-linked drivers, haplodiploid worker control, hermaphrodites and structured populations are also left out. The narrowest honest scope is dioecious, outbreeding, panmictic species whose sex ratio is under autosomal (parental or zygotic) control, with the costs measured at the end of parental investment. The browser check does not test any of these conditions itself.",
+       "narrowest_honest_scope": {
+        "taxa": [
+         "dioecious, panmictic, outbreeding species with autosomal sex-ratio control and no LMC or LRC (condition-defined, not taxon-defined)"
+        ]
+       }
+      },
+      {
+       "attack": "definition-restatement",
+       "verdict": "serious",
+       "finding": "The Lean content is the sign of the slope of a linear function that the hypothesis hands over, and that hypothesis already encodes Fisher's argument (reproductive value inversely proportional to sex number). The biology is all in the hypothesis and the proof is algebra. No accepted law overlaps: fisher-ftns is about the variance in fitness and does not cover sex allocation. It therefore forbids nothing the accepted set already forbids, and its only added content is the unproven hypothesis.",
+       "closest_accepted_law": "fisher-ftns"
+      },
+      {
+       "attack": "fires-on-real-organism",
+       "verdict": "minor",
+       "finding": "I found no measured counterexample to the theorem inside its stated scope, and I did not fetch any source. The weakness is in the browser check. It uses adult_males and adult_females, but Fisher's balance concerns investment in sons and daughters up to independence. Species with strong sex-specific mortality after parental care (for example highly female-biased adult ratios in polygynous mammals with early-dying males) have unequal adult counts but, in the standard account, roughly equal investment at the end of care. The row would then flag a design as 'violated' that Fisher's argument does not refute. I have no measurements in hand to name an animal and numbers, so this is a mapping defect, not a demonstrated firing.",
+       "organism": null,
+       "numbers": {},
+       "source": null,
+       "confidence": "low",
+       "fetched": []
+      },
+      {
+       "attack": "circularity",
+       "verdict": "survives",
+       "finding": "No data were fitted, so the law is not circular. It is also not tested: no observations stand behind it. It is a deduction from a cited hypothesis.",
+       "n_independent": 0,
+       "any_held_back": false
+      },
+      {
+       "attack": "designer-cost",
+       "verdict": "minor",
+       "finding": "The law only refutes a claim of evolutionary stability; it does not make a design impossible. A real cost arises if the row is read without scope screening. Designs with female-biased investment from LMC or LRC, such as fig wasps or bushbabies, or with sex-linked drivers, would turn RED unless excluded first. The candidate's own note admits that this false-positive path exists and relies on the user to apply it.",
+       "organism_it_would_forbid": "Any LMC or local-resource-competition lineage (e.g. fig wasps) claiming a stable biased ratio, if the scope screen is skipped."
+      }
+     ]
+    },
+    "evidence_checker": null,
+    "evidence_fetch": {
+     "verdict": "nothing-to-check",
+     "summary": {
+      "constants": 0,
+      "found": 0,
+      "not_in_text": 0,
+      "text_not_retrievable": 0,
+      "unreachable": 0
+     },
+     "method": "GET (never HEAD) against Europe PMC REST, Crossref and the repository bytes"
+    }
+   },
+   "independence_probes": [
+    {
+     "law_id": "aerobic-power-bound",
+     "reading": "no shared quantity to probe"
+    },
+    {
+     "law_id": "altitude-coupling",
+     "reading": "no shared quantity to probe"
+    },
+    {
+     "law_id": "blueprint-well-formedness",
+     "reading": "no shared quantity to probe"
+    },
+    {
+     "law_id": "E6",
+     "reading": "no shared quantity to probe"
+    },
+    {
+     "law_id": "favored-fixation-lower-bound",
+     "reading": "no shared quantity to probe"
+    }
+   ],
+   "worker_meta": {
+    "proponent": {
+     "role": "proponent",
+     "law_id": "fisher-sex-ratio",
+     "code": 0,
+     "model": "claude-sonnet-5-5",
+     "duration_s": 21,
+     "cost_usd": 0.09440409999999999,
+     "num_turns": 1,
+     "is_error": false,
+     "tools_given": [],
+     "tool_calls": [],
+     "fetched_urls": [],
+     "parsed_ok": true,
+     "prompt_chars": 29737,
+     "prompt_sha256": "ccee5254b7bc8853",
+     "stderr": "",
+     "final_text": "```json\n{\n  \"role\": \"proponent\",\n  \"law_id\": \"fisher-sex-ratio\",\n  \"rules_out\": {\n    \"design\": {\"R\": 1, \"cs\": 1, \"cd\": 1, \"Nm\": 100, \"Nd\": 50},\n    \"why_rejected\": \"Here cs*Nm = 100 > cd*Nd = 50. Then wAlloc(x) = (1-x)*1 + x*50/100 = 1 - 0.5x, which strictly decreases in x. A more female-biased rare mutant therefore strictly invades, so a design that claims this allocation (2 males per female at equal cost) is evolutionarily stable is refuted. The browser check SEXALLOC1 (cs*Nm = cd*Nd) flags it as violated.\",\n    \"buildable\": true,\n    \"buildable_note\": \"The organism is buildable. A population with 100 males, 50 females and equal per-offspring costs exists, and such populations can persist for a long time. What the law rejects is the claim that this allocation is uninvadable. It does not reject the organism. The candidate's own browser_check note says the same: 'violated' means the stability claim is refuted, not that the organism is impossible.\"\n  },\n  \"evidence\": [\n    {\n      \"constant\": \"wAlloc(x) = (1-x)*R/cd + x*R*Nd/(cs*Nm)\",\n      \"kind\": \"assumed\",\n      \"source\": \"Named hypothesis SexRatioHyp, citing Fisher 1930 ch. 6 and Shaw & Mohler 1953, Am. Nat. 87:337-342, doi:10.",
+     "at": "2026-11-01T05:41:22.234Z"
+    },
+    "critic": {
+     "role": "critic",
+     "law_id": "fisher-sex-ratio",
+     "code": 0,
+     "model": "claude-sonnet-5-5",
+     "duration_s": 33,
+     "cost_usd": 0.1099134,
+     "num_turns": 1,
+     "is_error": false,
+     "tools_given": [
+      "WebFetch",
+      "WebSearch"
+     ],
+     "tool_calls": [],
+     "fetched_urls": [],
+     "parsed_ok": true,
+     "prompt_chars": 31305,
+     "prompt_sha256": "4e1fb049edb0f187",
+     "stderr": "",
+     "final_text": "```json\n{\n  \"role\": \"critic\",\n  \"law_id\": \"fisher-sex-ratio\",\n  \"attacks\": [\n    {\n      \"attack\": \"vacuity\",\n      \"verdict\": \"serious\",\n      \"finding\": \"As a Lean theorem it is vacuous. Under SexRatioHyp, wAlloc is affine in x with slope R(cd*Nd - cs*Nm)/(cd*cs*Nm). Every positive assignment of R, cs, cd, Nm, Nd satisfies exactly one of the three cases, so the theorem cannot be false for any input. The browser row (cs*Nm = cd*Nd) can come back 'violated', but only because the candidate's own note says a population may sit off equal investment for many reasons. A violation therefore refutes only a design's claim of stability, not the biology.\",\n      \"tried\": \"Searched for positive reals that satisfy the hypothesis and falsify one of the three conjuncts. By trichotomy of the order on cs*Nm versus cd*Nd and the sign of the slope, none exists. The theorem also quantifies x, y over all reals, not [0,1], so it constrains no extra case.\",\n      \"evidence\": \"Algebra of the stated wAlloc. No external source needed.\"\n    },\n    {\n      \"attack\": \"constants\",\n      \"verdict\": \"minor\",\n      \"finding\": \"The law declares no constants, so nothing is miscalibrated. The substantive input, the ",
+     "at": "2026-11-01T05:41:51.113Z"
+    },
+    "evidence_checker": {
+     "role": "evidence-checker",
+     "law_id": "fisher-sex-ratio",
+     "skipped": "every constant was found verbatim in its cited source by the GET, with no rounding, so there was nothing for the checker to overturn"
+    },
+    "referee": {
+     "role": "referee",
+     "law_id": "fisher-sex-ratio",
+     "skipped": "invocation cap 3 reached"
+    }
+   },
+   "registry": null,
+   "corrections": [
+    {
+     "at": "2026-11-01T05:42:36.742Z",
+     "kind": "the ruling was re-decided after a gate bug was fixed; no new worker invocation was spent",
+     "previous_verdict": "REJECT",
+     "new_verdict": "NEEDS-WORK",
+     "what_was_wrong": "gates.mjs consistency() reported a MISSING propose.mjs status as C5 `fail`, which is a hard gate, so a law whose board task had not been posted yet was REJECTED. A metadata gap is not a proved inconsistency and must not read as a scientific verdict.",
+     "fix": "a missing or unrecognised status is now C5 `unclear`: it still blocks promotion and says what to run, but it does not reject the law. A status propose.mjs itself refused is still a fail.",
+     "roles_reused": "the proponent and critic cases are the ones argued in the original run, read back from transcripts/fisher-sex-ratio/"
+    }
+   ],
+   "record": {
+    "type": "candidate-with-requirements",
+    "file": "pipeline/leanbio/debate/out/records/fisher-sex-ratio.json",
+    "why": [
+     "C1_binds_something_real is unclear: the candidate declares no shared_scope.atoms, so the studio has nothing to evaluate and the law binds no design today. The proposer did not say whether this is deliberate; declare shared_scope.atoms over quantities a design carries, or declare browser_check_absent with missing_inputs"
+    ]
+   }
+  },
+  {
+   "law_id": "hamilton-rule",
+   "fingerprint": "0efb6169a00528c1",
+   "decided_at": "2026-11-01T05:42:46.379Z",
+   "criteria_version": "leanbio-debate-criteria/1.2.0",
+   "criteria_sha256": "13ee79891caebd62799dc8947b73de041c9488c39a395861d34cf157a0f10169",
+   "verdict": "NEEDS-WORK",
+   "how_the_verdict_was_reached": "the referee worker returned no parseable verdict; the gates decide and the ruling is recorded as unrefereed",
+   "allowed_by_gates": [
+    "NEEDS-WORK",
+    "REJECT"
+   ],
+   "open_disputes": {
+    "criterion": "disputes",
+    "verdict": "pass",
+    "why": "the candidate matches no known open dispute",
+    "checked": [
+     "kcnk5b-membrane-potential-sign",
+     "teleost-depth-cap",
+     "lat4a-paralogue-identity"
+    ]
+   },
+   "referee_said": null,
+   "gate_disagreement": null,
+   "criteria": {
+    "C1_binds_something_real": {
+     "verdict": "unclear",
+     "from_gate": true,
+     "gate_why": "the candidate declares no shared_scope.atoms, so the studio has nothing to evaluate and the law binds no design today. The proposer says so itself (browser_check_absent: not-checkable-in-principle (no rule-out direction); it would need relatedness (regression coefficient), benefit_to_recipient (fitness units), cost_to_actor (fitness units)), and that supplied, it would reject: Nothing, as a rule-out. It would become checkable only against a design that explicitly CLAIMS a social trait is maintained by kin selection; then r*b <= c refutes that claim. That is a claim-level check, not a design-level one, and the registry has no place for it today.",
+     "referee_reason": null,
+     "rejecting_design": null
+    },
+    "C2_constants_sourced": {
+     "verdict": "pass",
+     "from_gate": true,
+     "gate_why": "the statement carries no empirical constant (structural literals only), so there is nothing to source",
+     "referee_reason": null
+    },
+    "C3_scope_honest": {
+     "verdict": "unclear",
+     "from_gate": false,
+     "referee_reason": "the referee gave no reason"
+    },
+    "C4_independent": {
+     "verdict": "unclear",
+     "from_gate": false,
+     "referee_reason": "the referee gave no reason"
+    },
+    "C5_consistent": {
+     "verdict": "pass",
+     "from_gate": true,
+     "gate_why": "propose.mjs constructed a joint witness with every accepted law whose scope overlaps",
+     "referee_reason": null
+    },
+    "C6_wild_type_survives": {
+     "verdict": "unclear",
+     "from_gate": true,
+     "gate_why": "the candidate declares no shared_scope.atoms, so there is no formula to evaluate against a wild-type organism: C6 is untested, not satisfied",
+     "referee_reason": null,
+     "evaluated": 0,
+     "in_scope": 0,
+     "fired": [],
+     "held": []
+    },
+    "C7_not_circular": {
+     "verdict": "unclear",
+     "from_gate": false,
+     "referee_reason": "the referee gave no reason"
+    }
+   },
+   "ruling": null,
+   "needs_work": [],
+   "reject_because": null,
+   "contested_with": [],
+   "contest_settled_against_the_candidate": null,
+   "what_a_human_should_check": null,
+   "roles": {
+    "proponent": null,
+    "critic": null,
+    "evidence_checker": null,
+    "evidence_fetch": {
+     "verdict": "nothing-to-check",
+     "summary": {
+      "constants": 0,
+      "found": 0,
+      "not_in_text": 0,
+      "text_not_retrievable": 0,
+      "unreachable": 0
+     },
+     "method": "GET (never HEAD) against Europe PMC REST, Crossref and the repository bytes"
+    }
+   },
+   "independence_probes": [
+    {
+     "law_id": "aerobic-power-bound",
+     "reading": "no shared quantity to probe"
+    },
+    {
+     "law_id": "altitude-coupling",
+     "reading": "no shared quantity to probe"
+    },
+    {
+     "law_id": "blueprint-well-formedness",
+     "reading": "no shared quantity to probe"
+    },
+    {
+     "law_id": "E6",
+     "reading": "no shared quantity to probe"
+    },
+    {
+     "law_id": "favored-fixation-lower-bound",
+     "reading": "no shared quantity to probe"
+    }
+   ],
+   "worker_meta": {
+    "proponent": {
+     "role": "proponent",
+     "law_id": "hamilton-rule",
+     "skipped": "--no-llm"
+    },
+    "critic": {
+     "role": "critic",
+     "law_id": "hamilton-rule",
+     "skipped": "--no-llm"
+    },
+    "evidence_checker": {
+     "role": "evidence-checker",
+     "law_id": "hamilton-rule",
+     "skipped": "every constant was found verbatim in its cited source by the GET, with no rounding, so there was nothing for the checker to overturn"
+    },
+    "referee": {
+     "role": "referee",
+     "law_id": "hamilton-rule",
+     "skipped": "--no-llm"
+    }
+   },
+   "registry": null,
+   "record": {
+    "type": "candidate-with-requirements",
+    "file": "pipeline/leanbio/debate/out/records/hamilton-rule.json",
+    "why": [
+     "C1_binds_something_real is unclear: the candidate declares no shared_scope.atoms, so the studio has nothing to evaluate and the law binds no design today. The proposer says so itself (browser_check_absent: not-checkable-in-principle (no rule-out direction); it would need relatedness (regression coefficient), benefit_to_recipient (fitness units), cost_to_actor (fitness units)), and that supplied, it would reject: Nothing, as a rule-out. It would become checkable only against a design that explicitly CLAIMS a social trait is maintained by kin selection; then r*b <= c refutes that claim. That is a claim-level check, not a design-level one, and the registry has no place for it today."
+    ]
+   }
+  },
+  {
+   "law_id": "turing-wavelength",
+   "fingerprint": "cbc02ae3394218d6",
+   "decided_at": "2026-11-01T05:42:46.380Z",
+   "criteria_version": "leanbio-debate-criteria/1.2.0",
+   "criteria_sha256": "13ee79891caebd62799dc8947b73de041c9488c39a395861d34cf157a0f10169",
+   "verdict": "NEEDS-WORK",
+   "how_the_verdict_was_reached": "the referee worker returned no parseable verdict; the gates decide and the ruling is recorded as unrefereed",
+   "allowed_by_gates": [
+    "NEEDS-WORK",
+    "REJECT"
+   ],
+   "open_disputes": {
+    "criterion": "disputes",
+    "verdict": "pass",
+    "why": "the candidate matches no known open dispute",
+    "checked": [
+     "kcnk5b-membrane-potential-sign",
+     "teleost-depth-cap",
+     "lat4a-paralogue-identity"
+    ]
+   },
+   "referee_said": null,
+   "gate_disagreement": null,
+   "criteria": {
+    "C1_binds_something_real": {
+     "verdict": "unclear",
+     "from_gate": true,
+     "gate_why": "the candidate declares no shared_scope.atoms, so the studio has nothing to evaluate and the law binds no design today. The proposer did not say whether this is deliberate; declare shared_scope.atoms over quantities a design carries, or declare browser_check_absent with missing_inputs",
+     "referee_reason": null,
+     "rejecting_design": null
+    },
+    "C2_constants_sourced": {
+     "verdict": "pass",
+     "from_gate": true,
+     "gate_why": "the statement carries no empirical constant (structural literals only), so there is nothing to source",
+     "referee_reason": null
+    },
+    "C3_scope_honest": {
+     "verdict": "unclear",
+     "from_gate": false,
+     "referee_reason": "the referee gave no reason"
+    },
+    "C4_independent": {
+     "verdict": "unclear",
+     "from_gate": false,
+     "referee_reason": "the referee gave no reason"
+    },
+    "C5_consistent": {
+     "verdict": "unclear",
+     "from_gate": true,
+     "gate_why": "the candidate carries no propose.mjs status (no `status_after_propose` in its meta, no board task naming it and no registry entry), so joint consistency with the accepted set is unknown. Run lean/registry/propose.mjs and record the outcome; this is a metadata gap, not an inconsistency",
+     "referee_reason": null
+    },
+    "C6_wild_type_survives": {
+     "verdict": "unclear",
+     "from_gate": true,
+     "gate_why": "the candidate declares no shared_scope.atoms, so there is no formula to evaluate against a wild-type organism: C6 is untested, not satisfied",
+     "referee_reason": null,
+     "evaluated": 0,
+     "in_scope": 0,
+     "fired": [],
+     "held": []
+    },
+    "C7_not_circular": {
+     "verdict": "unclear",
+     "from_gate": false,
+     "referee_reason": "the referee gave no reason"
+    }
+   },
+   "ruling": null,
+   "needs_work": [],
+   "reject_because": null,
+   "contested_with": [],
+   "contest_settled_against_the_candidate": null,
+   "what_a_human_should_check": null,
+   "roles": {
+    "proponent": null,
+    "critic": null,
+    "evidence_checker": null,
+    "evidence_fetch": {
+     "verdict": "nothing-to-check",
+     "summary": {
+      "constants": 0,
+      "found": 0,
+      "not_in_text": 0,
+      "text_not_retrievable": 0,
+      "unreachable": 0
+     },
+     "method": "GET (never HEAD) against Europe PMC REST, Crossref and the repository bytes"
+    }
+   },
+   "independence_probes": [
+    {
+     "law_id": "aerobic-power-bound",
+     "reading": "no shared quantity to probe"
+    },
+    {
+     "law_id": "altitude-coupling",
+     "reading": "no shared quantity to probe"
+    },
+    {
+     "law_id": "blueprint-well-formedness",
+     "reading": "no shared quantity to probe"
+    },
+    {
+     "law_id": "E6",
+     "reading": "no shared quantity to probe"
+    },
+    {
+     "law_id": "favored-fixation-lower-bound",
+     "reading": "no shared quantity to probe"
+    }
+   ],
+   "worker_meta": {
+    "proponent": {
+     "role": "proponent",
+     "law_id": "turing-wavelength",
+     "skipped": "--no-llm"
+    },
+    "critic": {
+     "role": "critic",
+     "law_id": "turing-wavelength",
+     "skipped": "--no-llm"
+    },
+    "evidence_checker": {
+     "role": "evidence-checker",
+     "law_id": "turing-wavelength",
+     "skipped": "every constant was found verbatim in its cited source by the GET, with no rounding, so there was nothing for the checker to overturn"
+    },
+    "referee": {
+     "role": "referee",
+     "law_id": "turing-wavelength",
+     "skipped": "--no-llm"
+    }
+   },
+   "registry": null,
+   "record": {
+    "type": "candidate-with-requirements",
+    "file": "pipeline/leanbio/debate/out/records/turing-wavelength.json",
+    "why": [
+     "C1_binds_something_real is unclear: the candidate declares no shared_scope.atoms, so the studio has nothing to evaluate and the law binds no design today. The proposer did not say whether this is deliberate; declare shared_scope.atoms over quantities a design carries, or declare browser_check_absent with missing_inputs"
+    ]
    }
   }
  ]

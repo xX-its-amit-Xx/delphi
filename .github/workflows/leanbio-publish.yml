@@ -47,12 +47,27 @@ jobs:
       # sim-engine has its own package (the MCP SDK for --dump-contract, which check-exposed compares).
       - run: npm ci
         working-directory: sim-engine
+      # The evaluator is generated from lean/constraints.json AND from the registry (each law's optional
+      # browser_check block), so it is rebuilt before the mirror: a law added without regenerating it binds
+      # nothing, which is the failure check-exposed's bind:* guards exist for.
+      - name: Rebuild the evaluator (lean/eliminate/build-browser-check.mjs)
+        run: node lean/eliminate/build-browser-check.mjs
       - name: Rebuild /api/lean (dashboard/build-lean-api.mjs)
         run: node dashboard/build-lean-api.mjs
-      - name: check-exposed (every law on every surface, nothing stale)
+      - name: check-exposed (every law on every surface, bound and not stale)
         run: node lean/registry/check-exposed.mjs
       - name: Self-update tests
         run: node sim-engine/test/lean-self-update.mjs
+      - name: Declarative evaluator (a new law must bind with no code edit)
+        run: node lean/eliminate/browser-check-declared.test.mjs
+      - name: Evaluator formulas
+        run: node lean/eliminate/browser-check.test.mjs
+      - name: Second Lean round in validation (newly_violated_since)
+        run: node sim-engine/validate/lean-rounds.test.mjs
+      # Writes two fixture law files into lean/registry/laws/ and deletes them again, so it runs AFTER the
+      # mirror has been built and checked, never before.
+      - name: Surface guards, made to fail first (lean/registry/loop.test.mjs)
+        run: node lean/registry/loop.test.mjs
       - name: Report the lawset being published
         run: |
           node -e "const i=require('./dashboard/public/api/lean/index.json');console.log('lawset', i.current_lawset, '-', i.count, 'laws, lawsets', i.lawsets.join(', '))"

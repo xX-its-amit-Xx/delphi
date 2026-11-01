@@ -16,6 +16,7 @@
 // survivor. Nothing is accepted: see promote.mjs and README.md.
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { D, R, readJson, writeJson, nowIso, writeLock, requireLock, sha256 } from './lib.mjs';
 import { loadCandidate, roundCandidates, pendingReviewTasks, ROUND_DIR, DEBATE_ROLE } from './candidates.mjs';
 import { checkEvidence } from './evidence.mjs';
@@ -53,8 +54,10 @@ async function invoke({ role, blocks, lawId, maxBudget = 0.60, maxTurns = 14 }) 
     log(`SKIP ${role}/${lawId}: ${state.stopped}`);
     return { ok: false, parsed: null, meta: { role, law_id: lawId, skipped: state.stopped } };
   }
-  await slot();
+  // Claim the budget slot BEFORE awaiting the concurrency slot: two callers that both pass the cap check and then
+  // await can otherwise both increment past it (the first run logged "invocation 4/3").
   state.invocations++;
+  await slot();
   log(`-> ${role} on ${lawId} (invocation ${state.invocations}/${MAX_INVOCATIONS}, ${state.inflight} in flight)`);
   try {
     const r = await runRole({ role, blocks, model: MODEL, lawId, maxBudget, maxTurns });
@@ -155,7 +158,9 @@ function candidateBlock(c) {
 // ---------------------------------------------------------------- the board
 async function boardSubmit(taskId, ruling) {
   try {
-    const B = await import(path.join(R(), 'sim-engine', 'swarm', 'board.mjs').replace(/\\/g, '/'));
+    // A Windows absolute path is not an ESM specifier: it must be a file:// URL, or the import fails with
+    // "protocol 'd:' not supported" and every board submission is silently lost.
+    const B = await import(pathToFileURL(path.join(R(), 'sim-engine', 'swarm', 'board.mjs')).href);
     await B.swarmClaim({ role: DEBATE_ROLE, task_id: taskId });
     await B.swarmSubmit({ task_id: taskId, role: DEBATE_ROLE, outcome: 'done',
       summary: `debate verdict ${ruling.verdict} for ${ruling.law_id} under criteria ${ruling.criteria_sha256.slice(0, 16)}`,

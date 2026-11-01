@@ -32,9 +32,29 @@ export function entries(symbol, layer, feature) {
 const SRC = (e, db) => `omics/index/genes/${db}.json.gz (${(e.sources || []).join(', ')}${e.acc?.length ? `; ${e.acc.slice(0, 3).join(', ')}` : ''})`;
 const KIND = e => (e.kind || [])[0] || 'inferred-electronic';
 
-/** Documented paralogues of a gene, with the source that says so. */
+// Many Ensembl Compara paralogues have no gene symbol in the card (symbol: null), so their Ensembl id is looked
+// up in the gene universe to recover one. A paralogue whose symbol cannot be recovered is still REPORTED - it is
+// a real paralogue we cannot follow up, which is a different thing from no paralogue at all.
+let _byEns = null;
+function ensemblToSymbol(id) {
+  if (!_byEns) {
+    const g = JSON.parse(fs.readFileSync(path.join(ROOT, 'omics', 'genes.json'), 'utf8'));
+    _byEns = new Map(g.genes.filter(x => x.ensembl_gene).map(x => [x.ensembl_gene, x.symbol]));
+  }
+  return _byEns.get(id) || null;
+}
+
+/** Documented paralogues of a gene, with the source that says so. A card's `value` is the object; `v` is its
+ *  JSON string, so both shapes are handled rather than one being assumed. */
 export function paralogues(symbol) {
-  return entries(symbol, 'genomic', 'paralog').map(e => ({ symbol: e.v, sources: e.sources, kind: KIND(e), source: SRC(e, symbol), acc: e.acc || null }));
+  return entries(symbol, 'genomic', 'paralog').map(e => {
+    let o = e.value;
+    if (!o || typeof o !== 'object') { try { o = JSON.parse(e.v); } catch { o = null; } }
+    const ens = o?.ensembl_gene || null;
+    const sym = o?.symbol || (ens ? ensemblToSymbol(ens) : null) || (typeof e.v === 'string' && !/^\{/.test(e.v) ? e.v : null);
+    return { symbol: sym, ensembl_gene: ens, identity_pct: o?.identity_pct ?? null, paralog_type: o?.type || null,
+      symbol_unresolved: !sym, sources: e.sources, kind: KIND(e), source: SRC(e, symbol), acc: e.acc || null, url: e.url || null };
+  });
 }
 
 /** Expression records, optionally filtered to an anatomy id or a label substring. */
@@ -64,14 +84,40 @@ export function domains(symbol) {
   return out;
 }
 
+// ---------------------------------------------------------------- term specificity
+// "Both proteins are in the membrane" is shared by 760 of 3,856 annotated genes and licenses nothing. A shared
+// term is evidence that two genes act in the same SPECIFIC process only when few genes carry it. The threshold is
+// measured, not hand-picked per case: a term may support ANALOGOUS_SET only if at most 1 % of the annotated gene
+// universe carries it, and go_component is excluded outright because co-localisation is not shared function.
+let _spec = null;
+const spec = () => (_spec ??= JSON.parse(fs.readFileSync(path.join(import.meta.dirname, 'data', 'term-specificity.json'), 'utf8')));
+export const SPECIFICITY_RULE = Object.freeze({
+  max_fraction_of_universe: 0.01,
+  excluded_features: ['go_component'],
+  why: 'a term carried by more than 1 % of the 3,856 annotated genes is not evidence that two particular genes do the same job; go_component is co-localisation, not function',
+  source: 'functional/data/term-specificity.json, built from omics/pathway/annotations.jsonl.gz',
+});
+export function termSpecificity(t) {
+  const S = spec();
+  const n = S.by_term[`${t.feature}|${t.id || t.term}`]?.n_genes ?? null;
+  const frac = n == null ? null : +(n / S.genes_with_pathway_rows).toFixed(5);
+  const excluded = SPECIFICITY_RULE.excluded_features.includes(t.feature);
+  return { n_genes_with_term: n, fraction_of_universe: frac, universe: S.genes_with_pathway_rows, excluded_feature: excluded,
+    specific: !excluded && n != null && frac <= SPECIFICITY_RULE.max_fraction_of_universe,
+    why_not: excluded ? `${t.feature} is excluded: co-localisation is not shared function`
+      : n == null ? 'the term is not in the specificity table, so its specificity is unknown and it is not used'
+        : frac > SPECIFICITY_RULE.max_fraction_of_universe ? `carried by ${n} of ${S.genes_with_pathway_rows} annotated genes (${(100 * frac).toFixed(1)} %), above the ${100 * SPECIFICITY_RULE.max_fraction_of_universe} % rule` : null };
+}
+
 /** Shared pathway/GO terms between two genes. The crosswalk this uses is the one already built in omics/pathway/
- *  (GO / Reactome / WikiPathways), read through the cards. Only terms present on BOTH cards are returned. */
+ *  (GO / Reactome / WikiPathways), read through the cards. Only terms present on BOTH cards are returned, each
+ *  annotated with its measured specificity so a caller cannot use a generic term by accident. */
 export function sharedPathwayTerms(a, b) {
   const A = pathwayTerms(a), B = pathwayTerms(b);
   const keyOf = t => `${t.feature}|${t.id || t.term}`;
   const bMap = new Map(B.map(t => [keyOf(t), t]));
   const shared = [];
-  for (const t of A) { const m = bMap.get(keyOf(t)); if (m) shared.push({ term: t.term, id: t.id, feature: t.feature, a_source: t.source, b_source: m.source, kind: [t.kind, m.kind].sort()[0] }); }
+  for (const t of A) { const m = bMap.get(keyOf(t)); if (m) shared.push({ term: t.term, id: t.id, feature: t.feature, a_source: t.source, b_source: m.source, kind: [t.kind, m.kind].sort()[0], specificity: termSpecificity(t) }); }
   return shared;
 }
 

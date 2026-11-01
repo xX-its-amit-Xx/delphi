@@ -162,6 +162,14 @@ section('a law that fires on a wild-type organism must be rejected (C6)');
   ok('the same check passes C6 on the real band (it holds for every in-scope specimen)', g.criteria.C6_wild_type_survives.verdict === 'pass', g.criteria.C6_wild_type_survives.gate_why);
   ok('and it says how many real animals it was evaluated against', g.criteria.C6_wild_type_survives.evaluated >= 4, String(g.criteria.C6_wild_type_survives.evaluated));
   // a specimen whose fins were folded is not a lifting configuration and must not be used to refute a wing loading
+  // Regression: a law with no atoms once collected a free C6 `pass`, because every in-scope organism counted as
+  // evaluated and nothing could fire. A vacuous pass is the one outcome C6 must never produce.
+  {
+    const noAtoms = { ...GOOD, law_id: 'test-c6-no-atoms', shared_scope: { atoms: [], quantities: {}, witness_values: {} } };
+    const c6 = wildType(noAtoms, {});
+    ok('C6 on a law with no atoms is unclear, never pass', c6.verdict === 'unclear', c6.verdict + ': ' + c6.why);
+    ok('and the reason says it is untested rather than satisfied', /untested, not satisfied/.test(c6.why), c6.why);
+  }
   const w = wildType(GOOD, {});
   ok('a fins-folded specimen is excluded from an area-derived check, with the reason recorded', w.skipped.some(s => /fins folded/i.test(s.why || '')), JSON.stringify(w.skipped.slice(0, 2)));
 }
@@ -203,7 +211,13 @@ section('C5: consistency with the accepted set');
 {
   ok('a contested candidate gets CONTESTED, not REJECT', verdictFor({ ...GOOD, law_id: 'test-contested', propose_status: 'contested', contested_with: ['perturb-depth-cap'] }).verdict === 'CONTESTED');
   ok('a `proposed` candidate (no joint witness proved) cannot be promoted', !allowedVerdicts(runGates({ ...GOOD, propose_status: 'proposed' }, {})).includes('PROMOTE-TO-CANDIDATE'));
-  ok('an unknown propose status fails C5', consistency({ propose_status: 'something-else' }).verdict === 'fail');
+  ok('an unknown propose status is unclear, not a fail', consistency({ propose_status: 'something-else' }).verdict === 'unclear');
+  // Regression: a MISSING status was reported as `fail`, which made a REJECT out of a law whose board task had not
+  // been posted yet. A metadata gap must not read as a scientific verdict.
+  ok('a MISSING propose status is unclear, not a fail', consistency({}).verdict === 'unclear', consistency({}).why);
+  ok('and it says the gap is metadata, not an inconsistency', /metadata gap, not an inconsistency/.test(consistency({}).why));
+  ok('a status propose.mjs already refused is a fail', consistency({ propose_status: 'rejected' }).verdict === 'fail');
+  ok('a missing status still blocks promotion', !allowedVerdicts(runGates({ ...GOOD, propose_status: null }, {})).includes('PROMOTE-TO-CANDIDATE'));
 }
 
 // ---------------------------------------------------------------- 6. nothing is accepted automatically
@@ -252,6 +266,18 @@ section('the atom evaluator, the constant finder and the holdout guard');
   ok('number forms include a rounding a paper might print', numberForms(37.025).some(f => f.form === '37.03'));
   ok('the matcher does not match inside a longer number', !findNumber(3.011, 'the value 13.0115 appears', 't').found);
   ok('parseSource finds a DOI', parseSource('doi:10.1016/j.cub.2021.08.054 Data S1').doi === '10.1016/j.cub.2021.08.054');
+  // Regression: the first real run reported a cited file hash as mismatched because the checker normalised CRLF to
+  // LF before hashing. The repository's provenance strings hash the RAW BYTES, so a declared hash must match either
+  // form. Two referees wrote a needs-work item on the strength of that bug; this test is why it cannot recur.
+  {
+    const { repoFile } = await import('./evidence.mjs');
+    const r = repoFile('genotype/cache/daane2021_data_s1A_fin_measurements.csv', '9c941299f5869e56');
+    if (r.exists) {
+      ok('a declared file hash over the RAW BYTES verifies', r.hash_ok === true, JSON.stringify({ declared: r.declared_hash, raw: r.sha256_raw_bytes, lf: r.sha256_lf_normalised }));
+      ok('and the report says which form matched', r.hash_matched === 'raw bytes', String(r.hash_matched));
+      ok('a wrong hash still fails', repoFile('genotype/cache/daane2021_data_s1A_fin_measurements.csv', 'deadbeefdeadbeef').hash_ok === false);
+    } else { ok('the cited cache file is present to check the hash against', false, 'the file is missing'); }
+  }
   ok('parseSource finds a repo file and its hash', parseSource(SOURCED).repo === 'physics/glide-data.csv' && parseSource(SOURCED).hash === 'bc24245b5163723b');
   ok('constantsOf infers a kind and says it inferred it', constantsOf({ shared_scope: { atoms: ['37.025 ≤ q.w'] }, sources: [SOURCED], evidence: { support: { values_N_m2: [37.026] } } }, '').every(c => c.kind_inferred === true));
   ok('statementText pulls a structure body out of Lean source', /wingLoading/.test(statementText('structure Band where\n  wingLoading : ℝ\n  lo : 37.0 ≤ wingLoading\n\n', 'Band') || ''));
@@ -270,6 +296,39 @@ if (MUTATE) {
   for (const [name, fx] of cases.map(c => [c[0], c[1]])) {
     const r = verdictFor(fx, MUTANTS['the hard-fail list is dropped']);
     ok(`dropping the hard-fail list lets ${name} through`, r.verdict !== 'REJECT', `still ${r.verdict}`);
+  }
+}
+
+// ---------------------------------------------------------------- 9. the queue -> approve path, end to end
+section('the promotion queue and the one-command approval, end to end');
+{
+  // A real queue file would be the project's; this runs against a throwaway copy so the test never touches it.
+  const realQueue = D('queue', 'promotion-queue.jsonl');
+  const backup = fs.existsSync(realQueue) ? fs.readFileSync(realQueue, 'utf8') : null;
+  try {
+    if (backup != null) fs.unlinkSync(realQueue);
+    const { requestPromotion, queue, approve, refuse } = await import('./promote.mjs');
+    const gates = runGates(GOOD, { evidenceReport: { constants: GOOD.constants.map(c => ({ value: c.value, verdict: 'found' })), summary: {} } });
+    const reasons = Object.fromEntries(['C1_binds_something_real', 'C2_constants_sourced', 'C3_scope_honest', 'C4_independent', 'C5_consistent', 'C6_wild_type_survives', 'C7_not_circular']
+      .map(k => [k, { verdict: 'pass', reason: 'a reason long enough to count as one for the purposes of this test' }]));
+    const ruling = reconcile({ cand: GOOD, gates, refereeOut: { verdict: 'PROMOTE-TO-CANDIDATE', ruling: 'a reasoned ruling for the test', criteria: reasons, what_a_human_should_check: 'the n of 4' } });
+    ok('the fixture law reaches PROMOTE-TO-CANDIDATE', ruling.verdict === 'PROMOTE-TO-CANDIDATE', ruling.verdict);
+    requestPromotion({ ruling, registry: { written: false, why: 'the test does not write the registry' } });
+    const row = queue().find(q => q.law_id === GOOD.law_id);
+    ok('a promotion request is queued awaiting a human', row && row.status === 'awaiting-human', JSON.stringify(row && row.status));
+    ok('the queued request carries the written ruling and the criteria hash', !!(row.ruling && row.ruling.ruling) && row.criteria_sha256 === requireLock().criteria_sha256);
+    ok('the request names the consequence it asks a human to accept', /turn designs RED/.test(row.history[0].asks), row.history[0].asks);
+    let threw = null;
+    try { await approve(GOOD.law_id, { by: 'human:project-lead', dryRun: true }); } catch (e) { threw = e.message; }
+    ok('approve refuses a law that is not in the registry (so nothing was written behind the registry)', /not in the registry/.test(threw || ''), threw || 'it did not refuse');
+    const ref = refuse(GOOD.law_id, { by: 'human:project-lead', why: 'the test refuses it so nothing is left pending' });
+    ok('refuse records a human decision with a reason', ref.refused === true && queue().find(q => q.law_id === GOOD.law_id).status === 'refused');
+    let t2 = null;
+    try { refuse(GOOD.law_id, { by: 'human:project-lead' }); } catch (e) { t2 = e.message; }
+    ok('refuse without a reason is rejected', /--why is required/.test(t2 || ''), t2 || 'it did not refuse');
+  } finally {
+    if (backup != null) fs.writeFileSync(realQueue, backup);
+    else if (fs.existsSync(realQueue)) fs.unlinkSync(realQueue);
   }
 }
 

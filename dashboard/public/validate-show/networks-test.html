@@ -261,8 +261,12 @@ async function runCase(designId, hostWrap, opts = {}) {
 
   /* ---- theme flip ---- */
   if (typeof scene.setTheme === 'function') {
-    scene.setTheme('dark'); scene.setTheme('light');
-    ok(`${designId}: setTheme survives a flip`, true);
+    // flip away and back, ending on the theme this mount was asked for — otherwise every
+    // screenshot afterwards is of the wrong theme and dark mode is never actually looked at
+    scene.setTheme(opts.theme === 'dark' ? 'light' : 'dark');
+    scene.setTheme(opts.theme || 'light');
+    ok(`${designId}: setTheme survives a flip and ends on ${opts.theme || 'light'}`,
+       host.querySelector('.nw-root').dataset.nwtheme === (opts.theme || 'light'));
   }
 
   /* ---- clickable anatomy announces the part ---- */

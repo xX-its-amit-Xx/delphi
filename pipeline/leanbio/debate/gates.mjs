@@ -116,7 +116,13 @@ export function consistency(cand) {
   }
   if (s === 'candidate') return { criterion: 'C5', verdict: 'pass', why: 'propose.mjs constructed a joint witness with every accepted law whose scope overlaps' };
   if (s === 'proposed') return { criterion: 'C5', verdict: 'unclear', why: 'propose.mjs reached status `proposed`: neither a joint witness nor a contradiction was proved, so joint consistency is unknown' };
-  return { criterion: 'C5', verdict: 'fail', why: `the candidate arrived with propose.mjs status ${JSON.stringify(s)}; only candidate, proposed or contested can be debated` };
+  // A MISSING status is a metadata gap, not a proved inconsistency. Reporting it as `fail` turned a law whose board
+  // task had not been posted yet into a REJECT, which reads as a scientific verdict it has not earned. An unknown
+  // status is `unclear`: it blocks promotion and says what is missing. Only a status that propose.mjs itself refused
+  // is a fail.
+  if (s == null) return { criterion: 'C5', verdict: 'unclear', why: 'the candidate carries no propose.mjs status (no `status_after_propose` in its meta, no board task naming it and no registry entry), so joint consistency with the accepted set is unknown. Run lean/registry/propose.mjs and record the outcome; this is a metadata gap, not an inconsistency' };
+  if (['retired', 'rejected', 'refused'].includes(s)) return { criterion: 'C5', verdict: 'fail', why: `the candidate arrived with status ${JSON.stringify(s)}: propose.mjs or a person already refused it, so there is nothing to debate` };
+  return { criterion: 'C5', verdict: 'unclear', why: `the candidate arrived with an unrecognised propose.mjs status ${JSON.stringify(s)}; only candidate, proposed or contested can be debated, so joint consistency is unknown` };
 }
 
 // ---------------------------------------------------------------- C6: would it have fired on a wild-type organism?
@@ -125,6 +131,18 @@ export function wildType(cand, { dossier = null } = {}) {
   const atoms = cand.shared_scope?.atoms || [];
   const needs = [...new Set(atoms.flatMap(atomQuantities))];
   const out = { criterion: 'C6', atoms, needs, dossier_version: wt.version, in_scope: 0, evaluated: 0, fired: [], held: [], skipped: [] };
+  // A law with no atoms cannot be evaluated against anything, so it must not read as `pass`. Without this, every
+  // organism in scope counted as "evaluated", nothing could fire, and the law collected a free C6 pass - exactly the
+  // vacuous pass C6 exists to prevent. (Found 2026-11-01 on development-growth-asymptote, which declares no
+  // shared_scope.atoms and was reported as holding for all 24 in-scope organisms.)
+  if (!atoms.length) return { ...out, verdict: 'unclear',
+    why: 'the candidate declares no shared_scope.atoms, so there is no formula to evaluate against a wild-type organism: C6 is untested, not satisfied' };
+  // A law with no atoms cannot be evaluated against anything, so it must not read as `pass`. Without this, every
+  // organism in scope counted as "evaluated", nothing could fire, and the law collected a free C6 pass - which is
+  // exactly the vacuous pass C6 exists to prevent. (Found 2026-11-01 on development-growth-asymptote, which has no
+  // shared_scope.atoms and was reported as holding for all 24 in-scope organisms.)
+  if (!atoms.length) return { ...out, verdict: 'unclear',
+    why: 'the candidate declares no shared_scope.atoms, so there is no formula to evaluate against a wild-type organism: C6 is untested, not satisfied' };
   // An area-derived quantity cannot be read off a specimen whose fins were folded: that row is not a lifting
   // configuration, and refuting a wing-loading law with it would be dishonest.
   const AREA_DERIVED = new Set(['wingLoading', 'liftingArea', 'CLmax', 'LDmax', 'aspectRatio']);

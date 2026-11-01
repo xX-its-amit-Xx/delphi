@@ -108,6 +108,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {
   mountCreatures, makeSchool, makeEnsemble, makeRng, glideTrajectory, analyticBound,
   perturbRun, DISTRIBUTIONS, SCOPE_NOTES, LEGEND, legendHtml, seedFromUrl, seedToUrl,
+  launchDrawGate, FIELD_OBSERVATIONS, OPEN_QUESTIONS,
   SPECIES_SCALE, glbScale, metresPerUnit, isFlier,
 } from './creatures.js';
 
@@ -405,6 +406,26 @@ chk('nothing decorative sits above the surface except the distant flying fish', 
   chk('a winged-zebrafish ensemble still never glides', z.stats.can_glide_fraction === 0 && z.runs.every(r => r.result.can_glide === false),
     `v_min ${f2(z.stats.v_min_m_s.median)} m/s vs launch ${f2(z.stats.launch_airspeed_m_s.median)} m/s, in all 200 draws`);
   chk('the zebrafish does not get the flying-fish taxi band', isFlier(ZF) === false && perturbRun(ZF, makeRng('x')).skipped.includes('launch_airspeed_m_s'));
+  // THE STAGE GATE: a flying-fish LARVA matches the species and must still be refused the adult band.
+  const k = 0.006 / 0.203;
+  const LARVA = { id: 'ff-larva', species: 'Cypselurus hiraii', stage: 'larva', SL_m: { value: 0.006 },
+    mass_kg: { value: 0.06 * k ** 3 }, ref_area_m2: { value: 0.012688 * k ** 2 }, span_m: { value: 0.261 * k },
+    CL_max: { value: 0.78 }, LD_max: { value: 4.37 }, CD_min: { value: 0.055 }, CL_at_zero_deg: { value: 0.4 },
+    stall_alpha_deg: { value: 35 }, glide_alpha_deg: { value: 5 }, approach_angle_deg: { value: 10 },
+    launch_airspeed_m_s: { value: 0.18 } };
+  const lv = makeEnsemble({ draws: 200, seed: 'larva', baseParams: LARVA, keepTrajectories: false });
+  chk('a flying-fish LARVA is refused the adult taxi band (defect D1)',
+    lv.species_gate.species_matches_flier === true && lv.species_gate.launch_speed_drawn === false
+    && lv.stats.can_glide_fraction === 0 && lv.stats.launch_airspeed_m_s.max < 15,
+    `species matches, stage does not; launch stays at ${lv.stats.launch_airspeed_m_s.median.toFixed(2)} m/s and it never glides`);
+  chk('the adult still gets the band', launchDrawGate(L3, 17.5).allow === true && launchDrawGate(L3, 10).allow === false,
+    'adult at 17.5 m/s yes, a juvenile capped at the 10 m/s leap speed no');
+  chk('the 50 m field figure is recorded as ONE hop, not a sequence',
+    /ONE free flight/.test(FIELD_OBSERVATIONS.single_hop_range_m.measures) && /SEQUENCE/.test(FIELD_OBSERVATIONS.sequence_total_range_m.measures),
+    'Deng et al. 2019 separates the 50 m free flight from the 400 m repeated-taxiing total');
+  chk('the sequence bookkeeping is present and says it is not a prediction',
+    E.stats.sequence && E.stats.sequence.is_prediction === false,
+    E.stats.sequence && E.stats.sequence.distance_covered_in_30s_m ? `${E.stats.sequence.distance_covered_in_30s_m.median.toFixed(0)} m in 30 s (median) against the quoted 400 m` : '');
   const a = makeEnsemble({ draws: 30, seed: 'url-seed', baseParams: L3, keepTrajectories: false });
   const b = makeEnsemble({ draws: 30, seed: seedFromUrl(new URL(seedToUrl(location.href, 'url-seed')).search), baseParams: L3, keepTrajectories: false });
   chk('a seed carried in the URL reproduces the ensemble exactly', a.runs.every((r, i) => r.result.range_m === b.runs[i].result.range_m));

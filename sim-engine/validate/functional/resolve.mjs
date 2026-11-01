@@ -87,7 +87,9 @@ export function paralogueResolution(symbol, { anatomyLabel = 'fin' } = {}) {
   if (!paras.length) return { applies: false, refusal: `no paralogue of ${symbol} is recorded in omics/genomic (Ensembl/ZFIN paralog rows)`, candidates: [] };
   const assessed = [];
   for (const p of paras) {
-    if (!C.hasCard(p.symbol)) { assessed.push({ symbol: p.symbol, refused: `${p.symbol} has no omics card, so no expression or domain evidence can be read for it` }); continue; }
+    const name = p.symbol || p.ensembl_gene || 'an unnamed paralogue';
+    if (p.symbol_unresolved) { assessed.push({ symbol: name, identity_pct: p.identity_pct, refused: `a real paralogue (${p.ensembl_gene}, ${p.identity_pct ?? '?'} % identity, ${p.paralog_type || 'Compara paralog'}) that carries NO gene symbol in our map, so no expression, domain or phenotype record can be looked up for it. It is a paralogue we cannot follow up, which is not the same as no paralogue` }); continue; }
+    if (!C.hasCard(p.symbol)) { assessed.push({ symbol: p.symbol, identity_pct: p.identity_pct, refused: `${p.symbol} has no omics card, so no expression or domain evidence can be read for it` }); continue; }
     const expr = C.finExpression(p.symbol);
     const dom = C.sharedDomains(symbol, p.symbol);
     if (!expr) { assessed.push({ symbol: p.symbol, refused: `no expression record places ${p.symbol} in any ${anatomyLabel} structure (omics/transcriptomic expressed_in)`, shared_domains: dom.length }); continue; }
@@ -110,7 +112,13 @@ export function paralogueResolution(symbol, { anatomyLabel = 'fin' } = {}) {
     ],
     documented_rescue: null,
     hypothesis: true,
-    hypothesis_why: 'expression plus domain retention makes the paralogue a CANDIDATE to carry the function. No rescue experiment in our sources shows that it does, so the resolution is hypothesised, not demonstrated.',
+    hypothesis_why: 'expression plus domain retention makes the paralogue a CANDIDATE to carry the function. No rescue experiment in our sources shows that it does, so the resolution is hypothesised, not demonstrated.'
+      + (assessed.some(a => /NO gene symbol/.test(a.refused || ''))
+        ? ` It is also the paralogue we could FOLLOW UP, not necessarily the most similar one: ${assessed.filter(a => /NO gene symbol/.test(a.refused || '')).map(a => `${a.symbol} at ${a.identity_pct ?? '?'} % identity`).join(', ')} could not be checked for want of a gene symbol, and ${ok.symbol}'s own identity may be lower.` : ''),
+    shared_domain_levels: [...new Set(ok.shared_domains.map(d => d.feature))],
+    domain_evidence_caveat: ok.shared_domains.every(d => d.feature === 'homologous_superfamily')
+      ? 'the only shared annotation is a HOMOLOGOUS SUPERFAMILY, which is the weakest level of domain retention: it says the two proteins share an ancient fold, not that they do the same job'
+      : null,
   };
 }
 
@@ -124,9 +132,15 @@ export function analogousSetResolution(symbol, genotype) {
   const hits = [];
   for (const g of edited) {
     if (!C.hasCard(g)) { hits.push({ gene: g, refused: `${g} has no omics card` }); continue; }
-    const pw = C.sharedPathwayTerms(symbol, g), dm = C.sharedDomains(symbol, g);
-    if (!pw.length && !dm.length) { hits.push({ gene: g, refused: `${g} shares no pathway, GO term or domain with ${symbol}` }); continue; }
-    hits.push({ gene: g, shared_pathway_terms: pw, shared_domains: dm });
+    const all = C.sharedPathwayTerms(symbol, g), dm = C.sharedDomains(symbol, g);
+    const pw = all.filter(t => t.specificity.specific);
+    if (!pw.length && !dm.length) {
+      hits.push({ gene: g, refused: all.length
+        ? `${g} shares ${all.length} term(s) with ${symbol} but NONE is specific enough to license the class: ${all.slice(0, 4).map(t => `${t.term} (${t.id}) - ${t.specificity.why_not}`).join('; ')}`
+        : `${g} shares no pathway, GO term or domain with ${symbol}`, generic_terms_rejected: all.length });
+      continue;
+    }
+    hits.push({ gene: g, shared_pathway_terms: pw, shared_domains: dm, generic_terms_rejected: all.length - pw.length });
   }
   const ok = hits.filter(h => !h.refused);
   if (!ok.length) return { applies: false, candidates: hits, refusal: `none of the design's edited genes (${edited.join(', ')}) shares a pathway, GO term or domain with ${symbol}: ${hits.map(h => h.refused).join('; ')}` };
@@ -135,7 +149,7 @@ export function analogousSetResolution(symbol, genotype) {
   return {
     applies: true, genes: ok.map(h => h.gene), candidates: hits,
     evidence: [
-      ev(`the design edits ${best.gene}, which shares ${terms.length} annotated term(s) with the required gene ${symbol}: ${terms.slice(0, 4).map(t => `${t.term}${t.id ? ` (${t.id})` : ''}`).join('; ')}`, terms[0].a_source, terms[0].kind),
+      ev(`the design edits ${best.gene}, which shares ${terms.length} SPECIFIC annotated term(s) with the required gene ${symbol}: ${terms.slice(0, 4).map(t => `${t.term}${t.id ? ` (${t.id})` : ''}${t.specificity ? ` [carried by ${t.specificity.n_genes_with_term} of ${t.specificity.universe} annotated genes]` : ''}`).join('; ')}${best.generic_terms_rejected ? `. ${best.generic_terms_rejected} further shared term(s) were REJECTED as too generic by the measured specificity rule (${C.SPECIFICITY_RULE.why})` : ''}`, terms[0].a_source, terms[0].kind),
       ev(`shared membership comes from the omics pathway crosswalk (GO / Reactome / WikiPathways) as built in omics/pathway/ and read through the gene cards`, 'omics/pathway/pathway-crosswalk.json; omics/index/genes/*.json.gz', 'curated'),
     ],
     hypothesis: true,
@@ -171,8 +185,13 @@ export async function resolveOne(req, genotype, { direction = 'ADDITION' } = {})
     row.class = 'SAME';
     row.difference = `none at the residue level: the zebrafish reference already carries ${req.locus.alt} at the homologous site (position ${req.design_residue.position})`;
     push(analogueEv,
-      ev(`the design's base protein carries ${req.design_residue.residue} at the column aligned to ${req.locus.source_symbol} ${req.locus.pos}, which IS the analogue's derived state. Read by global alignment at ${req.design_residue.percent_identity} % identity, local window identity ${req.design_residue.local_window.identity}`, 'functional/data/design-residues.json (functional/scripts/read-design-residues.mjs)', 'measured'),
-      ev('so this requirement is met ancestrally, not by the design. Sheet G is built from substitutions absent in the beloniform OUTGROUPS, and zebrafish is not in that panel, which is why the state had to be read rather than assumed to differ', 'sequences/progression.json read_this_first[1]', 'curated'));
+      /^IDENTITY/.test(req.design_residue.method || '')
+        ? ev(`the design's base genome IS the analogue's, so its state at this unedited locus is the analogue's own: ${req.design_residue.residue} at ${req.locus.source_symbol} ${req.locus.pos}. Nothing is aligned or inferred here - this is identity, and it is exactly what the positive control is for`, 'functional/requirements.mjs (base genome = the analogue)', 'measured')
+        : ev(`the design's base protein carries ${req.design_residue.residue} at the column aligned to ${req.locus.source_symbol} ${req.locus.pos}, which IS the analogue's derived state. Read by global alignment at ${req.design_residue.percent_identity} % identity, local window identity ${req.design_residue.local_window.identity}`, 'functional/data/design-residues.json (functional/scripts/read-design-residues.mjs)', 'measured'),
+      ev(/^IDENTITY/.test(req.design_residue.method || '')
+        ? 'the requirement is met by identity, not by the design: a design built on the analogue\'s own genome cannot differ from it at a locus it does not edit'
+        : 'so this requirement is met ANCESTRALLY, not by the design. Sheet G is built from substitutions absent in the beloniform OUTGROUPS, and zebrafish is not in that panel, which is why the state had to be read rather than assumed to differ',
+      'sequences/progression.json read_this_first[1]', 'curated'));
     row.kind = weakest();
     return row;
   }

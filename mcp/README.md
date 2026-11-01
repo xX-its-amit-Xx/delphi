@@ -92,7 +92,7 @@ Use `local` while building; use `network` when citing something or checking what
 | `lean_laws_list` | The project's versioned Lean laws (physical and biological): `law_id`, version, kind, status, theorem, constraint ids. Filter by `kind`, `status`, `scope`, `lawset`, `text`. |
 | `lean_law_get` | One law in full: statement, the Lean source of its theorem and named hypotheses, constraint lemmas, version history, sources, non-vacuity witness, pinned commit and statement hash with a live drift flag. |
 | `lean_lawset_get` | A lawset release (`law_id`, version, content hash, pinned status), or `current`. |
-| `lean_check` | Evaluate a design (SI units) against a lawset: per-law verdicts and violations `{law_id, version, kind, status, inputs, message, binding}`. Floating point, **not a kernel check**. |
+| `lean_check` | Evaluate a design (SI units) against a lawset: per-law verdicts (`holds`, `violated`, `cannot-evaluate`, `out-of-scope`, `unknown-lawset`) and violations `{law_id, version, kind, status, inputs, message, binding}`. Floating point, **not a kernel check**. |
 | `lean_verify` | Re-hash pinned Lean statements; report drift, missing theorems and a stale `/api/lean/` mirror. |
 | `lean_source_status` | Where the laws come from (`local`, `remote:mirror`, `remote:github`; env `LEANBIO_REMOTE`), the current lawset, when it was fetched and last checked, the TTL, 304 counts, integrity, and the last error or rejected (tampered) fetch. `refresh: true` checks now. |
 | `lean_changes` | Lawset releases newer than `since_version`, newest first: CHANGELOG prose plus a diff of the pins (laws added or removed, version and status changes). Same feed at `/api/lean/changes.json` and `changes.xml` (Atom). |

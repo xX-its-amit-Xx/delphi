@@ -18,7 +18,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { closestFunctionalAnalogue, registry } from './analogue.mjs';
-import { genotypeOf, canonicalSymbol } from './designs.mjs';
+import { genotypeOf, canonicalSymbol, baseGenome } from './designs.mjs';
 
 const HERE = import.meta.dirname;
 const read = p => JSON.parse(fs.readFileSync(p, 'utf8'));
@@ -60,7 +60,7 @@ export function detectDirection(design, analogue, { desiredText = null } = {}) {
 }
 
 /** ADDITION: the analogue's loci, each as a requirement on the design, with assessability decided by a stated rule. */
-function additionRequirements() {
+function additionRequirements(base) {
   const D = reqData();
   const res = resData().residues || {};
   const out = [];
@@ -69,10 +69,18 @@ function additionRequirements() {
     const confirmed = !!(st.read && st.n_carrying_derived > 0);
     const orth = !r.zebrafish.none;
     const inUniverse = !!r.zebrafish.symbol;
-    const rr = res[r.id] || null;
+    // The design's state at an UNEDITED locus is its base genome's state, so which genome that is decides what
+    // can be read at all.
+    const analogueBase = base.kind === 'analogue';
+    const rr = analogueBase
+      ? (confirmed ? { read: true, danio_residue: r.locus.alt, danio_position: r.locus.pos, percent_identity: 100,
+          local_window: { identity: 1, usable: true }, carries_derived_state: true,
+          method: "IDENTITY: the design's base genome IS the analogue's, so its state at an unedited locus is the analogue's own measured state (the per-species residues read from the Daane exon capture)" } : null)
+      : base.kind === 'danio_reference' ? (res[r.id] || null) : null;
     const designRead = !!(rr?.read && rr.local_window?.usable);
     let assessable = true, why = null, depth = 'full';
-    if (!st.read) { assessable = false; why = `UNASSESSABLE on the analogue side: ${st.why}`; }
+    if (base.kind === 'undefined') { assessable = false; why = `UNASSESSABLE on the design side: ${base.why}`; }
+    else if (!st.read) { assessable = false; why = `UNASSESSABLE on the analogue side: ${st.why}`; }
     else if (!confirmed) {
       assessable = false;
       why = st.n_with_data === 0
@@ -135,10 +143,11 @@ export async function requirementSet(design, target, { designFinSL = null } = {}
   const analogue = closestFunctionalAnalogue(design, target, { designFinSL });
   const dir = detectDirection(design, analogue, { desiredText });
   const genotype = await genotypeOf(design);
+  const base = baseGenome(design);
   const D = reqData();
 
   let requirements = [];
-  if (dir.direction === 'ADDITION') requirements = additionRequirements();
+  if (dir.direction === 'ADDITION') requirements = additionRequirements(base);
   else if (dir.direction === 'SUBTRACTION') requirements = subtractionRequirements();
   // NO_ANALOGUE: the set stays empty, deliberately.
 
@@ -151,7 +160,7 @@ export async function requirementSet(design, target, { designFinSL = null } = {}
   }
   return {
     direction: dir.direction, direction_detected_by: dir.detected_by, direction_evidence: dir.evidence,
-    analogue, genotype,
+    analogue, genotype, base_genome: base,
     requirements,
     source_dataset: dir.direction === 'NO_ANALOGUE' ? null : { title: D.title, built: D.built, sources: D.sources, counts: D.counts, what_this_is: D.what_this_is, what_this_is_not: D.what_this_is_not },
     coverage: {
