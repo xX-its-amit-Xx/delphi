@@ -68,7 +68,18 @@ export function ingestDebate({ write = false } = {}) {
       // THE ASYMMETRY. A wild-type failure inside the statement's own scope SETTLES it against the statement,
       // so it is a failure and not an open question. Any other defeat must say why it is settled.
       const wild = rec.failed_gate === 'C6_wild_type_survives' || /wild[- ]type/i.test(String(rec.why || []).concat(rec.ruling || ''));
-      const organisms = [...String(rec.criteria?.C6_wild_type_survives?.reason || '').matchAll(/([A-Z][a-z]+ [a-z]+(?: [a-z]+)?)\s*\(/g)].map(m => m[1]);
+      // The ruling states a COUNT but names only the first organism explicitly, so record both and say which is
+      // which. Listing one name where the ruling says five would understate the evidence; inventing four names
+      // would be worse.
+      const c6 = String(rec.criteria?.C6_wild_type_survives?.reason || '');
+      const named = [...c6.matchAll(/([A-Z][a-z]+ [a-z]+(?: [a-z]+)?)\s*\(/g)].map(m => m[1]);
+      const countM = /fires on (\d+) wild-type organism/.exec(c6);
+      const organisms = [
+        ...named,
+        ...(countM && Number(countM[1]) > named.length
+          ? [`and ${Number(countM[1]) - named.length} further wild-type organism(s) inside the declared scope, counted but NOT individually named in the debate ruling (see debate.criteria.C6_wild_type_survives.reason; the underlying rows are in the cited data file)`]
+          : []),
+      ];
       const reason = wild ? 'fires-on-wild-type'
         : /vacuous|tautolog/i.test(String(rec.why)) ? 'vacuous'
         : /unsourced|no source/i.test(String(rec.why)) ? 'unsourced'
