@@ -7,8 +7,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { designScoreV12 } from './score-v12.mjs';
 import { designScore } from './score.mjs';
+const VERSION = process.env.SCORER_VERSION || '1.2.0';
 import { mulberry32 } from './phenotype.mjs';
 
 const DIR = import.meta.dirname;
@@ -37,7 +37,7 @@ const t0 = Date.now(); const rows = {};
 for (const [g, list] of Object.entries(sample)) {
   rows[g] = [];
   for (const d of list) {
-    const r = await designScoreV12(designOf(d), { reference_set_excluding: lofo(d), network: false });
+    const r = await designScore(designOf(d), { version: VERSION, reference_set_excluding: lofo(d), network: false });
     let r10 = null;
     if (!d.doc) { try { const raw = {}; const M = { standard_length_m: 'SL_m', body_mass_kg: 'mass_kg', body_depth_over_SL: 'depth_SL', body_width_over_SL: 'width_SL', peduncle_depth_frac: 'ped_depth_frac', peduncle_width_frac: 'ped_width_frac', pectoral_len_over_SL: 'pectoral_len_SL', pectoral_area_over_SL2: 'pectoral_area_SL2', pectoral_span_over_SL: 'pectoral_span_SL' };
       for (const [k, v] of Object.entries(d.params || {})) if (M[k]) raw[M[k]] = v; r10 = (await designScore({ specimen: raw }, { version: '1.0.0', reference_set_excluding: lofo(d), network: false })).score; } catch (e) { r10 = null; } }
@@ -63,7 +63,7 @@ for (const k of ['rank_score', 'score', 'v100_score']) {
     distinct_values: new Set(Object.values(rows).flat().map(r => r[k])).size, n: Object.values(rows).flat().length,
   };
 }
-const out = { version: '1.2.0', partition: 'dev only (heldout/ never read)', split: 'LOFO (family + species of every source specimen excluded)', n_per_group: N, seconds: Math.round((Date.now() - t0) / 1000),
+const out = { version: VERSION, scored_through: 'score.mjs designScore (the shipped entry point)', partition: 'dev only (heldout/ never read)', split: 'LOFO (family + species of every source specimen excluded)', n_per_group: N, seconds: Math.round((Date.now() - t0) / 1000),
   refused: Object.values(rows).flat().filter(r => r.refused).length, errors: Object.values(rows).flat().filter(r => r.error).map(r => ({ id: r.id, error: r.error })).slice(0, 20), report, rows };
-fs.writeFileSync(path.join(DIR, 'dev-benchmark-v1.2.0.json'), JSON.stringify(out, null, 1));
+fs.writeFileSync(path.join(DIR, `dev-benchmark-v${VERSION}.json`), JSON.stringify(out, null, 1));
 console.log(JSON.stringify({ seconds: out.seconds, refused: out.refused, errors: out.errors.length, report }, null, 1));

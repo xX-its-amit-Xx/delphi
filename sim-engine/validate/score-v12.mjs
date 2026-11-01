@@ -18,7 +18,8 @@ import { loadReferences } from './phenotype.mjs';
 export const BODY_SPEC_KEYS = new Set(['SL_m', 'mass_kg', 'finArea_m2', 'pectoralFinArea_m2', 'taxon', 'life_stage', 'gillArea_m2', 'finLength_SL', 'rho']);
 
 const DIR = import.meta.dirname;
-const W = JSON.parse(fs.readFileSync(path.join(DIR, 'score-weights.v1.2.0.json'), 'utf8'));
+const W0 = JSON.parse(fs.readFileSync(path.join(DIR, 'score-weights.v1.2.0.json'), 'utf8'));
+const W = W0;
 const ENV = JSON.parse(fs.readFileSync(path.join(DIR, 'data', 'trait-envelopes.v1.2.0.json'), 'utf8'));
 export const SCORER_V12 = Object.freeze({ ...W, weights_file: 'sim-engine/validate/score-weights.v1.2.0.json', envelopes_file: 'sim-engine/validate/data/trait-envelopes.v1.2.0.json' });
 
@@ -31,8 +32,8 @@ const ORGAN_FRAC = /_volume_over_body_volume$/;
 const isNum = x => typeof x === 'number' && Number.isFinite(x);
 
 /** Per-trait envelope, definitional and organ-fraction checks on whatever traits are present. */
-export function traitChecks(params) {
-  const rows = []; const D = W.decay_decades;
+export function traitChecks(params, Wc = W0) {
+  const rows = []; const D = Wc.decay_decades;
   for (const [k, v] of Object.entries(params)) {
     if (!isNum(v)) continue;
     const E = ENV.envelopes[k];
@@ -54,9 +55,9 @@ export function traitChecks(params) {
   return rows;
 }
 
-function composite(C, floor) {
+function composite(C, floor, Wc = W0) {
   let s = 0, w = 0;
-  for (const [k, c] of Object.entries(C)) if (c && c.ran && isNum(c.value)) { s += W.weights[k] * Math.log(Math.max(c.value, floor)); w += W.weights[k]; }
+  for (const [k, c] of Object.entries(C)) if (c && c.ran && isNum(c.value)) { s += Wc.weights[k] * Math.log(Math.max(c.value, floor)); w += Wc.weights[k]; }
   return w ? Math.exp(s / w) : null;
 }
 
@@ -68,6 +69,10 @@ export async function designScoreV12(design, opts = {}) {
   catch (e) { return { score: null, plausible: null, rank_score: null, error: `scorer error (a bug, not a verdict): ${e.message}`, scorer: SCORER_V12 }; }
 }
 async function scoreInner(design, opts) {
+  // Injection points for LATER versions (v1.3.0+). With neither option set every line below behaves exactly as the
+  // frozen v1.2.0 did; the test 'v12-frozen' checks that.
+  const W = opts._weights || W0;                    // a later version's weights file
+  const extraPartsFn = opts._extraPartsFn || null;  // (params, ctx) -> [{part, value, p}] appended to the P parts
   const exclude = [...(opts.reference_set_excluding || []), ...(opts.exclude || [])];
   const leanSpec = design?.lean_spec || opts.lean_spec || null;
   let r, params;
@@ -95,7 +100,7 @@ async function scoreInner(design, opts) {
   }
   const C1 = r.score.components;
   // ---- P
-  const tc = traitChecks(params);
+  const tc = traitChecks(params, W);
   // range:* sanity checks are superseded by the per-trait envelopes (wider reference set, incl. larvae)
   const sanFailed = (r.sanity?.phenotype || []).filter(c => c.status === 'failed' && !/^range:/.test(c.id));
   const parts = [...(C1.P.parts || []).filter(x => !/^p_fin_envelope/.test(x.part)).map(x => ({ ...x }))];
@@ -107,6 +112,7 @@ async function scoreInner(design, opts) {
   if (envRows.length) { const worst = envRows.reduce((a, b) => (b.p < a.p ? b : a)); parts.push({ part: 'p_trait_envelope', value: worst.p, p: worst.p, trait: worst.trait }); }
   for (const t of tc.filter(t => t.kind !== 'envelope')) parts.push({ part: `${t.kind}:${t.trait}`, value: t.p, p: t.p });
   for (const c of sanFailed) parts.push({ part: `sanity_failed:${c.id}`, value: W.sanity_failed_value, p: W.sanity_failed_value });
+  for (const x of (extraPartsFn ? extraPartsFn(params, { exclude, r }) : [])) parts.push(x);
   const checkedTraits = new Set([...envRows.map(t => t.trait), ...(r.phenotype?.body?.ran ? (r.phenotype.body.features_present || r.phenotype.body.larval_envelope?.rows?.map(x => x.feature) || []) : [])]);
   const coverage = { checked: checkedTraits.size, traits_present: Object.keys(params).length, unchecked: Object.keys(params).filter(k => !ENV.envelopes[k] && !ORGAN_FRAC.test(k) && !PARAM_TO_RAW[k]), body_block_ran: !!r.phenotype?.body?.ran,
     factor: null, rule: `P x (0.5 + 0.5 x min(1, checked / ${W.coverage_target})); with nothing checked P = ${W.no_evidence_P}` };
@@ -133,10 +139,10 @@ async function scoreInner(design, opts) {
     } catch (e) { claims = { error: e.message }; }
   }
   const C = { P, L, G: C1.G, S: C1.S, E: C1.E };
-  const score = composite(C, W.floor);
+  const score = composite(C, W.floor, W);
   // ---- rank_score (v1.1.1 rule): raw P parts geometric mean x coverage, mean evidence
   const rp = parts.length ? Math.exp(parts.reduce((a, x) => a + Math.log(Math.max(x.p ?? x.value, W.rank.floor)), 0) / parts.length) * coverage.factor : W.no_evidence_P;
-  const rank = composite({ P: { ran: true, value: rp }, L, G: C1.G, S: C1.S, E: { ran: true, value: r.score.rank?.components?.E ?? C1.E.value } }, W.rank.floor);
+  const rank = composite({ P: { ran: true, value: rp }, L, G: C1.G, S: C1.S, E: { ran: true, value: r.score.rank?.components?.E ?? C1.E.value } }, W.rank.floor, W);
   const plausible = score != null && score >= W.plausible_threshold;
   const three = threeResults(r, { claims });
   return {
@@ -144,6 +150,6 @@ async function scoreInner(design, opts) {
     closest_real_relative: r.verdict.closest_real_relative, excluded: r.phenotype?.excluded,
     verdict: { statement: `Not a validity claim. Score ${score?.toFixed(3)} (${plausible ? 'plausible' : 'implausible'} by the pre-registered 0.5 cut; scorer v${W.version}); rank_score ${rank?.toFixed(3)}. Coverage: ${coverage.checked} trait(s) checked of ${coverage.traits_present} present. Closest real relative: ${r.verdict.closest_real_relative?.name || 'none'}. Lean: ${(L.newly_caused_accepted || []).length} accepted-law violation(s).`,
       failed: [...r.verdict.failed, ...tc.filter(t => t.p < 0.05).map(t => `trait:${t.trait}`)], could_not_run: r.verdict.could_not_run },
-    scorer: SCORER_V12, design: r.design,
+    scorer: opts._scorer || SCORER_V12, design: r.design, coverage_factor: coverage.factor,
   };
 }

@@ -16,7 +16,7 @@
 :root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3);
   --real:#3987e5;--neg:#d95926;--grid:#21332f}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{margin:0;overflow-x:hidden;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 a{color:var(--accent)}
 h1,h2,h3{line-height:1.2;margin:0 0 .5em}
 h1{font-size:clamp(1.7rem,4.5vw,2.6rem)} h2{font-size:1.4rem} h3{font-size:1.05rem}
@@ -25,8 +25,8 @@ p{margin:.4em 0 .8em}
 section{padding:28px 0;border-bottom:1px solid var(--line)}
 .lede{color:var(--mute);max-width:72ch;font-size:1.05rem}
 .grid{display:grid;gap:14px}
-.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
-.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr))}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);min-width:0}
 .card h3{margin-top:0}
 .kpi{font-size:2.1rem;font-weight:650;line-height:1.05}
@@ -54,6 +54,8 @@ svg .gr{stroke:var(--grid);stroke-width:1}
 svg .thr{stroke:var(--ink);stroke-width:1;opacity:.55}
 svg .hit{fill:transparent;cursor:default}
 svg .mk:hover,svg .mk:focus{opacity:.75;outline:none}
+.headline{font-size:1.15rem;line-height:1.5;max-width:80ch;margin:10px 0 6px}
+.headline b{font-weight:700}
 #tip{position:fixed;pointer-events:none;z-index:50;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:.82rem;box-shadow:var(--shadow);display:none;max-width:320px}
 #tip b{font-size:.95rem}
 details{margin-top:8px} summary{cursor:pointer;color:var(--accent);font-size:.9rem}
@@ -68,6 +70,7 @@ footer{padding:26px 0;color:var(--mute);font-size:.88rem}
 <section>
   <h1>Does the design scorer work?</h1>
   <p class="lede">An independent check of <span class="tag">designScore</span>, the scorer that rates synthetic organism designs. The test: real organisms should score high, designs that real biology rules out should score low, and nobody should be able to fool the scorer easily. The evaluator did not build the scorer or the benchmark. Every number below is recomputed from the run file, and every failure is kept.</p>
+  <div id="headline"></div>
   <div id="banner"></div>
   <div class="grid g4" id="kpis"></div>
   <p class="small mute" id="ver"></p>
@@ -155,15 +158,16 @@ fetch('data.json', { cache: 'no-store' }).then(r => r.json()).then(d => { D = d;
 function renderVersions() {
   if (!VERS.length) return;
   const ids = ['P1', 'P2', 'P3', 'S1', 'S2', 'S3', 'S4', 'S5', 'S6'];
-  const rows = VERS.map(v => [`v${v.version}`, v.overall_primary_pass ? 'PASS' : 'FAIL', `${f3(v.heldout_lofo.auc)} (${f3(v.heldout_lofo.ci[0])} to ${f3(v.heldout_lofo.ci[1])})`, pct(v.heldout_lofo.real_above), pct(v.heldout_lofo.neg_below),
+  const rows = VERS.map(v => [`v${v.version}`, v.overall_primary_pass ? 'PASS' : 'FAIL', `${f3(v.heldout_lofo.auc)} (${f3(v.heldout_lofo.ci[0])} to ${f3(v.heldout_lofo.ci[1])})`, v.heldout_lofo.minus_nn ? `${f3(v.heldout_lofo.minus_nn.mean)} (${f3(v.heldout_lofo.minus_nn.lo)} to ${f3(v.heldout_lofo.minus_nn.hi)})` : '', v.rank ? `${f3(v.rank.auc)}; minus NN ${f3(v.rank.minus_nn?.mean)} (${f3(v.rank.minus_nn?.lo)} to ${f3(v.rank.minus_nn?.hi)}); primary ${v.rank.overall_primary_pass ? 'PASS' : 'FAIL'}` : 'none', pct(v.heldout_lofo.real_above), pct(v.heldout_lofo.neg_below),
     ...ids.map(id => { const c = v.criteria.find(x => x.id === id); return c ? `${c.pass ? 'PASS' : 'FAIL'}${c.value != null ? ' ' + f3(c.value) : ''}` : ''; }), v.adversarial ? `${v.adversarial.specimen_space} · ${v.adversarial.document_space_C8}` : '', `${v.run_id.slice(0, 16)} · score.mjs ${v.score_mjs}`]);
-  $('#vertable').replaceChildren(table(['version', 'primary verdict', 'AUC, all real vs all negatives (95 % CI)', 'real organisms at or above 0.5', 'negatives below 0.5', ...ids, 'attacks that score plausible (specimen space · unread traits)', 'run'], rows));
+  $('#vertable').replaceChildren(table(['version', 'primary verdict (score)', 'AUC, all real vs all negatives (95 % CI)', 'scorer minus nearest-neighbour AUC (95 % CI)', 'rank_score: AUC, minus NN, primary verdict', 'real organisms at or above 0.5', 'negatives below 0.5', ...ids, 'attacks that score plausible (specimen space · unread traits)', 'run'], rows));
   $('#verbtns').replaceChildren(...VERS.map(v => { const b = el('button', { 'aria-pressed': 'false', text: `show v${v.version}` }); b.onclick = () => fetch(v.file, { cache: 'no-store' }).then(r => r.json()).then(d => { D = d; document.querySelectorAll('#verbtns button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); $('#splitbtns').replaceChildren(); init(); }); return b; }));
 }
 
 function view(k) { const [part, sp] = k.split(':'); return D[part][sp]; }
 function init() {
   const V = D.versions;
+  renderHeadline();
   $('#banner').innerHTML = '';
   const prim = D.criteria.filter(c => c.primary), sec = D.criteria.filter(c => !c.primary);
   const b = el('div', { class: 'note ' + (D.overall_primary_pass ? 'ok' : 'bad') });
@@ -184,6 +188,21 @@ function render() {
     kpi(pct(M.negatives_below_threshold.frac), `of negatives score below ${D.threshold} (${M.negatives_below_threshold.k}/${M.negatives_below_threshold.n})`),
     kpi(f3(M.pr_auc), `PR-AUC (chance ${f3(M.pr_chance)}; CI ${f3(M.pr_ci_family.lo)} to ${f3(M.pr_ci_family.hi)}). Restricted to items the scorer can read: AUC ${f3(v.readable_only.roc_auc)} (${v.readable_only.n_pos} real / ${v.readable_only.n_neg} negative)`));
   renderDists(M); renderBaselines(v.baselines); renderFamilies(v.per_taxon); renderCalib(M.calibration); renderWpert(v.weight_perturbation);
+}
+function renderHeadline() {
+  const H = D.heldout.family, M = H.metrics, nn = H.baselines.nn_distance_only, d = nn.scorer_minus_baseline, W = H.weight_perturbation, ver = D.versions.score_weights.version;
+  const R = D.rank?.heldout_family, rnn = R?.baselines?.nn_distance_only;
+  const beats = x => (x.lo > 0 ? 'beats' : x.hi < 0 ? 'is worse than' : 'does no better than');
+  const wFlat = W.joint_random_pm20.roc_auc.max - W.joint_random_pm20.roc_auc.min < 0.002;
+  const box = el('div', { class: 'card hero', style: 'border:2px solid var(--accent)' });
+  const p1 = el('p', { class: 'headline' });
+  p1.textContent = `Scorer v${ver}, held-out families, family-out: the full scorer ${beats(d)} nearest-neighbour distance alone (AUC ${f3(M.roc_auc)} vs ${f3(nn.roc_auc)}; difference ${f3(d.mean)}, 95 % CI ${f3(d.lo)} to ${f3(d.hi)}).` + (rnn ? ` Ranked by its rank_score, it gets AUC ${f3(R.metrics.roc_auc)} vs ${f3(rnn.roc_auc)} for nearest-neighbour distance (difference ${f3(rnn.scorer_minus_baseline.mean)}, CI ${f3(rnn.scorer_minus_baseline.lo)} to ${f3(rnn.scorer_minus_baseline.hi)}).` : '');
+  const p2 = el('p', { class: 'headline' });
+  p2.textContent = `${pct(M.real_above_threshold.frac)} of real organisms score as plausible, and ${pct(M.negatives_below_threshold.frac)} of negatives score as implausible. ` + (M.negatives_below_threshold.frac < 0.5 ? 'This is close to calling everything plausible. "Real organisms score high" is necessary, but on its own it is nowhere near sufficient, and this result shows why.' : 'Real organisms score high, and most negatives score low.');
+  const p3 = el('p', { class: 'headline' });
+  p3.textContent = wFlat ? `Moving any weight by ±20 % leaves the AUC unchanged (${f3(W.joint_random_pm20.roc_auc.min)} to ${f3(W.joint_random_pm20.roc_auc.max)}). The Lean, genotype, spec and evidence components are constant on this benchmark, so four of the five components do no work here.` : `Moving the weights by ±20 % moves the AUC between ${f3(W.joint_random_pm20.roc_auc.min)} and ${f3(W.joint_random_pm20.roc_auc.max)}.`;
+  box.append(p1, p2, p3);
+  $('#headline').replaceChildren(box);
 }
 function kpi(v, label, hero) { const c = el('div', { class: 'card' }); const k = el('div', { class: 'kpi' + (hero ? ' hero' : ''), text: v }); k.appendChild(el('small', { text: label })); c.appendChild(k); return c; }
 
@@ -241,13 +260,13 @@ function renderBaselines(Bl) {
 }
 function renderFamilies(T) {
   const fam = T.low_families.slice(0, 20);
-  const W = 760, L = 200, R = 60, rowH = 24;
+  const W = 760, L = 250, R = 80, rowH = 24;
   const svg = el('svg', { viewBox: `0 0 ${W} ${fam.length * rowH + 26}`, role: 'img' });
   const x = v => L + v * (W - L - R);
   [0, 0.5, 1].forEach(t => { svg.appendChild(el('line', { class: 'gr', x1: x(t), x2: x(t), y1: 0, y2: fam.length * rowH })); svg.appendChild(el('text', { x: x(t), y: fam.length * rowH + 16, 'text-anchor': 'middle', text: pct(t) })); });
   fam.forEach((f, i) => {
     const y = i * rowH;
-    svg.appendChild(el('text', { x: 0, y: y + 15, text: `${f.family} (${f.order || '?'})`, style: 'fill:var(--ink);font-size:12px' }));
+    svg.appendChild(el('text', { x: 0, y: y + 15, text: (`${f.family} (${f.order || '?'})`).slice(0, 36), style: 'fill:var(--ink);font-size:12px' }));
     const w = Math.max(2, f.frac_above * (W - L - R));
     const r = el('rect', { class: 'mk', x: L, y: y + 4, width: w, height: 16, rx: 4, fill: 'var(--real)' });
     hover(r, [`${pct(f.frac_above)} at or above cut`, `${f.family}: n ${f.n}, mean score ${f3(f.mean)}`, ...f.worst.map(w => `lowest: ${w.label} ${f3(w.score)} (limiting ${w.limiting || '?'})`)]);

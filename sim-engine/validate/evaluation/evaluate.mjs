@@ -27,21 +27,30 @@ const RUN_ID = new Date().toISOString().replace(/[:.]/g, '-') + (process.env.EVA
 const log = (...a) => console.error(`[eval ${new Date().toISOString().slice(11, 19)}]`, ...a);
 const SC = await import('../score.mjs');
 const PH = await import('../phenotype.mjs');
-const THRESH = SC.SCORER.plausible_threshold;
+// Scorer version under test (score.mjs designScore(design, {version})). v1.2.0 takes the raw benchmark design
+// {params, lean_spec, doc} (its own adapter); earlier versions read only the specimen record, so they get the
+// specimen mapping (benchmark-adapter.mjs), which is all they can read.
+const VERSION = process.env.EVAL_VERSION || '1.0.0';
+const WFILE = { '1.0.0': 'score-weights.json', '1.1.0': 'score-weights.v1.1.0.json', '1.1.1': 'score-weights.v1.1.1.json', '1.2.0': 'score-weights.v1.2.0.json' }[VERSION];
+if (!WFILE) throw new Error(`unknown scorer version ${VERSION}`);
+const WV = JSON.parse(fs.readFileSync(path.join(VAL, WFILE), 'utf8'));
+const THRESH = WV.plausible_threshold;
+const designFor = it => (VERSION === '1.2.0' ? it.bench : it.design);
+const callScorer = (design, opts) => SC.designScore(design, { ...opts, version: VERSION });
 const SPLITS = ['specimen', 'species', 'family'];
 const norm = x => String(x ?? '').trim().toLowerCase().replace(/[_\s]+/g, ' ');
 
 // ---------------------------------------------------------------- versions and hashes
 const sha = f => (fs.existsSync(f) ? crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex') : null);
 function versions() {
-  const W = JSON.parse(fs.readFileSync(path.join(VAL, 'score-weights.json'), 'utf8'));
+  const W = WV;
   const B = path.join(VAL, 'benchmark');
   const files = ['BENCHMARK-PREREGISTRATION.md', 'manifest.json', 'splits/splits.json', 'dev/items.jsonl', 'heldout/items.jsonl', 'dev/own-models.jsonl', 'build/lean-controls.json'];
   return {
     run_id: RUN_ID, node: process.version, started: new Date().toISOString(),
-    score_weights: { version: W.version, sha256: sha(path.join(VAL, 'score-weights.json')), weights: W.weights, plausible_threshold: W.plausible_threshold, alpha: W.alpha },
-    scorer_version_reported: SC.SCORER.version,
-    scorer_files: Object.fromEntries(['score.mjs', 'phenotype.mjs', 'sanity.mjs', 'genotype.mjs', 'lean-components.mjs', 'SCORER-PREREGISTRATION.md'].map(f => [f, sha(path.join(VAL, f))])),
+    score_weights: { version: W.version, file: WFILE, sha256: sha(path.join(VAL, WFILE)), weights: W.weights, plausible_threshold: W.plausible_threshold, alpha: W.alpha },
+    scorer_version_requested: VERSION, design_input: VERSION === '1.2.0' ? '{params, lean_spec, doc} (raw benchmark fields)' : '{specimen} mapped from params (all this version reads) or the doc',
+    scorer_files: Object.fromEntries(['score.mjs', 'score-v12.mjs', 'phenotype.mjs', 'sanity.mjs', 'genotype.mjs', 'lean-components.mjs', 'SCORER-PREREGISTRATION.md', 'SCORER-PREREGISTRATION-v1.1.0.md', 'SCORER-PREREGISTRATION-v1.1.1.md', 'SCORER-PREREGISTRATION-v1.2.0.md', 'data/trait-envelopes.v1.2.0.json'].map(f => [f, sha(path.join(VAL, f))])),
     benchmark: { prereg_sha256: sha(path.join(B, 'BENCHMARK-PREREGISTRATION.md')), prereg_sha256_declared: fs.existsSync(path.join(B, 'PREREG.sha256')) ? fs.readFileSync(path.join(B, 'PREREG.sha256'), 'utf8').trim().split(/\s+/)[0] : null,
       manifest_sha256: sha(path.join(B, 'manifest.json')), files: Object.fromEntries(files.map(f => [f, sha(path.join(B, f))])) },
     evaluator_files: Object.fromEntries(['evaluate.mjs', 'stats.mjs', 'benchmark-adapter.mjs', 'reference-index.mjs', 'adversarial.mjs'].map(f => [f, sha(path.join(DIR, f))])),
@@ -49,9 +58,9 @@ function versions() {
 }
 
 // ---------------------------------------------------------------- exclusion audit (evaluator's own taxon index)
-const audit = { checked: 0, violations: [], unknown_taxon_nearest: 0 };
+const audit = { checked: 0, violations: [], unknown_taxon_nearest: 0, nearest_reported: 0 };
 function auditItem(item, split, res, IDX) {
-  for (const [block, n] of [['body', res.verdict?.closest_real_relative], ['fin', res.verdict?.closest_real_relative_fins]]) {
+  for (const [block, n] of [['body', res.closest_real_relative || res.verdict?.closest_real_relative], ['fin', res.verdict?.closest_real_relative_fins]]) {
     if (!n || !n.id) continue;
     audit.checked++;
     const t = taxonOfRef(IDX, n.id);
@@ -71,14 +80,16 @@ const exclusionsFor = (item, split) => item.bench_exclude?.[split] || [];
 async function scoreItem(item, split, IDX) {
   const exclude = split ? exclusionsFor(item, split) : [];
   let res;
-  try { res = await SC.designScore(item.design, { reference_set_excluding: exclude, network: false }); }
+  try { res = await callScorer(designFor(item), { reference_set_excluding: exclude, network: false }); }
   catch (e) { return { ...rowBase(item, split), error: String(e.message || e).slice(0, 200) }; }
   if (split) auditItem(item, split, res, IDX);
   const C = res.components || {};
   const s = typeof res.score === 'number' && Number.isFinite(res.score) ? res.score : null;
-  return { ...rowBase(item, split), score: s, ...(s == null ? { error: 'no score returned' } : {}),
+  const rk = typeof res.rank_score === 'number' && Number.isFinite(res.rank_score) ? res.rank_score : null;
+  if (split) audit.nearest_reported += (res.closest_real_relative || res.verdict?.closest_real_relative) ? 1 : 0;
+  return { ...rowBase(item, split), score: s, rank_score: rk, ...(s == null ? { error: res.error || 'no score returned' } : {}), ...(res.refused ? { refused: String(res.refused).slice(0, 120) } : {}),
     comp: Object.fromEntries(Object.entries(C).map(([k, c]) => [k, c?.ran ? S.r4(c.value) : null])), limiting: C.P?.limiting || null,
-    nearest: res.verdict?.closest_real_relative ? { id: res.verdict.closest_real_relative.id, name: res.verdict.closest_real_relative.name, d: res.verdict.closest_real_relative.distance } : null,
+    nearest: (() => { const n = res.closest_real_relative || res.verdict?.closest_real_relative; return n ? { id: n.id, name: n.name, d: n.distance } : null; })(),
     nearest_fin_d: res.verdict?.closest_real_relative_fins?.distance ?? null, failed_checks: res.verdict?.failed || [] };
 }
 const rowBase = (it, split) => ({ id: it.id, label: it.label, y: it.y, type: it.type, subset: it.subset, src: it.source_ds, split, partition: it.partition, family: it.taxon?.family || null, order: it.taxon?.order || null,
@@ -96,7 +107,7 @@ async function scoreMany(items, split, IDX, { seed = null } = {}) {
     cp.on('exit', c => { if (!done) rej(new Error(`worker exited ${c} before replying`)); });
     cp.send({ items: sh, split, seed });
   })));
-  for (const p of parts) { audit.checked += p.audit.checked; audit.unknown_taxon_nearest += p.audit.unknown_taxon_nearest; audit.violations.push(...p.audit.violations); }
+  for (const p of parts) { audit.checked += p.audit.checked; audit.unknown_taxon_nearest += p.audit.unknown_taxon_nearest; audit.nearest_reported += p.audit.nearest_reported; audit.violations.push(...p.audit.violations); }
   const byId = new Map(parts.flatMap(p => p.rows).map(r => [r.id, r]));
   return items.map(it => byId.get(it.id));
 }
@@ -170,9 +181,9 @@ function perTaxon(rows0) {
     by_order: Object.entries(ordAuc).filter(([, rs]) => rs.length >= 30).map(([o, rs]) => ({ order: o, n: rs.length, frac_above: S.r4(rs.filter(r => r.score >= THRESH).length / rs.length), auc_vs_all_negatives: S.r4(S.rocAuc(rs.map(r => r.score), neg.map(r => r.score))) })).sort((a, b) => a.auc_vs_all_negatives - b.auc_vs_all_negatives),
     lowest_real_items: [...pos].sort((a, b) => a.score - b.score).slice(0, 15).map(r => ({ id: r.id, type: r.type, family: r.family, score: S.r4(r.score), comp: r.comp, limiting: r.limiting, nearest: r.nearest, failed_checks: r.failed_checks, readable: r.readable })) };
 }
-function recompose(comp, w, floor = SC.SCORER.floor) { let s = 0, t = 0; for (const [k, v] of Object.entries(comp || {})) if (v != null && w[k] != null) { s += w[k] * Math.log(Math.max(v, floor)); t += w[k]; } return t ? Math.exp(s / t) : null; }
+function recompose(comp, w, floor = WV.floor) { let s = 0, t = 0; for (const [k, v] of Object.entries(comp || {})) if (v != null && w[k] != null) { s += w[k] * Math.log(Math.max(v, floor)); t += w[k]; } return t ? Math.exp(s / t) : null; }
 function weightPerturbation(rows0) {
-  const rows = rows0.filter(r => r.score != null), w0 = { ...SC.SCORER.weights };
+  const rows = rows0.filter(r => r.score != null), w0 = { ...WV.weights };
   const evalW = w => { const v = rows.map(r => ({ y: r.y, s: recompose(r.comp, w) })); const p = v.filter(x => x.y === 1).map(x => x.s), n = v.filter(x => x.y === 0).map(x => x.s);
     return { roc_auc: S.r4(S.rocAuc(p, n)), real_above: S.r4(p.filter(s => s >= THRESH).length / p.length), neg_below: S.r4(n.filter(s => s < THRESH).length / n.length) }; };
   const maxDev = Math.max(...rows.map(r => Math.abs(recompose(r.comp, w0) - r.score)));
@@ -242,9 +253,10 @@ async function main() {
 
   // Canary: scoring a FishShapes positive WITHOUT its exclusions must trip the audit (nearest = itself).
   const c = BM.heldoutLabelled.find(i => i.subset === 'fishshapes_specimen' && i.self_ref_ids.length);
-  const resC = await SC.designScore(c.design, { reference_set_excluding: [], network: false });
+  const resC = await callScorer(designFor(c), { reference_set_excluding: [], network: false });
   const before = audit.violations.length; auditItem(c, 'family', resC, IDX);
-  const canary = { item: c.id, nearest_without_exclusion: resC.verdict?.closest_real_relative?.id, distance: resC.verdict?.closest_real_relative?.distance, audit_tripped: audit.violations.length > before };
+  const nC = resC.closest_real_relative || resC.verdict?.closest_real_relative;
+  const canary = { item: c.id, nearest_without_exclusion: nC?.id, distance: nC?.distance, audit_tripped: audit.violations.length > before };
   audit.violations.length = 0; audit.checked = 0;
   if (!canary.audit_tripped) { console.error('CANARY FAILED: the exclusion audit did not catch an unexcluded run; aborting.'); process.exit(3); }
   log('canary ok:', JSON.stringify(canary));
@@ -270,7 +282,18 @@ async function main() {
     dev: Object.fromEntries(Object.entries(R.dev).filter(([k]) => SPLITS.includes(k)).map(([s, rows]) => [s, fullBlock(rows, `dev ${s}-out`)])) };
   const E = endpoints(R, { controls, own });
   results.criteria = E.criteria; results.overall_primary_pass = E.overall_primary_pass; results.exploratory = E.exploratory;
-  results.exclusion_audit = { checked: audit.checked, unknown_taxon_nearest: audit.unknown_taxon_nearest, n_violations: audit.violations.length, pass: audit.violations.length === 0, violations: audit.violations.slice(0, 50) };
+  results.endpoints_input = 'score (the plausibility score; pass/fail cut 0.5)';
+  // The same endpoints and the headline block on rank_score, when the version provides one (v1.1.1+).
+  const hasRank = R.heldout.family.some(r => r.rank_score != null);
+  if (hasRank) {
+    const toRank = rows => rows.map(r => ({ ...r, score: r.rank_score }));
+    const RR = { heldout: Object.fromEntries(SPLITS.map(s => [s, toRank(R.heldout[s])])), dev: Object.fromEntries(Object.entries(R.dev).filter(([k]) => SPLITS.includes(k)).map(([k, v]) => [k, toRank(v)])) };
+    const ctrlR = BM.controls.map(cn => { const pid = cn.id.replace(/^control-/, ''); const r = [...(RR.dev.family || []), ...RR.heldout.family].find(x => x.id === pid); return { id: cn.id, specimen_item: pid, score: r?.score ?? null }; });
+    const ER = endpoints(RR, { controls: ctrlR, own: toRank(own) });
+    results.rank = { what: 'the same endpoints with rank_score as the score (the scorer designates rank_score for ranking; the 0.5 cut does not apply to it, so the threshold columns here are not meaningful)',
+      criteria: ER.criteria, overall_primary_pass: ER.overall_primary_pass, heldout_family: { metrics: metricsFor(RR.heldout.family, 'held-out family-out, rank_score'), baselines: baselines(RR.heldout.family) } };
+  }
+  results.exclusion_audit = { checked: audit.checked, nearest_reported: audit.nearest_reported, unknown_taxon_nearest: audit.unknown_taxon_nearest, n_violations: audit.violations.length, pass: audit.violations.length === 0, violations: audit.violations.slice(0, 50) };
 
   if (!process.env.EVAL_SKIP_STABILITY) {
     const rnd = S.mulberry32(99), byT = {}; for (const i of BM.heldoutLabelled) (byT[i.subset] ||= []).push(i);
@@ -285,7 +308,7 @@ async function main() {
     const a = runs.map(r => r.p1_auc);
     results.stability = { what: `a fixed stratified ${sub.length}-item sample of held-out items (LOFO) rescored under 5 seeds of the scorer's species split (phenotype.useSeed: changes its calibration and train pool)`, runs, p1_auc_range: S.r4(Math.max(...a) - Math.min(...a)) };
   }
-  if (!process.env.EVAL_SKIP_ADVERSARIAL) results.adversarial = await (await import('./adversarial.mjs')).run({ designScore: SC.designScore, quick: false, log });
+  if (!process.env.EVAL_SKIP_ADVERSARIAL) results.adversarial = await (await import('./adversarial.mjs')).run({ designScore: callScorer, quick: false, log });
   results.seconds = Math.round((Date.now() - t0) / 1000);
 
   // ---- outputs
@@ -295,23 +318,7 @@ async function main() {
   const outDir = path.join(DIR, 'results'); fs.mkdirSync(outDir, { recursive: true });
   const slim = JSON.stringify({ ...results, rows_file: path.join(ROWS_DIR, `${RUN_ID}.rows.json.gz`).replace(/\\/g, '/') }, null, 1);
   fs.writeFileSync(path.join(outDir, `${RUN_ID}.json`), slim); fs.writeFileSync(path.join(outDir, 'latest.json'), slim);
-  const pub = path.join(ROOT, 'dashboard', 'public', 'scorer'); fs.mkdirSync(pub, { recursive: true });
-  const hist = (() => { try { return JSON.parse(fs.readFileSync(path.join(pub, 'data.json'), 'utf8')).history || []; } catch { return []; } })().filter(h => h.run_id !== RUN_ID);
-  const head = { run_id: RUN_ID, weights: V.score_weights.version, score_mjs: V.scorer_files['score.mjs'].slice(0, 12), prereg: V.benchmark.prereg_sha256?.slice(0, 12), p1: results.criteria[0].value.auc, primary_pass: results.overall_primary_pass, real_above_heldout_lofo: results.heldout.family.metrics.real_above_threshold.frac };
-  fs.writeFileSync(path.join(pub, 'data.json'), JSON.stringify({ ...results, history: [...hist, head].slice(-10) }));
-  // one file per scorer version, plus an index for the side-by-side table (latest run per version wins)
-  const vtag = `w${V.score_weights.version}`;
-  fs.writeFileSync(path.join(pub, `data-${vtag}.json`), JSON.stringify(results));
-  const idxF = path.join(pub, 'versions.json');
-  let vidx = []; try { vidx = JSON.parse(fs.readFileSync(idxF, 'utf8')); } catch {}
-  const HL = results.heldout.family.metrics;
-  vidx = vidx.filter(x => x.version !== V.score_weights.version);
-  vidx.push({ version: V.score_weights.version, file: `data-${vtag}.json`, run_id: RUN_ID, score_mjs: V.scorer_files['score.mjs'].slice(0, 12), weights_sha: V.score_weights.sha256.slice(0, 12), prereg: V.benchmark.prereg_sha256?.slice(0, 12),
-    overall_primary_pass: results.overall_primary_pass, criteria: results.criteria.map(c => ({ id: c.id, primary: c.primary, pass: !!c.pass, value: c.value.auc ?? c.value.frac ?? c.value.gap ?? c.value.median_positive ?? c.value.auc_pooled ?? null })),
-    heldout_lofo: { auc: HL.roc_auc, ci: [HL.ci_family.lo, HL.ci_family.hi], real_above: HL.real_above_threshold.frac, neg_below: HL.negatives_below_threshold.frac, readable_auc: results.heldout.family.readable_only.roc_auc },
-    adversarial: results.adversarial?.headline || null, audit_pass: results.exclusion_audit.pass });
-  vidx.sort((a, b) => a.version.localeCompare(b.version, undefined, { numeric: true }));
-  fs.writeFileSync(idxF, JSON.stringify(vidx, null, 1));
+  (await import('./publish.mjs')).publish({ ...results, rows_file: undefined });
 
   console.log(JSON.stringify({ run: RUN_ID, weights: V.score_weights.version, score_mjs: V.scorer_files['score.mjs'].slice(0, 12), prereg: V.benchmark.prereg_sha256, manifest: V.benchmark.manifest_sha256,
     heldout: Object.fromEntries(SPLITS.map(s => { const m = results.heldout[s].metrics; return [s, { auc: m.roc_auc, ci: [m.ci_family.lo, m.ci_family.hi], pr: m.pr_auc, real_above: m.real_above_threshold.frac, neg_below: m.negatives_below_threshold.frac }]; })),

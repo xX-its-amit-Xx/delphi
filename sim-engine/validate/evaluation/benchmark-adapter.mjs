@@ -54,6 +54,7 @@ export async function loadBenchmark() {
       scorer_readable: !!d.doc || readable(d.params || {}),
       altered_traits_read_by_scorer: altered == null ? null : altered.filter(k => PARAM_TO_RAW[k]).length,
       paired_baseline: d.paired_baseline || null, has_lean_spec: !!d.lean_spec,
+      bench: { params: d.params || {}, ...(d.lean_spec ? { lean_spec: d.lean_spec } : {}), ...(d.doc ? { doc: d.doc } : {}) },
     };
   };
   const dev = readJsonl(devF).map(d => conv(d, 'dev')), ho = readJsonl(hoF).map(d => conv(d, 'heldout'));

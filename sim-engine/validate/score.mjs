@@ -203,9 +203,9 @@ export function threeResults(r, { claims = null } = {}) {
     return { gene: e.edit.gene, edit: e.edit.raw, kind: e.edit.kind, zygosity: e.edit.zygosity || null,
       closest_real_orthologue: c.closest_species ? { species: c.closest_species.species, percent_identity_after_edit: c.closest_species.identity_after, percent_identity_before_edit: c.closest_species.identity_before } : null,
       percent_identity_to_unedited_reference: c.identity_to_unedited_zebrafish ?? null, fraction_of_reference_protein_retained: c.fraction_of_reference_protein_retained ?? null,
-      edited_state_exists_in_real_organism: alt ? alt.exists : null, in_natural_orthologues: alt ? alt.in_natural_orthologues.map(x => x.species) : [], known_alleles: alt ? (alt.known_lab_or_natural_alleles || []).map(x => x.id) : [],
+      edited_state_exists_in_real_organism: alt ? alt.exists ?? null : null, in_natural_orthologues: alt?.in_natural_orthologues?.map(x => x.species) ?? [], known_alleles: alt?.known_lab_or_natural_alleles?.map(x => x.id) ?? [],
       site_conservation: c.site ? { fraction_of_orthologues_with_reference_residue: c.site.conservation_vs_reference, n_rows: c.site.n_rows, conserved: c.site.conserved_flag } : null,
-      checks: e.checks.map(k => ({ id: k.id, status: k.status })), source: c.source || c.reason || null };
+      checks: e.checks?.map(k => ({ id: k.id, status: k.status })) ?? [], source: c.source || c.reason || null };
   });
   const ids = perGene.map(g => g.percent_identity_to_unedited_reference).filter(x => typeof x === 'number');
   const ex = perGene.map(g => g.edited_state_exists_in_real_organism).filter(x => typeof x === 'boolean');
@@ -219,8 +219,8 @@ export function threeResults(r, { claims = null } = {}) {
   const phenotype_similarity = {
     closest_real_relative: dom(ph.body?.ran && ph.body.nearest ? ph.body.nearest[0] : null),
     body: ph.body?.ran ? { distance: ph.body.distance, p_value: ph.body.p_value, ood: ph.body.ood, threshold: ph.body.threshold, features_compared: ph.body.features_present || null, larval_envelope: ph.body.larval ? ph.body.larval_envelope : undefined } : { ran: false, reason: ph.body?.reason },
-    fins: ph.fin?.ran ? { closest_on_pectoral_length: dom(ph.fin.nearest[0]), p_value: ph.fin.p_value, ood: ph.fin.ood, envelope_outside: (ph.fin_envelope?.outside || []).map(o => ({ feature: o.feature, design: o.design, min: o.min, max: o.max })) } : { ran: false, reason: ph.fin?.reason },
-    physiology_envelope_outside: r.state_envelope ? r.state_envelope.outside.map(o => ({ field: o.field, value: o.value, lo: o.lo, hi: o.hi })) : null,
+    fins: ph.fin?.ran ? { closest_on_pectoral_length: dom(ph.fin.nearest?.[0]), p_value: ph.fin.p_value, ood: ph.fin.ood, envelope_outside: (ph.fin_envelope?.outside || []).map(o => ({ feature: o.feature, design: o.design, min: o.min, max: o.max })) } : { ran: false, reason: ph.fin?.reason },
+    physiology_envelope_outside: r.state_envelope?.outside?.map(o => ({ field: o.field, value: o.value, lo: o.lo, hi: o.hi })) ?? null,
     ood: !!ph.ood, rule: 'Shape similarity to real specimens, not relatedness. Birds excluded (frozen holdout).' };
   const L = r.lean || {};
   const brief = v => ({ law_id: v.law_id, law_version: v.law_version || v.version, status: v.status, constraint: v.constraint, inputs: v.inputs ?? null, message: v.message, parts: v.parts || [] });
@@ -229,13 +229,20 @@ export function threeResults(r, { claims = null } = {}) {
   const counts = L.counts ? { holds: L.counts.holds, violated: L.counts.violated, out_of_scope: L.counts.out_of_scope, cannot_evaluate: L.counts.cannot_evaluate } : null;
   const anyAccepted = acc.length + claimAcc.length > 0;
   const lean_check = { evaluated_on: 'the DESIGNED organism (resolved STATE with every edit applied), not its base', lawset: L.lawset_version || claims?.lawset || null, counts,
-    by_component: (L.components || []).map(c => ({ component: c.component, summary: c.summary, verdicts: c.verdicts.map(v => ({ law_id: v.law_id, law_version: v.law_version, status: v.status, verdict: v.verdict, inputs: v.decided_by, missing: v.missing })) })),
+    by_component: (L.components || []).map(c => ({ component: c.component, summary: c.summary, verdicts: (c.verdicts || []).map(v => ({ law_id: v.law_id, law_version: v.law_version, status: v.status, verdict: v.verdict, inputs: v.decided_by, missing: v.missing })) })),
     accepted_violations: [...acc, ...claimAcc], accepted_violations_newly_caused_by_design: (L.accepted?.newly_caused || []).map(brief), candidate_violations: (L.candidate || []).map(brief), contested_violations: (L.contested || []).map(brief),
     claims: claims || null,
     gate: anyAccepted ? 'FAIL: an accepted law is violated by the designed organism; the design is not validated, whatever the similarity scores' : 'no accepted-law violation found (most laws may be cannot-evaluate or out-of-scope: see counts)',
     note: 'Floating-point evaluation of the Lean-backed formulas (lean/eliminate/browser-check.mjs), not a kernel check.' };
   return { genotype_similarity, phenotype_similarity, lean_check, lean_gate_failed: anyAccepted };
 }
+
+/** Benchmark / design-schema trait name -> the specimen-record field phenotype.mjs reads. Shared with score-v12.mjs
+ *  so one mapping serves every version. */
+export const PARAM_TO_RAW = { standard_length_m: 'SL_m', body_mass_kg: 'mass_kg', body_depth_over_SL: 'depth_SL', body_width_over_SL: 'width_SL', peduncle_depth_frac: 'ped_depth_frac', peduncle_width_frac: 'ped_width_frac',
+  pectoral_len_over_SL: 'pectoral_len_SL', pectoral_area_over_SL2: 'pectoral_area_SL2', pectoral_span_over_SL: 'pectoral_span_SL', pelvic_len_over_SL: 'pelvic_len_SL', dorsal_height_over_SL: 'dorsal_h_SL', anal_height_over_SL: 'anal_h_SL',
+  caudal_upper_lobe_over_SL: 'caudal_upper_SL', caudal_lower_lobe_over_SL: 'caudal_lower_SL' };
+export const paramsToSpecimen = params => Object.fromEntries(Object.entries(params || {}).filter(([k, v]) => PARAM_TO_RAW[k] && typeof v === 'number' && Number.isFinite(v)).map(([k, v]) => [PARAM_TO_RAW[k], v]));
 
 /** STABLE ENTRY POINT for scoring a design.
  *    designScore(design, opts) -> { score, plausible, components, verdict, closest_real_relative, scorer, design }
@@ -247,6 +254,15 @@ export function threeResults(r, { claims = null } = {}) {
  *  real organism is never scored against itself (see phenotype.mjs excludeMatcher). Weights: score-weights.json. */
 export async function designScore(design, opts = {}) {
   if (opts.version === '1.2.0') return (await import('./score-v12.mjs')).designScoreV12(design, opts);
+  if (opts.version === '1.3.0') return (await import('./score-v13.mjs')).designScoreV13(design, opts);
+  // A {params} item (the benchmark's own shape) is accepted by every version: the traits a version can read are
+  // mapped to the specimen record, and the rest are reported as unread rather than silently dropped.
+  if (design && typeof design === 'object' && design.params && !design.doc && !('specimen' in design)) {
+    const specimen = paramsToSpecimen(design.params);
+    const unread = Object.keys(design.params).filter(k => !PARAM_TO_RAW[k]);
+    const out = await designScore({ specimen, taxon: design.taxon, label: design.label }, opts);
+    return { ...out, traits_not_read_by_this_version: unread };
+  }
   const args = { ...opts };
   if (design && typeof design === 'object' && 'specimen' in design) Object.assign(args, design);
   else if (design && typeof design === 'object' && 'organism' in design) Object.assign(args, design);

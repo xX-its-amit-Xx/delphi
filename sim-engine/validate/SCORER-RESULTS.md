@@ -173,6 +173,39 @@ v1.0.0 passed 4 of 8; v1.1.0 passes 5 of 8.
 whose validation was blind.
 <!-- V11:END -->
 
+### Deviation 3: a crash in the shipped entry point, and how the dev numbers were produced
+
+**The bug.** `threeResults` in `score.mjs` read `r.state_envelope.outside.map(...)` behind a truthiness check only.
+`stateEnvelope()` returns `{ran: false, reason}` with **no `outside`** for any specimen-shaped item, because a
+specimen has no resolved STATE. Every specimen-shaped benchmark item therefore threw a `TypeError`: under v1.1.0 it
+propagated, and under v1.2.0 it was caught and returned `score: null`. The independent evaluator found it on
+held-out items of every type and refused to launch the blind run, which was the right call: benchmark rules would
+have scored those items worst-case, making the run meaningless rather than a legitimate failure.
+
+A test now calls `designScore` on a bare `{specimen}` **and** a `{params}` item under every version (1.0.0, 1.1.0,
+1.1.1, 1.2.0) and asserts a numeric score. Against the pre-fix file **7 of those 8 combinations failed**; only
+v1.0.0 with a specimen survived, because v1.0.0 never builds a state envelope. The same audit guarded
+`ph.fin.nearest[0]`, `alt.in_natural_orthologues`, `e.checks` and `c.verdicts`, which had the same shape.
+`three-results-guards` tests the guards directly and is seen to fail when `state_envelope.outside` throws.
+
+**No version bump and no weights change.** This is a crash fix in a reporting function. Scores, components, weights
+and the 0.5 cut are untouched.
+
+**One input-handling change, stated because it is not purely a fix:** a `{params}` item is now accepted by every
+version (its traits are mapped to the specimen record, and the unread ones are returned as
+`traits_not_read_by_this_version`). Before, `{params}` threw "not an organism document" under 1.0.0, 1.1.0 and
+1.1.1, so no previously published number can have come from that path.
+
+**How the dev numbers were produced, and whether they stand.** The evaluator was right to ask: the dev run called
+`designScoreV12` in `score-v12.mjs` **directly**, and it ran **before** `threeResults` existed, so it never
+exercised the shipped path. The run was therefore repeated through `score.mjs designScore` after the fix, and
+`dev-benchmark-v1.2.0.json` now records `scored_through: "score.mjs designScore (the shipped entry point)"`. Every
+headline number is **identical**: P1 0.870798, P2 100 percent, S1 0.498, S2 0.538, S4 75 percent, 1310 distinct
+values, 4 refused, 0 errors. The dev numbers stand, and they now come from the path the evaluator will call.
+
+`score.mjs` sha256 after the fix: `87bb335e262bddd5fd73355b831d5b0539c4b5083929782a2f25cf7e26817a7f`
+
+
 ## v1.1.1: a ranking score (`rank_score`); the score is unchanged
 
 Pre-registration: `SCORER-PREREGISTRATION-v1.1.1.md`. Weights: `score-weights.v1.1.1.json`. Data:

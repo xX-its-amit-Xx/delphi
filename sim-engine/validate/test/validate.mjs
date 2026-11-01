@@ -90,5 +90,38 @@ const doc = (base, edits, genotype) => { let d = { ...O.docFor(bundle, base), id
   const r = await designScore(doc('flying-fish', [{ target: { level: 'body' }, param: 'standard_length_m', op: 'scale', value: M('three-results-lean-gate') ? 1 : 3 }]), { version: '1.2.0' });
   check('three-results-lean-gate', r.lean_gate_failed === true && /^FAIL/.test(r.lean_check.gate) && r.lean_check.accepted_violations.every(v => v.inputs) && r.genotype_similarity && r.phenotype_similarity.closest_real_relative, r.lean_check.gate.slice(0, 50));
 }
+// Every version must survive BOTH benchmark-shaped inputs: a bare {specimen} and a {params} item. The shipped
+// entry point is score.mjs designScore; a crash here makes a blind benchmark run meaningless rather than a fail.
+{
+  const { designScore } = await import('../score.mjs');
+  const SPEC = { SL_m: 0.0388, mass_kg: 0.0006943, depth_SL: 0.2535, width_SL: 0.135, ped_depth_frac: 0.38, ped_width_frac: 0.4 };
+  const PARAMS = { standard_length_m: 0.0388, body_mass_kg: 0.0006943, body_depth_over_SL: 0.2535, body_width_over_SL: 0.135, peduncle_depth_frac: 0.38, peduncle_width_frac: 0.4 };
+  const bad = [];
+  for (const version of ['1.0.0', '1.1.0', '1.1.1', '1.2.0']) {
+    for (const [shape, design] of [['specimen', { specimen: M('every-version-no-crash') ? { depth_SL: 0.25 } : SPEC }], ['params', { params: PARAMS }]]) {
+      let r = null, err = null;
+      try { r = await designScore(design, { version, network: false }); } catch (e) { err = e.message; }
+      const ok = !err && r && typeof r.score === 'number' && !r.error;
+      if (!ok) bad.push(`${version}/${shape}: ${err || r?.error || 'score ' + JSON.stringify(r?.score)}`);
+    }
+  }
+  // No MUTATE knob: this check was SEEN to fail against the pre-fix file, 7 of these 8 combinations
+  // (SCORER-RESULTS.md, deviation 3). The guards it covers are exercised by 'three-results-guards' below.
+  check('every-version-no-crash', bad.length === 0, bad.join(' | ') || 'all 8 version/shape combinations returned a numeric score');
+
+  // The guards themselves: threeResults must survive blocks that did not run. MUTATE makes state_envelope.outside
+  // throw on access, which is what an unguarded `.outside.map(...)` did, so the check is seen to be sensitive.
+  const { threeResults } = await import('../score.mjs');
+  const stub = {
+    genotype: { edits: [] },
+    phenotype: { body: { ran: false, reason: 'no body features' }, fin: { ran: true }, ood: false },
+    state_envelope: M('three-results-guards') ? new Proxy({}, { get: () => { throw new Error('unguarded .outside'); } }) : { ran: false, reason: 'specimen record: no STATE' },
+    lean: { counts: null, components: [{ component: { level: 'body', id: 'body' } }] },
+    verdict: { closest_real_relative: null },
+  };
+  let t3 = null, t3err = null;
+  try { t3 = threeResults(stub); } catch (e) { t3err = e.message; }
+  check('three-results-guards', !t3err && t3 && t3.phenotype_similarity.physiology_envelope_outside === null && t3.lean_check.by_component.length === 1, t3err || 'blocks that did not run are reported as null, not crashed on');
+}
 console.log(`\n${n - fails}/${n} passed${MUT ? ` (MUTATE=${MUT})` : ''}`);
 process.exit(fails);
