@@ -265,17 +265,28 @@ component values kept beside it (`score_uncorrected` in `results.json` and on th
 
 ## 7. Compliance
 
-- **Aves holdout respected.** No bird taxon, claim id or dataset appears in any task, dossier, brief or fixture.
+- **Aves holdout respected.** No bird taxon, claim id or dataset appears in any task, dossier or brief.
   `node holdout/check-leaks.mjs` was run over every generated artifact as part of grading: **0 strong hits and
   0 claim-id hits** across the 9 final nanopub records and the 17 graded swarm candidates; 9 of 9 final records
   `leak_clean`.
+- **The whole benchmark tree was scanned too**, not just the generated records:
+  `node holdout/check-leaks.mjs swarm/benchmark dashboard/public/t/benchmark` reports **0 held-out taxon hits**
+  and 64 claim-id hits, all of a single id, **`thompson1917-ch02-06`**, and all inside `lean_check` and
+  `validate_generation` *output* files, where it appears as a law id in the registry's verdict table with no
+  measurement, no scientific name and no trait row attached. The holdout thread has already ruled on exactly
+  this case (`holdout/rulings.json`, `formal-statements-of-bird-linked-claims`, 2026-10-31): *"Not a leak. Not
+  burned. Both claims stay eligible for a blind exam on the held-out birds."* No allowlist entry was added,
+  because `holdout/` belongs to another thread and is never written from here; this is reported to it instead.
+- **The leak checker's own negative control leaves nothing behind.** Making that check fail once requires writing
+  a held-out name, so `grade.mjs` reads the name from `holdout/split.json` at run time rather than containing it,
+  and deletes the fixture afterwards. A thirteenth selftest asserts the deletion happened.
 - **One `lake` process at a time**, enforced in the grader by a guard that throws rather than racing.
 - **No other thread's folder was written.** `sim-engine/`, `lean/`, `holdout/` and `swarm/compare/` were read and
   invoked, never modified. `swarm/compare/run.mjs`'s `runClaude` is the acknowledged source of `agent.mjs`.
 - **No credentials in any file.** Agents ran with `--tools ""` and a cwd outside the repository, so no agent could
   write into the tree.
 - **Nothing committed, nothing deployed.**
-- **Every grader check was made to fail once before it was trusted**: 12 checks, each with a corrupted input that
+- **Every grader check was made to fail once before it was trusted**: 13 checks, each with a corrupted input that
   flipped its verdict, in `fixtures/grader-selftest.json`. One of them (an intact repository record failing
   `parses`) exposed a real defect in this grader before any arm was scored.
 

@@ -30,6 +30,11 @@ const LEVEL_METRIC = {
   design: 'mean of 4 checks (accepted, fixed fields present, laws actually evaluated, no unflagged invented fields)',
   validation: 'mean of 7 checks (five named correct, no summing, cannot-assess not a pass, composite not the verdict, withholding reported, scales reported, no fabrications)',
 };
+// A stage whose own task design is defective says so ON ITS FIGURE, not only in RESULTS.md.
+const CAVEAT = {
+  design: `TASK-DESIGN DEFECT: the briefs are infeasible at lawset 1.8.1. All three arms violate the same five binding laws on brief 1, because the sponsor's fixed SL_m 0.25 and mass_kg 0.075 sit outside the Exocoetidae isometry band the accepted laws are scoped to. Re-running lean_check on one arm's own design with SL_m set to the reference specimen's 0.19 drops binding violations from 5 to 0. "accepted" was unreachable by construction, so this stage measures the brief, not the arms. Do not quote its quality column.`,
+  nanopub: `METRIC CAVEAT: "parses" is 0 for every arm on every task, because the prompt never asked for a provenance template and every record is minutes old — neither is an RDF problem. The post-hoc secondary "parses_valid_rdf", which tolerates those two notes, separates: single 1 of 3, decentralised 3 of 3, centralised 0 of 3 (no artifact). At n = 3 that is one task of difference.`,
+};
 const GROUND_TRUTH = {
   nanopub: 'holdout/nanopubs/check.mjs over the nanopub 1.95.0 validator, plus holdout/check-leaks.mjs',
   leanbio: 'lake env lean with Mathlib v4.35.0 (compilation is the ground truth), one process at a time',
@@ -65,7 +70,7 @@ for (const lv of LEVEL_ORDER) {
   if (!g) { data.levels.push({ level: lv, title: LEVEL_TITLE[lv], missing: true }); continue; }
   const level = {
     level: lv, title: LEVEL_TITLE[lv], metric: LEVEL_METRIC[lv], ground_truth: GROUND_TRUTH[lv],
-    n_tasks: LEVELS[lv].tasks.length, tasks: LEVELS[lv].tasks.map(t => t.id), arms: {},
+    n_tasks: LEVELS[lv].tasks.length, tasks: LEVELS[lv].tasks.map(t => t.id), caveat: CAVEAT[lv] || null, arms: {},
   };
   for (const arm of ARMS) {
     const a = g.arms[arm];

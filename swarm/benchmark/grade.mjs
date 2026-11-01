@@ -484,13 +484,21 @@ function selftest() {
 
   // level 1: a record naming a held-out taxon must fail the leak check; a mangled record must fail `parses`
   const skel = fs.readFileSync(path.join(repo, 'holdout/nanopubs/unsigned/triage-coverage.trig'), 'utf8');
-  const leaky = skel.replace('14 of 16 completed claim tests contain no bird rows', 'a record that names Columba livia, taxid 8932, on purpose');
+  // The negative control needs a held-out name, but this FILE must not contain one and must not leave one on
+  // disk: both would be a leak in a benchmark whose own rule is that Aves is frozen. So the name is read from
+  // holdout/split.json at run time, never written here, and the fixture is deleted after the check.
+  const heldOut = JSON.parse(fs.readFileSync(path.join(repo, 'holdout/split.json'), 'utf8'))
+    .taxa.filter(t => t.assignment === 'holdout' && t.rank === 'species')[0];
+  const leaky = skel.replace('14 of 16 completed claim tests contain no bird rows', `a record that names ${heldOut.name} on purpose`);
   const g1 = gradeNanopubOne({ trig: leaky }, LEVELS.nanopub.tasks[0], path.join(d2, 'leaky'));
   res.push({ check: 'level1 leak_clean catches a held-out taxon', value: g1.leak_clean, strong_hits: g1.leak_strong_hits, fails_as_expected: g1.leak_clean === 0 });
   const g1b = gradeNanopubOne({ trig: skel.slice(0, Math.floor(skel.length * 0.6)) }, LEVELS.nanopub.tasks[0], path.join(d2, 'truncated'));
   res.push({ check: 'level1 parses catches a truncated record', value: g1b.parses, fails_as_expected: g1b.parses === 0 });
   const g1c = gradeNanopubOne({ trig: skel }, LEVELS.nanopub.tasks[0], path.join(d2, 'intact'));
   res.push({ check: 'level1 parses accepts an intact repository record', value: g1c.parses, note: g1c.parse_stdout.slice(0, 160), fails_as_expected: g1c.parses === 1 });
+  // the control has done its job; the held-out name does not stay in the tree
+  fs.rmSync(path.join(d2, 'leaky'), { recursive: true, force: true });
+  res.push({ check: 'level1 the leak-control fixture is deleted afterwards', value: fs.existsSync(path.join(d2, 'leaky')), fails_as_expected: !fs.existsSync(path.join(d2, 'leaky')) });
 
   fs.writeFileSync(path.join(here, 'fixtures', 'grader-selftest.json'), JSON.stringify({ run: new Date().toISOString(), results: res }, null, 1));
   for (const r of res) console.log((r.fails_as_expected === true ? 'OK   ' : r.skipped ? 'SKIP ' : 'BAD  ') + r.check + '  ' + JSON.stringify({ ...r, check: undefined, probe: undefined }));
