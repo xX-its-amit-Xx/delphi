@@ -79,6 +79,18 @@ const clips = fs.existsSync(clipsDir) ? fs.readdirSync(clipsDir).filter(f => f.e
 must(shots.length > 5, `expected screenshots in pitch-video/shots, found ${shots.length}`);
 must(clips.length > 5, `expected clips in pitch-video/clips, found ${clips.length}`);
 
+// The generated art. Decoration, not evidence - but the page references each file by name, so a
+// missing one must fail the build rather than render as a broken frame.
+const artDir = path.join(here, 'art');
+const ART = ['planes.jpg', 'fish.jpg', 'graph.jpg', 'form.jpg', 'blueprint.webm', 'lab.webm'];
+const art = fs.existsSync(artDir) ? fs.readdirSync(artDir) : [];
+for (const f of ART) must(art.includes(f), `docs/art/${f} is referenced by the page but is not on disk`);
+// And every art reference in the page must be one of those files, so a typo cannot ship.
+const pageHtml = fs.readFileSync(path.join(here, 'index.html'), 'utf8');
+for (const m of pageHtml.matchAll(/(?:src|href)="art\/([^"]+)"/g)) {
+  must(ART.includes(m[1]), `the page references art/${m[1]}, which is not in the art inventory`);
+}
+
 // The five named validation results, read from the pipeline rather than listed from memory.
 const pipelineSrc = read('sim-engine/validate/pipeline/index.mjs');
 const FIVE = ['genotype_similarity', 'phenotype_similarity', 'lean_check', 'functional_resolution', 'physics'];
@@ -128,7 +140,7 @@ const data = {
   tool_names: toolNames,
   grand_questions: gq,
   five_results: FIVE,
-  assets: { shots, clips },
+  assets: { shots, clips, art: ART },
 };
 
 if (CHECK) { console.log('docs/build.mjs --check: all sources read and asserted OK'); process.exit(0); }
