@@ -22,6 +22,8 @@ import Delphi.Favored
 import Delphi.Fisher
 import Delphi.MaynardSmith
 import Delphi.Thompson
+import Delphi.Scaling
+import Delphi.Flight
 
 namespace Delphi.Constraints
 
@@ -161,5 +163,184 @@ theorem exponent_rules_out {W : ℝ → ℝ} {L₁ L₂ a b : ℝ} (h₁ : 0 < L
   intro k hk
   have := cubeLaw_loglog_exponent hk h₁ h₂ hne
   rcases h with h | h <;> linarith [hb.1, hb.2]
+
+/-! ### Strength (R7) and flight (R4, R5, R8) -/
+
+/-- **C8, axial strength, dimensional.** A member of cross-section `A` and breaking stress `σ` that is
+claimed to carry `n` body weights `W` is ruled out when `σ A < n W`. -/
+theorem axial_strength_rules_out {σ A W n F : ℝ} (hF : F = σ * A) (hclaim : n * W ≤ F) (h : σ * A < n * W) :
+    False := by
+  linarith
+
+/-- **C8b, strength scaling.** Under isometric sections and the same material, breaking load scales as `L²`:
+a committed breaking-load ratio `r` at length ratio `ℓ` with `r ≠ ℓ²` is ruled out. -/
+theorem strength_ratio_rules_out {A : ℝ → ℝ} {k₃ σ : ℝ} (hA : AreaLaw A k₃) (hσ : 0 < σ) {L₁ L₂ r ℓ : ℝ}
+    (h₁ : 0 < L₁) (h₂ : 0 < L₂) (hr : breakLoad σ A L₂ / breakLoad σ A L₁ = r) (hℓ : L₂ / L₁ = ℓ)
+    (hne : r ≠ ℓ ^ 2) : False := by
+  have := breakLoad_ratio hA hσ h₁ h₂
+  rw [hr, hℓ] at this
+  exact hne this
+
+/-- **C8c, Galileo's giant.** A body scaled by `ℓ` with unchanged proportions and material, whose reference
+member carries `n₀` body weights, is claimed to carry `n` body weights: ruled out when `n₀ < n ℓ`. -/
+theorem giant_rules_out {W A : ℝ → ℝ} {k₁ k₃ σ : ℝ} (hW : CubeLaw W k₁) (hA : AreaLaw A k₃) {L₁ L₂ ℓ n₀ n : ℝ}
+    (h₁ : 0 < L₁) (h₂ : 0 < L₂) (hℓ : L₂ / L₁ = ℓ) (hn₀ : breakLoad σ A L₁ / W L₁ = n₀)
+    (hclaim : n * W L₂ ≤ breakLoad σ A L₂) (h : n₀ < n * ℓ) : False := by
+  have hs := safetyFactor_scaled (σ := σ) hW hA h₁ h₂
+  rw [hn₀, hℓ] at hs
+  have hW₂ : 0 < W L₂ := cubeLaw_pos hW h₂
+  have hℓpos : 0 < ℓ := by rw [← hℓ]; positivity
+  have h3 : n ≤ breakLoad σ A L₂ / W L₂ := by rw [le_div_iff₀ hW₂]; exact hclaim
+  rw [hs, le_div_iff₀ hℓpos] at h3
+  linarith
+
+/-- **C8d, stress scaling.** Under R1 and isometric sections, stress `W/A` grows as `L`: a committed stress
+ratio `r` at length ratio `ℓ` with `r ≠ ℓ` is ruled out. -/
+theorem stress_ratio_rules_out {W A : ℝ → ℝ} {k₁ k₃ : ℝ} (hW : CubeLaw W k₁) (hA : AreaLaw A k₃) {L₁ L₂ r ℓ : ℝ}
+    (h₁ : 0 < L₁) (h₂ : 0 < L₂) (hr : (W L₂ / A L₂) / (W L₁ / A L₁) = r) (hℓ : L₂ / L₁ = ℓ) (hne : r ≠ ℓ) :
+    False := by
+  have := stress_ratio hW hA h₁ h₂
+  rw [hr, hℓ] at this
+  exact hne this
+
+/-- **C2a, area scaling.** Under isometry an area scales as `L²`: a committed area ratio `r` at length ratio
+`ℓ` with `r ≠ ℓ²` is ruled out. -/
+theorem area_ratio_rules_out {S : ℝ → ℝ} {k : ℝ} (hS : AreaLaw S k) {L₁ L₂ r ℓ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂)
+    (hr : S L₂ / S L₁ = r) (hℓ : L₂ / L₁ = ℓ) (hne : r ≠ ℓ ^ 2) : False := by
+  have := areaLaw_ratio hS h₁ h₂
+  rw [hr, hℓ] at this
+  exact hne this
+
+lemma log_ratio_ne_zero {L₁ L₂ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) (hne : L₁ ≠ L₂) : Real.log (L₂ / L₁) ≠ 0 :=
+  Real.log_ne_zero_of_pos_of_ne_one (by positivity) (fun h0 => hne ((div_eq_one_iff_eq h₁.ne').mp h0).symm)
+
+/-- **C2a, area exponent.** Under isometry an area's log-log exponent on `L` is `2`. -/
+theorem area_exponent_rules_out {S : ℝ → ℝ} {k : ℝ} (hS : AreaLaw S k) {L₁ L₂ b : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂)
+    (hne : L₁ ≠ L₂) (hb : Real.log (S L₂ / S L₁) = b * Real.log (L₂ / L₁)) (h : b ≠ 2) : False := by
+  have := areaLaw_log hS h₁ h₂
+  rw [hb] at this
+  exact h (mul_right_cancel₀ (log_ratio_ne_zero h₁ h₂ hne) this)
+
+/-- **C8e, stress (or wing-loading) exponent.** Under R1 and isometric areas the exponent of `W/A` on `L` is `1`. -/
+theorem stress_exponent_rules_out {W A : ℝ → ℝ} {k₁ k₃ : ℝ} (hW : CubeLaw W k₁) (hA : AreaLaw A k₃) {L₁ L₂ b : ℝ}
+    (h₁ : 0 < L₁) (h₂ : 0 < L₂) (hne : L₁ ≠ L₂)
+    (hb : Real.log ((W L₂ / A L₂) / (W L₁ / A L₁)) = b * Real.log (L₂ / L₁)) (h : b ≠ 1) : False := by
+  have := wingLoading_log hW hA h₁ h₂
+  rw [hb] at this
+  exact h (mul_right_cancel₀ (log_ratio_ne_zero h₁ h₂ hne) this)
+
+/-- **C9c, minimum-speed exponent.** Under R1, R2 and constant `ρ`, `C_L,max`, the exponent of `v_min` on `L` is `1/2`. -/
+theorem vmin_exponent_rules_out {W S : ℝ → ℝ} {k₁ k₂ ρ Cmax : ℝ} (hW : CubeLaw W k₁) (hS : AreaLaw S k₂)
+    (hρ : 0 < ρ) (hCmax : 0 < Cmax) {L₁ L₂ b : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) (hne : L₁ ≠ L₂)
+    (hb : Real.log (vmin ρ Cmax (W L₂) (S L₂) / vmin ρ Cmax (W L₁) (S L₁)) = b * Real.log (L₂ / L₁))
+    (h : b ≠ 1 / 2) : False := by
+  have := vmin_log hW hS hρ hCmax h₁ h₂
+  rw [hb] at this
+  exact h (mul_right_cancel₀ (log_ratio_ne_zero h₁ h₂ hne) this)
+
+/-- **C9, minimum speed.** Steady lift-supported flight at airspeed `v` with `v² < 2W/(ρ S C_L,max)` is ruled
+out (`v < v_min`). -/
+theorem vmin_rules_out {ρ S C Cmax W v : ℝ} (hρ : 0 < ρ) (hS : 0 < S) (hC : 0 < C) (hCmax : C ≤ Cmax)
+    (hv : 0 ≤ v) (hlift : lift ρ v S C = W) (h : v ^ 2 < 2 * W / (ρ * S * Cmax)) : False := by
+  have h1 := vmin_le hρ hS hC hCmax hv hlift
+  have h2 : v < vmin ρ Cmax W S := by
+    unfold vmin
+    exact (Real.lt_sqrt hv).mpr h
+  linarith
+
+/-- **C9b, minimum-speed scaling.** Under R1, R2 and constant `ρ`, `C_L,max`, `v_min` scales as `√L`: a
+committed `v_min` ratio `r ≥ 0` at length ratio `ℓ` with `r² ≠ ℓ` is ruled out. -/
+theorem vmin_scaling_rules_out {W S : ℝ → ℝ} {k₁ k₂ ρ Cmax : ℝ} (hW : CubeLaw W k₁) (hS : AreaLaw S k₂)
+    (hρ : 0 < ρ) (hCmax : 0 < Cmax) {L₁ L₂ r ℓ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂)
+    (hr : vmin ρ Cmax (W L₂) (S L₂) / vmin ρ Cmax (W L₁) (S L₁) = r) (hℓ : L₂ / L₁ = ℓ) (hr0 : 0 ≤ r)
+    (hne : r ^ 2 ≠ ℓ) : False := by
+  have := vmin_ratio hW hS hρ hCmax h₁ h₂
+  rw [hr, hℓ] at this
+  have hℓ0 : 0 ≤ ℓ := by rw [← hℓ]; positivity
+  exact hne (by rw [this, Real.sq_sqrt hℓ0])
+
+/-- **C10, power required.** Under R1, R2, constant `ρ`, `C_L,max` and `L/D`, flight at `v_min`: a committed
+log-log exponent `b ≠ 7/2` of `P_req` on `L` is ruled out. -/
+theorem powerRequired_exponent_rules_out {W S : ℝ → ℝ} {k₁ k₂ ρ Cmax LD : ℝ} (hW : CubeLaw W k₁)
+    (hS : AreaLaw S k₂) (hρ : 0 < ρ) (hCmax : 0 < Cmax) (hLD : 0 < LD) {L₁ L₂ b : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂)
+    (hne : L₁ ≠ L₂)
+    (hb : Real.log (powerRequired (W L₂) (vmin ρ Cmax (W L₂) (S L₂)) LD /
+      powerRequired (W L₁) (vmin ρ Cmax (W L₁) (S L₁)) LD) = b * Real.log (L₂ / L₁)) (h : b ≠ 7 / 2) : False := by
+  have hlog := powerRequired_log hW hS hρ hCmax hLD h₁ h₂
+  rw [hb] at hlog
+  have hq : 0 < L₂ / L₁ := by positivity
+  have hq1 : L₂ / L₁ ≠ 1 := by
+    intro h0
+    exact hne ((div_eq_one_iff_eq h₁.ne').mp h0).symm
+  have hl : Real.log (L₂ / L₁) ≠ 0 := Real.log_ne_zero_of_pos_of_ne_one hq hq1
+  exact h (mul_right_cancel₀ hl hlog)
+
+/-- **C12, bending exponent, body-like load.** Under R9a the exponent of bending stress on `L` is `1`. -/
+theorem bending_exponent_rules_out {F ℓ Z : ℝ → ℝ} {kF kℓ kZ : ℝ} (hF : CubeLaw F kF) (hℓ : LeverLaw ℓ kℓ)
+    (hZ : SectionModulusLaw Z kZ) {L₁ L₂ b : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) (hne : L₁ ≠ L₂)
+    (hb : Real.log (bendingStress F ℓ Z L₂ / bendingStress F ℓ Z L₁) = b * Real.log (L₂ / L₁)) (h : b ≠ 1) :
+    False := by
+  have := bendingStress_log_body hF hℓ hZ h₁ h₂
+  rw [hb] at this
+  exact h (mul_right_cancel₀ (log_ratio_ne_zero h₁ h₂ hne) this)
+
+/-- **C12b, bending ratio, body-like load.** A committed bending-stress ratio `r ≠ ℓ` is ruled out. -/
+theorem bending_ratio_rules_out {F ℓ Z : ℝ → ℝ} {kF kℓ kZ : ℝ} (hF : CubeLaw F kF) (hℓ : LeverLaw ℓ kℓ)
+    (hZ : SectionModulusLaw Z kZ) {L₁ L₂ r q : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂)
+    (hr : bendingStress F ℓ Z L₂ / bendingStress F ℓ Z L₁ = r) (hq : L₂ / L₁ = q) (hne : r ≠ q) : False := by
+  have := bendingStress_ratio_body hF hℓ hZ h₁ h₂
+  rw [hr, hq] at this
+  exact hne this
+
+/-- **C12c, bending exponent, sheet-like load.** Under R9b the exponent is `0`: a candidate with a constant-thickness
+lamina that still commits to bending stress rising (or falling) with size is ruled out. -/
+theorem bending_exponent_sheet_rules_out {F ℓ Z : ℝ → ℝ} {kF kℓ kZ : ℝ} (hF : AreaLaw F kF) (hℓ : LeverLaw ℓ kℓ)
+    (hZ : SectionModulusLaw Z kZ) {L₁ L₂ b : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) (hne : L₁ ≠ L₂)
+    (hb : Real.log (bendingStress F ℓ Z L₂ / bendingStress F ℓ Z L₁) = b * Real.log (L₂ / L₁)) (h : b ≠ 0) :
+    False := by
+  have := bendingStress_log_sheet hF hℓ hZ h₁ h₂
+  rw [hb] at this
+  exact h (mul_right_cancel₀ (log_ratio_ne_zero h₁ h₂ hne) this)
+
+/-- **C13, allometric consistency.** If weight and lifting area are power laws with exponents `bW`, `bS`, the
+wing-loading exponent is `bW - bS`: a committed triple with `bWS ≠ bW - bS` is ruled out. -/
+theorem allometry_consistency_rules_out {W S : ℝ → ℝ} {aW bW aS bS bWS : ℝ} (hW : PowerLaw W aW bW)
+    (hS : PowerLaw S aS bS) {L₁ L₂ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) (hne : L₁ ≠ L₂)
+    (hb : Real.log ((W L₂ / S L₂) / (W L₁ / S L₁)) = bWS * Real.log (L₂ / L₁)) (h : bWS ≠ bW - bS) : False := by
+  have := powerLaw_log (powerLaw_div hW hS) h₁ h₂
+  rw [hb] at this
+  exact h (mul_right_cancel₀ (log_ratio_ne_zero h₁ h₂ hne) this)
+
+/-- **C14, aerobic sustained flight.** A claim of sustained (aerobic) flight at power `P_req = W v/(L/D)` with
+`η E Q Ca < P_req` is ruled out. -/
+theorem aerobic_flight_rules_out {W v LD P η E Q Ca Cv : ℝ} (hη : 0 ≤ η) (hE : 0 ≤ E) (hQ : 0 ≤ Q) (hCv : 0 ≤ Cv)
+    (hsus : P ≤ aerobicPower η E Q Ca Cv) (hflight : powerRequired W v LD ≤ P)
+    (h : η * E * Q * Ca < powerRequired W v LD) : False := by
+  have := sustained_flight_requires hη hE hQ hCv hsus hflight
+  linarith
+
+/-- **C15, glide range.** A claimed steady unpowered glide of distance `x > h (L/D)_max / (1 - δ)` from
+height `h` with drag reduced by a fraction `δ` near the surface (`δ = 0` away from it) is ruled out. -/
+theorem glide_range_rules_out {W h D x LDmax loss Lift δ : ℝ} (hW : 0 < W) (hD : 0 < D) (hh : 0 ≤ h)
+    (hδ0 : 0 ≤ δ) (hδ1 : δ < 1) (hlift : Lift = W) (hLD : Lift / D ≤ LDmax)
+    (henergy : W * h = (1 - δ) * D * x + loss) (hloss : 0 ≤ loss) (hx : h * LDmax / (1 - δ) < x) : False := by
+  have := glide_range_le_groundEffect hW hD hh hδ0 hδ1 hlift hLD henergy hloss
+  linarith
+
+/-- **C16, climb.** A claimed climb rate `c` above `(P_avail - P_req)/W` under the power balance is ruled out. -/
+theorem climb_rules_out {W Pavail Preq c loss : ℝ} (hW : 0 < W) (hbal : Pavail = Preq + W * c + loss)
+    (hloss : 0 ≤ loss) (h : climbRate W Pavail Preq < c) : False := by
+  have := climbRate_le hW hbal hloss
+  linarith
+
+/-- **C11, Froude.** At equal Froude number speed scales as `√L`: a committed speed ratio `r ≥ 0` at length
+ratio `ℓ` with `r² ≠ ℓ` is ruled out. -/
+theorem froude_rules_out {Fr g : ℝ} (hFr : 0 < Fr) (hg : 0 < g) {L₁ L₂ r ℓ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂)
+    (hr : froudeSpeed Fr g L₂ / froudeSpeed Fr g L₁ = r) (hℓ : L₂ / L₁ = ℓ) (hr0 : 0 ≤ r) (hne : r ^ 2 ≠ ℓ) :
+    False := by
+  have := froude_ratio hFr hg h₁ h₂
+  rw [hr, hℓ] at this
+  have hℓ0 : 0 ≤ ℓ := by rw [← hℓ]; positivity
+  exact hne (by rw [this, Real.sq_sqrt hℓ0])
 
 end Delphi.Constraints

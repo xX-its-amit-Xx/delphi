@@ -1,0 +1,683 @@
+{
+ "level": "design",
+ "level_title": "Design-studio usage",
+ "arm": "decentralised",
+ "task": "l3-t1",
+ "arm_definition": "3 agents work the same task independently, no shared state, no orchestrator; merged at the end by a fixed oracle-free medoid vote. 3 parallel calls at a third of the budget each.",
+ "model": "claude-sonnet-5-5",
+ "N": 3,
+ "budget_total_usd": 0.45,
+ "cap_per_call_usd": 0.15,
+ "allocation": "even",
+ "metric": "mean of 4 checks (accepted, fixed fields present, laws actually evaluated, no unflagged invented fields)",
+ "ground_truth": "sim-engine lean_check at lawset 1.8.1",
+ "shared_input_bytes": 2948,
+ "shared_input": "TASK: write the SI-unit `design` object that the DELPHI Design Studio tool `lean_check` judges,\nfor the brief below, at Lean lawset 1.8.1.\n\nTHE BRIEF\nSpecify a gliding adult flying fish (family Exocoetidae) for the studio. The sponsor fixes the animal's size and air: standard length 0.25 m, mass 0.075 kg, air density 1.225 kg/m3, launch height 1.0 m above the water. It is an UNPOWERED glide, not powered flight. You choose the pectoral lifting area, the maximum lift coefficient, the glide lift-to-drag ratio, the airspeed and the resulting glide distance so that the specification is internally consistent and no accepted Lean-backed law at lawset 1.8.1 is violated. Depth and altitude are both 0 m.\n\nQUANTITIES THE SPONSOR FIXES. These keys must appear in your design with these exact values:\n  taxon = \"Exocoetidae\"\n  life_stage = \"adult\"\n  flight_mode = \"glide\"\n  SL_m = 0.25\n  mass_kg = 0.075\n  rho = 1.225\n  glideHeight_m = 1\n  depth_m = 0\n  altitude_m = 0\n\nQUANTITIES YOU CHOOSE (the key names lean_check uses): finArea_m2, CLmax, LD_max, airspeed_m_s, glideDistance_m, drag_coefficient, drag_area_m2\n\nHOW lean_check READS A DESIGN\n- The design is a flat JSON object of SI quantities plus `taxon`, `life_stage` and `flight_mode`.\n- `flight_mode: \"glide\"` declares an UNPOWERED glide, which takes the aerobic-demand laws (constraints C14, E3)\n  OUT OF SCOPE instead of violating them. `powered: false` does the same. Declaring powered flight puts them IN scope.\n- A law whose inputs are absent returns `cannot-evaluate`, which is NOT a pass: it means the law could not judge\n  your design at all. A design that names almost nothing scores zero violations by being unjudgeable, and that is\n  explicitly counted against it here.\n- Laws scoped to Exocoetidae return `out-of-scope` for other taxa.\n- Keys lean_check knows include: taxon, life_stage, flight_mode, powered, SL_m, standard_length_m, mass_kg,\n  finArea_m2, CLmax, LD_max, rho, airspeed_m_s, horizontal_airspeed_m_s, climbRate_m_s, glideHeight_m,\n  glideDistance_m, ground_distance_m, drag_coefficient, drag_area_m2, wind_along_track_m_s, flight_duration_s,\n  powerAvailable_W, sustained_power_W, reference_sustained_power_W, aerobicCeiling_W, efficiency, oxycaloric,\n  cardiacOutput, arterialO2, flightMuscleFraction, musclePowerPerKg_W, o2_store_ml, oxycaloric_J_per_unit_O2,\n  body_temperature_C, ct_min_C, ct_max_C, q10, reference_temperature_C, critical_swimming_speed_m_s,\n  current_speed_m_s, depth_m, altitude_m, bladder_volume_surface_ml, bladder_volume_at_depth_ml,\n  has_swimbladder, intake_J_per_day, routine_cost_J_per_day, activity_cost_J_per_day,\n  assimilation_efficiency, mass_change, genotype_edits.\n\nAIM FOR: zero binding violations, every fixed quantity present and exact, and as MANY laws actually evaluated\n(verdict `holds` or `violated`) as the brief allows. Flag in `assumptions` every number you chose yourself.\n\nOutput `design`, `assumptions` and `notes`.",
+ "merge": {
+  "rule": "medoid",
+  "kept": 0,
+  "mean_similarity": [
+   {
+    "i": 0,
+    "s": 0.5835913312693499
+   },
+   {
+    "i": 1,
+    "s": 0.5835913312693499
+   },
+   {
+    "i": 2,
+    "s": 0.5789473684210527
+   }
+  ],
+  "n_live": 3
+ },
+ "cell_totals": {
+  "calls": 3,
+  "cost_usd": 0.12281,
+  "tokens_total": 32028,
+  "wall_ms": 14724,
+  "cap_stops": 0,
+  "infra_failures": 0,
+  "produced_artifact": true
+ },
+ "calls": [
+  {
+   "label": "worker-0",
+   "prompt_sent": "You are one of 3 agents working on this task INDEPENDENTLY and in parallel.\nYou cannot see the other agents and they cannot see you. There is no shared state and no coordinator.\nYour answer will be compared with theirs and the one most agreed-with will be kept, so do the whole task\nyourself and do it the way you believe is right. Do not hedge and do not leave anything for someone else.\n\nYou are agent 0 of 3.\n\nTASK: write the SI-unit `design` object that the DELPHI Design Studio tool `lean_check` judges,\nfor the brief below, at Lean lawset 1.8.1.\n\nTHE BRIEF\nSpecify a gliding adult flying fish (family Exocoetidae) for the studio. The sponsor fixes the animal's size and air: standard length 0.25 m, mass 0.075 kg, air density 1.225 kg/m3, launch height 1.0 m above the water. It is an UNPOWERED glide, not powered flight. You choose the pectoral lifting area, the maximum lift coefficient, the glide lift-to-drag ratio, the airspeed and the resulting glide distance so that the specification is internally consistent and no accepted Lean-backed law at lawset 1.8.1 is violated. Depth and altitude are both 0 m.\n\nQUANTITIES THE SPONSOR FIXES. These keys must appear in your design with these exact values:\n  taxon = \"Exocoetidae\"\n  life_stage = \"adult\"\n  flight_mode = \"glide\"\n  SL_m = 0.25\n  mass_kg = 0.075\n  rho = 1.225\n  glideHeight_m = 1\n  depth_m = 0\n  altitude_m = 0\n\nQUANTITIES YOU CHOOSE (the key names lean_check uses): finArea_m2, CLmax, LD_max, airspeed_m_s, glideDistance_m, drag_coefficient, drag_area_m2\n\nHOW lean_check READS A DESIGN\n- The design is a flat JSON object of SI quantities plus `taxon`, `life_stage` and `flight_mode`.\n- `flight_mode: \"glide\"` declares an UNPOWERED glide, which takes the aerobic-demand laws (constraints C14, E3)\n  OUT OF SCOPE instead of violating them. `powered: false` does the same. Declaring powered flight puts them IN scope.\n- A law whose inputs are absent returns `cannot-evaluate`, which is NOT a pass: it means the law could not judge\n  your design at all. A design that names almost nothing scores zero violations by being unjudgeable, and that is\n  explicitly counted against it here.\n- Laws scoped to Exocoetidae return `out-of-scope` for other taxa.\n- Keys lean_check knows include: taxon, life_stage, flight_mode, powered, SL_m, standard_length_m, mass_kg,\n  finArea_m2, CLmax, LD_max, rho, airspeed_m_s, horizontal_airspeed_m_s, climbRate_m_s, glideHeight_m,\n  glideDistance_m, ground_distance_m, drag_coefficient, drag_area_m2, wind_along_track_m_s, flight_duration_s,\n  powerAvailable_W, sustained_power_W, reference_sustained_power_W, aerobicCeiling_W, efficiency, oxycaloric,\n  cardiacOutput, arterialO2, flightMuscleFraction, musclePowerPerKg_W, o2_store_ml, oxycaloric_J_per_unit_O2,\n  body_temperature_C, ct_min_C, ct_max_C, q10, reference_temperature_C, critical_swimming_speed_m_s,\n  current_speed_m_s, depth_m, altitude_m, bladder_volume_surface_ml, bladder_volume_at_depth_ml,\n  has_swimbladder, intake_J_per_day, routine_cost_J_per_day, activity_cost_J_per_day,\n  assimilation_efficiency, mass_change, genotype_edits.\n\nAIM FOR: zero binding violations, every fixed quantity present and exact, and as MANY laws actually evaluated\n(verdict `holds` or `violated`) as the brief allows. Flag in `assumptions` every number you chose yourself.\n\nOutput `design`, `assumptions` and `notes`.",
+   "prompt_chars": 3361,
+   "model_output_parsed": {
+    "design": {
+     "taxon": "Exocoetidae",
+     "life_stage": "adult",
+     "flight_mode": "glide",
+     "powered": false,
+     "SL_m": 0.25,
+     "mass_kg": 0.075,
+     "rho": 1.225,
+     "glideHeight_m": 1,
+     "depth_m": 0,
+     "altitude_m": 0,
+     "finArea_m2": 0.015,
+     "CLmax": 1,
+     "LD_max": 5,
+     "airspeed_m_s": 12,
+     "glideDistance_m": 4,
+     "drag_coefficient": 0.1111,
+     "drag_area_m2": 0.001667
+    },
+    "assumptions": [
+     "finArea_m2 = 0.015: plausible total pectoral lifting area for a 0.25 m adult; gives stall speed ~8.95 m/s.",
+     "CLmax = 1.0: moderate value in the range reported for flying-fish wings, not extreme.",
+     "LD_max = 5: conservative glide ratio, well below any bird/glider bound.",
+     "airspeed_m_s = 12: above the stall speed 8.95 m/s at CLmax, so L=W is reachable with CL≈0.556 < CLmax.",
+     "glideDistance_m = 4: below the energy bound LD_max*glideHeight_m = 5 m for an unpowered glide from 1 m.",
+     "drag_coefficient = 0.1111 = CL/LD at the 12 m/s trim point (CL≈0.556).",
+     "drag_area_m2 = 0.001667 = CD*S; drag at 12 m/s is ≈0.147 N, so W/D = 0.736/0.147 ≈ 5, matching LD_max.",
+     "powered=false added alongside flight_mode glide to make the unpowered declaration explicit.",
+     "Omitted metabolic, thermal, swimbladder and energy-budget keys because the brief does not fix them; adding invented values would risk false violations."
+    ],
+    "notes": "I couldn't call lean_check from here, so nothing was actually run through it. I checked consistency by hand: lift equals weight at 12 m/s, the airspeed is above stall, drag matches LD_max, and glide distance is within LD×height. C14 and E3 are out of scope because the design declares an unpowered glide. Laws whose inputs I left out, such as the metabolic, thermal and swimbladder ones, will return cannot-evaluate. No law blocks the brief."
+   },
+   "model_output_raw": "{\"design\":{\"taxon\":\"Exocoetidae\",\"life_stage\":\"adult\",\"flight_mode\":\"glide\",\"powered\":false,\"SL_m\":0.25,\"mass_kg\":0.075,\"rho\":1.225,\"glideHeight_m\":1,\"depth_m\":0,\"altitude_m\":0,\"finArea_m2\":0.015,\"CLmax\":1,\"LD_max\":5,\"airspeed_m_s\":12,\"glideDistance_m\":4,\"drag_coefficient\":0.1111,\"drag_area_m2\":0.001667},\"assumptions\":[\"finArea_m2 = 0.015: plausible total pectoral lifting area for a 0.25 m adult; gives stall speed ~8.95 m/s.\",\"CLmax = 1.0: moderate value in the range reported for flying-fish wings, not extreme.\",\"LD_max = 5: conservative glide ratio, well below any bird/glider bound.\",\"airspeed_m_s = 12: above the stall speed 8.95 m/s at CLmax, so L=W is reachable with CL≈0.556 < CLmax.\",\"glideDistance_m = 4: below the energy bound LD_max*glideHeight_m = 5 m for an unpowered glide from 1 m.\",\"drag_coefficient = 0.1111 = CL/LD at the 12 m/s trim point (CL≈0.556).\",\"drag_area_m2 = 0.001667 = CD*S; drag at 12 m/s is ≈0.147 N, so W/D = 0.736/0.147 ≈ 5, matching LD_max.\",\"powered=false added alongside flight_mode glide to make the unpowered declaration explicit.\",\"Omitted metabolic, thermal, swimbladder and energy-budget keys because the brief does not fix them; adding invented values would risk false violations.\"],\"notes\":\"I couldn't call lean_check from here, so nothing was actually run through it. I checked consistency by hand: lift equals weight at 12 m/s, the airspeed is above stall, drag matches LD_max, and glide distance is within LD×height. C14 and E3 are out of scope because the design declares an unpowered glide. Laws whose inputs I left out, such as the metabolic, thermal and swimbladder ones, will return cannot-evaluate. No law blocks the brief.\"}",
+   "tokens": {
+    "input": 2,
+    "output": 1779,
+    "cache_read": 2771,
+    "cache_creation": 6396
+   },
+   "tokens_total": 10948,
+   "cost_usd": 0.0436551,
+   "duration_ms": 14722,
+   "num_turns": 2,
+   "stop_reason": "tool_use",
+   "terminal_reason": "completed",
+   "is_error": false,
+   "error_text": null,
+   "cap_stop": false,
+   "failure_class": "ok"
+  },
+  {
+   "label": "worker-1",
+   "prompt_sent": "You are one of 3 agents working on this task INDEPENDENTLY and in parallel.\nYou cannot see the other agents and they cannot see you. There is no shared state and no coordinator.\nYour answer will be compared with theirs and the one most agreed-with will be kept, so do the whole task\nyourself and do it the way you believe is right. Do not hedge and do not leave anything for someone else.\n\nYou are agent 1 of 3.\n\nTASK: write the SI-unit `design` object that the DELPHI Design Studio tool `lean_check` judges,\nfor the brief below, at Lean lawset 1.8.1.\n\nTHE BRIEF\nSpecify a gliding adult flying fish (family Exocoetidae) for the studio. The sponsor fixes the animal's size and air: standard length 0.25 m, mass 0.075 kg, air density 1.225 kg/m3, launch height 1.0 m above the water. It is an UNPOWERED glide, not powered flight. You choose the pectoral lifting area, the maximum lift coefficient, the glide lift-to-drag ratio, the airspeed and the resulting glide distance so that the specification is internally consistent and no accepted Lean-backed law at lawset 1.8.1 is violated. Depth and altitude are both 0 m.\n\nQUANTITIES THE SPONSOR FIXES. These keys must appear in your design with these exact values:\n  taxon = \"Exocoetidae\"\n  life_stage = \"adult\"\n  flight_mode = \"glide\"\n  SL_m = 0.25\n  mass_kg = 0.075\n  rho = 1.225\n  glideHeight_m = 1\n  depth_m = 0\n  altitude_m = 0\n\nQUANTITIES YOU CHOOSE (the key names lean_check uses): finArea_m2, CLmax, LD_max, airspeed_m_s, glideDistance_m, drag_coefficient, drag_area_m2\n\nHOW lean_check READS A DESIGN\n- The design is a flat JSON object of SI quantities plus `taxon`, `life_stage` and `flight_mode`.\n- `flight_mode: \"glide\"` declares an UNPOWERED glide, which takes the aerobic-demand laws (constraints C14, E3)\n  OUT OF SCOPE instead of violating them. `powered: false` does the same. Declaring powered flight puts them IN scope.\n- A law whose inputs are absent returns `cannot-evaluate`, which is NOT a pass: it means the law could not judge\n  your design at all. A design that names almost nothing scores zero violations by being unjudgeable, and that is\n  explicitly counted against it here.\n- Laws scoped to Exocoetidae return `out-of-scope` for other taxa.\n- Keys lean_check knows include: taxon, life_stage, flight_mode, powered, SL_m, standard_length_m, mass_kg,\n  finArea_m2, CLmax, LD_max, rho, airspeed_m_s, horizontal_airspeed_m_s, climbRate_m_s, glideHeight_m,\n  glideDistance_m, ground_distance_m, drag_coefficient, drag_area_m2, wind_along_track_m_s, flight_duration_s,\n  powerAvailable_W, sustained_power_W, reference_sustained_power_W, aerobicCeiling_W, efficiency, oxycaloric,\n  cardiacOutput, arterialO2, flightMuscleFraction, musclePowerPerKg_W, o2_store_ml, oxycaloric_J_per_unit_O2,\n  body_temperature_C, ct_min_C, ct_max_C, q10, reference_temperature_C, critical_swimming_speed_m_s,\n  current_speed_m_s, depth_m, altitude_m, bladder_volume_surface_ml, bladder_volume_at_depth_ml,\n  has_swimbladder, intake_J_per_day, routine_cost_J_per_day, activity_cost_J_per_day,\n  assimilation_efficiency, mass_change, genotype_edits.\n\nAIM FOR: zero binding violations, every fixed quantity present and exact, and as MANY laws actually evaluated\n(verdict `holds` or `violated`) as the brief allows. Flag in `assumptions` every number you chose yourself.\n\nOutput `design`, `assumptions` and `notes`.",
+   "prompt_chars": 3361,
+   "model_output_parsed": {
+    "design": {
+     "taxon": "Exocoetidae",
+     "life_stage": "adult",
+     "flight_mode": "glide",
+     "powered": false,
+     "SL_m": 0.25,
+     "mass_kg": 0.075,
+     "rho": 1.225,
+     "glideHeight_m": 1,
+     "depth_m": 0,
+     "altitude_m": 0,
+     "finArea_m2": 0.01,
+     "CLmax": 1.2,
+     "LD_max": 10,
+     "airspeed_m_s": 15,
+     "glideDistance_m": 8,
+     "drag_coefficient": 0.0534,
+     "drag_area_m2": 0.000534
+    },
+    "assumptions": [
+     "finArea_m2=0.01: plausible total pectoral lifting area for a 0.25 m fish; gives stall speed ~10 m/s.",
+     "CLmax=1.2: moderate value for a cambered fin wing.",
+     "LD_max=10: modest glide ratio, so max unpowered range from 1 m is 10 m.",
+     "airspeed_m_s=15: above the 10 m/s stall speed, so lift can support weight (CL≈0.53 < CLmax).",
+     "glideDistance_m=8: below the LD_max*glideHeight_m=10 m ballistic/glide bound.",
+     "drag_coefficient=0.0534 (based on finArea) and drag_area_m2=0.000534: set so D=W/LD at 15 m/s (CL/CD≈10).",
+     "powered=false added alongside flight_mode glide to make the unpowered declaration explicit.",
+     "g=9.81 m/s2 assumed for weight."
+    ],
+    "notes": "I know of no law that blocks the brief. I haven't run lean_check, so the design is checked only by hand. Hand checks: lift balances weight at 15 m/s, speed exceeds stall, range does not exceed LD*h, and drag is consistent with L/D. A glide from 1 m cannot be longer than LD*h. Real flying fish glide much farther, but only by powered taxiing, which the brief excludes. The aerobic laws C14 and E3 are out of scope for an unpowered glide, so they won't be evaluated. Inputs for the swimbladder, thermal, and energy-budget laws are deliberately omitted, so those laws will return cannot-evaluate or out-of-scope."
+   },
+   "model_output_raw": "{\"design\":{\"taxon\":\"Exocoetidae\",\"life_stage\":\"adult\",\"flight_mode\":\"glide\",\"powered\":false,\"SL_m\":0.25,\"mass_kg\":0.075,\"rho\":1.225,\"glideHeight_m\":1,\"depth_m\":0,\"altitude_m\":0,\"finArea_m2\":0.01,\"CLmax\":1.2,\"LD_max\":10,\"airspeed_m_s\":15,\"glideDistance_m\":8,\"drag_coefficient\":0.0534,\"drag_area_m2\":0.000534},\"assumptions\":[\"finArea_m2=0.01: plausible total pectoral lifting area for a 0.25 m fish; gives stall speed ~10 m/s.\",\"CLmax=1.2: moderate value for a cambered fin wing.\",\"LD_max=10: modest glide ratio, so max unpowered range from 1 m is 10 m.\",\"airspeed_m_s=15: above the 10 m/s stall speed, so lift can support weight (CL≈0.53 < CLmax).\",\"glideDistance_m=8: below the LD_max*glideHeight_m=10 m ballistic/glide bound.\",\"drag_coefficient=0.0534 (based on finArea) and drag_area_m2=0.000534: set so D=W/LD at 15 m/s (CL/CD≈10).\",\"powered=false added alongside flight_mode glide to make the unpowered declaration explicit.\",\"g=9.81 m/s2 assumed for weight.\"],\"notes\":\"I know of no law that blocks the brief. I haven't run lean_check, so the design is checked only by hand. Hand checks: lift balances weight at 15 m/s, speed exceeds stall, range does not exceed LD*h, and drag is consistent with L/D. A glide from 1 m cannot be longer than LD*h. Real flying fish glide much farther, but only by powered taxiing, which the brief excludes. The aerobic laws C14 and E3 are out of scope for an unpowered glide, so they won't be evaluated. Inputs for the swimbladder, thermal, and energy-budget laws are deliberately omitted, so those laws will return cannot-evaluate or out-of-scope.\"}",
+   "tokens": {
+    "input": 2,
+    "output": 1282,
+    "cache_read": 2771,
+    "cache_creation": 6396
+   },
+   "tokens_total": 10451,
+   "cost_usd": 0.0386851,
+   "duration_ms": 11059,
+   "num_turns": 2,
+   "stop_reason": "tool_use",
+   "terminal_reason": "completed",
+   "is_error": false,
+   "error_text": null,
+   "cap_stop": false,
+   "failure_class": "ok"
+  },
+  {
+   "label": "worker-2",
+   "prompt_sent": "You are one of 3 agents working on this task INDEPENDENTLY and in parallel.\nYou cannot see the other agents and they cannot see you. There is no shared state and no coordinator.\nYour answer will be compared with theirs and the one most agreed-with will be kept, so do the whole task\nyourself and do it the way you believe is right. Do not hedge and do not leave anything for someone else.\n\nYou are agent 2 of 3.\n\nTASK: write the SI-unit `design` object that the DELPHI Design Studio tool `lean_check` judges,\nfor the brief below, at Lean lawset 1.8.1.\n\nTHE BRIEF\nSpecify a gliding adult flying fish (family Exocoetidae) for the studio. The sponsor fixes the animal's size and air: standard length 0.25 m, mass 0.075 kg, air density 1.225 kg/m3, launch height 1.0 m above the water. It is an UNPOWERED glide, not powered flight. You choose the pectoral lifting area, the maximum lift coefficient, the glide lift-to-drag ratio, the airspeed and the resulting glide distance so that the specification is internally consistent and no accepted Lean-backed law at lawset 1.8.1 is violated. Depth and altitude are both 0 m.\n\nQUANTITIES THE SPONSOR FIXES. These keys must appear in your design with these exact values:\n  taxon = \"Exocoetidae\"\n  life_stage = \"adult\"\n  flight_mode = \"glide\"\n  SL_m = 0.25\n  mass_kg = 0.075\n  rho = 1.225\n  glideHeight_m = 1\n  depth_m = 0\n  altitude_m = 0\n\nQUANTITIES YOU CHOOSE (the key names lean_check uses): finArea_m2, CLmax, LD_max, airspeed_m_s, glideDistance_m, drag_coefficient, drag_area_m2\n\nHOW lean_check READS A DESIGN\n- The design is a flat JSON object of SI quantities plus `taxon`, `life_stage` and `flight_mode`.\n- `flight_mode: \"glide\"` declares an UNPOWERED glide, which takes the aerobic-demand laws (constraints C14, E3)\n  OUT OF SCOPE instead of violating them. `powered: false` does the same. Declaring powered flight puts them IN scope.\n- A law whose inputs are absent returns `cannot-evaluate`, which is NOT a pass: it means the law could not judge\n  your design at all. A design that names almost nothing scores zero violations by being unjudgeable, and that is\n  explicitly counted against it here.\n- Laws scoped to Exocoetidae return `out-of-scope` for other taxa.\n- Keys lean_check knows include: taxon, life_stage, flight_mode, powered, SL_m, standard_length_m, mass_kg,\n  finArea_m2, CLmax, LD_max, rho, airspeed_m_s, horizontal_airspeed_m_s, climbRate_m_s, glideHeight_m,\n  glideDistance_m, ground_distance_m, drag_coefficient, drag_area_m2, wind_along_track_m_s, flight_duration_s,\n  powerAvailable_W, sustained_power_W, reference_sustained_power_W, aerobicCeiling_W, efficiency, oxycaloric,\n  cardiacOutput, arterialO2, flightMuscleFraction, musclePowerPerKg_W, o2_store_ml, oxycaloric_J_per_unit_O2,\n  body_temperature_C, ct_min_C, ct_max_C, q10, reference_temperature_C, critical_swimming_speed_m_s,\n  current_speed_m_s, depth_m, altitude_m, bladder_volume_surface_ml, bladder_volume_at_depth_ml,\n  has_swimbladder, intake_J_per_day, routine_cost_J_per_day, activity_cost_J_per_day,\n  assimilation_efficiency, mass_change, genotype_edits.\n\nAIM FOR: zero binding violations, every fixed quantity present and exact, and as MANY laws actually evaluated\n(verdict `holds` or `violated`) as the brief allows. Flag in `assumptions` every number you chose yourself.\n\nOutput `design`, `assumptions` and `notes`.",
+   "prompt_chars": 3361,
+   "model_output_parsed": {
+    "design": {
+     "taxon": "Exocoetidae",
+     "life_stage": "adult",
+     "flight_mode": "glide",
+     "powered": false,
+     "SL_m": 0.25,
+     "mass_kg": 0.075,
+     "rho": 1.225,
+     "glideHeight_m": 1,
+     "depth_m": 0,
+     "altitude_m": 0,
+     "finArea_m2": 0.015,
+     "CLmax": 1.2,
+     "LD_max": 8,
+     "airspeed_m_s": 10,
+     "glideDistance_m": 5,
+     "drag_coefficient": 0.1,
+     "drag_area_m2": 0.0015,
+     "wind_along_track_m_s": 0,
+     "flight_duration_s": 0.5
+    },
+    "assumptions": [
+     "finArea_m2=0.015: total pectoral lifting area, wing loading ~49 N/m2, plausible for a 0.25 m flying fish.",
+     "CLmax=1.2: moderate maximum lift coefficient for a fish fin wing.",
+     "airspeed_m_s=10: above stall speed (~8.2 m/s from W=0.736 N, S, CLmax), so required CL ≈ 0.80 < CLmax.",
+     "LD_max=8: glide ratio; bounds glide distance from 1 m at 8 m.",
+     "glideDistance_m=5: below LD_max*glideHeight_m = 8 m.",
+     "drag_coefficient=0.1: equals CL/LD at 10 m/s (0.80/8).",
+     "drag_area_m2=0.0015: drag_coefficient*finArea_m2.",
+     "powered=false: added explicitly alongside flight_mode glide so C14/E3 are out of scope.",
+     "wind_along_track_m_s=0: still air assumed.",
+     "flight_duration_s=0.5: glideDistance/airspeed = 5/10."
+    ],
+    "notes": "I ran no check, so I haven't confirmed any verdicts. By hand, the numbers are consistent: airspeed is above stall speed, glide distance is within LD_max times the launch height, and the drag terms agree. A real flying fish glides much farther than 5 m, but that relies on powered taxiing and wind or wave lift, which this unpowered 1 m launch excludes. C14 and E3 are out of scope because the glide is unpowered. I don't know of any law that blocks this brief."
+   },
+   "model_output_raw": "{\"design\":{\"taxon\":\"Exocoetidae\",\"life_stage\":\"adult\",\"flight_mode\":\"glide\",\"powered\":false,\"SL_m\":0.25,\"mass_kg\":0.075,\"rho\":1.225,\"glideHeight_m\":1,\"depth_m\":0,\"altitude_m\":0,\"finArea_m2\":0.015,\"CLmax\":1.2,\"LD_max\":8,\"airspeed_m_s\":10,\"glideDistance_m\":5,\"drag_coefficient\":0.1,\"drag_area_m2\":0.0015,\"wind_along_track_m_s\":0,\"flight_duration_s\":0.5},\"assumptions\":[\"finArea_m2=0.015: total pectoral lifting area, wing loading ~49 N/m2, plausible for a 0.25 m flying fish.\",\"CLmax=1.2: moderate maximum lift coefficient for a fish fin wing.\",\"airspeed_m_s=10: above stall speed (~8.2 m/s from W=0.736 N, S, CLmax), so required CL ≈ 0.80 < CLmax.\",\"LD_max=8: glide ratio; bounds glide distance from 1 m at 8 m.\",\"glideDistance_m=5: below LD_max*glideHeight_m = 8 m.\",\"drag_coefficient=0.1: equals CL/LD at 10 m/s (0.80/8).\",\"drag_area_m2=0.0015: drag_coefficient*finArea_m2.\",\"powered=false: added explicitly alongside flight_mode glide so C14/E3 are out of scope.\",\"wind_along_track_m_s=0: still air assumed.\",\"flight_duration_s=0.5: glideDistance/airspeed = 5/10.\"],\"notes\":\"I ran no check, so I haven't confirmed any verdicts. By hand, the numbers are consistent: airspeed is above stall speed, glide distance is within LD_max times the launch height, and the drag terms agree. A real flying fish glides much farther than 5 m, but that relies on powered taxiing and wind or wave lift, which this unpowered 1 m launch excludes. C14 and E3 are out of scope because the glide is unpowered. I don't know of any law that blocks this brief.\"}",
+   "tokens": {
+    "input": 2,
+    "output": 1460,
+    "cache_read": 2771,
+    "cache_creation": 6396
+   },
+   "tokens_total": 10629,
+   "cost_usd": 0.0404651,
+   "duration_ms": 12433,
+   "num_turns": 2,
+   "stop_reason": "tool_use",
+   "terminal_reason": "completed",
+   "is_error": false,
+   "error_text": null,
+   "cap_stop": false,
+   "failure_class": "ok"
+  }
+ ],
+ "final_artifact": {
+  "design": {
+   "taxon": "Exocoetidae",
+   "life_stage": "adult",
+   "flight_mode": "glide",
+   "powered": false,
+   "SL_m": 0.25,
+   "mass_kg": 0.075,
+   "rho": 1.225,
+   "glideHeight_m": 1,
+   "depth_m": 0,
+   "altitude_m": 0,
+   "finArea_m2": 0.015,
+   "CLmax": 1,
+   "LD_max": 5,
+   "airspeed_m_s": 12,
+   "glideDistance_m": 4,
+   "drag_coefficient": 0.1111,
+   "drag_area_m2": 0.001667
+  },
+  "assumptions": [
+   "finArea_m2 = 0.015: plausible total pectoral lifting area for a 0.25 m adult; gives stall speed ~8.95 m/s.",
+   "CLmax = 1.0: moderate value in the range reported for flying-fish wings, not extreme.",
+   "LD_max = 5: conservative glide ratio, well below any bird/glider bound.",
+   "airspeed_m_s = 12: above the stall speed 8.95 m/s at CLmax, so L=W is reachable with CL≈0.556 < CLmax.",
+   "glideDistance_m = 4: below the energy bound LD_max*glideHeight_m = 5 m for an unpowered glide from 1 m.",
+   "drag_coefficient = 0.1111 = CL/LD at the 12 m/s trim point (CL≈0.556).",
+   "drag_area_m2 = 0.001667 = CD*S; drag at 12 m/s is ≈0.147 N, so W/D = 0.736/0.147 ≈ 5, matching LD_max.",
+   "powered=false added alongside flight_mode glide to make the unpowered declaration explicit.",
+   "Omitted metabolic, thermal, swimbladder and energy-budget keys because the brief does not fix them; adding invented values would risk false violations."
+  ],
+  "notes": "I couldn't call lean_check from here, so nothing was actually run through it. I checked consistency by hand: lift equals weight at 12 m/s, the airspeed is above stall, drag matches LD_max, and glide distance is within LD×height. C14 and E3 are out of scope because the design declares an unpowered glide. Laws whose inputs I left out, such as the metabolic, thermal and swimbladder ones, will return cannot-evaluate. No law blocks the brief."
+ },
+ "swarm_candidates": [
+  {
+   "index": 0,
+   "ok": true,
+   "subtask": null,
+   "parsed": {
+    "design": {
+     "taxon": "Exocoetidae",
+     "life_stage": "adult",
+     "flight_mode": "glide",
+     "powered": false,
+     "SL_m": 0.25,
+     "mass_kg": 0.075,
+     "rho": 1.225,
+     "glideHeight_m": 1,
+     "depth_m": 0,
+     "altitude_m": 0,
+     "finArea_m2": 0.015,
+     "CLmax": 1,
+     "LD_max": 5,
+     "airspeed_m_s": 12,
+     "glideDistance_m": 4,
+     "drag_coefficient": 0.1111,
+     "drag_area_m2": 0.001667
+    },
+    "assumptions": [
+     "finArea_m2 = 0.015: plausible total pectoral lifting area for a 0.25 m adult; gives stall speed ~8.95 m/s.",
+     "CLmax = 1.0: moderate value in the range reported for flying-fish wings, not extreme.",
+     "LD_max = 5: conservative glide ratio, well below any bird/glider bound.",
+     "airspeed_m_s = 12: above the stall speed 8.95 m/s at CLmax, so L=W is reachable with CL≈0.556 < CLmax.",
+     "glideDistance_m = 4: below the energy bound LD_max*glideHeight_m = 5 m for an unpowered glide from 1 m.",
+     "drag_coefficient = 0.1111 = CL/LD at the 12 m/s trim point (CL≈0.556).",
+     "drag_area_m2 = 0.001667 = CD*S; drag at 12 m/s is ≈0.147 N, so W/D = 0.736/0.147 ≈ 5, matching LD_max.",
+     "powered=false added alongside flight_mode glide to make the unpowered declaration explicit.",
+     "Omitted metabolic, thermal, swimbladder and energy-budget keys because the brief does not fix them; adding invented values would risk false violations."
+    ],
+    "notes": "I couldn't call lean_check from here, so nothing was actually run through it. I checked consistency by hand: lift equals weight at 12 m/s, the airspeed is above stall, drag matches LD_max, and glide distance is within LD×height. C14 and E3 are out of scope because the design declares an unpowered glide. Laws whose inputs I left out, such as the metabolic, thermal and swimbladder ones, will return cannot-evaluate. No law blocks the brief."
+   }
+  },
+  {
+   "index": 1,
+   "ok": true,
+   "subtask": null,
+   "parsed": {
+    "design": {
+     "taxon": "Exocoetidae",
+     "life_stage": "adult",
+     "flight_mode": "glide",
+     "powered": false,
+     "SL_m": 0.25,
+     "mass_kg": 0.075,
+     "rho": 1.225,
+     "glideHeight_m": 1,
+     "depth_m": 0,
+     "altitude_m": 0,
+     "finArea_m2": 0.01,
+     "CLmax": 1.2,
+     "LD_max": 10,
+     "airspeed_m_s": 15,
+     "glideDistance_m": 8,
+     "drag_coefficient": 0.0534,
+     "drag_area_m2": 0.000534
+    },
+    "assumptions": [
+     "finArea_m2=0.01: plausible total pectoral lifting area for a 0.25 m fish; gives stall speed ~10 m/s.",
+     "CLmax=1.2: moderate value for a cambered fin wing.",
+     "LD_max=10: modest glide ratio, so max unpowered range from 1 m is 10 m.",
+     "airspeed_m_s=15: above the 10 m/s stall speed, so lift can support weight (CL≈0.53 < CLmax).",
+     "glideDistance_m=8: below the LD_max*glideHeight_m=10 m ballistic/glide bound.",
+     "drag_coefficient=0.0534 (based on finArea) and drag_area_m2=0.000534: set so D=W/LD at 15 m/s (CL/CD≈10).",
+     "powered=false added alongside flight_mode glide to make the unpowered declaration explicit.",
+     "g=9.81 m/s2 assumed for weight."
+    ],
+    "notes": "I know of no law that blocks the brief. I haven't run lean_check, so the design is checked only by hand. Hand checks: lift balances weight at 15 m/s, speed exceeds stall, range does not exceed LD*h, and drag is consistent with L/D. A glide from 1 m cannot be longer than LD*h. Real flying fish glide much farther, but only by powered taxiing, which the brief excludes. The aerobic laws C14 and E3 are out of scope for an unpowered glide, so they won't be evaluated. Inputs for the swimbladder, thermal, and energy-budget laws are deliberately omitted, so those laws will return cannot-evaluate or out-of-scope."
+   }
+  },
+  {
+   "index": 2,
+   "ok": true,
+   "subtask": null,
+   "parsed": {
+    "design": {
+     "taxon": "Exocoetidae",
+     "life_stage": "adult",
+     "flight_mode": "glide",
+     "powered": false,
+     "SL_m": 0.25,
+     "mass_kg": 0.075,
+     "rho": 1.225,
+     "glideHeight_m": 1,
+     "depth_m": 0,
+     "altitude_m": 0,
+     "finArea_m2": 0.015,
+     "CLmax": 1.2,
+     "LD_max": 8,
+     "airspeed_m_s": 10,
+     "glideDistance_m": 5,
+     "drag_coefficient": 0.1,
+     "drag_area_m2": 0.0015,
+     "wind_along_track_m_s": 0,
+     "flight_duration_s": 0.5
+    },
+    "assumptions": [
+     "finArea_m2=0.015: total pectoral lifting area, wing loading ~49 N/m2, plausible for a 0.25 m flying fish.",
+     "CLmax=1.2: moderate maximum lift coefficient for a fish fin wing.",
+     "airspeed_m_s=10: above stall speed (~8.2 m/s from W=0.736 N, S, CLmax), so required CL ≈ 0.80 < CLmax.",
+     "LD_max=8: glide ratio; bounds glide distance from 1 m at 8 m.",
+     "glideDistance_m=5: below LD_max*glideHeight_m = 8 m.",
+     "drag_coefficient=0.1: equals CL/LD at 10 m/s (0.80/8).",
+     "drag_area_m2=0.0015: drag_coefficient*finArea_m2.",
+     "powered=false: added explicitly alongside flight_mode glide so C14/E3 are out of scope.",
+     "wind_along_track_m_s=0: still air assumed.",
+     "flight_duration_s=0.5: glideDistance/airspeed = 5/10."
+    ],
+    "notes": "I ran no check, so I haven't confirmed any verdicts. By hand, the numbers are consistent: airspeed is above stall speed, glide distance is within LD_max times the launch height, and the drag terms agree. A real flying fish glides much farther than 5 m, but that relies on powered taxiing and wind or wave lift, which this unpowered 1 m launch excludes. C14 and E3 are out of scope because the glide is unpowered. I don't know of any law that blocks this brief."
+   }
+  }
+ ],
+ "grader_verdict": {
+  "task": "l3-t1",
+  "lawset": "1.8.1",
+  "accepted": 0,
+  "binding_violations": 5,
+  "evaluable_binding_laws": 8,
+  "brief_fields_present": 1,
+  "fixed_checks": [
+   {
+    "key": "taxon",
+    "want": "Exocoetidae",
+    "got": "Exocoetidae",
+    "ok": true
+   },
+   {
+    "key": "life_stage",
+    "want": "adult",
+    "got": "adult",
+    "ok": true
+   },
+   {
+    "key": "flight_mode",
+    "want": "glide",
+    "got": "glide",
+    "ok": true
+   },
+   {
+    "key": "SL_m",
+    "want": 0.25,
+    "got": 0.25,
+    "ok": true
+   },
+   {
+    "key": "mass_kg",
+    "want": 0.075,
+    "got": 0.075,
+    "ok": true
+   },
+   {
+    "key": "rho",
+    "want": 1.225,
+    "got": 1.225,
+    "ok": true
+   },
+   {
+    "key": "glideHeight_m",
+    "want": 1,
+    "got": 1,
+    "ok": true
+   },
+   {
+    "key": "depth_m",
+    "want": 0,
+    "got": 0,
+    "ok": true
+   },
+   {
+    "key": "altitude_m",
+    "want": 0,
+    "got": 0,
+    "ok": true
+   }
+  ],
+  "invented_fields": 0,
+  "invented": [],
+  "lean_summary": {
+   "violated": 5,
+   "binding_violations": 5,
+   "holds": 4,
+   "out_of_scope": 7,
+   "unknown_lawset": 0,
+   "cannot_evaluate": 19
+  },
+  "design_keys": 17,
+  "assumptions_count": 9,
+  "artifact_absent": 0,
+  "score": 0.6818
+ },
+ "candidate_grades": {
+  "kept": 0,
+  "rule": "medoid",
+  "candidates": [
+   {
+    "index": 0,
+    "task": "l3-t1",
+    "lawset": "1.8.1",
+    "accepted": 0,
+    "binding_violations": 5,
+    "evaluable_binding_laws": 8,
+    "brief_fields_present": 1,
+    "fixed_checks": [
+     {
+      "key": "taxon",
+      "want": "Exocoetidae",
+      "got": "Exocoetidae",
+      "ok": true
+     },
+     {
+      "key": "life_stage",
+      "want": "adult",
+      "got": "adult",
+      "ok": true
+     },
+     {
+      "key": "flight_mode",
+      "want": "glide",
+      "got": "glide",
+      "ok": true
+     },
+     {
+      "key": "SL_m",
+      "want": 0.25,
+      "got": 0.25,
+      "ok": true
+     },
+     {
+      "key": "mass_kg",
+      "want": 0.075,
+      "got": 0.075,
+      "ok": true
+     },
+     {
+      "key": "rho",
+      "want": 1.225,
+      "got": 1.225,
+      "ok": true
+     },
+     {
+      "key": "glideHeight_m",
+      "want": 1,
+      "got": 1,
+      "ok": true
+     },
+     {
+      "key": "depth_m",
+      "want": 0,
+      "got": 0,
+      "ok": true
+     },
+     {
+      "key": "altitude_m",
+      "want": 0,
+      "got": 0,
+      "ok": true
+     }
+    ],
+    "invented_fields": 0,
+    "invented": [],
+    "lean_summary": {
+     "violated": 5,
+     "binding_violations": 5,
+     "holds": 4,
+     "out_of_scope": 7,
+     "unknown_lawset": 0,
+     "cannot_evaluate": 19
+    },
+    "design_keys": 17,
+    "assumptions_count": 9,
+    "score": 0.6818
+   },
+   {
+    "index": 1,
+    "task": "l3-t1",
+    "lawset": "1.8.1",
+    "accepted": 0,
+    "binding_violations": 5,
+    "evaluable_binding_laws": 8,
+    "brief_fields_present": 1,
+    "fixed_checks": [
+     {
+      "key": "taxon",
+      "want": "Exocoetidae",
+      "got": "Exocoetidae",
+      "ok": true
+     },
+     {
+      "key": "life_stage",
+      "want": "adult",
+      "got": "adult",
+      "ok": true
+     },
+     {
+      "key": "flight_mode",
+      "want": "glide",
+      "got": "glide",
+      "ok": true
+     },
+     {
+      "key": "SL_m",
+      "want": 0.25,
+      "got": 0.25,
+      "ok": true
+     },
+     {
+      "key": "mass_kg",
+      "want": 0.075,
+      "got": 0.075,
+      "ok": true
+     },
+     {
+      "key": "rho",
+      "want": 1.225,
+      "got": 1.225,
+      "ok": true
+     },
+     {
+      "key": "glideHeight_m",
+      "want": 1,
+      "got": 1,
+      "ok": true
+     },
+     {
+      "key": "depth_m",
+      "want": 0,
+      "got": 0,
+      "ok": true
+     },
+     {
+      "key": "altitude_m",
+      "want": 0,
+      "got": 0,
+      "ok": true
+     }
+    ],
+    "invented_fields": 0,
+    "invented": [],
+    "lean_summary": {
+     "violated": 5,
+     "binding_violations": 5,
+     "holds": 4,
+     "out_of_scope": 7,
+     "unknown_lawset": 0,
+     "cannot_evaluate": 19
+    },
+    "design_keys": 17,
+    "assumptions_count": 8,
+    "score": 0.6818
+   },
+   {
+    "index": 2,
+    "task": "l3-t1",
+    "lawset": "1.8.1",
+    "accepted": 0,
+    "binding_violations": 5,
+    "evaluable_binding_laws": 8,
+    "brief_fields_present": 1,
+    "fixed_checks": [
+     {
+      "key": "taxon",
+      "want": "Exocoetidae",
+      "got": "Exocoetidae",
+      "ok": true
+     },
+     {
+      "key": "life_stage",
+      "want": "adult",
+      "got": "adult",
+      "ok": true
+     },
+     {
+      "key": "flight_mode",
+      "want": "glide",
+      "got": "glide",
+      "ok": true
+     },
+     {
+      "key": "SL_m",
+      "want": 0.25,
+      "got": 0.25,
+      "ok": true
+     },
+     {
+      "key": "mass_kg",
+      "want": 0.075,
+      "got": 0.075,
+      "ok": true
+     },
+     {
+      "key": "rho",
+      "want": 1.225,
+      "got": 1.225,
+      "ok": true
+     },
+     {
+      "key": "glideHeight_m",
+      "want": 1,
+      "got": 1,
+      "ok": true
+     },
+     {
+      "key": "depth_m",
+      "want": 0,
+      "got": 0,
+      "ok": true
+     },
+     {
+      "key": "altitude_m",
+      "want": 0,
+      "got": 0,
+      "ok": true
+     }
+    ],
+    "invented_fields": 0,
+    "invented": [],
+    "lean_summary": {
+     "violated": 5,
+     "binding_violations": 5,
+     "holds": 4,
+     "out_of_scope": 7,
+     "unknown_lawset": 0,
+     "cannot_evaluate": 19
+    },
+    "design_keys": 19,
+    "assumptions_count": 10,
+    "score": 0.6818
+   }
+  ]
+ },
+ "run_dir": "swarm/benchmark/runs/design/decentralised/l3-t1"
+}

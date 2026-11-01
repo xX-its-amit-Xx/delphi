@@ -14,6 +14,8 @@
 //   node sim-engine/cli.mjs session post --session <id> --author agent:physics --kind proposal --rationale "..." --json '{"edits":[...]}'
 //   node sim-engine/cli.mjs session decide --session <id> --proposal p2 --decision approve --role human --reason "..."
 //   node sim-engine/cli.mjs session read --session <id>
+//   node sim-engine/cli.mjs tools                                   every registered tool name
+//   node sim-engine/cli.mjs tool validate_generation --json '{"desired_phenotype":"...","generated":"winged-zebrafish","base":"zebrafish-adult"}'
 // Any command also takes --json '<raw arguments object>', merged over the flags.
 import * as T from './tools/studio.mjs';
 
@@ -54,6 +56,34 @@ const COMMANDS = {
   'session decide': () => T.sessionDecide({ session: flags.session, proposal_id: flags.proposal, decision: flags.decision, decided_by_role: flags.role, reason: flags.reason, lawset: flags.lawset, ...raw }),
   'session read': () => T.sessionRead({ session: flags.session, since: num('since'), ...raw }),
 };
+
+// `tool <name>` and `tools`: a generic passthrough to EVERY tool the MCP server registers, so a tool added to
+// server.mjs is reachable from the shell with no change here. The studio verbs above stay as they are; this is
+// the only way to reach validate_generation, functional_resolution, physics_check, edit_plan, lean_open_* and
+// anything registered later. Arguments come from --json, or from --key value flags for the simple cases.
+if (group === 'tools' || group === 'tool') {
+  const { TOOLS } = await import('./server.mjs');
+  if (group === 'tools') {
+    process.stdout.write(JSON.stringify({ count: TOOLS.length, tools: TOOLS.map(t => ({ name: t.name, title: t.title })) }, null, 1) + '\n');
+    process.exit(0);
+  }
+  const name = cmd;
+  const t = TOOLS.find(x => x.name === name);
+  if (!t) {
+    process.stderr.write(`unknown tool: ${name}\nknown: ${TOOLS.map(x => x.name).join(', ')}\n`);
+    process.exit(2);
+  }
+  // Flags other than --json are passed through as-is, with numbers and booleans coerced; --json wins.
+  const flat = Object.fromEntries(Object.entries(flags).filter(([k]) => k !== 'json' && k !== 'compact').map(([k, v]) => [k, val(v)]));
+  try {
+    const out = await t.handler({ ...flat, ...raw });
+    process.stdout.write(JSON.stringify(out, null, flags.compact ? 0 : 1) + '\n');
+  } catch (e) {
+    process.stdout.write(JSON.stringify({ error: e.message, tool: name }, null, 1) + '\n');
+    process.exit(1);
+  }
+  process.exit(0);
+}
 
 const key = group === 'optimize' ? 'optimize' : `${group} ${cmd}`;
 const fn = COMMANDS[key];

@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../shared/shell.css">
+<script src="../shared/shell.js"></script>
+<title>Capability map &mdash; DELPHI</title>
+<meta name="description" content="Who could use Lean for Bio, what they could ask it, the grand questions split into what a proof can settle and what only measurement can, and the tools that are missing.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M10 16h12M16 10v12' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--accent-ink:#fff;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--viol:#6b4fb3;--soft:#eef2ef;--shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3);color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--dsh-h,0px) + 64px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+h1,h2,h3,h4{line-height:1.2;margin:0 0 .5em;text-wrap:balance}
+h1{font-size:clamp(1.7rem,4.5vw,2.6rem)} h2{font-size:1.4rem} h3{font-size:1.05rem} h4{font-size:.95rem}
+p{margin:.4em 0 .8em}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{position:sticky;top:var(--dsh-h,0px);z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;gap:12px;align-items:center;padding-block:8px;flex-wrap:wrap}
+.brand{font-weight:700}
+nav.sub a{display:inline-block;padding:4px 10px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.9rem}
+nav.sub a:hover{background:var(--soft);color:var(--ink)}
+section{padding-block:30px;border-bottom:1px solid var(--line)}
+.lede{color:var(--mute);max-width:72ch;font-size:1.05rem}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(330px,100%),1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr))}
+.grid>*{min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.card h3,.card h4{margin-top:0}
+.kpi{font-size:1.9rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.kpi small{display:block;font-size:.78rem;font-weight:400;color:var(--mute);margin-top:6px}
+.chip{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;border:1px solid var(--line);background:var(--soft);color:var(--mute);white-space:nowrap}
+.chip.ok{color:var(--ok);border-color:var(--ok)} .chip.bad{color:var(--bad);border-color:var(--bad)}
+.chip.warn{color:var(--warn);border-color:var(--warn)} .chip.viol{color:var(--viol);border-color:var(--viol)}
+.small{font-size:.88rem} .mute{color:var(--mute)}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;font-size:.85rem}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.note{background:var(--soft);border-left:3px solid var(--warn);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:.92rem}
+.note.ok{border-left-color:var(--ok)} .note.bad{border-left-color:var(--bad)} .note.line{border-left-color:var(--accent)}
+.tag{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85rem;background:var(--soft);padding:1px 6px;border-radius:6px;overflow-wrap:anywhere}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--soft);padding:12px;border-radius:8px;overflow-x:auto;font-size:.85rem;margin:.4em 0}
+footer{padding-block:26px;color:var(--mute);font-size:.9rem}
+main{overflow-wrap:anywhere}
+.scroll{overflow-x:auto;max-width:100%}
+/* bars: one series, one hue, thin marks, 4px rounded data end anchored to the baseline, 2px gap */
+.bars{display:grid;gap:2px}
+.bar{display:grid;grid-template-columns:minmax(7em,11em) 1fr 2.6em;align-items:center;gap:8px;font-size:.85rem;padding:3px 0;border-radius:4px}
+.bar:hover,.bar:focus-within{background:var(--soft)}
+.bar .track{height:14px;position:relative;min-width:0}
+.bar .fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:0 4px 4px 0;min-width:1px}
+.bar .lab{color:var(--mute);overflow-wrap:anywhere}
+.bar .val{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
+/* status marks: shape as well as colour, so EXISTS / PARTIAL / MISSING is never colour alone */
+.st{display:inline-flex;align-items:center;gap:5px;font-size:.78rem;white-space:nowrap}
+.st::before{content:"";width:9px;height:9px;flex:none;border:1.5px solid currentColor}
+.st.e{color:var(--ok)} .st.e::before{border-radius:99px;background:currentColor}
+.st.p{color:var(--warn)} .st.p::before{border-radius:99px;background:linear-gradient(90deg,currentColor 50%,transparent 50%)}
+.st.m{color:var(--bad)} .st.m::before{border-radius:2px;background:transparent}
+ul.tight{margin:.3em 0;padding-left:20px} ul.tight li{margin:.25em 0}
+details{border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:.5em 0;background:var(--panel)}
+details>summary{cursor:pointer;font-weight:600;font-size:.92rem;color:var(--accent)}
+details[open]>summary{margin-bottom:.5em}
+.q{border:1px solid var(--line);border-radius:12px;background:var(--panel);box-shadow:var(--shadow);padding:16px;margin:14px 0}
+.q h3{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.split{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));margin-top:10px}
+.half{border:1px solid var(--line);border-radius:10px;padding:12px;min-width:0}
+.half.a{border-left:3px solid var(--accent)} .half.b{border-left:3px solid var(--warn)}
+.half h4{text-transform:uppercase;letter-spacing:.06em;font-size:.74rem;color:var(--mute);margin-bottom:8px}
+.stmt{margin:0 0 10px;padding-bottom:10px;border-bottom:1px dashed var(--line)}
+.stmt:last-child{border-bottom:0;padding-bottom:0;margin-bottom:0}
+.stmt .claim{font-size:.92rem}
+.stmt .meta{font-size:.82rem;color:var(--mute);margin-top:4px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+</style>
+<style id="dsh-fit">@media (max-width:720px){body{overflow-wrap:break-word}main table,section table,.card table,.in table,.scroll table{display:block;overflow-x:auto;max-width:100%}code,pre,.mono{overflow-wrap:anywhere}}</style>
+</head>
+<body>
+<!-- delphi-shell:start  generated by dashboard/build-shell.mjs - do not edit by hand -->
+<a class="dsh-skip" href="#dsh-content">Skip the navigation</a>
+<header class="dsh">
+  <div class="dsh-bar"><a class="dsh-brand" href="../index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0e7c86"/><path d="M5 16c5-7 14-9 22-4-3 2-6 3-8 4 2 1 5 2 8 4-8 5-17 3-22-4z" fill="#fff"/></svg>DELPHI<span class="sub">laws of biology</span></a>
+    <nav class="dsh-nav" aria-label="Primary"><span class="dsh-grp"><span class="dsh-lab">Results</span><a class="dsh-link" href="../results/">Results</a><a class="dsh-link" href="../scorer/">Design scorer</a><a class="dsh-link" href="../deck/">Pitch deck</a><a class="dsh-link" href="../print/">Printable kit</a><a class="dsh-link" href="../studio-api/">Validate a design</a><a class="dsh-link" href="../gene-diff/">Gene diff</a><a class="dsh-link" href="../t/benchmark/">Swarm benchmark</a><a class="dsh-link" href="../swarm-board/">Swarm board</a><a class="dsh-link" href="../evolve/">Enzymes</a></span><span class="dsh-grp"><span class="dsh-lab">Evidence</span><a class="dsh-link" href="../proofs/">Claim book</a><a class="dsh-link" href="../leanbio/">LeanBio repo</a><a class="dsh-link" href="../graph/">Graph</a><a class="dsh-link" href="../figures/">Figures</a></span><span class="dsh-grp"><span class="dsh-lab">Threads</span><a class="dsh-link" href="../t/lean/">Lean proofs</a><a class="dsh-link" href="../t/claims/">Claim tests</a><a class="dsh-link" href="../t/genotype/">Genotype</a><a class="dsh-link" href="../t/physics/">Physics</a><a class="dsh-link" href="../t/physics/sim/">Simulator</a><a class="dsh-link" href="../t/organism/">Organism</a><a class="dsh-link" href="../t/holdout/">Holdout</a><a class="dsh-link" href="../t/swarm/">Swarm</a><a class="dsh-link" href="../t/validation/">Validation</a></span><span class="dsh-grp"><span class="dsh-lab">About</span><a class="dsh-link" href="../start/">Start here</a><a class="dsh-link" href="../record/">Development record</a><a class="dsh-link" href="../index.html">Mission control</a></span></nav>
+    <button class="dsh-theme" id="themeBtn" data-dsh-theme type="button" title="Toggle light or dark">Theme</button></div>
+  <nav class="dsh-modes" aria-label="The 3D organism viewer"><span class="dsh-lab">The organism</span><a class="dsh-link" href="../blueprint3d/">Anatomy</a><a class="dsh-link" href="../blueprint3d/?mode=physiology">Circulation &amp; gills</a><a class="dsh-link" href="../blueprint3d/?mode=tissue">Tissue signals</a><a class="dsh-link" href="../blueprint3d/?mode=cell">Cell interactions</a><a class="dsh-link" href="../blueprint3d/?mode=physics">Flight simulator</a><a class="dsh-link" href="../blueprint3d/?mode=design">Design studio</a><a class="dsh-link" href="../blueprint3d/?mode=growth">Growth</a><a class="dsh-link" href="../blueprint3d/?mode=compare">Compare species</a><a class="dsh-link" href="../blueprint3d/?mode=sequences">Gene sequences</a><a class="dsh-link" href="../blueprint3d/?view=radial">Radial map</a></nav>
+</header>
+<span id="dsh-content"></span>
+<!-- delphi-shell:end --><header class="top"><div class="wrap">
+  <span class="brand">Capability map</span>
+  <nav class="sub"><a href="#line">The line</a><a href="#personas">Personas</a><a href="#cases">Use cases</a><a href="#grand">Grand questions</a><a href="#gaps">Tool gaps</a><a href="#absent">Deliberately absent</a><a href="#serve">Get it</a></nav>
+</div></header>
+
+<main class="wrap">
+
+<section id="top">
+  <h1>Who could use Lean for Bio, and what it cannot do for them</h1>
+  <p class="lede">Four enumerations, served as versioned JSON and checked by tests: the people and agents with a reason to open this system, the concrete jobs they would bring, the grand questions of biology split into the part a proof can settle and the part only measurement can, and every tool that is missing, ranked by how much it unblocks.</p>
+  <div class="grid g4" id="kpis"></div>
+  <div class="note" id="built"></div>
+</section>
+
+<section id="line">
+  <h2>The line this whole page depends on</h2>
+  <div class="note line" id="theLine"></div>
+  <p class="small mute">Every claim below about what Lean settles is a claim about premises, never about organisms. A grand question has a formalisable core exactly to the extent that part of the disagreement about it is a disagreement about what follows from what.</p>
+</section>
+
+<section id="personas">
+  <h2>Personas</h2>
+  <p class="lede">One entry per person or agent with a reason to use a formalised law registry over biology: what they do today without it, what they would ask, and the tools they need. <span class="st e">EXISTS</span> and <span class="st p">PARTIAL</span> names were checked against <span class="tag">sim-engine/contract.json</span> and <span class="tag">mcp/server.mjs</span>, so a name here cannot be invented. <span class="st m">MISSING</span> names are proposals defined in the gap list. No persona has an empty tool list; a test enforces that.</p>
+  <div id="personaList"></div>
+</section>
+
+<section id="cases">
+  <h2>Use cases</h2>
+  <p class="lede">One row per job, with the tool sequence that answers it today. <b>Answerable today</b> is derived from the step statuses, not asserted: <em>no</em> means a missing step the route cannot be walked without.</p>
+  <div class="grid g3" id="caseKpis" style="margin-bottom:14px"></div>
+  <div class="wrap" style="padding:0;display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="caseFilters"></div>
+  <div id="caseList"></div>
+</section>
+
+<section id="grand">
+  <h2>Grand questions</h2>
+  <p class="lede">The big open questions, each split honestly into (a) the formalisable core, written as conditionals so the premises are visible, and (b) the empirical remainder, item by item, with why no proof reaches it. Then what already exists here towards it, and what a user would still need. Every citation was fetched from Europe PMC or Crossref; both sides are named where the literature disagrees.</p>
+  <div id="grandList"></div>
+</section>
+
+<section id="gaps">
+  <h2>Tool gap analysis</h2>
+  <p class="lede">The union of every missing tool above, deduplicated. The rank is counted at build time from the personas, use cases and grand questions, so a gap cannot promote itself: one point per distinct persona, use case and grand question that names it, plus one more for each use case that cannot be answered at all without it.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Ranked by how much each unblocks</h3>
+      <div class="bars" id="gapBars" role="img" aria-label="Tool gaps ranked by how many personas, use cases and grand questions each unblocks"></div>
+      <p class="small mute" id="gapBarNote"></p>
+      <details><summary>The same numbers as a table</summary><div class="scroll"><table id="gapTable"><thead><tr><th>#</th><th>gap</th><th>kind</th><th>effort</th><th class="n">personas</th><th class="n">use cases</th><th class="n">questions</th><th class="n">score</th></tr></thead><tbody></tbody></table></div></details>
+    </div>
+    <div class="card">
+      <h3>What each kind means</h3>
+      <table><thead><tr><th>kind</th><th class="n">n</th><th>what it means</th></tr></thead><tbody>
+        <tr><td><span class="tag">tool</span></td><td class="n" id="kTool"></td><td>A surface over data we can already reach. Buildable now.</td></tr>
+        <tr><td><span class="tag">lean-module</span></td><td class="n" id="kLean"></td><td>A Lean file that has to be written and proposed before any tool can serve it.</td></tr>
+        <tr><td><span class="tag">data</span></td><td class="n" id="kData"></td><td>A measurement set we do not have. No tooling creates it.</td></tr>
+        <tr><td><span class="tag">integration</span></td><td class="n" id="kInt"></td><td>Wiring to a system outside this repo.</td></tr>
+      </tbody></table>
+      <p class="small mute">Effort estimates are judgements written by this thread and have not been validated against any delivery. Nothing here is costed, scheduled or assigned.</p>
+    </div>
+  </div>
+  <div id="gapList"></div>
+</section>
+
+<section id="absent">
+  <h2>Deliberately absent</h2>
+  <p class="lede">Things a reader will look for in the gap list and not find, because leaving them out was a decision. Without this section a missing feature is indistinguishable from an oversight.</p>
+  <div class="grid g2" id="notGaps"></div>
+</section>
+
+<section id="serve">
+  <h2>Get it</h2>
+  <div class="grid g2">
+    <div class="card">
+      <h3>MCP</h3>
+      <p class="small">Four read-only tools, no network call, each returning the provenance envelope <span class="tag">{result, provenance, scope}</span>.</p>
+      <pre>leanbio_personas        { id, text, needs_tool, status, brief }
+leanbio_use_cases       { id, persona, answerable, tool, uses_gap,
+                          uncomfortable, worked_only, text, limit }
+leanbio_grand_questions { id, disputed, has_repo_asset,
+                          core_strength, section, with_citations }
+leanbio_tool_gap        { id, kind, effort, buildable_now,
+                          unblocks_persona, unblocks_question, limit }</pre>
+      <p class="small mute">Handlers: <span class="tag">pipeline/leanbio/capability-map/tools.mjs</span>. They reach the hosted server once the hub applies <span class="tag">sim-engine/tools/CAPABILITY-REGISTER.md</span> and <span class="tag">mcp/CAPABILITY-PATCH.md</span>; this page and the static mirror do not wait for that.</p>
+    </div>
+    <div class="card">
+      <h3>CLI</h3>
+      <pre>node pipeline/leanbio/capability-map/cli.mjs overview --table
+node ... cli.mjs personas --needs-tool premise_check --table
+node ... cli.mjs use-cases --answerable no --table
+node ... cli.mjs grand-questions --id gq-hamiltons-rule --table
+node ... cli.mjs tool-gap --kind lean-module --table
+node ... cli.mjs line</pre>
+      <h3 style="margin-top:14px">Static API</h3>
+      <pre>GET /api/lean/capability/index.json
+GET /api/lean/capability/personas.json
+GET /api/lean/capability/use-cases.json
+GET /api/lean/capability/grand-questions.json
+GET /api/lean/capability/grand-questions/&lt;id&gt;.json
+GET /api/lean/capability/tool-gap.json
+GET /api/lean/capability/citations.json
+GET /api/lean/capability/schema.json</pre>
+      <p class="small mute">Built by <span class="tag">dashboard/build-lean-api.mjs</span> from the same files, so the mirror cannot drift from the tools.</p>
+    </div>
+  </div>
+  <div class="note" id="scopeNote"></div>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <p>Source: <span class="tag">pipeline/leanbio/capability-map/</span> &mdash; four hand-written JSON enumerations, one JSON Schema, and <span class="tag">build.mjs</span> for everything derived. Tests: <span class="tag">node pipeline/leanbio/capability-map/test.mjs</span>; every check also fails once on broken input. Every number on this page comes from <span class="tag">capability.json</span>.</p>
+</footer>
+
+<script>
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const ST = { EXISTS:'e', PARTIAL:'p', MISSING:'m' };
+const st = s => `<span class="st ${ST[s]||'m'}">${esc(s)}</span>`;
+const $ = id => document.getElementById(id);
+const kpi = (n, label) => `<div class="card"><div class="kpi">${esc(n)}<small>${esc(label)}</small></div></div>`;
+
+function fail(msg) {
+  document.querySelector('main').insertAdjacentHTML('afterbegin',
+    `<div class="note bad"><b>This page could not load its data.</b> ${esc(msg)} Run <span class="tag">node pipeline/leanbio/capability-map/build.mjs</span> to write <span class="tag">dashboard/public/leanbio/capability.json</span>.</div>`);
+}
+
+(async () => {
+  let d;
+  try { d = await (await fetch('capability.json', { cache: 'no-store' })).json(); }
+  catch (e) { fail(String(e && e.message || e)); return; }
+  const c = d.counts;
+
+  // ---- at a glance
+  $('kpis').innerHTML = [
+    kpi(c.personas, 'personas, none with an empty tool list'),
+    kpi(c.use_cases, `use cases (${c.use_cases_by_answerability.yes || 0} answerable today)`),
+    kpi(c.grand_questions, `grand questions (${c.grand_questions_with_real_repo_asset} with something real here)`),
+    kpi(c.gaps, `tool gaps, plus ${c.not_gaps} absent on purpose`),
+  ].join('');
+  $('built').innerHTML = `Capability map <b>${esc(d.map_version)}</b>, as of ${esc(d.as_of)}; data built ${esc(String(d.built).slice(0,16).replace('T',' '))} UTC. ` +
+    `${c.real_tools} real tools, referenced ${c.tool_references} times across the map: ` +
+    `${st('EXISTS')} ${c.tool_reference_status.EXISTS} &middot; ${st('PARTIAL')} ${c.tool_reference_status.PARTIAL} &middot; ${st('MISSING')} ${c.tool_reference_status.MISSING}. ` +
+    `${c.citations} citations, every one fetched.`;
+  $('theLine').textContent = d.the_line;
+  $('scopeNote').innerHTML = `<b>What this page does not establish.</b> ${esc(d.scope)}`;
+
+  // ---- personas
+  $('personaList').innerHTML = d.personas.map(p => `
+    <details class="q"${p.is_us ? ' open' : ''}>
+      <summary><span style="font-weight:700">${esc(p.name)}</span>
+        ${p.is_us ? '<span class="chip viol">this project</span>' : ''}
+        <span class="chip ok">${p.counts.EXISTS} exists</span>${p.counts.PARTIAL ? `<span class="chip warn">${p.counts.PARTIAL} partial</span>` : ''}${p.counts.MISSING ? `<span class="chip bad">${p.counts.MISSING} missing</span>` : ''}
+      </summary>
+      <p class="small"><b>Who.</b> ${esc(p.who)}</p>
+      <p class="small"><b>Today, without this.</b> ${esc(p.today)}</p>
+      <p class="small"><b>Would ask.</b></p>
+      <ul class="tight small">${p.would_ask.map(q => `<li>&ldquo;${esc(q)}&rdquo;</li>`).join('')}</ul>
+      <div class="scroll"><table><thead><tr><th>tool</th><th>state</th><th>what it gives, or what it does not</th></tr></thead><tbody>
+        ${p.tools.map(t => `<tr><td><span class="tag">${esc(t.name)}</span></td><td>${st(t.status)}</td><td class="small">${esc(t.note)}${t.gap_id ? ` <a href="#gap-${esc(t.gap_id)}">gap</a>` : ''}</td></tr>`).join('')}
+      </tbody></table></div>
+      ${p.honesty ? `<div class="note"><b>Easiest thing for them to be misled about.</b> ${esc(p.honesty)}</div>` : ''}
+    </details>`).join('');
+
+  // ---- use cases
+  const byA = c.use_cases_by_answerability;
+  $('caseKpis').innerHTML = [
+    kpi(byA.yes || 0, 'answerable today: every step exists'),
+    kpi(byA.partly || 0, 'partly: a step stops short, or a gap would only sharpen it'),
+    kpi(byA.no || 0, 'not answerable: a load-bearing step is missing'),
+  ].join('');
+
+  const CASE_FILTERS = [['all','Everything'],['no','Not answerable'],['partly','Partly'],['yes','Answerable today'],['unc','Uncomfortable']];
+  let caseFilter = 'all';
+  const matches = u => caseFilter === 'all' || (caseFilter === 'unc' ? u.uncomfortable : u.answerable_today === caseFilter);
+  const aChip = a => a === 'yes' ? '<span class="chip ok">answerable today</span>' : a === 'partly' ? '<span class="chip warn">partly</span>' : '<span class="chip bad">not answerable today</span>';
+
+  function renderCases() {
+    $('caseFilters').innerHTML = CASE_FILTERS.map(([k, label]) =>
+      `<button type="button" class="chip${k === caseFilter ? ' ok' : ''}" data-f="${k}" aria-pressed="${k === caseFilter}" style="cursor:pointer;background:${k === caseFilter ? 'var(--soft)' : 'var(--panel)'}">${esc(label)} (${k === 'all' ? d.use_cases.length : d.use_cases.filter(u => k === 'unc' ? u.uncomfortable : u.answerable_today === k).length})</button>`).join('');
+    for (const b of $('caseFilters').querySelectorAll('button')) b.onclick = () => { caseFilter = b.dataset.f; renderCases(); };
+    const rows = d.use_cases.filter(matches);
+    $('caseList').innerHTML = rows.map(u => `
+      <details class="q" id="${esc(u.id)}">
+        <summary><span style="font-weight:700">${esc(u.question)}</span> ${aChip(u.answerable_today)}${u.uncomfortable ? '<span class="chip viol">uncomfortable</span>' : ''}</summary>
+        <p class="small mute">For: ${u.personas.map(x => `<a href="#personas">${esc(x)}</a>`).join(', ')}${(u.scale || []).length ? ` &middot; scale: ${u.scale.map(esc).join(', ')}` : ''}</p>
+        <div class="scroll"><table><thead><tr><th class="n">#</th><th>tool</th><th>state</th><th>why this step</th></tr></thead><tbody>
+          ${u.sequence.map(s => `<tr><td class="n">${s.step}</td><td><span class="tag">${esc(s.tool)}</span></td><td>${st(s.status)}${s.status === 'MISSING' && s.load_bearing ? '<br><span class="chip bad">load-bearing</span>' : ''}</td><td class="small">${esc(s.why)}${s.gap_id ? ` <a href="#gap-${esc(s.gap_id)}">gap</a>` : ''}</td></tr>`).join('')}
+        </tbody></table></div>
+        ${u.worked_example ? `<div class="note ok"><b>Worked example.</b> ${esc(u.worked_example.what)}${u.worked_example.command ? `<pre>${esc(u.worked_example.command)}</pre>` : ''}${esc(u.worked_example.result)}${(u.worked_example.evidence || []).length ? `<br><span class="small mute">Open: ${u.worked_example.evidence.map(e => `<span class="tag">${esc(e)}</span>`).join(' ')}</span>` : ''}</div>` : ''}
+        <div class="note"><b>What the answer does not establish.</b> ${esc(u.does_not_establish)}</div>
+      </details>`).join('') || '<p class="mute">Nothing matches that filter.</p>';
+  }
+  renderCases();
+
+  // ---- grand questions
+  $('grandList').innerHTML = d.grand_questions.map(q => `
+    <div class="q" id="${esc(q.id)}">
+      <h3>${esc(q.name)}
+        ${q.disputed ? '<span class="chip bad">disputed in the literature</span>' : ''}
+        ${q.core.has_core ? `<span class="chip">core: ${esc(q.core.strength)}</span>` : '<span class="chip">no formalisable core</span>'}
+        <span class="chip warn">remainder: ${esc(q.remainder.share || 'none')}</span>
+        ${q.real_assets ? `<span class="chip ok">${q.real_assets} real here</span>` : '<span class="chip">nothing here yet</span>'}
+      </h3>
+      <p>${esc(q.question)}</p>
+      ${q.dispute ? `<p class="small mute"><b>The dispute.</b> ${esc(q.dispute)}</p>` : ''}
+      <div class="split">
+        <div class="half a">
+          <h4>(a) Formalisable core &mdash; what a proof settles</h4>
+          ${q.core.has_core
+            ? `<p class="small mute">${q.core.proved_here} of ${q.core.total} already proved in this repo.</p>` +
+              q.core.statements.map(s => `<div class="stmt"><div class="claim">${esc(s.claim)}</div><div class="meta"><b>Settles:</b> ${esc(s.settles)}</div><div class="meta">${s.state === 'proved-here' ? '<span class="chip ok">proved here</span>' : s.state === 'stated-not-proved' ? '<span class="chip warn">stated, not proved</span>' : '<span class="chip bad">not formalised</span>'} ${s.lean ? `<span class="tag">${esc(s.lean)}</span>` : ''} ${s.law_id ? `<span class="small mute">law ${esc(s.law_id)}</span>` : ''}</div></div>`).join('')
+            : `<p class="small">${esc(q.core.reason_none)}</p>`}
+        </div>
+        <div class="half b">
+          <h4>(b) Empirical remainder &mdash; what no proof reaches</h4>
+          ${q.remainder.has_remainder
+            ? q.remainder.items.map(i => `<div class="stmt"><div class="claim">${esc(i.what)}</div><div class="meta"><b>Why no proof:</b> ${esc(i.why_not_provable)}</div>${i.measurement ? `<div class="meta"><b>Measurement:</b> ${esc(i.measurement)}</div>` : ''}</div>`).join('')
+            : `<p class="small">${esc(q.remainder.reason_none)}</p>`}
+        </div>
+      </div>
+      <details><summary>(c) What already exists here (${q.in_repo.length})</summary>
+        <div class="scroll"><table><thead><tr><th>strength</th><th>what</th><th>note</th></tr></thead><tbody>
+        ${q.in_repo.length ? q.in_repo.map(r => `<tr><td>${r.strength === 'real' ? '<span class="chip ok">real</span>' : r.strength === 'adjacent' ? '<span class="chip warn">adjacent</span>' : '<span class="chip">shape only</span>'}<br><span class="small mute">${esc(r.kind)}</span></td><td><span class="tag">${esc(r.ref)}</span></td><td class="small">${esc(r.note)}</td></tr>`).join('') : '<tr><td colspan="3" class="mute">Nothing, honestly.</td></tr>'}
+        </tbody></table></div>
+      </details>
+      <details><summary>(d) Tools a user would need (${q.tools_needed.length})</summary>
+        <div class="scroll"><table><thead><tr><th>tool</th><th>state</th><th>note</th></tr></thead><tbody>
+        ${q.tools_needed.map(t => `<tr><td><span class="tag">${esc(t.name)}</span></td><td>${st(t.status)}</td><td class="small">${esc(t.note)}${t.gap_id ? ` <a href="#gap-${esc(t.gap_id)}">gap</a>` : ''}</td></tr>`).join('')}
+        </tbody></table></div>
+      </details>
+      <details><summary>Literature (${q.citations.length} fetched)${q.open_problem_ids.length ? ` &middot; open problems: ${q.open_problem_ids.map(esc).join(', ')}` : ''}</summary>
+        <ul class="tight small">${q.citations.map(x => `<li>${esc(x.ref)}${x.doi ? ` <a href="https://doi.org/${encodeURIComponent(x.doi)}">doi:${esc(x.doi)}</a>` : ''}${x.pmid ? ` &middot; <a href="https://europepmc.org/article/MED/${encodeURIComponent(x.pmid)}">PMID ${esc(x.pmid)}</a>` : ''}${x.side ? `<br><span class="mute">side: ${esc(x.side)}</span>` : ''}${x.is_book ? '<br><span class="chip warn">book, verified through a monograph DOI, not an indexed article</span>' : ''}</li>`).join('')}</ul>
+      </details>
+    </div>`).join('');
+
+  // ---- gap chart: one series, one hue, labelled to the value each bar reaches
+  const max = Math.max(...d.gaps.map(g => g.unblocks.score), 1);
+  $('gapBars').innerHTML = d.gaps.map(g => {
+    const u = g.unblocks.counts;
+    const label = `${g.name}: ${u.personas} personas, ${u.use_cases} use cases, ${u.grand_questions} grand questions, ${u.blocking_use_cases} answerable only with it`;
+    return `<a class="bar" href="#gap-${esc(g.id)}" style="text-decoration:none;color:inherit" title="${esc(label)}" aria-label="${esc(label)}">
+      <span class="lab">${esc(g.name)}</span>
+      <span class="track"><span class="fill" style="width:${(g.unblocks.score / max * 100).toFixed(1)}%"></span></span>
+      <span class="val">${g.unblocks.score}</span></a>`;
+  }).join('');
+  $('gapBarNote').textContent = `Score out of ${max}. Counted at build time from the three enumerations above; ties broken by effort, cheaper first.`;
+  $('gapTable').querySelector('tbody').innerHTML = d.gaps.map(g => {
+    const u = g.unblocks.counts;
+    return `<tr><td class="n">${g.rank}</td><td><a href="#gap-${esc(g.id)}">${esc(g.name)}</a></td><td class="small">${esc(g.kind)}</td><td class="small">${esc(g.effort)}</td><td class="n">${u.personas}</td><td class="n">${u.use_cases}</td><td class="n">${u.grand_questions}</td><td class="n">${g.unblocks.score}</td></tr>`;
+  }).join('');
+  for (const [id, k] of [['kTool','tool'],['kLean','lean-module'],['kData','data'],['kInt','integration']]) $(id).textContent = c.gaps_by_kind[k] || 0;
+
+  $('gapList').innerHTML = d.gaps.map(g => `
+    <details class="q" id="gap-${esc(g.id)}">
+      <summary><span style="font-weight:700">${g.rank}. ${esc(g.name)}</span>
+        <span class="chip">${esc(g.kind)}</span><span class="chip">${esc(g.effort)}</span>
+        ${g.buildable.on_what_we_have ? '<span class="chip ok">buildable on what we have</span>' : '<span class="chip bad">needs data or Lean work first</span>'}
+        <span class="chip warn">unblocks ${g.unblocks.score}</span>
+      </summary>
+      <p class="small"><b>Need.</b> ${esc(g.need)}</p>
+      <p class="small"><b>Signature.</b></p><pre>${esc(g.signature)}</pre>
+      <p class="small"><b>Would read.</b></p><ul class="tight small">${g.reads.map(r => `<li><span class="tag">${esc(r)}</span></li>`).join('')}</ul>
+      <p class="small"><b>Buildable?</b> ${esc(g.buildable.why)}${(g.buildable.needs_data || []).length ? `<br><b>Data we do not have:</b> ${g.buildable.needs_data.map(esc).join('; ')}` : ''}${g.buildable.needs_lean_build ? '<br>Runs a Lean build, so it is stdio-only and never on the hosted server.' : ''}</p>
+      ${(g.nearest_existing || []).length ? `<p class="small"><b>Closest today.</b> ${g.nearest_existing.map(x => `<span class="tag">${esc(x)}</span>`).join(' ')}</p>` : ''}
+      <div class="note bad"><b>How it could mislead.</b> ${esc(g.risk)}</div>
+      <p class="small mute"><b>Unblocks.</b> ${g.unblocks.counts.personas} personas (${g.unblocks.personas.map(esc).join(', ') || 'none'}); ${g.unblocks.counts.use_cases} use cases (${g.unblocks.use_cases.map(x => `<a href="#${esc(x)}">${esc(x)}</a>`).join(', ') || 'none'}); ${g.unblocks.counts.grand_questions} grand questions (${g.unblocks.grand_questions.map(x => `<a href="#${esc(x)}">${esc(x)}</a>`).join(', ') || 'none'}).</p>
+    </details>`).join('');
+
+  // ---- deliberately absent
+  $('notGaps').innerHTML = d.not_gaps.map(n => `
+    <div class="card"><h4>${esc(n.name)}</h4>
+      <p class="small">${esc(n.why_not)}</p>
+      ${n.owner ? `<p class="small mute">Decision belongs to: ${esc(n.owner)}</p>` : ''}
+    </div>`).join('');
+
+  // Open whatever the artifact link pointed at, since details are collapsed by default.
+  const h = location.hash.slice(1);
+  if (h) { const el = document.getElementById(h); if (el) { if (el.tagName === 'DETAILS') el.open = true; el.scrollIntoView(); } }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+TASK: write ONE unsigned nanopublication draft (TriG) recording the finding below.
+
+THE FINDING IN ONE LINE
+On the winged-zebrafish headline run the design scorer's composite is 0.878 and "plausible" while two of the five named gates FAIL and two cannot be assessed, and the validator withholds the word "validated".
+
+THE DOSSIER. These are the only facts you have. Each carries its LOCATOR, which is how a reader finds it again.
+  [1] locator: swarm/benchmark/fixtures/gt-l4-t1.json#results
+      fact: validate_generation on generated=winged-zebrafish, base=zebrafish-adult, desired phenotype "a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult": phenotype_similarity pass; functional_resolution fail; physics_check fail; genotype_similarity cannot-assess; lean_check cannot-assess.
+  [2] locator: swarm/benchmark/fixtures/gt-l4-t1.json#composite_score_from_the_scorer
+      fact: The scorer's own composite on the same run is 0.878, flagged plausible true, version 1.0.0, carried through for reference and explicitly not the report's verdict; no gate feeds it.
+  [3] locator: swarm/benchmark/fixtures/gt-l4-t1.json#verdict.word_validated_withheld
+      fact: word_validated_withheld is true.
+  [4] locator: swarm/benchmark/fixtures/gt-l4-t1.json#verdict.withheld_because
+      fact: withheld_because: 2 gate(s) failed; 2 gate(s) could not be assessed; 3 biological scale(s) could not be assessed; no sequence was compared at any locus.
+  [5] locator: swarm/benchmark/fixtures/gt-l4-t1.json#verdict.scales_not_assessed
+      fact: scales_not_assessed: cell, tissue, organ_system.
+  [6] locator: sim-engine/validate-cli.mjs:17
+      fact: The CLI exit code is 0 when every gate passed, 1 when any gate failed, 2 when nothing failed but something could not be assessed; this run exited 1.
+
+The only numeric literals you may write are these: 0.878, 1.0.0, 2, 3, 5, 1, 10, 30, 0. Any other number is an invention.
+
+REQUIRED SHAPE. Use exactly these prefixes, verbatim:
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix nt: <https://w3id.org/np/o/ntemplate/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix schema: <https://schema.org/> .
+@prefix spdx: <http://spdx.org/rdf/terms#> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+
+Then four named graphs: sub:Head (this: a np:Nanopublication with np:hasAssertion sub:assertion,
+np:hasProvenance sub:provenance, np:hasPublicationInfo sub:pubinfo), sub:assertion, sub:provenance, sub:pubinfo.
+In sub:assertion put a delphi:Claim at
+  <https://w3id.org/delphi/resource/claim/high-composite-with-failing-gates>
+with rdfs:label (one quotable sentence), dct:description, delphi:hasEvidence pointing at a delphi:EvidenceItem at
+  <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates>
+which itself carries rdfs:label, dct:description and one schema:additionalProperty / schema:PropertyValue node
+per number you report (schema:propertyID, schema:value, schema:description).
+In sub:provenance: sub:assertion prov:wasAttributedTo an agent IRI and prov:wasDerivedFrom the locators.
+In sub:pubinfo: dct:created (an xsd:dateTime), dct:creator, an rdfs:label beginning "Draft: ",
+dct:license <https://creativecommons.org/licenses/by/4.0/>, npx:hasNanopubType delphi:Claim,
+npx:introduces the claim IRI, delphi:domain <https://w3id.org/delphi/resource/domain/design-validation>
+with an rdfs:label for that domain node, and an rdfs:comment saying it is an unsigned draft, not published.
+
+HONESTY RULES, which are what this record is for:
+- Every literal longer than a line must be traceable: name the locator it came from, in the literal or via prov:wasDerivedFrom.
+- Write no number that is not in the allowed list above.
+- The claim's dct:description must state the finding's STATUS in words and must state what the finding does NOT establish.
+- Do not reuse a description, label or comment you would write for a different finding. Shared boilerplate is the failure mode being measured.
+- The record is UNSIGNED. Say so in the pubinfo rdfs:comment.
+
+Output the TriG as the `trig` field and the locators you cited as `cited_locators`. No commentary.

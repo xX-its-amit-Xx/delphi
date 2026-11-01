@@ -17,9 +17,9 @@ node sim-engine/examples/d-altitude/run.mjs   # or one at a time
 | [c-current-timecourse](c-current-timecourse/README.md) | Winged zebrafish vs flying fish against a 0.3 m/s current at every life stage | winged zebrafish fails at 0d,3d,10d,25d and holds from 60d (Ucrit calibrated); flying fish ruled out only at 0d (physical bound), otherwise no Ucrit model (feasible null) | 10/10 | ok |
 | [d-altitude](d-altitude/README.md) | TFF vs flying fish from 0 to 5 km, checked against the Lean altitude law | glide ceiling: none below 5 km for tff and flying-fish; ceilings TFF > 11000 m, flying fish 9493 m (launch 15 m/s, measured-secondhand); powered flight impossible at every height for both; feasible heights closed downward as Lean altitude-coupling requires | 13/13 | ok |
 | [e-predator](e-predator/README.md) | Which organisms can escape a predator by air | aerial escape: yes = flying-fish, tff; no = zebrafish-adult, winged-zebrafish, wingless-flying-fish; no verdict = zebrafish-larva, ff-zf-chimera | 8/8 | ok |
-| [codesign-demo](codesign-demo/README.md) | A live co-design session over MCP stdio: physics proposes, genotype comments, a human approves, lean_check | proposal p1 by agent:physics (pectoral_area_over_SL2 0.07126 -> 0.1547), genotype caveat (kcnk5b chain sufficiency), approved by human via session_decide; agent edit and double decision refused; lean_check C15 holds for the Lean-covered glide and violated for the studio total; C14 violated, C16 cannot-evaluate | 19/19 | ok |
+| [codesign-demo](codesign-demo/README.md) | A live co-design session over MCP stdio: physics proposes, genotype comments, a human approves, lean_check | proposal p1 by agent:physics (pectoral_area_over_SL2 0.07126 -> 0.1547), genotype caveat (kcnk5b chain sufficiency), approved by human via session_decide; agent edit and double decision refused; lean_check C15 holds for the Lean-covered glide and violated for the studio total; C14 out-of-scope, C16 cannot-evaluate | 19/19 | ok |
 
-Run at 2026-11-01T04:46:15.939Z on v24.13.0. Every check passed.
+Run at 2026-11-01T05:23:35.010Z on v24.13.0. Every check passed.
 
 ## Ground rules the examples follow
 

@@ -21,11 +21,17 @@ import * as protein from './tools/protein-structure.mjs';
 import { physiologySchema, physiologyChain, growthSchema, growthTrajectory } from './tools/wrappers.mjs';
 import { LEAN_TOOLS } from './tools/lean-tools.mjs';
 import { LEANBIO_TOOLS } from '../pipeline/leanbio/tools.mjs';
+import { CAPABILITY_TOOLS } from '../pipeline/leanbio/capability-map/tools.mjs';
 import { STUDIO_TOOLS } from './tools/studio.mjs';
 import { OMICS_TOOLS } from './tools/omics-tools.mjs';
 import { VALIDATE_TOOLS } from './tools/validate-tools.mjs';
 import { SPEC_TOOLS } from './tools/spec-tools.mjs';
 import { GENERATIVE_TOOLS } from './tools/generative-tools.mjs';
+import { PIPELINE_TOOLS } from './tools/pipeline-tools.mjs';
+import { PHYSICS_TOOLS } from './tools/physics-tools.mjs';
+import { FUNCTIONAL_TOOLS } from './tools/functional-tools.mjs';
+import { EDITPLAN_TOOLS } from './tools/editplan-tools.mjs';
+import { OPENQ_TOOLS } from '../lean/registry/open-questions/openq-tools.mjs';
 import { SWARM_TOOLS } from './swarm/board.mjs';
 
 export const TOOLS = [
@@ -38,13 +44,19 @@ export const TOOLS = [
   ...LEAN_TOOLS,
   // LeanBio: queue, grounding, claim records (pipeline/leanbio/tools.mjs).
   ...LEANBIO_TOOLS,
+  // The capability map: personas, use cases, grand questions split into formalisable core vs empirical
+  // remainder, and the ranked tool-gap analysis (pipeline/leanbio/capability-map/tools.mjs;
+  // tools/CAPABILITY-REGISTER.md). Read-only, no network, no writes.
+  ...CAPABILITY_TOOLS,
   // Design Studio: organism documents, STATE, scenarios, optimisation, co-design sessions (tools/studio.mjs).
   ...STUDIO_TOOLS,
   // Multi-omics: omics_gene, omics_part, omics_search over omics/index (tools/omics-tools.mjs).
   ...OMICS_TOOLS,
-  // Design score (scorer v1.0.0, weights frozen in validate/score-weights.json; tools/validate-tools.mjs). Only
-  // design_score is registered; the other validate tools wait for VALIDATE-REGISTER.md.
-  ...VALIDATE_TOOLS.filter(t => t.name === 'design_score'),
+  // Design validation and the pre-registered design scorer (sim-engine/validate/; tools/validate-tools.mjs):
+  // closest_relative_phenotype, closest_relative_genotype, sanity_check_design, lean_by_component, design_score,
+  // validate_design, validate_swarm_tasks. Scorer v1.0.0, weights frozen in validate/score-weights.json.
+  // (VALIDATE-REGISTER.md, applied 2026-11-01.)
+  ...VALIDATE_TOOLS,
   // Functional criteria: parse_design_text, design_from_spec (tools/spec-tools.mjs, lib/spec.mjs, lib/parse-text.mjs).
   ...SPEC_TOOLS,
   // Swarm task board on codesign sessions: swarm_post_task, swarm_claim, swarm_submit, swarm_status, swarm_try_edits
@@ -52,6 +64,25 @@ export const TOOLS = [
   ...SWARM_TOOLS,
   // Generative backends: generate_candidates, generative_backends_status (sim-engine/generative, README there).
   ...GENERATIVE_TOOLS,
+  // THE ENTRY POINT a collaborator should reach for: validate_generation. Generated organism + base organism +
+  // the desired phenotype AS TEXT -> the five named results side by side, each with its own gate, never summed,
+  // plus per-scale coverage and a verdict sentence. (sim-engine/validate/pipeline/; PIPELINE-REGISTER.md.)
+  ...PIPELINE_TOOLS,
+  // The FOURTH named result on its own: functional_resolution, the functional-analogue ledger
+  // (sim-engine/validate/functional/, consumed through validate/functional-interface.mjs; tools/functional-tools.mjs).
+  // A GATE: an UNRESOLVED difference fails it and never moves the composite score.
+  ...FUNCTIONAL_TOOLS,
+  // The FIFTH named result: physics_check -- does the design actually do the thing? (validate/physics/,
+  // interface in validate/physics/INTERFACE.md, controls in validate/physics/RESULTS.md). It is a GATE and
+  // never moves the composite design score, in the same way the Lean gate does not. (PHYSICS-REGISTER.md.)
+  ...PHYSICS_TOOLS,
+  // The germline editing plan for a design's gene edits (sim-engine/validate/editplan/; a PROPOSAL, never a
+  // protocol). Zebrafish only; it refuses every other species. (EDITPLAN-REGISTER.md.)
+  ...EDITPLAN_TOOLS,
+  // The open-question guard: lean_open_questions, lean_open_question, lean_open_question_guard
+  // (lean/registry/open-questions/). A statement that asserts one arm of a question this project holds open is
+  // REFUSED rather than promoted, so automation cannot settle what the evidence has not.
+  ...OPENQ_TOOLS,
 ];
 
 // flight_sim is deliberately absent. It would wrap the physics simulation's equations, which are not
@@ -81,7 +112,10 @@ server.setRequestHandler(CallToolRequestSchema, async request => {
   }
 });
 
-if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
+// `process.argv[1]` is undefined under `node -e` / `node --eval`, and reading .replace on it threw, so a
+// collaborator who did `const { TOOLS } = await import('./sim-engine/server.mjs')` from an eval crashed on
+// import. Guarded, like the identical check in http.mjs.
+if (process.argv[1] && import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
   // --dump-contract writes the schemas CONTRACT.md documents, so the document cannot drift from the
   // code: regenerate it rather than editing the schemas by hand in two places.
   if (process.argv.includes('--dump-contract')) {

@@ -1,0 +1,155 @@
+{
+ "meta": {
+  "label": "single",
+  "model": "claude-sonnet-5-5",
+  "exit_code": 0,
+  "via_stdin": false,
+  "prompt_chars": 2307,
+  "duration_ms": 17332,
+  "cost_usd": 0.199704,
+  "num_turns": 2,
+  "stop_reason": "tool_use",
+  "terminal_reason": "completed",
+  "is_error": false,
+  "error_text": null,
+  "usage": {
+   "input": 2,
+   "output": 2012,
+   "cache_read": 0,
+   "cache_creation": 44895
+  },
+  "tokens_total": 46909,
+  "infra_failure": false,
+  "stderr": ""
+ },
+ "prompt": "You are a single agent working alone. You do the whole task, end to end, yourself.\nYou have no colleagues, no tools and no second pass: what you output is final.\n\nTASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.\n\nTHE CLAIM IN ENGLISH\nFor a body in steady gliding flight, lift balances weight only at or above the minimum airspeed v_min = sqrt(2 * m * g / (rho * S * CLmax)), where m is mass, g gravitational acceleration, rho air density, S lifting area and CLmax the maximum lift coefficient. It follows that of two gliders with the same CLmax and the same air density, the one with the greater wing loading m/S strictly requires the greater minimum airspeed.\n\nREQUIRED CONTENT. A statement that compiles but does not carry these is a failure:\n  [1] a square root appears\n  [2] the factor 2 appears\n  [3] air density is hypothesised positive\n  [4] lifting area is hypothesised positive\n  [5] the lift coefficient is hypothesised positive\n  [6] a STRICT inequality is the conclusion (not a non-strict one)\n  [7] two gliders are compared, or wing loading m/S is formed\n\nKNOWN TRAP: A statement that merely defines v_min and proves 0 <= v_min is TRUE and VACUOUS. The strict monotonicity in m/S is the content.\n\nHARD REQUIREMENTS ON THE FILE\n- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.\n- The main theorem is named exactly `l2_t1`.\n- A second declaration named exactly `l2_t1_witness` proves that the hypotheses of `l2_t1` are\n  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`\n  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.\n- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.\n- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the\n  formalization is worthless and will be scored as a failure.\n- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,\n  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.\n\nOutput the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.",
+ "parsed": {
+  "lean_file": "import Mathlib\n\ntheorem l2_t1 (m₁ m₂ S₁ S₂ g ρ C : ℝ)\n    (hg : 0 < g) (hρ : 0 < ρ) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (hC : 0 < C)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (h : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * C)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * C)) := by\n  have key : ∀ m S : ℝ, 0 < S → 2 * m * g / (ρ * S * C) = 2 * g / (ρ * C) * (m / S) := by\n    intro m S hS\n    field_simp <;> ring\n  apply Real.sqrt_lt_sqrt\n  · positivity\n  · rw [key m₁ S₁ hS₁, key m₂ S₂ hS₂]\n    exact mul_lt_mul_of_pos_left h (by positivity)\n\ntheorem l2_t1_witness :\n    ∃ (m₁ m₂ S₁ S₂ g ρ C : ℝ), 0 < g ∧ 0 < ρ ∧ 0 < S₁ ∧ 0 < S₂ ∧ 0 < C ∧\n      0 < m₁ ∧ 0 < m₂ ∧ m₁ / S₁ < m₂ / S₂ := by\n  refine ⟨1, 2, 1, 1, 10, 1, 1, ?_⟩\n  norm_num\n",
+  "statement_only": "theorem l2_t1 (m₁ m₂ S₁ S₂ g ρ C : ℝ)\n    (hg : 0 < g) (hρ : 0 < ρ) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (hC : 0 < C)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (h : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * C)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * C))",
+  "notes": "Asserts that for two gliders with the same g, air density rho and CLmax (all positive), and positive areas and masses, strictly greater wing loading m/S gives strictly greater v_min = sqrt(2 m g/(rho S CLmax)). The proof factors v_min^2 as (2g/(rho C))*(m/S) and uses strict sqrt monotonicity. The positivity hypotheses are used in the proof (for example, 0 < rho*C makes the factor positive). The witness shows the hypotheses are satisfiable with concrete numbers. It does not derive v_min from force balance, and it does not model drag, the stall's dependence on Reynolds number, or the non-strict case. I did not compile this file, so the proof tactics (the field_simp <;> ring step in particular) are untested."
+ },
+ "raw_result": {
+  "duration_api_ms": 13027,
+  "stop_reason": "tool_use",
+  "session_id": "07917290-0075-4a08-bfa4-f6f91cd57b52",
+  "total_cost_usd": 0.199704,
+  "usage": {
+   "input_tokens": 2,
+   "cache_creation_input_tokens": 44895,
+   "cache_read_input_tokens": 0,
+   "output_tokens": 2012,
+   "output_tokens_details": {
+    "thinking_tokens": 848
+   },
+   "server_tool_use": {
+    "web_search_requests": 0,
+    "web_fetch_requests": 0
+   },
+   "service_tier": "standard",
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 44895,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "inference_geo": "global",
+   "iterations": [
+    {
+     "input_tokens": 2,
+     "output_tokens": 2012,
+     "cache_read_input_tokens": 0,
+     "cache_creation_input_tokens": 44895,
+     "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 44895
+     },
+     "type": "message"
+    }
+   ],
+   "speed": "standard",
+   "fallback_credit": null
+  },
+  "modelUsage": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 2012,
+    "cacheReadInputTokens": 0,
+    "cacheCreationInputTokens": 44895,
+    "webSearchRequests": 0,
+    "costUSD": 0.199704,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 848,
+    "cacheCreationEphemeral5mInputTokens": 0,
+    "cacheCreationEphemeral1hInputTokens": 44895,
+    "canonicalModel": "claude-sonnet-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 2,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "{\"lean_file\":\"import Mathlib\\n\\ntheorem l2_t1 (m₁ m₂ S₁ S₂ g ρ C : ℝ)\\n    (hg : 0 < g) (hρ : 0 < ρ) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (hC : 0 < C)\\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (h : m₁ / S₁ < m₂ / S₂) :\\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * C)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * C)) := by\\n  have key : ∀ m S : ℝ, 0 < S → 2 * m * g / (ρ * S * C) = 2 * g / (ρ * C) * (m / S) := by\\n    intro m S hS\\n    field_simp <;> ring\\n  apply Real.sqrt_lt_sqrt\\n  · positivity\\n  · rw [key m₁ S₁ hS₁, key m₂ S₂ hS₂]\\n    exact mul_lt_mul_of_pos_left h (by positivity)\\n\\ntheorem l2_t1_witness :\\n    ∃ (m₁ m₂ S₁ S₂ g ρ C : ℝ), 0 < g ∧ 0 < ρ ∧ 0 < S₁ ∧ 0 < S₂ ∧ 0 < C ∧\\n      0 < m₁ ∧ 0 < m₂ ∧ m₁ / S₁ < m₂ / S₂ := by\\n  refine ⟨1, 2, 1, 1, 10, 1, 1, ?_⟩\\n  norm_num\\n\",\"statement_only\":\"theorem l2_t1 (m₁ m₂ S₁ S₂ g ρ C : ℝ)\\n    (hg : 0 < g) (hρ : 0 < ρ) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (hC : 0 < C)\\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (h : m₁ / S₁ < m₂ / S₂) :\\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * C)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * C))\",\"notes\":\"Asserts that for two gliders with the same g, air density rho and CLmax (all positive), and positive areas and masses, strictly greater wing loading m/S gives strictly greater v_min = sqrt(2 m g/(rho S CLmax)). The proof factors v_min^2 as (2g/(rho C))*(m/S) and uses strict sqrt monotonicity. The positivity hypotheses are used in the proof (for example, 0 < rho*C makes the factor positive). The witness shows the hypotheses are satisfiable with concrete numbers. It does not derive v_min from force balance, and it does not model drag, the stall's dependence on Reynolds number, or the non-strict case. I did not compile this file, so the proof tactics (the field_simp <;> ring step in particular) are untested.\"}",
+  "structured_output": {
+   "lean_file": "import Mathlib\n\ntheorem l2_t1 (m₁ m₂ S₁ S₂ g ρ C : ℝ)\n    (hg : 0 < g) (hρ : 0 < ρ) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (hC : 0 < C)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (h : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * C)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * C)) := by\n  have key : ∀ m S : ℝ, 0 < S → 2 * m * g / (ρ * S * C) = 2 * g / (ρ * C) * (m / S) := by\n    intro m S hS\n    field_simp <;> ring\n  apply Real.sqrt_lt_sqrt\n  · positivity\n  · rw [key m₁ S₁ hS₁, key m₂ S₂ hS₂]\n    exact mul_lt_mul_of_pos_left h (by positivity)\n\ntheorem l2_t1_witness :\n    ∃ (m₁ m₂ S₁ S₂ g ρ C : ℝ), 0 < g ∧ 0 < ρ ∧ 0 < S₁ ∧ 0 < S₂ ∧ 0 < C ∧\n      0 < m₁ ∧ 0 < m₂ ∧ m₁ / S₁ < m₂ / S₂ := by\n  refine ⟨1, 2, 1, 1, 10, 1, 1, ?_⟩\n  norm_num\n",
+   "statement_only": "theorem l2_t1 (m₁ m₂ S₁ S₂ g ρ C : ℝ)\n    (hg : 0 < g) (hρ : 0 < ρ) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (hC : 0 < C)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (h : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * C)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * C))",
+   "notes": "Asserts that for two gliders with the same g, air density rho and CLmax (all positive), and positive areas and masses, strictly greater wing loading m/S gives strictly greater v_min = sqrt(2 m g/(rho S CLmax)). The proof factors v_min^2 as (2g/(rho C))*(m/S) and uses strict sqrt monotonicity. The positivity hypotheses are used in the proof (for example, 0 < rho*C makes the factor positive). The witness shows the hypotheses are satisfiable with concrete numbers. It does not derive v_min from force balance, and it does not model drag, the stall's dependence on Reynolds number, or the non-strict case. I did not compile this file, so the proof tactics (the field_simp <;> ring step in particular) are untested."
+  },
+  "ttft_ms": 7610,
+  "type": "result",
+  "duration_ms": 13217,
+  "uuid": "0eba6566-6122-41b4-b465-c9f397151b49",
+  "ttft_stream_ms": 1790,
+  "time_to_request_ms": 201,
+  "first_content_frame_ms": 1790,
+  "queued_turn_count": 0,
+  "result_index": 0,
+  "model_usage_since_last_result": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 2012,
+    "cacheReadInputTokens": 0,
+    "cacheCreationInputTokens": 44895,
+    "webSearchRequests": 0,
+    "costUSD": 0.199704,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 848,
+    "cacheCreationEphemeral5mInputTokens": 0,
+    "cacheCreationEphemeral1hInputTokens": 44895,
+    "canonicalModel": "claude-sonnet-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  }
+ }
+}

@@ -1,0 +1,48 @@
+{
+ "law_id": "turing-wavelength",
+ "kind": "biological",
+ "class": "theorem-from-hypothesis",
+ "label": "Turing onset wavenumber is fixed by diffusivities and det J alone, and scales as 1/m",
+ "statement_en": "For the onset relation q^2*(du*dv) = det J on the squared critical wavenumber q = k_c^2, with du > 0, dv > 0, det J > 0 and q > 0 (a named hypothesis), any two solutions for the same du, dv and det J are equal -- so the tissue size, which the relation does not mention, cannot enter the critical wavenumber -- and multiplying both diffusivities by m > 1 at fixed kinetics gives a new squared critical wavenumber qm with qm*m = q exactly, hence strictly smaller, so the critical wavelength grows as the square root of the diffusivity scale.",
+ "lean": {
+  "theorem": "Delphi.LeanBio.Round2.TuringWavelength.onset_wavenumber",
+  "witness": "Delphi.LeanBio.Round2.TuringWavelength.witness"
+ },
+ "hypotheses": [
+  {
+   "name": "Delphi.LeanBio.Round2.TuringWavelength.OnsetHyp",
+   "statement": "At onset the squared critical wavenumber q = k_c^2 of a two-morphogen reaction-diffusion system satisfies q^2*(du*dv) = det J, with du > 0, dv > 0, det J > 0 and q > 0. This is the claim's k_c^2 = sqrt(det J/(Du*Dv)), squared so that no square root enters the statement. The critical wavelength is lambda_c = 2*pi/sqrt(q).",
+   "source": "Turing AM (1952) The chemical basis of morphogenesis. Phil Trans R Soc Lond B 237:37-72, doi:10.1098/rstb.1952.0012; claim notation in math-bio-theorems/claims/key-claims.json (turing-wavelength); see_also doi:10.1126/science.1226804, doi:10.1126/science.1252960"
+  }
+ ],
+ "scope": {
+  "taxa": ["any"],
+  "life_stages": ["embryo", "larva"],
+  "ranges": {},
+  "basis": "Near the onset of instability, two species, and a domain large compared with the wavelength (the claim's own assumptions). On a FINITE domain the admissible modes are quantised by the boundary conditions, so the realised spacing does depend on tissue size; this law is about the critical wavenumber of the dispersion relation, not about the spacing of any observed pattern. Away from onset the selected wavelength is set by nonlinear mode competition. 'Independent of tissue size' is formalised as 'determined by du, dv and det J alone', which is a statement about this relation, not a proof that no other mechanism depends on tissue size."
+ },
+ "browser_check": {
+  "constraint": "TURINGLAMBDA1",
+  "quantity": "critical_wavenumber_sq ^ 2 * Du * Dv",
+  "op": "eq",
+  "bound": "f_u * g_v - f_v * g_u",
+  "inputs": ["critical_wavenumber_sq", "Du", "Dv", "f_u", "f_v", "g_u", "g_v"],
+  "relation": "q^2 Du Dv = det J, q = k_c^2  (the onset relation for the critical wavenumber)",
+  "note": "Checks that a committed critical wavenumber is the one the committed diffusivities and kinetic Jacobian imply at onset. 'violated' means those numbers are mutually inconsistent with the onset relation; it does NOT mean an observed pattern spacing is wrong, because on a finite domain the realised modes are quantised by the boundary conditions and away from onset the spacing is set by nonlinear mode competition. Tissue size deliberately does not appear among the inputs: that absence is the content of the law, not an omission.",
+  "unit": "1/m^4 x m^4/s^2, i.e. 1/s^2",
+  "band": "hypothesis",
+  "tolerance": "relative"
+ },
+ "browser_check_caveat": {
+  "verdict": "evaluable-but-this-studio-cannot-supply-the-inputs",
+  "reason": "Operator and direction checked: the law's content is the onset relation itself, an equality, and 'violated' means a committed set of numbers cannot hold together, which is a legitimate rule-out of an internally inconsistent specification. But no sim-engine design carries a morphogen diffusivity, a kinetic Jacobian or a critical wavenumber, so the row reads cannot-evaluate for every design we can write. Same inputs as turing-ddi plus the wavenumber.",
+  "missing_inputs": ["critical_wavenumber_sq (1/m^2)", "Du (m^2/s)", "Dv (m^2/s)", "f_u, f_v, g_u, g_v (1/s)"]
+ },
+ "evidence": {
+  "sources": ["doi:10.1098/rstb.1952.0012", "doi:10.1126/science.1226804", "doi:10.1126/science.1252960"],
+  "observations": [],
+  "leanbio": { "pipeline": "pipeline/leanbio", "round": "discovery round 2", "belief_params": "leanbio-belief/0.1.0", "note": "belief is an ordering heuristic for the formalization queue, not a probability" }
+ },
+ "sources": ["doi:10.1098/rstb.1952.0012"],
+ "origin": { "by_role": "agent:leanbio-discovery-2", "kind": "agent" }
+}

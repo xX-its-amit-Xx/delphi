@@ -7,6 +7,7 @@ import path from 'node:path';
 import { loadBundle } from '../lib/data-node.mjs';
 import * as O from '../lib/organism.mjs';
 import { validateDesign } from './score.mjs';
+import { leanRounds } from './lean-rounds.mjs';
 
 const DIR = import.meta.dirname;
 const bundle = await loadBundle();
@@ -31,6 +32,9 @@ fs.writeFileSync(path.join(DIR, 'results.json'), JSON.stringify(out.map(o => ({ 
 const reports = [];
 for (const id of ['zebrafish-adult', 'zebrafish-larva', 'flying-fish', 'winged-zebrafish', 'tff', 'ff-zf-chimera', 'wingless-flying-fish']) {
   const r = (await validateDesign({ organism: id })).result;
+  // The panel's "re-checked against today's law base" section comes from the tool layer at run time; the static
+  // reports get it here so the section is not dead when no bridge is running.
+  try { r.lean_rounds = await leanRounds({ organism: id }); r.lean_rounds_headline = r.lean_rounds.summary; } catch (e) { r.lean_rounds = { error: e.message }; }
   for (const e of r.closest_relative_genotype.edits) if (e.comparison?.identity_table) e.comparison.identity_table = e.comparison.identity_table.slice(0, 5);
   reports.push({ design_key: id, report: r });
 }

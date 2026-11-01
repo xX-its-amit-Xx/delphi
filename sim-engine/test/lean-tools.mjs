@@ -131,6 +131,45 @@ await ok('no violation message or law label contains "null" or "undefined" (ever
   assert.ok(seen > 5, `only ${seen} violations exercised`);
   for (const l of (await T.lean_laws_list({})).result.laws) assert.ok(l.label && !/^(null|undefined)$/.test(String(l.label)), `${l.law_id} has no label`);
 });
+await ok('every released lawset is embedded in the generated checker (nothing returns unknown-lawset)', async () => {
+  for (const ls of reg.lawsets) {
+    const r = (await T.lean_check({ design: DESIGN, lawset: ls.version })).result;
+    assert.ok(!r.unknown_lawset, `lawset ${ls.version} is not in lean/eliminate/browser-check.mjs: run node lean/eliminate/build-browser-check.mjs`);
+    assert.equal(r.summary.unknown_lawset, 0, `lawset ${ls.version} produced unknown-lawset rows`);
+  }
+});
+await ok('an unknown lawset is grey everywhere: no violations, nothing "holds"', async () => {
+  // Through the browser client, which takes a lawset OBJECT, so a version the checker cannot know is reachable
+  // without touching the registry. The verdict must pass through as grey, never red and never a pass.
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async u => { const p = fileURLToPath(u); return fs.existsSync(p) ? { ok: true, status: 200, json: async () => JSON.parse(fs.readFileSync(p, 'utf8')) } : { ok: false, status: 404, json: async () => null }; };
+  try {
+    const c = await imp('dashboard/public/blueprint3d/lean-client.js');
+    const real = await c.getLawset('current');
+    const rows = await c.checkState({ ...DESIGN, taxon: 'Cypselurus hiraii' }, { ...real, version: '99.0.0' });
+    assert.ok(rows.length > 0 && rows.every(r => r.verdict === 'unknown-lawset'), 'every row must be unknown-lawset');
+    assert.equal(rows.violations.length, 0, 'an unknown lawset may never produce a violation');
+    assert.equal(rows.unknownLawset, true);
+    assert.ok(!rows.some(r => r.verdict === 'holds'), 'an unknown lawset may never report holds');
+  } finally { globalThis.fetch = realFetch; }
+});
+await ok('a declared unpowered glide takes the aerobic-demand laws out of scope, not into violation', async () => {
+  // A real Park and Choi flying fish making an ordinary glide claim. The aerobic ceiling bounds sustained aerobic
+  // DEMAND, so a glide paid out of height is not something it judges: grey, with the law's own words for why.
+  const glide = { taxon: 'Cypselurus hiraii', SL_m: 0.203, mass_kg: 0.06, finArea_m2: 0.0127, CLmax: 0.78, LD_max: 4.37,
+                  airspeed_m_s: 12, glideHeight_m: 1.5, glideDistance_m: 6, flight_mode: 'glide',
+                  efficiency: 0.2, oxycaloric_J_per_unit_O2: 20, cardiacOutput: 1e-7, arterialO2: 1e-4 };
+  const g = (await T.lean_check({ design: glide })).result;
+  const p_ = (await T.lean_check({ design: { ...glide, flight_mode: 'powered' } })).result;
+  const row = (r, id) => r.verdicts.find(v => v.constraint === id);
+  for (const id of ['C14', 'E3']) {
+    assert.equal(row(g, id)?.verdict, 'out-of-scope', `${id} must be grey for a declared glide`);
+    assert.ok(!g.violations.some(v => v.constraint === id), `${id} must not be a violation for a glide`);
+    assert.ok(row(g, id).scope_reason && !/^out of scope \(decided/.test(row(g, id).scope_reason), `${id} must carry the checker's own reason`);
+    assert.ok(Array.isArray(row(g, id).excludes) && row(g, id).excludes.length, `${id} must carry scope.excludes`);
+    assert.equal(row(p_, id)?.verdict, 'violated', `${id} must still fire for the same numbers claimed as powered flight`);
+  }
+});
 await ok('lean_check accepts the v1 {spec} argument', async () => {
   const a = (await T.lean_check({ design: DESIGN })).result, b = (await T.lean_check({ spec: DESIGN })).result;
   assert.deepEqual(a.violations.map(v => v.constraint), b.violations.map(v => v.constraint));

@@ -1,0 +1,409 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/delphi/schema/leanbio-capability-map/1.0.0",
+  "title": "LeanBio capability map",
+  "description": "Schema for the four versioned enumerations in pipeline/leanbio/capability-map/: personas.json, use-cases.json, grand-questions.json, tool-gap.json, plus the citation list they share. One schema, five document types, selected by the top-level `kind`. Every document carries `version` (the capability-map release, semver) and `as_of` (ISO date). Tool references carry a status: EXISTS means the name is a tool in sim-engine/contract.json or on the delphisci MCP server; PARTIAL means it exists but does not answer the whole question; MISSING means no such tool exists and the name is a PROPOSAL, defined in tool-gap.json. A validator (build.mjs) enforces that EXISTS/PARTIAL names resolve to real tools and that MISSING names do not.",
+
+  "oneOf": [
+    { "$ref": "#/$defs/personasDoc" },
+    { "$ref": "#/$defs/useCasesDoc" },
+    { "$ref": "#/$defs/grandQuestionsDoc" },
+    { "$ref": "#/$defs/toolGapDoc" },
+    { "$ref": "#/$defs/citationsDoc" }
+  ],
+
+  "$defs": {
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "isoDate": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}" },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "status": {
+      "type": "string",
+      "enum": ["EXISTS", "PARTIAL", "MISSING"],
+      "description": "EXISTS: the name is in sim-engine/contract.json or the delphisci MCP server and answers the need. PARTIAL: real tool, incomplete answer; `note` must say what it does not do. MISSING: no such tool; the name is a proposal and must appear in tool-gap.json."
+    },
+    "surface": {
+      "type": "string",
+      "enum": ["mcp", "cli", "http", "static-api", "lean-cli", "script", "page"],
+      "description": "Where the tool is reachable. `script` means a node script in the repo with no tool wrapper (so an agent cannot call it)."
+    },
+    "toolRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "status", "note"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "status": { "$ref": "#/$defs/status" },
+        "note": { "type": "string", "minLength": 10, "description": "For EXISTS, what it gives this persona. For PARTIAL, what it does NOT give. For MISSING, the one-line need." },
+        "surface": { "type": "array", "items": { "$ref": "#/$defs/surface" } },
+        "gap_id": { "$ref": "#/$defs/id", "description": "Required when status is MISSING: the tool-gap.json entry that defines it." }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "MISSING" } }, "required": ["status"] },
+          "then": { "required": ["gap_id"] }
+        }
+      ]
+    },
+    "header": {
+      "type": "object",
+      "required": ["kind", "version", "as_of", "_about"],
+      "properties": {
+        "kind": { "type": "string" },
+        "version": { "$ref": "#/$defs/semver" },
+        "as_of": { "$ref": "#/$defs/isoDate" },
+        "_about": { "type": "string", "minLength": 40 },
+        "scope": { "type": "string", "minLength": 40, "description": "What this document does NOT establish. Mandatory on every served document, like the tool envelope's scope." }
+      }
+    },
+
+    "personasDoc": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "version", "as_of", "_about", "scope", "personas"],
+      "properties": {
+        "kind": { "const": "personas" },
+        "version": { "$ref": "#/$defs/semver" },
+        "as_of": { "$ref": "#/$defs/isoDate" },
+        "_about": { "type": "string", "minLength": 40 },
+        "scope": { "type": "string", "minLength": 40 },
+        "personas": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "who", "today", "would_ask", "tools"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "name": { "type": "string", "minLength": 4 },
+              "who": { "type": "string", "minLength": 30, "description": "Who they are." },
+              "today": { "type": "string", "minLength": 30, "description": "What they actually do today, without this system." },
+              "would_ask": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 15 } },
+              "tools": {
+                "type": "array",
+                "minItems": 1,
+                "description": "The tools this persona needs. NEVER empty: a persona with no tool list is a persona we have not thought about.",
+                "items": { "$ref": "#/$defs/toolRef" }
+              },
+              "use_cases": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+              "is_us": { "type": "boolean", "description": "True when this persona is a role inside this project rather than an outside user." },
+              "honesty": { "type": "string", "minLength": 20, "description": "The thing this persona would most easily be misled about." }
+            }
+          }
+        }
+      }
+    },
+
+    "useCasesDoc": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "version", "as_of", "_about", "scope", "use_cases"],
+      "properties": {
+        "kind": { "const": "use_cases" },
+        "version": { "$ref": "#/$defs/semver" },
+        "as_of": { "$ref": "#/$defs/isoDate" },
+        "_about": { "type": "string", "minLength": 40 },
+        "scope": { "type": "string", "minLength": 40 },
+        "use_cases": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "question", "personas", "sequence", "answerable_today", "does_not_establish"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "question": { "type": "string", "minLength": 20, "description": "The question as a user would ask it, in their words." },
+              "personas": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/id" } },
+              "scale": {
+                "type": "array",
+                "items": { "type": "string", "enum": ["molecule", "gene", "cell", "tissue", "organ", "organism", "population", "clade", "literature", "any"] }
+              },
+              "sequence": {
+                "type": "array",
+                "minItems": 1,
+                "description": "The tool sequence, in order. Every entry names a real tool (EXISTS/PARTIAL) or is explicitly MISSING with a gap_id. This is the field the test checks.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["step", "tool", "status", "why"],
+                  "properties": {
+                    "step": { "type": "integer", "minimum": 1 },
+                    "tool": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+                    "status": { "$ref": "#/$defs/status" },
+                    "why": { "type": "string", "minLength": 15 },
+                    "args": { "type": "object", "description": "Illustrative arguments, not a fixture." },
+                    "gap_id": { "$ref": "#/$defs/id" },
+                    "load_bearing": { "type": "boolean", "description": "Required when status is MISSING. true: without this tool the route cannot be walked at all, so the use case is not answerable today. false: the route produces an answer without it and this tool would improve or quantify that answer. This is the atomic judgement from which `answerable_today` is derived, kept per step so it is inspectable." },
+                    "surface": { "type": "array", "items": { "$ref": "#/$defs/surface" } }
+                  },
+                  "allOf": [
+                    {
+                      "if": { "properties": { "status": { "const": "MISSING" } }, "required": ["status"] },
+                      "then": { "required": ["gap_id", "load_bearing"] }
+                    }
+                  ]
+                }
+              },
+              "answerable_today": {
+                "type": "string",
+                "enum": ["yes", "partly", "no"],
+                "description": "yes: every step EXISTS. partly: at least one PARTIAL and no MISSING, or a MISSING step that only improves the answer. no: a MISSING step is load-bearing. Derived and checked by build.mjs."
+              },
+              "missing": { "type": "array", "items": { "$ref": "#/$defs/id" }, "description": "tool-gap ids this use case waits on." },
+              "worked_example": {
+                "type": ["object", "null"],
+                "additionalProperties": false,
+                "required": ["what", "result"],
+                "properties": {
+                  "what": { "type": "string", "minLength": 20 },
+                  "command": { "type": "string" },
+                  "result": { "type": "string", "minLength": 20, "description": "What actually came back, from a file in this repo. Not a hypothetical." },
+                  "evidence": { "type": "array", "items": { "type": "string" }, "description": "Repo paths or identifiers a reader can open." }
+                }
+              },
+              "does_not_establish": { "type": "string", "minLength": 25, "description": "The honest limit of the answer this sequence produces." },
+              "uncomfortable": { "type": "boolean", "description": "Marks a use case that is awkward for us: it exposes a gap, or its honest answer is 'we do not know'." }
+            }
+          }
+        }
+      }
+    },
+
+    "grandQuestionsDoc": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "version", "as_of", "_about", "scope", "the_line", "grand_questions"],
+      "properties": {
+        "kind": { "const": "grand_questions" },
+        "version": { "$ref": "#/$defs/semver" },
+        "as_of": { "$ref": "#/$defs/isoDate" },
+        "_about": { "type": "string", "minLength": 40 },
+        "scope": { "type": "string", "minLength": 40 },
+        "the_line": {
+          "type": "string",
+          "minLength": 80,
+          "description": "The statement of what Lean can and cannot do, repeated once at the top of the document because every entry below depends on it."
+        },
+        "grand_questions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "question", "formalisable_core", "empirical_remainder", "in_repo", "tools_needed"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "name": { "type": "string", "minLength": 6 },
+              "question": { "type": "string", "minLength": 30 },
+              "disputed": { "type": "boolean", "description": "True when the literature actively disagrees; `dispute` then says what about." },
+              "dispute": { "type": "string", "minLength": 30 },
+              "formalisable_core": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["has_core", "statements"],
+                "description": "(a) The part that is a question of whether a conclusion follows from stated premises. `has_core: false` with a reason is a legitimate answer and the test accepts it.",
+                "properties": {
+                  "has_core": { "type": "boolean" },
+                  "reason_none": { "type": "string", "minLength": 25, "description": "Required when has_core is false." },
+                  "strength": { "type": "string", "enum": ["strong", "moderate", "narrow"], "description": "How much of the question the core covers. `narrow` is the honest answer for most of them." },
+                  "statements": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["claim", "settles"],
+                      "properties": {
+                        "claim": { "type": "string", "minLength": 25, "description": "The conditional, written so the premises are visible." },
+                        "settles": { "type": "string", "minLength": 20, "description": "What a Lean proof of it would settle." },
+                        "lean": { "type": "string", "description": "Fully qualified declaration in this repo, if it exists." },
+                        "module": { "type": "string" },
+                        "law_id": { "type": "string" },
+                        "state": { "type": "string", "enum": ["proved-here", "stated-not-proved", "not-formalised"] }
+                      }
+                    }
+                  }
+                },
+                "allOf": [
+                  {
+                    "if": { "properties": { "has_core": { "const": false } }, "required": ["has_core"] },
+                    "then": { "required": ["reason_none"] }
+                  },
+                  {
+                    "if": { "properties": { "has_core": { "const": true } }, "required": ["has_core"] },
+                    "then": { "properties": { "statements": { "minItems": 1 } }, "required": ["strength"] }
+                  }
+                ]
+              },
+              "empirical_remainder": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["has_remainder", "items"],
+                "description": "(b) What no proof can settle. `has_remainder: false` would be an extraordinary claim and needs a reason; no entry in this file makes it.",
+                "properties": {
+                  "has_remainder": { "type": "boolean" },
+                  "reason_none": { "type": "string", "minLength": 25 },
+                  "share": { "type": "string", "enum": ["most", "half", "some"], "description": "How much of the question is left to measurement after the core is proved." },
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["what", "why_not_provable"],
+                      "properties": {
+                        "what": { "type": "string", "minLength": 20 },
+                        "why_not_provable": { "type": "string", "minLength": 20 },
+                        "measurement": { "type": "string", "description": "The measurement that would settle it, where one is identifiable." }
+                      }
+                    }
+                  }
+                },
+                "allOf": [
+                  {
+                    "if": { "properties": { "has_remainder": { "const": false } }, "required": ["has_remainder"] },
+                    "then": { "required": ["reason_none"] }
+                  },
+                  {
+                    "if": { "properties": { "has_remainder": { "const": true } }, "required": ["has_remainder"] },
+                    "then": { "properties": { "items": { "minItems": 1 } }, "required": ["share"] }
+                  }
+                ]
+              },
+              "in_repo": {
+                "type": "array",
+                "description": "(c) What already exists here towards it. An empty array is allowed and means: nothing, honestly.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["kind", "ref", "note"],
+                  "properties": {
+                    "kind": { "type": "string", "enum": ["lean-theorem", "lean-structure", "registry-law", "claim", "dataset", "tool", "pipeline", "enumeration", "failed-validation"] },
+                    "ref": { "type": "string", "minLength": 3 },
+                    "note": { "type": "string", "minLength": 20 },
+                    "strength": { "type": "string", "enum": ["real", "adjacent", "shape-only"], "description": "real: it addresses this question. adjacent: it addresses a neighbour and could be pointed here. shape-only: the proof pattern is reusable but says nothing about this question yet." }
+                  }
+                }
+              },
+              "tools_needed": {
+                "type": "array",
+                "minItems": 1,
+                "description": "(d) What a user would need to work on this question here.",
+                "items": { "$ref": "#/$defs/toolRef" }
+              },
+              "open_problem_ids": { "type": "array", "items": { "type": "string" }, "description": "Ids in open-problems/problems.json, so the two enumerations join." },
+              "citations": { "type": "array", "items": { "type": "string" }, "description": "Keys into citations.json." },
+              "use_cases": { "type": "array", "items": { "$ref": "#/$defs/id" } }
+            }
+          }
+        }
+      }
+    },
+
+    "toolGapDoc": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "version", "as_of", "_about", "scope", "gaps", "not_gaps"],
+      "properties": {
+        "kind": { "const": "tool_gap" },
+        "version": { "$ref": "#/$defs/semver" },
+        "as_of": { "$ref": "#/$defs/isoDate" },
+        "_about": { "type": "string", "minLength": 40 },
+        "scope": { "type": "string", "minLength": 40 },
+        "ranking": { "type": "object", "description": "Written by build.mjs: how the rank was computed, so it is not a hand-asserted order." },
+        "gaps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "kind", "need", "signature", "reads", "effort", "buildable"],
+            "properties": {
+              "id": { "$ref": "#/$defs/id" },
+              "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$", "description": "The proposed tool name, in this repo's naming style." },
+              "kind": {
+                "type": "string",
+                "enum": ["tool", "lean-module", "data", "integration"],
+                "description": "tool: an MCP/CLI/HTTP surface over data we can reach. lean-module: a Lean file that must be written and proposed before any tool can serve it. data: a measurement set we do not have. integration: wiring to a system outside this repo."
+              },
+              "need": { "type": "string", "minLength": 30, "description": "The question it answers, in a user's words." },
+              "signature": { "type": "string", "minLength": 15, "description": "name(args) -> result, concretely enough to implement." },
+              "reads": { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "The files, endpoints or registries it would read. This is what makes `buildable` checkable." },
+              "effort": { "type": "string", "enum": ["small", "medium", "large", "research"], "description": "small: a day on existing data. medium: a week. large: a month or a new subsystem. research: nobody knows how yet." },
+              "buildable": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["on_what_we_have", "why"],
+                "properties": {
+                  "on_what_we_have": { "type": "boolean" },
+                  "why": { "type": "string", "minLength": 25 },
+                  "needs_data": { "type": "array", "items": { "type": "string" }, "description": "Data we do not have, named." },
+                  "needs_lean_build": { "type": "boolean", "description": "True when it runs a Lean build, so it can be stdio-only and never on the hosted server." }
+                }
+              },
+              "surfaces": { "type": "array", "items": { "$ref": "#/$defs/surface" } },
+              "nearest_existing": { "type": "array", "items": { "type": "string" }, "description": "Real tool names that come closest today, so a reader can see what is already half-done." },
+              "risk": { "type": "string", "minLength": 25, "description": "How this tool could mislead if built carelessly. A tool whose failure mode is not stated should not be built." },
+              "unblocks": {
+                "type": "object",
+                "description": "Written by build.mjs from the other three documents; never hand-edited.",
+                "additionalProperties": true
+              },
+              "rank": { "type": "integer", "description": "Written by build.mjs." }
+            }
+          }
+        },
+        "not_gaps": {
+          "type": "array",
+          "description": "Things a reader will expect to find in the gap list that are absent ON PURPOSE. Leaving these out would make the gap list look like an oversight instead of a decision.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "why_not"],
+            "properties": {
+              "name": { "type": "string" },
+              "why_not": { "type": "string", "minLength": 30 },
+              "owner": { "type": "string", "description": "The thread or person who owns the decision, where there is one." }
+            }
+          }
+        }
+      }
+    },
+
+    "citationsDoc": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "version", "as_of", "_about", "scope", "citations"],
+      "properties": {
+        "kind": { "const": "citations" },
+        "version": { "$ref": "#/$defs/semver" },
+        "as_of": { "$ref": "#/$defs/isoDate" },
+        "_about": { "type": "string", "minLength": 40 },
+        "scope": { "type": "string", "minLength": 40 },
+        "citations": {
+          "type": "object",
+          "description": "key -> record. Keys are referenced from grand-questions.json.",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["ref", "verified_via"],
+            "properties": {
+              "ref": { "type": "string", "minLength": 20 },
+              "doi": { "type": "string" },
+              "pmid": { "type": "string" },
+              "url": { "type": "string" },
+              "verified_via": {
+                "type": "string",
+                "enum": ["europepmc", "crossref", "europepmc+crossref", "crossref-reprint", "openalex", "publisher", "UNVERIFIED", "UNVERIFIED-BOOK"],
+                "description": "How the record was confirmed to exist. `crossref-reprint` means only a later reprint's DOI could be fetched, not the original. UNVERIFIED means we could not fetch it and the reader should not trust the details; a fabricated citation is the worst failure this repo has."
+              },
+              "is_book": { "type": "boolean", "description": "A book or lecture, verified through a monograph or reprint DOI rather than as an indexed article. Check the details against a copy before quoting." },
+              "quotable": { "type": "string", "description": "Text seen in the fetched record (title or abstract), so a reader can tell we opened it." },
+              "note": { "type": "string" },
+              "side": { "type": "string", "description": "For a disputed question, which side of the dispute this is." }
+            }
+          }
+        }
+      }
+    }
+  }
+}

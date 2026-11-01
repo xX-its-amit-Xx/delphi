@@ -1,0 +1,155 @@
+{
+ "meta": {
+  "label": "worker-0",
+  "model": "claude-sonnet-5-5",
+  "exit_code": 0,
+  "via_stdin": false,
+  "prompt_chars": 2557,
+  "duration_ms": 18680,
+  "cost_usd": 0.062679,
+  "num_turns": 2,
+  "stop_reason": "tool_use",
+  "terminal_reason": "completed",
+  "is_error": false,
+  "error_text": null,
+  "usage": {
+   "input": 2,
+   "output": 2210,
+   "cache_read": 40950,
+   "cache_creation": 9120
+  },
+  "tokens_total": 52282,
+  "infra_failure": false,
+  "stderr": ""
+ },
+ "prompt": "You are one of 3 agents working on this task INDEPENDENTLY and in parallel.\nYou cannot see the other agents and they cannot see you. There is no shared state and no coordinator.\nYour answer will be compared with theirs and the one most agreed-with will be kept, so do the whole task\nyourself and do it the way you believe is right. Do not hedge and do not leave anything for someone else.\n\nYou are agent 0 of 3.\n\nTASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.\n\nTHE CLAIM IN ENGLISH\nFor a body in steady gliding flight, lift balances weight only at or above the minimum airspeed v_min = sqrt(2 * m * g / (rho * S * CLmax)), where m is mass, g gravitational acceleration, rho air density, S lifting area and CLmax the maximum lift coefficient. It follows that of two gliders with the same CLmax and the same air density, the one with the greater wing loading m/S strictly requires the greater minimum airspeed.\n\nREQUIRED CONTENT. A statement that compiles but does not carry these is a failure:\n  [1] a square root appears\n  [2] the factor 2 appears\n  [3] air density is hypothesised positive\n  [4] lifting area is hypothesised positive\n  [5] the lift coefficient is hypothesised positive\n  [6] a STRICT inequality is the conclusion (not a non-strict one)\n  [7] two gliders are compared, or wing loading m/S is formed\n\nKNOWN TRAP: A statement that merely defines v_min and proves 0 <= v_min is TRUE and VACUOUS. The strict monotonicity in m/S is the content.\n\nHARD REQUIREMENTS ON THE FILE\n- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.\n- The main theorem is named exactly `l2_t1`.\n- A second declaration named exactly `l2_t1_witness` proves that the hypotheses of `l2_t1` are\n  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`\n  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.\n- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.\n- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the\n  formalization is worthless and will be scored as a failure.\n- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,\n  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.\n\nOutput the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.",
+ "parsed": {
+  "lean_file": "import Mathlib\n\ntheorem l2_t1 (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CLmax)\n    (hload : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CLmax)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CLmax)) := by\n  have h1 : ρ ≠ 0 := hρ.ne'\n  have h2 : CLmax ≠ 0 := hCL.ne'\n  have h3 : S₁ ≠ 0 := hS₁.ne'\n  have h4 : S₂ ≠ 0 := hS₂.ne'\n  have e1 : 2 * m₁ * g / (ρ * S₁ * CLmax) = (2 * g / (ρ * CLmax)) * (m₁ / S₁) := by\n    first | (field_simp; done) | (field_simp; ring)\n  have e2 : 2 * m₂ * g / (ρ * S₂ * CLmax) = (2 * g / (ρ * CLmax)) * (m₂ / S₂) := by\n    first | (field_simp; done) | (field_simp; ring)\n  have hc : 0 < 2 * g / (ρ * CLmax) := by positivity\n  have hlt : 2 * m₁ * g / (ρ * S₁ * CLmax) < 2 * m₂ * g / (ρ * S₂ * CLmax) := by\n    rw [e1, e2]\n    exact mul_lt_mul_of_pos_left hload hc\n  have hnn : 0 ≤ 2 * m₁ * g / (ρ * S₁ * CLmax) := by positivity\n  exact Real.sqrt_lt_sqrt hnn hlt\n\ntheorem l2_t1_witness :\n    ∃ (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ),\n      0 < m₁ ∧ 0 < m₂ ∧ 0 < S₁ ∧ 0 < S₂ ∧ 0 < g ∧ 0 < ρ ∧ 0 < CLmax ∧\n      m₁ / S₁ < m₂ / S₂ := by\n  refine ⟨1, 1, 2, 1, 10, 1, 1, ?_⟩\n  norm_num\n",
+  "statement_only": "theorem l2_t1 (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CLmax)\n    (hload : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CLmax)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CLmax))",
+  "notes": "States that for two gliders sharing g, air density rho and CLmax (all positive), with positive masses and areas, strictly greater wing loading m/S gives strictly greater v_min = sqrt(2 m g/(rho S CLmax)). The witness gives concrete numbers satisfying all hypotheses. It does not model the lift-weight balance dynamics, drag, or the physical derivation of v_min; v_min is taken as the given formula. I have not compiled this file, so the field_simp steps are untested."
+ },
+ "raw_result": {
+  "duration_api_ms": 14217,
+  "stop_reason": "tool_use",
+  "session_id": "041d38e4-7686-4228-bf3c-73425a69a0e7",
+  "total_cost_usd": 0.062679,
+  "usage": {
+   "input_tokens": 2,
+   "cache_creation_input_tokens": 9120,
+   "cache_read_input_tokens": 40950,
+   "output_tokens": 2210,
+   "output_tokens_details": {
+    "thinking_tokens": 796
+   },
+   "server_tool_use": {
+    "web_search_requests": 0,
+    "web_fetch_requests": 0
+   },
+   "service_tier": "standard",
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 9120,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "inference_geo": "global",
+   "iterations": [
+    {
+     "input_tokens": 2,
+     "output_tokens": 2210,
+     "cache_read_input_tokens": 40950,
+     "cache_creation_input_tokens": 9120,
+     "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 9120
+     },
+     "type": "message"
+    }
+   ],
+   "speed": "standard",
+   "fallback_credit": null
+  },
+  "modelUsage": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 2210,
+    "cacheReadInputTokens": 40950,
+    "cacheCreationInputTokens": 9120,
+    "webSearchRequests": 0,
+    "costUSD": 0.062679,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 796,
+    "cacheCreationEphemeral5mInputTokens": 0,
+    "cacheCreationEphemeral1hInputTokens": 9120,
+    "canonicalModel": "claude-sonnet-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 2,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "{\"lean_file\":\"import Mathlib\\n\\ntheorem l2_t1 (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ)\\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CLmax)\\n    (hload : m₁ / S₁ < m₂ / S₂) :\\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CLmax)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CLmax)) := by\\n  have h1 : ρ ≠ 0 := hρ.ne'\\n  have h2 : CLmax ≠ 0 := hCL.ne'\\n  have h3 : S₁ ≠ 0 := hS₁.ne'\\n  have h4 : S₂ ≠ 0 := hS₂.ne'\\n  have e1 : 2 * m₁ * g / (ρ * S₁ * CLmax) = (2 * g / (ρ * CLmax)) * (m₁ / S₁) := by\\n    first | (field_simp; done) | (field_simp; ring)\\n  have e2 : 2 * m₂ * g / (ρ * S₂ * CLmax) = (2 * g / (ρ * CLmax)) * (m₂ / S₂) := by\\n    first | (field_simp; done) | (field_simp; ring)\\n  have hc : 0 < 2 * g / (ρ * CLmax) := by positivity\\n  have hlt : 2 * m₁ * g / (ρ * S₁ * CLmax) < 2 * m₂ * g / (ρ * S₂ * CLmax) := by\\n    rw [e1, e2]\\n    exact mul_lt_mul_of_pos_left hload hc\\n  have hnn : 0 ≤ 2 * m₁ * g / (ρ * S₁ * CLmax) := by positivity\\n  exact Real.sqrt_lt_sqrt hnn hlt\\n\\ntheorem l2_t1_witness :\\n    ∃ (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ),\\n      0 < m₁ ∧ 0 < m₂ ∧ 0 < S₁ ∧ 0 < S₂ ∧ 0 < g ∧ 0 < ρ ∧ 0 < CLmax ∧\\n      m₁ / S₁ < m₂ / S₂ := by\\n  refine ⟨1, 1, 2, 1, 10, 1, 1, ?_⟩\\n  norm_num\\n\",\"statement_only\":\"theorem l2_t1 (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ)\\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CLmax)\\n    (hload : m₁ / S₁ < m₂ / S₂) :\\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CLmax)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CLmax))\",\"notes\":\"States that for two gliders sharing g, air density rho and CLmax (all positive), with positive masses and areas, strictly greater wing loading m/S gives strictly greater v_min = sqrt(2 m g/(rho S CLmax)). The witness gives concrete numbers satisfying all hypotheses. It does not model the lift-weight balance dynamics, drag, or the physical derivation of v_min; v_min is taken as the given formula. I have not compiled this file, so the field_simp steps are untested.\"}",
+  "structured_output": {
+   "lean_file": "import Mathlib\n\ntheorem l2_t1 (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CLmax)\n    (hload : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CLmax)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CLmax)) := by\n  have h1 : ρ ≠ 0 := hρ.ne'\n  have h2 : CLmax ≠ 0 := hCL.ne'\n  have h3 : S₁ ≠ 0 := hS₁.ne'\n  have h4 : S₂ ≠ 0 := hS₂.ne'\n  have e1 : 2 * m₁ * g / (ρ * S₁ * CLmax) = (2 * g / (ρ * CLmax)) * (m₁ / S₁) := by\n    first | (field_simp; done) | (field_simp; ring)\n  have e2 : 2 * m₂ * g / (ρ * S₂ * CLmax) = (2 * g / (ρ * CLmax)) * (m₂ / S₂) := by\n    first | (field_simp; done) | (field_simp; ring)\n  have hc : 0 < 2 * g / (ρ * CLmax) := by positivity\n  have hlt : 2 * m₁ * g / (ρ * S₁ * CLmax) < 2 * m₂ * g / (ρ * S₂ * CLmax) := by\n    rw [e1, e2]\n    exact mul_lt_mul_of_pos_left hload hc\n  have hnn : 0 ≤ 2 * m₁ * g / (ρ * S₁ * CLmax) := by positivity\n  exact Real.sqrt_lt_sqrt hnn hlt\n\ntheorem l2_t1_witness :\n    ∃ (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ),\n      0 < m₁ ∧ 0 < m₂ ∧ 0 < S₁ ∧ 0 < S₂ ∧ 0 < g ∧ 0 < ρ ∧ 0 < CLmax ∧\n      m₁ / S₁ < m₂ / S₂ := by\n  refine ⟨1, 1, 2, 1, 10, 1, 1, ?_⟩\n  norm_num\n",
+   "statement_only": "theorem l2_t1 (m₁ S₁ m₂ S₂ g ρ CLmax : ℝ)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂)\n    (hg : 0 < g) (hρ : 0 < ρ) (hCL : 0 < CLmax)\n    (hload : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * CLmax)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * CLmax))",
+   "notes": "States that for two gliders sharing g, air density rho and CLmax (all positive), with positive masses and areas, strictly greater wing loading m/S gives strictly greater v_min = sqrt(2 m g/(rho S CLmax)). The witness gives concrete numbers satisfying all hypotheses. It does not model the lift-weight balance dynamics, drag, or the physical derivation of v_min; v_min is taken as the given formula. I have not compiled this file, so the field_simp steps are untested."
+  },
+  "ttft_ms": 8231,
+  "type": "result",
+  "duration_ms": 14683,
+  "uuid": "acd0f13b-0b5e-4013-ba7a-b4075d042840",
+  "ttft_stream_ms": 1892,
+  "time_to_request_ms": 504,
+  "first_content_frame_ms": 1892,
+  "queued_turn_count": 0,
+  "result_index": 0,
+  "model_usage_since_last_result": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 2210,
+    "cacheReadInputTokens": 40950,
+    "cacheCreationInputTokens": 9120,
+    "webSearchRequests": 0,
+    "costUSD": 0.062679,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 796,
+    "cacheCreationEphemeral5mInputTokens": 0,
+    "cacheCreationEphemeral1hInputTokens": 9120,
+    "canonicalModel": "claude-sonnet-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  }
+ }
+}

@@ -233,6 +233,16 @@ for (const [k, c] of cons) {
   nodes.get(clid).formal = true;
   link(kid, clid, 'constraint from');
 }
+// rulings per constraint from lean/constraints.json: how many open-problem candidates each theorem reached,
+// and, where it reached none, the Lean thread's stated reason (shown as "unreached: <reason>" on the node)
+for (const [k, c] of cons) {
+  const n = nodes.get('constraint:' + k); if (!n) continue;
+  const r = c.openProblemRulings || null;
+  n.info.rulings = r;
+  n.info.whyNoCandidate = c.whyNoCandidate || null;
+  n.unreached = !!(r && r.reached === 0);
+  if (n.unreached) n.unreachedWhy = c.whyNoCandidate || 'no candidate reached this constraint (no reason given in the file)';
+}
 for (const n of nodes.values()) if (n.type === 'theorem') n.formal = true;
 for (const l of links) {
   const a = nodes.get(l.source), b = nodes.get(l.target);
@@ -344,31 +354,281 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
     const leanText = JSON.stringify([lean?.theorems, lean?.lemmas, lean?.formalized, lean?.constraints]);
     const bioMentioned = [...terms.keys()].filter(id => /^(UBERON|CL)_\d+$/.test(id) && leanText.includes(id));
 
-    // genotype map: optional, written by the genotype thread. Tolerant of a few plausible shapes;
-    // links whose node is not a term of this blueprint are dropped and counted.
-    const gmRaw = J('genotype/map.json');
+    // genotype map, written by the genotype thread (genotype/map.json, organised by layer). Term ids there
+    // use 'UBERON:0000151'; the blueprint uses 'UBERON_0000151'. Per node we keep the counts of direct and
+    // derived genes by link type, and a capped list of the stored direct links (required/sufficient first).
+    // Every gene link was measured in a proxy species (zebrafish, medaka); none is flying-fish data.
+    // GATE (hub, 2026-10-31): the map is drawn only when the genotype thread marks it vetted, either as a separate
+    // slimmed genotype/map.vetted.json or as a top-level "vetted": true in genotype/map.json. Until then the page
+    // says the file exists and why nothing is drawn. Only the per-node summary below ever reaches the browser.
+    // Lookup order: the committed slim vetted map first, then the full vetted map, then map.json only if it says vetted.
+    // Test fixtures never go under genotype/ (that folder belongs to the Genotype thread): VIZ_GENOTYPE_MAP=<absolute path>
+    // points the builder at a fixture kept under C:/Temp instead, for local previews only.
+    const noMap = process.env.VIZ_TEST_NO_MAP === '1';
+    const fixture = process.env.VIZ_GENOTYPE_MAP ? (() => { try { return JSON.parse(fs.readFileSync(process.env.VIZ_GENOTYPE_MAP, 'utf8')); } catch { return null; } })() : null;
+    const gmSlim = fixture || (noMap ? null : J('genotype/map.vetted.slim.json'));
+    const gmVetted = gmSlim || noMap ? null : J('genotype/map.vetted.json');
+    const gmFull = gmSlim || gmVetted || noMap ? null : J('genotype/map.json');
+    // VIZ_UNGATED_TEST=1 lets the viz thread preview the renderer locally; never deploy a build made with it.
+    const gmRaw = gmSlim || gmVetted || (gmFull && (gmFull.vetted === true || process.env.VIZ_UNGATED_TEST === '1') ? gmFull : null);
+    const gmSource = fixture ? `TEST FIXTURE ${process.env.VIZ_GENOTYPE_MAP} (never deploy)` : gmSlim ? 'genotype/map.vetted.slim.json' : gmVetted ? 'genotype/map.vetted.json' : 'genotype/map.json';
     let genotype = null;
-    if (gmRaw) {
-      genotype = { file: 'genotype/map.json', raw_keys: Array.isArray(gmRaw) ? ['<array>'] : Object.keys(gmRaw), note: gmRaw.note || gmRaw.caveat || gmRaw.honesty || null, built: gmRaw.built || gmRaw.generated || null, links: [], dropped_unknown_node: 0 };
-      const arr = Array.isArray(gmRaw) ? gmRaw : (gmRaw.links || gmRaw.map || gmRaw.edges || gmRaw.nodes || []);
-      const rows = Array.isArray(arr) ? arr : Object.entries(arr).flatMap(([node, v]) => (Array.isArray(v) ? v : (v.genes || [])).map(g => ({ node, ...(typeof g === 'string' ? { gene: g } : g) })));
-      for (const r of rows) {
-        const node = iriId(r.node || r.blueprint_node || r.term || r.iri || r.uberon || r.cl || '');
-        const gs = Array.isArray(r.genes) ? r.genes : [r];
-        for (const g of gs) {
-          const L = { node, gene: g.gene || g.symbol || g.name || g.id || null, gene_id: g.gene_id || g.ensembl || g.zfin || g.ncbi_gene || null,
-            link: g.link || g.type || g.relation || r.link || r.type || r.relation || null,
-            organism: g.organism || g.source_organism || g.species || r.organism || r.source_organism || r.species || null,
-            source: g.source || g.evidence || r.source || null, retrieved: g.retrieved || r.retrieved || null };
-          if (terms.has(node)) genotype.links.push(L); else genotype.dropped_unknown_node++;
+    if (!gmRaw && gmFull) {
+      genotype = { file: 'genotype/map.json', gated: true, built: gmFull.built || null,
+        reason: 'genotype/map.json exists but is not marked vetted (no top-level "vetted": true and no genotype/map.vetted.json). It is the background agent\'s unvetted output, so no gene is drawn until the Genotype session marks it ready.',
+        nodes: {}, links: {}, coverage: {} };
+    }
+    if (gmRaw && gmRaw.layers) {
+      const nid = s => String(s || '').replace(':', '_');
+      const CAP = 40;
+      const KIND_RANK = k => /single|in situ|immunost/i.test(k || '') ? 0 : /bulk|RNA Seq/i.test(k || '') ? 2 : 1;
+      const short = o => /Danio/.test(o?.name || '') ? 'zebrafish' : /Oryzias/.test(o?.name || '') ? 'medaka' : (o?.name || 'unstated');
+      genotype = { file: gmSource, built: gmRaw.built || null, tool: gmRaw.tool || null, title: gmRaw.title || null, vetted: gmRaw.vetted === true || !!gmSlim, vetted_flag_in_file: gmRaw.vetted === true, vetting: gmRaw.vetting || null, slimming: gmRaw.slimming || null,
+        constraint: gmRaw.constraint || null, causation_warning: gmRaw.causation_warning || null,
+        link_types: gmRaw.link_types || null, propagation_rules: gmRaw.propagation_rules || null, not_sourced: gmRaw.not_sourced || [],
+        proxy_organisms: gmRaw.summary?.proxy_organisms || [], blueprint_sha256: gmRaw.blueprint?.sha256 || null, matches_blueprint_now: (gmRaw.blueprint?.sha256 || null) === sha,
+        summary: { direct_links: gmRaw.summary?.direct_links ?? null, direct_links_by_type: gmRaw.summary?.direct_links_by_type || null, genes_by_organism: gmRaw.summary?.genes_by_organism || null, derived_links_stored: gmRaw.summary?.derived_links_stored ?? null, storage: gmRaw.summary?.storage || null },
+        coverage: {}, nodes: {}, links: {}, omitted: {}, fin_size: null, cap_per_type: CAP };
+      for (const [layer, L] of Object.entries(gmRaw.layers)) {
+        genotype.coverage[layer] = L.coverage || null;
+        for (const n of (L.nodes || [])) {
+          const id = nid(n.term); if (!terms.has(id)) continue;
+          genotype.nodes[id] = { direct: !!n.direct, derived_only: !!n.derived_only,
+            expressed_in: n.direct_expressed_in_genes || 0, required_for: n.direct_required_for_genes || 0, sufficient_for: n.direct_sufficient_for_genes || 0,
+            derived_expressed_in: n.derived_expressed_in_genes || 0, derived_required_for: n.derived_required_for_genes || 0 };
+        }
+        const byNode = new Map();
+        for (const l of (L.links || [])) { if (l.derived) continue; const id = nid(l.blueprint_node); if (!terms.has(id)) continue; if (!byNode.has(id)) byNode.set(id, []); byNode.get(id).push(l); }
+        for (const [id, ls] of byNode) {
+          const out = [], om = {};
+          for (const type of ['sufficient for', 'required for', 'expressed in']) {
+            const grp = ls.filter(l => l.link_type === type).sort((a, b) => KIND_RANK(a.evidence_kind) - KIND_RANK(b.evidence_kind) || String(a.symbol).localeCompare(String(b.symbol)));
+            // one row per gene symbol + organism + kind, so the same gene from two databases is not two rows
+            const seen = new Set(), rows = [];
+            for (const l of grp) { const k = `${l.symbol}|${short(l.organism)}|${l.evidence_kind}`; if (seen.has(k)) continue; seen.add(k); rows.push(l); }
+            if (rows.length > CAP) om[type] = rows.length - CAP;
+            for (const l of rows.slice(0, CAP)) out.push({ gene: l.gene || null, symbol: l.symbol || null, organism: short(l.organism), taxon: l.organism?.taxon || null, link: l.link_type, kind: l.evidence_kind || null,
+              db: l.source?.database || null, url: l.source?.url || null, retrieved: l.source?.retrieved || null, stage: l.stage?.period || l.stage?.bgee || null,
+              finding: l.finding || l.evidence?.finding || null });
+          }
+          genotype.links[id] = out; if (Object.keys(om).length) genotype.omitted[id] = om;
         }
       }
-      genotype.nodes_with_genes = new Set(genotype.links.map(l => l.node)).size;
-      genotype.organisms = [...new Set(genotype.links.map(l => l.organism).filter(Boolean))];
-      genotype.link_types = genotype.links.reduce((a, l) => (a[l.link || 'untyped'] = (a[l.link || 'untyped'] || 0) + 1, a), {});
+      if (gmRaw.fin_size) genotype.fin_size = { why: gmRaw.fin_size.why || null,
+        verified_leads: (gmRaw.fin_size.verified_leads || []).map(v => ({ gene: v.gene, organism: v.organism, finding: v.finding, link_type: v.link_type, citations: (v.citations || []).map(c => typeof c === 'string' ? c : (c.pmid ? 'PMID ' + c.pmid + (c.doi ? ' doi ' + c.doi : '') : JSON.stringify(c))) })),
+        zfin_fin_size_genes: gmRaw.fin_size.zfin_fin_size_genes ? { definition: gmRaw.fin_size.zfin_fin_size_genes.definition, count: gmRaw.fin_size.zfin_fin_size_genes.count } : null };
+      // ---- for the explode view: a gene index (symbol -> the nodes it touches by STORED direct record), the breadth
+      // table (counts per layer, all direct records, full map only), Daane 2021 fin proportions, and the fin subtree.
+      // The stored rows are complete for 'required for' and 'sufficient for' links and for the focus and fin-size genes;
+      // other 'expressed in' rows live in genotype/expression_index.json.gz and are counted in breadth, not located.
+      const gidx = {};
+      const full = gmSlim ? (noMap ? null : J('genotype/map.vetted.json')) : (gmVetted || null);   // the full map's rows when present
+      const geneSrc = full || gmRaw;
+      const fullForBreadth = full || ((gmRaw.genes && typeof gmRaw.genes === 'object' && !gmRaw.genes.note) ? gmRaw : null);
+      for (const [layer, L] of Object.entries((geneSrc || gmRaw).layers)) {
+        for (const l of (L.links || [])) {
+          if (l.derived || !l.symbol) continue;
+          const id = nid(l.blueprint_node); if (!terms.has(id)) continue;
+          const g = gidx[l.symbol] || (gidx[l.symbol] = { nodes: {}, organisms: new Set(), ids: new Set() });
+          const types = g.nodes[id] || (g.nodes[id] = []);
+          const t = l.link_type === 'sufficient for' ? 'S' : l.link_type === 'required for' ? 'R' : 'E';
+          if (!types.includes(t)) types.push(t);
+          g.organisms.add(short(l.organism)); if (l.gene) g.ids.add(l.gene);
+        }
+      }
+      const breadthBySymbol = {};
+      for (const [gid, g] of Object.entries(fullForBreadth?.genes || {})) {
+        if (!g || !g.symbol || !g.breadth) continue;
+        const b = breadthBySymbol[g.symbol] || (breadthBySymbol[g.symbol] = { direct: 0, layers: {}, types: {}, ids: [] });
+        b.direct += g.breadth.blueprint_nodes_direct || 0; b.ids.push(gid);
+        for (const [k, v] of Object.entries(g.breadth.layers || {})) b.layers[k] = (b.layers[k] || 0) + v;
+        for (const k of ['expressed in', 'required for', 'sufficient for']) if (g.breadth[k]) b.types[k] = (b.types[k] || 0) + g.breadth[k];
+      }
+
+      genotype.gene_index_note = `symbol -> nodes with a stored direct record (${Object.keys(gidx).length} genes from ${full ? 'genotype/map.vetted.json' : gmSource}); complete for required-for and sufficient-for links and for the focus and fin-size genes, partial for expressed-in; breadth counts cover every direct record` + (fullForBreadth?.genes ? '' : ' (breadth table not in this checkout)');
+      genotype.breadth_available = !!fullForBreadth?.genes;
+      const mfp = (geneSrc || gmRaw).fin_size?.measured_fin_proportions || gmRaw.fin_size?.measured_fin_proportions || null;
+      genotype.fin_proportions = mfp ? { source: mfp.source || null, n_specimens: mfp.n_specimens ?? null, by_group: mfp.pectoral_over_SL_by_group || null } : null;
+      // the fin subtree (genotype/fin-subtree.json): the zebrafish pectoral fin (ZFA) and its parts below the
+      // blueprint's pectoral fin, with proxy-fish links re-attached to the exact structure each record names.
+      // Kept per node: label, level, parent (first part_of edge), counts, xrefs; links capped like the map.
+      const fsub = J('genotype/fin-subtree.json');
+      if (fsub && fsub.layers) {
+        const F = { file: 'genotype/fin-subtree.json', built: fsub.built || null, tool: fsub.tool || null, vetted: fsub.vetted === true,
+          organ: nid(fsub.blueprint_join?.pectoral_fin_uberon || 'UBERON:0000151'), zfa_root: fsub.blueprint_join?.pectoral_fin_zfa || 'ZFA:0001161',
+          join_note: fsub.blueprint_join?.note || null, constraint: fsub.constraint || null, causation_warning: fsub.causation_warning || null,
+          propagation_rules: fsub.propagation_rules || null, summary: { zfa_terms: fsub.summary?.zfa_terms ?? null, links: fsub.summary?.links ?? null, links_by_type: fsub.summary?.links_by_type || null, links_by_level: fsub.summary?.links_by_level || null, zfin_phenotype_rejected: fsub.summary?.zfin_phenotype_rows?.rejected || null },
+          coverage: {}, nodes: {}, links: {}, omitted: fsub.slimming?.links_omitted_by_node_and_type || {}, edges: [], wing_genes: null, single_cell_leads: null, sources: Object.keys(fsub.sources || {}) };
+        const parentOf = {};
+        for (const e of (fsub.edges || [])) { F.edges.push({ child: e.child, parent: e.parent, rel: e.rel }); if (e.rel === 'part_of' && !parentOf[e.child]) parentOf[e.child] = e.parent; }
+        for (const [layer, L] of Object.entries(fsub.layers)) {
+          F.coverage[layer] = L.coverage || null;
+          for (const n of (L.nodes || [])) {
+            F.nodes[n.term] = { label: n.label, level: layer, parent: n.parent || parentOf[n.term] || null, depth: n.depth_below_pectoral_fin ?? null,
+              direct: !!n.direct, expressed_in: n.direct_expressed_in_genes || 0, required_for: n.direct_required_for_genes || 0, sufficient_for: n.direct_sufficient_for_genes || 0,
+              uberon_xref: n.uberon_xref || [], cl_xref: n.cl_xref || null, in_blueprint: !!n.in_blueprint, zebrafish_only: !!n.zebrafish_only, structure: n.structure || null, cell_type: n.cell_type || null,
+              stage_range: n.stage_range ? (Array.isArray(n.stage_range.periods) ? n.stage_range.periods.join('..') : (n.stage_range.span || n.stage_range.period || null)) : null };
+          }
+          const byNode = {};
+          for (const l of (L.links || [])) { if (l.derived) continue; (byNode[l.blueprint_node] || (byNode[l.blueprint_node] = [])).push(l); }
+          for (const [id, ls] of Object.entries(byNode)) {
+            const rank = { 'sufficient for': 0, 'required for': 1, 'expressed in': 2 };
+            F.links[id] = ls.sort((a, b) => rank[a.link_type] - rank[b.link_type] || KIND_RANK(a.evidence_kind) - KIND_RANK(b.evidence_kind) || String(a.symbol).localeCompare(String(b.symbol)))
+              .map(l => ({ gene: l.gene || null, symbol: l.symbol || null, organism: short(l.organism), link: l.link_type, kind: l.evidence_kind || null, db: l.source?.database || null, url: l.source?.url || null, retrieved: l.source?.retrieved || null,
+                stage: l.stage?.period || l.stage?.span || (typeof l.stage === 'string' ? l.stage : null), finding: l.finding || null }));
+            // the fin subtree's rows also feed the gene lens, keyed by ZFA id
+            for (const l of ls) { if (!l.symbol) continue; const g = gidx[l.symbol] || (gidx[l.symbol] = { nodes: {}, organisms: new Set(), ids: new Set() });
+              const types = g.nodes[id] || (g.nodes[id] = []); const t = l.link_type === 'sufficient for' ? 'S' : l.link_type === 'required for' ? 'R' : 'E'; if (!types.includes(t)) types.push(t); g.organisms.add(short(l.organism)); if (l.gene) g.ids.add(l.gene); }
+          }
+        }
+        if (fsub.wing_genes) F.wing_genes = { honest_summary: fsub.wing_genes._honest_summary || null,
+          genes: Object.fromEntries(Object.entries(fsub.wing_genes).filter(([k]) => !k.startsWith('_')).map(([k, v]) => [k, { links_in_fin_subtree: v.links_in_fin_subtree ?? null, deepest_level_reached: v.deepest_level_reached || null, nodes: v.nodes_level_type_stage || [], zfin_rows: v.all_zfin_rows_for_this_gene ? Object.keys(v.all_zfin_rows_for_this_gene).length : null }])) };
+        if (fsub.single_cell_leads) F.single_cell_leads = { note: fsub.single_cell_leads.note || null, n_series: (fsub.single_cell_leads.series || []).length, fin_in_title: (fsub.single_cell_leads.series || []).filter(x => x.fin_in_title).length };
+        genotype.fin_subtree = F;
+      } else genotype.fin_subtree = null;
+      genotype.gene_index = Object.fromEntries(Object.entries(gidx).map(([sym, g]) => [sym, { nodes: g.nodes, organisms: [...g.organisms], ids: [...g.ids], breadth: breadthBySymbol[sym] || null }]));
+      genotype.nodes_with_direct = Object.values(genotype.nodes).filter(n => n.direct).length;
+      genotype.nodes_with_derived_only = Object.values(genotype.nodes).filter(n => n.derived_only).length;
+      genotype.links_stored_here = Object.values(genotype.links).reduce((a, l) => a + l.length, 0);
+    } else if (!gmRaw && !gmFull) {
+      // Neither map is in this checkout (the vetted map is 14.7 MB and was not committed). Rather than silently
+      // dropping the genes, carry the genotype block of the previous build of this file and say so on the page.
+      const prev = J('dashboard/public/blueprint3d/data.json');
+      if (prev?.genotype && !prev.genotype.gated && !prev.genotype.error && prev.genotype.nodes) {
+        genotype = { ...prev.genotype, carried_from_previous_build: prev.genotype.carried_from_previous_build || prev.builtAt,
+          carried_note: `no genotype map (map.vetted.slim.json, map.vetted.json) is in this checkout; the gene records shown were read from it by the build of ${prev.genotype.carried_from_previous_build || prev.builtAt} and carried forward unchanged.` };
+      }
+    } else if (gmRaw) {
+      genotype = { file: gmSource, error: 'the map has no layers block; shape not understood, nothing drawn', nodes: {}, links: {}, coverage: {} };
     }
+    // ---- provenance index for the 3D fish (viz thread): everything a node's panel can trace, read from files ----
+    // constraints that apply: C6 (the blueprint certificate) to every node; the strength, v_min and bending
+    // constraints to skeleton and fin parts, as the hub specified. Each carries its proofScope so the page can say
+    // what is about the model and what is about the fish (nothing here is about the fish).
+    const consList = (constraints && (constraints.constraints || constraints)) || [];
+    const pick = ids => consList.filter(c => ids.includes(c.id)).map(c => ({ id: c.id, property: c.property || null, label: c.label || null, lemma: c.lemma || null, theorem: c.theorem || null, module: c.module || null, claim_id: c.claim_id || null,
+      status: c.status || null, faithfulness: c.faithfulness || null, relation: c.relation || null, requires: c.requires || null, appliesWhen: c.appliesWhen || null, assumptionsText: c.assumptionsText || null,
+      proofScope: c.proofScope || null, openProblemRulings: c.openProblemRulings || null, whyNoCandidate: c.whyNoCandidate || null }));
+    const provConstraints = { all: pick(['C6']), skeleton_fin: pick(['C8', 'C8c', 'C9', 'C12']) };
+    // nanopub drafts: which terms, constraints and claim ids each unsigned draft mentions (unsigned drafts, nothing published)
+    const npRe = /(UBERON[_:]\d{7}|CL[_:]\d{7}|ZFA[_:]\d{7}|NCBITaxon[_:]\d+)/g;
+    const claimIds = new Set([...claimById.keys(), ...consList.map(c => c.claim_id).filter(Boolean)]);
+    const nanopubs = [];
+    for (const dir of ['lean', 'genotype', 'physics', 'organism-design', 'holdout']) {
+      const d = path.join(root, dir, 'nanopubs', 'unsigned'); if (!fs.existsSync(d)) continue;
+      for (const f of fs.readdirSync(d).filter(x => x.endsWith('.trig'))) {
+        const t = fs.readFileSync(path.join(d, f), 'utf8');
+        const title = (t.match(/(?:dct:title|rdfs:label)\s+"((?:[^"\\]|\\.)*)"/) || [])[1] || f;
+        const terms = [...new Set([...t.matchAll(npRe)].map(m => m[1].replace(':', '_')))];
+        const cons = [...new Set([...t.matchAll(/\b(C\d{1,2}[bc]?)\b/g)].map(m => m[1]))].filter(k => consList.some(c => c.id === k));
+        const claims = [...claimIds].filter(id => t.includes(id));
+        const np = `${dir}/nanopubs/unsigned/${f}`;
+        if (terms.length || cons.length || claims.length || dir === 'physics') nanopubs.push({ file: np, dir, title: title.replace(/\\"/g, '"').slice(0, 160), terms, constraints: cons, claims });
+      }
+    }
+    // physics: figures and verdicts for the pectoral fin
+    const phys = J('physics/results.json'), physStatus = J('dashboard/public/t/physics/status.json');
+    const physFigs = ['vmin-band.svg', 'bridge.svg', 'envelope.svg'].filter(f => fs.existsSync(path.join(here, 'public/t/physics', f))).map(f => ({ file: 't/physics/' + f, name: f.replace('.svg', '') }));
+    const physics = phys ? { file: 'physics/results.json', computed_at: phys.computed_at || null, overall: phys.overall || null, verdicts: phys.verdicts || null, headline: physStatus?.headline || null, status_file: 'dashboard/public/t/physics/status.json', page: 't/physics/', figures: physFigs } : null;
+    // explicit graph links into blueprint (morph) nodes: never text-matched
+    const graphLinks = {};
+    for (const l of links) {
+      const a = l.source, b = l.target; const m = a.startsWith('morph:') ? a : b.startsWith('morph:') ? b : null; if (!m) continue;
+      const o = m === a ? b : a; if (o.startsWith('morph:')) continue;
+      const on = nodes.get(o); const key = m.replace('morph:', ''); if (!on) continue;
+      (graphLinks[key] || (graphLinks[key] = [])).push({ id: o, label: on.label, type: on.type, rel: l.rel, out: m === a, browse: 'graph/?view=flyingfish' });
+    }
+    // Lean morphology grounding (lean/morphology-grounding.json): per manifest object, which theorems constrain it,
+    // their audit verdicts, how, numbers, and what nothing constrains. Shown instead of the generic constraint list.
+    const mg = J('lean/morphology-grounding.json');
+    const grounding = mg && mg.grounding ? { file: 'lean/morphology-grounding.json', summary: mg.summary || null, audit_file: 'lean/flying-fish-audit.json', page: 't/lean/#audit-fish', parts: mg.grounding } : null;
+    const provenance = { constraints: provConstraints, nanopubs, physics, graph_links: graphLinks, grounding,
+      note: 'Constraints apply by level as stated in constraints.applies; every proofScope is about the stated model, not about any fish. Nanopub drafts are unsigned and unpublished. Graph links are the explicit edges of dashboard/public/graph.json, never text matches.',
+      applies: { all: provConstraints.all.map(c => c.id), skeleton_fin: provConstraints.skeleton_fin.map(c => c.id) } };
+    // ---- physiology and interactions inputs (other threads' files), copied into the viz folder when present ----
+    // physiology/ (circulation.json, gills.json, countercurrent.js, cardiac.js) -> dashboard/public/blueprint3d/physiology/
+    // genotype/interactions.json -> dashboard/public/blueprint3d/interactions.json. Nothing is written back to those folders.
+    const copied = { physiology: [], interactions: null, zebrafish_model: [] };
+    const physDir = path.join(here, 'public/blueprint3d/physiology'); fs.mkdirSync(physDir, { recursive: true });
+    const physSrcDir = path.join(root, 'physiology');
+    const physFiles = fs.existsSync(physSrcDir) ? fs.readdirSync(physSrcDir).filter(f => /\.(js|mjs|json)$/.test(f) && !/^test/.test(f)) : [];
+    for (const f of fs.readdirSync(physDir)) if (f !== 'status.json' && !physFiles.includes(f)) fs.unlinkSync(path.join(physDir, f));
+    for (const f of physFiles) { const src = path.join(physSrcDir, f); fs.copyFileSync(src, path.join(physDir, f)); copied.physiology.push({ file: 'physiology/' + f, bytes: fs.statSync(src).size, mtime: fs.statSync(src).mtime.toISOString() }); }
+    fs.writeFileSync(path.join(physDir, 'status.json'), JSON.stringify({ builtAt: new Date().toISOString(), present: copied.physiology.map(x => x.file.split('/').pop()), files: copied.physiology, note: copied.physiology.length ? 'copied from physiology/ by dashboard/build-graph.mjs' : 'physiology/ has not been written yet; the page uses labelled stand-ins' }));
+    const ccSrc = path.join(root, 'genotype', 'causal-chains.json'), ccDst = path.join(here, 'public/blueprint3d/causal-chains.json');
+    if (fs.existsSync(ccSrc)) { fs.copyFileSync(ccSrc, ccDst); copied.causal_chains = { file: 'genotype/causal-chains.json', bytes: fs.statSync(ccSrc).size, mtime: fs.statSync(ccSrc).mtime.toISOString() }; }
+    else { copied.causal_chains = null; if (fs.existsSync(ccDst)) fs.unlinkSync(ccDst); }
+    const intSrc = path.join(root, 'genotype', 'interactions.json'), intDst = path.join(here, 'public/blueprint3d/interactions.json');
+    if (fs.existsSync(intSrc)) { fs.copyFileSync(intSrc, intDst); copied.interactions = { file: 'genotype/interactions.json', bytes: fs.statSync(intSrc).size, mtime: fs.statSync(intSrc).mtime.toISOString() }; }
+    else if (fs.existsSync(intDst)) fs.unlinkSync(intDst);
+    // Design Studio inputs from the Lean, conditions, physics, genotype and development threads, copied verbatim so the page can
+    // import them: lean/eliminate/browser-check.mjs (dependency-free ES module), conditions/baseline.json, physics/flier/spec.json,
+    // genotype/interventions.json, and development/ (trajectory.mjs and its data) when that folder exists. A missing source
+    // removes the stale copy, and the page says the input is absent.
+    copied.studio = [];
+    for (const [src, dst] of [['lean/eliminate/browser-check.mjs', 'browser-check.mjs'], ['conditions/baseline.json', 'conditions-baseline.json'], ['physics/flier/spec.json', 'flier-spec.json'], ['genotype/interventions.json', 'interventions.json'], ['genotype/compare-2x2.json', 'compare-2x2.json'], ['physics/flier/tff/tff.json', 'tff.json']]) {
+      const s = path.join(root, src), d = path.join(here, 'public/blueprint3d', dst);
+      if (fs.existsSync(s)) { fs.copyFileSync(s, d); copied.studio.push({ file: src, as: 'blueprint3d/' + dst, bytes: fs.statSync(s).size, mtime: fs.statSync(s).mtime.toISOString() }); }
+      else if (fs.existsSync(d)) fs.unlinkSync(d);
+    }
+    // development/ (and its species subfolders, e.g. development/zebrafish/, whose trajectory.mjs imports ../trajectory.mjs): .mjs/.js/.json, no tests
+    { const copyDev = (src, dst, rel) => { if (!fs.existsSync(src)) { if (fs.existsSync(dst)) fs.rmSync(dst, { recursive: true, force: true }); return; } fs.mkdirSync(dst, { recursive: true });
+        for (const f of fs.readdirSync(dst)) { const fp = path.join(dst, f); if (fs.statSync(fp).isFile() && (/^test|\.test\./.test(f) || !fs.existsSync(path.join(src, f)))) fs.unlinkSync(fp); }
+        for (const f of fs.readdirSync(src)) { const sp = path.join(src, f); if (fs.statSync(sp).isDirectory()) { copyDev(sp, path.join(dst, f), rel + f + '/'); continue; }
+          if (/\.(mjs|js|json)$/.test(f) && !/^test|\.test\./.test(f)) { fs.copyFileSync(sp, path.join(dst, f)); copied.studio.push({ file: 'development/' + rel + f, as: 'blueprint3d/development/' + rel + f }); } } };
+      copyDev(path.join(root, 'development'), path.join(here, 'public/blueprint3d/development'), ''); }
+    // genotype/sequence-layer.json (the orthologue calls and the two labelled reciprocal-best-hit FAILURES) and a slice of
+    // genotype/pathways.slim.json. The slim file is 1.9 MB and holds 3857 genes; the viewer only ever asks about genes that
+    // appear in interventions.json, causal-chains.json or the sequence layer, so the slice keeps those and the pathway names
+    // they point at, and records which genes were kept. Nothing is recomputed here: rows are copied verbatim.
+    { const gDst = path.join(here, 'public/blueprint3d');
+      const seqSrc = path.join(root, 'genotype', 'sequence-layer.json'), seqDst = path.join(gDst, 'sequence-layer.json');
+      if (fs.existsSync(seqSrc)) { fs.copyFileSync(seqSrc, seqDst); copied.studio.push({ file: 'genotype/sequence-layer.json', as: 'blueprint3d/sequence-layer.json', bytes: fs.statSync(seqSrc).size }); }
+      else if (fs.existsSync(seqDst)) fs.unlinkSync(seqDst);
+      const pw = J('genotype/pathways.slim.json'), iv = J('genotype/interventions.json'), cc2 = J('genotype/causal-chains.json'), sq = J('genotype/sequence-layer.json');
+      const pwDst = path.join(gDst, 'pathways.json');
+      if (pw && pw.genes) {
+        const symbols = {}; const want = new Set();
+        const add = (sym, zfin) => { if (!sym || !zfin) return; const k = String(zfin).startsWith('ZF:') ? String(zfin) : 'ZF:' + zfin; symbols[sym] = k; want.add(k); };
+        for (const x of (iv && iv.interventions) || []) add(x.gene, x.zfin_id);
+        for (const g of (cc2 && (cc2.genes || cc2.chains)) || []) add(g.symbol, g.zfin_id);
+        for (const g of [...((sq && sq.orthologues_resolved) || []), ...((sq && sq.orthologues_not_resolved) || [])]) add(g.gene, g.zfin_id);
+        const genes = {}; const pids = new Set();
+        for (const k of want) { const rows = pw.genes[k]; if (!rows) continue; genes[k] = rows; for (const r of rows) pids.add(r[0]); }
+        const pathways = {}; for (const id of pids) if (pw.pathways[id]) pathways[id] = pw.pathways[id];
+        const out = { source: 'genotype/pathways.slim.json', built: pw.built || null, vetted: pw.vetted === true,
+          not_causation: pw.not_causation || null, constraint: pw.constraint || null, sources: pw.sources || null,
+          encoding: pw.encoding || null, summary: pw.summary || null,
+          slice: { note: 'Only the genes the viewer can ask about are kept: every gene named in genotype/interventions.json, genotype/causal-chains.json or genotype/sequence-layer.json. The full table is genotype/pathways.slim.json.',
+            genes_asked_for: want.size, genes_kept: Object.keys(genes).length, genes_with_no_pathway_row: want.size - Object.keys(genes).length, pathways_kept: Object.keys(pathways).length },
+          symbols, genes, pathways };
+        fs.writeFileSync(pwDst, JSON.stringify(out));
+        copied.studio.push({ file: 'genotype/pathways.slim.json', as: 'blueprint3d/pathways.json', bytes: fs.statSync(pwDst).size, note: 'sliced to ' + Object.keys(genes).length + ' genes' });
+      } else if (fs.existsSync(pwDst)) fs.unlinkSync(pwDst); }
+    // anatomy-model/zebrafish/: the two zebrafish manifests and the source list the viewer's provenance panel quotes.
+    // The .glb files themselves are committed under public/blueprint3d/model/ and are not copied here.
+    { const zmSrc = path.join(root, 'anatomy-model', 'zebrafish'), zmDst = path.join(here, 'public/blueprint3d/model');
+      copied.zebrafish_model = [];
+      for (const [f, as] of [['manifest-adult.json', 'manifest-adult.json'], ['manifest-larva.json', 'manifest-larva.json'], ['sources.json', 'zebrafish-sources.json']]) {
+        const sp = path.join(zmSrc, f), dp = path.join(zmDst, as);
+        if (fs.existsSync(sp)) { fs.mkdirSync(zmDst, { recursive: true }); fs.copyFileSync(sp, dp); copied.zebrafish_model.push({ file: 'anatomy-model/zebrafish/' + f, as: 'blueprint3d/model/' + as, bytes: fs.statSync(sp).size }); }
+        else if (fs.existsSync(dp) && as === 'zebrafish-sources.json') fs.unlinkSync(dp);
+      }
+      for (const g of ['zebrafish-adult.glb', 'zebrafish-larva.glb', 'flying-fish.glb']) {
+        const gp = path.join(zmDst, g); copied.zebrafish_model.push({ file: 'blueprint3d/model/' + g, present: fs.existsSync(gp), bytes: fs.existsSync(gp) ? fs.statSync(gp).size : 0 });
+      } }
+    // sequences/ (Sequences view): genes.json, genome-regions.json, engineered-diff.json and alignments/*.json, plus a
+    // status.json listing what is present (the page cannot list a folder). calls.json (the fetch log) is not copied.
+    { const sqSrc = path.join(root, 'sequences'), sqDst = path.join(here, 'public/blueprint3d/sequences');
+      if (fs.existsSync(sqDst)) fs.rmSync(sqDst, { recursive: true, force: true }); fs.mkdirSync(path.join(sqDst, 'alignments'), { recursive: true });
+      const present = [], alignments = [];
+      for (const f of ['genes.json', 'genome-regions.json', 'engineered-diff.json', 'gliders.json', 'progression.json']) { const s = path.join(sqSrc, f); if (fs.existsSync(s)) { fs.copyFileSync(s, path.join(sqDst, f)); present.push(f); copied.studio.push({ file: 'sequences/' + f, as: 'blueprint3d/sequences/' + f }); } }
+      const aSrc = path.join(sqSrc, 'alignments'); if (fs.existsSync(aSrc)) for (const f of fs.readdirSync(aSrc).filter(f => /\.json$/.test(f))) { fs.copyFileSync(path.join(aSrc, f), path.join(sqDst, 'alignments', f)); alignments.push(f); }
+      if (alignments.length) present.push('alignments/');
+      fs.writeFileSync(path.join(sqDst, 'status.json'), JSON.stringify({ builtAt: new Date().toISOString(), present, alignments, note: present.length ? 'copied from sequences/ by dashboard/build-graph.mjs' : 'sequences/ has no genes.json, alignments or regions yet; the page draws a labelled stand-in layout' })); }
     const out3d = {
       builtAt: new Date().toISOString(),
+      provenance, inputs: copied,
       source: { file: bpPath, built: bp.built, tool: bp.tool, sha256: sha },
       description: bp.input?.description || null,
       taxon: bp.reading?.taxon || null,
@@ -398,6 +658,6 @@ console.log('  by type:', JSON.stringify(out.counts.byType));
     };
     const dir = path.join(here, 'public/blueprint3d'); fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, 'data.json'), JSON.stringify(out3d));
-    console.log(`blueprint3d/data.json: ${terms.size} distinct terms, ${edges.length} edges, byLevel ${JSON.stringify(byLevel)}; certificate ${cert ? (out3d.certificate.matches_file_now ? 'matches the file' : 'STALE: hash differs') : 'missing'}; lean statements mentioning a term: ${bioMentioned.length}; genotype ${genotype ? genotype.links.length + ' links' : 'map.json not present'}`);
+    console.log(`blueprint3d/data.json: ${terms.size} distinct terms, ${edges.length} edges, byLevel ${JSON.stringify(byLevel)}; certificate ${cert ? (out3d.certificate.matches_file_now ? 'matches the file' : 'STALE: hash differs') : 'missing'}; physiology files ${copied.physiology.length} (${copied.physiology.map(x => x.file.split('/').pop()).join(', ') || 'none'}), interactions ${copied.interactions ? 'present' : 'absent'}, causal chains ${copied.causal_chains ? 'present' : 'absent'}; lean statements mentioning a term: ${bioMentioned.length}; genotype ${genotype ? (genotype.carried_from_previous_build ? `CARRIED from the build of ${genotype.carried_from_previous_build} (no map in this checkout)` : genotype.gated ? 'present but NOT vetted: gated, nothing drawn' : genotype.error || `${genotype.nodes_with_direct} nodes with direct records, ${genotype.links_stored_here} links kept`) : 'map.json not present'}`);
   } else console.log('blueprint3d: organism-design/examples/a-flying-fish.json not found; nothing written');
 }

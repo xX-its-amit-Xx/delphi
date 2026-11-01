@@ -1,0 +1,92 @@
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix nt: <https://w3id.org/np/o/ntemplate/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix schema: <https://schema.org/> .
+@prefix spdx: <http://spdx.org/rdf/terms#> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/claim/high-composite-with-failing-gates> a delphi:Claim ;
+    rdfs:label "On the winged-zebrafish headline run the scorer's composite is 0.878 and flagged plausible, yet two of the five named validation gates fail and two cannot be assessed, so the validator withholds the word \"validated\"." ;
+    dct:description "Status: an observed single-run discrepancy between two outputs on one fixture (generated=winged-zebrafish, base=zebrafish-adult), recorded from swarm/benchmark/fixtures/gt-l4-t1.json. The scorer's composite (version 1.0.0) is 0.878 with plausible true, but it is carried through for reference only, is explicitly not the report's verdict, and no gate feeds it. The gate report has phenotype_similarity pass, functional_resolution fail, physics_check fail, genotype_similarity cannot-assess, lean_check cannot-assess; the validator therefore withheld \"validated\" and the CLI exited 1 (sim-engine/validate-cli.mjs:17). What this does NOT establish: it does not show the winged zebrafish glides or survives, does not show it fails in reality (only that two gates failed and two were not assessable), does not show the composite is wrong in general or tracks gates on other runs, and says nothing about other fixtures. Cell, tissue and organ_system scales were not assessed and no sequence was compared at any locus." ;
+    delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates> .
+
+  <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates> a delphi:EvidenceItem ;
+    rdfs:label "Fixture gt-l4-t1: gate results, scorer composite and withheld verdict for the winged-zebrafish run" ;
+    dct:description "Read from swarm/benchmark/fixtures/gt-l4-t1.json (#results, #composite_score_from_the_scorer, #verdict.word_validated_withheld, #verdict.withheld_because, #verdict.scales_not_assessed) and the exit-code convention at sim-engine/validate-cli.mjs:17. Desired phenotype: a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult." ;
+    schema:additionalProperty
+      <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates/composite>,
+      <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates/version>,
+      <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates/gates-failed>,
+      <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates/gates-not-assessed>,
+      <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates/scales-not-assessed>,
+      <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates/exit-code> .
+
+  <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates/composite> a schema:PropertyValue ;
+    schema:propertyID "scorer_composite" ;
+    schema:value "0.878"^^xsd:decimal ;
+    schema:description "Scorer composite on this run, flagged plausible true; reference only, not the verdict (swarm/benchmark/fixtures/gt-l4-t1.json#composite_score_from_the_scorer)." .
+
+  <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates/version> a schema:PropertyValue ;
+    schema:propertyID "scorer_version" ;
+    schema:value "1.0.0" ;
+    schema:description "Version string of the scorer that produced the composite (swarm/benchmark/fixtures/gt-l4-t1.json#composite_score_from_the_scorer)." .
+
+  <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates/gates-failed> a schema:PropertyValue ;
+    schema:propertyID "gates_failed" ;
+    schema:value "2"^^xsd:integer ;
+    schema:description "Gates that failed: functional_resolution and physics_check (swarm/benchmark/fixtures/gt-l4-t1.json#results)." .
+
+  <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates/gates-not-assessed> a schema:PropertyValue ;
+    schema:propertyID "gates_cannot_assess" ;
+    schema:value "2"^^xsd:integer ;
+    schema:description "Gates that could not be assessed: genotype_similarity and lean_check (swarm/benchmark/fixtures/gt-l4-t1.json#results)." .
+
+  <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates/scales-not-assessed> a schema:PropertyValue ;
+    schema:propertyID "biological_scales_not_assessed" ;
+    schema:value "3"^^xsd:integer ;
+    schema:description "Scales not assessed: cell, tissue, organ_system (swarm/benchmark/fixtures/gt-l4-t1.json#verdict.scales_not_assessed)." .
+
+  <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates/exit-code> a schema:PropertyValue ;
+    schema:propertyID "cli_exit_code" ;
+    schema:value "1"^^xsd:integer ;
+    schema:description "Exit code of this run: 0 all gates passed, 1 any gate failed, 2 nothing failed but something could not be assessed (sim-engine/validate-cli.mjs:17)." .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/claude-drafting-agent> ;
+    prov:wasDerivedFrom
+      <swarm/benchmark/fixtures/gt-l4-t1.json#results>,
+      <swarm/benchmark/fixtures/gt-l4-t1.json#composite_score_from_the_scorer>,
+      <swarm/benchmark/fixtures/gt-l4-t1.json#verdict.word_validated_withheld>,
+      <swarm/benchmark/fixtures/gt-l4-t1.json#verdict.withheld_because>,
+      <swarm/benchmark/fixtures/gt-l4-t1.json#verdict.scales_not_assessed>,
+      <sim-engine/validate-cli.mjs:17> .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-11-01T00:00:00Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/claude-drafting-agent> ;
+    rdfs:label "Draft: high scorer composite alongside failing and unassessable gates on the winged-zebrafish run" ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType delphi:Claim ;
+    npx:introduces <https://w3id.org/delphi/resource/claim/high-composite-with-failing-gates> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/design-validation> ;
+    rdfs:comment "Unsigned draft, not published: this nanopublication has no signature and has not been submitted to any registry." .
+
+  <https://w3id.org/delphi/resource/domain/design-validation> rdfs:label "Design validation" .
+}

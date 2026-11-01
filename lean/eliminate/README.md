@@ -74,11 +74,47 @@ carrying provenance (published, proposed-here, illustrative values) and, on an e
 proposed-here candidate's elimination eliminates the enumerator's construction, not a published hypothesis.
 Rank nothing by elimination count.
 
-## The most valuable next constraint
+## Strength is now formalised (R7), and what it changed
 
-Galileo's argument becomes an elimination only when strength scaling as `L^2` (cross-section) is formalised
-beside mass scaling as `L^3`: then "a giant of unchanged proportions can stand up" is ruled out, not merely
-unconstrained. Nothing in the repository proves that yet, and the ledger must not be read as if it did.
+With `lean/Delphi/Scaling.lean` (2026-10-31, from the physics thread's R2-R8) the constraints grew from 13 to 25:
+area exponent and ratio (C2a, C2b), axial strength (C8), breaking-load ratio (C8b), **Galileo's giant** (C8c:
+reference safety factor divided by the length ratio against the claimed load), stress ratio and exponent (C8d,
+C8e), the exact minimum-speed bound (C9), minimum-speed ratio and exponent (C9b, C9c), the power-required
+exponent (C10) and Froude (C11). Rerunning the open-problems ledger moved all 13 translatable square-cube rows
+from cannot-rule to **consistent**: they assert the exponents R2 and R7 give, so nothing was eliminated, and
+the only strength claim still marked not formalised is petiole **bending** (WP-077), which R7's axial case does
+not cover. The illustrative giant claimed to stand (reference safety factor 10, illustrative) is eliminated by
+C8c, and a glider below its own minimum speed by C9. Power available is not a constraint: its `L^3` rests on
+Thompson's muscle premise, carried as a named hypothesis.
+
+## Bending (R9) and the WP-077 fork
+
+R9 (`bendingStress = F l / Z`, similar sections `Z ~ L^3`, lever arm `~ L`) splits on the load: body-like
+(`F ~ L^3`, R9a) gives bending stress `~ L` and a size limit `sigma_max k_Z/(k_F k_l n)`; sheet-like (a lamina of
+constant thickness, `F ~ L^2`, R9b) gives size-independent stress and **no** limit. The candidate must commit
+to one fork (`body_like_load` or `sheet_like_load`). WP-077/C1 commits to thickness scaling with size, so its
+"bending stress ~ k" is R9a's own conclusion and the row is **consistent**; the illustrative constant-thickness
+leaf that still claims a rising stress is eliminated by C12c. Three mutants: `Z ~ d^2`, a sheet-like load kept
+with the body-like conclusion, and the size limit stated without `sigma_max`.
+
+## Flight: allometry, climb, glide range, the aerobic bound (C13-C16)
+
+`lean/Delphi/Flight.lean` adds general power laws (so measured exponents compose: wing loading `bW − bS`, `v_min`
+exponent `(bW − bS)/2`), the climb corollary `c ≤ (P_avail − P_req)/W`, the steady-glide range `x ≤ h (L/D)max/(1 − δ)`
+with the ground-effect fraction `δ` as an input, and the aerobic bound `P ≤ η E_O2 Q (Ca − Cv) ≤ η E_O2 Q Ca` composed
+with the power required (sustained flight needs `η E_O2 Q Ca ≥ P_req`) and a crossover theorem (a size limit for any
+supply exponent below `7/2`), which replaces Thompson's muscle premise. On the real fish the glide bound fires:
+one unpowered glide from 8 m with the stuffed-model (L/D)max 4.37 reaches at most 35 m (40.7 m with the measured 14%
+ground effect) against field glides of 50 m, so the single-glide reading is eliminated and taxiing thrust, repeated
+touch-and-go or a higher L/D (the theoretical 15.7 passes) must enter the model; the three illustrative glide
+candidates show the fork. Six mutants: venous term dropped the wrong way, efficiency above one, crossover exponent
+reversed, glide bound halved, climb bound reversed, quotient exponent summed.
+
+## The most valuable next constraints
+
+Gill O2 uptake as a function of water O2 and gill area (the first link of the simulator chain, so that `Ca` is
+derived rather than committed), taxiing thrust from the caudal fin, aspect ratio and induced drag, elastic similarity, the walking (pendulum) route, and any quantitative muscle-power
+law; without the last, "a bird as large as a man could not fly" has an existence proof and no number.
 
 ## Mutants
 

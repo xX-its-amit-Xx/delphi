@@ -90,5 +90,175 @@ const doc = (base, edits, genotype) => { let d = { ...O.docFor(bundle, base), id
   const r = await designScore(doc('flying-fish', [{ target: { level: 'body' }, param: 'standard_length_m', op: 'scale', value: M('three-results-lean-gate') ? 1 : 3 }]), { version: '1.2.0' });
   check('three-results-lean-gate', r.lean_gate_failed === true && /^FAIL/.test(r.lean_check.gate) && r.lean_check.accepted_violations.every(v => v.inputs) && r.genotype_similarity && r.phenotype_similarity.closest_real_relative, r.lean_check.gate.slice(0, 50));
 }
+// Every version must survive BOTH benchmark-shaped inputs: a bare {specimen} and a {params} item. The shipped
+// entry point is score.mjs designScore; a crash here makes a blind benchmark run meaningless rather than a fail.
+{
+  const { designScore, RELEASED_VERSIONS } = await import('../score.mjs');
+  const SPEC = { SL_m: 0.0388, mass_kg: 0.0006943, depth_SL: 0.2535, width_SL: 0.135, ped_depth_frac: 0.38, ped_width_frac: 0.4 };
+  const PARAMS = { standard_length_m: 0.0388, body_mass_kg: 0.0006943, body_depth_over_SL: 0.2535, body_width_over_SL: 0.135, peduncle_depth_frac: 0.38, peduncle_width_frac: 0.4 };
+  const bad = [];
+  // Read from RELEASED_VERSIONS rather than a literal list: this loop was written as ['1.0.0'...'1.2.0'] and silently
+  // stopped covering v1.3.0 the day v1.3.0 was released, which is how the tool-path throw survived.
+  for (const version of RELEASED_VERSIONS) {
+    for (const [shape, design] of [['specimen', { specimen: M('every-version-no-crash') ? { depth_SL: 0.25 } : SPEC }], ['params', { params: PARAMS }]]) {
+      let r = null, err = null;
+      try { r = await designScore(design, { version, network: false }); } catch (e) { err = e.message; }
+      const ok = !err && r && typeof r.score === 'number' && !r.error;
+      if (!ok) bad.push(`${version}/${shape}: ${err || r?.error || 'score ' + JSON.stringify(r?.score)}`);
+    }
+  }
+  // No MUTATE knob: this check was SEEN to fail against the pre-fix file, 7 of these 8 combinations
+  // (SCORER-RESULTS.md, deviation 3). The guards it covers are exercised by 'three-results-guards' below.
+  check('every-version-no-crash', bad.length === 0, bad.join(' | ') || `all ${RELEASED_VERSIONS.length * 2} version/shape combinations returned a numeric score`);
+
+  // The guards themselves: threeResults must survive blocks that did not run. MUTATE makes state_envelope.outside
+  // throw on access, which is what an unguarded `.outside.map(...)` did, so the check is seen to be sensitive.
+  const { threeResults } = await import('../score.mjs');
+  const stub = {
+    genotype: { edits: [] },
+    phenotype: { body: { ran: false, reason: 'no body features' }, fin: { ran: true }, ood: false },
+    state_envelope: M('three-results-guards') ? new Proxy({}, { get: () => { throw new Error('unguarded .outside'); } }) : { ran: false, reason: 'specimen record: no STATE' },
+    lean: { counts: null, components: [{ component: { level: 'body', id: 'body' } }] },
+    verdict: { closest_real_relative: null },
+  };
+  let t3 = null, t3err = null;
+  try { t3 = threeResults(stub); } catch (e) { t3err = e.message; }
+  check('three-results-guards', !t3err && t3 && t3.phenotype_similarity.physiology_envelope_outside === null && t3.lean_check.by_component.length === 1, t3err || 'blocks that did not run are reported as null, not crashed on');
+}
+// v1.3.0 joint term: it must see a shuffled decoy (correlations broken, every marginal realistic), which is what
+// per-trait envelopes cannot do. MUTATE feeds a REAL specimen instead, so the check is seen to be sensitive.
+{
+  const { jointTerm, fitBlock, inverse } = await import('../joint.mjs');
+  const real = { standard_length_m: 0.0961, body_mass_kg: 0.0101, body_depth_over_SL: 0.2437, body_width_over_SL: 0.1049, peduncle_depth_frac: 0.3416, peduncle_width_frac: 0.3932 };
+  // same marginals, recombined: a long thin body with a deep-bodied fish's depth and a deep peduncle
+  const decoy = { standard_length_m: 0.0961, body_mass_kg: 0.0101, body_depth_over_SL: 0.62, body_width_over_SL: 0.1049, peduncle_depth_frac: 0.95, peduncle_width_frac: 0.3932 };
+  const rr = jointTerm(real, {}), rd = jointTerm(M('joint-sees-broken-correlations') ? real : decoy, {});
+  check('joint-sees-broken-correlations', rr.ran && rd.ran && rr.p_value > 0.05 && rd.p_value < 0.01 && rd.top_broken_pairs.length > 0,
+    `real p ${rr.p_value}, recombined p ${rd.p_value}${rd.top_broken_pairs?.[0] ? ` (worst pair ${rd.top_broken_pairs[0].traits.join(' x ')}, r=${rd.top_broken_pairs[0].correlation_in_real_fish})` : ''}`);
+  // family-held-out fitting must be an exact subtraction, not a refit on everything
+  const all = fitBlock('fishshapes', {}), out = fitBlock('fishshapes', { excludeFamilies: M('joint-family-held-out') ? [] : ['Cyprinidae'] });
+  check('joint-family-held-out', all.ran && out.ran && out.n < all.n && out.held_out_families.length === 1 && Math.abs(out.mu[0] - all.mu[0]) > 1e-9,
+    `n ${all.n} -> ${out.n} with Cyprinidae held out`);
+  check('joint-inverse', (() => { const A = [[2, 0.3], [0.3, 1]], I = inverse(A); const p = I[0][0] * A[0][0] + I[0][1] * A[1][0]; return Math.abs(p - (M('joint-inverse') ? 0 : 1)) < 1e-9; })());
+}
+// functional_resolution (the fourth named result): the interface must never let a COMPENSATORY hypothesis count as
+// a demonstrated resolution, must not silently accept a class outside the ladder, and must recompute the counts.
+{
+  const { normaliseLedger, LADDER } = await import('../functional-interface.mjs');
+  const stub = { ran: true, closest_functional_analogue: { id: 'flying-fish', name: 'flying fish', function: 'glide' },
+    requirement_set: [{ id: 'req-1', requirement: 'lifting area per mass', source: 'test', kind: 'measured' }],
+    counts: { SAME: 99 },  // deliberately wrong, to prove the counts are recomputed
+    ledger: [
+      { id: 'd1', difference: 'pectoral area', class: 'SAME', evidence: [{ claim: 'x', source: 'test', kind: 'measured' }] },
+      { id: 'd2', difference: 'lat4a residue', class: 'ALLELIC', evidence: [{ claim: 'x', source: 'test', kind: 'measured' }] },
+      { id: 'd3', difference: 'no flying-fish transcriptome', class: M('functional-hypothesis-not-a-resolution') ? 'SAME' : 'COMPENSATORY', evidence: [{ claim: 'could be compensated', source: 'test', kind: 'assumed' }] },
+      { id: 'd4', difference: 'girdle muscle', class: 'INVENTED_CLASS', evidence: [] },
+    ] };
+  const L = normaliseLedger(stub);
+  check('functional-hypothesis-not-a-resolution',
+    L.ran && L.resolution.demonstrated === 2 && L.resolution.hypothesised === 1 && L.resolution.unresolved === 1
+    && L.unknown_classes.length === 1 && L.counts_disagreed_with_module?.length > 0 && /^FAIL/.test(L.gate),
+    `demonstrated ${L.resolution.demonstrated}, hypothesised ${L.resolution.hypothesised}, unresolved ${L.resolution.unresolved}, unknown ${L.unknown_classes.length}`);
+  const absent = normaliseLedger({ ran: false, reason: 'not landed' });
+  check('functional-absent-is-not-a-pass', absent.ran === false && !!absent.reason && absent.resolution === undefined
+    && LADDER.length === (M('functional-absent-is-not-a-pass') ? 99 : 6));
+}
+// The second Lean round (another thread's lean-rounds.mjs, wired in at the tool layer). Two things are mine to
+// check: that it does not move a frozen score, and that the panel surfaces a changed verdict.
+{
+  const { leanRounds } = await import('../lean-rounds.mjs');
+  const { designScore } = await import('../score.mjs');
+  const thermal = { body_temperature_C: 41, ct_min_C: 6.2, ct_max_C: 38.6, sustained_power_W: 0.002 };
+  const lr = await leanRounds({ organism: 'zebrafish-adult', from: M('lean-round2-sees-law-decay') ? null : '1.0.0', extraSpec: thermal });
+  check('lean-round2-sees-law-decay',
+    lr.newly_violated_since.some(v => v.law_id === 'perturb-thermal') && lr.verdict_changed === true && lr.newly_violated_without_a_law_change.length === 0,
+    `${lr.round1.lawset_version} -> ${lr.round2.lawset_version}: newly violated ${lr.newly_violated_since.map(v => v.constraint).join(',') || 'none'}`);
+  // frozen scores must not move now that the tool layer runs a second round
+  const want = { 'zebrafish-adult': 0.9217, tff: 0.3492, 'ff-zf-chimera': 0.8201 };
+  const moved = [];
+  for (const [id, exp] of Object.entries(want)) { const r = await designScore(id, {}); if (r.score !== (M('lean-round2-no-score-change') ? exp + 1 : exp)) moved.push(`${id} ${r.score} != ${exp}`); }
+  check('lean-round2-no-score-change', moved.length === 0, moved.join('; ') || 'v1.0.0 scores for the published designs are unchanged');
+  // the envelope's counts must still summarise its own provenance list after the tool pushes rows onto it
+  const T = (await import('../../tools/validate-tools.mjs')).VALIDATE_TOOLS;
+  const out = await T.find(t => t.name === 'validate_design').handler({ organism: 'zebrafish-adult' });
+  const sum = Object.values(out.counts).reduce((a, b) => a + b, 0);
+  check('envelope-counts-match-provenance', sum === out.provenance.length - (M('envelope-counts-match-provenance') ? 1 : 0) && !!out.result.lean_rounds,
+    `${out.provenance.length} rows, counts sum ${sum}, weakest_input ${out.weakest_input}`);
+}
+// physics_simulation (the fifth named result). What is MINE to guarantee is the wiring: a hard criterion with NO
+// MODEL must NOT raise the gate ("we could not check it" is not "it failed"), and the result must still surface.
+{
+  const { namedResults } = await import('../score.mjs');
+  const base = { genotype: { edits: [] }, phenotype: { body: { ran: false }, fin: { ran: false }, ood: false },
+    lean: { counts: null, components: [] }, verdict: { closest_real_relative: null } };
+  const incomplete = namedResults({ ...base, physics: { ran: true, physics_gate_failed: M('physics-no-model-is-not-a-failure'), gate_status: 'incomplete', function_achieved: false, unchecked_requirements: [{ criterion: 'c1', why: 'no model' }], summary: { hard_criteria: 2, met: 1, no_model: 1 } } });
+  check('physics-no-model-is-not-a-failure',
+    incomplete.physics_gate_failed === false && incomplete.physics_simulation.gate_status === 'incomplete'
+    && incomplete.physics_simulation.unchecked_requirements.length === 1 && incomplete.physics_simulation.function_achieved === false,
+    'an unchecked hard requirement leaves the gate down and function_achieved false');
+  const failed = namedResults({ ...base, physics: { ran: true, physics_gate_failed: !M('physics-gate-only-on-not-met'), gate_status: 'fail', function_achieved: false } });
+  const absent = namedResults({ ...base, physics: { ran: false, reason: 'no STATE' } });
+  check('physics-gate-only-on-not-met', failed.physics_gate_failed === true && absent.physics_gate_failed === false
+    && /breaks no law/i.test(failed.gates_note) && /actually does the thing/i.test(failed.gates_note), 'gate true only on a hard criterion not met');
+  // the real controls: the winged zebrafish is scored plausible AND cannot glide. Both must be reported.
+  const { designScore } = await import('../score.mjs');
+  const wz = await designScore('winged-zebrafish', {});
+  check('physics-separates-plausible-from-functional',
+    wz.score === 0.9217 && wz.physics_simulation.ran && wz.physics_gate_failed === true && wz.physics_simulation.function_achieved === false,
+    `winged zebrafish: score ${wz.score} (plausible) but function_achieved ${wz.physics_simulation.function_achieved}`);
+}
+// ---------------------------------------------------------------------------------------------------------------
+// THE VERSION MATRIX. Every released scorer version, called through the SHIPPED TOOL PATH (designScoreTool, the
+// handler MCP/HTTP actually run), on every input shape the tool accepts. This exists because of two real failures:
+//   1. v1.2.0 and v1.3.0 -- the two NEWEST released versions -- threw "provenance must be an array" through
+//      designScoreTool while working fine from library code, because the v12/v13 modules never built `_prov`.
+//      Nothing called the tool with a version, so nothing noticed.
+//   2. A crash in score.mjs silently killed 7 of 8 version x shape combinations in a blind evaluation run
+//      (SCORER-EVALUATION.md, Deviations: "a11e1311 crashed every v1.1+ item").
+// A version that is released and not callable is a lie about what this repository ships, so the matrix FAILS on any
+// throw rather than reporting it as a result.
+{
+  const { designScoreTool, RELEASED_VERSIONS, BLIND_EVALUATION, evaluationLabel } = await import('../score.mjs');
+  const SHAPES = {
+    organism: { organism: 'winged-zebrafish' },
+    specimen: { specimen: { SL_m: 0.0388, mass_kg: 0.0006943, depth_SL: 0.2535, width_SL: 0.135, ped_depth_frac: 0.38, ped_width_frac: 0.4, pectoral_len_SL: 0.35 }, taxon: 'Teleostei', label: 'matrix specimen' },
+  };
+  check('released-versions-listed', RELEASED_VERSIONS.length >= 5 && RELEASED_VERSIONS.includes('1.3.0') && RELEASED_VERSIONS.includes('1.0.0'),
+    `RELEASED_VERSIONS = ${RELEASED_VERSIONS.join(', ')}`);
+  const threw = [], scored = [];
+  for (const v of RELEASED_VERSIONS) for (const [shape, args] of Object.entries(SHAPES)) {
+    // MUTATE=every-released-version-is-callable asks for a version that does not exist, so the matrix must fail.
+    const version = M('every-released-version-is-callable') ? '9.9.9' : v;
+    try {
+      const t = await designScoreTool({ ...args, version });
+      if (!Array.isArray(t.provenance)) throw new Error('the envelope came back without a provenance array');
+      if (!t.result) throw new Error('the envelope came back with no result');
+      scored.push(`v${v}/${shape}=${t.result.score}`);
+    } catch (e) { threw.push(`v${version}/${shape}: ${e.message}`); }
+  }
+  check('every-released-version-is-callable', threw.length === 0,
+    threw.length ? `THREW: ${threw.join(' | ')}` : `${scored.length} version x shape combinations, none threw: ${scored.join(' ')}`);
+  // No version may be released without an entry saying whether its composite was blind-evaluated, because the label
+  // is what stops an un-evaluated number being quoted as if it had been tested.
+  const unlabelled = RELEASED_VERSIONS.filter(v => !BLIND_EVALUATION[M('every-version-has-an-evaluation-label') ? 'nope' : v]);
+  check('every-version-has-an-evaluation-label', unlabelled.length === 0, unlabelled.length ? `no BLIND_EVALUATION entry for ${unlabelled.join(', ')}` : 'all released versions carry one');
+  // The default version's composite must arrive carrying its own label, warning included.
+  const def = await designScoreTool({ organism: 'winged-zebrafish' });
+  const lab = def.result.scorer && evaluationLabel(M('default-composite-is-labelled') ? '1.1.1' : def.result.scorer.version);
+  check('default-composite-is-labelled',
+    def.result.scorer.version === '1.0.0' && lab.blind_evaluated === true && lab.score_verdict === 'FAIL' && lab.warning === true,
+    `default v${def.result.scorer.version}: blind ${lab.blind_evaluated}, composite verdict ${lab.score_verdict}`);
+  // v1.1.1 is callable but was never in the blind run. That must be visible, not inferred from its absence.
+  check('unevaluated-version-says-so', evaluationLabel(M('unevaluated-version-says-so') ? '1.3.0' : '1.1.1').blind_evaluated === false
+    && /NOT BLIND-EVALUATED/.test(evaluationLabel(M('unevaluated-version-says-so') ? '1.3.0' : '1.1.1').label), 'v1.1.1 is labelled as never blind-evaluated');
+  // The composite is comparable only within one version AND one set of components. A spec changes it: the same
+  // design, same version, goes 0.9217 -> 0.878 when a spec with 1 failed and 2 met criteria runs.
+  const { parseDesignText } = await import('../../lib/parse-text.mjs');
+  const spec = parseDesignText('a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult').spec;
+  const withSpec = await designScoreTool({ organism: 'winged-zebrafish', spec: M('spec-changes-the-composite') ? undefined : spec });
+  check('spec-changes-the-composite', withSpec.result.score === 0.878 && def.result.score === 0.9217 && withSpec.result.components.S.ran === true,
+    `no spec ${def.result.score} (S did not run) vs spec ${withSpec.result.score} (S = ${withSpec.result.components.S.value})`);
+}
+
 console.log(`\n${n - fails}/${n} passed${MUT ? ` (MUTATE=${MUT})` : ''}`);
 process.exit(fails);

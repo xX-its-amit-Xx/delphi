@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="../shared/shell.css">
 <script src="../shared/shell.js"></script>
-<title>For Agents &mdash; DELPHI</title>
-<meta name="description" content="How an outside agent connects to the DELPHI design studio: the hosted delphisci MCP, the local sim-engine, the HTTP bridge, the provenance envelope and the rules every number follows.">
+<title>DELPHI Validation Quickstart</title>
+<meta name="description" content="Run a generated organism design through DELPHI validation: one call with the design, its base and the desired phenotype in plain English, five named results and their gates, the six measured reasons not to over-read them, and a worked example you can re-run.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M10 16h12M16 10v12' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
 <style>
 :root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--accent-ink:#fff;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--viol:#6b4fb3;--soft:#eef2ef;--shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05)}
@@ -53,33 +53,238 @@ footer{padding:26px 0;color:var(--mute);font-size:.9rem}
 <a class="dsh-skip" href="#dsh-content">Skip the navigation</a>
 <header class="dsh">
   <div class="dsh-bar"><a class="dsh-brand" href="../index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0e7c86"/><path d="M5 16c5-7 14-9 22-4-3 2-6 3-8 4 2 1 5 2 8 4-8 5-17 3-22-4z" fill="#fff"/></svg>DELPHI<span class="sub">laws of biology</span></a>
-    <nav class="dsh-nav" aria-label="Primary"><span class="dsh-grp"><span class="dsh-lab">Results</span><a class="dsh-link" href="../results/">Results</a><a class="dsh-link" href="../deck/">Pitch deck</a><a class="dsh-link" href="../print/">Printable kit</a><a class="dsh-link" href="../evolve/">Enzymes</a></span><span class="dsh-grp"><span class="dsh-lab">Evidence</span><a class="dsh-link" href="../proofs/">Claim book</a><a class="dsh-link" href="../graph/">Graph</a><a class="dsh-link" href="../figures/">Figures</a></span><span class="dsh-grp"><span class="dsh-lab">Threads</span><a class="dsh-link" href="../t/lean/">Lean proofs</a><a class="dsh-link" href="../t/claims/">Claim tests</a><a class="dsh-link" href="../t/genotype/">Genotype</a><a class="dsh-link" href="../t/physics/">Physics</a><a class="dsh-link" href="../t/physics/sim/">Simulator</a><a class="dsh-link" href="../t/organism/">Organism</a><a class="dsh-link" href="../t/holdout/">Holdout</a><a class="dsh-link" href="../t/swarm/">Swarm</a><a class="dsh-link" href="../t/validation/">Validation</a></span><span class="dsh-grp"><span class="dsh-lab">About</span><a class="dsh-link" href="../start/">Start here</a><a class="dsh-link" href="../index.html">Mission control</a></span></nav>
+    <nav class="dsh-nav" aria-label="Primary"><span class="dsh-grp" data-cur><span class="dsh-lab">Results</span><a class="dsh-link" href="../results/">Results</a><a class="dsh-link" href="../scorer/">Design scorer</a><a class="dsh-link" href="../deck/">Pitch deck</a><a class="dsh-link" href="../print/">Printable kit</a><a class="dsh-link" href="../studio-api/" aria-current="page">Validate a design</a><a class="dsh-link" href="../gene-diff/">Gene diff</a><a class="dsh-link" href="../t/benchmark/">Swarm benchmark</a><a class="dsh-link" href="../swarm-board/">Swarm board</a><a class="dsh-link" href="../evolve/">Enzymes</a></span><span class="dsh-grp"><span class="dsh-lab">Evidence</span><a class="dsh-link" href="../proofs/">Claim book</a><a class="dsh-link" href="../leanbio/">LeanBio repo</a><a class="dsh-link" href="../graph/">Graph</a><a class="dsh-link" href="../figures/">Figures</a></span><span class="dsh-grp"><span class="dsh-lab">Threads</span><a class="dsh-link" href="../t/lean/">Lean proofs</a><a class="dsh-link" href="../t/claims/">Claim tests</a><a class="dsh-link" href="../t/genotype/">Genotype</a><a class="dsh-link" href="../t/physics/">Physics</a><a class="dsh-link" href="../t/physics/sim/">Simulator</a><a class="dsh-link" href="../t/organism/">Organism</a><a class="dsh-link" href="../t/holdout/">Holdout</a><a class="dsh-link" href="../t/swarm/">Swarm</a><a class="dsh-link" href="../t/validation/">Validation</a></span><span class="dsh-grp"><span class="dsh-lab">About</span><a class="dsh-link" href="../start/">Start here</a><a class="dsh-link" href="../record/">Development record</a><a class="dsh-link" href="../index.html">Mission control</a></span></nav>
     <button class="dsh-theme" id="themeBtn" data-dsh-theme type="button" title="Toggle light or dark">Theme</button></div>
   <nav class="dsh-modes" aria-label="The 3D organism viewer"><span class="dsh-lab">The organism</span><a class="dsh-link" href="../blueprint3d/">Anatomy</a><a class="dsh-link" href="../blueprint3d/?mode=physiology">Circulation &amp; gills</a><a class="dsh-link" href="../blueprint3d/?mode=tissue">Tissue signals</a><a class="dsh-link" href="../blueprint3d/?mode=cell">Cell interactions</a><a class="dsh-link" href="../blueprint3d/?mode=physics">Flight simulator</a><a class="dsh-link" href="../blueprint3d/?mode=design">Design studio</a><a class="dsh-link" href="../blueprint3d/?mode=growth">Growth</a><a class="dsh-link" href="../blueprint3d/?mode=compare">Compare species</a><a class="dsh-link" href="../blueprint3d/?mode=sequences">Gene sequences</a><a class="dsh-link" href="../blueprint3d/?view=radial">Radial map</a></nav>
 </header>
 <span id="dsh-content"></span>
 <!-- delphi-shell:end -->
 <header class="top"><div class="wrap">
-  <span class="brand">For agents</span>
-  <nav><a href="#servers">Servers</a><a href="#connect">Connect</a><a href="#envelope">Envelope</a><a href="#workflow">Workflow</a><a href="#rules">Rules</a><a href="#tools">Tools</a></nav>
+  <span class="brand">Validate a design</span>
+  <nav><a href="#validate">Validate a design</a><a href="#paths">Three ways in</a><a href="#honest">Read this first</a><a href="#example">Worked example</a><a href="#servers">Servers</a><a href="#envelope">Envelope</a><a href="#workflow">Co-design</a><a href="#rules">Rules</a><a href="#tools">Tools</a></nav>
 </div></header>
 
 <main class="wrap">
 
 <section id="top">
-  <h1>Co-design organisms with DELPHI from your own agent</h1>
-  <p class="lede">The design studio is open to outside agents: Claude Code, a collaborator's swarm, the MorphoSwarm Frontier agents, or a plain script. Agents edit, simulate, check against the laws and propose. A human approves in the studio. Every number that comes back says where it came from.</p>
-  <div class="note">The tool list changes faster than this page. The authority is always the live list: MCP <span class="tag">tools/list</span>, or <span class="tag">GET /contract</span> on the HTTP bridge.</div>
+  <h1>Run your generated design through DELPHI validation</h1>
+  <p class="lede">Three inputs, one call, five named results. Hand the validator your generated design, the base organism it came from, and the desired phenotype in plain English &mdash; the same prompt your generator was given. Nothing is summed: each result keeps its own gate, and a result that could not be assessed says so instead of passing.</p>
+  <div class="note ok">Everything on this page was run against the servers it names on <b>2026-11-01T06:06Z</b>. The outputs quoted are that run's real output, copied. The tool list still changes faster than the page: the authority is always the live list &mdash; MCP <span class="tag">tools/list</span>, or <span class="tag">GET /contract</span> on the HTTP bridge.</div>
+</section>
+
+<section id="validate">
+  <h2>The one call</h2>
+<pre>validate_generation {
+  "generated":         "winged-zebrafish",
+  "base":              "zebrafish-adult",
+  "desired_phenotype": "a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult"
+}</pre>
+  <p class="small"><span class="tag">generated</span> and <span class="tag">base</span> each take a design id, an inline organism document, a path to an organism-document JSON, or FASTA / plain sequence. <span class="tag">desired_phenotype</span> is your generator's prompt, verbatim. Whatever the parser cannot read comes back word for word under <span class="tag">verdict.unparsed_desired_phenotype</span>, because an unparsed requirement is an unchecked requirement.</p>
+
+  <h3 style="margin-top:22px">Five named results, each with its own gate</h3>
+  <table>
+    <tr><th>named result</th><th>the question it answers</th><th>headline run</th></tr>
+    <tr><td><span class="tag">genotype_similarity</span></td><td>is the edited sequence state close to a real organism's?</td><td><span class="chip viol">cannot-assess</span></td></tr>
+    <tr><td><span class="tag">phenotype_similarity</span></td><td>is the shape inside the distribution of real measured specimens?</td><td><span class="chip ok">pass</span></td></tr>
+    <tr><td><span class="tag">lean_check</span></td><td>does any <b>accepted</b> Lean-backed law rule the design out?</td><td><span class="chip viol">cannot-assess</span></td></tr>
+    <tr><td><span class="tag">functional_resolution</span></td><td>can every difference from the closest <b>functional</b> analogue be accounted for from known annotation?</td><td><span class="chip bad">fail</span></td></tr>
+    <tr><td><span class="tag">physics_check</span></td><td>does the design actually do what was asked?</td><td><span class="chip bad">fail</span></td></tr>
+  </table>
+  <p class="small">Three statuses, and the third is the point: <span class="chip ok">pass</span> <span class="chip bad">fail</span> <span class="chip viol">cannot-assess</span>. <b>A <span class="tag">cannot-assess</span> is not a pass.</b> The verdict object withholds the word &ldquo;validated&rdquo; whenever a gate failed, a gate could not be assessed, a biological scale could not be assessed, or no sequence was compared:</p>
+<pre>verdict.word_validated_withheld  true
+verdict.withheld_because         ["2 gate(s) failed", "2 gate(s) could not be assessed",
+                                  "3 biological scale(s) could not be assessed",
+                                  "no sequence was compared at any locus"]</pre>
+  <p class="small">The scorer's own composite arrives beside them, carried for reference and explicitly not the verdict:</p>
+<pre>composite_score_from_the_scorer  {"value": 0.878, "plausible": true, "version": "1.0.0",
+  "components_that_ran": "P+L+G+S+E",
+  "depends_on_the_desired_phenotype_text": true,
+  "evaluation": {"blind_evaluated": true, "score_verdict": "FAIL", "warning": true,
+                 "label": "scorer v1.0.0: blind-evaluated (168 held-out families,
+                 family-out). The blind verdict on this composite is FAIL -- P1, P2
+                 and P3 all fail ..."},
+  "note": "the scorer thread's own frozen number, carried through for reference.
+           It is NOT this report's verdict, and no gate above feeds it. ..."}</pre>
+  <div class="note bad"><b>Two labels now travel with every composite, and they are the point.</b>
+  <span class="tag">evaluation</span> &mdash; scorer v1.0.0's composite <b>FAILED</b> the blind held-out
+  evaluation, and so does every released version's composite, v1.3.0 included; only v1.3.0's
+  <span class="tag">rank_score</span>, a different output, passed. No version of this composite has passed its
+  own pre-registered test. <span class="tag">components_that_ran</span> &mdash; the composite is a function of
+  what was asked for, not of the design alone: the same design at the same version reads <b>0.9217</b> with no
+  spec, <b>0.878</b> with this page's three-criterion ask, and <b>0.4676, &ldquo;implausible&rdquo;</b> if the ask
+  mentions only gliding. Adding a criterion the design meets trivially <i>raises</i> it. Never put two composites
+  on one axis unless both labels match. See <code>sim-engine/validate/SCORER-VERSION.md</code>.</div>
+</section>
+
+<section id="paths">
+  <h2>Three ways in</h2>
+  <div class="grid g2">
+    <div class="card hero">
+      <h3>Hosted MCP <span class="chip ok">nothing to install</span></h3>
+<pre>claude mcp add --transport http delphisci \
+  https://delphisci-mcp.fly.dev/mcp</pre>
+      <p class="small">Verified: added, reported connected, removed. Any other client speaks Streamable HTTP, no auth, 120 requests per minute per IP.</p>
+<pre>curl -s -X POST https://delphisci-mcp.fly.dev/mcp \
+  -H 'content-type: application/json' \
+  -H 'accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+
+curl -s https://delphisci-mcp.fly.dev/healthz
+# {"ok":true,"files":4266,"built":"2026-11-01 05:47"}</pre>
+      <div class="note bad"><b>The hosted server does not serve the validator.</b> At the check above it served 16 tools &mdash; the <span class="tag">delphi_*</span> claim, graph, organism and forum tools &mdash; and no <span class="tag">lean_*</span> and no <span class="tag">validate_generation</span>. It is DELPHI's knowledge layer. To validate a design, clone.</div>
+    </div>
+    <div class="card">
+      <h3>Local clone <span class="chip ok">the full set</span></h3>
+<pre>git clone https://github.com/fractastical/delphisci
+cd delphisci
+npm install
+(cd sim-engine &amp;&amp; npm install)
+
+claude mcp add delphi-sim-engine -- \
+  node "$PWD/sim-engine/server.mjs"   # 54 tools
+claude mcp add delphisci-local -- \
+  node "$PWD/mcp/server.mjs"          # 21 tools</pre>
+      <p class="small">Or as a project <span class="tag">.mcp.json</span> entry &mdash; the repository's existing file holds another server, so merge, do not replace:</p>
+<pre>{ "mcpServers": { "delphi-sim-engine": {
+  "type": "stdio", "command": "node",
+  "args": ["sim-engine/server.mjs"] } } }</pre>
+      <p class="small">Verified over raw MCP stdio: <span class="tag">initialize</span>, then <span class="tag">tools/call</span> <span class="tag">validate_generation</span> with the three arguments above, returned <span class="tag">isError: false</span> and the envelope <span class="tag">{contract_version, result, provenance, scope, weakest_input, counts}</span> carrying the five gates.</p>
+    </div>
+    <div class="card">
+      <h3>No MCP: the CLI</h3>
+<pre>node sim-engine/validate-cli.mjs \
+  "a zebrafish that glides at least 5 m from a 1 m
+   launch and survives 10-30 C as an adult" \
+  --base zebrafish-adult \
+  --generated winged-zebrafish</pre>
+      <table>
+        <tr><th>exit</th><th>meaning</th></tr>
+        <tr><td>0</td><td>every gate passed</td></tr>
+        <tr><td>1</td><td>a gate failed &mdash; the headline run</td></tr>
+        <tr><td>2</td><td>nothing failed, but something could not be assessed</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>No MCP: the HTTP bridge</h3>
+<pre>node sim-engine/http.mjs   # 127.0.0.1:7341, loopback only
+
+curl -s -X POST 127.0.0.1:7341/tool/validate_generation \
+  -H 'content-type: application/json' -d '{
+  "generated": "winged-zebrafish",
+  "base": "zebrafish-adult",
+  "desired_phenotype": "...as above..."
+}' | jq '.result.results | map_values(.status)'</pre>
+      <p class="small">Same tools, same schemas, same envelope. From JavaScript, with no server at all:</p>
+<pre>import { validateGeneration }
+  from './sim-engine/validate/pipeline/index.mjs';
+const report = await validateGeneration(
+  { generated, base, desired_phenotype });</pre>
+    </div>
+  </div>
+
+  <h3 style="margin-top:22px">Which tools are hosted, and which are local-only</h3>
+  <table>
+    <tr><th>surface</th><th>tools</th><th>holds</th></tr>
+    <tr><td><span class="tag">https://delphisci-mcp.fly.dev/mcp</span> <span class="chip ok">hosted</span></td><td>16</td><td>the five <span class="tag">delphi_*</span> readers and <span class="tag">delphi_sparql</span>, the organism and morpholib readers, the claim-test log, and the six forum tools</td></tr>
+    <tr><td><span class="tag">node mcp/server.mjs</span> <span class="chip warn">local</span></td><td>21</td><td>the six <span class="tag">delphi_*</span> plus the eight <span class="tag">lean_*</span> law tools, <span class="tag">leanbio_*</span>, <span class="tag">omics_*</span> and <span class="tag">design_score</span></td></tr>
+    <tr><td><span class="tag">node sim-engine/server.mjs</span> <span class="chip warn">local</span></td><td>54, contract <span class="tag">0.8.0</span></td><td>the studio (<span class="tag">organism_*</span>, <span class="tag">scenario_*</span>, <span class="tag">optimize</span>, <span class="tag">session_*</span>), the validators (<span class="tag">validate_generation</span>, <span class="tag">functional_resolution</span>, <span class="tag">physics_check</span>, <span class="tag">validate_design</span>, <span class="tag">design_score</span>, <span class="tag">sanity_check_design</span>, <span class="tag">closest_relative_*</span>, <span class="tag">lean_by_component</span>), <span class="tag">edit_plan</span>, the open-questions tools, and the generative and swarm tools</td></tr>
+  </table>
+  <p class="small">Three reasons a tool is local-only, and they are the whole rule:</p>
+  <ol class="path small">
+    <li><b>It runs a Lean build.</b> <span class="tag">lean_propose</span> compiles a submitted file. It is marked <span class="tag">local_only</span> in the contract, the bridge serves it only while bound to loopback, and it is never hosted.</li>
+    <li><b>It writes.</b> <span class="tag">organism_create</span>, <span class="tag">session_open</span>, <span class="tag">session_post</span>, <span class="tag">session_decide</span> and the <span class="tag">swarm_*</span> tools append under <span class="tag">sim-engine/sessions/</span>. A hosted, unauthenticated server has nowhere honest to put that.</li>
+    <li><b>It reads repository data that is not in the deployed image.</b> The validators read the five omics layers (about 914,000 rows), the FishShapes reference set, the captured exons and the GRCz11 coordinate tables. The hosted image packs about 2&nbsp;MB of claims, unsigned TriG files and Lean law sources, and nothing else.</li>
+  </ol>
+  <div class="note">The hosted server serves upstream <span class="tag">main</span> as of its last deploy, and this work lives on a fork. Its tool list is neither a subset nor a superset of the local one: it already has forum and organism tools the fork does not, and it lacks the <span class="tag">lean_*</span> tools the fork adds. Read its <span class="tag">tools/list</span>, not this table.</div>
+</section>
+
+<section id="honest">
+  <h2>Read this before you trust any number above</h2>
+  <p class="lede">Not an appendix. A collaborator who takes these five results at face value will be misled in six specific ways. Each one is measured, and each links to the page that proves it.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3><span class="chip bad">1</span> &ldquo;Real organisms score plausible&rdquo; is close to worthless on its own</h3>
+      <p class="small">In the blind, held-out, family-out evaluation &mdash; 168 held-out families, scored family-out, by an evaluator who built neither the scorer nor the benchmark &mdash; <b>98 to 99.6&nbsp;% of real organisms score at or above the 0.5 plausibility cut in every scorer version, and only 12 to 17&nbsp;% of negatives score below it.</b> Every version passes &ldquo;real things look real&rdquo;, and every version is close to calling everything plausible.</p>
+      <p class="small"><a href="../scorer/">The blind scorer evaluation &rarr;</a> <span class="mute">&middot; <span class="tag">sim-engine/validate/evaluation/SCORER-EVALUATION.md</span>, top line item&nbsp;2</span></p>
+    </div>
+    <div class="card">
+      <h3><span class="chip bad">2</span> The composite has never beaten its own strongest single term</h3>
+      <p class="small">v1.3.0's <span class="tag">rank_score</span> reaches P1 AUC <b>0.875</b>; its joint Mahalanobis term used <b>alone</b> reaches <b>0.883</b> (difference &minus;0.008, CI &minus;0.020 to 0.002; over all held-out items &minus;0.007, CI &minus;0.013 to &minus;0.002, significantly worse). The joint term alone also passes all three primary endpoints by itself. On the primary ranking the composite is one term wearing a costume; the other four components earn their place only on secondary endpoints.</p>
+      <p class="small"><a href="../scorer/">The blind scorer evaluation &rarr;</a> <span class="mute">&middot; same file, top line item&nbsp;1</span></p>
+    </div>
+    <div class="card">
+      <h3><span class="chip bad">3</span> <span class="tag">functional_resolution</span> covers about a third of the requirements, and the analogue has no functional data</h3>
+      <p class="small">For the winged zebrafish against the flying fish, <b>22 of 73 requirements are assessable, 30.1&nbsp;%</b>. Of those 22, <b>2 are met and both ancestrally</b> &mdash; a residue the zebrafish already carried &mdash; 1 rests on a hypothesis, and <b>19 are unresolved</b>; 14 of the 19 carry the caveat that &ldquo;unresolved&rdquo; is the absence of a search, not of a resolution. And <b>0 of the 73 loci carry any flying-fish expression, proteomic or functional-assay data of any kind</b>; 2 carry so much as a <i>Hirundichthys</i> gene identifier. Every &ldquo;requirement&rdquo; is a sequence state of the analogue, never a measured function of it.</p>
+      <p class="small"><span class="mute"><span class="tag">sim-engine/validate/functional/RESULTS.md</span></span></p>
+    </div>
+    <div class="card">
+      <h3><span class="chip bad">4</span> No genome was compared, on any run</h3>
+      <p class="small">All seven repository organisms carry <span class="tag">edits: []</span> &mdash; they are parameter sets, not base-plus-edit documents. So <span class="tag">sequence_basis</span> is <b><span class="tag">document-only</span></b>, <span class="tag">loci_covered</span> is <b>0</b>, <span class="tag">genome_fraction_assessed</span> is <b>0</b>, and <span class="tag">genotype_similarity</span> is <span class="tag">cannot-assess</span>. The report prints &ldquo;NO SEQUENCE WAS ASSESSED&rdquo; in words on every such call. The reconstruction path through the GRCz11 coordinates is wired and runs the moment a design carries a gene-level edit; it has never had one to run on.</p>
+      <p class="small"><span class="mute"><span class="tag">sim-engine/validate/pipeline/RESULTS.md</span></span></p>
+    </div>
+    <div class="card">
+      <h3><span class="chip bad">5</span> Every glide-based physics check grades <span class="tag">circular</span></h3>
+      <p class="small">All ten criterion rows in the physics controls carry <span class="tag">model_confidence: circular</span> or <span class="tag">circular-in-part</span>. The glide module's own model card says so: &ldquo;PARTLY CIRCULAR &hellip; Not independent evidence.&rdquo; The positive control's 36.5&nbsp;m prediction at 15&nbsp;m/s and the 50&nbsp;m field glide it is checked against come from the same body of second-hand observations. <b>What is not circular is the four negative controls</b>, each of which turns on an inequality between two independently sourced quantities &mdash; a burst or taxi speed from field observation against a v_min computed from a wind-tunnel polar and a measured mass and area. So a physics <b>fail</b> carries weight here, and a physics <b>pass</b> carries much less.</p>
+      <p class="small"><a href="../t/physics/">Physics thread &rarr;</a> <span class="mute">&middot; <span class="tag">sim-engine/validate/physics/RESULTS.md</span></span></p>
+    </div>
+    <div class="card">
+      <h3><span class="chip bad">6</span> 15 accepted laws evaluate nothing on a design</h3>
+      <p class="small">Of the 36 accepted laws in lawset 1.8.1, 15 produce no row for any design. Until a guard was written for it on 2026-11-01, a law could be accepted, released in a lawset, served by every tool and mirror, shown in the studio's law list &mdash; and run no arithmetic at all. The guard's first run found a live case nobody had noticed: <span class="tag">aerobic-power-bound</span>, an <b>accepted</b> law, evaluated nothing, because it and <span class="tag">fick-principle</span> both claimed constraint <span class="tag">C14</span> and the generator broke the tie alphabetically. Each of the 15 now carries a written reason in <span class="tag">NO_DESIGN_ROW</span>, and the guard fails if a reason stops being true. On the headline run <span class="tag">lean_check</span> is <span class="tag">cannot-assess</span>: 25 laws cannot evaluate, 10 are out of scope, 0 evaluated either way.</p>
+      <p class="small"><a href="../t/lean/">Lean thread &rarr;</a> <span class="mute">&middot; <span class="tag">lean/registry/LIVE-LOOP-DEMO.md</span> &sect;0 &middot; re-run <span class="tag">node lean/registry/check-exposed.mjs</span></span></p>
+    </div>
+  </div>
+  <div class="note bad">And the standing one: <span class="tag">lean_check</span> is a floating-point evaluation of a Lean-backed formula, <b>not a kernel proof</b>. Say it that way.</div>
+</section>
+
+<section id="example">
+  <h2>The worked example, and why five results beat one number</h2>
+  <p class="lede">Re-run it yourself; it takes about four seconds. Base <span class="tag">zebrafish-adult</span>, generated <span class="tag">winged-zebrafish</span> &mdash; the same fish with its pectoral fins scaled up, length and span &times;2.26, planform area &times;4.45, and nothing else changed.</p>
+<pre>node sim-engine/validate-cli.mjs \
+  "a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult" \
+  --base zebrafish-adult --generated winged-zebrafish</pre>
+  <div class="note bad"><b>The scorer calls it plausible, 0.878. The physics says it cannot leave the water.</b> Both are in the same report, and neither is allowed to hide the other. That 0.878 is scorer v1.0.0 <i>with this exact ask</i>: with no spec the same design reads 0.9217, and with a glide-only ask it reads 0.4676 &ldquo;implausible&rdquo; &mdash; the temperature clause, which any zebrafish meets, is what lifts it over the 0.5 cut. v1.0.0&rsquo;s composite failed the blind held-out evaluation, as every released version&rsquo;s does.</div>
+<pre>NAMED RESULTS (five, never summed)
+  genotype_similarity    CANNOT-ASSESS  the generated design carries no gene-level edit ... This is not a pass
+  phenotype_similarity   PASS           inside the calibrated shape distribution (body p 1)
+  lean_check             CANNOT-ASSESS  no Lean law could be evaluated on this design
+                                        (25 cannot-evaluate, 10 out of scope)
+  functional_resolution  FAIL           19 difference(s) from the closest functional analogue are UNRESOLVED
+  physics_check          FAIL           cannot glide: the reachable launch speed 0.67 m/s is below v_min
+                                        8.64 m/s, so lift cannot carry the weight [achieved in 0.0 % of
+                                        200 draws; median 0 m, 5-95 % 0 to 0]
+                                        lifting_area_supports_mass@adult -- the lifting area is 166.37x
+                                        too small: 1.91 cm2 against 317.76 cm2 needed to carry 0.007 N
+                                        at 0.67 m/s
+
+  [the scorer thread's own composite, for reference only, NOT this verdict: 0.878 (plausible), v1.0.0]
+
+  The word "validated" is WITHHELD: 2 gate(s) failed; 2 gate(s) could not be assessed;
+  3 biological scale(s) could not be assessed; no sequence was compared at any locus.</pre>
+  <p>A single number would have shipped this design. Five named results show exactly where it fails, and the report names the reason at the tissue scale in a line of its own: the design grew the wing and never touched the pectoral muscle that would have to move it. The 166&times; lifting-area shortfall and that tissue gap are one fact seen at two scales.</p>
+
+  <h3 style="margin-top:22px">The control: the real flying fish as <span class="tag">generated</span></h3>
+<pre>node sim-engine/validate-cli.mjs \
+  "a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult" \
+  --base zebrafish-adult --generated flying-fish     # exit 2
+
+  phenotype_similarity   PASS
+  functional_resolution  PASS           every difference has a demonstrated resolution
+  physics_check          CANNOT-ASSESS  INCOMPLETE: 2 of 3 hard criteria have NO MODEL and were NOT
+                                        checked (temperature/survives, temperature/survives)
+  [... composite: 0.933 (plausible), v1.0.0]
+  The word "validated" is WITHHELD: 3 gate(s) could not be assessed; ...</pre>
+  <p>The glide criterion the winged zebrafish misses, the real animal meets &mdash; so the physics separates a real glider from a design that merely has bigger fins, which is what a control is for. But its overall physics gate is <span class="tag">cannot-assess</span>, not a pass, and the reason is worth having: <span class="tag">scenarios/temperature.mjs</span> holds CT limits for zebrafish only and <b>refuses to substitute them</b> for another species, and no flying-fish thermal measurement was found. &ldquo;Survives 10&ndash;30&nbsp;&deg;C&rdquo; is unanswerable for the real flying fish from the data on hand, and the report says that rather than borrowing a constant.</p>
+  <p class="small">Hand your agent the Claude Code skill at <span class="tag">sim-engine/skill/delphi-studio/SKILL.md</span> &mdash; copy it into <span class="tag">.claude/skills/delphi-studio/</span> &mdash; and it has the tool sequence, what each named result means, and the refusal rules below.</p>
 </section>
 
 <section id="servers">
   <h2>Two servers, two jobs</h2>
   <div class="grid g2">
     <div class="card hero">
-      <h3>Hosted <span class="tag">delphisci</span> MCP <span class="chip ok">start here</span></h3>
-      <p>DELPHI's knowledge: claims, their maths, assessments, the claim graph, and the Lean law tools (<span class="tag">lean_*</span>) once they land. Nothing to install. Streamable HTTP, no auth, 120 requests per minute per IP.</p>
+      <h3>Hosted <span class="tag">delphisci</span> MCP <span class="chip ok">to read claims</span></h3>
+      <p>DELPHI's knowledge: claims, their maths, assessments, the claim graph, the organism readers and the forum. Nothing to install. Streamable HTTP, no auth, 120 requests per minute per IP.</p>
       <pre>https://delphisci-mcp.fly.dev/mcp</pre>
-      <p class="small mute">It serves <span class="tag">main</span> as of its last deploy. The <span class="tag">lean_*</span> tools appear there only after their change merges to <span class="tag">main</span> upstream and redeploys. Until then, check <span class="tag">tools/list</span> or <a href="https://delphisci-mcp.fly.dev/healthz">/healthz</a>, and use the local copy below.</p>
+      <p class="small mute">It serves <span class="tag">main</span> as of its last deploy, and this work lives on a fork, so it had <b>no <span class="tag">lean_*</span> tools and no validator</b> at the 2026-11-01T06:06Z check. Read <span class="tag">tools/list</span> or <a href="https://delphisci-mcp.fly.dev/healthz">/healthz</a> and use the local copy below for the laws and the validators.</p>
     </div>
     <div class="card">
       <h3>Local <span class="tag">sim-engine</span></h3>
@@ -197,6 +402,7 @@ curl -s -X POST 127.0.0.1:7341/tool/morphogen_diffusion \
 <section id="tools">
   <h2>The tools</h2>
   <p class="lede">As listed when this page was written. Ask the live list for the current set.</p>
+  <div class="note bad"><b>The table below was regenerated at 02:41Z and the tool set has moved since.</b> Re-checked at <b>2026-11-01T06:06Z</b> with <span class="tag">node sim-engine/server.mjs --dump-contract</span>: contract version <b>0.8.0</b>, <b>54 tools</b> in MCP <span class="tag">tools/list</span>, and <span class="tag">GET /contract</span> on the bridge reports <b>no <span class="tag">http_only_tools</span> left</b> &mdash; everything the bridge serves is now in the MCP list too. Fifteen live tools the table does not name: <span class="tag">validate_generation</span> <span class="tag">functional_resolution</span> <span class="tag">physics_check</span> <span class="tag">validate_design</span> <span class="tag">validate_swarm_tasks</span> <span class="tag">sanity_check_design</span> <span class="tag">closest_relative_phenotype</span> <span class="tag">closest_relative_genotype</span> <span class="tag">lean_by_component</span> <span class="tag">design_score</span> <span class="tag">edit_plan</span> <span class="tag">edit_plan_methods</span> <span class="tag">lean_open_questions</span> <span class="tag">lean_open_question</span> <span class="tag">lean_open_question_guard</span>; and also live: <span class="tag">leanbio_*</span>, <span class="tag">omics_*</span>, <span class="tag">parse_design_text</span>, <span class="tag">design_from_spec</span>, <span class="tag">session_decide</span>, <span class="tag">generate_candidates</span>, <span class="tag">generative_backends_status</span> and the <span class="tag">swarm_*</span> tools. All of them are local &mdash; see <a href="#paths">Three ways in</a> for the hosted/local split and the three reasons for it. If your bridge disagrees, restart it: it discovers tools once, at its first request. Two gaps the table's closing notes record are now <b>closed</b>: there is a text-to-spec path (<span class="tag">parse_design_text</span>, <span class="tag">design_from_spec</span>) and an approval tool (<span class="tag">session_decide</span>, which needs a role starting with <span class="tag">human</span>). An agent still never posts <span class="tag">kind: "edit"</span> and never calls <span class="tag">session_decide</span> as a human role.</div>
   <!-- tool-table:start -->
   <p class="small mute">Checked 2026-11-01T02:41:33Z.</p>
   <h3>Local sim-engine</h3>
@@ -227,7 +433,7 @@ curl -s -X POST 127.0.0.1:7341/tool/morphogen_diffusion \
   <p class="small">"HTTP only" tools are exported from <span class="tag">sim-engine/tools/</span> and served by the bridge, but are not yet in the MCP server's <span class="tag">tools/list</span>.</p>
   <div class="note">At this check: <ul><li>no text-to-spec tool (<span class="tag">sim-engine/lib/spec.mjs</span> exists but is not exposed as a tool); write criteria by hand as <span class="tag">optimize</span> <span class="tag">hard_constraints</span>.</li><li>installed scenarios: <span class="tag">current</span>, <span class="tag">glide</span>, <span class="tag">predator</span>, <span class="tag">pressure</span>, <span class="tag">sleep</span>, <span class="tag">temperature</span>.</li><li>no approval tool: a human approves by posting <span class="tag">kind: &quot;edit&quot;</span> (as <span class="tag">human</span>) in the studio UI; nothing in the schema stops an agent from posting <span class="tag">kind: &quot;edit&quot;</span> itself, so agents must keep to <span class="tag">kind: &quot;proposal&quot;</span>.</li></ul></div>
   <h3>Hosted delphisci MCP</h3>
-  <p class="small"><span class="tag">delphi_overview</span> <span class="tag">delphi_search_claims</span> <span class="tag">delphi_get_claim</span> <span class="tag">delphi_rank_claims</span> <span class="tag">delphi_graph</span> <span class="tag">delphi_sparql</span> and the <span class="tag">lean_*</span> tools, once merged to main and redeployed.</p>
+  <p class="small">Live at the 2026-11-01T06:06Z check, 16 tools: <span class="tag">delphi_overview</span> <span class="tag">delphi_search_claims</span> <span class="tag">delphi_get_claim</span> <span class="tag">delphi_rank_claims</span> <span class="tag">delphi_graph</span> <span class="tag">delphi_claim_tests</span> <span class="tag">delphi_morpholib</span> <span class="tag">delphi_organisms</span> <span class="tag">delphi_get_organism</span> <span class="tag">delphi_sparql</span> <span class="tag">delphi_forum_read</span> <span class="tag">delphi_forum_register</span> <span class="tag">delphi_forum_post</span> <span class="tag">delphi_forum_respond</span> <span class="tag">delphi_propose_claim</span> <span class="tag">delphi_log_test_result</span>. <b>No <span class="tag">lean_*</span> and no validator</b>: it serves upstream <span class="tag">main</span> as of its last deploy, and the law and validator tools are on a fork. The local <span class="tag">node mcp/server.mjs</span> in a clone has 21 tools, the six <span class="tag">delphi_*</span> plus the eight <span class="tag">lean_*</span>, <span class="tag">leanbio_*</span>, <span class="tag">omics_*</span> and <span class="tag">design_score</span>.</p>
   <h3>Static law mirror</h3>
   <p class="small"><a href="../api/lean/index.json">/api/lean/index.json</a> and <a href="../api/lean/current.json">current.json</a>: read-only JSON of the laws and lawsets, from the same loader as the tools. It cannot run a check.</p>
   

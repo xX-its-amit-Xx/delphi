@@ -1,0 +1,90 @@
+@prefix this: <http://purl.org/nanopub/temp/np1/> .
+@prefix sub: <http://purl.org/nanopub/temp/np1/> .
+@prefix np: <http://www.nanopub.org/nschema#> .
+@prefix npx: <http://purl.org/nanopub/x/> .
+@prefix nt: <https://w3id.org/np/o/ntemplate/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix schema: <https://schema.org/> .
+@prefix spdx: <http://spdx.org/rdf/terms#> .
+@prefix delphi: <https://w3id.org/delphi/ontology/> .
+
+sub:Head {
+  this: a np:Nanopublication ;
+    np:hasAssertion sub:assertion ;
+    np:hasProvenance sub:provenance ;
+    np:hasPublicationInfo sub:pubinfo .
+}
+
+sub:assertion {
+  <https://w3id.org/delphi/resource/claim/high-composite-with-failing-gates> a delphi:Claim ;
+    rdfs:label "On the winged-zebrafish run the scorer's composite is 0.878 and plausible, yet 2 of the 5 named validation gates fail and 2 cannot be assessed, so the validator withholds the word validated." ;
+    dct:description "Status: a single-run observation from the fixture swarm/benchmark/fixtures/gt-l4-t1.json (generated=winged-zebrafish, base=zebrafish-adult), recorded as reported by the validator; it is not a replicated or independently confirmed result. Verdict: word_validated_withheld is true because 2 gates failed (functional_resolution, physics_check), 2 could not be assessed (genotype_similarity, lean_check), 3 biological scales could not be assessed (cell, tissue, organ_system) and no sequence was compared at any locus; only phenotype_similarity passed. The CLI exited 1 (sim-engine/validate-cli.mjs:17). What this does NOT establish: it does not show the design is valid, that the fish can glide at least 5 m from a 1 m launch or survive 10-30 C as an adult, or that the composite measures validity in general; the composite is carried through for reference, is not the report's verdict, and no gate feeds it. It also does not show the untested gates would have passed or failed." ;
+    delphi:hasEvidence <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates> .
+
+  <https://w3id.org/delphi/resource/evidence/high-composite-with-failing-gates> a delphi:EvidenceItem ;
+    rdfs:label "Gate results versus scorer composite for winged-zebrafish in gt-l4-t1.json" ;
+    dct:description "From swarm/benchmark/fixtures/gt-l4-t1.json#results: phenotype_similarity pass, functional_resolution fail, physics_check fail, genotype_similarity cannot-assess, lean_check cannot-assess for the desired phenotype of gliding at least 5 m from a 1 m launch and surviving 10-30 C as an adult. From #composite_score_from_the_scorer: composite 0.878, plausible true, scorer version 1.0.0, not the verdict, no gate feeds it. From #verdict: validated withheld, scales not assessed are cell, tissue, organ_system." ;
+    schema:additionalProperty sub:pv-composite, sub:pv-failed, sub:pv-unassessed-gates, sub:pv-unassessed-scales, sub:pv-exit, sub:pv-withheld, sub:pv-version .
+
+  sub:pv-composite a schema:PropertyValue ;
+    schema:propertyID "composite_score" ;
+    schema:value 0.878 ;
+    schema:description "Scorer composite, flagged plausible true; reference only, not the verdict (gt-l4-t1.json#composite_score_from_the_scorer)." .
+
+  sub:pv-version a schema:PropertyValue ;
+    schema:propertyID "scorer_version" ;
+    schema:value "1.0.0" ;
+    schema:description "Scorer version that produced the composite (gt-l4-t1.json#composite_score_from_the_scorer)." .
+
+  sub:pv-failed a schema:PropertyValue ;
+    schema:propertyID "gates_failed" ;
+    schema:value 2 ;
+    schema:description "functional_resolution and physics_check failed (gt-l4-t1.json#results)." .
+
+  sub:pv-unassessed-gates a schema:PropertyValue ;
+    schema:propertyID "gates_cannot_assess" ;
+    schema:value 2 ;
+    schema:description "genotype_similarity and lean_check could not be assessed (gt-l4-t1.json#results)." .
+
+  sub:pv-unassessed-scales a schema:PropertyValue ;
+    schema:propertyID "scales_not_assessed" ;
+    schema:value 3 ;
+    schema:description "Biological scales not assessed: cell, tissue, organ_system (gt-l4-t1.json#verdict.scales_not_assessed)." .
+
+  sub:pv-exit a schema:PropertyValue ;
+    schema:propertyID "cli_exit_code" ;
+    schema:value 1 ;
+    schema:description "Exit code 1 means some gate failed (0 all passed, 2 nothing failed but something not assessable); this run exited 1 (sim-engine/validate-cli.mjs:17)." .
+
+  sub:pv-withheld a schema:PropertyValue ;
+    schema:propertyID "word_validated_withheld" ;
+    schema:value "true" ;
+    schema:description "Validator withheld the word validated: 2 gate(s) failed; 2 gate(s) could not be assessed; 3 biological scale(s) could not be assessed; no sequence compared at any locus (gt-l4-t1.json#verdict.withheld_because)." .
+}
+
+sub:provenance {
+  sub:assertion prov:wasAttributedTo <https://w3id.org/delphi/resource/agent/drafting-agent-0> ;
+    prov:wasDerivedFrom "swarm/benchmark/fixtures/gt-l4-t1.json#results",
+      "swarm/benchmark/fixtures/gt-l4-t1.json#composite_score_from_the_scorer",
+      "swarm/benchmark/fixtures/gt-l4-t1.json#verdict.word_validated_withheld",
+      "swarm/benchmark/fixtures/gt-l4-t1.json#verdict.withheld_because",
+      "swarm/benchmark/fixtures/gt-l4-t1.json#verdict.scales_not_assessed",
+      "sim-engine/validate-cli.mjs:17" .
+}
+
+sub:pubinfo {
+  this: dct:created "2026-11-01T00:00:00Z"^^xsd:dateTime ;
+    dct:creator <https://w3id.org/delphi/resource/agent/drafting-agent-0> ;
+    rdfs:label "Draft: high scorer composite coexists with failing and unassessable gates on winged-zebrafish" ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    npx:hasNanopubType delphi:Claim ;
+    npx:introduces <https://w3id.org/delphi/resource/claim/high-composite-with-failing-gates> ;
+    delphi:domain <https://w3id.org/delphi/resource/domain/design-validation> ;
+    rdfs:comment "Unsigned draft nanopublication, not published; no signature or trusty URI has been applied." .
+
+  <https://w3id.org/delphi/resource/domain/design-validation> rdfs:label "Design validation" .
+}

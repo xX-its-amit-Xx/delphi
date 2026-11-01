@@ -109,8 +109,20 @@ scoped to Exocoetidae adults. A design that names no taxon is out of scope for e
 must stay in step. A taxon outside the small table (`SCOPE_PARENT` in browser-check-lawset.fragment.mjs) is
 treated as out of scope, never red.
 
-Sanity rule, enforced in test.mjs: no ACCEPTED law may be red for an unedited measured wild type within its own
-scope. If one is, the law or its constants is wrong and must be contested (`contest.mjs`).
+A law may also state WHAT KIND OF CLAIM it judges: `scope.applies_to` and `scope.excludes` (plain words). The
+aerobic laws (E3 2.1.0, fick-principle 1.2.0) use them to say they bound sustained aerobic power DEMAND — powered
+level or climbing flight, sustained swimming — and not unpowered descent or glide, whose work comes from potential
+and kinetic energy rather than metabolism, nor burst effort on white-muscle stores. The checker enforces that: a
+design declaring an unpowered glide (`flight_mode: 'glide'`, `powered: false`, or glide geometry with no power
+source or climb) gets `out-of-scope` on C14 and E3 instead of `violated`. When a design says nothing, those rows
+still evaluate and say so in the note, so an existing powered-flight elimination is not silently dropped.
+
+Sanity rule, enforced in test.mjs by a STANDING check over real organisms making realistic claims (the Park and
+Choi flying fish in an ordinary glide, the resolved zebrafish adult and larva, the adult holding station in a
+current): no ACCEPTED law may be violated by a real organism within its own scope. If one is, either the law or its
+constants is wrong (contest it with `contest.mjs`) or it is being applied outside its scope (fix the mapping and
+state the limit in `scope.excludes`). The fixtures use sourced numbers only. Its broken input is the defect it was
+written for: the same glide mapped as a sustained powered demand, which the check must report.
 
 ## Using it from the Design Studio (browser-check.mjs API)
 
@@ -132,7 +144,7 @@ The design should carry `taxon` (e.g. 'Danio rerio', 'Exocoetidae', 'Cypselurus 
 
 | field | meaning |
 |---|---|
-| `verdict` | `holds`, `violated` (red), `cannot-evaluate`, **`contested`** (amber: the formula says violated but the law is contested), **`candidate-violated`** (grey/flagged: a candidate law the formula says is violated), **`out-of-scope`** (grey), **`not-in-lawset`** (the law is proposed, retired, or absent from the chosen law set) |
+| `verdict` | `holds`, `violated` (red), `cannot-evaluate`, **`unknown-lawset`** (grey: the law set asked for is not in this generated file; nothing was judged, `unknown_lawset_reason` says so), **`contested`** (amber: the formula says violated but the law is contested), **`candidate-violated`** (grey/flagged: a candidate law the formula says is violated), **`out-of-scope`** (grey), **`not-in-lawset`** (the law is proposed, retired, or absent from the chosen law set) |
 | `computed_verdict` | what the formula said before the law-set judgement |
 | `lawset` | the law-set version this row was judged against: show "judged against law set vX.Y.Z" |
 | `law` | `{law_id, version, kind: 'physical'\|'biological', status}` in that law set |
@@ -141,6 +153,99 @@ The design should carry `taxon` (e.g. 'Danio rerio', 'Exocoetidae', 'Cypselurus 
 
 Only `display: 'red'` means "violates a law". A Studio page that still maps `/^viol/` to red keeps working:
 `contested` and `out-of-scope` do not match it, and `candidate-violated` does not either.
+
+## Declarative browser check (`browser_check`): how a new law comes to BIND anything
+
+A law can be accepted, released in a law set, served by every tool, shown in the Studio's law list — and
+evaluate **nothing**. That happened, and it is the worst failure this registry can have, because every surface
+then reports a design as checked against the law while no arithmetic ran. False assurance is worse than no law.
+
+The cause: every other row in `lean/eliminate/browser-check.mjs` is a **hand-written formula** keyed by a
+constraint id in the generator's `USED` list. A law whose constraint id has no formula there produces no row.
+It shows up only in `laws_without_browser_evaluation`, which used to fail nothing.
+
+So a law file may carry an optional **`browser_check`** block, and the row for it is generated from that block.
+The block is **data**: add it to the law file, run the two generators, cut a release, and the law binds on every
+surface with **no code edited anywhere**.
+
+```json
+"constraints": ["TL1"],
+"browser_check": {
+  "constraint": "TL1",
+  "quantity": "mass_kg",
+  "op": "le",
+  "bound": "rho_max * SL_m ^ 3",
+  "defaults": { "rho_max": 1000000 },
+  "inputs": ["mass_kg", "SL_m"],
+  "relation": "mass_kg <= 1e6 kg/m^3 x SL_m^3",
+  "note": "one line saying what this row does and does not mean",
+  "unit": "kg",
+  "band": "hypothesis",
+  "tolerance": "relative"
+}
+```
+
+| field | meaning |
+|---|---|
+| `constraint` | the row id. **Must also appear in this law's own `constraints` array**, or the row maps back to no law. It must not be a constraint id of `lean/constraints.json` (those have hand-written formulas); the generator refuses a collision. |
+| `quantity` | expression for the left-hand side |
+| `op` | `le` `lt` `ge` `gt` `eq` `between` |
+| `bound` | right-hand side (every `op` but `between`) |
+| `lo`, `hi` | the two ends (`op: "between"`) |
+| `defaults` | `{name: finite number}` constants the expressions may use |
+| `inputs` | spec fields that must be present; derived from the expressions when omitted. A missing input gives `cannot-evaluate` and names it — a declared row **never** defaults a number it was not given |
+| `relation`, `note` | required prose: the relation as a reader sees it, and what the row does not mean |
+| `band` | `proved` / `empirical` / `hypothesis` (which band the Studio draws it in; default `empirical`) |
+| `tolerance` | `relative` (default: the same ulp tolerance every computed-bound row uses) or `exact` |
+
+**Expressions** are arithmetic over spec field names: numbers, `+ - * / ^` (`**`), parentheses, unary minus, and
+`sqrt abs log log10 exp min max pow`. They are **parsed, never `eval`'d** (there is no property access and no
+call into anything else), so a law file cannot run code in anyone's browser. The field names are the ones at the
+top of `browser-check.mjs`, plus the derived quantities the hand-written rows compute and pass through:
+`W_N`, `S_m2`, `liftingArea_m2`, `powerRequired_W`, `powerAvailable_W`, `lengthRatio`, `impliedMassExponent`.
+
+`browser_check` **is inside `content_hash`**, because it is part of what the law says about a design: editing it
+needs a version bump, exactly like editing the statement. It is deliberately `undefined` rather than `null` when
+absent, so every law written before the field existed keeps its hash and every released law-set pin stays valid.
+
+**`check-exposed.mjs` enforces all of this:**
+
+| check | fails when |
+|---|---|
+| `bind:accepted` | an **accepted** law (pinned in the current set, or already marked accepted in its file) produces no row attributed to it. The only way out is an entry in `NO_DESIGN_ROW` in `check-exposed.mjs` **with the reason it cannot be a design row and what would make it bind** — and that entry itself fails (`bind:exempt-stale`) once it stops being true. |
+| `bind:unclaimed` | the evaluator emits a row no law claims, so `lean_check` drops it as unmapped and no surface shows it (provenance rows, which can never read as a violation, are exempt) |
+| `bind:declared` | a `browser_check` block is not wired to its law, or its row is not in the generated file |
+| `a:unreleased` | an accepted law is pinned by no law set, so `lean_check` excludes it |
+| `stale:page-checker` | the Studio page's bundled copy of the evaluator has forgotten the **current** law set, so anything importing it directly judges every row `unknown-lawset` |
+
+A candidate or proposed law that binds nothing is a **note**, not a failure: it binds nothing by status anyway.
+Give it a block before it is accepted.
+
+Per-law capture, hop by hop, for a release you want to be able to show rather than assert:
+
+```bash
+node lean/registry/law-surfaces.mjs <law_id> [--design '<json>']
+```
+
+## Releasing: order matters
+
+A law set is only in force once `lawsets/current.json` names it, and the generated checker embeds the law sets it
+knows. Moving the pointer first broke every caller once ("unknown law set 1.6.0" out of `checkDesign`, mid-release).
+Three guards now make that impossible rather than remembered:
+
+1. **release.mjs regenerates, then points.** It writes `lawset-<v>.json` and the CHANGELOG entry, runs
+   `lean/eliminate/build-browser-check.mjs` and `dashboard/build-lean-api.mjs`, asks the regenerated checker whether
+   it knows the new version, and only then writes `current.json` (rebuilding the mirror once more, since the mirror
+   embeds the pointer). If regeneration fails, or the checker does not know the version, it exits non-zero and leaves
+   `current.json` alone: the new lawset file sits on disk unreferenced and callers keep judging against the old one.
+   `--no-regen` skips regeneration and therefore also refuses to move the pointer.
+   `regenerateCheckers(version)` and `lawsetsKnownToChecker()` are exported for a caller that wants the gate alone.
+2. **The checker fails soft.** `judgeRows` (so `check`) no longer throws on an unknown law set: every row comes back
+   `verdict: 'unknown-lawset'`, `display: 'grey'`, with `unknown_lawset_reason` naming the versions the file knows.
+   `lawsetKnown(version)` lets a caller ask first. A half-landed release degrades to "nothing judged" instead of an
+   exception.
+3. **Tests.** `test.mjs` checks that the generated checker knows the version `current.json` names, and that an
+   unknown law set degrades instead of throwing (its broken input is the old throwing behaviour).
 
 ## Proposing a law (propose.mjs)
 

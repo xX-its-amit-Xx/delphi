@@ -16,7 +16,7 @@
  * OWNED and re-running, or by pasting the block this script prints with
  * --emit <page>.
  */
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -53,9 +53,13 @@ const MODES = {
 const GROUPS = [
   { key: 'results', label: 'Results', items: [
     { key: 'results',  href: 'results/',        text: 'Results' },
+    { key: 'scorer',   href: 'scorer/',         text: 'Design scorer' },
     { key: 'deck',     href: 'deck/',           text: 'Pitch deck' },
     { key: 'print',    href: 'print/',          text: 'Printable kit' },
-    { key: 'agents',   href: 'studio-api/',     text: 'For agents' },
+    { key: 'agents',   href: 'studio-api/',     text: 'Validate a design' },
+    { key: 'genediff', href: 'gene-diff/',      text: 'Gene diff' },
+    { key: 'bench',    href: 't/benchmark/',     text: 'Swarm benchmark' },
+    { key: 'docs',     href: 'docs/',           text: 'Product report' },
     { key: 'swarmb',   href: 'swarm-board/',    text: 'Swarm board' },
     { key: 'evolve',   href: 'evolve/',         text: 'Enzymes' }
   ]},
@@ -98,7 +102,20 @@ const OWNED = {
   't/organism/index.html':  'organism',
   't/physics/index.html':   'physics',
   't/swarm/index.html':     'swarm',
-  't/validation/index.html':'valid'
+  't/validation/index.html':'valid',
+  // Adopted the shell later, via other threads. Added to OWNED by the hub so the build keeps every
+  // header identical: the drift audit found these at 27-31 links against a 33-link nav, which is the
+  // original several-pages-several-headers problem growing back.
+  'print/index.html':       'print',
+  'studio-api/index.html':  'agents',
+  'swarm-board/index.html': 'swarmb',
+  'leanbio/index.html':     'leanbio',
+  'leanbio/capability.html': null,
+  'record/index.html':      'record',
+  'scorer/index.html':      'scorer',
+  'gene-diff/index.html':   'genediff',
+  't/benchmark/index.html': 'bench',
+  'docs/index.html':        'docs'
 };
 
 /* ------------------------------------------------------------- link verifying */
@@ -247,3 +264,41 @@ const dropped = notes.filter(n => n.startsWith('DROPPED')).length;
 console.log(`  ${notes.length - dropped} link(s) resolve, ${dropped} dropped\n`);
 console.log(check ? 'pages (dry run)' : 'pages');
 for (const [rel, cur] of Object.entries(OWNED)) console.log('  ' + applyTo(rel, cur, !check));
+
+/* ---------------------------------------------------------------- drift audit
+ * A page that pastes the shell block but is not listed in OWNED is never
+ * refreshed, so its copy of the navigation silently falls behind every later
+ * addition: the site goes back to having several different headers, which is
+ * the thing this shell exists to stop. Nothing is written here -- the owning
+ * thread adds one line to OWNED and the build keeps its block current. */
+function audit(dir, out = []) {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, e.name);
+    if (e.isDirectory()) { if (e.name !== 'node_modules') audit(full, out); }
+    else if (e.name.endsWith('.html')) out.push(full);
+  }
+  return out;
+}
+const rows = [];
+for (const file of audit(PUB)) {
+  const rel = file.slice(PUB.length + 1).split('\\').join('/');
+  if (OWNED[rel]) continue;
+  let html = '';
+  try { html = readFileSync(file, 'utf8'); } catch { continue; }
+  const hasBlock = html.includes(START), hasCss = /shared\/shell\.css/.test(html);
+  if (!hasBlock && !hasCss) continue;
+  if (!hasBlock) { rows.push(`PARTIAL  ${rel}  loads shell.css but has no header block`); continue; }
+  const depth = rel.split('/').length - 1;
+  const key = GROUPS.flatMap(g => g.items).concat(MODES.items)
+    .find(i => i.href === rel.replace(/index\.html$/, '') || i.href === rel)?.key || null;
+  const want = shellFor('../'.repeat(depth), key);
+  const s = html.indexOf(START), e2 = html.indexOf(END, s);
+  const have = e2 === -1 ? '' : html.slice(s, e2 + END.length);
+  const n = (have.match(/class="dsh-link"/g) || []).length;
+  rows.push(have === want
+    ? `current  ${rel}`
+    : `STALE    ${rel}  ${n} link(s) in its block, ${want.match(/class="dsh-link"/g).length} in this build -- add '${rel}': ${key ? `'${key}'` : 'null'} to OWNED`);
+}
+console.log('\npages outside OWNED that use the shell');
+if (!rows.length) console.log('  none');
+for (const r of rows) console.log('  ' + r);

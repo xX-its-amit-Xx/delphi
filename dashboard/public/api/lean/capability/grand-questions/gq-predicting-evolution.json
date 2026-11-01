@@ -1,0 +1,163 @@
+{
+ "map_version": "1.0.0",
+ "as_of": "2026-11-01",
+ "the_line": "Lean proves that a conclusion follows from stated premises. It does not adjudicate reality. Every theorem in this repo is of the form 'if these premises hold, then this follows', and a kernel proof of it is silent on whether any organism satisfies the premises. So a grand question has a formalisable core exactly to the extent that part of the disagreement about it is a disagreement about what follows from what, and an empirical remainder exactly to the extent that it is a disagreement about what the world is like. Most of these questions are mostly remainder. Two of them (the Price equation, Hamilton's rule) are disputes in which the formal part has been repeatedly confused with the empirical part for decades, and those are the ones where formalisation would do the most good. A capability map that let the first kind of progress be read as the second would be worse than no map.",
+ "id": "gq-predicting-evolution",
+ "name": "Predicting evolution",
+ "question": "Can we say what a population will do next, and if not in detail, then what can we rule out?",
+ "formalisable_core": {
+  "has_core": true,
+  "strength": "strong",
+  "statements": [
+   {
+    "claim": "If a neutral allele is present in i copies among M in a stated Markov chain, then its fixation probability is i over M, so a claimed fixation probability outside that is impossible.",
+    "settles": "The neutral baseline against which any prediction is measured, proved as a limit of the chain rather than asserted.",
+    "lean": "Delphi.NeutralChain.fixedBy_tendsto, Delphi.fixationProbability_eq, Delphi.wrightFisher_fixation_one",
+    "module": "lean/Delphi/Kimura.lean",
+    "law_id": "kimura-fixation-probability",
+    "state": "proved-here"
+   },
+   {
+    "claim": "If selection does not oppose a mutant, then its fixation probability is at least the neutral value, so a claimed probability below the neutral value for a non-deleterious mutant is impossible.",
+    "settles": "A one-sided bound that eliminates without needing the selection coefficient, which is usually the unmeasured quantity.",
+    "lean": "Delphi.FavoredChain.fixationProbability_ge, Delphi.wrightFisherSelection_fixation_one_ge",
+    "module": "lean/Delphi/Favored.lean",
+    "law_id": "favored-fixation-lower-bound",
+    "state": "proved-here"
+   },
+   {
+    "claim": "If substitutions are neutral, then the substitution rate equals the mutation rate, independent of population size, so a claimed rate that depends on population size does not follow under neutrality.",
+    "settles": "Kimura's result, which is the single most used prediction in molecular evolution and the one most often stated without its premise.",
+    "lean": "Delphi.neutral_substitution_rate",
+    "module": "lean/Delphi/Kimura.lean",
+    "law_id": "kimura-substitution-rate",
+    "state": "proved-here"
+   },
+   {
+    "claim": "If a claimed adaptive trajectory requires n substitutions in T generations at mutation rate mu in population M, then the expected waiting time bounds whether it is possible at all.",
+    "settles": "Prediction as elimination, which is the honest formalisable form of this question: not what will happen, but what cannot.",
+    "lean": "Delphi.Genotype.expectedWaitingTime_bounds, Delphi.Constraints.supply_rules_out",
+    "module": "lean/Delphi/Genotype.lean, lean/Delphi/Constraints.lean",
+    "law_id": "genotype-substitution-time",
+    "state": "proved-here"
+   }
+  ]
+ },
+ "empirical_remainder": {
+  "has_remainder": true,
+  "share": "most",
+  "items": [
+   {
+    "what": "The fitness landscape itself.",
+    "why_not_provable": "Landscapes are measured, not derived, and de Visser and Krug's point is that the metaphor was used for decades before anyone measured one.",
+    "measurement": "Combinatorially complete mutant sets with fitness assayed for every genotype."
+   },
+   {
+    "what": "Whether selection coefficients are constant, and whether epistasis is weak.",
+    "why_not_provable": "Facts about the organism and its environment.",
+    "measurement": "Competition assays across environments and genetic backgrounds."
+   },
+   {
+    "what": "The actual population size history, which every fixation calculation needs.",
+    "why_not_provable": "A demographic fact, usually inferred rather than observed.",
+    "measurement": "Genomic inference of effective population size, with its own model assumptions."
+   },
+   {
+    "what": "Whether prediction is even possible beyond the short term, given contingency.",
+    "why_not_provable": "An open empirical question about how much of evolution is repeatable.",
+    "measurement": "Parallel replicate evolution experiments, and natural replicates across independent colonisations."
+   }
+  ]
+ },
+ "in_repo": [
+  {
+   "kind": "lean-theorem",
+   "ref": "Delphi.NeutralChain (fixedBy, fixedBy_tendsto, fixationProbability_eq, wfKernel, wrightFisher, substitutionRate, neutral_substitution_rate)",
+   "note": "A full finite-population Markov chain development with fixation proved as a limit and the Wright-Fisher kernel constructed, not postulated.",
+   "strength": "real"
+  },
+  {
+   "kind": "lean-theorem",
+   "ref": "Delphi.FavoredChain (fixationProbability_ge, fixationProbability_le_one, binomialKernel, wrightFisherSelection, wrightFisher_toFavored_fixedBy)",
+   "note": "The with-selection chain and a proved lower bound, plus a proved relation back to the neutral chain so the two are not separate stories.",
+   "strength": "real"
+  },
+  {
+   "kind": "lean-theorem",
+   "ref": "Delphi.Constraints.kimura_rate_rules_out, kimura_rate_ratio_rules_out, neutral_fixation_rules_out, favored_fixation_rules_out, supply_rules_out, supply_rules_out'",
+   "note": "Six elimination theorems: the prediction turned into a ruling-out, which is what the eliminate pipeline consumes.",
+   "strength": "real"
+  },
+  {
+   "kind": "registry-law",
+   "ref": "kimura-substitution-rate, kimura-fixation-probability, kimura-heterozygosity, favored-fixation-lower-bound, genotype-substitution-time, haldane-cost-of-selection",
+   "note": "Six registry laws bearing directly on what a population can and cannot do in a given time.",
+   "strength": "real"
+  }
+ ],
+ "tools_needed": [
+  {
+   "name": "lean_check",
+   "status": "PARTIAL",
+   "note": "Can evaluate a substitution-budget claim. It cannot evaluate a claim about a fitness landscape, because no law here constrains one.",
+   "gap_id": "lean-genotype-network"
+  },
+  {
+   "name": "lean_law_get",
+   "status": "EXISTS",
+   "note": "The Kimura and favoured-fixation statements with their premises, which is what distinguishes the neutral prediction from its usual unconditional restatement."
+  },
+  {
+   "name": "lean_module_genotype_network",
+   "status": "MISSING",
+   "note": "To predict on a landscape one must first be able to state one formally. Nothing here can.",
+   "gap_id": "lean-genotype-network"
+  },
+  {
+   "name": "evidence_value",
+   "status": "MISSING",
+   "note": "Which measurement would most sharpen a prediction, which is the practical question behind this grand question.",
+   "gap_id": "evidence-value"
+  }
+ ],
+ "open_problem_ids": [
+  "SMC-09"
+ ],
+ "citations": [
+  "lassig2017",
+  "devisser2014",
+  "nosil2020"
+ ],
+ "use_cases": [
+  "uc-trajectory-possible",
+  "uc-what-would-settle",
+  "uc-tautology-or-content"
+ ],
+ "citations_resolved": {
+  "lassig2017": {
+   "ref": "Lassig M, Mustonen V, Walczak AM (2017). Predicting evolution. Nature Ecology & Evolution 1:77.",
+   "doi": "10.1038/s41559-017-0077",
+   "pmid": "28812721",
+   "verified_via": "europepmc",
+   "quotable": "The face of evolutionary biology is changing: from reconstructing and analysing the past to predicting future evolutionary processes",
+   "note": "the programmatic review of evolutionary prediction"
+  },
+  "devisser2014": {
+   "ref": "de Visser JA, Krug J (2014). Empirical fitness landscapes and the predictability of evolution. Nature Reviews Genetics 15:480-490.",
+   "doi": "10.1038/nrg3744",
+   "pmid": "24913663",
+   "verified_via": "europepmc",
+   "quotable": "The genotype-fitness map (that is, the fitness landscape) is a key determinant of evolution, yet it has mostly been used as a superficial metaphor",
+   "note": "fitness-landscape basis of predictability"
+  },
+  "nosil2020": {
+   "ref": "Nosil P, Flaxman SM, Feder JL, Gompert Z (2020). Increasing our ability to predict contemporary evolution. Nature Communications 11:5592.",
+   "doi": "10.1038/s41467-020-19437-x",
+   "pmid": "33154385",
+   "verified_via": "europepmc",
+   "quotable": "Increasing our ability to predict contemporary evolution",
+   "note": "the Europe PMC record carries no abstract text."
+  }
+ },
+ "scope": "This is a map of what is formalisable, not a research programme and not a claim that the formalisable parts are the important parts. The (a)/(b) split is a judgement made here and is arguable for every entry; where it is contentious the dispute field says so. The list is not exhaust: there is no canonical set of grand questions in biology, and this one is weighted toward evolution, development and scaling because that is what this project reads. Several entries have no counterpart in open-problems/problems.json, which is a gap in that enumeration rather than evidence the question is settled. Nothing here is about the held-out exam clade."
+}

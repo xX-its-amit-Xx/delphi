@@ -20,7 +20,9 @@ assert.equal(by(r5, 'C9').verdict, 'violated');
 assert.equal(by(r10, 'C9').kernel, KERNEL_NOTE);
 // Two bands. A PROVED row carries the kernel note and names its theorem and module; an EMPIRICAL row carries
 // the conditional sentence, the observation it rests on, and the entry a reader would reject to drop it.
-const proved = r10.filter(r => r.band !== 'empirical' && r.id !== 'unconstrained-inputs');
+// The proved band is NAMED, not inferred by exclusion: only a row claiming a kernel-checked theorem has to name
+// one. The 'empirical' and 'hypothesis' bands and declarative registry rows legitimately have no theorem.
+const proved = r10.filter(r => r.band === 'proved');
 const empirical = r10.filter(r => r.band === 'empirical');
 assert.ok(proved.length >= 11 && proved.every(r => r.kernel === KERNEL_NOTE && r.theorem && r.module));
 assert.ok(empirical.length === 5 && empirical.every(r => r.conditionalOn && r.observation && r.observationSource && r.kernel !== KERNEL_NOTE));
@@ -51,7 +53,9 @@ assert.equal(by(check({ glideHeight_m: 8, LD_max: 15.7, glideDistance_m: 50 }), 
 
 // Missing inputs are named, never passed.
 const empty = check({});
-assert.ok(empty.every(r => r.verdict === 'cannot-evaluate' && (r.missing.length > 0 || r.verdictKind === 'provenance')));
+// 'not-in-lawset' is also acceptable: a law the chosen law set does not pin is not judged at all. Either way the
+// row must name the inputs it lacked.
+assert.ok(empty.every(r => (r.verdict === 'cannot-evaluate' || r.verdict === 'not-in-lawset') && (r.missing.length > 0 || r.verdictKind === 'provenance')));
 assert.ok(by(check({ ...base, airspeed_m_s: 12, gillArea_m2: 0.01 }), 'C14').missing.includes('arterialO2'));
 // Viz design shape and aliases; environment from conditions/baseline.json.
 import { ENVIRONMENT } from './browser-check.mjs';

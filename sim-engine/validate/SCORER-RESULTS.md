@@ -173,6 +173,213 @@ v1.0.0 passed 4 of 8; v1.1.0 passes 5 of 8.
 whose validation was blind.
 <!-- V11:END -->
 
+## physics_simulation and the second Lean round: five named results, and what each licenses
+
+Two more results landed from other threads and are wired in as **gates beside the composite**, never into
+`rank_score`, on the same reasoning as `functional_resolution` above.
+
+### The five results, and the distinction that justifies having five
+
+| result | what it licenses |
+|---|---|
+| `genotype_similarity` | sequence-level STATE: identity to real orthologues, whether an edited state exists in a real organism |
+| `phenotype_similarity` | shape similarity to real specimens, and how far out the design sits |
+| `lean_check` | **the design breaks no law — necessary, and not sufficient** |
+| `functional_resolution` | how each difference from the closest functional analogue is accounted for |
+| `physics_simulation` | **whether the design actually does the thing** |
+
+Those two sentences are kept together wherever the two results appear, including in the panel. A design can break
+no law and still be unable to fly.
+
+**The case that makes this concrete, and which is now a test:** the winged zebrafish scores **0.9217 and is called
+plausible**, breaks no accepted law, and **fails the physics gate** — launch 0.67 m/s against a minimum flight
+speed of 8.64, with a lifting area 166x too small. One number could not have said that. Five results can.
+
+### Gate semantics I was asked to preserve, and did
+
+`physics_gate_failed` is true **only when a hard criterion is NOT MET**. A hard criterion with **no model** does
+not raise it: that sets `gate_status: 'incomplete'` and lists the criterion under `unchecked_requirements`, because
+*"we could not check it" is not "it failed"*. The field to read is `function_achieved`, true only when every hard
+criterion is met **and** none is unchecked. A test asserts exactly this, and fails when the wiring is flipped.
+
+Controls reproduced independently here: flying-fish glide **pass** (`function_achieved: true`), zebrafish asked
+only to swim **pass**, TFF powered flight **fail**, winged zebrafish **fail**, wingless flying fish **fail**.
+
+### Model honesty, stated as the module states it
+
+Every glide-based check returns `model_confidence: circular`, read at call time from each scenario's model card and
+the studio validation run rather than hard-coded. **The non-circular part of this result is the negative controls:**
+each turns on an inequality between independently sourced quantities rather than on a fitted number. That is the
+honest claim for this result, and it is what the panel says.
+
+### The second Lean round
+
+`validate_design` now reports Lean **twice**: round 1 against the law set the design was made under (read off the
+`lawset_version` its edits record), round 2 against the set in force now. I verified both the claim that scores are
+unaffected and the history it reports, rather than taking either on trust:
+
+- Published scores are **unchanged** (zebrafish 0.9217, winged zebrafish 0.9217, TFF 0.3492, chimera 0.8201), and a
+  test now asserts this so a future change to the tool layer cannot move them silently.
+- A thermal design made under law set 1.0.0 comes back with **`newly_violated_since: perturb-thermal/P1`** — a law
+  admitted after the design was made, which the design now breaks.
+- The same design across **1.4.0 to 1.5.0** comes back under **`newly_binding_since`**, because 1.5.0 raised
+  perturb-thermal from candidate to accepted: **grey in the studio then, red today, with no change to the design.**
+- `newly_violated_without_a_law_change` is empty, which is the module's own check for a caller bug reporting clean.
+
+A design recording no law set gets two identical rounds **by construction**, and the panel says so explicitly,
+because that must never read as "nothing has changed since it was made".
+
+### One fix in my own layer
+
+The tool layer pushes two provenance rows (the two law sets) onto the envelope after `lib/envelope.mjs` has
+already computed `counts` and `weakest_input`, which left `counts` under-reporting by 2. Both are honesty fields,
+so they are recomputed after the push. While fixing it I first derived the order by reversing `KINDS`, which is
+**not** the weakest-to-strongest order `envelope.mjs` uses — it ranks `borrowed` below `derived`, and would have
+reported `derived` where `envelope.mjs` reports `borrowed`. The order is now repeated verbatim with a comment
+saying why it is not derived, and the mistake is recorded here because it was mine.
+
+
+## functional_resolution: the fourth named result, and why it stays out of the composite
+
+`functional_resolution` is exposed beside `genotype_similarity`, `phenotype_similarity` and `lean_check`, in
+`designScore` and in `validate_design` (`result.results`), and on the Validate panel. The ledger is built by
+another thread in `sim-engine/validate/functional/`; I consume it through `validate/functional-interface.mjs`,
+which states the shape, validates what comes back, recomputes the counts from the rows so a module summary cannot
+disagree with its own entries, and reports "did not run" when the module is absent. Nothing is assumed in its
+place.
+
+**Where I will not put it: inside the composite score or `rank_score`.** I agree with the coordinator, and the
+reasons are measurable rather than stylistic.
+
+1. **Thin-data terms have already cost real organisms in this scorer.** When I added the larval envelope from two
+   lineages in v1.1.0, C3 got *worse*, 83 % to 75 %. When I tightened the fin envelope, a real mutant (prdm1a tp39)
+   lost its plausible status. Both were honest attempts to add a signal from sparse data, and both produced false
+   negatives on real biology. The functional ledger is sparser still.
+2. **A sparse component breaks ranking in a way the number hides.** The composite renormalises the weights over the
+   components that actually ran. A design with a ledger would therefore be scored on a different weighting from one
+   without, so the two scores would not be comparable — and ranking synthetic designs is the whole purpose. This is
+   exactly why `S` is excluded when no spec is given.
+3. **It would let a hypothesis pay for a gap.** If a resolution raises the score, then asserting "this difference
+   could be compensated" raises the score, and a design with an unexplained gap scores *higher* by adding a
+   hypothesis. That is the v1.2.0 "absence = pass" failure in a worse form: not absence passing, but a claim paying
+   for absence. A compensation decision rule narrows this but cannot close it, because the rule's evidence base is
+   the transcriptional-adaptation literature in zebrafish, not in the analogue.
+4. **Coverage, not the resolved fraction, is the honest headline.** There is no flying-fish transcriptome or
+   proteome, and about 9 focal genes are mapped against 4 571 in the vetted map. A resolved fraction computed over
+   9 genes would be precise and close to meaningless.
+
+**Where it does belong:** beside the score, as a gate, exactly like the Lean gate. `functional_gate_failed` is true
+when any difference is UNRESOLVED, and the gate string says the design is not functionally accounted for whatever
+the similarity scores say. A gate changes the verdict's wording and not the ranking, so it cannot distort a
+comparison between designs.
+
+**What would change my mind,** and the conditions I would want on it: a new version with its own pre-registration
+hashed first; only demonstrated classes counted, never COMPENSATORY; a coverage floor below which the component
+does not run at all, so it cannot be gamed by classifying one easy difference; and a benchmark negative family that
+specifically exercises function, showing the term moves AUC without costing real organisms plausible status. Until
+there is a negative set it can be shown to catch, folding it in would be tuning against a hope.
+
+
+## v1.3.0: shuffled synthetic organisms cannot be caught without a joint model
+
+Pre-registration: `SCORER-PREREGISTRATION-v1.3.0.md`, sha256 `bac949e8...`, hashed before the run. Weights:
+`score-weights.v1.3.0.json`. Model: `joint.mjs`, `data/joint-model.v1.3.0.json`,
+`data/joint-calibration.v1.3.0.json`. Dev only; `heldout/` not read. v1.2.0 is untouched and still frozen for the
+blind run.
+
+### The finding, stated plainly
+
+**Detecting a shuffled synthetic organism requires a joint model. No set of per-trait ranges can do it, however
+well tuned.**
+
+The benchmark's standard decoys take each trait from a specimen of a different family. Every marginal therefore
+sits exactly where real fish sit, and only the **correlations between traits** are broken. A scorer assembled from
+per-trait envelopes asks only "is each trait a value a real fish could have?", and for these decoys the answer is
+yes for every trait. v1.2.0 scored **AUC 0.498 against FishBase decoys**: a coin flip, from 25 envelopes and
+20 traits. That is a structural limit of marginal checks, not a tuning shortfall.
+
+This matters beyond the benchmark. A generative model that gets every trait distribution right and the
+*correlations* wrong produces organisms that a marginal scorer calls plausible. Scoring synthetic designs needs a
+term that reads the joint structure.
+
+### What v1.3.0 adds
+
+One term, `p_joint`: the Mahalanobis distance of the log10 trait vector under a Gaussian fitted on dev positives,
+with the design's **own family held out of the fit exactly** (by subtracting that family's sufficient statistics).
+Calibrated empirically against real fish under leave-own-family-out, because real fish have far fatter tails than a
+Gaussian implies (q99 about 5-7 against chi-square's 2.4). It reports **which trait pair** is in an impossible
+combination, with that pair's correlation among real fish, so a low score is explainable.
+
+Everything else is v1.2.0 unchanged, reached through injection points so v1.2.0's behaviour is untouched.
+
+### Dev results, leave-one-family-out, 5 410 items, `rank_score`
+
+| endpoint | threshold | v1.2.0 | **v1.3.0** |
+|---|---|---|---|
+| P1 FishShapes positives vs decoys, AUC | >= 0.75 | 0.871 | **0.897** |
+| P2 easy negatives below the positives' 5th percentile | >= 90 % | 100 % | **100 %** (all four types) |
+| P3 median positive above the decoy 75th percentile | pass | **fail** (0.860 vs 1.000) | **pass** (0.819 vs 0.655) |
+| S1 FishBase positives vs decoys, AUC | >= 0.70 | **0.498** | **0.823** |
+| S2 hard negatives, AUC | >= 0.60 | **0.538** | **0.641** |
+| S4 ontogeny stages above the decoy median | >= 75 % | 75 % | **100 %** |
+| distinct values among 5 410 rows | | 1 310 | **5 064** (94 %) |
+| real positives still scored plausible | | 99.2 % | 98.7 % |
+
+Every pre-registered threshold is met on dev. The cost is as predicted and small: 0.5 % of real positives lose
+plausible status, because a calibrated test puts about 5 % of real fish in its own tail and some of those fall
+below the cut.
+
+**My predictions, scored honestly.** S1, S2, P1 and the sensitivity cost came out as predicted.
+I predicted **P3 may still fail**; it passed, because the joint term moved the decoy 75th percentile down from
+1.000 to 0.655. The prediction was wrong in the favourable direction.
+
+### Limits that remain
+
+- **A Gaussian on log traits is a crude model of fish shape:** one mode, no allometric curvature. It catches these
+  decoys *because they break the linear correlation structure*. A decoy preserving that structure would pass.
+- **Hard negatives are still the weakest** (S2 0.641). A single swapped trait barely moves the vector. The corner
+  chimeras are caught; single swaps are caught poorly.
+- **Dev is optimistic for this term**, since the model is fitted on dev positives. Family-held-out fitting is the
+  defence, and the blind held-out run is the test.
+- **Fins and physiology are not in the joint model.** No large source measures paired-fin size, so fins keep their
+  small-sample envelopes.
+- **The flow-matching density was not used.** Its blockers are unchanged and real: head depth is in its joint
+  density but not in designs, its split is by species rather than family, and its likelihood tail is unstable.
+
+
+### Deviation 3: a crash in the shipped entry point, and how the dev numbers were produced
+
+**The bug.** `threeResults` in `score.mjs` read `r.state_envelope.outside.map(...)` behind a truthiness check only.
+`stateEnvelope()` returns `{ran: false, reason}` with **no `outside`** for any specimen-shaped item, because a
+specimen has no resolved STATE. Every specimen-shaped benchmark item therefore threw a `TypeError`: under v1.1.0 it
+propagated, and under v1.2.0 it was caught and returned `score: null`. The independent evaluator found it on
+held-out items of every type and refused to launch the blind run, which was the right call: benchmark rules would
+have scored those items worst-case, making the run meaningless rather than a legitimate failure.
+
+A test now calls `designScore` on a bare `{specimen}` **and** a `{params}` item under every version (1.0.0, 1.1.0,
+1.1.1, 1.2.0) and asserts a numeric score. Against the pre-fix file **7 of those 8 combinations failed**; only
+v1.0.0 with a specimen survived, because v1.0.0 never builds a state envelope. The same audit guarded
+`ph.fin.nearest[0]`, `alt.in_natural_orthologues`, `e.checks` and `c.verdicts`, which had the same shape.
+`three-results-guards` tests the guards directly and is seen to fail when `state_envelope.outside` throws.
+
+**No version bump and no weights change.** This is a crash fix in a reporting function. Scores, components, weights
+and the 0.5 cut are untouched.
+
+**One input-handling change, stated because it is not purely a fix:** a `{params}` item is now accepted by every
+version (its traits are mapped to the specimen record, and the unread ones are returned as
+`traits_not_read_by_this_version`). Before, `{params}` threw "not an organism document" under 1.0.0, 1.1.0 and
+1.1.1, so no previously published number can have come from that path.
+
+**How the dev numbers were produced, and whether they stand.** The evaluator was right to ask: the dev run called
+`designScoreV12` in `score-v12.mjs` **directly**, and it ran **before** `threeResults` existed, so it never
+exercised the shipped path. The run was therefore repeated through `score.mjs designScore` after the fix, and
+`dev-benchmark-v1.2.0.json` now records `scored_through: "score.mjs designScore (the shipped entry point)"`. Every
+headline number is **identical**: P1 0.870798, P2 100 percent, S1 0.498, S2 0.538, S4 75 percent, 1310 distinct
+values, 4 refused, 0 errors. The dev numbers stand, and they now come from the path the evaluator will call.
+
+`score.mjs` sha256 after the fix: `87bb335e262bddd5fd73355b831d5b0539c4b5083929782a2f25cf7e26817a7f`
+
+
 ## v1.1.1: a ranking score (`rank_score`); the score is unchanged
 
 Pre-registration: `SCORER-PREREGISTRATION-v1.1.1.md`. Weights: `score-weights.v1.1.1.json`. Data:

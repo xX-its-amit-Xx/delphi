@@ -5,4 +5,12 @@ import Delphi.Favored
 import Delphi.Blueprint
 import Delphi.Thompson
 import Delphi.Certificates.AFlyingFish
+import Delphi.Scaling
+import Delphi.Flight
+import Delphi.Genotype
+import Delphi.Physiology
+import Delphi.Empirical
+import Delphi.Altitude
+import Delphi.Perturb
+import Delphi.Hydrostatics
 import Delphi.Constraints

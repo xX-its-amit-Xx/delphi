@@ -4,7 +4,7 @@ Layer `proteomic` of the DELPHI multi-omic annotations. One JSON row per (gene, 
 `annotations.jsonl.gz`, in the format set by `omics/SCHEMA.md`. The gene universe and the join key (`zfin_id`) come from
 `omics/genes.json`. Code: `omics/proteomic/scripts/` (`fetch_api.py`, `fetch_pdb.py`, `fetch_pride.py`, `build.py`, `common.py`).
 Downloads are cached in `C:/Temp/omics-cache/proteomic/`, never in the repo. Counts, coverage, sha256 of every file and
-retrieval URLs are in `MANIFEST.json`. The numbers below come from the build of 2026-11-01. MANIFEST.json is the authority if they differ.
+retrieval URLs are in `MANIFEST.json`. The numbers below come from the build of 2026-11-01 (199,149 rows, 3,859 genes). MANIFEST.json is the authority if they differ.
 
 **Species.** Every row is *Danio rerio* (taxid 7955) except 3 rows for flying-fish UniProt entries (see the flying-fish section).
 None of the rows is bird data. IntAct is restricted to zebrafish-zebrafish pairs, STRING to the zebrafish network, and any
@@ -20,8 +20,8 @@ case the row carries `protein_accession` and a note. Every row names its protein
 | source.db | what | URL | release | licence | rows | genes |
 |---|---|---|---|---|---|---|
 | UniProt | protein existence (PE1-5), length, function text, subcellular location, membrane topology, FT domain/region/motif/zinc finger/repeat/coiled coil, keywords, Swiss-Prot vs TrEMBL, annotation score | `https://rest.uniprot.org/uniprotkb/stream?query=organism_id:7955` (78,189 entries) | 2026_03 (02-Sep-2026) | CC BY 4.0 | ~72k | 3,823 |
-| InterPro | InterPro entries per protein (family, domain, repeat, homologous superfamily, site), with positions and the Pfam signatures each one integrates | `https://www.ebi.ac.uk/interpro/api/entry/all/protein/uniprot/{acc}` | InterPro 110.0 | CC0 | ~21k | ~3,816 |
-| Pfam | Pfam matches (names and positions from the InterPro API, otherwise ids only from the UniProt cross-reference) | same, and the UniProt `xref_pfam` | via InterPro 110.0 | CC0 | ~8k | ~3,772 |
+| InterPro | InterPro entries per protein (family, domain, repeat, homologous superfamily, site), with positions and the Pfam signatures each one integrates | `https://www.ebi.ac.uk/interpro/api/entry/all/protein/uniprot/{acc}` | InterPro 110.0 | CC0 | 21,327 | 3,837 |
+| Pfam | Pfam matches (names and positions from the InterPro API, otherwise ids only from the UniProt cross-reference) | same, and the UniProt `xref_pfam` | via InterPro 110.0 | CC0 | 8,083 | 3,794 |
 | AlphaFold DB | model id, mean pLDDT, fraction of residues with pLDDT > 70 (confident + very high), > 90 and < 50, model version | `https://alphafold.ebi.ac.uk/api/prediction/{acc}` | AFDB API (models v6) | CC BY 4.0 | 3,612 | 3,612 |
 | PDB | experimental structures of the zebrafish protein: number of entries, best-resolution entry, method, resolution, and up to 30 entries | UniProt PDB cross-references plus `https://data.rcsb.org/graphql` | RCSB 2026-11-01 | CC0 | 104 | 104 |
 | PaxDb | MS-derived protein abundance (ppm) per zebrafish dataset and tissue, plus one `protein_detected` summary row per gene | `https://pax-db.org/downloads/latest/datasets/7955/` (35 files) | PaxDb v6.1 | CC BY 4.0 (each dataset also falls under its repository's terms) | ~25k | 3,086 |
@@ -87,7 +87,7 @@ The priority sets. "MS" means a PaxDb detection, and "MS any" adds PeptideAtlas.
 |---|---|---|---|---|---|---|---|---|
 | causal-chain genes (`genotype/causal-chains.json`) | 42 | 37 | 38 | 15 | 37 | 42 | 40 | 0 |
 | fin required/sufficient genes (`genotype/fin-subtree.full.json`) | 178 | 147 | 153 | 71 | 166 | 175 | 165 | 1 |
-| pectoral-fin expressed genes | 1,108 | 916 | 962 | 420 | 1,050 | 1,093 | 996 | 18 |
+| pectoral-fin expressed genes | 1,108 | 916 | 962 | 420 | 1,050 | 1,100 | 996 | 18 |
 
 Five causal-chain genes have **no MS detection** in any zebrafish PaxDb dataset: fgf24, kcnk5b, ptch1, rspo2 and shha.
 shha still has a PE1 entry and a PeptideAtlas cross-reference. The other four have no protein-level evidence of any kind in zebrafish. None of the 35 PaxDb datasets is fin tissue (they are whole organism, embryo, brain, heart,
@@ -102,9 +102,11 @@ integrated.
   common in zebrafish) can be assigned to either one, so read `n_datasets` before trusting a detection.
 - PaxDb abundances are normalised within a dataset (ppm). Compare them within one dataset, not across datasets or
   methods.
-- **InterPro API rate limit.** At 10 concurrent requests the API answered HTTP 429, so the fetch was slowed to 2
-  threads. The proteins it had not reached by build time took the UniProt cross-reference fallback.
-  `coverage.interpro_via_api` and `interpro_via_uniprot_xref_fallback` in MANIFEST give the final split.
+- **InterPro.** The API answered HTTP 429 at 10 concurrent requests, so all 3,849 proteins were fetched at 2 threads
+  with a pause between calls (about 50 minutes). 3,475 genes have API matches with residue positions. For 373
+  accessions the API returned HTTP 204, no match set at all (mostly new TrEMBL accessions), and 365 of those fall back
+  to the UniProt InterPro and Pfam cross-references, which carry no positions. Each fallback row says so in its `note`,
+  and `coverage.interpro_via_api` vs `interpro_via_uniprot_xref_fallback` in MANIFEST gives the split.
 - STRING experimental evidence from zebrafish itself is rare. Only 52 genes have a partner whose zebrafish experiments
   channel is >= 0.4. Most high-confidence links are transferred from other species or come from text mining and
   databases. Read `interaction_class` and `channels` before treating a partner as a zebrafish interaction.

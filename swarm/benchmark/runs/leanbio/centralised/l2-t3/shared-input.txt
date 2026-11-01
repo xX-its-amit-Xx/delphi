@@ -1,0 +1,29 @@
+TASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.
+
+THE CLAIM IN ENGLISH
+For a morphogen with diffusion coefficient D and first-order degradation rate constant k, the characteristic gradient length is lambda = sqrt(D/k). Therefore halving the degradation rate constant (equivalently, doubling the degradation half-life) multiplies lambda by exactly sqrt 2.
+
+REQUIRED CONTENT. A statement that compiles but does not carry these is a failure:
+  [1] a square root appears
+  [2] the ratio D/k appears
+  [3] the rate constant is hypothesised positive (so D/k is defined)
+  [4] the diffusion coefficient is hypothesised non-negative
+  [5] the factor sqrt 2 appears explicitly
+  [6] the halved (or doubled) rate constant appears
+  [7] the conclusion is an equality, not an inequality
+
+KNOWN TRAP: Proving lambda >= 0, or proving the statement only for one numeric D and k, is not the claim. The claim is an exact equality for all admissible D and k.
+
+HARD REQUIREMENTS ON THE FILE
+- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.
+- The main theorem is named exactly `l2_t3`.
+- A second declaration named exactly `l2_t3_witness` proves that the hypotheses of `l2_t3` are
+  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`
+  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.
+- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.
+- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the
+  formalization is worthless and will be scored as a failure.
+- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,
+  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.
+
+Output the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.

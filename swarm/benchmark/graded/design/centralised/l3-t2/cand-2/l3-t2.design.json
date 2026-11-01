@@ -1,0 +1,35 @@
+{
+ "design": {
+  "intake_J_per_day": 93.75,
+  "routine_cost_J_per_day": 55,
+  "activity_cost_J_per_day": 20,
+  "assimilation_efficiency": 0.8,
+  "mass_change": 0,
+  "genotype_edits": [],
+  "efficiency": 0.25,
+  "oxycaloric": 20.1,
+  "oxycaloric_J_per_unit_O2": 20.1,
+  "cardiacOutput": 1.67e-9,
+  "arterialO2": 0.05,
+  "o2_store_ml": 0.002,
+  "aerobicCeiling_W": 0.0004,
+  "sustained_power_W": 0.0002,
+  "reference_sustained_power_W": 0.00023625
+ },
+ "assumptions": [
+  "intake_J_per_day=93.75: chosen so intake*assimilation (75.0 J/d) exactly equals routine+activity, consistent with mass_change=0.",
+  "routine_cost_J_per_day=55: ~0.2 mg O2/g/h x 0.8 g x 24 h = 3.84 mg O2/d x ~14.1 J/mg, rounded.",
+  "activity_cost_J_per_day=20: chosen modest share (~27%) of the budget for routine swimming; not sponsor-fixed.",
+  "assimilation_efficiency=0.8: typical fish assimilation of 0.7-0.9 (chosen).",
+  "mass_change=0: steady-state adult, per subtask.",
+  "genotype_edits=[]: wild-type, no edits.",
+  "efficiency=0.25: typical muscle-to-mechanical efficiency (chosen).",
+  "oxycaloric=oxycaloric_J_per_unit_O2=20.1: J per ml O2 (20.1e3 J/L), matching o2_store_ml in ml. Unit convention of lean_check is unverified.",
+  "cardiacOutput=1.67e-9 m^3/s (=0.1 ml/min): chosen, high end of adult zebrafish range. Unit convention unverified; may be read as ml/min.",
+  "arterialO2=0.05 ml O2 per ml blood (dimensionless): chosen, plausible fish blood O2 content.",
+  "o2_store_ml=0.002: ~0.04 ml blood x 0.05, chosen.",
+  "aerobicCeiling_W=0.0004: set at or below supply CO*arterialO2*oxycaloric*efficiency (~4.2e-4 W) and above sustained power.",
+  "sustained_power_W=0.0002 (26 C, chosen, below ceiling); reference_sustained_power_W=0.00023625 = 0.0002 / 2.3^-0.2 (2.3^-0.2=0.84657), so the 26 C value is 0.84657 x the 28 C reference."
+ ],
+ "notes": "I could not run lean_check, so none of these verdicts are tested. No law blocks the brief.\n\nKeys still safe to include when powered=false or flight_mode='glide': the C14/E3 aerobic-demand laws go out of scope, but these keys do no harm. They are:\n- intake_J_per_day, routine_cost_J_per_day, activity_cost_J_per_day, assimilation_efficiency, mass_change and genotype_edits, which feed the energy budget and edit laws.\n- sustained_power_W and reference_sustained_power_W, which feed the Q10 scaling law and not the flight-demand ones.\n- efficiency, oxycaloric, oxycaloric_J_per_unit_O2, cardiacOutput, arterialO2, o2_store_ml and aerobicCeiling_W. They may be unused if C14/E3 are out of scope. I made them mutually consistent anyway, in case a law reads them.\n\nMerge checklist for the orchestrator:\n1. The sponsor-fixed keys must appear exactly once with exact values. They are taxon, life_stage, standard_length_m, SL_m, mass_kg, body_temperature_C, ct_min_C, ct_max_C, q10, reference_temperature_C, depth_m and altitude_m.\n2. The other fragments must not redefine my keys with conflicting values. One that could clash is sustained_power_W.\n3. powered=false and flight_mode='glide' (or an explicit no-flight value) must both be present.\n4. The flight fields (airspeed, climbRate and similar) should be absent or 0, not made-up values that could put a flight law in scope.\n5. The energy budget must balance: intake*assimilation (75) >= routine+activity (75), with mass_change=0.\n6. reference_sustained_power_W / sustained_power_W must equal 1/0.84657 = 1.1812.\n7. The units of oxycaloric, cardiacOutput and arterialO2 are my guess. Change them if lean_check's documentation says otherwise."
+}

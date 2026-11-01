@@ -33,9 +33,32 @@
     "scope": {
       "type": "object",
       "required": ["taxa"],
-      "properties": { "taxa": { "type": "array", "items": { "type": "string" } }, "life_stages": { "type": "array", "items": { "type": "string" } }, "ranges": { "type": "object" }, "kernelChecked": { "type": "array" }, "assumed": { "type": "array" } }
+      "properties": { "taxa": { "type": "array", "items": { "type": "string" } }, "life_stages": { "type": "array", "items": { "type": "string" } }, "ranges": { "type": "object" }, "kernelChecked": { "type": "array" }, "assumed": { "type": "array" }, "basis": { "type": ["string", "null"] }, "applies_to": { "type": "array", "items": { "type": "string" }, "description": "the kinds of claim this law judges, in plain words (e.g. sustained aerobic power demand)" }, "excludes": { "type": "array", "items": { "type": "string" }, "description": "kinds of claim this law does NOT judge; a caller comparing one of these against the bound is making an application error, and the checker must return out-of-scope rather than violated" } }
     },
     "constraint_scopes": { "type": "object", "description": "per-constraint scope where the check is narrower than the law: {<constraint id>: {taxa, life_stages, ranges, basis}}" },
+    "browser_check": {
+      "type": "object",
+      "description": "OPTIONAL declarative row for the generated evaluator (lean/eliminate/browser-check-declared.fragment.mjs). Without it, a law whose constraint id has no hand-written formula in lean/eliminate/build-browser-check.mjs produces NO row and binds nothing anywhere: not in lean_check, not in the Studio's red/amber/grey, not in the optimizer's rejection rule, not in validate_design. `constraint` must also appear in this law's own \"constraints\" array. Expressions are arithmetic over spec field names (+ - * / ^, parentheses, sqrt/abs/log/log10/exp/min/max/pow); they are parsed, never eval'd. This block IS inside content_hash, so editing it needs a version bump.",
+      "required": ["constraint", "quantity", "op", "relation", "note"],
+      "properties": {
+        "constraint": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_-]*$", "description": "row id; must not be a constraint id of lean/constraints.json" },
+        "quantity": { "type": "string", "minLength": 1, "description": "expression for the left-hand side, e.g. \"gillArea_m2\"" },
+        "op": { "enum": ["le", "lt", "ge", "gt", "eq", "between"] },
+        "bound": { "type": "string", "description": "expression for the right-hand side (op le/lt/ge/gt/eq)" },
+        "lo": { "type": "string", "description": "expression for the lower end (op between)" },
+        "hi": { "type": "string", "description": "expression for the upper end (op between)" },
+        "defaults": { "type": "object", "description": "{name: finite number} constants the expressions may use" },
+        "inputs": { "type": "array", "items": { "type": "string" }, "description": "spec fields that must be present; derived from the expressions when omitted" },
+        "relation": { "type": "string", "minLength": 1, "description": "one line of human-readable relation text shown in the row" },
+        "note": { "type": "string", "minLength": 1, "description": "one line saying what the row does and does not mean" },
+        "unit": { "type": ["string", "null"] },
+        "band": { "enum": ["proved", "empirical", "hypothesis"] },
+        "tolerance": { "enum": ["relative", "exact"] }
+      },
+      "allOf": [
+        { "if": { "properties": { "op": { "const": "between" } } }, "then": { "required": ["lo", "hi"] }, "else": { "required": ["bound"] } }
+      ]
+    },
     "shared_scope": {
       "type": ["object", "null"],
       "required": ["atoms", "quantities"],

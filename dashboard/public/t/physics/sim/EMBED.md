@@ -270,3 +270,122 @@ If you load the iframe and listen afterwards you may miss `ready`; send `{type:"
 * Every parameter keeps its kind and source on screen, and the provenance summary says in one line
   how much of the run rests on assumptions.
 * No bird value enters any parameter, target or comparison: class Aves is the frozen holdout.
+
+---
+
+## 7. The 3D view (`scene3d.js`) — what the physics mode now shows
+
+Since 2026-11-01 the simulator page opens with a **3D flight view above the 2D charts**: the real
+anatomy meshes from `dashboard/public/blueprint3d/model/` flying the **real computed trajectory**.
+Nothing about embedding changes — same iframe, same URL parameters, same messages — but the viewer's
+physics mode now shows a moving scene, not three line charts, and its panel text should say so.
+
+**For `explode.html`'s physics mode.** No change is needed to make it appear: the iframe already
+points at `t/physics/sim/`, and the 3D view mounts itself there. Two things are worth changing in
+`physicsPanel()`:
+
+* the description still reads *"The physics thread's 2D side-view simulator"*. It is now a 3D view of
+  the same run with the 2D charts underneath; the honest wording is **"the physics thread's simulator:
+  the computed trajectory flown in 3D by the anatomy meshes, with the same run as 2D charts below"**.
+* the viewer may want to pass `&theme=` as it already does. Nothing else.
+
+**The page's own order puts the scene above the fold**, standalone and embedded alike:
+
+> pre-registration / validation banner &rarr; **3D view** &rarr; the controls &rarr; the prose &rarr; the 2D charts
+
+The banner stays first: it is the honesty contract and nothing is allowed to push it down. Checked at
+1366&times;900, where the whole 504 px scene is visible without scrolling (stage 316&ndash;820 of 900).
+At phone width the banner alone is ~450 px tall, so the scene still needs a scroll; the banner was not
+shortened to buy that space.
+
+If WebGL is unavailable the 3D block replaces itself with one sentence saying so and the page is the
+2D charts exactly as before, so an embedder never has to test for it.
+
+### What the 3D view computes, and what is only decoration
+
+Stated in full in a legend under the controls, and in the header comment of `scene3d.js`. In short:
+
+| computed, by the solver on this page | decorative, affecting no number |
+|---|---|
+| trajectory x(t), z(t) — the RK4 run's own 0.02 s samples, interpolated in time | the wave shape and height, the water colour, the foam |
+| speed, airspeed, height, depth, v_min, the phase boundaries | the sky gradient, the horizon, the sun, all lighting |
+| pitch = atan2(v_z, v_x) of the solver's velocity + the solver's own angle-of-attack parameter for the phase | the spray, the underwater tint, caustics and light shafts |
+| bank = 0 everywhere (the solver is 2-D, so there is no computed reason to roll) | the caudal-fin beat (a fixed 8 Hz sine) |
+| the ground-effect drag factor at the frame's height (the measured curve) | the camera's smoothing and placement, the sliding of the sea tile |
+| `glide_range_lean_bound_m` (apex × (L/D)max) kept apart from the kinetic phase, as `glide.mjs` keeps them | the school, the predator and the distant gliders (`creatures.js`, which flags them too) |
+| the fish's size: metres per model unit from the GLB's manifest via `blueprint3d/partedit.js` `metresPerUnit` | the drawn sea state (the solver has no sea state; `baseline.json` locks the conditions to calm) |
+
+**The sea on screen is not the sea the numbers would meet, and the page says so under the picture.**
+`env3d` draws a readability-scaled sea &mdash; `H_s_drawn = clamp(0.12 x H_s_PM, 0.06, 0.45) m`, with a
+13/7.3/4.1/2.3 m band of wavelengths in place of the true spectral peak &mdash; because the real peak
+wavelength (83 m at 10 m/s) would swallow a 0.2 m fish whole. A permanent note under the stage names
+**both** figures from `ocean.info.sea`: at the locked calm baseline it reads *drawn 0.060 m, true
+0.000 m &mdash; what you see is env3d's 0.06 m floor and is **rougher** than the stated conditions*;
+at the what-if 9 m/s it reads *drawn 0.208 m, true 1.735 m, peak wavelength 67 m, scaled down by a
+factor of 8.3*. Either way it ends **"Do not read a sea state off this picture"**, and says the solver
+has no sea state, so no number depends on either figure. A viewer judging *could it really fly in
+that?* from a scaled sea would be reading a flattered sea.
+
+There is **no hand-authored keyframe anywhere**. A species whose run never lifts off is shown not
+lifting off, and the banner says why; a design with no committed fin polar
+(`wingless-flying-fish.glb`) is loaded as a mesh and explicitly **not flown**.
+
+### New entry points on the page
+
+```js
+window.DELPHI_SIM3D.solveTrajectory({ params: { takeoff_speed_target_m_s: 19 }, tmax: 60 })
+// -> { ok, applied, refused, derived:{vmin, LDmax, span_m, mass_kg, ref_area_m2, wind_m_s, ground_effect},
+//      metrics:{ takeoff_speed_m_s, v_min_m_s, lift_supported_at_launch, apex_height_m, range_m,
+//                glide_range_lean_bound_m, kinetic_phase_m, lean_bound_exceeded, airborne, ... },
+//      samples:[{t, x, z, vx, vz, v, ph}] }
+```
+
+It is **pure**: it clones the live entry, applies `params`, and runs a complete solve without touching
+the page's own run. `params` keys are `params.json` keys; an unknown key is **refused**, not invented.
+It needs the DOM (the solver lives in `index.html`), so a Web Worker routes through the page.
+
+`window.DELPHI_SIM3D` also carries `status()`, `fishState()`, `setPlaying`, `setRate`, `seek`,
+`setCamera`, `setSpecies`, `runEnsemble`, `resolve`, `census()` and `dispose()`.
+
+`window.DELPHI_SIM` is the bridge the 3D view reads the solver through: `fish`, `P`, `baseline`,
+`derive`, `cloneFish`, `solve({fish, groundEffect}, tmax)`, `selectPreset`, `selectBase`, `setParam`,
+`setGroundEffect`, `onReset`.
+
+### What `index.html` gained, and what did not change
+
+* `function solveWith({fish, groundEffect}, tmax)` — a complete run that leaves the page's own `sim`
+  alone. `sweep.js` reads this function straight out of the page source, so **it must stay a top-level
+  `function solveWith(` declaration**.
+* `let GE_OFF` — the ground-effect switch, `false` by default, i.e. the measured curve applied.
+* `headwind_m_s` — a uniform horizontal headwind, **absent from every committed `params.json` entry**.
+  With `d.wind === 0` the aerodynamic forces use the ground velocity exactly as before, so a committed
+  run is reproduced **number for number**; a non-zero value makes them use the air-relative velocity
+  `(vx + u, vz)`, the same convention as `sim-engine/scenarios/glide.mjs`. There is a check for this.
+* the sampled history now carries `vx` and `vz` as well as `v`, so the 3D view can take the pitch from
+  the velocity vector instead of guessing it.
+
+No equation, constant, threshold or pre-registered parameter was changed.
+
+### URL parameters the 3D view adds
+
+| parameter | what it does |
+|---|---|
+| `cseed` | the ensemble seed (read through `creatures.js` `seedFromUrl`), so a band is reproducible |
+| `s3seg` | sea-mesh resolution, 8–176, for the performance check; the default adapts downwards on slow hardware |
+
+### env3d contract points this view honours
+
+* `camera.far` is set from `env3d.RECOMMENDED_CAMERA_FAR` (60000). Below it the 30 km horizon disc is
+  clipped and the horizon silently vanishes. There is a check for this.
+* `makeSky` owns `scene.fog`, `scene.background` and the scene's lights, so this file adds **none** of
+  its own when `env3d` is present (checked: 2 lights in the scene, both `makeSky`'s). The fallback sky
+  in `scene3d.js` brings its own, and only when `env3d.js` is absent.
+* `setDepth(m)` is the **viewer's** depth, and `<= 0` disables the underwater layers; it is called with
+  the camera's depth below the surface, and 0 whenever the camera is in the air.
+* `normalAt(x, z, out)` writes into `out`. This view does not call it, so it allocates nothing.
+* The ocean is one fixed 64 m tile (cell ~0.57 m) **slid** along x to stay under the fish rather than
+  stretched over a 300 m run, because a stretched tile loses the cell size that lets a 0.2 m fish sit on
+  a wave. It is only ever slid while the fish is clear of the water, so its ride is never stepped, and
+  every height query subtracts the tile offset.
+
+Everything in section 2 still works unchanged.

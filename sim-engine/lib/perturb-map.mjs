@@ -19,8 +19,13 @@ const num = x => typeof x === 'number' && Number.isFinite(x);
 const W_PER_KG_PER_UMOL_G_H = 0.1204;
 const TELEOSTS = ['Exocoetidae', 'Danio rerio', 'Teleostei'];
 
+// Scenarios whose flight phase is an UNPOWERED descent: a glide is paid for by launch kinetic energy and height,
+// so it has no sustained-power requirement for an aerobic ceiling to bound.
+const UNPOWERED_SCENARIOS = new Set(['glide', 'wind', 'altitude']);
+
 export function perturbInputs(state, scenarioKey = null, params = {}, run = null) {
   const spec = {}, sources = {};
+  const notes = [];
   const put = (k, v, src) => { if (num(v) || typeof v === 'boolean') { spec[k] = v; sources[k] = src; } };
   const metric = k => (run && run.ok && Array.isArray(run.metrics) ? run.metrics.find(m => m.key === k)?.value : undefined);
   const f = k => state?.[k]?.value;
@@ -86,7 +91,12 @@ export function perturbInputs(state, scenarioKey = null, params = {}, run = null
   // differs from STATE's mesh area (pectoral + pelvic + caudal). lib/lean.mjs evaluates those rows separately.
   const prov = q => (run && run.ok ? run.provenance?.find(x => x.quantity === q)?.value : undefined);
   const scoped = { spec: {}, only: [] };
-  if (scenarioKey === 'altitude' && run?.ok) {
+  // Fed when the organism can actually get airborne, OR when the caller ASSERTED a launch speed
+  // (launch_airspeed_override_m_s): that assertion is a flight claim, and an impossible claim is exactly what P4
+  // is for. Without either, nothing is claimed and nothing is judged: a zebrafish makes no flight claim, and its
+  // own report ("cannot glide: reachable launch speed 0.67 m/s is below v_min") is the honest statement. Feeding
+  // that to C9 and P4 would turn a real animal red for a claim it never made (the glide block guards this too).
+  if (scenarioKey === 'altitude' && run?.ok && (run.feasible === true || params.launch_airspeed_override_m_s > 0)) {
     const CL = run.lean_inputs?.CLmax?.value;
     const S = prov('lifting area (m2)'), v = metric('launch_airspeed_m_s');
     put('altitude_m', params.altitude_m, 'altitude scenario param altitude_m');
@@ -124,7 +134,9 @@ export function perturbInputs(state, scenarioKey = null, params = {}, run = null
   const li = run && run.ok && run.lean_inputs && typeof run.lean_inputs === 'object' ? run.lean_inputs : {};
   const lv = k => (li[k] && num(li[k].value) ? li[k].value : undefined);
   const ls = (k, extra = '') => `${scenarioKey} scenario lean_inputs.${k} (${li[k]?.kind}): ${String(li[k]?.source || '').slice(0, 160)}${extra}`;
-  const FICK = '; NOTE: the Fick upper bound (borrowed cardiac output, calibrated Hb capacity), not a measured power';
+  const FICK_NOTE = '; NOTE: the Fick upper bound (borrowed cardiac output, calibrated Hb capacity), not a measured power';
+  const MO2_NOTE = '; NOTE: an aerobic ceiling from a measured MO2max (scaled to mass and temperature), not a measured power at this condition';
+  const noteFor = k => (/measured MO2max/.test(String(li[k]?.source || '')) ? MO2_NOTE : FICK_NOTE);
   // P2b (drag power within the aerobic ceiling), current scenario.
   if (scenarioKey === 'current' && num(lv('drag_coefficient'))) {
     put('drag_coefficient', lv('drag_coefficient'), ls('drag_coefficient'));
@@ -134,7 +146,7 @@ export function perturbInputs(state, scenarioKey = null, params = {}, run = null
     const cdA = lv('drag_area_CdA_m2') ?? lv('drag_area_m2');
     if (num(lv('drag_reference_area_m2'))) put('drag_area_m2', lv('drag_reference_area_m2'), ls('drag_reference_area_m2'));
     else if (num(cdA)) put('drag_area_m2', cdA / lv('drag_coefficient'), `${scenarioKey} scenario: CdA / drag_coefficient (fallback: the module reports no drag_reference_area_m2)`);
-    put('aerobicCeiling_W', lv('aerobic_ceiling_W'), ls('aerobic_ceiling_W', FICK));
+    put('aerobicCeiling_W', lv('aerobic_ceiling_W'), ls('aerobic_ceiling_W', noteFor('aerobic_ceiling_W')));
     const rhoC = run.provenance?.find(x => x.quantity === 'water density (kg/m3)')?.value;
     put('water_density_kg_m3', rhoC, "current scenario provenance: water density (kg/m3), the density its drag uses");
   }
@@ -144,8 +156,8 @@ export function perturbInputs(state, scenarioKey = null, params = {}, run = null
   if (scenarioKey === 'temperature') {
     put('q10', lv('q10'), ls('q10', li.q10_basis ? ` [basis ${li.q10_basis.value}]` : ''));
     put('reference_temperature_C', lv('reference_temperature_C'), ls('reference_temperature_C'));
-    put('reference_sustained_power_W', lv('reference_sustained_power_W'), ls('reference_sustained_power_W', FICK));
-    put('sustained_power_W', lv('sustained_power_W'), ls('sustained_power_W', FICK));
+    put('reference_sustained_power_W', lv('reference_sustained_power_W'), ls('reference_sustained_power_W', noteFor('reference_sustained_power_W')));
+    put('sustained_power_W', lv('sustained_power_W'), ls('sustained_power_W', noteFor('reference_sustained_power_W')));
   }
   // P4b with wind, wind scenario: descent phase only, wind applied (w positive = tailwind, so w = -headwind).
   if (scenarioKey === 'wind' && num(lv('descent_ground_distance_m'))) {
@@ -155,16 +167,54 @@ export function perturbInputs(state, scenarioKey = null, params = {}, run = null
     put('LD_max', lv('LD_max'), ls('LD_max'));
     put('ground_distance_m', lv('descent_ground_distance_m'), ls('descent_ground_distance_m', '; descent only, the kinetic phase is never passed'));
   }
-  return { spec, sources, scoped };
+  const pi = { spec, sources, scoped, notes, mode: UNPOWERED_SCENARIOS.has(scenarioKey) ? 'glide' : null };
+  return enforceFlightMode(pi);
+}
+
+/** Tell the laws whether the flight is POWERED or an unpowered GLIDE, and pass it in the spec.
+ *
+ *  browser-check derives P_req = W v / (L/D) whenever a spec carries both an airspeed and an L/D, and the
+ *  sustained-power laws (E3 aerobic ceiling, C14, C16, E4) bound a METABOLIC demand. An unpowered descent is paid
+ *  for out of height and launch kinetic energy, not metabolism, so that P_req is not a demand those laws bound:
+ *  feeding it to them turned a real gliding flying fish red (Park & Choi specimens, 2026-11-01). Since lawset
+ *  1.6.0 the evaluator decides this itself from `flight_mode` ('powered' | 'glide'), marking those rows
+ *  out-of-scope for a glide while the speed and range laws (C9, C15, P4, P4b) still judge. So the mode is
+ *  committed in the spec and the law rules; nothing is hidden from the evaluator.
+ *  Glide, wind and altitude are unpowered-descent scenarios; a caller claiming level or climbing flight passes
+ *  claims {flight_mode: 'powered'}. */
+export function enforceFlightMode(pi) {
+  if (pi.mode) {
+    pi.spec.flight_mode = pi.mode;
+    pi.sources.flight_mode = pi.mode === 'powered'
+      ? "CLAIM: level or climbing flight, which pays a sustained power, so the sustained-power laws (E3, C14, C16, E4) judge it"
+      : "the scenario's flight phase is an unpowered descent (glide, wind, altitude): its energy comes from the launch and the height, so the sustained-power laws report out-of-scope rather than ruling on a power this design never pays. Claim flight_mode 'powered' for level or climbing flight.";
+    pi.notes.push(`flight_mode "${pi.mode}" committed in the spec: the evaluator scopes the sustained-power laws itself (browser-check flightMode, lawset >= 1.6.0).`);
+  }
+  return pi;
 }
 
 // Caller claims: what a designer ASSERTS about the organism (a glide distance, a mass gain, a climb), checked by the
 // laws against the scenario's own physics. Kept separate from the scenario's values and labelled as claims.
 export const CLAIM_KEYS = ['ground_distance_m', 'glideDistance_m', 'mass_change', 'airspeed_m_s', 'climbRate_m_s', 'current_speed_m_s',
-  'body_temperature_C', 'depth_m', 'altitude_m', 'sustained_power_W', 'intake_J_per_day', 'glideHeight_m', 'wind_along_track_m_s'];
+  'body_temperature_C', 'depth_m', 'altitude_m', 'sustained_power_W', 'intake_J_per_day', 'glideHeight_m', 'wind_along_track_m_s',
+  // A claim about the WHOLE glide (launch kinetic phase + steady descent). No theorem covers the sum, so it is
+  // recorded and reported, never fed to a law. ground_distance_m and glideDistance_m are the STEADY DESCENT, which
+  // P4b and C15 do bound.
+  'glide_total_distance_m',
+  // 'powered' = level or climbing flight, which pays a sustained power (E3, C14, C16 apply); 'glide' = unpowered.
+  'flight_mode', 'powerRequired_W'];
+const NOT_FED = { glide_total_distance_m: 'the whole glide (launch kinetic phase + steady descent). No Lean theorem covers the sum: the steady-glide laws (C15, P4b) bound only the h (L/D) descent, so this claim is reported, never ruled on.' };
+
 export function applyClaims(pi, claims = {}) {
   const bad = Object.keys(claims).filter(k => !CLAIM_KEYS.includes(k));
   if (bad.length) throw new Error(`unknown claim key(s) ${bad.join(', ')}; allowed: ${CLAIM_KEYS.join(', ')}`);
-  for (const [k, v] of Object.entries(claims)) { pi.spec[k] = v; pi.sources[k] = 'CLAIM by the caller (an assertion the laws check, not a scenario value)'; }
-  return pi;
+  if (claims.flight_mode !== undefined && !['glide', 'powered'].includes(claims.flight_mode)) throw new Error("flight_mode must be 'glide' or 'powered'");
+  for (const [k, v] of Object.entries(claims)) {
+    if (k === 'flight_mode') { pi.mode = v; continue; }
+    if (NOT_FED[k]) { (pi.not_covered ||= {})[k] = { value: v, why: NOT_FED[k] }; pi.notes.push(`${k} = ${v}: ${NOT_FED[k]}`); continue; }
+    pi.spec[k] = v; pi.sources[k] = 'CLAIM by the caller (an assertion the laws check, not a scenario value)';
+  }
+  // An explicit power requirement IS a powered claim unless the caller said otherwise.
+  if (claims.powerRequired_W !== undefined && claims.flight_mode === undefined) pi.mode = 'powered';
+  return enforceFlightMode(pi);
 }

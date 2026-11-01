@@ -1,0 +1,25 @@
+{
+ "design": {
+  "finArea_m2": 0.006,
+  "CLmax": 1.2,
+  "LD_max": 15,
+  "airspeed_m_s": 15,
+  "horizontal_airspeed_m_s": 15,
+  "climbRate_m_s": 0,
+  "glideDistance_m": 45,
+  "drag_area_m2": 0.000356,
+  "drag_coefficient": 0.0593
+ },
+ "assumptions": [
+  "finArea_m2=0.006: wing loading W/S=0.73575/0.006=122.6 N/m2 (12.5 kg/m2), in the range reported for flying fish; chosen by me.",
+  "CLmax=1.2: plausible for a rigid fin wing at low aspect ratio; chosen by me.",
+  "LD_max=15: mid-range for Exocoetidae and gives the drag below; chosen by me.",
+  "airspeed_m_s=15: the brief puts typical speeds at 10-20 m/s; chosen by me. Cruise CL=0.89 (about 74% of CLmax).",
+  "horizontal_airspeed_m_s=15 and climbRate_m_s=0: level powered flight, so horizontal speed equals airspeed.",
+  "glideDistance_m=45 = airspeed*duration = 15*3.",
+  "drag_area_m2=3.56e-4 = D/q, with q=0.5*1.225*15^2=137.8 Pa and D=0.04905 N.",
+  "drag_coefficient=0.0593 = drag_area/S = 3.56e-4/0.006. CL/CD = 0.89/0.0593 = 15, which matches LD_max.",
+  "wind_along_track_m_s was not set and is assumed 0."
+ ],
+ "notes": "ARITHMETIC\n- W = m*g = 0.075*9.81 = 0.7358 N.\n- q = 0.5*1.225*15^2 = 137.8 Pa.\n- Lift balance: CL = W/(q*S) = 0.7358/(137.8*0.006) = 0.89, which is at or below CLmax=1.2.\n- Stall speed at CLmax: sqrt(W/(0.6125*0.006*1.2)) = sqrt(166.8) = 12.9 m/s. The margin is 15/12.9 = 1.16, about 16%.\n- Drag force = W/LD = 0.7358/15 = 0.0491 N.\n- Drag power = D*v = 0.0491*15 = 0.736 W. This is the minimum mechanical power for level flight at 15 m/s. The power block's powerAvailable_W and sustained_power_W must be at least 0.736 W, and I would add propulsive and muscle efficiency on top. Mechanical power = 0.736 W; metabolic power = 0.736/efficiency.\n- Muscle check: 0.736 W over a 0.075 kg body is about 9.8 W/kg of whole body, and over flight muscle is higher. I did not set muscle mass.\n\nSANITY CHECKS I APPLIED\n- Lift balance holds at CL <= CLmax.\n- Stall margin is 16%.\n- Wing loading is 122.6 N/m2.\n- Speed is within 10-20 m/s.\n- Distance is tens of metres.\n- CL/CD equals LD_max.\n- Level flight, so climb rate is 0.\n\nUNSETTLED POINT\n- glideDistance_m=45 exceeds LD_max*glideHeight = 15*1 = 15 m. That is fine for powered flight, because thrust sustains it and the unpowered glide ratio does not bound it. If lean_check has a law capping glideDistance at LD_max*height even when powered, there are two ways out.\n  - Set glideDistance_m=15. This breaks the airspeed*duration = 45 m equality.\n  - Set LD_max=45. This is biologically implausible, and it would drop the drag to 0.0164 N and the drag power to 0.25 W.\n- I recommend the 45 m / LD 15 set, and I could not test it against lean_check. The orchestrator should run it. If it fails, fall back to glideDistance_m=15.\n- I assumed no extra drag law, such as one tied to Reynolds number, applies.\n- I did not touch the flight_mode, powered, aerobic or efficiency keys. Those belong to the other blocks, and flight_mode must be \"powered\" or absent, with powered=true."
+}

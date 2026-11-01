@@ -1,0 +1,687 @@
+{
+ "title": "Experimental interfaces for the DELPHI flight/gliding protein panel, from deposited RCSB PDB structures",
+ "built": "2026-10-31T22:01:19Z",
+ "tool": "structures/scripts/build_binding.py",
+ "bird_exclusion": "Class Aves is this project's frozen holdout; no bird structure was fetched and no bird species is named here, until the holdout exam runs.",
+ "method": {
+  "search": "RCSB Search API v2 (https://search.rcsb.org/rcsbsearch/v2/query): structured search on rcsb_polymer_entity_container_identifiers.reference_sequence_identifiers.database_accession for a known UniProt accession, plus contains_phrase search on rcsb_polymer_entity.pdbx_description for families where our own panel protein has no structure.",
+  "metadata": "RCSB Data API /core/entry, /core/polymer_entity, /core/assembly.",
+  "contacts": "gemmi ContactSearch on the deposited mmCIF (asymmetric unit unless noted), heavy atoms only, hydrogens and waters removed, inter-chain pairs within 4.0 A; a residue pair is reported once with its minimum atom-atom distance and the number of atom pairs under the cutoff.",
+  "numbering": "Contacts are first collected in author numbering, then converted to UniProt numbering through RCSB's own SIFTS-derived alignment (/core/uniprot/{entry}/{entity}, aligned_regions: uniprot_pos = ref_beg + label_seq - entity_beg) combined with the label_seq_id -> auth_seq_id table read out of the same coordinate file. Residues outside any aligned region (expression tags, engineered linkers, unmodelled loops) carry uniprot_pos = null and are kept, flagged."
+ },
+ "accessions": {
+  "HHIP": {
+   "accession": "Q96QV1",
+   "uniprot_id": "HHIP_HUMAN",
+   "reviewed": true,
+   "taxon": 9606,
+   "symbol": "HHIP",
+   "length": 700,
+   "name": "Hedgehog-interacting protein"
+  },
+  "SHH": {
+   "accession": "Q15465",
+   "uniprot_id": "SHH_HUMAN",
+   "reviewed": true,
+   "taxon": 9606,
+   "symbol": "SHH",
+   "length": 462,
+   "name": "Sonic hedgehog protein"
+  },
+  "GJA1": {
+   "accession": "P17302",
+   "uniprot_id": "CXA1_HUMAN",
+   "reviewed": true,
+   "taxon": 9606,
+   "symbol": "GJA1",
+   "length": 382,
+   "name": "Gap junction alpha-1 protein"
+  },
+  "KCNK5": {
+   "accession": "O95279",
+   "uniprot_id": "KCNK5_HUMAN",
+   "reviewed": true,
+   "taxon": 9606,
+   "symbol": "KCNK5",
+   "length": 499,
+   "name": "Potassium channel subfamily K member 5"
+  },
+  "KCNH2": {
+   "accession": "Q12809",
+   "uniprot_id": "KCNH2_HUMAN",
+   "reviewed": true,
+   "taxon": 9606,
+   "symbol": "KCNH2",
+   "length": 1159,
+   "name": "Voltage-gated inwardly rectifying potassium channel KCNH2"
+  },
+  "SLC43A2": {
+   "accession": "Q8N370",
+   "uniprot_id": "LAT4_HUMAN",
+   "reviewed": true,
+   "taxon": 9606,
+   "symbol": "SLC43A2",
+   "length": 569,
+   "name": "Large neutral amino acids transporter small subunit 4"
+  },
+  "TBX5": {
+   "accession": "Q99593",
+   "uniprot_id": "TBX5_HUMAN",
+   "reviewed": true,
+   "taxon": 9606,
+   "symbol": "TBX5",
+   "length": 518,
+   "name": "T-box transcription factor TBX5"
+  },
+  "PRDM1": {
+   "accession": "O75626",
+   "uniprot_id": "PRDM1_HUMAN",
+   "reviewed": true,
+   "taxon": 9606,
+   "symbol": "PRDM1",
+   "length": 825,
+   "name": "PR domain zinc finger protein 1"
+  },
+  "PTCH1": {
+   "accession": "Q13635",
+   "uniprot_id": "PTC1_HUMAN",
+   "reviewed": true,
+   "taxon": 9606,
+   "symbol": "PTCH1",
+   "length": 1447,
+   "name": "Protein patched homolog 1"
+  },
+  "CDON": {
+   "accession": "Q4KMG0",
+   "uniprot_id": "CDON_HUMAN",
+   "reviewed": true,
+   "taxon": 9606,
+   "symbol": "CDON",
+   "length": 1287,
+   "name": "Cell adhesion molecule-related/down-regulated by oncogenes"
+  },
+  "BOC": {
+   "accession": "Q9BWV1",
+   "uniprot_id": "BOC_HUMAN",
+   "reviewed": true,
+   "taxon": 9606,
+   "symbol": "BOC",
+   "length": 1114,
+   "name": "Brother of CDO"
+  },
+  "SMO": {
+   "accession": "Q9NWM0",
+   "uniprot_id": "SMOX_HUMAN",
+   "reviewed": true,
+   "taxon": 9606,
+   "symbol": "SMO",
+   "length": 555,
+   "name": "Spermine oxidase"
+  },
+  "GAS1": {
+   "accession": "P54826",
+   "uniprot_id": "GAS1_HUMAN",
+   "reviewed": true,
+   "taxon": 9606,
+   "symbol": "GAS1",
+   "length": 345,
+   "name": "Growth arrest-specific protein 1"
+  },
+  "IHH": {
+   "accession": "Q14623",
+   "uniprot_id": "IHH_HUMAN",
+   "reviewed": true,
+   "taxon": 9606,
+   "symbol": "IHH",
+   "length": 411,
+   "name": "Indian hedgehog protein"
+  },
+  "DHH": {
+   "accession": "O43323",
+   "uniprot_id": "DHH_HUMAN",
+   "reviewed": true,
+   "taxon": 9606,
+   "symbol": "DHH",
+   "length": 396,
+   "name": "Desert hedgehog protein"
+  },
+  "SLC7A5": {
+   "accession": "Q01650",
+   "uniprot_id": "LAT1_HUMAN",
+   "reviewed": true,
+   "taxon": 9606,
+   "symbol": "SLC7A5",
+   "length": 507,
+   "name": "Large neutral amino acids transporter small subunit 1"
+  },
+  "SLC3A2": {
+   "accession": "P08195",
+   "uniprot_id": "4F2_HUMAN",
+   "reviewed": true,
+   "taxon": 9606,
+   "symbol": "SLC3A2",
+   "length": 529,
+   "name": "Amino acid transporter heavy chain SLC3A2"
+  },
+  "KCNK5_MOUSE": {
+   "accession": "Q9JK62",
+   "uniprot_id": "Q9JK62_MOUSE",
+   "reviewed": false,
+   "taxon": 10090,
+   "symbol": "Kcnk5",
+   "length": 502,
+   "name": null
+  },
+  "KCNK5_ZF": {
+   "accession": "Q6PFU3",
+   "uniprot_id": "Q6PFU3_DANRE",
+   "reviewed": false,
+   "taxon": 7955,
+   "symbol": "kcnk5b",
+   "length": 448,
+   "name": null
+  }
+ },
+ "targets": {
+  "shh_hhip": {
+   "question": "Hedgehog ligand bound to HHIP: the interface where hhip loss acts",
+   "searches": [
+    {
+     "kind": "accession",
+     "arg": [
+      "Q96QV1"
+     ],
+     "purpose": "PDB entries containing human HHIP",
+     "n_hits": 11,
+     "hits": [
+      "2WFT",
+      "2WFX",
+      "2WG3",
+      "2WG4",
+      "3HO3",
+      "3HO4",
+      "3HO5",
+      "7PGK",
+      "7PGL",
+      "7PGM",
+      "7PGN"
+     ]
+    }
+   ],
+   "candidates": [],
+   "chosen": null,
+   "interface": null,
+   "notes": [],
+   "n_unique_entries": 11
+  },
+  "shh_ptch1": {
+   "question": "Hedgehog bound to Patched-1",
+   "searches": [
+    {
+     "kind": "accession",
+     "arg": [
+      "Q13635"
+     ],
+     "purpose": "PDB entries containing human PTCH1",
+     "n_hits": 16,
+     "hits": [
+      "6DMB",
+      "6DMO",
+      "6DMY",
+      "6E1H",
+      "6N7G",
+      "6N7H",
+      "6N7K",
+      "6OEU",
+      "6OEV",
+      "6RMG",
+      "6RTW",
+      "6RTX",
+      "6RTY",
+      "6RVC",
+      "6RVD",
+      "9MS8"
+     ]
+    }
+   ],
+   "candidates": [],
+   "chosen": null,
+   "interface": null,
+   "notes": [],
+   "n_unique_entries": 16
+  },
+  "shh_cdo_boc": {
+   "question": "Hedgehog bound to the CDO / BOC co-receptors",
+   "searches": [
+    {
+     "kind": "accession",
+     "arg": [
+      "Q4KMG0",
+      "Q9BWV1"
+     ],
+     "purpose": "PDB entries containing human CDON or BOC",
+     "n_hits": 6,
+     "hits": [
+      "3D1M",
+      "3N1F",
+      "3N1G",
+      "3N1M",
+      "3N1P",
+      "3N1Q"
+     ]
+    }
+   ],
+   "candidates": [],
+   "chosen": null,
+   "interface": null,
+   "notes": [],
+   "n_unique_entries": 6
+  },
+  "cx43_channel": {
+   "question": "Connexin-43 gap-junction channel: docked connexon pair and the extracellular docking interface",
+   "searches": [
+    {
+     "kind": "accession",
+     "arg": [
+      "P17302"
+     ],
+     "purpose": "PDB entries containing human GJA1 / Cx43",
+     "n_hits": 19,
+     "hits": [
+      "2LL2",
+      "7F92",
+      "7F93",
+      "7F94",
+      "7XQ9",
+      "7XQB",
+      "7XQD",
+      "7XQF",
+      "7XQG",
+      "7XQH",
+      "7XQI",
+      "7XQJ",
+      "7Z1T",
+      "7Z22",
+      "7Z23",
+      "8QKO",
+      "8XBM",
+      "9INZ",
+      "9RKX"
+     ]
+    },
+    {
+     "kind": "phrase",
+     "arg": "Gap junction alpha-1 protein",
+     "purpose": "PDB entries described as gap junction alpha-1",
+     "n_hits": 21,
+     "hits": [
+      "1R5S",
+      "2LL2",
+      "7F92",
+      "7F93",
+      "7XQ9",
+      "7XQB",
+      "7XQD",
+      "7XQF",
+      "7XQG",
+      "7XQI",
+      "7XQJ",
+      "7Z1T",
+      "7Z22",
+      "7Z23",
+      "8QKO",
+      "8XBM",
+      "9INZ",
+      "9RKX",
+      "3CYY",
+      "7XQH",
+      "7F94"
+     ]
+    }
+   ],
+   "candidates": [],
+   "chosen": null,
+   "interface": null,
+   "notes": [],
+   "n_unique_entries": 21
+  },
+  "k2p_dimer": {
+   "question": "A K2P (two-pore-domain) potassium channel dimer: subunit interface and selectivity filter",
+   "searches": [
+    {
+     "kind": "accession",
+     "arg": [
+      "O95279"
+     ],
+     "purpose": "PDB entries containing human KCNK5 (our panel protein)",
+     "n_hits": 0,
+     "hits": []
+    },
+    {
+     "kind": "accession",
+     "arg": [
+      "Q9JK62",
+      "Q6PFU3"
+     ],
+     "purpose": "PDB entries containing mouse Kcnk5 / TASK-2 or zebrafish kcnk5b, the ortholog of our gene",
+     "n_hits": 7,
+     "hits": [
+      "10OY",
+      "10PB",
+      "10PC",
+      "10PD",
+      "10PF",
+      "6WLV",
+      "6WM0"
+     ]
+    },
+    {
+     "kind": "fulltext",
+     "arg": "TASK-2 potassium channel",
+     "purpose": "PDB full-text search for TASK-2",
+     "n_hits": 40,
+     "hits": [
+      "9G9X",
+      "9G9V",
+      "9G9W",
+      "9MUH",
+      "10PD",
+      "6RV4",
+      "28IZ",
+      "6RV2",
+      "6RV3",
+      "8K1J",
+      "8K1Q",
+      "8K1V",
+      "8K1Z",
+      "6WLV",
+      "6WM0",
+      "3SMK",
+      "3SMN",
+      "3SP5",
+      "3SPR",
+      "4FR3",
+      "3SML",
+      "3SMM",
+      "3SMO",
+      "9OTA",
+      "9OTK",
+      "9OV0",
+      "9OV9",
+      "9OVE",
+      "9E94",
+      "9MEL",
+      "9MEK",
+      "9OVD",
+      "3P1O",
+      "3P1Q",
+      "3P1S",
+      "3P1R",
+      "3P1N",
+      "3P1P",
+      "3UKM",
+      "7SK0"
+     ]
+    },
+    {
+     "kind": "phrase",
+     "arg": "Potassium channel subfamily K member",
+     "purpose": "PDB entries described as a K2P channel",
+     "n_hits": 40,
+     "hits": [
+      "28IZ",
+      "3UKM",
+      "3UM7",
+      "4BW5",
+      "4RUE",
+      "4RUF",
+      "4TWK",
+      "4XDJ",
+      "4XDK",
+      "4XDL",
+      "6CQ6",
+      "6CQ8",
+      "6CQ9",
+      "6RV2",
+      "6RV3",
+      "6RV4",
+      "6V36",
+      "6V37",
+      "6V3C",
+      "6V3I",
+      "6W7B",
+      "6W7C",
+      "6W7D",
+      "6W7E",
+      "6W82",
+      "6W83",
+      "6W84",
+      "6W85",
+      "6W86",
+      "6W87",
+      "6W88",
+      "6W8A",
+      "6W8C",
+      "6W8F",
+      "7SK0",
+      "7SK1",
+      "8DE7",
+      "8DE8",
+      "8DE9",
+      "8K1J"
+     ]
+    }
+   ],
+   "candidates": [],
+   "chosen": null,
+   "interface": null,
+   "notes": [],
+   "n_unique_entries": 77
+  },
+  "herg_tetramer": {
+   "question": "An hERG-family (KCNH) tetramer: subunit interface and selectivity filter",
+   "searches": [
+    {
+     "kind": "accession",
+     "arg": [
+      "Q12809"
+     ],
+     "purpose": "PDB entries containing human KCNH2 / hERG",
+     "n_hits": 23,
+     "hits": [
+      "1BYW",
+      "1UJL",
+      "2L0W",
+      "2L1M",
+      "2L4R",
+      "2LE7",
+      "2N7G",
+      "4HP9",
+      "4HQA",
+      "5VA1",
+      "5VA2",
+      "5VA3",
+      "8IO4",
+      "8IO5",
+      "8IOB",
+      "8ZYN",
+      "8ZYO",
+      "8ZYP",
+      "8ZYQ",
+      "9CHP",
+      "9CHQ",
+      "9CHR",
+      "9CHS"
+     ]
+    },
+    {
+     "kind": "phrase",
+     "arg": "Potassium voltage-gated channel subfamily H",
+     "purpose": "PDB entries described as a KCNH channel",
+     "n_hits": 40,
+     "hits": [
+      "4LLO",
+      "1UJL",
+      "2L1M",
+      "2L4R",
+      "2LE7",
+      "2N7G",
+      "4F8A",
+      "4HOI",
+      "4HP9",
+      "4HQA",
+      "5J7E",
+      "5VA1",
+      "5VA2",
+      "5VA3",
+      "6SYG",
+      "6Y7Q",
+      "7YID",
+      "7YIE",
+      "7YIF",
+      "7YIG",
+      "7YIH",
+      "7YIJ",
+      "8IO4",
+      "8IO5",
+      "8IOB",
+      "8ZYN",
+      "8ZYO",
+      "8ZYP",
+      "8ZYQ",
+      "9CHP",
+      "9CHQ",
+      "9CHR",
+      "9CHS",
+      "5HIT",
+      "5K7L",
+      "6PBX",
+      "6PBY",
+      "8EOW",
+      "8EP0",
+      "8EP1"
+     ]
+    }
+   ],
+   "candidates": [],
+   "chosen": null,
+   "interface": null,
+   "notes": [],
+   "n_unique_entries": 42
+  },
+  "lat_substrate": {
+   "question": "An LAT-family amino-acid transporter with its substrate",
+   "searches": [
+    {
+     "kind": "accession",
+     "arg": [
+      "Q8N370"
+     ],
+     "purpose": "PDB entries containing human SLC43A2 / LAT4 (our panel protein)",
+     "n_hits": 3,
+     "hits": [
+      "9JBS",
+      "9JBT",
+      "9JBU"
+     ]
+    },
+    {
+     "kind": "phrase",
+     "arg": "Large neutral amino acids transporter",
+     "purpose": "PDB entries described as a large neutral amino-acid transporter",
+     "n_hits": 28,
+     "hits": [
+      "9JBS",
+      "9JBT",
+      "9JBU",
+      "6IRS",
+      "6IRT",
+      "7CMH",
+      "7CMI",
+      "7DSK",
+      "7DSL",
+      "7DSN",
+      "7DSQ",
+      "8IDA",
+      "8J8L",
+      "8J8M",
+      "8KDF",
+      "8KDH",
+      "8KDJ",
+      "8KDN",
+      "8KDO",
+      "8KDP",
+      "8X0W",
+      "6JMQ",
+      "8A6L",
+      "7B00",
+      "8XPU",
+      "8KDD",
+      "8KDG",
+      "8KDI"
+     ]
+    },
+    {
+     "kind": "accession",
+     "arg": [
+      "Q01650",
+      "P08195"
+     ],
+     "purpose": "PDB entries containing human SLC7A5 (LAT1) or SLC3A2 (4F2hc)",
+     "n_hits": 44,
+     "hits": [
+      "2DH2",
+      "2DH3",
+      "6IRS",
+      "6IRT",
+      "6JMQ",
+      "6JMR",
+      "6S8V",
+      "7B00",
+      "7CCS",
+      "7CMH",
+      "7CMI",
+      "7DF1",
+      "7DSK",
+      "7DSL",
+      "7DSN",
+      "7DSQ",
+      "7EPZ",
+      "7P9U",
+      "7P9V",
+      "8A6L",
+      "8G0M",
+      "8IDA",
+      "8J8L",
+      "8J8M",
+      "8KDD",
+      "8KDF",
+      "8KDG",
+      "8KDH",
+      "8KDI",
+      "8KDJ",
+      "8KDN",
+      "8KDO",
+      "8KDP",
+      "8QEY",
+      "8WNS",
+      "8WNT",
+      "8WNY",
+      "8X0W",
+      "8XPU",
+      "8YLP",
+      "9I1Z",
+      "9KJU",
+      "9KY5",
+      "9LDR"
+     ]
+    }
+   ],
+   "candidates": [],
+   "chosen": null,
+   "interface": null,
+   "notes": [],
+   "n_unique_entries": 47
+  }
+ }
+}

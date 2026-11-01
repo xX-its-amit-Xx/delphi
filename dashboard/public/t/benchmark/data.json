@@ -1,0 +1,1597 @@
+{
+ "built": "2026-11-01T07:48:29.180Z",
+ "prereg": "swarm/benchmark/ARMS.md",
+ "model": "claude-sonnet-5-5",
+ "N": 3,
+ "budget_total_usd_per_cell": 0.45,
+ "n_per_cell": 3,
+ "arms": [
+  "single",
+  "decentralised",
+  "centralised"
+ ],
+ "arm_definitions": {
+  "single": "One agent does the whole task end to end. 1 call at the whole cell budget.",
+  "decentralised": "3 agents work the same task independently, no shared state, no orchestrator; merged at the end by a fixed oracle-free medoid vote. 3 parallel calls at a third of the budget each.",
+  "centralised": "An orchestrator splits the task into 3 subtasks, 3 workers each do one, and a second orchestrator call sees all three and decides the final artifact. 5 calls at a fifth of the budget each."
+ },
+ "limitations": [
+  "n = 3 tasks per (arm, level). No claim of statistical significance is possible and none is made. A difference smaller than the within-arm min-max spread is reported as NOT separating.",
+  "No arm had any tools. Every arm's input was byte-identical. This measures the three architectures as REASONING architectures over fixed inputs; it does NOT measure tool use or tool coordination, which is what the rest of this project actually does. Do not quote it as if it did.",
+  "Equal TOTAL budget per cell ($0.45), not equal budget per agent. The single agent gets it in one call; the centralised arm gets a fifth of it per call. Giving every agent the full budget is a different experiment and was not run.",
+  "Temperature is not settable through the headless CLI, so runs are not deterministic. Spreads, not point values, carry the information."
+ ],
+ "levels": [
+  {
+   "level": "nanopub",
+   "title": "Nanopub creation",
+   "metric": "mean of 6 honesty checks (parses, leak-clean, locator traceability, quotable line, no invented numbers, no boilerplate reuse)",
+   "ground_truth": "holdout/nanopubs/check.mjs over the nanopub 1.95.0 validator, plus holdout/check-leaks.mjs",
+   "n_tasks": 3,
+   "tasks": [
+    "l1-t1",
+    "l1-t2",
+    "l1-t3"
+   ],
+   "caveat": "METRIC CAVEAT: \"parses\" is 0 for every arm on every task, because the prompt never asked for a provenance template and every record is minutes old — neither is an RDF problem. The post-hoc secondary \"parses_valid_rdf\", which tolerates those two notes, separates: single 1 of 3, decentralised 3 of 3, centralised 0 of 3 (no artifact). At n = 3 that is one task of difference.",
+   "arms": {
+    "single": {
+     "n": 3,
+     "mean_score": 0.6482,
+     "min_score": 0.5,
+     "max_score": 0.7778,
+     "spread": 0.2778,
+     "cost_usd": 0.4049,
+     "tokens_total": 83738,
+     "wall_s": 79.9,
+     "calls": 3,
+     "infra_failures": 0,
+     "cap_stops": 0,
+     "artifacts_absent": 0,
+     "per_task": [
+      {
+       "task": "l1-t1",
+       "score": 0.6667,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.08534,
+       "tokens": 14342,
+       "wall_s": 27.2,
+       "calls": 1,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/nanopub__single__l1-t1.json",
+       "headline": "parses 0 (valid RDF 1), leak-clean 1, locators 1, invented numbers 7, quotable line 1, boilerplate reuse 0"
+      },
+      {
+       "task": "l1-t2",
+       "score": 0.5,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.25403,
+       "tokens": 55964,
+       "wall_s": 30.1,
+       "calls": 1,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/nanopub__single__l1-t2.json",
+       "headline": "parses 0 (valid RDF 0), leak-clean 1, locators 1, invented numbers 6, quotable line 0, boilerplate reuse 0"
+      },
+      {
+       "task": "l1-t3",
+       "score": 0.7778,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.06557,
+       "tokens": 13432,
+       "wall_s": 22.6,
+       "calls": 1,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/nanopub__single__l1-t3.json",
+       "headline": "parses 0 (valid RDF 0), leak-clean 1, locators 1, invented numbers 1, quotable line 1, boilerplate reuse 0"
+      }
+     ]
+    },
+    "decentralised": {
+     "n": 3,
+     "mean_score": 0.5926,
+     "min_score": 0.5,
+     "max_score": 0.6667,
+     "spread": 0.1667,
+     "cost_usd": 0.9538,
+     "tokens_total": 372538,
+     "wall_s": 110.6,
+     "calls": 10,
+     "infra_failures": 0,
+     "cap_stops": 1,
+     "artifacts_absent": 0,
+     "per_task": [
+      {
+       "task": "l1-t1",
+       "score": 0.6667,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.5019,
+       "tokens": 166883,
+       "wall_s": 59.7,
+       "calls": 4,
+       "cap_stops": 1,
+       "infra_failures": 0,
+       "log": "logs/nanopub__decentralised__l1-t1.json",
+       "headline": "parses 0 (valid RDF 1), leak-clean 1, locators 1, invented numbers 7, quotable line 1, boilerplate reuse 0"
+      },
+      {
+       "task": "l1-t2",
+       "score": 0.5,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.2215,
+       "tokens": 42841,
+       "wall_s": 29.6,
+       "calls": 3,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/nanopub__decentralised__l1-t2.json",
+       "headline": "parses 0 (valid RDF 1), leak-clean 1, locators 1, invented numbers 6, quotable line 0, boilerplate reuse 0"
+      },
+      {
+       "task": "l1-t3",
+       "score": 0.6111,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.23039,
+       "tokens": 162814,
+       "wall_s": 21.3,
+       "calls": 3,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/nanopub__decentralised__l1-t3.json",
+       "headline": "parses 0 (valid RDF 1), leak-clean 1, locators 1, invented numbers 1, quotable line 0, boilerplate reuse 0"
+      }
+     ]
+    },
+    "centralised": {
+     "n": 3,
+     "mean_score": 0,
+     "min_score": 0,
+     "max_score": 0,
+     "spread": 0,
+     "cost_usd": 1.611,
+     "tokens_total": 405692,
+     "wall_s": 269.3,
+     "calls": 18,
+     "infra_failures": 0,
+     "cap_stops": 8,
+     "artifacts_absent": 3,
+     "per_task": [
+      {
+       "task": "l1-t1",
+       "score": 0,
+       "score_uncorrected": 0.5,
+       "artifact_absent": true,
+       "cost_usd": 0.47247,
+       "tokens": 173374,
+       "wall_s": 92,
+       "calls": 6,
+       "cap_stops": 2,
+       "infra_failures": 0,
+       "log": "logs/nanopub__centralised__l1-t1.json",
+       "headline": "no artifact produced"
+      },
+      {
+       "task": "l1-t2",
+       "score": 0,
+       "score_uncorrected": 0.5,
+       "artifact_absent": true,
+       "cost_usd": 0.70053,
+       "tokens": 69105,
+       "wall_s": 94,
+       "calls": 6,
+       "cap_stops": 4,
+       "infra_failures": 0,
+       "log": "logs/nanopub__centralised__l1-t2.json",
+       "headline": "no artifact produced"
+      },
+      {
+       "task": "l1-t3",
+       "score": 0,
+       "score_uncorrected": 0.5,
+       "artifact_absent": true,
+       "cost_usd": 0.43801,
+       "tokens": 163213,
+       "wall_s": 83.3,
+       "calls": 6,
+       "cap_stops": 2,
+       "infra_failures": 0,
+       "log": "logs/nanopub__centralised__l1-t3.json",
+       "headline": "no artifact produced"
+      }
+     ]
+    }
+   },
+   "merge_diagnosis": [
+    {
+     "cell": "decentralised/l1-t1",
+     "rule": "medoid",
+     "kept": 0,
+     "kept_score": 0.6667,
+     "best_candidate_score": 0.6667,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 0.6667
+      },
+      {
+       "index": 1,
+       "score": 0.6667
+      },
+      {
+       "index": 2,
+       "score": 0.6667
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "decentralised/l1-t2",
+     "rule": "medoid",
+     "kept": 0,
+     "kept_score": 0.4667,
+     "best_candidate_score": 0.4667,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 0.4667
+      },
+      {
+       "index": 1,
+       "score": 0.4667
+      },
+      {
+       "index": 2,
+       "score": 0.4667
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "decentralised/l1-t3",
+     "rule": "medoid",
+     "kept": 0,
+     "kept_score": 0.6111,
+     "best_candidate_score": 0.7778,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 0.6111
+      },
+      {
+       "index": 1,
+       "score": 0.7778
+      },
+      {
+       "index": 2,
+       "score": 0.7778
+      }
+     ],
+     "discarded_a_better_candidate": true
+    },
+    {
+     "cell": "centralised/l1-t1",
+     "rule": "orchestrator decides",
+     "kept": null,
+     "kept_score": null,
+     "best_candidate_score": 0.8333,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 0.6667
+      },
+      {
+       "index": 1,
+       "score": 0.8333
+      },
+      {
+       "index": 2,
+       "score": 0.6667
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "centralised/l1-t2",
+     "rule": "orchestrator decides",
+     "kept": null,
+     "kept_score": null,
+     "best_candidate_score": 0.6667,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 0.5
+      },
+      {
+       "index": 2,
+       "score": 0.6667
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "centralised/l1-t3",
+     "rule": "orchestrator decides",
+     "kept": null,
+     "kept_score": null,
+     "best_candidate_score": 0.6667,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 0.6667
+      },
+      {
+       "index": 1,
+       "score": 0.6111
+      },
+      {
+       "index": 2,
+       "score": 0.6667
+      }
+     ],
+     "discarded_a_better_candidate": false
+    }
+   ]
+  },
+  {
+   "level": "leanbio",
+   "title": "LeanBio formalisation",
+   "metric": "mean of 5 checks (compiles, no cheats, witness proved, hypotheses load-bearing, says what the claim says)",
+   "ground_truth": "lake env lean with Mathlib v4.35.0 (compilation is the ground truth), one process at a time",
+   "n_tasks": 3,
+   "tasks": [
+    "l2-t1",
+    "l2-t2",
+    "l2-t3"
+   ],
+   "caveat": null,
+   "arms": {
+    "single": {
+     "n": 3,
+     "mean_score": 0.9905,
+     "min_score": 0.9714,
+     "max_score": 1,
+     "spread": 0.0286,
+     "cost_usd": 0.4642,
+     "tokens_total": 108568,
+     "wall_s": 44.4,
+     "calls": 3,
+     "infra_failures": 0,
+     "cap_stops": 0,
+     "artifacts_absent": 0,
+     "per_task": [
+      {
+       "task": "l2-t1",
+       "score": 0.9714,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.1997,
+       "tokens": 46909,
+       "wall_s": 17.3,
+       "calls": 1,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/leanbio__single__l2-t1.json",
+       "headline": "compiles 1, witness proved 1, hypotheses load-bearing 1, content 0.857"
+      },
+      {
+       "task": "l2-t2",
+       "score": 1,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.05051,
+       "tokens": 10298,
+       "wall_s": 12.7,
+       "calls": 1,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/leanbio__single__l2-t2.json",
+       "headline": "compiles 1, witness proved 1, hypotheses load-bearing 1, content 1"
+      },
+      {
+       "task": "l2-t3",
+       "score": 1,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.21395,
+       "tokens": 51361,
+       "wall_s": 14.4,
+       "calls": 1,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/leanbio__single__l2-t3.json",
+       "headline": "compiles 1, witness proved 1, hypotheses load-bearing 1, content 1"
+      }
+     ]
+    },
+    "decentralised": {
+     "n": 3,
+     "mean_score": 0.8667,
+     "min_score": 0.6,
+     "max_score": 1,
+     "spread": 0.4,
+     "cost_usd": 0.691,
+     "tokens_total": 414846,
+     "wall_s": 72.1,
+     "calls": 10,
+     "infra_failures": 0,
+     "cap_stops": 1,
+     "artifacts_absent": 0,
+     "per_task": [
+      {
+       "task": "l2-t1",
+       "score": 1,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.17211,
+       "tokens": 115654,
+       "wall_s": 19.1,
+       "calls": 3,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/leanbio__decentralised__l2-t1.json",
+       "headline": "compiles 1, witness proved 1, hypotheses load-bearing 1, content 1"
+      },
+      {
+       "task": "l2-t2",
+       "score": 0.6,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.17708,
+       "tokens": 155871,
+       "wall_s": 17.1,
+       "calls": 3,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/leanbio__decentralised__l2-t2.json",
+       "headline": "compiles 0, witness proved 0, hypotheses load-bearing 1, content 1"
+      },
+      {
+       "task": "l2-t3",
+       "score": 1,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.34181,
+       "tokens": 143321,
+       "wall_s": 35.9,
+       "calls": 4,
+       "cap_stops": 1,
+       "infra_failures": 0,
+       "log": "logs/leanbio__decentralised__l2-t3.json",
+       "headline": "compiles 1, witness proved 1, hypotheses load-bearing 1, content 1"
+      }
+     ]
+    },
+    "centralised": {
+     "n": 3,
+     "mean_score": 1,
+     "min_score": 1,
+     "max_score": 1,
+     "spread": 0,
+     "cost_usd": 0.9551,
+     "tokens_total": 463775,
+     "wall_s": 189.1,
+     "calls": 15,
+     "infra_failures": 0,
+     "cap_stops": 1,
+     "artifacts_absent": 0,
+     "per_task": [
+      {
+       "task": "l2-t1",
+       "score": 1,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.27367,
+       "tokens": 63016,
+       "wall_s": 56.1,
+       "calls": 5,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/leanbio__centralised__l2-t1.json",
+       "headline": "compiles 1, witness proved 1, hypotheses load-bearing 1, content 1"
+      },
+      {
+       "task": "l2-t2",
+       "score": 1,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.33222,
+       "tokens": 228644,
+       "wall_s": 52.5,
+       "calls": 5,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/leanbio__centralised__l2-t2.json",
+       "headline": "compiles 1, witness proved 1, hypotheses load-bearing 1, content 1"
+      },
+      {
+       "task": "l2-t3",
+       "score": 1,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.34921,
+       "tokens": 172115,
+       "wall_s": 80.5,
+       "calls": 5,
+       "cap_stops": 1,
+       "infra_failures": 0,
+       "log": "logs/leanbio__centralised__l2-t3.json",
+       "headline": "compiles 1, witness proved 1, hypotheses load-bearing 1, content 1"
+      }
+     ]
+    }
+   },
+   "merge_diagnosis": [
+    {
+     "cell": "decentralised/l2-t1",
+     "rule": "medoid",
+     "kept": 1,
+     "kept_score": 1,
+     "best_candidate_score": 1,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 1
+      },
+      {
+       "index": 1,
+       "score": 1
+      },
+      {
+       "index": 2,
+       "score": 1
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "decentralised/l2-t2",
+     "rule": "medoid",
+     "kept": 2,
+     "kept_score": 0.6,
+     "best_candidate_score": 1,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 1
+      },
+      {
+       "index": 1,
+       "score": 1
+      },
+      {
+       "index": 2,
+       "score": 0.6
+      }
+     ],
+     "discarded_a_better_candidate": true
+    },
+    {
+     "cell": "decentralised/l2-t3",
+     "rule": "medoid",
+     "kept": 0,
+     "kept_score": 1,
+     "best_candidate_score": 1,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 1
+      },
+      {
+       "index": 1,
+       "score": 1
+      },
+      {
+       "index": 2,
+       "score": 1
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "centralised/l2-t1",
+     "rule": "orchestrator decides",
+     "kept": null,
+     "kept_score": null,
+     "best_candidate_score": 1,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 0.8
+      },
+      {
+       "index": 1,
+       "score": 1
+      },
+      {
+       "index": 2,
+       "score": 1
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "centralised/l2-t2",
+     "rule": "orchestrator decides",
+     "kept": null,
+     "kept_score": null,
+     "best_candidate_score": 1,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 1
+      },
+      {
+       "index": 1,
+       "score": 1
+      },
+      {
+       "index": 2,
+       "score": 1
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "centralised/l2-t3",
+     "rule": "orchestrator decides",
+     "kept": null,
+     "kept_score": null,
+     "best_candidate_score": 1,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 1
+      },
+      {
+       "index": 1,
+       "score": 1
+      }
+     ],
+     "discarded_a_better_candidate": false
+    }
+   ]
+  },
+  {
+   "level": "design",
+   "title": "Design-studio usage",
+   "metric": "mean of 4 checks (accepted, fixed fields present, laws actually evaluated, no unflagged invented fields)",
+   "ground_truth": "sim-engine lean_check at lawset 1.8.1",
+   "n_tasks": 3,
+   "tasks": [
+    "l3-t1",
+    "l3-t2",
+    "l3-t3"
+   ],
+   "caveat": "TASK-DESIGN DEFECT: the briefs are infeasible at lawset 1.8.1. All three arms violate the same five binding laws on brief 1, because the sponsor's fixed SL_m 0.25 and mass_kg 0.075 sit outside the Exocoetidae isometry band the accepted laws are scoped to. Re-running lean_check on one arm's own design with SL_m set to the reference specimen's 0.19 drops binding violations from 5 to 0. \"accepted\" was unreachable by construction, so this stage measures the brief, not the arms. Do not quote its quality column.",
+   "arms": {
+    "single": {
+     "n": 3,
+     "mean_score": 0.5682,
+     "min_score": 0.2955,
+     "max_score": 0.7045,
+     "spread": 0.409,
+     "cost_usd": 0.1534,
+     "tokens_total": 33978,
+     "wall_s": 54.5,
+     "calls": 3,
+     "infra_failures": 0,
+     "cap_stops": 0,
+     "artifacts_absent": 0,
+     "per_task": [
+      {
+       "task": "l3-t1",
+       "score": 0.7045,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.05479,
+       "tokens": 10927,
+       "wall_s": 15.6,
+       "calls": 1,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/design__single__l3-t1.json",
+       "headline": "accepted 0, binding violations 5, laws evaluated 9, invented fields 0"
+      },
+      {
+       "task": "l3-t2",
+       "score": 0.2955,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.04244,
+       "tokens": 10801,
+       "wall_s": 14.6,
+       "calls": 1,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/design__single__l3-t2.json",
+       "headline": "accepted 0, binding violations 1, laws evaluated 2, invented fields 4"
+      },
+      {
+       "task": "l3-t3",
+       "score": 0.7045,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.0562,
+       "tokens": 12250,
+       "wall_s": 24.3,
+       "calls": 1,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/design__single__l3-t3.json",
+       "headline": "accepted 0, binding violations 6, laws evaluated 9, invented fields 0"
+      }
+     ]
+    },
+    "decentralised": {
+     "n": 3,
+     "mean_score": 0.7197,
+     "min_score": 0.6818,
+     "max_score": 0.7727,
+     "spread": 0.0909,
+     "cost_usd": 0.3922,
+     "tokens_total": 98848,
+     "wall_s": 50.7,
+     "calls": 9,
+     "infra_failures": 0,
+     "cap_stops": 0,
+     "artifacts_absent": 0,
+     "per_task": [
+      {
+       "task": "l3-t1",
+       "score": 0.6818,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.12281,
+       "tokens": 32028,
+       "wall_s": 14.7,
+       "calls": 3,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/design__decentralised__l3-t1.json",
+       "headline": "accepted 0, binding violations 5, laws evaluated 8, invented fields 0"
+      },
+      {
+       "task": "l3-t2",
+       "score": 0.7727,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.11855,
+       "tokens": 31687,
+       "wall_s": 14.7,
+       "calls": 3,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/design__decentralised__l3-t2.json",
+       "headline": "accepted 1, binding violations 0, laws evaluated 1, invented fields 0"
+      },
+      {
+       "task": "l3-t3",
+       "score": 0.7045,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.15081,
+       "tokens": 35133,
+       "wall_s": 21.3,
+       "calls": 3,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/design__decentralised__l3-t3.json",
+       "headline": "accepted 0, binding violations 6, laws evaluated 9, invented fields 0"
+      }
+     ]
+    },
+    "centralised": {
+     "n": 3,
+     "mean_score": 0.5985,
+     "min_score": 0.4545,
+     "max_score": 0.75,
+     "spread": 0.2955,
+     "cost_usd": 0.9118,
+     "tokens_total": 192760,
+     "wall_s": 194.2,
+     "calls": 15,
+     "infra_failures": 0,
+     "cap_stops": 2,
+     "artifacts_absent": 0,
+     "per_task": [
+      {
+       "task": "l3-t1",
+       "score": 0.4545,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.26146,
+       "tokens": 62595,
+       "wall_s": 49.8,
+       "calls": 5,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/design__centralised__l3-t1.json",
+       "headline": "accepted 0, binding violations 5, laws evaluated 9, invented fields 5"
+      },
+      {
+       "task": "l3-t2",
+       "score": 0.5909,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.25172,
+       "tokens": 62213,
+       "wall_s": 53.2,
+       "calls": 5,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/design__centralised__l3-t2.json",
+       "headline": "accepted 0, binding violations 2, laws evaluated 4, invented fields 0"
+      },
+      {
+       "task": "l3-t3",
+       "score": 0.75,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.39861,
+       "tokens": 67952,
+       "wall_s": 91.2,
+       "calls": 5,
+       "cap_stops": 2,
+       "infra_failures": 0,
+       "log": "logs/design__centralised__l3-t3.json",
+       "headline": "accepted 0, binding violations 5, laws evaluated 11, invented fields 0"
+      }
+     ]
+    }
+   },
+   "merge_diagnosis": [
+    {
+     "cell": "decentralised/l3-t1",
+     "rule": "medoid",
+     "kept": 0,
+     "kept_score": 0.6818,
+     "best_candidate_score": 0.6818,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 0.6818
+      },
+      {
+       "index": 1,
+       "score": 0.6818
+      },
+      {
+       "index": 2,
+       "score": 0.6818
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "decentralised/l3-t2",
+     "rule": "medoid",
+     "kept": 0,
+     "kept_score": 0.7727,
+     "best_candidate_score": 0.7727,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 0.7727
+      },
+      {
+       "index": 1,
+       "score": 0.7727
+      },
+      {
+       "index": 2,
+       "score": 0.5455
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "decentralised/l3-t3",
+     "rule": "medoid",
+     "kept": 1,
+     "kept_score": 0.7045,
+     "best_candidate_score": 0.7045,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 0.7045
+      },
+      {
+       "index": 1,
+       "score": 0.7045
+      },
+      {
+       "index": 2,
+       "score": 0.7045
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "centralised/l3-t1",
+     "rule": "orchestrator decides",
+     "kept": null,
+     "kept_score": null,
+     "best_candidate_score": 0.7045,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 0.6591
+      },
+      {
+       "index": 1,
+       "score": 0.7045
+      },
+      {
+       "index": 2,
+       "score": 0.4545
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "centralised/l3-t2",
+     "rule": "orchestrator decides",
+     "kept": null,
+     "kept_score": null,
+     "best_candidate_score": 0.7727,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 0.7727
+      },
+      {
+       "index": 1,
+       "score": 0.7727
+      },
+      {
+       "index": 2,
+       "score": 0.25
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "centralised/l3-t3",
+     "rule": "orchestrator decides",
+     "kept": null,
+     "kept_score": null,
+     "best_candidate_score": 0.25,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 0.25
+      }
+     ],
+     "discarded_a_better_candidate": false
+    }
+   ]
+  },
+  {
+   "level": "validation",
+   "title": "Validation-framework usage",
+   "metric": "mean of 7 checks (five named correct, no summing, cannot-assess not a pass, composite not the verdict, withholding reported, scales reported, no fabrications)",
+   "ground_truth": "the verbatim validate_generation output the arm was given",
+   "n_tasks": 3,
+   "tasks": [
+    "l4-t1",
+    "l4-t2",
+    "l4-t3"
+   ],
+   "caveat": null,
+   "arms": {
+    "single": {
+     "n": 3,
+     "mean_score": 1,
+     "min_score": 1,
+     "max_score": 1,
+     "spread": 0,
+     "cost_usd": 0.3523,
+     "tokens_total": 87703,
+     "wall_s": 27,
+     "calls": 3,
+     "infra_failures": 0,
+     "cap_stops": 0,
+     "artifacts_absent": 0,
+     "per_task": [
+      {
+       "task": "l4-t1",
+       "score": 1,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.06297,
+       "tokens": 15542,
+       "wall_s": 8.1,
+       "calls": 1,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/validation__single__l4-t1.json",
+       "headline": "five named correct 1, no summing 1, cannot-assess not a pass 1, composite not the verdict 1, fabrications 0"
+      },
+      {
+       "task": "l4-t2",
+       "score": 1,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.23402,
+       "tokens": 56885,
+       "wall_s": 11,
+       "calls": 1,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/validation__single__l4-t2.json",
+       "headline": "five named correct 1, no summing 1, cannot-assess not a pass 1, composite not the verdict 1, fabrications 0"
+      },
+      {
+       "task": "l4-t3",
+       "score": 1,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.0553,
+       "tokens": 15276,
+       "wall_s": 7.9,
+       "calls": 1,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/validation__single__l4-t3.json",
+       "headline": "five named correct 1, no summing 1, cannot-assess not a pass 1, composite not the verdict 1, fabrications 0"
+      }
+     ]
+    },
+    "decentralised": {
+     "n": 3,
+     "mean_score": 1,
+     "min_score": 1,
+     "max_score": 1,
+     "spread": 0,
+     "cost_usd": 0.5292,
+     "tokens_total": 181419,
+     "wall_s": 27.4,
+     "calls": 9,
+     "infra_failures": 0,
+     "cap_stops": 0,
+     "artifacts_absent": 0,
+     "per_task": [
+      {
+       "task": "l4-t1",
+       "score": 1,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.17296,
+       "tokens": 47026,
+       "wall_s": 9.8,
+       "calls": 3,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/validation__decentralised__l4-t1.json",
+       "headline": "five named correct 1, no summing 1, cannot-assess not a pass 1, composite not the verdict 1, fabrications 0"
+      },
+      {
+       "task": "l4-t2",
+       "score": 1,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.17143,
+       "tokens": 46853,
+       "wall_s": 8.9,
+       "calls": 3,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/validation__decentralised__l4-t2.json",
+       "headline": "five named correct 1, no summing 1, cannot-assess not a pass 1, composite not the verdict 1, fabrications 0"
+      },
+      {
+       "task": "l4-t3",
+       "score": 1,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.18479,
+       "tokens": 87540,
+       "wall_s": 8.7,
+       "calls": 3,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/validation__decentralised__l4-t3.json",
+       "headline": "five named correct 1, no summing 1, cannot-assess not a pass 1, composite not the verdict 1, fabrications 0"
+      }
+     ]
+    },
+    "centralised": {
+     "n": 3,
+     "mean_score": 0.9524,
+     "min_score": 0.8571,
+     "max_score": 1,
+     "spread": 0.1429,
+     "cost_usd": 0.9315,
+     "tokens_total": 249301,
+     "wall_s": 82.8,
+     "calls": 15,
+     "infra_failures": 0,
+     "cap_stops": 0,
+     "artifacts_absent": 0,
+     "per_task": [
+      {
+       "task": "l4-t1",
+       "score": 1,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.31672,
+       "tokens": 83552,
+       "wall_s": 26.3,
+       "calls": 5,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/validation__centralised__l4-t1.json",
+       "headline": "five named correct 1, no summing 1, cannot-assess not a pass 1, composite not the verdict 1, fabrications 0"
+      },
+      {
+       "task": "l4-t2",
+       "score": 0.8571,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.30996,
+       "tokens": 83373,
+       "wall_s": 28.2,
+       "calls": 5,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/validation__centralised__l4-t2.json",
+       "headline": "five named correct 1, no summing 1, cannot-assess not a pass 1, composite not the verdict 1, fabrications 0"
+      },
+      {
+       "task": "l4-t3",
+       "score": 1,
+       "score_uncorrected": null,
+       "artifact_absent": false,
+       "cost_usd": 0.30487,
+       "tokens": 82376,
+       "wall_s": 28.3,
+       "calls": 5,
+       "cap_stops": 0,
+       "infra_failures": 0,
+       "log": "logs/validation__centralised__l4-t3.json",
+       "headline": "five named correct 1, no summing 1, cannot-assess not a pass 1, composite not the verdict 1, fabrications 0"
+      }
+     ]
+    }
+   },
+   "merge_diagnosis": [
+    {
+     "cell": "decentralised/l4-t1",
+     "rule": "medoid",
+     "kept": 0,
+     "kept_score": 1,
+     "best_candidate_score": 1,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 1
+      },
+      {
+       "index": 1,
+       "score": 1
+      },
+      {
+       "index": 2,
+       "score": 1
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "decentralised/l4-t2",
+     "rule": "medoid",
+     "kept": 0,
+     "kept_score": 1,
+     "best_candidate_score": 1,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 1
+      },
+      {
+       "index": 1,
+       "score": 1
+      },
+      {
+       "index": 2,
+       "score": 1
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "decentralised/l4-t3",
+     "rule": "medoid",
+     "kept": 0,
+     "kept_score": 1,
+     "best_candidate_score": 1,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 1
+      },
+      {
+       "index": 1,
+       "score": 1
+      },
+      {
+       "index": 2,
+       "score": 1
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "centralised/l4-t1",
+     "rule": "orchestrator decides",
+     "kept": null,
+     "kept_score": null,
+     "best_candidate_score": 1,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 1
+      },
+      {
+       "index": 1,
+       "score": 1
+      },
+      {
+       "index": 2,
+       "score": 0.4286
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "centralised/l4-t2",
+     "rule": "orchestrator decides",
+     "kept": null,
+     "kept_score": null,
+     "best_candidate_score": 1,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 0.4286
+      },
+      {
+       "index": 1,
+       "score": 1
+      },
+      {
+       "index": 2,
+       "score": 1
+      }
+     ],
+     "discarded_a_better_candidate": false
+    },
+    {
+     "cell": "centralised/l4-t3",
+     "rule": "orchestrator decides",
+     "kept": null,
+     "kept_score": null,
+     "best_candidate_score": 1,
+     "candidate_scores": [
+      {
+       "index": 0,
+       "score": 1
+      },
+      {
+       "index": 1,
+       "score": 1
+      },
+      {
+       "index": 2,
+       "score": 0.8095
+      }
+     ],
+     "discarded_a_better_candidate": false
+    }
+   ]
+  }
+ ],
+ "cells": [
+  {
+   "level": "nanopub",
+   "arm": "single",
+   "task": "l1-t1",
+   "score": 0.6667,
+   "log": "logs/nanopub__single__l1-t1.json"
+  },
+  {
+   "level": "nanopub",
+   "arm": "single",
+   "task": "l1-t2",
+   "score": 0.5,
+   "log": "logs/nanopub__single__l1-t2.json"
+  },
+  {
+   "level": "nanopub",
+   "arm": "single",
+   "task": "l1-t3",
+   "score": 0.7778,
+   "log": "logs/nanopub__single__l1-t3.json"
+  },
+  {
+   "level": "nanopub",
+   "arm": "decentralised",
+   "task": "l1-t1",
+   "score": 0.6667,
+   "log": "logs/nanopub__decentralised__l1-t1.json"
+  },
+  {
+   "level": "nanopub",
+   "arm": "decentralised",
+   "task": "l1-t2",
+   "score": 0.5,
+   "log": "logs/nanopub__decentralised__l1-t2.json"
+  },
+  {
+   "level": "nanopub",
+   "arm": "decentralised",
+   "task": "l1-t3",
+   "score": 0.6111,
+   "log": "logs/nanopub__decentralised__l1-t3.json"
+  },
+  {
+   "level": "nanopub",
+   "arm": "centralised",
+   "task": "l1-t1",
+   "score": 0,
+   "log": "logs/nanopub__centralised__l1-t1.json"
+  },
+  {
+   "level": "nanopub",
+   "arm": "centralised",
+   "task": "l1-t2",
+   "score": 0,
+   "log": "logs/nanopub__centralised__l1-t2.json"
+  },
+  {
+   "level": "nanopub",
+   "arm": "centralised",
+   "task": "l1-t3",
+   "score": 0,
+   "log": "logs/nanopub__centralised__l1-t3.json"
+  },
+  {
+   "level": "leanbio",
+   "arm": "single",
+   "task": "l2-t1",
+   "score": 0.9714,
+   "log": "logs/leanbio__single__l2-t1.json"
+  },
+  {
+   "level": "leanbio",
+   "arm": "single",
+   "task": "l2-t2",
+   "score": 1,
+   "log": "logs/leanbio__single__l2-t2.json"
+  },
+  {
+   "level": "leanbio",
+   "arm": "single",
+   "task": "l2-t3",
+   "score": 1,
+   "log": "logs/leanbio__single__l2-t3.json"
+  },
+  {
+   "level": "leanbio",
+   "arm": "decentralised",
+   "task": "l2-t1",
+   "score": 1,
+   "log": "logs/leanbio__decentralised__l2-t1.json"
+  },
+  {
+   "level": "leanbio",
+   "arm": "decentralised",
+   "task": "l2-t2",
+   "score": 0.6,
+   "log": "logs/leanbio__decentralised__l2-t2.json"
+  },
+  {
+   "level": "leanbio",
+   "arm": "decentralised",
+   "task": "l2-t3",
+   "score": 1,
+   "log": "logs/leanbio__decentralised__l2-t3.json"
+  },
+  {
+   "level": "leanbio",
+   "arm": "centralised",
+   "task": "l2-t1",
+   "score": 1,
+   "log": "logs/leanbio__centralised__l2-t1.json"
+  },
+  {
+   "level": "leanbio",
+   "arm": "centralised",
+   "task": "l2-t2",
+   "score": 1,
+   "log": "logs/leanbio__centralised__l2-t2.json"
+  },
+  {
+   "level": "leanbio",
+   "arm": "centralised",
+   "task": "l2-t3",
+   "score": 1,
+   "log": "logs/leanbio__centralised__l2-t3.json"
+  },
+  {
+   "level": "design",
+   "arm": "single",
+   "task": "l3-t1",
+   "score": 0.7045,
+   "log": "logs/design__single__l3-t1.json"
+  },
+  {
+   "level": "design",
+   "arm": "single",
+   "task": "l3-t2",
+   "score": 0.2955,
+   "log": "logs/design__single__l3-t2.json"
+  },
+  {
+   "level": "design",
+   "arm": "single",
+   "task": "l3-t3",
+   "score": 0.7045,
+   "log": "logs/design__single__l3-t3.json"
+  },
+  {
+   "level": "design",
+   "arm": "decentralised",
+   "task": "l3-t1",
+   "score": 0.6818,
+   "log": "logs/design__decentralised__l3-t1.json"
+  },
+  {
+   "level": "design",
+   "arm": "decentralised",
+   "task": "l3-t2",
+   "score": 0.7727,
+   "log": "logs/design__decentralised__l3-t2.json"
+  },
+  {
+   "level": "design",
+   "arm": "decentralised",
+   "task": "l3-t3",
+   "score": 0.7045,
+   "log": "logs/design__decentralised__l3-t3.json"
+  },
+  {
+   "level": "design",
+   "arm": "centralised",
+   "task": "l3-t1",
+   "score": 0.4545,
+   "log": "logs/design__centralised__l3-t1.json"
+  },
+  {
+   "level": "design",
+   "arm": "centralised",
+   "task": "l3-t2",
+   "score": 0.5909,
+   "log": "logs/design__centralised__l3-t2.json"
+  },
+  {
+   "level": "design",
+   "arm": "centralised",
+   "task": "l3-t3",
+   "score": 0.75,
+   "log": "logs/design__centralised__l3-t3.json"
+  },
+  {
+   "level": "validation",
+   "arm": "single",
+   "task": "l4-t1",
+   "score": 1,
+   "log": "logs/validation__single__l4-t1.json"
+  },
+  {
+   "level": "validation",
+   "arm": "single",
+   "task": "l4-t2",
+   "score": 1,
+   "log": "logs/validation__single__l4-t2.json"
+  },
+  {
+   "level": "validation",
+   "arm": "single",
+   "task": "l4-t3",
+   "score": 1,
+   "log": "logs/validation__single__l4-t3.json"
+  },
+  {
+   "level": "validation",
+   "arm": "decentralised",
+   "task": "l4-t1",
+   "score": 1,
+   "log": "logs/validation__decentralised__l4-t1.json"
+  },
+  {
+   "level": "validation",
+   "arm": "decentralised",
+   "task": "l4-t2",
+   "score": 1,
+   "log": "logs/validation__decentralised__l4-t2.json"
+  },
+  {
+   "level": "validation",
+   "arm": "decentralised",
+   "task": "l4-t3",
+   "score": 1,
+   "log": "logs/validation__decentralised__l4-t3.json"
+  },
+  {
+   "level": "validation",
+   "arm": "centralised",
+   "task": "l4-t1",
+   "score": 1,
+   "log": "logs/validation__centralised__l4-t1.json"
+  },
+  {
+   "level": "validation",
+   "arm": "centralised",
+   "task": "l4-t2",
+   "score": 0.8571,
+   "log": "logs/validation__centralised__l4-t2.json"
+  },
+  {
+   "level": "validation",
+   "arm": "centralised",
+   "task": "l4-t3",
+   "score": 1,
+   "log": "logs/validation__centralised__l4-t3.json"
+  }
+ ],
+ "posthoc_centralised_uneven_allocation": [
+  {
+   "level": "nanopub",
+   "task": "l1-t1",
+   "allocation": "uneven",
+   "calls": 5,
+   "cost_usd": 0.29178,
+   "tokens_total": 111762,
+   "wall_s": 54.8,
+   "cap_stops": 0,
+   "produced_artifact": true,
+   "artifact_bytes": 7498,
+   "run_dir": "swarm/benchmark/runs/nanopub/centralised/l1-t1-posthoc-uneven"
+  },
+  {
+   "level": "nanopub",
+   "task": "l1-t2",
+   "allocation": "uneven",
+   "calls": 5,
+   "cost_usd": 0.38203,
+   "tokens_total": 149498,
+   "wall_s": 62.3,
+   "cap_stops": 1,
+   "produced_artifact": true,
+   "artifact_bytes": 7879,
+   "run_dir": "swarm/benchmark/runs/nanopub/centralised/l1-t2-posthoc-uneven"
+  },
+  {
+   "level": "nanopub",
+   "task": "l1-t3",
+   "allocation": "uneven",
+   "calls": 5,
+   "cost_usd": 0.35111,
+   "tokens_total": 63636,
+   "wall_s": 59.7,
+   "cap_stops": 1,
+   "produced_artifact": true,
+   "artifact_bytes": 6317,
+   "run_dir": "swarm/benchmark/runs/nanopub/centralised/l1-t3-posthoc-uneven"
+  }
+ ]
+}

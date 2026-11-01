@@ -1,0 +1,1378 @@
+{
+ "map_version": "1.0.0",
+ "as_of": "2026-11-01",
+ "count": 27,
+ "by_kind": {
+  "tool": 13,
+  "lean-module": 9,
+  "data": 4,
+  "integration": 1
+ },
+ "gaps": [
+  {
+   "id": "lean-counter-model",
+   "name": "lean_counter_model",
+   "kind": "tool",
+   "need": "Prove that a claimed implication does NOT hold in general, by constructing and kernel-checking a model that satisfies the premises and falsifies the conclusion.",
+   "signature": "lean_counter_model({premises, conclusion} | {law_id, drop_hypothesis}) -> {status: 'counter-model'|'none-found'|'inconsistent-premises', witness_lean, instance_values, checked, envelope}",
+   "reads": [
+    "lean/registry/laws/*.json non_vacuity_witness",
+    "lean/registry/lean/Witnesses.lean",
+    "lean/Delphi/*.lean",
+    "the Lean toolchain (lake)"
+   ],
+   "effort": "large",
+   "buildable": {
+    "on_what_we_have": true,
+    "why": "The registry already builds the mirror-image object: a non-vacuity witness showing the hypotheses CAN be satisfied, with bridges proved in Witnesses.lean. A counter-model is a witness plus a proof that the conclusion fails on it, and the same build and checking machinery applies.",
+    "needs_lean_build": true
+   },
+   "surfaces": [
+    "mcp",
+    "lean-cli"
+   ],
+   "nearest_existing": [
+    "lean_propose",
+    "lean_law_get"
+   ],
+   "risk": "A counter-model is relative to the formalisation, so it can refute a formalisation nobody held. It must return the full instance values and the Lean source, so a reader can check that the model is not a degenerate case the original author would have excluded.",
+   "unblocks": {
+    "personas": [
+     "evolutionary-geneticist",
+     "formal-methods-engineer",
+     "theoretical-biologist"
+    ],
+    "use_cases": [
+     "uc-counter-model",
+     "uc-generality-claim"
+    ],
+    "grand_questions": [
+     "gq-hamiltons-rule"
+    ],
+    "blocking_use_cases": [
+     "uc-counter-model",
+     "uc-generality-claim"
+    ],
+    "counts": {
+     "personas": 3,
+     "use_cases": 2,
+     "grand_questions": 1,
+     "blocking_use_cases": 2
+    },
+    "score": 8
+   },
+   "rank": 1
+  },
+  {
+   "id": "premise-check",
+   "name": "premise_check",
+   "kind": "tool",
+   "need": "Given a stated conclusion and stated premises, return whether the conclusion is derivable, not derivable, or derivable only with a named additional premise.",
+   "signature": "premise_check({premises: [...], conclusion, idiom?}) -> {verdict: 'derivable'|'not-derivable'|'needs-premise', formalisation, missing_premise?, lean_source, proof_or_gap, envelope}",
+   "reads": [
+    "lean/registry/laws/*.json for reusable statement idioms",
+    "lean/Delphi/*.lean",
+    "the Lean toolchain (lake)"
+   ],
+   "effort": "research",
+   "buildable": {
+    "on_what_we_have": false,
+    "why": "Needs premise_extract for its input and automated proof search for its output. Lean will say whether a proof the tool wrote compiles; it will not find the proof, and a failed search is not a non-derivation.",
+    "needs_lean_build": true
+   },
+   "surfaces": [
+    "mcp",
+    "lean-cli"
+   ],
+   "nearest_existing": [
+    "lean_propose",
+    "lean_verify"
+   ],
+   "risk": "Confusing 'I could not find a proof' with 'it does not follow'. Those are different claims and only the second is interesting, which is why lean_counter_model is a separate gap rather than part of this one. A tool that conflated them would systematically accuse correct papers of error.",
+   "unblocks": {
+    "personas": [
+     "reviewer-editor"
+    ],
+    "use_cases": [
+     "uc-generality-claim",
+     "uc-premise-follows",
+     "uc-tautology-or-content"
+    ],
+    "grand_questions": [
+     "gq-fisher-ftns",
+     "gq-levels-of-selection"
+    ],
+    "blocking_use_cases": [
+     "uc-generality-claim",
+     "uc-premise-follows"
+    ],
+    "counts": {
+     "personas": 1,
+     "use_cases": 3,
+     "grand_questions": 2,
+     "blocking_use_cases": 2
+    },
+    "score": 8
+   },
+   "rank": 2
+  },
+  {
+   "id": "provenance-audit",
+   "name": "provenance_audit",
+   "kind": "tool",
+   "need": "One table of every number behind an answer, with its provenance kind and source, across a whole tool sequence or a whole corpus, rather than one envelope at a time.",
+   "signature": "provenance_audit({envelopes: [...]} | {organism_id, scenario} | {corpus: 'claims'|'laws'|'state'}) -> {rows: [{quantity, value, kind, source, used_by}], counts_by_kind, weakest_input, blocking: [...], envelope}",
+   "reads": [
+    "sim-engine/lib/envelope.mjs provenance shape",
+    "any tool's returned envelope",
+    "sim-engine/params/*.json",
+    "lean/registry/laws/*.json hypotheses[].source",
+    "pipeline/leanbio/out/records.json"
+   ],
+   "effort": "small",
+   "buildable": {
+    "on_what_we_have": true,
+    "why": "Every tool here already returns {result, provenance, scope, weakest_input, counts} and the envelope throws without a scope string. The tool is an aggregator over a shape that is already enforced at runtime, with an unknown kind already rejected so a typo cannot slip through."
+   },
+   "surfaces": [
+    "mcp",
+    "cli",
+    "http"
+   ],
+   "nearest_existing": [
+    "organism_get",
+    "physiology_chain",
+    "morphogen_diffusion",
+    "scenario_run"
+   ],
+   "risk": "Aggregation can launder a weak input: a table of fifty rows with one 'calibrated' entry reads as well-sourced. The tool must surface the weakest kind and the blocking rows first, and a calibrated quantity can never be cited as a result, which the output must repeat rather than assume.",
+   "unblocks": {
+    "personas": [
+     "ai-agent",
+     "experimentalist",
+     "metascientist"
+    ],
+    "use_cases": [
+     "uc-agent-propose-edits",
+     "uc-measured-or-assumed",
+     "uc-sim-vs-laws",
+     "uc-single-study-claims"
+    ],
+    "grand_questions": [],
+    "blocking_use_cases": [],
+    "counts": {
+     "personas": 3,
+     "use_cases": 4,
+     "grand_questions": 0,
+     "blocking_use_cases": 0
+    },
+    "score": 7
+   },
+   "rank": 3
+  },
+  {
+   "id": "premise-extract",
+   "name": "premise_extract",
+   "kind": "tool",
+   "need": "Read the premises out of a claim's or a paper's prose, as a structured list of named hypotheses with their sources, so there is something to formalise and compare against.",
+   "signature": "premise_extract({text | claim_id}) -> {premises: [{name, statement, quantities, source, confidence, span}], conclusion, unparsed_spans, envelope}",
+   "reads": [
+    "docs/claims.json delphi:context",
+    "pipeline/leanbio/relations.json",
+    "pipeline/leanbio/out/records.json typed statements",
+    "lean/registry/laws-registry.schema.json hypotheses shape"
+   ],
+   "effort": "large",
+   "buildable": {
+    "on_what_we_have": false,
+    "why": "The assumptions in this corpus are free text inside delphi:context, and the existing typing is first-match-wins regex whose precision has not been measured. Reliable premise extraction is a research-grade language task, and the honest version of this tool reports what it could NOT parse, like parse_design_text does.",
+    "needs_data": [
+     "a hand-annotated set of claims with their premises marked, to measure precision against"
+    ]
+   },
+   "surfaces": [
+    "mcp",
+    "cli"
+   ],
+   "nearest_existing": [
+    "parse_design_text",
+    "delphi_get_claim",
+    "leanbio_claim"
+   ],
+   "risk": "The worst failure in the map. A plausible but wrong premise list makes every downstream check wrong while looking rigorous, and the reviewer use case would then produce confident verdicts about manuscripts. It must follow parse_design_text's rule of reporting every span it could not read, and must never silently complete a premise set.",
+   "unblocks": {
+    "personas": [
+     "reviewer-editor",
+     "theoretical-biologist"
+    ],
+    "use_cases": [
+     "uc-contradiction-hunt",
+     "uc-generality-claim",
+     "uc-premise-follows"
+    ],
+    "grand_questions": [],
+    "blocking_use_cases": [
+     "uc-generality-claim",
+     "uc-premise-follows"
+    ],
+    "counts": {
+     "personas": 2,
+     "use_cases": 3,
+     "grand_questions": 0,
+     "blocking_use_cases": 2
+    },
+    "score": 7
+   },
+   "rank": 4
+  },
+  {
+   "id": "evidence-value",
+   "name": "evidence_value",
+   "kind": "tool",
+   "need": "For a claim, which measurement would move its belief most, and by how much on each outcome. lean_open_question states what would settle one of this project's seven open questions and whether that is feasible; this would compute the movement, for any claim in the 941-record corpus, by simulating the evidence item.",
+   "signature": "evidence_value({claim_id, candidates?: [{source_class, side}]}) -> {current: {belief, E, R, items}, candidates: [{source_class, belief_if_supports, belief_if_refutes, crosses_queue_threshold, independent_of_existing}], envelope}",
+   "reads": [
+    "pipeline/leanbio/out/records.json evidence_items",
+    "pipeline/leanbio/belief-params.json",
+    "pipeline/leanbio/belief.mjs",
+    "docs/claims.json delphi:proposedTest",
+    "lean/registry/laws/*.json hypotheses[].source"
+   ],
+   "effort": "small",
+   "buildable": {
+    "on_what_we_have": true,
+    "why": "belief.mjs already computes belief from a list of evidence items with source-class deduplication. Adding a hypothetical item and recomputing is a few lines; the deduplication rule means the tool correctly reports zero movement for a duplicate source, which is the interesting case."
+   },
+   "surfaces": [
+    "mcp",
+    "cli"
+   ],
+   "nearest_existing": [
+    "lean_open_question",
+    "leanbio_claim",
+    "delphi_get_claim"
+   ],
+   "risk": "A number like 'this measurement moves belief by 0.3' invites being read as a decision-theoretic value of information. The parameters are hand-set and were never fitted to a curated corpus, so the number is a property of this scorer and nothing else. It must be returned with the parameter version attached.",
+   "unblocks": {
+    "personas": [
+     "experimentalist"
+    ],
+    "use_cases": [
+     "uc-rank-open-questions",
+     "uc-what-would-settle"
+    ],
+    "grand_questions": [
+     "gq-ageing",
+     "gq-predicting-evolution"
+    ],
+    "blocking_use_cases": [
+     "uc-rank-open-questions"
+    ],
+    "counts": {
+     "personas": 1,
+     "use_cases": 2,
+     "grand_questions": 2,
+     "blocking_use_cases": 1
+    },
+    "score": 6
+   },
+   "rank": 5
+  },
+  {
+   "id": "literature-evidence",
+   "name": "literature_evidence_add",
+   "kind": "tool",
+   "need": "Resolve a DOI or PMID against Europe PMC or Crossref, confirm the record exists, and attach it as an evidence item with its source class.",
+   "signature": "literature_evidence_add({claim_id, identifier, side: 'supports'|'refutes', quoted_sentence}) -> {resolved: {ref, doi, pmid, title, year, fetched_at}, evidence_item, belief_before, belief_after, duplicate_of?, envelope}",
+   "reads": [
+    "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+    "https://api.crossref.org/works",
+    "pipeline/leanbio/out/records.json",
+    "pipeline/leanbio/belief.mjs",
+    "pipeline/leanbio/cache/"
+   ],
+   "effort": "small",
+   "buildable": {
+    "on_what_we_have": true,
+    "why": "Both endpoints are public, unauthenticated and already the ones this project uses for citations, and the pipeline already has a committed cache pattern so reruns and CI stay offline. The belief recomputation is a pure function call."
+   },
+   "surfaces": [
+    "mcp",
+    "cli"
+   ],
+   "nearest_existing": [
+    "leanbio_ground",
+    "leanbio_claim",
+    "harvest.mjs"
+   ],
+   "risk": "A resolvable identifier is not a read paper. The tool must not let a fetched title stand in for the quoted sentence, and the provenance kind for a number taken from such a record is 'measured-secondhand' at best. Writing the cache on a hosted server would also mean making outbound calls for anonymous clients, which leanbio_ground already forbids in hosted mode.",
+   "unblocks": {
+    "personas": [
+     "knowledge-base-curator",
+     "metascientist"
+    ],
+    "use_cases": [
+     "uc-add-literature-evidence",
+     "uc-evidence-both-sides",
+     "uc-grounding-failures"
+    ],
+    "grand_questions": [],
+    "blocking_use_cases": [
+     "uc-add-literature-evidence"
+    ],
+    "counts": {
+     "personas": 2,
+     "use_cases": 3,
+     "grand_questions": 0,
+     "blocking_use_cases": 1
+    },
+    "score": 6
+   },
+   "rank": 6
+  },
+  {
+   "id": "open-questions-list",
+   "name": "open_questions_list",
+   "kind": "tool",
+   "need": "Serve the 215-problem literature enumeration in open-problems/, which exists as files and is reachable from no tool. The open-questions thread's lean_open_questions serves a DIFFERENT and narrower thing well: this project's own first-class open questions (7 questions with Lean-formalised arms and computed belief proportions, 4 failed theorems, 11 requirements), all specific to this project's organisms and laws. The literature enumeration behind them is still unserved.",
+   "signature": "open_questions_list({category?, quantitative?, has_candidates?, text?, limit}) -> {total, items: [{id, statement, source, category, quantitative, candidates: [{id, commitment, checkable_against, origin, uses_illustrative_values}]}], sources, envelope}",
+   "reads": [
+    "open-problems/problems.json",
+    "open-problems/candidates.json",
+    "open-problems/candidates.formal.json",
+    "open-problems/SOURCES.md",
+    "lean/eliminate/ledger.open-problems.json"
+   ],
+   "effort": "small",
+   "buildable": {
+    "on_what_we_have": true,
+    "why": "Nothing to build but the serving layer: 215 problems with sources, 80 candidates for 47 eligible problems, 44 carrying checkable_against, and a formal translation set already written by the Lean thread. The lowest-effort, highest-breadth gap in this list, and the open-questions registry gives it a shape to follow."
+   },
+   "surfaces": [
+    "mcp",
+    "cli",
+    "http",
+    "static-api"
+   ],
+   "nearest_existing": [
+    "lean_open_questions",
+    "lean_open_question",
+    "leanbio_queue",
+    "delphi_search_claims"
+   ],
+   "risk": "A served list looks canonical. SOURCES.md states plainly that no exhaustive list of open problems exists, that the Wikipedia source carries a citations-needed banner, and that coverage is weighted toward evolution and organism design. All three must travel in the envelope. It must also not be confused with lean_open_questions: that tool answers \"what has THIS project failed to settle\", this one would answer \"what does the literature list as open\", and conflating them would make a seven-item project backlog look like the state of biology.",
+   "unblocks": {
+    "personas": [
+     "funder-programme-manager"
+    ],
+    "use_cases": [
+     "uc-rank-open-questions",
+     "uc-settled-vs-open"
+    ],
+    "grand_questions": [
+     "gq-evolvability",
+     "gq-major-transitions"
+    ],
+    "blocking_use_cases": [
+     "uc-rank-open-questions"
+    ],
+    "counts": {
+     "personas": 1,
+     "use_cases": 2,
+     "grand_questions": 2,
+     "blocking_use_cases": 1
+    },
+    "score": 6
+   },
+   "rank": 7
+  },
+  {
+   "id": "minimal-repair",
+   "name": "minimal_repair",
+   "kind": "tool",
+   "need": "Given a violated design, the smallest edit set that clears every binding violation, or a certificate that none exists within the stated ranges.",
+   "signature": "minimal_repair({organism_id, ageDays, conditions, ranges: [{target, param, min, max}], metric: 'edits'|'relative-change'}) -> {status: 'repaired'|'no-repair-in-range'|'irreparable', edits, cleared, still_violated, searched, envelope}",
+   "reads": [
+    "sim-engine/lib/state.mjs edit propagation rules",
+    "sim-engine/tools/studio.mjs organism_edit validation",
+    "lib/lean-source.mjs checkDesign",
+    "lean/registry/lawsets/current.json"
+   ],
+   "effort": "medium",
+   "buildable": {
+    "on_what_we_have": true,
+    "why": "organism_edit already validates targets and returns verdicts, swarm_try_edits already applies edits to an inline copy without saving, and optimize already rejects candidates with new binding violations. What is missing is the minimality objective and the no-repair certificate, not the machinery."
+   },
+   "surfaces": [
+    "mcp",
+    "cli",
+    "http"
+   ],
+   "nearest_existing": [
+    "optimize",
+    "swarm_try_edits",
+    "organism_edit",
+    "lean_check"
+   ],
+   "risk": "Edits propagate through STATE by stated rules (a fin area scale moves span, a gill volume change moves area by the two-thirds power, a body size change moves mass at constant density), so a change that is minimal in one parameter is not minimal in the organism. And a minimal change in parameter space may be one no organism could make: nothing here models the developmental or genetic accessibility of an edit, and the output must say so.",
+   "unblocks": {
+    "personas": [
+     "student",
+     "synthetic-biologist"
+    ],
+    "use_cases": [
+     "uc-minimal-repair",
+     "uc-which-laws-violated"
+    ],
+    "grand_questions": [
+     "gq-morphogenesis-scaling"
+    ],
+    "blocking_use_cases": [
+     "uc-minimal-repair"
+    ],
+    "counts": {
+     "personas": 2,
+     "use_cases": 2,
+     "grand_questions": 1,
+     "blocking_use_cases": 1
+    },
+    "score": 6
+   },
+   "rank": 8
+  },
+  {
+   "id": "teach-claim",
+   "name": "teach_claim",
+   "kind": "tool",
+   "need": "One claim or law packaged as a teachable unit: the theorem, its premises with sources, what it does not establish, an in-scope and an out-of-scope example, and a mutant whose proof fails.",
+   "signature": "teach_claim({law_id | claim_id, level: 'undergraduate'|'graduate'}) -> {statement_en, premises: [{name, statement, source}], lean_source, does_not_establish, in_scope_example, out_of_scope_example, failing_mutant, envelope}",
+   "reads": [
+    "lean/registry/laws/*.json",
+    "lean/Delphi/*.lean",
+    "lean/registry/proposals/*/result.json mutant results",
+    "sim-engine/scenarios/",
+    "docs/claims.json"
+   ],
+   "effort": "small",
+   "buildable": {
+    "on_what_we_have": true,
+    "why": "Every component already exists in a law file: statement_en, hypotheses with sources, scope with taxa and ranges, the non-vacuity witness, and the mutation results recorded by propose.mjs. The work is assembly and choosing the out-of-scope example, which the scope table already determines."
+   },
+   "surfaces": [
+    "mcp",
+    "cli",
+    "static-api",
+    "page"
+   ],
+   "nearest_existing": [
+    "lean_law_get",
+    "lean_check",
+    "delphi_get_claim"
+   ],
+   "risk": "A teaching package makes a law look settled. The bootstrap laws carry the approving role 'bootstrap-grandfathered', meaning no individual review was recorded, and the does_not_establish field must be mandatory rather than optional or it will be the first thing dropped.",
+   "unblocks": {
+    "personas": [
+     "student",
+     "teacher"
+    ],
+    "use_cases": [
+     "uc-teach-a-law",
+     "uc-why-is-this-red"
+    ],
+    "grand_questions": [
+     "gq-fisher-ftns"
+    ],
+    "blocking_use_cases": [],
+    "counts": {
+     "personas": 2,
+     "use_cases": 2,
+     "grand_questions": 1,
+     "blocking_use_cases": 0
+    },
+    "score": 5
+   },
+   "rank": 9
+  },
+  {
+   "id": "scale-coverage",
+   "name": "scale_coverage",
+   "kind": "tool",
+   "need": "For a gene, a part or an organism, what is known and what is NOT known at each biological scale, with absence as a first-class answer rather than an empty result.",
+   "signature": "scale_coverage({entity, kind: 'gene'|'part'|'organism'|'taxon', scales?}) -> {per_scale: [{scale, known: [{what, source, provenance_kind}], not_in_dataset: [...], never_looked: [...]}], weakest_scale, envelope}",
+   "reads": [
+    "omics/ gene rows via tools/omics-tools.mjs",
+    "docs/claims.json",
+    "pipeline/leanbio/out/records.json groundings",
+    "sim-engine/lib/state.mjs resolved STATE field list",
+    "lean/registry/laws/*.json scope.ranges and scope.taxa",
+    "anatomy-model/parametric/stages.json",
+    "organisms/merged/taxa.json"
+   ],
+   "effort": "medium",
+   "buildable": {
+    "on_what_we_have": true,
+    "why": "Every input is already in the repo and already read by an existing tool. The work is the join and, harder, deciding the three-way distinction between 'measured and recorded', 'not in this dataset' and 'nobody looked', which has to be derivable from the files rather than asserted."
+   },
+   "surfaces": [
+    "mcp",
+    "cli",
+    "http",
+    "static-api"
+   ],
+   "nearest_existing": [
+    "omics_gene",
+    "omics_part",
+    "organism_list_parts",
+    "leanbio_ground"
+   ],
+   "risk": "An empty row would read as 'science does not know this' when it means 'this repo does not hold it'. The tool must distinguish absence-in-corpus from absence-in-literature in its output shape, not in a footnote, or it will be quoted as the former.",
+   "unblocks": {
+    "personas": [
+     "knowledge-base-curator"
+    ],
+    "use_cases": [
+     "uc-not-known-at-scale"
+    ],
+    "grand_questions": [
+     "gq-genotype-phenotype",
+     "gq-minimal-cell"
+    ],
+    "blocking_use_cases": [
+     "uc-not-known-at-scale"
+    ],
+    "counts": {
+     "personas": 1,
+     "use_cases": 1,
+     "grand_questions": 2,
+     "blocking_use_cases": 1
+    },
+    "score": 5
+   },
+   "rank": 10
+  },
+  {
+   "id": "lean-genotype-network",
+   "name": "lean_module_genotype_network",
+   "kind": "lean-module",
+   "need": "Reachability and distance in a stated genotype space, generalising the proved codon-space case to an arbitrary stated mutational neighbourhood.",
+   "signature": "a Lean module lean/Delphi/GenotypeNetwork.lean with Delphi.GNet.reachable_within, Delphi.GNet.distance_ge and Delphi.GNet.claimed_reachability_rules_out, entering the registry as law_id `genotype-network-reachability`",
+   "reads": [
+    "lean/Delphi/Genotype.lean (code, hamming, minSubst, allCodons)",
+    "Mathlib Relation.TransGen as used in lean/Delphi/Blueprint.lean",
+    "lean/Delphi/Audit.lean for the rules_out idiom"
+   ],
+   "effort": "medium",
+   "buildable": {
+    "on_what_we_have": true,
+    "why": "Both halves exist: a decided finite-graph distance in Genotype.lean and transitive-closure reasoning over a stated graph in Blueprint.lean. The module is their combination over an abstract neighbourhood relation.",
+    "needs_lean_build": true
+   },
+   "surfaces": [
+    "mcp",
+    "cli",
+    "static-api"
+   ],
+   "nearest_existing": [
+    "lean_propose",
+    "lean_check",
+    "lean_law_get"
+   ],
+   "risk": "A reachability result is relative to the stated neighbourhood, and real mutational accessibility is measured, not stated. The law must be scoped so that 'unreachable in this stated space' cannot be quoted as 'evolutionarily impossible'. This one module serves three grand questions, which makes it the highest-leverage Lean target after Price.",
+   "unblocks": {
+    "personas": [],
+    "use_cases": [
+     "uc-trajectory-possible"
+    ],
+    "grand_questions": [
+     "gq-evolvability",
+     "gq-genotype-phenotype",
+     "gq-predicting-evolution"
+    ],
+    "blocking_use_cases": [],
+    "counts": {
+     "personas": 0,
+     "use_cases": 1,
+     "grand_questions": 3,
+     "blocking_use_cases": 0
+    },
+    "score": 4
+   },
+   "rank": 11
+  },
+  {
+   "id": "lean-price",
+   "name": "lean_module_price_equation",
+   "kind": "lean-module",
+   "need": "The Price equation as a proved identity, with the multilevel partition, so that every argument built on it can be checked as following or not following.",
+   "signature": "a Lean module lean/Delphi/Price.lean with Delphi.Price.price_identity and Delphi.Price.multilevel_partition, entering the registry as law_id `price-equation` and served by lean_law_get",
+   "reads": [
+    "lean/Delphi/Fisher.lean (meanFitness, variance, select, IsFreq)",
+    "Mathlib finite-sum and covariance lemmas",
+    "lean/registry/laws-registry.schema.json"
+   ],
+   "effort": "medium",
+   "buildable": {
+    "on_what_we_have": true,
+    "why": "It is an identity over a finite index type, and the exact machinery is already in Fisher.lean: a frequency vector with IsFreq, a selection operator proved to preserve it, a mean and a variance. No data is needed, because an identity has no empirical premises.",
+    "needs_lean_build": true
+   },
+   "surfaces": [
+    "mcp",
+    "cli",
+    "static-api"
+   ],
+   "nearest_existing": [
+    "lean_law_get",
+    "lean_propose"
+   ],
+   "risk": "The Price equation is an identity, so proving it establishes nothing about any population, and the registry class must be `theorem` with a statement_en that says so. The real risk is the opposite of overreach: a proved identity being cited as a result about group selection, which is the confusion the formalisation is supposed to end.",
+   "unblocks": {
+    "personas": [
+     "evolutionary-geneticist"
+    ],
+    "use_cases": [],
+    "grand_questions": [
+     "gq-hamiltons-rule",
+     "gq-levels-of-selection",
+     "gq-major-transitions"
+    ],
+    "blocking_use_cases": [],
+    "counts": {
+     "personas": 1,
+     "use_cases": 0,
+     "grand_questions": 3,
+     "blocking_use_cases": 0
+    },
+    "score": 4
+   },
+   "rank": 12
+  },
+  {
+   "id": "lean-sketch",
+   "name": "lean_sketch",
+   "kind": "tool",
+   "need": "Turn a typed statement (relation, subject, object, quantities) into a Lean skeleton with named hypotheses, the theorem shape and a witness stub, so a first file is not written from a blank page.",
+   "signature": "lean_sketch({claim_id | statement: {relation, subject, object, quantities}}) -> {lean_source, meta_json, hypotheses_needing_sources, witness_stub, next_steps, envelope}",
+   "reads": [
+    "pipeline/leanbio/relations.json",
+    "pipeline/leanbio/out/records.json typed statements",
+    "lean/registry/laws-registry.schema.json",
+    "lean/registry/laws/*.json as idiom templates",
+    "lean/registry/propose.mjs header for the meta.json fields"
+   ],
+   "effort": "medium",
+   "buildable": {
+    "on_what_we_have": true,
+    "why": "The relation vocabulary is versioned and small (ScalingLaw, Bound, Equality, Dynamics, Comparative and the INDRA types), and 62 existing law files supply the idioms per relation. A template per relation family covers most of it."
+   },
+   "surfaces": [
+    "mcp",
+    "cli",
+    "lean-cli"
+   ],
+   "nearest_existing": [
+    "lean_propose",
+    "lean_law_get",
+    "leanbio_claim"
+   ],
+   "risk": "A skeleton that compiles trivially. The generated statement must be non-vacuous and must fail its own mutants, or the tool manufactures proposals that pass propose.mjs while saying nothing. The stub should refuse to emit a theorem whose hypotheses have no source field.",
+   "unblocks": {
+    "personas": [
+     "ai-agent",
+     "theoretical-biologist"
+    ],
+    "use_cases": [
+     "uc-formalise-model"
+    ],
+    "grand_questions": [
+     "gq-error-threshold"
+    ],
+    "blocking_use_cases": [],
+    "counts": {
+     "personas": 2,
+     "use_cases": 1,
+     "grand_questions": 1,
+     "blocking_use_cases": 0
+    },
+    "score": 4
+   },
+   "rank": 13
+  },
+  {
+   "id": "question-rank",
+   "name": "question_rank",
+   "kind": "tool",
+   "need": "Open questions ordered ACROSS questions by how decisive new evidence would be, rather than by how often they are cited. lean_open_question already gives, per question, what would settle it and whether that is feasible today; nothing ranks questions against each other, and nothing covers the literature enumeration.",
+   "signature": "question_rank({field?, category?, limit, measure: 'belief-movement'|'claims-flipped'|'both'}) -> {items: [{question_id, statement, source, expected_belief_movement, claims_that_would_flip, formalisable, inputs_used}], method, envelope}",
+   "reads": [
+    "open-problems/problems.json",
+    "open-problems/candidates.json",
+    "open-problems/candidates.formal.json",
+    "pipeline/leanbio/out/records.json",
+    "pipeline/leanbio/belief.mjs (as a pure function)",
+    "pipeline/leanbio/capability-map/grand-questions.json",
+    "lean/registry/laws/*.json",
+    "lean/registry/open-questions/questions/*.json (arms, computed belief proportion, what would settle it)"
+   ],
+   "effort": "medium",
+   "buildable": {
+    "on_what_we_have": true,
+    "why": "215 enumerated problems with sources, 80 formal candidates, and a belief function that is pure and therefore simulable with a hypothetical evidence item added. Nothing has to be fetched."
+   },
+   "surfaces": [
+    "mcp",
+    "cli",
+    "static-api"
+   ],
+   "nearest_existing": [
+    "lean_open_questions",
+    "lean_open_question",
+    "leanbio_queue",
+    "delphi_graph"
+   ],
+   "risk": "A ranked list of research questions looks like a funding recommendation. It ranks movement in OUR hand-set belief function, which is not calibrated to anything, and says nothing about importance, tractability or cost. The output must carry the ranking's inputs so it can be argued with rather than cited.",
+   "unblocks": {
+    "personas": [
+     "experimentalist",
+     "funder-programme-manager"
+    ],
+    "use_cases": [
+     "uc-rank-open-questions"
+    ],
+    "grand_questions": [],
+    "blocking_use_cases": [
+     "uc-rank-open-questions"
+    ],
+    "counts": {
+     "personas": 2,
+     "use_cases": 1,
+     "grand_questions": 0,
+     "blocking_use_cases": 1
+    },
+    "score": 4
+   },
+   "rank": 14
+  },
+  {
+   "id": "data-metabolic-scaling",
+   "name": "data_metabolic_rate_mass",
+   "kind": "data",
+   "need": "Metabolic rate against body mass across species with phylogenetic information, over enough mass range to test for curvature rather than assume an exponent.",
+   "signature": "a sourced dataset under sim-engine/params/ or omics/, each row carrying its source, the measurement conditions and its provenance kind, with an empirical band law derived from it",
+   "reads": [
+    "published compilations with per-record sources",
+    "no existing repo file: this is an acquisition"
+   ],
+   "effort": "medium",
+   "buildable": {
+    "on_what_we_have": false,
+    "why": "This repo holds length, area, mass and aerobic-budget data. It has nothing on metabolic rate against body mass across species, and no amount of tooling creates it.",
+    "needs_data": [
+     "basal or standard metabolic rate with body mass, per species, with measurement conditions and a phylogeny"
+    ]
+   },
+   "surfaces": [
+    "static-api"
+   ],
+   "nearest_existing": [
+    "physiology_chain",
+    "growth_trajectory"
+   ],
+   "risk": "A compiled dataset inherits every compiler's judgement about which measurements are comparable, which is precisely what the curvature dispute turns on. Rows must carry measurement conditions, and any band derived from it must be scoped to the taxa actually in it, as E2 is scoped to one family because it rests on six studies of it. No avian rows: this project holds a clade out as a blind exam.",
+   "unblocks": {
+    "personas": [
+     "comparative-physiologist"
+    ],
+    "use_cases": [
+     "uc-exponent-vs-band"
+    ],
+    "grand_questions": [
+     "gq-metabolic-scaling"
+    ],
+    "blocking_use_cases": [],
+    "counts": {
+     "personas": 1,
+     "use_cases": 1,
+     "grand_questions": 1,
+     "blocking_use_cases": 0
+    },
+    "score": 3
+   },
+   "rank": 15
+  },
+  {
+   "id": "contradiction-scan",
+   "name": "contradiction_scan",
+   "kind": "tool",
+   "need": "Scan the claim set for pairs whose stated premises or conclusions are jointly inconsistent over the quantities they share.",
+   "signature": "contradiction_scan({domain?, min_shared_quantities, prove?}) -> {pairs: [{a, b, shared_quantities, status: 'proved-inconsistent'|'suspected'|'consistent-over-shared', proof?}], scanned, envelope}",
+   "reads": [
+    "pipeline/leanbio/out/records.json",
+    "docs/claims.json",
+    "lean/registry/laws/*.json shared_scope.atoms",
+    "lean/registry/propose.mjs joint-consistency path"
+   ],
+   "effort": "large",
+   "buildable": {
+    "on_what_we_have": false,
+    "why": "The machinery exists for LAWS: shared-scope atoms, a bridge proving the Lean structure equivalent to them, and a proved-contradiction path in propose.mjs. Extending it to claims needs structured premises and shared quantities per claim, which means premise_extract first.",
+    "needs_lean_build": true
+   },
+   "surfaces": [
+    "mcp",
+    "lean-cli"
+   ],
+   "nearest_existing": [
+    "lean_propose",
+    "delphi_graph",
+    "leanbio_claim"
+   ],
+   "risk": "'Suspected inconsistent' pairs would be read as proved ones. Only the proved tier means anything, and the suspected tier will be dominated by claims that use the same word for different quantities, which is exactly the failure the shared-scope atoms were introduced to avoid.",
+   "unblocks": {
+    "personas": [
+     "reviewer-editor"
+    ],
+    "use_cases": [
+     "uc-contradiction-hunt"
+    ],
+    "grand_questions": [],
+    "blocking_use_cases": [
+     "uc-contradiction-hunt"
+    ],
+    "counts": {
+     "personas": 1,
+     "use_cases": 1,
+     "grand_questions": 0,
+     "blocking_use_cases": 1
+    },
+    "score": 3
+   },
+   "rank": 16
+  },
+  {
+   "id": "adhesion-mechanics",
+   "name": "adhesion_mechanics",
+   "kind": "integration",
+   "need": "Force, contact and cell-matrix mechanics, and the integrin signalling that would couple them to the morphogen field.",
+   "signature": "a tool set implementing the sim-engine contract's names and envelope, supplied by a collaborator's MCP server and swapped in as a configuration change",
+   "reads": [
+    "sim-engine/contract.json for the names and schemas",
+    "sim-engine/lib/envelope.mjs for the envelope and provenance kinds",
+    "the morphogen field from morphogen_diffusion"
+   ],
+   "effort": "large",
+   "buildable": {
+    "on_what_we_have": false,
+    "why": "Out of scope here by instruction, and CONTRACT.md names it as the natural module for the collaborator's server. Nothing in this repo models force, contact or adhesion, and no tool here should be read as if it did.",
+    "needs_data": [
+     "adhesion and cell-matrix mechanical parameters for the tissue and stage in question"
+    ]
+   },
+   "surfaces": [
+    "mcp",
+    "http"
+   ],
+   "nearest_existing": [
+    "morphogen_diffusion"
+   ],
+   "risk": "The contract is mechanical except in one respect: a tool must not report a number as 'measured' that it did not read in a primary source for the organism in question. A replacement server that labels everything measured satisfies the schema and destroys the contract, and CONTRACT.md says exactly that.",
+   "unblocks": {
+    "personas": [
+     "simulation-modeller"
+    ],
+    "use_cases": [],
+    "grand_questions": [
+     "gq-body-plan"
+    ],
+    "blocking_use_cases": [],
+    "counts": {
+     "personas": 1,
+     "use_cases": 0,
+     "grand_questions": 1,
+     "blocking_use_cases": 0
+    },
+    "score": 2
+   },
+   "rank": 17
+  },
+  {
+   "id": "lean-hamilton",
+   "name": "lean_module_hamilton_rule",
+   "kind": "lean-module",
+   "need": "Both forms of Hamilton's rule: the general form proved from the Price identity, the restricted form proved from pairwise interaction, weak selection and additivity, and a counter-model for the restricted form without additivity.",
+   "signature": "a Lean module lean/Delphi/Hamilton.lean with Delphi.Hamilton.general_form (from Price), Delphi.Hamilton.restricted_form (from named hypotheses) and Delphi.Hamilton.restricted_fails_without_additivity, entering the registry as two laws plus a counter-model record",
+   "reads": [
+    "lean/Delphi/Price.lean (once it exists)",
+    "lean/Delphi/Fisher.lean",
+    "lean/registry/lean/Witnesses.lean for the witness and bridge idiom"
+   ],
+   "effort": "large",
+   "buildable": {
+    "on_what_we_have": false,
+    "why": "Depends on the Price module, which does not exist, and on lean_counter_model for its third statement. Nothing about relatedness or social interaction exists in this repo at all today.",
+    "needs_lean_build": true
+   },
+   "surfaces": [
+    "mcp",
+    "cli",
+    "static-api"
+   ],
+   "nearest_existing": [
+    "lean_propose",
+    "lean_law_get"
+   ],
+   "risk": "The highest-value and highest-risk item on the list. Formalising both forms would settle which definitions make the rule a theorem; it would settle nothing about whether kin selection explains eusociality, and in a dispute this public the result would certainly be reported as the latter. The statement_en and scope must be written to make that misreading hard, and the empirical remainder must be carried in the law file itself.",
+   "unblocks": {
+    "personas": [
+     "evolutionary-geneticist"
+    ],
+    "use_cases": [],
+    "grand_questions": [
+     "gq-hamiltons-rule"
+    ],
+    "blocking_use_cases": [],
+    "counts": {
+     "personas": 1,
+     "use_cases": 0,
+     "grand_questions": 1,
+     "blocking_use_cases": 0
+    },
+    "score": 2
+   },
+   "rank": 18
+  },
+  {
+   "id": "lean-pattern-scaling",
+   "name": "lean_module_pattern_scaling",
+   "kind": "lean-module",
+   "need": "Which stated patterning mechanisms imply that the pattern scales with domain size, so mechanism claims separate from the observation that scaling occurs.",
+   "signature": "a Lean module lean/Delphi/PatternScaling.lean with Delphi.Pattern.scales_of_expansion_repression and Delphi.Pattern.no_scaling_without_feedback, entering the registry as law_id `pattern-scaling-of-mechanism`",
+   "reads": [
+    "sim-engine/tools/morphogen-diffusion.mjs for the steady-state model",
+    "Mathlib analysis lemmas for the gradient length",
+    "lean/Delphi/Thompson.lean for the ratio idiom"
+   ],
+   "effort": "large",
+   "buildable": {
+    "on_what_we_have": true,
+    "why": "The steady-state model and its gradient length are already implemented with sourced coefficients, and the scaling statement is a consequence of a stated feedback structure. Large because it needs a formalisation of the dynamics rather than of an algebraic ratio.",
+    "needs_lean_build": true
+   },
+   "surfaces": [
+    "mcp",
+    "cli",
+    "static-api"
+   ],
+   "nearest_existing": [
+    "morphogen_diffusion",
+    "lean_propose"
+   ],
+   "risk": "The implemented model is source-sink diffusion, one of two live hypotheses for Fgf8, with gastrula coefficients used for a fin bud. A theorem about that model would inherit all of it, and this repo's own pre-registered test of the model FAILED on the axis that mattered. A law here must be scoped to the model and not to development.",
+   "unblocks": {
+    "personas": [],
+    "use_cases": [],
+    "grand_questions": [
+     "gq-body-plan",
+     "gq-morphogenesis-scaling"
+    ],
+    "blocking_use_cases": [],
+    "counts": {
+     "personas": 0,
+     "use_cases": 0,
+     "grand_questions": 2,
+     "blocking_use_cases": 0
+    },
+    "score": 2
+   },
+   "rank": 19
+  },
+  {
+   "id": "lean-wbe",
+   "name": "lean_module_wbe_derivation",
+   "kind": "lean-module",
+   "need": "Whether the three-quarters exponent follows from space-filling, area-preserving branching and size-invariant terminal units, with asymmetric branching as a stated variant.",
+   "signature": "a Lean module lean/Delphi/Network.lean with Delphi.Network.exponent_of_premises and a variant for asymmetric branching, entering the registry as law_id `wbe-network-exponent` with class theorem-from-hypothesis",
+   "reads": [
+    "Mathlib geometric-series and power lemmas",
+    "lean/Delphi/Scaling.lean for the ratio and log-slope idioms",
+    "open-problems/problems.json ORX-14"
+   ],
+   "effort": "large",
+   "buildable": {
+    "on_what_we_have": true,
+    "why": "Mathematically self-contained: the derivation is a consequence of stated geometric premises and needs no data. It is large because the original derivation is informal in places and formalising it means choosing which reading to formalise, which is itself part of the dispute.",
+    "needs_lean_build": true
+   },
+   "surfaces": [
+    "mcp",
+    "cli",
+    "static-api"
+   ],
+   "nearest_existing": [
+    "lean_propose",
+    "lean_laws_list"
+   ],
+   "risk": "Proving the derivation valid would be reported as confirming three-quarters scaling, which it would not do: real vasculature may not satisfy the premises, and Kolokotrones et al. report the empirical relation is curved, so a single exponent may be the wrong model entirely. Proving it INVALID would be equally over-reported in the other direction.",
+   "unblocks": {
+    "personas": [
+     "comparative-physiologist"
+    ],
+    "use_cases": [],
+    "grand_questions": [
+     "gq-metabolic-scaling"
+    ],
+    "blocking_use_cases": [],
+    "counts": {
+     "personas": 1,
+     "use_cases": 0,
+     "grand_questions": 1,
+     "blocking_use_cases": 0
+    },
+    "score": 2
+   },
+   "rank": 20
+  },
+  {
+   "id": "data-mortality-schedules",
+   "name": "data_mortality_schedules",
+   "kind": "data",
+   "need": "Age-specific survival and fecundity schedules for at least one organism, with sources, so an age-specific sensitivity law has a satisfiable instance.",
+   "signature": "a sourced schedule table under sim-engine/params/, one row per age class, with the population, conditions and provenance kind per row",
+   "reads": [
+    "published life tables",
+    "no existing repo file: this is an acquisition"
+   ],
+   "effort": "small",
+   "buildable": {
+    "on_what_we_have": false,
+    "why": "Small as an acquisition and still a real blocker: this registry refuses a law with no satisfiable instance, so the Lean module cannot be proposed until at least one schedule is in the repo with a source.",
+    "needs_data": [
+     "an age-specific life table with survival and fecundity, laboratory or field, with the source quoted"
+    ]
+   },
+   "surfaces": [
+    "static-api"
+   ],
+   "nearest_existing": [
+    "growth_trajectory"
+   ],
+   "risk": "Laboratory schedules differ systematically from field schedules, and the evolutionary theories of ageing are about the latter. A law whose witness is a laboratory table must be scoped to say so.",
+   "unblocks": {
+    "personas": [],
+    "use_cases": [],
+    "grand_questions": [
+     "gq-ageing"
+    ],
+    "blocking_use_cases": [],
+    "counts": {
+     "personas": 0,
+     "use_cases": 0,
+     "grand_questions": 1,
+     "blocking_use_cases": 0
+    },
+    "score": 1
+   },
+   "rank": 21
+  },
+  {
+   "id": "lean-error-threshold",
+   "name": "lean_module_error_threshold",
+   "kind": "lean-module",
+   "need": "Eigen's error threshold as a proved inequality over stated fidelity, genome length and selective superiority, so a claimed prebiotic genome length can be eliminated against a claimed fidelity.",
+   "signature": "a Lean module lean/Delphi/ErrorThreshold.lean with Delphi.Eigen.threshold and Delphi.Eigen.length_rules_out, entering the registry as law_id `eigen-error-threshold`",
+   "reads": [
+    "Mathlib real logarithm and power lemmas",
+    "lean/Delphi/Kimura.lean for the finite-chain idiom",
+    "lean/Delphi/Audit.lean for the rules_out idiom"
+   ],
+   "effort": "small",
+   "buildable": {
+    "on_what_we_have": true,
+    "why": "A single inequality between three stated quantities, with the elimination form following the pattern already used by a dozen rules_out theorems here. The cheapest high-value formalisation on the list.",
+    "needs_lean_build": true
+   },
+   "surfaces": [
+    "mcp",
+    "cli",
+    "static-api"
+   ],
+   "nearest_existing": [
+    "lean_propose",
+    "lean_check"
+   ],
+   "risk": "The threshold follows from the quasispecies premises: deterministic dynamics, effectively infinite population, a fixed landscape. Those are strong and the published objections are about exactly them, so the named hypotheses must carry them explicitly or the law will be applied to finite stochastic systems it does not cover.",
+   "unblocks": {
+    "personas": [],
+    "use_cases": [],
+    "grand_questions": [
+     "gq-error-threshold"
+    ],
+    "blocking_use_cases": [],
+    "counts": {
+     "personas": 0,
+     "use_cases": 0,
+     "grand_questions": 1,
+     "blocking_use_cases": 0
+    },
+    "score": 1
+   },
+   "rank": 22
+  },
+  {
+   "id": "lean-code-optimality",
+   "name": "lean_module_code_optimality",
+   "kind": "lean-module",
+   "need": "Optimality of the standard genetic code within a STATED space of alternatives under a STATED objective, with both stated as named hypotheses.",
+   "signature": "a Lean module lean/Delphi/CodeOptimality.lean with Delphi.Code.optimal_in_space and Delphi.Code.claimed_optimality_rules_out, entering the registry as law_id `genetic-code-optimality-in-stated-space`",
+   "reads": [
+    "lean/Delphi/Genotype.lean (code, allCodons, codonsOf, minSubst)",
+    "Mathlib Finset minimisation lemmas"
+   ],
+   "effort": "medium",
+   "buildable": {
+    "on_what_we_have": true,
+    "why": "The standard code is already a total function in Genotype.lean with codon-space distance decided by the kernel, so an objective over assignments is computable and a finite space of alternatives is enumerable. The combinatorics may need care but needs no data.",
+    "needs_lean_build": true
+   },
+   "surfaces": [
+    "mcp",
+    "cli",
+    "static-api"
+   ],
+   "nearest_existing": [
+    "lean_law_get",
+    "lean_propose"
+   ],
+   "risk": "An optimality result would be reported as explaining why the code is as it is. Optimality is relative to an objective, the objective is not observable, and all four historical accounts of the code's origin are consistent with the standard code being optimal under some objective. The statement_en must make the relativity to the stated objective unmissable.",
+   "unblocks": {
+    "personas": [],
+    "use_cases": [],
+    "grand_questions": [
+     "gq-genetic-code"
+    ],
+    "blocking_use_cases": [],
+    "counts": {
+     "personas": 0,
+     "use_cases": 0,
+     "grand_questions": 1,
+     "blocking_use_cases": 0
+    },
+    "score": 1
+   },
+   "rank": 23
+  },
+  {
+   "id": "lean-selection-sensitivity",
+   "name": "lean_module_selection_sensitivity",
+   "kind": "lean-module",
+   "need": "Age-specific sensitivity of fitness to a change in mortality, from stated survival and fecundity schedules, which is the one piece of ageing theory that is pure arithmetic.",
+   "signature": "a Lean module lean/Delphi/Senescence.lean with Delphi.Senescence.sensitivity_declines and Delphi.Senescence.claimed_force_rules_out, entering the registry as law_id `selection-sensitivity-with-age`",
+   "reads": [
+    "Mathlib finite-sum lemmas",
+    "lean/Delphi/Fisher.lean for the frequency and mean idioms",
+    "a schedule dataset (does not exist here)"
+   ],
+   "effort": "medium",
+   "buildable": {
+    "on_what_we_have": false,
+    "why": "The mathematics is tractable, but this registry refuses a law with no satisfiable instance, and there is no age-specific survival and fecundity schedule in this repo to build a non-vacuity witness from.",
+    "needs_data": [
+     "age-specific survival and fecundity schedules for at least one organism, with a source"
+    ],
+    "needs_lean_build": true
+   },
+   "surfaces": [
+    "mcp",
+    "cli",
+    "static-api"
+   ],
+   "nearest_existing": [
+    "lean_propose",
+    "growth_trajectory"
+   ],
+   "risk": "Proving that selection against late-acting effects is weak would be read as establishing an evolutionary theory of ageing. It establishes an arithmetic consequence of the schedules, and this grand question's honest verdict is that almost all of it is empirical remainder.",
+   "unblocks": {
+    "personas": [],
+    "use_cases": [],
+    "grand_questions": [
+     "gq-ageing"
+    ],
+    "blocking_use_cases": [],
+    "counts": {
+     "personas": 0,
+     "use_cases": 0,
+     "grand_questions": 1,
+     "blocking_use_cases": 0
+    },
+    "score": 1
+   },
+   "rank": 24
+  },
+  {
+   "id": "data-gp-panel",
+   "name": "data_gp_panel",
+   "kind": "data",
+   "need": "A combinatorial mutant panel with one consistently measured phenotype, so additivity and epistasis can be tested rather than assumed.",
+   "signature": "a sourced dataset of genotype-phenotype pairs over a defined mutational neighbourhood, with the phenotype definition and assay recorded per row",
+   "reads": [
+    "published deep mutational scanning datasets",
+    "no existing repo file: this is an acquisition"
+   ],
+   "effort": "large",
+   "buildable": {
+    "on_what_we_have": false,
+    "why": "The omics universe here is annotation, not measurement of a phenotype across genotypes. Without such a panel the additive-variance statement and the genotype-network reachability law both lack any instance to be checked against.",
+    "needs_data": [
+     "a combinatorially complete or near-complete mutant set with one phenotype assayed throughout"
+    ]
+   },
+   "surfaces": [
+    "static-api"
+   ],
+   "nearest_existing": [
+    "omics_gene",
+    "protein_structure"
+   ],
+   "risk": "A panel measures one phenotype in one background. Conclusions about the genotype-phenotype map drawn from it generalise no further than that, and the provenance kind for using it outside that context is 'borrowed'.",
+   "unblocks": {
+    "personas": [],
+    "use_cases": [],
+    "grand_questions": [
+     "gq-genotype-phenotype"
+    ],
+    "blocking_use_cases": [],
+    "counts": {
+     "personas": 0,
+     "use_cases": 0,
+     "grand_questions": 1,
+     "blocking_use_cases": 0
+    },
+    "score": 1
+   },
+   "rank": 25
+  },
+  {
+   "id": "lean-flux-feasibility",
+   "name": "lean_module_flux_feasibility",
+   "kind": "lean-module",
+   "need": "Whether a stated growth flux is achievable in a stated stoichiometric network, with a kernel-checkable infeasibility certificate rather than a solver's word.",
+   "signature": "a Lean module lean/Delphi/Flux.lean with Delphi.Flux.infeasible_of_certificate and Delphi.Flux.claimed_growth_rules_out, entering the registry as law_id `flux-infeasibility-certificate`",
+   "reads": [
+    "Mathlib linear-algebra and inequality lemmas",
+    "lean/Delphi/Genotype.lean closure idiom",
+    "a stoichiometric reconstruction (does not exist here)"
+   ],
+   "effort": "large",
+   "buildable": {
+    "on_what_we_have": false,
+    "why": "Checking a Farkas-style infeasibility certificate in Lean is tractable mathematics, but there is no metabolic reconstruction in this repo. The omics universe is 3,860 zebrafish genes with pathway annotation, not a stoichiometric model of anything.",
+    "needs_data": [
+     "a stoichiometric network with bounds, for example the published syn3A reconstruction"
+    ],
+    "needs_lean_build": true
+   },
+   "surfaces": [
+    "mcp",
+    "cli",
+    "static-api"
+   ],
+   "nearest_existing": [
+    "lean_propose",
+    "omics_gene"
+   ],
+   "risk": "A proved infeasibility is only as good as the reconstruction: one missing reaction makes a feasible network look infeasible, and the proof would be correct and the conclusion wrong. The law must carry the reconstruction's version and its known gaps as named hypotheses.",
+   "unblocks": {
+    "personas": [],
+    "use_cases": [],
+    "grand_questions": [
+     "gq-minimal-cell"
+    ],
+    "blocking_use_cases": [],
+    "counts": {
+     "personas": 0,
+     "use_cases": 0,
+     "grand_questions": 1,
+     "blocking_use_cases": 0
+    },
+    "score": 1
+   },
+   "rank": 26
+  },
+  {
+   "id": "data-relatedness",
+   "name": "data_relatedness_eusocial",
+   "kind": "data",
+   "need": "Within-colony relatedness and measured fitness effects for the clades where eusociality originated, so the empirical half of the Hamilton's-rule dispute has anything to stand on here.",
+   "signature": "a sourced dataset of relatedness estimates with the marker set and estimator recorded, paired with measured fitness effects for interacting individuals",
+   "reads": [
+    "published colony genotyping and fitness studies",
+    "no existing repo file: this is an acquisition"
+   ],
+   "effort": "research",
+   "buildable": {
+    "on_what_we_have": false,
+    "why": "Nothing in this repo touches social behaviour, relatedness or insects. Acquiring this is a research programme and it is listed so that the formalisable core of the Hamilton's-rule question is not mistaken for the whole of it.",
+    "needs_data": [
+     "within-colony relatedness with the estimator stated, and additivity-tested fitness effects for interacting pairs and for groups"
+    ]
+   },
+   "surfaces": [
+    "static-api"
+   ],
+   "nearest_existing": [],
+   "risk": "Relatedness estimates depend on the marker set and the estimator, and the dispute turns in part on which definition of relatedness is in play. A dataset that records a number without its estimator would be worse than no dataset.",
+   "unblocks": {
+    "personas": [],
+    "use_cases": [],
+    "grand_questions": [
+     "gq-hamiltons-rule"
+    ],
+    "blocking_use_cases": [],
+    "counts": {
+     "personas": 0,
+     "use_cases": 0,
+     "grand_questions": 1,
+     "blocking_use_cases": 0
+    },
+    "score": 1
+   },
+   "rank": 27
+  }
+ ],
+ "not_gaps": [
+  {
+   "name": "nanopub signing and publishing",
+   "why_not": "Deliberately absent, not missing. Signing and publishing a nanopub is irreversible; it is done only by the key owner, with explicit approval and the test registry first. Every draft here is unsigned, carries no human ORCID and no key, and CI refuses a personal identifier in an approval field. A tool for it would be a tool for making that mistake quickly.",
+   "owner": "the key owner, with explicit human approval"
+  },
+  {
+   "name": "flight_sim",
+   "why_not": "It would wrap the physics simulation's equations, which are not currently exposed as an importable module, and physics/ belongs to another thread. A tool that cannot run is not listed, so tools/list does not advertise it. Asked for through the hub rather than edited here.",
+   "owner": "the physics thread"
+  },
+  {
+   "name": "whole-embryo all-atom simulation",
+   "why_not": "Not deferred but impossible: many orders of magnitude beyond any available GPU. 'Molecular level' in this engine means molecular species and channel conductances in a cell-based tissue model, not atoms, and CONTRACT.md says so to stop the word being read the other way."
+  },
+  {
+   "name": "a tool that returns a truth value for a claim",
+   "why_not": "There is no such thing here to return. Belief is an ordering heuristic with unfitted parameters, assessor scores are graded judgements in the unit interval and not probabilities, and a law's status is a decision about review. Each of those is served with its own name precisely so that nothing can be mistaken for a probability that a claim is true."
+  },
+  {
+   "name": "automated acceptance of a law",
+   "why_not": "propose.mjs stops at `candidate` by design and never returns accepted. Promotion requires a person to set approval.approved_by_role and cut a lawset with release.mjs, which refuses an accepted law without that role and refuses a role that looks like an e-mail address. Automating it would remove the only human check in the chain.",
+   "owner": "a human project role, never an agent"
+  },
+  {
+   "name": "anything about the held-out exam clade",
+   "why_not": "One clade is frozen as a blind exam. The pipeline withholds every record whose text, claim id or taxon id touches it BEFORE any service call, screens service responses for homonymous genera, reports only the count withheld (69 records), and CI fails if an output names it. A tool to reach it would defeat the exam, and the omission is the point.",
+   "owner": "the holdout thread"
+  },
+  {
+   "name": "first-class open questions with Lean-formalised arms",
+   "why_not": "Being built by another thread under lean/registry/open-questions/ and not duplicated here. This map's open_questions_list gap is the serving layer over the raw enumeration in open-problems/, and when that registry lands the tool should read it instead and treat open-problems/ as the material behind it. Coordinate through the hub.",
+   "owner": "the open-questions thread"
+  }
+ ],
+ "scope": "Effort estimates are judgements made here, by the thread that wrote this file, and have not been validated against any delivery. `buildable.on_what_we_have` means the inputs exist in this repo or at a public endpoint we already call; it does not mean the tool would be good, or that the reads listed are sufficient. The rank measures breadth of unblocking inside THIS map only: a gap that unblocks one persona may still be the most valuable thing to build, and the rank cannot see that. No gap here has been costed, scheduled or assigned, and nothing in this file is a commitment."
+}

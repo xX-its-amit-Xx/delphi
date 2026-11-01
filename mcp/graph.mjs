@@ -45,8 +45,14 @@ export const GROUP_KEYS = Object.keys(GROUPS);
 
 export function browseClaims({
   text, thinker, work, status, kind, yearFrom, yearTo, minTruth, maxTruth, minTruthAssessors = 0,
-  published, sort = "truth", groupBy, limit = 20,
+  published, sort = "truth", groupBy, limit = 20, source = "local",
 } = {}) {
+  // This tool reads one local snapshot (docs/claims.json) and nothing else. It used to accept and
+  // silently drop source: "network", so a caller who asked for published data got unpublished
+  // drafts without being told (issue #56 F5). Refuse instead, and name the source in the answer.
+  if (source !== "local") {
+    throw new Error(`delphi_graph has no "${source}" source: it reads the local docs/claims.json snapshot, which includes unpublished drafts. For what is published use delphi_sparql or delphi_search_claims with source "network", or filter here with published: true.`);
+  }
   const { built, claims } = load();
   const hits = claims.filter(c =>
     (!text || has(`${c.label} ${c.statement} ${c.quote ?? ""}`, text))
@@ -69,7 +75,7 @@ export function browseClaims({
       (groups.get(k) ?? groups.set(k, []).get(k)).push(c);
     }
     return {
-      built, matched: hits.length, groupBy,
+      source: "local-snapshot", built, matched: hits.length, groupBy,
       groups: [...groups].map(([group, cs]) => ({
         group, claims: cs.length,
         meanTruth: mean(cs.map(c => c.truth).filter(v => v != null)),
@@ -83,7 +89,7 @@ export function browseClaims({
 
   if (!SORTS[sort]) throw new Error(`sort must be one of ${SORT_KEYS.join(", ")}`);
   return {
-    built, matched: hits.length,
+    source: "local-snapshot", built, matched: hits.length,
     claims: [...hits].sort(SORTS[sort]).slice(0, Math.min(Number(limit) || 20, 500)).map(c => ({
       id: c.id, title: c.label, statement: c.statement, thinker: c.thinker, year: c.year, work: c.work, chapter: c.chapter,
       kind: c.kind, status: c.status, truth: c.truth, truthBy: c.truth_by, disagreement: c.disagreement,

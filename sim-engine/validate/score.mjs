@@ -29,6 +29,8 @@ import { loadReferences, rawFromState, closestPhenotype } from './phenotype.mjs'
 import { closestGenotype, STATE_NOT_PHENOTYPE } from './genotype.mjs';
 import { phenoSanity, genoSanity, stateEnvelope } from './sanity.mjs';
 import { leanByComponent } from './lean-components.mjs';
+import { functionalResolutionFor } from './functional-interface.mjs';
+import { physicsCheck } from './physics/index.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 // Weights, floor, alpha, cut and evidence map live in score-weights.json (versioned, frozen before validation).
@@ -41,6 +43,45 @@ export const SCORERS = Object.freeze({ '1.0.0': mkScorer(loadW('score-weights.js
 export const DEFAULT_VERSION = '1.0.0';
 export const SCORER = SCORERS[DEFAULT_VERSION];
 const KIND_ORDER = ['assumed', 'borrowed', 'measured-secondhand', 'calibrated', 'derived', 'measured'];
+
+/** EVERY released scorer version, in release order. SCORERS holds only the versions that run through assess() in
+ *  this file; 1.2.0 and 1.3.0 are separate modules reached through designScore(design, {version}). This list is the
+ *  one place that says what "released" means, so the version matrix test can enumerate it. */
+export const RELEASED_VERSIONS = Object.freeze(['1.0.0', '1.1.0', '1.1.1', '1.2.0', '1.3.0']);
+
+/** Did this version go through the BLIND held-out run, and what did that run say about the number this file emits?
+ *  Source: sim-engine/validate/evaluation/SCORER-EVALUATION.md (168 held-out families, family-out), written by the
+ *  independent evaluator. Read the two verdict fields before quoting any composite:
+ *    - the composite `score` FAILED the pre-registered primary endpoints in EVERY released version, 1.3.0 included;
+ *    - only v1.3.0's `rank_score` passed, and rank_score is a DIFFERENT output with a different rule.
+ *  So "a newer scorer version" is not "a scorer version whose composite passed". There is no such version. This
+ *  table exists so a composite can never be emitted without that fact attached to it. */
+export const BLIND_EVALUATION = Object.freeze({
+  '1.0.0': Object.freeze({ blind_evaluated: true, run: '2026-11-01T04-37-49Z_w1.0.0', input: 'specimen',
+    score_verdict: 'FAIL', score_detail: 'P1, P2 and P3 all fail (P1 AUC 0.690 against 0.843 for the nearest-neighbour distance it is built from)', rank_score_verdict: null }),
+  '1.1.0': Object.freeze({ blind_evaluated: true, run: '2026-11-01T04-58-15Z_w1.1.0', input: 'specimen',
+    score_verdict: 'FAIL', score_detail: 'all three primary endpoints fail (P1 AUC 0.688)', rank_score_verdict: null }),
+  '1.1.1': Object.freeze({ blind_evaluated: false, run: null, input: null, score_verdict: null, rank_score_verdict: null,
+    reason: 'v1.1.1 was never run against the held-out benchmark: it is absent from the verdict table in SCORER-EVALUATION.md. Its numbers carry no blind evidence at all.' }),
+  '1.2.0': Object.freeze({ blind_evaluated: true, run: '2026-11-01T04-58-08Z_w1.2.0', input: '{params, lean_spec, doc}',
+    score_verdict: 'FAIL', score_detail: 'only P2 passes (P1 AUC 0.683)', rank_score_verdict: 'FAIL', rank_score_detail: 'P3 fails (rank_score P1 0.838)' }),
+  '1.3.0': Object.freeze({ blind_evaluated: true, run: '2026-11-01T05-12-45Z_w1.3.0', input: '{params, lean_spec, doc}',
+    score_verdict: 'FAIL', score_detail: 'only P2 passes (P1 AUC 0.736)', rank_score_verdict: 'PASS', rank_score_detail: 'P1 0.875, P2 99.7 %, P3 0.836 > 0.691 -- but rank_score does not beat the joint Mahalanobis term used alone (P1 0.883), so on the primary ranking the composite is one term wearing a costume' }),
+});
+
+/** The label that must travel with every composite this repository emits. A number whose version was never
+ *  blind-evaluated says so on its face; a number whose version WAS evaluated carries that run's verdict, which is
+ *  FAIL on the composite in every released version. A composite is never the verdict (see SCOPE and gates_note). */
+export function evaluationLabel(version) {
+  const e = BLIND_EVALUATION[version];
+  if (!e) return { version, blind_evaluated: null, label: `scorer v${version}: NOT A RELEASED VERSION; no blind evaluation exists for it`, warning: true };
+  if (!e.blind_evaluated) return { version, blind_evaluated: false, ...e,
+    label: `scorer v${version}: NOT BLIND-EVALUATED -- ${e.reason} Treat this number as a development figure.`, warning: true };
+  return { version, blind_evaluated: true, ...e,
+    label: `scorer v${version}: blind-evaluated (${e.run}, 168 held-out families, family-out). The blind verdict on this composite is ${e.score_verdict} -- ${e.score_detail}.`
+      + (e.rank_score_verdict ? ` rank_score, a different output: ${e.rank_score_verdict} (${e.rank_score_detail}).` : ''),
+    warning: e.score_verdict !== 'PASS' };
+}
 
 export function composite(components, SC = SCORER) {
   let s = 0, w = 0;
@@ -174,8 +215,26 @@ export async function assess(args = {}) {
   };
   out.state_envelope = stEnv;
   out.score = { value: score == null ? null : +score.toFixed(4), plausible: score != null && score >= SC.plausible_threshold, components: C, version: SC.version, ...(rank ? { rank_score: rank.value, rank } : {}),
-    formula: 'exp(sum w_i ln max(c_i,0.01) / sum w_i) over components that ran; w = P .35, L .25, G .15, S .15, E .10' };
+    formula: 'exp(sum w_i ln max(c_i,0.01) / sum w_i) over components that ran; w = P .35, L .25, G .15, S .15, E .10',
+    // Attached to the number itself, not left for the reader to look up: which version produced it, and whether
+    // that version's composite was ever blind-evaluated and what the blind run said about it.
+    evaluation: evaluationLabel(SC.version),
+    // The components that RAN are part of the number's identity. The same design at the same version returns a
+    // different composite depending on whether a spec was passed, because S enters the weighted mean only when it
+    // runs: winged-zebrafish is 0.9217 with no spec, 0.878 with a spec whose three criteria go 1 failed / 2 met,
+    // and 0.4676 with a spec whose single glide criterion fails. Two composites are comparable only when this
+    // list matches. See sim-engine/validate/SCORER-VERSION.md.
+    components_that_ran: Object.entries(C).filter(([, c]) => c && c.ran).map(([k]) => k).join('+'),
+    comparability: 'Comparable only with another composite from the same version AND the same components_that_ran. Adding a spec changes the number; adding a spec criterion that is trivially met RAISES it.' };
   out.phenotype = pheno; out.genotype = geno; out.sanity = { phenotype: pSan, genotype: gSan }; out.lean = lean;
+  // The FOURTH named result. Built by another thread in validate/functional/; absent until it lands, and then
+  // reported as 'did not run' rather than assumed. It never moves the composite score (see SCORER-RESULTS.md).
+  out.functional = await functionalResolutionFor(args.design_for_functional ?? (args.specimen ? { specimen: args.specimen } : args.organism), args);
+  // The FIFTH named result: does the design actually DO the thing? (validate/physics/, another thread.) Like the
+  // functional ledger it is a GATE beside the composite and never enters rank_score.
+  const designForPhysics = args.design_for_functional ?? (args.specimen ? { specimen: args.specimen } : args.organism);
+  try { out.physics = await physicsCheck(designForPhysics, args); }
+  catch (e) { out.physics = { ran: false, reason: `the physics module threw: ${e.message}` }; }
   out.raw = raw;
   out.ms = Date.now() - t0;
   return out;
@@ -193,19 +252,35 @@ function provOf(r) {
   return R;
 }
 
+/** Provenance for the v1.2.0+ return shape. Those versions return the finished designScore result rather than the
+ *  assess() result provOf() reads, so the rows are rebuilt from the scorer descriptor they carry. Every row names a
+ *  real file; nothing is invented to satisfy the envelope. */
+function provOfVersioned(r, version) {
+  const SC = r.scorer || {};
+  const R = [p('FishShapes v1 specimens', null, 'measured', 'Price et al. 2022 Ecology 103:e3829, doi 10.1002/ecy.3829; Zenodo 6642650 (sim-engine/validate/data/fishshapes-features.json)'),
+    p('fin envelope rule', null, 'assumed', 'phenotype.mjs finEnvelope: fixed, uncalibrated rule, for traits with no dev envelope'),
+    p('flight-muscle capacity', null, 'borrowed', 'sanity.mjs FLIGHT_MUSCLE_CAPACITY: from the tff and ff-zf-chimera mesh clips, transferred to other bodies'),
+    p('score weights', SC.version || version, 'assumed', `${SC.weights_file || 'sim-engine/validate/score-weights.json'}, fixed in ${SC.preregistration || 'SCORER-PREREGISTRATION.md'} before validation`),
+    p('blind evaluation of this version', BLIND_EVALUATION[version]?.blind_evaluated ? BLIND_EVALUATION[version].score_verdict : 'not blind-evaluated', 'derived', 'sim-engine/validate/evaluation/SCORER-EVALUATION.md (168 held-out families, family-out, independent evaluator)')];
+  if (SC.envelopes_file) R.push(p('per-trait envelopes', null, 'derived', `${SC.envelopes_file}: log10 ranges over the dev reference set`));
+  if (SC.joint_model_file) R.push(p('joint trait model', null, 'derived', `${SC.joint_model_file} with ${SC.joint_calibration_file}: one Gaussian on log traits fitted on DEV positives (sim-engine/validate/joint.mjs); unimodal, no allometric curvature, no fins or physiology`));
+  if (r.components?.E?.weakest_kind) R.push(p('evidence: weakest input kind', r.components.E.weakest_kind, 'derived', 'resolved STATE field kinds'));
+  return R;
+}
+
 
 /** The three separately reported results (Amit, 2026-11-01): genotype similarity, phenotype similarity, and Lean on
  *  the DESIGNED organism. Never merged into one another; the composite score is reported beside them, not instead. */
-export function threeResults(r, { claims = null } = {}) {
+export function namedResults(r, { claims = null } = {}) {
   const ge = r.genotype?.edits || [];
   const perGene = ge.map(e => {
     const c = e.comparison || {}, alt = c.alt_state_in_real_organisms || null;
     return { gene: e.edit.gene, edit: e.edit.raw, kind: e.edit.kind, zygosity: e.edit.zygosity || null,
       closest_real_orthologue: c.closest_species ? { species: c.closest_species.species, percent_identity_after_edit: c.closest_species.identity_after, percent_identity_before_edit: c.closest_species.identity_before } : null,
       percent_identity_to_unedited_reference: c.identity_to_unedited_zebrafish ?? null, fraction_of_reference_protein_retained: c.fraction_of_reference_protein_retained ?? null,
-      edited_state_exists_in_real_organism: alt ? alt.exists : null, in_natural_orthologues: alt ? alt.in_natural_orthologues.map(x => x.species) : [], known_alleles: alt ? (alt.known_lab_or_natural_alleles || []).map(x => x.id) : [],
+      edited_state_exists_in_real_organism: alt ? alt.exists ?? null : null, in_natural_orthologues: alt?.in_natural_orthologues?.map(x => x.species) ?? [], known_alleles: alt?.known_lab_or_natural_alleles?.map(x => x.id) ?? [],
       site_conservation: c.site ? { fraction_of_orthologues_with_reference_residue: c.site.conservation_vs_reference, n_rows: c.site.n_rows, conserved: c.site.conserved_flag } : null,
-      checks: e.checks.map(k => ({ id: k.id, status: k.status })), source: c.source || c.reason || null };
+      checks: e.checks?.map(k => ({ id: k.id, status: k.status })) ?? [], source: c.source || c.reason || null };
   });
   const ids = perGene.map(g => g.percent_identity_to_unedited_reference).filter(x => typeof x === 'number');
   const ex = perGene.map(g => g.edited_state_exists_in_real_organism).filter(x => typeof x === 'boolean');
@@ -219,8 +294,8 @@ export function threeResults(r, { claims = null } = {}) {
   const phenotype_similarity = {
     closest_real_relative: dom(ph.body?.ran && ph.body.nearest ? ph.body.nearest[0] : null),
     body: ph.body?.ran ? { distance: ph.body.distance, p_value: ph.body.p_value, ood: ph.body.ood, threshold: ph.body.threshold, features_compared: ph.body.features_present || null, larval_envelope: ph.body.larval ? ph.body.larval_envelope : undefined } : { ran: false, reason: ph.body?.reason },
-    fins: ph.fin?.ran ? { closest_on_pectoral_length: dom(ph.fin.nearest[0]), p_value: ph.fin.p_value, ood: ph.fin.ood, envelope_outside: (ph.fin_envelope?.outside || []).map(o => ({ feature: o.feature, design: o.design, min: o.min, max: o.max })) } : { ran: false, reason: ph.fin?.reason },
-    physiology_envelope_outside: r.state_envelope ? r.state_envelope.outside.map(o => ({ field: o.field, value: o.value, lo: o.lo, hi: o.hi })) : null,
+    fins: ph.fin?.ran ? { closest_on_pectoral_length: dom(ph.fin.nearest?.[0]), p_value: ph.fin.p_value, ood: ph.fin.ood, envelope_outside: (ph.fin_envelope?.outside || []).map(o => ({ feature: o.feature, design: o.design, min: o.min, max: o.max })) } : { ran: false, reason: ph.fin?.reason },
+    physiology_envelope_outside: r.state_envelope?.outside?.map(o => ({ field: o.field, value: o.value, lo: o.lo, hi: o.hi })) ?? null,
     ood: !!ph.ood, rule: 'Shape similarity to real specimens, not relatedness. Birds excluded (frozen holdout).' };
   const L = r.lean || {};
   const brief = v => ({ law_id: v.law_id, law_version: v.law_version || v.version, status: v.status, constraint: v.constraint, inputs: v.inputs ?? null, message: v.message, parts: v.parts || [] });
@@ -229,13 +304,30 @@ export function threeResults(r, { claims = null } = {}) {
   const counts = L.counts ? { holds: L.counts.holds, violated: L.counts.violated, out_of_scope: L.counts.out_of_scope, cannot_evaluate: L.counts.cannot_evaluate } : null;
   const anyAccepted = acc.length + claimAcc.length > 0;
   const lean_check = { evaluated_on: 'the DESIGNED organism (resolved STATE with every edit applied), not its base', lawset: L.lawset_version || claims?.lawset || null, counts,
-    by_component: (L.components || []).map(c => ({ component: c.component, summary: c.summary, verdicts: c.verdicts.map(v => ({ law_id: v.law_id, law_version: v.law_version, status: v.status, verdict: v.verdict, inputs: v.decided_by, missing: v.missing })) })),
+    by_component: (L.components || []).map(c => ({ component: c.component, summary: c.summary, verdicts: (c.verdicts || []).map(v => ({ law_id: v.law_id, law_version: v.law_version, status: v.status, verdict: v.verdict, inputs: v.decided_by, missing: v.missing })) })),
     accepted_violations: [...acc, ...claimAcc], accepted_violations_newly_caused_by_design: (L.accepted?.newly_caused || []).map(brief), candidate_violations: (L.candidate || []).map(brief), contested_violations: (L.contested || []).map(brief),
     claims: claims || null,
     gate: anyAccepted ? 'FAIL: an accepted law is violated by the designed organism; the design is not validated, whatever the similarity scores' : 'no accepted-law violation found (most laws may be cannot-evaluate or out-of-scope: see counts)',
     note: 'Floating-point evaluation of the Lean-backed formulas (lean/eliminate/browser-check.mjs), not a kernel check.' };
-  return { genotype_similarity, phenotype_similarity, lean_check, lean_gate_failed: anyAccepted };
+  const fr = r.functional || { ran: false, reason: 'the functional ledger was not computed' };
+  const ph5 = r.physics || { ran: false, reason: 'the physics check was not computed' };
+  return { genotype_similarity, phenotype_similarity, lean_check, functional_resolution: fr, physics_simulation: ph5,
+    lean_gate_failed: anyAccepted, functional_gate_failed: !!(fr.ran && fr.resolution?.unresolved > 0),
+    // true only when a HARD criterion is NOT MET. A hard criterion with NO MODEL does not raise it: "we could not
+    // check it" is not "it failed" (that case is gate_status 'incomplete' + unchecked_requirements).
+    physics_gate_failed: !!(ph5.ran && ph5.physics_gate_failed),
+    // What the two Lean/physics results each license, kept together wherever they are reported:
+    gates_note: 'lean_check says the design BREAKS NO LAW, which is necessary and not sufficient. physics_simulation says whether it ACTUALLY DOES THE THING. Neither substitutes for the other, and neither is folded into the score.' };
 }
+/** Kept as the former name: callers that imported threeResults keep working, and now get the fourth result too. */
+export const threeResults = namedResults;
+
+/** Benchmark / design-schema trait name -> the specimen-record field phenotype.mjs reads. Shared with score-v12.mjs
+ *  so one mapping serves every version. */
+export const PARAM_TO_RAW = { standard_length_m: 'SL_m', body_mass_kg: 'mass_kg', body_depth_over_SL: 'depth_SL', body_width_over_SL: 'width_SL', peduncle_depth_frac: 'ped_depth_frac', peduncle_width_frac: 'ped_width_frac',
+  pectoral_len_over_SL: 'pectoral_len_SL', pectoral_area_over_SL2: 'pectoral_area_SL2', pectoral_span_over_SL: 'pectoral_span_SL', pelvic_len_over_SL: 'pelvic_len_SL', dorsal_height_over_SL: 'dorsal_h_SL', anal_height_over_SL: 'anal_h_SL',
+  caudal_upper_lobe_over_SL: 'caudal_upper_SL', caudal_lower_lobe_over_SL: 'caudal_lower_SL' };
+export const paramsToSpecimen = params => Object.fromEntries(Object.entries(params || {}).filter(([k, v]) => PARAM_TO_RAW[k] && typeof v === 'number' && Number.isFinite(v)).map(([k, v]) => [PARAM_TO_RAW[k], v]));
 
 /** STABLE ENTRY POINT for scoring a design.
  *    designScore(design, opts) -> { score, plausible, components, verdict, closest_real_relative, scorer, design }
@@ -246,15 +338,31 @@ export function threeResults(r, { claims = null } = {}) {
  *  Leave-out scoring: everything named in reference_set_excluding is removed from the nearest-neighbour search, so a
  *  real organism is never scored against itself (see phenotype.mjs excludeMatcher). Weights: score-weights.json. */
 export async function designScore(design, opts = {}) {
-  if (opts.version === '1.2.0') return (await import('./score-v12.mjs')).designScoreV12(design, opts);
+  if (opts.version === '1.2.0' || opts.version === '1.3.0') {
+    const m = opts.version === '1.2.0' ? await import('./score-v12.mjs') : await import('./score-v13.mjs');
+    const r = opts.version === '1.2.0' ? await m.designScoreV12(design, opts) : await m.designScoreV13(design, opts);
+    // v1.2.0 and v1.3.0 are separate modules and never built the `_prov` row list that provOf() builds from an
+    // assess() result. designScoreTool then called envelope(res, undefined, SCOPE), which threw
+    // "provenance must be an array" -- so the two NEWEST released versions were not callable through the shipped
+    // design_score tool at all, while still being callable from library code. Hence provOfVersioned().
+    return r._prov ? r : { ...r, score_evaluation: evaluationLabel(opts.version), _prov: provOfVersioned(r, opts.version) };
+  }
+  // A {params} item (the benchmark's own shape) is accepted by every version: the traits a version can read are
+  // mapped to the specimen record, and the rest are reported as unread rather than silently dropped.
+  if (design && typeof design === 'object' && design.params && !design.doc && !('specimen' in design)) {
+    const specimen = paramsToSpecimen(design.params);
+    const unread = Object.keys(design.params).filter(k => !PARAM_TO_RAW[k]);
+    const out = await designScore({ specimen, taxon: design.taxon, label: design.label }, opts);
+    return { ...out, traits_not_read_by_this_version: unread };
+  }
   const args = { ...opts };
   if (design && typeof design === 'object' && 'specimen' in design) Object.assign(args, design);
   else if (design && typeof design === 'object' && 'organism' in design) Object.assign(args, design);
   else args.organism = design;
   args.exclude = [...(opts.reference_set_excluding || []), ...(opts.exclude || []), ...(args.exclude || [])];
   const r = await assess(args);
-  const three = threeResults(r);
-  return { ...three, score: r.score.value, plausible: r.score.plausible, rank_score: r.score.rank_score ?? null, rank: r.score.rank ?? null, components: r.score.components, verdict: r.verdict, closest_real_relative: r.verdict.closest_real_relative,
+  const named = namedResults(r);
+  return { ...named, score: r.score.value, plausible: r.score.plausible, rank_score: r.score.rank_score ?? null, rank: r.score.rank ?? null, components: r.score.components, verdict: r.verdict, closest_real_relative: r.verdict.closest_real_relative,
     excluded: r.phenotype.excluded, scorer: r.scorer, design: r.design,
     genotype_summary: r.genotype.edits.map(e => ({ gene: e.edit.gene, edit: e.edit.raw, checks: e.checks, closest_species: e.comparison?.closest_species ? { species: e.comparison.closest_species.species, identity_after: e.comparison.closest_species.identity_after } : null,
       alt_state_exists_in_real_organism: e.comparison?.alt_state_in_real_organisms ?? null, annotations: e.annotations })),
@@ -270,8 +378,8 @@ export async function designScoreTool(args = {}) {
 
 export async function validateDesign(args = {}) {
   const r = await assess(args);
-  const three = threeResults(r);
-  const res = { design: r.design, results: { genotype_similarity: three.genotype_similarity, phenotype_similarity: three.phenotype_similarity, lean_check: three.lean_check }, lean_gate_failed: three.lean_gate_failed, verdict: r.verdict, score: r.score, closest_relative_phenotype: r.phenotype, closest_relative_genotype: r.genotype, sanity: r.sanity, lean_by_component: r.lean, scorer: r.scorer, ms: r.ms };
+  const named = namedResults(r);
+  const res = { design: r.design, results: { genotype_similarity: named.genotype_similarity, phenotype_similarity: named.phenotype_similarity, lean_check: named.lean_check, functional_resolution: named.functional_resolution, physics_simulation: named.physics_simulation }, lean_gate_failed: named.lean_gate_failed, functional_gate_failed: named.functional_gate_failed, physics_gate_failed: named.physics_gate_failed, gates_note: named.gates_note, verdict: r.verdict, score: r.score, closest_relative_phenotype: r.phenotype, closest_relative_genotype: r.genotype, sanity: r.sanity, lean_by_component: r.lean, scorer: r.scorer, ms: r.ms };
   if (args.swarm) res.swarm = swarmTasks(args, r);
   return envelope(res, provOf(r), SCOPE);
 }

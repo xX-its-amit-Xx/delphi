@@ -1,0 +1,128 @@
+{
+ "law_id": "fisher-kpp-speed",
+ "version": "1.1.0",
+ "kind": "biological",
+ "class": "theorem-from-hypothesis",
+ "status": "candidate",
+ "label": "Fisher-KPP: c^2 = 4sD is the minimum of the linear speed relation, attained at one decay rate",
+ "level": null,
+ "lean_ref": {
+  "module": "lean/registry/proposals/fisher-kpp-speed/law.lean",
+  "theorem": "Delphi.LeanBio.Round2.KppSpeed.kpp_min_speed",
+  "structure": null,
+  "commit": "05ccd2d9a9b952bc14565e89eb62687da473d9cc",
+  "statement_sha256": "96926d3525873f3ec1fa4adb3cbb5d6ae881b2512afefbe9546c1713392259ff",
+  "content_hash": "ed316e1bc97dfa63d6e848d658bdb7e926c37331112e6fd6ef4057d2d0751b59"
+ },
+ "statement_en": "For a Fisher-KPP gene wave with dispersal coefficient D > 0, selection coefficient s > 0 and minimal speed c > 0 satisfying c^2 = 4*s*D (a named hypothesis), the relation c*k <= D*k^2 + s holds at every exponential decay rate k, strictly except at the single minimiser 2*D*k = c, so c is the minimum of the family of linear spreading speeds and is attained at exactly one decay rate; and at fixed dispersal a larger selection coefficient gives a strictly larger minimal speed.",
+ "hypotheses": [
+  {
+   "name": "Delphi.LeanBio.Round2.KppSpeed.KppHyp",
+   "statement": "A continuous population obeying u_t = D*u_xx + s*u*(1-u) with D > 0 (dispersal coefficient per generation), s > 0 (selection coefficient) and minimal travelling-wave speed c > 0 satisfying c^2 = 4*s*D, the squared form of c* = 2*sqrt(s*D).",
+   "source": "Fisher RA (1937) The wave of advance of advantageous genes. Annals of Eugenics 7:355-369, doi:10.1111/j.1469-1809.1937.tb02153.x; rigorous spreading-speed result doi:10.1016/0001-8708(78)90130-5; claim notation in math-bio-theorems/claims/key-claims.json (fisher-kpp-speed)"
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "One spatial dimension, constant diffusion coefficient, logistic (genic) selection, deterministic large-population limit. The theorem is the arithmetic of the linearised speed relation; it does not establish that a travelling wave exists, that compactly supported initial data converge to it, or that any population disperses diffusively."
+ },
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "doi:10.1111/j.1469-1809.1937.tb02153.x",
+   "doi:10.1016/0001-8708(78)90130-5"
+  ],
+  "observations": [],
+  "leanbio": {
+   "pipeline": "pipeline/leanbio",
+   "round": "discovery round 2",
+   "belief_params": "leanbio-belief/0.1.0",
+   "note": "belief is an ordering heuristic for the formalization queue, not a probability"
+  }
+ },
+ "sources": [
+  "doi:10.1111/j.1469-1809.1937.tb02153.x"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.LeanBio.Round2.KppSpeed.witness",
+  "statement": "theorem witness : Nonempty Instance",
+  "file": "lean/registry/proposals/fisher-kpp-speed/law.lean"
+ },
+ "constraints": [
+  "KPP1"
+ ],
+ "introduced_in": "1.8.0",
+ "supersedes": "fisher-kpp-speed@1.0.0",
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": null,
+ "origin": "lean/registry/laws/fisher-kpp-speed.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "propose.mjs against lawset 1.7.0: candidate"
+  },
+  {
+   "version": "1.1.0",
+   "date": "2026-11-01",
+   "change": "added a declarative browser_check block (constraint KPP1) so the law generates a row without a code edit; statement, hypotheses, scope and witness unchanged. Status stays candidate."
+  }
+ ],
+ "content_hash": "ed316e1bc97dfa63d6e848d658bdb7e926c37331112e6fd6ef4057d2d0751b59",
+ "browser_check": {
+  "constraint": "KPP1",
+  "quantity": "spread_speed_m_per_generation ^ 2",
+  "op": "ge",
+  "bound": "4 * selection_coefficient * dispersal_D_m2_per_generation",
+  "inputs": [
+   "spread_speed_m_per_generation",
+   "selection_coefficient",
+   "dispersal_D_m2_per_generation"
+  ],
+  "relation": "c^2 >= 4 s D, i.e. c >= c* = 2 sqrt(s D)  (no front is slower than the Fisher-KPP minimal speed)",
+  "note": "The law proves c* is the MINIMUM of the family of linear spreading speeds, so the checkable direction is the lower bound: a committed front speed below 2 sqrt(s D) is inconsistent with the committed selection and dispersal coefficients. 'violated' says those three numbers cannot hold together under the Fisher-KPP hypothesis; it does not say the population spreads too slowly in nature, and it does not establish that a travelling wave exists at all.",
+  "unit": "m^2 per generation^2",
+  "band": "hypothesis",
+  "tolerance": "relative"
+ },
+ "lean": {
+  "theorem": "Delphi.LeanBio.Round2.KppSpeed.kpp_min_speed",
+  "module": "lean/registry/proposals/fisher-kpp-speed/law.lean",
+  "line": 44,
+  "source": "/-- **Fisher-KPP minimal wave speed.** Under `KppHyp`: `c` is a lower bound on the linear speed\nrelation at every decay rate, strictly so except at the unique minimiser `2 D k = c`, and the\nminimal speed rises strictly with the selection coefficient at fixed dispersal. -/\ntheorem kpp_min_speed {D s c : ℝ} (h : KppHyp D s c) :\n    (∀ k : ℝ, c * k ≤ D * k ^ 2 + s) ∧\n    (∀ k : ℝ, 2 * D * k ≠ c → c * k < D * k ^ 2 + s) ∧\n    (∀ s' c' : ℝ, 0 < c' → c' ^ 2 = 4 * s' * D → s < s' → c < c') := by\n  have hD := h.D_pos\n  have hs := h.s_pos\n  have hc := h.c_pos\n  have hm := h.minimal\n  refine ⟨?_, ?_, ?_⟩\n  · intro k\n    nlinarith [sq_nonneg (2 * D * k - c), hD, hm]\n  · intro k hk\n    have hne : 2 * D * k - c ≠ 0 := sub_ne_zero.mpr hk\n    have hsq : 0 < (2 * D * k - c) ^ 2 := by\n      rcases lt_or_gt_of_ne hne with h1 | h1 <;> nlinarith\n    nlinarith [hsq, hD, hm]\n  · intro s' c' hc' hm' hlt\n    nlinarith [hm, hm', hc, hc', hD, hlt]",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.LeanBio.Round2.KppSpeed.KppHyp",
+    "keyword": "structure",
+    "module": "lean/registry/proposals/fisher-kpp-speed/law.lean",
+    "line": 35,
+    "source": "/-- Named hypothesis: a Fisher-KPP wave with dispersal coefficient `D`, selection coefficient `s`\nand minimal speed `c` satisfying `c ^ 2 = 4 * s * D`. -/\nstructure KppHyp (D s c : ℝ) : Prop where\n  D_pos : 0 < D\n  s_pos : 0 < s\n  c_pos : 0 < c\n  minimal : c ^ 2 = 4 * s * D"
+   }
+  ]
+ },
+ "constraint_details": [],
+ "pin": {
+  "module": "lean/registry/proposals/fisher-kpp-speed/law.lean",
+  "decl": "Delphi.LeanBio.Round2.KppSpeed.kpp_min_speed",
+  "commit": "05ccd2d9a9b952bc14565e89eb62687da473d9cc",
+  "theorem_found": true,
+  "pinned_statement_sha256": "96926d3525873f3ec1fa4adb3cbb5d6ae881b2512afefbe9546c1713392259ff",
+  "current_statement_sha256": "96926d3525873f3ec1fa4adb3cbb5d6ae881b2512afefbe9546c1713392259ff",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.8.0",
+  "1.8.1"
+ ],
+ "other_versions": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

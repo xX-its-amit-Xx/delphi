@@ -7,7 +7,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { REG, ROOT, LAWS_DIR, readJson, loadLaws, listLawsets, loadLawset, contentHash, statementText, validate, sha256, scratchDir, loadLawVersion } from './registry-lib.mjs';
-import { releaseProblems } from './release.mjs';
+import { releaseProblems, lawsetsKnownToChecker } from './release.mjs';
 import { propose } from './propose.mjs';
 
 let failures = 0;
@@ -38,7 +38,9 @@ const schemaErrs = ls => ls.flatMap(l => validate(schema, l).map(e => `${l.law_i
 check('schema: every law file validates', () => schemaErrs(laws), () => { const b = clone(laws); b[0].kind = 'chemical'; b[1].status = 'accepted'; b[1].approval = { approved_by_role: 'someone@example.org', date: 'x', basis: 'x' }; return schemaErrs(b); });
 
 // 2. content hashes
-const hashErrs = ls => ls.flatMap(l => [contentHash(l) !== l.content_hash ? `${l.law_id}: content_hash` : null, l.lean_ref.content_hash !== l.content_hash ? `${l.law_id}: lean_ref.content_hash` : null].filter(Boolean));
+// lean_ref.content_hash is a convenience mirror of content_hash for the loader; a law with no Lean module may
+// leave it null, so require null-or-equal rather than equal.
+const hashErrs = ls => ls.flatMap(l => [contentHash(l) !== l.content_hash ? `${l.law_id}: content_hash does not match its hashed fields` : null, l.lean_ref.content_hash != null && l.lean_ref.content_hash !== l.content_hash ? `${l.law_id}: lean_ref.content_hash is set but differs from content_hash` : null].filter(Boolean));
 check('hashes: content_hash matches the hashed fields', () => hashErrs(laws), () => { const b = clone(laws); b[3].statement_en += ' (edited without a version bump)'; return hashErrs(b); });
 
 // 3. statement drift against the Lean source now on disk
@@ -66,6 +68,18 @@ const sets = listLawsets().map(v => loadLawset(v));
 check(`lawsets: ${sets.map(s => s.version).join(', ')} reproducible from the law files`, () => lawsetErrs(sets, laws),
   () => { const b = clone(sets); b[0].laws[0].content_hash = '0'.repeat(64); return lawsetErrs(b, laws.filter(l => l.law_id !== 'E5'), (id, v) => id === 'perturb-pressure' && v === '1.0.0' ? null : loadLawVersion(id, v)); });
 const cur = readJson(path.join(REG, 'lawsets/current.json'));
+// The release-order rule: the GENERATED checker must know the version current.json names. When current.json was
+// bumped to 1.6.0 while lean/eliminate/browser-check.mjs still knew only up to 1.5.0, every checkDesign threw
+// "unknown law set 1.6.0" and the studio, the scorer and the examples broke mid-release. release.mjs now refuses to
+// move current.json until the regenerated checker knows the version, judgeRows fails soft, and this is the check.
+const knownToChecker = () => {
+  const known = lawsetsKnownToChecker();
+  if (known === null) return ['could not read LAWSETS out of lean/eliminate/browser-check.mjs'];
+  return known.includes(cur.version) ? [] : [`lawsets/current.json names ${cur.version}, which the generated lean/eliminate/browser-check.mjs does not know (it knows ${known.join(', ')}): run node lean/eliminate/build-browser-check.mjs`];
+};
+check('release order: the generated browser-check knows the law set current.json names', knownToChecker,
+  () => { const known = lawsetsKnownToChecker() || []; const fake = '99.0.0'; return known.includes(fake) ? [] : [`current.json naming ${fake} would be caught: the checker knows ${known.join(', ')}`]; });
+
 check('lawsets: current.json names an existing law set', () => sets.some(s => s.version === cur.version) ? [] : ['missing'], () => sets.some(s => s.version === '9.9.9') ? [] : ['missing']);
 
 // 5. approval rule: accepted needs a human approval by ROLE
@@ -105,6 +119,74 @@ check('scope sanity: no ACCEPTED law is red for an unedited measured wild type w
   () => wildTypes.flatMap(w => acceptedRed(BC.check(w.design)).map(id => `${w.id}: ${id}`)),
   // broken: the same designs judged WITHOUT scope (formula verdicts) do turn accepted laws red, which is the defect
   () => wildTypes.flatMap(w => BC.checkRaw(w.design).filter(r => r.verdict === 'violated' && BC.CONSTRAINT_LAW[r.id] && BC.LAWSETS[BC.LAWSET_VERSION].laws[BC.CONSTRAINT_LAW[r.id]].status === 'accepted').map(r => `${w.id}: ${r.id}`)));
+// STANDING CHECK (hub, 2026-11-01): no ACCEPTED law may be violated by a real organism making a REALISTIC claim
+// within that law's scope. A law that a measured wild type breaks is wrong, or is being applied outside its scope;
+// either way it must not be accepted-and-red. This caught the class of error it is meant to catch: E3 and C14 fired
+// on Park and Choi flying fish making ordinary glide claims, because a glide had been turned into a level-powered-
+// flight power requirement. Fixtures use SOURCED numbers only (the checker's REFERENCE specimen, which comes from
+// physics/glide-data.csv, and anatomy-model/parametric/resolved/*.json); design-committed inputs are marked.
+const REF = BC.REFERENCE;
+const o = id => readJson(path.join(ROOT, `anatomy-model/parametric/resolved/${id}.json`)).parameters;
+const zfa = o('zebrafish-adult'), zfl = o('zebrafish-larva');
+// Every Cypselurus hiraii specimen Park and Choi measured, not just the one the checker uses as its reference.
+// The sibling specimens are why this check exists: their length ratios sit within 1 to 3 percent of the reference,
+// which is exactly where an implied exponent is near-singular.
+const glideCsv = fs.readFileSync(path.join(ROOT, 'physics/glide-data.csv'), 'utf8').split(/\r?\n/).filter(Boolean);
+const glideHead = glideCsv[0].split(',');
+const glideRows = glideCsv.slice(1).map(l => { const c = []; let cur = '', q = false; for (const ch of l) { if (ch === '"') q = !q; else if (ch === ',' && !q) { c.push(cur); cur = ''; } else cur += ch; } c.push(cur); return Object.fromEntries(glideHead.map((h, i) => [h, c[i] ?? ''])); })
+  .filter(r => r.species === 'Cypselurus hiraii' && r.row_kind === 'specimen');
+const SPECIMENS = glideRows.map(r => {
+  const area = +r.pectoral_fin_area_m2 + (+r.pelvic_fin_area_m2 || 0) + (+r.body_planform_area_m2 || 0);
+  const winged = +r.pectoral_fin_area_m2 > 0;   // models M and N have fins folded; N is body only
+  const base = { taxon: 'Cypselurus hiraii', life_stage: 'adult', SL_m: +r.body_length_m, mass_kg: +r.body_mass_kg, fin_area_m2: area };
+  return { id: `park-choi-${r.source_locator.replace(/[^A-Za-z0-9]+/g, '-')}`,
+    note: `${r.source_locator}: measured morphometry, length ratio ${(+r.body_length_m / BC.REFERENCE.SL_m).toFixed(4)} against the checker's reference specimen` + (winged ? ', in an ordinary unpowered glide' : '; fins folded in this model, so no flight claim is attributed to it'),
+    design: winged
+      ? { ...base, CLmax: BC.REFERENCE.CLmax, LD_max: BC.REFERENCE.LD_max, airspeed_m_s: 12, flight_mode: 'glide', glideHeight_m: 8, glide_distance_m: 30,
+          efficiency: 0.15, oxycaloric_J_per_unit_O2: 19.34, cardiacOutput: 0.0656, arterialO2: 0.187 }
+      : base };
+});
+const FIXTURES = [
+  ...SPECIMENS,
+  { id: 'flying-fish-glide', note: 'Park and Choi 2010 model L3 in an ordinary unpowered glide: 8 m launch height (deng-2019), 30 m over the ground, inside the L/D 4.37 bound of 34.96 m, at 12 m/s (field range 10 to 20 m/s)',
+    design: { taxon: 'Cypselurus hiraii', life_stage: 'adult', SL_m: REF.SL_m, mass_kg: REF.mass_kg, fin_area_m2: REF.liftingArea_m2, CLmax: REF.CLmax, LD_max: REF.LD_max,
+      airspeed_m_s: 12, flight_mode: 'glide', glideHeight_m: 8, glide_distance_m: 30,
+      efficiency: 0.15, oxycaloric_J_per_unit_O2: 19.34, cardiacOutput: 0.0656, arterialO2: 0.187 } },
+  { id: 'zebrafish-adult', note: 'the unedited adult zebrafish as resolved, no locomotion claim',
+    design: { taxon: 'Danio rerio', life_stage: 'adult', SL_m: zfa.standard_length_m, mass_kg: zfa.body_mass_kg, fin_area_m2: zfa.pectoral_area_over_SL2 * zfa.standard_length_m ** 2, fin_length_over_SL: zfa.pectoral_len_over_SL } },
+  { id: 'zebrafish-adult-swimming', note: 'the same fish holding station in a current below the U_crit it commits to (both design inputs, not claims about reality)',
+    design: { taxon: 'Danio rerio', life_stage: 'adult', SL_m: zfa.standard_length_m, mass_kg: zfa.body_mass_kg, current_speed_m_s: 0.1, critical_swimming_speed_m_s: 0.2 } },
+  { id: 'zebrafish-larva', note: 'the unedited 5 dpf larva as resolved',
+    design: { taxon: 'Danio rerio', life_stage: 'larva', SL_m: zfl.standard_length_m, mass_kg: zfl.body_mass_kg, fin_area_m2: zfl.pectoral_area_over_SL2 * zfl.standard_length_m ** 2 } },
+];
+const acceptedRedIn = rows => rows.filter(r => r.law && r.law.status === 'accepted' && r.verdict === 'violated')
+  .map(r => `${r.id} (${r.law.law_id}@${r.law.version}): ${JSON.stringify(r.numbers).slice(0, 160)}`);
+const standingErrs = (fixtures = FIXTURES) => fixtures.flatMap(f => acceptedRedIn(BC.check(f.design)).map(x => `${f.id}: ${x}`));
+check(`standing: no accepted law is violated by any of the ${FIXTURES.length} real organisms making realistic claims (${SPECIMENS.length} measured Park and Choi specimens, the reference glide, 2 zebrafish states and a swimming claim; law set ${BC.LAWSET_VERSION})`,
+  () => standingErrs(),
+  // The broken input is the defect this guards against: the SAME realistic glide mapped as a sustained powered
+  // demand. The aerobic laws then fire (the flying fish cannot power level flight, a real finding), so the check
+  // must report it rather than pass.
+  () => standingErrs([{ id: 'flying-fish-glide-mismapped-as-powered', design: { ...FIXTURES[0].design, flight_mode: 'powered' } }]));
+
+// scope_check is authoritative for BOTH kinds of out-of-scope: 'organism' (taxon, life stage, range) and
+// 'claim-kind' (the caller asked the wrong law, e.g. an unpowered glide against an aerobic bound). A consumer must
+// not have to fall back to `note` to learn why, and the claim-kind row carries the law's excludes.
+const kindErrs = rows => {
+  const e = [];
+  for (const r of rows.filter(x => x.verdict === 'out-of-scope')) {
+    const sc = r.scope_check;
+    if (!sc || sc.in_scope !== false) e.push(`${r.id}: out-of-scope with no scope_check`);
+    else if (!['organism', 'claim-kind'].includes(sc.kind)) e.push(`${r.id}: scope_check.kind is ${sc.kind}`);
+    else if (!sc.reason) e.push(`${r.id}: scope_check carries no reason`);
+    else if (sc.kind === 'claim-kind' && !(sc.scope.excludes || []).length) e.push(`${r.id}: claim-kind row carries no excludes`);
+  }
+  return e;
+};
+check("scope_check explains every out-of-scope row, with kind 'organism' or 'claim-kind'",
+  () => kindErrs([...BC.check(FIXTURES[0].design), ...BC.check(FIXTURES[1].design)]),
+  () => kindErrs([{ id: 'fake', verdict: 'out-of-scope', scope_check: null }]));
+
 const zf = BC.check(wildTypes[1].design);
 const zfScoped = ['C7b', 'C2a', 'C8e', 'E2'].map(id => zf.find(r => r.id === id)).filter(Boolean);
 check('scope: C7b, C2a, C8e, E2 are out-of-scope (grey) for the unedited adult zebrafish',
@@ -117,6 +199,17 @@ const judgeAs = (status, opts = {}) => { const ls = clone(BC.LAWSETS[BC.LAWSET_V
 check(`status: accepted red, candidate not red (flagged), candidate red with includeCandidates, contested amber, retired not judged (law ${lid}, constraint ${cid})`,
   () => [judgeAs('accepted').display === 'red' || 'accepted', judgeAs('candidate').verdict === 'candidate-violated' || 'candidate', judgeAs('candidate', { includeCandidates: true }).display === 'red' || 'candidate+include', judgeAs('contested').display === 'amber' || 'contested', judgeAs('retired').verdict === 'not-in-lawset' || 'retired'].filter(x => x !== true),
   () => [judgeAs('contested').display === 'red' || 'contested is not red'].filter(x => x !== true));
+
+// Fail-soft: an unknown law set must degrade, never throw. The broken input is the OLD behaviour (a throw), which
+// this check must catch; that is what broke every caller mid-release.
+const softCheck = judge => {
+  let rows;
+  try { rows = judge(); } catch (e) { return ['threw instead of degrading: ' + e.message]; }
+  return rows.length && rows.every(r => r.verdict === 'unknown-lawset' && r.display === 'grey' && r.unknown_lawset_reason) ? [] : ['rows were judged, or carry no reason'];
+};
+check('fail soft: an unknown law set yields unknown-lawset rows (grey) instead of throwing',
+  () => softCheck(() => BC.check({ taxon: 'Exocoetidae', SL_m: 0.2, mass_kg: 0.06 }, { lawset: '99.0.0' })),
+  () => softCheck(() => { throw new Error('unknown law set 99.0.0; known: 1.0.0'); }));
 
 // 7 and 8. proposals through Lean: a contradictory law is contested; a sorry is rejected
 if (!process.env.REGISTRY_TEST_FAST) {

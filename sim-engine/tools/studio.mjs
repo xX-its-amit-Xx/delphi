@@ -97,7 +97,7 @@ export const SCHEMAS = {
     inputSchema: { type: 'object', properties: {} } },
   scenario_run: { title: 'Run a scenario', description: 'Run one scenario on an organism at one age. Never runs when a required STATE field is null.',
     inputSchema: { type: 'object', properties: { organism: ORG, scenario: { type: 'string' }, params: { type: 'object' }, ageDays: AGE, conditions: COND, measured: MEASURED, lawset: LAWSET,
-      claims: { type: 'object', description: `Assertions the Lean laws check against the scenario's own physics, labelled as claims (e.g. {ground_distance_m: 10} for a glide claim, {mass_change: 'positive'} for a growth claim). Keys: ${CLAIM_KEYS.join(', ')}.` } }, required: ['organism', 'scenario'] } },
+      claims: { type: 'object', description: `Assertions the Lean laws check against the scenario's own physics, labelled as claims. {ground_distance_m} and {glideDistance_m} are the STEADY DESCENT that C15 and P4b bound; {glide_total_distance_m} is the whole glide (kinetic phase included), which no theorem covers, so it is reported and never ruled on. {flight_mode: 'powered'} says the claim is level or climbing flight, which pays a sustained power (E3, C14, C16 apply); an unpowered glide never reaches those laws. Keys: ${CLAIM_KEYS.join(', ')}.` } }, required: ['organism', 'scenario'] } },
   scenario_timecourse: { title: 'Run a scenario across development', description: 'The same scenario at every developmental stage in anatomy-model/parametric/stages.json for the organism\'s parents: per-stage metrics, survives, limiting, Lean violations.',
     inputSchema: { type: 'object', properties: { organism: ORG, scenario: { type: 'string' }, params: { type: 'object' }, conditions: COND, lawset: LAWSET }, required: ['organism', 'scenario'] } },
   optimize: { title: 'Optimise a design against a scenario metric', description: 'Seeded random-restart hill climb over decision variables [{target,param,min,max}]. A candidate is rejected if it creates a NEW binding Lean violation (strict: any binding violation) or breaks a hard constraint; every rejection is returned with the law or constraint it broke. If no candidate is feasible the result says "no design meets the spec".',
@@ -200,6 +200,9 @@ async function runOne(doc, bundle, s, args, ageDays) {
   const pb = applyClaims(perturbInputs(base, s.key, run.params || args.params || {}, runScenario(s, base, args.params || {})), args.claims || {});
   const lean = await leanVerdicts(state, { lawset: args.lawset, baselineState: base, extraSpec: pi.spec, baselineExtraSpec: pb.spec, scoped: pi.scoped });
   lean.perturb_input_sources = pi.sources;
+  lean.perturb_notes = pi.notes;
+  lean.flight_mode = pi.mode;
+  lean.not_covered = pi.not_covered || null;
   return { state, run, lean };
 }
 
@@ -208,7 +211,7 @@ export async function scenarioRun(args = {}) {
   const s = await scenarioOrThrow(args.scenario);
   const { state, run, lean } = await runOne(doc, bundle, s, args, args.ageDays);
   const prov = [...(run.ok ? run.provenance : []), ...stateProvenance(state)];
-  return envelope({ scenario: s.key, run, state: stateSummary(state), lawset_version: lean.lawset_version, verdicts: lean.verdicts, violations: lean.violations, lean_inputs: { spec: lean.spec, sources: lean.perturb_input_sources },
+  return envelope({ scenario: s.key, run, state: stateSummary(state), lawset_version: lean.lawset_version, verdicts: lean.verdicts, violations: lean.violations, lean_inputs: { spec: lean.spec, sources: lean.perturb_input_sources, notes: lean.perturb_notes, flight_mode: lean.flight_mode, not_covered: lean.not_covered },
     new_binding_violations: lean.new_binding_violations, out_of_validity: run.ok && !run.validity.inRange ? run.validity : null },
   prov, `${run.ok ? run.scope : `Scenario did not run: ${run.error}`} Out-of-validity results are reported under out_of_validity and are NOT law violations. ${STATE_SCOPE}`);
 }

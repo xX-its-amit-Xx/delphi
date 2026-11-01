@@ -9,7 +9,7 @@ import { belief, PARAMS } from './belief.mjs';
 import { decide, groundEntity } from './ground.mjs';
 import { typeStatement } from './relations.mjs';
 import { renderDraft, iriOf } from './draft.mjs';
-import { registryProblems, criteriaProblems, draftProblems, holdoutProblems } from './check.mjs';
+import { registryProblems, criteriaProblems, criteriaNotes, draftProblems, holdoutProblems, assertsEmpiricalRegularity, dataOrigin } from './check.mjs';
 import { harvestQuery } from './harvest.mjs';
 import { LEANBIO_TOOLS } from './tools.mjs';
 
@@ -89,9 +89,23 @@ const mine = laws.find(l => l.law_id === 'maynardsmith-hitchhiking');
 check('check: registry schema and content hash (tampered statement is caught)',
   () => registryProblems(laws, schema),
   () => registryProblems([{ ...mine, statement_en: mine.statement_en + ' (edited)' }], schema));
-check('check: LeanBio criteria (missing witness, unsourced hypothesis, low belief are caught)',
+check('check: LeanBio criteria (missing witness and unsourced hypothesis are caught)',
   () => criteriaProblems(laws, byId),
-  () => criteriaProblems([{ ...mine, non_vacuity_witness: null, hypotheses: [{ name: 'h', statement: 's' }] }], new Map([[mine.law_id, { ...rec, belief: { belief: 0.2 } }]])));
+  () => criteriaProblems([{ ...mine, non_vacuity_witness: null, hypotheses: [{ name: 'h', statement: 's' }] }], byId));
+// Criterion 3 is SCOPED (house rule 2026-11-01): the belief gate applies to a law that asserts an
+// empirical regularity, not to a model theorem. Both sides are tested, so the gate cannot quietly die.
+const lowBelief = new Map([[mine.law_id, { ...rec, belief: { belief: 0.2 } }]]);
+check('check: the belief gate FIRES for a law asserting an empirical regularity',
+  () => criteriaProblems([{ ...mine, class: 'empirical-observation' }], lowBelief).some(p => /belief 0.2 below/.test(p)),
+  () => criteriaProblems([{ ...mine, class: 'empirical-observation' }], byId).some(p => /belief/.test(p)));
+check('check: the belief gate does NOT fire for a model theorem, and says so in a note',
+  () => criteriaProblems([{ ...mine, class: 'theorem-from-hypothesis' }], lowBelief).every(p => !/belief/.test(p))
+     && criteriaNotes([{ ...mine, class: 'theorem-from-hypothesis' }], lowBelief).some(n => /does NOT gate/.test(n)),
+  () => assertsEmpiricalRegularity({ class: 'theorem-from-hypothesis' }));
+check('check: a law distilled from repo data is a legitimate origin, a dangling path is not',
+  () => dataOrigin({ sources: ['development/growth.json'] }) === 'development/growth.json'
+     && criteriaProblems([{ ...mine, sources: ['development/growth.json'] }], new Map()).every(p => !/no LeanBio record/.test(p)),
+  () => dataOrigin({ sources: ['development/does-not-exist.json'] }) !== null);
 check('check: personal identifier in approval is refused',
   () => criteriaProblems([{ ...mine, status: 'accepted', approval: { approved_by_role: 'human:project-lead', date: '2026-11-01', basis: 'x' } }], byId),
   () => criteriaProblems([{ ...mine, status: 'accepted', approval: { approved_by_role: 'someone@example.org', date: '2026-11-01', basis: 'x' } }], byId));

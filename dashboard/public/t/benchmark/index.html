@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../../shared/shell.css">
+<script src="../../shared/shell.js"></script>
+<title>Three architectures, four stages</title>
+<meta name="description" content="Single agent against a decentralised swarm against a centralised swarm, measured at four stages of the DELPHI stack on equal total budget, with cost beside quality and every bar traceable to the run that produced it.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Crect x='7' y='17' width='4' height='9' fill='white'/%3E%3Crect x='14' y='11' width='4' height='15' fill='white'/%3E%3Crect x='21' y='14' width='4' height='12' fill='white'/%3E%3C/svg%3E">
+<style>
+/* Layout: a stated headline, then one figure per stage (quality beside cost), then every cell as a row that opens its own run log. */
+:root{
+  --bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;
+  --ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--soft:#eef2ef;
+  --shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05);
+  /* the three arms. validated with the dataviz skill's checker: all-pairs CVD dE 9.2, normal-vision 24.0 (light) */
+  --arm-single:#2a78d6;--arm-dec:#eb6834;--arm-cent:#1baf7a;
+  --grid:#e4e8e4;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;
+  --ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--soft:#192b29;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3);
+  /* dark steps of the same three hues, validated against the dark surface */
+  --arm-single:#3987e5;--arm-dec:#d95926;--arm-cent:#199e70;
+  --grid:#223531;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;
+  --ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--soft:#192b29;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3);
+  --arm-single:#3987e5;--arm-dec:#d95926;--arm-cent:#199e70;
+  --grid:#223531;
+  color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--dsh-h,0px) + 64px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+h1,h2,h3{line-height:1.2;margin:0 0 .5em;text-wrap:balance}
+h1{font-size:clamp(1.5rem,4vw,2.3rem)} h2{font-size:1.4rem} h3{font-size:1.05rem}
+p{margin:.4em 0 .8em}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{position:sticky;top:var(--dsh-h,0px);z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;gap:10px;align-items:center;overflow-x:auto;padding-block:8px;white-space:nowrap}
+.brand{font-weight:700;margin-right:6px;text-decoration:none;color:var(--ink)}
+nav a{display:inline-block;padding:4px 10px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.88rem}
+nav a:hover{background:var(--soft);color:var(--ink)}
+#themeBtn{margin-left:auto}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px;border-radius:8px}
+button:hover{border-color:var(--accent)}
+section{padding-block:32px;border-bottom:1px solid var(--line)}
+.lede{color:var(--mute);max-width:68ch;font-size:1.04rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.mute{color:var(--mute)} .small{font-size:.88rem}
+.chip{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.76rem;border:1px solid var(--line);background:var(--soft);color:var(--mute);vertical-align:middle}
+.chip.ok{color:var(--ok);border-color:var(--ok)} .chip.bad{color:var(--bad);border-color:var(--bad)} .chip.warn{color:var(--warn);border-color:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font-size:.86rem;color:var(--mute);margin:2px 0 10px}
+.legend b{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--ink)}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+.fig{min-width:0}
+.figscroll{overflow-x:auto;overflow-y:hidden;min-width:0;-webkit-overflow-scrolling:touch}
+.fig svg{display:block;width:100%;height:auto;min-width:660px}
+.figcap{font-size:.85rem;color:var(--mute);margin-top:6px}
+.bar-hit{cursor:pointer}
+.bar-hit:hover rect.b{filter:brightness(1.12)}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;position:sticky;top:0;background:var(--panel)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto;min-width:0}
+tr.row{cursor:pointer} tr.row:hover td{background:var(--soft)}
+#drawer{position:fixed;right:0;top:0;bottom:0;width:min(680px,100vw);background:var(--panel);border-left:1px solid var(--line);box-shadow:var(--shadow);transform:translateX(105%);transition:transform .2s;z-index:40;overflow:auto;padding:18px;padding-top:calc(18px + env(safe-area-inset-top,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
+#drawer.open{transform:none}
+#drawer h2{margin-right:70px}
+#drawer .x{position:absolute;right:16px;top:calc(14px + env(safe-area-inset-top,0px))}
+#drawer dl{display:grid;grid-template-columns:max-content 1fr;gap:3px 12px;font-size:.88rem;margin:.4em 0}
+#drawer dt{color:var(--mute)} #drawer dd{margin:0;overflow-wrap:anywhere}
+details{border:1px solid var(--line);border-radius:10px;background:var(--bg);margin:8px 0}
+details>summary{cursor:pointer;padding:9px 13px;font-weight:600;list-style:none;font-size:.9rem}
+details>summary::before{content:"\25B8";display:inline-block;margin-right:8px;transition:transform .15s;color:var(--accent)}
+details[open]>summary::before{transform:rotate(90deg)}
+details>.in{padding:0 13px 12px}
+pre{white-space:pre-wrap;font-size:.8rem;line-height:1.45;background:var(--soft);padding:10px;border-radius:8px;overflow:auto;max-height:420px;margin:.4em 0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+ul{margin:.3em 0 .8em;padding-left:1.25em} li{margin:.25em 0}
+.warnbox{border-left:3px solid var(--warn);background:var(--soft);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0}
+.headline{font-size:1.12rem;border-left:3px solid var(--accent);padding:10px 16px;background:var(--soft);border-radius:0 8px 8px 0;max-width:72ch}
+.hatch-key{width:12px;height:12px;display:inline-block;border:1px solid var(--bad);background:repeating-linear-gradient(45deg,var(--bad) 0 2px,transparent 2px 5px)}
+@media (max-width:560px){#drawer dl{grid-template-columns:1fr} #drawer dt{margin-top:.4em}}
+</style>
+<style id="dsh-fit">@media (max-width:720px){body{overflow-wrap:break-word}main table,section table,.card table,.in table,.scroll table{display:block;overflow-x:auto;max-width:100%}code,pre,.mono{overflow-wrap:anywhere}}</style>
+</head>
+<body>
+<!-- in <head> -->
+
+<!-- straight after <body>, current page = bench -->
+<!-- delphi-shell:start  generated by dashboard/build-shell.mjs - do not edit by hand -->
+<a class="dsh-skip" href="#dsh-content">Skip the navigation</a>
+<header class="dsh">
+  <div class="dsh-bar"><a class="dsh-brand" href="../../index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0e7c86"/><path d="M5 16c5-7 14-9 22-4-3 2-6 3-8 4 2 1 5 2 8 4-8 5-17 3-22-4z" fill="#fff"/></svg>DELPHI<span class="sub">laws of biology</span></a>
+    <nav class="dsh-nav" aria-label="Primary"><span class="dsh-grp" data-cur><span class="dsh-lab">Results</span><a class="dsh-link" href="../../results/">Results</a><a class="dsh-link" href="../../scorer/">Design scorer</a><a class="dsh-link" href="../../deck/">Pitch deck</a><a class="dsh-link" href="../../print/">Printable kit</a><a class="dsh-link" href="../../studio-api/">Validate a design</a><a class="dsh-link" href="../../gene-diff/">Gene diff</a><a class="dsh-link" href="../../t/benchmark/" aria-current="page">Swarm benchmark</a><a class="dsh-link" href="../../swarm-board/">Swarm board</a><a class="dsh-link" href="../../evolve/">Enzymes</a></span><span class="dsh-grp"><span class="dsh-lab">Evidence</span><a class="dsh-link" href="../../proofs/">Claim book</a><a class="dsh-link" href="../../leanbio/">LeanBio repo</a><a class="dsh-link" href="../../graph/">Graph</a><a class="dsh-link" href="../../figures/">Figures</a></span><span class="dsh-grp"><span class="dsh-lab">Threads</span><a class="dsh-link" href="../../t/lean/">Lean proofs</a><a class="dsh-link" href="../../t/claims/">Claim tests</a><a class="dsh-link" href="../../t/genotype/">Genotype</a><a class="dsh-link" href="../../t/physics/">Physics</a><a class="dsh-link" href="../../t/physics/sim/">Simulator</a><a class="dsh-link" href="../../t/organism/">Organism</a><a class="dsh-link" href="../../t/holdout/">Holdout</a><a class="dsh-link" href="../../t/swarm/">Swarm</a><a class="dsh-link" href="../../t/validation/">Validation</a></span><span class="dsh-grp"><span class="dsh-lab">About</span><a class="dsh-link" href="../../start/">Start here</a><a class="dsh-link" href="../../record/">Development record</a><a class="dsh-link" href="../../index.html">Mission control</a></span></nav>
+    <button class="dsh-theme" id="themeBtn" data-dsh-theme type="button" title="Toggle light or dark">Theme</button></div>
+  <nav class="dsh-modes" aria-label="The 3D organism viewer"><span class="dsh-lab">The organism</span><a class="dsh-link" href="../../blueprint3d/">Anatomy</a><a class="dsh-link" href="../../blueprint3d/?mode=physiology">Circulation &amp; gills</a><a class="dsh-link" href="../../blueprint3d/?mode=tissue">Tissue signals</a><a class="dsh-link" href="../../blueprint3d/?mode=cell">Cell interactions</a><a class="dsh-link" href="../../blueprint3d/?mode=physics">Flight simulator</a><a class="dsh-link" href="../../blueprint3d/?mode=design">Design studio</a><a class="dsh-link" href="../../blueprint3d/?mode=growth">Growth</a><a class="dsh-link" href="../../blueprint3d/?mode=compare">Compare species</a><a class="dsh-link" href="../../blueprint3d/?mode=sequences">Gene sequences</a><a class="dsh-link" href="../../blueprint3d/?view=radial">Radial map</a></nav>
+</header>
+<span id="dsh-content"></span>
+<!-- delphi-shell:end -->
+
+<header class="top"><div class="wrap">
+  <a class="brand" href="../../index.html">DELPHI</a>
+  <nav>
+    <a href="#headline">Headline</a>
+    <a href="#stages">Four stages</a>
+    <a href="#cells">Every run</a>
+    <a href="#merge">Merge</a>
+    <a href="#posthoc">Post hoc</a>
+    <a href="#limits">Limits</a>
+  </nav>
+  <button id="themeBtn" type="button">Theme</button>
+</div></header>
+
+<main class="wrap">
+
+<section id="headline">
+  <h1>Three architectures, four stages</h1>
+  <p class="lede">One agent, a decentralised swarm of three with no shared state, and a centralised swarm of three under an
+  orchestrator, each given the <strong>same total budget</strong> and <strong>byte-identical inputs</strong>, measured at four
+  stages of the DELPHI stack: writing a nanopublication, formalising a claim in Lean 4, specifying a design the studio accepts,
+  and reporting what <code>validate_generation</code> actually said. Graded by the repository's own checks, not by a checker
+  written for the experiment.</p>
+  <p class="headline" id="oneLine">Loading.</p>
+  <div class="warnbox" id="limitsTop"></div>
+  <div class="grid g2" id="armDefs"></div>
+</section>
+
+<section id="stages">
+  <h2>Each stage, all three arms, cost beside quality</h2>
+  <p class="lede">One figure per stage. Hue is fixed per arm across all four figures, so an arm can be tracked from stage to
+  stage. Each quality bar carries its <strong>min&ndash;max spread</strong> as a whisker and its three per-task scores as dots,
+  because with n = 3 the spread carries more information than the mean. <strong>Click any bar</strong> to open the runs behind it.</p>
+  <div class="legend" id="legend"></div>
+  <div id="figs" class="grid"></div>
+</section>
+
+<section id="cells">
+  <h2>Every run, traceable to its log</h2>
+  <p class="lede">Thirty-six cells: three arms &times; four stages &times; three tasks. Each row opens the prompt as it was sent,
+  the model's raw output, the tokens, the wall time, the stop reason, and the grader's verdict with its per-check reasoning.
+  Harness failures, budget cap stops and architecture failures are three different columns.</p>
+  <div class="card scroll"><table id="cellTable"><thead></thead><tbody></tbody></table></div>
+</section>
+
+<section id="merge">
+  <h2>What the merge rule threw away</h2>
+  <p class="lede">The decentralised arm merges by a fixed, oracle-free medoid vote: keep the candidate most agreed with by the
+  other two. That rule never consults a grader, so it can discard a better answer. How often it did is a property of the merge
+  rule, not of the architecture, and is reported as such.</p>
+  <div class="card scroll"><table id="mergeTable"><thead></thead><tbody></tbody></table></div>
+</section>
+
+<section id="posthoc">
+  <h2>Post hoc: the centralised arm's budget, split unevenly</h2>
+  <p class="lede" id="posthocLede">Loading.</p>
+  <div class="card scroll"><table id="phTable"><thead></thead><tbody></tbody></table></div>
+</section>
+
+<section id="limits" style="border-bottom:none">
+  <h2>What this cannot support</h2>
+  <ul id="limitsList"></ul>
+  <p class="small mute">Pre-registration: <code>swarm/benchmark/ARMS.md</code>, written before the first call.
+  Numbers on this page are read from <a href="data.json">data.json</a>, which is built from the run files by
+  <code>swarm/benchmark/publish.mjs</code> and holds nothing that is not in them.
+  Deviations and post-hoc corrections: <code>swarm/benchmark/RESULTS.md</code>.</p>
+</section>
+
+</main>
+
+<div id="drawer" aria-live="polite"><button class="x" type="button" onclick="closeDrawer()">Close</button><div id="drawerBody"></div></div>
+
+<script>
+const ARMS=['single','decentralised','centralised'];
+const ARM_COLOR={single:'var(--arm-single)',decentralised:'var(--arm-dec)',centralised:'var(--arm-cent)'};
+const ARM_LABEL={single:'single',decentralised:'decentralised swarm',centralised:'centralised swarm'};
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let DATA=null;
+
+function svgEl(t,a){const e=document.createElementNS('http://www.w3.org/2000/svg',t);for(const k in a)e.setAttribute(k,a[k]);return e;}
+
+// One stage figure: quality panel (left) and cost panel (right), one scale each, no dual axis.
+function figure(level){
+  const W=760,H=276,padL=46,padR=14,padT=26,padB=72;
+  const half=(W-padL-padR-28)/2, x0=padL, x1=padL+half+28;
+  const svg=svgEl('svg',{viewBox:`0 0 ${W} ${H}`,role:'img','aria-label':`${level.title}: quality and cost by arm, n=${level.n_tasks}`});
+  const plotH=H-padT-padB;
+  const maxCost=Math.max(.0001,...ARMS.map(a=>level.arms[a].cost_usd));
+  const txt=(x,y,s,o={})=>{const t=svgEl('text',Object.assign({x,y,fill:o.fill||'var(--mute)','font-size':o.fs||11,'text-anchor':o.anchor||'start','font-weight':o.w||400},o.extra||{}));t.textContent=s;return t;};
+
+  // panel titles
+  svg.appendChild(txt(x0,14,'quality  (0–1, higher is better)',{fill:'var(--ink)',w:600,fs:12}));
+  svg.appendChild(txt(x1,14,'cost  (US$ list price, lower is better)',{fill:'var(--ink)',w:600,fs:12}));
+
+  // ---- quality panel: y 0..1
+  for(let v=0;v<=1.0001;v+=0.25){
+    const y=padT+plotH-v*plotH;
+    svg.appendChild(svgEl('line',{x1:x0,x2:x0+half,y1:y,y2:y,stroke:'var(--grid)','stroke-width':1}));
+    svg.appendChild(txt(x0-6,y+4,v.toFixed(2),{anchor:'end',fs:10}));
+  }
+  // ---- cost panel: y 0..maxCost (own scale, own panel - never a second axis on one plot)
+  for(let i=0;i<=4;i++){
+    const v=maxCost*i/4,y=padT+plotH-(i/4)*plotH;
+    svg.appendChild(svgEl('line',{x1:x1,x2:x1+half,y1:y,y2:y,stroke:'var(--grid)','stroke-width':1}));
+    svg.appendChild(txt(x1-6,y+4,'$'+v.toFixed(2),{anchor:'end',fs:10}));
+  }
+
+  const bw=Math.min(62,(half-16)/ARMS.length-14), gap=(half-ARMS.length*bw)/(ARMS.length+1);
+  ARMS.forEach((arm,i)=>{
+    const a=level.arms[arm], col=ARM_COLOR[arm];
+    const absent=a.artifacts_absent>0 && a.mean_score===0;
+    // quality bar
+    const bx=x0+gap+i*(bw+gap);
+    const h=Math.max(0,(a.mean_score||0)*plotH);
+    const g=svgEl('g',{class:'bar-hit',tabindex:0,role:'button','aria-label':`${ARM_LABEL[arm]} on ${level.title}: mean ${a.mean_score}, ${a.n} tasks, $${a.cost_usd}`});
+    g.addEventListener('click',()=>openLevelArm(level.level,arm));
+    g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openLevelArm(level.level,arm);}});
+    if(h>0.5){
+      const r=svgEl('rect',{class:'b',x:bx,y:padT+plotH-h,width:bw,height:h,fill:col,rx:4});
+      r.setAttribute('ry','4'); g.appendChild(r);
+      // square off the baseline end: rounded data-end only, anchored to the axis
+      g.appendChild(svgEl('rect',{class:'b2',x:bx,y:padT+plotH-5,width:bw,height:5,fill:col}));
+    }else{
+      // draw the absence rather than omitting the bar
+      g.appendChild(svgEl('rect',{x:bx,y:padT+plotH-18,width:bw,height:18,fill:'none',stroke:'var(--bad)','stroke-width':1.5,'stroke-dasharray':'3 3',rx:3}));
+      const lab=txt(bx+bw/2,padT+plotH-24,'no artifact',{anchor:'middle',fs:9,fill:'var(--bad)',w:600});
+      g.appendChild(lab);
+    }
+    // min-max whisker + per-task dots (shows n directly)
+    if(a.n){
+      const cx=bx+bw/2, yLo=padT+plotH-(a.min_score||0)*plotH, yHi=padT+plotH-(a.max_score||0)*plotH;
+      g.appendChild(svgEl('line',{x1:cx,x2:cx,y1:yLo,y2:yHi,stroke:'var(--ink)','stroke-width':2,opacity:.55}));
+      g.appendChild(svgEl('line',{x1:cx-6,x2:cx+6,y1:yHi,y2:yHi,stroke:'var(--ink)','stroke-width':2,opacity:.55}));
+      g.appendChild(svgEl('line',{x1:cx-6,x2:cx+6,y1:yLo,y2:yLo,stroke:'var(--ink)','stroke-width':2,opacity:.55}));
+      if(!absent) a.per_task.forEach((p,k)=>{
+        const dy=padT+plotH-(p.score||0)*plotH;
+        const dx=cx+(k-1)*9;
+        const c=svgEl('circle',{cx:dx,cy:dy,r:4,fill:'var(--panel)',stroke:col,'stroke-width':2});
+        c.appendChild(svgEl('title')).textContent=`${p.task}: ${p.score}`;
+        g.appendChild(c);
+      });
+      // the mean sits above the highest thing in the group (the max dot / whisker cap), never on top of it
+      const ly=Math.max(padT+22,yHi-11);
+      // when the group reaches the top of the plot the label has to sit on the bar: switch it to white there
+      const onBar=ly>padT+plotH-h+2;
+      g.appendChild(txt(cx,ly,(a.mean_score??0).toFixed(2),{anchor:'middle',fs:12,fill:onBar?'#fff':'var(--ink)',w:700}));
+    }
+    svg.appendChild(g);
+    // cost bar, same arm hue, own panel
+    const cx2=x1+gap+i*(bw+gap);
+    const ch=Math.max(1,(a.cost_usd/maxCost)*plotH);
+    const g2=svgEl('g',{class:'bar-hit',tabindex:0,role:'button','aria-label':`${ARM_LABEL[arm]} cost on ${level.title}: $${a.cost_usd}, ${a.tokens_total} tokens, ${a.calls} calls`});
+    g2.addEventListener('click',()=>openLevelArm(level.level,arm));
+    g2.appendChild(svgEl('rect',{class:'b',x:cx2,y:padT+plotH-ch,width:bw,height:ch,fill:col,rx:4,ry:4}));
+    g2.appendChild(svgEl('rect',{class:'b2',x:cx2,y:padT+plotH-5,width:bw,height:5,fill:col}));
+    const inside=ch>44;
+    g2.appendChild(txt(cx2+bw/2,inside?padT+plotH-ch+17:padT+plotH-ch-6,'$'+a.cost_usd.toFixed(2),{anchor:'middle',fs:12,fill:inside?'#fff':'var(--ink)',w:700}));
+    g2.appendChild(txt(cx2+bw/2,inside?padT+plotH-ch+31:padT+plotH-ch-18,(a.tokens_total/1000).toFixed(0)+'k tok',{anchor:'middle',fs:9,fill:inside?'#fff':'var(--mute)'}));
+    svg.appendChild(g2);
+    // shared x labels under both panels
+    [bx,cx2].forEach(xx=>{
+      svg.appendChild(txt(xx+bw/2,padT+plotH+15,arm==='decentralised'?'decentralised':arm==='centralised'?'centralised':'single',{anchor:'middle',fs:11,fill:'var(--ink)',w:600}));
+      svg.appendChild(txt(xx+bw/2,padT+plotH+28,arm==='single'?'1 call':(arm==='decentralised'?'3 calls':'5 calls'),{anchor:'middle',fs:9}));
+    });
+    if(a.cap_stops||a.infra_failures){
+      [bx,cx2].forEach(xx=>svg.appendChild(txt(xx+bw/2,padT+plotH+42,(a.cap_stops?a.cap_stops+' cap stop'+(a.cap_stops>1?'s':''):'')+(a.cap_stops&&a.infra_failures?', ':'')+(a.infra_failures?a.infra_failures+' harness':''),{anchor:'middle',fs:9,fill:'var(--bad)'})));
+    }
+  });
+  // baselines
+  svg.appendChild(svgEl('line',{x1:x0,x2:x0+half,y1:padT+plotH,y2:padT+plotH,stroke:'var(--line)','stroke-width':1.5}));
+  svg.appendChild(svgEl('line',{x1:x1,x2:x1+half,y1:padT+plotH,y2:padT+plotH,stroke:'var(--line)','stroke-width':1.5}));
+  // n, on the figure itself
+  svg.appendChild(txt(W-padR,H-6,`n = ${level.n_tasks} tasks per arm · whisker = min–max · dots = the three tasks`,{anchor:'end',fs:10}));
+  return svg;
+}
+
+function separates(level){
+  const m=ARMS.map(a=>({a,s:level.arms[a].mean_score??0,sp:level.arms[a].spread??0}));
+  m.sort((x,y)=>y.s-x.s);
+  const diff=m[0].s-m[m.length-1].s;
+  const maxSpread=Math.max(...m.map(x=>x.sp));
+  return {best:m[0],worst:m[m.length-1],diff:+diff.toFixed(3),maxSpread:+maxSpread.toFixed(3),separates:diff>maxSpread};
+}
+
+function renderFigs(){
+  const host=document.getElementById('figs');host.innerHTML='';
+  for(const lv of DATA.levels){
+    const card=document.createElement('div');card.className='card fig';
+    if(lv.missing){card.innerHTML=`<h3>${esc(lv.title)}</h3><p class="chip bad">did not run</p>`;host.appendChild(card);continue;}
+    const s=separates(lv);
+    const costRatio=(lv.arms.centralised.cost_usd/Math.max(1e-9,lv.arms.single.cost_usd)).toFixed(1);
+    card.innerHTML=`<h3>${esc(lv.title)}</h3>
+      <p class="small mute" style="margin-top:-.3em">Score: ${esc(lv.metric)}.<br>Ground truth: ${esc(lv.ground_truth)}.</p>`;
+    const fs=document.createElement('div');fs.className='figscroll';fs.appendChild(figure(lv));card.appendChild(fs);
+    const cap=document.createElement('p');cap.className='figcap';
+    const absentArm=ARMS.find(a=>lv.arms[a].artifacts_absent>0&&lv.arms[a].mean_score===0);
+    cap.innerHTML = s.separates
+      ? (absentArm
+        ? `<span class="chip warn">separates, but on an absence</span> the gap of ${s.diff} exists because the ${esc(ARM_LABEL[absentArm])} produced <strong>no artifact at all</strong> on all ${lv.arms[absentArm].n} tasks &mdash; its merge call was stopped by its own budget cap. That is a cost effect, not a measured quality difference. Among the arms that did produce artifacts the gap is ${(Math.max(...ARMS.filter(a=>a!==absentArm).map(a=>lv.arms[a].mean_score))-Math.min(...ARMS.filter(a=>a!==absentArm).map(a=>lv.arms[a].mean_score))).toFixed(3)}, inside the widest spread (${s.maxSpread}).`
+        : `<span class="chip warn">separates</span> largest gap ${s.diff} (${esc(ARM_LABEL[s.best.a])} over ${esc(ARM_LABEL[s.worst.a])}), which is larger than the widest within-arm spread (${s.maxSpread}). At n = ${lv.n_tasks} this is still not a significance claim.`)
+      : `<span class="chip">does not separate</span> largest gap ${s.diff} (${esc(ARM_LABEL[s.best.a])} over ${esc(ARM_LABEL[s.worst.a])}) is <em>inside</em> the widest within-arm spread (${s.maxSpread}), so the arms do not separate at this stage. Centralised cost is ${costRatio}&times; single.`;
+    card.appendChild(cap);
+    if(lv.caveat){const w=document.createElement('p');w.className='warnbox small';w.style.margin='8px 0 0';w.innerHTML=esc(lv.caveat);card.appendChild(w);}
+    host.appendChild(card);
+  }
+}
+
+function renderLegend(){
+  document.getElementById('legend').innerHTML =
+    ARMS.map(a=>`<b><span class="sw" style="background:${ARM_COLOR[a]}"></span>${esc(ARM_LABEL[a])}</b>`).join('')
+    + `<span><span class="hatch-key"></span> drawn absence: the arm produced no artifact</span>`
+    + `<span>dashed red label = budget cap stop, not a crash</span>`;
+}
+
+function renderCells(){
+  const t=document.getElementById('cellTable');
+  t.querySelector('thead').innerHTML='<tr><th>stage</th><th>arm</th><th>task</th><th class="n">score</th><th class="n">$</th><th class="n">tokens</th><th class="n">wall s</th><th class="n">calls</th><th>failures</th><th>what the grader saw</th></tr>';
+  const rows=[];
+  for(const lv of DATA.levels){ if(lv.missing) continue;
+    for(const arm of ARMS) for(const p of lv.arms[arm].per_task){
+      const fail=[p.artifact_absent?'<span class="chip bad">no artifact</span>':'',p.cap_stops?`<span class="chip warn">${p.cap_stops} cap stop</span>`:'',p.infra_failures?`<span class="chip bad">${p.infra_failures} harness</span>`:''].filter(Boolean).join(' ')||'<span class="chip ok">none</span>';
+      rows.push(`<tr class="row" data-log="${esc(p.log)}"><td>${esc(lv.title)}</td><td><span class="sw" style="background:${ARM_COLOR[arm]}"></span> ${esc(arm)}</td><td>${esc(p.task)}</td><td class="n"><b>${p.score}</b>${p.score_uncorrected!=null?`<br><span class="small mute">was ${p.score_uncorrected}</span>`:''}</td><td class="n">${(p.cost_usd??0).toFixed(3)}</td><td class="n">${(p.tokens??0).toLocaleString()}</td><td class="n">${p.wall_s}</td><td class="n">${p.calls}</td><td>${fail}</td><td class="small">${esc(p.headline)}</td></tr>`);
+    }
+  }
+  t.querySelector('tbody').innerHTML=rows.join('');
+  t.querySelectorAll('tr.row').forEach(r=>r.addEventListener('click',()=>openLog(r.dataset.log)));
+}
+
+function renderMerge(){
+  const t=document.getElementById('mergeTable');
+  t.querySelector('thead').innerHTML='<tr><th>stage / cell</th><th>rule</th><th class="n">kept</th><th class="n">kept score</th><th class="n">best candidate</th><th>candidates</th><th>verdict</th></tr>';
+  const rows=[];
+  for(const lv of DATA.levels){ if(lv.missing||!lv.merge_diagnosis) continue;
+    for(const d of lv.merge_diagnosis) rows.push(`<tr><td>${esc(lv.title)} &middot; ${esc(d.cell)}</td><td class="small">${esc(d.rule||'')}</td><td class="n">${d.kept??'—'}</td><td class="n">${d.kept_score??'—'}</td><td class="n">${d.best_candidate_score??'—'}</td><td class="small">${(d.candidate_scores||[]).map(c=>`#${c.index}: ${c.score}`).join(', ')}</td><td>${d.discarded_a_better_candidate?'<span class="chip warn">discarded a better candidate</span>':'<span class="chip ok">kept the best, or tied</span>'}</td></tr>`);
+  }
+  t.querySelector('tbody').innerHTML=rows.join('')||'<tr><td colspan="7" class="mute">No swarm candidates graded.</td></tr>';
+}
+
+function renderPosthoc(){
+  const ph=DATA.posthoc_centralised_uneven_allocation||[];
+  const t=document.getElementById('phTable');
+  document.getElementById('posthocLede').innerHTML = ph.length
+    ? `Under the pre-registered <em>even</em> split of the same $0.45, the centralised arm's merge call &mdash; the one that must read every worker's output and then re-emit a complete artifact &mdash; was killed by its own cap. The CLI reported <code>terminal_reason: budget_exhausted</code> at $0.104 and $0.115 against a $0.09 cap, twice including the retry, on all three nanopub cells. This variant gives the arm the <strong>same $0.45 total</strong> split unevenly ($0.05 plan, $0.09 per worker, $0.13 merge) to separate &ldquo;the architecture cannot do this on this budget&rdquo; from &ldquo;this allocation of that budget was wrong&rdquo;. <strong>It is post hoc and its numbers are never mixed with the pre-registered ones.</strong>`
+    : 'Not run.';
+  t.querySelector('thead').innerHTML='<tr><th>stage</th><th>task</th><th>allocation</th><th class="n">calls</th><th class="n">$</th><th class="n">tokens</th><th class="n">wall s</th><th class="n">cap stops</th><th>artifact</th></tr>';
+  t.querySelector('tbody').innerHTML = ph.length ? ph.map(p=>`<tr><td>${esc(p.level)}</td><td>${esc(p.task)}</td><td>${esc(p.allocation)}</td><td class="n">${p.calls}</td><td class="n">${p.cost_usd.toFixed(3)}</td><td class="n">${p.tokens_total.toLocaleString()}</td><td class="n">${p.wall_s}</td><td class="n">${p.cap_stops}</td><td>${p.produced_artifact?`<span class="chip ok">produced (${p.artifact_bytes??'?'} bytes)</span>`:'<span class="chip bad">none</span>'}</td></tr>`).join('') : '<tr><td colspan="9" class="mute">Not run.</td></tr>';
+}
+
+function renderHeader(){
+  const lvOK=DATA.levels.filter(l=>!l.missing);
+  const sep=lvOK.filter(l=>separates(l).separates).map(l=>l.title);
+  const costMax=Math.max(...lvOK.map(l=>l.arms.centralised.cost_usd/Math.max(1e-9,l.arms.single.cost_usd)));
+  document.getElementById('oneLine').innerHTML =
+    `At n = ${DATA.n_per_cell} per arm per stage, on equal total budget and identical inputs, <strong>the three architectures do not separate on quality at ${lvOK.length-sep.length} of the ${lvOK.length} stages</strong>`
+    + (sep.length?` (they separate at: ${sep.map(esc).join(', ')})`:'')
+    + `, while the swarms cost up to <strong>${costMax.toFixed(1)}&times;</strong> the single agent. The one robust difference is a cost effect, not a quality one: the centralised arm's merge call is structurally the most expensive single call in the architecture, and an equal-total-budget rule starves exactly that step.`;
+  document.getElementById('limitsTop').innerHTML =
+    `<strong>Read these two before quoting anything on this page.</strong> <strong>1.</strong> n = ${DATA.n_per_cell} tasks per arm per stage. No claim of statistical significance is possible and none is made; a difference smaller than the within-arm spread is reported as not separating.
+     <strong>2.</strong> No arm had any tools. This measures the three architectures as <em>reasoning</em> architectures over fixed inputs. It does <em>not</em> measure tool use or tool coordination &mdash; which is what the rest of DELPHI actually does.`;
+  document.getElementById('armDefs').innerHTML = ARMS.map(a=>`<div class="card"><h3><span class="sw" style="background:${ARM_COLOR[a]}"></span> ${esc(ARM_LABEL[a])}</h3><p class="small mute">${esc(DATA.arm_definitions[a])}</p></div>`).join('');
+  document.getElementById('limitsList').innerHTML = DATA.limitations.map(l=>`<li>${esc(l)}</li>`).join('')
+    + `<li>Model: <code>${esc(DATA.model||'?')}</code>; N = ${DATA.N}; budget $${DATA.budget_total_usd_per_cell} total per cell, every arm. Built ${esc(DATA.built)}.</li>`;
+}
+
+// ---- drawer: the traceable log
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
+
+function openLevelArm(level,arm){
+  const lv=DATA.levels.find(l=>l.level===level);const a=lv.arms[arm];
+  const b=document.getElementById('drawerBody');
+  b.innerHTML=`<h2><span class="sw" style="background:${ARM_COLOR[arm]}"></span> ${esc(ARM_LABEL[arm])} &middot; ${esc(lv.title)}</h2>
+   <p class="small mute">${esc(DATA.arm_definitions[arm])}</p>
+   <dl><dt>mean</dt><dd>${a.mean_score}</dd><dt>min–max</dt><dd>${a.min_score} – ${a.max_score} (spread ${a.spread})</dd>
+   <dt>n</dt><dd>${a.n} tasks</dd><dt>cost</dt><dd>$${a.cost_usd} list price</dd><dt>tokens</dt><dd>${a.tokens_total.toLocaleString()}</dd>
+   <dt>wall</dt><dd>${a.wall_s}s over ${a.calls} model calls</dd>
+   <dt>cap stops</dt><dd>${a.cap_stops}</dd><dt>harness failures</dt><dd>${a.infra_failures}</dd><dt>artifacts absent</dt><dd>${a.artifacts_absent}</dd></dl>
+   <p class="small">Open one run:</p>
+   ${a.per_task.map(p=>`<p><button type="button" data-log="${esc(p.log)}">${esc(p.task)} &middot; score ${p.score}</button> <span class="small mute">${esc(p.headline)}</span></p>`).join('')}`;
+  b.querySelectorAll('button[data-log]').forEach(x=>x.addEventListener('click',()=>openLog(x.dataset.log)));
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer').scrollTop=0;
+}
+
+async function openLog(url){
+  const b=document.getElementById('drawerBody');
+  b.innerHTML='<p class="mute">Loading the run log…</p>';
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer').scrollTop=0;
+  let L;
+  try{ const r=await fetch(url); L=await r.json(); }
+  catch(e){ b.innerHTML=`<p class="chip bad">could not load ${esc(url)}</p>`; return; }
+  const g=L.grader_verdict||{};
+  const checks=Object.entries(g).filter(([k,v])=>typeof v==='number'||typeof v==='boolean').map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
+  b.innerHTML=`<h2><span class="sw" style="background:${ARM_COLOR[L.arm]}"></span> ${esc(L.level_title)} &middot; ${esc(ARM_LABEL[L.arm])} &middot; ${esc(L.task)}</h2>
+  <p class="small mute">${esc(L.arm_definition)}</p>
+  <dl>
+    <dt>model</dt><dd><code>${esc(L.model)}</code></dd>
+    <dt>budget</dt><dd>$${L.budget_total_usd} total for this cell, cap $${L.cap_per_call_usd} per call, allocation <code>${esc(L.allocation)}</code></dd>
+    <dt>cell totals</dt><dd>${L.cell_totals.calls} calls, $${(L.cell_totals.cost_usd??0).toFixed(4)}, ${(L.cell_totals.tokens_total??0).toLocaleString()} tokens, ${((L.cell_totals.wall_ms||0)/1000).toFixed(1)}s wall, ${L.cell_totals.cap_stops} cap stop(s), ${L.cell_totals.infra_failures} harness failure(s)</dd>
+    <dt>artifact</dt><dd>${L.cell_totals.produced_artifact?'produced':'<span class="chip bad">none produced</span>'}</dd>
+    <dt>merge</dt><dd><code>${esc(JSON.stringify(L.merge))}</code></dd>
+    <dt>ground truth</dt><dd>${esc(L.ground_truth)}</dd>
+    <dt>run files</dt><dd><code>${esc(L.run_dir)}</code></dd>
+  </dl>
+  <details><summary>Grader verdict (${esc(g.score)})</summary><div class="in"><dl>${checks}</dl><pre>${esc(JSON.stringify(g,null,1))}</pre></div></details>
+  <details><summary>Shared input, byte-identical across all three arms (${L.shared_input_bytes} bytes)</summary><div class="in"><pre>${esc(L.shared_input)}</pre></div></details>
+  <h3 style="margin-top:1em">The ${L.calls.length} model call${L.calls.length===1?'':'s'}</h3>
+  ${L.calls.map(c=>`<details><summary>${esc(c.label)} &middot; ${(c.tokens_total||0).toLocaleString()} tok &middot; $${(c.cost_usd??0).toFixed(4)} &middot; ${((c.duration_ms||0)/1000).toFixed(1)}s &middot; ${c.failure_class==='ok'?'<span class="chip ok">ok</span>':`<span class="chip bad">${esc(c.failure_class)}</span>`}</summary><div class="in">
+    <dl><dt>stop reason</dt><dd><code>${esc(c.stop_reason)}</code> / <code>${esc(c.terminal_reason)}</code></dd>
+    <dt>turns</dt><dd>${esc(c.num_turns)}</dd>
+    <dt>tokens</dt><dd>${esc(JSON.stringify(c.tokens))}</dd>
+    ${c.error_text?`<dt>error</dt><dd><code>${esc(c.error_text)}</code></dd>`:''}</dl>
+    <details><summary>Prompt as sent (${c.prompt_chars} chars)</summary><div class="in"><pre>${esc(c.prompt_sent)}</pre></div></details>
+    <details><summary>What the model said</summary><div class="in"><pre>${esc(c.model_output_parsed!=null?JSON.stringify(c.model_output_parsed,null,1):(c.model_output_raw||'(no output)'))}</pre></div></details>
+  </div></details>`).join('')}
+  <h3 style="margin-top:1em">Final artifact, as graded</h3>
+  <pre>${esc(L.final_artifact!=null?JSON.stringify(L.final_artifact,null,1):'(none)')}</pre>
+  ${L.candidate_grades?`<details><summary>Every swarm candidate, graded (diagnosis of the merge rule, not of the arm)</summary><div class="in"><pre>${esc(JSON.stringify(L.candidate_grades,null,1))}</pre></div></details>`:''}
+  <p class="small mute">Raw files: <code>${esc(L.run_dir)}</code>. This log is <code>${esc(url)}</code>.</p>`;
+}
+
+(async function(){
+  try{
+    DATA=await (await fetch('data.json')).json();
+  }catch(e){
+    document.getElementById('oneLine').textContent='data.json could not be loaded.';return;
+  }
+  renderHeader();renderLegend();renderFigs();renderCells();renderMerge();renderPosthoc();
+})();
+</script>
+</body>
+</html>

@@ -2,7 +2,7 @@
  "api": "delphisci lean laws, static mirror",
  "version": 1,
  "origin": "registry",
- "current_lawset": "1.6.0",
+ "current_lawset": "1.8.1",
  "lawsets": [
   "1.0.0",
   "1.1.0",
@@ -10,9 +10,12 @@
   "1.3.0",
   "1.4.0",
   "1.5.0",
-  "1.6.0"
+  "1.6.0",
+  "1.7.0",
+  "1.8.0",
+  "1.8.1"
  ],
- "count": 53,
+ "count": 62,
  "laws": [
   {
    "law_id": "E1",
@@ -41,7 +44,7 @@
   },
   {
    "law_id": "E2",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "kind": "biological",
    "status": "accepted",
    "label": "The fitted mass exponent lies in [2.90, 3.02]",
@@ -60,7 +63,13 @@
     "life_stages": [
      "adult"
     ],
-    "ranges": {}
+    "ranges": {},
+    "applies_to": [
+     "a mass exponent fitted over a size range: a length-weight regression, or a design that commits mass_exponent"
+    ],
+    "excludes": [
+     "an exponent IMPLIED against the single reference specimen at a length ratio inside [0.905, 1.105]: ln(L/L_ref) is then too small to carry an exponent (about 1% relative uncertainty in L against the studio's 0.1 band), so the number says nothing about the fitted band. Commit mass_exponent from a fit instead. The real Park and Choi siblings L1 (ratio 1.0099), L2 (1.0296) and model N (0.9951) fell here and came back red against this law (blind evaluator, 2026-11-01)."
+    ]
    },
    "constraint_scopes": {},
    "constraints": [
@@ -70,7 +79,7 @@
   },
   {
    "law_id": "E3",
-   "version": "2.0.0",
+   "version": "2.1.0",
    "kind": "biological",
    "status": "accepted",
    "label": "Efficiency and O2 delivery lie in the ranges the cited sources support (widened after measured zebrafish)",
@@ -93,7 +102,14 @@
       "unit": "kg",
       "note": "the O2-delivery bound (1600 mg O2 kg^-1 h^-1) was converted to ml O2/s for a 0.06 kg fish; at any other mass the absolute bound 0.0187 ml/s is not the one the sources give"
      }
-    }
+    },
+    "applies_to": [
+     "sustained aerobic power DEMAND: powered level flight, climbing flight, and sustained (aerobic) swimming — work the animal must pay for out of metabolism"
+    ],
+    "excludes": [
+     "unpowered descent or glide: the work comes from potential and kinetic energy, not from metabolism, so W v / (L/D) computed for a descent is NOT a demand this law bounds. A real gliding flying fish compared against this ceiling comes back \"violated\" only because the caller converted a glide into a level-powered-flight requirement; that is an application error, not a violation (it happened to Park and Choi specimens making realistic glide claims, 2026-11-01).",
+     "burst (anaerobic) effort paid out of white-muscle stores, which is what a flying fish is understood to use for take-off and taxiing"
+    ]
    },
    "constraint_scopes": {},
    "constraints": [
@@ -244,7 +260,7 @@
   },
   {
    "law_id": "aerobic-power-bound",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "kind": "biological",
    "status": "accepted",
    "label": "Sustained mechanical power is bounded by oxygen delivery (Fick) times efficiency",
@@ -260,7 +276,14 @@
      "any"
     ],
     "life_stages": [],
-    "ranges": {}
+    "ranges": {},
+    "applies_to": [
+     "sustained aerobic power DEMAND: powered level flight, climbing flight, and sustained (aerobic) swimming — work the animal must pay for out of metabolism"
+    ],
+    "excludes": [
+     "unpowered descent or glide: the work comes from potential and kinetic energy, not from metabolism, so W v / (L/D) computed for a descent is NOT a demand this law bounds. A real gliding flying fish compared against this ceiling comes back \"violated\" only because the caller converted a glide into a level-powered-flight requirement; that is an application error, not a violation (it happened to Park and Choi specimens making realistic glide claims, 2026-11-01).",
+     "burst (anaerobic) effort paid out of white-muscle stores, which is what a flying fish is understood to use for take-off and taxiing"
+    ]
    },
    "constraint_scopes": {},
    "constraints": [
@@ -340,6 +363,47 @@
     "C6"
    ],
    "href": "laws/blueprint-well-formedness.json"
+  },
+  {
+   "law_id": "development-growth-asymptote",
+   "version": "1.2.0",
+   "kind": "biological",
+   "status": "candidate",
+   "label": "A von Bertalanffy grower stays strictly below its asymptotic length, and K alone sets the shape",
+   "level": null,
+   "theorem": "Delphi.LeanBio.Round2.GrowthAsymptote.von_bertalanffy_asymptote",
+   "module": "lean/registry/proposals/development-growth-asymptote/law.lean",
+   "statement": "For a cohort whose length at age follows von Bertalanffy, length(t) = Linf*(1 - exp(-K*(t - t0))) with asymptotic length Linf > 0 and Brody coefficient K > 0 (a named hypothesis), length is strictly below Linf at every age, strictly increasing in age, and two cohorts sharing K reach the same fraction of their own asymptote at the same age measured from their own t0, however different their asymptotic lengths.",
+   "sources": [
+    "doi:10.1007/BF00347505",
+    "development/growth.json"
+   ],
+   "scope": {
+    "taxa": [
+     "Exocoetidae"
+    ],
+    "life_stages": [
+     "larva",
+     "juvenile",
+     "adult"
+    ],
+    "ranges": {
+     "asymptotic_length": {
+      "min": 13.5,
+      "max": 30.5,
+      "unit": "cm (FL or TL as given per row)"
+     },
+     "brody_K": {
+      "min": 0.86,
+      "max": 3.65,
+      "unit": "1/yr"
+     }
+    }
+   },
+   "constraints": [
+    "GROWTH1"
+   ],
+   "href": "laws/development-growth-asymptote.json"
   },
   {
    "law_id": "disc-flying-fish-fin-ratio-gap",
@@ -484,7 +548,7 @@
   },
   {
    "law_id": "fick-principle",
-   "version": "1.1.0",
+   "version": "1.3.0",
    "kind": "biological",
    "status": "accepted",
    "label": "Fick principle: aerobic supply is at most eta E Q (Ca - Cv)",
@@ -498,12 +562,17 @@
      "any"
     ],
     "life_stages": [],
-    "ranges": {}
+    "ranges": {},
+    "applies_to": [
+     "sustained aerobic power DEMAND: powered level flight, climbing flight, and sustained (aerobic) swimming — work the animal must pay for out of metabolism"
+    ],
+    "excludes": [
+     "unpowered descent or glide: the work comes from potential and kinetic energy, not from metabolism, so W v / (L/D) computed for a descent is NOT a demand this law bounds. A real gliding flying fish compared against this ceiling comes back \"violated\" only because the caller converted a glide into a level-powered-flight requirement; that is an application error, not a violation (it happened to Park and Choi specimens making realistic glide claims, 2026-11-01).",
+     "burst (anaerobic) effort paid out of white-muscle stores, which is what a flying fish is understood to use for take-off and taxiing"
+    ]
    },
    "constraint_scopes": {},
-   "constraints": [
-    "C14"
-   ],
+   "constraints": [],
    "href": "laws/fick-principle.json"
   },
   {
@@ -555,6 +624,56 @@
     "C4c"
    ],
    "href": "laws/fisher-ftns.json"
+  },
+  {
+   "law_id": "fisher-kpp-speed",
+   "version": "1.1.0",
+   "kind": "biological",
+   "status": "candidate",
+   "label": "Fisher-KPP: c^2 = 4sD is the minimum of the linear speed relation, attained at one decay rate",
+   "level": null,
+   "theorem": "Delphi.LeanBio.Round2.KppSpeed.kpp_min_speed",
+   "module": "lean/registry/proposals/fisher-kpp-speed/law.lean",
+   "statement": "For a Fisher-KPP gene wave with dispersal coefficient D > 0, selection coefficient s > 0 and minimal speed c > 0 satisfying c^2 = 4*s*D (a named hypothesis), the relation c*k <= D*k^2 + s holds at every exponential decay rate k, strictly except at the single minimiser 2*D*k = c, so c is the minimum of the family of linear spreading speeds and is attained at exactly one decay rate; and at fixed dispersal a larger selection coefficient gives a strictly larger minimal speed.",
+   "sources": [
+    "doi:10.1111/j.1469-1809.1937.tb02153.x"
+   ],
+   "scope": {
+    "taxa": [
+     "any"
+    ],
+    "life_stages": [],
+    "ranges": {}
+   },
+   "constraints": [
+    "KPP1"
+   ],
+   "href": "laws/fisher-kpp-speed.json"
+  },
+  {
+   "law_id": "fisher-sex-ratio",
+   "version": "1.1.0",
+   "kind": "biological",
+   "status": "candidate",
+   "label": "No sex allocation is uninvadable unless investment in the two sexes is equal",
+   "level": null,
+   "theorem": "Delphi.LeanBio.Round2.SexRatio.fisher_equal_investment",
+   "module": "lean/registry/proposals/fisher-sex-ratio/law.lean",
+   "statement": "For a rare mutant parent with resource R > 0 splitting fraction x into sons (cost cs > 0 each) and the rest into daughters (cost cd > 0 each) in a population of Nm > 0 males and Nd > 0 females, with Shaw-Mohler fitness wAlloc(x) = (1-x)*R/cd + x*R*Nd/(cs*Nm) (a named hypothesis): if cs*Nm < cd*Nd then fitness strictly increases in x so a more male-biased parent strictly invades; if cd*Nd < cs*Nm then a more female-biased parent strictly invades; and only when cs*Nm = cd*Nd does every allocation do equally well. Hence no sex allocation is uninvadable unless total investment in the two sexes is equal, of which the 1:1 ratio is the special case cs = cd.",
+   "sources": [
+    "doi:10.1086/281794"
+   ],
+   "scope": {
+    "taxa": [
+     "any"
+    ],
+    "life_stages": [],
+    "ranges": {}
+   },
+   "constraints": [
+    "SEXALLOC1"
+   ],
+   "href": "laws/fisher-sex-ratio.json"
   },
   {
    "law_id": "flight-allometry-law",
@@ -784,6 +903,35 @@
    "href": "laws/haldane-cost-of-selection.json"
   },
   {
+   "law_id": "hamilton-rule",
+   "version": "1.0.0",
+   "kind": "biological",
+   "status": "candidate",
+   "label": "Hamilton's rule: the sign of the change in a social trait is the sign of rb - c",
+   "level": null,
+   "theorem": "Delphi.LeanBio.Round2.HamiltonRule.hamilton_rule",
+   "module": "lean/registry/proposals/hamilton-rule/law.lean",
+   "statement": "For a social trait whose change in mean breeding value is dp = k*(r*b - c) with k > 0 and 0 <= r <= 1 (a named hypothesis, the Price-equation form with b and c as partial regressions of fitness on the partner's and the actor's genotype), the trait increases if and only if c < r*b, and decreases if and only if r*b < c. Both directions hold, which makes the rule a criterion rather than a sufficient condition.",
+   "sources": [
+    "doi:10.1016/0022-5193(64)90038-4"
+   ],
+   "scope": {
+    "taxa": [
+     "any"
+    ],
+    "life_stages": [],
+    "ranges": {
+     "relatedness": {
+      "min": 0,
+      "max": 1,
+      "unit": "regression coefficient"
+     }
+    }
+   },
+   "constraints": [],
+   "href": "laws/hamilton-rule.json"
+  },
+  {
    "law_id": "kimura-fixation-probability",
    "version": "1.0.0",
    "kind": "biological",
@@ -808,6 +956,31 @@
     "C2"
    ],
    "href": "laws/kimura-fixation-probability.json"
+  },
+  {
+   "law_id": "kimura-heterozygosity",
+   "version": "1.1.0",
+   "kind": "biological",
+   "status": "candidate",
+   "label": "Neutral equilibrium heterozygosity rises strictly with Ne times mu",
+   "level": null,
+   "theorem": "Delphi.LeanBio.Round2.KimuraHet.het_equilibrium",
+   "module": "lean/registry/proposals/kimura-heterozygosity/law.lean",
+   "statement": "Under the infinite-alleles equilibrium H*(1+4*Ne*mu) = 4*Ne*mu (a named hypothesis), equilibrium heterozygosity lies strictly between 0 and 1 for every positive effective size and neutral mutation rate, and of two populations the one with the larger product Ne*mu has strictly the larger equilibrium heterozygosity.",
+   "sources": [
+    "doi:10.1093/genetics/49.4.725"
+   ],
+   "scope": {
+    "taxa": [
+     "any"
+    ],
+    "life_stages": [],
+    "ranges": {}
+   },
+   "constraints": [
+    "HET1"
+   ],
+   "href": "laws/kimura-heterozygosity.json"
   },
   {
    "law_id": "kimura-substitution-rate",
@@ -835,6 +1008,32 @@
     "C1b"
    ],
    "href": "laws/kimura-substitution-rate.json"
+  },
+  {
+   "law_id": "maynardsmith-hawk-dove",
+   "version": "1.1.0",
+   "kind": "biological",
+   "status": "candidate",
+   "label": "Hawk-Dove: the escalation probability p*C = V is invaded from neither side and costs the population",
+   "level": null,
+   "theorem": "Delphi.LeanBio.Round2.HawkDove.hawk_dove_mixture",
+   "module": "lean/registry/proposals/maynardsmith-hawk-dove/law.lean",
+   "statement": "For a symmetric Hawk-Dove contest with resource value V > 0, injury cost C > V and escalation probability p fixed by p*C = V (a named hypothesis), p lies strictly inside (0,1); Hawk and Dove have equal payoff against a population escalating with probability p; a population escalating less often than p gives Hawk a strictly higher payoff and one escalating more often gives Dove a strictly higher payoff, so p is invaded from neither side; and the payoff at p is strictly below V/2, the all-Dove payoff, which is the cost of conflict.",
+   "sources": [
+    "doi:10.1038/246015a0",
+    "doi:10.1017/cbo9780511806292"
+   ],
+   "scope": {
+    "taxa": [
+     "any"
+    ],
+    "life_stages": [],
+    "ranges": {}
+   },
+   "constraints": [
+    "HAWKDOVE1"
+   ],
+   "href": "laws/maynardsmith-hawk-dove.json"
   },
   {
    "law_id": "maynardsmith-hitchhiking",
@@ -1142,7 +1341,7 @@
   },
   {
    "law_id": "scaling-area-law",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "kind": "physical",
    "status": "accepted",
    "label": "Area law and wing loading under isometry (R2, R3)",
@@ -1166,7 +1365,16 @@
       "Exocoetidae"
      ],
      "life_stages": [],
-     "ranges": {},
+     "ranges": {
+      "length_ratio_vs_reference": {
+       "exclude_between": [
+        0.905,
+        1.105
+       ],
+       "unit": "1",
+       "note": "an implied exponent is ln(X/X_ref) / ln(L/L_ref) against the single reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3, SL 0.203 m), so the denominator approaches zero as L approaches L_ref and ordinary specimen variation is amplified without limit. About 1% relative uncertainty in L against the studio's 0.1 decision band means the comparison carries no information until |ln(L/L_ref)| >= 0.1, i.e. a length ratio outside [0.905, 1.105]. Measured in the real siblings: L1 (ratio 1.0099) implied a v_min exponent of -1.43 and L2 (1.0296) -3.86 against a target of 0.5, and model N (0.9951) -60.8, so accepted laws fired red on unedited wild-type flying fish (blind evaluator, 2026-11-01)"
+      }
+     },
      "basis": "evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope"
     }
    },
@@ -1206,7 +1414,7 @@
   },
   {
    "law_id": "scaling-strength-law",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "kind": "physical",
    "status": "accepted",
    "label": "Strength scales as L^2: the missing half of Galileo's square-cube argument (R7)",
@@ -1238,7 +1446,16 @@
       "Exocoetidae"
      ],
      "life_stages": [],
-     "ranges": {},
+     "ranges": {
+      "length_ratio_vs_reference": {
+       "exclude_between": [
+        0.905,
+        1.105
+       ],
+       "unit": "1",
+       "note": "an implied exponent is ln(X/X_ref) / ln(L/L_ref) against the single reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3, SL 0.203 m), so the denominator approaches zero as L approaches L_ref and ordinary specimen variation is amplified without limit. About 1% relative uncertainty in L against the studio's 0.1 decision band means the comparison carries no information until |ln(L/L_ref)| >= 0.1, i.e. a length ratio outside [0.905, 1.105]. Measured in the real siblings: L1 (ratio 1.0099) implied a v_min exponent of -1.43 and L2 (1.0296) -3.86 against a target of 0.5, and model N (0.9951) -60.8, so accepted laws fired red on unedited wild-type flying fish (blind evaluator, 2026-11-01)"
+      }
+     },
      "basis": "evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope"
     }
    },
@@ -1272,6 +1489,30 @@
    "constraint_scopes": {},
    "constraints": [],
    "href": "laws/taxiing-thrust.json"
+  },
+  {
+   "law_id": "test-loop-only-density-sanity",
+   "version": "1.0.0",
+   "kind": "physical",
+   "status": "retired",
+   "label": "TEST-LOOP-ONLY: a teleost design's bulk density is at most a million times water",
+   "level": "body",
+   "theorem": null,
+   "module": null,
+   "statement": "For a teleost design that commits a standard length and a mass, mass_kg is at most 1e6 kg/m^3 times SL_m^3: the bulk density implied by the committed numbers is at most a million times that of water.",
+   "sources": [],
+   "scope": {
+    "taxa": [
+     "Teleostei"
+    ],
+    "life_stages": [],
+    "ranges": {}
+   },
+   "constraint_scopes": {},
+   "constraints": [
+    "TL1"
+   ],
+   "href": "laws/test-loop-only-density-sanity.json"
   },
   {
    "law_id": "thompson1917-ch02-06",
@@ -1326,7 +1567,7 @@
   },
   {
    "law_id": "thompson1917-ch02-10",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "kind": "physical",
    "status": "accepted",
    "label": "Speed varies as the square root of linear size in swimming, flight and walking",
@@ -1350,7 +1591,16 @@
       "Exocoetidae"
      ],
      "life_stages": [],
-     "ranges": {},
+     "ranges": {
+      "length_ratio_vs_reference": {
+       "exclude_between": [
+        0.905,
+        1.105
+       ],
+       "unit": "1",
+       "note": "an implied exponent is ln(X/X_ref) / ln(L/L_ref) against the single reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3, SL 0.203 m), so the denominator approaches zero as L approaches L_ref and ordinary specimen variation is amplified without limit. About 1% relative uncertainty in L against the studio's 0.1 decision band means the comparison carries no information until |ln(L/L_ref)| >= 0.1, i.e. a length ratio outside [0.905, 1.105]. Measured in the real siblings: L1 (ratio 1.0099) implied a v_min exponent of -1.43 and L2 (1.0296) -3.86 against a target of 0.5, and model N (0.9951) -60.8, so accepted laws fired red on unedited wild-type flying fish (blind evaluator, 2026-11-01)"
+      }
+     },
      "basis": "evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope"
     }
    },
@@ -1363,7 +1613,7 @@
   },
   {
    "law_id": "thompson1917-ch03-07",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "kind": "physical",
    "status": "accepted",
    "label": "Weight tends to vary as the cube of linear dimensions during growth",
@@ -1387,7 +1637,16 @@
       "Exocoetidae"
      ],
      "life_stages": [],
-     "ranges": {},
+     "ranges": {
+      "length_ratio_vs_reference": {
+       "exclude_between": [
+        0.905,
+        1.105
+       ],
+       "unit": "1",
+       "note": "an implied exponent is ln(X/X_ref) / ln(L/L_ref) against the single reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3, SL 0.203 m), so the denominator approaches zero as L approaches L_ref and ordinary specimen variation is amplified without limit. About 1% relative uncertainty in L against the studio's 0.1 decision band means the comparison carries no information until |ln(L/L_ref)| >= 0.1, i.e. a length ratio outside [0.905, 1.105]. Measured in the real siblings: L1 (ratio 1.0099) implied a v_min exponent of -1.43 and L2 (1.0296) -3.86 against a target of 0.5, and model N (0.9951) -60.8, so accepted laws fired red on unedited wild-type flying fish (blind evaluator, 2026-11-01)"
+      }
+     },
      "basis": "evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope"
     }
    },
@@ -1396,6 +1655,62 @@
     "C7b"
    ],
    "href": "laws/thompson1917-ch03-07.json"
+  },
+  {
+   "law_id": "turing-ddi",
+   "version": "1.1.0",
+   "kind": "biological",
+   "status": "candidate",
+   "label": "Diffusion-driven instability exists, and equal diffusivities cannot produce it",
+   "level": null,
+   "theorem": "Delphi.LeanBio.Round2.TuringDDI.turing_instability",
+   "module": "lean/registry/proposals/turing-ddi/law.lean",
+   "statement": "For the linearisation of a two-morphogen reaction-diffusion system about a homogeneous steady state with positive diffusivities, negative Jacobian trace, positive Jacobian determinant and Turing's inequality 4*du*dv*detJ < (dv*fu + du*gv)^2 with dv*fu + du*gv > 0 (a named hypothesis), there is a strictly positive squared wavenumber at which the dispersion relation is negative, so the homogeneous state is linearly unstable to a spatial mode; and the two diffusivities are necessarily unequal, so no equal-diffusivity system stable without diffusion can pattern, whatever its kinetics.",
+   "sources": [
+    "doi:10.1098/rstb.1952.0012"
+   ],
+   "scope": {
+    "taxa": [
+     "any"
+    ],
+    "life_stages": [
+     "embryo",
+     "larva"
+    ],
+    "ranges": {}
+   },
+   "constraints": [
+    "TURING1"
+   ],
+   "href": "laws/turing-ddi.json"
+  },
+  {
+   "law_id": "turing-wavelength",
+   "version": "1.1.0",
+   "kind": "biological",
+   "status": "candidate",
+   "label": "Turing onset wavenumber is fixed by diffusivities and det J alone, and scales as 1/m",
+   "level": null,
+   "theorem": "Delphi.LeanBio.Round2.TuringWavelength.onset_wavenumber",
+   "module": "lean/registry/proposals/turing-wavelength/law.lean",
+   "statement": "For the onset relation q^2*(du*dv) = det J on the squared critical wavenumber q = k_c^2, with du > 0, dv > 0, det J > 0 and q > 0 (a named hypothesis), any two solutions for the same du, dv and det J are equal -- so the tissue size, which the relation does not mention, cannot enter the critical wavenumber -- and multiplying both diffusivities by m > 1 at fixed kinetics gives a new squared critical wavenumber qm with qm*m = q exactly, hence strictly smaller, so the critical wavelength grows as the square root of the diffusivity scale.",
+   "sources": [
+    "doi:10.1098/rstb.1952.0012"
+   ],
+   "scope": {
+    "taxa": [
+     "any"
+    ],
+    "life_stages": [
+     "embryo",
+     "larva"
+    ],
+    "ranges": {}
+   },
+   "constraints": [
+    "TURINGLAMBDA1"
+   ],
+   "href": "laws/turing-wavelength.json"
   },
   {
    "law_id": "walking-pendulum-speed",
@@ -1426,11 +1741,13 @@
   "lawset": "lawsets/<version>.json",
   "current": "current.json",
   "changes": "changes.json",
-  "changes_atom": "changes.xml"
+  "changes_atom": "changes.xml",
+  "open_questions": "open-questions.json",
+  "capability": "capability/index.json"
  },
  "scope": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js.",
  "source_fingerprint": {
-  "hash": "sha256:1f45a60c98fa39cd11d5f3cfcc84071ba6eb4cc58c1373b920b958ae0ae1810d",
+  "hash": "sha256:faeea342750642adfcbbeb39a6596d6d70d13d3829f50d251ffa988e676ee7b8",
   "files": {
    "lean/Delphi/Altitude.lean": "sha256:a4d50803eef0c96bcfa1de9542311ab5eb45444b0d33de9e56b63d5334cd4278",
    "lean/Delphi/Audit.lean": "sha256:78c8d21447cee5340781ecc9f089c3d94f49efcc1fcf2eea1e676402f6b1eebc",
@@ -1448,35 +1765,55 @@
    "lean/Delphi/Physiology.lean": "sha256:77f9a325714ccfd36648b9c858b89dc7b815f052f14a8d1f8d4bb927e5238379",
    "lean/Delphi/Scaling.lean": "sha256:06a4a8983291cf2740913f5e31c8c95f19b0372287e0a886b3d1ca26b42ee340",
    "lean/Delphi/Thompson.lean": "sha256:e8a404588d3d7172f18c0f396653d942f0264e4c1a997d3d04beccbb946f7f02",
-   "lean/constraints.json": "sha256:085b53d124fc478d9ffb20568fc1b0bdd70d38d94a24e5d278eb4f580899b2ce",
-   "lean/eliminate/browser-check.mjs": "sha256:673a9d290802e6526f84765e023c98596a69461166b5899f796fbb9d73f3245b",
+   "lean/constraints.json": "sha256:8bf0074c19a72a87be01b69091b69618f47f4c12ce3e5f0c997bf87e839ddad7",
+   "lean/eliminate/browser-check.mjs": "sha256:43cc84f97b428daf1b3656e120f886ac184715c7566d6ce4095373d54591d675",
    "lean/empirical.json": "sha256:f566a7d81a95ea8475a3587e5483700b108e8d1573386bcc5fa0071f23734ebb",
    "lean/laws.json": "sha256:591e989a9f266becf08ecc349aac57f867c85116347837fe78bb80ef8e7c6bcb",
+   "lean/registry/law-versions/E2@1.0.0.json": "sha256:8af0886a1b507bf6d05e04fc3c3947532441f17e54265bc69e47d933e0fc291b",
    "lean/registry/law-versions/E3@1.0.0.json": "sha256:087082468bb1ceb6662eeab8dc4177f3b3569624d0d3b0c5c6195920f347379f",
+   "lean/registry/law-versions/E3@2.0.0.json": "sha256:6542c137a8717d50861985da649d3c3e5fb1144ba8de8a7c4678c2113baca827",
+   "lean/registry/law-versions/aerobic-power-bound@1.0.0.json": "sha256:1b72b21555a67e03e432c425fcc83d6df273c9c526e870ae3158dbc608a4b3ae",
+   "lean/registry/law-versions/development-growth-asymptote@1.0.0.json": "sha256:013151d0eddad7966e07fc2bd6dcab81c3ba94b3157d303991bab46aa71aa696",
+   "lean/registry/law-versions/development-growth-asymptote@1.1.0.json": "sha256:7fb2833d47b972164d225705d6718ea47ac672d7304f761634149b3451833312",
    "lean/registry/law-versions/fick-principle@1.0.0.json": "sha256:33c183807e6e9f434a1331bd12a9710235d83178913d92d83c20f0924e92d783",
+   "lean/registry/law-versions/fick-principle@1.1.0.json": "sha256:a64a6c22df48670ef68ed2d43f6458e77101b83a8cf72caa8050c16442573377",
+   "lean/registry/law-versions/fick-principle@1.2.0.json": "sha256:87ff327cf9af70c8b93907be9c00603751eb989ba5504a184f9d4a05807629b5",
+   "lean/registry/law-versions/fisher-kpp-speed@1.0.0.json": "sha256:1c1b485afeea1997b8d4a96d7b4780edda09e88d056b9be9ece56683d1d1294e",
+   "lean/registry/law-versions/fisher-sex-ratio@1.0.0.json": "sha256:6949707186836210f2de8051828441e55d8e487fd4960baa8ae14903696a8aa9",
+   "lean/registry/law-versions/kimura-heterozygosity@1.0.0.json": "sha256:e0bca382dabbdc767890c82ff2ca7fd19112f230f26f86a7cf18e240e5215e24",
+   "lean/registry/law-versions/maynardsmith-hawk-dove@1.0.0.json": "sha256:8b5e320b051f2ef1e65d2e0b589214d355be66a1f0d5d93603eaa2051c324557",
    "lean/registry/law-versions/perturb-current@1.0.0.json": "sha256:9f9b20bd25ca5498210ebbd63969cb786b938e3b2e893f5338e083eb144beee3",
    "lean/registry/law-versions/perturb-pressure@1.0.0.json": "sha256:c2578e2e50754f3b913aa6f15f9911c5f52e9513d8a67adaa10c9b053d0daafc",
+   "lean/registry/law-versions/scaling-area-law@1.0.0.json": "sha256:509552faf88735a44d1d3e4799f7bba6c0d949fd09103ae980cb47bc35307f14",
+   "lean/registry/law-versions/scaling-strength-law@1.0.0.json": "sha256:4c3395ad34626be0a594aa9c065204bee2795c3232d3cad2ade3eb619d19c0b1",
+   "lean/registry/law-versions/thompson1917-ch02-10@1.0.0.json": "sha256:387d640f985961736d811abf5405b730e66a49d5ae4cf278f1a155ec8513853a",
+   "lean/registry/law-versions/thompson1917-ch03-07@1.0.0.json": "sha256:2ee4f840366ec1209c91027b43fc15cad947d72dd2db0e0600be7dd9c7b8caf7",
+   "lean/registry/law-versions/turing-ddi@1.0.0.json": "sha256:9c1f3de7ba7802b46927d6484cb2032ed8a649dbb0a5b0749cf07cd929449b14",
+   "lean/registry/law-versions/turing-wavelength@1.0.0.json": "sha256:1088725c79f48c90c25ef190961f548650728b64f2fff02db90cee63c7f8d55b",
    "lean/registry/laws/E1.json": "sha256:02955b834627707cbad384f34b1e30345859ecb8876b82804f43cb8475abaae6",
-   "lean/registry/laws/E2.json": "sha256:688392efcea59e60305e8becc515751b8f0f10f706b2a324eeca25716de30064",
-   "lean/registry/laws/E3.json": "sha256:5bbd8ddccbac67866af044a7c89269b107a0c29cc96cb71561e819d6edebeb2c",
+   "lean/registry/laws/E2.json": "sha256:29e0d8df645e56b12e842361cf5f0b29d61a41e3961c6daf68ef5f5787d5c5a4",
+   "lean/registry/laws/E3.json": "sha256:c5b577e3173e1bd87a73e400f8161c851fbd5c1a8c893bf18c3a45154c226117",
    "lean/registry/laws/E4.json": "sha256:d392f3c17fccdb545a7c882965c0092f4bf4c0da84403ad6ae27bac7ec454ba2",
    "lean/registry/laws/E5.json": "sha256:07f9a6c45bae754bfbcd45be3689926afb28647e5f532a34e24faf338021a8b6",
    "lean/registry/laws/E6.json": "sha256:6880bbc752b1426b67d518e4b070c9f46906d36f8855e420db87203b1c9e50cd",
    "lean/registry/laws/E7.json": "sha256:300ce3b3ed42925253eb3eadb96df4db0fdaa36f45e1037a9977dc15f86689f4",
    "lean/registry/laws/E8.json": "sha256:f9d8cd8ef56744881983a013006d91c97cd09f2c0442fbef23d1ef35e16562e4",
-   "lean/registry/laws/aerobic-power-bound.json": "sha256:dd6bade3fa2633f83b2a93b5938b5faafaf201e79ea9338f6aca94c93d275bfa",
+   "lean/registry/laws/aerobic-power-bound.json": "sha256:f9121e68a7e079de72b176403bf7cc0627f120df99088d99bbe756490488069a",
    "lean/registry/laws/altitude-coupling.json": "sha256:57dab630ecf99c53800fddc0b8c4a020d237b82833925be7b212335814039008",
    "lean/registry/laws/aspect-ratio-induced-drag.json": "sha256:9d5ecd3a05b8db5e490573649f46329e495eb3f36fbb71fb1bb62eb318b44f61",
    "lean/registry/laws/blueprint-well-formedness.json": "sha256:7939c05d223e09486169457858d9f82943d58352df9cae972936a0801f786703",
+   "lean/registry/laws/development-growth-asymptote.json": "sha256:972b38f74c0dbdbdb61b6b1947399665e54a4a0c3674a7c8a745edd7cfe6956f",
    "lean/registry/laws/disc-flying-fish-fin-ratio-gap.json": "sha256:bf79af537c45c294f75712bd4f38d7361b9201598684f621824ad1befe1234b9",
    "lean/registry/laws/disc-heterurus-mass-exponent.json": "sha256:5f4da38d6f3f9852761bd9c0864ae3a36be04d33ce8328037e7ee7ab865362d8",
    "lean/registry/laws/disc-measured-wing-loading-band.json": "sha256:2dfaa187f88879020e5351b3b9d6eeb7ba5a128199dcb1a63ac3382e2a84114e",
    "lean/registry/laws/disc-pectoral-length-allometry.json": "sha256:2a06df708b96231ebc5ae9677bd972ca310b754cb102f80bb7db9468edf6dd05",
    "lean/registry/laws/elastic-similarity.json": "sha256:2d6d886d92392c10353c407b7fdbe030eb98697f071da908b5c15113d51b3fff",
    "lean/registry/laws/favored-fixation-lower-bound.json": "sha256:6a01b7421bc626a2518610fa2ac8b42d52933101953f925f9924ca92ffb57b45",
-   "lean/registry/laws/fick-principle.json": "sha256:c1a6856301cceb9c50a2c329d05aab306ce0e00b04fc1870431b2036cc5a7cab",
+   "lean/registry/laws/fick-principle.json": "sha256:94836771d83c3b6a1d3d71269ecaf80d4a8ca3d565eab9416d0bebe0c74c47f0",
    "lean/registry/laws/fin-length-ratio.json": "sha256:57f874b23c1e048a722828549635e0441129a569612df12f9ab445b40a37941e",
    "lean/registry/laws/fisher-ftns.json": "sha256:3006fa8e5c91c070f572be1cc2e5a66c073cac7d08c744b44266431d3d65e84a",
+   "lean/registry/laws/fisher-kpp-speed.json": "sha256:635cebac6fa37af67e6649a6d984a460d7f8a4bac7d3f72d6195252320c85812",
+   "lean/registry/laws/fisher-sex-ratio.json": "sha256:5a93102d61c1c8e92dbfd31dee5adb5c53cd224d11523a99083c58aee8b45241",
    "lean/registry/laws/flight-allometry-law.json": "sha256:f688056ad88c94f9292bb04bef021763eea05f153d6fdb20b438f203946a0315",
    "lean/registry/laws/flight-climb-glide-law.json": "sha256:e5849c54f2bf04be1f94fe9bb12f60a663a0351c4a45e09854602c2ce6501920",
    "lean/registry/laws/gene-regulatory-dynamics.json": "sha256:646dbc348c46d67824582b577a639adf37762129993ebfe2bd01245e7f55d4af",
@@ -1486,8 +1823,11 @@
    "lean/registry/laws/genotype-substitution-time.json": "sha256:8c3325c7057e6cf1c8a69a048b355f5080b91fb584f3db3fa7de3bf632ae5cdb",
    "lean/registry/laws/gill-o2-uptake.json": "sha256:350e2cdb17c5757914d10f67bc416663682d417fd02b6d53bad14ea0b4d79c78",
    "lean/registry/laws/haldane-cost-of-selection.json": "sha256:f3d244a4dfff2b753a5ea48c58d0fafaf8f97439a2cafe54dbfa91113f45d777",
+   "lean/registry/laws/hamilton-rule.json": "sha256:575a61f01f84eb009f7e8bd06df87d5dedacddb86b7b36db4a9ab3f029887fa7",
    "lean/registry/laws/kimura-fixation-probability.json": "sha256:9db63d3a56b4e85625b0bf8798ba7b9452f01240d989849075b06cb02125ebf8",
+   "lean/registry/laws/kimura-heterozygosity.json": "sha256:b54cb3c41ccb21a876148da22add7d8412969c783c4c49e5f5a6b713a8a1ff03",
    "lean/registry/laws/kimura-substitution-rate.json": "sha256:5ec78b7002b5d8bc9af788af73dfb2c62cc4bafecafbc16a84b9376bae46af14",
+   "lean/registry/laws/maynardsmith-hawk-dove.json": "sha256:d347555f0a464b73da1896abb5222882a0afa9fd1908dc2136bf05d165a3adb2",
    "lean/registry/laws/maynardsmith-hitchhiking.json": "sha256:93032348d4c0ec8eeadee1cc7e780137f969050856f0363a5c6203d6f68c5b34",
    "lean/registry/laws/maynardsmith-twofold-cost.json": "sha256:7b0bff035b949df9f78b8bd43de9f9fa61d437d594b7c398e0173f8e54e9f002",
    "lean/registry/laws/muscle-power-premise.json": "sha256:3506f6ddf186039d612e6f3c98b8fc2d598abb70c1f3e0814c55ca9b042a4f69",
@@ -1500,16 +1840,19 @@
    "lean/registry/laws/perturb-wind-glide.json": "sha256:17d7895ac8c990bc0dbf26d3dd5e2e99de918f45ca82e5114a646e1b371a9bf9",
    "lean/registry/laws/physiology-laplace.json": "sha256:b2d5526dc46fb31e3f69e12e06137e133a0860a4b6550561aaf9aaaad9b657a7",
    "lean/registry/laws/physiology-q10.json": "sha256:0735acde2ff09d7cebe142bfa54341652cd3c2383bba576839cda9c7228cf6ea",
-   "lean/registry/laws/scaling-area-law.json": "sha256:b60035f25a1348573b0af46e7ab64699e5290e30f6a89d9800a14a04146a8db2",
+   "lean/registry/laws/scaling-area-law.json": "sha256:3f7fd3c8a71decee96e8d2783f341c5f1656d2b9b08eccc0446483116f94496a",
    "lean/registry/laws/scaling-bending-law.json": "sha256:6b74660c10c4331ad415a1d2ced74e7c899ea911442675d0e61d75cef28dd14b",
-   "lean/registry/laws/scaling-strength-law.json": "sha256:14f5e4fe4098b99813ca261355e2b62f30161cdca8c6d41e5f8434f4916822a6",
+   "lean/registry/laws/scaling-strength-law.json": "sha256:13c7dad8dcc889685d94c127b15d39f2f400e84c10ddcad7dcea9c38688f830f",
    "lean/registry/laws/taxiing-thrust.json": "sha256:7b5298782504f688c0d18a106e99c6472cb85e7b58635e3c8dfa91970acdbcee",
+   "lean/registry/laws/test-loop-only-density-sanity.json": "sha256:4f1c501bb039798a2576fd7a659fb5065d8760cf2ebf66df6d29a4487043a974",
    "lean/registry/laws/thompson1917-ch02-06.json": "sha256:009b5df642821740c5a99f4d06d8630fc07768aeb4fd62a237e873124342bf5e",
    "lean/registry/laws/thompson1917-ch02-07.json": "sha256:833440c0a7eef2aab43a1c68c8c92516fffd34efd3b019ad89e9c8169abb5e6a",
-   "lean/registry/laws/thompson1917-ch02-10.json": "sha256:6bdadedad2c0cfba43a696dc24d20ba0786f226247856d124d9091ddc0006327",
-   "lean/registry/laws/thompson1917-ch03-07.json": "sha256:35cbf4a3be0fd72893c84bc21a039e8c9315fc9bd74add027e2e863e56d51d4c",
+   "lean/registry/laws/thompson1917-ch02-10.json": "sha256:6eda93db6b37c1c2ddace7d0a3ac3923552c8c3094eb250c130c367715239049",
+   "lean/registry/laws/thompson1917-ch03-07.json": "sha256:dd3d655a5b7145eb3cddfc617956b760fa98482eed5ef50701605f72dca04773",
+   "lean/registry/laws/turing-ddi.json": "sha256:270076b69392386a5d2ed3dca9800786cbfb96b3480f701043f956af326cf299",
+   "lean/registry/laws/turing-wavelength.json": "sha256:ed605bf023b57157a4aa5289d72faf9b6161b3134ff61579de2ab7acdade9c1f",
    "lean/registry/laws/walking-pendulum-speed.json": "sha256:c72e5162fe67dd3d4be7b65e5fb35cc47ac3b5f9a8c95bb094d58db0cc1a40d2",
-   "lean/registry/lawsets/current.json": "sha256:c036833739b9436aa116ca15bdfd27f276fe6b941fc46e42544ddddfa48b5453",
+   "lean/registry/lawsets/current.json": "sha256:4df8c54fe3ca2951485b6eb3a26948fa40903c529921b47adcb06f458f8dcc21",
    "lean/registry/lawsets/lawset-1.0.0.json": "sha256:4b16ed1db92a680a35fb9ca5fbb3f4c067cab4eaff12de0c874283683dcee166",
    "lean/registry/lawsets/lawset-1.1.0.json": "sha256:a418e2c4d2c8d60e6c8cf47d0b44be66ed309cf75aeada720bbc5a6136517eb3",
    "lean/registry/lawsets/lawset-1.2.0.json": "sha256:ee891927214d94ab7e50870e18d8056935aa11371f553bc472426d1064b43983",
@@ -1517,8 +1860,11 @@
    "lean/registry/lawsets/lawset-1.4.0.json": "sha256:cd6cd106df94ce8c5df0b3f554344ef0a5dbd9ab264a690c2243ca04a00c3358",
    "lean/registry/lawsets/lawset-1.5.0.json": "sha256:6bcaf1915ccbe0eebf4fad4ba408e2c824cb7b24987a2e8c6f90a7b459bc1d5a",
    "lean/registry/lawsets/lawset-1.6.0.json": "sha256:382a96432dd2ccf3755becf72e07e5a74e2b36981e0e600507c64b01004bc409",
+   "lean/registry/lawsets/lawset-1.7.0.json": "sha256:5f3f9f401959d4c561477ec2df6581c2ebe32db56d4b099ad5ed7dca5527d6b5",
+   "lean/registry/lawsets/lawset-1.8.0.json": "sha256:7d31ce7829122a2196914759cc86d4986b1e0fa9cc95e9ffbf876e213262d9c0",
+   "lean/registry/lawsets/lawset-1.8.1.json": "sha256:23c9b63edd25b92539d3a0c87dbd2b67be66765847cf5ccfba2b2a8bf3b5dad3",
    "lib/lean-scope.mjs": "sha256:d075654841b8793c3c7533f323b81bc0178823cd9ced472980f5f718ad724e0d",
-   "lib/lean-source.mjs": "sha256:c571974f8427162964c28c058ef1e775515f78f5e4aee6f72e492dfce61cf5b8"
+   "lib/lean-source.mjs": "sha256:9d0bdc20d142c2356beff336722893959c2530140728bff94dd8056d44e1932f"
   }
  }
 }

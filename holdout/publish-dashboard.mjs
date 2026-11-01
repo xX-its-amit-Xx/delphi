@@ -31,6 +31,8 @@ let leaks = null;
   const r = spawnSync(process.execPath, [path.join(root, 'holdout/check-leaks.mjs'), '--json'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   try { leaks = JSON.parse(r.stdout.trim().split(/\r?\n/).pop()); } catch { leaks = { error: (r.stderr || '').slice(0, 300) }; }
   if (leaks && leaks.hits) {
+    leaks.files_scanned = leaks.files; // `files` below becomes the list of files with hits, for the page
+    leaks.hit_lines = leaks.hits.length;
     const byFile = {};
     for (const h of leaks.hits) (byFile[h.file] ||= { file: h.file, n: 0, what: new Set() }).n++, byFile[h.file].what.add(h.what.replace(/ \(.*$/, ''));
     leaks.files = Object.values(byFile).map(f => ({ file: f.file, n: f.n, what: [...f.what].slice(0, 6) })).sort((a, b) => b.n - a.n);
@@ -51,6 +53,11 @@ if (fs.existsSync(er)) for (const f of latestPerDir(walk(er))) {
 
 const powerP = path.join(root, 'holdout/power-analysis.json');
 const power = fs.existsSync(powerP) ? JSON.parse(fs.readFileSync(powerP, 'utf8')) : null;
+
+// Rulings on questions other threads raised (holdout/rulings.json); the allowlist cites them by id.
+const rulP = path.join(root, 'holdout/rulings.json');
+const rulings = fs.existsSync(rulP) ? JSON.parse(fs.readFileSync(rulP, 'utf8')).rulings : [];
+const allowlist = fs.existsSync(path.join(root, 'holdout/leak-allowlist.json')) ? JSON.parse(fs.readFileSync(path.join(root, 'holdout/leak-allowlist.json'), 'utf8')) : [];
 
 const naP = path.join(root, 'holdout/exam-results/not-applicable.json');
 const notApplicable = fs.existsSync(naP) ? JSON.parse(fs.readFileSync(naP, 'utf8')).tests : [];
@@ -78,6 +85,8 @@ const out = {
   notApplicable,
   power,
   nanopubs,
+  rulings,
+  allowlist: allowlist.map(a => ({ path: a.file || a.prefix, kind: a.file ? 'file' : 'prefix', taxa: a.taxa || null, claims: a.claims || null, pattern: a.pattern || null, committed_before: a.committed_before || null, reason: a.reason })),
   leaks
 };
 const dir = path.join(root, 'dashboard/public/t/holdout');

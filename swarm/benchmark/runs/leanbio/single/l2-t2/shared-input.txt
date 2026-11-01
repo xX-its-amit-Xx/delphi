@@ -1,0 +1,29 @@
+TASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.
+
+THE CLAIM IN ENGLISH
+The aerobic power a fish can supply is bounded above by the Fick product P_avail = eta * E * Q * (Ca - Cv), where eta is the mechanical efficiency, E the oxycaloric equivalent, Q the cardiac output and (Ca - Cv) the arterio-venous oxygen difference. Therefore if the power a sustained activity demands strictly exceeds P_avail, that activity cannot be sustained aerobically.
+
+REQUIRED CONTENT. A statement that compiles but does not carry these is a failure:
+  [1] efficiency enters as a multiplicative factor
+  [2] the arterio-venous difference appears as a difference
+  [3] cardiac output enters as a multiplicative factor
+  [4] efficiency is constrained (positive or in a band), so the premise is not vacuous
+  [5] a demanded power is named separately from the available power
+  [6] the conclusion is a negation: the activity cannot be sustained
+  [7] the arterio-venous difference is hypothesised non-negative, which is what stops the bound being vacuous
+
+KNOWN TRAP: If the hypotheses are mutually contradictory the theorem is vacuously true and compiles. The witness declaration is what catches this, and `hypotheses_load_bearing` is what catches a conclusion that needs no hypotheses at all.
+
+HARD REQUIREMENTS ON THE FILE
+- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.
+- The main theorem is named exactly `l2_t2`.
+- A second declaration named exactly `l2_t2_witness` proves that the hypotheses of `l2_t2` are
+  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`
+  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.
+- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.
+- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the
+  formalization is worthless and will be scored as a failure.
+- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,
+  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.
+
+Output the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.

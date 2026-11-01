@@ -29,20 +29,29 @@ setInterval(() => {
   for (const [ip, h] of hits) if (h.minute < minute) hits.delete(ip);
 }, 60_000).unref();
 
+// Over the limit we stop buffering but keep draining the socket. Destroying the request here instead
+// killed the connection before the 413 could be written, so the caller saw a reset locally and a 502
+// from the Fly proxy (issue #56 F6). The caller is told; the socket is closed once the reply is out.
 function readJson(req) {
   return new Promise((resolve, reject) => {
     let size = 0;
+    let over = false;
     const chunks = [];
     req.on("data", c => {
+      if (over) return;
       size += c.length;
-      if (size > MAX_BODY) { reject(Object.assign(new Error("Request body too large"), { status: 413 })); req.destroy(); }
-      else chunks.push(c);
+      if (size > MAX_BODY) {
+        over = true;
+        chunks.length = 0;
+        reject(Object.assign(new Error(`Request body too large (over ${MAX_BODY} bytes)`), { status: 413 }));
+      } else chunks.push(c);
     });
     req.on("end", () => {
+      if (over) return;
       try { resolve(JSON.parse(Buffer.concat(chunks).toString("utf8"))); }
       catch { reject(Object.assign(new Error("Body is not valid JSON"), { status: 400 })); }
     });
-    req.on("error", reject);
+    req.on("error", e => { if (!over) reject(e); });
   });
 }
 
@@ -94,7 +103,12 @@ export function serveHttp(createServer, port, version = null) {
 
     let body;
     try { body = await readJson(req); }
-    catch (e) { return rpcError(res, e.status ?? 400, e.message); }
+    catch (e) {
+      // Close the socket only after the reply has gone out, otherwise an oversized upload keeps
+      // streaming into a connection we have already answered (issue #56 F6).
+      res.on("finish", () => req.destroy());
+      return rpcError(res, e.status ?? 400, e.message);
+    }
 
     const server = createServer();
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });

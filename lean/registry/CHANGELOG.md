@@ -4,6 +4,53 @@ Newest first. Each release is an immutable file `lawsets/lawset-<version>.json` 
 content hash, status and kind. `lawsets/current.json` names the current one. Laws are never deleted: a retired
 or contested law keeps its file, so a verdict computed against an older law set can be reproduced exactly.
 
+## 1.8.1 (2026-11-01)
+
+Retires test-loop-only-density-sanity. It was a LOOP TEST authored only to demonstrate that a law entering the registry reaches all eight surfaces without a code edit (lean/registry/LIVE-LOOP-DEMO.md), it was never a scientific claim, and it is retired now that the demonstration is captured. Law set 1.8.0 keeps pinning it as candidate, because law sets are immutable and the captured demonstration must stay reproducible; from 1.8.1 on lean_check excludes it and no surface evaluates it. Nothing else changes: the four genuine discovery candidates (turing-ddi, kimura-heterozygosity, maynardsmith-hawk-dove, fisher-kpp-speed) stay candidate and stay non-binding.
+
+It also carries one law that landed while this release was being cut: `development-growth-asymptote` 1.0.0
+(candidate, Exocoetidae, von Bertalanffy length-at-age from `development/growth.json`). It arrived with
+`constraints: []` and no `browser_check` block, so **it evaluates nothing and binds nothing yet** -- it is in
+the law set, served by every tool, and judges no design. That is not a defect of the release; it is the state
+`check-exposed` now reports as a note for a candidate and would FAIL for an accepted law (`bind:accepted`). It
+needs a `browser_check` block with a `lookups` entry reading Linf out of `development/growth.json` keyed by
+taxon, because Linf is in no engine state; the mechanism for that is documented under "Declarative browser
+check" in `lean/registry/README.md` and needs no code edit.
+
+### Added
+- added `development-growth-asymptote` 1.0.0 (biological, candidate)
+
+### Status
+- `test-loop-only-density-sanity` candidate -> retired
+
+## 1.8.0 (2026-11-01)
+
+First release in which a new law BINDS without a code edit. Five laws enter the set carrying a declarative `browser_check` block (lean/registry/README.md "Declarative browser check"): the LeanBio discovery agent's four survivors fisher-kpp-speed 1.1.0 (KPP1), kimura-heterozygosity 1.1.0 (HET1), maynardsmith-hawk-dove 1.1.0 (HAWKDOVE1) and turing-ddi 1.1.0 (TURING1), plus test-loop-only-density-sanity 1.0.0 (TL1), which is a LOOP TEST and not a scientific claim and is retired in 1.8.1. ALL FIVE ARE candidate, SO NONE OF THEM IS BINDING: a candidate violation is advisory everywhere (binding:false), candidate is the automatic ceiling, and nothing here can reject a design on its own. What is new is that they evaluate at all -- before this release a law whose constraint id had no hand-written formula in lean/eliminate/build-browser-check.mjs produced no row and bound nothing, on any surface, silently. This release also carries five SCOPE-ONLY registry versions sitting unreleased in lean/registry/laws/: thompson1917-ch03-07 1.1.0, scaling-area-law 1.1.0, scaling-strength-law 1.1.0, thompson1917-ch02-10 1.1.0 and E2 1.1.0, all the same near-singular implied-exponent exclusion (|ln(L/L_ref)| < 0.1, i.e. a length ratio inside [0.905, 1.105]) that fixes the third wild-type false positive. No Lean statement, hypothesis or number changed in any of the five and the old versions are archived, so the narrowing only greys rows that were WRONGLY red: nothing previously ruled out becomes allowed. The reasoning for that narrowing belongs to the registry thread and is written up under the 1.9.0 entry. Also carried: aerobic-power-bound 1.1.0 and fick-principle 1.3.0, which move C14 and C14b to aerobic-power-bound and leave fick-principle owning no constraint, because aerobic-power-bound is the law whose theorem rules a design out while fick-principle is the named hypothesis it rests on -- until now both laws listed C14 and the generated checker broke the tie alphabetically, so a violation of the aerobic ceiling was reported under fick-principle for no better reason than the letter f.
+
+### Added
+- added `fisher-kpp-speed` 1.1.0 (biological, candidate)
+- added `kimura-heterozygosity` 1.1.0 (biological, candidate)
+- added `maynardsmith-hawk-dove` 1.1.0 (biological, candidate)
+- added `test-loop-only-density-sanity` 1.0.0 (physical, candidate)
+- added `turing-ddi` 1.1.0 (biological, candidate)
+
+### Changed
+- `E2` 1.0.0 -> 1.1.0
+- `aerobic-power-bound` 1.0.0 -> 1.1.0
+- `fick-principle` 1.2.0 -> 1.3.0
+- `scaling-area-law` 1.0.0 -> 1.1.0
+- `scaling-strength-law` 1.0.0 -> 1.1.0
+- `thompson1917-ch02-10` 1.0.0 -> 1.1.0
+- `thompson1917-ch03-07` 1.0.0 -> 1.1.0
+
+## 1.7.0 (2026-11-01)
+
+E3 2.0.0 -> 2.1.0 and fick-principle 1.1.0 -> 1.2.0, WORDING ONLY: scope.applies_to and scope.excludes now say the aerobic bound is on sustained aerobic power DEMAND (powered level or climbing flight, sustained swimming) and does NOT apply to unpowered descent or glide, where the work comes from potential and kinetic energy rather than metabolism, nor to burst effort on white-muscle stores. No Lean statement, hypothesis or number changed (statement hashes identical); v2.0.0 and v1.1.0 are archived in law-versions/ and stay pinned by law sets up to 1.6.0. Prompted by E3 and C14 firing red on real Park and Choi flying fish making ordinary glide claims: the checker now returns out-of-scope for a declared unpowered glide, and a standing registry test asserts no accepted law is violated by a real organism making a realistic claim.
+
+### Changed
+- `E3` 2.0.0 -> 2.1.0
+- `fick-principle` 1.1.0 -> 1.2.0
+
 ## 1.6.0 (2026-11-01)
 
 E3 1.0.0 -> 2.0.0: the Fick aerobic envelope widened after a measured zebrafish broke it (Palstra et al. 2010, PMC3013094: MO2max at Ucrit 2630 mg O2 kg^-1 h^-1, about 2x the per-kg delivery v1 allowed). v2 bounds eta <= 0.23 (Gladman and Askew 2024) and O2 delivery Q*Ca <= 0.0187 ml O2/s at 0.06 kg (1600 mg O2 kg^-1 h^-1), ceiling 0.0458 -> 0.0833 W, wording rescoped from every teleost to its sources; v1 stays compiled and pinned by law sets 1.0.0-1.5.0, and v2 is proved a weakening of v1 (TeleostAerobic.toV2). Flying-fish powered-flight shortfall: 16x on the new envelope, about 10 to 29x (central about 20x) across corrected inputs, 38x with the original snapper proxies; still ruled out by an order of magnitude. perturb-current 1.1.0 adds a P2b scope assumption (aerobic only below about 0.8 Ucrit; taxon-appropriate ceiling); fick-principle 1.1.0 adds a scope note (taxon-appropriate MO2max or Q). The three new versions carry approval role carried-forward-pending-review: no person has reviewed them yet. Report: physics/FICK-CEILING-CHECK.md.

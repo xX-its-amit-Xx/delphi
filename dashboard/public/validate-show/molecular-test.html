@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Molecular Act Harness</title>
+<script type="importmap">{"imports":{
+  "three":"https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}</script>
+<style>
+/* Layout: a control bar, then one mounted act per selected case, stacked.
+   Tokens mirror the scene's own so the harness never flatters it. */
+:root{--bg:#fbfaf8;--panel:#fff;--ink:#17171b;--dim:#5d5d68;--line:#ddd9d2;--accent:#1f6fd0;
+  --bad:#b23a20;--good:#0f8f54;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101016;--panel:#1b1b22;
+  --ink:#ecebf2;--dim:#a2a0ae;--line:#32313c;--accent:#6fa8ff;--bad:#ff8a66;--good:#4cd39a;
+  color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101016;--panel:#1b1b22;--ink:#ecebf2;--dim:#a2a0ae;--line:#32313c;
+  --accent:#6fa8ff;--bad:#ff8a66;--good:#4cd39a;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans)}
+.shell{padding-block:16px;padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1180px;margin:0 auto;
+  display:flex;flex-direction:column;gap:14px}
+h1{margin:0;font:600 19px/1.3 var(--sans);text-wrap:balance}
+.lede{margin:0;font:400 13.5px/1.55 var(--sans);color:var(--dim);max-width:70ch}
+.bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+button{font:600 12px/1 var(--sans);padding:7px 11px;border:1px solid var(--line);border-radius:6px;
+  background:var(--panel);color:var(--ink);cursor:pointer}
+button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mount{border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+.mh{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;padding:9px 12px;
+  border-bottom:1px solid var(--line)}
+.mh b{font:600 13px/1.3 var(--sans)}
+.mh span{font:400 11.5px/1.4 var(--mono);color:var(--dim)}
+.body{min-width:0}
+.meta{padding:10px 12px;border-top:1px solid var(--line);font:400 12px/1.55 var(--sans)}
+.meta h5{margin:0 0 4px;font:600 10.5px/1.3 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}
+.meta ul{margin:0 0 8px;padding-left:1.1em}
+.meta li{margin-bottom:2px}
+.k{font-family:var(--mono);font-size:11px;background:rgba(127,127,140,.14);border-radius:3px;padding:0 4px}
+.skip{padding:12px;border:1.5px dashed var(--bad);border-radius:8px;margin:10px;color:var(--bad);
+  font:400 13px/1.5 var(--sans)}
+#log{font:400 11.5px/1.5 var(--mono);white-space:pre-wrap;color:var(--dim);
+  border-top:1px solid var(--line);padding-top:8px;max-height:220px;overflow:auto}
+.ok{color:var(--good);font-weight:600}.bad{color:var(--bad);font-weight:600}
+</style>
+</head>
+<body>
+<div class="shell">
+  <h1>Molecular act harness</h1>
+  <p class="lede">Mounts <span class="k">molecular.js</span> against each committed run, plus two
+  forced-gap cases, so every branch is seen rather than assumed: a design whose genes this project
+  has no data for, and a design with no genes at all.</p>
+  <div class="bar" id="bar"></div>
+  <div class="bar">
+    <button id="theme">Flip theme</button>
+    <button id="rm" aria-pressed="false">Reduced motion</button>
+    <button id="scrub">Scrub every act backwards</button>
+    <button id="wipe">Dispose all</button>
+  </div>
+  <div id="mounts"></div>
+  <div id="log"></div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+import { mountScene } from './molecular.js';
+
+const CASES = ['winged-zebrafish', 'wingless-flying-fish', 'tff', 'ff-zf-chimera'];
+const logEl = document.getElementById('log');
+const errors = [];
+const say = (s, cls) => { logEl.innerHTML += (cls ? `<span class="${cls}">${s}</span>` : s) + '\n'; };
+addEventListener('error', (e) => { errors.push(String(e.message)); });
+addEventListener('unhandledrejection', (e) => { errors.push('rejection: ' + (e.reason?.message || e.reason)); });
+
+let reducedMotion = false;
+const live = [];
+
+async function loadRun(id) {
+  const r = await fetch(`./run-${id}.json`);
+  if (!r.ok) throw new Error(`run-${id}.json: ${r.status}`);
+  return r.json();
+}
+
+/* Forced-gap cases. These are not real runs and are labelled so on screen; they exist to prove
+   the scene renders a reasoned gap instead of breaking. */
+const SYNTH = {
+  'synthetic-unknown-gene': {
+    meta: { generated_by: 'molecular-test.html, SYNTHETIC', pipeline: 'assembled-from-parts',
+      pipeline_note: 'not a validator run: a hand-made case to exercise the no-data branch' },
+    case: { id: 'synthetic-unknown-gene', kind: 'functional-addition', direction: 'increase',
+      parents: [{ organism: 'zebrafish-adult', weight: 1 }],
+      changed: [{ parameter: 'opercle_len_over_SL', label: 'opercle length', part: 'opercle',
+        from: 0.1, to: 0.2, direction: 'increase', factor: 2, kind: 'assumed', source: 'synthetic' }],
+      function: { name: 'gill cover flare', status: 'gained', no_real_organism_has_it: false } },
+    design: { id: 'synthetic-unknown-gene', name: 'synthetic: a gene outside the pack',
+      base: 'zebrafish-adult',
+      edits: [{ gene: 'notagene1', raw: 'notagene1 A10V', kind: 'substitution', zygosity: 'het' }] },
+    genotype_similarity: { status: 'cannot-assess', gate: 'SYNTHETIC CASE' },
+  },
+  'synthetic-no-genes': {
+    meta: { generated_by: 'molecular-test.html, SYNTHETIC', pipeline: 'assembled-from-parts',
+      pipeline_note: 'not a validator run: a hand-made case with nothing at the molecular scale' },
+    case: { id: 'synthetic-no-genes', kind: 'morphological-subtraction', direction: 'decrease',
+      parents: [{ organism: 'zebrafish-adult', weight: 1 }],
+      changed: [{ parameter: 'swim_bladder_volume', label: 'swim bladder volume', part: 'swim bladder',
+        from: 1, to: 0.4, direction: 'decrease', factor: 0.4, kind: 'assumed', source: 'synthetic' }],
+      function: { name: 'buoyancy control', status: 'lost', no_real_organism_has_it: false } },
+    design: { id: 'synthetic-no-genes', name: 'synthetic: no genes anywhere', base: 'zebrafish-adult', edits: [] },
+  },
+};
+
+function row(id, label) {
+  const d = document.createElement('div');
+  d.className = 'mount';
+  d.innerHTML = `<div class="mh"><b>${label}</b><span id="h-${id}">mounting…</span></div>
+    <div class="body" id="b-${id}"></div><div class="meta" id="m-${id}"></div>`;
+  document.getElementById('mounts').appendChild(d);
+  return d;
+}
+
+async function mountOne(id, data, label) {
+  row(id, label);
+  const container = document.getElementById(`b-${id}`);
+  const head = document.getElementById(`h-${id}`);
+  const meta = document.getElementById(`m-${id}`);
+  const notes = [];
+  let handle;
+  try {
+    handle = await mountScene({
+      container, THREE, data, act: 4, theme: document.documentElement.dataset.theme || 'light',
+      reducedMotion, onReady: () => say(`  ${id}: onReady`), onNote: (n) => notes.push(n),
+    });
+  } catch (e) {
+    head.innerHTML = `<span class="bad">THREW: ${e.message}</span>`;
+    errors.push(`${id} threw: ${e.message}\n${e.stack}`);
+    return null;
+  }
+  if (handle?.skip) {
+    head.innerHTML = `<span class="ok">skip: with a reason</span>`;
+    container.innerHTML = `<div class="skip"><b>Act skipped.</b> ${handle.reason}</div>`;
+    meta.innerHTML = `<h5>Notes (${notes.length})</h5>` + notes.map((n) => `<li>${n.severity}: ${n.title} — ${n.text}</li>`).join('');
+    say(`  ${id}: SKIP — ${handle.reason}`);
+    return handle;
+  }
+  const p = handle.provenance || {};
+  const kinds = {};
+  for (const it of p.items || []) kinds[it.kind] = (kinds[it.kind] || 0) + 1;
+  const canvas = container.querySelector('canvas');
+  head.innerHTML = `dur ${handle.duration}s · ${handle.chapters?.length || 0} chapters · ${(p.items || []).length} provenance items · canvas ${canvas ? `${canvas.width}×${canvas.height}` : '<span class="bad">none</span>'}`;
+  meta.innerHTML = `
+    <h5>Provenance · verdict ${p.verdict}</h5><p>${p.summary || ''}</p>
+    <ul>${(p.items || []).map((i) => `<li><span class="k">${i.kind}</span> <b>${i.label}</b> — ${i.source || ''}</li>`).join('')}</ul>
+    <h5>Kind histogram</h5><p>${Object.entries(kinds).map(([k, v]) => `<span class="k">${k}:${v}</span>`).join(' ')}</p>
+    <h5>Chapters</h5><ul>${(handle.chapters || []).map((c) => `<li><span class="k">${c.t}s</span> <b>${c.label}</b> — ${c.say || '<span class="bad">NO say</span>'}</li>`).join('')}</ul>
+    <h5>Notes pushed (${notes.length})</h5><ul>${notes.map((n) => `<li><span class="k">${n.severity}</span> <b>${n.title}</b> — ${n.text}</li>`).join('')}</ul>`;
+  say(`  ${id}: ok, ${(p.items || []).length} provenance items, ${notes.length} notes`);
+  live.push({ id, handle });
+  (window.__HANDLES ||= {})[id] = handle;
+  return handle;
+}
+
+async function mountAll() {
+  for (const { handle } of live) { try { handle.dispose(); } catch (e) { errors.push('dispose: ' + e.message); } }
+  live.length = 0;
+  window.__HANDLES = {};
+  document.getElementById('mounts').innerHTML = '';
+  logEl.innerHTML = '';
+  for (const id of CASES) {
+    try { await mountOne(id, await loadRun(id), id); }
+    catch (e) { errors.push(`${id}: ${e.message}`); say(`  ${id}: LOAD FAILED ${e.message}`, 'bad'); }
+  }
+  for (const [id, data] of Object.entries(SYNTH)) await mountOne(id, data, `${id} (synthetic)`);
+  window.__MOL = {
+    errors,
+    acts: live.map(({ id, handle }) => ({
+      id, duration: handle.duration, chapters: handle.chapters?.length || 0,
+      provenance: (handle.provenance?.items || []).length,
+      verdict: handle.provenance?.verdict,
+      kinds: (handle.provenance?.items || []).reduce((a, i) => (a[i.kind] = (a[i.kind] || 0) + 1, a), {}),
+      canvases: document.querySelectorAll(`#b-${id} canvas`).length,
+    })),
+    canvases: document.querySelectorAll('canvas').length,
+  };
+  say(`\nmounted ${live.length} acts, ${document.querySelectorAll('canvas').length} canvases, ${errors.length} errors`,
+    errors.length ? 'bad' : 'ok');
+  document.body.dataset.ready = '1';
+}
+
+document.getElementById('theme').onclick = () => {
+  const next = (document.documentElement.dataset.theme === 'dark') ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  for (const { handle } of live) handle.setTheme?.(next);
+};
+const rmBtn = document.getElementById('rm');
+rmBtn.onclick = () => { reducedMotion = !reducedMotion; rmBtn.setAttribute('aria-pressed', String(reducedMotion)); mountAll(); };
+document.getElementById('scrub').onclick = () => {
+  /* seek(t) must be pure in t: walk forwards then backwards and assert nothing throws. */
+  let bad = 0;
+  for (const { id, handle } of live) {
+    try {
+      for (let t = 0; t <= handle.duration; t += 1) handle.seek(t);
+      for (let t = handle.duration; t >= 0; t -= 1) handle.seek(t);
+      handle.seek(0);
+    } catch (e) { bad++; errors.push(`${id} seek: ${e.message}`); }
+  }
+  say(`scrubbed ${live.length} acts both ways, ${bad} failures`, bad ? 'bad' : 'ok');
+  window.__SCRUB = { failures: bad };
+};
+document.getElementById('wipe').onclick = () => {
+  for (const { handle } of live) handle.dispose();
+  live.length = 0;
+  document.getElementById('mounts').innerHTML = '';
+  window.__DISPOSED = { canvases: document.querySelectorAll('canvas').length };
+  say(`disposed; canvases left in the document: ${document.querySelectorAll('canvas').length}`,
+    document.querySelectorAll('canvas').length ? 'bad' : 'ok');
+};
+
+const bar = document.getElementById('bar');
+for (const id of [...CASES, ...Object.keys(SYNTH)]) {
+  const b = document.createElement('button');
+  b.textContent = id;
+  b.onclick = () => document.getElementById(`b-${id}`)?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' });
+  bar.appendChild(b);
+}
+mountAll();
+</script>
+</body>
+</html>

@@ -33,6 +33,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { REG, ROOT, LAWS_DIR, STANDARD_AXIOMS, readJson, writeJson, loadLaws, loadLawset, contentHash, statementText, stripLeanComments, scratchDir, leanCheckAsync, parseAxioms, errorLines, scopesOverlap, sha256, gitHead } from './registry-lib.mjs';
+// (g) open questions: a law that asserts one arm of a question this project holds OPEN is never a candidate,
+// however clean its Lean is. See lean/registry/open-questions/README.md and pipeline/leanbio/debate/CRITERIA.md
+// ("Known open disputes"). Loaded lazily so propose.mjs still runs if the folder is absent.
+let openq = null;
+try { openq = await import('./open-questions/openq-lib.mjs'); } catch { openq = null; }
 
 const FORBIDDEN = [['sorry', /\bsorry\b/], ['admit', /\badmit\b/], ['axiom', /(^|\n)\s*(private\s+)?axiom\b/], ['unsafe', /\bunsafe\b/], ['native_decide', /\bnative_decide\b/]];
 
@@ -231,9 +236,32 @@ export async function propose(file, meta, opts = {}) {
     else if (!steps.mutants.ok) reasons.push('surviving mutants: ' + res.filter(r => !r.rejected).map(r => `line ${r.line} ${r.from}->${r.to}`).join(', '));
   } else if (!runMutants) steps.mutants = { ok: true, skipped: true };
 
+  // (g) OPEN QUESTIONS. A proposal that asserts one arm of a question this project holds open is REFUSED
+  // promotion: promoting one arm would settle by automation a question the evidence has not settled. The check
+  // runs on the proposal as it would be written, so it sees the same statement_en, hypotheses, atoms and lean_ref
+  // a law file would carry. Outcome 'contested' with the question id, never 'candidate'.
+  steps.open_questions = { ok: true, checked: 0, violations: [], exemptions: [] };
+  let openArmViolations = [];
+  if (openq) {
+    const asLaw = { law_id: id, status: 'candidate', statement_en: meta.statement_en, label: meta.label || null,
+      hypotheses: meta.hypotheses || [], scope: meta.scope || { taxa: ['any'] },
+      shared_scope: ss ? { atoms: ss.atoms, quantities: ss.quantities || {} } : null,
+      lean_ref: { module: path.relative(ROOT, path.resolve(file)).split(path.sep).join('/'), theorem: L.theorem || null, structure: L.structure || null },
+      open_question_arm: meta.open_question_arm || null, open_question_scoped: meta.open_question_scoped || null };
+    const open = openq.openQuestions();
+    const g = openq.openQuestionGuard(asLaw, { questions: open });
+    openArmViolations = g.violations;
+    steps.open_questions = { ok: g.ok, checked: open.length, questions: open.map(q => q.question_id),
+      violations: g.violations.map(v => ({ question_id: v.question_id, arm_id: v.arm_id, via: v.via, proportion: v.proportion, refusal: v.refusal })),
+      exemptions: g.exemptions };
+    for (const v of g.violations) reasons.push(`asserts arm "${v.arm_id}" of OPEN question ${v.question_id}, which this project holds unsettled (${v.via}); settle the question, register a scoped exemption on both sides, or restate the law so it takes no side`);
+  }
+
   // (f) status
   const passedAllButJoint = steps.forbidden.ok && steps.build.ok && steps.axioms.ok && steps.witness.ok && steps.bridge.ok && steps.mutants.ok;
-  const status = contested.length && passedAllButJoint ? 'contested' : passedAllButJoint && steps.joint.ok ? 'candidate' : 'proposed';
+  const status = openArmViolations.length && passedAllButJoint ? 'contested'
+    : contested.length && passedAllButJoint ? 'contested'
+    : passedAllButJoint && steps.joint.ok && !openArmViolations.length ? 'candidate' : 'proposed';
   const today = new Date().toISOString().slice(0, 10);
   // A law stated in a library module (lean/Delphi/...) is referenced there; any other file is copied into the proposal.
   const inLib = path.resolve(file).toLowerCase().startsWith(path.resolve(ROOT, 'lean', 'Delphi').toLowerCase() + path.sep.toLowerCase());
@@ -248,7 +276,15 @@ export async function propose(file, meta, opts = {}) {
     evidence: meta.evidence || { sources: meta.sources || [] }, sources: meta.sources || (meta.evidence && meta.evidence.sources) || [],
     non_vacuity_witness: L.witness ? { lean: L.witness, statement: witnessDeclared || '', file: L.witness_file || relModule } : null,
     constraints: meta.constraints || [], introduced_in: null, supersedes: meta.supersedes || null, superseded_by: null, retired_reason: null,
-    contested_with: contested.map(c => ({ law_id: c, reason: `contradiction proved in Lean against lawset ${lawset.version} (theorem contra_P_${c.replace(/[^A-Za-z0-9]/g, '_')} in the generated joint file)` })),
+    contested_with: [
+      ...contested.map(c => ({ law_id: c, reason: `contradiction proved in Lean against lawset ${lawset.version} (theorem contra_P_${c.replace(/[^A-Za-z0-9]/g, '_')} in the generated joint file)` })),
+      ...openArmViolations.map(v => ({ open_question_id: v.question_id, arm_id: v.arm_id,
+        reason: `asserts arm "${v.arm_id}" of OPEN question ${v.question_id} (${v.via}). Neither arm may constrain a design while the question is open; see lean/registry/open-questions/questions/${v.question_id}.json for the arms, the computed belief proportion and what would settle it.`,
+        proportion: v.proportion, what_would_settle_it: v.what_would_settle_it })),
+    ],
+    // Non-hashed: which open questions block this law's promotion. A law can lose this by the QUESTION being
+    // settled, without its own statement changing, so it is status-like rather than part of what the law says.
+    blocked_by_open_questions: openArmViolations.length ? openArmViolations.map(v => ({ question_id: v.question_id, arm_id: v.arm_id })) : undefined,
     approval: null, origin: meta.origin || { by_role: 'unknown', kind: 'agent' },
     machine_proposed: meta.origin && meta.origin.kind === 'machine-discovery' ? true : undefined,
     history: [{ version: meta.version || '1.0.0', date: today, change: `propose.mjs against lawset ${lawset.version}: ${status}${reasons.length ? ' (' + reasons.join('; ') + ')' : ''}` }],

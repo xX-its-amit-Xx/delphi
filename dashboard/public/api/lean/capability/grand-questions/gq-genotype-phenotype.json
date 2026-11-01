@@ -1,0 +1,160 @@
+{
+ "map_version": "1.0.0",
+ "as_of": "2026-11-01",
+ "the_line": "Lean proves that a conclusion follows from stated premises. It does not adjudicate reality. Every theorem in this repo is of the form 'if these premises hold, then this follows', and a kernel proof of it is silent on whether any organism satisfies the premises. So a grand question has a formalisable core exactly to the extent that part of the disagreement about it is a disagreement about what follows from what, and an empirical remainder exactly to the extent that it is a disagreement about what the world is like. Most of these questions are mostly remainder. Two of them (the Price equation, Hamilton's rule) are disputes in which the formal part has been repeatedly confused with the empirical part for decades, and those are the ones where formalisation would do the most good. A capability map that let the first kind of progress be read as the second would be worse than no map.",
+ "id": "gq-genotype-phenotype",
+ "name": "The genotype-to-phenotype map",
+ "question": "Given a genome, what phenotype does it produce, and why can we not read one off the other?",
+ "formalisable_core": {
+  "has_core": true,
+  "strength": "moderate",
+  "statements": [
+   {
+    "claim": "If the standard genetic code holds and a claimed phenotypic change requires a stated set of amino-acid substitutions, then the number of nucleotide substitutions required is at least the sum of the codon-space distances, so a claimed substitution count below that is impossible.",
+    "settles": "Rules out a genotype-to-phenotype story whose mutational budget is arithmetically too small. The code is a finite table, so this is decidable rather than merely provable.",
+    "lean": "Delphi.Genotype.claimed_substitutions_rules_out",
+    "module": "lean/Delphi/Genotype.lean",
+    "law_id": "genotype-genetic-code",
+    "state": "proved-here"
+   },
+   {
+    "claim": "If k substitutions are required, the per-site mutation rate is mu, the population size is M and T generations are available, then the expected waiting time is bounded below, so a claimed trajectory faster than that bound is impossible.",
+    "settles": "Turns 'is this genotype-to-phenotype route reachable in the time available' into an arithmetic question, once the route's substitution count is defined. The repo's own law note says plainly that it eliminates nothing until that count is defined.",
+    "lean": "Delphi.Genotype.expectedWaitingTime_bounds",
+    "module": "lean/Delphi/Genotype.lean",
+    "law_id": "genotype-substitution-time",
+    "state": "proved-here"
+   },
+   {
+    "claim": "If a pleiotropy graph is stated and a view of it omits a set of nodes, then the view's closure under the part-of and affects relations is determined, so a claim that the view captures a phenotype's determinants either follows or does not.",
+    "settles": "What a partial map of the genotype-phenotype map is allowed to leave out. This is a statement about what a VIEW may omit, not about development, and the registry says so in the law's own note.",
+    "lean": "Delphi.Genotype.closure_of_check",
+    "module": "lean/Delphi/Genotype.lean",
+    "law_id": "genotype-pleiotropy-closure",
+    "state": "proved-here"
+   },
+   {
+    "claim": "If a trait is additive with stated allele frequencies p_i and effect sizes alpha_i, then the additive genetic variance is the sum of 2 p_i q_i alpha_i squared, so a claimed heritability inconsistent with that sum is impossible under additivity.",
+    "settles": "The arithmetic half of the missing-heritability problem: whether a reported heritability is even consistent with the reported effect sizes under the model the authors state.",
+    "state": "not-formalised"
+   }
+  ]
+ },
+ "empirical_remainder": {
+  "has_remainder": true,
+  "share": "most",
+  "items": [
+   {
+    "what": "Whether the map is additive at all, and if not, the structure and dimension of the epistatic interaction.",
+    "why_not_provable": "A proof can only say what follows from an assumed functional form. Which functional form is right is a fact about organisms.",
+    "measurement": "Systematic double- and higher-order mutant panels in one organism, with the same phenotype measured throughout."
+   },
+   {
+    "what": "Which loci affect the trait, and with what effect sizes.",
+    "why_not_provable": "No premise set determines the actual architecture of an actual trait; this is the content of every GWAS.",
+    "measurement": "Association studies and, for causality, allele-replacement experiments."
+   },
+   {
+    "what": "Whether the trait is a well-defined measurable at all, or an aggregate that different studies operationalise differently.",
+    "why_not_provable": "This is a question about measurement practice, not about a formal system.",
+    "measurement": "Cross-laboratory harmonisation of the phenotype definition before any genetic analysis."
+   },
+   {
+    "what": "Whether most variation acts through a small number of core genes or diffusely through nearly all of them (the omnigenic question).",
+    "why_not_provable": "Both pictures are consistent with the same formalism; they differ in what the effect-size distribution actually is.",
+    "measurement": "Effect-size distributions across traits at sufficient sample size, with regulatory and expression data."
+   }
+  ]
+ },
+ "in_repo": [
+  {
+   "kind": "lean-theorem",
+   "ref": "Delphi.Genotype.minSubst, phe_leu_one, trp_stop_one, met_trp_two",
+   "note": "Codon-space distances computed by kernel decision over the finite code table, so the elimination is not merely asserted.",
+   "strength": "real"
+  },
+  {
+   "kind": "registry-law",
+   "ref": "genotype-genetic-code, genotype-substitution-time, genotype-pleiotropy-closure, genotype-developmental-ordering",
+   "note": "Four accepted or candidate laws bearing on the mutational and structural constraints of the map.",
+   "strength": "real"
+  },
+  {
+   "kind": "tool",
+   "ref": "omics_gene, omics_part, omics_search",
+   "note": "Omics layers for 3,860 zebrafish genes keyed to anatomy and cell-type identifiers, which is the data substrate a scale-coverage view of the map would read.",
+   "strength": "adjacent"
+  },
+  {
+   "kind": "claim",
+   "ref": "the genotype thread's settling of lat4a as slc43a2a",
+   "note": "A worked instance of the identifier half of the problem: a former gene symbol that no authority resolves, resolved by hand against an outside source.",
+   "strength": "adjacent"
+  }
+ ],
+ "tools_needed": [
+  {
+   "name": "scale_coverage",
+   "status": "MISSING",
+   "note": "For one gene, what is known and what is NOT known at each scale from molecule to population. The map's hard part is the missing middle, and nothing reports absence as a result.",
+   "gap_id": "scale-coverage"
+  },
+  {
+   "name": "lean_module_genotype_network",
+   "status": "MISSING",
+   "note": "Reachability and distance in a stated genotype space, generalising the codon-space distance already proved here to an arbitrary stated mutational neighbourhood.",
+   "gap_id": "lean-genotype-network"
+  },
+  {
+   "name": "data_gp_panel",
+   "status": "MISSING",
+   "note": "A combinatorial mutant panel with one consistently measured phenotype. Without it the additive-variance statement has nothing to be checked against.",
+   "gap_id": "data-gp-panel"
+  },
+  {
+   "name": "omics_gene",
+   "status": "EXISTS",
+   "note": "The per-gene omics view that a scale-coverage tool would build on."
+  }
+ ],
+ "open_problem_ids": [
+  "EVO-03"
+ ],
+ "citations": [
+  "boyle2017",
+  "manolio2009",
+  "wagner2011pleiotropy"
+ ],
+ "use_cases": [
+  "uc-not-known-at-scale",
+  "uc-trajectory-possible",
+  "uc-measured-or-assumed"
+ ],
+ "citations_resolved": {
+  "boyle2017": {
+   "ref": "Boyle EA, Li YI, Pritchard JK (2017). An Expanded View of Complex Traits: From Polygenic to Omnigenic. Cell 169:1177-1186.",
+   "doi": "10.1016/j.cell.2017.05.038",
+   "pmid": "28622505",
+   "verified_via": "europepmc",
+   "quotable": "A central goal of genetics is to understand the links between genetic variation and disease",
+   "note": "foundational statement of the omnigenic model"
+  },
+  "manolio2009": {
+   "ref": "Manolio TA, Collins FS, Cox NJ, Goldstein DB, Hindorff LA, Hunter DJ, McCarthy MI, et al. (2009). Finding the missing heritability of complex diseases. Nature 461:747-753.",
+   "doi": "10.1038/nature08494",
+   "pmid": "19812666",
+   "verified_via": "europepmc",
+   "quotable": "Genome-wide association studies have identified hundreds of genetic variants associated with complex human diseases and traits",
+   "note": "the canonical missing-heritability problem statement"
+  },
+  "wagner2011pleiotropy": {
+   "ref": "Wagner GP, Zhang J (2011). The pleiotropic structure of the genotype-phenotype map: the evolvability of complex organisms. Nature Reviews Genetics 12:204-213.",
+   "doi": "10.1038/nrg2949",
+   "pmid": "21331091",
+   "verified_via": "europepmc",
+   "quotable": "Because pleiotropy was found so frequently, the notion arose that pleiotropy is 'universal'",
+   "note": "structural account of why the genotype-phenotype map is hard"
+  }
+ },
+ "scope": "This is a map of what is formalisable, not a research programme and not a claim that the formalisable parts are the important parts. The (a)/(b) split is a judgement made here and is arguable for every entry; where it is contentious the dispute field says so. The list is not exhaust: there is no canonical set of grand questions in biology, and this one is weighted toward evolution, development and scaling because that is what this project reads. Several entries have no counterpart in open-problems/problems.json, which is a gap in that enumeration rather than evidence the question is settled. Nothing here is about the held-out exam clade."
+}

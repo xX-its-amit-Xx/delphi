@@ -6,6 +6,8 @@
 <title>Flying fish simulator</title>
 <meta name="description" content="A 2D side-view physics simulation of a flying fish swimming, taxiing, taking off and gliding, integrated with RK4 from measured and labelled parameters; every number shows its source.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M6 20 Q16 6 26 20' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+<!-- same three.js build and addon host as dashboard/public/blueprint3d/explode.html, so the viewer and this page share one cache -->
+<script type="importmap">{"imports":{"three":"https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <style>
 :root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--accent-ink:#fff;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--soft:#eef2ef;--code:#f0f3f1;--water:#cfe6ec;--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--soft:#192b29;--code:#0f1a19;--water:#173a43;--s1:#3987e5;--s2:#d95926;--s3:#199e70}}
@@ -95,8 +97,12 @@ footer{padding:20px 0;color:var(--mute);font-size:.85rem}
 <div class="card" id="statusBanner" style="border-color:var(--warn);margin:12px 0 4px;padding:10px 14px"><b>Validation status:</b> <span class="chip a">not a validated result</span> &nbsp;Pre-registered 2026-10-31 20:34 UTC before the first run (<a href="../data/sim/PREREG.md">PREREG.md</a>, hash in <a href="../data/sim/PREREG.sha256">PREREG.sha256</a>). Parameters shown are those of <b>run 6</b>; <b>tests 1 to 3 are post-hoc</b> (exploratory: the model was changed after run 1's result, every change is in <a href="../data/sim/RUNS.md">RUNS.md</a>); <b>test 4 has run</b> (2026-10-31 22:45 UTC, physiology chain wired): under the real fish's own muscle it passes; under the pre-registered non-bird upper bound (a bat's 9.1 % flight muscle, launch uncapped, flapping allowed) it <b>FAILS</b>: the model lets that fish gain net energy for 26 s bouts on its burst store. With the chain capping the launch the real fish cannot even lift off, which shows the tuned launch thrust to be unphysical. Both outcomes are in RUNS.md; nothing was retuned. A match in the table below means "not contradicted by the second-hand field figures with these parameters", nothing more.</div>
 <div class="card" id="hypoBanner" style="display:none;border-color:var(--bad);margin:12px 0 4px;padding:10px 14px"><b>HYPOTHETICAL.</b> The selected fish is a design study (physics/flier/spec.json), not an organism: the real fish's equations and measured fin polar with four times the lifting area, 16 % flight muscle and a flapping power derived from a bat. It exists to show what a truly flying fish would need. Nothing about it is measured. <b>Its climb is power-limited only: the oxygen supply is not yet applied</b> (the physiology chain is not wired; in air, gills do not ventilate, so the design needs an air-breathing respiratory surface); expect the result to change when the chain is wired.</div>
 <div class="card" id="designCard" style="display:none;margin:12px 0 4px"></div>
-<h1>How a flying fish swims, taxis, takes off and glides, in equations</h1>
-<p class="lede">A point-mass model of one real fish, the darkedged-wing flying fish specimen whose fins Park and Choi measured in a wind tunnel, moving through five phases. Every parameter is listed below with where it came from; the ones that are <span class="chip a">assumed</span> or <span class="chip t">tuned</span> have sliders so you can see how much they matter. The sim does not know what a real glide looks like; the validation panel compares it with the published field figures, which are themselves second-hand. Nothing here uses bird data (class Aves is the frozen holdout). <b>Scope:</b> this is the organism level of a chain whose chemistry (gill exchange, haemoglobin), organ (cardiac output) and tissue (muscle power) levels are being written as separate sourced modules; until they land the power interface is a stub that returns zero and says so. Development (genome to morphology) and molecular dynamics are not simulated. Flying fish are not isometric within a species (Davenport 1992: fin area &prop; L<sup>1.83</sup>, wing loading &prop; L<sup>1.24</sup>), so this one 60 g specimen does not stand for the family; the designed flier, when it comes, changes parameters only, never these equations.</p>
+<!-- 3D view. Everything inside #sim3d is written by scene3d.js; this block is what shows if that module
+     never loads, so the page still works (the 2D charts below are the same run and need no WebGL). -->
+<section class="card" id="sim3d" style="margin:0 0 12px">
+  <h3 style="margin:0 0 4px">3D view &mdash; the computed trajectory, flown by the anatomy meshes</h3>
+  <p class="small mute" id="sim3dNote" style="margin:0">Loading three.js and the fish mesh&hellip; if this line stays, the 3D view is unavailable here; the 2D charts below are the same run and do not need WebGL.</p>
+</section>
 
 <div class="row" style="margin:10px 0">
   <button id="runBtn" class="on">Run</button><button id="stepBtn">Step 0.1 s</button><button id="resetBtn">Reset</button>
@@ -109,6 +115,9 @@ footer{padding:20px 0;color:var(--mute);font-size:.85rem}
 </div>
 <div class="small mute" id="linkOut" style="display:none;word-break:break-all;margin:-4px 0 8px"></div>
 <div class="small" id="phaseLine" style="margin:0 0 8px"></div>
+<h1>How a flying fish swims, taxis, takes off and glides, in equations</h1>
+<p class="lede">A point-mass model of one real fish, the darkedged-wing flying fish specimen whose fins Park and Choi measured in a wind tunnel, moving through five phases. Every parameter is listed below with where it came from; the ones that are <span class="chip a">assumed</span> or <span class="chip t">tuned</span> have sliders so you can see how much they matter. The sim does not know what a real glide looks like; the validation panel compares it with the published field figures, which are themselves second-hand. Nothing here uses bird data (class Aves is the frozen holdout). <b>Scope:</b> this is the organism level of a chain whose chemistry (gill exchange, haemoglobin), organ (cardiac output) and tissue (muscle power) levels are being written as separate sourced modules; until they land the power interface is a stub that returns zero and says so. Development (genome to morphology) and molecular dynamics are not simulated. Flying fish are not isometric within a species (Davenport 1992: fin area &prop; L<sup>1.83</sup>, wing loading &prop; L<sup>1.24</sup>), so this one 60 g specimen does not stand for the family; the designed flier, when it comes, changes parameters only, never these equations.</p>
+
 
 <div class="grid g2">
   <div class="card"><h3>Side view: height above the sea against distance</h3><canvas id="cTraj" width="900" height="300"></canvas>
@@ -170,12 +179,18 @@ function derive(f){
   d.Af=f.body_frontal_area_m2.value; d.Cdw=FLAGS.get('cdw')?+FLAGS.get('cdw'):f.water_drag_coefficient.value; d.vapp=f.approach_speed_m_s.value;
   d.Tswim=0.5*P.constants.rho_water.value*d.vapp*d.vapp*d.Af*d.Cdw; d.taxiFactor=f.taxi_thrust_N.factor??0.7; d.Ttaxi=d.taxiFactor*d.Tswim;
   d.lobe=f.lobe_length_m.value; d.pitch=f.pitch_at_leap_deg.value*Math.PI/180; d.appr=f.approach_angle_deg.value*Math.PI/180; d.vto=f.takeoff_speed_target_m_s.value; d.z0=f.start_depth_m.value; d.vre=f.reentry_min_speed_m_s.value; d.maxG=f.max_glides.value;
+  // Uniform horizontal headwind, m/s, positive = headwind. ADDED for the 3D view's wind control; it is absent
+  // from every committed params.json entry, so d.wind is 0 and the equations below are the committed ones,
+  // number for number. Only a value the user types makes the aerodynamic forces use the AIR-relative velocity
+  // (vx + u, vz) instead of the ground velocity -- the same convention as sim-engine/scenarios/glide.mjs.
+  d.wind=(f.headwind_m_s&&f.headwind_m_s.value)||0;
   d.powered=!!(f.powered&&f.powered.value); d.alt=!!(f.altitude_model&&f.altitude_model.value); d.A0=(f.aerobic_capacity_W&&f.aerobic_capacity_W.value)||0; d.P50=(f.hb_P50_kPa&&f.hb_P50_kPa.value)||3.31; d.nH=(f.hb_n&&f.hb_n.value)||1.34; d.fmf=(f.flight_muscle_fraction&&f.flight_muscle_fraction.value)||0; d.pspec=(f.muscle_specific_power_W_per_kg&&f.muscle_specific_power_W_per_kg.value)||0; d.pinert=(f.inertial_power_W_per_kg_body&&f.inertial_power_W_per_kg_body.value)||0; d.Pavail=Math.max(0,d.fmf*d.m*d.pspec-d.pinert*d.m); d.W=d.m*P.constants.g.value; d.vmin=Math.sqrt(2*d.W/(P.constants.rho_air.value*d.S*d.CLmax));
   return d;
 }
 function CL(d,a){ if(a<=d.stall) return Math.max(-0.5,d.CL0+d.CLslope*a); const a2=Math.min(a,60); return d.CLmax*(60-a2)/25; }
 function CD(d,cl){ return d.CDmin+d.k*cl*cl; }
-function fge(r){ if(!ge) return 1; if(r>=0.97) return 1; if(r<=0.33) return 0.86; return 1-(0.97-r)/(0.97-0.33)*0.14; }
+let GE_OFF=false; // the 3D view's ground-effect switch; false = the committed behaviour (the measured curve applied)
+function fge(r){ if(!ge||GE_OFF) return 1; if(r>=0.97) return 1; if(r<=0.33) return 0.86; return 1-(0.97-r)/(0.97-0.33)*0.14; }
 function phaseOf(d,z){ if(z+(-d.lobe)<0 && z<0) return z< -d.lobe? 'swim':'taxi'; if(z<d.lobe) return z<0?'taxi':'taxi'; return 'glide'; }
 // phase: body centre z. swim: whole body under (z < -lobe). taxi: 0 <= z < lobe (lobe in water, body out), also -lobe <= z < 0 treated as breaching taxi. glide: z >= lobe.
 let CUR=null;
@@ -191,12 +206,15 @@ function accel(d,s,ph){
     const Dw=0.5*rw*v*v*d.Af*d.Cdw; ax-=Dw/d.m*ux; az-=Dw/d.m*uz;
     let Ts=physCap('axial',v,d.Tswim); if(FLAGS.get('v2')==='1'&&CUR&&CUR.phys){ const pa=CUR.physLast&&CUR.physLast.axial; Ts=pa?Math.min(pa.total_W/Math.max(v,0.5),4*d.W):0; } if(CUR) CUR.physDem+=Ts*v; ax+=Ts/d.m*Math.cos(d.appr); az+=Ts/d.m*Math.sin(d.appr);
   } else {
-    let alpha=d.alpha; if(ph==='taxi'){ if(v<d.vto){ const need=d.W*(1+2*((d.lobe/2-s.z)/d.lobe)-2*s.vz)/(0.5*ra*v*v*d.S); alpha=Math.max(-10,Math.min(d.stall,(need-d.CL0)/d.CLslope)); } }
+    // Air-relative velocity. With d.wind === 0 (every committed entry) va/uax/uaz ARE v/ux/uz, so the
+    // aerodynamics below is unchanged; a non-zero headwind u makes them (vx + u, vz)-relative.
+    const w=d.wind||0, avx=s.vx+w, avz=s.vz, va=w?(Math.hypot(avx,avz)||1e-9):v, uax=w?avx/va:ux, uaz=w?avz/va:uz;
+    let alpha=d.alpha; if(ph==='taxi'){ if(va<d.vto){ const need=d.W*(1+2*((d.lobe/2-s.z)/d.lobe)-2*s.vz)/(0.5*ra*va*va*d.S); alpha=Math.max(-10,Math.min(d.stall,(need-d.CL0)/d.CLslope)); } }
     const cl=CL(d,alpha), cd=CD(d,cl);
-    const h=Math.max(0,s.z); const q=0.5*ra*v*v*d.S;
+    const h=Math.max(0,s.z); const q=0.5*ra*va*va*d.S;
     const Lf=q*cl, Df=q*cd*fge(h/d.b);
-    ax+= (-Df*ux - Lf*uz)/d.m; az+= (-Df*uz + Lf*ux)/d.m;
-    if(ph==='glide'&&(d.powered||(FLAGS.get('flap')==='1'&&CUR&&CUR.phys))){ let Pav=d.Pavail; if(d.alt&&d.A0>0){ const c0=satHb(atmo(0).PO2,d.P50,d.nH), ch=satHb(atmo(s.z).PO2,d.P50,d.nH); Pav=Math.max(0,d.A0*ch/c0-d.pinert*d.m); } let T=Pav>0?Math.min(Pav/Math.max(v,1),2*d.W):0; if(CUR&&CUR.phys){ const pf=CUR.physLast&&CUR.physLast.flight; const Pf=pf?((FLAGS.get('flapsrc')==='aerobic')?pf.aerobic_W:pf.total_W):0; T=pf?Math.min(Math.max(0,Pf-d.pinert*d.m)/Math.max(v,1),2*d.W):0; } if(CUR) CUR.physDem+=T*v; if(T>0){ ax+=T/d.m*ux; az+=T/d.m*uz; } }
+    ax+= (-Df*uax - Lf*uaz)/d.m; az+= (-Df*uaz + Lf*uax)/d.m;
+    if(ph==='glide'&&(d.powered||(FLAGS.get('flap')==='1'&&CUR&&CUR.phys))){ let Pav=d.Pavail; if(d.alt&&d.A0>0){ const c0=satHb(atmo(0).PO2,d.P50,d.nH), ch=satHb(atmo(s.z).PO2,d.P50,d.nH); Pav=Math.max(0,d.A0*ch/c0-d.pinert*d.m); } let T=Pav>0?Math.min(Pav/Math.max(v,1),2*d.W):0; if(CUR&&CUR.phys){ const pf=CUR.physLast&&CUR.physLast.flight; const Pf=pf?((FLAGS.get('flapsrc')==='aerobic')?pf.aerobic_W:pf.total_W):0; T=pf?Math.min(Math.max(0,Pf-d.pinert*d.m)/Math.max(v,1),2*d.W):0; } if(CUR) CUR.physDem+=T*v; if(T>0){ ax+=T/d.m*uax; az+=T/d.m*uaz; } }
     if(ph==='taxi'){
       const imm=Math.min(1,Math.max(0,(d.lobe-s.z)/d.lobe)); // immersed fraction of the lobe
       let T=physCap('axial',v,d.Ttaxi*imm); if(FLAGS.get('v2')==='1'&&CUR&&CUR.phys){ const pa=CUR.physLast&&CUR.physLast.axial; T=pa?Math.min(pa.total_W/Math.max(v,0.5),4*d.W)*imm:0; } if(CUR) CUR.physDem+=T*v; ax+=T/d.m*ux; az+=T/d.m*uz;
@@ -238,7 +256,7 @@ function stepSim(S,T){
     if(S.physLast){ const pf=S.physLast.flight; S.test4.PaeroMax=Math.max(S.test4.PaeroMax||0,pf.aerobic_W); if(S.phase==='glide'){ const E=0.5*(S.s.vx*S.s.vx+S.s.vz*S.s.vz)+P.constants.g.value*S.s.z; if(S.airStart==null){S.airStart=S.t;S.Eair0=E;S.Eref=E;} else { if(E>S.Eref+0.5){ S.gainHeld=(S.gainHeld||0)+S.dt; } else { S.gainHeld=0; S.Eref=Math.min(S.Eref,E); } S.test4.gainHeldMax=Math.max(S.test4.gainHeldMax||0,S.gainHeld||0); } if(pf.total_W>0.5){ if(S.bout==null) S.bout={t0:S.t}; } else if(S.bout){ S.bout.t1=S.t; S.bout.end=pf.limitedBy; (S.bouts=S.bouts||[]).push(S.bout); S.bout=null; } } else { S.airStart=null; if(S.bout){ S.bout.t1=S.t; S.bout.end='re-entry'; (S.bouts=S.bouts||[]).push(S.bout); S.bout=null; } } }
     if(S.phase==='glide'){ const E=0.5*(S.s.vx*S.s.vx+S.s.vz*S.s.vz)+P.constants.g.value*S.s.z; if(S.Eair==null) S.Eair=E; else { S.test4.maxGain=Math.max(S.test4.maxGain,E-S.Eair); S.Eair=Math.min(S.Eair,E); } if(S.physLast){ S.test4.PavailMax=Math.max(S.test4.PavailMax,S.physLast.flight.total_W); } }
     if(S.cur){S.cur.zmax=Math.max(S.cur.zmax,S.s.z);S.cur.vmax=Math.max(S.cur.vmax,Math.hypot(S.s.vx,S.s.vz));}
-    if(S.t>=S.nextSample){S.hist.push({t:S.t,x:S.s.x,z:S.s.z,v:Math.hypot(S.s.vx,S.s.vz),ph:S.phase});S.nextSample+=0.02;}
+    if(S.t>=S.nextSample){S.hist.push({t:S.t,x:S.s.x,z:S.s.z,vx:S.s.vx,vz:S.s.vz,v:Math.hypot(S.s.vx,S.s.vz),ph:S.phase});S.nextSample+=0.02;}
     if(S.t>(+FLAGS.get('tmax')||60)||S.s.x>(d.alt?30000:900)){S.done=true;S.phase='stopped';}
     if(S.s.z>(S.zmax||0)){S.zmax=S.s.z;S.zmaxT=S.t;}
     if(S.physLast&&S.phase==='glide'&&(d.powered||FLAGS.get('flap')==='1')&&S.climbEnd==null){ const pf=S.physLast.flight; if(pf.limitedBy==='store'&&pf.total_W<0.5){S.climbEnd={t:S.t,z:S.s.z,limitedBy:pf.limitedBy,o2:S.physLast.o2.storeFraction,burst:S.physLast.o2.burstStoreFraction};} }
@@ -646,7 +664,56 @@ function renderParams(){
   renderStatus();
 }
 function renderPhys(){ const el=document.getElementById('physRows'); if(!sim||!sim.phys){ el.innerHTML=''; return; } const rows=sim.phys.describe(); el.innerHTML='<table><tr><th>quantity</th><th>value</th><th>unit</th><th>kind</th><th>source</th></tr>'+rows.map(r=>`<tr><td>${r.quantity}</td><td>${typeof r.value==='number'?(Math.abs(r.value)<0.01||Math.abs(r.value)>=1e4?r.value.toExponential(3):r.value.toFixed(4)):r.value}</td><td>${r.unit}</td><td><span class="chip">${r.kind}</span></td><td class="small mute">${r.source}</td></tr>`).join('')+'</table>'; }
-function reset(){ running=false; document.getElementById('runBtn').classList.remove('on'); sim=newSim(); stepSim(sim,0.0); draw(); renderPhys(); renderStatus(); }
+function reset(){ running=false; document.getElementById('runBtn').classList.remove('on'); sim=newSim(); stepSim(sim,0.0); draw(); renderPhys(); renderStatus(); fireReset(); }
+
+// ------------------------------------------------------------------ bridge for scene3d.js (the 3D view)
+// The 3D view never integrates anything of its own: it asks for a complete run here and plays it back.
+// solveWith() leaves this page's own `sim` (the one the 2D charts draw) untouched.
+const RESET_HOOKS=[];
+function fireReset(){ for(const fn of RESET_HOOKS){ try{ fn(); }catch(e){ console.error(e); } } }
+function solveWith(over,tmax){
+  const saveFish=fish, saveGE=GE_OFF;
+  try{
+    if(over&&over.fish) fish=over.fish;
+    if(over&&over.groundEffect!=null) GE_OFF=!over.groundEffect;
+    const S=newSim(); stepSim(S,(tmax||+FLAGS.get('tmax')||60));
+    return S;
+  } finally { fish=saveFish; GE_OFF=saveGE; }
+}
+window.DELPHI_SIM={
+  version:1,
+  get ready(){ return !!(P&&fish&&COMMITTED); },
+  get fish(){ return fish; },
+  get P(){ return P; },
+  get sim(){ return sim; },
+  get presets(){ return PRESETS; },
+  get committed(){ return COMMITTED; },
+  get baseIndex(){ return BASEIDX; },
+  get presetId(){ return PRESETID; },
+  get physOn(){ return physOn; },
+  get groundEffectData(){ return ge; },
+  get baseline(){ return BASE; },
+  get baselineConditions(){ return BASE?BASE.conditions:null; },
+  get flags(){ return FLAGS; },
+  derive:f=>derive(f||fish),
+  deriveOf:f=>derive(f),
+  cloneFish:()=>JSON.parse(JSON.stringify(fish)),
+  solve:(over,tmax)=>solveWith(over,tmax),
+  selectPreset:id=>loadPreset(id),
+  selectBase:i=>selectFish(i),
+  baseIndexOf:id=>(COMMITTED||[]).findIndex(f=>f.id===id),
+  // Change one parameter of the live entry, exactly as the parameter table's own sliders do, so the 2D charts
+  // and the 3D view always show the same run. `meta` is used only when the parameter is not in params.json yet
+  // (headwind_m_s), and it must carry a kind and a source like every other row in that table.
+  setParam(key,value,meta){
+    if(!fish) return false;
+    if(!fish[key]) fish[key]=Object.assign({kind:'assumed',source:'set from the 3D view'},meta||{});
+    MOVED.add(key); fish[key].value=value; reset(); renderParams(); return true;
+  },
+  setGroundEffect(on){ GE_OFF=!on; reset(); },
+  groundEffectOn:()=>!GE_OFF,
+  onReset(fn){ RESET_HOOKS.push(fn); },
+};
 document.getElementById('runBtn').onclick=()=>{ if(sim.done) reset(); running=!running; document.getElementById('runBtn').classList.toggle('on',running); last=performance.now(); if(running) requestAnimationFrame(loop); };
 document.getElementById('stepBtn').onclick=()=>{running=false;stepSim(sim,0.1);draw();};
 document.getElementById('resetBtn').onclick=reset;
@@ -696,7 +763,20 @@ Promise.all([fetch('params.json').then(r=>r.json()),fetch('../data/ground-effect
   if(q.get('taxi')){MOVED.add('taxi_thrust_N');fish.taxi_thrust_N.factor=+q.get('taxi');renderParams();reset();}
   sendReady();
   if(q.get('autorun')){stepSim(sim,+q.get('tmax')||60);draw();document.body.dataset.done='1';emit('results',resultsPayload());}
+  window.dispatchEvent(new CustomEvent('delphi-sim-ready'));
 }).catch(e=>{document.getElementById('phaseLine').textContent='could not load params.json, presets.json, ground-effect.json, baseline.json or results.json: '+e;console.error(e);});
+</script>
+
+<!-- The 3D view. It is a separate ES module so that a missing three.js, a missing GLB or a machine with no
+     WebGL leaves the 2D page above exactly as it was. -->
+<script type="module">
+import('./scene3d.js')
+  .then(m => m.mount({ into: '#sim3d', note: '#sim3dNote' }))
+  .catch(e => {
+    const n = document.getElementById('sim3dNote');
+    if (n) { n.innerHTML = '<b>The 3D view did not start</b>, so this page is the 2D charts only (they are the same run and need no WebGL). Reason: <code>' + String((e && e.message) || e).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])) + '</code>'; }
+    console.error(e);
+  });
 
 </script>
 </body>

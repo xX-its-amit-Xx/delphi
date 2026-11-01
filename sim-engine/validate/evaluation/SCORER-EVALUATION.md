@@ -9,7 +9,238 @@ The public page for these results is `dashboard/public/scorer/index.html`. It re
 `data-w<version>.json` (one file per scorer version) and `versions.json` (the side-by-side table).
 
 <!-- RESULTS:BEGIN -->
-(filled in after each run; see "Runs" below)
+## Top line
+
+Every number below is from the blind held-out run of each scorer version: 168 held-out families, scored
+family-out. Dev results are reported alongside but count for nothing.
+
+**1. In every version, one distance-like term does all of the ranking.**
+
+- **v1.0.0 to v1.2.0.** The `score` output is *worse* than the raw nearest-neighbour distance it is built from. On the
+  primary comparison P1 (real FishShapes fish vs shuffled decoys), nearest-neighbour distance alone, taken from the
+  scorer's own output under the same exclusions, reaches AUC 0.843. The scorer reaches:
+  - v1.0.0: 0.690 (difference −0.151, CI −0.181 to −0.117);
+  - v1.1.0: 0.688;
+  - v1.2.0: 0.683.
+
+  The cause is the `min(1, p/0.05)` transform. It saturates almost every fish at 1.0 and throws the ranking away.
+  Over all held-out items, v1.0.0 equals nearest-neighbour distance exactly (0.585 vs 0.585; difference −0.0005, CI
+  −0.014 to 0.015).
+- **v1.2.0 `rank_score`.** It recovers the ranking (P1 0.838) but is still slightly and significantly *below*
+  nearest-neighbour distance (−0.004, CI −0.010 to −0.001). Given the same specimen-only input as v1.0.0, its P1 is
+  0.843, with a difference from nearest-neighbour distance of +0.0001 (CI −0.0005 to 0.0007). That is nearest-neighbour
+  distance, to four decimals.
+- **v1.3.0 `rank_score`.** It beats nearest-neighbour distance (P1 0.875; +0.032, CI 0.026 to 0.040). It does **not**
+  beat its own joint Mahalanobis term used alone:
+  - P1: −0.008, CI −0.020 to 0.002;
+  - all held-out items: −0.007, CI −0.013 to −0.002, significantly *worse*.
+
+  **The joint term alone also passes all three primary endpoints**: P1 0.883, P2 96.3 %, and P3 with a median
+  positive above the decoys' 75th percentile. On the primary ranking, the v1.3.0 composite is one term wearing a
+  costume. The other components earn their place only on secondary endpoints:
+  - they keep larvae, ontogeny stages and small curated specimens from being rejected (S4 and S5 pass on rank_score;
+    the joint term alone fails both);
+  - the Lean and definitional gates catch the 12 easy negatives that the joint term cannot see.
+
+**2. "Real organisms score high" is necessary and nowhere near sufficient.** On the plausibility `score`, 98 to 99.6 %
+of real held-out organisms score at or above 0.5 in every version. Only 12 to 17 % of negatives score below it. Every
+version passes Amit's test, and every version is close to "everything is plausible". On this benchmark, the share of
+real organisms scoring high carries almost no evidence that a scorer works.
+
+**3. Four of the five components do no ranking work.** Moving each weight ±20 %, alone or all together, leaves the AUC
+unchanged in every version: v1.0.0 0.585, v1.3.0 0.650. L (Lean), G (genotype) and E (evidence) are effectively
+constant across benchmark items, and S (spec) never runs. All ranking comes from P.
+
+**4. Verdicts per BENCHMARK-PREREGISTRATION.md** (held-out, family-out; P1 to P3 are primary):
+
+| version (input) | on `score` | on `rank_score` | P1 score / rank_score / NN / joint alone |
+|---|---|---|---|
+| v1.0.0 (specimen) | FAIL (P1, P2, P3 all fail) | none | 0.690 / n.a. / 0.842 / n.a. |
+| v1.1.0 (specimen) | FAIL (all three fail) | none | 0.688 / n.a. / 0.843 / n.a. |
+| v1.2.0 (params, lean_spec, doc) | FAIL (P2 passes) | FAIL (P3 fails) | 0.683 / 0.838 / 0.843 / n.a. |
+| v1.2.0 (specimen; matched input) | FAIL | FAIL (P2 fails) | 0.688 / 0.843 / 0.843 / n.a. |
+| v1.3.0 (params, lean_spec, doc) | FAIL (P2 passes) | **PASS** (P1 0.875, P2 99.7 %, P3 0.836 > 0.691) | 0.736 / 0.875 / 0.843 / **0.883** |
+
+v1.3.0 passes the primary endpoints only through `rank_score`. The scorer's own pre-registration designates
+`rank_score` as its ranking output, and the pass/fail `score` fails. Its secondary endpoints on rank_score:
+- S1, FishBase: 0.839 PASS.
+- S2, hard negatives: FishShapes 0.693, FishBase 0.600. FAIL.
+- S3: gap 0.018. PASS.
+- S4: 12/12. PASS.
+- S5: PASS.
+- S6: PASS, but only on a tie. The Park & Choi controls with realistic flight claims score 0.067, exactly as the
+  law-breakers do (see Lean below).
+
+**5. Input asymmetry.** v1.2.0 and v1.3.0 receive the raw `{params, lean_spec, doc}`. v1.0.0 and v1.1.0 receive the
+specimen mapping, which is all they can read. A matched-input run of v1.2.0 on the specimen mapping is in the table.
+Its P1 does not depend on the input (0.688 vs 0.683). The raw input buys P2: Lean claims and organ fractions catch
+the law-breakers and containment items, with P2 at 99.7 % vs 36 %. It also buys S1, but only through v1.3.0's joint
+term on the FishBase traits.
+
+**6. Limits of v1.3.0's joint term, carried over from its author.**
+- It is a single Gaussian on log traits: unimodal, with no allometric curvature.
+- It catches these decoys *because* they break the linear correlation structure. A decoy generator that preserved
+  that structure would pass.
+- Fins and physiology are not in the joint model.
+- It was fitted on dev positives. The held-out families were never in the fit, so the held-out numbers here are
+  clean, but its dev numbers (P1 0.897) are optimistic. Held-out P1 on rank_score is 0.875.
+
+**7. Lean.** Under v1.2.0, the realistic-claim Park & Choi controls were rejected by E3. The cause was a glide claim
+converted into a sustained-power demand; it was fixed after the freeze (contract 0.7.1) and those runs were not
+rescored. On score.mjs 29773c5e, E3 no longer fires. L1 and L2 still fire C9c (thompson1917-ch02-10, a v_min scaling
+exponent) against the single reference specimen L3 at a length ratio of 1.0098, so S6 still ties. An exponent fitted
+over a 1 % length difference is not meaningful. The studio-core agent confirmed it on lawset 1.7.0: the implied
+exponent is −1.43 for L1 and −3.86 for L2, against a target of 0.5 ± 0.1. The same expo() drives C7b, C2a and C8e. It
+proposed that these rows be out of scope when the length ratio is in [0.905, 1.105], and routed this to the registry
+thread. It is an addendum: the frozen runs were not rescored.
+
+**8. Attacks.** In specimen space, the share of hard-rule violators that score ≥ 0.5 fell from 31/933 (v1.0.0) to
+8/933 (v1.3.0). The best attack still scores 1.0 in every version.
+- v1.3.0's best attack is a fish exactly at fill factor 1.10, the edge of rule H1.
+- Unread traits (the C8 replication): 74/74 score plausible under v1.0.0 and 2/74 under v1.2.0 and v1.3.0.
+
+The exclusion audit PASSED on every run, with about 57k to 61.5k nearest-reference checks each and 0 violations. The
+canary was live on every run. Genus-out was NOT RUN: v1.0.0 and v1.1.0 have no genus key, and v1.2.0+ added one after
+these runs were wired.
+
+## v1.0.0 in detail
+
+Top line for v1.0.0 alone: it adds nothing over nearest-neighbour distance; 99.5 % real above the cut vs 12.0 % of negatives below it; weights inert. Verdict per BENCHMARK-PREREGISTRATION.md: **FAIL**. All three primary endpoints fail.
+
+## Results, scorer v1.0.0 (run 2026-11-01T04-37-49Z_w1.0.0)
+
+The run used:
+- score-weights.json v1.0.0;
+- score.mjs sha256 7c8bac18be34…;
+- benchmark prereg sha256 b2586640… (matches PREREG.sha256);
+- manifest ba6684e9….
+
+It scored all 23,355 held-out labelled items under specimen-out, species-out and family-out, plus a stratified 12,044
+of the 34,419 dev items (every type with 60 or fewer items kept whole). Genus-out was NOT RUN. Only 5
+`organ_containment` items failed. They threw on an out-of-bounds partedit edit and were counted as worst case.
+
+### Exclusion audit: PASS
+
+- 61,490 nearest-reference returns were checked against the evaluator's own taxon index, with 0 violations.
+- The canary is live: held-out item fs-00006, scored with no exclusions, returns itself
+  (`fishshapes:150082:Ablabys_taenianotus`) at distance 0, and the audit trips.
+- 94 FishShapes lots named in exclusion lists are absent from the scorer's references, so there was nothing to
+  exclude. The scorer dropped those rows itself for missing mass or other core fields.
+
+### Pre-registered endpoints (held-out, family-out unless stated)
+
+| id | measured | threshold | result |
+|---|---|---|---|
+| P1 | FishShapes real vs FishShapes standard decoys: AUC 0.690 (family CI 0.678 to 0.701), 5,604 vs 4,097 | ≥ 0.75 and lower bound > 0.5 | **FAIL** |
+| P2 | 26.8 % of 354 easy negatives score below the positives' 5th percentile, which is 1.000. Extrapolations 26 %; law-breakers 5/8, only because they score 0.95 to 0.98 against a percentile of 1.000; impossible combo 0/1; containment 0/3 | ≥ 90 % | **FAIL** |
+| P3 | median FishShapes positive 1.000; 75th percentile of standard decoys 1.000 | median > p75 | **FAIL** |
+| S1 | FishBase real vs FishBase decoys: AUC 0.500, exactly chance. Every FishBase item scores 1.0 because the scorer reads none of their traits | ≥ 0.70 | FAIL |
+| S2 | hard negatives vs same-source positives: FishShapes 0.618, FishBase 0.500 | ≥ 0.60 | FAIL (the FishBase half) |
+| S3 | P1 under specimen-out 0.697 vs family-out 0.690: gap 0.007 | ≤ 0.10 | PASS |
+| S4 | 0 of 12 ontogeny stages score above the decoy median, which is 1.000 | ≥ 75 % | FAIL |
+| S5 | the FishShapes 25th percentile is 1.000, so no specimen can score above it | all above | FAIL |
+| S6 | Lean controls 0.948, 0.978 and 1.0 vs the highest law-breaker 1.0. The scorer has no input for flight claims | not below any law-breaker | FAIL |
+
+S4, S5 and S6 fail by saturation: so many decoys score 1.0 that no real item can rank above them.
+
+### Whole held-out set, all real vs all negatives
+
+| split | ROC-AUC (family CI) | PR-AUC | real ≥ 0.5 | negatives < 0.5 |
+|---|---|---|---|---|
+| held-out, family-out | 0.585 (0.578 to 0.593) | 0.507 | 99.5 % | 12.0 % |
+| held-out, species-out | 0.587 | 0.508 | 99.7 % | 11.8 % |
+| held-out, specimen-out | 0.589 | 0.509 | 99.8 % | 11.7 % |
+| dev, family-out | 0.621 | | 99.2 % | 17.3 % |
+
+On held-out, family-out, restricted to items the scorer can read (5,601 real vs 5,623 negatives whose altered traits
+include at least one it reads), the AUC is 0.693.
+
+**By negative type** (held-out family-out; share scoring below 0.5):
+
+| type | share below 0.5 | median score |
+|---|---|---|
+| chimera_extreme_corner | 41 % | 1.0 |
+| decoy_shuffle_shape | 25 % | 1.0 |
+| out_of_range_extrapolation | 23 % | 1.0 |
+| decoy_shuffle_all | 9.5 % | 1.0 |
+| decoy_shuffle_one | 8 % | 1.0 |
+| law_breaker, impossible_combo, organ_containment | 0 % | 1.0 |
+
+FishBase-built negatives are invisible to the scorer. They carry only body depth among the traits it reads, so the
+body block does not run, P is dropped, and the score is L·G·E = 1.
+
+### Baselines (held-out family-out; paired family bootstrap of the AUC difference)
+
+| rule | AUC | scorer minus rule (95 % CI) |
+|---|---|---|
+| nearest-neighbour distance alone | 0.585 | −0.0005 (−0.014 to 0.015) |
+| P alone | 0.553 | +0.030 (0.017 to 0.046) |
+| Lean alone | 0.500 | +0.085 (0.077 to 0.094) |
+| random | 0.499 | +0.086 (0.074 to 0.097) |
+
+### Per taxon
+
+168 held-out families were scored. Two families with at least 3 real items have fewer than 80 % of them scoring
+plausible: Eurypharyngidae (gulper eels, 3/5) and Aspredinidae (banjo catfishes, 20/29). The low scorers are elongate
+or extreme body plans whose nearest remaining relative, once their family is removed, is far away. Examples:
+- fs-05942, a gulper eel, scores 0.15; its nearest is the cutlassfish *Lepturacanthus savala* at d 0.96;
+- fs-01370, a banjo catfish, scores 0.15; its nearest is *Plotosus canius* at d 1.05.
+
+These are benchmark-coverage limits of a nearest-neighbour method, not wrong labels: a body plan with no surviving
+relative looks out of distribution. By order, the weakest separation from negatives is in Scorpaeniformes (0.49),
+Lophiiformes (0.51) and Anguilliformes (0.52).
+
+### Calibration
+
+Read as P(real), the score is badly calibrated: ECE 0.48, Brier 0.47. 20,989 of 23,355 items fall in the top bin
+[0.9, 1], and only 50 % of those are real.
+
+### Stability
+
+- Over 5 seeds of the scorer's species split, on a 1,890-item stratified held-out sample, P1's AUC ranges from 0.691
+  to 0.704. The range of 0.013 is small.
+- Weights ±20 %: AUC unchanged at 0.585 (see the top line). The share of real items at or above the cut ranges
+  99.4 to 99.6 %.
+- Recomputing the score with the frozen weights reproduces the scorer to within 1e-4.
+
+### Attacks
+
+- **Specimen space.** Of 1,500 random specimens, 933 break a hard rule, and 31 of those score ≥ 0.5. By rule:
+  - H3, peduncle larger than the body maximum: 24 of 532 score plausible;
+  - H1, fill factor above 1.1: 9 of 498;
+  - H2, fill factor below 0.05: 0 of 135;
+  - H4, a 1.5 SL pectoral fin on a fish over 5 kg: 0 of 6.
+
+  **Best attack: score 1.0.** It is a 0.37 m, 53 g fish whose peduncle is 1.91× deeper and 1.54× wider than its own
+  maximum body depth and width. Its nearest real relative is *Synaphobranchus affinis* at d 0.35. The scorer's own
+  `range:log_ped_depth` and `range:log_ped_width` sanity checks fail on it but do not enter the score.
+- **Unread traits.** 74 of 74 clearly implausible documents score plausible, at 0.92. This **confirms** the scorer
+  agent's own C8 finding. An example: the flying fish with its dorsal rays cut to 0.28× and a body density of
+  578 kg/m³ scores 0.92.
+- The evaluator's hard rules hold for real data with a few exceptions, which should be noted. 15 of 16,377 FishShapes
+  rows have a fill factor above 1.1 (up to 4.3), and 2 have a peduncle deeper than 1.05× the body. These are
+  recording errors in the source, and the benchmark builder screened them out.
+
+### Exploratory
+
+- **Mutants vs their paired wild-type baseline:** the differences run from 0 to −0.035 (prdm1a tp39 −0.035, prdm1a m805
+  −0.032, the rest 0). The scorer does not penalise viable real phenotypes, though it also barely reads them.
+- **Own models** (unlabelled):
+  - TFF 0.349, at the 0.2nd percentile of held-out positives;
+  - the ff-zf chimera 0.82, limited by flight-muscle fit;
+  - the other five 0.92.
+
+### Defects reported to the hub (not patched)
+
+1. **Absence = pass.** When the body block can't run, P is dropped rather than scored low. Every FishBase item, and
+   every FishBase-built extrapolation (body depth at 2× the maximum), scores 1.0.
+2. **Containment documents throw** (partedit bounds) instead of scoring as implausible.
+3. **No genus key**, so genus-out was NOT RUN.
+4. **No `lean_spec` input**, so flight claims never reach Lean and law-breakers score 0.95 to 1.0.
+5. **Failed range and definitional checks don't enter the score.**
+6. After v1.1.0, v1.1.1 and v1.2.0 were frozen, the shared `threeResults()` in score.mjs (sha256 a11e1311…) crashed on
+   every specimen under versions 1.1.0 and 1.2.0 (`r.state_envelope.outside` undefined). Their blind runs waited for
+   the fix.
 <!-- RESULTS:END -->
 
 ## Protocol, as run
@@ -75,3 +306,34 @@ The public page for these results is `dashboard/public/scorer/index.html`. It re
 
 | run | weights | score.mjs sha256 | benchmark prereg / manifest | note |
 |---|---|---|---|---|
+| 2026-11-01T04-37-49Z_w1.0.0 | v1.0.0 (score-weights.json 761e59108b8f) | 7c8bac18be34 | b2586640 / ba6684e9 | held-out full x 3 splits, dev 12,044 stratified; results/2026-11-01T04-37-49-397Z_w1.0.0.json; rows C:/Temp/delphi-eval/ |
+| 2026-11-01T04-58-15Z_w1.1.0 | v1.1.0 (score-weights.v1.1.0.json 8a14a2bac668) | 87bb335e262b | b2586640 / ba6684e9 | specimen input; reanalysed (S6 controls, P1 NN baseline), no rescoring |
+| 2026-11-01T04-58-08Z_w1.2.0 | v1.2.0 (score-weights.v1.2.0.json 5a2bb4247a44) | 87bb335e262b | b2586640 / ba6684e9 | raw {params, lean_spec, doc}; score and rank_score; reanalysed |
+| 2026-11-01T05-12-45Z_w1.2.0-specimen | v1.2.0 (5a2bb4247a44) | 29773c5e63dc | b2586640 / ba6684e9 | matched-input comparison (specimen mapping); no stability/attacks |
+| 2026-11-01T05-12-45Z_w1.3.0 | v1.3.0 (score-weights.v1.3.0.json daed6f7f99eb) | 29773c5e63dc | b2586640 / ba6684e9 | raw input; joint-only endpoints added in reanalysis |
+
+The v1.0.0 run was also reanalysed after the S6 and NN-baseline fixes; no item was rescored in any reanalysis.
+
+### Deviations
+
+- score.mjs changed between runs. 7c8bac18 → a11e1311 crashed every v1.1+ item (the threeResults bug; no run used
+  it). → 87bb335e fixed the crash (v1.1.0 and v1.2.0 runs). → 29773c5e added the v1.3.0 dispatch and more null guards
+  (v1.3.0 and matched-input runs). v1.0.0 behaviour was unchanged per the scorer agent, but it was not re-verified by
+  rescoring.
+- The analysis was fixed after the first runs and re-run from the stored rows (`EVAL_REANALYSE`):
+  - S6 controls are scored from build/lean-controls.json specs, with control-zf mapped to the wild-type baseline;
+  - a P1 nearest-neighbour baseline was added;
+  - joint-only endpoints were added for v1.3.0.
+- Dev was a stratified 12,044-item sample of 34,419, so as not to load the shared box. Held-out was scored in full.
+- Stability seeds and attacks were not run for the matched-input v1.2.0 run.
+
+### Reproduce
+
+```
+EVAL_VERSION=1.3.0 EVAL_WORKERS=13 EVAL_MAX_DEV=12000 EVAL_TAG=w1.3.0 node sim-engine/validate/evaluation/evaluate.mjs
+EVAL_VERSION=1.2.0 EVAL_DESIGN=specimen ...          # matched-input run
+EVAL_VERSION=<v> EVAL_REANALYSE=<results.json> ...   # re-run the analysis from stored rows
+node sim-engine/validate/evaluation/publish.mjs <results.json>   # page data
+```
+
+Per-item rows (gzipped) are in C:/Temp/delphi-eval/, because D: is nearly full.

@@ -27,6 +27,13 @@ export function checkEmpirical(s, derived) {
   // E2: the fitted mass-exponent band.
   { const b = num(s.mass_exponent) ? s.mass_exponent : (derived && num(derived.impliedMassExponent) ? derived.impliedMassExponent : null);
     const src = num(s.mass_exponent) ? 'committed mass_exponent' : 'the exponent implied against the reference specimen';
+    // An exponent IMPLIED against the single reference specimen carries no information at a near-unit length ratio
+    // (see SINGULARITY): the denominator ln(L/L_ref) approaches zero. A committed mass_exponent is unaffected.
+    const lrE2 = num(s.SL_m) && REFERENCE.SL_m ? s.SL_m / REFERENCE.SL_m : null;
+    const nearRefE2 = !num(s.mass_exponent) && lrE2 !== null && lrE2 > SINGULARITY.ratio_lo && lrE2 < SINGULARITY.ratio_hi;
+    if (nearRefE2) rows.push(empiricalRow('E2', 'out-of-scope', { length_ratio_vs_reference: +lrE2.toFixed(4), impliedExponent: b, excluded_between: [SINGULARITY.ratio_lo, SINGULARITY.ratio_hi] }, [],
+      'the mass exponent was implied against the reference specimen at a length ratio of ' + (+lrE2.toFixed(4)) + ', inside [' + SINGULARITY.ratio_lo + ', ' + SINGULARITY.ratio_hi + '] where ln(L/L_ref) is too small to carry an exponent (about ' + (SINGULARITY.sigma_rel * 100) + '% measurement uncertainty against a ' + SINGULARITY.band + ' band): commit mass_exponent from a fit instead'));
+    else
     if (b === null) rows.push(empiricalRow('E2', 'cannot-evaluate', {}, ['mass_exponent (or a length different from the reference specimen)'], 'the band is [2.90, 3.02] over the six fitted field rows of five species'));
     else rows.push(empiricalRow('E2', geTol(b, 2.9) && leTol(b, 3.02) ? 'holds' : 'violated', { exponent: b, from: src, band: [2.9, 3.02] }, [],
       'within the band every fitted flying-fish study spans; outside it, no fit in the project\'s table supports the design',
@@ -36,8 +43,10 @@ export function checkEmpirical(s, derived) {
   // 0.06 kg, from measured zebrafish MO2max, Palstra 2010). v1.0.0 (law sets 1.0.0-1.5.0) used 0.0458 W; the
   // law-set judgement re-applies that ceiling when an older law set is chosen (ceiling_v1_W below).
   { const ceiling = 0.0833, ceilingV1 = 0.0458;
-    if (Preq === null) rows.push(empiricalRow('E3', 'cannot-evaluate', {}, ['airspeed_m_s and LD_max (or powerRequired_W)'], 'the ceiling is ' + ceiling + ' W at 0.06 kg; a different mass needs the O2 delivery per kg, which this row does not scale'));
-    else rows.push(empiricalRow('E3', leTol(Preq, ceiling) ? 'holds' : 'violated', { powerRequired_W: Preq, ceiling_W: ceiling, shortfall_factor: Preq > 0 ? Preq / ceiling : null, ceiling_v1_W: ceilingV1 }, [],
+    const fm = (derived && derived.flightMode) || { unpowered: false, reason: '' };
+    if (fm.unpowered) rows.push(empiricalRow('E3', 'out-of-scope', { powerRequired_W: Preq, flight_mode: 'glide' }, [], 'the aerobic ceiling bounds SUSTAINED AEROBIC power demand (powered level or climbing flight, sustained swimming). This design claims an unpowered glide (' + fm.reason + '), paid for out of potential and kinetic energy rather than metabolism, so this law does not judge it. See E3 scope.excludes in lean/registry.'));
+    else if (Preq === null) rows.push(empiricalRow('E3', 'cannot-evaluate', {}, ['airspeed_m_s and LD_max (or powerRequired_W)'], 'the ceiling is ' + ceiling + ' W at 0.06 kg; a different mass needs the O2 delivery per kg, which this row does not scale'));
+    else rows.push(empiricalRow('E3', leTol(Preq, ceiling) ? 'holds' : 'violated', { powerRequired_W: Preq, ceiling_W: ceiling, shortfall_factor: Preq > 0 ? Preq / ceiling : null, ceiling_v1_W: ceilingV1, assumes_powered_demand: !fm.powered || undefined }, [],
       'stronger than the oxygen row C14, which rules only on the physiology a design commits: this one rules on the widened ranges its sources support (E3 v2; v1 claimed every teleost and was withdrawn after measured zebrafish exceeded it)',
       { needed: { power_W: Preq }, available: { power_W: ceiling } })); }
 

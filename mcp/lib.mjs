@@ -75,20 +75,55 @@ export function localFileCount() {
   return cache.files;
 }
 
+// A SPARQL prologue (BASE / PREFIX declarations) can only appear before the query form, so a query
+// "declares its own prefixes" exactly when it starts with one. Testing `query.includes("PREFIX")`
+// instead meant a query with the word PREFIX in a string literal got no default prefixes and failed
+// to parse (issue #56 F4, case sparql-PREFIX-in-literal).
+const pad = s => s.replace(/^(?:\s|#[^\n]*)*/, "");
+const declaresPrefix = q => /^(?:PREFIX|BASE)\b/i.test(pad(q));
+
+// The query form, read after skipping the prologue. null = not one of the four read-only forms
+// (so an update, or unparseable); callers refuse rather than hand the store something it would
+// answer with a JavaScript TypeError (issue #56 F3, cases sparql-ask / sparql-construct).
+const DECL = /^(?:PREFIX\s+[A-Za-z0-9_.\-]*:\s*<[^>]*>|BASE\s*<[^>]*>)/i;
+function queryForm(q) {
+  let s = pad(q);
+  for (let i = 0; i < 200 && /^(?:PREFIX|BASE)\b/i.test(s); i++) {
+    const m = s.match(DECL);
+    if (!m) return null;
+    s = pad(s.slice(m[0].length));
+  }
+  return s.match(/^(SELECT|ASK|CONSTRUCT|DESCRIBE)\b/i)?.[1].toUpperCase() ?? null;
+}
+
+const ntriples = text => text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
 export async function sparql(query, source = "local") {
-  const q = query.includes("PREFIX") ? query : PREFIXES + query;
+  const q = declaresPrefix(query) ? query : PREFIXES + query;
+  const form = queryForm(q);
+  if (!form) throw new Error("delphi_sparql runs read-only queries only: use SELECT, ASK, CONSTRUCT or DESCRIBE");
+  const graphForm = form === "CONSTRUCT" || form === "DESCRIBE";
   if (source === "local") {
-    return simplify(JSON.parse(localStore().query(q, { results_format: "application/sparql-results+json" })));
+    const fmt = graphForm ? "application/n-triples" : "application/sparql-results+json";
+    const out = localStore().query(q, { results_format: fmt });
+    if (graphForm) return { form, triples: ntriples(out) };
+    const json = JSON.parse(out);
+    return form === "ASK" ? { form, boolean: !!json.boolean } : simplify(json);
   }
   if (source !== "network") throw new Error(`Unknown source "${source}" (use "local" or "network")`);
   const res = await fetch(NETWORK_ENDPOINT, {
     method: "POST",
-    headers: { Accept: "application/sparql-results+json", "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      Accept: graphForm ? "application/n-triples" : "application/sparql-results+json",
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
     body: new URLSearchParams({ query: q }),
     signal: AbortSignal.timeout(60_000),
   });
   if (!res.ok) throw new Error(`SPARQL endpoint ${NETWORK_ENDPOINT} returned ${res.status}: ${(await res.text()).slice(0, 500)}`);
-  return simplify(await res.json());
+  if (graphForm) return { form, triples: ntriples(await res.text()) };
+  const json = await res.json();
+  return form === "ASK" ? { form, boolean: !!json.boolean } : simplify(json);
 }
 
 const lit = s => JSON.stringify(String(s));
@@ -99,6 +134,10 @@ const compact = iri => {
   return hit ? `${hit[1]}:${iri.slice(hit[0].length)}` : iri;
 };
 const claimIri = id => (id.startsWith("http") ? id : CLAIM_BASE + id);
+// Characters a SPARQL IRIREF cannot contain. An id carrying one is not a claim id, so the answer is
+// "not found"; splicing it into the query text leaked parser internals to the caller instead
+// (issue #56 F2, cases claim-space-in-id / claim-iri-injection).
+const IRI_UNSAFE = /[\u0000- <>"{}|^`\\]/;
 
 export async function overview(source = "local") {
   const domains = await sparql(`
@@ -140,7 +179,10 @@ SELECT ?claim (SAMPLE(?label) AS ?title) (SAMPLE(?desc) AS ?statement)
 }
 
 export async function getClaim({ id, source = "local" }) {
-  const iri = claimIri(id);
+  const iri = claimIri(String(id));
+  if (IRI_UNSAFE.test(iri)) {
+    return { claim: iri, found: false, source, note: "not a claim id: it contains a character that cannot appear in an IRI" };
+  }
   const triples = await sparql(`
 SELECT DISTINCT ?nanopub ?predicate ?value WHERE {
   GRAPH ?h { ?nanopub np:hasAssertion ?a . }

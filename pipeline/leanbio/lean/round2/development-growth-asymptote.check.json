@@ -1,0 +1,26 @@
+{
+ "constraint": "GROWTH1",
+ "quantity": "standard_length_m",
+ "op": "lt",
+ "bound": "growth_Linf_m",
+ "inputs": ["standard_length_m"],
+ "lookups": [
+  {
+   "name": "growth_Linf_m",
+   "file": "development/growth.json",
+   "rows": "fishbase_rows",
+   "match": "taxon",
+   "row_key": "species",
+   "value": "Linf.value",
+   "where": { "length_type": "FL" },
+   "scale": 0.00927,
+   "select": "max",
+   "fallback_key": null
+  }
+ ],
+ "relation": "SL < Linf  (a von Bertalanffy grower never reaches its own asymptotic length)",
+ "note": "Checks a design's standard length against the asymptotic length of the growth curve fitted to its OWN species, looked up in development/growth.json. 'violated' means the design's length is impossible under that fitted curve; it does NOT mean the animal cannot be that long, because only 7 of 75 Exocoetidae species have a growth row, only 2 of those have fork-length rows, and all 12 rows are a FishBase compilation (kind 'secondary') fitted in one locality and year. select is 'max': where a species has several published fits the LOOSEST asymptote is used, so that a red verdict never depends on which of three fits a reader believes - the conservative direction for a law whose job is to rule designs out. fallback_key is null on purpose: a species with no fork-length row gets cannot-evaluate rather than being judged against another species' asymptote. The scale 0.00927 converts cm FL to m SL and is the weakest number in this row.",
+ "unit": "m",
+ "band": "hypothesis",
+ "tolerance": "relative"
+}

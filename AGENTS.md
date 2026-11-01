@@ -21,6 +21,47 @@ Default `source` is `local` (repo files, including unpublished drafts). Pass `so
 for what is actually published. Details, ranking semantics and known gaps:
 [mcp/README.md](mcp/README.md).
 
+## Lean laws: one source, every surface (enforced)
+
+Get Lean laws from the API, never from a list you copied. Agents use the `lean_*` MCP tools:
+`lean_laws_list`, `lean_law_get`, `lean_lawset_get`, `lean_check`, `lean_verify`, and `lean_propose`
+(local stdio only). They are on the hosted `delphisci` server, on `sim-engine/server.mjs`, and on the
+sim-engine HTTP bridge (`POST /tool/lean_*`). Without MCP, use `node mcp/cli.mjs laws|law|lawset|check|verify`
+or `node sim-engine/lean-cli.mjs ...`. Pages use `dashboard/public/blueprint3d/lean-client.js`, which reads the
+live bridge if one is configured and otherwise the static mirror `/api/lean/`. Never paste law ids, statuses or
+statements into a page.
+
+All of these read laws through one loader, `lib/lean-source.mjs`. Its source is the versioned registry
+`lean/registry/` (one file per law, lawsets under `lean/registry/lawsets/`), with `lean/laws.json` +
+`lean/constraints.json` as the fallback until the registry exists.
+
+**Any new Lean law, empirical constraint or eliminating lemma (`*_rules_out`) must be added to the registry
+and exposed through the MCP tools, the CLI and the static API in the same change.** In practice:
+
+1. Register the law: `node lean/registry/propose.mjs <file.lean> --meta meta.json --write`. It never
+   auto-accepts; acceptance is a human approval recorded in the law file.
+2. Map every new constraint to that law (`constraints` in the law file).
+3. Regenerate: `node dashboard/build-lean-api.mjs`, and `node sim-engine/server.mjs --dump-contract > sim-engine/contract.json`
+   if tools changed.
+4. Run `node lean/registry/check-exposed.mjs`. It must pass.
+
+`check-exposed.mjs` fails if any law in the Lean modules, `laws.json`, `constraints.json`, `empirical.json` or
+the registry is missing from the registry, from `lean_laws_list`, from `/api/lean/`, from either CLI or from the
+hosted MCP server's tools. It also fails if the mirror or `contract.json` is stale. It runs as a pre-commit hook
+(enable once per clone with `git config core.hooksPath .githooks`) and in CI
+(`.github/workflows/lean-exposed.yml`). A Lean module that holds no law goes into `INFRASTRUCTURE` in
+`check-exposed.mjs` with a reason; do not delete laws to make the check pass (laws are retired, never removed).
+To mark a new theorem as a law before its registry entry exists, put `-- @law <law_id>` next to it. The check then
+holds you to registering that id.
+
+## Everything is modifiable, as long as it is versioned (Amit, Oct 31)
+
+No folder in this repo is off limits, including `mcp/` (the hosted server). Do not build a parallel copy of a component
+to avoid touching it: change it in place and version the change (a commit, plus a version bump and a CHANGELOG entry
+where the component has a version: `mcp/` via package.json, `sim-engine/` via `contract_version`, Lean laws via
+the registry's per-law version and lawsets). Folder ownership between running agents still applies for coordination;
+it is about not clobbering live work, not about permission.
+
 ## Projects
 
 - `darwin-origin/`: 247 claims from *On the Origin of Species*, with dataset-resolvability assessments.
@@ -547,3 +588,11 @@ Rules:
    service. A research agent sent the project lead's email to NCBI as an etiquette parameter; that is now
    prohibited.
 5. **A choice between alternatives is an idea too.** Record what was chosen, what was rejected, and why.
+
+## Scratchpad filenames collide between sessions (added Nov 1)
+
+The session scratchpad is SHARED across DELPHI agent sessions. Two threads tonight independently wrote
+`serve.mjs` and `shots/`, and each silently destroyed the other's work — one lost 52 verification
+screenshots it had already reviewed, and a report pointing at them would have been worthless. Give every
+scratchpad file and directory a name unique to your thread (prefix it, or use a private directory such
+as `C:/Temp/delphi-<thread>-<purpose>/`). If you cite a file in a report, check it still exists first.

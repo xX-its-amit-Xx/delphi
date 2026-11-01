@@ -1,0 +1,58 @@
+{
+ "cell": {
+  "level": "leanbio",
+  "arm": "single",
+  "task": "l2-t1",
+  "model": "claude-sonnet-5-5",
+  "N": 3,
+  "budget_total_usd": 0.45,
+  "cap_per_call_usd": 0.45,
+  "started": "2026-11-01T06:59:32.155Z",
+  "wall_ms": 17333,
+  "calls": 1,
+  "cost_usd": 0.1997,
+  "tokens": {
+   "input": 2,
+   "output": 2012,
+   "cache_read": 0,
+   "cache_creation": 44895
+  },
+  "tokens_total": 46909,
+  "infra_failures": 0,
+  "cap_stops": 0,
+  "cli_errors": [],
+  "produced_artifact": true,
+  "merge": null,
+  "call_meta": [
+   {
+    "label": "single",
+    "model": "claude-sonnet-5-5",
+    "exit_code": 0,
+    "via_stdin": false,
+    "prompt_chars": 2307,
+    "duration_ms": 17332,
+    "cost_usd": 0.199704,
+    "num_turns": 2,
+    "stop_reason": "tool_use",
+    "terminal_reason": "completed",
+    "is_error": false,
+    "error_text": null,
+    "usage": {
+     "input": 2,
+     "output": 2012,
+     "cache_read": 0,
+     "cache_creation": 44895
+    },
+    "tokens_total": 46909,
+    "infra_failure": false,
+    "stderr": ""
+   }
+  ]
+ },
+ "final": {
+  "lean_file": "import Mathlib\n\ntheorem l2_t1 (m₁ m₂ S₁ S₂ g ρ C : ℝ)\n    (hg : 0 < g) (hρ : 0 < ρ) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (hC : 0 < C)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (h : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * C)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * C)) := by\n  have key : ∀ m S : ℝ, 0 < S → 2 * m * g / (ρ * S * C) = 2 * g / (ρ * C) * (m / S) := by\n    intro m S hS\n    field_simp <;> ring\n  apply Real.sqrt_lt_sqrt\n  · positivity\n  · rw [key m₁ S₁ hS₁, key m₂ S₂ hS₂]\n    exact mul_lt_mul_of_pos_left h (by positivity)\n\ntheorem l2_t1_witness :\n    ∃ (m₁ m₂ S₁ S₂ g ρ C : ℝ), 0 < g ∧ 0 < ρ ∧ 0 < S₁ ∧ 0 < S₂ ∧ 0 < C ∧\n      0 < m₁ ∧ 0 < m₂ ∧ m₁ / S₁ < m₂ / S₂ := by\n  refine ⟨1, 2, 1, 1, 10, 1, 1, ?_⟩\n  norm_num\n",
+  "statement_only": "theorem l2_t1 (m₁ m₂ S₁ S₂ g ρ C : ℝ)\n    (hg : 0 < g) (hρ : 0 < ρ) (hS₁ : 0 < S₁) (hS₂ : 0 < S₂) (hC : 0 < C)\n    (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (h : m₁ / S₁ < m₂ / S₂) :\n    Real.sqrt (2 * m₁ * g / (ρ * S₁ * C)) < Real.sqrt (2 * m₂ * g / (ρ * S₂ * C))",
+  "notes": "Asserts that for two gliders with the same g, air density rho and CLmax (all positive), and positive areas and masses, strictly greater wing loading m/S gives strictly greater v_min = sqrt(2 m g/(rho S CLmax)). The proof factors v_min^2 as (2g/(rho C))*(m/S) and uses strict sqrt monotonicity. The positivity hypotheses are used in the proof (for example, 0 < rho*C makes the factor positive). The witness shows the hypotheses are satisfiable with concrete numbers. It does not derive v_min from force balance, and it does not model drag, the stall's dependence on Reynolds number, or the non-strict case. I did not compile this file, so the proof tactics (the field_simp <;> ring step in particular) are untested."
+ },
+ "candidates": null
+}

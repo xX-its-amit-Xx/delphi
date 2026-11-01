@@ -1,0 +1,34 @@
+{
+ "design": {
+  "taxon": "Danio rerio",
+  "life_stage": "adult",
+  "standard_length_m": 0.035,
+  "SL_m": 0.035,
+  "mass_kg": 0.0008,
+  "body_temperature_C": 26,
+  "ct_min_C": 6.2,
+  "ct_max_C": 41.4,
+  "q10": 2.3,
+  "reference_temperature_C": 28,
+  "depth_m": 0.3,
+  "altitude_m": 0,
+  "has_swimbladder": true,
+  "bladder_volume_surface_ml": 0.024,
+  "bladder_volume_at_depth_ml": 0.0233,
+  "critical_swimming_speed_m_s": 0.35,
+  "current_speed_m_s": 0.1,
+  "powered": false,
+  "flight_mode": "none"
+ },
+ "assumptions": [
+  "has_swimbladder=true: zebrafish are physoclistous fish with a two-chamber swimbladder.",
+  "bladder_volume_surface_ml=0.024: 3% of ~0.8 ml body volume (mass 0.8 g at ~1 g/ml), within the typical 2-5% range.",
+  "bladder_volume_at_depth_ml=0.0233: Boyle's law, 0.024/1.029 = 0.02332, rounded to 0.0233 (pressure ratio (101325+9810*0.3)/101325 = 1.029).",
+  "critical_swimming_speed_m_s=0.35: about 10 SL/s for 0.035 m, a plausible Ucrit for adult zebrafish. This is outside my subtask, so the orchestrator should confirm it with the swimming agent.",
+  "current_speed_m_s=0.1: about 3 SL/s, well below Ucrit so the animal can hold station. This is also outside my subtask, so the orchestrator should confirm it.",
+  "powered=false: the brief says purely aquatic and non-flying. Per the brief this takes the aerobic-demand laws (C14, E3) out of scope. The orchestrator may prefer powered=true if the swimming agent supplies energetics.",
+  "flight_mode='none': explicit no-flight declaration. The brief gives no exact string, so I assumed lean_check treats a non-'glide' value as no flight. If it only accepts 'glide', use 'glide' instead.",
+  "Thermal margins: body 26 C is 19.8 C above ct_min 6.2 and 15.4 C below ct_max 41.4, so it lies inside the tolerance range. The Q10 reference of 28 C is also inside the range."
+ ],
+ "notes": "I did not run lean_check, so none of these values are verified against it. No law I know of blocks the brief. The unsettled item is flight_mode: 'none' may be unrecognised, and 'glide' might be the safer choice if lean_check only accepts known values. The orchestrator should also decide between powered=false and powered=true. Setting powered=false removes C14 and E3 from scope, so fewer laws are evaluated. Setting it to true would evaluate them, but only if aerobic inputs such as aerobicCeiling_W and sustained_power_W are supplied, and those are outside my subtask. The Boyle's-law pair is consistent: 0.024/0.0233 = 1.030, against the expected 1.029."
+}

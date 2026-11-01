@@ -137,6 +137,27 @@ the queue instead), testability (ease of testing is not evidence of truth; a que
 searches found but no draft cites. **Calibration**: the parameters are hand-set, not fitted; INDRA fits them to curated
 corpora and we have none yet. Belief orders the queue. It is not a probability.
 
+**And the converse, which is house policy** (decided 2026-11-01, after discovery round 2 hit it): *a refuted empirical
+claim does not refute a model theorem derived from it.* The two halves are one rule read both ways — belief is about
+whether organisms do something, and a `theorem` or `theorem-from-hypothesis` law never says they do; it says a
+conclusion follows from its named hypotheses. So **the belief gate (`CONTRIBUTING-LEANBIO.md` criterion 3) applies
+only to a law that ASSERTS an empirical regularity** (`class` `empirical-observation` or `named-hypothesis`). A model
+theorem is judged on soundness (`propose.mjs`), scope, and whether it binds anything (its `browser_check` block;
+`lean/registry/check-exposed.mjs` reports the laws that evaluate nothing).
+
+This is a scoping, not an exemption, and none of it is silent: `check.mjs` prints a **criteria note** for every ungated
+belief score, naming the score, the class and the contradicting evidence worth reading, and `test.mjs` tests the gate
+**both ways** — that it fires for an empirical law and does not for a model theorem — so it cannot quietly die. The two
+laws that forced the ruling are `kimura-heterozygosity` (belief 0.082) and `fisher-sex-ratio` (0.14): both have the
+corpus's strongest model support *and* a pre-registered test that refutes the **claim**, and the
+`kimura-heterozygosity` test says so itself — *"a slope far below 1 therefore means that Ne is decoupled from N ...
+not that the within-model theorem is wrong."* See `DISCOVERY-ROUND-2.md` §4a.
+
+**A law may also be distilled from the repo's own measured data** rather than from a claim or a draft, with origin
+`data:<path>` (criterion 4). Its lineage check is that the source file resolves in the tree. Rejecting such a law
+while accepting one derived from an aphorism is backwards: the law that forced this, `development-growth-asymptote`
+(from `development/growth.json`), is the only law of round 2 that constrains a design property the engine supplies.
+
 ## 7. Queue
 
 A record is queued when belief >= 0.5, its relation is formalizable (`theorem` or `named-hypothesis`), it is linked to

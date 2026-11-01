@@ -2,6 +2,82 @@
 
 Versions follow `version` in the root `package.json` (the server's package) and `VERSION` in `mcp/server.mjs`.
 
+## 0.8.1 (2026-11-01)
+
+Five of the six defects in the 100-case MCP test report (issue #56, report in
+`dashboard/public/t/validation/MCP-TEST-REPORT.md`) fixed. F1 — the Windows backslash in the local base IRI —
+was already fixed in this tree, so this release closes F2 to F6. The harness rows that cover each one are named
+below; verified case by case through `mcp/cli.mjs` and through a local HTTP server on port 8799.
+
+- **`delphi_get_claim` no longer splices an unvalidated id into the query text** (F2, `claim-space-in-id`,
+  `claim-iri-injection`). An id carrying a character a SPARQL IRIREF cannot hold now answers
+  `found: false` with a `note` saying why, which is what an unknown id already answered. Before, the caller got
+  the store's parser error (`expected IRI parsing failed`).
+- **`delphi_sparql` answers `ASK`, `CONSTRUCT` and `DESCRIBE`** (F3, `sparql-ask`, `sparql-construct`). `ASK`
+  returned a JavaScript `TypeError` from `simplify()`, which assumed SELECT bindings; `CONSTRUCT` returned
+  `Not supported RDF format media type`. `ASK` now returns `{ form, boolean }` and the graph forms
+  `{ form, triples }` as N-Triples, local and network alike. Anything that is not one of the four read-only
+  forms is refused by name, so an update statement no longer reaches the store.
+- **The default prefixes are added unless the query declares its own** (F4, `sparql-PREFIX-in-literal`). The
+  test was `query.includes("PREFIX")`, so a query with the word `PREFIX` inside a string literal got no
+  prefixes and failed to parse. A prologue can only precede the query form, so that is where it is now read.
+- **`delphi_graph` no longer accepts `source` silently** (F5, `graph-source-network`). It reads one local
+  `docs/claims.json` snapshot, drafts included; `source: "network"` was dropped by the input schema and the
+  caller was served unpublished data without being told. The schema now admits only `"local"`, `browseClaims`
+  refuses anything else with the alternatives named, and every answer carries `source: "local-snapshot"`.
+- **An oversized request body returns 413 with a body** (F6). `readJson` destroyed the request as soon as the
+  limit was passed, so the 413 never reached the client: locally a reset, on Fly a 502 with an empty body. It
+  now stops buffering, keeps draining, and the socket closes once the reply is out.
+
+## 0.8.0 (2026-11-01)
+
+The validation framework and the LeanBio capability map reach the hosted server. 20 tools -> **38 hosted**
+(39 over local stdio; `lean_propose` is the difference). A collaborator with no clone can now run a generated
+design through the validation framework.
+
+- Added **`validate_generation`** — the entry point: generated organism + base organism + the desired
+  phenotype as text -> five named results, five gates, never summed, plus per-scale coverage and a verdict
+  sentence. The recipe, with real output from an unpacked tarball and the honest limits, is the first section
+  of `mcp/README.md`.
+- Added the components, each callable alone while iterating: `functional_resolution`, `physics_check`,
+  `validate_design`, `closest_relative_phenotype`, `closest_relative_genotype`, `sanity_check_design`,
+  `lean_by_component`, `validate_swarm_tasks`, `parse_design_text`, `edit_plan_methods`,
+  `lean_open_questions`, `lean_open_question`, `lean_open_question_guard`.
+- Hosted policy, enforced in code and not only documented: `network: false` and `blast: false` are forced on
+  every one of them for anonymous callers, `physics_check`'s ensemble `draws` is capped at 500, and nothing
+  that runs a Lean build or writes a file is registered at all. The per-tool decision and its reasoning —
+  including why `edit_plan` is **not** hosted while `edit_plan_methods` is — is in `mcp/README.md`.
+- `mcp/server.mjs` now exports `TOOLS` and only starts a transport when it is the program, so `mcp/cli.mjs`
+  can drive the same registrations. `mcp/cli.mjs` gains `tools` and `tool <name> [--json '<args>']`, which go
+  through those registrations, so the CLI cannot drift from the server's hosted policy.
+- Packaging: the files all 15 validation tools read at run time were traced, added to `package.json` `files`,
+  `.dockerignore` and the `deploy-mcp.yml` path filters, and then **proved** by running the hosted server from
+  an unpacked `npm pack` tarball and asserting on the content of every answer. The byte sizes from the package
+  match the working tree exactly. 36.1 MB packed, 78.0 MB unpacked, 6 977 files — still under the ~50 MB line,
+  so everything ships in the npm package as well as the image and there is no npx fallback.
+  - Two traps the tracing sets. (a) The first pass missed `omics/genes.json`, and the result was a
+    **silent** degradation: `validate/functional/index.mjs` never throws, so the missing file came back as
+    `{ran: false}` -> a `cannot-assess` gate -> a 200, and `functional_resolution` returned 2.4 KB from the
+    package against 130 KB from the tree. "It answered" is not the test; the content assertions are.
+    (b) An `existsSync` miss looks identical to a read: `getDoc` probes the gitignored, empty
+    `sim-engine/sessions/organisms/` before falling through to the repository bundle, so the trace named
+    files that are never read and do not exist. Design ids such as `winged-zebrafish` and `tff` resolve
+    from `anatomy-model/parametric/resolved/*.json`, which was already shipped. Check that a traced path
+    exists before adding it.
+- Added the four capability-map tools, `leanbio_personas`, `leanbio_use_cases`,
+  `leanbio_grand_questions` and `leanbio_tool_gap` (`pipeline/leanbio/capability-map/tools.mjs`,
+  `mcp/CAPABILITY-PATCH.md`). Read-only, no outbound call, no writes and no Lean build, so they need no
+  hosted-mode override and none is applied. `pipeline/leanbio/capability-map/*.{mjs,json}` added to
+  `package.json` `files` and `.dockerignore`; the `pipeline/leanbio/**` deploy filter already covered them.
+  - Carry the caveat into any UI: `leanbio_grand_questions` exists **for** the split between
+    `formalisable_core` (about premises) and `empirical_remainder` (about the world). A client that renders
+    only the core half turns a map of what is formalisable into a claim about what is known. `the_line` at
+    the top of every response and the envelope's `scope` both say so; keep them visible.
+  - These were registered late: `CAPABILITY-REGISTER.md`, `mcp/CAPABILITY-PATCH.md` and
+    `capability-map/tools.mjs` all landed while this work was in progress, after an earlier pass had
+    recorded them as impossible to expose (only the four *names* existed then, in
+    `capability-map/lib.mjs`, with no handler module). Re-checked rather than trusted.
+
 ## 0.6.0 (2026-11-01)
 
 - Added the multi-omics tools `omics_gene`, `omics_part`, `omics_search` (`sim-engine/tools/omics-tools.mjs`).

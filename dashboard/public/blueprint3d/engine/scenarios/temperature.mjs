@@ -28,7 +28,7 @@ const Q10 = { SMR: 1.56, MMR: 1.34, range: [23, 35.5],
   cite: 'Correction: Thermal preference does not align with optimal temperature for aerobic scope in zebrafish (Danio rerio). J Exp Biol (2023) 226:jeb245488 (corrected Q10: SMR 1.56, MMR 1.34; correcting Ripley et al. 2022, J Exp Biol 225:jeb243774)',
   doi: 'https://doi.org/10.1242/jeb.245488' };
 
-import { fickPower, FICK } from './glide.mjs';
+import { fickPower, FICK, measuredAerobicCeiling } from './glide.mjs';
 const val = (s, k) => (s && s[k] && s[k].value != null ? s[k].value : null);
 const LIN = (value, unit, kind, source, reason) => (value == null || (typeof value === 'number' && !Number.isFinite(value)) ? { value: null, unit, kind: 'assumed', source: 'none', reason: reason || 'not computable from the inputs given' } : { value, unit, kind, source });
 
@@ -110,12 +110,15 @@ export default {
     const amb = (state && state.ambient) || {};
     const pO2w = amb.pO2_kPa && amb.pO2_kPa.value != null ? amb.pO2_kPa.value : null;
     const fk = m != null && pO2w != null ? fickPower({ mass_kg: m, pO2_kPa: pO2w, P50_kPa: val(state, 'hb_P50_kPa') ?? FICK.P50_kPa.value, Q_ml_s: val(state, 'cardiac_output_max_ml_s') }) : null;
-    const refP = fk ? fk.P_W : null;
+    // Measured MO2max (zebrafish, Palstra 2010) scaled to this mass and the reference temperature where the species has one;
+    // else the Fick product with the snapper-Q fallback (physics/FICK-CEILING-CHECK.md).
+    const mc = m != null ? measuredAerobicCeiling(val(state, 'species'), m, Ta) : null;
+    const refP = mc ? mc.P_W : fk ? fk.P_W : null;
     const lean_inputs = {
       q10: LIN(Q10.MMR, '1', smrOk ? 'calibrated' : 'assumed', `MMR Q10 1.34 (${Q10.cite}); 28 degC-acclimated fish, 23-35.5 degC`),
       q10_basis: { value: 'MMR', unit: null, kind: 'calibrated', source: 'the sustained-power ceiling follows maximum metabolic rate; SMR Q10 (1.56) is reported as smr_factor' },
       reference_temperature_C: LIN(Ta, '°C', 'assumed', 'acclimation_temperature_C parameter'),
-      reference_sustained_power_W: LIN(refP, 'W', 'derived', fk ? `Fick aerobic bound eta E Q Ca at the reference (acclimation) temperature: Q ${fk.Q_ml_s.toFixed(5)} ml/s (snapper per kg, borrowed, unless STATE gives cardiac output), Ca ${fk.Ca_ml_ml.toFixed(4)} ml/ml at water pO2 ${pO2w.toFixed(1)} kPa; an upper bound resting on a calibrated Hb capacity` : 'none', m == null ? 'mass_kg is null' : 'state.ambient.pO2_kPa is null'),
+      reference_sustained_power_W: mc ? LIN(refP, 'W', 'derived', `aerobic ceiling from measured MO2max at the reference (acclimation) temperature: ${mc.source}`) : LIN(refP, 'W', 'derived', fk ? `FALLBACK (no measured MO2max for this species) Fick aerobic bound eta E Q Ca at the reference (acclimation) temperature: Q ${fk.Q_ml_s.toFixed(5)} ml/s (snapper per kg, borrowed, unless STATE gives cardiac output), Ca ${fk.Ca_ml_ml.toFixed(4)} ml/ml at water pO2 ${pO2w.toFixed(1)} kPa; an upper bound resting on a calibrated Hb capacity` : 'none', m == null ? 'mass_kg is null' : 'state.ambient.pO2_kPa is null'),
       sustained_power_W: LIN(refP != null ? refP * Q10.MMR ** ((T - Ta) / 10) : null, 'W', 'derived', 'reference_sustained_power_W x q10^((T - T_ref)/10); the Q10 ignores the decline near CTmax', m == null ? 'mass_kg is null' : 'state.ambient.pO2_kPa is null'),
     };
     const survives = T > ctmin && T < ctmax;

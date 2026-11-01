@@ -1,0 +1,95 @@
+{
+ "record_type": "candidate-with-requirements",
+ "requirement_id": "cr-kimura-heterozygosity",
+ "version": "1.0.0",
+ "law_id": "kimura-heterozygosity",
+ "statement_en": "Under the infinite-alleles equilibrium H*(1+4*Ne*mu) = 4*Ne*mu (a named hypothesis), equilibrium heterozygosity lies strictly between 0 and 1 for every positive effective size and neutral mutation rate, and of two populations the one with the larger product Ne*mu has strictly the larger equilibrium heterozygosity.",
+ "verdict": "NEEDS-WORK",
+ "missing_inputs": [
+  "Declare shared_scope.atoms for effective_population_size (Ne), neutral_mutation_rate_per_generation (mu) and observed_heterozygosity (H), with units and the mapping a design would use to supply them, so nonvacuity.mjs can search for a rejecting assignment such as Ne=1000, mu=1e-5, H=0.9.",
+  "Fill scope.ranges with Ne>0, mu>0 and 0<H<1. Move the model conditions (neutral locus, infinite alleles, constant Ne, mutation-drift equilibrium, diploid autosomal so the factor is 4) out of free text into explicit scope.assumed entries, and state that haploid, X-linked, organellar, selected, non-equilibrium and census-size uses are excluded.",
+  "Either keep taxa as 'any' but state in scope.basis that it means 'wherever the hypothesis holds' with no empirical taxon claim, or narrow the taxa to a diploid autosomal group for which an independent Ne, mu and H are available.",
+  "Add at least one wild-type organism with measured Ne, mu and H, each with a source, to wildtype.json, inside the declared scope, so C6 can evaluate the law instead of returning unclear. If no such organism can be sourced, C6 stays unclear and the law cannot be promoted.",
+  "Add evidence.caveats stating that this is a model-internal implication and not a discovery about biology, and that it is in tension with Lewontin's paradox when applied to census-size or poorly estimated Ne. Cite an equation or page in Kimura & Crow 1964 for H = theta/(1+theta) with theta = 4*Ne*mu.",
+  "effective_population_size (individuals)",
+  "neutral_mutation_rate_per_generation (per generation)",
+  "neutral_heterozygosity (dimensionless)"
+ ],
+ "would_constrain_if_supplied": "Rejects a design whose declared neutral heterozygosity is not the mutation-drift equilibrium of its declared effective size and mutation rate, or is outside (0,1). A population-level annotation on a design would be enough; no new measurement of the organism is needed.",
+ "lean_ref": {
+  "module": "pipeline/leanbio/lean/round2/kimura-heterozygosity.lean",
+  "theorem": "Delphi.LeanBio.Round2.KimuraHet.het_equilibrium",
+  "witness": "Delphi.LeanBio.Round2.KimuraHet.witness"
+ },
+ "origin": {
+  "by_role": "leanbio-debate",
+  "kind": "agent"
+ },
+ "debate": {
+  "from": "pipeline/leanbio/debate/out/records/kimura-heterozygosity.json",
+  "verdict": "NEEDS-WORK",
+  "criteria_version": "leanbio-debate-criteria/1.2.0",
+  "criteria_sha256": "13ee79891caebd62799dc8947b73de041c9488c39a395861d34cf157a0f10169",
+  "emitted_at": "2026-11-01T05:44:19.854Z",
+  "failed_gate": null,
+  "criteria": {
+   "C1_binds_something_real": {
+    "verdict": "unclear",
+    "reason": "the candidate declares no shared_scope.atoms, so the studio has nothing to evaluate and the law binds no design today. The proposer says so itself (browser_check_absent: provable-but-not-checkable; it would need effective_population_size (Ne, individuals), neutral_mutation_rate_per_generation (mu), observed_heterozygosity (H)), and that supplied, it would reject: Rejects a design annotated with an effective population size and a neutral mutation rate whose stated neutral heterozygosity is outside (0,1) or is lower than that of a sibling design with a smaller Ne*mu."
+   },
+   "C2_constants_sourced": {
+    "verdict": "pass",
+    "reason": "the statement carries no empirical constant (structural literals only), so there is nothing to source"
+   },
+   "C3_scope_honest": {
+    "verdict": "fail",
+    "reason": "scope.taxa is ['any'] and ranges is {}, so the structured scope names no ranges for Ne, mu or H. The conditions that actually limit the law (neutral locus, infinite alleles, constant Ne, equilibrium, diploid autosomal so that the factor is 4) appear only in the free-text basis. The proponent concedes it fails for haploid, X-linked and organellar loci. Nothing was observed in any organism (observations: []). The prose is candid, but the structured fields claim more than the basis supports. This is fixable by declaring the conditions, not by dropping the law."
+   },
+   "C4_independent": {
+    "verdict": "pass",
+    "reason": "No accepted law constrains equilibrium heterozygosity. kimura-fixation-probability (neutral fixation = initial frequency), favored-fixation-lower-bound and genotype-substitution-time concern substitution and fixation, and fisher-ftns concerns the rate of change of mean fitness. A design with correct 1/(2N) neutral fixation but H outside (0,1), or non-monotone in Ne*mu, passes all of those and fails this law. The critic's point that the law restates its own hypothesis is true but is not what C4 tests. HetHyp is a cited model result, not a definition by the meaning of its terms and not an accepted law. The range in (0,1) and the strict monotonicity are derived consequences of it. The content is thin but not null."
+   },
+   "C5_consistent": {
+    "verdict": "pass",
+    "reason": "propose.mjs constructed a joint witness with every accepted law whose scope overlaps"
+   },
+   "C6_wild_type_survives": {
+    "verdict": "unclear",
+    "reason": "no wild-type organism in leanbio-debate-wildtype/1.0.0 falls inside the scope [\"any\"]: the law is untested against any real animal, so it may not be promoted (CRITERIA.md C6)"
+   },
+   "C7_not_circular": {
+    "verdict": "pass",
+    "reason": "No data were fitted. The statement is explicitly conditional ('Under the infinite-alleles equilibrium ... (a named hypothesis)'). It is a deduction from a stated model premise, not an observed extreme presented as an impossibility. The proponent's own bound_kind_why says it is model-internal, and the scope basis flags Lewontin's paradox against applying the hypothesis to real census sizes. The cost is that nothing empirical backs the law, which is a C6 and C3 matter, not circularity."
+   }
+  },
+  "ruling": "The law is a kernel-checked consequence of the Kimura-Crow infinite-alleles equilibrium: H lies strictly in (0,1) and rises strictly with Ne*mu. It is not a tautology and not a restatement of any accepted law, since none constrains heterozygosity. No hard gate failed, but two things block promotion. C1 and C6 are both unclear: the law declares no shared atoms, so the studio cannot evaluate it, and no wild-type organism was tested. C3 also fails, because 'any' taxa with empty ranges leaves the real limiting conditions only in prose. This is NEEDS-WORK and not REJECT because every defect is a missing mapping or a mis-stated scope, not a false claim or a record bound sold as an impossibility. It is not PROMOTE because an untestable law does not get to turn designs dashed.",
+  "debate_limitations": "PROVENANCE BOUND on this ruling: in the round that produced it, the debate's critic and evidence-checker workers made ZERO web tool calls despite having them (recorded in pipeline/leanbio/debate/DEBATE-RESULTS.md). So no counterexample in this round came from the literature: every rejection was caught by a mechanical check against data already in the repository. The \"debated\" label therefore means \"survived the repo's own gates\", not \"survived a literature search for counterexamples\"."
+ },
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "ingested from pipeline/leanbio/debate/out/records/kimura-heterozygosity.json (verdict NEEDS-WORK, criteria leanbio-debate-criteria/1.2.0)"
+  },
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "merged a second, independent ruling on the same law from leanbio-discovery (pipeline/leanbio/out/round2-open-questions.json): 3 further missing input(s) added, 0 already listed. Both producers' provenance kept; neither ruling overwrites the other."
+  }
+ ],
+ "content_hash": "9dc762d3df7d66e58b4fce00e4a4c8520255848781915bdbb927f8f89636404d",
+ "not_checkable_because": "PROVABLE BUT NOT CHECKABLE. The statement is sound and nothing in the design can be fed to it, so the Studio would report it as checked while nothing was checked. CRITERIA.md routes this to NEEDS-WORK, never to a rejection: the fix is to declare the quantities a design would have to carry.",
+ "ruled_by": [
+  "leanbio-debate",
+  "leanbio-discovery"
+ ],
+ "produced_by": {
+  "from": "pipeline/leanbio/out/round2-open-questions.json",
+  "proof_status": null
+ },
+ "discovery": {
+  "from": "pipeline/leanbio/out/round2-open-questions.json",
+  "proof_status": null
+ },
+ "scope_note": "Static mirror of lean/registry/open-questions/. An OPEN QUESTION is a question this project holds unsettled, with an arm per live position, each arm's evidence quoted from its primary source, and a belief `proportion` COMPUTED by pipeline/leanbio/belief.mjs rather than asserted. A proportion orders the arms; it is NOT a probability that an arm is true, and belief-params.json says plainly that its parameters are hand-set and not fitted. No arm of an open question is in any law set, and the guard in openq-lib.mjs refuses to accept a law that asserts one. A FAILED THEOREM is a statement this project tried and could not establish, kept with its reason so nobody reproposes it; `what_survives` says what is still true after the failure. READ `attempted`: a failed-theorem record with `attempted: false` was NEVER TRIED (the single Lean build lock was contended, or it was abandoned on cost, or withheld on purpose), so it is not a result about the statement at all and its `proof_status` says so; the counts report attempted and never-attempted separately for that reason. A NOT-CHECKABLE-IN-PRINCIPLE record is a fourth thing: sound, usually proved, but with no falsifiable direction over any design, so NO input would make it bind -- it carries no `missing_inputs`, because a list of them would read as a to-do and misstate the finding. Arms formalised in Lean are proved internally consistent and are NOT proved true of any organism."
+}

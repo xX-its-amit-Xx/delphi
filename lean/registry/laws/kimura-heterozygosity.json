@@ -1,0 +1,97 @@
+{
+  "law_id": "kimura-heterozygosity",
+  "version": "1.1.0",
+  "kind": "biological",
+  "class": "theorem-from-hypothesis",
+  "status": "candidate",
+  "label": "Neutral equilibrium heterozygosity rises strictly with Ne times mu",
+  "level": null,
+  "lean_ref": {
+    "module": "lean/registry/proposals/kimura-heterozygosity/law.lean",
+    "theorem": "Delphi.LeanBio.Round2.KimuraHet.het_equilibrium",
+    "structure": null,
+    "commit": "e4444f69efad042de928731680b92a8f13ce044c",
+    "statement_sha256": "4d5f7e0bca572592de93b9c8a980f8841aadbd6682f6b505d351277b5e815466",
+    "content_hash": "ef9c256e218b8ca259999726567be1a2e5b1f91e78a17acbeda8c578d2ac2483"
+  },
+  "statement_en": "Under the infinite-alleles equilibrium H*(1+4*Ne*mu) = 4*Ne*mu (a named hypothesis), equilibrium heterozygosity lies strictly between 0 and 1 for every positive effective size and neutral mutation rate, and of two populations the one with the larger product Ne*mu has strictly the larger equilibrium heterozygosity.",
+  "hypotheses": [
+    {
+      "name": "Delphi.LeanBio.Round2.KimuraHet.HetHyp",
+      "statement": "A population with effective size Ne > 0 and neutral per-generation mutation rate mu > 0 has equilibrium expected heterozygosity H satisfying H*(1+4*Ne*mu) = 4*Ne*mu (the infinite-alleles equilibrium H = theta/(1+theta), theta = 4*Ne*mu, in product form). The factor 4 is the diploid autosomal value of the 1964 model.",
+      "source": "Kimura M, Crow JF (1964) The number of alleles that can be maintained in a finite population. Genetics 49:725-738, doi:10.1093/genetics/49.4.725; claim notation in math-bio-theorems/claims/key-claims.json (kimura-heterozygosity)"
+    }
+  ],
+  "scope": {
+    "taxa": [
+      "any"
+    ],
+    "life_stages": [],
+    "ranges": {},
+    "basis": "A population-genetic model: one neutral locus, infinite-alleles mutation, constant effective size, mutation-drift equilibrium, diploid autosomal inheritance. Says nothing about selected loci, about populations away from equilibrium, or about census size. Observed diversity varies far less across species than Ne estimates predict (Lewontin's paradox, doi:10.1371/journal.pbio.1001388), which contradicts the hypothesis as applied to census sizes, not the theorem."
+  },
+  "shared_scope": null,
+  "evidence": {
+    "sources": [
+      "doi:10.1093/genetics/49.4.725",
+      "doi:10.1371/journal.pbio.1001388 (contradicting context: Lewontin's paradox)"
+    ],
+    "observations": [],
+    "leanbio": {
+      "pipeline": "pipeline/leanbio",
+      "round": "discovery round 2",
+      "belief_params": "leanbio-belief/0.1.0",
+      "note": "belief is an ordering heuristic for the formalization queue, not a probability"
+    }
+  },
+  "sources": [
+    "doi:10.1093/genetics/49.4.725"
+  ],
+  "non_vacuity_witness": {
+    "lean": "Delphi.LeanBio.Round2.KimuraHet.witness",
+    "statement": "theorem witness : Nonempty Instance",
+    "file": "lean/registry/proposals/kimura-heterozygosity/law.lean"
+  },
+  "constraints": [
+    "HET1"
+  ],
+  "introduced_in": "1.8.0",
+  "supersedes": "kimura-heterozygosity@1.0.0",
+  "superseded_by": null,
+  "retired_reason": null,
+  "contested_with": [],
+  "approval": null,
+  "origin": {
+    "by_role": "agent:leanbio-discovery-2",
+    "kind": "agent"
+  },
+  "history": [
+    {
+      "version": "1.0.0",
+      "date": "2026-11-01",
+      "change": "propose.mjs against lawset 1.7.0: candidate"
+    },
+    {
+      "version": "1.1.0",
+      "date": "2026-11-01",
+      "change": "added a declarative browser_check block (constraint HET1) so the law generates a row without a code edit; statement, hypotheses, scope and witness unchanged. Status stays candidate."
+    }
+  ],
+  "content_hash": "ef9c256e218b8ca259999726567be1a2e5b1f91e78a17acbeda8c578d2ac2483",
+  "browser_check": {
+    "constraint": "HET1",
+    "quantity": "neutral_heterozygosity * (1 + 4 * effective_population_size * neutral_mutation_rate_per_generation)",
+    "op": "eq",
+    "bound": "4 * effective_population_size * neutral_mutation_rate_per_generation",
+    "inputs": [
+      "neutral_heterozygosity",
+      "effective_population_size",
+      "neutral_mutation_rate_per_generation"
+    ],
+    "relation": "H (1 + 4 Ne u) = 4 Ne u, i.e. H = theta/(1 + theta) with theta = 4 Ne u  (infinite-alleles equilibrium)",
+    "note": "Checks that a committed neutral heterozygosity is the mutation-drift equilibrium of the committed effective size and mutation rate. The law also proves 0 < H < 1 follows, so a committed H outside (0,1) is impossible under the hypothesis. 'violated' means the three numbers cannot hold together at equilibrium; it does NOT mean the population is mismeasured, because real populations are routinely away from this equilibrium and observed diversity varies far less across species than Ne predicts (Lewontin's paradox).",
+    "unit": null,
+    "band": "hypothesis",
+    "tolerance": "relative"
+  }
+}

@@ -1,0 +1,129 @@
+{
+ "law_id": "maynardsmith-hawk-dove",
+ "version": "1.1.0",
+ "kind": "biological",
+ "class": "theorem-from-hypothesis",
+ "status": "candidate",
+ "label": "Hawk-Dove: the escalation probability p*C = V is invaded from neither side and costs the population",
+ "level": null,
+ "lean_ref": {
+  "module": "lean/registry/proposals/maynardsmith-hawk-dove/law.lean",
+  "theorem": "Delphi.LeanBio.Round2.HawkDove.hawk_dove_mixture",
+  "structure": null,
+  "commit": "922d08b6851e3fed5a4de8b5ebfe115d41611317",
+  "statement_sha256": "296557c91fd5260d1aab568d42973f4929e37c1b80e8cda757e1035b637b4f39",
+  "content_hash": "a00c135e6030638fa84a7ac0bb8891485813789b43350e4ecacafe787a20a21a"
+ },
+ "statement_en": "For a symmetric Hawk-Dove contest with resource value V > 0, injury cost C > V and escalation probability p fixed by p*C = V (a named hypothesis), p lies strictly inside (0,1); Hawk and Dove have equal payoff against a population escalating with probability p; a population escalating less often than p gives Hawk a strictly higher payoff and one escalating more often gives Dove a strictly higher payoff, so p is invaded from neither side; and the payoff at p is strictly below V/2, the all-Dove payoff, which is the cost of conflict.",
+ "hypotheses": [
+  {
+   "name": "Delphi.LeanBio.Round2.HawkDove.HawkDoveHyp",
+   "statement": "A symmetric pairwise contest with payoffs E(H,H) = (V-C)/2, E(H,D) = V, E(D,H) = 0, E(D,D) = V/2, resource value V > 0, injury cost C with V < C, and escalation probability p satisfying p*C = V (the claim's p* = V/C, written without division).",
+   "source": "Maynard Smith J, Price GR (1973) The logic of animal conflict. Nature 246:15-18, doi:10.1038/246015a0; Maynard Smith J (1982) Evolution and the Theory of Games, doi:10.1017/cbo9780511806292; claim notation in math-bio-theorems/claims/key-claims.json (maynardsmith-hawk-dove)"
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "Symmetric pairwise contests, fixed V and C, no role asymmetries and no repeated interaction. With an asymmetry such as ownership the Bourgeois strategy is the ESS instead and this law does not apply. The theorem establishes first-order invasion resistance (the indifference condition and strict payoff ordering either side of p), not the full second-order ESS condition."
+ },
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "doi:10.1038/246015a0",
+   "doi:10.1017/cbo9780511806292"
+  ],
+  "observations": [],
+  "leanbio": {
+   "pipeline": "pipeline/leanbio",
+   "round": "discovery round 2",
+   "belief_params": "leanbio-belief/0.1.0",
+   "note": "belief is an ordering heuristic for the formalization queue, not a probability"
+  }
+ },
+ "sources": [
+  "doi:10.1038/246015a0",
+  "doi:10.1017/cbo9780511806292"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.LeanBio.Round2.HawkDove.witness",
+  "statement": "theorem witness : Nonempty Instance",
+  "file": "lean/registry/proposals/maynardsmith-hawk-dove/law.lean"
+ },
+ "constraints": [
+  "HAWKDOVE1"
+ ],
+ "introduced_in": "1.8.0",
+ "supersedes": "maynardsmith-hawk-dove@1.0.0",
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": null,
+ "origin": "lean/registry/laws/maynardsmith-hawk-dove.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "propose.mjs against lawset 1.7.0: candidate"
+  },
+  {
+   "version": "1.1.0",
+   "date": "2026-11-01",
+   "change": "added a declarative browser_check block (constraint HAWKDOVE1) so the law generates a row without a code edit; statement, hypotheses, scope and witness unchanged. Status stays candidate."
+  }
+ ],
+ "content_hash": "a00c135e6030638fa84a7ac0bb8891485813789b43350e4ecacafe787a20a21a",
+ "browser_check": {
+  "constraint": "HAWKDOVE1",
+  "quantity": "escalation_probability * injury_cost",
+  "op": "eq",
+  "bound": "resource_value",
+  "inputs": [
+   "escalation_probability",
+   "injury_cost",
+   "resource_value"
+  ],
+  "relation": "p C = V, i.e. p = V/C  (the Hawk-Dove escalation probability that is invaded from neither side)",
+  "note": "Checks that a committed escalation probability is the one the committed resource value and injury cost imply. The law also proves 0 < p < 1 follows from 0 < V < C, so a design committing V >= C is outside this law's scope rather than violating it. 'violated' means the three numbers are mutually inconsistent with the Hawk-Dove mixture; it does not mean any animal escalates too often, and it says nothing about asymmetric contests, where the Bourgeois strategy is the ESS instead.",
+  "unit": "fitness units",
+  "band": "hypothesis",
+  "tolerance": "relative"
+ },
+ "lean": {
+  "theorem": "Delphi.LeanBio.Round2.HawkDove.hawk_dove_mixture",
+  "module": "lean/registry/proposals/maynardsmith-hawk-dove/law.lean",
+  "line": 48,
+  "source": "/-- **Hawk-Dove mixture.** Under `HawkDoveHyp`: the escalation probability is a genuine mixture,\nthe two pure strategies are indifferent against it, it is invaded from neither side, and the\npopulation pays for conflict (payoff strictly below the all-Dove payoff `V/2`). -/\ntheorem hawk_dove_mixture {V C p : ℝ} (h : HawkDoveHyp V C p) :\n    0 < p ∧ p < 1 ∧ wH V C p = wD V C p ∧\n      (∀ x : ℝ, x < p → wD V C x < wH V C x) ∧\n      (∀ x : ℝ, p < x → wH V C x < wD V C x) ∧\n      wD V C p < V / 2 := by\n  have hV := h.V_pos\n  have hVC := h.cost_exceeds\n  have hC : (0:ℝ) < C := by linarith\n  have hp := h.mixture\n  have hp0 : 0 < p := by nlinarith\n  have hp1 : p < 1 := by nlinarith\n  refine ⟨hp0, hp1, ?_, ?_, ?_, ?_⟩\n  · unfold wH wD\n    linear_combination (-1/2 : ℝ) * hp\n  · intro x hx\n    unfold wH wD\n    nlinarith [hx, hC, hp]\n  · intro x hx\n    unfold wH wD\n    nlinarith [hx, hC, hp]\n  · unfold wD\n    nlinarith [hp0, hV]",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.LeanBio.Round2.HawkDove.HawkDoveHyp",
+    "keyword": "structure",
+    "module": "lean/registry/proposals/maynardsmith-hawk-dove/law.lean",
+    "line": 40,
+    "source": "/-- Named hypothesis: a symmetric Hawk-Dove contest whose cost exceeds the resource value,\nwith `p` the escalation probability satisfying `p * C = V`. -/\nstructure HawkDoveHyp (V C p : ℝ) : Prop where\n  V_pos : 0 < V\n  cost_exceeds : V < C\n  mixture : p * C = V"
+   }
+  ]
+ },
+ "constraint_details": [],
+ "pin": {
+  "module": "lean/registry/proposals/maynardsmith-hawk-dove/law.lean",
+  "decl": "Delphi.LeanBio.Round2.HawkDove.hawk_dove_mixture",
+  "commit": "922d08b6851e3fed5a4de8b5ebfe115d41611317",
+  "theorem_found": true,
+  "pinned_statement_sha256": "296557c91fd5260d1aab568d42973f4929e37c1b80e8cda757e1035b637b4f39",
+  "current_statement_sha256": "296557c91fd5260d1aab568d42973f4929e37c1b80e8cda757e1035b637b4f39",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.8.0",
+  "1.8.1"
+ ],
+ "other_versions": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

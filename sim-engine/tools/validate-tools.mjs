@@ -3,6 +3,9 @@
 // Same {name, title, description, inputSchema, handler} shape as TOOLS in server.mjs; registration patch for the hub
 // in tools/VALIDATE-REGISTER.md. http.mjs serves these as POST /tool/<name> through its tools/ discovery already.
 import { envelope, p } from '../lib/envelope.mjs';
+// The weakest-to-strongest order lib/envelope.mjs uses. Object.keys(KINDS) is NOT this order, so it is repeated
+// here verbatim rather than derived: reversing KINDS would rank borrowed below derived and misreport weakest_input.
+const KIND_ORDER = ['assumed', 'borrowed', 'measured-secondhand', 'calibrated', 'derived', 'measured'];
 import { loadBundle } from '../lib/data-node.mjs';
 import { resolveState } from '../lib/state.mjs';
 import { getDoc } from './studio.mjs';
@@ -10,6 +13,7 @@ import { rawFromState, closestPhenotype, loadReferences } from '../validate/phen
 import { closestGenotype, STATE_NOT_PHENOTYPE } from '../validate/genotype.mjs';
 import { phenoSanity, genoSanity } from '../validate/sanity.mjs';
 import { leanByComponent } from '../validate/lean-components.mjs';
+import { leanRounds } from '../validate/lean-rounds.mjs';
 import { designScoreTool, validateDesign, swarmTasks, assess, SCORER } from '../validate/score.mjs';
 
 const ORG = { description: 'Organism: a saved document id, a repository organism/design id (zebrafish-adult, flying-fish, winged-zebrafish, tff, ff-zf-chimera, ...), or an inline organism document. Gene edits: target {level:"gene", id}, param "allele" with an HGVS-like value (p.W169L, p.Y285*, c.505del, p.T200K/+), "knockout" or "expression_fold"; genes outside the vetted map go in doc.genotype [{gene, change}].', anyOf: [{ type: 'string' }, { type: 'object' }] };
@@ -21,7 +25,7 @@ const COMMON = {
   network: { type: 'boolean', description: 'Allow cached network calls (UniProt, Ensembl). Default true; results are cached in sim-engine/validate/cache/.' },
   blast: { type: 'boolean', description: 'For genes not in sequences/alignments: run NCBI BLAST (blastp nr, NOT Aves[Organism]; minutes; cached). Default false.' },
   lawset: { type: 'string' },
-  version: { type: 'string', description: 'Scorer version (score-weights*.json): 1.0.0 (default, the blind-validated one), 1.1.0, or 1.1.1 (adds rank_score for ranking).' },
+  version: { type: 'string', description: 'Scorer version (score-weights*.json): 1.0.0 (default, the blind-validated one), 1.1.0, 1.1.1 (adds rank_score), 1.2.0 (frozen for the blind benchmark run) or 1.3.0 (adds the joint correlation-aware term; see SCORER-RESULTS.md).' },
 };
 const SCOPE_PH = 'Nearest real relatives in a 6-feature body space (FishShapes v1, 16 377 teleost specimens, measured; our 3 real organisms and their ontogeny stages) and on pectoral fin length (Daane 2021 sheet A, 9 beloniform species, measured). The other fin features have only our own two lineages as references, so they get an uncalibrated envelope rule. Distance is not relatedness: a nearest neighbour is the most similar shape, not an ancestor. Birds (Aves) excluded: frozen holdout.';
 
@@ -71,10 +75,38 @@ export const VALIDATE_TOOLS = [
     description: `One number with its components: phenotype plausibility vs closest real relatives (P), accepted-law Lean violations newly caused (L), genotype sequence sanity (G), spec performance if a spec is given (S) and evidence strength (E). Formula and weights fixed in ${SCORER.preregistration} before validation; results of that validation in sim-engine/validate/SCORER-RESULTS.md.`,
     inputSchema: { type: 'object', properties: { ...COMMON, reference_set_excluding: { type: 'array', items: { type: 'string' }, description: 'Leave-out scoring: ids, species:Genus_species, family:Name, order:Name, organism:zebrafish|flying-fish. Use it whenever the design IS a real organism, or real-organism scores are trivially high (distance 0).' }, taxon: { type: 'string' }, label: { type: 'string' }, spec: { type: 'object', description: 'Optional DesignSpec (design_from_spec format) for the S component.' } } },
     handler: args => designScoreTool(args) },
-  { name: 'validate_design', title: 'Validate a design (one call)',
-    description: 'Closest real relatives (phenotype and genotype), sanity checks, Lean by component and the design score in one report. The verdict never says "valid": it lists checks passed, failed, flagged and not run, and names the closest real relative. swarm:true adds validation sub-tasks for the swarm board.',
-    inputSchema: { type: 'object', properties: { ...COMMON, spec: { type: 'object' }, swarm: { type: 'boolean' } } },
-    handler: args => validateDesign(args) },
+  { name: 'validate_design', title: 'Validate a design (one call, TWO Lean rounds)',
+    description: 'Closest real relatives (phenotype and genotype), sanity checks, Lean by component and the design score in one report, and TWO Lean rounds instead of one: round 1 against the law set that was in force when the design was made (read off the lawset_version its edits record), then the CURRENT law set is re-resolved and round 2 is run against that. Both rounds are reported with their law-set version and timestamp, and the difference is named: newly_violated_since (laws admitted since that the design now breaks), newly_binding_since (violations it already had, now binding because the law was raised to accepted), no_longer_violated_since and newly_unjudged_since. A design that was valid last week and is not valid today is what a living law base is for, and it is visible here. The verdict never says "valid": it lists checks passed, failed, flagged and not run, and names the closest real relative. swarm:true adds validation sub-tasks for the swarm board.',
+    inputSchema: { type: 'object', properties: { ...COMMON, spec: { type: 'object' }, swarm: { type: 'boolean' },
+      made_under_lawset: { type: 'string', description: 'The law set to use for round 1, when the design itself does not record one (an unedited repository organism or an inline document). Omitted: the newest lawset_version stamped on the document\'s edits, else the current set, and lean_rounds.round1.lawset_basis says which.' },
+      second_round: { type: 'boolean', description: 'Run the second Lean round (default true). false gives the single-round report only.' } } },
+    handler: async args => {
+      const out = await validateDesign(args);
+      if (args.second_round === false) { out.result.lean_rounds = { skipped: 'second_round:false was passed; only the single round inside lean_by_component ran' }; return out; }
+      // The second round is reported even when it fails: a validation report that quietly drops it would be
+      // exactly the "checked once, long ago" behaviour this replaces.
+      try {
+        out.result.lean_rounds = args.organism
+          ? await leanRounds({ organism: args.organism, ageDays: args.ageDays, conditions: args.conditions || {}, from: args.made_under_lawset || null, to: args.lawset || null })
+          : { skipped: 'no organism document was given (a raw specimen record carries no edit history, so there is no law set it was made under); pass organism, or made_under_lawset with an organism, to get two rounds' };
+      } catch (e) { out.result.lean_rounds = { error: e.message, note: 'the second Lean round did not run; the single-round verdicts in lean_by_component are the only Lean result in this report' }; }
+      const lr = out.result.lean_rounds;
+      if (lr && lr.round2) {
+        out.result.lean_rounds_headline = lr.summary;
+        out.scope += ' The Lean part is reported TWICE: round 1 against law set ' + lr.round1.lawset_version
+          + ' (' + lr.round1.lawset_basis + ') and round 2 against ' + lr.round2.lawset_version
+          + '. lean_by_component, lean_check and the score use the CURRENT law set, so they agree with round 2;'
+          + ' round 1 exists to show whether this design\'s verdict has changed since it was made, and it changes nothing else in this report.';
+        out.provenance.push(p('round 1 law set', lr.round1.lawset_version, 'derived', 'sim-engine/validate/lean-rounds.mjs: ' + lr.round1.lawset_basis_detail),
+          p('round 2 law set', lr.round2.lawset_version, 'derived', 'lean/registry/lawsets/current.json, re-resolved at call time'));
+        // lib/envelope.mjs computes `counts` and `weakest_input` when the envelope is BUILT, so rows pushed
+        // afterwards would leave both stale (counts under-reported by 2). They are honesty fields, so they are
+        // recomputed here by the same rule rather than left disagreeing with the list they summarise.
+        out.counts = out.provenance.reduce((a, q) => ((a[q.kind] = (a[q.kind] || 0) + 1), a), {});
+        out.weakest_input = KIND_ORDER.find(k => out.provenance.some(q => q.kind === k)) || 'none';
+      }
+      return out;
+    } },
   { name: 'validate_swarm_tasks', title: 'Validation sub-tasks for the swarm board',
     description: 'The six validation sub-tasks (closest-relative-phenotype, closest-relative-genotype, sanity-geno, sanity-pheno, lean-by-component, adversarial-review) as JSON for swarm_post_task.',
     inputSchema: { type: 'object', properties: { organism: ORG, specimen: SPECIMEN, exclude: COMMON.exclude } },

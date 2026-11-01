@@ -1,0 +1,767 @@
+{
+ "level": "design",
+ "level_title": "Design-studio usage",
+ "arm": "decentralised",
+ "task": "l3-t2",
+ "arm_definition": "3 agents work the same task independently, no shared state, no orchestrator; merged at the end by a fixed oracle-free medoid vote. 3 parallel calls at a third of the budget each.",
+ "model": "claude-sonnet-5-5",
+ "N": 3,
+ "budget_total_usd": 0.45,
+ "cap_per_call_usd": 0.15,
+ "allocation": "even",
+ "metric": "mean of 4 checks (accepted, fixed fields present, laws actually evaluated, no unflagged invented fields)",
+ "ground_truth": "sim-engine lean_check at lawset 1.8.1",
+ "shared_input_bytes": 3044,
+ "shared_input": "TASK: write the SI-unit `design` object that the DELPHI Design Studio tool `lean_check` judges,\nfor the brief below, at Lean lawset 1.8.1.\n\nTHE BRIEF\nSpecify an adult zebrafish (Danio rerio) for the studio as a purely aquatic, non-flying design. The sponsor fixes: standard length 0.035 m, mass 0.0008 kg, body temperature 26 C, thermal lower limit 6.2 C, thermal upper limit 41.4 C, Q10 of 2.3 referenced to 28 C, holding depth 0.3 m, altitude 0 m. There is no flight: say so explicitly in the design rather than leaving the flight fields blank. You choose the critical swimming speed and the current speed the animal must hold against, and any further quantity you need, so that no accepted Lean-backed law at lawset 1.8.1 is violated.\n\nQUANTITIES THE SPONSOR FIXES. These keys must appear in your design with these exact values:\n  taxon = \"Danio rerio\"\n  life_stage = \"adult\"\n  standard_length_m = 0.035\n  SL_m = 0.035\n  mass_kg = 0.0008\n  body_temperature_C = 26\n  ct_min_C = 6.2\n  ct_max_C = 41.4\n  q10 = 2.3\n  reference_temperature_C = 28\n  depth_m = 0.3\n  altitude_m = 0\n\nQUANTITIES YOU CHOOSE (the key names lean_check uses): critical_swimming_speed_m_s, current_speed_m_s, has_swimbladder, powered\n\nHOW lean_check READS A DESIGN\n- The design is a flat JSON object of SI quantities plus `taxon`, `life_stage` and `flight_mode`.\n- `flight_mode: \"glide\"` declares an UNPOWERED glide, which takes the aerobic-demand laws (constraints C14, E3)\n  OUT OF SCOPE instead of violating them. `powered: false` does the same. Declaring powered flight puts them IN scope.\n- A law whose inputs are absent returns `cannot-evaluate`, which is NOT a pass: it means the law could not judge\n  your design at all. A design that names almost nothing scores zero violations by being unjudgeable, and that is\n  explicitly counted against it here.\n- Laws scoped to Exocoetidae return `out-of-scope` for other taxa.\n- Keys lean_check knows include: taxon, life_stage, flight_mode, powered, SL_m, standard_length_m, mass_kg,\n  finArea_m2, CLmax, LD_max, rho, airspeed_m_s, horizontal_airspeed_m_s, climbRate_m_s, glideHeight_m,\n  glideDistance_m, ground_distance_m, drag_coefficient, drag_area_m2, wind_along_track_m_s, flight_duration_s,\n  powerAvailable_W, sustained_power_W, reference_sustained_power_W, aerobicCeiling_W, efficiency, oxycaloric,\n  cardiacOutput, arterialO2, flightMuscleFraction, musclePowerPerKg_W, o2_store_ml, oxycaloric_J_per_unit_O2,\n  body_temperature_C, ct_min_C, ct_max_C, q10, reference_temperature_C, critical_swimming_speed_m_s,\n  current_speed_m_s, depth_m, altitude_m, bladder_volume_surface_ml, bladder_volume_at_depth_ml,\n  has_swimbladder, intake_J_per_day, routine_cost_J_per_day, activity_cost_J_per_day,\n  assimilation_efficiency, mass_change, genotype_edits.\n\nAIM FOR: zero binding violations, every fixed quantity present and exact, and as MANY laws actually evaluated\n(verdict `holds` or `violated`) as the brief allows. Flag in `assumptions` every number you chose yourself.\n\nOutput `design`, `assumptions` and `notes`.",
+ "merge": {
+  "rule": "medoid",
+  "kept": 0,
+  "mean_similarity": [
+   {
+    "i": 0,
+    "s": 0.7610526315789474
+   },
+   {
+    "i": 1,
+    "s": 0.7210526315789474
+   },
+   {
+    "i": 2,
+    "s": 0.64
+   }
+  ],
+  "n_live": 3
+ },
+ "cell_totals": {
+  "calls": 3,
+  "cost_usd": 0.11855,
+  "tokens_total": 31687,
+  "wall_ms": 14694,
+  "cap_stops": 0,
+  "infra_failures": 0,
+  "produced_artifact": true
+ },
+ "calls": [
+  {
+   "label": "worker-0",
+   "prompt_sent": "You are one of 3 agents working on this task INDEPENDENTLY and in parallel.\nYou cannot see the other agents and they cannot see you. There is no shared state and no coordinator.\nYour answer will be compared with theirs and the one most agreed-with will be kept, so do the whole task\nyourself and do it the way you believe is right. Do not hedge and do not leave anything for someone else.\n\nYou are agent 0 of 3.\n\nTASK: write the SI-unit `design` object that the DELPHI Design Studio tool `lean_check` judges,\nfor the brief below, at Lean lawset 1.8.1.\n\nTHE BRIEF\nSpecify an adult zebrafish (Danio rerio) for the studio as a purely aquatic, non-flying design. The sponsor fixes: standard length 0.035 m, mass 0.0008 kg, body temperature 26 C, thermal lower limit 6.2 C, thermal upper limit 41.4 C, Q10 of 2.3 referenced to 28 C, holding depth 0.3 m, altitude 0 m. There is no flight: say so explicitly in the design rather than leaving the flight fields blank. You choose the critical swimming speed and the current speed the animal must hold against, and any further quantity you need, so that no accepted Lean-backed law at lawset 1.8.1 is violated.\n\nQUANTITIES THE SPONSOR FIXES. These keys must appear in your design with these exact values:\n  taxon = \"Danio rerio\"\n  life_stage = \"adult\"\n  standard_length_m = 0.035\n  SL_m = 0.035\n  mass_kg = 0.0008\n  body_temperature_C = 26\n  ct_min_C = 6.2\n  ct_max_C = 41.4\n  q10 = 2.3\n  reference_temperature_C = 28\n  depth_m = 0.3\n  altitude_m = 0\n\nQUANTITIES YOU CHOOSE (the key names lean_check uses): critical_swimming_speed_m_s, current_speed_m_s, has_swimbladder, powered\n\nHOW lean_check READS A DESIGN\n- The design is a flat JSON object of SI quantities plus `taxon`, `life_stage` and `flight_mode`.\n- `flight_mode: \"glide\"` declares an UNPOWERED glide, which takes the aerobic-demand laws (constraints C14, E3)\n  OUT OF SCOPE instead of violating them. `powered: false` does the same. Declaring powered flight puts them IN scope.\n- A law whose inputs are absent returns `cannot-evaluate`, which is NOT a pass: it means the law could not judge\n  your design at all. A design that names almost nothing scores zero violations by being unjudgeable, and that is\n  explicitly counted against it here.\n- Laws scoped to Exocoetidae return `out-of-scope` for other taxa.\n- Keys lean_check knows include: taxon, life_stage, flight_mode, powered, SL_m, standard_length_m, mass_kg,\n  finArea_m2, CLmax, LD_max, rho, airspeed_m_s, horizontal_airspeed_m_s, climbRate_m_s, glideHeight_m,\n  glideDistance_m, ground_distance_m, drag_coefficient, drag_area_m2, wind_along_track_m_s, flight_duration_s,\n  powerAvailable_W, sustained_power_W, reference_sustained_power_W, aerobicCeiling_W, efficiency, oxycaloric,\n  cardiacOutput, arterialO2, flightMuscleFraction, musclePowerPerKg_W, o2_store_ml, oxycaloric_J_per_unit_O2,\n  body_temperature_C, ct_min_C, ct_max_C, q10, reference_temperature_C, critical_swimming_speed_m_s,\n  current_speed_m_s, depth_m, altitude_m, bladder_volume_surface_ml, bladder_volume_at_depth_ml,\n  has_swimbladder, intake_J_per_day, routine_cost_J_per_day, activity_cost_J_per_day,\n  assimilation_efficiency, mass_change, genotype_edits.\n\nAIM FOR: zero binding violations, every fixed quantity present and exact, and as MANY laws actually evaluated\n(verdict `holds` or `violated`) as the brief allows. Flag in `assumptions` every number you chose yourself.\n\nOutput `design`, `assumptions` and `notes`.",
+   "prompt_chars": 3457,
+   "model_output_parsed": {
+    "design": {
+     "taxon": "Danio rerio",
+     "life_stage": "adult",
+     "flight_mode": "none",
+     "powered": false,
+     "standard_length_m": 0.035,
+     "SL_m": 0.035,
+     "mass_kg": 0.0008,
+     "body_temperature_C": 26,
+     "ct_min_C": 6.2,
+     "ct_max_C": 41.4,
+     "q10": 2.3,
+     "reference_temperature_C": 28,
+     "depth_m": 0.3,
+     "altitude_m": 0,
+     "critical_swimming_speed_m_s": 0.35,
+     "current_speed_m_s": 0.15,
+     "has_swimbladder": true,
+     "bladder_volume_surface_ml": 0.04,
+     "bladder_volume_at_depth_ml": 0.03887
+    },
+    "assumptions": [
+     "critical_swimming_speed_m_s = 0.35 (~10 SL/s, typical adult zebrafish Ucrit)",
+     "current_speed_m_s = 0.15 (well below Ucrit, ~4 SL/s, sustainable hold)",
+     "has_swimbladder = true (physoclistous teleost)",
+     "bladder_volume_surface_ml = 0.04 (~5% of ~0.8 ml body volume for near-neutral buoyancy)",
+     "bladder_volume_at_depth_ml = 0.03887 from Boyle's law at 0.3 m: 0.04/1.02905 (P=101325+1000*9.81*0.3 Pa)",
+     "powered = false and flight_mode = 'none' to state explicitly there is no flight; flight/aerobic-demand fields omitted on purpose",
+     "Energy budget, mass_change and genotype_edits omitted: no basis to choose them, avoids unforced violations"
+    ],
+    "notes": "I couldn't run lean_check, so none of this has been checked against it. No law blocks the brief as far as I can tell. Flight-related laws (C14, E3) should be out of scope because powered is false. The flight_mode value 'none' may not be a value lean_check recognises. If it isn't, 'glide' is the fallback, though that declares an unpowered glide, which isn't quite what the brief says. Laws that depend on omitted inputs, such as the energy budget, will probably return cannot-evaluate."
+   },
+   "model_output_raw": "{\"design\":{\"taxon\":\"Danio rerio\",\"life_stage\":\"adult\",\"flight_mode\":\"none\",\"powered\":false,\"standard_length_m\":0.035,\"SL_m\":0.035,\"mass_kg\":0.0008,\"body_temperature_C\":26,\"ct_min_C\":6.2,\"ct_max_C\":41.4,\"q10\":2.3,\"reference_temperature_C\":28,\"depth_m\":0.3,\"altitude_m\":0,\"critical_swimming_speed_m_s\":0.35,\"current_speed_m_s\":0.15,\"has_swimbladder\":true,\"bladder_volume_surface_ml\":0.04,\"bladder_volume_at_depth_ml\":0.03887},\"assumptions\":[\"critical_swimming_speed_m_s = 0.35 (~10 SL/s, typical adult zebrafish Ucrit)\",\"current_speed_m_s = 0.15 (well below Ucrit, ~4 SL/s, sustainable hold)\",\"has_swimbladder = true (physoclistous teleost)\",\"bladder_volume_surface_ml = 0.04 (~5% of ~0.8 ml body volume for near-neutral buoyancy)\",\"bladder_volume_at_depth_ml = 0.03887 from Boyle's law at 0.3 m: 0.04/1.02905 (P=101325+1000*9.81*0.3 Pa)\",\"powered = false and flight_mode = 'none' to state explicitly there is no flight; flight/aerobic-demand fields omitted on purpose\",\"Energy budget, mass_change and genotype_edits omitted: no basis to choose them, avoids unforced violations\"],\"notes\":\"I couldn't run lean_check, so none of this has been checked against it. No law blocks the brief as far as I can tell. Flight-related laws (C14, E3) should be out of scope because powered is false. The flight_mode value 'none' may not be a value lean_check recognises. If it isn't, 'glide' is the fallback, though that declares an unpowered glide, which isn't quite what the brief says. Laws that depend on omitted inputs, such as the energy budget, will probably return cannot-evaluate.\"}",
+   "tokens": {
+    "input": 2,
+    "output": 1294,
+    "cache_read": 2771,
+    "cache_creation": 6443
+   },
+   "tokens_total": 10510,
+   "cost_usd": 0.0389931,
+   "duration_ms": 11616,
+   "num_turns": 2,
+   "stop_reason": "tool_use",
+   "terminal_reason": "completed",
+   "is_error": false,
+   "error_text": null,
+   "cap_stop": false,
+   "failure_class": "ok"
+  },
+  {
+   "label": "worker-1",
+   "prompt_sent": "You are one of 3 agents working on this task INDEPENDENTLY and in parallel.\nYou cannot see the other agents and they cannot see you. There is no shared state and no coordinator.\nYour answer will be compared with theirs and the one most agreed-with will be kept, so do the whole task\nyourself and do it the way you believe is right. Do not hedge and do not leave anything for someone else.\n\nYou are agent 1 of 3.\n\nTASK: write the SI-unit `design` object that the DELPHI Design Studio tool `lean_check` judges,\nfor the brief below, at Lean lawset 1.8.1.\n\nTHE BRIEF\nSpecify an adult zebrafish (Danio rerio) for the studio as a purely aquatic, non-flying design. The sponsor fixes: standard length 0.035 m, mass 0.0008 kg, body temperature 26 C, thermal lower limit 6.2 C, thermal upper limit 41.4 C, Q10 of 2.3 referenced to 28 C, holding depth 0.3 m, altitude 0 m. There is no flight: say so explicitly in the design rather than leaving the flight fields blank. You choose the critical swimming speed and the current speed the animal must hold against, and any further quantity you need, so that no accepted Lean-backed law at lawset 1.8.1 is violated.\n\nQUANTITIES THE SPONSOR FIXES. These keys must appear in your design with these exact values:\n  taxon = \"Danio rerio\"\n  life_stage = \"adult\"\n  standard_length_m = 0.035\n  SL_m = 0.035\n  mass_kg = 0.0008\n  body_temperature_C = 26\n  ct_min_C = 6.2\n  ct_max_C = 41.4\n  q10 = 2.3\n  reference_temperature_C = 28\n  depth_m = 0.3\n  altitude_m = 0\n\nQUANTITIES YOU CHOOSE (the key names lean_check uses): critical_swimming_speed_m_s, current_speed_m_s, has_swimbladder, powered\n\nHOW lean_check READS A DESIGN\n- The design is a flat JSON object of SI quantities plus `taxon`, `life_stage` and `flight_mode`.\n- `flight_mode: \"glide\"` declares an UNPOWERED glide, which takes the aerobic-demand laws (constraints C14, E3)\n  OUT OF SCOPE instead of violating them. `powered: false` does the same. Declaring powered flight puts them IN scope.\n- A law whose inputs are absent returns `cannot-evaluate`, which is NOT a pass: it means the law could not judge\n  your design at all. A design that names almost nothing scores zero violations by being unjudgeable, and that is\n  explicitly counted against it here.\n- Laws scoped to Exocoetidae return `out-of-scope` for other taxa.\n- Keys lean_check knows include: taxon, life_stage, flight_mode, powered, SL_m, standard_length_m, mass_kg,\n  finArea_m2, CLmax, LD_max, rho, airspeed_m_s, horizontal_airspeed_m_s, climbRate_m_s, glideHeight_m,\n  glideDistance_m, ground_distance_m, drag_coefficient, drag_area_m2, wind_along_track_m_s, flight_duration_s,\n  powerAvailable_W, sustained_power_W, reference_sustained_power_W, aerobicCeiling_W, efficiency, oxycaloric,\n  cardiacOutput, arterialO2, flightMuscleFraction, musclePowerPerKg_W, o2_store_ml, oxycaloric_J_per_unit_O2,\n  body_temperature_C, ct_min_C, ct_max_C, q10, reference_temperature_C, critical_swimming_speed_m_s,\n  current_speed_m_s, depth_m, altitude_m, bladder_volume_surface_ml, bladder_volume_at_depth_ml,\n  has_swimbladder, intake_J_per_day, routine_cost_J_per_day, activity_cost_J_per_day,\n  assimilation_efficiency, mass_change, genotype_edits.\n\nAIM FOR: zero binding violations, every fixed quantity present and exact, and as MANY laws actually evaluated\n(verdict `holds` or `violated`) as the brief allows. Flag in `assumptions` every number you chose yourself.\n\nOutput `design`, `assumptions` and `notes`.",
+   "prompt_chars": 3457,
+   "model_output_parsed": {
+    "design": {
+     "taxon": "Danio rerio",
+     "life_stage": "adult",
+     "flight_mode": "none",
+     "powered": false,
+     "standard_length_m": 0.035,
+     "SL_m": 0.035,
+     "mass_kg": 0.0008,
+     "body_temperature_C": 26,
+     "ct_min_C": 6.2,
+     "ct_max_C": 41.4,
+     "q10": 2.3,
+     "reference_temperature_C": 28,
+     "depth_m": 0.3,
+     "altitude_m": 0,
+     "critical_swimming_speed_m_s": 0.35,
+     "current_speed_m_s": 0.1,
+     "has_swimbladder": true,
+     "bladder_volume_surface_ml": 0.02,
+     "bladder_volume_at_depth_ml": 0.0194
+    },
+    "assumptions": [
+     "critical_swimming_speed_m_s=0.35: about 10 body lengths/s, typical of adult zebrafish; chosen by me.",
+     "current_speed_m_s=0.1: well below Ucrit (about 29% of it), so the fish can hold station aerobically; chosen by me.",
+     "has_swimbladder=true: zebrafish are physoclistous and have a swimbladder.",
+     "bladder_volume_surface_ml=0.02: my estimate, about 2.5% of body volume (0.8 mL), which is a modest value for a freshwater fish.",
+     "bladder_volume_at_depth_ml=0.0194: Boyle's law at 0.3 m of fresh water. Pressure goes from 101.325 kPa to about 104.27 kPa (rho*g*h is about 2.94 kPa), so V = 0.02*101.325/104.27 = 0.01943 mL, rounded to 0.0194.",
+     "flight_mode='none' and powered=false: declared explicitly. This takes the aerobic-demand laws (C14, E3) out of scope, which is intended for a non-flying design.",
+     "Flight fields (airspeed, finArea, CLmax and the rest) are omitted on purpose. They do not apply to a non-flying animal, and inventing values would risk false violations."
+    ],
+    "notes": "I know of no law that blocks the brief. I have not run lean_check, so none of this is verified. Flight-specific and Exocoetidae-scoped laws will return out-of-scope or cannot-evaluate, which is expected. The thermal laws (26 C inside 6.2–41.4 C, Q10 referenced to 28 C), the swimming-speed law (current below Ucrit) and the swimbladder Boyle's-law check should all be evaluated. Energy-budget keys (intake_J_per_day and similar) are left out, because I did not want to invent values that could violate a balance law."
+   },
+   "model_output_raw": "{\"design\":{\"taxon\":\"Danio rerio\",\"life_stage\":\"adult\",\"flight_mode\":\"none\",\"powered\":false,\"standard_length_m\":0.035,\"SL_m\":0.035,\"mass_kg\":0.0008,\"body_temperature_C\":26,\"ct_min_C\":6.2,\"ct_max_C\":41.4,\"q10\":2.3,\"reference_temperature_C\":28,\"depth_m\":0.3,\"altitude_m\":0,\"critical_swimming_speed_m_s\":0.35,\"current_speed_m_s\":0.1,\"has_swimbladder\":true,\"bladder_volume_surface_ml\":0.02,\"bladder_volume_at_depth_ml\":0.0194},\"assumptions\":[\"critical_swimming_speed_m_s=0.35: about 10 body lengths/s, typical of adult zebrafish; chosen by me.\",\"current_speed_m_s=0.1: well below Ucrit (about 29% of it), so the fish can hold station aerobically; chosen by me.\",\"has_swimbladder=true: zebrafish are physoclistous and have a swimbladder.\",\"bladder_volume_surface_ml=0.02: my estimate, about 2.5% of body volume (0.8 mL), which is a modest value for a freshwater fish.\",\"bladder_volume_at_depth_ml=0.0194: Boyle's law at 0.3 m of fresh water. Pressure goes from 101.325 kPa to about 104.27 kPa (rho*g*h is about 2.94 kPa), so V = 0.02*101.325/104.27 = 0.01943 mL, rounded to 0.0194.\",\"flight_mode='none' and powered=false: declared explicitly. This takes the aerobic-demand laws (C14, E3) out of scope, which is intended for a non-flying design.\",\"Flight fields (airspeed, finArea, CLmax and the rest) are omitted on purpose. They do not apply to a non-flying animal, and inventing values would risk false violations.\"],\"notes\":\"I know of no law that blocks the brief. I have not run lean_check, so none of this is verified. Flight-specific and Exocoetidae-scoped laws will return out-of-scope or cannot-evaluate, which is expected. The thermal laws (26 C inside 6.2–41.4 C, Q10 referenced to 28 C), the swimming-speed law (current below Ucrit) and the swimbladder Boyle's-law check should all be evaluated. Energy-budget keys (intake_J_per_day and similar) are left out, because I did not want to invent values that could violate a balance law.\"}",
+   "tokens": {
+    "input": 2,
+    "output": 935,
+    "cache_read": 2771,
+    "cache_creation": 6443
+   },
+   "tokens_total": 10151,
+   "cost_usd": 0.0354031,
+   "duration_ms": 8373,
+   "num_turns": 2,
+   "stop_reason": "tool_use",
+   "terminal_reason": "completed",
+   "is_error": false,
+   "error_text": null,
+   "cap_stop": false,
+   "failure_class": "ok"
+  },
+  {
+   "label": "worker-2",
+   "prompt_sent": "You are one of 3 agents working on this task INDEPENDENTLY and in parallel.\nYou cannot see the other agents and they cannot see you. There is no shared state and no coordinator.\nYour answer will be compared with theirs and the one most agreed-with will be kept, so do the whole task\nyourself and do it the way you believe is right. Do not hedge and do not leave anything for someone else.\n\nYou are agent 2 of 3.\n\nTASK: write the SI-unit `design` object that the DELPHI Design Studio tool `lean_check` judges,\nfor the brief below, at Lean lawset 1.8.1.\n\nTHE BRIEF\nSpecify an adult zebrafish (Danio rerio) for the studio as a purely aquatic, non-flying design. The sponsor fixes: standard length 0.035 m, mass 0.0008 kg, body temperature 26 C, thermal lower limit 6.2 C, thermal upper limit 41.4 C, Q10 of 2.3 referenced to 28 C, holding depth 0.3 m, altitude 0 m. There is no flight: say so explicitly in the design rather than leaving the flight fields blank. You choose the critical swimming speed and the current speed the animal must hold against, and any further quantity you need, so that no accepted Lean-backed law at lawset 1.8.1 is violated.\n\nQUANTITIES THE SPONSOR FIXES. These keys must appear in your design with these exact values:\n  taxon = \"Danio rerio\"\n  life_stage = \"adult\"\n  standard_length_m = 0.035\n  SL_m = 0.035\n  mass_kg = 0.0008\n  body_temperature_C = 26\n  ct_min_C = 6.2\n  ct_max_C = 41.4\n  q10 = 2.3\n  reference_temperature_C = 28\n  depth_m = 0.3\n  altitude_m = 0\n\nQUANTITIES YOU CHOOSE (the key names lean_check uses): critical_swimming_speed_m_s, current_speed_m_s, has_swimbladder, powered\n\nHOW lean_check READS A DESIGN\n- The design is a flat JSON object of SI quantities plus `taxon`, `life_stage` and `flight_mode`.\n- `flight_mode: \"glide\"` declares an UNPOWERED glide, which takes the aerobic-demand laws (constraints C14, E3)\n  OUT OF SCOPE instead of violating them. `powered: false` does the same. Declaring powered flight puts them IN scope.\n- A law whose inputs are absent returns `cannot-evaluate`, which is NOT a pass: it means the law could not judge\n  your design at all. A design that names almost nothing scores zero violations by being unjudgeable, and that is\n  explicitly counted against it here.\n- Laws scoped to Exocoetidae return `out-of-scope` for other taxa.\n- Keys lean_check knows include: taxon, life_stage, flight_mode, powered, SL_m, standard_length_m, mass_kg,\n  finArea_m2, CLmax, LD_max, rho, airspeed_m_s, horizontal_airspeed_m_s, climbRate_m_s, glideHeight_m,\n  glideDistance_m, ground_distance_m, drag_coefficient, drag_area_m2, wind_along_track_m_s, flight_duration_s,\n  powerAvailable_W, sustained_power_W, reference_sustained_power_W, aerobicCeiling_W, efficiency, oxycaloric,\n  cardiacOutput, arterialO2, flightMuscleFraction, musclePowerPerKg_W, o2_store_ml, oxycaloric_J_per_unit_O2,\n  body_temperature_C, ct_min_C, ct_max_C, q10, reference_temperature_C, critical_swimming_speed_m_s,\n  current_speed_m_s, depth_m, altitude_m, bladder_volume_surface_ml, bladder_volume_at_depth_ml,\n  has_swimbladder, intake_J_per_day, routine_cost_J_per_day, activity_cost_J_per_day,\n  assimilation_efficiency, mass_change, genotype_edits.\n\nAIM FOR: zero binding violations, every fixed quantity present and exact, and as MANY laws actually evaluated\n(verdict `holds` or `violated`) as the brief allows. Flag in `assumptions` every number you chose yourself.\n\nOutput `design`, `assumptions` and `notes`.",
+   "prompt_chars": 3457,
+   "model_output_parsed": {
+    "design": {
+     "taxon": "Danio rerio",
+     "life_stage": "adult",
+     "standard_length_m": 0.035,
+     "SL_m": 0.035,
+     "mass_kg": 0.0008,
+     "body_temperature_C": 26,
+     "ct_min_C": 6.2,
+     "ct_max_C": 41.4,
+     "q10": 2.3,
+     "reference_temperature_C": 28,
+     "depth_m": 0.3,
+     "altitude_m": 0,
+     "flight_mode": "none",
+     "powered": false,
+     "critical_swimming_speed_m_s": 0.4,
+     "current_speed_m_s": 0.2,
+     "has_swimbladder": true,
+     "bladder_volume_surface_ml": 0.04,
+     "bladder_volume_at_depth_ml": 0.03887,
+     "intake_J_per_day": 90,
+     "routine_cost_J_per_day": 52,
+     "activity_cost_J_per_day": 20,
+     "assimilation_efficiency": 0.8,
+     "mass_change": 0,
+     "genotype_edits": 0
+    },
+    "assumptions": [
+     "critical_swimming_speed_m_s = 0.4: about 11 body lengths/s, typical adult zebrafish Ucrit.",
+     "current_speed_m_s = 0.2: half of Ucrit, so the fish holds station aerobically below Ucrit.",
+     "has_swimbladder = true: zebrafish are physoclistous and have a swimbladder.",
+     "powered = false and flight_mode = 'none': no flight, stated explicitly. This takes the aerobic-demand laws C14 and E3 out of scope.",
+     "bladder_volume_surface_ml = 0.04: about 5% of body volume (about 0.8 mL at 0.8 g).",
+     "bladder_volume_at_depth_ml = 0.03887: Boyle's law, 0.04 x 101325 / (101325 + 1000x9.80665x0.3). Assumes fresh water at 1000 kg/m3 and 1 atm at the surface, because altitude is 0.",
+     "intake_J_per_day = 90, routine_cost_J_per_day = 52, activity_cost_J_per_day = 20, assimilation_efficiency = 0.8: rough energy budget for a 0.8 g fish at 26 C. 90 x 0.8 = 72 = 52 + 20, so the budget balances.",
+     "mass_change = 0 and genotype_edits = 0: balanced budget and an unedited wild-type fish.",
+     "I left out airborne and flight keys (airspeed, finArea, CLmax, and so on) so no flight law is given an invented value. Those laws will return cannot-evaluate or out-of-scope."
+    ],
+    "notes": "I know of no law that blocks the brief. I could not run lean_check, so none of this has been checked against lawset 1.8.1. The energy-budget keys are the least certain: if a law reads them differently, they could cause a violation or a cannot-evaluate. The flight laws will not be evaluated because the animal has no flight, and that cost is intended."
+   },
+   "model_output_raw": "{\"design\":{\"taxon\":\"Danio rerio\",\"life_stage\":\"adult\",\"standard_length_m\":0.035,\"SL_m\":0.035,\"mass_kg\":0.0008,\"body_temperature_C\":26,\"ct_min_C\":6.2,\"ct_max_C\":41.4,\"q10\":2.3,\"reference_temperature_C\":28,\"depth_m\":0.3,\"altitude_m\":0,\"flight_mode\":\"none\",\"powered\":false,\"critical_swimming_speed_m_s\":0.4,\"current_speed_m_s\":0.2,\"has_swimbladder\":true,\"bladder_volume_surface_ml\":0.04,\"bladder_volume_at_depth_ml\":0.03887,\"intake_J_per_day\":90,\"routine_cost_J_per_day\":52,\"activity_cost_J_per_day\":20,\"assimilation_efficiency\":0.8,\"mass_change\":0,\"genotype_edits\":0},\"assumptions\":[\"critical_swimming_speed_m_s = 0.4: about 11 body lengths/s, typical adult zebrafish Ucrit.\",\"current_speed_m_s = 0.2: half of Ucrit, so the fish holds station aerobically below Ucrit.\",\"has_swimbladder = true: zebrafish are physoclistous and have a swimbladder.\",\"powered = false and flight_mode = 'none': no flight, stated explicitly. This takes the aerobic-demand laws C14 and E3 out of scope.\",\"bladder_volume_surface_ml = 0.04: about 5% of body volume (about 0.8 mL at 0.8 g).\",\"bladder_volume_at_depth_ml = 0.03887: Boyle's law, 0.04 x 101325 / (101325 + 1000x9.80665x0.3). Assumes fresh water at 1000 kg/m3 and 1 atm at the surface, because altitude is 0.\",\"intake_J_per_day = 90, routine_cost_J_per_day = 52, activity_cost_J_per_day = 20, assimilation_efficiency = 0.8: rough energy budget for a 0.8 g fish at 26 C. 90 x 0.8 = 72 = 52 + 20, so the budget balances.\",\"mass_change = 0 and genotype_edits = 0: balanced budget and an unedited wild-type fish.\",\"I left out airborne and flight keys (airspeed, finArea, CLmax, and so on) so no flight law is given an invented value. Those laws will return cannot-evaluate or out-of-scope.\"],\"notes\":\"I know of no law that blocks the brief. I could not run lean_check, so none of this has been checked against lawset 1.8.1. The energy-budget keys are the least certain: if a law reads them differently, they could cause a violation or a cannot-evaluate. The flight laws will not be evaluated because the animal has no flight, and that cost is intended.\"}",
+   "tokens": {
+    "input": 2,
+    "output": 1810,
+    "cache_read": 2771,
+    "cache_creation": 6443
+   },
+   "tokens_total": 11026,
+   "cost_usd": 0.0441531,
+   "duration_ms": 14680,
+   "num_turns": 2,
+   "stop_reason": "tool_use",
+   "terminal_reason": "completed",
+   "is_error": false,
+   "error_text": null,
+   "cap_stop": false,
+   "failure_class": "ok"
+  }
+ ],
+ "final_artifact": {
+  "design": {
+   "taxon": "Danio rerio",
+   "life_stage": "adult",
+   "flight_mode": "none",
+   "powered": false,
+   "standard_length_m": 0.035,
+   "SL_m": 0.035,
+   "mass_kg": 0.0008,
+   "body_temperature_C": 26,
+   "ct_min_C": 6.2,
+   "ct_max_C": 41.4,
+   "q10": 2.3,
+   "reference_temperature_C": 28,
+   "depth_m": 0.3,
+   "altitude_m": 0,
+   "critical_swimming_speed_m_s": 0.35,
+   "current_speed_m_s": 0.15,
+   "has_swimbladder": true,
+   "bladder_volume_surface_ml": 0.04,
+   "bladder_volume_at_depth_ml": 0.03887
+  },
+  "assumptions": [
+   "critical_swimming_speed_m_s = 0.35 (~10 SL/s, typical adult zebrafish Ucrit)",
+   "current_speed_m_s = 0.15 (well below Ucrit, ~4 SL/s, sustainable hold)",
+   "has_swimbladder = true (physoclistous teleost)",
+   "bladder_volume_surface_ml = 0.04 (~5% of ~0.8 ml body volume for near-neutral buoyancy)",
+   "bladder_volume_at_depth_ml = 0.03887 from Boyle's law at 0.3 m: 0.04/1.02905 (P=101325+1000*9.81*0.3 Pa)",
+   "powered = false and flight_mode = 'none' to state explicitly there is no flight; flight/aerobic-demand fields omitted on purpose",
+   "Energy budget, mass_change and genotype_edits omitted: no basis to choose them, avoids unforced violations"
+  ],
+  "notes": "I couldn't run lean_check, so none of this has been checked against it. No law blocks the brief as far as I can tell. Flight-related laws (C14, E3) should be out of scope because powered is false. The flight_mode value 'none' may not be a value lean_check recognises. If it isn't, 'glide' is the fallback, though that declares an unpowered glide, which isn't quite what the brief says. Laws that depend on omitted inputs, such as the energy budget, will probably return cannot-evaluate."
+ },
+ "swarm_candidates": [
+  {
+   "index": 0,
+   "ok": true,
+   "subtask": null,
+   "parsed": {
+    "design": {
+     "taxon": "Danio rerio",
+     "life_stage": "adult",
+     "flight_mode": "none",
+     "powered": false,
+     "standard_length_m": 0.035,
+     "SL_m": 0.035,
+     "mass_kg": 0.0008,
+     "body_temperature_C": 26,
+     "ct_min_C": 6.2,
+     "ct_max_C": 41.4,
+     "q10": 2.3,
+     "reference_temperature_C": 28,
+     "depth_m": 0.3,
+     "altitude_m": 0,
+     "critical_swimming_speed_m_s": 0.35,
+     "current_speed_m_s": 0.15,
+     "has_swimbladder": true,
+     "bladder_volume_surface_ml": 0.04,
+     "bladder_volume_at_depth_ml": 0.03887
+    },
+    "assumptions": [
+     "critical_swimming_speed_m_s = 0.35 (~10 SL/s, typical adult zebrafish Ucrit)",
+     "current_speed_m_s = 0.15 (well below Ucrit, ~4 SL/s, sustainable hold)",
+     "has_swimbladder = true (physoclistous teleost)",
+     "bladder_volume_surface_ml = 0.04 (~5% of ~0.8 ml body volume for near-neutral buoyancy)",
+     "bladder_volume_at_depth_ml = 0.03887 from Boyle's law at 0.3 m: 0.04/1.02905 (P=101325+1000*9.81*0.3 Pa)",
+     "powered = false and flight_mode = 'none' to state explicitly there is no flight; flight/aerobic-demand fields omitted on purpose",
+     "Energy budget, mass_change and genotype_edits omitted: no basis to choose them, avoids unforced violations"
+    ],
+    "notes": "I couldn't run lean_check, so none of this has been checked against it. No law blocks the brief as far as I can tell. Flight-related laws (C14, E3) should be out of scope because powered is false. The flight_mode value 'none' may not be a value lean_check recognises. If it isn't, 'glide' is the fallback, though that declares an unpowered glide, which isn't quite what the brief says. Laws that depend on omitted inputs, such as the energy budget, will probably return cannot-evaluate."
+   }
+  },
+  {
+   "index": 1,
+   "ok": true,
+   "subtask": null,
+   "parsed": {
+    "design": {
+     "taxon": "Danio rerio",
+     "life_stage": "adult",
+     "flight_mode": "none",
+     "powered": false,
+     "standard_length_m": 0.035,
+     "SL_m": 0.035,
+     "mass_kg": 0.0008,
+     "body_temperature_C": 26,
+     "ct_min_C": 6.2,
+     "ct_max_C": 41.4,
+     "q10": 2.3,
+     "reference_temperature_C": 28,
+     "depth_m": 0.3,
+     "altitude_m": 0,
+     "critical_swimming_speed_m_s": 0.35,
+     "current_speed_m_s": 0.1,
+     "has_swimbladder": true,
+     "bladder_volume_surface_ml": 0.02,
+     "bladder_volume_at_depth_ml": 0.0194
+    },
+    "assumptions": [
+     "critical_swimming_speed_m_s=0.35: about 10 body lengths/s, typical of adult zebrafish; chosen by me.",
+     "current_speed_m_s=0.1: well below Ucrit (about 29% of it), so the fish can hold station aerobically; chosen by me.",
+     "has_swimbladder=true: zebrafish are physoclistous and have a swimbladder.",
+     "bladder_volume_surface_ml=0.02: my estimate, about 2.5% of body volume (0.8 mL), which is a modest value for a freshwater fish.",
+     "bladder_volume_at_depth_ml=0.0194: Boyle's law at 0.3 m of fresh water. Pressure goes from 101.325 kPa to about 104.27 kPa (rho*g*h is about 2.94 kPa), so V = 0.02*101.325/104.27 = 0.01943 mL, rounded to 0.0194.",
+     "flight_mode='none' and powered=false: declared explicitly. This takes the aerobic-demand laws (C14, E3) out of scope, which is intended for a non-flying design.",
+     "Flight fields (airspeed, finArea, CLmax and the rest) are omitted on purpose. They do not apply to a non-flying animal, and inventing values would risk false violations."
+    ],
+    "notes": "I know of no law that blocks the brief. I have not run lean_check, so none of this is verified. Flight-specific and Exocoetidae-scoped laws will return out-of-scope or cannot-evaluate, which is expected. The thermal laws (26 C inside 6.2–41.4 C, Q10 referenced to 28 C), the swimming-speed law (current below Ucrit) and the swimbladder Boyle's-law check should all be evaluated. Energy-budget keys (intake_J_per_day and similar) are left out, because I did not want to invent values that could violate a balance law."
+   }
+  },
+  {
+   "index": 2,
+   "ok": true,
+   "subtask": null,
+   "parsed": {
+    "design": {
+     "taxon": "Danio rerio",
+     "life_stage": "adult",
+     "standard_length_m": 0.035,
+     "SL_m": 0.035,
+     "mass_kg": 0.0008,
+     "body_temperature_C": 26,
+     "ct_min_C": 6.2,
+     "ct_max_C": 41.4,
+     "q10": 2.3,
+     "reference_temperature_C": 28,
+     "depth_m": 0.3,
+     "altitude_m": 0,
+     "flight_mode": "none",
+     "powered": false,
+     "critical_swimming_speed_m_s": 0.4,
+     "current_speed_m_s": 0.2,
+     "has_swimbladder": true,
+     "bladder_volume_surface_ml": 0.04,
+     "bladder_volume_at_depth_ml": 0.03887,
+     "intake_J_per_day": 90,
+     "routine_cost_J_per_day": 52,
+     "activity_cost_J_per_day": 20,
+     "assimilation_efficiency": 0.8,
+     "mass_change": 0,
+     "genotype_edits": 0
+    },
+    "assumptions": [
+     "critical_swimming_speed_m_s = 0.4: about 11 body lengths/s, typical adult zebrafish Ucrit.",
+     "current_speed_m_s = 0.2: half of Ucrit, so the fish holds station aerobically below Ucrit.",
+     "has_swimbladder = true: zebrafish are physoclistous and have a swimbladder.",
+     "powered = false and flight_mode = 'none': no flight, stated explicitly. This takes the aerobic-demand laws C14 and E3 out of scope.",
+     "bladder_volume_surface_ml = 0.04: about 5% of body volume (about 0.8 mL at 0.8 g).",
+     "bladder_volume_at_depth_ml = 0.03887: Boyle's law, 0.04 x 101325 / (101325 + 1000x9.80665x0.3). Assumes fresh water at 1000 kg/m3 and 1 atm at the surface, because altitude is 0.",
+     "intake_J_per_day = 90, routine_cost_J_per_day = 52, activity_cost_J_per_day = 20, assimilation_efficiency = 0.8: rough energy budget for a 0.8 g fish at 26 C. 90 x 0.8 = 72 = 52 + 20, so the budget balances.",
+     "mass_change = 0 and genotype_edits = 0: balanced budget and an unedited wild-type fish.",
+     "I left out airborne and flight keys (airspeed, finArea, CLmax, and so on) so no flight law is given an invented value. Those laws will return cannot-evaluate or out-of-scope."
+    ],
+    "notes": "I know of no law that blocks the brief. I could not run lean_check, so none of this has been checked against lawset 1.8.1. The energy-budget keys are the least certain: if a law reads them differently, they could cause a violation or a cannot-evaluate. The flight laws will not be evaluated because the animal has no flight, and that cost is intended."
+   }
+  }
+ ],
+ "grader_verdict": {
+  "task": "l3-t2",
+  "lawset": "1.8.1",
+  "accepted": 1,
+  "binding_violations": 0,
+  "evaluable_binding_laws": 1,
+  "brief_fields_present": 1,
+  "fixed_checks": [
+   {
+    "key": "taxon",
+    "want": "Danio rerio",
+    "got": "Danio rerio",
+    "ok": true
+   },
+   {
+    "key": "life_stage",
+    "want": "adult",
+    "got": "adult",
+    "ok": true
+   },
+   {
+    "key": "standard_length_m",
+    "want": 0.035,
+    "got": 0.035,
+    "ok": true
+   },
+   {
+    "key": "SL_m",
+    "want": 0.035,
+    "got": 0.035,
+    "ok": true
+   },
+   {
+    "key": "mass_kg",
+    "want": 0.0008,
+    "got": 0.0008,
+    "ok": true
+   },
+   {
+    "key": "body_temperature_C",
+    "want": 26,
+    "got": 26,
+    "ok": true
+   },
+   {
+    "key": "ct_min_C",
+    "want": 6.2,
+    "got": 6.2,
+    "ok": true
+   },
+   {
+    "key": "ct_max_C",
+    "want": 41.4,
+    "got": 41.4,
+    "ok": true
+   },
+   {
+    "key": "q10",
+    "want": 2.3,
+    "got": 2.3,
+    "ok": true
+   },
+   {
+    "key": "reference_temperature_C",
+    "want": 28,
+    "got": 28,
+    "ok": true
+   },
+   {
+    "key": "depth_m",
+    "want": 0.3,
+    "got": 0.3,
+    "ok": true
+   },
+   {
+    "key": "altitude_m",
+    "want": 0,
+    "got": 0,
+    "ok": true
+   }
+  ],
+  "invented_fields": 0,
+  "invented": [],
+  "lean_summary": {
+   "violated": 1,
+   "binding_violations": 0,
+   "holds": 2,
+   "out_of_scope": 10,
+   "unknown_lawset": 0,
+   "cannot_evaluate": 22
+  },
+  "design_keys": 19,
+  "assumptions_count": 7,
+  "artifact_absent": 0,
+  "score": 0.7727
+ },
+ "candidate_grades": {
+  "kept": 0,
+  "rule": "medoid",
+  "candidates": [
+   {
+    "index": 0,
+    "task": "l3-t2",
+    "lawset": "1.8.1",
+    "accepted": 1,
+    "binding_violations": 0,
+    "evaluable_binding_laws": 1,
+    "brief_fields_present": 1,
+    "fixed_checks": [
+     {
+      "key": "taxon",
+      "want": "Danio rerio",
+      "got": "Danio rerio",
+      "ok": true
+     },
+     {
+      "key": "life_stage",
+      "want": "adult",
+      "got": "adult",
+      "ok": true
+     },
+     {
+      "key": "standard_length_m",
+      "want": 0.035,
+      "got": 0.035,
+      "ok": true
+     },
+     {
+      "key": "SL_m",
+      "want": 0.035,
+      "got": 0.035,
+      "ok": true
+     },
+     {
+      "key": "mass_kg",
+      "want": 0.0008,
+      "got": 0.0008,
+      "ok": true
+     },
+     {
+      "key": "body_temperature_C",
+      "want": 26,
+      "got": 26,
+      "ok": true
+     },
+     {
+      "key": "ct_min_C",
+      "want": 6.2,
+      "got": 6.2,
+      "ok": true
+     },
+     {
+      "key": "ct_max_C",
+      "want": 41.4,
+      "got": 41.4,
+      "ok": true
+     },
+     {
+      "key": "q10",
+      "want": 2.3,
+      "got": 2.3,
+      "ok": true
+     },
+     {
+      "key": "reference_temperature_C",
+      "want": 28,
+      "got": 28,
+      "ok": true
+     },
+     {
+      "key": "depth_m",
+      "want": 0.3,
+      "got": 0.3,
+      "ok": true
+     },
+     {
+      "key": "altitude_m",
+      "want": 0,
+      "got": 0,
+      "ok": true
+     }
+    ],
+    "invented_fields": 0,
+    "invented": [],
+    "lean_summary": {
+     "violated": 1,
+     "binding_violations": 0,
+     "holds": 2,
+     "out_of_scope": 10,
+     "unknown_lawset": 0,
+     "cannot_evaluate": 22
+    },
+    "design_keys": 19,
+    "assumptions_count": 7,
+    "score": 0.7727
+   },
+   {
+    "index": 1,
+    "task": "l3-t2",
+    "lawset": "1.8.1",
+    "accepted": 1,
+    "binding_violations": 0,
+    "evaluable_binding_laws": 1,
+    "brief_fields_present": 1,
+    "fixed_checks": [
+     {
+      "key": "taxon",
+      "want": "Danio rerio",
+      "got": "Danio rerio",
+      "ok": true
+     },
+     {
+      "key": "life_stage",
+      "want": "adult",
+      "got": "adult",
+      "ok": true
+     },
+     {
+      "key": "standard_length_m",
+      "want": 0.035,
+      "got": 0.035,
+      "ok": true
+     },
+     {
+      "key": "SL_m",
+      "want": 0.035,
+      "got": 0.035,
+      "ok": true
+     },
+     {
+      "key": "mass_kg",
+      "want": 0.0008,
+      "got": 0.0008,
+      "ok": true
+     },
+     {
+      "key": "body_temperature_C",
+      "want": 26,
+      "got": 26,
+      "ok": true
+     },
+     {
+      "key": "ct_min_C",
+      "want": 6.2,
+      "got": 6.2,
+      "ok": true
+     },
+     {
+      "key": "ct_max_C",
+      "want": 41.4,
+      "got": 41.4,
+      "ok": true
+     },
+     {
+      "key": "q10",
+      "want": 2.3,
+      "got": 2.3,
+      "ok": true
+     },
+     {
+      "key": "reference_temperature_C",
+      "want": 28,
+      "got": 28,
+      "ok": true
+     },
+     {
+      "key": "depth_m",
+      "want": 0.3,
+      "got": 0.3,
+      "ok": true
+     },
+     {
+      "key": "altitude_m",
+      "want": 0,
+      "got": 0,
+      "ok": true
+     }
+    ],
+    "invented_fields": 0,
+    "invented": [],
+    "lean_summary": {
+     "violated": 0,
+     "binding_violations": 0,
+     "holds": 3,
+     "out_of_scope": 10,
+     "unknown_lawset": 0,
+     "cannot_evaluate": 22
+    },
+    "design_keys": 19,
+    "assumptions_count": 7,
+    "score": 0.7727
+   },
+   {
+    "index": 2,
+    "task": "l3-t2",
+    "lawset": "1.8.1",
+    "accepted": 0,
+    "binding_violations": 1,
+    "evaluable_binding_laws": 2,
+    "brief_fields_present": 1,
+    "fixed_checks": [
+     {
+      "key": "taxon",
+      "want": "Danio rerio",
+      "got": "Danio rerio",
+      "ok": true
+     },
+     {
+      "key": "life_stage",
+      "want": "adult",
+      "got": "adult",
+      "ok": true
+     },
+     {
+      "key": "standard_length_m",
+      "want": 0.035,
+      "got": 0.035,
+      "ok": true
+     },
+     {
+      "key": "SL_m",
+      "want": 0.035,
+      "got": 0.035,
+      "ok": true
+     },
+     {
+      "key": "mass_kg",
+      "want": 0.0008,
+      "got": 0.0008,
+      "ok": true
+     },
+     {
+      "key": "body_temperature_C",
+      "want": 26,
+      "got": 26,
+      "ok": true
+     },
+     {
+      "key": "ct_min_C",
+      "want": 6.2,
+      "got": 6.2,
+      "ok": true
+     },
+     {
+      "key": "ct_max_C",
+      "want": 41.4,
+      "got": 41.4,
+      "ok": true
+     },
+     {
+      "key": "q10",
+      "want": 2.3,
+      "got": 2.3,
+      "ok": true
+     },
+     {
+      "key": "reference_temperature_C",
+      "want": 28,
+      "got": 28,
+      "ok": true
+     },
+     {
+      "key": "depth_m",
+      "want": 0.3,
+      "got": 0.3,
+      "ok": true
+     },
+     {
+      "key": "altitude_m",
+      "want": 0,
+      "got": 0,
+      "ok": true
+     }
+    ],
+    "invented_fields": 0,
+    "invented": [],
+    "lean_summary": {
+     "violated": 2,
+     "binding_violations": 1,
+     "holds": 2,
+     "out_of_scope": 10,
+     "unknown_lawset": 0,
+     "cannot_evaluate": 21
+    },
+    "design_keys": 25,
+    "assumptions_count": 9,
+    "score": 0.5455
+   }
+  ]
+ },
+ "run_dir": "swarm/benchmark/runs/design/decentralised/l3-t2"
+}

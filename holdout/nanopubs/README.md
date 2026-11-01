@@ -27,10 +27,11 @@ the holdout thread's records as **unsigned drafts**. Nothing here is signed or p
 | `prereg-organism-design-aves.trig` | the pre-registered hypothesis and scoring rule for the organism-design exam | pre-registered (written before the prediction file existed) |
 | `exam-organism-design-aves.trig` | held-out exam of the organism-design blueprint tool on the 48-species roster | inconclusive (the panel lacks both pre-registered structures) |
 | `clade-analysis.trig` | the public tables cannot support a blind clade exam at the builders' own minimum n (13 vs 50, 8 vs 15); Aves confirmed by Amit on 2026-10-31 knowing this, over a Mammalia holdout that would make 1 of 2 exams decisive but 3 built tests post hoc | established by enumeration of project files; decision and cost recorded |
-| `leak-check.trig` | method and result of the leak check over the builders' folders | observed at the stated time (0 hits outside the reasoned allowlist) |
+| `leak-check.trig` | method and result of the leak check over the whole tree (every top-level folder except the exam and its inputs, including every thread's nanopub drafts and Lean modules; held-out names, identifiers and bird-only claim ids) | observed at the stated time (0 hits outside the reasoned allowlist) |
 | `triage-coverage.trig` | 14 of 16 completed tests contain no bird rows | established by inspection |
 | `burned-darwin1859-ch01-10.trig` | pigeon claim retired as a blind exam item | burned |
 | `burned-thompson1917-ch15-01.trig` | egg-shape claim retired as a blind exam item | burned |
+| `ruling-formal-statements-of-bird-linked-claims.trig` | a Lean 4 theorem of Thompson's flight-scaling law (`thompson1917-ch02-06`, `-07`) and the physics thread's flying-fish test of it are not a leak and do not burn the exam; the checker's blind spot that let the hub's curator, not the checker, find it, and how it was closed | eligible (ruled 2026-10-31; from `holdout/rulings.json`) |
 
 Each record carries, as the hub asked: the claim in one plain sentence (`rdfs:label`), its status in words
 (`delphi:hasVerdict` or the first words of `dct:description`), the evidence item linked with

@@ -1,0 +1,137 @@
+{
+ "law_id": "development-growth-asymptote",
+ "version": "1.2.0",
+ "kind": "biological",
+ "class": "theorem-from-hypothesis",
+ "status": "candidate",
+ "label": "A von Bertalanffy grower stays strictly below its asymptotic length, and K alone sets the shape",
+ "level": null,
+ "lean_ref": {
+  "module": "lean/registry/proposals/development-growth-asymptote/law.lean",
+  "theorem": "Delphi.LeanBio.Round2.GrowthAsymptote.von_bertalanffy_asymptote",
+  "structure": null,
+  "commit": "23c95f790e6554abf6955ea1bcbae03954cdb153",
+  "statement_sha256": "72bc0353ab45412353eeb6fd3e4f7ec4faf12d700a77444b38ab130c1114d0ba",
+  "content_hash": "20e444e1715692f8a8f5522f5b0fb32f6995387d79237c3b901cf7742584e8f0"
+ },
+ "statement_en": "For a cohort whose length at age follows von Bertalanffy, length(t) = Linf*(1 - exp(-K*(t - t0))) with asymptotic length Linf > 0 and Brody coefficient K > 0 (a named hypothesis), length is strictly below Linf at every age, strictly increasing in age, and two cohorts sharing K reach the same fraction of their own asymptote at the same age measured from their own t0, however different their asymptotic lengths.",
+ "hypotheses": [
+  {
+   "name": "Delphi.LeanBio.Round2.GrowthAsymptote.GrowthHyp",
+   "statement": "A cohort's length at age follows the von Bertalanffy curve length(t) = Linf*(1 - exp(-K*(t - t0))) with Linf > 0 and K > 0. The repo's default curve is FL_cm(t_yr) = 23.3*(1 - exp(-3.12*(t_yr - 0.01))) for Hirundichthys affinis off northwest Barbados; across the 12 FishBase rows in development/growth.json Linf runs 13.5 to 30.5 cm and K runs 0.86 to 3.65 per year. All 12 rows are kind 'secondary' (a FishBase compilation), not measurements made in this repo.",
+   "value": "Linf = 23.3 cm FL, K = 3.12 /yr, t0 = 0.01 yr (default curve)",
+   "unit": "cm FL, 1/yr, yr",
+   "source": "development/growth.json default_curve (FishBase growth row autoctr 4651, Main Ref 6829 = Oxenford HA, Hunte W, Deane R, Campana SE (1994) Otolith age validation and growth-rate variation in flyingfish (Hirundichthys affinis) from the eastern Caribbean. Mar Biol 118:585-592, doi:10.1007/BF00347505; the only row FishBase marks as validated, by laboratory rearing of larvae and mark-recapture of adults); development/sources.json oxenford-1994 records that the paper itself was not seen and the parameters come from the FishBase row"
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "Exocoetidae"
+  ],
+  "life_stages": [
+   "larva",
+   "juvenile",
+   "adult"
+  ],
+  "ranges": {
+   "asymptotic_length": {
+    "min": 13.5,
+    "max": 30.5,
+    "unit": "cm (FL or TL as given per row)"
+   },
+   "brody_K": {
+    "min": 0.86,
+    "max": 3.65,
+    "unit": "1/yr"
+   }
+  },
+  "basis": "12 FishBase von Bertalanffy rows over 7 of the 75 Exocoetidae species, compiled in development/growth.json (built 2026-10-31); the default curve is the single row FishBase marks as validated. Field fits already embed the food and temperature of their locality (development/growth.json 'conditions' says nothing is adjusted for temperature or nutrition), so this is not a temperature-free law of growth. Nothing is established for the 68 species with no growth row, nor for embryos, for which no growth row exists. The theorem itself is taxon-free; the scope is the data the constants and the witness come from."
+ },
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "development/growth.json (12 FishBase von Bertalanffy rows, 7 Exocoetidae species; default curve autoctr 4651)",
+   "doi:10.1007/BF00347505",
+   "development/sources.json (fishbase-growth, oxenford-1994)"
+  ],
+  "observations": [],
+  "n_organisms": 7,
+  "n_observations": 12,
+  "leanbio": {
+   "pipeline": "pipeline/leanbio",
+   "round": "discovery round 2",
+   "belief_params": "leanbio-belief/0.1.0",
+   "note": "belief is an ordering heuristic for the formalization queue, not a probability"
+  }
+ },
+ "sources": [
+  "doi:10.1007/BF00347505",
+  "development/growth.json"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.LeanBio.Round2.GrowthAsymptote.witness",
+  "statement": "theorem witness : Nonempty Instance",
+  "file": "lean/registry/proposals/development-growth-asymptote/law.lean"
+ },
+ "constraints": [
+  "GROWTH1"
+ ],
+ "introduced_in": "1.8.1",
+ "supersedes": "development-growth-asymptote@1.1.0",
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": null,
+ "origin": {
+  "by_role": "agent:leanbio-discovery-2",
+  "kind": "agent"
+ },
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "propose.mjs against lawset 1.8.0: candidate"
+  },
+  {
+   "version": "1.1.0",
+   "date": "2026-11-01",
+   "change": "added a declarative browser_check block (constraint GROWTH1) so the law generates a row without a code edit; statement, hypotheses, scope and witness unchanged. Status stays candidate."
+  },
+  {
+   "version": "1.2.0",
+   "date": "2026-11-01",
+   "change": "added a declarative browser_check block (constraint GROWTH1) so the law generates a row without a code edit; statement, hypotheses, scope and witness unchanged. Status stays candidate."
+  }
+ ],
+ "content_hash": "20e444e1715692f8a8f5522f5b0fb32f6995387d79237c3b901cf7742584e8f0",
+ "browser_check": {
+  "constraint": "GROWTH1",
+  "quantity": "standard_length_m",
+  "op": "lt",
+  "bound": "growth_Linf_m",
+  "inputs": [
+   "standard_length_m"
+  ],
+  "lookups": [
+   {
+    "name": "growth_Linf_m",
+    "file": "development/growth.json",
+    "rows": "fishbase_rows",
+    "match": "taxon",
+    "row_key": "species",
+    "value": "Linf.value",
+    "where": {
+     "length_type": "FL"
+    },
+    "scale": 0.00927,
+    "select": "max",
+    "fallback_key": null
+   }
+  ],
+  "relation": "SL < Linf  (a von Bertalanffy grower never reaches its own asymptotic length)",
+  "note": "Checks a design's standard length against the asymptotic length of the growth curve fitted to its OWN species, looked up in development/growth.json. 'violated' means the design's length is impossible under that fitted curve; it does NOT mean the animal cannot be that long, because only 7 of 75 Exocoetidae species have a growth row, only 2 of those have fork-length rows, and all 12 rows are a FishBase compilation (kind 'secondary') fitted in one locality and year. select is 'max': where a species has several published fits the LOOSEST asymptote is used, so that a red verdict never depends on which of three fits a reader believes - the conservative direction for a law whose job is to rule designs out. fallback_key is null on purpose: a species with no fork-length row gets cannot-evaluate rather than being judged against another species' asymptote. The scale 0.00927 converts cm FL to m SL and is the weakest number in this row.",
+  "unit": "m",
+  "band": "hypothesis",
+  "tolerance": "relative"
+ }
+}

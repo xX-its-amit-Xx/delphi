@@ -55,20 +55,89 @@ function bar(label, c, weight) {
   return `<div class="vp-comp ${v >= 0.5 ? 'ok' : 'bad'}"><span class="vp-cl">${esc(label)}</span><span class="vp-bar"><i style="width:${(v * 100).toFixed(1)}%"></i></span><span class="vp-cv">${f(c.value)}</span><span class="vp-cw">w ${weight}</span></div>`;
 }
 
+/** Lean, re-checked against today's law base (sim-engine/validate/lean-rounds.mjs, another thread). Round 1 is the
+ *  law set the design was MADE under; round 2 is the set in force now. Shown only when the report carries it. */
+function leanRoundsHtml(report) {
+  const lr = report.lean_rounds;
+  if (!lr) return '';
+  if (lr.skipped || lr.error) return `<details><summary>Lean, re-checked against today's law base</summary><p class="vp-na">${esc(lr.skipped || lr.error)}</p></details>`;
+  if (!lr.round2) return '';
+  const r1 = lr.round1, r2 = lr.round2;
+  const list = (rows, cls, label, why) => rows && rows.length
+    ? `<p class="${cls}"><b>${esc(label)} (${rows.length})</b> <span class="vp-fine">${esc(why)}</span></p><ul>${rows.map(v => `<li class="${cls}"><b>${esc(v.law_id)}</b> ${esc(v.constraint)}${v.status ? ` [${esc(v.status)}]` : ''}${v.law_base_change ? ` · ${esc(v.law_base_change.kind)}` : ''}${v.message ? `: ${esc(String(v.message).slice(0, 160))}` : ''}</li>`).join('')}</ul>`
+    : '';
+  // A design that records no law set gets two identical rounds BY CONSTRUCTION. That must never read as
+  // "nothing has changed since it was made", so it is said explicitly.
+  const identical = lr.rounds_identical
+    ? `<p class="${r1.lawset_basis === 'unknown' ? 'warn' : 'vp-na'}">${r1.lawset_basis === 'unknown'
+        ? 'Both rounds used the CURRENT law set, because nothing on this design records the set it was made under. The two rounds are identical by construction, which is not evidence that the law base has not moved.'
+        : 'Both rounds used the same law set: the law base has not moved since this design was made.'}</p>`
+    : '';
+  const moved = lr.law_base_moved || {};
+  const rel = (moved.releases_between || []).length;
+  return `<details ${lr.verdict_changed ? 'open' : ''}><summary>Lean, re-checked against today's law base${lr.verdict_changed ? ' — <b class="bad">the verdict changed</b>' : ''}</summary>
+ <p>Round 1: law set <b>${esc(r1.lawset_version)}</b> <span class="vp-fine">(${esc(r1.lawset_basis)})</span> · Round 2: law set <b>${esc(r2.lawset_version)}</b> <span class="vp-fine">(in force now)</span>${rel ? ` · ${rel} release(s) between` : ''}</p>
+ ${identical}
+ ${list(lr.newly_violated_since, 'bad', 'Now broken, and was not when the design was made', 'a law admitted or changed since')}
+ ${list(lr.newly_binding_since, 'bad', 'Already broken, but only binding now', 'the law was raised to accepted: grey in the studio then, red today')}
+ ${list(lr.no_longer_violated_since, 'ok', 'No longer broken', 'a law was loosened, retired, re-scoped or superseded')}
+ ${list(lr.newly_unjudged_since, 'warn', 'No longer judged', 'a loss of coverage, not an improvement')}
+ ${list(lr.newly_violated_without_a_law_change, 'warn', 'Changed with no law change', 'the two rounds were not given the same numbers: a caller bug, not a law change')}
+ <p class="vp-fine">${esc(lr.summary || '')}</p>
+ <p class="vp-fine">${esc(lr.note || '')}</p></details>`;
+}
+
 /** The three separately reported results: genotype similarity, phenotype similarity, Lean on the designed organism. */
 function threeHtml(report) {
   const R = report.results; if (!R) return '';
-  const g = R.genotype_similarity, p = R.phenotype_similarity, l = R.lean_check;
+  const g = R.genotype_similarity, p = R.phenotype_similarity, l = R.lean_check, fr = R.functional_resolution, ps = R.physics_simulation;
   const gA = g.aggregate || {};
   const gHtml = g.n_edits ? `<table class="vp-t"><tr><th>gene</th><th>edit</th><th>closest real orthologue</th><th>identity to reference</th><th>state in a real organism</th><th>site conservation</th></tr>${g.per_gene.map(x => `<tr><td>${esc(x.gene)}</td><td><code>${esc(x.edit)}</code></td><td>${x.closest_real_orthologue ? `${esc(x.closest_real_orthologue.species)} (${f(x.closest_real_orthologue.percent_identity_after_edit, 2)} %)` : '–'}</td><td>${f(x.percent_identity_to_unedited_reference, 2)} %</td><td>${x.edited_state_exists_in_real_organism == null ? '–' : x.edited_state_exists_in_real_organism ? `yes: ${esc([...x.in_natural_orthologues, ...x.known_alleles].join(', '))}` : 'no'}</td><td>${x.site_conservation ? `${Math.round(x.site_conservation.fraction_of_orthologues_with_reference_residue * 100)} % of ${x.site_conservation.n_rows}${x.site_conservation.conserved ? ' (conserved)' : ''}` : '–'}</td></tr>`).join('')}</table><p class="vp-fine">Aggregate: min identity ${f(gA.min_percent_identity_to_reference, 2)} % · ${gA.edits_whose_state_exists_in_a_real_organism}/${gA.edits_assessed} edited states exist in a real organism · ${gA.conserved_sites_changed} conserved site(s) changed. ${esc(g.rule)}</p>` : `<p class="vp-na">${esc(gA.note || 'no gene edits')}</p>`;
   const cr = p.closest_real_relative;
   const pHtml = `<p>${cr ? `Closest real relative: <b>${esc(cr.name)}</b> (${esc(cr.taxon)}), distance ${f(cr.distance)}; dominant: ${cr.dominant_features.map(d => `${esc(d.label)} ${Math.round(d.share * 100)} %`).join(', ')}` : 'No body comparison ran.'}${p.body && p.body.p_value != null ? ` · body p ${f(p.body.p_value)}${p.body.ood ? ' · <b class="bad">out of distribution</b>' : ''}` : ''}</p>${p.fins && p.fins.closest_on_pectoral_length ? `<p>Pectoral length: closest ${esc(p.fins.closest_on_pectoral_length.name)} (p ${f(p.fins.p_value)})${p.fins.envelope_outside.length ? ` · outside the real fin range: ${p.fins.envelope_outside.map(o => esc(o.feature)).join(', ')}` : ''}</p>` : ''}${p.physiology_envelope_outside && p.physiology_envelope_outside.length ? `<p class="warn">Physiology outside its sourced envelope: ${p.physiology_envelope_outside.map(o => `${esc(o.field)} ${f(o.value)} (range ${f(o.lo)}–${f(o.hi)})`).join('; ')}</p>` : ''}`;
   const c = l.counts || {};
   const lHtml = `<p class="${l.accepted_violations.length ? 'bad' : 'ok'}"><b>${esc(l.gate)}</b></p><p>On the designed organism (${esc(l.lawset || '')}): holds ${c.holds ?? '–'} · violated ${c.violated ?? '–'} · out of scope ${c.out_of_scope ?? '–'} · cannot evaluate ${c.cannot_evaluate ?? '–'}</p>${l.accepted_violations.length ? `<ul>${l.accepted_violations.map(v => `<li class="bad"><b>${esc(v.law_id)}</b> ${esc(v.constraint)}: ${esc(v.message || '')} <code>${esc(JSON.stringify(v.inputs))}</code></li>`).join('')}</ul>` : ''}`;
-  return `<div class="vp-card"><b>Three results, reported separately</b>
+  // 4 · functional resolution: the ledger from sim-engine/validate/functional/ (another thread). Absent until it
+  // lands, and then said so plainly; a hypothesis is never shown as a demonstrated resolution.
+  let frHtml;
+  if (!fr) frHtml = '<p class="vp-na">not reported by this scorer version</p>';
+  else if (!fr.ran) frHtml = `<p class="vp-na">${esc(fr.reason || 'did not run')}</p>`;
+  else {
+    const rs = fr.resolution || {}, an = fr.closest_functional_analogue;
+    frHtml = `<p class="${rs.unresolved > 0 ? 'bad' : rs.hypothesised > 0 ? 'warn' : 'ok'}"><b>${esc(fr.gate)}</b></p>
+  ${an ? `<p>Closest functional analogue: <b>${esc(an.name || an.id)}</b>${an.function ? ` (by function: ${esc(an.function)})` : ''}${an.basis ? ` · basis: ${esc(an.basis)}` : ''}</p>` : ''}
+  <p>${rs.differences} difference(s): <b>${rs.demonstrated}</b> demonstrated · <b class="warn">${rs.hypothesised}</b> hypothesised (compensation) · <b class="bad">${rs.unresolved}</b> unresolved. <span class="vp-fine">Demonstrated and hypothesised are never summed.</span></p>
+  <table class="vp-t"><tr><th>difference</th><th>class</th><th>evidence</th></tr>${fr.entries.map(e => `<tr><td>${esc(e.difference || e.id)}${e.gene ? ` <code>${esc(e.gene)}</code>` : ''}</td><td class="${e.hypothesis ? 'warn' : e.class === 'UNRESOLVED' ? 'bad' : 'ok'}">${esc(e.class)}${e.hypothesis ? ' (hypothesis)' : ''}${e.class_recognised === false ? ` <span class="bad">[class "${esc(e.class_as_given)}" is not in the ladder]</span>` : ''}</td><td class="vp-fine">${e.evidence.map(v => esc(v.claim || '') + (v.kind ? ` [${esc(v.kind)}]` : '')).join('; ') || '–'}</td></tr>`).join('')}</table>
+  ${fr.coverage ? `<p class="vp-fine">Coverage: ${esc(JSON.stringify(fr.coverage))}</p>` : ''}
+  <p class="vp-fine">${esc(fr.scope || '')}</p>`;
+  }
+  // 5 · physics: does it actually DO the thing? A hard criterion with NO MODEL does not fail the gate; it makes
+  // the result INCOMPLETE, because "we could not check it" is not "it failed".
+  let psHtml;
+  if (!ps) psHtml = '<p class="vp-na">not reported by this scorer version</p>';
+  else if (!ps.ran) psHtml = `<p class="vp-na">${esc(ps.reason || 'did not run')}</p>`;
+  else {
+    const S = ps.summary || {}, unchecked = ps.unchecked_requirements || [];
+    const cls = ps.function_achieved ? 'ok' : ps.gate_status === 'incomplete' ? 'warn' : 'bad';
+    const crit = (ps.criteria || []).map(c => `<tr><td>${esc(c.scenario || '')} <span class="vp-fine">${esc(c.metric || '')} ${esc(c.op || '')} ${f(c.value)} ${esc(c.unit || '')}</span>${c.hard ? ' <b>[hard]</b>' : ''}${c.inferred ? ' <span class="vp-fine">(inferred)</span>' : ''}</td><td class="${c.status === 'met' ? 'ok' : c.status === 'not met' ? 'bad' : 'warn'}">${esc(c.status)}</td><td class="vp-fine">${esc(c.model_confidence?.validated || '')}</td></tr>`).join('');
+    const stand = (ps.standing_checks || []).map(c => `<tr><td>${esc(c.id)}</td><td class="${c.status === 'met' ? 'ok' : c.status === 'not met' ? 'bad' : 'warn'}">${esc(c.status)}</td><td class="vp-fine">${esc(c.statement || '')}</td></tr>`).join('');
+    psHtml = `<p class="${cls}"><b>function achieved: ${ps.function_achieved ? 'yes' : 'no'}</b> · gate ${esc(ps.gate_status)}${ps.function_achieved ? '' : ps.gate_status === 'incomplete' ? ' — a hard requirement could not be checked, which is not the same as failing' : ''}</p>
+  <p>${esc(ps.gate || '')}</p>
+  ${ps.target_function ? `<p class="vp-fine">Target function: ${esc(ps.target_function.inferred_function || ps.target_function.source)} — ${esc(ps.target_function.statement || '')}</p>` : ''}
+  <p>Hard criteria: ${S.met ?? '–'} met · ${S.not_met ?? '–'} not met · ${S.no_model ?? '–'} no model${unchecked.length ? ` · <b class="warn">${unchecked.length} unchecked</b>` : ''}</p>
+  ${unchecked.length ? `<p class="warn"><b>Unchecked requirements</b> <span class="vp-fine">(not failures: no model could decide them)</span></p><ul>${unchecked.map(u => `<li class="warn">${esc(u.criterion || u.metric || '')}${u.scenario ? ` <span class="vp-fine">(${esc(u.scenario)})</span>` : ''}${u.why ? `: ${esc(u.why)}` : ''}</li>`).join('')}</ul>` : ''}
+  ${crit ? `<table class="vp-t"><caption>Criteria</caption><tr><th>criterion</th><th>status</th><th>model confidence</th></tr>${crit}</table>` : ''}
+  ${stand ? `<table class="vp-t"><caption>Standing checks (run whether or not the spec asked; never summed into one number)</caption><tr><th>check</th><th>status</th><th></th></tr>${stand}</table>` : ''}
+  ${ps.model_honesty ? `<p class="vp-fine"><b>Model honesty.</b> ${esc(ps.model_honesty.statement || '')}${ps.model_honesty.circular_checks?.length ? ` Glide-based checks report <b>model_confidence: circular</b> (${ps.model_honesty.circular_checks.length} of them), read at call time from each scenario's model card and the studio validation run, not hard-coded.` : ''} The non-circular part of this result is the negative controls: each turns on an inequality between independently sourced quantities rather than on a fitted number.</p>` : ''}
+  ${ps.scenario_errors?.length ? `<p class="warn">Scenario modules that failed to load (a visible gap, not a pass): ${ps.scenario_errors.map(esc).join('; ')}</p>` : ''}`;
+  }
+  return `<div class="vp-card"><b>Five results, reported separately</b>
+ <p class="vp-rule"><b>lean_check</b> says the design <b>breaks no law</b> — necessary, not sufficient. <b>physics_simulation</b> says whether it <b>actually does the thing</b>. Neither substitutes for the other, and neither is folded into the score.</p>
  <details open><summary>1 · Genotype similarity</summary>${gHtml}</details>
  <details open><summary>2 · Phenotype similarity</summary>${pHtml}</details>
- <details open><summary>3 · Lean check on the designed organism</summary>${lHtml}</details></div>`;
+ <details open><summary>3 · Lean check on the designed organism</summary>${lHtml}</details>
+ <details open><summary>4 · Functional resolution (closest functional analogue)</summary>${frHtml}</details>
+ <details open><summary>5 · Physics: does it actually do the thing?</summary>${psHtml}</details></div>`;
 }
 
 /** Pure: report -> HTML (no DOM access), so it can be tested in node. */
@@ -91,6 +160,7 @@ export function renderValidate(report, { source = '' } = {}) {
  <p class="vp-fine">Weights and formula were fixed in sim-engine/validate/SCORER-PREREGISTRATION.md before the scorer was validated; how it did is in SCORER-RESULTS.md, failures included. Features the scorer does not read (ray and vertebra counts, gills, haemoglobin, density, internal organs beyond the flight-muscle budget) cannot lower it.</p>
 </div>
 ${threeHtml(report)}
+${leanRoundsHtml(report)}
 <details open><summary>Closest real relatives</summary>${nb(ph.body, 'Body shape (FishShapes v1 + our organisms and stages)')}${nb(ph.fin, 'Pectoral fin length (Daane 2021 + our organisms)')}
  ${ph.fin_envelope?.outside?.length ? `<p class="warn">Outside the real fin range (uncalibrated envelope): ${ph.fin_envelope.outside.map(o => `${esc(o.label)} ${f(o.design)} vs ${f(o.min)}–${f(o.max)}`).join('; ')}</p>` : ''}<p class="vp-fine">Distance is shape similarity, not relatedness. Birds excluded (frozen holdout).</p></details>
 <details open><summary>Checks (${checks.filter(c => c.status === 'passed').length} passed · ${checks.filter(c => c.status === 'failed').length} failed · ${checks.filter(c => c.status === 'flagged').length} flagged · ${checks.filter(c => c.status === 'could-not-run').length} not run)</summary><ul class="vp-checks">${checks.map(c => `<li class="${STATUS_CLS[c.status] || ''}"><b>${esc(c.status)}</b> <code>${esc(c.id)}</code> ${esc(c.detail)}</li>`).join('')}</ul></details>

@@ -249,6 +249,20 @@ const corrections = [
     ],
     paths: ['physics/FICK-CEILING-CHECK.md', 'lean/registry/laws/E3.json', 'lean/registry/law-versions/E3@1.0.0.json', 'lean/empirical.json (E3)', 'sim-engine/scenarios/current.mjs'],
   },
+  {
+    id: 'kcnk5b-attribution',
+    what: '"The papers disagree on sign" about the membrane-potential change caused by gain-of-function kcnk5b',
+    verdict: 'CORRECTED',
+    found_by: 'trying to FORMALISE the dispute in Lean: writing both arms as named hypotheses forced a check of which paper asserted which sign, and the attribution did not survive it',
+    why: 'Jiang 2024 proposes a RECONCILIATION of the two readings, not a contradiction of Perathoner 2014: the increased K+-channel activity first hyperpolarizes the membrane potential, and this increase immediately activates Na+ channels to depolarize the cells. Our own stored evidence held that sentence all along — it is in genotype/causal-chains.json with full-text provenance — but the prose summary built from it dropped the third position and recast a reconciliation as a dispute, putting a disagreement in a cited author’s mouth.',
+    caveat: 'The scientific gap is real and unchanged: no steady-state membrane potential of a wild-type versus alf zebrafish fin-bud cell exists in any source we have fetched, so the direction in the tissue that matters is unresolved. What changed is that it is now a three-arm open question rather than a two-sided dispute, and the two published readings are provably NOT formally contradictory — they conflict only under an added same-preparation premise, carried explicitly as a Lean hypothesis.',
+    metrics: [
+      ['arms, after formalisation', 3],
+      ['arms formally contradictory without a same-preparation premise', 0],
+      ['steady-state fin-bud membrane potentials in any fetched source', 0],
+    ],
+    paths: ['genotype/CAUSAL.md (kcnk5b row; unresolved-questions list)', 'lean/registry/open-questions/questions/oq-kcnk5b-vm-sign.json', 'lean/registry/open-questions/lean/KcnkSign.lean'],
+  },
 ];
 
 // ---------------------------------------------------------------- 2. design test
@@ -454,13 +468,13 @@ function gateFigure() {
   const legend = states.map(s => `<span class="lg"><span class="sw ${s.cls}${s.k === 'violated' ? ' hatched' : ''}"></span><b>${s.glyph}</b> ${esc(s.label)}</span>`).join('');
   return `<figure class="figwrap">
   <figcaption class="fcap">Of the ${rows} constraint rows, how many each arm actually decides. Longer grey means the gate said nothing.</figcaption>
-  <svg class="fig" viewBox="0 0 ${W} ${H}" role="img" aria-label="Stacked bars of holds, violated and cannot-evaluate counts across ${rows} constraint rows for three arms">
+  <div class="scroll figscroll gate"><svg class="fig" viewBox="0 0 ${W} ${H}" role="img" aria-label="Stacked bars of holds, violated and cannot-evaluate counts across ${rows} constraint rows for three arms">
    <defs><pattern id="hatch" width="7" height="7" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
      <line x1="0" y1="0" x2="0" y2="7" stroke="var(--panel)" stroke-width="2.4" stroke-opacity=".55"/></pattern></defs>
    <text x="0" y="20" class="ftitle">Three of ${rows} rows carry the whole verdict</text>
    <text x="0" y="38" class="axl sub">one bar per arm · ${rows} rows = full width</text>
    ${g}
-  </svg>
+  </svg></div>
   <div class="legend">${legend}</div>
   ${src(SRC.scorecard + ' (part3_lean_gate.tallies, .verdicts)')}
  </figure>`;
@@ -546,6 +560,9 @@ ul.tight{margin:.3em 0 .6em;padding-left:1.2em} ul.tight li{margin:.25em 0}
 .figwrap{margin:14px 0;padding:0}
 .fcap{font-size:.88rem;color:var(--mute);margin-bottom:8px}
 svg.fig{display:block;width:100%;height:auto;max-width:100%;color:var(--ink)}
+.figscroll{padding-bottom:4px}
+.figscroll.gate svg{min-width:620px}
+.figscroll.cov svg{min-width:780px}
 svg.fig .ftitle{fill:var(--ink);font-size:15px;font-weight:700}
 svg.fig .axl{fill:var(--ink);font-size:12.5px}
 svg.fig .axl.sub{fill:var(--mute);font-size:11px}
@@ -765,7 +782,7 @@ ${src(SRC.readiness + ' (items, checklist)')}</div>
 
 ${coverageSvg ? `<div class="card" style="margin-top:14px">
  <h3>The figure the readiness thread drew</h3>
- <figure class="figwrap">${coverageSvg}</figure>
+ <figure class="figwrap"><div class="scroll figscroll cov">${coverageSvg}</div></figure>
  ${src(SRC.coverageSvg + ' (embedded as built, not redrawn)')}
 </div>` : `<p class="na-block">${NA} &mdash; <code>${esc(SRC.coverageSvg)}</code> could not be read.</p>`}
 

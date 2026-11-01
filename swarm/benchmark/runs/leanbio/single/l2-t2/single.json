@@ -1,0 +1,155 @@
+{
+ "meta": {
+  "label": "single",
+  "model": "claude-sonnet-5-5",
+  "exit_code": 0,
+  "via_stdin": false,
+  "prompt_chars": 2531,
+  "duration_ms": 12655,
+  "cost_usd": 0.050506,
+  "num_turns": 2,
+  "stop_reason": "tool_use",
+  "terminal_reason": "completed",
+  "is_error": false,
+  "error_text": null,
+  "usage": {
+   "input": 2,
+   "output": 1553,
+   "cache_read": 0,
+   "cache_creation": 8743
+  },
+  "tokens_total": 10298,
+  "infra_failure": false,
+  "stderr": ""
+ },
+ "prompt": "You are a single agent working alone. You do the whole task, end to end, yourself.\nYou have no colleagues, no tools and no second pass: what you output is final.\n\nTASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.\n\nTHE CLAIM IN ENGLISH\nThe aerobic power a fish can supply is bounded above by the Fick product P_avail = eta * E * Q * (Ca - Cv), where eta is the mechanical efficiency, E the oxycaloric equivalent, Q the cardiac output and (Ca - Cv) the arterio-venous oxygen difference. Therefore if the power a sustained activity demands strictly exceeds P_avail, that activity cannot be sustained aerobically.\n\nREQUIRED CONTENT. A statement that compiles but does not carry these is a failure:\n  [1] efficiency enters as a multiplicative factor\n  [2] the arterio-venous difference appears as a difference\n  [3] cardiac output enters as a multiplicative factor\n  [4] efficiency is constrained (positive or in a band), so the premise is not vacuous\n  [5] a demanded power is named separately from the available power\n  [6] the conclusion is a negation: the activity cannot be sustained\n  [7] the arterio-venous difference is hypothesised non-negative, which is what stops the bound being vacuous\n\nKNOWN TRAP: If the hypotheses are mutually contradictory the theorem is vacuously true and compiles. The witness declaration is what catches this, and `hypotheses_load_bearing` is what catches a conclusion that needs no hypotheses at all.\n\nHARD REQUIREMENTS ON THE FILE\n- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.\n- The main theorem is named exactly `l2_t2`.\n- A second declaration named exactly `l2_t2_witness` proves that the hypotheses of `l2_t2` are\n  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`\n  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.\n- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.\n- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the\n  formalization is worthless and will be scored as a failure.\n- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,\n  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.\n\nOutput the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.",
+ "parsed": {
+  "lean_file": "import Mathlib\n\ntheorem l2_t2 (eta E Q Ca Cv Pavail Pdemand Psup : ℝ)\n    (heta0 : 0 < eta) (heta1 : eta ≤ 1)\n    (hE : 0 < E) (hQ : 0 < Q)\n    (hav : 0 ≤ Ca - Cv)\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\n    (hsup : Psup ≤ Pavail)\n    (hdem : Pavail < Pdemand) :\n    ¬ (Pdemand ≤ Psup) := by\n  intro h\n  linarith\n\ntheorem l2_t2_witness :\n    ∃ (eta E Q Ca Cv Pavail Pdemand Psup : ℝ),\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧ 0 ≤ Ca - Cv ∧\n      Pavail = eta * E * Q * (Ca - Cv) ∧ Psup ≤ Pavail ∧ Pavail < Pdemand := by\n  refine ⟨1/2, 1, 1, 2, 1, 1/2, 1, 1/2, ?_⟩\n  norm_num\n",
+  "statement_only": "theorem l2_t2 (eta E Q Ca Cv Pavail Pdemand Psup : ℝ)\n    (heta0 : 0 < eta) (heta1 : eta ≤ 1)\n    (hE : 0 < E) (hQ : 0 < Q)\n    (hav : 0 ≤ Ca - Cv)\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\n    (hsup : Psup ≤ Pavail)\n    (hdem : Pavail < Pdemand) :\n    ¬ (Pdemand ≤ Psup)",
+  "notes": "Pavail is defined as eta*E*Q*(Ca-Cv), with eta in (0,1], E>0, Q>0, and Ca-Cv ≥ 0. Psup is any aerobic power actually supplied, and it is bounded by Pavail. If the demanded power Pdemand strictly exceeds Pavail, the demand cannot be met by the supply, so the conclusion is the negation ¬(Pdemand ≤ Psup). The witness gives concrete numbers that satisfy all the hypotheses, so the premises are not vacuous. The bound hsup and the strict inequality hdem are what the proof actually uses. The positivity hypotheses are there to make the premise realistic and non-degenerate, and the proof does not need them. The statement does not model fish physiology beyond this inequality chain. It does not derive the Fick bound from first principles: \"supply ≤ Pavail\" is taken as a hypothesis. The proof was not compiled in this session, so it has not been checked against Lean 4 v4.35.0 and Mathlib."
+ },
+ "raw_result": {
+  "duration_api_ms": 10263,
+  "stop_reason": "tool_use",
+  "session_id": "5480a422-025f-4784-9735-044fa7c64abb",
+  "total_cost_usd": 0.050506,
+  "usage": {
+   "input_tokens": 2,
+   "cache_creation_input_tokens": 8743,
+   "cache_read_input_tokens": 0,
+   "output_tokens": 1553,
+   "output_tokens_details": {
+    "thinking_tokens": 472
+   },
+   "server_tool_use": {
+    "web_search_requests": 0,
+    "web_fetch_requests": 0
+   },
+   "service_tier": "standard",
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 8743,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "inference_geo": "global",
+   "iterations": [
+    {
+     "input_tokens": 2,
+     "output_tokens": 1553,
+     "cache_read_input_tokens": 0,
+     "cache_creation_input_tokens": 8743,
+     "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 8743
+     },
+     "type": "message"
+    }
+   ],
+   "speed": "standard",
+   "fallback_credit": null
+  },
+  "modelUsage": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 1553,
+    "cacheReadInputTokens": 0,
+    "cacheCreationInputTokens": 8743,
+    "webSearchRequests": 0,
+    "costUSD": 0.050506,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 472,
+    "cacheCreationEphemeral5mInputTokens": 0,
+    "cacheCreationEphemeral1hInputTokens": 8743,
+    "canonicalModel": "claude-sonnet-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 2,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "{\"lean_file\":\"import Mathlib\\n\\ntheorem l2_t2 (eta E Q Ca Cv Pavail Pdemand Psup : ℝ)\\n    (heta0 : 0 < eta) (heta1 : eta ≤ 1)\\n    (hE : 0 < E) (hQ : 0 < Q)\\n    (hav : 0 ≤ Ca - Cv)\\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\\n    (hsup : Psup ≤ Pavail)\\n    (hdem : Pavail < Pdemand) :\\n    ¬ (Pdemand ≤ Psup) := by\\n  intro h\\n  linarith\\n\\ntheorem l2_t2_witness :\\n    ∃ (eta E Q Ca Cv Pavail Pdemand Psup : ℝ),\\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧ 0 ≤ Ca - Cv ∧\\n      Pavail = eta * E * Q * (Ca - Cv) ∧ Psup ≤ Pavail ∧ Pavail < Pdemand := by\\n  refine ⟨1/2, 1, 1, 2, 1, 1/2, 1, 1/2, ?_⟩\\n  norm_num\\n\",\"statement_only\":\"theorem l2_t2 (eta E Q Ca Cv Pavail Pdemand Psup : ℝ)\\n    (heta0 : 0 < eta) (heta1 : eta ≤ 1)\\n    (hE : 0 < E) (hQ : 0 < Q)\\n    (hav : 0 ≤ Ca - Cv)\\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\\n    (hsup : Psup ≤ Pavail)\\n    (hdem : Pavail < Pdemand) :\\n    ¬ (Pdemand ≤ Psup)\",\"notes\":\"Pavail is defined as eta*E*Q*(Ca-Cv), with eta in (0,1], E>0, Q>0, and Ca-Cv ≥ 0. Psup is any aerobic power actually supplied, and it is bounded by Pavail. If the demanded power Pdemand strictly exceeds Pavail, the demand cannot be met by the supply, so the conclusion is the negation ¬(Pdemand ≤ Psup). The witness gives concrete numbers that satisfy all the hypotheses, so the premises are not vacuous. The bound hsup and the strict inequality hdem are what the proof actually uses. The positivity hypotheses are there to make the premise realistic and non-degenerate, and the proof does not need them. The statement does not model fish physiology beyond this inequality chain. It does not derive the Fick bound from first principles: \\\"supply ≤ Pavail\\\" is taken as a hypothesis. The proof was not compiled in this session, so it has not been checked against Lean 4 v4.35.0 and Mathlib.\"}",
+  "structured_output": {
+   "lean_file": "import Mathlib\n\ntheorem l2_t2 (eta E Q Ca Cv Pavail Pdemand Psup : ℝ)\n    (heta0 : 0 < eta) (heta1 : eta ≤ 1)\n    (hE : 0 < E) (hQ : 0 < Q)\n    (hav : 0 ≤ Ca - Cv)\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\n    (hsup : Psup ≤ Pavail)\n    (hdem : Pavail < Pdemand) :\n    ¬ (Pdemand ≤ Psup) := by\n  intro h\n  linarith\n\ntheorem l2_t2_witness :\n    ∃ (eta E Q Ca Cv Pavail Pdemand Psup : ℝ),\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧ 0 ≤ Ca - Cv ∧\n      Pavail = eta * E * Q * (Ca - Cv) ∧ Psup ≤ Pavail ∧ Pavail < Pdemand := by\n  refine ⟨1/2, 1, 1, 2, 1, 1/2, 1, 1/2, ?_⟩\n  norm_num\n",
+   "statement_only": "theorem l2_t2 (eta E Q Ca Cv Pavail Pdemand Psup : ℝ)\n    (heta0 : 0 < eta) (heta1 : eta ≤ 1)\n    (hE : 0 < E) (hQ : 0 < Q)\n    (hav : 0 ≤ Ca - Cv)\n    (hP : Pavail = eta * E * Q * (Ca - Cv))\n    (hsup : Psup ≤ Pavail)\n    (hdem : Pavail < Pdemand) :\n    ¬ (Pdemand ≤ Psup)",
+   "notes": "Pavail is defined as eta*E*Q*(Ca-Cv), with eta in (0,1], E>0, Q>0, and Ca-Cv ≥ 0. Psup is any aerobic power actually supplied, and it is bounded by Pavail. If the demanded power Pdemand strictly exceeds Pavail, the demand cannot be met by the supply, so the conclusion is the negation ¬(Pdemand ≤ Psup). The witness gives concrete numbers that satisfy all the hypotheses, so the premises are not vacuous. The bound hsup and the strict inequality hdem are what the proof actually uses. The positivity hypotheses are there to make the premise realistic and non-degenerate, and the proof does not need them. The statement does not model fish physiology beyond this inequality chain. It does not derive the Fick bound from first principles: \"supply ≤ Pavail\" is taken as a hypothesis. The proof was not compiled in this session, so it has not been checked against Lean 4 v4.35.0 and Mathlib."
+  },
+  "ttft_ms": 5643,
+  "type": "result",
+  "duration_ms": 10713,
+  "uuid": "c24b8311-e365-4986-8e89-51dd91cc5ed4",
+  "ttft_stream_ms": 1586,
+  "time_to_request_ms": 470,
+  "first_content_frame_ms": 1586,
+  "queued_turn_count": 0,
+  "result_index": 0,
+  "model_usage_since_last_result": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 1553,
+    "cacheReadInputTokens": 0,
+    "cacheCreationInputTokens": 8743,
+    "webSearchRequests": 0,
+    "costUSD": 0.050506,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 472,
+    "cacheCreationEphemeral5mInputTokens": 0,
+    "cacheCreationEphemeral1hInputTokens": 8743,
+    "canonicalModel": "claude-sonnet-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  }
+ }
+}

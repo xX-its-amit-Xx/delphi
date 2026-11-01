@@ -5,6 +5,79 @@ the scenario interface. Its version is `CONTRACT_VERSION` in `lib/envelope.mjs`.
 as `contract_version`, and `contract.json` states it. The rule: anything may change, provided it is
 versioned here. While the major version is 0, a minor bump may break callers; each entry says what breaks.
 
+## 0.8.0 (2026-11-01)
+
+**Added** (18 tools; 40 -> 58. Nothing removed, no schema changed.)
+
+Every outstanding registration note under `tools/` is applied, so the stdio MCP server, the HTTP bridge, the
+CLI and `contract.json` now all list the same tools. Before this, ten of them existed only as `POST
+/tool/<name>` on the HTTP bridge's `tools/` discovery and four had no tool name at all, so a collaborator
+could not run a design through the validation framework over MCP.
+
+- **`validate_generation`** (`tools/pipeline-tools.mjs`, PIPELINE-REGISTER.md). The entry point: generated
+  organism + base organism + the desired phenotype **as text** -> the five named results side by side, each
+  with its own gate, never summed, plus per-scale coverage and a verdict sentence. Recipe and real output:
+  `mcp/README.md`, first section.
+- **`functional_resolution`** (new `tools/functional-tools.mjs`). The fourth named result as a tool of its
+  own. Registration only: a JSON Schema and an envelope over `validate/functional-interface.mjs`
+  `functionalResolutionFor`, which is the entry point that file already stated. Nothing in
+  `validate/functional/` was touched.
+- **`physics_check`** (`tools/physics-tools.mjs`, PHYSICS-REGISTER.md). The fifth named result. A gate; it
+  never moves the composite score.
+- **The six remaining design-validation tools** (`tools/validate-tools.mjs`, VALIDATE-REGISTER.md):
+  `closest_relative_phenotype`, `closest_relative_genotype`, `sanity_check_design`, `lean_by_component`,
+  `validate_design`, `validate_swarm_tasks`. `design_score` was already registered; the `.filter()` that
+  held the other six back is gone.
+- **`edit_plan`, `edit_plan_methods`** (`tools/editplan-tools.mjs`, EDITPLAN-REGISTER.md). Zebrafish only;
+  a proposal, never a protocol.
+- **`lean_open_questions`, `lean_open_question`, `lean_open_question_guard`**
+  (`lean/registry/open-questions/openq-tools.mjs`, OPENQ-REGISTER.md). What the project holds UNSETTLED and
+  what it tried and could not establish. The guard refuses a statement that asserts one arm of an open
+  question, so automation cannot settle what the evidence has not.
+- **`leanbio_personas`, `leanbio_use_cases`, `leanbio_grand_questions`, `leanbio_tool_gap`**
+  (`pipeline/leanbio/capability-map/tools.mjs`, CAPABILITY-REGISTER.md). Read-only, no network, no writes.
+  `leanbio_grand_questions` must keep its `formalisable_core` / `empirical_remainder` split visible: a client
+  that renders only the core half turns a map of what is formalisable into a claim about what is known.
+
+**Fixed**
+
+- `validate_generation` broke the envelope contract and so **could not be called over HTTP at all**: the
+  report carries `scope` but no `provenance` array, and `http.mjs envelopeProblem` therefore answered
+  `502 contract violation by validate_generation: envelope has no provenance array. Output withheld.` This
+  was a live 502 on the one tool the whole validation entry point rests on, while PIPELINE-REGISTER.md said
+  the bridge already served it. The envelope is now built in `tools/pipeline-tools.mjs` (the registration
+  surface) rather than in `validate/pipeline/index.mjs`, which belongs to another thread; the whole report
+  is unchanged under `result`.
+- `server.mjs` threw on import when `process.argv[1]` was undefined (`node -e`, `node --eval`), so
+  `await import('./sim-engine/server.mjs')` to read `TOOLS` crashed. Guarded, as `http.mjs` already was.
+
+**Also**
+
+- `sim-engine/cli.mjs` gains `tools` and `tool <name> [--json '<args>']`: a generic passthrough to every
+  registered tool, so a tool added to `server.mjs` is reachable from the shell with no change to the CLI.
+  The studio verbs are unchanged.
+
+## 0.7.1 (2026-11-01)
+
+**Fixed** (correctness: an accepted law marked a real wild type as violating)
+
+- A glide claim no longer reaches the sustained-power laws. `scenario_run` now commits `flight_mode` in the spec:
+  `glide` for the unpowered-descent scenarios (glide, wind, altitude), `powered` when the caller claims level or
+  climbing flight. Since lawset 1.6.0 the evaluator scopes E3, C14, C16 and E4 out for a glide, so a real adult
+  flying fish making a realistic 40 m glide at 15 m/s now violates NO accepted law, while a claim of sustained
+  powered level flight still turns E3 red.
+  - The defect: browser-check derives P_req = W·v/(L/D) from any airspeed plus an L/D, and that is the cost of
+    LEVEL POWERED flight. A glide is paid for out of height and launch kinetic energy, so it is not a metabolic
+    demand for the aerobic ceiling to bound. Feeding it there scored Park & Choi specimens 0.258, level with
+    deliberate law-breakers. Same class of error as feeding C15 the kinetic-phase total (fixed in 0.3.1).
+- New claim `glide_total_distance_m`: the whole glide, launch kinetic phase included. No theorem covers the sum, so
+  it is reported under `lean_inputs.not_covered` and never fed to a law. `ground_distance_m` and `glideDistance_m`
+  remain the steady descent, which P4b and C15 do bound.
+- `scenario_run` returns `lean_inputs.flight_mode`, `lean_inputs.notes` and `lean_inputs.not_covered`.
+- Regression tests, each made to fail once: the real flying fish's 40 m glide violates no accepted law; a sustained
+  powered claim still turns E3 red; the TFF powered claim still fires; and no real wild type violates an accepted
+  law in any flight scenario.
+
 ## 0.7.0 (2026-11-01)
 
 **Added** (one tool)

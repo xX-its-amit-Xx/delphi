@@ -12,6 +12,35 @@ const outDir = path.join(root, 'dashboard/public/t/organism/data');
 fs.mkdirSync(path.join(outDir, 'examples'), { recursive: true });
 const rd = p => JSON.parse(fs.readFileSync(p, 'utf8'));
 
+// A pointer to another thread's record about the same taxon, for readers. This is navigation, not a
+// statement: the relation itself is asserted once, by the thread that owns it (the lean thread's
+// skos:related, verified present in its draft before this link was added), and nothing is asserted
+// from this side. Each entry names the file it points at so a reader can check it is still there.
+const RELATED = {
+  'a-flying-fish.json': [
+    {
+      href: '../../lean/#flyingfish',
+      thread: 'lean',
+      file: 'lean/nanopubs/unsigned/bound-exocoetidae-substitution-budget.trig',
+      iri: 'https://w3id.org/delphi/resource/hypothesis/exocoetidae-substitution-budget',
+      text:
+        'The lean thread computed a neutral substitution budget for this family from a machine-checked Kimura fixation-probability theorem and the family’s 48–56 Ma fossil range, and reached an explicit "inconclusive": the adaptive floor needs a favored-mutation rate nobody has defined, and "the substitutions a wing requires" is not a defined quantity, so there is nothing to compare it against.',
+      relation:
+        'Two independent statements about the same taxon, cited in one direction only. Neither supports or derives from the other, and neither is evidence about the transition Darwin imagined.',
+    },
+    {
+      href: '../../lean/#blueprint',
+      thread: 'lean',
+      file: 'lean/nanopubs/unsigned/certificate-blueprint-a-flying-fish.trig',
+      iri: 'https://w3id.org/delphi/resource/hypothesis/blueprint-well-formed-a-flying-fish',
+      text:
+        'The lean thread put this file through a proof kernel and certified that the structure is well-formed under its own rules: 536 distinct terms, 674 part_of edges, every term reaching the body root, and the per-level counts matching what this page claims. Acyclicity there is not tested but proved, from the level function alone: every edge goes strictly down a level, so no path can return to where it started, and the 114 terms sitting under more than one parent are converging paths rather than loops. Two deliberately sabotaged copies are rejected. Recounted here independently against the same file with the same result — after a naive walk-up of my own first reported 106 cycles that are not there, which is the mistake the level-function argument rules out by construction.',
+      relation:
+        'This certifies the shape of the artifact, not the biology. A well-formed tree built on mistaken ontology statements would pass, and the certificate says so: it assumes Uberon, the Cell Ontology and Ubergraph are right, and claims nothing about any fish being real. It is therefore cited here rather than attached as evidence for the blueprint.',
+    },
+  ],
+};
+
 // Examples: copy each blueprint, and summarise it for the index.
 const exDir = path.join(here, 'examples');
 const examples = [];
@@ -30,6 +59,8 @@ for (const f of fs.existsSync(exDir) ? fs.readdirSync(exDir).filter(f => f.endsW
     words_not_recognised: b.reading?.words_not_recognised || [],
     pruned: b.pruning?.totals || null,
     named_structures_cut: (b.pruning?.named_structures_cut || []).map(x => x.label),
+    // Only emit a pointer whose target file is actually present, so a link cannot rot into a dead one.
+    related: (RELATED[f] || []).filter(r => fs.existsSync(path.join(root, r.file))),
     cells_with_markers: b.genome_sketch?.cells_with_markers ?? null, built: b.built,
     evidence: b.nodes ? { stated: b.nodes.filter(n => n.level === 'organ' && n.taxon_evidence?.startsWith('stated')).length, weak: b.nodes.filter(n => n.level === 'organ' && n.taxon_evidence?.startsWith('weak')).length, none: b.nodes.filter(n => n.level === 'organ' && n.taxon_evidence?.startsWith('none')).length } : null
   });
