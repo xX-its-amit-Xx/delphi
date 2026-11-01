@@ -1,0 +1,58 @@
+{
+ "cell": {
+  "level": "leanbio",
+  "arm": "single",
+  "task": "l2-t3",
+  "model": "claude-sonnet-5-5",
+  "N": 3,
+  "budget_total_usd": 0.45,
+  "cap_per_call_usd": 0.45,
+  "started": "2026-11-01T07:00:02.148Z",
+  "wall_ms": 14410,
+  "calls": 1,
+  "cost_usd": 0.21395,
+  "tokens": {
+   "input": 2,
+   "output": 1419,
+   "cache_read": 0,
+   "cache_creation": 49940
+  },
+  "tokens_total": 51361,
+  "infra_failures": 0,
+  "cap_stops": 0,
+  "cli_errors": [],
+  "produced_artifact": true,
+  "merge": null,
+  "call_meta": [
+   {
+    "label": "single",
+    "model": "claude-sonnet-5-5",
+    "exit_code": 0,
+    "via_stdin": false,
+    "prompt_chars": 2202,
+    "duration_ms": 14409,
+    "cost_usd": 0.213954,
+    "num_turns": 2,
+    "stop_reason": "tool_use",
+    "terminal_reason": "completed",
+    "is_error": false,
+    "error_text": null,
+    "usage": {
+     "input": 2,
+     "output": 1419,
+     "cache_read": 0,
+     "cache_creation": 49940
+    },
+    "tokens_total": 51361,
+    "infra_failure": false,
+    "stderr": ""
+   }
+  ]
+ },
+ "final": {
+  "lean_file": "import Mathlib\n\ntheorem l2_t3 (D k : ℝ) (hD : 0 ≤ D) (hk : 0 < k) :\n    Real.sqrt (D / (k / 2)) = Real.sqrt 2 * Real.sqrt (D / k) := by\n  have h : D / (k / 2) = 2 * (D / k) := by\n    rw [div_div_eq_mul_div]; ring\n  rw [h, Real.sqrt_mul (by norm_num)]\n\ntheorem l2_t3_witness : ∃ D k : ℝ, 0 ≤ D ∧ 0 < k := by\n  exact ⟨1, 1, by norm_num, by norm_num⟩\n",
+  "statement_only": "theorem l2_t3 (D k : ℝ) (hD : 0 ≤ D) (hk : 0 < k) :\n    Real.sqrt (D / (k / 2)) = Real.sqrt 2 * Real.sqrt (D / k)",
+  "notes": "The theorem says that for every D ≥ 0 and k > 0, the gradient length with the halved degradation rate, sqrt(D/(k/2)), equals sqrt 2 times the original length sqrt(D/k). That is an exact equality over all admissible D and k, not a bound and not a single numeric case. Halving k is the same as doubling the degradation half-life, so the theorem covers both phrasings. The proof rewrites D/(k/2) as 2*(D/k) and applies Real.sqrt_mul. I have not compiled the file. Both hypotheses are required by the task but are not used in the proof. Real.sqrt returns 0 on negatives and k = 0 gives 0 on both sides, so the equality holds without them. They matter only for the physical reading, where D/k is a meaningful ratio. The witness gives concrete values D = 1, k = 1 that satisfy the hypotheses, so the theorem is not vacuous. I proved it with an explicit anonymous constructor rather than a bare `norm_num`, because norm_num cannot pick the witnesses itself."
+ },
+ "candidates": null
+}

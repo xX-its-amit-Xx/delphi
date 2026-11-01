@@ -26,7 +26,8 @@ export const MODEL = process.env.BENCH_MODEL || 'claude-sonnet-5-5';
 export function runClaude({ prompt, schema, maxTurns = 8, maxBudget = 0.15, label = 'call', logDir = null }) {
   return new Promise((resolve) => {
     const viaStdin = prompt.length > 8000;
-    const args = ['-p', ...(viaStdin ? [] : [prompt]), '--model', MODEL,
+    // `--tools ""` disables every built-in tool (ARMS.md 1.2: no tools, identical inputs, no tool-failure surface).
+    const args = ['-p', ...(viaStdin ? [] : [prompt]), '--model', MODEL, '--tools', '',
       '--json-schema', JSON.stringify(schema), '--output-format', 'stream-json', '--verbose',
       '--no-session-persistence', '--max-turns', String(maxTurns), '--max-budget-usd', String(maxBudget)];
     const t0 = Date.now();

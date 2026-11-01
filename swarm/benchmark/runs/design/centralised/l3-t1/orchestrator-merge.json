@@ -1,0 +1,233 @@
+{
+ "meta": {
+  "label": "orchestrator-merge",
+  "model": "claude-sonnet-5-5",
+  "exit_code": 0,
+  "via_stdin": true,
+  "prompt_chars": 12715,
+  "duration_ms": 13801,
+  "cost_usd": 0.061657100000000006,
+  "num_turns": 2,
+  "stop_reason": "tool_use",
+  "terminal_reason": "completed",
+  "is_error": false,
+  "error_text": null,
+  "usage": {
+   "input": 2,
+   "output": 1762,
+   "cache_read": 2771,
+   "cache_creation": 10939
+  },
+  "tokens_total": 15474,
+  "infra_failure": false,
+  "stderr": ""
+ },
+ "prompt": "You are the ORCHESTRATOR of a 3-agent team. Your 3 agents have reported. You decide what is kept and\nyou emit the FINAL answer. You may take, correct, combine or discard any part of what they produced.\nWhere they disagree, decide, and say in your notes why. The final answer is yours and is what is scored.\n\nTHE SPLIT YOU CHOSE\n0: Aerodynamic core: finArea, CLmax, stall speed -- Using the fixed values (mass 0.075 kg, rho 1.225, SL 0.25 m, glide launch height 1 m), choose physically plausible values for finArea_m2 (pectoral+pelvic wing area for a 0.25 m Exocoetidae; wing loading roughly 50-120 N/m2 is typical), CLmax (realistic 0.8-1.5 for a fish fin/body wing), and compute the stall speed V_stall = sqrt(2*m*g/(rho*S*CLmax)) with g=9.81. Check that the chosen airspeed (supplied by others later) must be >= V_stall, and that lift at the chosen airspeed does not exceed 0.5*rho*V^2*S*CLmax. Output: a concrete finArea_m2, CLmax, the wing loading, V_stall, and a recommended airspeed_m_s range (e.g. 1.1-1.5x V_stall, staying below plausible flying-fish glide speeds ~10-20 m/s). List every number you chose as an assumption and state the formulas used so the orchestrator can verify them.\n1: Glide kinematics: LD_max, glideDistance, airspeed consistency -- Given fixed glideHeight_m = 1 m, mass 0.075 kg, SL 0.25 m, choose a glide lift-to-drag ratio LD_max (plausible 5-12 for flying fish; pick one conservative value), and a glideDistance_m that is internally consistent: for an unpowered glide, glideDistance_m must not exceed glideHeight_m * LD_max (ideal still-air range = H*L/D). Choose glideDistance_m comfortably below that bound (e.g. 60-90% of it) and note that real flying fish glides cover tens of metres, so check against whether a 1 m launch height with L/D chosen makes the number plausible. Also report airspeed_m_s you recommend (take a value around 8-12 m/s unless it conflicts) and the implied glide duration = glideDistance/airspeed. Also decide whether to include optional keys flight_duration_s, horizontal_airspeed_m_s, ground_distance_m, wind_along_track_m_s (0) so more laws become evaluable, with consistent values (horizontal_airspeed ≈ airspeed, ground_distance = glideDistance when wind 0, duration = distance/speed). Output explicit numbers, formulas, and a list of assumptions.\n2: Drag terms and extra-law coverage -- Assume mass 0.075 kg, rho 1.225, SL 0.25 m, unpowered glide, g=9.81. Propose drag_coefficient and drag_area_m2 consistent with a glide: in steady glide L≈W so drag D = W/LD_max (use LD_max ~8 as a working value, and show the formula so it can be rescaled), and D = 0.5*rho*V^2*drag_area_m2 where drag_area_m2 = CdA, at airspeed ~10 m/s; also give drag_coefficient = drag_area_m2 / finArea_m2 (assume finArea ~0.02-0.03 m2, show for 0.025) so that CD = CL/LD is consistent. Make sure drag_coefficient, drag_area_m2, LD_max, CL and finArea are mutually consistent and give a formula-based table the orchestrator can recompute for other choices. Additionally, review the key list (taxon, life_stage, flight_mode, powered, SL_m, standard_length_m, mass_kg, finArea_m2, CLmax, LD_max, rho, airspeed_m_s, horizontal_airspeed_m_s, climbRate_m_s, glideHeight_m, glideDistance_m, ground_distance_m, drag_coefficient, drag_area_m2, wind_along_track_m_s, flight_duration_s, ... depth_m, altitude_m, has_swimbladder, ...) and recommend which extra benign keys (e.g. powered:false, standard_length_m = 0.25, wind_along_track_m_s = 0, climbRate_m_s = 0 or a small negative for glide, has_swimbladder true, bladder volumes at depth 0) can be safely added to make additional laws evaluable WITHOUT risking violations, and flag any key that would bring aerobic-demand laws (C14, E3) into scope or that you cannot justify and should omit. Output a list of recommended extra keys with values and the reason for each, and list all assumptions.\n\nWHAT YOUR AGENTS REPORTED\n--- AGENT 0 (Aerodynamic core: finArea, CLmax, stall speed) REPORTED ---\n{\n \"design\": {\n  \"taxon\": \"Exocoetidae\",\n  \"life_stage\": \"adult\",\n  \"flight_mode\": \"glide\",\n  \"SL_m\": 0.25,\n  \"mass_kg\": 0.075,\n  \"rho\": 1.225,\n  \"glideHeight_m\": 1,\n  \"depth_m\": 0,\n  \"altitude_m\": 0,\n  \"finArea_m2\": 0.012,\n  \"CLmax\": 1.2,\n  \"airspeed_m_s\": 11\n },\n \"assumptions\": [\n  \"finArea_m2 = 0.012 m2: chosen so wing loading = 0.73575/0.012 = 61.3 N/m2, inside the 50-120 typical range.\",\n  \"CLmax = 1.2: mid-range of the realistic 0.8-1.5 for a fish fin/body wing.\",\n  \"g = 9.81 m/s2 for weight W = 0.73575 N.\",\n  \"V_stall = sqrt(2*m*g/(rho*S*CLmax)) = 9.13 m/s.\",\n  \"airspeed_m_s = 11.0 (1.2 x V_stall); recommended range 10.1-13.7 m/s (1.1-1.5 x V_stall), below the 10-20 m/s flying-fish glide speeds.\",\n  \"Required CL at 11 m/s = 0.827 < CLmax; max lift 1.067 N >= weight 0.736 N.\",\n  \"Not chosen by me (other agents): LD_max, glideDistance_m, drag_coefficient, drag_area_m2. Suggested for consistency: LD_max about 10, glideDistance_m <= LD_max*glideHeight_m, drag_coefficient = CL/LD about 0.083.\"\n ],\n \"notes\": \"My part (finArea_m2, CLmax, airspeed_m_s) is in the design object. The other keys (LD_max, glideDistance_m, drag_coefficient, drag_area_m2) are left for the other agents. I did not run lean_check, so no law has been judged. No law blocks this part of the brief. The reference-area convention for drag_area_m2 is unknown to me; check it against the tool.\"\n}\n\n--- AGENT 1 (Glide kinematics: LD_max, glideDistance, airspeed consistency) REPORTED ---\n{\n \"design\": {\n  \"taxon\": \"Exocoetidae\",\n  \"life_stage\": \"adult\",\n  \"flight_mode\": \"glide\",\n  \"powered\": false,\n  \"SL_m\": 0.25,\n  \"mass_kg\": 0.075,\n  \"rho\": 1.225,\n  \"glideHeight_m\": 1,\n  \"depth_m\": 0,\n  \"altitude_m\": 0,\n  \"finArea_m2\": 0.03,\n  \"CLmax\": 1.2,\n  \"LD_max\": 6,\n  \"airspeed_m_s\": 10,\n  \"glideDistance_m\": 4.5,\n  \"drag_coefficient\": 0.0667,\n  \"drag_area_m2\": 0.002,\n  \"horizontal_airspeed_m_s\": 10,\n  \"ground_distance_m\": 4.5,\n  \"wind_along_track_m_s\": 0,\n  \"flight_duration_s\": 0.45\n },\n \"assumptions\": [\n  \"LD_max=6: conservative end of the 5-12 range.\",\n  \"glideDistance_m=4.5: 75% of the ideal still-air bound H*L/D = 1*6 = 6 m.\",\n  \"airspeed_m_s=10: within the suggested 8-12 m/s range. It is 1.73x the stall speed of 5.78 m/s, which is computed from finArea 0.03 m2 and CLmax 1.2.\",\n  \"finArea_m2=0.03: gives wing loading of 24.5 N/m2 (2.5 kg/m2), plausible for a flying fish of this size. I chose it myself.\",\n  \"CLmax=1.2: moderate value I chose. The cruise CL needed is W/(0.5*rho*v^2*S) = 0.7358/1.8375 = 0.40, below CLmax.\",\n  \"drag_area_m2=0.002: from CdA = (W/LD)/(0.5*rho*v^2) = 0.1226/61.25.\",\n  \"drag_coefficient=0.0667: drag_area/finArea = 0.002/0.03. This is a whole-animal coefficient referenced to fin area.\",\n  \"flight_duration_s=0.45 = 4.5/10. horizontal_airspeed_m_s=10 (equal to airspeed, level-ish glide approximation). ground_distance_m=4.5 (equal to glideDistance because wind is 0). wind_along_track_m_s=0.\",\n  \"powered:false is added redundantly with flight_mode glide, to place C14 and E3 out of scope.\",\n  \"g=9.81 m/s2 was used for weight.\"\n ],\n \"notes\": \"I could not run lean_check, so none of this is verified against lawset 1.8.1. The numbers are only checked by hand for consistency.\\n\\nReal flying fish glides cover tens of metres. They get that from powered taxiing with the tail in the water, from ground effect, and from wind updrafts. A purely unpowered still-air glide from 1 m at L/D 6 can't exceed 6 m. To reach about 30 m, L/D would have to be about 30 or more, which is outside the 5-12 range. So I kept the distance at 4.5 m.\\n\\nThe 0.45 s duration is shorter than the steady-glide descent time. That time is H/(v/LD) = 0.6 s at a sink rate of 1.67 m/s. This is fine because the distance is below the bound. If a law requires distance = v*t exactly, 0.45 s satisfies it.\\n\\nDropping any of the optional keys (horizontal_airspeed_m_s, ground_distance_m, wind_along_track_m_s, flight_duration_s) makes the laws that use them cannot-evaluate, so I kept them in.\\n\\nIf the orchestrator wants a longer glide, raise LD_max (up to 12 gives a 12 m bound, so about 9 m distance). In that case recompute drag_area as W/(LD*0.5*rho*v^2) and drag_coefficient as drag_area/finArea. At LD 12 they come to 0.001 and 0.0333.\"\n}\n\n--- AGENT 2 (Drag terms and extra-law coverage) REPORTED ---\n{\n \"design\": {\n  \"taxon\": \"Exocoetidae\",\n  \"life_stage\": \"adult\",\n  \"flight_mode\": \"glide\",\n  \"powered\": false,\n  \"SL_m\": 0.25,\n  \"standard_length_m\": 0.25,\n  \"mass_kg\": 0.075,\n  \"rho\": 1.225,\n  \"glideHeight_m\": 1,\n  \"depth_m\": 0,\n  \"altitude_m\": 0,\n  \"finArea_m2\": 0.025,\n  \"CLmax\": 1,\n  \"LD_max\": 8,\n  \"airspeed_m_s\": 10,\n  \"horizontal_airspeed_m_s\": 10,\n  \"climbRate_m_s\": -1.25,\n  \"glideDistance_m\": 6,\n  \"ground_distance_m\": 6,\n  \"wind_along_track_m_s\": 0,\n  \"flight_duration_s\": 0.6,\n  \"drag_coefficient\": 0.0601,\n  \"drag_area_m2\": 0.0015015,\n  \"has_swimbladder\": true,\n  \"bladder_volume_surface_ml\": 3.75,\n  \"bladder_volume_at_depth_ml\": 3.75\n },\n \"assumptions\": [\n  \"LD_max=8 working value\",\n  \"airspeed 10 m/s\",\n  \"finArea 0.025 m2\",\n  \"CLmax=1.0 chosen (CL at 10 m/s = 0.48, stall 6.9 m/s)\",\n  \"g=9.81, steady glide L=W\",\n  \"still air, wind 0\",\n  \"glideDistance 6 m chosen below LD*h=8 m cap\",\n  \"drag_area = 2mg/(LD*rho*V^2)=0.0015015; drag_coefficient=CdA/S=0.0601\",\n  \"climbRate = -V/LD = -1.25\",\n  \"bladder volume 3.75 ml (~5% body volume) equal at depth 0 by Boyle\",\n  \"horizontal_airspeed set equal to airspeed (true value 9.92)\"\n ],\n \"notes\": \"No law known to block the brief. I did not run lean_check; values are hand-computed. Main risk is a distance-vs-height law (max 8 m at LD 8, h 1 m). Aerobic/power/thermal/energy keys omitted to keep C14/E3 out of scope. Orchestrator can drop horizontal_airspeed_m_s or climbRate_m_s if a strict kinematic law conflicts.\"\n}\n\nTASK: write the SI-unit `design` object that the DELPHI Design Studio tool `lean_check` judges,\nfor the brief below, at Lean lawset 1.8.1.\n\nTHE BRIEF\nSpecify a gliding adult flying fish (family Exocoetidae) for the studio. The sponsor fixes the animal's size and air: standard length 0.25 m, mass 0.075 kg, air density 1.225 kg/m3, launch height 1.0 m above the water. It is an UNPOWERED glide, not powered flight. You choose the pectoral lifting area, the maximum lift coefficient, the glide lift-to-drag ratio, the airspeed and the resulting glide distance so that the specification is internally consistent and no accepted Lean-backed law at lawset 1.8.1 is violated. Depth and altitude are both 0 m.\n\nQUANTITIES THE SPONSOR FIXES. These keys must appear in your design with these exact values:\n  taxon = \"Exocoetidae\"\n  life_stage = \"adult\"\n  flight_mode = \"glide\"\n  SL_m = 0.25\n  mass_kg = 0.075\n  rho = 1.225\n  glideHeight_m = 1\n  depth_m = 0\n  altitude_m = 0\n\nQUANTITIES YOU CHOOSE (the key names lean_check uses): finArea_m2, CLmax, LD_max, airspeed_m_s, glideDistance_m, drag_coefficient, drag_area_m2\n\nHOW lean_check READS A DESIGN\n- The design is a flat JSON object of SI quantities plus `taxon`, `life_stage` and `flight_mode`.\n- `flight_mode: \"glide\"` declares an UNPOWERED glide, which takes the aerobic-demand laws (constraints C14, E3)\n  OUT OF SCOPE instead of violating them. `powered: false` does the same. Declaring powered flight puts them IN scope.\n- A law whose inputs are absent returns `cannot-evaluate`, which is NOT a pass: it means the law could not judge\n  your design at all. A design that names almost nothing scores zero violations by being unjudgeable, and that is\n  explicitly counted against it here.\n- Laws scoped to Exocoetidae return `out-of-scope` for other taxa.\n- Keys lean_check knows include: taxon, life_stage, flight_mode, powered, SL_m, standard_length_m, mass_kg,\n  finArea_m2, CLmax, LD_max, rho, airspeed_m_s, horizontal_airspeed_m_s, climbRate_m_s, glideHeight_m,\n  glideDistance_m, ground_distance_m, drag_coefficient, drag_area_m2, wind_along_track_m_s, flight_duration_s,\n  powerAvailable_W, sustained_power_W, reference_sustained_power_W, aerobicCeiling_W, efficiency, oxycaloric,\n  cardiacOutput, arterialO2, flightMuscleFraction, musclePowerPerKg_W, o2_store_ml, oxycaloric_J_per_unit_O2,\n  body_temperature_C, ct_min_C, ct_max_C, q10, reference_temperature_C, critical_swimming_speed_m_s,\n  current_speed_m_s, depth_m, altitude_m, bladder_volume_surface_ml, bladder_volume_at_depth_ml,\n  has_swimbladder, intake_J_per_day, routine_cost_J_per_day, activity_cost_J_per_day,\n  assimilation_efficiency, mass_change, genotype_edits.\n\nAIM FOR: zero binding violations, every fixed quantity present and exact, and as MANY laws actually evaluated\n(verdict `holds` or `violated`) as the brief allows. Flag in `assumptions` every number you chose yourself.\n\nOutput `design`, `assumptions` and `notes`.",
+ "parsed": {
+  "design": {
+   "taxon": "Exocoetidae",
+   "life_stage": "adult",
+   "flight_mode": "glide",
+   "powered": false,
+   "SL_m": 0.25,
+   "standard_length_m": 0.25,
+   "mass_kg": 0.075,
+   "rho": 1.225,
+   "glideHeight_m": 1,
+   "depth_m": 0,
+   "altitude_m": 0,
+   "finArea_m2": 0.025,
+   "CLmax": 1,
+   "LD_max": 8,
+   "airspeed_m_s": 10,
+   "horizontal_airspeed_m_s": 10,
+   "climbRate_m_s": -1.25,
+   "glideDistance_m": 6,
+   "ground_distance_m": 6,
+   "wind_along_track_m_s": 0,
+   "flight_duration_s": 0.6,
+   "drag_coefficient": 0.06,
+   "drag_area_m2": 0.0015,
+   "has_swimbladder": true,
+   "bladder_volume_surface_ml": 3.75,
+   "bladder_volume_at_depth_ml": 3.75
+  },
+  "assumptions": [
+   "finArea_m2=0.025 (my choice; wing loading 29.4 N/m2)",
+   "CLmax=1.0 (mid-range fin wing); stall speed 6.93 m/s, cruise CL 0.48 < CLmax",
+   "LD_max=8 working mid-range value",
+   "airspeed_m_s=10, about 1.44x stall, within glide speeds",
+   "glideDistance_m=6, 75% of the still-air bound H*LD=8 m",
+   "drag_area_m2=W/(LD*0.5*rho*V^2)=0.0015 (rounded from 0.0015015)",
+   "drag_coefficient=CdA/S=0.06=CL/LD",
+   "flight_duration_s=0.6=6/10; ground_distance=glideDistance (wind 0); horizontal_airspeed=airspeed (approximation, true 9.92)",
+   "climbRate_m_s=-V/LD=-1.25; sink over 0.6 s = 0.75 m < 1 m height",
+   "powered:false added redundantly with glide to keep C14/E3 out of scope; standard_length_m=SL_m",
+   "has_swimbladder true, bladder volume 3.75 ml (~5% body volume), equal at surface and depth 0 by Boyle"
+  ],
+  "notes": "lean_check was not run by me or the agents, so results are hand-checked only. Agent 0's finArea 0.012 and Agent 1's LD 6 / finArea 0.03 were discarded in favour of Agent 2's set, since it is the only fully mutually consistent one (L=W, D=W/LD, CD=CL/LD, distance<H*LD). I omitted power, energy and thermal keys to avoid bringing C14/E3 into scope, and these laws will be cannot-evaluate. Real flying fish glide tens of metres via taxiing, ground effect and updrafts, which an unpowered still-air 1 m launch cannot reproduce, so no law blocks the brief but the glide distance is capped at 8 m by H*LD. If a strict kinematic law conflicts, drop climbRate_m_s or horizontal_airspeed_m_s first."
+ },
+ "raw_result": {
+  "duration_api_ms": 12862,
+  "stop_reason": "tool_use",
+  "session_id": "befebbcc-f53f-4086-917b-4073e4f1c364",
+  "total_cost_usd": 0.061657100000000006,
+  "usage": {
+   "input_tokens": 2,
+   "cache_creation_input_tokens": 10939,
+   "cache_read_input_tokens": 2771,
+   "output_tokens": 1762,
+   "output_tokens_details": {
+    "thinking_tokens": 670
+   },
+   "server_tool_use": {
+    "web_search_requests": 0,
+    "web_fetch_requests": 0
+   },
+   "service_tier": "standard",
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 10939,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "inference_geo": "global",
+   "iterations": [
+    {
+     "input_tokens": 2,
+     "output_tokens": 1762,
+     "cache_read_input_tokens": 2771,
+     "cache_creation_input_tokens": 10939,
+     "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 10939
+     },
+     "type": "message"
+    }
+   ],
+   "speed": "standard",
+   "fallback_credit": null
+  },
+  "modelUsage": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 1762,
+    "cacheReadInputTokens": 2771,
+    "cacheCreationInputTokens": 10939,
+    "webSearchRequests": 0,
+    "costUSD": 0.061657100000000006,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 670,
+    "cacheCreationEphemeral5mInputTokens": 0,
+    "cacheCreationEphemeral1hInputTokens": 10939,
+    "canonicalModel": "claude-sonnet-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 2,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "{\"design\":{\"taxon\":\"Exocoetidae\",\"life_stage\":\"adult\",\"flight_mode\":\"glide\",\"powered\":false,\"SL_m\":0.25,\"standard_length_m\":0.25,\"mass_kg\":0.075,\"rho\":1.225,\"glideHeight_m\":1,\"depth_m\":0,\"altitude_m\":0,\"finArea_m2\":0.025,\"CLmax\":1,\"LD_max\":8,\"airspeed_m_s\":10,\"horizontal_airspeed_m_s\":10,\"climbRate_m_s\":-1.25,\"glideDistance_m\":6,\"ground_distance_m\":6,\"wind_along_track_m_s\":0,\"flight_duration_s\":0.6,\"drag_coefficient\":0.06,\"drag_area_m2\":0.0015,\"has_swimbladder\":true,\"bladder_volume_surface_ml\":3.75,\"bladder_volume_at_depth_ml\":3.75},\"assumptions\":[\"finArea_m2=0.025 (my choice; wing loading 29.4 N/m2)\",\"CLmax=1.0 (mid-range fin wing); stall speed 6.93 m/s, cruise CL 0.48 < CLmax\",\"LD_max=8 working mid-range value\",\"airspeed_m_s=10, about 1.44x stall, within glide speeds\",\"glideDistance_m=6, 75% of the still-air bound H*LD=8 m\",\"drag_area_m2=W/(LD*0.5*rho*V^2)=0.0015 (rounded from 0.0015015)\",\"drag_coefficient=CdA/S=0.06=CL/LD\",\"flight_duration_s=0.6=6/10; ground_distance=glideDistance (wind 0); horizontal_airspeed=airspeed (approximation, true 9.92)\",\"climbRate_m_s=-V/LD=-1.25; sink over 0.6 s = 0.75 m < 1 m height\",\"powered:false added redundantly with glide to keep C14/E3 out of scope; standard_length_m=SL_m\",\"has_swimbladder true, bladder volume 3.75 ml (~5% body volume), equal at surface and depth 0 by Boyle\"],\"notes\":\"lean_check was not run by me or the agents, so results are hand-checked only. Agent 0's finArea 0.012 and Agent 1's LD 6 / finArea 0.03 were discarded in favour of Agent 2's set, since it is the only fully mutually consistent one (L=W, D=W/LD, CD=CL/LD, distance<H*LD). I omitted power, energy and thermal keys to avoid bringing C14/E3 into scope, and these laws will be cannot-evaluate. Real flying fish glide tens of metres via taxiing, ground effect and updrafts, which an unpowered still-air 1 m launch cannot reproduce, so no law blocks the brief but the glide distance is capped at 8 m by H*LD. If a strict kinematic law conflicts, drop climbRate_m_s or horizontal_airspeed_m_s first.\"}",
+  "structured_output": {
+   "design": {
+    "taxon": "Exocoetidae",
+    "life_stage": "adult",
+    "flight_mode": "glide",
+    "powered": false,
+    "SL_m": 0.25,
+    "standard_length_m": 0.25,
+    "mass_kg": 0.075,
+    "rho": 1.225,
+    "glideHeight_m": 1,
+    "depth_m": 0,
+    "altitude_m": 0,
+    "finArea_m2": 0.025,
+    "CLmax": 1,
+    "LD_max": 8,
+    "airspeed_m_s": 10,
+    "horizontal_airspeed_m_s": 10,
+    "climbRate_m_s": -1.25,
+    "glideDistance_m": 6,
+    "ground_distance_m": 6,
+    "wind_along_track_m_s": 0,
+    "flight_duration_s": 0.6,
+    "drag_coefficient": 0.06,
+    "drag_area_m2": 0.0015,
+    "has_swimbladder": true,
+    "bladder_volume_surface_ml": 3.75,
+    "bladder_volume_at_depth_ml": 3.75
+   },
+   "assumptions": [
+    "finArea_m2=0.025 (my choice; wing loading 29.4 N/m2)",
+    "CLmax=1.0 (mid-range fin wing); stall speed 6.93 m/s, cruise CL 0.48 < CLmax",
+    "LD_max=8 working mid-range value",
+    "airspeed_m_s=10, about 1.44x stall, within glide speeds",
+    "glideDistance_m=6, 75% of the still-air bound H*LD=8 m",
+    "drag_area_m2=W/(LD*0.5*rho*V^2)=0.0015 (rounded from 0.0015015)",
+    "drag_coefficient=CdA/S=0.06=CL/LD",
+    "flight_duration_s=0.6=6/10; ground_distance=glideDistance (wind 0); horizontal_airspeed=airspeed (approximation, true 9.92)",
+    "climbRate_m_s=-V/LD=-1.25; sink over 0.6 s = 0.75 m < 1 m height",
+    "powered:false added redundantly with glide to keep C14/E3 out of scope; standard_length_m=SL_m",
+    "has_swimbladder true, bladder volume 3.75 ml (~5% body volume), equal at surface and depth 0 by Boyle"
+   ],
+   "notes": "lean_check was not run by me or the agents, so results are hand-checked only. Agent 0's finArea 0.012 and Agent 1's LD 6 / finArea 0.03 were discarded in favour of Agent 2's set, since it is the only fully mutually consistent one (L=W, D=W/LD, CD=CL/LD, distance<H*LD). I omitted power, energy and thermal keys to avoid bringing C14/E3 into scope, and these laws will be cannot-evaluate. Real flying fish glide tens of metres via taxiing, ground effect and updrafts, which an unpowered still-air 1 m launch cannot reproduce, so no law blocks the brief but the glide distance is capped at 8 m by H*LD. If a strict kinematic law conflicts, drop climbRate_m_s or horizontal_airspeed_m_s first."
+  },
+  "ttft_ms": 6765,
+  "type": "result",
+  "duration_ms": 12951,
+  "uuid": "58d333d7-2abd-4fc7-9de8-9b1a5c28ec50",
+  "ttft_stream_ms": 1165,
+  "time_to_request_ms": 105,
+  "first_content_frame_ms": 1165,
+  "queued_turn_count": 0,
+  "result_index": 0,
+  "model_usage_since_last_result": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 1762,
+    "cacheReadInputTokens": 2771,
+    "cacheCreationInputTokens": 10939,
+    "webSearchRequests": 0,
+    "costUSD": 0.061657100000000006,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 670,
+    "cacheCreationEphemeral5mInputTokens": 0,
+    "cacheCreationEphemeral1hInputTokens": 10939,
+    "canonicalModel": "claude-sonnet-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  }
+ }
+}

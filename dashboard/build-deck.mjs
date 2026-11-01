@@ -744,6 +744,7 @@ const NEGATIVES = [
   {
     id: 'physicsgate',
     headline: 'Our headline design fails the physics gate',
+    keyFigure: '0.67 vs 8.64 m/s',
     detail: 'The reachable launch speed is 0.67 m/s against a minimum flying speed of 8.64 m/s, and the '
           + 'lifting area is 166× too small: 1.91 cm² against the 317.76 cm² needed to carry 0.007 N.',
     figures: [['launch speed reached', '0.67 m/s'], ['minimum flying speed', '8.64 m/s'],
@@ -755,6 +756,7 @@ const NEGATIVES = [
   {
     id: 'funcledger',
     headline: 'An unedited zebrafish scores exactly as well',
+    keyFigure: '19 = 19',
     detail: 'The functional-analogue ledger can assess 22 of 73 requirements, and leaves 19 unresolved. '
           + 'An unedited zebrafish scored against the same flying fish leaves the same 19 unresolved: the '
           + 'design’s edits move one row from one hypothesis to another, and neither is a demonstrated '
@@ -768,6 +770,7 @@ const NEGATIVES = [
   {
     id: 'compensation',
     headline: 'Our compensation rule does not predict new cases',
+    keyFigure: '4 of 13',
     detail: 'Applied with its case table disabled, the rule chain scores 11 of 12 on the cases it was '
           + 'derived from and 4 of 13 on independent ones. All nine independent errors are false '
           + 'positives: it predicted a compensation response where the experimenters looked and found '
@@ -781,6 +784,7 @@ const NEGATIVES = [
   {
     id: 'edges',
     headline: 'Two of 3,283 interaction edges are zebrafish experiments',
+    keyFigure: '2 of 3,283',
     detail: 'In the molecular pack behind the design, 2 edges are curated zebrafish experiments and 2 '
           + 'more are STRING links whose zebrafish experiments channel reaches 0.4. The other 3,279 are '
           + '955 experiments transferred from another species, 1,382 pathway-database assertions and 942 '
@@ -794,6 +798,7 @@ const NEGATIVES = [
   {
     id: 'deadlaws',
     headline: 'Fifteen of 36 accepted laws can bind nothing',
+    keyFigure: '15 of 36',
     detail: 'An accepted law that evaluates nowhere gives false assurance — the law base reads as though '
           + 'a design were checked against it when nothing was. So each of the 15 is listed with a written '
           + 'reason and what would make it bind, and the check fails if an entry stops being true.',
@@ -806,6 +811,7 @@ const NEGATIVES = [
   {
     id: 'nevertried',
     headline: 'Nine of our 12 failed theorems were never attempted',
+    keyFigure: '9 of 12',
     detail: 'A failed-theorem record marked attempted:false was never tried at all — the single Lean build '
           + 'lock was contended, or it was abandoned on cost, or withheld on purpose. It is not a result '
           + 'about the statement, and the counts report attempted and never-attempted separately so it '
@@ -928,7 +934,54 @@ const numbers = {
 
 // A slide is live when the evidence it needs exists. Anticipated slides name what they are waiting for.
 const have = v => v !== null && v !== undefined && !(Array.isArray(v) && !v.length);
+const neg = id => negatives.some(n => n.id === id);
+const shot = key => pageShots.some(p => p.file === `fig/page_${key}.png`);
+
+// ── the spine ───────────────────────────────────────────────────────────────────────────────────
+// Twelve beats, in the order the argument is made: why biology has no formal object to check a design
+// against; the Forum that makes one; what the Forum's theorems then constrain; and what happened when
+// we pointed the whole thing at a real design. The negative results sit in the middle, not in an
+// appendix, because a deck that claims a working flying fish loses to one honest question.
 const slides = [
+  // 1-4  the fire
+  { id: 'title', state: 'live' },
+  { id: 'tacit', state: facts.tacit.verified ? 'partial' : 'anticipated',
+    needs: 'the three citations fetched and checked; the claim is standard, the exact references are named from knowledge' },
+  { id: 'noobject', state: 'live' },
+  { id: 'contrast', state: facts.mathlib.verified && facts.biologyFormal.verified ? 'live' : 'partial',
+    needs: 'deck/FACTS.md: the narrow, defensible wording for the biology side of the contrast' },
+  { id: 'attrition', state: facts.attrition.verified ? 'live' : 'anticipated', needs: 'deck/FACTS.md' },
+
+  // 5-7  the Forum
+  { id: 'forum', state: have(lawreg) ? 'live' : 'anticipated', needs: 'the versioned law registry' },
+  { id: 'provenance', state: have(numbers.claims) ? 'live' : 'anticipated', needs: 'the claim graph' },
+  { id: 'swarm', state: have(numbers.swarmArms) ? 'live' : 'anticipated', needs: 'the swarm experiments' },
+  { id: 'bench4', state: 'anticipated',
+    needs: 'the four-level benchmark now running: single agent vs decentralised swarm vs centralised swarm. Ground truth is frozen; no arm has reported.' },
+  { id: 'mcp', state: shot('capability') ? 'live' : 'anticipated', needs: 'a screenshot of /leanbio/capability.html (dashboard/shot-pages.mjs)' },
+
+  // 8-9  what the theorems constrain
+  { id: 'constrain', state: shot('blueprint') ? 'live' : 'anticipated', needs: 'a screenshot of /blueprint3d/ (dashboard/shot-pages.mjs)' },
+  { id: 'lawreg', state: have(lawreg) ? 'live' : 'anticipated', needs: 'the versioned law registry' },
+  { id: 'studio', state: studio?.shot ? 'live' : 'anticipated', needs: 'a screenshot of the studio rendering on the real engine (dashboard/shot-studio.mjs)' },
+  { id: 'sim', state: shot('physics') ? 'live' : 'anticipated', needs: 'a screenshot of /t/physics/sim/ (dashboard/shot-pages.mjs)' },
+
+  // 10  the validation harness, and then what it said
+  { id: 'harness', state: shot('validate') ? 'live' : 'anticipated', needs: 'a screenshot of /validate-show/ (dashboard/shot-pages.mjs)' },
+  { id: 'physicsgate', state: neg('physicsgate') ? 'live' : 'anticipated', needs: 'the validator run on the headline design' },
+  { id: 'funcledger', state: neg('funcledger') ? 'live' : 'anticipated', needs: 'the functional-analogue ledger and its negative control' },
+  { id: 'knownbad', state: negatives.length >= 4 ? 'live' : 'partial', needs: 'the four remaining negative results, each read back from its own source' },
+  { id: 'nocomposite', state: 'live' },
+
+  // 11-12  the second server, and the round trip
+  { id: 'secondmcp', state: have(numbers.studioval) ? 'live' : 'anticipated', needs: 'the pre-registered studio validation harness' },
+  { id: 'roundtrip', state: 'anticipated',
+    needs: 'the predicted sequence fed back into Design Studio in a fresh session, with the phenotype it returns. The harness exists; this loop has not been closed.' },
+
+  { id: 'honest', state: 'live' },
+  { id: 'ask', state: 'live' }
+];
+const slidesLegacy = [
   { id: 'title', state: 'live' },
   { id: 'question', state: have(numbers.claims) ? 'live' : 'anticipated', needs: 'the claim graph' },
   { id: 'gap', state: have(numbers.claims) && have(numbers.claimTests) ? 'live' : 'anticipated', needs: 'claim tests' },
@@ -965,8 +1018,10 @@ const slides = [
   { id: 'ask', state: 'live' }
 ];
 
+void slidesLegacy; // kept for one release so a reviewer can diff the old spine against this one
+
 // The event gives three minutes. These six carry the spoken pitch; the rest are there for questions.
-const CORE = ['title', 'question', 'route', 'swarm', 'crosscheck', 'ask'];
+const CORE = ['title', 'tacit', 'contrast', 'forum', 'physicsgate', 'ask'];
 slides.forEach(s2 => { s2.core = CORE.includes(s2.id); });
 
 const data = {

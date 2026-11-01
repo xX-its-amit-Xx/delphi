@@ -220,162 +220,6 @@ def route_row(s, nodes, y, weakest=None, broken=False):
         x = Emu(int(x + bw + gap))
 
 
-# ----------------------------------------------------------------- slides
-# 1 title
-s = new("Which experiment would\njustify the next step?", "live")
-tbox(s, M, Inches(2.45), Inches(8.6), Inches(0.9),
-     "We turn claims about how life works into experiments a machine can check —\nand say plainly when the evidence is not there yet.", 15, False, MUTE, spacing=1.2)
-if N.get("route"):
-    route_row(s, N["route"]["nodes"], Inches(4.1))
-caption(s, "A real route through a real enzyme: every step measured, every step uphill, the whole thing machine-checked.")
-
-# 2 the backlog
-s = new("Science has a backlog.", STATE["question"]["state"])
-hero(s, [(fmt(N["claims"]), "claims pulled out of Darwin, Thompson, Turing, Wolfram and others", S1),
-         (fmt(N["claimTests"]), "of them tested against real data this weekend", S2)])
-caption(s, "The gap is the opportunity, not an embarrassment. Most of these claims have never had a dataset pointed at them, "
-           "because nobody had a cheap way to ask which dataset would settle which claim.")
-
-# 3 the funnel
-s = new("So we built the asking machine.", STATE["gap"]["state"])
-barchart(s, ["Extracted", "Tested on data", "Proved in Lean"],
-         [("claims", (N["claims"], N["claimTests"], N.get("leanProved") or 0))],
-         y=Inches(2.3), height=Inches(3.2), colors=[S1])
-caption(s, "Each stage is narrower than the last, on purpose. A claim only advances when a named dataset can settle it "
-           "and two independent assessors agree it can.")
-
-# 4 pipeline
-s = new("Ten specialists, one chain.", "live")
-stages = [("A1", "say it plainly"), ("A2", "find the sources"), ("A3", "name the species"), ("A4", "find the data"),
-          ("A5", "inventory"), ("A6", "all scales?"), ("A7", "write the maths"), ("A8", "run the test"),
-          ("A9", "is it faithful?"), ("A10", "publish it")]
-x, y = M, Inches(2.6)
-for i, (k, v) in enumerate(stages):
-    if i == 5:
-        x, y = M, y + Inches(1.05)
-    b = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, y, Inches(2.3), Inches(0.82))
-    b.fill.solid()
-    b.fill.fore_color.rgb = PAPER
-    b.line.color.rgb = ACCENT if i in (7, 8) else RGBColor(0xD9, 0xDF, 0xDB)
-    b.shadow.inherit = False
-    tf = b.text_frame
-    tf.word_wrap = True
-    p = tf.paragraphs[0]
-    r = p.add_run()
-    r.text = k
-    r.font.size = Pt(9)
-    r.font.bold = True
-    r.font.color.rgb = MUTE
-    p2 = tf.add_paragraph()
-    r2 = p2.add_run()
-    r2.text = v
-    r2.font.size = Pt(12)
-    r2.font.color.rgb = INK
-    x += Inches(2.46)
-caption(s, "Two rules carry most of the weight. Nothing scores its own work, so the agent that runs a test never judges it. "
-           "And every test is written down before the data is opened, so a disappointing answer stays the answer.")
-
-# 5 the route
-r = N.get("route")
-_steps = len(r["nodes"]) - 1 if r else 0
-_word = ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"][_steps - 1] if 1 <= _steps <= 10 else str(_steps)
-s = new(f"{_word} changes. No usable shortcut.", STATE["route"]["state"])
-if r:
-    route_row(s, r["nodes"], Inches(2.45), r.get("weakest"), broken=False)
-    route_row(s, r["nodes"], Inches(3.75), r.get("weakest"), broken=True)
-    tbox(s, M, Inches(2.2), Inches(5), Inches(0.3), f"at κ = {N['kappaUsed']}, the setting used for the result", 10, False, MUTE)
-    tbox(s, M, Inches(3.5), Inches(5), Inches(0.3), f"at κ = {r['breaksAt']}, one step stops being defensible", 10, False, SERIOUS)
-    caption(s, f"Going straight needs {len(r['nodes']) - 1} changes; every direct ordering drops downhill somewhere, so the usable path is a "
-               f"{len(r['nodes']) - 1}-step detour. Demand a little more margin and the route breaks. That is the product: it tells you which measurement would settle it.")
-else:
-    ghostbox(s, M, Inches(2.4), W - 2 * M, Inches(2.6), "No certified route yet", STATE["route"].get("needs", ""))
-
-# 6 scoreboard
-P = sorted(N.get("policies") or [], key=lambda p: -p["certified"])
-s = new("Asking beats guessing.", STATE["scoreboard"]["state"])
-if P:
-    if realfig(s, "cert_vs_assays.png", M, Inches(2.0), W - 2 * M) is None:
-        labels = {"q2c_nomodel": "Ask to settle, no model", "q2c": "Ask to settle, with model",
-                  "collective_shared": "Five agents, sharing", "collective_isolated": "Five agents, isolated",
-                  "directed": "Head toward the target", "greedy": "Always climb highest"}
-        barchart(s, [labels.get(p["key"], p["key"]) for p in P],
-                 [("of 100 runs settled correctly", tuple(p["certified"] for p in P))],
-                 y=Inches(2.2), height=Inches(3.5), colors=[S3])
-caption(s, "Same budget, same starting data, 100 runs each. Picking experiments to settle the question beats chasing the "
-           "best-looking variant — and nobody issued a single false certificate.")
-
-# 7 the twist
-pn = N.get("panel")
-s = new("Then we tried to break our own best result.", STATE["twist"]["state"])
-if pn:
-    hero(s, [(fmt(pn["theirLazyOnly"]), f"extra wins on their panel, over {fmt(pn['theirEpisodes'])} runs", S2),
-             (fmt(pn["separatingPairs"]), f"pair separating the top two on our {pn['pairs']} fresh pairs", S3),
-             (fmt(pn["theirVfvsEpisodes"]), f"of their {fmt(pn['theirEpisodes'])} runs start from the same genotype", GHOST)],
-         y=Inches(2.45))
-    caption(s, "The ranking held; the margin did not. We pre-registered the panel before running it. A gap of "
-               f"{pn['theirLazyOnly']} collapsed to {pn['separatingPairs']} once the pairs were not chosen by the people being measured. "
-               "The benchmark was partly measuring its own composition.")
-else:
-    ghostbox(s, M, Inches(2.4), W - 2 * M, Inches(2.6), "No independent panel yet", STATE["twist"].get("needs", ""))
-
-# 8 swarm
-A = N.get("swarmArms") or []
-s = new("A group beats one agent — when attention is the bottleneck.", STATE["swarm"]["state"])
-if A:
-    names = {"centralized": "Swarm, led", "decentralized": "Swarm, peer-to-peer",
-             "isolated": "Workers, isolated", "single": "One agent alone"}
-    barchart(s, [names.get(a["key"], a["key"]) for a in A],
-             [("run 1, from memory", tuple(a["exp1"] for a in A)),
-              ("run 2, must fetch the page", tuple(a["exp2"] for a in A))],
-             y=Inches(2.2), height=Inches(3.4), colors=[S1, S4], legend=True)
-caption(s, "Two pre-registered runs, same model and budget, out of 20 each. The single agent lost mostly by running out of room "
-           "and leaving answers blank, not by reasoning worse. The same contest on the enzyme benchmark found no advantage at all, "
-           "because there the members are deterministic code. Collaboration pays when the limit is attention.")
-
-# 8b two swarms
-C = N.get("crosscheck")
-if C:
-    s = new("Two independent swarms. Same claims. Six of eight agree.", "live")
-    hero(s, [(fmt(C["agreements"]), f"of {C['overlapping']} claims where both swarms reached the same verdict, working separately", S3),
-             (fmt(C["disagreements"]), "where they differ — both differences methodological, not factual", S2),
-             (f"{fmt(C['theirTests'])}+{fmt(C['ourTests'])}", "claim tests across the two swarms", INK)],
-         y=Inches(2.3))
-    y = Inches(4.35)
-    for d in C["differing"]:
-        why = ("same data, same method, different pre-registered age range: %.2f for ages 2-19 vs %.2f once infants are pooled in"
-               % (d["ourValue"], d["theirValue"])) if d["kind"] == "same-data-different-analysis" and d.get("ourValue") and d.get("theirValue")             else "different operationalisation of the same sentence"
-        tbox(s, M, y, W - 2 * M, Inches(0.42),
-             f"{d['claim'].split('/')[-1]}:  ours {d['ours']}  ·  theirs {d['theirs']}  —  {why}", 11, False, INK)
-        y += Inches(0.44)
-    caption(s, "Nobody coordinated these; the overlap was accidental. Then we chased the disagreements down. On Thompson's cube law "
-               "the two swarms reproduce each other exactly once the age range matches: their own 2-20 year window gives 2.74, ours "
-               "2.76. The whole gap is infants, who scale near 2.1 and drag the pooled exponent to 2.41. The verdict turns on one "
-               "pre-registered choice, not on anyone's method. Neither number is 3.")
-
-# 9 proof
-pr = N.get("proofs")
-s = new("We broke the proofs on purpose.", STATE["proof"]["state"])
-if pr:
-    hero(s, [(f"{pr['rejected']}/{pr['mutations']}", "deliberate breakages correctly rejected", S3),
-             ("clean" if pr["buildExit"] == 0 else f"exit {pr['buildExit']}", "rebuild from source, on our own copy", INK),
-             (fmt(N.get("leanProved")), "of our own laws machine-checked, zero gaps", S1)])
-    caption(s, "Reversing an inequality, weakening a wall, deleting a check, moving one measured number — each must stop the proof "
-               "compiling, and each did. The theorems are general, not arithmetic about fixed constants. "
-               + ("Found by checking rather than trusting: one receipt in the partner project credits a proof module that does not exist in its repository. "
-                  "The proofs are sound; the paperwork overstated the coverage." if pr.get("discrepancy") else ""))
-
-# 10 nulls
-g = N.get("gpu") or {}
-s = new("Two things that did not work.", STATE["nulls"]["state"])
-hero(s, [("0", f"benefit from a protein language model, across {g.get('sizes', 5)} sizes and {fmt(g.get('variants'))} variants on an H100", GHOST),
-         ("0", "saving from reusing a claim, over an ordinary cache, within one context", GHOST)],
-     y=Inches(2.15))
-caption(s, "A deliberately shuffled model scored as well as the real one. We lead with this because a null you can reproduce is "
-           "worth more than a result you cannot — and because most teams will not show you theirs.", y=Inches(3.95))
-realfig(s, "ablation.png", M, Inches(4.5), Inches(6.2), "Remove the learned model and the curves do not move")
-
-# ----------------------------------------------------------------- the shape of the output
-# Every number below comes from DATA["numbers"], which build-deck.mjs read out of the repository.
 def rows(s, items, y=Inches(2.3), gap=Inches(0.62), vw=Inches(3.2)):
     """One line per result: what it is on the left, its number on the right, a note beneath."""
     for head, note, val, col in items:
@@ -406,253 +250,11 @@ def note(s, y, text, col=GHOST, w=None):
     return box
 
 
-SH = N.get("shape")
-if SH:
-    s = new("More of this is negative than positive.\nThat is the result.", STATE["shape"]["state"])
-    # one composition bar, 2px gaps between segments, direct labels beneath
-    xs, total_w, y0 = M, W - 2 * M, Inches(2.25)
-    segs = [(SH["negative"], S2, "negative or self-limiting"),
-            (SH["methodological"], S1, "methodological, found by accident"),
-            (SH["supported"], S3, "supported")]
-    x = xs
-    for n_, col, lab in segs:
-        w = Emu(int(total_w * n_ / SH["total"])) - Emu(19050)
-        b = s.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y0, w, Inches(0.34))
-        b.fill.solid()
-        b.fill.fore_color.rgb = col
-        b.line.fill.background()
-        b.shadow.inherit = False
-        tbox(s, x, y0 + Inches(0.4), w, Inches(0.6), f"{n_}  {lab}", 10, False, MUTE, spacing=1.1)
-        x = Emu(int(x + total_w * n_ / SH["total"]))
-    barchart(s, [r["label"] for r in SH["rows"]],
-             [("records", tuple(r["n"] for r in SH["rows"]))],
-             y=Inches(3.25), height=Inches(2.5), colors=[S2])
-    CR = N.get("corrections")
-    if CR:
-        note(s, Inches(5.95),
-             f"{CR['total']} claims corrected in one day — {CR['ours']} found by our own checks, {CR['collaborator']} by a "
-             "collaborator's independent cross-check: "
-             + "; ".join(x["title"].rstrip(".") + f" (caught by {x['who']})" for x in CR["items"])
-             + ". Every one is a record or a log entry, never a silent edit to history.", SERIOUS)
-    caption(s, f"This is an argument about method, not an apology. {SH['notAPlainWin']} of {SH['total']} records are not a win for "
-               f"the hypothesis we set out to test: {SH['negative']} are negative or self-limiting and {SH['methodological']} are "
-               "methodological findings we only have because something broke. A pipeline that mostly produces negatives, corrects "
-               "itself in public and refuses statistics its sample cannot support is making a stronger claim about its method than "
-               "one that reports only wins — because only the first kind can be wrong out loud.")
 
-# ----------------------------------------------------------------- the design validation
-V = N.get("designval")
-if V:
-    s = new("We pre-registered a test of a designed organism.\nIt failed.", STATE["designval"]["state"])
-    note(s, Inches(2.2),
-         "SAY THIS FIRST: the design is not ours. It is Daane et al. 2021's own germline double heterozygote — built, scored and "
-         "published by them, with their own claim that it phenocopies flying-fish fin proportions. Our contribution is the "
-         "validation arithmetic, not the organism. We did not design a flying fish.", SERIOUS)
-    rows(s, [
-        (f"Morphological axes that could be scored at all",
-         f"The axis the design is about, {V['definingAxis']}, cannot be scored on either side: no published adult zebrafish value "
-         "exists, and the design's value exists only inside a figure we refused to digitise.",
-         f"{V['scored']} of {V['axes']}", SERIOUS),
-        ("Loci known to differ in flying fishes that the design TOUCHES — a near miss, not a hit",
-         "Same gene, different variant. lat4a/slc43a2a is genuinely in Daane's convergent-substitution sheet, so the design touches "
-         "the right gene — but "
-         + splice((N.get("corrections") or {}).get("variantMismatch"),
-                   "the design's allele is T200K and the convergent substitution is F326L: different sites, different species, "
-                   "not the same variant")
-         + ". The design changes a different position in the same transporter, not the change flying fishes carry. The other half "
-           "of the design, kcnh2a, appears nowhere in that workbook.",
-         f"{V['lociReproduced']} of {V['lociKnownToDiffer']}  ·  {V['fraction'] * 100:.1f}%", SERIOUS),
-        ("The Lean constraint gate",
-         f"It fails for the design ({V['gateTallies']['DESIGN']['violated']} violated) and for the real flying fish "
-         f"({V['gateTallies']['REAL']['violated']} violated), so failing does not separate the design from its target. The gate is "
-         f"weak: only {V['rowsDecided']} of {V['gateRows']} rows are decided by a single design, and it tests nothing aerodynamic, "
-         "nothing developmental and nothing about fins.",
-         "FAILS, both arms", SERIOUS),
-    ], y=Inches(3.3), gap=Inches(1.08))
-    caption(s, "Dropped as unsupported, not disproved, under the pre-registration's own rule. The honest framing is also the "
-               "stronger one: we built the apparatus to ask whether a designed organism matches a real one, wrote the test down "
-               "first, ran it, and it failed — which is why we can now say what designing an organism would require. "
-               + ("At a single scored axis none of the pre-registered FAIL triggers could fire, so the letter of the rule would "
-                  "have awarded \"close\" by default; the agent refused that and logged it as a deviation against the design's own "
-                  "interest. " if V.get("refusedTheDefault") else "")
-               + f"Pre-registration hashed before the first number, sha256 {V['preregSha'][:16]}…"
-               + (" (verified unaltered)." if V.get("preregVerified") else "."))
-
-# ----------------------------------------------------------------- the correction
-G = N.get("genomeGap")
-if G:
-    s = new("We said there was no genome. There is.", STATE["annotation"]["state"])
-    hero(s, [(fmt(G["genes"]), "protein-coding genes predicted in the flying-fish assembly", S1),
-             (f"{G['percent']}%", f"of them carry at least one database hit ({fmt(G['annotated'])} genes)", S3),
-             (str(G["rnaseqMentions"]), 'occurrences of "RNA-seq" or "transcriptome" in that paper, counted', SERIOUS)],
-         y=Inches(2.3))
-    note(s, Inches(4.25),
-         f"What we said, and what changed: until this weekend our own files, our brief to ten subagents and the public dashboard "
-         f"all said that almost no molecular data exists for flying fish. That was wrong, and it was load-bearing — it was "
-         f"repeated on every number in the map. {G['filesCorrected']} files were rewritten and the error recorded as its own "
-         f"citable correction.   And the caveat on our own headline: \"functionally annotated\" means one sequence-similarity or "
-         f"domain hit. TrEMBL alone supplies {fmt(G['trembl'])} of the hits and is automatically generated and unreviewed, so "
-         f"{G['percent']}% measures database coverage, not understood function.", SERIOUS)
-    caption(s, "This is the cleanest statement of the gap we face. The genes are known; what is missing is measurement. That paper "
-               "reports no expression data, no mutant, no kinetics and no regulatory network, and the zero is established by "
-               "counting strings in the full text rather than by inference. "
-               f"{G['citation']}, doi {G['doi']}.")
-
-# ----------------------------------------------------------------- annotation is not measurement
-RD = N.get("readiness")
-if RD:
-    s = new(f"{RD['annotatedPct']}% annotated. 0% parameterised.", STATE["readiness"]["state"])
-    hero(s, [("0", f"of the {fmt(RD['needed'])} numbers a minimal dynamical model of our {fmt(RD['genes'])} genes would need", SERIOUS),
-             (f"{RD['annotatedPct']}%", f"of the same genes carry a functional annotation ({fmt(RD['annotated'])} of {fmt(RD['genes'])})", S3),
-             (fmt(RD["edges"]), f"of {fmt(RD['pairs'])} gene pairs with any direct experimental support ({RD['pairsPct']})", GHOST)],
-         y=Inches(2.25))
-    barchart(s, [i["label"] for i in RD["items"]],
-             [(f"of {fmt(RD['genes'])} genes", tuple(i["n"] for i in RD["items"]))],
-             y=Inches(4.2), height=Inches(1.9), colors=[S2])
-    caption(s, "This is not a complaint about missing data; it is a measurement nobody had made. Annotation says this gene is "
-               "involved in this process. A simulation needs this many molecules, decaying this fast, binding this tightly — and "
-               "the first does not constrain the second. Relaxed as far as honesty allows, accepting a relative abundance figure "
-               f"in place of an absolute one, it is {fmt(RD['lenientHeld'])} of {fmt(RD['needed'])} ({RD['lenientPct']}%), and every "
-               f"one of those is that same single substitute."
-               + (f" For scale: the whole-cell model that predicts phenotype from genotype used {RD['precedent']['genes']} genes and "
-                  f"{RD['precedent']['sources']} primary sources, for a single cell with no anatomy and no development "
-                  f"(Karr 2012, {RD['precedent']['doi']})." if RD.get("precedent") else ""))
-
-# ----------------------------------------------------------------- powered flight eliminated
-PH = N.get("physiology")
-if PH:
-    s = new("Sustained powered flight is eliminated,\nwith a certificate.", STATE["flight"]["state"])
-    ld = next((c for c in PH["cases"] if c["speed"] == 10), PH["cases"][0])
-    EV = PH.get("envelope")
-    hero(s, [(f"{PH['ceilingW']} W", "aerobic ceiling on the proxy values we commit to", S3),
-             (f"{ld['requiredW']} W", f"needed for level flight at {ld['speed']} m/s at the measured L/D of {ld['ld']}", S2),
-             (("10-30x" if EV and EV.get("corrected") else f"{ld['shortBy']}x"),
-              (f"short (central about 20x; {EV['shortBy']}x on the widened envelope, {ld['shortBy']}x with the original "
-               "snapper-based proxies), checked by the Lean kernel") if EV and EV.get("corrected") else
-              "short, and the gap is checked by the Lean kernel, not by us", SERIOUS)],
-         y=Inches(2.25))
-    y = Inches(4.15)
-    for c in PH["cases"]:
-        tag = "  [illustrative numbers]" if c["illustrative"] else ""
-        tbox(s, M, y, Inches(7.4), Inches(0.3), f"{c['what']}, {c['speed']} m/s{tag}", 11, False, INK)
-        tbox(s, W - M - Inches(4.2), y, Inches(4.2), Inches(0.3),
-             f"{c['requiredW']} W needed  ·  {c['shortBy']}x short", 11, True, SERIOUS, align=PP_ALIGN.RIGHT)
-        y += Inches(0.34)
-    if EV:
-        cor = EV.get("corrected") or {}
-        note(s, Inches(5.3),
-             f"TWO CEILINGS, AND A CORRECTION. {PH['ceilingW']} W is the product of the four proxy values this candidate "
-             f"commits to (a snapper cardiac output), so {ld['shortBy']}x rules flight out for THAT ONE PARAMETERISATION. "
-             f"{EV['ceilingW']} W is the widened envelope ({EV.get('boundsText', '')}), {EV['shortBy']}x short. "
-             + (cor.get("text", "") + " ") + (EV.get("rejectable") or ""), ACCENT)
-    caption(s, "What it rests on: Fick's principle, aerobic power rather than burst power, and teleost proxy values — no "
-               "flying-fish physiology exists, so the proxies are what the elimination rests on. What it does NOT bound: gliding "
-               f"(a flying fish is a glider), and short burst flight. {PH['kernelChecked']} of {PH['candidates']} candidates "
-               f"eliminated by theorems the compiler accepted; {PH['cannotRule']} other constraints on the same candidates could "
-               "not be fired at all, for want of an input. A proof about a model, not a fact about a fish.")
-
-# ----------------------------------------------------------------- the requirement that does not fit
-# Its own slide here, where the HTML deck can afford to set it beside the certificates.
-FL = N.get("flier")
-if FL and FL.get("musclePctThatFits"):
-    s = new("What a fish that really flew would need,\nand no animal has.", STATE["flight"]["state"])
-    hero(s, [(f"{FL['musclePctThatFits']}%", "of the required flight muscle actually fits inside the body at the pectoral "
-                                             "girdle, in the geometry the specification itself implies", SERIOUS),
-             (f"{FL['needs'][0]['value']:,.0f}", f"{FL['needs'][0]['unit']} of cardiac output — "
-                                                 f"{FL['cardiacVerdict'].split(':')[0]}", SERIOUS)],
-         y=Inches(2.4))
-    note(s, Inches(4.6),
-         f"A flight muscle that does not fit in the animal. At {FL['muscleFraction'] * 100:.0f}% of a 60 g body and ordinary "
-         f"muscle density that is {FL['muscleVolumeM3']} m³ of muscle, and only {FL['musclePctThatFits']}% of it fits inside the "
-         "body at the pectoral girdle. That is a geometric consequence of the specification, not an opinion — and building the "
-         "design as real geometry was itself a test, which caught something three rounds of equations did not.", SERIOUS)
-    caption(s, "The flier is hypothetical throughout and now carries a requirement nothing can satisfy. It is not a validated "
-               "design, and nothing in this deck presents it as one.")
-
-# ----------------------------------------------------------------- one glide is not enough
-GL = N.get("glide")
-if GL:
-    s = new("One glide cannot explain the long flights.", STATE["glide"]["state"])
-    cats = [f"From {GL['heightM']} m at the measured L/D {GL['ldMeasured']}",
-            f"… with the measured {GL['deltaGroundEffect'] * 100:.0f}% ground effect",
-            "Field flight, reported as one glide"]
-    vals = [GL["reachM"], GL["reachWithGroundEffectM"], GL["fieldSingleGlideM"]]
-    if GL.get("ldTheoretical"):
-        cats.append(f"… at the theoretical L/D {GL['ldTheoretical']}, for comparison")
-        vals.append(GL["reachTheoreticalM"])
-    barchart(s, cats, [("metres", tuple(vals))], y=Inches(2.3), height=Inches(3.1), colors=[S2])
-    caption(s, "A steady glide can only trade height for distance, so its range is at most height times lift-to-drag. At the "
-               f"measured ratio that is {GL['reachM']} m from the greatest recorded flight height, or {GL['reachWithGroundEffectM']} m "
-               f"once the measured ground effect is allowed — and the field reports {GL['fieldSingleGlideM']} m. So the single-glide "
-               "reading is eliminated, and taxiing re-launches or wind must account for the rest. The field figures are quoted "
-               f"second-hand and labelled secondary; the {GL['fieldSequenceM']} m one is already described by its own source as a "
-               "sequence of taxiing and glides, not one glide."
-               + (f" Our simulator reproduces that shape: {GL['sim']['glides']} glides and {GL['sim']['metres']} m in "
-                  f"{GL['sim']['seconds']} s, from a model changed after seeing results, so that run is exploratory and labelled so."
-                  if GL.get("sim") else ""))
-
-# ----------------------------------------------------------------- the sequence layer
-Q = N.get("sequences")
-if Q:
-    cv, la, dr, en = Q["convergence"], Q["lat4a"], Q["doseResponse"], Q["engineered"]
-    s = new("Four sequence results. Three of them say no.", STATE["sequence"]["state"])
-    rows(s, [
-        ("Gliders do not converge",
-         f"Across {cv['genes']} fin genes, {cv['gliderColumns']} alignment columns show a residue shared by independent gliders and "
-         f"absent from each lineage's non-gliding relative — against {cv['baselineColumns']} for the same count with the roles "
-         "swapped. Similarity follows ancestry, not gliding. The genes were picked from fin biology, so this says nothing about "
-         "the rest of the genome.",
-         f"{cv['gliderColumns']} vs {cv['baselineColumns']}", SERIOUS),
-        ("The lat4a substitution tracks gliding inside the fishes only",
-         f"L in {la['flyingFishL']} of {la['flyingFishN']} flying fishes and in both gliding halfbeaks, against {la['nonGliderF']} of "
-         f"{la['nonGliderSpecies']} non-gliding relatives carrying F. But all three bats, both colugos, the sugar glider, mouse, "
-         "human and every outgroup scored carry F too, so this is not convergence with gliding mammals. Tracking is not causing.",
-         f"{la['flyingFishL']}/{la['flyingFishN']}  ·  {la['nonGliderF']}/{la['nonGliderSpecies']}", GOOD),
-        ("The derived-site panel is not a dose-response",
-         f"Gliding halfbeaks carry a mean {dr['glidingHalfbeak']['derived']} of {dr['sites']} derived states at a fin-to-body ratio of "
-         f"{dr['glidingHalfbeak']['ratio']}; flying fishes carry {dr['flyingFish']['derived']} at {dr['flyingFish']['ratio']}. The group "
-         "with the far smaller fin carries slightly more derived residues. The non-gliders' zero is circular by construction and is "
-         "not shown as a finding; four groups is a ladder to read, not a statistical test.",
-         f"{dr['glidingHalfbeak']['derived']} at {dr['glidingHalfbeak']['ratio']}  ·  {dr['flyingFish']['derived']} at {dr['flyingFish']['ratio']}", SERIOUS),
-        ("An \"engineered\" genome is a handful of edits",
-         f"{en['editedLoci']} edited loci change {en['aminoAcidsChanged']} amino acid; the other edit is regulatory and changes none. "
-         f"In just {en['proteins']} of our causal-chain proteins, zebrafish and medaka differ by {fmt(en['naturalSubstitutions'])} "
-         f"amino-acid substitutions ({fmt(en['naturalDifferences'])} positions counting indels). Coding only, in a tiny gene sample.",
-         f"{en['aminoAcidsChanged']} vs {fmt(en['naturalSubstitutions'])}", SERIOUS),
-    ], y=Inches(2.2), gap=Inches(1.04))
-    caption(s, "All four are about fin enlargement for gliding, the trait Daane et al. 2021 measured (10.1016/j.cub.2021.08.054); "
-               "the fin ratios, the convergent-substitution panel and the captured exons are theirs. Three of these close a door we "
-               "would have liked open, and the one that holds, holds only inside the Beloniformes. No bird sequence, assembly or "
-               "annotation was fetched: Aves is this project's frozen holdout.")
-
-# ----------------------------------------------------------------- the 3D organism
-AN = N.get("anatomy")
-if AN:
-    s = new(f"{fmt(AN['pieces'])} named pieces. {AN['sourcedValues']} measured numbers behind them.", STATE["organism3d"]["state"])
-    barchart(s, [m["name"] for m in AN["models"]],
-             [("pieces", tuple(m["pieces"] for m in AN["models"])),
-              ("with an ontology term", tuple(m["mapped"] for m in AN["models"]))],
-             y=Inches(2.2), height=Inches(2.3), colors=[S1, S3], legend=True)
-    _zf = [m for m in AN["models"] if not m["unmapped"]]
-    note(s, Inches(4.7),
-         f"Evidence-backed: the flying fish rests on exactly ONE measured proportion — pectoral fin length at "
-         f"{AN['evidenceBacked']['ratio']} of standard length, the median of {AN['evidenceBacked']['n']} museum specimens, read "
-         f"from the measurement file rather than typed in ({AN['evidenceBacked']['caveat']}). The two zebrafish models carry "
-         f"{sum(m['sourcedValues'] for m in _zf)} sourced proportions and counts between them.   Schematic, and labelled so per "
-         f"piece: everything else, including every count.   Where the ontology ran out: {AN['unmapped']} of the flying fish's "
-         "pieces have no ontology term at all; the manifest records a null and the nearest ancestor it could find, instead of "
-         "inventing one.", ACCENT)
-    caption(s, "The one novelty claim we make, worded as narrowly as the search supports: we did not find prior use of a proof "
-               "assistant on an ontology-derived anatomy hierarchy. Ten logged searches turned up no Lean, Coq or Isabelle proofs "
-               "about a hierarchy built from Uberon and the Cell Ontology. That is \"not found\", not \"does not exist\", and it is "
-               "not a claim to a first. Built on Uberon (10.1186/gb-2012-13-1-r5), the Cell Ontology (10.1186/2041-1480-5-21) via "
-               "Ubergraph, Phenoscape (10.1093/molbev/msv223, 10.1093/sysbio/syv031) and Daane 2021 "
-               "(10.1016/j.cub.2021.08.054). The anatomy terms are theirs; only the hierarchy check is ours.")
-
-# ----------------------------------------------------------------- the Design Studio
-# Four slides, every number from DATA["numbers"] (studio, lawreg, studioval, printkit), which build-deck.mjs read
-# out of sim-engine/, lean/registry/ and anatomy-model/print/. A block that is missing comes out greyed.
 DECK = ROOT / "public/deck"
+FACTS = N.get("facts") or {}
+NEG = {n["id"]: n for n in (N.get("negatives") or [])}
+SHOTS = {p["file"].replace("fig/page_", "").replace(".png", ""): p for p in (N.get("pageShots") or [])}
 
 
 def picture(s, rel, x, y, w=None, h=None):
@@ -663,279 +265,559 @@ def picture(s, rel, x, y, w=None, h=None):
     return s.shapes.add_picture(str(f), x, y, width=w, height=h)
 
 
-ST = N.get("studio")
-if ST and ST.get("shot"):
-    sh = ST["shot"]
-    s = new("Say what the animal must do.\nThe studio says what it would take.", STATE["studio"]["state"])
-    pic = picture(s, sh["file"], M, Inches(2.2), h=Inches(3.85))
-    tbox(s, M, Inches(6.1), Inches(6.9), Inches(0.6),
-         f"Typed: “{sh['typed']}”. Read into {sh['criteria']} criteria, valid against the engine; every default it "
-         f"assumed is listed. Real page, real engine ({sh['engineLine'].replace('Engine: ', '')}); screenshot {sh['takenAt']}, "
-         f"sha256 {sh['sha256'][:16]}…", 8, False, MUTE, spacing=1.1)
-    rx = M + Inches(7.15)
-    rw = W - M - rx
-    y = Inches(2.2)
-    for head, body in [
-        ("Edit at any level", "body, organ system, organ, tissue, cell, gene; humans and agents in one append-only co-design log. Agents post proposals; a human applies them."),
-        (f"{len(ST['scenarios'])} perturbations, every developmental stage", ", ".join(ST["scenarios"]) + "."),
-        ("Every number keeps its kind", "measured, borrowed, derived, calibrated or assumed; a calibrated number can never be cited as a result."),
-        ("The optimizer refuses", "any candidate that breaks a binding law, and says “no design meets the spec” instead of returning its best failure."),
-    ]:
-        tbox(s, rx, y, rw, Inches(0.3), head, 13, True, INK)
-        tbox(s, rx, y + Inches(0.28), rw, Inches(0.6), body, 10, False, MUTE, spacing=1.1)
-        y += Inches(0.86)
-    tbox(s, rx, y + Inches(0.05), rw, Inches(1.0), "What it is not: an edited parameter set is a shape, not a viable or breedable "
-         "organism; mixing parents is morphological interpolation, not genetic hybridisation. Law verdicts are floating-point checks "
-         "of Lean-backed formulas, not kernel proofs.", 10, False, SERIOUS, spacing=1.1)
-else:
-    s = new("Say what the animal must do.", "anticipated")
-    ghostbox(s, M, Inches(2.4), W - 2 * M, Inches(2.6), "No screenshot of the studio on the real engine",
-             STATE.get("studio", {}).get("needs", ""))
+def pageshot(s, key, x, y, w, lead=None, maxh=None):
+    """A screenshot of one of our own pages, with where it came from written under it.
+    No shot means no picture: the slide says so rather than showing a drawing."""
+    p = SHOTS.get(key)
+    if not p or not (DECK / p["file"]).exists():
+        ghostbox(s, x, y, w, Inches(2.4), "No screenshot",
+                 "the page did not render in the headless check, so nothing is shown here")
+        return None
+    pic = s.shapes.add_picture(str(DECK / p["file"]), x, y, width=w)
+    room = maxh if maxh is not None else (H - y - Inches(1.25))
+    if pic.height > room:  # keep the aspect ratio; the caption has to fit under it too
+        pic.width = Emu(int(pic.width * room / pic.height))
+        pic.height = Emu(int(room))
+    tbox(s, x, y + pic.height + Inches(0.05), w, Inches(0.6),
+         (lead or p["shows"]) + "  —  " + p["provenance"], 8, False, MUTE, spacing=1.08)
+    return pic
 
-LR = N.get("lawreg")
-if LR:
-    s = new("The laws are data, with version numbers.", STATE["lawreg"]["state"])
-    what = {"proposed": "stated, not formalised: enters no verdict", "candidate": "builds, no sorry/axiom, witness, mutants rejected: advisory",
-            "accepted": "recorded human approval: the only laws that turn a design red", "contested": "proved contradiction or live dispute: amber",
-            "retired": "kept on file so old verdicts reproduce"}
-    bw, gap = Inches(2.22), Inches(0.13)
+
+def srcline(s, items):
+    """The provenance rail: every slide that states a number says where to find it."""
+    txt = "Read from " + "  ·  ".join([i for i in items if i])
+    tbox(s, M, H - Inches(0.62), W - 2 * M, Inches(0.42), txt, 8, False, MUTE, spacing=1.05)
+
+
+def tiles(s, pairs, y=Inches(2.25), col=SERIOUS):
+    """A negative result's figures: four tiles of one finding, all in one tone."""
     x = M
-    for t in LR["inLawset"]:
-        b = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, Inches(2.15), bw, Inches(1.75))
-        b.fill.solid()
-        b.fill.fore_color.rgb = PAPER
-        b.line.color.rgb = ACCENT if t["status"] == "accepted" else RGBColor(0xD9, 0xDF, 0xDB)
-        b.line.width = Pt(2 if t["status"] == "accepted" else 1)
-        b.shadow.inherit = False
-        tbox(s, x + Inches(0.12), Inches(2.22), bw - Inches(0.2), Inches(0.3), t["status"].upper(), 9, True, MUTE)
-        tbox(s, x + Inches(0.12), Inches(2.45), bw - Inches(0.2), Inches(0.6), str(t["n"]), 30, True, INK)
-        tbox(s, x + Inches(0.12), Inches(3.0), bw - Inches(0.2), Inches(0.9),
-             f"{t['physical']} physical · {t['biological']} biological\n{what[t['status']]}", 8, False, MUTE, spacing=1.1)
-        x += bw + gap
-    mir = LR.get("mirror") or {}
-    lines = [
-        f"Law set {LR['lawset']} pins {LR['inLawsetTotal']} laws, each with its version, a content hash over what it says, the Lean module "
-        "and theorem, and the commit and statement hash it was checked at. Promotion to accepted is never automated."
-        + (f" {LR['discovered']} further candidates were mined from the project's own sourced data." if LR.get("discovered") else ""),
-        f"Served three ways from one loader: the delphisci MCP server {LR.get('mcpVersion') or ''} (lean_laws_list, lean_law_get, "
-        "lean_lawset_get, lean_check, lean_verify; the hosted copy has them only once this change is merged and redeployed, so check "
-        "its tools/list first); the CLI and local sim-engine; and a static JSON mirror at /api/lean/"
-        + (f", currently serving law set {mir['lawset']} ({mir['count']} laws)" if mir else "")
-        + (", one release behind the registry; lean_verify reports exactly this drift." if mir and mir.get("lawset") != LR["lawset"] else "."),
-    ]
-    y = Inches(4.15)
-    for ln in lines:
-        tbox(s, M, y, W - 2 * M, Inches(0.7), ln, 12, False, INK, spacing=1.12)
-        y += Inches(0.82)
-    caption(s, "Red on the model means an accepted law is violated; amber means contested, candidate or not checkable. A law's status is "
-               "a registry decision, not a truth value, and the accepted set was grandfathered in at bootstrap with no per-law review "
-               "recorded; the approval field says exactly that. Read from lean/registry/ and dashboard/public/api/lean/index.json.")
+    wide = Inches(2.95)
+    for val, label in pairs:
+        tbox(s, x, y, wide, Inches(0.95), val, 36, True, col)
+        tbox(s, x, y + Inches(0.78), wide - Inches(0.25), Inches(0.9), label, 10, False, MUTE, spacing=1.12)
+        x += wide + Inches(0.25)
+    return y + Inches(1.7)
 
-SV = N.get("studioval")
-if SV:
-    head = ("No numeric prediction about a real zebrafish\npasses as independent evidence." if SV["wildIndependentPasses"] == 0
-            else f"{SV['wildIndependentPasses']} of {SV['wildNumeric']} numeric wild-type predictions pass independently.")
-    s = new(head, STATE["studioval"]["state"])
-    SEG = [("pass", "pass", S3), ("pass-rests-on-assumed", "pass, rests on an assumed input", RGBColor(0x8F, 0xD6, 0xBC)),
-           ("circular", "circular: read the answer back", S4), ("fail", "fail", S2), ("no-target", "no target to test against", GHOST)]
-    used = [x for x in SEG if sum(g["counts"].get(x[0], 0) for g in SV["groups"])]
-    cd = CategoryChartData()
-    cats = [f"{g['label']} ({g['n']})" for g in SV["groups"]][::-1]
-    cd.categories = cats
-    for k, lab, _ in used:
-        tot = sum(g["counts"].get(k, 0) for g in SV["groups"])
-        pre = (SV.get("tallyPre") or {}).get(k, tot)
-        cd.add_series(f"{tot} {lab}" + (f" (pre-registered: {pre})" if pre != tot else ""), [g["counts"].get(k, 0) or None for g in SV["groups"]][::-1])
-    gf = s.shapes.add_chart(XL_CHART_TYPE.BAR_STACKED, M, Inches(2.15), W - 2 * M, Inches(2.1), cd)
-    ch = gf.chart
-    ch.font.size = Pt(11)
-    ch.font.color.rgb = MUTE
-    ch.font.name = "Segoe UI"
-    ch.has_legend = True
-    ch.legend.position = XL_LEGEND_POSITION.BOTTOM
-    ch.legend.include_in_layout = False
-    plot = ch.plots[0]
-    plot.gap_width = 45
-    plot.overlap = 100
-    plot.has_data_labels = True
-    plot.data_labels.font.size = Pt(11)
-    plot.data_labels.font.bold = True
-    plot.data_labels.font.color.rgb = PAPER
-    for i, ser in enumerate(plot.series):
-        ser.format.fill.solid()
-        ser.format.fill.fore_color.rgb = used[i][2]
-        ser.format.line.color.rgb = PAPER
-        ser.format.line.width = Pt(1.5)
-    va = ch.value_axis
-    va.has_major_gridlines = False
-    va.visible = False
-    ch.category_axis.format.line.color.rgb = RGBColor(0xC3, 0xC2, 0xB7)
-    items = [(f"{f['id']} · {f['name']}", f["why"], "fail", S2) for f in SV["fails"]]
-    items.append((f"{len(SV['circular'])} “passes” read the answer back",
-                  f"{', '.join(SV['circular'])}: in band only because the module is calibrated to, interpolates, or quotes the paper it is scored against. "
-                  "Scored circular, never counted as a pass.", "circular", S4))
-    if SV.get("changes"):
-        items.append((f"{len(SV['changes'])} verdicts changed by amendments written after the results",
-                      "; ".join(f"{c['id']} {c['from']} → {c['to']} ({c['amendment']})" for c in SV["changes"])
-                      + ". Both verdicts kept side by side; the pre-registration file is unchanged.", str(len(SV["changes"])), SERIOUS))
-    rows(s, items, y=Inches(4.4), gap=Inches(0.62), vw=Inches(1.4))
-    trust = ("Tests fixed before any scenario module existed"
-             + ("; the pre-registration still hashes to " + SV["preregSha"][:16] + "…" if SV.get("preregHashOk") else "")
-             + ". Written by an agent that built none of the studio."
-             + (f" Harness self-test: {SV['selftest']['ok']} of {SV['selftest']['total']} checks fail on a planted bad input." if SV.get("selftest") else "")
-             + (" Every negative, law and optimizer control held" if SV.get("controlsHeld") else " Not every control held")
-             + ("".join(f"; {c['id']} only under a post-results amendment ({c['amendment']})" for c in SV.get("changes", [])
-                        if re.match(r"^(N[1-6]|O\d|P\d)$", c["id"])) + "."))
-    caption(s, trust + f"  Read from sim-engine/validation/studio-results.json, run {SV['generatedAt']}.", y=H - Inches(1.12))
 
-PK = N.get("printkit")
-if PK:
-    s = new("A design you can hold.\nNobody has thrown one yet.", STATE["printkit"]["state"])
-    if PK.get("render"):
-        picture(s, PK["render"]["file"], M, Inches(2.25), h=Inches(3.9))
-        tbox(s, M, Inches(6.2), Inches(5.3), Inches(0.5),
-             f"The life-size starter kit, exploded in assembly order: a render of the shipped STL files, not a photograph of a print. "
-             f"{PK['render']['from']}, sha256 {PK['render']['sha256'][:16]}…", 8, False, MUTE, spacing=1.1)
-    g = PK["glider"]
-    st0 = g["states"][0] if g["states"] else None
-    rod = next((x for x in g["states"] if x["stable"]), None)
-    rx = M + Inches(5.6)
-    items = [
-        ("Life-size starter kit", "keyed press-fit pegs, no glue; small organs merged into blocks, every merge recorded",
-         f"{PK['starter']['passed']} of {PK['starter']['passed'] + PK['starter']['failed']} pass", GOOD),
-        ("120 mm containment-hierarchy kit", "organs into system carriers into the body case; failing parts listed, not dropped",
-         f"{PK['kit120']['passed']} of {PK['kit120']['parts']} pass", INK),
-    ]
-    if st0 and rod:
-        items.append((f"The one to throw, {g['sl_mm']} mm",
-                      f"fin at the one measured proportion (flying-fish median, Daane 2021). Empty: static margin {st0['margin'] * 100:.1f}% "
-                      f"of chord, unstable; a {rod['mass_g'] - st0['mass_g']:.2f} g steel rod makes it +{rod['margin'] * 100:.1f}% (first-order)",
-                      f"v_min {st0['v_min']}–{rod['v_min']} m/s", INK))
-    y = Inches(2.25)
-    for head, body, val, col in items:
-        tbox(s, rx, y, Inches(4.0), Inches(0.3), head, 13, True, INK)
-        tbox(s, W - M - Inches(2.1), y, Inches(2.1), Inches(0.3), val, 13, True, col, align=PP_ALIGN.RIGHT)
-        tbox(s, rx, y + Inches(0.3), W - M - rx, Inches(0.6), body, 9.5, False, MUTE, spacing=1.1)
-        y += Inches(0.95)
-    box = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, rx, y + Inches(0.05), W - M - rx, Inches(1.3))
+
+# Two-column geometry, stated once. A picture column and a text column that cannot overlap:
+# M + PICW <= COLX, and COLX + COLW == W - M.
+PICW = Inches(6.25)
+COLX = Inches(7.35)
+COLW = Inches(5.2)
+
+
+def col(s, y, head, val, nt, vcol=S1, hw=Inches(3.9)):
+    """One label / number / note row inside the right-hand text column."""
+    tbox(s, COLX, y, hw, Inches(0.3), head, 12, True, INK)
+    tbox(s, COLX + COLW - Inches(1.25), y, Inches(1.25), Inches(0.3), val, 13, True, vcol, align=PP_ALIGN.RIGHT)
+    tbox(s, COLX, y + Inches(0.26), COLW, Inches(0.5), nt, 9, False, MUTE, spacing=1.1)
+    return y + Inches(0.82)
+
+# ═════════════════════════════════════════════════════════════════════ slides
+# LeanBio Forum: the deliverable this deck pitches. The repository still calls it DELPHI; the two
+# names refer to the same system (README.md, "The two names"). Twelve beats, in argument order.
+EB = "LeanBio Forum · ScienceClaw 2026"
+
+# ───────────────────────────────────────────────────────── 1-4 · the fire
+s = new("Biology has never built the thing\nyou check a design against.", "live", EB)
+tbox(s, M, Inches(2.5), Inches(8.8), Inches(1.2),
+     "Mathematics has mathlib. Biology has papers, protocols and the people who know how to make them "
+     "work. We are building the missing object: biological laws that hold in Lean, survive agent debate "
+     "on the evidence, and then constrain what a design model is allowed to propose.",
+     14, False, MUTE, spacing=1.2)
+route_row(s, ["claim", "nanopub", "debate", "Lean", "axiom", "design", "validate"], Inches(4.25))
+caption(s, "Everything in this deck runs. Where a result does not exist, the slide is greyed instead of "
+           "guessed — including on our own headline claim, which fails.")
+
+TA = FACTS.get("tacit") or {}
+s = new("The knowledge that makes biology work\nis not written down.", STATE["tacit"]["state"], EB)
+if TA.get("verified"):
+    tbox(s, M, Inches(2.4), W - 2 * M, Inches(0.7), TA["sentence"], 15, False, INK, spacing=1.2)
+    y = Inches(3.2)
+    for lit in TA.get("literature", []):
+        tbox(s, M, y, W - 2 * M, Inches(0.3), lit["cite"], 13, True, INK)
+        tbox(s, M, y + Inches(0.27), W - 2 * M - Inches(0.6), Inches(0.42), lit["what"], 10, False, MUTE, spacing=1.1)
+        y += Inches(0.76)
+    note(s, y + Inches(0.1), TA["caveat"], SERIOUS)
+    caption(s, "A claim about biology's own literature, not about agents. The gap is not that agents are "
+               "weak at biology. It is that biology has never produced the formal artefact that would let "
+               "anything — human or agent — check a design.")
+    srcline(s, [TA.get("locator")])
+else:
+    ghostbox(s, M, Inches(2.4), W - 2 * M, Inches(2.4), "Not evidenced yet", STATE["tacit"].get("needs", ""))
+
+s = new("So an agent has nothing to check against.", "live", EB)
+rows(s, [
+    ("In mathematics: a kernel proof",
+     "An agent writes a statement, a proof assistant accepts or rejects it, and the verdict needs no "
+     "referee. Agents are extremely good at this.", "verifiable", GOOD),
+    ("In biology: a reviewer",
+     "An agent proposes a design. Nothing can say whether it is consistent with what is already known, "
+     "at any scale, because what is already known has no machine-checkable form.", "unverifiable", SERIOUS),
+], y=Inches(2.3), gap=Inches(1.1))
+note(s, Inches(4.6),
+     "What is missing, precisely:  a statement of a biological law a machine can evaluate on a candidate "
+     "design;  a way to tell a law that BINDS from one that merely sounds true;  a record of what each law "
+     "rests on, so a later correction reaches every result built on it.", ACCENT)
+caption(s, "A design model can generate a sequence all day. Without a formal object to check it against, "
+           "every proposal is as good as every other, and the only filter left is an experiment that costs a year.")
+
+ML, BF = FACTS.get("mathlib") or {}, FACTS.get("biologyFormal") or {}
+greyed = not BF.get("verified")
+s = new("The asymmetry, in one line.", "partial" if greyed else "live", EB)
+hero(s, [
+    ("250,000+" if ML.get("verified") else "—",
+     "machine-checked theorems in mathlib, mathematics' largest formal library"
+     + (f" ({ML['asOf']})" if ML.get("asOf") else ""), S1),
+    ("?" if greyed else str(BF.get("value")),
+     BF.get("claimWithoutANumber", "Nothing comparable exists for biology."), GHOST),
+], y=Inches(2.3))
+if greyed:
+    note(s, Inches(4.35), "We will not put a number here.  " + BF.get("whyNoNumber", ""), SERIOUS)
+caption(s, "The grey number is the deck working as intended. A quarter of a million proofs on one side and "
+           "a question mark on the other is the whole problem statement, and the question mark is honest.")
+srcline(s, [ML.get("locator"), BF.get("locator")])
+
+AT = FACTS.get("attrition") or {}
+s = new("That is why this is expensive.", "live" if AT.get("verified") else "anticipated", EB)
+if AT.get("verified"):
+    hero(s, [("9 in 10", "drug programmes that enter clinical trials never reach approval", S2)], y=Inches(2.2))
+    tbox(s, M, Inches(3.9), Inches(8.6), Inches(1.0),
+         "If almost everything that reaches a trial fails, the leverage is not in running more trials. It is "
+         "in theoretical biology: knowing which experiment would change what you believe, before the "
+         "experiment is paid for.", 14, False, INK, spacing=1.2)
+    note(s, Inches(5.0), "Say it exactly this way.  " + AT.get("trap", ""), SERIOUS)
+    srcline(s, AT.get("sources", []) + ["true range " + AT.get("range", "")])
+else:
+    ghostbox(s, M, Inches(2.4), W - 2 * M, Inches(2.4), "Not evidenced yet", STATE["attrition"].get("needs", ""))
+
+# ───────────────────────────────────────────────────────── 5-7 · the Forum
+LR = N.get("lawreg")
+s = new("LeanBio Forum: a theorem becomes an axiom\nonly if it survives both gates.",
+        STATE["forum"]["state"], EB)
+x = M
+for k, v in [("upload", "a nanopub-backed theorem"), ("debate", "agents argue it on the evidence"),
+             ("Lean", "the kernel checks it follows"), ("axiom", "it may now constrain a design"),
+             ("or", "rejected, contested or retired — kept, with its reason")]:
+    box = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, Inches(2.45), Inches(2.3), Inches(0.95))
     box.fill.solid()
     box.fill.fore_color.rgb = PAPER
-    box.line.color.rgb = SERIOUS
+    box.line.color.rgb = ACCENT if k in ("debate", "Lean") else RGBColor(0xD9, 0xDF, 0xDB)
     box.shadow.inherit = False
-    box.text_frame.word_wrap = True
-    p = box.text_frame.paragraphs[0]
-    r = p.add_run()
-    r.text = "UNVERIFIED  " + (g.get("unverified") or "") + (" The winged zebrafish is a design, not a described species." if PK.get("hypothetical") else "")
-    r.font.size = Pt(10)
-    r.font.color.rgb = INK
-    r.font.name = "Segoe UI"
-
-# 11 the wing: anticipated, deliberately empty
-s = new("Where this goes next.", "anticipated")
-tbox(s, M, Inches(2.1), Inches(9), Inches(0.5),
-     "The same question at the scale of a whole organism: which genes drive fin enlargement for gliding, and by how much?", 15, False, MUTE)
-bw = Inches(3.72)
-ghostbox(s, M, Inches(2.85), bw, Inches(2.2), "Printed flying-fish pectoral fin", "no specimen, no scan, no print exists")
-ghostbox(s, M + bw + Inches(0.2), Inches(2.85), bw, Inches(2.2), "Fruit-fly wing, scaled to match", "no matched control exists")
-ghostbox(s, M + 2 * (bw + Inches(0.2)), Inches(2.85), bw, Inches(2.2), "Which genes move which feature", "no measurement, no model")
-caption(s, "This slide stays grey until there is something real behind it. An insect wing and a fish fin solve the same problem with "
-           "unrelated parts, which makes the comparison worth running — and makes a pretty rendering easy to mistake for a result.")
-
-# 12 the ladder
-s = new("The honest state of the ladder.", "partial")
-x = M
-for k, ok in [("molecule", True), ("tissue", False), ("organ", False), ("whole organism", False), ("population", True)]:
-    b = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, Inches(2.7), Inches(2.3), Inches(1.0))
-    b.fill.solid()
-    b.fill.fore_color.rgb = PAPER
-    b.line.color.rgb = ACCENT if ok else GHOST
-    if not ok:
-        b.line.dash_style = 4
-    b.shadow.inherit = False
-    tf = b.text_frame
+    tf = box.text_frame
+    tf.word_wrap = True
     p = tf.paragraphs[0]
+    p.alignment = PP_ALIGN.CENTER
     r = p.add_run()
-    r.text = "evidenced" if ok else "thin"
-    r.font.size = Pt(9)
-    r.font.bold = True
-    r.font.color.rgb = ACCENT if ok else GHOST
+    r.text = k.upper()
+    r.font.size, r.font.bold, r.font.color.rgb = Pt(9), True, MUTE
     p2 = tf.add_paragraph()
+    p2.alignment = PP_ALIGN.CENTER
     r2 = p2.add_run()
-    r2.text = k
-    r2.font.size = Pt(13)
-    r2.font.color.rgb = INK if ok else GHOST
-    x += Inches(2.46)
-caption(s, "We can go from a sequence to a measured growth rate, and from a claim to a population-level test. The middle of the "
-           "ladder is where the data thins out, and we are not going to pretend otherwise: the species with a complete record at "
-           "every scale is a short list, and we publish its length rather than loosening the definition.")
+    r2.text = v
+    r2.font.size, r2.font.color.rgb = Pt(10), INK
+    x += Inches(2.42)
+if LR:
+    statuses = LR.get("inLawset", [])
+    barchart(s, [r["status"] for r in statuses],
+             [("laws in lawset " + LR["lawset"], tuple(r["n"] for r in statuses))],
+             y=Inches(3.7), height=Inches(2.6), colors=[S3])
+tbox(s, M, H - Inches(1.5), W - 2 * M, Inches(0.9),
+     "Both gates, or neither. A statement that compiles but loses the debate is not a law; one that wins the "
+     "debate but does not follow from its premises is not a law either. Neither failure is deleted: it is "
+     "recorded with its reason, so nobody proposes it again.", 11, False, MUTE, spacing=1.15)
+srcline(s, ["lean/registry/lawsets/current.json", "lean/registry/laws/*.json"] if LR else [])
 
-# 12b records
-R = N.get("records") or {}
-if R.get("drafts"):
-    s = new("Every finding, made citable.", STATE.get("records", {}).get("state", "partial"))
-    names = {"lean": "Proofs + assessments", "organism": "Blueprints, predictions, a refusal",
-             "swarm": "Swarm experiments", "claims": "Claim tests, incl. refutations",
-             "genotype": "Gene-to-fin, mostly negative", "holdout": "The held-out exam", "physics": "Flight physics"}
-    barchart(s, [names.get(x["thread"], x["thread"]) for x in R["sets"]],
-             [("records drafted", tuple(x["drafts"] for x in R["sets"]))],
-             y=Inches(2.15), height=Inches(2.5), colors=[S3])
-    tbox(s, M, Inches(4.8), Inches(5.6), Inches(0.9),
-         f"{R['drafts']} records drafted and validated", 26, True, S3)
-    tbox(s, M + Inches(6.0), Inches(4.8), Inches(5.6), Inches(0.9),
-         f"{R['signed']} signed — publishing is irreversible", 26, True, GHOST)
-    caption(s, "Each record carries the claim in one sentence, its status including refuted and inconclusive, the dataset with its "
-               "identifier, the commit proving the test predated the data, and what it does not establish. Refutations are published "
-               "too; publishing only successes builds a victory log. While drafting we found the published templates use a retired "
-               "vocabulary, so declaring one would have asserted something false about how every record was made — dropped, "
-               "measured across five templates, and reported upstream.")
+s = new("Today's theorems came out of four books.", STATE["provenance"]["state"], EB)
+y = Inches(2.3)
+for head, nt, val, vcol in [
+        ("Darwin — On the Origin of Species, 1859", "Sentences read from the source text itself", "primary", S1),
+        ("Thompson — On Growth and Form, 1917", "Scaling and growth claims, taken verbatim and then operationalised", "primary", S1),
+        ("Turing — reaction–diffusion", "Reached through the mathematical-biology literature that formalised it", "secondary", S4),
+        ("Wolfram — A New Kind of Science", "Computation-in-biology claims, the least dataset-shaped of the four", "tertiary", GHOST)]:
+    tbox(s, M, y, Inches(4.6), Inches(0.3), head, 12, True, INK)
+    tbox(s, M + Inches(4.7), y, Inches(1.3), Inches(0.3), val, 11, True, vcol)
+    tbox(s, M, y + Inches(0.26), PICW, Inches(0.5), nt, 9, False, MUTE, spacing=1.1)
+    y += Inches(0.86)
+pageshot(s, "graph", COLX, Inches(2.25), COLW,
+         "The claim graph as served: each claim linked to the tests that checked it and the theorem that formalised it")
+caption(s, "Decentralised agent swarms distilled the assertions into nanopublications and argued the evidence "
+           "sources BEFORE anything was formalised. Formalising first would have produced beautiful proofs of "
+           "sentences nobody had checked anyone actually wrote.")
+srcline(s, ["docs/claims.json", "darwin-origin/", "thompson-growth-form/", "wolfram-nks/", "math-bio-theorems/"])
 
-# 13 limits
-s = new("What we are not claiming.", "live")
-rc = N.get("recount") or {}
-lines = [
-    "No wet lab. Nothing here was measured at a bench by us; no new organism, protein or variant was made.",
-    f"No proof about biology. The machine checked the reasoning from measurements to a safe route. That the measurements bracket the truth is assumed, and two replicates cannot justify it across {fmt(N['enzymeMeasured'])} variants.",
-    '"Blocked" is not "impossible." It means unreachable in the measured four-position graph, never in biology.',
-    "The publications are unsigned drafts. Valid, unpublished, and described as drafts.",
-    f"{rc.get('confirmed', '—')} of {rc.get('total', '—')} outside numbers reproduced exactly; the one we could not check, we said so rather than fill in.",
-]
-if N.get("corrections"):
-    cr = N["corrections"]
-    lines.append(f"{cr['total']} of our own claims were corrected in one day — {cr['ours']} found by our own checks, "
-                 f"{cr['collaborator']} by a collaborator's independent cross-check. Each was withdrawn or narrowed in public, as "
-                 "a record or a log entry, never as a silent edit.")
-if N.get("designval"):
-    lines.append("We did not design an organism. The \"designed\" fish is Daane et al. 2021's published double heterozygote, and "
-                 "our pre-registered test of it came back unsupported. The apparatus is ours; the animal is not.")
-if N.get("examLine"):
-    ex = N["examLine"]
-    lines.append(f"Validation on unseen data ran, and returned nothing. A clade was frozen as a holdout before the tests were "
-                 f"built; {ex['examined']} completed results were examined against it and {ex['inconclusive']} came back "
-                 "inconclusive"
-                 + (f". The {ex['withReason']} that state a reason were stopped by the builders' own pre-registered minimum "
-                    "sample size, not by a verdict we disliked" if ex.get("underpowered") and ex.get("withReason") else "")
-                 + ". An exam that cannot reach a verdict is reported as one that cannot.")
-y = Inches(2.35)
-for ln in lines:
-    tbox(s, M, y, W - 2 * M, Inches(0.8), "—  " + ln, 13, False, INK, spacing=1.15)
-    y += Inches(0.82)
-caption(s, "Every one of these is on the public dashboard too, next to the result it limits.")
+ARMS = N.get("swarmArms") or []
+s = new("The distillation was done by a swarm,\nand we measured whether that mattered.", STATE["swarm"]["state"], EB)
+if ARMS:
+    label = {"centralized": "Swarm, led", "decentralized": "Swarm, peer-to-peer",
+             "isolated": "Workers, isolated", "single": "One agent alone"}
+    barchart(s, [label.get(a["key"], a["key"]) for a in ARMS],
+             [("run 1, verified of 20", tuple(a.get("exp1") or 0 for a in ARMS)),
+              ("run 2, verified of 20", tuple(a.get("exp2") or 0 for a in ARMS))],
+             y=Inches(2.4), height=Inches(3.3), colors=[S1, S4], legend=True)
+    caption(s, "Each arm wrote 20 pre-registered test plans, each naming one real public dataset. Both numbers "
+               "are plans whose dataset URL and DOI a script could actually fetch — same model, same prompt, "
+               "same schema, same budget. "
+               + ("No arm fabricated a single identifier: every URL was fetched once by script, and a 404 counts "
+                  "as fabrication, not bad luck." if N.get("swarmFabricated") == 0 else ""))
+else:
+    ghostbox(s, M, Inches(2.4), W - 2 * M, Inches(2.6), "Not evidenced yet", STATE["swarm"].get("needs", ""))
+srcline(s, ["swarm/PREREG.md", "swarm/compare/results.json", "swarm/compare/verify.mjs"])
 
-# 14 ask
-s = new("What we want.", "live")
-asks = [
-    ("One historical campaign from one lab.", "Give us a finished enzyme-engineering campaign and we will replay it at matched budget and show, in assays and days, where the decision could have been reached sooner."),
-    ("A second assessor, from a different company.", "One is not enough for a verdict to travel with a publication, and we will not let the model that wrote a proof grade it."),
-    ("A harder panel.", "Our own check showed a benchmark can measure its own composition. Send pairs we did not pick."),
-]
+# The one slide that is deliberately empty until an experiment that is running right now reports.
+s = new("Single agent vs decentralised swarm vs\ncentralised swarm, across four levels.", "anticipated", EB)
+ghostbox(s, M, Inches(2.5), Inches(6.0), Inches(2.4), "Running now",
+         "Ground truth is frozen (swarm/benchmark/fixtures/gt-l4-t1…t3). No arm has reported. "
+         "This slide fills in or stays grey.")
+note2 = s.shapes.add_textbox(W - M - Inches(5.6), Inches(2.5), Inches(5.6), Inches(2.4))
+note2.text_frame.word_wrap = True
+for i, ln in enumerate([
+        "What it will and will not settle",
+        "— Four task levels of increasing difficulty, the same three organisations on each.",
+        "— Ground truth was written and frozen BEFORE any arm ran, so a late result cannot be fitted to it.",
+        "— It compares organisations on one task family. It is not a claim about swarms in general."]):
+    p = note2.text_frame.paragraphs[0] if i == 0 else note2.text_frame.add_paragraph()
+    p.line_spacing = 1.15
+    r = p.add_run()
+    r.text = ln
+    r.font.size = Pt(11 if i else 10)
+    r.font.bold = i == 0
+    r.font.color.rgb = MUTE if i else GHOST
+    r.font.name = "Segoe UI"
+caption(s, "The deck reads the same whether or not this fills. We would rather hand you a grey slide than a "
+           "number we chose after seeing it.")
+srcline(s, ["swarm/benchmark/fixtures/", "swarm/PREREG.md"])
+
+s = new("Served as an MCP server,\nso an agent can ask it things.", STATE["mcp"]["state"], EB)
+pageshot(s, "capability", M, Inches(2.4), PICW,
+         "The capability map, live: who would use this, what they would ask, and every tool that is missing")
 y = Inches(2.4)
-for head, body in asks:
+for head, val, nt in [
+        ("Personas", "14", "One per person or agent with a reason to open a formalised law registry over biology"),
+        ("Use cases", "32", "One row per job, with the tool sequence that answers it today; 9 answerable now, 8 not"),
+        ("Grand questions", "14", "Each split into the formalisable core and the empirical remainder"),
+        ("Ranked tool gaps", "27", "Ranked at build time; a test tampers with a stored rank to prove no gap can assert its own importance")]:
+    y = col(s, y, head, val, nt)
+note2 = note(s, y + Inches(0.1),
+             "And what it cannot do: most of these questions are mostly empirical remainder. A capability map "
+             "that let progress on the formal part be read as progress on the empirical part would be worse "
+             "than no map.", SERIOUS, w=COLW)
+note2.left = COLX
+srcline(s, ["/leanbio/capability.html", "pipeline/leanbio/capability-map/build.mjs"])
+
+# ───────────────────────────────────────── 8-9 · what the theorems constrain
+AN = N.get("anatomy")
+s = new("Those theorems constrain\na text-to-organism model.", STATE["constrain"]["state"], EB)
+pageshot(s, "blueprint", M, Inches(2.4), PICW,
+         "The blueprint the studio writes into: a morphological change on a base organism, resolved down every layer")
+tbox(s, COLX, Inches(2.4), COLW, Inches(1.1),
+     "You type a phenotype. The model has to say which genetic change produces it, at every layer and at "
+     "every developmental stage — and every layer it touches is an existing ontology term, so a law can be "
+     "evaluated on it.", 12, False, INK, spacing=1.18)
+if AN:
+    y = Inches(3.7)
+    for head, val, nt in [
+            ("Named pieces across the models", str(AN["pieces"]), "flying fish, adult zebrafish, larval zebrafish"),
+            ("Mapped to an ontology term", str(AN["mapped"]), f"{AN['unmapped']} are not, and are shown as unmapped rather than quietly dropped"),
+            ("Values that are a real measurement", str(AN["sourcedValues"]), "everything else in the flying-fish model is schematic, and the page says so")]:
+        y = col(s, y, head, val, nt)
+    nb = note(s, y, "One measured proportion carries the flying-fish model: pectoral fin length 0.687 of "
+                    "standard length, n = 49 museum specimens. Body depth, fin spread, organ shapes and every "
+                    "count are illustrative.", SERIOUS, w=COLW)
+    nb.left = COLX
+srcline(s, ["anatomy-model/manifest.json", "Daane et al. 2021, doi 10.1016/j.cub.2021.08.054"])
+
+RF = N.get("lawRowFacts") or {}
+s = new("A law that binds nothing\nis worse than no law.", STATE["lawreg"]["state"], EB)
+if LR:
+    rows(s, [
+        (f"Laws in lawset {LR['lawset']}", "versioned, pinned to a commit, and mirrored into the MCP server",
+         str(LR["inLawsetTotal"]), INK),
+        ("Accepted", "may rule a design out", str(RF.get("accepted", "—")), GOOD),
+        ("… of which produce NO design row",
+         "each with a written reason and what would make it bind; the check fails if an entry stops being true",
+         str(RF.get("noDesignRow", "—")), SERIOUS),
+        ("Retired, never deleted", "so an older lawset still reproduces",
+         str(next((r["n"] for r in LR.get("inLawset", []) if r["status"] == "retired"), 0)), MUTE),
+    ], y=Inches(2.35), gap=Inches(0.8), vw=Inches(1.6))
+    tbox(s, M, Inches(5.6), W - 2 * M, Inches(1.3),
+         "Three of the fifteen reasons, verbatim:\n"
+         "kimura-fixation-probability — fixation probability of an allele in a population; a design commits no population size or selection coefficient.\n"
+         "scaling-bending-law — the section modulus needs a cross-section; the resolved state carries none, so no design can be judged.\n"
+         "fick-principle — it is the named hypothesis the aerobic bound rests on, not the law that rules anything out, so it owns no constraint.",
+         9, False, MUTE, spacing=1.2)
+srcline(s, ["lean/registry/check-exposed.mjs", "lean/registry/lawsets/current.json", "mcp/server.mjs"])
+
+STU = N.get("studio")
+s = new("Design Studio: type the phenotype,\nget the criteria.", STATE["studio"]["state"], EB)
+if STU and STU.get("shot"):
+    sh = STU["shot"]
+    pic = picture(s, sh["file"], M, Inches(2.4), w=PICW)
+    if pic:
+        tbox(s, M, Inches(2.4) + pic.height + Inches(0.05), PICW, Inches(0.6),
+             f"Typed into the live studio, not a mock-up: “{sh['typed']}” — {sh.get('criteria')} criteria parsed, "
+             + ("valid against the engine." if sh.get("valid") else "NOT valid against the engine."),
+             8, False, MUTE, spacing=1.08)
+    tbox(s, COLX, Inches(2.4), COLW, Inches(1.4),
+         "The studio turns a sentence into criteria the engine can actually run. A clause it cannot parse is "
+         "shown in red and is NOT checked by anything downstream, rather than being silently dropped.",
+         12, False, INK, spacing=1.18)
+    tbox(s, COLX, Inches(3.9), COLW, Inches(1.4),
+         f"{len(STU.get('scenarios', []))} scenarios the engine runs:\n" + ", ".join(STU.get("scenarios", [])),
+         10, False, MUTE, spacing=1.15)
+else:
+    ghostbox(s, M, Inches(2.4), W - 2 * M, Inches(2.6), "Not evidenced yet", STATE["studio"].get("needs", ""))
+srcline(s, STU.get("sources", []) if STU else [])
+
+s = new("Then physics, flow and development\nstress-test it.", STATE["sim"]["state"], EB)
+pageshot(s, "physics", M, Inches(2.4), PICW,
+         "The flying-fish simulator: the solver computes the trajectory and the anatomy meshes fly it, sample by sample")
+y = Inches(2.4)
+for head, val, nt, col__ in [
+        ("Physics simulation", "runs", "A glide solver over the design's own mesh and mass, with ground effect, headwind, altitude and depth as parameters", GOOD),
+        ("Developmental simulation", "runs", "The same design resolved at each stage, so a criterion can be demanded at adult and failed at larva", GOOD),
+        ("Flow matching", "not here yet", "The generative half of the design model; nothing in this deck rests on it", SERIOUS)]:
+    col_ = col__
+    y = col(s, y, head, val, nt, vcol=col_)
+nb = note(s, y, "The simulator page carries its own banner: NOT A VALIDATED RESULT. Tests 1 to 3 are post-hoc, "
+                "and under the pre-registered upper bound the model lets a real fish gain net energy — which "
+                "shows the tuned launch thrust to be unphysical. Both outcomes are in the run log; nothing was "
+                "retuned.", SERIOUS, w=COLW)
+nb.left = COLX
+srcline(s, ["/t/physics/sim/", "physics/sim/RUNS.md", "physics/PREREG.md"])
+
+# ───────────────────────────── 10 · the harness, and then what it said
+s = new("The validation harness, in four moves.", STATE["harness"]["state"], EB)
+x = M
+for k, v in [("step 1", "take the predicted sequence and the desired function"),
+             ("step 2", "find the closest FUNCTIONAL analogue, not the closest relative"),
+             ("step 3", "annotate every functional difference, interpretably"),
+             ("step 4", "score formally in LeanBio, then run physics on the mesh")]:
+    box = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, Inches(2.35), Inches(2.95), Inches(1.0))
+    box.fill.solid()
+    box.fill.fore_color.rgb = PAPER
+    box.line.color.rgb = ACCENT
+    box.shadow.inherit = False
+    tf = box.text_frame
+    tf.word_wrap = True
+    p = tf.paragraphs[0]
+    p.alignment = PP_ALIGN.CENTER
+    r = p.add_run()
+    r.text = k.upper()
+    r.font.size, r.font.bold, r.font.color.rgb = Pt(9), True, MUTE
+    p2 = tf.add_paragraph()
+    p2.alignment = PP_ALIGN.CENTER
+    r2 = p2.add_run()
+    r2.text = v
+    r2.font.size, r2.font.color.rgb = Pt(10), INK
+    x += Inches(3.07)
+pageshot(s, "validate", M, Inches(3.6), PICW,
+         "The harness on the headline design, at the physics act: five named results, each with its own gate",
+         maxh=Inches(3.0))
+tbox(s, COLX, Inches(3.6), COLW, Inches(1.5),
+     "Five named results, side by side, each with its own gate. They are never summed. Where the evidence "
+     "does not exist the page leaves a marked gap instead of drawing something pretty — nine gaps on this run.",
+     12, False, INK, spacing=1.18)
+nb = note(s, Inches(5.2), "On the run shown: 1 pass · 2 fail · 2 not assessed. The next three slides are what "
+                          "the two failures and the gaps actually say.", SERIOUS, w=COLW)
+nb.left = COLX
+srcline(s, ["sim-engine/validate/pipeline/index.mjs", "dashboard/public/validate-show/run-winged-zebrafish.json"])
+
+PG = NEG.get("physicsgate")
+s = new("Our headline design does not fly.", "live" if PG else "anticipated", EB)
+if PG:
+    y = tiles(s, PG["figures"])
+    tbox(s, M, y, W - 2 * M - Inches(1.5), Inches(1.0), PG["detail"], 14, False, INK, spacing=1.2)
+    note(s, y + Inches(1.1),
+         "This is the design the whole deck is built around, and the gate it fails is the one that matters. A "
+         "deck that claimed a working flying fish would lose to one honest question; this is the answer to that "
+         "question, put on a slide before anyone has to ask it.", SERIOUS)
+    srcline(s, [PG["locator"]])
+else:
+    ghostbox(s, M, Inches(2.4), W - 2 * M, Inches(2.6), "Not evidenced yet", STATE["physicsgate"].get("needs", ""))
+
+FR = NEG.get("funcledger")
+s = new("And the negative control scores\nexactly as well.", "live" if FR else "anticipated", EB)
+if FR:
+    y = tiles(s, FR["figures"], y=Inches(2.35))
+    tbox(s, M, y, W - 2 * M - Inches(1.5), Inches(1.0), FR["detail"], 13, False, INK, spacing=1.2)
+    note(s, Inches(5.5),
+         "Why that is the sharpest result we have: on this ledger the designed fish is exactly as far from the "
+         "flying fish's known requirement set as an unedited zebrafish is. The control was pre-registered, and "
+         "it behaved as it must.   ·   What the ledger is not: every requirement is a SEQUENCE STATE of the "
+         "analogue, never a measured function of it. Zero of the loci have functional data of any kind.", SERIOUS)
+    srcline(s, [FR["locator"]])
+else:
+    ghostbox(s, M, Inches(2.4), W - 2 * M, Inches(2.6), "Not evidenced yet", STATE["funcledger"].get("needs", ""))
+
+GOT = [NEG[i] for i in ("compensation", "edges", "deadlaws", "nevertried") if i in NEG]
+s = new("Four more results that go against us.", "live" if len(GOT) == 4 else "partial", EB)
+y = Inches(2.3)
+for n in GOT:
+    tbox(s, M, y, W - 2 * M - Inches(2.2), Inches(0.3), n["headline"], 14, True, INK)
+    tbox(s, W - M - Inches(2.0), y, Inches(2.0), Inches(0.3), n.get("keyFigure", ""), 14, True, SERIOUS, align=PP_ALIGN.RIGHT)
+    tbox(s, M, y + Inches(0.28), W - 2 * M - Inches(2.4), Inches(0.72), n["detail"], 9, False, MUTE, spacing=1.12)
+    y += Inches(1.12)
+if len(GOT) < 4:
+    note(s, y, f"{4 - len(GOT)} further result(s) are not shown: their source file no longer says what this "
+               "deck claimed, so the claim was dropped rather than reprinted.", SERIOUS)
+caption(s, "Each one is read back out of its own source file at build time. If a number drifts, the row "
+           "disappears from this slide rather than quietly going stale.")
+srcline(s, [n["locator"] for n in GOT])
+
+s = new("We are not going to give you one number.", "live", EB)
+tbox(s, M, Inches(2.3), Inches(6.0), Inches(1.0),
+     "Three different composite values for this same design are under investigation right now. Until that is "
+     "settled, no composite score goes on any slide, in any deck, or into any record. You get the gates.",
+     13, False, INK, spacing=1.2)
+y = Inches(3.5)
+for head, val, nt, col in [
+        ("Physics gate", "FAIL", "the design does not do what was asked", SERIOUS),
+        ("Functional-analogue ledger", "FAIL", "19 differences unresolved; the unedited control scores the same", SERIOUS),
+        ("Phenotype similarity", "PASS", "the one gate it clears", GOOD),
+        ("Genotype similarity", "CANNOT ASSESS", "no gene-level edit, so no sequence was compared. This is not a pass.", GHOST),
+        ("Lean law check", "CANNOT ASSESS", "25 cannot-evaluate, 10 out of scope", GHOST)]:
+    tbox(s, M, y, Inches(4.2), Inches(0.3), head, 13, True, INK)
+    tbox(s, M + Inches(4.3), y, Inches(2.2), Inches(0.3), val, 13, True, col)
+    tbox(s, M + Inches(6.6), y, Inches(5.0), Inches(0.42), nt, 10, False, MUTE, spacing=1.1)
+    y += Inches(0.62)
+note(s, y + Inches(0.1),
+     "Why a single score is the dangerous output: a composite hides which gate failed and lets “cannot assess” "
+     "average against “pass”. Two of the five results above are not verdicts at all. Summing them would turn an "
+     "absence of evidence into a middling grade, which is the one thing this system exists to prevent.", SERIOUS)
+srcline(s, ["run-winged-zebrafish.json → verdict", "sim-engine/validate/SCORER-RESULTS.md"])
+
+# ───────────────────────── 11-12 · the second server, and the round trip
+SV = N.get("studioval")
+s = new("Design studio and harness,\nserved as a second MCP server.", STATE["secondmcp"]["state"], EB)
+tbox(s, M, Inches(2.4), Inches(6.2), Inches(1.0),
+     "Two servers, two jobs. The first answers questions about the law registry. The second takes a phenotype, "
+     "returns a design, and validates it — so an agent can run the whole loop without a human in it.",
+     13, False, INK, spacing=1.2)
+if SV:
+    t = SV.get("tally", {})
+    rows(s, [
+        ("Rows scored by the harness", "against a pre-registration hashed before the first number was produced",
+         str(SV.get("scored", "—")), INK),
+        ("Pass", "the prediction matched a target taken from the literature", str(t.get("pass", "—")), GOOD),
+        ("Circular", "the engine was asked to reproduce a number it was given. Counted, named, never scored as a pass.",
+         str(t.get("circular", "—")), SERIOUS),
+        ("Fail", "the prediction missed its target", str(t.get("fail", "—")), SERIOUS),
+        ("Self-test", "every assertion was checked to be capable of failing before it was trusted",
+         f"{(SV.get('selftest') or {}).get('ok', '—')} of {(SV.get('selftest') or {}).get('total', '—')}", GOOD),
+    ], y=Inches(3.6), gap=Inches(0.62), vw=Inches(1.6))
+    note(s, H - Inches(1.6),
+         "The circular rows are the point: five of the scored rows reproduced a value that had been fed into "
+         "the engine. A harness that counted those as passes would report a working validator. Ours labels them "
+         "and keeps them visible on the scorecard.", SERIOUS)
+srcline(s, ["mcp/server.mjs", "sim-engine/validate/SCORER-RESULTS.md", "sim-engine/contract.json"])
+
+s = new("The round trip.", "anticipated", EB)
+route_row(s, ["phenotype", "design", "sequence", "fresh session", "design", "phenotype?"], Inches(2.45))
+ghostbox(s, M, Inches(3.5), Inches(5.9), Inches(1.9), "Not run", STATE["roundtrip"].get("needs", ""))
+rt = s.shapes.add_textbox(W - M - Inches(5.9), Inches(3.5), Inches(5.9), Inches(1.9))
+rt.text_frame.word_wrap = True
+for i, ln in enumerate([
+        "Why it is the test that matters",
+        "Feed the predicted sequence back into Design Studio in a session that has never seen the original ask, "
+        "and see whether the phenotype comes back. It is the one check the system cannot pass by remembering, and "
+        "the only one that would show the mapping is a mapping rather than a lookup."]):
+    p = rt.text_frame.paragraphs[0] if i == 0 else rt.text_frame.add_paragraph()
+    p.line_spacing = 1.18
+    r = p.add_run()
+    r.text = ln
+    r.font.size = Pt(11 if i == 0 else 10)
+    r.font.bold = i == 0
+    r.font.color.rgb = MUTE if i == 0 else INK
+    r.font.name = "Segoe UI"
+caption(s, "Both halves exist and both are served. Nothing has been run end to end and back, so this slide "
+           "stays grey.")
+
+CR, RC = N.get("corrections"), N.get("records") or {}
+s = new("What we are not claiming.", "live", EB)
+lines = [
+    "No wet lab. Nothing here was measured at a bench by us; no organism, protein or variant was made.",
+    "No proof about biology. Every theorem says a conclusion follows from premises. That any organism "
+    "satisfies those premises is assumed, and a kernel proof is silent on it.",
+    "We did not design an organism. The “designed” fish is Daane et al. 2021's published double "
+    "heterozygote, and our pre-registered test of it came back unsupported. The apparatus is ours; the animal is not.",
+]
+if CR:
+    lines.append(f"{CR['total']} of our own claims were corrected in one day — {CR['ours']} by our own checks, "
+                 f"{CR['collaborator']} by a collaborator's independent cross-check. Each was withdrawn or "
+                 "narrowed in public, never as a silent edit.")
+if RC.get("drafts"):
+    lines.append(f"The publications are unsigned drafts. {RC['drafts']} records are drafted and validated; "
+                 f"{RC.get('signed', 0)} are signed, because publishing is irreversible and no key owner has signed off.")
+lines.append("No bird data anywhere. Class Aves is a frozen holdout, excluded at build time from every layer, "
+             "figure and record in this deck.")
+y = Inches(2.3)
+for ln in lines:
+    tbox(s, M, y, W - 2 * M, Inches(0.8), "—  " + ln, 12, False, INK, spacing=1.15)
+    y += Inches(0.78)
+caption(s, "All of this is on the public dashboard too, next to the result it limits.")
+
+s = new("What we want.", "live", EB)
+y = Inches(2.4)
+for head, body in [
+        ("Laws, from people who own them.",
+         "Upload a theorem with its nanopub. If it holds in Lean and survives the debate, it becomes an axiom "
+         "that constrains every design after it — and it keeps your name on it."),
+        ("One functional assay on a non-model organism.",
+         "Zero of the 73 requirements in our ledger have functional data of any kind. One real assay would move "
+         "more rows than another year of sequence."),
+        ("A second kernel, and a second debate.",
+         "We will not let the system that wrote a proof grade it. Run the registry against your own checker and "
+         "tell us where it disagrees.")]:
     tbox(s, M, y, W - 2 * M, Inches(0.4), head, 17, True, INK)
     tbox(s, M, y + Inches(0.38), W - 2 * M - Inches(1), Inches(0.7), body, 12, False, MUTE, spacing=1.12)
-    y += Inches(1.28)
-tbox(s, M, H - Inches(1.1), W - 2 * M, Inches(0.5),
-     "delphi-mission-control.ashenoy000.workers.dev/start/", 14, True, ACCENT)
+    y += Inches(1.3)
+tbox(s, M, H - Inches(1.5), W - 2 * M, Inches(0.4),
+     "LeanBio Forum — the system this repository still calls DELPHI.", 14, True, INK)
+tbox(s, M, H - Inches(1.05), W - 2 * M, Inches(0.4),
+     "delphi-mission-control.ashenoy000.workers.dev", 13, True, ACCENT)
+
+# ---------------------------------------------------------------- geometry check
+# PowerPoint is laid out blind: nothing here renders, so a column that runs off the slide or a
+# picture that sits on top of a paragraph is invisible until someone opens the file in front of an
+# audience. This fails the build instead.
+def _box(sh):
+    return (sh.left or 0, sh.top or 0, (sh.left or 0) + (sh.width or 0), (sh.top or 0) + (sh.height or 0))
+
+
+def _overlap(a, b):
+    return max(0, min(a[2], b[2]) - max(a[0], b[0])) * max(0, min(a[3], b[3]) - max(a[1], b[1]))
+
+
+SLIDE_IDS = [x["id"] for x in DATA["slides"]]
+faults = []
+SLACK = Emu(int(Inches(0.04)))
+for i, sl in enumerate(prs.slides):
+    sid = SLIDE_IDS[i] if i < len(SLIDE_IDS) else f"#{i}"
+    pics, texts = [], []
+    for sh in sl.shapes:
+        b = _box(sh)
+        if b[2] > W + SLACK or b[3] > H + SLACK or b[0] < -SLACK or b[1] < -SLACK:
+            faults.append(f"{sid}: a shape runs off the slide ({b[0]/914400:.2f},{b[1]/914400:.2f} to {b[2]/914400:.2f},{b[3]/914400:.2f} in)")
+        if sh.shape_type == 13:
+            pics.append((sh, b))
+        elif sh.has_text_frame and sh.text_frame.text.strip():
+            texts.append((sh, b))
+    # a picture covering a paragraph is the fault that actually happens, and only on two-column slides
+    for _, pb in pics:
+        for sh, tb in texts:
+            ov = _overlap(pb, tb)
+            if ov > 0 and ov > 0.25 * max(1, (tb[2] - tb[0]) * (tb[3] - tb[1])):
+                faults.append(f"{sid}: a picture covers the text \"{sh.text_frame.text.strip()[:44]}…\"")
+if faults:
+    print(f"\n{len(faults)} LAYOUT FAULT(S):")
+    for f in faults:
+        print("  - " + f)
+    raise SystemExit(1)
 
 prs.save(OUT)
 print(f"{OUT.name}: {len(prs.slides.__iter__.__self__._sldIdLst)} slides, "
-      f"{DATA['progress']['live']} live / {DATA['progress']['partial']} partial / {DATA['progress']['anticipated']} anticipated")
+      f"{DATA['progress']['live']} live / {DATA['progress']['partial']} partial / "
+      f"{DATA['progress']['anticipated']} anticipated")

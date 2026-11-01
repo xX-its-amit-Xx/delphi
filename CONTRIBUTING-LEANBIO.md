@@ -1,5 +1,13 @@
 # Contributing to LeanBio: harvest nanopubs, propose laws
 
+> ### The two names
+>
+> **LeanBio Forum** and **DELPHI** are the same system. `DELPHI` is the name used throughout
+> this repository — every path, module, URL and record id uses it, and none of that is being
+> renamed. **LeanBio Forum** is the name the project is presented under: the pitch deck at
+> `dashboard/public/deck/`, and the public pages under `/leanbio/`. If you see one name in a file
+> and the other on a slide, they refer to the same thing.
+
 DELPHI serves **LeanBio claims**: biology claims distilled from the literature, recorded as nanopublications, grounded
 to ontology identifiers, ordered by a belief score, and, where a correct statement exists, formalized as Lean 4 laws.
 Anyone can add claims and propose laws. This page says what a proposal must meet and how to get there. The machinery

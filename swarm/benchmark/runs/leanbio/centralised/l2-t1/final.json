@@ -1,0 +1,188 @@
+{
+ "cell": {
+  "level": "leanbio",
+  "arm": "centralised",
+  "task": "l2-t1",
+  "model": "claude-sonnet-5-5",
+  "N": 3,
+  "budget_total_usd": 0.45,
+  "cap_per_call_usd": 0.09,
+  "started": "2026-11-01T07:01:29.080Z",
+  "wall_ms": 56113,
+  "calls": 5,
+  "cost_usd": 0.27367,
+  "tokens": {
+   "input": 10,
+   "output": 12654,
+   "cache_read": 13923,
+   "cache_creation": 36429
+  },
+  "tokens_total": 63016,
+  "infra_failures": 0,
+  "cap_stops": 0,
+  "cli_errors": [],
+  "produced_artifact": true,
+  "merge": {
+   "rule": "orchestrator decides",
+   "subtasks": [
+    "Draft the statement and witness",
+    "Prove l2_t1",
+    "Audit against requirements and traps"
+   ]
+  },
+  "call_meta": [
+   {
+    "label": "orchestrator-plan",
+    "model": "claude-sonnet-5-5",
+    "exit_code": 0,
+    "via_stdin": false,
+    "prompt_chars": 2520,
+    "duration_ms": 16534,
+    "cost_usd": 0.042647500000000005,
+    "num_turns": 2,
+    "stop_reason": "tool_use",
+    "terminal_reason": "completed",
+    "is_error": false,
+    "error_text": null,
+    "usage": {
+     "input": 2,
+     "output": 1855,
+     "cache_read": 2735,
+     "cache_creation": 5955
+    },
+    "tokens_total": 10547,
+    "infra_failure": false,
+    "stderr": ""
+   },
+   {
+    "label": "worker-0",
+    "model": "claude-sonnet-5-5",
+    "exit_code": 0,
+    "via_stdin": false,
+    "prompt_chars": 3727,
+    "duration_ms": 17427,
+    "cost_usd": 0.0480137,
+    "num_turns": 2,
+    "stop_reason": "tool_use",
+    "terminal_reason": "completed",
+    "is_error": false,
+    "error_text": null,
+    "usage": {
+     "input": 2,
+     "output": 2155,
+     "cache_read": 2797,
+     "cache_creation": 6545
+    },
+    "tokens_total": 11499,
+    "infra_failure": false,
+    "stderr": ""
+   },
+   {
+    "label": "worker-1",
+    "model": "claude-sonnet-5-5",
+    "exit_code": 0,
+    "via_stdin": false,
+    "prompt_chars": 3371,
+    "duration_ms": 21835,
+    "cost_usd": 0.057543699999999996,
+    "num_turns": 2,
+    "stop_reason": "tool_use",
+    "terminal_reason": "completed",
+    "is_error": false,
+    "error_text": null,
+    "usage": {
+     "input": 2,
+     "output": 3154,
+     "cache_read": 2797,
+     "cache_creation": 6430
+    },
+    "tokens_total": 12383,
+    "infra_failure": false,
+    "stderr": ""
+   },
+   {
+    "label": "worker-2",
+    "model": "claude-sonnet-5-5",
+    "exit_code": 0,
+    "via_stdin": false,
+    "prompt_chars": 4020,
+    "duration_ms": 25418,
+    "cost_usd": 0.0618037,
+    "num_turns": 2,
+    "stop_reason": "tool_use",
+    "terminal_reason": "completed",
+    "is_error": false,
+    "error_text": null,
+    "usage": {
+     "input": 2,
+     "output": 3506,
+     "cache_read": 2797,
+     "cache_creation": 6615
+    },
+    "tokens_total": 12920,
+    "infra_failure": false,
+    "stderr": ""
+   },
+   {
+    "label": "orchestrator-merge",
+    "model": "claude-sonnet-5-5",
+    "exit_code": 0,
+    "via_stdin": true,
+    "prompt_chars": 11772,
+    "duration_ms": 14125,
+    "cost_usd": 0.0636597,
+    "num_turns": 2,
+    "stop_reason": "tool_use",
+    "terminal_reason": "completed",
+    "is_error": false,
+    "error_text": null,
+    "usage": {
+     "input": 2,
+     "output": 1984,
+     "cache_read": 2797,
+     "cache_creation": 10884
+    },
+    "tokens_total": 15667,
+    "infra_failure": false,
+    "stderr": ""
+   }
+  ]
+ },
+ "final": {
+  "lean_file": "import Mathlib\n\ntheorem l2_t1 (m1 m2 S rho g CL : ℝ) (hrho : 0 < rho) (hS : 0 < S) (hCL : 0 < CL)\n    (hg : 0 < g) (hm1 : 0 < m1) (hwl : m1 / S < m2 / S) :\n    Real.sqrt (2 * m1 * g / (rho * S * CL)) < Real.sqrt (2 * m2 * g / (rho * S * CL)) := by\n  have h : m1 < m2 := by\n    by_contra hc\n    push_neg at hc\n    have : m2 / S ≤ m1 / S := by gcongr\n    linarith\n  have hD : 0 < rho * S * CL := by positivity\n  apply Real.sqrt_lt_sqrt (by positivity)\n  first\n    | (gcongr)\n    | (rw [div_lt_div_iff_of_pos_right hD]; nlinarith)\n\ntheorem l2_t1_witness : ∃ (m1 m2 S rho g CL : ℝ), 0 < rho ∧ 0 < S ∧ 0 < CL ∧ 0 < g ∧ 0 < m1 ∧ m1 / S < m2 / S := by\n  refine ⟨1, 2, 1, 1, 1, 1, ?_⟩\n  norm_num\n",
+  "statement_only": "theorem l2_t1 (m1 m2 S rho g CL : ℝ) (hrho : 0 < rho) (hS : 0 < S) (hCL : 0 < CL) (hg : 0 < g) (hm1 : 0 < m1) (hwl : m1 / S < m2 / S) : Real.sqrt (2 * m1 * g / (rho * S * CL)) < Real.sqrt (2 * m2 * g / (rho * S * CL))",
+  "notes": "The theorem compares two gliders with the same g, air density rho, lifting area S and CLmax (called CL). Here v_min(m) = sqrt(2*m*g/(rho*S*CL)). If glider 1 has strictly smaller wing loading (m1/S < m2/S), then v_min(m1) < v_min(m2), and the conclusion is strict. The file was NOT compiled, because no Lean run was possible within the budget. The proof is the one from agent 1. It derives m1 < m2 by contradiction using gcongr. It then applies Real.sqrt_lt_sqrt with a positivity side goal and closes with gcongr. If gcongr fails, a fallback via div_lt_div_iff_of_pos_right and nlinarith is included. The lemma names I'm least sure of are div_lt_div_iff_of_pos_right (fallback only) and Real.sqrt_lt_sqrt. I chose agent 1's proof over agent 2's, which had unneeded steps. Hypotheses: rho, S, CL, g and m1 are all positive, and positivity uses each of them. m1 > 0 is genuinely needed. Without it, m1 < m2 <= 0 gives sqrt 0 < sqrt 0, which is false. Dropping g > 0 also breaks the claim. I kept the v_min formula inline and did not model the lift-balance half (v >= v_min iff lift >= weight). That half needs a lift model, and the strict monotonicity in m/S is the content of the claim. The witness (m1=1, m2=2, S=rho=g=CL=1) shows the hypotheses are satisfiable. It uses refine for the witnesses and then norm_num, because bare norm_num cannot choose existential witnesses. This departs slightly from the required `:= by norm_num` shape."
+ },
+ "candidates": [
+  {
+   "index": 0,
+   "ok": true,
+   "subtask": "Draft the statement and witness",
+   "parsed": {
+    "lean_file": "import Mathlib\n\ntheorem l2_t1 (m1 m2 S rho g CL : ℝ) (hrho : 0 < rho) (hS : 0 < S) (hCL : 0 < CL)\n    (hg : 0 < g) (hm1 : 0 < m1) (hwl : m1 / S < m2 / S) :\n    Real.sqrt (2 * m1 * g / (rho * S * CL)) < Real.sqrt (2 * m2 * g / (rho * S * CL)) := by\n  -- PLACEHOLDER PROOF (to be replaced by the proof agent)\n  sorry\n\ntheorem l2_t1_witness : ∃ (m1 m2 S rho g CL : ℝ), 0 < rho ∧ 0 < S ∧ 0 < CL ∧ 0 < g ∧ 0 < m1 ∧ m1 / S < m2 / S := by\n  refine ⟨1, 2, 1, 1, 1, 1, ?_⟩\n  norm_num\n",
+    "statement_only": "theorem l2_t1 (m1 m2 S rho g CL : ℝ) (hrho : 0 < rho) (hS : 0 < S) (hCL : 0 < CL)\n    (hg : 0 < g) (hm1 : 0 < m1) (hwl : m1 / S < m2 / S) :\n    Real.sqrt (2 * m1 * g / (rho * S * CL)) < Real.sqrt (2 * m2 * g / (rho * S * CL))",
+    "notes": "Statement asserts: for two gliders with the same S, rho, g and CLmax (all positive), m1 > 0, and wing loading m1/S < m2/S, the strict inequality v_min(m1) < v_min(m2) holds, with v_min = sqrt(2*m*g/(rho*S*CL)). It does not assert lift balance itself or anything for different CLmax, rho or S between the gliders. NOT COMPILED (no Lean run, budget exhausted). The proof slot is a `sorry` placeholder, which must be replaced before delivery since the file may contain no sorry. A suggested proof is in my message: derive m1<m2 via div_lt_div_iff_of_pos_right, then Real.sqrt_lt_sqrt with positivity, then div_lt_div_of_pos_right and nlinarith. The witness uses refine with 1,2,1,1,1,1 and norm_num because bare norm_num cannot pick existential witnesses; it is also uncompiled. Hypothesis necessity: g=0 or rho<0 collapses both sides to 0 or equal values, and m1<m2<=0 gives 0<0, so these are load-bearing."
+   }
+  },
+  {
+   "index": 1,
+   "ok": true,
+   "subtask": "Prove l2_t1",
+   "parsed": {
+    "lean_file": "import Mathlib\n\ntheorem l2_t1 (m1 m2 S rho g CL : ℝ) (hrho : 0 < rho) (hS : 0 < S) (hCL : 0 < CL)\n    (hg : 0 < g) (hm1 : 0 < m1) (hwl : m1 / S < m2 / S) :\n    Real.sqrt (2 * m1 * g / (rho * S * CL)) < Real.sqrt (2 * m2 * g / (rho * S * CL)) := by\n  have h : m1 < m2 := by\n    by_contra hc\n    push_neg at hc\n    have : m2 / S ≤ m1 / S := by gcongr\n    linarith\n  apply Real.sqrt_lt_sqrt (by positivity)\n  first\n    | (gcongr)\n    | (apply div_lt_div_of_pos_right _ (by positivity); nlinarith)\n\ntheorem l2_t1_witness : ∃ (m1 m2 S rho g CL : ℝ), 0 < rho ∧ 0 < S ∧ 0 < CL ∧ 0 < g ∧ 0 < m1 ∧ m1 / S < m2 / S := by\n  refine ⟨1, 2, 1, 1, 1, 1, ?_⟩\n  norm_num\n",
+    "statement_only": "theorem l2_t1 (m1 m2 S rho g CL : ℝ) (hrho : 0 < rho) (hS : 0 < S) (hCL : 0 < CL) (hg : 0 < g) (hm1 : 0 < m1) (hwl : m1 / S < m2 / S) : Real.sqrt (2 * m1 * g / (rho * S * CL)) < Real.sqrt (2 * m2 * g / (rho * S * CL))",
+    "notes": "NOT COMPILED (budget too small to run Lean); the orchestrator should compile. The statement says that with the same CLmax and rho, if wing loading m1/S < m2/S then v_min(m1) < v_min(m2), where v_min = sqrt(2 m g/(rho S CL)). The conclusion is strict. It does not model lift balance or flight dynamics, and it takes the v_min formula as given. hm1 is unused by the proof (it may draw an unused-variable lint) but keeps the witness meaningful. Uncertain lemma names: Real.sqrt_lt_sqrt (signature (hx : 0 ≤ x) (h : x < y)), and div_lt_div_of_pos_right, which appears only in the fallback branch of `first`. Alternatives: Real.sqrt_lt_sqrt_iff, or (div_lt_div_iff_of_pos_right hS).mp hwl for m1 < m2. The witness uses `refine ⟨1,2,1,1,1,1,?_⟩; norm_num`; if the exact `:= by norm_num` shape is required, use ⟨1,2,1,1,1,1, by norm_num⟩ instead."
+   }
+  },
+  {
+   "index": 2,
+   "ok": true,
+   "subtask": "Audit against requirements and traps",
+   "parsed": {
+    "lean_file": "import Mathlib\n\ntheorem l2_t1 (m1 m2 S rho g CL : ℝ) (hrho : 0 < rho) (hS : 0 < S) (hCL : 0 < CL)\n    (hg : 0 < g) (hm1 : 0 < m1) (hwl : m1 / S < m2 / S) :\n    Real.sqrt (2 * m1 * g / (rho * S * CL)) < Real.sqrt (2 * m2 * g / (rho * S * CL)) := by\n  have e1 : m1 / S * S = m1 := by field_simp\n  have e2 : m2 / S * S = m2 := by field_simp\n  have hm : m1 < m2 := by\n    have := mul_lt_mul_of_pos_right hwl hS\n    linarith\n  have hD : 0 < rho * S * CL := by positivity\n  apply Real.sqrt_lt_sqrt\n  · positivity\n  · gcongr\n\ntheorem l2_t1_witness : ∃ (m1 m2 S rho g CL : ℝ), 0 < rho ∧ 0 < S ∧ 0 < CL ∧ 0 < g ∧ 0 < m1 ∧ m1 / S < m2 / S := by\n  refine ⟨1, 2, 1, 1, 1, 1, ?_⟩\n  norm_num\n",
+    "statement_only": "theorem l2_t1 (m1 m2 S rho g CL : ℝ) (hrho : 0 < rho) (hS : 0 < S) (hCL : 0 < CL) (hg : 0 < g) (hm1 : 0 < m1) (hwl : m1 / S < m2 / S) : Real.sqrt (2 * m1 * g / (rho * S * CL)) < Real.sqrt (2 * m2 * g / (rho * S * CL))",
+    "notes": "The theorem says that two gliders with the same g, air density rho and CLmax (called CL here) have minimum airspeeds v_min = sqrt(2*m*g/(rho*S*CL)). If glider 2 has strictly greater wing loading (m1/S < m2/S), its v_min is strictly greater. The hypotheses rho, S, CL, g and m1 > 0 are all needed: dropping g > 0 or m1 > 0 lets both square roots collapse to 0, and the strict inequality fails. l2_t1_witness gives concrete numbers (m1=1, m2=2, S=rho=g=CL=1) that satisfy every hypothesis, so l2_t1 is not vacuous. The statement deliberately leaves out the lift-balance half of the claim (v >= v_min iff lift >= weight). That half needs a lift model L = 1/2*rho*v^2*S*CL and extra reasoning, and the strict monotonicity of v_min in m/S is what the claim rests on. The file was NOT compiled by this auditor, so check it once in the real toolchain. If `gcongr` fails, the fallback is `rw [div_lt_div_iff_of_pos_right hD]; nlinarith`."
+   }
+  }
+ ]
+}

@@ -1,0 +1,29 @@
+TASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.
+
+THE CLAIM IN ENGLISH
+For a body in steady gliding flight, lift balances weight only at or above the minimum airspeed v_min = sqrt(2 * m * g / (rho * S * CLmax)), where m is mass, g gravitational acceleration, rho air density, S lifting area and CLmax the maximum lift coefficient. It follows that of two gliders with the same CLmax and the same air density, the one with the greater wing loading m/S strictly requires the greater minimum airspeed.
+
+REQUIRED CONTENT. A statement that compiles but does not carry these is a failure:
+  [1] a square root appears
+  [2] the factor 2 appears
+  [3] air density is hypothesised positive
+  [4] lifting area is hypothesised positive
+  [5] the lift coefficient is hypothesised positive
+  [6] a STRICT inequality is the conclusion (not a non-strict one)
+  [7] two gliders are compared, or wing loading m/S is formed
+
+KNOWN TRAP: A statement that merely defines v_min and proves 0 <= v_min is TRUE and VACUOUS. The strict monotonicity in m/S is the content.
+
+HARD REQUIREMENTS ON THE FILE
+- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.
+- The main theorem is named exactly `l2_t1`.
+- A second declaration named exactly `l2_t1_witness` proves that the hypotheses of `l2_t1` are
+  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`
+  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.
+- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.
+- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the
+  formalization is worthless and will be scored as a failure.
+- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,
+  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.
+
+Output the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.

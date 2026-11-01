@@ -1,0 +1,155 @@
+{
+ "meta": {
+  "label": "worker-0",
+  "model": "claude-sonnet-5-5",
+  "exit_code": 0,
+  "via_stdin": false,
+  "prompt_chars": 2781,
+  "duration_ms": 17101,
+  "cost_usd": 0.061877,
+  "num_turns": 2,
+  "stop_reason": "tool_use",
+  "terminal_reason": "completed",
+  "is_error": false,
+  "error_text": null,
+  "usage": {
+   "input": 2,
+   "output": 2103,
+   "cache_read": 40950,
+   "cache_creation": 9187
+  },
+  "tokens_total": 52242,
+  "infra_failure": false,
+  "stderr": ""
+ },
+ "prompt": "You are one of 3 agents working on this task INDEPENDENTLY and in parallel.\nYou cannot see the other agents and they cannot see you. There is no shared state and no coordinator.\nYour answer will be compared with theirs and the one most agreed-with will be kept, so do the whole task\nyourself and do it the way you believe is right. Do not hedge and do not leave anything for someone else.\n\nYou are agent 0 of 3.\n\nTASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.\n\nTHE CLAIM IN ENGLISH\nThe aerobic power a fish can supply is bounded above by the Fick product P_avail = eta * E * Q * (Ca - Cv), where eta is the mechanical efficiency, E the oxycaloric equivalent, Q the cardiac output and (Ca - Cv) the arterio-venous oxygen difference. Therefore if the power a sustained activity demands strictly exceeds P_avail, that activity cannot be sustained aerobically.\n\nREQUIRED CONTENT. A statement that compiles but does not carry these is a failure:\n  [1] efficiency enters as a multiplicative factor\n  [2] the arterio-venous difference appears as a difference\n  [3] cardiac output enters as a multiplicative factor\n  [4] efficiency is constrained (positive or in a band), so the premise is not vacuous\n  [5] a demanded power is named separately from the available power\n  [6] the conclusion is a negation: the activity cannot be sustained\n  [7] the arterio-venous difference is hypothesised non-negative, which is what stops the bound being vacuous\n\nKNOWN TRAP: If the hypotheses are mutually contradictory the theorem is vacuously true and compiles. The witness declaration is what catches this, and `hypotheses_load_bearing` is what catches a conclusion that needs no hypotheses at all.\n\nHARD REQUIREMENTS ON THE FILE\n- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.\n- The main theorem is named exactly `l2_t2`.\n- A second declaration named exactly `l2_t2_witness` proves that the hypotheses of `l2_t2` are\n  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`\n  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.\n- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.\n- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the\n  formalization is worthless and will be scored as a failure.\n- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,\n  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.\n\nOutput the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.",
+ "parsed": {
+  "lean_file": "import Mathlib\n\ntheorem l2_t2 (eta E Q Ca Cv Pdem VO2 : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hAV : 0 ≤ Ca - Cv) (hVO2 : 0 ≤ VO2)\n    (hfick : VO2 ≤ Q * (Ca - Cv))\n    (hdem : eta * E * Q * (Ca - Cv) < Pdem) :\n    ¬ (Pdem ≤ eta * E * VO2) := by\n  intro h\n  have h1 : 0 < eta * E := mul_pos heta hE\n  have h2 : eta * E * VO2 ≤ eta * E * (Q * (Ca - Cv)) :=\n    mul_le_mul_of_nonneg_left hfick h1.le\n  nlinarith\n\ntheorem l2_t2_witness :\n    ∃ (eta E Q Ca Cv Pdem VO2 : ℝ),\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧ 0 ≤ Ca - Cv ∧ 0 ≤ VO2 ∧\n      VO2 ≤ Q * (Ca - Cv) ∧ eta * E * Q * (Ca - Cv) < Pdem := by\n  refine ⟨1/2, 20, 1, 10, 4, 100, 3, ?_⟩\n  norm_num\n",
+  "statement_only": "theorem l2_t2 (eta E Q Ca Cv Pdem VO2 : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hAV : 0 ≤ Ca - Cv) (hVO2 : 0 ≤ VO2)\n    (hfick : VO2 ≤ Q * (Ca - Cv))\n    (hdem : eta * E * Q * (Ca - Cv) < Pdem) :\n    ¬ (Pdem ≤ eta * E * VO2)",
+  "notes": "Not compiled here (no Lean tool available), so it is untested. The theorem models aerobic power actually supplied as eta*E*VO2, where oxygen uptake VO2 is nonnegative and bounded by the Fick flux Q*(Ca-Cv). P_avail = eta*E*Q*(Ca-Cv) has eta as a factor, Q as a factor and (Ca-Cv) as a difference. Efficiency satisfies 0<eta≤1. The arterio-venous difference is hypothesised nonnegative. The demanded power Pdem is a separate variable. If Pdem strictly exceeds P_avail, the conclusion is the negation that demand cannot be met by aerobic supply. The bound VO2 ≤ Q(Ca-Cv) is a hypothesis (the Fick limit), and the conclusion is not definitional; dropping hdem or hfick makes it false. The witness gives concrete satisfying numbers (eta=1/2, E=20, Q=1, Ca=10, Cv=4, Pdem=100, VO2=3). It does not model anaerobic supply, time-dependence, or units."
+ },
+ "raw_result": {
+  "duration_api_ms": 13184,
+  "stop_reason": "tool_use",
+  "session_id": "ca8771d6-b508-463e-9097-3150c15b1d4e",
+  "total_cost_usd": 0.061877,
+  "usage": {
+   "input_tokens": 2,
+   "cache_creation_input_tokens": 9187,
+   "cache_read_input_tokens": 40950,
+   "output_tokens": 2103,
+   "output_tokens_details": {
+    "thinking_tokens": 889
+   },
+   "server_tool_use": {
+    "web_search_requests": 0,
+    "web_fetch_requests": 0
+   },
+   "service_tier": "standard",
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 9187,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "inference_geo": "global",
+   "iterations": [
+    {
+     "input_tokens": 2,
+     "output_tokens": 2103,
+     "cache_read_input_tokens": 40950,
+     "cache_creation_input_tokens": 9187,
+     "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 9187
+     },
+     "type": "message"
+    }
+   ],
+   "speed": "standard",
+   "fallback_credit": null
+  },
+  "modelUsage": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 2103,
+    "cacheReadInputTokens": 40950,
+    "cacheCreationInputTokens": 9187,
+    "webSearchRequests": 0,
+    "costUSD": 0.061877,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 889,
+    "cacheCreationEphemeral5mInputTokens": 0,
+    "cacheCreationEphemeral1hInputTokens": 9187,
+    "canonicalModel": "claude-sonnet-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 2,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "{\"lean_file\":\"import Mathlib\\n\\ntheorem l2_t2 (eta E Q Ca Cv Pdem VO2 : ℝ)\\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\\n    (hAV : 0 ≤ Ca - Cv) (hVO2 : 0 ≤ VO2)\\n    (hfick : VO2 ≤ Q * (Ca - Cv))\\n    (hdem : eta * E * Q * (Ca - Cv) < Pdem) :\\n    ¬ (Pdem ≤ eta * E * VO2) := by\\n  intro h\\n  have h1 : 0 < eta * E := mul_pos heta hE\\n  have h2 : eta * E * VO2 ≤ eta * E * (Q * (Ca - Cv)) :=\\n    mul_le_mul_of_nonneg_left hfick h1.le\\n  nlinarith\\n\\ntheorem l2_t2_witness :\\n    ∃ (eta E Q Ca Cv Pdem VO2 : ℝ),\\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧ 0 ≤ Ca - Cv ∧ 0 ≤ VO2 ∧\\n      VO2 ≤ Q * (Ca - Cv) ∧ eta * E * Q * (Ca - Cv) < Pdem := by\\n  refine ⟨1/2, 20, 1, 10, 4, 100, 3, ?_⟩\\n  norm_num\\n\",\"statement_only\":\"theorem l2_t2 (eta E Q Ca Cv Pdem VO2 : ℝ)\\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\\n    (hAV : 0 ≤ Ca - Cv) (hVO2 : 0 ≤ VO2)\\n    (hfick : VO2 ≤ Q * (Ca - Cv))\\n    (hdem : eta * E * Q * (Ca - Cv) < Pdem) :\\n    ¬ (Pdem ≤ eta * E * VO2)\",\"notes\":\"Not compiled here (no Lean tool available), so it is untested. The theorem models aerobic power actually supplied as eta*E*VO2, where oxygen uptake VO2 is nonnegative and bounded by the Fick flux Q*(Ca-Cv). P_avail = eta*E*Q*(Ca-Cv) has eta as a factor, Q as a factor and (Ca-Cv) as a difference. Efficiency satisfies 0<eta≤1. The arterio-venous difference is hypothesised nonnegative. The demanded power Pdem is a separate variable. If Pdem strictly exceeds P_avail, the conclusion is the negation that demand cannot be met by aerobic supply. The bound VO2 ≤ Q(Ca-Cv) is a hypothesis (the Fick limit), and the conclusion is not definitional; dropping hdem or hfick makes it false. The witness gives concrete satisfying numbers (eta=1/2, E=20, Q=1, Ca=10, Cv=4, Pdem=100, VO2=3). It does not model anaerobic supply, time-dependence, or units.\"}",
+  "structured_output": {
+   "lean_file": "import Mathlib\n\ntheorem l2_t2 (eta E Q Ca Cv Pdem VO2 : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hAV : 0 ≤ Ca - Cv) (hVO2 : 0 ≤ VO2)\n    (hfick : VO2 ≤ Q * (Ca - Cv))\n    (hdem : eta * E * Q * (Ca - Cv) < Pdem) :\n    ¬ (Pdem ≤ eta * E * VO2) := by\n  intro h\n  have h1 : 0 < eta * E := mul_pos heta hE\n  have h2 : eta * E * VO2 ≤ eta * E * (Q * (Ca - Cv)) :=\n    mul_le_mul_of_nonneg_left hfick h1.le\n  nlinarith\n\ntheorem l2_t2_witness :\n    ∃ (eta E Q Ca Cv Pdem VO2 : ℝ),\n      0 < eta ∧ eta ≤ 1 ∧ 0 < E ∧ 0 < Q ∧ 0 ≤ Ca - Cv ∧ 0 ≤ VO2 ∧\n      VO2 ≤ Q * (Ca - Cv) ∧ eta * E * Q * (Ca - Cv) < Pdem := by\n  refine ⟨1/2, 20, 1, 10, 4, 100, 3, ?_⟩\n  norm_num\n",
+   "statement_only": "theorem l2_t2 (eta E Q Ca Cv Pdem VO2 : ℝ)\n    (heta : 0 < eta) (heta1 : eta ≤ 1) (hE : 0 < E) (hQ : 0 < Q)\n    (hAV : 0 ≤ Ca - Cv) (hVO2 : 0 ≤ VO2)\n    (hfick : VO2 ≤ Q * (Ca - Cv))\n    (hdem : eta * E * Q * (Ca - Cv) < Pdem) :\n    ¬ (Pdem ≤ eta * E * VO2)",
+   "notes": "Not compiled here (no Lean tool available), so it is untested. The theorem models aerobic power actually supplied as eta*E*VO2, where oxygen uptake VO2 is nonnegative and bounded by the Fick flux Q*(Ca-Cv). P_avail = eta*E*Q*(Ca-Cv) has eta as a factor, Q as a factor and (Ca-Cv) as a difference. Efficiency satisfies 0<eta≤1. The arterio-venous difference is hypothesised nonnegative. The demanded power Pdem is a separate variable. If Pdem strictly exceeds P_avail, the conclusion is the negation that demand cannot be met by aerobic supply. The bound VO2 ≤ Q(Ca-Cv) is a hypothesis (the Fick limit), and the conclusion is not definitional; dropping hdem or hfick makes it false. The witness gives concrete satisfying numbers (eta=1/2, E=20, Q=1, Ca=10, Cv=4, Pdem=100, VO2=3). It does not model anaerobic supply, time-dependence, or units."
+  },
+  "ttft_ms": 7571,
+  "type": "result",
+  "duration_ms": 13407,
+  "uuid": "11201c8b-cf36-4869-a225-05566807521a",
+  "ttft_stream_ms": 1385,
+  "time_to_request_ms": 222,
+  "first_content_frame_ms": 1386,
+  "queued_turn_count": 0,
+  "result_index": 0,
+  "model_usage_since_last_result": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 2103,
+    "cacheReadInputTokens": 40950,
+    "cacheCreationInputTokens": 9187,
+    "webSearchRequests": 0,
+    "costUSD": 0.061877,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 889,
+    "cacheCreationEphemeral5mInputTokens": 0,
+    "cacheCreationEphemeral1hInputTokens": 9187,
+    "canonicalModel": "claude-sonnet-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  }
+ }
+}

@@ -516,9 +516,21 @@ async function offTargetsNCBI(spacer, pam, { network = true, maxPolls = 40, poll
   return { ran: false, reason: `BLAST did not finish in ${(maxPolls * pollMs / 60000).toFixed(0)} min`, rid };
 }
 
-/** Ensembl /overlap/region gene annotation for a list of sites, +/- 2 kb. Shared by both backends. */
-async function annotateGeneContext(sites, { network = true, limit = 40 } = {}) {
-  for (const s of sites.slice(0, limit)) {
+/**
+ * Ensembl /overlap/region gene annotation for a list of sites, +/- 2 kb. Shared by both backends.
+ *
+ * The local search is exhaustive, so a guide can have 100+ sites at 4 mismatches, and annotating all of them
+ * would be hundreds of Ensembl calls per guide. So annotation is PRIORITISED, not merely truncated: every
+ * site at or under `alwaysBelowMismatches` mismatches is annotated however many there are (those are the
+ * sites with a non-negligible Hsu score, and the only ones a lab would act on), then the rest up to `limit`.
+ * A site that was not annotated says so explicitly; it is never reported as intergenic by default.
+ */
+async function annotateGeneContext(sites, { network = true, limit = 25, alwaysBelowMismatches = 3 } = {}) {
+  const priority = sites.filter(s => s.n_mismatches <= alwaysBelowMismatches);
+  const rest = sites.filter(s => s.n_mismatches > alwaysBelowMismatches).slice(0, Math.max(0, limit - priority.length));
+  const chosen = new Set([...priority, ...rest]);
+  for (const s of sites) if (!chosen.has(s)) s.gene_context = { not_attempted: `annotation is prioritised: every site with <= ${alwaysBelowMismatches} mismatches is annotated, then others up to ${limit}. This site has ${s.n_mismatches} mismatches and fell outside that budget, so its gene context is UNKNOWN - not intergenic.` };
+  for (const s of [...priority, ...rest]) {
     if (!s.chromosome) { s.gene_context = { not_attempted: 'site is on an unplaced scaffold, not a chromosome' }; continue; }
     const r = await fetchCached({ url: `${ENS}/overlap/region/${SPECIES}/${s.chromosome}:${Math.max(1, s.hit_from - 2000)}-${s.hit_to + 2000}?feature=gene;content-type=application/json` }, { network });
     s.gene_context = Array.isArray(r.value) ? r.value.map(g => ({ id: g.id, symbol: g.external_name || null, biotype: g.biotype, start: g.start, end: g.end })) : { error: r.error };
@@ -527,13 +539,12 @@ async function annotateGeneContext(sites, { network = true, limit = 40 } = {}) {
     // the table. Retry twice with a back-off. A site whose annotation still fails says so; it is never
     // silently reported as intergenic, because "no genes returned" and "the request failed" are different facts.
     for (let attempt = 0; attempt < 2 && s.gene_context?.error && /HTTP 5\d\d/.test(s.gene_context.error); attempt++) {
-      await new Promise(r2 => setTimeout(r2, 1500 * (attempt + 1)));
+      await new Promise(r2 => setTimeout(r2, 700 * (attempt + 1)));
       const again = await fetchCached({ url: `${ENS}/overlap/region/${SPECIES}/${s.chromosome}:${Math.max(1, s.hit_from - 2000)}-${s.hit_to + 2000}?feature=gene;content-type=application/json` }, { network });
       if (Array.isArray(again.value)) s.gene_context = again.value.map(g => ({ id: g.id, symbol: g.external_name || null, biotype: g.biotype, start: g.start, end: g.end }));
       else s.gene_context = { error: again.error, attempts: attempt + 2, note: 'Ensembl /overlap/region did not answer for this site. This is NOT a finding that the site is intergenic: the gene context here is UNKNOWN.' };
     }
   }
-  if (sites.length > limit) for (const s of sites.slice(limit)) s.gene_context = { not_attempted: `only the first ${limit} sites (sorted by mismatch count) were annotated, to bound the number of Ensembl calls` };
   return sites;
 }
 
@@ -582,11 +593,25 @@ export async function offTargetsLocal(spacer, pam, { network = true, maxMismatch
         'GUIDE-seq, CIRCLE-seq or amplicon sequencing of the actual fish is the measurement; this is the list of places to look.',
     };
     cachePut(key, v);
-    if (geneContext) { await annotateGeneContext(v.sites, { network }); cachePut(key, v); }
+    if (geneContext) { await annotateGeneContext(v.sites, { network }); annotationSummary(v); cachePut(key, v); }
     return { ...v, cached: false };
   }
-  if (geneContext && v.sites?.length && v.sites[0].gene_context === undefined) { await annotateGeneContext(v.sites, { network }); cachePut(key, v); }
+  if (geneContext && v.sites?.length && v.sites[0].gene_context === undefined) { await annotateGeneContext(v.sites, { network }); annotationSummary(v); cachePut(key, v); }
   return { ...v, cached: true };
+}
+
+/** How much of the site list actually carries a gene context, so a reader is not misled by silence. */
+function annotationSummary(v) {
+  const n = s => v.sites.filter(s2 => s2 !== undefined && s(s2)).length;
+  v.gene_annotation = {
+    n_sites: v.sites.length,
+    n_annotated: n(s => Array.isArray(s.gene_context)),
+    n_annotation_failed: n(s => s.gene_context?.error),
+    n_not_attempted: n(s => s.gene_context?.not_attempted),
+    rule: 'every site with <= 3 mismatches is annotated however many there are; others up to a budget of 25. A site with no annotation is reported as UNKNOWN, never as intergenic.',
+    why: 'the search is exhaustive, so a guide can have 100+ sites at 4 mismatches. Annotating all of them would be hundreds of Ensembl calls per guide for sites whose Hsu score is negligible.',
+  };
+  return v;
 }
 
 export const OFFTARGET_METHODS = {

@@ -27,7 +27,10 @@ const EDGE = process.env.PITCH_BROWSER || 'C:/Program Files (x86)/Microsoft/Edge
 // simulation pages need the engine to draw a frame); `act` runs in the page before the shot.
 const SHOTS = [
   { id: 'validate-show', url: '/validate-show/', settle: 6000 },
-  { id: 'validate-gate', url: '/validate-show/', settle: 6000, scrollTo: /does not do what was asked|FAIL/i },
+  // Narrower viewport on purpose: the gate paragraph is the thing being read in the film, and a
+  // narrow column makes it bigger relative to the frame than a 1600-wide shot would.
+  { id: 'validate-gate', url: '/validate-show/', settle: 6000, vp: { width: 1120, height: 860 },
+    scrollTo: /does not do what was asked|FAIL/i },
   { id: 'physics-sim', url: '/t/physics/sim/', settle: 9000 },
   { id: 'blueprint3d', url: '/blueprint3d/', settle: 11000 },
   { id: 'studio', url: '/blueprint3d/perturb.html', settle: 9000, act: async (page) => {
@@ -76,7 +79,7 @@ if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}` || proce
   try {
     for (const s of SHOTS) {
       if (only.length && !only.includes(s.id)) continue;
-      const page = await browser.newPage({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1, colorScheme: 'dark' });
+      const page = await browser.newPage({ viewport: s.vp || { width: 1600, height: 900 }, deviceScaleFactor: 1, colorScheme: 'dark' });
       // These pages all carry a dark palette under prefers-color-scheme and a [data-theme] override;
       // the attribute is set too so a page that only honours the explicit toggle still comes out dark.
       await page.addInitScript(() => {

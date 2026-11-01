@@ -1,0 +1,44 @@
+TASK: write the SI-unit `design` object that the DELPHI Design Studio tool `lean_check` judges,
+for the brief below, at Lean lawset 1.8.1.
+
+THE BRIEF
+Specify an adult zebrafish (Danio rerio) for the studio as a purely aquatic, non-flying design. The sponsor fixes: standard length 0.035 m, mass 0.0008 kg, body temperature 26 C, thermal lower limit 6.2 C, thermal upper limit 41.4 C, Q10 of 2.3 referenced to 28 C, holding depth 0.3 m, altitude 0 m. There is no flight: say so explicitly in the design rather than leaving the flight fields blank. You choose the critical swimming speed and the current speed the animal must hold against, and any further quantity you need, so that no accepted Lean-backed law at lawset 1.8.1 is violated.
+
+QUANTITIES THE SPONSOR FIXES. These keys must appear in your design with these exact values:
+  taxon = "Danio rerio"
+  life_stage = "adult"
+  standard_length_m = 0.035
+  SL_m = 0.035
+  mass_kg = 0.0008
+  body_temperature_C = 26
+  ct_min_C = 6.2
+  ct_max_C = 41.4
+  q10 = 2.3
+  reference_temperature_C = 28
+  depth_m = 0.3
+  altitude_m = 0
+
+QUANTITIES YOU CHOOSE (the key names lean_check uses): critical_swimming_speed_m_s, current_speed_m_s, has_swimbladder, powered
+
+HOW lean_check READS A DESIGN
+- The design is a flat JSON object of SI quantities plus `taxon`, `life_stage` and `flight_mode`.
+- `flight_mode: "glide"` declares an UNPOWERED glide, which takes the aerobic-demand laws (constraints C14, E3)
+  OUT OF SCOPE instead of violating them. `powered: false` does the same. Declaring powered flight puts them IN scope.
+- A law whose inputs are absent returns `cannot-evaluate`, which is NOT a pass: it means the law could not judge
+  your design at all. A design that names almost nothing scores zero violations by being unjudgeable, and that is
+  explicitly counted against it here.
+- Laws scoped to Exocoetidae return `out-of-scope` for other taxa.
+- Keys lean_check knows include: taxon, life_stage, flight_mode, powered, SL_m, standard_length_m, mass_kg,
+  finArea_m2, CLmax, LD_max, rho, airspeed_m_s, horizontal_airspeed_m_s, climbRate_m_s, glideHeight_m,
+  glideDistance_m, ground_distance_m, drag_coefficient, drag_area_m2, wind_along_track_m_s, flight_duration_s,
+  powerAvailable_W, sustained_power_W, reference_sustained_power_W, aerobicCeiling_W, efficiency, oxycaloric,
+  cardiacOutput, arterialO2, flightMuscleFraction, musclePowerPerKg_W, o2_store_ml, oxycaloric_J_per_unit_O2,
+  body_temperature_C, ct_min_C, ct_max_C, q10, reference_temperature_C, critical_swimming_speed_m_s,
+  current_speed_m_s, depth_m, altitude_m, bladder_volume_surface_ml, bladder_volume_at_depth_ml,
+  has_swimbladder, intake_J_per_day, routine_cost_J_per_day, activity_cost_J_per_day,
+  assimilation_efficiency, mass_change, genotype_edits.
+
+AIM FOR: zero binding violations, every fixed quantity present and exact, and as MANY laws actually evaluated
+(verdict `holds` or `violated`) as the brief allows. Flag in `assumptions` every number you chose yourself.
+
+Output `design`, `assumptions` and `notes`.

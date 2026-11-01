@@ -1,0 +1,155 @@
+{
+ "meta": {
+  "label": "worker-0",
+  "model": "claude-sonnet-5-5",
+  "exit_code": 0,
+  "via_stdin": false,
+  "prompt_chars": 3320,
+  "duration_ms": 21889,
+  "cost_usd": 0.069369,
+  "num_turns": 2,
+  "stop_reason": "tool_use",
+  "terminal_reason": "completed",
+  "is_error": false,
+  "error_text": null,
+  "usage": {
+   "input": 2,
+   "output": 2723,
+   "cache_read": 40950,
+   "cache_creation": 9510
+  },
+  "tokens_total": 53185,
+  "infra_failure": false,
+  "stderr": ""
+ },
+ "prompt": "You are one of 3 agents on a team led by an orchestrator. You do ONLY your assigned subtask.\nThe orchestrator will see your output beside the other two agents' and will assemble the final answer.\nDo your part completely and state plainly anything you could not settle, so the orchestrator can.\n\nYOUR SUBTASK (1 of 3): Draft statement and witness\nWrite the Lean 4 (Mathlib, `import Mathlib` only, first line) declarations only, no main proof needed beyond a stub. Main theorem `l2_t3 (D k : ℝ) (hD : 0 ≤ D) (hk : 0 < k) : Real.sqrt (D / (k / 2)) = Real.sqrt 2 * Real.sqrt (D / k)`. Also write `theorem l2_t3_witness : ∃ D k : ℝ, 0 ≤ D ∧ 0 < k := ⟨1, 1, by norm_num, by norm_num⟩` (or use `by norm_num` after the existential, as required: `:= by refine ⟨1,1,?_,?_⟩ <;> norm_num` is acceptable if bare norm_num fails; prefer exact shape `∃ D k : ℝ, 0 ≤ D ∧ 0 < k := ⟨1, 1, by norm_num⟩` style that compiles). Check that both hypotheses are load-bearing: explain in notes why dropping hD (D negative: sqrt clamps to 0 on both sides, so note whether equality still holds) and hk matter, and if any hypothesis is not strictly needed for the proof, say so honestly while keeping it as required content. Output the full file text and a short note on each of the 7 required content items.\n\nTASK: formalize the claim below as a Lean 4 theorem that COMPILES, and prove it.\n\nTHE CLAIM IN ENGLISH\nFor a morphogen with diffusion coefficient D and first-order degradation rate constant k, the characteristic gradient length is lambda = sqrt(D/k). Therefore halving the degradation rate constant (equivalently, doubling the degradation half-life) multiplies lambda by exactly sqrt 2.\n\nREQUIRED CONTENT. A statement that compiles but does not carry these is a failure:\n  [1] a square root appears\n  [2] the ratio D/k appears\n  [3] the rate constant is hypothesised positive (so D/k is defined)\n  [4] the diffusion coefficient is hypothesised non-negative\n  [5] the factor sqrt 2 appears explicitly\n  [6] the halved (or doubled) rate constant appears\n  [7] the conclusion is an equality, not an inequality\n\nKNOWN TRAP: Proving lambda >= 0, or proving the statement only for one numeric D and k, is not the claim. The claim is an exact equality for all admissible D and k.\n\nHARD REQUIREMENTS ON THE FILE\n- The file starts with exactly `import Mathlib` and imports nothing else. No `open` of a project namespace.\n- The main theorem is named exactly `l2_t3`.\n- A second declaration named exactly `l2_t3_witness` proves that the hypotheses of `l2_t3` are\n  SATISFIABLE by concrete numbers, in the shape `theorem <name>_witness : ∃ ..., <the hypotheses> := by norm_num`\n  (an existential over concrete values, proved, not asserted). Without it the theorem may be vacuously true.\n- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.\n- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the\n  formalization is worthless and will be scored as a failure.\n- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,\n  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.\n\nOutput the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.",
+ "parsed": {
+  "lean_file": "import Mathlib\n\ntheorem l2_t3 (D k : ℝ) (hD : 0 ≤ D) (hk : 0 < k) :\n    Real.sqrt (D / (k / 2)) = Real.sqrt 2 * Real.sqrt (D / k) := by\n  have h : D / (k / 2) = 2 * (D / k) := by\n    rw [div_div_eq_mul_div]; ring\n  rw [h, Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 2)]\n\ntheorem l2_t3_witness : ∃ D k : ℝ, 0 ≤ D ∧ 0 < k :=\n  ⟨1, 1, by norm_num, by norm_num⟩\n",
+  "statement_only": "theorem l2_t3 (D k : ℝ) (hD : 0 ≤ D) (hk : 0 < k) :\n    Real.sqrt (D / (k / 2)) = Real.sqrt 2 * Real.sqrt (D / k)",
+  "notes": "NOT COMPILED: no Lean toolchain was available in this session, so the file is untested. The statement asserts sqrt(D/(k/2)) = sqrt 2 * sqrt(D/k) for D>=0, k>0, i.e. halving the degradation rate multiplies the gradient length by exactly sqrt 2. Proof: D/(k/2) = 2*(D/k) via div_div_eq_mul_div + ring, then Real.sqrt_mul (needs only 0 <= 2). HONEST FLAG: hD and hk are NOT used by the proof; the equality is true unconditionally over Real (D<0: both sides clamp to 0; k=0: both sides 0 by division-by-zero convention; k<0: identity still holds since sqrt_mul only needs 0<=2). They are kept as required content and for physical meaning, but they are not load-bearing, which may conflict with the scoring rule that hypotheses must be load-bearing. The linter will warn about unused variables. Witness l2_t3_witness proves the hypotheses are satisfiable (D=1,k=1) with a term-mode existential."
+ },
+ "raw_result": {
+  "duration_api_ms": 17454,
+  "stop_reason": "tool_use",
+  "session_id": "1d026230-dce6-41a0-baed-45b2fa986754",
+  "total_cost_usd": 0.069369,
+  "usage": {
+   "input_tokens": 2,
+   "cache_creation_input_tokens": 9510,
+   "cache_read_input_tokens": 40950,
+   "output_tokens": 2723,
+   "output_tokens_details": {
+    "thinking_tokens": 703
+   },
+   "server_tool_use": {
+    "web_search_requests": 0,
+    "web_fetch_requests": 0
+   },
+   "service_tier": "standard",
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 9510,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "inference_geo": "global",
+   "iterations": [
+    {
+     "input_tokens": 2,
+     "output_tokens": 2723,
+     "cache_read_input_tokens": 40950,
+     "cache_creation_input_tokens": 9510,
+     "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 9510
+     },
+     "type": "message"
+    }
+   ],
+   "speed": "standard",
+   "fallback_credit": null
+  },
+  "modelUsage": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 2723,
+    "cacheReadInputTokens": 40950,
+    "cacheCreationInputTokens": 9510,
+    "webSearchRequests": 0,
+    "costUSD": 0.069369,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 703,
+    "cacheCreationEphemeral5mInputTokens": 0,
+    "cacheCreationEphemeral1hInputTokens": 9510,
+    "canonicalModel": "claude-sonnet-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 2,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "{\"lean_file\":\"import Mathlib\\n\\ntheorem l2_t3 (D k : ℝ) (hD : 0 ≤ D) (hk : 0 < k) :\\n    Real.sqrt (D / (k / 2)) = Real.sqrt 2 * Real.sqrt (D / k) := by\\n  have h : D / (k / 2) = 2 * (D / k) := by\\n    rw [div_div_eq_mul_div]; ring\\n  rw [h, Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 2)]\\n\\ntheorem l2_t3_witness : ∃ D k : ℝ, 0 ≤ D ∧ 0 < k :=\\n  ⟨1, 1, by norm_num, by norm_num⟩\\n\",\"statement_only\":\"theorem l2_t3 (D k : ℝ) (hD : 0 ≤ D) (hk : 0 < k) :\\n    Real.sqrt (D / (k / 2)) = Real.sqrt 2 * Real.sqrt (D / k)\",\"notes\":\"NOT COMPILED: no Lean toolchain was available in this session, so the file is untested. The statement asserts sqrt(D/(k/2)) = sqrt 2 * sqrt(D/k) for D>=0, k>0, i.e. halving the degradation rate multiplies the gradient length by exactly sqrt 2. Proof: D/(k/2) = 2*(D/k) via div_div_eq_mul_div + ring, then Real.sqrt_mul (needs only 0 <= 2). HONEST FLAG: hD and hk are NOT used by the proof; the equality is true unconditionally over Real (D<0: both sides clamp to 0; k=0: both sides 0 by division-by-zero convention; k<0: identity still holds since sqrt_mul only needs 0<=2). They are kept as required content and for physical meaning, but they are not load-bearing, which may conflict with the scoring rule that hypotheses must be load-bearing. The linter will warn about unused variables. Witness l2_t3_witness proves the hypotheses are satisfiable (D=1,k=1) with a term-mode existential.\"}",
+  "structured_output": {
+   "lean_file": "import Mathlib\n\ntheorem l2_t3 (D k : ℝ) (hD : 0 ≤ D) (hk : 0 < k) :\n    Real.sqrt (D / (k / 2)) = Real.sqrt 2 * Real.sqrt (D / k) := by\n  have h : D / (k / 2) = 2 * (D / k) := by\n    rw [div_div_eq_mul_div]; ring\n  rw [h, Real.sqrt_mul (by norm_num : (0:ℝ) ≤ 2)]\n\ntheorem l2_t3_witness : ∃ D k : ℝ, 0 ≤ D ∧ 0 < k :=\n  ⟨1, 1, by norm_num, by norm_num⟩\n",
+   "statement_only": "theorem l2_t3 (D k : ℝ) (hD : 0 ≤ D) (hk : 0 < k) :\n    Real.sqrt (D / (k / 2)) = Real.sqrt 2 * Real.sqrt (D / k)",
+   "notes": "NOT COMPILED: no Lean toolchain was available in this session, so the file is untested. The statement asserts sqrt(D/(k/2)) = sqrt 2 * sqrt(D/k) for D>=0, k>0, i.e. halving the degradation rate multiplies the gradient length by exactly sqrt 2. Proof: D/(k/2) = 2*(D/k) via div_div_eq_mul_div + ring, then Real.sqrt_mul (needs only 0 <= 2). HONEST FLAG: hD and hk are NOT used by the proof; the equality is true unconditionally over Real (D<0: both sides clamp to 0; k=0: both sides 0 by division-by-zero convention; k<0: identity still holds since sqrt_mul only needs 0<=2). They are kept as required content and for physical meaning, but they are not load-bearing, which may conflict with the scoring rule that hypotheses must be load-bearing. The linter will warn about unused variables. Witness l2_t3_witness proves the hypotheses are satisfiable (D=1,k=1) with a term-mode existential."
+  },
+  "ttft_ms": 6330,
+  "type": "result",
+  "duration_ms": 17758,
+  "uuid": "79a1a6be-6441-4df3-9caa-050e2ec8920c",
+  "ttft_stream_ms": 1949,
+  "time_to_request_ms": 308,
+  "first_content_frame_ms": 1949,
+  "queued_turn_count": 0,
+  "result_index": 0,
+  "model_usage_since_last_result": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 2723,
+    "cacheReadInputTokens": 40950,
+    "cacheCreationInputTokens": 9510,
+    "webSearchRequests": 0,
+    "costUSD": 0.069369,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 703,
+    "cacheCreationEphemeral5mInputTokens": 0,
+    "cacheCreationEphemeral1hInputTokens": 9510,
+    "canonicalModel": "claude-sonnet-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  }
+ }
+}

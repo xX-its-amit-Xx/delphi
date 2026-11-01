@@ -1,6 +1,12 @@
 # Three architectures, four levels: arm definitions and pre-registered metrics
 
 **Written 2026-11-01, before any arm was run.** Nothing in this file is edited after the first arm starts.
+One exception, disclosed here and again in `RESULTS.md`: the level-1 `locator_traceability` definition was
+rewritten after three **level 4** smoke cells had run but **before any level-1 call was made**, because the
+original wording ("fraction of assertion-graph literals over 40 characters that cite a locator") would have
+scored near zero for every arm — a locator is normally carried on the provenance graph, not repeated inside
+each description — and a metric that is zero for everyone measures nothing. No level-1 output had been seen.
+The original wording is in the paragraph's git-less history only, so it is quoted in `RESULTS.md`.
 Anything learned afterwards goes in `RESULTS.md` under "Deviations", with a time, including any metric that
 changed after data were seen.
 
@@ -96,7 +102,8 @@ named graphs) copied from `holdout/nanopubs/unsigned/triage-coverage.trig`.
 |---|---|---|
 | `parses` | `java -jar nanopub-1.95.0 check -v` reports the file valid, read structurally by **the repository's own `holdout/nanopubs/check.mjs`** (not a pattern scan), with the same `EXPECTED_ISSUES` allowance for unsigned drafts | 1 is better |
 | `leak_clean` | `node holdout/check-leaks.mjs <the arm's output dir>` exits 0 with no `strong` and no `claim` hit | 1 is better |
-| `locator_traceability` | fraction of the record's **assertion-graph literals longer than 40 characters** that cite at least one locator from the dossier (file path, line number, accession or SHA-256 prefix, matched literally). A record that asserts things with no locator scores low | higher is better |
+| `locator_traceability` | fraction of the dossier's locators (the `file:line` string, or its file-path part) that appear **literally** in the record. A record that asserts things without naming where they came from scores low | higher is better |
+| `untraceable_assertions` | count of assertion-graph literals longer than 40 characters sitting in a subject block that contains no locator string at all (diagnostic, reported beside the score) | 0 is better |
 | `unsupported_numeric_claims` | count of numeric literals in the assertion graph that do **not** appear in the dossier (an invented number) | 0 is better |
 | `boilerplate_reuse` | over the arm's **three** records for the three tasks: the fraction of the five template-shaped fields (`rdfs:label` on the claim, `dct:description` on the claim, `rdfs:label` on the evidence item, `dct:description` on the evidence item, `rdfs:comment` in pubinfo) whose value is byte-identical across two or more of the arm's three records, after whitespace normalisation. **This is the "shared boilerplate rather than real content" test** | 0 is better |
 | `quotable_line` | does the record contain a single sentence a reader could quote that is true of the finding *and* states its limit? Measured mechanically as: the claim's `dct:description` contains a status word (`established`, `observed`, `inconclusive`, `pre-registered`, `burned`, `measured`, `not established`) **and** a limiting clause (a sentence matching `/does not (establish|show|mean|prove)|is not (a|an|evidence)|nothing about|silent on|says nothing/i`) | 1 is better |

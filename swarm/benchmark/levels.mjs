@@ -107,8 +107,8 @@ const level2 = {
       '- No `sorry`, no `admit`, no `axiom`, no `native_decide`, no `@[implemented_by]`.',
       '- The hypotheses must be LOAD-BEARING: if the conclusion is provable with the hypotheses deleted, the',
       '  formalization is worthless and will be scored as a failure.',
-      '- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`, `field_simp`,',
-      '  `norm_num`, `rw [Real.sqrt_div\'']`-style lemmas as you need them. Keep proofs short and robust.',
+      '- Toolchain: Lean 4 v4.35.0 with Mathlib v4.35.0. Use `Real`, `Real.sqrt`, `positivity`, `nlinarith`,',
+      '  `field_simp`, `norm_num` and the Mathlib `Real.sqrt_*` lemmas as you need them. Keep proofs short and robust.',
       '',
       'Output the whole file as `lean_file`, the main theorem signature as `statement_only`, and your `notes`.',
     ].join('\n');

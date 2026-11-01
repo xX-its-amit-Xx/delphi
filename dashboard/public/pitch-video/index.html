@@ -1,0 +1,1041 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LeanBio Forum &mdash; two minutes</title>
+<meta name="description" content="A self-playing two-minute film: tacit biology, a formal gate, a swarm that expands the literature, a text-to-organism studio, and a harness that says no to our own design.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* One fixed 1920x1080 stage, scaled to the viewport. Beats HARD-CUT on a JS clock; every child
+   animation is paused until its beat runs, so a ?t= jump lands composed.
+   Palette: engineering-drawing dark. One cyan accent for anything a machine checked, amber for
+   anything unresolved, red only ever for a failed gate. Type: DIN-adjacent condensed for display,
+   its upright sibling for reading, a mono for anything a machine produced. */
+:root{
+  --ink:#06080c; --ink2:#0c1017; --panel:#111722; --line:#1b2432; --line2:#2a3749;
+  --fg:#e9eef5; --dim:#8695a8; --dim2:#5d6b7d;
+  --cyan:#45dcd6; --cyan-d:#0f6f6c; --amber:#f0a73c; --red:#ff5f5a; --paper:#e6e0d2;
+  --g1:#45dcd6; --g2:#f0a73c; --g3:#6f9bf2; --g4:#cfd8e4; --g5:#53657c;
+  --disp:"Barlow Condensed",Bahnschrift,"DIN Alternate","Arial Narrow",sans-serif;
+  --body:"Barlow","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",Consolas,ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#000;overflow:hidden}
+body{font-family:var(--body);color:var(--fg)}
+#fit{position:fixed;inset:0;display:grid;place-items:center;background:#000}
+#stage{width:1920px;height:1080px;position:relative;overflow:hidden;transform-origin:center center;
+  background:radial-gradient(130% 92% at 50% -6%, #0f151e 0%, var(--ink) 60%), var(--ink)}
+#grid{position:absolute;inset:0;pointer-events:none;opacity:.42;z-index:1;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:128px 128px;-webkit-mask-image:radial-gradient(88% 72% at 50% 44%,#000 0%,transparent 100%);
+  mask-image:radial-gradient(88% 72% at 50% 44%,#000 0%,transparent 100%)}
+#vig{position:absolute;inset:0;pointer-events:none;z-index:28;box-shadow:inset 0 0 240px 80px rgba(0,0,0,.76)}
+#grain{position:absolute;inset:-120px;pointer-events:none;z-index:29;opacity:.045;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/></filter><rect width='220' height='220' filter='url(%23n)'/></svg>");
+  animation:grain 1.1s steps(5) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-32px,14px)}40%{transform:translate(18px,-26px)}60%{transform:translate(-14px,-12px)}80%{transform:translate(26px,20px)}}
+
+/* ---- beats: hard cut by default ---- */
+.beat{position:absolute;inset:0;opacity:0;z-index:2;visibility:hidden}
+.beat.on{opacity:1;visibility:visible}
+.beat.fade{transition:opacity .5s ease}
+.beat *{animation-play-state:paused}
+.beat.run *{animation-play-state:running}
+.pad{position:absolute;inset:88px 108px 104px;z-index:3}
+
+.eyebrow{position:absolute;top:0;left:0;font-family:var(--mono);font-size:25px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--dim2);display:flex;gap:18px;align-items:center;z-index:6}
+.eyebrow b{color:var(--cyan);font-weight:500}
+.eyebrow i{font-style:normal;width:56px;height:1px;background:var(--line2)}
+
+h1{font-family:var(--disp);font-weight:700;font-size:94px;line-height:.98;letter-spacing:-.006em;margin:0;text-wrap:balance}
+h2{font-family:var(--disp);font-weight:600;font-size:62px;line-height:1.02;margin:0}
+.lead{font-size:40px;line-height:1.3;margin:0}
+.body{font-size:30px;line-height:1.42;color:var(--dim);margin:0}
+.mono{font-family:var(--mono);font-size:27px;line-height:1.5;color:var(--dim)}
+.tiny{font-family:var(--mono);font-size:24px;letter-spacing:.06em;color:var(--dim2)}
+.cy{color:var(--cyan)} .am{color:var(--amber)} .rd{color:var(--red)} .fgc{color:var(--fg)}
+
+@keyframes rise{from{opacity:0;transform:translateY(26px)}}
+@keyframes fade{from{opacity:0}}
+@keyframes pop{from{opacity:0;transform:scale(.88)}}
+@keyframes slideL{from{opacity:0;transform:translateX(-40px)}}
+.r{animation:rise .62s cubic-bezier(.16,.84,.26,1) both;animation-delay:calc(var(--d,0s) - var(--seek,0s))}
+.f{animation:fade .7s ease both;animation-delay:calc(var(--d,0s) - var(--seek,0s))}
+.sl{animation:slideL .6s cubic-bezier(.16,.84,.26,1) both;animation-delay:calc(var(--d,0s) - var(--seek,0s))}
+
+/* ---- screen frames: a live clip, with the still behind it if the clip is missing ---- */
+.shot{position:relative;border:1px solid var(--line2);border-radius:5px;overflow:hidden;background:#080b11;
+  box-shadow:0 36px 90px -36px #000, 0 0 0 1px rgba(255,255,255,.02) inset}
+.shot .bar{position:absolute;top:0;left:0;right:0;height:36px;background:#0a0e15;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:9px;padding:0 14px;font-family:var(--mono);font-size:19px;color:var(--dim2);
+  letter-spacing:.04em;z-index:3;white-space:nowrap;overflow:hidden}
+.shot .bar s{width:9px;height:9px;border-radius:50%;background:var(--line2);text-decoration:none;flex:none}
+.shot .bar em{font-style:normal;margin-left:auto;color:var(--cyan);font-size:17px;letter-spacing:.14em}
+.shot .in{position:absolute;inset:36px 0 0;overflow:hidden;background:#0a0e14}
+.shot video,.shot img{display:block;width:100%;height:100%;object-fit:cover;object-position:top center}
+.shot video{position:absolute;inset:0;z-index:2}
+.shot.noclip video{display:none}
+@keyframes kb{from{transform:scale(1.02)}to{transform:scale(1.13)}}
+.kb{animation:kb 13s linear both;animation-delay:calc(0s - var(--seek,0s));transform-origin:50% 28%}
+.cap{font-family:var(--mono);font-size:23px;color:var(--dim2);letter-spacing:.06em;margin-top:12px}
+
+/* ---- placeholder slate for founder footage ---- */
+.slate{border:2px dashed var(--amber);border-radius:4px;background:repeating-linear-gradient(135deg,rgba(240,167,60,.05) 0 14px,transparent 14px 28px);
+  padding:22px 26px;color:var(--amber)}
+.slate .k{font-family:var(--mono);font-size:21px;letter-spacing:.24em;text-transform:uppercase}
+.slate .t{font-size:27px;line-height:1.35;color:var(--fg);margin-top:10px}
+.slate .s{font-family:var(--mono);font-size:21px;color:var(--dim2);margin-top:10px}
+
+#prog{position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--cyan);opacity:.6;z-index:30}
+#mark{position:absolute;left:108px;bottom:30px;font-family:var(--mono);font-size:21px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--dim2);z-index:30}
+#mark b{color:var(--dim);font-weight:400}
+
+/* ========== 1 TACIT ========== */
+#b1 svg.draw{position:absolute;right:92px;top:120px;width:820px;height:820px;opacity:.9;z-index:2}
+#b1 svg.draw *{fill:none;stroke:var(--cyan);stroke-width:1.5;
+  stroke-dasharray:var(--len,2400);stroke-dashoffset:var(--len,2400);
+  animation:trace 4.6s cubic-bezier(.35,.1,.2,1) infinite both;animation-delay:calc(var(--d,0s) - var(--seek,0s))}
+@keyframes trace{
+  0%{stroke-dashoffset:var(--len);opacity:0;filter:blur(0)}
+  10%{opacity:.95}
+  44%{stroke-dashoffset:calc(var(--len) * .36);opacity:.9}
+  68%{stroke-dashoffset:calc(var(--len) * .24);opacity:.22;filter:blur(3px)}
+  84%,100%{stroke-dashoffset:calc(var(--len) * .22);opacity:0;filter:blur(8px)}}
+#b1 .txt{position:absolute;left:0;top:206px;width:1080px}
+#b1 .k{font-family:var(--disp);font-weight:600;font-size:88px;line-height:1.04;letter-spacing:-.005em}
+#b1 .big{font-family:var(--disp);font-weight:700;font-size:200px;line-height:.84;letter-spacing:-.02em;
+  color:var(--cyan);display:block;margin:6px 0}
+#b1 .slate{position:absolute;left:0;bottom:0;width:980px}
+
+/* ========== 2 ASYMMETRY ========== */
+#b2 .cols{position:absolute;top:116px;left:0;right:0;display:grid;grid-template-columns:1fr 1fr;gap:54px}
+#b2 .pane{min-height:412px;background:var(--ink2);border:1px solid var(--line2);border-radius:4px;padding:28px 32px}
+#b2 .ph{font-family:var(--mono);font-size:23px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim2);margin-bottom:22px}
+#b2 pre{font-family:var(--mono);font-size:26px;line-height:1.56;margin:0;color:var(--dim);white-space:pre-wrap}
+#b2 pre em{font-style:normal;color:var(--fg)}
+#b2 .verdict{margin-top:26px;display:inline-flex;align-items:center;gap:14px;font-family:var(--mono);font-size:28px;padding:12px 22px;border-radius:3px}
+#b2 .ok{background:rgba(69,220,214,.1);border:1px solid var(--cyan-d);color:var(--cyan)}
+#b2 .none{border:1px dashed var(--amber);color:var(--amber);background:rgba(240,167,60,.05)}
+#b2 .claim{font-size:31px;line-height:1.45;color:var(--fg)}
+#b2 .foot{position:absolute;left:0;right:0;bottom:24px}
+
+/* ========== 3 THE DESK ========== */
+#b3 .desk{position:absolute;left:0;right:0;bottom:168px;height:4px;z-index:3;
+  background:linear-gradient(90deg,transparent,var(--line2) 10%,var(--line2) 90%,transparent)}
+#b3 .deskface{position:absolute;left:0;right:0;bottom:0;height:168px;z-index:3;background:linear-gradient(180deg,#0a0e15,#05070a)}
+#b3 .paper{position:absolute;width:208px;height:274px;background:var(--paper);border-radius:2px;z-index:4;
+  box-shadow:0 12px 30px -14px rgba(0,0,0,.95);padding:19px 17px;
+  transform:translate(var(--x),var(--y)) rotate(var(--r));
+  animation:fall 1.45s cubic-bezier(.42,.03,.76,.6) both;animation-delay:calc(var(--d,0s) - var(--seek,0s))}
+#b3 .paper u{display:block;height:6px;background:#4a4336;opacity:.45;border-radius:1px;margin-bottom:9px;text-decoration:none}
+#b3 .paper u:first-child{height:12px;opacity:.72;margin-bottom:16px;width:70%}
+#b3 .paper u.s{width:56%} #b3 .paper u.m{width:88%}
+@keyframes fall{to{transform:translate(calc(var(--x) + var(--fx)),1480px) rotate(calc(var(--r) + var(--fr)));opacity:.08}}
+#b3 .side{position:absolute;bottom:200px;width:760px;z-index:5}
+#b3 .maths{left:0} #b3 .bio{right:0;text-align:right}
+#b3 .num{font-family:var(--mono);font-weight:500;font-size:118px;line-height:1;color:var(--fg);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+#b3 .slot{height:132px;border:2px dashed var(--line2);border-radius:3px;display:grid;place-items:center;
+  font-family:var(--mono);font-size:26px;color:var(--dim2);letter-spacing:.12em}
+#b3 .lbl{font-family:var(--mono);font-size:25px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim2);margin-bottom:16px}
+
+/* ========== 4 NINE IN TEN ========== */
+#b4 .rowten{position:absolute;top:142px;left:0;display:flex;gap:24px;z-index:4}
+#b4 .prog{width:92px;height:188px;border-radius:4px;border:1px solid var(--cyan-d);background:rgba(69,220,214,.14);
+  animation:dim .9s ease both;animation-delay:calc(var(--d,0s) - var(--seek,0s))}
+#b4 .prog.keep{animation:none;border-color:var(--cyan);background:rgba(69,220,214,.24);box-shadow:0 0 44px -6px rgba(69,220,214,.5)}
+@keyframes dim{to{border-color:var(--line);background:#090d13;opacity:.34}}
+#b4 .st{position:absolute;top:142px;right:0;width:600px;text-align:right}
+#b4 .mid{position:absolute;top:382px;left:0;right:0}
+#b4 .srcs{display:flex;gap:40px;margin-top:24px;flex-wrap:wrap}
+#b4 .src{border-left:2px solid var(--line2);padding-left:20px;max-width:620px}
+#b4 .pivot{position:absolute;left:0;right:0;bottom:30px;border-top:1px solid var(--line2);padding-top:30px}
+
+/* ========== 5 LEANBIO FORUM ========== */
+#b5 .grid{position:absolute;top:112px;left:0;right:0;bottom:92px;display:grid;grid-template-columns:810px 1fr;gap:56px}
+#b5 .gates{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}
+#b5 .gate{border:1px solid var(--line2);border-radius:4px;padding:20px 24px;background:var(--ink2);position:relative;min-height:168px}
+#b5 .gate .n{font-family:var(--mono);font-size:21px;letter-spacing:.18em;color:var(--dim2);text-transform:uppercase}
+#b5 .gate .t{font-family:var(--disp);font-weight:600;font-size:36px;margin-top:10px;line-height:1.08}
+#b5 .gate .chk{position:absolute;right:20px;bottom:18px;color:var(--cyan);font-family:var(--mono);font-size:32px;
+  animation:pop .45s cubic-bezier(.2,1.6,.4,1) both;animation-delay:calc(var(--d,0s) - var(--seek,0s))}
+#b5 .andbar{font-family:var(--mono);font-size:24px;letter-spacing:.18em;color:var(--dim2);text-align:center;margin:16px 0}
+#b5 .axiom{border:1px solid var(--cyan-d);background:rgba(69,220,214,.1);border-radius:4px;padding:22px 26px}
+#b5 .axiom .t{font-family:var(--disp);font-weight:600;font-size:40px;color:var(--cyan);line-height:1.05}
+#b5 .rename{font-family:var(--mono);font-size:22px;color:var(--amber);letter-spacing:.03em;margin-top:18px}
+#b5 .quote{position:absolute;left:0;right:0;bottom:0;border-top:1px solid var(--line2);padding-top:20px}
+
+/* ========== 6 SWARM EXPANSION ========== */
+#b6 canvas{position:absolute;inset:0;width:1920px;height:1080px;z-index:2}
+#b6 .hud{position:absolute;left:108px;top:330px;z-index:5;width:650px}
+#b6 .ctr{display:flex;align-items:baseline;gap:18px;padding:12px 0;border-bottom:1px solid var(--line)}
+#b6 .ctr b{font-family:var(--mono);font-weight:500;font-size:52px;color:var(--fg);width:160px;text-align:right;
+  font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
+#b6 .ctr s{text-decoration:none;font-size:27px;color:var(--dim);line-height:1.25}
+#b6 .ctr i{font-style:normal;width:12px;height:12px;border-radius:50%;background:var(--c,var(--dim2));flex:none}
+#b6 .flash{position:absolute;right:108px;bottom:146px;width:780px;text-align:right;z-index:5;
+  font-family:var(--mono);font-size:24px;line-height:1.5;color:var(--dim);min-height:108px;
+  text-shadow:0 0 18px var(--ink),0 0 36px var(--ink),0 2px 6px var(--ink);transition:opacity .35s ease}
+#b6 .flash b{display:block;color:var(--cyan);font-weight:400;font-size:20px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:8px}
+#b6 .foot{position:absolute;left:108px;right:108px;bottom:62px;z-index:5}
+
+/* ========== 7 ARCHITECTURES ========== */
+#b7 .three{position:absolute;top:210px;left:0;right:0;display:grid;grid-template-columns:repeat(3,1fr);gap:48px}
+#b7 .arch{border:1px solid var(--line2);background:var(--ink2);border-radius:4px;padding:26px 28px;min-height:400px;position:relative}
+#b7 .arch h3{font-family:var(--disp);font-weight:600;font-size:44px;margin:0 0 6px;line-height:1}
+#b7 .arch .d{font-family:var(--mono);font-size:22px;color:var(--dim2);letter-spacing:.06em}
+#b7 .viz{position:relative;height:238px;margin-top:22px}
+#b7 .ag{position:absolute;width:34px;height:34px;border-radius:50%;border:2px solid var(--cyan);background:rgba(69,220,214,.2);
+  animation:beat 1.6s ease-in-out infinite both;animation-delay:calc(var(--d,0s) - var(--seek,0s))}
+#b7 .ag.orc{width:46px;height:46px;border-color:var(--amber);background:rgba(240,167,60,.2)}
+@keyframes beat{0%,100%{transform:scale(1);opacity:.75}50%{transform:scale(1.22);opacity:1}}
+#b7 .ln{position:absolute;height:2px;background:var(--line2);transform-origin:left center;
+  animation:flow 1.8s linear infinite both;animation-delay:calc(var(--d,0s) - var(--seek,0s))}
+@keyframes flow{0%{background:var(--line2)}40%{background:var(--cyan)}100%{background:var(--line2)}}
+#b7 .note{position:absolute;left:0;right:0;bottom:22px;border-top:1px solid var(--line2);padding-top:22px}
+
+/* ========== 8 MCP 1 ========== */
+#b8 .bgshot{position:absolute;inset:0;opacity:.14;overflow:hidden;z-index:1}
+#b8 .bgshot img{width:100%;height:100%;object-fit:cover}
+#b8 .nums{position:absolute;top:398px;left:0;right:0;display:grid;grid-template-columns:repeat(4,1fr);gap:32px}
+#b8 .n{border-top:2px solid var(--cyan-d);padding-top:20px}
+#b8 .n b{display:block;font-family:var(--mono);font-weight:500;font-size:106px;line-height:1;font-variant-numeric:tabular-nums}
+#b8 .n s{display:block;text-decoration:none;font-size:28px;color:var(--dim);margin-top:12px}
+#b8 .ep{position:absolute;left:0;right:0;bottom:30px;font-family:var(--mono);font-size:25px;color:var(--dim2);letter-spacing:.07em}
+
+/* ========== 9 TEXT TO ORGANISM ========== */
+#b9 .grid{position:absolute;top:110px;left:0;right:0;bottom:0;display:grid;grid-template-columns:720px 1fr;gap:48px}
+#b9 .prompt{border:1px solid var(--cyan-d);background:rgba(69,220,214,.06);border-radius:4px;padding:24px 28px}
+#b9 .prompt .lbl{font-family:var(--mono);font-size:21px;letter-spacing:.2em;color:var(--dim2);text-transform:uppercase}
+#b9 .type{font-family:var(--disp);font-weight:600;font-size:76px;color:var(--cyan);margin-top:8px;
+  white-space:nowrap;overflow:hidden;width:18ch;border-right:3px solid var(--cyan);
+  animation:type 1.4s steps(18) both, caret .7s step-end 6 both;animation-delay:var(--d,.4s)}
+@keyframes type{from{width:0}}
+@keyframes caret{50%{border-color:transparent}}
+#b9 .layers{margin-top:24px;display:flex;flex-direction:column;gap:7px}
+#b9 .ly{display:flex;align-items:center;gap:18px;padding:10px 16px;border-left:3px solid var(--cyan);background:var(--ink2);
+  animation:slideL .42s cubic-bezier(.16,.84,.26,1) both;animation-delay:calc(var(--d,0s) - var(--seek,0s))}
+#b9 .ly .k{font-family:var(--mono);font-size:20px;letter-spacing:.14em;color:var(--dim2);width:150px;text-transform:uppercase;flex:none}
+#b9 .ly .v{font-size:26px;color:var(--fg)}
+#b9 .two{display:grid;grid-template-rows:1fr 1fr;gap:20px;height:100%}
+
+/* ========== 10 WINGS ========== */
+#b10 .three{position:absolute;top:292px;left:0;right:0;display:grid;grid-template-columns:repeat(3,1fr);gap:44px}
+#b10 .w{border-top:3px solid var(--c);padding-top:22px;animation:rise .6s cubic-bezier(.16,.84,.26,1) both;animation-delay:calc(var(--d,0s) - var(--seek,0s))}
+#b10 .w h3{font-family:var(--disp);font-weight:700;font-size:58px;margin:0;line-height:1;color:var(--c)}
+#b10 .w .sci{font-family:var(--mono);font-size:21px;color:var(--dim2);letter-spacing:.06em;margin-top:6px;line-height:1.4;min-height:58px}
+#b10 .w svg{display:block;width:100%;height:158px;margin:12px 0 10px}
+#b10 .w svg *{fill:none;stroke:var(--c);stroke-width:2;opacity:.9;stroke-linejoin:round}
+#b10 .w svg .fill{fill:var(--c);opacity:.09;stroke:none}
+#b10 .w .m{display:flex;align-items:baseline;gap:16px;border-top:1px solid var(--line);padding:11px 0;font-family:var(--mono);font-variant-numeric:tabular-nums}
+#b10 .w .m b{font-size:34px;font-weight:500;color:var(--fg);white-space:nowrap;flex:none}
+#b10 .w .m s{text-decoration:none;font-size:21px;color:var(--dim2);line-height:1.32;min-width:0}
+#b10 .noaves{position:absolute;left:0;right:0;bottom:16px;border-top:1px solid var(--line2);padding-top:20px;
+  font-family:var(--mono);font-size:24px;color:var(--amber);letter-spacing:.03em}
+
+/* ========== 11 PHYSICS SIDE BY SIDE ========== */
+#b11 .two{position:absolute;top:196px;left:0;right:0;bottom:148px;display:grid;grid-template-columns:1fr 1fr;gap:36px}
+#b11 .col{display:flex;flex-direction:column;gap:14px}
+#b11 .col .shot{flex:1}
+#b11 .hd{display:flex;align-items:baseline;gap:16px}
+#b11 .hd h3{font-family:var(--disp);font-weight:700;font-size:50px;margin:0;line-height:1}
+#b11 .hd .tag{font-family:var(--mono);font-size:21px;letter-spacing:.18em;padding:5px 14px;border-radius:3px;text-transform:uppercase}
+#b11 .real{border:1px solid var(--cyan-d);color:var(--cyan)}
+#b11 .ours{border:1px solid var(--line2);color:var(--amber)}
+#b11 .ft{position:absolute;left:0;right:0;bottom:24px;display:flex;gap:40px;align-items:flex-end}
+
+/* ========== 12 HARNESS ========== */
+#b12 .grid{position:absolute;top:110px;left:0;right:0;bottom:0;display:grid;grid-template-columns:1fr 760px;gap:48px}
+#b12 .steps{display:flex;flex-direction:column;gap:12px;margin-top:26px}
+#b12 .st{background:var(--ink2);border:1px solid var(--line2);border-left:3px solid var(--cyan);border-radius:3px;
+  padding:16px 22px;animation:slideL .5s cubic-bezier(.16,.84,.26,1) both;animation-delay:calc(var(--d,0s) - var(--seek,0s))}
+#b12 .st .n{font-family:var(--mono);font-size:21px;color:var(--cyan);letter-spacing:.2em}
+#b12 .st .t{font-family:var(--disp);font-weight:600;font-size:38px;line-height:1.05;margin:4px 0 4px}
+#b12 .st .d{font-size:24px;line-height:1.35;color:var(--dim)}
+#b12 .two{display:grid;grid-template-rows:1fr 1fr;gap:18px;height:100%}
+
+/* ========== 13 THE NO ========== */
+#b13 .grid{position:absolute;top:108px;left:0;right:0;bottom:0;display:grid;grid-template-columns:860px 1fr;gap:48px}
+#b13 .shot{height:544px}
+#b13 .res{display:flex;flex-direction:column;gap:14px}
+#b13 .rc{border:1px solid var(--line2);border-left:4px solid var(--red);background:var(--ink2);border-radius:3px;
+  padding:16px 24px;animation:slideL .5s cubic-bezier(.16,.84,.26,1) both;animation-delay:calc(var(--d,0s) - var(--seek,0s))}
+#b13 .rc.part{border-left-color:var(--amber)}
+#b13 .rc.refuse{border-left-color:var(--cyan);border-style:dashed}
+#b13 .rc .k{font-family:var(--mono);font-size:21px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim2)}
+#b13 .rc .v{display:flex;align-items:baseline;gap:16px;margin-top:5px;font-family:var(--mono);
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+#b13 .rc .v b{font-size:52px;font-weight:500;color:var(--fg);line-height:1.05;flex:none}
+#b13 .rc .v s{text-decoration:none;font-size:24px;color:var(--dim);flex:none}
+#b13 .rc .v u{text-decoration:none;margin-left:auto;font-size:23px;letter-spacing:.14em;color:var(--red);flex:none}
+#b13 .rc.part .v u{color:var(--amber)} #b13 .rc.refuse .v u{color:var(--cyan)}
+#b13 .rc .d{font-size:23px;color:var(--dim);margin-top:7px;line-height:1.35}
+#b13 .stamp{position:absolute;left:0;bottom:30px;width:860px}
+#b13 .stamp h2{font-size:68px}
+
+/* ========== 14 ROUND TRIP + CLOSE ========== */
+#b14 .grid{position:absolute;top:110px;left:0;right:0;bottom:168px;display:grid;grid-template-columns:720px 1fr 480px;gap:44px}
+#b14 .lp{border:1px solid var(--line2);background:var(--ink2);border-radius:4px;padding:16px 22px;margin-bottom:12px;
+  animation:slideL .45s cubic-bezier(.16,.84,.26,1) both;animation-delay:calc(var(--d,0s) - var(--seek,0s))}
+#b14 .lp .k{font-family:var(--mono);font-size:20px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim2)}
+#b14 .lp .t{font-size:30px;margin-top:4px}
+#b14 .back{border-color:var(--cyan-d)} #b14 .back .k{color:var(--cyan)} #b14 .back .t{color:var(--cyan)}
+#b14 .end{position:absolute;left:0;right:0;bottom:0;border-top:1px solid var(--line2);padding-top:26px;
+  display:flex;align-items:flex-end;gap:44px;animation:fade .9s ease both;animation-delay:calc(var(--d,0s) - var(--seek,0s))}
+#b14 .wordmark{font-family:var(--disp);font-weight:700;font-size:88px;letter-spacing:-.012em;line-height:.92}
+#b14 .wordmark span{color:var(--cyan)}
+
+/* ---- scrub bar (hidden when recording) ---- */
+#hud{position:fixed;left:0;right:0;bottom:0;z-index:50;background:rgba(5,7,10,.95);border-top:1px solid var(--line2);
+  padding:9px 14px;display:flex;gap:14px;align-items:center;font-family:var(--mono);font-size:13px;color:var(--dim)}
+#hud button{background:var(--panel);border:1px solid var(--line2);color:var(--fg);font:inherit;padding:5px 12px;border-radius:3px;cursor:pointer}
+#hud button:focus-visible,#track:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+#track{flex:1;height:26px;position:relative;cursor:pointer}
+#track .rail{position:absolute;left:0;right:0;top:12px;height:3px;background:var(--line2)}
+#track .fill{position:absolute;left:0;top:12px;height:3px;background:var(--cyan)}
+#track .tk{position:absolute;top:7px;width:1px;height:13px;background:var(--dim2)}
+body.rec #hud{display:none}
+
+@media (prefers-reduced-motion: reduce){
+  .beat *,.beat.run *{animation:none!important}
+  .beat.fade{transition:none}
+  #grain{display:none}
+  #b3 .paper{opacity:0}
+  #b1 svg.draw *{stroke-dashoffset:0;opacity:.3}
+  #b9 .type{width:18ch;border-right-color:transparent}
+}
+</style>
+</head>
+<body>
+<div id="fit"><div id="stage">
+<div id="grid"></div>
+
+<!-- ======== 1 · TACIT ======== -->
+<section class="beat fade" id="b1"><div class="pad">
+  <div class="eyebrow"><b>01</b><i></i><span>the problem</span></div>
+  <svg class="draw" viewBox="0 0 820 820" aria-hidden="true">
+    <ellipse cx="400" cy="420" rx="300" ry="104" style="--len:1400;--d:.15s"/>
+    <path d="M400 316 C 560 252, 700 210, 800 178" style="--len:470;--d:.5s"/>
+    <path d="M400 316 C 530 278, 660 268, 780 280" style="--len:400;--d:.75s"/>
+    <path d="M400 316 C 510 300, 630 318, 740 362" style="--len:370;--d:1.0s"/>
+    <path d="M110 420 L 700 420" style="--len:590;--d:.35s"/>
+    <circle cx="400" cy="420" r="178" style="--len:1120;--d:1.3s"/>
+    <path d="M220 514 C 310 586, 450 598, 568 544" style="--len:440;--d:1.7s"/>
+    <path d="M400 242 L 400 598" style="--len:356;--d:1.95s"/>
+    <path d="M688 382 L 800 332 L 800 468 Z" style="--len:420;--d:2.2s"/>
+  </svg>
+  <div class="txt">
+    <div class="k r" style="--d:.35s">Biology design knowledge<br>lives primarily as</div>
+    <b class="big r" style="--d:1.0s">TACIT</b>
+    <div class="k r" style="--d:1.5s">knowledge.</div>
+    <p class="body r" style="--d:3.0s;max-width:22ch;margin-top:34px;font-size:34px">The thing experts know and cannot write down.</p>
+  </div>
+  <div class="slate f" style="--d:5.4s">
+    <div class="k">placeholder &mdash; founder wideshot A</div>
+    <div class="t">Drop footage here. Intended shot: wide, static, founder alone at a lab bench or whiteboard, 3&ndash;4 s, no dialogue, cool key light to match this grade.</div>
+    <div class="s">replace this element in index.html &middot; the edit length does not change</div>
+  </div>
+</div></section>
+
+<!-- ======== 2 · THE ASYMMETRY ======== -->
+<section class="beat" id="b2"><div class="pad">
+  <div class="eyebrow"><b>02</b><i></i><span>the asymmetry</span></div>
+  <div class="cols">
+    <div class="pane r" style="--d:.05s">
+      <div class="ph">mathematics &mdash; a proof assistant</div>
+<pre><em>theorem</em> glide_range_bound
+  (h : 0 &lt; ld) (hh : 0 &le; height) :
+  range &le; height * ld := <em>by</em>
+  simpa [range] <em>using</em>
+    mul_le_mul_of_nonneg_left h hh</pre>
+      <div class="verdict ok f" style="--d:1.5s">&#10003;&nbsp; checked by the kernel</div>
+    </div>
+    <div class="pane r" style="--d:.3s">
+      <div class="ph">biology &mdash; the same shape of claim</div>
+      <p class="claim">A zebrafish given enlarged, wing&#8209;like pectoral fins<br>will glide over water after leaving it.</p>
+      <div class="verdict none f" style="--d:2.1s">&#9633;&nbsp; no check exists</div>
+    </div>
+  </div>
+  <div class="foot">
+    <h1 class="r" style="--d:2.9s;max-width:31ch">Agents have no formal way to verify a biological design at any scale.</h1>
+    <p class="body r" style="--d:4.0s;margin-top:20px;font-size:34px">And they are extraordinarily good at mathematics.</p>
+  </div>
+</div></section>
+
+<!-- ======== 3 · THE DESK ======== -->
+<section class="beat" id="b3">
+  <div class="deskface"></div><div class="desk"></div>
+  <div class="pad">
+    <div class="eyebrow"><b>03</b><i></i><span>the desk</span></div>
+    <h1 class="r" style="--d:.1s;max-width:21ch;position:absolute;top:36px;left:0;width:1000px">Everything on this desk is mathematics.</h1>
+    <div class="side maths">
+      <div class="lbl f" style="--d:5.2s">what came off the desk</div>
+      <div class="num" id="mathNum" data-count data-to="250000" data-suffix="+" data-start="2.0" data-end="4.9">0</div>
+      <p class="body f" style="--d:5.3s;font-size:27px;margin-top:10px" id="mathSub">machine&#8209;checked theorems</p>
+    </div>
+    <div class="side bio">
+      <div class="lbl f" style="--d:6.0s">what is left on it</div>
+      <div class="slot f" id="bioSlot" style="--d:6.1s">&nbsp;</div>
+      <p class="body f" style="--d:6.3s;font-size:27px;margin-top:14px;margin-left:auto;max-width:36ch" id="bioSub"></p>
+    </div>
+  </div>
+</section>
+
+<!-- ======== 4 · NINE IN TEN ======== -->
+<section class="beat" id="b4"><div class="pad">
+  <div class="eyebrow"><b>04</b><i></i><span>why it matters now</span></div>
+  <div class="rowten" id="tenRow"></div>
+  <div class="st f" style="--d:3.0s">
+    <div class="tiny" style="margin-bottom:10px">unit of analysis</div>
+    <p class="body fgc" style="font-size:31px">programmes and drugs,<br>not individual trials</p>
+  </div>
+  <div class="mid">
+    <h1 class="r" style="--d:.5s;max-width:30ch" id="attrLine"></h1>
+    <div class="srcs" id="attrSrcs"></div>
+  </div>
+  <div class="pivot">
+    <h2 class="r" style="--d:5.6s;max-width:42ch">So return focus to <span class="cy">theoretical biology</span>, and design experiments strategically.</h2>
+  </div>
+</div></section>
+
+<!-- ======== 5 · LEANBIO FORUM ======== -->
+<section class="beat" id="b5"><div class="pad">
+  <div class="eyebrow"><b>05</b><i></i><span>the deliverable</span></div>
+  <div class="grid">
+    <div>
+      <h1 class="r" style="--d:.05s;font-size:112px">LeanBio Forum</h1>
+      <p class="body r" style="--d:.3s;margin:12px 0 0;font-size:32px">You upload your own nanopub&#8209;backed theorem.</p>
+      <div class="gates">
+        <div class="gate r" style="--d:1.0s"><div class="n">gate 1</div><div class="t">It holds up in Lean</div><div class="chk" style="--d:2.0s">&#10003;</div></div>
+        <div class="gate r" style="--d:1.3s"><div class="n">gate 2</div><div class="t">It survives agent debate on existing evidence</div><div class="chk" style="--d:2.6s">&#10003;</div></div>
+      </div>
+      <div class="andbar f" style="--d:2.9s">&#8595;&nbsp;&nbsp;both, or neither&nbsp;&nbsp;&#8595;</div>
+      <div class="axiom r" style="--d:3.2s"><div class="t">It enters as a biological axiom</div></div>
+      <div class="rename f" style="--d:5.0s">The screens still read DELPHI. The repository name has not caught up.</div>
+    </div>
+    <div class="shot f" style="--d:.5s">
+      <div class="bar"><s></s><s></s><s></s>&nbsp;/leanbio/capability.html<em>live page</em></div>
+      <div class="in"><img class="kb" src="shots/leanbio-capability.jpg" alt="The capability map: 14 personas, 32 use cases, 14 grand questions, 27 tool gaps."></div>
+    </div>
+  </div>
+  <div class="quote">
+    <p class="mono f" style="--d:5.4s;font-size:27px">&ldquo;Lean proves that a conclusion follows from stated premises. <span class="fgc">It does not adjudicate reality.</span>&rdquo;</p>
+  </div>
+</div></section>
+
+<!-- ======== 6 · THE SWARM EXPANDS THE LITERATURE ======== -->
+<section class="beat" id="b6">
+  <canvas id="treeCv" width="1920" height="1080"></canvas>
+  <div class="pad">
+    <div class="eyebrow"><b>06</b><i></i><span>where the theorems came from</span></div>
+    <h1 class="r" style="--d:.1s;max-width:17ch;position:absolute;top:34px;left:0;width:760px;font-size:76px">Darwin, Thompson, Wolfram, Turing.</h1>
+  </div>
+  <div class="hud" id="treeHud"></div>
+  <div class="flash" id="treeFlash"></div>
+  <div class="foot">
+    <p class="body r" style="--d:8.6s;font-size:31px;max-width:64ch">Decentralised agent swarms distilled the assertions into nanopubs and debated the evidence <span class="fgc">before anything was formalised</span>.</p>
+  </div>
+</section>
+
+<!-- ======== 7 · THREE ARCHITECTURES ======== -->
+<section class="beat" id="b7"><div class="pad">
+  <div class="eyebrow"><b>07</b><i></i><span>how the swarm is arranged</span></div>
+  <h1 class="r" style="--d:.05s;position:absolute;top:34px;left:0;width:1200px;font-size:78px">Three architectures, one fixed budget.</h1>
+  <div class="three">
+    <div class="arch r" style="--d:.5s">
+      <h3>Single</h3><div class="d">1 call &middot; the whole task</div>
+      <div class="viz">
+        <div class="ag" style="left:calc(50% - 17px);top:100px;--d:0s"></div>
+      </div>
+    </div>
+    <div class="arch r" style="--d:.75s">
+      <h3>Decentralised</h3><div class="d">N = 3 &middot; independent &middot; no orchestrator</div>
+      <div class="viz">
+        <div class="ag" style="left:14%;top:100px;--d:0s"></div>
+        <div class="ag" style="left:calc(50% - 17px);top:60px;--d:.25s"></div>
+        <div class="ag" style="left:72%;top:100px;--d:.5s"></div>
+      </div>
+    </div>
+    <div class="arch r" style="--d:1.0s">
+      <h3>Centralised</h3><div class="d">plan &middot; 3 workers &middot; merge</div>
+      <div class="viz">
+        <div class="ag orc" style="left:calc(50% - 23px);top:8px;--d:0s"></div>
+        <div class="ln" style="left:50%;top:40px;width:120px;transform:rotate(118deg);--d:.1s"></div>
+        <div class="ln" style="left:50%;top:40px;width:104px;transform:rotate(90deg);--d:.3s"></div>
+        <div class="ln" style="left:50%;top:40px;width:120px;transform:rotate(62deg);--d:.5s"></div>
+        <div class="ag" style="left:8%;top:146px;--d:.2s"></div>
+        <div class="ag" style="left:calc(50% - 17px);top:146px;--d:.4s"></div>
+        <div class="ag" style="left:76%;top:146px;--d:.6s"></div>
+      </div>
+    </div>
+  </div>
+  <div class="note">
+    <p class="mono f" style="--d:2.2s;font-size:26px" id="archNote"></p>
+  </div>
+</div></section>
+
+<!-- ======== 8 · MCP SERVER ONE ======== -->
+<section class="beat" id="b8">
+  <div class="bgshot"><img src="shots/leanbio-capability.jpg" alt=""></div>
+  <div class="pad">
+    <div class="eyebrow"><b>08</b><i></i><span>how you reach it</span></div>
+    <h1 class="r" style="--d:.05s;margin-top:118px;font-size:112px">Served as an MCP server.</h1>
+    <p class="body r" style="--d:.35s;font-size:34px;margin-top:18px">Personas, use cases, the big biological questions, custom endpoints.</p>
+    <div class="nums" id="capNums"></div>
+    <div class="ep f" style="--d:2.6s" id="capFoot"></div>
+  </div>
+</section>
+
+<!-- ======== 9 · TEXT TO ORGANISM ======== -->
+<section class="beat" id="b9"><div class="pad">
+  <div class="eyebrow"><b>09</b><i></i><span>the use</span></div>
+  <div class="grid">
+    <div>
+      <div class="prompt f" style="--d:.05s">
+        <div class="lbl">design studio &mdash; describe an organism</div>
+        <div class="type" style="--d:.4s">a fish, with wings</div>
+      </div>
+      <div class="layers">
+        <div class="ly" style="--d:2.1s"><span class="k">phenotype</span><span class="v">glides over water after leaving it</span></div>
+        <div class="ly" style="--d:2.3s"><span class="k">morphology</span><span class="v">pectoral length / SL, span, lifting area</span></div>
+        <div class="ly" style="--d:2.5s"><span class="k">anatomy</span><span class="v">13 organ systems &rarr; 67 organs &rarr; 198 tissues</span></div>
+        <div class="ly" style="--d:2.7s"><span class="k">cell type</span><span class="v">257 types, each an existing ontology term</span></div>
+        <div class="ly" style="--d:2.9s"><span class="k">pathway</span><span class="v">fin&#8209;ray outgrowth, muscle, ion handling</span></div>
+        <div class="ly" style="--d:3.1s"><span class="k">gene</span><span class="v">lat4a, kcnh2a &mdash; and 72 more loci</span></div>
+        <div class="ly" style="--d:3.3s"><span class="k">sequence</span><span class="v">residue by residue, against the orthologue</span></div>
+        <div class="ly" style="--d:3.5s"><span class="k">development</span><span class="v">0&ndash;365 d after hatching, stage by stage</span></div>
+      </div>
+      <p class="body f" style="--d:4.6s;font-size:28px;margin-top:20px">The theorems constrain every one of these layers.</p>
+    </div>
+    <div class="two">
+      <div class="shot f" style="--d:.3s" data-clip="studio">
+        <div class="bar"><s></s><s></s><s></s>&nbsp;/blueprint3d/perturb.html &mdash; design studio<em>live</em></div>
+        <div class="in"><video muted playsinline loop preload="auto"><source src="clips/studio.webm" type="video/webm"></video><img src="shots/studio.jpg" alt="The design studio parsing a typed specification into criteria."></div>
+      </div>
+      <div class="shot f" style="--d:4.2s" data-clip="blueprint">
+        <div class="bar"><s></s><s></s><s></s>&nbsp;/blueprint3d/ &mdash; the organism, opened<em>live</em></div>
+        <div class="in"><video muted playsinline loop preload="auto"><source src="clips/blueprint.webm" type="video/webm"></video><img src="shots/blueprint3d.jpg" alt="The blueprint in 3D: the organism split, peeled and traced to ontology terms."></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ======== 10 · WINGS, MANY TIMES OVER ======== -->
+<section class="beat" id="b10"><div class="pad">
+  <div class="eyebrow"><b>10</b><i></i><span>the design space is not empty</span></div>
+  <h1 class="r" style="--d:.05s;position:absolute;top:30px;left:0;width:1500px;font-size:84px">Wings were invented more than once, from different tissue.</h1>
+  <p class="body r" style="--d:.25s;position:absolute;top:208px;left:0;width:1200px;font-size:32px">The same physics judged every one of them. Three of the inventions, with the numbers we actually hold.</p>
+  <div class="three">
+    <div class="w" style="--c:var(--g2);--d:.5s">
+      <h3>Bat</h3><div class="sci">Chiroptera &mdash; skin membrane stretched over an elongated hand</div>
+      <svg viewBox="0 0 300 150" aria-hidden="true">
+        <path class="fill" d="M16 126 C 30 54, 96 14, 288 18 C 262 40, 236 52, 236 52 C 252 72, 254 84, 254 84 C 222 88, 198 92, 198 92 C 206 112, 202 124, 202 124 C 168 116, 142 116, 142 116 C 132 134, 112 142, 112 142 C 78 128, 42 130, 16 126 Z"/>
+        <path d="M16 126 C 30 54, 96 14, 288 18 C 262 40, 236 52, 236 52 C 252 72, 254 84, 254 84 C 222 88, 198 92, 198 92 C 206 112, 202 124, 202 124 C 168 116, 142 116, 142 116 C 132 134, 112 142, 112 142 C 78 128, 42 130, 16 126 Z"/>
+        <path d="M16 126 L 288 18"/><path d="M16 126 L 236 52"/><path d="M16 126 L 198 92"/>
+        <path d="M16 126 L 142 116"/><path d="M16 126 L 112 142"/>
+      </svg>
+      <div class="m"><b>9.13&#8201;%</b><s>of body mass is flight muscle (mean; 7.8&#8201;% minimum)<br>Bullen &amp; McKenzie 2004, via PMC10966098</s></div>
+      <div class="m"><b>6.5&ndash;14.25</b><s>N/m&sup2; wing loading, three species<br>physics/comparison-data.csv</s></div>
+    </div>
+    <div class="w" style="--c:var(--g3);--d:.75s">
+      <h3>Insect</h3><div class="sci">Pterygota &mdash; an outgrowth of the body wall, with no bone in it at all</div>
+      <svg viewBox="0 0 300 150" aria-hidden="true">
+        <path class="fill" d="M20 86 C 40 28, 150 10, 276 40 C 288 50, 286 62, 270 72 C 196 118, 92 130, 44 116 C 22 110, 16 98, 20 86 Z"/>
+        <path d="M20 86 C 40 28, 150 10, 276 40 C 288 50, 286 62, 270 72 C 196 118, 92 130, 44 116 C 22 110, 16 98, 20 86 Z"/>
+        <path d="M22 84 C 96 62, 198 44, 278 42"/><path d="M24 96 C 104 86, 206 66, 274 56"/>
+        <path d="M30 108 C 108 106, 200 88, 264 68"/><path d="M58 120 C 118 118, 190 104, 236 86"/>
+        <path d="M112 128 C 146 118, 196 106, 226 96"/>
+        <path d="M62 78 L 66 112"/><path d="M118 64 L 122 124"/><path d="M174 54 L 176 114"/><path d="M226 46 L 228 94"/>
+      </svg>
+      <div class="m"><b>559</b><s>W/kg hovering metabolic power, bumblebee<br>PMC12606204 (10.1098/rsbl.2025.0325)</s></div>
+      <div class="m"><b>7.3&ndash;14.7&#8201;%</b><s>overall efficiency, same measurement</s></div>
+    </div>
+    <div class="w" style="--c:var(--g1);--d:1.0s">
+      <h3>Flying fish</h3><div class="sci">Exocoetidae &mdash; a pectoral fin, bony rays under a membrane</div>
+      <svg viewBox="0 0 300 150" aria-hidden="true">
+        <path class="fill" d="M22 74 L 288 16 L 282 34 L 286 54 L 274 74 L 272 96 L 252 110 L 242 130 L 34 96 Z"/>
+        <path d="M22 74 L 288 16 L 282 34 L 286 54 L 274 74 L 272 96 L 252 110 L 242 130 L 34 96 Z"/>
+        <path d="M22 74 L 288 16"/><path d="M23 78 L 284 44"/><path d="M24 82 L 276 72"/>
+        <path d="M26 86 L 268 96"/><path d="M29 90 L 252 110"/><path d="M32 94 L 242 130"/>
+        <path d="M22 74 C 26 84, 30 92, 34 96"/>
+      </svg>
+      <div class="m"><b>10.7</b><s>aspect ratio, measured<br>Park &amp; Choi 2010, Tables 1&ndash;2</s></div>
+      <div class="m"><b>4.37</b><s>maximum lift&#8209;to&#8209;drag ratio, same polar</s></div>
+    </div>
+  </div>
+  <div class="noaves f" style="--d:3.4s">No bird appears on this screen. Aves is a frozen holdout in this project, and nothing in this film reads a byte from it.</div>
+</div></section>
+
+<!-- ======== 11 · PHYSICS, SIDE BY SIDE ======== -->
+<section class="beat" id="b11"><div class="pad">
+  <div class="eyebrow"><b>11</b><i></i><span>stress&#8209;test the design</span></div>
+  <h1 class="r" style="--d:.05s;position:absolute;top:34px;left:0;width:1300px;font-size:80px">The same solver flies both of them.</h1>
+  <div class="two">
+    <div class="col">
+      <div class="hd f" style="--d:.3s"><h3>Flying fish</h3><span class="tag real">real, measured</span></div>
+      <div class="shot" data-clip="sim-ff">
+        <div class="bar"><s></s><s></s><s></s>&nbsp;/t/physics/sim/<em>live</em></div>
+        <div class="in"><video muted playsinline loop preload="auto"><source src="clips/sim-ff.webm" type="video/webm"></video><img src="shots/physics-sim.jpg" alt="The flying-fish simulator running the measured flying fish."></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="hd f" style="--d:.6s"><h3>Winged zebrafish</h3><span class="tag ours">our design</span></div>
+      <div class="shot" data-clip="sim-wz">
+        <div class="bar"><s></s><s></s><s></s>&nbsp;/t/physics/sim/<em>live</em></div>
+        <div class="in"><video muted playsinline loop preload="auto"><source src="clips/sim-wz.webm" type="video/webm"></video><img src="shots/physics-sim.jpg" alt="The same simulator running our winged-zebrafish design."></div>
+      </div>
+    </div>
+  </div>
+  <div class="ft">
+    <p class="mono f" style="--d:2.4s;font-size:26px;max-width:66ch">Physics simulation, flow matching and developmental simulation, pre&#8209;registered before the first run. Post&#8209;hoc tests are marked post&#8209;hoc on the page itself.</p>
+  </div>
+</div></section>
+
+<!-- ======== 12 · THE HARNESS ======== -->
+<section class="beat" id="b12"><div class="pad">
+  <div class="eyebrow"><b>12</b><i></i><span>the validation harness</span></div>
+  <div class="grid">
+    <div>
+      <h1 class="r" style="--d:.05s;max-width:22ch;font-size:80px">The predicted sequence and the desired function go in.</h1>
+      <div class="steps">
+        <div class="st" style="--d:.6s"><div class="n">01</div><div class="t">Closest functional analogue</div><div class="d">Chosen from the desired function, never from relatedness.</div></div>
+        <div class="st" style="--d:.85s"><div class="n">02</div><div class="t">Functional differences, annotated</div><div class="d">Every difference classed, carrying its evidence, residue by residue.</div></div>
+        <div class="st" style="--d:1.1s"><div class="n">03</div><div class="t">Scored formally in LeanBio</div><div class="d">Against the laws the forum has already accepted.</div></div>
+        <div class="st" style="--d:1.35s"><div class="n">04</div><div class="t">Physics on the resulting mesh</div><div class="d">The body it implies is flown, not assumed.</div></div>
+      </div>
+      <p class="mono f" style="--d:2.4s;font-size:25px;margin-top:20px">Every gap is stated in place rather than left blank, because a blank column in an alignment reads as identity.</p>
+    </div>
+    <div class="two">
+      <div class="shot f" style="--d:.2s" data-clip="gene">
+        <div class="bar"><s></s><s></s><s></s>&nbsp;/gene-diff/ &mdash; the diff, from one residue outward<em>live</em></div>
+        <div class="in"><video muted playsinline loop preload="auto"><source src="clips/gene.webm" type="video/webm"></video><img src="shots/gene-diff.jpg" alt="The gene diff: an alignment expanded through expression, protein, pathway and developmental time."></div>
+      </div>
+      <div class="shot f" style="--d:3.0s" data-clip="validate">
+        <div class="bar"><s></s><s></s><s></s>&nbsp;/validate-show/ &mdash; seven acts<em>live</em></div>
+        <div class="in"><video muted playsinline loop preload="auto"><source src="clips/validate.webm" type="video/webm"></video><img src="shots/validate-show.jpg" alt="The validation walkthrough playing its seven acts."></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ======== 13 · THE MACHINE SAYS NO ======== -->
+<section class="beat" id="b13"><div class="pad">
+  <div class="eyebrow"><b>13</b><i></i><span>our own design, judged</span></div>
+  <div class="grid">
+    <div>
+      <div class="shot f" style="--d:.1s">
+        <div class="bar"><s></s><s></s><s></s>&nbsp;/validate-show/ &mdash; the gate, as the validator wrote it<em>unedited</em></div>
+        <div class="in"><img src="shots/validate-gate.jpg" alt="The validator's gate text for the winged zebrafish, reading FAIL."></div>
+      </div>
+      <div class="stamp r" style="--d:8.0s">
+        <h2>This is not a fish that works.<br><span class="cy">It is a machine that can say no.</span></h2>
+      </div>
+    </div>
+    <div class="res" id="resCards"></div>
+  </div>
+</div></section>
+
+<!-- ======== 14 · SECOND SERVER, ROUND TRIP, CLOSE ======== -->
+<section class="beat fade" id="b14"><div class="pad">
+  <div class="eyebrow"><b>14</b><i></i><span>and back again</span></div>
+  <div class="grid">
+    <div>
+      <h1 class="r" style="--d:.05s;font-size:72px;max-width:17ch">Design studio and validation harness, as a second MCP server.</h1>
+      <p class="body r" style="--d:.3s;font-size:30px;margin-top:20px;max-width:30ch">So anyone can design their own organism &mdash; and be told no by the same gates.</p>
+    </div>
+    <div>
+      <div class="lp" style="--d:1.0s"><div class="k">out</div><div class="t">The predicted genetic sequence</div></div>
+      <div class="lp" style="--d:1.25s"><div class="k">in &mdash; a fresh session</div><div class="t">Design Studio reads it cold</div></div>
+      <div class="lp" style="--d:1.5s"><div class="k">it predicts</div><div class="t">A phenotype</div></div>
+      <div class="lp back" style="--d:1.8s"><div class="k">&#8630; the round trip</div><div class="t">Is it the phenotype we asked for?</div></div>
+      <p class="mono f" style="--d:2.4s;font-size:24px">If it is not, the design was never specified &mdash; only described.</p>
+    </div>
+    <div class="slate f" style="--d:2.8s">
+      <div class="k">placeholder &mdash; founder wideshot B</div>
+      <div class="t">Drop footage here. Intended shot: founder to camera, medium, 3&ndash;4 s, delivering the closing line.</div>
+      <div class="s">replace this element in index.html</div>
+    </div>
+  </div>
+  <div class="end" style="--d:4.0s">
+    <div class="wordmark">LeanBio<br><span>Forum</span></div>
+    <p class="body" style="font-size:29px;max-width:44ch;margin-bottom:8px">Formal gates for biological design, with every number on screen carrying the file it came from.</p>
+  </div>
+</div></section>
+
+<div id="vig"></div><div id="grain"></div>
+<div id="prog"></div>
+<div id="mark">Lean<b>Bio Forum</b></div>
+</div></div>
+
+<div id="hud">
+  <button id="pp" type="button">Pause</button>
+  <button id="rs" type="button">Restart</button>
+  <div id="track" tabindex="0" role="slider" aria-label="Timeline" aria-valuemin="0" aria-valuemax="120" aria-valuenow="0">
+    <div class="rail"></div><div class="fill"></div>
+  </div>
+  <span id="tc">0:00 / 2:00</span>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- the cut. Durations sum to exactly 120 s; see BEATS.md. ---------- */
+var BEATS = [
+  {id:'b1',  t:0,   d:9},   {id:'b2',  t:9,   d:8},
+  {id:'b3',  t:17,  d:10},  {id:'b4',  t:27,  d:8},
+  {id:'b5',  t:35,  d:11},  {id:'b6',  t:46,  d:12},
+  {id:'b7',  t:58,  d:6},   {id:'b8',  t:64,  d:5},
+  {id:'b9',  t:69,  d:9},   {id:'b10', t:78,  d:7},
+  {id:'b11', t:85,  d:8},   {id:'b12', t:93,  d:8},
+  {id:'b13', t:101, d:12},  {id:'b14', t:113, d:7}
+];
+var TOTAL = 120;
+var RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+var params = new URLSearchParams(location.search);
+if (params.has('rec')) document.body.classList.add('rec');
+
+var stage = document.getElementById('stage');
+function fit(){
+  var hud = document.body.classList.contains('rec') ? 0 : 46;
+  stage.style.transform = 'scale(' + Math.min(innerWidth/1920, (innerHeight-hud)/1080) + ')';
+}
+addEventListener('resize', fit);
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+var F = null, TREE = null;
+
+/* ================= numbers, all from facts.json ================= */
+function paint(f){
+  F = f;
+
+  /* 3 — the two sides of the desk */
+  var mn = document.getElementById('mathNum');
+  if (f.maths_side && f.maths_side.verified){
+    mn.dataset.to = String(f.maths_side.value).replace(/[^\d]/g,'') || '0';
+    mn.dataset.suffix = /\+/.test(f.maths_side.value) ? '+' : '';
+    document.getElementById('mathSub').innerHTML = esc(f.maths_side.label) + '<br><span class="tiny">' + esc(f.maths_side.sub) + '</span>';
+  } else { mn.style.display = 'none'; }
+  var slot = document.getElementById('bioSlot');
+  if (f.biology_side && f.biology_side.verified && f.biology_side.value != null){
+    slot.textContent = f.biology_side.value;
+    slot.style.color = 'var(--fg)'; slot.style.fontSize = '96px'; slot.style.letterSpacing = '0';
+  } else {
+    slot.innerHTML = '<span style="letter-spacing:.34em">&mdash;&mdash;&mdash;</span>';   // deliberately no numeral
+  }
+  document.getElementById('bioSub').textContent = f.biology_side.label;
+
+  /* 4 — ten programmes, nine go out */
+  var row = document.getElementById('tenRow'); row.innerHTML = '';
+  for (var i = 0; i < 10; i++){
+    var dv = document.createElement('div');
+    dv.className = 'prog' + (i === 9 ? ' keep' : '');
+    dv.style.setProperty('--d', (1.7 + i * 0.12) + 's');
+    row.appendChild(dv);
+  }
+  document.getElementById('attrLine').textContent = f.attrition.sentence;
+  var ss = document.getElementById('attrSrcs'); ss.innerHTML = '';
+  f.attrition.sources.forEach(function(s, i){
+    var e = document.createElement('div');
+    e.className = 'src f'; e.style.setProperty('--d', (4.0 + i * 0.25) + 's');
+    e.innerHTML = '<p class="mono" style="font-size:24px;line-height:1.45">' + esc(s) + '</p>';
+    ss.appendChild(e);
+  });
+
+  /* 7 — the architectures note, which says nothing about a result unless one exists */
+  var b = f.swarm_benchmark;
+  document.getElementById('archNote').innerHTML = b.has_results
+    ? esc(b.result_line) + ' <span class="tiny">n = ' + esc(b.n) + '</span>'
+    : esc(b.no_result_line);
+
+  /* 8 — the capability counts */
+  var cn = document.getElementById('capNums'); cn.innerHTML = '';
+  [[f.capability.personas, 'personas, none with an empty tool list'],
+   [f.capability.use_cases, 'use cases'],
+   [f.capability.grand_questions, 'grand questions of biology'],
+   [f.corpus.leanbio_records, 'records in the forum']].forEach(function(p, i){
+    var e = document.createElement('div');
+    e.className = 'n r'; e.style.setProperty('--d', (0.8 + i * 0.18) + 's');
+    e.innerHTML = '<b>' + p[0] + '</b><s>' + esc(p[1]) + '</s>';
+    cn.appendChild(e);
+  });
+  document.getElementById('capFoot').textContent =
+    f.capability.real_tools + ' real tools · ' + f.capability.tool_references +
+    ' tool references across the map · versioned JSON, checked by tests';
+
+  /* 13 — three gate results, never summed, plus the refusal to show a composite */
+  var g = f.gate, fu = f.functional;
+  document.getElementById('resCards').innerHTML =
+    card('launch speed', g.launch_m_s + ' m/s', 'needs ' + g.v_min_m_s + ' m/s', 'fail',
+         'lift cannot carry the weight. It never could: the design glided in 0.0 % of 200 draws over the stated input distributions.', 0.7) +
+    card('lifting area', '1.91 cm&sup2;', 'needs 317.76 cm&sup2;', g.area_factor + ' too small',
+         'to carry 0.007 N at ' + g.launch_m_s + ' m/s', 1.0) +
+    card('functional resolution', fu.assessable + ' / ' + fu.total, 'requirements assessable',
+         fu.unresolved + ' unresolved',
+         'Of the ' + fu.classified + ' differences from the closest functional analogue that could be classified at all, ' +
+         fu.unresolved + ' are UNRESOLVED.', 1.3, 'part') +
+    card('composite score', 'not shown', '', 'withheld', f.composite.why, 1.7, 'refuse');
+
+  document.getElementById('mark').innerHTML = 'Lean<b>Bio Forum</b>';
+  fit();
+}
+function card(k, v, s, u, d, delay, cls){
+  return '<div class="rc' + (cls ? ' ' + cls : '') + '" style="--d:' + delay + 's">' +
+    '<div class="k">' + esc(k) + '</div>' +
+    '<div class="v"><b>' + v + '</b><s>' + s + '</s><u>' + esc(u) + '</u></div>' +
+    '<div class="d">' + esc(d) + '</div></div>';
+}
+
+/* ================= beat 3: the falling papers, from a fixed seed ================= */
+(function(){
+  var seed = 20261101;
+  function rnd(){ seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+  var host = document.getElementById('b3'), frag = document.createDocumentFragment();
+  for (var i = 0; i < 48; i++){
+    var p = document.createElement('div');
+    p.className = 'paper';
+    var x = 30 + rnd() * 1640, y = 450 + rnd() * 300;
+    p.style.setProperty('--x', Math.round(x) + 'px');
+    p.style.setProperty('--y', Math.round(y) + 'px');
+    p.style.setProperty('--r', (rnd() * 26 - 13).toFixed(1) + 'deg');
+    p.style.setProperty('--fx', Math.round(rnd() * 440 - 150) + 'px');
+    p.style.setProperty('--fr', Math.round(rnd() * 210 - 105) + 'deg');
+    p.style.setProperty('--d', (1.7 + rnd() * 2.1).toFixed(2) + 's');
+    p.style.zIndex = String(4 + Math.round(y / 10));
+    var n = 4 + Math.floor(rnd() * 4), h = '<u></u>';
+    for (var j = 0; j < n; j++) h += '<u class="' + (rnd() > 0.5 ? 's' : 'm') + '"></u>';
+    p.innerHTML = h;
+    frag.appendChild(p);
+  }
+  host.insertBefore(frag, host.firstChild);
+})();
+
+/* ================= beat 6: the literature tree, laid out from the real graph ================= */
+var tree = { nodes: [], links: [], ready: false, hud: [], labels: [] };
+var HUE = ['#45dcd6', '#f0a73c', '#6f9bf2', '#cfd8e4', '#53657c'];
+function layoutTree(T){
+  var cx = 1240, cy = 548, seed = 7919;
+  function rnd(){ seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+  var per = [0, 0, 0, 0, 0];
+  T.nodes.forEach(function(n){ per[n.d < 0 ? 4 : n.d]++; });
+  var seen = [0, 0, 0, 0, 0];
+  // One wedge per domain. Angle is spread across the wedge independently of birth order, and radius
+  // grows with it, so the group fills out as a fan from the origin instead of drawing one thin arc.
+  var SECTOR = [[-0.62, 0.34], [0.42, 1.40], [1.48, 2.46], [2.54, 3.30], [3.38, 5.66]];
+  tree.nodes = T.nodes.map(function(n){
+    var d = n.d < 0 ? 4 : n.d, k = seen[d]++ / Math.max(1, per[d]);
+    var s = SECTOR[d], spread = rnd();
+    var a = s[0] + (s[1] - s[0]) * (0.06 + spread * 0.88);
+    // the fan reaches further out the later a node is born, with the ends tapering in
+    var rr = 54 + Math.pow(k, 0.5) * 430 * (0.56 + 0.44 * Math.sin(Math.PI * spread)) + rnd() * 54;
+    var big = n.t === 'theorem' || n.t === 'test';
+    return { x: cx + Math.cos(a) * rr, y: cy + Math.sin(a) * rr * 0.86,
+             c: HUE[d], r: big ? 4.8 : (n.c ? 2.7 : 1.9), big: big,
+             born: 0.7 + Math.pow(k, 0.8) * 5.4 + (big ? 2.2 : 0) + rnd() * 0.3 };
+  });
+  tree.links = T.links.map(function(p){
+    var a = tree.nodes[p[0]], b = tree.nodes[p[1]];
+    return a && b ? { a: a, b: b, born: Math.max(a.born, b.born) + 0.5 } : null;
+  }).filter(Boolean);
+  tree.labels = T.labels || [];
+  tree.stems = SECTOR.map(function(s, i){
+    var a = (s[0] + s[1]) / 2;
+    return { x0: cx, y0: cy, x1: cx + Math.cos(a) * 118, y1: cy + Math.sin(a) * 118 * 0.86, c: HUE[i] };
+  });
+  tree.hud = [
+    { n: T.counts.byType.claim, l: 'claims distilled from the primary texts', c: HUE[3], at: 0.9, to: 3.6 },
+    { n: (F && F.corpus.nanopub_files) || 4905, l: 'nanopub drafts written', c: HUE[1], at: 2.0, to: 4.8 },
+    { n: T.counts.byType.test, l: 'tests run against real datasets', c: HUE[0], at: 3.6, to: 5.6 },
+    { n: T.counts.byType.theorem, l: 'theorems formalised in Lean, after debate', c: HUE[0], at: 4.8, to: 7.0 }
+  ];
+  var hud = document.getElementById('treeHud');
+  hud.innerHTML = tree.hud.map(function(h){
+    return '<div class="ctr"><i style="--c:' + h.c + '"></i><b data-n="' + h.n + '">0</b><s>' + esc(h.l) + '</s></div>';
+  }).join('');
+  tree.hudEls = [].slice.call(hud.querySelectorAll('b'));
+  tree.ready = true;
+}
+var cv = document.getElementById('treeCv'), cx2 = cv.getContext('2d');
+function drawTree(el){
+  cx2.clearRect(0, 0, 1920, 1080);
+  if (!tree.ready) return;
+  cx2.globalCompositeOperation = 'lighter';
+  cx2.lineWidth = 1;
+  // the trunk: one stem per source, drawn before anything grows off it
+  if (tree.stems) for (var s0 = 0; s0 < tree.stems.length; s0++){
+    var S = tree.stems[s0], sp = Math.min(1, Math.max(0, (el - 0.15) / 0.65));
+    if (sp <= 0) continue;
+    cx2.strokeStyle = S.c; cx2.globalAlpha = 0.5 * sp; cx2.lineWidth = 2;
+    cx2.beginPath(); cx2.moveTo(S.x0, S.y0);
+    cx2.lineTo(S.x0 + (S.x1 - S.x0) * sp, S.y0 + (S.y1 - S.y0) * sp); cx2.stroke();
+  }
+  cx2.globalAlpha = 1; cx2.lineWidth = 1;
+  for (var i = 0; i < tree.links.length; i++){
+    var L = tree.links[i], p = (el - L.born) / 0.8;
+    if (p <= 0) continue; p = Math.min(1, p);
+    cx2.strokeStyle = 'rgba(133,160,190,' + (0.3 * p) + ')';
+    cx2.beginPath(); cx2.moveTo(L.a.x, L.a.y);
+    cx2.lineTo(L.a.x + (L.b.x - L.a.x) * p, L.a.y + (L.b.y - L.a.y) * p);
+    cx2.stroke();
+  }
+  for (var j = 0; j < tree.nodes.length; j++){
+    var n = tree.nodes[j], q = (el - n.born) / 0.45;
+    if (q <= 0) continue;
+    var sc = q < 1 ? (0.3 + 0.7 * q) * (1 + (1 - q) * 0.9) : 1;
+    cx2.globalAlpha = Math.min(1, q) * (n.big ? 1 : 0.78);
+    cx2.fillStyle = n.c;
+    cx2.beginPath(); cx2.arc(n.x, n.y, n.r * sc, 0, 6.2832); cx2.fill();
+    if (n.big){
+      cx2.globalAlpha = Math.min(1, q) * 0.16;
+      cx2.beginPath(); cx2.arc(n.x, n.y, n.r * sc * 4.2, 0, 6.2832); cx2.fill();
+    }
+  }
+  cx2.globalAlpha = 1; cx2.globalCompositeOperation = 'source-over';
+  // counters
+  // A counter that has not started yet reads as a dash, never as a zero: a zero on this screen
+  // would be a claim, and it is not one this project can make.
+  if (tree.hudEls) tree.hudEls.forEach(function(b, i){
+    var h = tree.hud[i], p = (el - h.at) / (h.to - h.at);
+    if (p <= 0) { b.textContent = '—'; b.parentNode.style.opacity = '.4'; return; }
+    b.parentNode.style.opacity = '1';
+    p = Math.min(1, p);
+    b.textContent = Math.round(h.n * (1 - Math.pow(1 - p, 3))).toLocaleString('en-US');
+  });
+  // one real label at a time, flashing through what the swarm actually produced
+  var fl = document.getElementById('treeFlash');
+  if (tree.labels.length){
+    var k = Math.floor(Math.max(0, el - 1.4) / 0.9);
+    var L2 = tree.labels[k % tree.labels.length];
+    if (el > 1.4 && fl.dataset.k !== String(k)){
+      fl.dataset.k = String(k);
+      fl.innerHTML = '<b>' + esc(L2.t) + '</b>' + esc(L2.l);
+      fl.style.color = HUE[L2.d < 0 ? 4 : L2.d];
+    }
+    fl.style.opacity = el > 1.4 && el < 10.4 ? '1' : '0';
+  }
+}
+
+/* ================= the clock ================= */
+var sections = BEATS.map(function(b){ return document.getElementById(b.id); });
+var cur = -1;
+function setBeat(i, seek){
+  if (i === cur) return;
+  sections.forEach(function(el, j){
+    var vs = el.querySelectorAll('video');
+    if (j === i){
+      // --seek shifts every child animation back by the elapsed time, so a ?t= jump lands on the
+      // frame the film would show at that moment instead of restarting the beat from zero.
+      el.style.setProperty('--seek', (seek || 0) + 's');
+      el.classList.add('on');
+      el.classList.remove('run'); void el.offsetWidth; el.classList.add('run');
+      for (var v = 0; v < vs.length; v++){
+        try { vs[v].currentTime = Math.min(seek || 0, Math.max(0, (vs[v].duration || 99) - 0.1)); vs[v].play(); } catch (e) {}
+      }
+    } else {
+      el.classList.remove('on', 'run');
+      for (var w = 0; w < vs.length; w++) { try { vs[w].pause(); } catch (e) {} }
+    }
+  });
+  cur = i;
+}
+function beatAt(t){ for (var i = BEATS.length - 1; i >= 0; i--) if (t >= BEATS[i].t) return i; return 0; }
+
+var counters = [].slice.call(document.querySelectorAll('[data-count]'));
+function perBeat(t){
+  var b = BEATS[cur]; if (!b) return;
+  var el = t - b.t;
+  if (b.id === 'b3') counters.forEach(function(c){
+    var a = parseFloat(c.dataset.start), z = parseFloat(c.dataset.end), to = parseFloat(c.dataset.to);
+    var p = Math.max(0, Math.min(1, (el - a) / (z - a)));
+    p = 1 - Math.pow(1 - p, 3);
+    c.textContent = Math.round(to * p).toLocaleString('en-US') + (p >= 1 ? (c.dataset.suffix || '') : '');
+  });
+  if (b.id === 'b6') drawTree(el);
+}
+
+var t = 0, playing = true, last = null;
+var prog = document.getElementById('prog'), tc = document.getElementById('tc'),
+    fill = document.querySelector('#track .fill'), track = document.getElementById('track');
+function fmt(s){ s = Math.max(0, s); return Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0'); }
+function frame(now){
+  if (last == null) last = now;
+  if (playing) t = Math.min(TOTAL, t + (now - last) / 1000);
+  last = now;
+  setBeat(beatAt(t));
+  perBeat(t);
+  var p = t / TOTAL;
+  prog.style.width = (p * 1920) + 'px';
+  fill.style.width = (p * 100) + '%';
+  tc.textContent = fmt(t) + ' / 2:00';
+  track.setAttribute('aria-valuenow', t.toFixed(1));
+  if (t >= TOTAL) playing = false;
+  requestAnimationFrame(frame);
+}
+function seekTo(v){
+  t = Math.max(0, Math.min(TOTAL, v));
+  var i = beatAt(t);
+  cur = -1; setBeat(i, t - BEATS[i].t);
+  perBeat(t);
+}
+
+/* ---------- controls ---------- */
+document.getElementById('pp').onclick = function(){ playing = !playing; this.textContent = playing ? 'Pause' : 'Play'; };
+document.getElementById('rs').onclick = function(){ seekTo(0); playing = true; document.getElementById('pp').textContent = 'Pause'; };
+BEATS.forEach(function(b){
+  var tk = document.createElement('div'); tk.className = 'tk';
+  tk.style.left = (b.t / TOTAL * 100) + '%'; track.appendChild(tk);
+});
+track.addEventListener('click', function(e){ seekTo((e.clientX - track.getBoundingClientRect().left) / track.clientWidth * TOTAL); });
+addEventListener('keydown', function(e){
+  if (e.code === 'Space'){ playing = !playing; document.getElementById('pp').textContent = playing ? 'Pause' : 'Play'; e.preventDefault(); }
+  else if (e.key === 'ArrowRight') seekTo(t + 5);
+  else if (e.key === 'ArrowLeft') seekTo(t - 5);
+  else if (/^[1-9]$/.test(e.key)) seekTo(BEATS[+e.key - 1].t);
+  else if (e.key === '0') seekTo(BEATS[9].t);
+});
+
+/* ---------- clips: fall back to the still if one is missing ---------- */
+var clipsReady = Promise.all([].slice.call(document.querySelectorAll('.shot[data-clip] video')).map(function(v){
+  return new Promise(function(res){
+    var done = false, fin = function(ok){ if (done) return; done = true; if (!ok) v.closest('.shot').classList.add('noclip'); res(); };
+    v.addEventListener('canplaythrough', function(){ fin(true); }, { once: true });
+    v.addEventListener('error', function(){ fin(false); }, { once: true });
+    v.querySelector('source').addEventListener('error', function(){ fin(false); }, { once: true });
+    setTimeout(function(){ fin(v.readyState >= 2); }, 9000);
+    try { v.load(); } catch (e) { fin(false); }
+  });
+}));
+
+/* ---------- boot ---------- */
+window.__pitch = { beats: BEATS, total: TOTAL, seek: seekTo, ready: false,
+                   get t(){ return t; }, set playing(v){ playing = v; } };
+
+Promise.all([
+  fetch('facts.json', { cache: 'no-store' }).then(function(r){ return r.json(); }),
+  fetch('tree.json',  { cache: 'no-store' }).then(function(r){ return r.json(); })
+]).then(function(a){
+  paint(a[0]); TREE = a[1]; layoutTree(TREE);
+}).catch(function(){
+  document.getElementById('mark').innerHTML = 'facts.json or tree.json did not load';
+}).then(function(){
+  return Promise.all([
+    (document.fonts && document.fonts.ready) || Promise.resolve(),
+    clipsReady
+  ]);
+}).then(function(){
+  fit();
+  if (params.has('t')) seekTo(parseFloat(params.get('t')) || 0);
+  if (params.has('paused')) playing = false;
+  window.__pitch.ready = true;
+  requestAnimationFrame(frame);
+});
+})();
+</script>
+</body>
+</html>
