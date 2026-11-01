@@ -744,6 +744,58 @@
     border:1px solid rgba(10,163,138,.2)}
   .bl-end p{margin:0;font-size:16px;color:var(--ink2)}
   @media(max-width:700px){ .bl p{font-size:16.6px} }
+
+  /* ---- live alignment, drawn like a code diff ---- */
+  #align{margin:30px 0 8px}
+  .al-head{display:flex;gap:20px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-bottom:16px}
+  .al-head h3{margin:2px 0 6px}
+  .al-lede{margin:0;max-width:46rem;color:var(--ink2);font-size:14.6px;line-height:1.6}
+  .al-genes{display:flex;gap:6px;flex-wrap:wrap}
+  .al-gene{font-family:var(--mono);font-size:11.4px;padding:5px 10px;border-radius:999px;cursor:pointer;
+    border:1px solid var(--line);background:var(--card);color:var(--ink2)}
+  .al-gene[aria-selected=true]{background:#0aa38a;border-color:#0aa38a;color:#fff}
+  .al-gene i{font-style:normal;margin-left:5px;font-size:9.4px;opacity:.75}
+  .al-meta{display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--ink2);margin-bottom:12px}
+  .al-meta b{color:var(--ink)}
+  .al-pill{font-family:var(--mono);font-size:10.6px;letter-spacing:.08em;text-transform:uppercase;
+    background:rgba(10,163,138,.1);color:#0b6b5c;border:1px solid rgba(10,163,138,.22);padding:3px 9px;border-radius:999px}
+  .al-note{margin:0 0 12px;font-size:13px;color:#a06a00;background:#fff8ea;border:1px solid rgba(201,138,6,.3);
+    padding:8px 12px;border-radius:9px}
+  .al-rows{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+  .al-row{display:flex;align-items:center;gap:14px}
+  .al-label{flex:0 0 190px;display:flex;flex-direction:column;line-height:1.25}
+  .al-label b{font-size:12.8px}
+  .al-label i{font-style:normal;font-size:10.6px;color:var(--ink3)}
+  .al-seqbar,.al-track{position:relative;flex:1;height:17px;border-radius:5px;overflow:hidden;
+    background:#eef3f1;border:1px solid var(--line)}
+  .al-track{height:25px;margin-bottom:12px;cursor:crosshair}
+  .al-strip{position:absolute;inset:0}
+  .al-seqbar i,.al-strip i,.al-track .r{position:absolute;top:0;bottom:0;display:block}
+  .al-sweep{position:absolute;inset:0;background:rgba(10,163,138,.14);transform-origin:left center;z-index:2}
+  .al-edit{position:absolute;top:-3px;bottom:-3px;width:3px;background:#111;z-index:3;cursor:pointer;border-radius:2px}
+  .al-edit::after{content:'';position:absolute;left:-4px;top:-4px;width:11px;height:11px;border-radius:50%;
+    background:#111;border:2px solid #fff}
+  .al-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.4px;color:var(--ink2)}
+  .al-legend span{display:flex;align-items:center;gap:6px}
+  .al-legend i{width:12px;height:12px;border-radius:3px;display:block}
+  .al-foot{display:flex;gap:20px;justify-content:space-between;flex-wrap:wrap;align-items:flex-start}
+  .al-src{margin:0;font-size:11.8px;color:var(--ink3);max-width:44rem;line-height:1.55}
+  .al-zoom{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--card);padding:14px 16px;overflow-x:auto}
+  .al-zhead{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);
+    font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px}
+  .al-zclose{border:0;background:none;font-size:19px;line-height:1;cursor:pointer;color:var(--ink3)}
+  .al-zrow{display:flex;gap:12px;align-items:center;margin-bottom:3px}
+  .al-zrow > span{flex:0 0 150px;font-size:11.6px;color:var(--ink2)}
+  .al-zrow code{display:flex;font-family:var(--mono);font-size:12px}
+  .al-zrow code i{font-style:normal;width:15px;text-align:center;line-height:20px;border-radius:2px}
+  .al-zrow code i.b{background:#f1f5f3;color:var(--ink2)}
+  .al-zrow code i.s{background:rgba(47,163,107,.17);color:#1f7a52}
+  .al-zrow code i.d{background:rgba(229,72,77,.17);color:#b23a3a}
+  .al-zrow code i.g{background:rgba(240,163,58,.19);color:#8a5a06}
+  .al-zrow code i.n{background:#eef1f0;color:#9aa8a4}
+  .al-zrow code i.e{outline:2px solid #111;outline-offset:-2px;font-weight:700}
+  .al-znote{margin:10px 0 0;font-size:12.6px;color:var(--ink2)}
+  @media(max-width:860px){ .al-label{flex-basis:120px} .al-zrow > span{flex-basis:90px} }
 </style>
 <script type="importmap">{"imports":{"three":"https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <style id="dsh-fit">@media (max-width:720px){body{overflow-wrap:break-word}main table,section table,.card table,.in table,.scroll table{display:block;overflow-x:auto;max-width:100%}code,pre,.mono{overflow-wrap:anywhere}}</style>
@@ -1336,6 +1388,7 @@ cd lean &amp;&amp; lake env lean &lt;file&gt;</pre>
     <div class="phero-copy"><p class="kicker">Surface 5 · Validation harness</p><h3>From genotype to phenotype, and back</h3><p>Map a design to its closest real relative, annotate every difference, check the CRISPR plan — then withhold the word validated.</p></div>
     <figure class="phero-fig"><img src="art/hero-harness.jpg" alt=""><figcaption>Generated · Nano Banana 2.1</figcaption></figure>
   </div>
+  <div id="align"></div>
   <div class="cases" data-cases="harness"></div>
 <section>
   <p class="kicker">Surface 5</p>
@@ -1482,6 +1535,7 @@ node sim-engine/cli.mjs tool functional_resolution --json '{…}'</pre>
 <script src="../glossary.js"></script>
 <script src="terms.js"></script>
 <script src="nest.js" defer></script>
+<script src="align/align.js" defer></script>
 <script src="blog.js" defer></script>
 <script src="sections.js" defer></script>
 <script type="module" src="voxels.js"></script>
