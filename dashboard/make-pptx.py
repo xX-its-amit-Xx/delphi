@@ -88,7 +88,35 @@ def tbox(slide, x, y, w, h, text, size=18, bold=False, color=INK, align=PP_ALIGN
     return box
 
 
-def new(title, state="live", eyebrow="DELPHI · ScienceClaw 2026"):
+DELIV = {d["n"]: d for d in (N.get("deliverables") or [])}
+BADGE = N.get("badgeOf") or {}
+_slide_i = [0]
+
+
+def deliverable_badge(s, sid):
+    """Which of the four this slide serves. Same marker, same corner, every time."""
+    ns = BADGE.get(sid) or []
+    if not ns or sid == "four":
+        return
+    x = M
+    for n in ns:
+        nm = (DELIV.get(n) or {}).get("name", "")
+        w = Inches(0.34) + Inches(0.075) * max(10, len(nm))
+        chip = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, W - M - w, Inches(6.72), w, Inches(0.3))
+        chip.fill.solid()
+        chip.fill.fore_color.rgb = PAPER
+        chip.line.color.rgb = ACCENT
+        chip.line.width = Pt(0.75)
+        chip.shadow.inherit = False
+        par = chip.text_frame.paragraphs[0]
+        par.alignment = PP_ALIGN.CENTER
+        r = par.add_run()
+        r.text = f"{n}  ·  {nm}"
+        r.font.size, r.font.bold, r.font.color.rgb, r.font.name = Pt(9), True, ACCENT, "Segoe UI"
+        x += w + Inches(0.12)
+
+
+def new(title, state="live", eyebrow="LeanBio Forum · ScienceClaw 2026"):
     s = prs.slides.add_slide(BLANK)
     s.background.fill.solid()
     s.background.fill.fore_color.rgb = PAPER
@@ -113,6 +141,10 @@ def new(title, state="live", eyebrow="DELPHI · ScienceClaw 2026"):
     r.font.color.rgb = col
     tbox(s, M, Inches(0.95), W - 2 * M, Inches(1.5), title, 40, True,
          GHOST if state == "anticipated" else INK, spacing=0.92)
+    ids = [x["id"] for x in DATA["slides"]]
+    if _slide_i[0] < len(ids):
+        deliverable_badge(s, ids[_slide_i[0]])
+    _slide_i[0] += 1
     return s
 
 
@@ -411,10 +443,54 @@ if AT.get("verified"):
 else:
     ghostbox(s, M, Inches(2.4), W - 2 * M, Inches(2.4), "Not evidenced yet", STATE["attrition"].get("needs", ""))
 
+# ── the map, before the walk ────────────────────────────────────────────────
+s = new("Four things exist. Here they are.", STATE["four"]["state"], EB)
+_cards = N.get("deliverables") or []
+if _cards:
+    cw = (W - 2 * M - Inches(0.36)) / 4
+    for i, dv in enumerate(_cards):
+        cx = M + i * (cw + Inches(0.12))
+        card = s.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, cx, Inches(2.2), cw, Inches(3.85))
+        card.fill.solid()
+        card.fill.fore_color.rgb = PAPER
+        card.line.color.rgb = RGBColor(0xD9, 0xDF, 0xDB)
+        card.shadow.inherit = False
+        card.text_frame.text = ""
+        dot = s.shapes.add_shape(MSO_SHAPE.OVAL, cx + Inches(0.14), Inches(2.34), Inches(0.3), Inches(0.3))
+        dot.fill.solid()
+        dot.fill.fore_color.rgb = ACCENT
+        dot.line.fill.background()
+        dot.shadow.inherit = False
+        dp = dot.text_frame.paragraphs[0]
+        dp.alignment = PP_ALIGN.CENTER
+        dr = dp.add_run()
+        dr.text = str(dv["n"])
+        dr.font.size, dr.font.bold, dr.font.color.rgb = Pt(11), True, PAPER
+        tbox(s, cx + Inches(0.52), Inches(2.32), cw - Inches(0.66), Inches(0.5),
+             dv["name"], 11, True, INK, spacing=1.08)
+        if dv.get("inDevelopment"):
+            tbox(s, cx + Inches(0.52), Inches(2.72), cw - Inches(0.66), Inches(0.24),
+                 "IN DEVELOPMENT", 8, True, SERIOUS)
+        shot = SHOTS.get(dv.get("shot"))
+        if shot and (DECK / shot["file"]).exists():
+            pic = s.shapes.add_picture(str(DECK / shot["file"]), cx + Inches(0.12), Inches(3.05),
+                                       width=cw - Inches(0.24))
+            if pic.height > Inches(1.55):
+                pic.height = Emu(int(Inches(1.55)))
+                pic.width = Emu(int((cw - Inches(0.24))))
+        tbox(s, cx + Inches(0.14), Inches(4.75), cw - Inches(0.3), Inches(1.2),
+             dv["what"], 9, False, MUTE, spacing=1.14)
+caption(s, "Every panel is a screenshot of a page that is running, not a drawing. From here on, each slide "
+           "carries the number of the deliverable it belongs to.")
+srcline(s, [(SHOTS.get(x.get("shot")) or {}).get("route") for x in _cards])
+
 # ───────────────────────────────────────────────────────── 5-7 · the Forum
 LR = N.get("lawreg")
 s = new("LeanBio Forum: a theorem becomes an axiom\nonly if it survives both gates.",
         STATE["forum"]["state"], EB)
+if DELIV.get(1):
+    tbox(s, M, Inches(2.08), W - 2 * M, Inches(0.5), "The way in is the deliverable.  " + DELIV[1]["how"],
+         10, False, MUTE, spacing=1.12)
 x = M
 for k, v in [("upload", "a nanopub-backed theorem"), ("debate", "agents argue it on the evidence"),
              ("Lean", "the kernel checks it follows"), ("axiom", "it may now constrain a design"),
@@ -575,16 +651,19 @@ if LR:
 srcline(s, ["lean/registry/check-exposed.mjs", "lean/registry/lawsets/current.json", "mcp/server.mjs"])
 
 STU = N.get("studio")
-s = new("Design Studio: type the phenotype,\nget the criteria.", STATE["studio"]["state"], EB)
+s = new("Design Studio (MorphoSwarm):\ntype the phenotype, get the criteria.", STATE["studio"]["state"], EB)
+tbox(s, M, Inches(2.08), W - 2 * M, Inches(0.3),
+     "Part of delphi-frontier, and ACTIVELY IN DEVELOPMENT — the screen below is where it is today, not "
+     "where it stops.", 10, True, SERIOUS)
 if STU and STU.get("shot"):
     sh = STU["shot"]
-    pic = picture(s, sh["file"], M, Inches(2.4), w=PICW)
+    pic = picture(s, sh["file"], M, Inches(2.55), w=PICW)
     if pic:
-        tbox(s, M, Inches(2.4) + pic.height + Inches(0.05), PICW, Inches(0.6),
+        tbox(s, M, Inches(2.55) + pic.height + Inches(0.05), PICW, Inches(0.6),
              f"Typed into the live studio, not a mock-up: “{sh['typed']}” — {sh.get('criteria')} criteria parsed, "
              + ("valid against the engine." if sh.get("valid") else "NOT valid against the engine."),
              8, False, MUTE, spacing=1.08)
-    tbox(s, COLX, Inches(2.4), COLW, Inches(1.4),
+    tbox(s, COLX, Inches(2.55), COLW, Inches(1.4),
          "The studio turns a sentence into criteria the engine can actually run. A clause it cannot parse is "
          "shown in red and is NOT checked by anything downstream, rather than being silently dropped.",
          12, False, INK, spacing=1.18)

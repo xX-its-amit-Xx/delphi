@@ -798,6 +798,51 @@ const facts = {
   }
 };
 
+// ---- the four deliverables ---------------------------------------------------------------------
+// Four things were built. Every slide that delivers one carries its number, in the same place, so the
+// audience always knows which of the four they are inside. The map is on the "four" slide; the badges
+// are the walk. The mapping lives here, not in the renderer, so HTML and PowerPoint cannot drift.
+const deliverables = [
+  {
+    n: 1, key: 'forum', name: 'LeanBio Forum',
+    what: 'The repository of biological laws — and, just as much, the framework for adding more.',
+    how: 'A new theorem enters the same way every time: upload it nanopub-backed, it must hold in Lean, '
+       + 'and it must survive agent debate on the existing evidence. Clear both and it becomes an axiom '
+       + 'that constrains every design after it. Fail either and it is recorded with its reason.',
+    shot: 'leanbio', slides: ['forum', 'provenance']
+  },
+  {
+    n: 2, key: 'mcp', name: 'MCP server, API and CLI',
+    what: 'Designed against named personas, use cases and the grand questions — not against a guess at '
+        + 'what someone might want.',
+    how: '14 personas, 32 use cases, 14 grand questions and 27 ranked tool gaps, served as versioned JSON '
+       + 'and checked by tests. The gaps are ranked at build time, and a test tampers with a stored rank to '
+       + 'prove no gap can assert its own importance.',
+    shot: 'capability', slides: ['mcp']
+  },
+  {
+    n: 3, key: 'studio', name: 'Design Studio (MorphoSwarm)',
+    what: 'Type a phenotype; get the genetic change at every biological layer and every developmental stage.',
+    how: 'Part of delphi-frontier. The laws from deliverable 1 constrain what it may propose, and physics '
+       + 'and developmental simulation stress-test what it does.',
+    inDevelopment: true,
+    shot: 'blueprint', slides: ['studio', 'constrain', 'sim']
+  },
+  {
+    n: 4, key: 'harness', name: 'The validation harness',
+    what: 'Takes a predicted sequence and a desired function, and says what is wrong with it.',
+    how: 'Finds the closest FUNCTIONAL analogue, annotates every difference interpretably, scores formally '
+       + 'in LeanBio, and runs physics on the mesh. Five named results, never summed. It is the thing that '
+       + 'told us our own headline design does not fly.',
+    shot: 'validate', slides: ['harness', 'physicsgate', 'funcledger', 'secondmcp']
+  }
+];
+// Every slide's badge, derived from the list above rather than typed twice.
+const badgeOf = {};
+for (const d of deliverables) for (const s of d.slides) badgeOf[s] = (badgeOf[s] || []).concat(d.n);
+badgeOf.roundtrip = [3, 4];   // the round trip is literally the loop between those two
+badgeOf.four = [1, 2, 3, 4];
+
 // ---- what is actually proved, and what is actually published -----------------------------------
 // Both of these correct a figure the deck previously stated. The Lean count in the docs was stale, and
 // the deck used to say nothing was published, which is simply untrue: 269 records are on production.
@@ -971,6 +1016,7 @@ try {
 
 const numbers = {
   facts, negatives, pageShots, lawRowFacts, failedTheoremFacts, leanTruth, nanopubTruth,
+  deliverables, badgeOf,
   claims: D?.stats?.claims ?? D?.claims?.length ?? null,
   claimTests: (D?.tests || []).length || null,
   leanProved: D?.lean?.summary?.claimsVerified ?? null,
@@ -1057,6 +1103,10 @@ const slides = [
     needs: 'deck/FACTS.md: the narrow, defensible wording for the biology side of the contrast' },
   { id: 'attrition', state: facts.attrition.verified ? 'live' : 'anticipated', needs: 'deck/FACTS.md' },
 
+  // the map, before the walk: the four things we built, each shown as the real screen it is
+  { id: 'four', state: pageShots.length >= 3 ? 'live' : 'partial',
+    needs: 'a screenshot of each of the four deliverables (dashboard/shot-pages.mjs)' },
+
   // 5-7  the Forum
   { id: 'forum', state: have(lawreg) ? 'live' : 'anticipated', needs: 'the versioned law registry' },
   { id: 'provenance', state: have(numbers.claims) ? 'live' : 'anticipated', needs: 'the claim graph' },
@@ -1126,7 +1176,8 @@ const slidesLegacy = [
 void slidesLegacy; // kept for one release so a reviewer can diff the old spine against this one
 
 // The event gives three minutes. These six carry the spoken pitch; the rest are there for questions.
-const CORE = ['title', 'tacit', 'contrast', 'forum', 'physicsgate', 'ask'];
+const CORE = ['title', 'contrast', 'four', 'forum', 'physicsgate', 'ask'];
+slides.forEach(s2 => { if (badgeOf[s2.id]) s2.deliverable = badgeOf[s2.id]; });
 slides.forEach(s2 => { s2.core = CORE.includes(s2.id); });
 
 const data = {

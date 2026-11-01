@@ -31,6 +31,13 @@ const EDGE = process.env.DECK_BROWSER || 'C:/Program Files (x86)/Microsoft/Edge/
 // page that failed to load cannot be photographed as if it had.
 const PAGES = [
   {
+    key: 'leanbio',
+    route: '/leanbio/',
+    shows: 'The LeanBio forum: claims distilled from the literature, grounded to ontology ids, ranked, and queued for Lean',
+    viewport: { width: 1500, height: 1000 },
+    settle: () => document.body.innerText.trim().length > 400,
+  },
+  {
     key: 'capability',
     route: '/leanbio/capability.html',
     shows: 'The capability map: personas, use cases, grand questions and ranked tool gaps, served as versioned JSON',

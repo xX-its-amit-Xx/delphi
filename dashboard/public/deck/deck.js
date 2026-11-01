@@ -70,6 +70,19 @@ function build(D) {
   const NEG = Object.fromEntries((N.negatives || []).map(n => [n.id, n]));
   const SHOT = Object.fromEntries((N.pageShots || []).map(p => [p.file.replace(/^fig\/page_|\.png$/g, ''), p]));
   const LT = N.leanTruth, NP = N.nanopubTruth;
+  const DEL = N.deliverables || [];
+  const delOf = n => DEL.find(x => x.n === n);
+
+  // Which of the four this slide delivers. Same marker, same place, every time, so the viewer always
+  // knows where in the four they are. Derived from data.json, never typed per slide.
+  const badge = id => {
+    const ns = ((S[id] || {}).deliverable) || [];
+    if (!ns.length || id === 'four') return '';   // the map slide numbers its own cards
+    return `<div class="badge">${ns.map(n => {
+      const dd = delOf(n);
+      return `<span class="bn" title="${esc(dd ? dd.name : '')}"><i>${n}</i>${esc(dd ? dd.name : '')}</span>`;
+    }).join('')}</div>`;
+  };
 
   // ---------------- shared pieces ----------------
   const srcs = list => `<p class="srcline">Read from ${list.filter(Boolean).map(esc).join(' &middot; ')}</p>`;
@@ -102,16 +115,15 @@ function build(D) {
   SL.title = () => `
     <div class="eyebrow">LeanBio Forum &middot; ScienceClaw &middot; MIT Media Lab</div>
     <h1>Biology has never built<br>the thing you check a<br>design against.</h1>
-    <p class="sub">Mathematics has mathlib. Biology has papers, protocols and the people who know how to make them
-      work. We are building the missing object: biological laws that hold in Lean, survive agent debate on the
-      evidence, and then constrain what a design model is allowed to propose.</p>
+    <p class="sub" style="max-width:40ch">Mathematics has mathlib. Biology has papers, protocols, and the
+      people who know how to make them work.</p>
     <div class="route" data-anim="route-intro">
       ${['claim', 'nanopub', 'debate', 'Lean', 'axiom', 'design', 'validate'].map((nd, i, a) =>
         `<div class="node${i === 0 ? ' start' : i === a.length - 1 ? ' end' : ''}" data-i="${i}">${esc(nd)}</div>`
         + (i < a.length - 1 ? `<div class="link" data-i="${i}"></div>` : '')).join('')}
     </div>
-    <p class="caption">Everything in this deck runs. Where a result does not exist, the slide is greyed instead of
-      guessed &mdash; including on our own headline claim, which fails.</p>`;
+    <p class="caption">Every step above is a running system. Where a result does not exist, the slide is greyed
+      instead of guessed &mdash; including on our own headline claim, which fails.</p>`;
 
   SL.tacit = () => {
     const t = F.tacit;
@@ -204,11 +216,31 @@ function build(D) {
 
   // ════════ 5-7 · the Forum ════════
 
+  SL.four = () => {
+    if (!DEL.length) return ghost('four');
+    return `${ribbon(st('four'))}
+      <h2>Four things exist. Here they are.</h2>
+      <div class="fourgrid">
+        ${DEL.map(x => `<article class="dcard">
+          <header><i>${x.n}</i><h3>${esc(x.name)}${x.inDevelopment
+            ? ' <span class="wip">in development</span>' : ''}</h3></header>
+          ${SHOT[x.shot] ? `<img src="${esc(SHOT[x.shot].file)}" alt="${esc(SHOT[x.shot].shows)}" loading="lazy">`
+            : '<div class="noshot">no screenshot</div>'}
+          <p>${esc(x.what)}</p>
+        </article>`).join('')}
+      </div>
+      <p class="caption">Every panel is a screenshot of a page that is running, not a drawing. From here on,
+        each slide carries the number of the deliverable it belongs to.</p>
+      ${srcs(DEL.map(x => SHOT[x.shot] ? SHOT[x.shot].route : null))}`;
+  };
+
   SL.forum = () => {
     const L = N.lawreg;
     const accepted = (L?.inLawset || []).find(r => r.status === 'accepted');
     return `${ribbon(st('forum'))}
       <h2>LeanBio Forum: a theorem becomes an axiom only if it survives both gates.</h2>
+      ${delOf(1) ? `<p class="sub" style="max-width:68ch;margin-bottom:.7em"><b>The way in is the
+        deliverable.</b> ${esc(delOf(1).how)}</p>` : ''}
       <div class="chain" data-anim="chain">
         ${[['upload', 'a nanopub-backed theorem'], ['debate', 'agents argue it on the existing evidence'],
            ['Lean', 'the kernel checks that it follows from its premises'],
@@ -367,7 +399,10 @@ function build(D) {
     if (!T || !T.shot) return ghost('studio');
     const s = T.shot;
     return `${ribbon(st('studio'))}
-      <h2>Design Studio: type the phenotype, get the criteria.</h2>
+      <h2>Design Studio <span class="alias">(MorphoSwarm)</span>: type the phenotype, get the criteria.</h2>
+      <p class="sub" style="max-width:64ch;margin-bottom:.7em">Part of <b>delphi-frontier</b>, and
+        <span class="wip">actively in development</span> &mdash; the screen below is where it is today,
+        not where it stops.</p>
       <div class="figrow">
         <figure class="real"><img src="${esc(s.file)}" alt="The design studio parsing a typed phenotype on the real engine" class="figshot" loading="lazy">
           <figcaption><b>Typed into the live studio, not a mock-up:</b> &ldquo;${esc(s.typed)}&rdquo;<br>
@@ -581,7 +616,7 @@ function build(D) {
   // ---------------- assemble ----------------
   const order = D.slides.map(s => s.id).filter(id => SL[id]);
   $('#deck').innerHTML = order.map(id =>
-    `<section class="slide" data-id="${id}" data-state="${st(id)}">${SL[id]()}</section>`).join('');
+    `<section class="slide" data-id="${id}" data-state="${st(id)}">${badge(id)}${SL[id]()}</section>`).join('');
 
   $('#dots').innerHTML = order.map((id, i) =>
     `<button data-i="${i}" class="${st(id)}" title="${esc(id)} — ${esc(st(id))}" aria-label="${esc(id)}"></button>`).join('');

@@ -195,7 +195,7 @@ async function evo2Block(res, t, plan) {
     context: { reference_window_bp: refWindow.length, configured_context_bp: EVO2.CONTEXT_BP,
       note: refWindow.length < EVO2.CONTEXT_BP ? `the fetched genomic window is ${win.seq.length} nt, so the Evo2 context is ${refWindow.length} nt, not the configured ${EVO2.CONTEXT_BP}. Refetch with a larger flank for a longer context.` : null,
       centred_on: `${E.ASSEMBLY} ${res.chromosome}:${centre}` },
-    ranks_never_gates: 'Nothing in this block changes the plan. The coordinates, guides, donors, pegRNA, base-editor route and off-target table above were all computed without any model, and are unchanged whether or not this block ran.',
+    ranks_never_gates: 'It RANKS; it never gates. Nothing in this block changes the plan: the coordinates, guides, donors, pegRNA, base-editor route and off-target table above were all computed with no model involved, and are unchanged whether or not this block ran.',
   };
 
   if (t.kind === 'knockout' || !t.chosen_codon) {
