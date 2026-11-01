@@ -89,7 +89,34 @@
       ${!g && !l ? '<p class="sx-muted">No open questions recorded for this product yet.</p>' : ''}`;
   }
 
+  // Sponsor tools, rendered once at the end of the overview rather than per product, with the
+  // verified status badge. `unavailable` is shown as prominently as `used`: a sponsor tool our own
+  // protocol requires and that we could not call is a finding, not something to leave out.
+  const SP = { used: 'Used', unavailable: 'Not callable', wired: 'Wired, unused' };
+  function sponsors(d) {
+    if (!d.sponsors) return;
+    const host = document.getElementById('overview');
+    if (!host || host.querySelector('.sp')) return;
+    const box = document.createElement('div');
+    box.className = 'sp';
+    box.innerHTML = `<h3>Sponsor tools, and what each one actually did</h3>
+      <p class="sx-muted">${esc(d.sponsors.generated_note)}</p>
+      <div class="sx-cards">${d.sponsors.entries.map(e => `
+        <details class="sx-card">
+          <summary><span class="sx-badge sp-${esc(e.status)}">${SP[e.status] || e.status}</span>
+            <b>${esc(e.sponsor)}</b> &middot; ${esc(e.tool)}
+            <i class="sp-where">${esc(e.where)}</i></summary>
+          <div class="sx-body">
+            <p>${esc(e.what)}</p>
+            <p class="sx-ret"><span>Evidence</span>${esc(e.evidence)}</p>
+            <p class="sx-rule"><span>What it does not show</span>${esc(e.limit)}</p>
+            ${e.note ? `<p class="sx-muted">${esc(e.note)}</p>` : ''}
+          </div></details>`).join('')}</div>`;
+    host.appendChild(box);
+  }
+
   function mount(data) {
+    sponsors(data);
     const map = { nanopubs: 'nanopubs', leanbio: 'leanbio', mcp: 'mcp', studio: 'studio', harness: 'harness' };
     for (const [id, key] of Object.entries(map)) {
       const panel = document.getElementById(`panel-${id}`);
