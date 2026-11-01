@@ -1,0 +1,31 @@
+{
+ "version": "leanbio-belief/0.1.0",
+ "model": "INDRA SimpleScorer form (INDRA belief engine: https://indra.readthedocs.io/en/latest/modules/belief/index.html), applied separately to supporting and to contradicting evidence",
+ "formula": {
+  "per_class": "P_wrong(s) = min(1, syst_s + rand_s ^ n_s), n_s = number of INDEPENDENT items of source class s; a class with no items contributes factor 1",
+  "support": "E = 1 - PROD_s P_wrong(s) over supporting items",
+  "contradiction": "R = 1 - PROD_s P_wrong(s) over contradicting items",
+  "belief": "belief = E * (1 - R)",
+  "rounding": "3 decimals"
+ },
+ "independence": "Items are deduplicated by their source key before counting: one DOI or PMID counts once however many drafts cite it; one pre-registered test counts once across its readings and its evidence drafts (key = the claim id of the test); one language model counts once (key = assessor name); one Lean conflict counts once (key = the law id).",
+ "classes": {
+  "preregistered-test": { "rand": 0.10, "syst": 0.05, "what": "claim-tests/**/result.json verdict supports (support) or refutes (contradiction); mixed adds one item to each side; inconclusive adds nothing and is reported" },
+  "repo-evidence": { "rand": 0.25, "syst": 0.10, "what": "an unsigned nanopub draft in a thread folder, not derived from a claim test, whose declared status is supported / established / observed (support) or refuted / not-established (contradiction), keyed by draft file" },
+  "literature": { "rand": 0.30, "syst": 0.10, "what": "a DOI or PMID cited by a SUPPORTING draft for this record (the draft cites it as a source; this pipeline did not re-read the paper for direction of support)" },
+  "model-elicitation": { "rand": 0.45, "syst": 0.25, "what": "a language-model truth score from truth/raw via docs/claims.json: p_true >= 0.5 is one supporting item, p_true < 0.5 one contradicting item. An elicited opinion, never a measurement; high syst because the models share training data" },
+  "lean-conflict": { "rand": 0.20, "syst": 0.10, "what": "a law linked to the claim is 'contested' or carries open_conflicts in lean/registry (contradiction only)" }
+ },
+ "not_used": [
+  "A Lean proof of the claim's mathematical reading: it proves a model's consequence, not that organisms obey the model. Already-formalized claims leave the queue instead.",
+  "Testability / dataset-resolvability: how easy a claim is to test is not evidence that it is true; used only as a queue tie-break.",
+  "Prior work found by nanopubs-index searches but not cited by any draft: not read for direction of support."
+ ],
+ "calibration": "The rand/syst values are set by hand and have NOT been fitted. INDRA fits them to curated statement corpora; this project has no curated LeanBio corpus yet. Treat belief as an ordering heuristic for the formalization queue, not a probability.",
+ "queue": {
+  "min_belief": 0.5,
+  "formalizable": ["theorem", "named-hypothesis"],
+  "exclude_if_linked_law_status": ["accepted", "candidate", "proposed", "contested"],
+  "order": "formalizable 'theorem' before 'named-hypothesis', then belief desc, then supporting preregistered tests desc, then testability desc, then id"
+ }
+}

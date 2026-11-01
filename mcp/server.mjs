@@ -8,9 +8,10 @@ import { z } from "zod";
 import { GROUP_KEYS, SORT_KEYS, browseClaims } from "./graph.mjs";
 import { NETWORK_ENDPOINT, PREFIXES, getClaim, overview, rankClaims, searchClaims, sparql } from "./lib.mjs";
 import { LEAN_TOOLS } from "../sim-engine/tools/lean-tools.mjs";
+import { LEANBIO_TOOLS } from "../pipeline/leanbio/tools.mjs";
 
 const TOOLS = [];
-export const VERSION = "0.4.0";
+export const VERSION = "0.5.0";
 // Hosted (HTTP) mode never offers tools that run a Lean build or write files.
 const HOSTED = !!process.env.DELPHI_HTTP_PORT;
 
@@ -131,6 +132,28 @@ if (!HOSTED) leanTool("lean_propose", {
   source: z.string().optional().describe("Lean source text, if no file"),
   meta: z.record(z.string(), z.any()).default({}).describe("law_id, kind, statement_en, hypotheses, sources (see lean/registry/README.md)"),
 });
+
+// LeanBio: the formalization queue, grounding, and per-claim records (pipeline/leanbio/). Read-only; leanbio_ground
+// calls Gilda / MyGene.info / OLS4 on a cache miss unless offline is set. In hosted mode it is forced offline so the
+// public server makes no outbound calls on behalf of anonymous clients and never writes the cache.
+const lb = Object.fromEntries(LEANBIO_TOOLS.map(t => [t.name, t]));
+tool("leanbio_queue", lb.leanbio_queue.description, {
+  limit: z.number().int().min(1).max(500).default(20),
+  min_belief: z.number().min(0).max(1).optional().describe("Only items at or above this belief"),
+  relation: z.string().optional().describe("Relation type, e.g. ScalingLaw, Bound, Equality, Dynamics, Inhibition"),
+  origin: z.enum(["claim", "draft"]).optional(),
+}, args => lb.leanbio_queue.handler(args));
+tool("leanbio_ground", lb.leanbio_ground.description, {
+  text: z.string().optional().describe("Free text to annotate"),
+  entity: z.string().optional().describe("One entity name or identifier, instead of text"),
+  kind: z.enum(["any", "gene", "taxon"]).default("any"),
+  context: z.string().optional().describe("Context for an entity, e.g. \"zebrafish\""),
+  offline: z.boolean().default(false).describe("Answer from the cache only"),
+}, args => lb.leanbio_ground.handler({ ...args, offline: HOSTED ? true : args.offline }));
+tool("leanbio_claim", lb.leanbio_claim.description, {
+  id: z.string().describe("Claim id (docs/claims.json), e.g. \"maynardsmith-hitchhiking\", or \"draft:<repo path>\""),
+  draft: z.boolean().default(true).describe("Include the unsigned nanopub draft (TriG)"),
+}, args => lb.leanbio_claim.handler(args));
 
 if (process.env.DELPHI_HTTP_PORT) {
   const { serveHttp } = await import("./http.mjs");

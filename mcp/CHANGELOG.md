@@ -2,6 +2,20 @@
 
 Versions follow `version` in the root `package.json` (the server's package) and `VERSION` in `mcp/server.mjs`.
 
+## 0.5.0 (2026-11-01)
+
+- Added the LeanBio tools:
+  - `leanbio_queue`: formalization candidates ordered by belief.
+  - `leanbio_ground`: text or entity -> ontology groundings via Gilda, MyGene.info, OLS4 and the repo inventory.
+    Forced offline (cache only) in hosted mode.
+  - `leanbio_claim`: groundings, INDRA-style statement, belief breakdown, linked laws and an unsigned nanopub draft
+    for one claim.
+
+  Handlers are in `pipeline/leanbio/tools.mjs`; the pipeline is documented in `pipeline/leanbio/README.md`. CLI
+  parity: `node mcp/cli.mjs leanbio-queue|leanbio-ground|leanbio-claim`. The hosted image ships the LeanBio files
+  and the held-out roster files the grounding guard reads (`package.json` `files`, `.dockerignore`), and changes to
+  them redeploy (`deploy-mcp.yml`).
+
 ## 0.4.0 (2026-11-01)
 
 LeanBio self-update. Details and a recorded demo: `lean/registry/SELF-UPDATE.md`.

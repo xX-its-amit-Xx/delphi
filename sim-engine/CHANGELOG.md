@@ -5,6 +5,23 @@ the scenario interface. Its version is `CONTRACT_VERSION` in `lib/envelope.mjs`.
 as `contract_version`, and `contract.json` states it. The rule: anything may change, provided it is
 versioned here. While the major version is 0, a minor bump may break callers; each entry says what breaks.
 
+## 0.6.0 (2026-11-01)
+
+**Added** (three tools, nothing removed)
+
+- The multi-omics tools (`tools/omics-tools.mjs`, `tools/OMICS-REGISTER.md`): `omics_gene`, `omics_part`,
+  `omics_search`. They read `omics/index/`, or fall back to the browser bundle. Kind `borrowed` (proxy species).
+  They are registered on the sim-engine server only, not yet on the hosted MCP: that would need the 31 MB index in
+  the Docker image (a deployment decision).
+
+## 0.5.0 (2026-11-01)
+
+**Added** (three tools, nothing removed)
+
+- The LeanBio tools (`pipeline/leanbio/tools.mjs`, `tools/LEANBIO-REGISTER.md`): `leanbio_queue`, `leanbio_ground`,
+  `leanbio_claim`. They are read-only apart from the grounding cache. The hosted delphisci MCP server (`mcp/`, now
+  0.5.0) carries them too, with `leanbio_ground` forced offline there.
+
 ## 0.4.0 (2026-11-01)
 
 **Added** (seven tools, nothing removed)

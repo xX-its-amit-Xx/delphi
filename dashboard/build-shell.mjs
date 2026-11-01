@@ -61,6 +61,7 @@ const GROUPS = [
   ]},
   { key: 'evidence', label: 'Evidence', items: [
     { key: 'proofs',   href: 'proofs/',         text: 'Claim book' },
+    { key: 'leanbio',  href: 'leanbio/',        text: 'LeanBio repo' },
     { key: 'graph',    href: 'graph/',          text: 'Graph' },
     { key: 'figures',  href: 'figures/',        text: 'Figures' }
   ]},

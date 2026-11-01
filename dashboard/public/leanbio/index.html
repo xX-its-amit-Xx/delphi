@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../shared/shell.css">
+<script src="../shared/shell.js"></script>
+<title>LeanBio &mdash; DELPHI</title>
+<meta name="description" content="The living LeanBio repo at a glance: claims, grounded entities, nanopub drafts, belief scores, the formalization queue and how to propose a law.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M10 16h12M16 10v12' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--accent-ink:#fff;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--viol:#6b4fb3;--soft:#eef2ef;--shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+h1,h2,h3{line-height:1.2;margin:0 0 .5em}
+h1{font-size:clamp(1.7rem,4.5vw,2.6rem)} h2{font-size:1.4rem} h3{font-size:1.05rem}
+p{margin:.4em 0 .8em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+header.top{position:sticky;top:var(--dsh-h,0px);z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;gap:12px;align-items:center;padding:8px 16px;flex-wrap:wrap}
+.brand{font-weight:700}
+nav a{display:inline-block;padding:4px 10px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.9rem}
+nav a:hover{background:var(--soft);color:var(--ink)}
+section{padding:30px 0;border-bottom:1px solid var(--line)}
+.lede{color:var(--mute);max-width:72ch;font-size:1.05rem}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.card h3{margin-top:0}
+.kpi{font-size:1.9rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.kpi small{display:block;font-size:.78rem;font-weight:400;color:var(--mute);margin-top:6px}
+.chip{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;border:1px solid var(--line);background:var(--soft);color:var(--mute)}
+.chip.ok{color:var(--ok);border-color:var(--ok)} .chip.bad{color:var(--bad);border-color:var(--bad)} .chip.warn{color:var(--warn);border-color:var(--warn)}
+.small{font-size:.88rem} .mute{color:var(--mute)}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;font-size:.85rem}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.note{background:var(--soft);border-left:3px solid var(--warn);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:.92rem}
+.note.ok{border-left-color:var(--ok)}
+.tag{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85rem;background:var(--soft);padding:1px 6px;border-radius:6px;overflow-wrap:anywhere}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--soft);padding:12px;border-radius:8px;overflow-x:auto;font-size:.85rem}
+footer{padding:26px 0;color:var(--mute);font-size:.9rem}
+/* bars: one series, one hue, thin marks, 4px rounded data end, 2px gap */
+.bars{display:grid;gap:2px}
+.bar{display:grid;grid-template-columns:7.5em 1fr 3.5em;align-items:center;gap:8px;font-size:.85rem;padding:3px 0;border-radius:4px}
+.bar:hover{background:var(--soft)}
+.bar .track{height:14px;position:relative}
+.bar .fill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);border-radius:0 4px 4px 0;min-width:1px}
+.bar .lab{color:var(--mute);font-variant-numeric:tabular-nums}
+.bar .val{text-align:right;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto;max-width:100%}
+main{overflow-wrap:anywhere}
+.grid>*{min-width:0}
+</style>
+<style id="dsh-fit">@media (max-width:720px){body{overflow-wrap:break-word}main table,section table,.card table,.scroll table{display:block;overflow-x:auto;max-width:100%}code,pre,.mono{overflow-wrap:anywhere}}</style>
+</head>
+<body>
+<!-- delphi-shell:start  generated by dashboard/build-shell.mjs - do not edit by hand -->
+<a class="dsh-skip" href="#dsh-content">Skip the navigation</a>
+<header class="dsh">
+  <div class="dsh-bar"><a class="dsh-brand" href="../index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0e7c86"/><path d="M5 16c5-7 14-9 22-4-3 2-6 3-8 4 2 1 5 2 8 4-8 5-17 3-22-4z" fill="#fff"/></svg>DELPHI<span class="sub">laws of biology</span></a>
+    <nav class="dsh-nav" aria-label="Primary"><span class="dsh-grp"><span class="dsh-lab">Results</span><a class="dsh-link" href="../results/">Results</a><a class="dsh-link" href="../deck/">Pitch deck</a><a class="dsh-link" href="../print/">Printable kit</a><a class="dsh-link" href="../studio-api/">For agents</a><a class="dsh-link" href="../swarm-board/">Swarm board</a><a class="dsh-link" href="../evolve/">Enzymes</a></span><span class="dsh-grp"><span class="dsh-lab">Evidence</span><a class="dsh-link" href="../proofs/">Claim book</a><a class="dsh-link" href="../graph/">Graph</a><a class="dsh-link" href="../figures/">Figures</a></span><span class="dsh-grp"><span class="dsh-lab">Threads</span><a class="dsh-link" href="../t/lean/">Lean proofs</a><a class="dsh-link" href="../t/claims/">Claim tests</a><a class="dsh-link" href="../t/genotype/">Genotype</a><a class="dsh-link" href="../t/physics/">Physics</a><a class="dsh-link" href="../t/physics/sim/">Simulator</a><a class="dsh-link" href="../t/organism/">Organism</a><a class="dsh-link" href="../t/holdout/">Holdout</a><a class="dsh-link" href="../t/swarm/">Swarm</a><a class="dsh-link" href="../t/validation/">Validation</a></span><span class="dsh-grp"><span class="dsh-lab">About</span><a class="dsh-link" href="../start/">Start here</a><a class="dsh-link" href="../record/">Development record</a><a class="dsh-link" href="../index.html">Mission control</a></span></nav>
+    <button class="dsh-theme" id="themeBtn" data-dsh-theme type="button" title="Toggle light or dark">Theme</button></div>
+  <nav class="dsh-modes" aria-label="The 3D organism viewer"><span class="dsh-lab">The organism</span><a class="dsh-link" href="../blueprint3d/">Anatomy</a><a class="dsh-link" href="../blueprint3d/?mode=physiology">Circulation &amp; gills</a><a class="dsh-link" href="../blueprint3d/?mode=tissue">Tissue signals</a><a class="dsh-link" href="../blueprint3d/?mode=cell">Cell interactions</a><a class="dsh-link" href="../blueprint3d/?mode=physics">Flight simulator</a><a class="dsh-link" href="../blueprint3d/?mode=design">Design studio</a><a class="dsh-link" href="../blueprint3d/?mode=growth">Growth</a><a class="dsh-link" href="../blueprint3d/?mode=compare">Compare species</a><a class="dsh-link" href="../blueprint3d/?mode=sequences">Gene sequences</a><a class="dsh-link" href="../blueprint3d/?view=radial">Radial map</a></nav>
+</header>
+<span id="dsh-content"></span>
+<!-- delphi-shell:end -->
+<header class="top"><div class="wrap">
+  <span class="brand">LeanBio</span>
+  <nav><a href="#glance">At a glance</a><a href="#belief">Belief</a><a href="#grounding">Grounding</a><a href="#queue">Queue</a><a href="#proposed">Proposed</a><a href="#contribute">Contribute</a></nav>
+</div></header>
+
+<main class="wrap">
+<section id="glance">
+  <h1>LeanBio: claims, grounded and ranked for Lean</h1>
+  <p class="lede">Claims distilled from the literature become nanopubs. Each one is grounded to ontology identifiers, typed as a subject&ndash;relation&ndash;object statement, and given a belief score from its independent evidence. The best-supported claims that have a mathematical form go to a queue, and from there to a Lean 4 statement in the law registry. A person accepts a law; the pipeline never does.</p>
+  <div class="grid g4" id="kpis"></div>
+  <div class="note" id="built"></div>
+</section>
+
+<section id="belief">
+  <h2>Belief scores</h2>
+  <p class="lede">Belief = E &times; (1 &minus; R), with E from supporting and R from contradicting evidence in INDRA's SimpleScorer form, each source counted once. The parameters are set by hand and not fitted, so treat belief as an order, not a probability. Most claims have only two elicited model opinions, which is why so many share one value.</p>
+  <div class="grid g2">
+    <div class="card"><h3>Records by belief</h3><div class="bars" id="beliefBars" role="img" aria-label="Histogram of belief scores"></div><p class="small mute" id="beliefMean"></p></div>
+    <div class="card"><h3>How a score is made</h3>
+      <pre>P_wrong(s) = min(1, syst_s + rand_s ^ n_s)
+E = 1 - PROD P_wrong   (supporting)
+R = 1 - PROD P_wrong   (contradicting)
+belief = E * (1 - R)</pre>
+      <table><thead><tr><th>source class</th><th class="n">rand</th><th class="n">syst</th></tr></thead><tbody>
+      <tr><td>pre-registered test</td><td class="n">0.10</td><td class="n">0.05</td></tr>
+      <tr><td>thread evidence draft</td><td class="n">0.25</td><td class="n">0.10</td></tr>
+      <tr><td>cited literature</td><td class="n">0.30</td><td class="n">0.10</td></tr>
+      <tr><td>language-model opinion</td><td class="n">0.45</td><td class="n">0.25</td></tr>
+      <tr><td>Lean conflict (against)</td><td class="n">0.20</td><td class="n">0.10</td></tr></tbody></table>
+      <p class="small mute">From <span class="tag">pipeline/leanbio/belief-params.json</span>. A Lean proof is not counted: it proves a model's consequence, not that organisms obey the model.</p>
+    </div>
+  </div>
+</section>
+
+<section id="laws">
+  <h2>Laws in the registry</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Laws by status</h3><div class="bars" id="lawBars" role="img" aria-label="Laws by registry status"></div><p class="small mute" id="lawset"></p></div>
+    <div class="card"><h3>Statement types</h3><p class="small mute">INDRA's molecular types fire only when a gene, protein or chemical is grounded on both sides; the rest are our law types. Typing is regex rules with unmeasured precision.</p><div class="bars" id="relBars" role="img" aria-label="Records by statement type"></div></div>
+  </div>
+</section>
+
+<section id="grounding">
+  <h2>Grounding coverage</h2>
+  <p class="lede">Gilda (INDRA's grounder) reads each claim; MyGene.info, OLS4 and the repo's taxon inventory cover zebrafish genes and taxa that Gilda does not index, and check identifiers that drafts declare. Low-scoring synonym hits are rejected; near-ties are flagged as ambiguous and never resolved automatically.</p>
+  <div class="grid g2">
+    <div class="card"><h3>Mentions found in text</h3><div class="scroll"><table id="mentionTbl"></table></div><p class="small mute" id="nsLine"></p></div>
+    <div class="card"><h3>Entities declared by drafts</h3><div class="scroll"><table id="declTbl"></table></div><h3 style="margin-top:14px">Not grounded</h3><div class="scroll"><table id="ungTbl"></table></div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>Ambiguous mentions</h3><div class="scroll"><table id="ambTbl"></table></div></div>
+</section>
+
+<section id="queue">
+  <h2>The formalization queue</h2>
+  <p class="lede">Records with belief &ge; 0.5, a relation that has a mathematical form, no law in the registry yet, and no reviewer decision against them. Theorem-shaped relations come first, then belief. Being on the queue means &ldquo;worth a look&rdquo;, not &ldquo;formalizable&rdquo;: a reviewer often finds there is nothing to state.</p>
+  <div class="scroll"><table id="queueTbl"></table></div>
+</section>
+
+<section id="proposed">
+  <h2>Decisions on the queue</h2>
+  <p class="lede">Every queue item a person or agent looked at, including the ones where no correct Lean statement exists.</p>
+  <div class="grid g2" id="proposals"></div>
+</section>
+
+<section id="contribute">
+  <h2>How to contribute</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Propose a LeanBio law</h3>
+      <ol class="small">
+        <li>A sourced nanopub draft or claim in the repo, with resolvable identifiers.</li>
+        <li>Grounded entities and a belief at or above 0.5 (<span class="tag">node pipeline/leanbio/run.mjs</span>).</li>
+        <li>A Lean statement with named hypotheses: no <span class="tag">axiom</span>, no <span class="tag">sorry</span>, a non-vacuity witness, a scope.</li>
+        <li><span class="tag">node lean/registry/propose.mjs law.lean --meta meta.json --write</span>: builds, checks axioms, rejects statement mutants, checks joint consistency.</li>
+        <li><span class="tag">node lean/registry/check-exposed.mjs</span> green.</li>
+        <li>A person accepts it, by role, in a new lawset.</li>
+      </ol>
+      <p class="small">Full criteria: <a href="https://github.com/fractastical/delphisci/blob/main/CONTRIBUTING-LEANBIO.md">CONTRIBUTING-LEANBIO.md</a>. Open the PR with the <span class="tag">leanbio.md</span> template; CI runs the checks.</p>
+    </div>
+    <div class="card"><h3>Harvest nanopubs and query</h3>
+      <p class="small">Read-only SPARQL on the public Knowledge Pixels query service: <span class="tag">node pipeline/leanbio/harvest.mjs --count</span>. A harvested nanopub is a candidate; it enters the pipeline as a claim or draft that cites it.</p>
+      <p class="small">Agents: MCP tools <span class="tag">leanbio_queue</span>, <span class="tag">leanbio_ground</span> (text to ontology ids), <span class="tag">leanbio_claim</span> (claim to nanopub draft, belief and linked laws), once the hub registers them.</p>
+      <p class="small mute">Nothing is ever signed or published from a pull request. The held-out exam clade is excluded everywhere.</p>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="wrap">Every number on this page is read from <span class="tag">leanbio/data.json</span>, written by <span class="tag">node pipeline/leanbio/run.mjs</span>.</footer>
+
+<script>
+(async () => {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const fmt = n => Number(n).toLocaleString('en-US');
+  const pct = (a, b) => b ? `${(100 * a / b).toFixed(1)}%` : 'n/a';
+  let d;
+  try { d = await (await fetch('data.json', { cache: 'no-store' })).json(); }
+  catch (e) { $('built').textContent = 'Could not load data.json: run node pipeline/leanbio/run.mjs.'; return; }
+  const s = d.summary, c = d.coverage;
+  const kpi = (v, label) => `<div class="card"><div class="kpi">${v}<small>${label}</small></div></div>`;
+  $('kpis').innerHTML = [
+    kpi(fmt(s.counts.claims), 'claims in the claim graph'),
+    kpi(fmt(s.counts.nanopub_drafts_read), 'unsigned nanopub drafts read'),
+    kpi(fmt(s.counts.grounded_entities_distinct), 'distinct grounded entities'),
+    kpi(pct(c.records_with_grounded_entity.all, c.records.total), `of ${fmt(c.records.total)} records have a grounded entity`),
+    kpi(fmt(s.counts.queue), 'records on the formalization queue'),
+    kpi(`${s.laws.lawset}`, `lawset; ${fmt(s.laws.total)} laws registered`),
+  ].join('');
+  $('built').innerHTML = `${fmt(s.counts.withheld_held_out_records)} records were withheld by the held-out guard before any processing (the exam clade stays blind). Belief parameters <span class="tag">${esc(s.belief.params)}</span>, statement vocabulary <span class="tag">${esc(s.relations)}</span>.`;
+  const bars = (el, rows, title) => {
+    const max = Math.max(1, ...rows.map(r => r.n));
+    el.innerHTML = rows.map(r => `<div class="bar" title="${esc(title(r))}"><span class="lab">${esc(r.label)}</span><span class="track"><span class="fill" style="width:${(100 * r.n / max).toFixed(2)}%"></span></span><span class="val">${fmt(r.n)}</span></div>`).join('');
+  };
+  bars($('beliefBars'), s.belief.distribution.map(b => ({ label: `${b.lo.toFixed(1)}–${b.hi.toFixed(1)}`, n: b.n })), r => `${r.n} records with belief in ${r.label}`);
+  $('beliefMean').textContent = `Mean belief ${s.belief.mean} over ${fmt(c.records.total)} records.`;
+  const order = ['accepted', 'candidate', 'proposed', 'contested', 'retired'];
+  bars($('lawBars'), order.filter(k => s.laws.by_status[k]).map(k => ({ label: k, n: s.laws.by_status[k] })), r => `${r.n} laws ${r.label}`);
+  $('lawset').textContent = `Current lawset ${s.laws.lawset}. Candidates and proposed laws are shown but never binding.`;
+  bars($('relBars'), Object.entries(c.relation_types).sort((a, b) => b[1] - a[1]).map(([k, n]) => ({ label: k, n })), r => `${r.n} records typed ${r.label}`);
+  const tm = c.text_mentions, dc = c.declared_entities;
+  const rowsOf = (obj, tot) => Object.entries(obj).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<tr><td>${esc(k)}</td><td class="n">${fmt(n)}</td><td class="n">${pct(n, tot)}</td></tr>`).join('');
+  $('mentionTbl').innerHTML = `<thead><tr><th>status</th><th class="n">mentions</th><th class="n">share</th></tr></thead><tbody>${rowsOf(tm.by_status, tm.total)}</tbody>`;
+  $('nsLine').textContent = 'Grounded by namespace: ' + Object.entries(tm.grounded_by_namespace).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${fmt(n)}`).join(', ') + '. Many MeSH hits are generic concepts ("Population", "Animals").';
+  $('declTbl').innerHTML = `<thead><tr><th>status</th><th class="n">entities</th><th class="n">share</th></tr></thead><tbody>${rowsOf(dc.by_status, dc.total)}</tbody>`;
+  $('ungTbl').innerHTML = `<thead><tr><th>entity</th><th>kind</th><th>status</th><th class="n">records</th></tr></thead><tbody>${c.ungroundable_declared.map(u => `<tr><td>${esc(u.name)}</td><td>${esc(u.kind)}</td><td>${esc(u.status)}</td><td class="n">${u.n}</td></tr>`).join('') || '<tr><td colspan="4" class="mute">none</td></tr>'}</tbody>`;
+  $('ambTbl').innerHTML = `<thead><tr><th>mention</th><th class="n">times</th><th>best</th><th>rival within 0.05</th></tr></thead><tbody>${c.ambiguous_mentions.map(a => `<tr><td>${esc(a.text)}</td><td class="n">${a.n}</td><td><span class="tag">${esc(a.best.id)}</span> ${esc(a.best.name)}</td><td>${(a.alternatives || []).map(x => `<span class="tag">${esc(x.id)}</span> ${esc(x.name)}`).join('<br>')}</td></tr>`).join('')}</tbody>`;
+  $('queueTbl').innerHTML = `<thead><tr><th class="n">#</th><th>claim</th><th class="n">belief</th><th class="n">E / R</th><th>relation</th><th>grounded entities</th></tr></thead><tbody>${d.queue.map(q => `<tr><td class="n">${q.rank}</td><td><span class="tag">${esc(q.id.replace(/^draft:/, ''))}</span><br><span class="small">${esc(q.text)}</span></td><td class="n">${q.belief.toFixed(3)}</td><td class="n">${q.E.toFixed(2)} / ${q.R.toFixed(2)}</td><td>${esc(q.relation)}<br><span class="small mute">${q.formalizable === 'theorem' ? 'theorem-shaped' : 'named hypothesis'}</span></td><td class="small">${q.entities.map(e => `<span class="tag">${esc(e.id)}</span> ${esc(e.name)}`).join('<br>')}</td></tr>`).join('')}</tbody>`;
+  $('proposals').innerHTML = d.proposals.map(p => `<div class="card"><h3><span class="tag">${esc(p.id)}</span> <span class="chip ${p.decision === 'proposed' ? 'ok' : 'warn'}">${esc(p.decision)}${p.registry_status ? ': ' + esc(p.registry_status) : ''}</span></h3><p class="small">${esc(p.reason || p.checks || '')}</p>${p.caveat ? `<p class="small mute">${esc(p.caveat)}</p>` : ''}${p.not_accepted ? `<p class="small mute">${esc(p.not_accepted)}</p>` : ''}<p class="small mute">Decided ${esc(p.date)}, queue rank ${p.queue_rank_when_decided} at the time.</p></div>`).join('');
+})();
+</script>
+</body>
+</html>

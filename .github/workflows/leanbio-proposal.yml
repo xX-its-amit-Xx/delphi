@@ -1,0 +1,44 @@
+name: LeanBio proposal checks
+
+# Node-only checks for LeanBio contributions (CONTRIBUTING-LEANBIO.md): every claim and draft grounded, belief computed
+# and current, registry schema and content hashes valid, LeanBio criteria met for proposed laws, drafts unsigned with
+# no ORCID, no held-out leak in outputs, and every law exposed (check-exposed). Offline: grounding answers come from
+# the committed cache in pipeline/leanbio/cache/, so a PR that adds a claim or draft must commit the refreshed cache.
+# No Lean build here (propose.mjs runs it on the proposer's machine) and nothing is ever published.
+
+on:
+  pull_request:
+    paths:
+      - "**/nanopubs/**"
+      - "nanopubs-index/**"
+      - "docs/claims.json"
+      - "claim-tests/**/result.json"
+      - "pipeline/leanbio/**"
+      - "lean/registry/**"
+      - "CONTRIBUTING-LEANBIO.md"
+      - ".github/workflows/leanbio-proposal.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  leanbio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # check-exposed dumps the sim-engine contract, which needs sim-engine's own package.
+      - run: npm ci
+        working-directory: sim-engine
+      - name: grounding present, belief computed, registry schema, criteria, drafts, held-out leak
+        run: node pipeline/leanbio/check.mjs
+      - name: pipeline tests (each check also fails once on broken input)
+        run: node pipeline/leanbio/test.mjs
+      - name: every law exposed in registry, MCP tools, CLIs and static API
+        run: node lean/registry/check-exposed.mjs

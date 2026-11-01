@@ -1,7 +1,7 @@
 {
  "server": "delphisci-sim-engine",
  "version": "0.1.0",
- "contract_version": "0.4.0",
+ "contract_version": "0.6.0",
  "changelog": "sim-engine/CHANGELOG.md",
  "transport": "stdio",
  "envelope": {
@@ -370,6 +370,96 @@
      "since_version": {
       "type": "string",
       "description": "A lawset version such as \"1.3.0\" (exclusive), or \"current\". Omit for every release."
+     }
+    }
+   }
+  },
+  {
+   "name": "leanbio_queue",
+   "title": "LeanBio formalization queue",
+   "description": "Claims and nanopub drafts that are candidates for a LeanBio (Lean 4) statement, ordered by formalizability (theorem before named hypothesis) then belief. Excludes anything already in the law registry, anything below the queue threshold, and items a reviewer declined. Each item has its belief breakdown (E support, R contradiction, independent evidence counts), its INDRA-style relation type and its grounded entities.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 500,
+      "default": 20
+     },
+     "min_belief": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Only items at or above this belief"
+     },
+     "relation": {
+      "type": "string",
+      "description": "Only this relation type, e.g. ScalingLaw, Bound, Equality, Dynamics, Inhibition"
+     },
+     "origin": {
+      "type": "string",
+      "enum": [
+       "claim",
+       "draft"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "name": "leanbio_ground",
+   "title": "Ground text or an entity to ontology identifiers",
+   "description": "Text -> entity mentions with groundings (Gilda NER over grounding.indra.bio; zebrafish gene symbols via MyGene.info; taxa via the repo inventory and OLS4 NCBITaxon). Or entity -> one grounding decision (identifiers such as UBERON:0000151 are verified against OLS4). Each mention has status grounded | ambiguous | low-confidence | ungroundable, the best match and alternatives. Responses are cached in pipeline/leanbio/cache/.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "text": {
+      "type": "string",
+      "description": "Free text to annotate"
+     },
+     "entity": {
+      "type": "string",
+      "description": "One entity name or identifier, instead of text"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "any",
+       "gene",
+       "taxon"
+      ],
+      "default": "any"
+     },
+     "context": {
+      "type": "string",
+      "description": "Context for an entity (e.g. \"zebrafish\") to pick the organism"
+     },
+     "offline": {
+      "type": "boolean",
+      "default": false,
+      "description": "Answer from the cache only (no network)"
+     }
+    }
+   }
+  },
+  {
+   "name": "leanbio_claim",
+   "title": "LeanBio record for one claim",
+   "description": "One claim (docs/claims.json id, e.g. \"maynardsmith-hitchhiking\") or draft (\"draft:<repo path>\") -> its grounded entities, INDRA-style statement, evidence items, belief breakdown, linked Lean laws with their CURRENT registry status, queue position or the reason it is not queued, and an unsigned nanopub draft (TriG) carrying the groundings and belief.",
+   "inputSchema": {
+    "type": "object",
+    "required": [
+     "id"
+    ],
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "draft": {
+      "type": "boolean",
+      "default": true,
+      "description": "Include the TriG draft"
      }
     }
    }
@@ -1042,6 +1132,112 @@
     },
     "required": [
      "session"
+    ]
+   }
+  },
+  {
+   "name": "omics_gene",
+   "title": "Multi-omic card for one gene",
+   "description": "All omics layers for one gene of the DELPHI gene universe (3,860 zebrafish genes behind the flying-fish blueprint): genomic (Ensembl, NCBI Gene, ZFIN alleles and mutant phenotypes with ZFA anatomy, Alliance orthology and disease), transcriptomic, proteomic, pathway and PTM, grouped by feature with per-entry concordance (n_sources) and listed conflicts. Accepts a ZFIN symbol, a ZFIN gene id, or a human orthologue symbol.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "symbol": {
+      "type": "string",
+      "description": "ZFIN symbol (e.g. kcnk5b), ZDB-GENE id, or human orthologue symbol (e.g. KCNK5)."
+     },
+     "id": {
+      "type": "string",
+      "description": "Alias of symbol."
+     },
+     "layers": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "genomic",
+        "transcriptomic",
+        "proteomic",
+        "pathway",
+        "ptm"
+       ]
+      },
+      "description": "Only these layers (default all)."
+     },
+     "features": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "Only these features (e.g. allele_phenotype, expressed_in)."
+     }
+    }
+   }
+  },
+  {
+   "name": "omics_part",
+   "title": "Genes recorded at a blueprint part, with multi-omic summaries",
+   "description": "Genes with an omics row whose anatomy (or cell type) is this part: an UBERON or CL id from the flying-fish blueprint (UBERON:0000151 = pectoral fin), or a ZFA id mapped through the ontology crosswalk. Direct records only, no propagation from sub-parts. Each gene comes with the layers that place it there, row counts per feature, and its per-layer row totals.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "part_id": {
+      "type": "string",
+      "description": "UBERON:xxxxxxx, CL:xxxxxxx (UBERON_xxxxxxx also accepted)."
+     },
+     "layer": {
+      "type": "string",
+      "enum": [
+       "genomic",
+       "transcriptomic",
+       "proteomic",
+       "pathway",
+       "ptm"
+      ],
+      "description": "Only genes placed at the part by this layer."
+     },
+     "limit": {
+      "type": "number",
+      "description": "Max genes returned (default 100)."
+     }
+    },
+    "required": [
+     "part_id"
+    ]
+   }
+  },
+  {
+   "name": "omics_search",
+   "title": "Search omics annotations by feature value or term",
+   "description": "Find genes whose omics rows mention a term: an anatomy label, a GO/Reactome/KEGG/WikiPathways/InterPro/Pfam/DOID id or label, a phenotype phrase, a modification. Substring match on normalised values; returns matching terms with their layers, features and genes.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "term": {
+      "type": "string",
+      "description": "e.g. \"pectoral fin\", \"GO:0030326\", \"Wnt signaling\", \"phosphoserine\", \"DOID:0050590\"."
+     },
+     "feature": {
+      "type": "string",
+      "description": "Restrict to one feature (e.g. allele_phenotype, pathway_member)."
+     },
+     "layer": {
+      "type": "string",
+      "enum": [
+       "genomic",
+       "transcriptomic",
+       "proteomic",
+       "pathway",
+       "ptm"
+      ]
+     },
+     "limit": {
+      "type": "number",
+      "description": "Max matching terms (default 25)."
+     }
+    },
+    "required": [
+     "term"
     ]
    }
   },

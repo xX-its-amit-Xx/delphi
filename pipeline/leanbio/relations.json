@@ -1,0 +1,28 @@
+{
+ "version": "leanbio-relations/0.1.0",
+ "note": "Fixed relation vocabulary for LeanBio statements. The 'indra' family copies INDRA statement types (https://indra.readthedocs.io/en/latest/modules/statements.html) for molecular claims; the 'law' family is ours, for the quantitative and structural claims that biology-law sources make and that INDRA has no type for. Typing is rule-based (regex triggers below, first match wins, molecular rules only fire when both sides are grounded to a gene, protein or chemical). It is a heuristic with unmeasured precision: every typed statement records the rule that fired so a reviewer can overrule it.",
+ "formalizable": {
+  "theorem": "a mathematical reading exists that Lean can state as a theorem over named-hypothesis structures (quantities with units)",
+  "named-hypothesis": "Lean can only carry the claim as a named empirical premise; there is nothing to prove until it is combined with other laws",
+  "no": "not a candidate for a Lean statement (meta-records, absences, assessments)"
+ },
+ "types": [
+  { "type": "Phosphorylation", "family": "indra", "molecular": true, "formalizable": "named-hypothesis", "trigger": "\\bphosphorylat" },
+  { "type": "Complex", "family": "indra", "molecular": true, "formalizable": "named-hypothesis", "trigger": "\\b(binds?|binding to|forms? a complex|complex with)\\b" },
+  { "type": "Inhibition", "family": "indra", "molecular": true, "formalizable": "named-hypothesis", "trigger": "\\b(inhibit\\w*|suppress\\w*|repress\\w*|block\\w*|restrict\\w*|antagoni\\w*)\\b" },
+  { "type": "Activation", "family": "indra", "molecular": true, "formalizable": "named-hypothesis", "trigger": "\\b(activat\\w*|induc\\w*|stimulat\\w*|promot\\w*|drives?|driving)\\b" },
+  { "type": "IncreaseAmount", "family": "indra", "molecular": true, "formalizable": "named-hypothesis", "trigger": "\\b(increase\\w*|raises?|upregulat\\w*|elevat\\w*)\\b" },
+  { "type": "DecreaseAmount", "family": "indra", "molecular": true, "formalizable": "named-hypothesis", "trigger": "\\b(decrease\\w*|reduc\\w*|lowers?|downregulat\\w*|dissolve\\w*)\\b" },
+  { "type": "ScalingLaw", "family": "law", "formalizable": "theorem", "trigger": "\\b(scales? (with|as)|allometr\\w*|proportional to|power of|square of|cube of|squares? of|cubes? of|as the (square|cube)|surface.{0,20}volume|varies as|isometr\\w*|log-log)\\b" },
+  { "type": "Bound", "family": "law", "formalizable": "theorem", "trigger": "\\b(cannot exceed|at most|at least|upper limit|lower limit|upper bound|lower bound|bounded|maximum|minimum|limit(s|ed)? (to|on)|never (exceed|fall)|no more than|no less than|threshold|budget)\\b" },
+  { "type": "Equality", "family": "law", "formalizable": "theorem", "trigger": "\\b(equals?|is equal to|equal to|conserved|conservation|remains? constant|is constant|invariant|1:1|one-to-one)\\b" },
+  { "type": "Dynamics", "family": "law", "formalizable": "theorem", "trigger": "\\b(rate of|per generation|grows? exponentially|exponential|logistic|geometric (ratio|increase|progression)|probability (that|of)|fixation|differential equation|equilibrium|steady state|converges?)\\b" },
+  { "type": "Comparative", "family": "law", "formalizable": "theorem", "trigger": "\\b(more than|less than|greater than|smaller than|larger than|exceeds?|faster than|slower than|higher than|lower than)\\b" },
+  { "type": "Causation", "family": "law", "formalizable": "named-hypothesis", "trigger": "\\b(causes?|caused by|leads? to|results? in|because|due to|owing to|produces?|gives? rise to|determines?|controls?|regulates?)\\b" },
+  { "type": "Correlation", "family": "law", "formalizable": "named-hypothesis", "trigger": "\\b(correlat\\w*|associated with|covar\\w*|tends? to|generally|usually|resembles?)\\b" },
+  { "type": "Absence", "family": "law", "formalizable": "no", "trigger": "\\b(no .{0,40}(could be|was) (sourced|found)|absent|not found|none of|is not (sourced|known))\\b" },
+  { "type": "WellFormedness", "family": "law", "formalizable": "theorem", "trigger": "\\b(well-formed\\w*|certificate|machine-checked|consistent with its own rules)\\b" }
+ ],
+ "fallback": { "type": "Unclassified", "family": "law", "formalizable": "named-hypothesis" },
+ "meta_types": ["LLMClaimAssessment", "LanguageModel", "Assessment", "Concept"]
+}
