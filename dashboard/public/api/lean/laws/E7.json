@@ -1,0 +1,154 @@
+{
+ "law_id": "E7",
+ "version": "1.0.0",
+ "kind": "biological",
+ "class": "empirical-observation",
+ "status": "accepted",
+ "label": "A lever lethal before the scoring stage cannot produce the phenotype",
+ "level": "empirical observation",
+ "lean_ref": {
+  "module": "lean/Delphi/Empirical.lean",
+  "theorem": "Delphi.Empirical.cannot_score_of_lethal_before",
+  "structure": "Delphi.Empirical.CanScore",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "dc1b3f58a0cd8979e63c37eaeb888d3154f08b0b2303dfa062c17f4b2f234f00",
+  "content_hash": "419a5d6c82ee1f210c23e02f1ac645cde125fe51a2c26d3e9b54652f5ae82c2c"
+ },
+ "statement_en": "death_hpf <= scored_hpf implies the phenotype cannot be scored in a living animal.",
+ "hypotheses": [
+  {
+   "name": "Delphi.Empirical.CanScore",
+   "statement": "death_hpf <= scored_hpf implies the phenotype cannot be scored in a living animal.",
+   "value": {
+    "evaluated": [
+     {
+      "id": "ezh2-loss-MZ-fin",
+      "gene": "ezh2",
+      "parameter": "fin area or span",
+      "death_hpf": 48,
+      "scored_hpf": 48,
+      "quote": "LETHAL: 'die around 2 days post fertilization' / 'They die at 48 hpf'. The animal dies at the same stage at which the fin phenotype is scored, before any fin skeletal differentiation."
+     },
+     {
+      "id": "wls-c186-pectoral-fin-small",
+      "gene": "wls",
+      "parameter": "lepidotrichium (ray) length, segment and branching",
+      "death_hpf": 288,
+      "scored_hpf": 1080,
+      "quote": "LETHAL BEFORE THE RAY PARAMETER EXISTS: 'The mutants fail to develop swim bladders and die by approximately 12 dpf.' Lepidotrichia are not formed by then, so no ray length, segment or branching value can be measured in this allele, and the effect_size value is null for that reason. Even fully rescued mutants 'did not survive to adulthood'.",
+      "conversion": "death \"by approximately 12 dpf\" = 288 h; the ray parameters exist only from Juvenile:Days 45-89, taken as 45 dpf = 1080 h"
+     }
+    ],
+    "statedLethalButNotEvaluated": [],
+    "notEvaluated": {
+     "count": 90,
+     "why": "the genotype thread records lethality as free text (58 rows say \"not reported\"); only rows that state BOTH a time of death and a scoring stage in hours are instantiated here, and no time is parsed out of prose beyond those two"
+    }
+   },
+   "source": "genotype/interventions.json (the genotype thread's own lethality notes, quoted in the value)",
+   "observation": "Two levers in the project's own intervention table state both times: ezh2 dies at 48 hpf, the stage at which its fin absence is scored, and wls dies by 12 dpf while the ray parameters exist only from 45 dpf."
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "Danio rerio"
+  ],
+  "life_stages": [
+   "embryo",
+   "larva"
+  ],
+  "ranges": {},
+  "basis": "genotype/interventions.json: zebrafish alleles and treatments, death and scoring stages in hours post fertilisation",
+  "kernelChecked": [],
+  "assumed": [],
+  "note": "Only the 2 rows that state both a death time and a scoring stage in hours are instantiated. the genotype thread records lethality as free text (58 rows say \"not reported\"); only rows that state BOTH a time of death and a scoring stage in hours are instantiated here, and no time is parsed out of prose beyond those two Lethality of a homozygote says nothing about a heterozygote, a mosaic, a conditional allele or a rescue, and a lever lethal in zebrafish may not be in another species."
+ },
+ "constraint_scopes": {},
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "genotype/interventions.json (the genotype thread's own lethality notes, quoted in the value)",
+   "genotype/interventions.json (the genotype thread's own lethality notes, quoted in the value)"
+  ],
+  "observations": [
+   "Two levers in the project's own intervention table state both times: ezh2 dies at 48 hpf, the stage at which its fin absence is scored, and wls dies by 12 dpf while the ray parameters exist only from 45 dpf."
+  ],
+  "faithfulness": null,
+  "flyingFishAudit": null,
+  "rejectable": "Reject it and a design may claim a phenotype from a lever whose animal does not reach the stage; nothing proved elsewhere changes."
+ },
+ "sources": [
+  "genotype/interventions.json (the genotype thread's own lethality notes, quoted in the value)",
+  "genotype/interventions.json (the genotype thread's own lethality notes, quoted in the value)"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.Empirical.empirical_nonvacuous",
+  "statement": "Nonempty Record: the measured numbers satisfy every empirical entry at once"
+ },
+ "constraints": [
+  "E7"
+ ],
+ "introduced_in": "1.0.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": {
+  "approved_by_role": "bootstrap-grandfathered",
+  "date": "2026-11-01",
+  "basis": "in force in lean/constraints.json / lean/laws.json before the registry existed; no per-law human review recorded by the registry"
+ },
+ "origin": "lean/registry/laws/E7.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "bootstrapped from lean/laws.json (status there: \"empirical\")"
+  }
+ ],
+ "content_hash": "419a5d6c82ee1f210c23e02f1ac645cde125fe51a2c26d3e9b54652f5ae82c2c",
+ "lean": {
+  "theorem": "Delphi.Empirical.cannot_score_of_lethal_before",
+  "module": "lean/Delphi/Empirical.lean",
+  "line": 227,
+  "source": "/-- **An intervention lethal at or before the scoring stage cannot produce the scored phenotype.** -/\ntheorem cannot_score_of_lethal_before {d s : ℕ} (h : d ≤ s) : ¬ CanScore d s := by\n  unfold CanScore; omega",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.Empirical.CanScore",
+    "keyword": "def",
+    "module": "lean/Delphi/Empirical.lean",
+    "line": 224,
+    "source": "/-- A phenotype can be scored only if the animal is still alive at that stage (stages in hours). -/\ndef CanScore (deathHpf scoredHpf : ℕ) : Prop := scoredHpf < deathHpf"
+   }
+  ]
+ },
+ "constraint_details": [
+  {
+   "id": "E7",
+   "relation": "scored < death",
+   "lemma": "Delphi.Empirical.cannot_score_of_lethal_before",
+   "law": "Delphi.Empirical.CanScore",
+   "module": "lean/Delphi/Empirical.lean",
+   "status": "empirical",
+   "appliesWhen": [
+    "lethality_before_scoring"
+   ],
+   "canEliminate": "a design that claims a phenotype from a lever whose animal does not reach the stage at which the phenotype exists",
+   "lemma_source": "/-- **An intervention lethal at or before the scoring stage cannot produce the scored phenotype.** -/\ntheorem cannot_score_of_lethal_before {d s : ℕ} (h : d ≤ s) : ¬ CanScore d s := by\n  unfold CanScore; omega"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Empirical.lean",
+  "decl": "Delphi.Empirical.CanScore",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "dc1b3f58a0cd8979e63c37eaeb888d3154f08b0b2303dfa062c17f4b2f234f00",
+  "current_statement_sha256": "dc1b3f58a0cd8979e63c37eaeb888d3154f08b0b2303dfa062c17f4b2f234f00",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

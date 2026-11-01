@@ -1,0 +1,129 @@
+{
+ "law_id": "altitude-coupling",
+ "version": "1.0.0",
+ "kind": "physical",
+ "class": "theorem",
+ "status": "accepted",
+ "label": "Demand rises and supply falls with height together, so the flyable heights reach down to the ground",
+ "level": "phenotype+physiology",
+ "lean_ref": {
+  "module": "lean/Delphi/Altitude.lean",
+  "theorem": "Delphi.Altitude.feasible_downward_closed",
+  "structure": null,
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "79666c221032ac0bed7a7658d5868524d6074df0d1a50b044f51d6b73b71e3b0",
+  "content_hash": "aa83377b72009d60785b78f92053d1d977fe399361e1f3dcb83f4d3e2d99feb2"
+ },
+ "statement_en": "In an atmosphere where air density and oxygen partial pressure both fall with height, the minimum speed of lift-supported flight and the power to fly at it are nondecreasing in height, while the aerobic supply (with arterial content nondecreasing in partial pressure, as a Hill curve gives) is nonincreasing. Hence sustained flight possible at a height is possible at every lower height; above an infeasible height every height is infeasible, so the flyable set is an interval from the ground up to a ceiling; and a design that cannot fly at the ground cannot fly at any height. A larger lifting area lowers the power required at a fixed height.",
+ "hypotheses": [
+  {
+   "name": "altitude-coupling#assumed-1",
+   "statement": "A monotone atmosphere: both density and oxygen partial pressure fall with height. No profile, no numbers; the candidates' profile is the physics thread's NASA Glenn fit."
+  },
+  {
+   "name": "altitude-coupling#assumed-2",
+   "statement": "Arterial content nondecreasing in partial pressure (a Hill curve is, but the Hill equation, the Bohr shift and the Root effect are not formalised)."
+  },
+  {
+   "name": "altitude-coupling#assumed-3",
+   "statement": "Everything else held fixed with height: the animal makes no compensation (haematocrit, ventilation, cardiac output), and temperature, humidity and wind are outside the model."
+  },
+  {
+   "name": "altitude-coupling#assumed-4",
+   "statement": "The size of the effect is NOT proved: it is gentle, and the binding constraint for the real fish is the aerobic ceiling at sea level."
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "a theorem about a model: it applies wherever the design supplies the quantities it uses and accepts the hypotheses in scope.assumed",
+  "kernelChecked": [
+   "That the minimum speed and the power required at it are nondecreasing in height, given only that air density falls with height.",
+   "That the aerobic supply is nonincreasing in height, given only that oxygen partial pressure falls with height and arterial content is nondecreasing in it.",
+   "That the feasible heights are downward closed, that infeasibility propagates upward (a ceiling in that sense), and that infeasibility at the ground forces infeasibility everywhere.",
+   "That a larger lifting area lowers the power required at a fixed height."
+  ],
+  "assumed": [
+   "A monotone atmosphere: both density and oxygen partial pressure fall with height. No profile, no numbers; the candidates' profile is the physics thread's NASA Glenn fit.",
+   "Arterial content nondecreasing in partial pressure (a Hill curve is, but the Hill equation, the Bohr shift and the Root effect are not formalised).",
+   "Everything else held fixed with height: the animal makes no compensation (haematocrit, ventilation, cardiac output), and temperature, humidity and wind are outside the model.",
+   "The size of the effect is NOT proved: it is gentle, and the binding constraint for the real fish is the aerobic ceiling at sea level."
+  ],
+  "note": null
+ },
+ "constraint_scopes": {},
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "proved in this project; no paper states it in this form"
+  ],
+  "observations": [],
+  "faithfulness": "not assessed",
+  "flyingFishAudit": {
+   "cannot-evaluate": 5,
+   "violated": 1,
+   "holds": 1
+  },
+  "rejectable": null
+ },
+ "sources": [
+  "proved in this project; no paper states it in this form"
+ ],
+ "non_vacuity_witness": {
+  "lean": null,
+  "statement": "a theorem from standard axioms whose hypotheses are plain inequalities or decidable checks on the inputs; no separate witness structure (see scope.kernelChecked)"
+ },
+ "constraints": [],
+ "introduced_in": "1.0.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": {
+  "approved_by_role": "bootstrap-grandfathered",
+  "date": "2026-11-01",
+  "basis": "in force in lean/constraints.json / lean/laws.json before the registry existed; no per-law human review recorded by the registry"
+ },
+ "origin": "lean/registry/laws/altitude-coupling.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "bootstrapped from lean/laws.json (status there: \"proved\")"
+  }
+ ],
+ "content_hash": "aa83377b72009d60785b78f92053d1d977fe399361e1f3dcb83f4d3e2d99feb2",
+ "lean": {
+  "theorem": "Delphi.Altitude.feasible_downward_closed",
+  "module": "lean/Delphi/Altitude.lean",
+  "line": 106,
+  "source": "/-- **The feasible heights reach down to the ground.** If the design can fly at a height, it can fly at\nevery lower one: demand only falls as you descend and supply only rises. -/\ntheorem feasible_downward_closed {ca : ℝ → ℝ} (hca : ∀ x y : ℝ, x ≤ y → ca x ≤ ca y)\n    {W S CL LD eta E Q : ℝ} (hW : 0 < W) (hS : 0 < S) (hCL : 0 < CL) (hLD : 0 < LD)\n    (he : 0 ≤ eta) (hE : 0 ≤ E) (hQ : 0 ≤ Q) {h₁ h₂ : ℝ} (hle : h₁ ≤ h₂)\n    (hfeas : Feasible A ca W S CL LD eta E Q h₂) : Feasible A ca W S CL LD eta E Q h₁ := by\n  unfold Feasible at hfeas ⊢\n  calc demandAt A W S CL LD h₁ ≤ demandAt A W S CL LD h₂ := demand_mono A hW hS hCL hLD hle\n    _ ≤ supplyAt A ca eta E Q h₂ := hfeas\n    _ ≤ supplyAt A ca eta E Q h₁ := supply_anti A hca he hE hQ hle",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.Altitude.Feasible",
+    "keyword": "def",
+    "module": "lean/Delphi/Altitude.lean",
+    "line": 101,
+    "source": "/-- Sustained flight is possible at height `h` when the aerobic supply there covers the power required\nthere. \"Feasible\" in the model's sense only: it says the oxygen budget is not what forbids the flight, and\nnothing about burst power, structure, control, heat or whether the animal exists. -/\ndef Feasible (ca : ℝ → ℝ) (W S CL LD eta E Q h : ℝ) : Prop :=\n  demandAt A W S CL LD h ≤ supplyAt A ca eta E Q h"
+   }
+  ]
+ },
+ "constraint_details": [],
+ "pin": {
+  "module": "lean/Delphi/Altitude.lean",
+  "decl": "Delphi.Altitude.feasible_downward_closed",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "79666c221032ac0bed7a7658d5868524d6074df0d1a50b044f51d6b73b71e3b0",
+  "current_statement_sha256": "79666c221032ac0bed7a7658d5868524d6074df0d1a50b044f51d6b73b71e3b0",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

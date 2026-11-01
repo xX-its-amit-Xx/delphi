@@ -1,11 +1,25 @@
 {
  "server": "delphisci-sim-engine",
  "version": "0.1.0",
+ "contract_version": "0.3.0",
+ "changelog": "sim-engine/CHANGELOG.md",
  "transport": "stdio",
  "envelope": {
+  "contract_version": "semver string",
   "result": "tool-specific",
   "provenance": "[{quantity, value, kind, source}]",
-  "scope": "string, mandatory"
+  "scope": "string, mandatory",
+  "weakest_input": "kind",
+  "counts": "{kind: n}"
+ },
+ "scenario_result": {
+  "metrics": "[{key,label,value,unit,better,kind,source}]",
+  "survives": "true|false|null: the organism survives the perturbation",
+  "feasible": "true|false|null: the behaviour asked about is possible",
+  "limiting": "string|null",
+  "provenance": "[...]",
+  "scope": "string",
+  "validity": "{inRange, notes}"
  },
  "provenance_kinds": {
   "measured": "Read from a primary source that measured it in the stated organism.",
@@ -187,20 +201,989 @@
    }
   },
   {
+   "name": "lean_laws_list",
+   "title": "List Lean-backed laws",
+   "description": "Every law in the versioned law registry (physical and biological), with law_id, version, kind, status, Lean theorem and the constraint ids that evaluate it. Filter by kind, status, scope substring (matches level and scope text), lawset version, or free text.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "kind": {
+      "type": "string",
+      "enum": [
+       "physical",
+       "biological"
+      ]
+     },
+     "status": {
+      "oneOf": [
+       {
+        "type": "string",
+        "enum": [
+         "proposed",
+         "candidate",
+         "accepted",
+         "contested",
+         "retired"
+        ]
+       },
+       {
+        "type": "array",
+        "items": {
+         "type": "string",
+         "enum": [
+          "proposed",
+          "candidate",
+          "accepted",
+          "contested",
+          "retired"
+         ]
+        }
+       }
+      ],
+      "description": "One status or a list."
+     },
+     "scope": {
+      "type": "string",
+      "description": "Substring of the law level or scope, e.g. \"genotype\", \"physiology\"."
+     },
+     "lawset": {
+      "type": "string",
+      "description": "Only laws in this lawset version, or \"current\"."
+     },
+     "text": {
+      "type": "string",
+      "description": "Substring of law_id, label or statement."
+     }
+    }
+   }
+  },
+  {
+   "name": "lean_law_get",
+   "title": "One Lean-backed law, in full",
+   "description": "The full registry entry for one law: statement, the Lean source text of its theorem and of the named hypotheses its signature uses, constraint lemmas, version history, sources, non-vacuity witness, and the pinned commit and content hash with a live drift flag.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "description": "law_id from lean_laws_list"
+     }
+    },
+    "required": [
+     "id"
+    ]
+   }
+  },
+  {
+   "name": "lean_lawset_get",
+   "title": "A lawset release",
+   "description": "A versioned set of laws (law_id, version, content hash, pinned status) as released in the registry. \"current\" resolves to lean/registry/lawsets/current.json.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "version": {
+      "type": "string",
+      "default": "current",
+      "description": "Semver, or \"current\"."
+     }
+    }
+   }
+  },
+  {
    "name": "lean_check",
-   "title": "Lean-backed constraint check (NOT a kernel check)",
-   "description": "Wraps lean/eliminate/browser-check.mjs. Evaluates in floating point the same formulas the Lean-backed constraints encode, and returns one verdict per constraint it can reach. This is NOT a kernel proof: kernel certificates exist only for the recorded examples under lean/Delphi/Certificates/.",
+   "title": "Check a design against a lawset (NOT a kernel check)",
+   "description": "Evaluates a resolved state/design (SI units, fields documented at the top of lean/eliminate/browser-check.mjs) against one lawset. Evaluation is the generated browser-check (floating point); law_id, version, kind and status come from the registry. Returns per-law verdicts (holds, violated, cannot-evaluate, out-of-scope) and violations [{law_id, version, kind, status, inputs, message, binding}]. Violations of non-accepted laws are advisory (binding:false). A row is out-of-scope when the law scope (taxa, life stages, ranges) excludes the design, or when it compares the design with the single flying-fish reference specimen and the design is not a flying fish; give taxon (e.g. \"Danio rerio\") in the design.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "design": {
+      "type": "object",
+      "description": "SI-unit spec: taxon, life_stage, SL_m, mass_kg, finArea_m2, CLmax, LD_max, rho, airspeed_m_s, genotype_edits, ... (alias: spec)."
+     },
+     "spec": {
+      "type": "object",
+      "description": "Alias of design, accepted for compatibility with the v1 lean_check."
+     },
+     "lawset": {
+      "type": "string",
+      "default": "current"
+     }
+    }
+   }
+  },
+  {
+   "name": "lean_propose",
+   "title": "Propose a new Lean law (local only)",
+   "description": "Runs lean/registry/propose.mjs on a submitted Lean statement plus metadata and returns its verdict: candidate, contested or rejected. Never auto-accepts (an \"accepted\" result is downgraded to candidate). Runs a Lean build, so it is not offered on the hosted HTTP server.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "file": {
+      "type": "string",
+      "description": "Path to a .lean file (local)."
+     },
+     "source": {
+      "type": "string",
+      "description": "Lean source text, used if file is absent."
+     },
+     "meta": {
+      "type": "object",
+      "description": "law_id, kind, statement_en, hypotheses, sources ... as lean/registry/README.md documents."
+     }
+    }
+   }
+  },
+  {
+   "name": "lean_verify",
+   "title": "Verify pinned Lean sources",
+   "description": "Re-hashes every pinned Lean module and reports drift against the registry pins, whether each named theorem still exists, whether the static /api/lean/ mirror is stale, and whether the generated browser-check lags lean/constraints.json.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {}
+   }
+  },
+  {
+   "name": "organism_create",
+   "title": "Create an organism document",
+   "description": "New organism document from weighted parents (reference organisms or designs; weights sum to 1). Saved under sim-engine/sessions/organisms/.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "parents": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "organism": {
+         "type": "string"
+        },
+        "weight": {
+         "type": "number"
+        }
+       },
+       "required": [
+        "organism",
+        "weight"
+       ]
+      }
+     },
+     "notes": {
+      "type": "string"
+     },
+     "overwrite": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "id",
+     "parents"
+    ]
+   }
+  },
+  {
+   "name": "organism_get",
+   "title": "Get an organism document and its STATE",
+   "description": "Returns the document and, at the given age and conditions, the resolved STATE with per-field provenance.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "organism": {
+      "description": "Organism: a saved document id, a repository organism/design id (flying-fish, zebrafish-adult, zebrafish-larva, tff, winged-zebrafish, wingless-flying-fish, ff-zf-chimera), or an inline organism document.",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "ageDays": {
+      "type": "number",
+      "description": "Age in days after hatching. Default: the reference age of the dominant parent. Ages outside the growth data are clamped and flagged."
+     },
+     "conditions": {
+      "type": "object",
+      "description": "Conditions: temperature_C, salinity_psu, depth_m, altitude_m, air_O2_fraction, medium. Unset values come from conditions/baseline.json."
+     },
+     "measured": {
+      "type": "object",
+      "description": "Optional values measured on the edited mesh by dashboard/public/blueprint3d/partedit.js measurePart: {pectoral_area_both_m2, pectoral_span_m, lifting_area_m2}. They replace the parameter-model values in STATE (kind derived)."
+     }
+    },
+    "required": [
+     "organism"
+    ]
+   }
+  },
+  {
+   "name": "organism_list_parts",
+   "title": "Editable part hierarchy",
+   "description": "body -> organ system -> organ -> tissue (mesh parts from the organism manifest) plus ontology tissue/cell terms and gene symbols, with the editable params at each level and what each edit affects.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "organism": {
+      "description": "Organism: a saved document id, a repository organism/design id (flying-fish, zebrafish-adult, zebrafish-larva, tff, winged-zebrafish, wingless-flying-fish, ff-zf-chimera), or an inline organism document.",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "level": {
+      "enum": [
+       "body",
+       "system",
+       "organ",
+       "tissue",
+       "cell",
+       "gene"
+      ],
+      "description": "Optional: return only this level."
+     }
+    },
+    "required": [
+     "organism"
+    ]
+   }
+  },
+  {
+   "name": "organism_edit",
+   "title": "Append an edit and re-check the Lean laws",
+   "description": "Validates the target against the manifest/ontology/gene list (unknown ids are rejected), appends the edit, resolves STATE and returns Lean verdicts plus violations (red), contested (amber) and whether the unedited base also violates each.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "organism": {
+      "description": "Organism: a saved document id, a repository organism/design id (flying-fish, zebrafish-adult, zebrafish-larva, tff, winged-zebrafish, wingless-flying-fish, ff-zf-chimera), or an inline organism document.",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "edit": {
+      "type": "object",
+      "description": "One edit. author is a ROLE label (human, agent:physics), never a personal identifier.",
+      "properties": {
+       "target": {
+        "type": "object",
+        "properties": {
+         "level": {
+          "enum": [
+           "body",
+           "system",
+           "organ",
+           "tissue",
+           "cell",
+           "gene"
+          ]
+         },
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "level"
+        ]
+       },
+       "param": {
+        "type": "string"
+       },
+       "op": {
+        "enum": [
+         "set",
+         "scale",
+         "add"
+        ]
+       },
+       "value": {},
+       "author": {
+        "type": "string"
+       },
+       "reason": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "target",
+       "param",
+       "op",
+       "value",
+       "author",
+       "reason"
+      ]
+     },
+     "new_id": {
+      "type": "string",
+      "description": "When editing a repository organism, save the result under this id."
+     },
+     "ageDays": {
+      "type": "number",
+      "description": "Age in days after hatching. Default: the reference age of the dominant parent. Ages outside the growth data are clamped and flagged."
+     },
+     "conditions": {
+      "type": "object",
+      "description": "Conditions: temperature_C, salinity_psu, depth_m, altitude_m, air_O2_fraction, medium. Unset values come from conditions/baseline.json."
+     },
+     "lawset": {
+      "type": "string",
+      "description": "Lean lawset version (default 'current'). Read from the law registry via lib/lean-source.mjs."
+     }
+    },
+    "required": [
+     "organism",
+     "edit"
+    ]
+   }
+  },
+  {
+   "name": "scenario_list",
+   "title": "List scenarios",
+   "description": "Every scenario module in sim-engine/scenarios with params, required STATE fields, declared metrics and model card. Modules that fail the interface are listed under errors.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {}
+   }
+  },
+  {
+   "name": "scenario_run",
+   "title": "Run a scenario",
+   "description": "Run one scenario on an organism at one age. Never runs when a required STATE field is null.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "organism": {
+      "description": "Organism: a saved document id, a repository organism/design id (flying-fish, zebrafish-adult, zebrafish-larva, tff, winged-zebrafish, wingless-flying-fish, ff-zf-chimera), or an inline organism document.",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "scenario": {
+      "type": "string"
+     },
+     "params": {
+      "type": "object"
+     },
+     "ageDays": {
+      "type": "number",
+      "description": "Age in days after hatching. Default: the reference age of the dominant parent. Ages outside the growth data are clamped and flagged."
+     },
+     "conditions": {
+      "type": "object",
+      "description": "Conditions: temperature_C, salinity_psu, depth_m, altitude_m, air_O2_fraction, medium. Unset values come from conditions/baseline.json."
+     },
+     "measured": {
+      "type": "object",
+      "description": "Optional values measured on the edited mesh by dashboard/public/blueprint3d/partedit.js measurePart: {pectoral_area_both_m2, pectoral_span_m, lifting_area_m2}. They replace the parameter-model values in STATE (kind derived)."
+     },
+     "lawset": {
+      "type": "string",
+      "description": "Lean lawset version (default 'current'). Read from the law registry via lib/lean-source.mjs."
+     }
+    },
+    "required": [
+     "organism",
+     "scenario"
+    ]
+   }
+  },
+  {
+   "name": "scenario_timecourse",
+   "title": "Run a scenario across development",
+   "description": "The same scenario at every developmental stage in anatomy-model/parametric/stages.json for the organism's parents: per-stage metrics, survives, limiting, Lean violations.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "organism": {
+      "description": "Organism: a saved document id, a repository organism/design id (flying-fish, zebrafish-adult, zebrafish-larva, tff, winged-zebrafish, wingless-flying-fish, ff-zf-chimera), or an inline organism document.",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "scenario": {
+      "type": "string"
+     },
+     "params": {
+      "type": "object"
+     },
+     "conditions": {
+      "type": "object",
+      "description": "Conditions: temperature_C, salinity_psu, depth_m, altitude_m, air_O2_fraction, medium. Unset values come from conditions/baseline.json."
+     },
+     "lawset": {
+      "type": "string",
+      "description": "Lean lawset version (default 'current'). Read from the law registry via lib/lean-source.mjs."
+     }
+    },
+    "required": [
+     "organism",
+     "scenario"
+    ]
+   }
+  },
+  {
+   "name": "optimize",
+   "title": "Optimise a design against a scenario metric",
+   "description": "Seeded random-restart hill climb over decision variables [{target,param,min,max}]. A candidate is rejected if it creates a NEW binding Lean violation (strict: any binding violation) or breaks a hard constraint; every rejection is returned with the law or constraint it broke. If no candidate is feasible the result says \"no design meets the spec\".",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "organism": {
+      "description": "Organism: a saved document id, a repository organism/design id (flying-fish, zebrafish-adult, zebrafish-larva, tff, winged-zebrafish, wingless-flying-fish, ff-zf-chimera), or an inline organism document.",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "objective": {
+      "type": "object",
+      "properties": {
+       "scenario": {
+        "type": "string"
+       },
+       "metric": {
+        "type": "string"
+       },
+       "params": {
+        "type": "object"
+       },
+       "ageDays": {
+        "type": "number",
+        "description": "Age in days after hatching. Default: the reference age of the dominant parent. Ages outside the growth data are clamped and flagged."
+       },
+       "conditions": {
+        "type": "object",
+        "description": "Conditions: temperature_C, salinity_psu, depth_m, altitude_m, air_O2_fraction, medium. Unset values come from conditions/baseline.json."
+       },
+       "direction": {
+        "enum": [
+         "maximize",
+         "minimize"
+        ]
+       }
+      },
+      "required": [
+       "scenario",
+       "metric"
+      ]
+     },
+     "variables": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "target": {
+         "type": "object",
+         "properties": {
+          "level": {
+           "enum": [
+            "body",
+            "system",
+            "organ",
+            "tissue",
+            "cell",
+            "gene"
+           ]
+          },
+          "id": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "level"
+         ]
+        },
+        "param": {
+         "type": "string"
+        },
+        "min": {
+         "type": "number"
+        },
+        "max": {
+         "type": "number"
+        }
+       },
+       "required": [
+        "target",
+        "param",
+        "min",
+        "max"
+       ]
+      }
+     },
+     "hard_constraints": {
+      "type": "array",
+      "description": "Each: {scenario, metric, op:\"<=\"|\">=\"|\"==\", value, params?, ageDays?} or {scenario, survives:true} or {scenario, feasible:true} or {state_field, op, value}.",
+      "items": {
+       "type": "object"
+      }
+     },
+     "budget": {
+      "type": "integer",
+      "description": "Evaluations (default 60, max 400), including the start design."
+     },
+     "restarts": {
+      "type": "integer"
+     },
+     "seed": {
+      "type": "integer"
+     },
+     "strict": {
+      "type": "boolean"
+     },
+     "lawset": {
+      "type": "string",
+      "description": "Lean lawset version (default 'current'). Read from the law registry via lib/lean-source.mjs."
+     },
+     "tolerance": {
+      "type": "number",
+      "description": "Relative improvement over the START design a candidate must exceed (default 0.001 = 0.1 %). Below it the result is status \"no improvement\" and the start design is returned unchanged."
+     }
+    },
+    "required": [
+     "organism",
+     "objective",
+     "variables"
+    ]
+   }
+  },
+  {
+   "name": "session_open",
+   "title": "Open a co-design session",
+   "description": "Append-only JSONL log under sim-engine/sessions/. Optionally bound to a saved organism document that kind:\"edit\" posts modify.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "title": {
+      "type": "string"
+     },
+     "organism": {
+      "type": "string",
+      "description": "Saved organism document id (create it first)."
+     },
+     "author": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "title",
+     "author"
+    ]
+   }
+  },
+  {
+   "name": "session_post",
+   "title": "Post to a co-design session",
+   "description": "kind 'comment' | 'proposal' (edits + rationale + the scenario results that motivated them; validated, NOT applied; gets a proposal_id for session_decide) | 'edit' (applied at once; only for author roles starting with 'human'). author is a role label, never a personal identifier.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "session": {
+      "type": "string"
+     },
+     "author": {
+      "type": "string"
+     },
+     "kind": {
+      "enum": [
+       "comment",
+       "proposal",
+       "edit"
+      ]
+     },
+     "body": {
+      "type": "string"
+     },
+     "edits": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "description": "One edit. author is a ROLE label (human, agent:physics), never a personal identifier.",
+       "properties": {
+        "target": {
+         "type": "object",
+         "properties": {
+          "level": {
+           "enum": [
+            "body",
+            "system",
+            "organ",
+            "tissue",
+            "cell",
+            "gene"
+           ]
+          },
+          "id": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "level"
+         ]
+        },
+        "param": {
+         "type": "string"
+        },
+        "op": {
+         "enum": [
+          "set",
+          "scale",
+          "add"
+         ]
+        },
+        "value": {},
+        "author": {
+         "type": "string"
+        },
+        "reason": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "target",
+        "param",
+        "op",
+        "value",
+        "author",
+        "reason"
+       ]
+      },
+      "description": "Edits (author is taken from the post)."
+     },
+     "edit": {
+      "type": "object",
+      "description": "One edit. author is a ROLE label (human, agent:physics), never a personal identifier.",
+      "properties": {
+       "target": {
+        "type": "object",
+        "properties": {
+         "level": {
+          "enum": [
+           "body",
+           "system",
+           "organ",
+           "tissue",
+           "cell",
+           "gene"
+          ]
+         },
+         "id": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "level"
+        ]
+       },
+       "param": {
+        "type": "string"
+       },
+       "op": {
+        "enum": [
+         "set",
+         "scale",
+         "add"
+        ]
+       },
+       "value": {},
+       "author": {
+        "type": "string"
+       },
+       "reason": {
+        "type": "string"
+       }
+      },
+      "required": [
+       "target",
+       "param",
+       "op",
+       "value",
+       "author",
+       "reason"
+      ]
+     },
+     "rationale": {
+      "type": "string",
+      "description": "Required for a proposal."
+     },
+     "evidence": {
+      "type": "array",
+      "items": {
+       "type": "object"
+      },
+      "description": "Scenario results (or other tool results) that motivated the proposal; stored verbatim."
+     },
+     "lawset": {
+      "type": "string",
+      "description": "Lean lawset version (default 'current'). Read from the law registry via lib/lean-source.mjs."
+     }
+    },
+    "required": [
+     "session",
+     "author",
+     "kind"
+    ]
+   }
+  },
+  {
+   "name": "session_decide",
+   "title": "Approve or reject a proposal",
+   "description": "Applies (approve) or rejects a proposal posted to a session. decided_by_role must be a role label starting with 'human' (agents propose, humans decide). Approval applies every edit of the proposal atomically to the session's organism and records the lawset version and the Lean violations at that moment.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "session": {
+      "type": "string"
+     },
+     "proposal_id": {
+      "type": "string"
+     },
+     "decision": {
+      "enum": [
+       "approve",
+       "reject"
+      ]
+     },
+     "decided_by_role": {
+      "type": "string"
+     },
+     "reason": {
+      "type": "string"
+     },
+     "lawset": {
+      "type": "string",
+      "description": "Lean lawset version (default 'current'). Read from the law registry via lib/lean-source.mjs."
+     }
+    },
+    "required": [
+     "session",
+     "proposal_id",
+     "decision",
+     "decided_by_role",
+     "reason"
+    ]
+   }
+  },
+  {
+   "name": "session_read",
+   "title": "Read a co-design session",
+   "description": "Every entry (or those after `since`), plus the current organism document if the session has one.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "session": {
+      "type": "string"
+     },
+     "since": {
+      "type": "integer",
+      "description": "Return entries with seq > since."
+     }
+    },
+    "required": [
+     "session"
+    ]
+   }
+  },
+  {
+   "name": "parse_design_text",
+   "title": "Parse a design request (plain English) into a DesignSpec",
+   "description": "Deterministic, rule-based parser (no LLM). Returns the DesignSpec it could read, every piece of text it could NOT read (`unparsed`, verbatim, with the reason), requests it refused (`refused`: birds are a frozen holdout; Lean laws cannot be waived), every default it applied (`assumptions`), and the spec validated against the engine (`validation`). An agent should resolve every unparsed item with the user before calling design_from_spec.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "text": {
+      "type": "string",
+      "description": "The request, e.g. \"a zebrafish that glides at least 30 m from 1 m, survives 4 °C to 32 °C, outswims a 0.3 m/s current as a larva and adult\"."
+     }
+    },
+    "required": [
+     "text"
+    ]
+   }
+  },
+  {
+   "name": "design_from_spec",
+   "title": "Design an organism that meets a functional spec",
+   "description": "Validates the DesignSpec against the engine (unknown scenarios, metrics, units, parts and params are rejected with the reason), evaluates the starting design on every criterion at every requested stage, runs the `optimize` tool over the editable parameters with the hard criteria as constraints and the Lean laws holding, then explains the result per criterion and per stage: met / failed / no-model, with the limiting factor and the weakest provenance kind behind each verdict. A design \"meets the spec\" only if every hard criterion holds at every requested stage and no Lean law is violated; a criterion with no model counts as NOT met.",
    "inputSchema": {
     "type": "object",
     "properties": {
      "spec": {
       "type": "object",
-      "description": "SI-unit spec: SL_m, mass_kg, finArea_m2, CLmax, LD_max, rho, airspeed_m_s, and the rest documented at the top of browser-check.mjs."
+      "description": "A DesignSpec (sim-engine/lib/spec.mjs).",
+      "properties": {
+       "start_from": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "properties": {
+          "organism": {
+           "type": "string",
+           "description": "zebrafish-adult, zebrafish-larva, flying-fish, tff, winged-zebrafish, wingless-flying-fish, ff-zf-chimera"
+          },
+          "weight": {
+           "type": "number"
+          }
+         },
+         "required": [
+          "organism",
+          "weight"
+         ]
+        },
+        "description": "Parents and weights; weights sum to 1. Birds are refused (frozen holdout)."
+       },
+       "base_edits": {
+        "type": "array",
+        "items": {
+         "type": "object"
+        },
+        "description": "Optional organism.mjs edits applied before optimizing: {target:{level,id}, param, op:\"set\"|\"scale\"|\"add\", value}."
+       },
+       "criteria": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "properties": {
+          "scenario": {
+           "type": "string",
+           "description": "A key from scenario_list."
+          },
+          "params": {
+           "type": "object",
+           "description": "Scenario parameters (aliases such as water_temp_C or pressure_kPa are mapped and converted; the result says so)."
+          },
+          "metric": {
+           "type": "string",
+           "description": "A metric key the scenario declares. Not needed for op \"survives\"."
+          },
+          "op": {
+           "enum": [
+            ">=",
+            "<=",
+            "survives",
+            "maximize",
+            "minimize"
+           ]
+          },
+          "value": {
+           "type": "number"
+          },
+          "unit": {
+           "type": "string"
+          },
+          "stages": {
+           "description": "'all', a list of embryo/larva/juvenile/adult, or {ageDays:{min,max}} (days after hatching). Default ['adult']."
+          },
+          "weight": {
+           "type": "number",
+           "description": "Soft-criterion weight (default 1)."
+          },
+          "hard": {
+           "type": "boolean",
+           "description": "Default: true for >=, <=, survives; false (and must be) for maximize/minimize."
+          }
+         },
+         "required": [
+          "scenario",
+          "op"
+         ]
+        }
+       },
+       "editable": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "properties": {
+          "target": {
+           "type": "object",
+           "properties": {
+            "level": {
+             "type": "string"
+            },
+            "id": {
+             "type": "string"
+            }
+           }
+          },
+          "param": {
+           "type": "string"
+          },
+          "min": {
+           "type": "number"
+          },
+          "max": {
+           "type": "number"
+          }
+         },
+         "required": [
+          "target",
+          "param"
+         ]
+        },
+        "description": "Decision variables. Use organism_list_parts for valid targets and params."
+       },
+       "constraints": {
+        "type": "object",
+        "properties": {
+         "lean": {
+          "const": "must-hold"
+         }
+        }
+       }
+      },
+      "required": [
+       "start_from",
+       "criteria"
+      ]
+     },
+     "text": {
+      "type": "string",
+      "description": "Alternative to spec: parsed with parse_design_text first; refused or unparsed text stops the run."
+     },
+     "budget": {
+      "type": "integer",
+      "description": "Optimizer evaluations (default 60, max 400)."
+     },
+     "seed": {
+      "type": "integer"
+     },
+     "restarts": {
+      "type": "integer"
+     },
+     "strict": {
+      "type": "boolean",
+      "description": "Reject ANY binding Lean violation, including ones the unedited parents already have (default: reject only NEW ones, as optimize does)."
+     },
+     "evaluate_only": {
+      "type": "boolean",
+      "description": "Skip the optimizer: validate and explain the starting design only."
      }
-    },
-    "required": [
-     "spec"
-    ]
+    }
    }
   }
  ]

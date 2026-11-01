@@ -1,0 +1,141 @@
+{
+ "law_id": "aerobic-power-bound",
+ "version": "1.0.0",
+ "kind": "biological",
+ "class": "theorem",
+ "status": "accepted",
+ "label": "Sustained mechanical power is bounded by oxygen delivery (Fick) times efficiency",
+ "level": "physiology",
+ "lean_ref": {
+  "module": "lean/Delphi/Flight.lean",
+  "theorem": "Delphi.sustained_flight_requires",
+  "structure": null,
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "ad366a0c384e0997203d4b8e7fdad5595fd06f55fe44ecfab665f1d067741887",
+  "content_hash": "e6399b6def1833018402551c3f0c01b8e260c09c01125bed8f9bbe04af3057c0"
+ },
+ "statement_en": "With cardiac output Q, arterial and venous O2 contents Ca ≥ Cv ≥ 0, oxycaloric equivalent E and muscular efficiency 0 ≤ η ≤ 1, aerobic mechanical power is η E Q (Ca − Cv) ≤ η E Q Ca ≤ E Q Ca. A sustained power supplied aerobically is at most η E Q Ca; sustained flight needing P_req = W v/(L/D) requires η E Q Ca ≥ P_req; climb under an aerobic supply is at most (η E Q Ca − P_req)/W. If demand and supply are power laws in size with the supply exponent below the demand exponent there is a size above which supply falls short (crossover), so Thompson's size limit holds for any supply exponent below 7/2 without the muscle premise.",
+ "hypotheses": [
+  {
+   "name": "aerobic-power-bound#assumed-1",
+   "statement": "Fick: O2 delivered = Q (Ca − Cv); the oxycaloric equivalent E converts O2 to metabolic power; mechanical power is at most η times it; sustained power is aerobic (anaerobic bursts, oxygen debt, and the glide phase, which needs no muscle power, are outside)."
+  },
+  {
+   "name": "aerobic-power-bound#assumed-2",
+   "statement": "0 ≤ Cv ≤ Ca, 0 ≤ η ≤ 1, Q, E ≥ 0; the supply exponent is whatever the physiology gives, not derived here."
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "a theorem about a model: it applies wherever the design supplies the quantities it uses and accepts the hypotheses in scope.assumed",
+  "kernelChecked": [
+   "η E Q (Ca − Cv) ≤ η E Q Ca for Cv ≥ 0 (aerobic_le_Ca); ≤ E Q Ca for η ≤ 1 (aerobic_le_metabolic); P ≤ aerobicPower ⇒ P ≤ η E Q Ca (sustained_le).",
+   "P_req ≤ P ≤ aerobicPower ⇒ P_req ≤ η E Q Ca (sustained_flight_requires); climb under aerobic supply c ≤ (η E Q Ca − P_req)/W (climb_le_aerobic).",
+   "PowerLaw demand and supply with b_supply < b_demand ⇒ ∃ L* > 0, ∀ L > L*, supply < demand (powerLaw_crossover)."
+  ],
+  "assumed": [
+   "Fick: O2 delivered = Q (Ca − Cv); the oxycaloric equivalent E converts O2 to metabolic power; mechanical power is at most η times it; sustained power is aerobic (anaerobic bursts, oxygen debt, and the glide phase, which needs no muscle power, are outside).",
+   "0 ≤ Cv ≤ Ca, 0 ≤ η ≤ 1, Q, E ≥ 0; the supply exponent is whatever the physiology gives, not derived here."
+  ],
+  "note": null
+ },
+ "constraint_scopes": {},
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "proved in this project; no paper states it in this form"
+  ],
+  "observations": [],
+  "faithfulness": "not assessed",
+  "flyingFishAudit": {
+   "holds": 3,
+   "cannot-evaluate": 9,
+   "violated": 3
+  },
+  "rejectable": null
+ },
+ "sources": [
+  "proved in this project; no paper states it in this form"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.Registry.fick_witness",
+  "file": "lean/registry/lean/Witnesses.lean",
+  "statement": "a positive power below the Fick supply with the measured teleost proxies"
+ },
+ "constraints": [
+  "C14",
+  "C14b"
+ ],
+ "introduced_in": "1.0.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": {
+  "approved_by_role": "bootstrap-grandfathered",
+  "date": "2026-11-01",
+  "basis": "in force in lean/constraints.json / lean/laws.json before the registry existed; no per-law human review recorded by the registry"
+ },
+ "origin": "lean/registry/laws/aerobic-power-bound.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "bootstrapped from lean/laws.json (status there: \"proved\")"
+  }
+ ],
+ "content_hash": "e6399b6def1833018402551c3f0c01b8e260c09c01125bed8f9bbe04af3057c0",
+ "lean": {
+  "theorem": "Delphi.sustained_flight_requires",
+  "module": "lean/Delphi/Flight.lean",
+  "line": 167,
+  "source": "/-- **Sustained flight needs enough oxygen.** If flight at speed `v` needs `P_req = W v / (L/D)` and the\nsustained power is aerobic, then `P_req ≤ η E Q Ca`. -/\ntheorem sustained_flight_requires {W v LD P η E Q Ca Cv : ℝ} (hη : 0 ≤ η) (hE : 0 ≤ E) (hQ : 0 ≤ Q) (hCv : 0 ≤ Cv)\n    (hsus : P ≤ aerobicPower η E Q Ca Cv) (hflight : powerRequired W v LD ≤ P) :\n    powerRequired W v LD ≤ η * E * Q * Ca :=\n  le_trans hflight (sustained_le hη hE hQ hCv hsus)",
+  "named_hypotheses": []
+ },
+ "constraint_details": [
+  {
+   "id": "C14",
+   "relation": "η E_O2 Q Ca ≥ W v / (L/D)",
+   "lemma": "Delphi.Constraints.aerobic_flight_rules_out",
+   "law": "Delphi.sustained_flight_requires",
+   "module": "lean/Delphi/Flight.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "fick_aerobic_supply"
+   ],
+   "canEliminate": "a design claiming sustained powered flight its oxygen delivery cannot pay for",
+   "lemma_source": "/-- **C14, aerobic sustained flight.** A claim of sustained (aerobic) flight at power `P_req = W v/(L/D)` with\n`η E Q Ca < P_req` is ruled out. -/\ntheorem aerobic_flight_rules_out {W v LD P η E Q Ca Cv : ℝ} (hη : 0 ≤ η) (hE : 0 ≤ E) (hQ : 0 ≤ Q) (hCv : 0 ≤ Cv)\n    (hsus : P ≤ aerobicPower η E Q Ca Cv) (hflight : powerRequired W v LD ≤ P)\n    (h : η * E * Q * Ca < powerRequired W v LD) : False := by\n  have := sustained_flight_requires hη hE hQ hCv hsus hflight\n  linarith"
+  },
+  {
+   "id": "C14b",
+   "relation": "ceiling ≥ P_req",
+   "lemma": "Delphi.sustained_le",
+   "law": "Delphi.sustained_flight_requires",
+   "module": "lean/Delphi/Flight.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "fick_aerobic_supply"
+   ],
+   "canEliminate": "a design whose own oxygen chain reports a ceiling below the power its flight needs",
+   "lemma_source": "/-- **Sustained power bound.** A sustained mechanical power supplied aerobically is at most `η E Q Ca`. -/\ntheorem sustained_le {P η E Q Ca Cv : ℝ} (hη : 0 ≤ η) (hE : 0 ≤ E) (hQ : 0 ≤ Q) (hCv : 0 ≤ Cv)\n    (hsus : P ≤ aerobicPower η E Q Ca Cv) : P ≤ η * E * Q * Ca :=\n  le_trans hsus (aerobic_le_Ca hη hE hQ hCv)"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Flight.lean",
+  "decl": "Delphi.sustained_flight_requires",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "ad366a0c384e0997203d4b8e7fdad5595fd06f55fe44ecfab665f1d067741887",
+  "current_statement_sha256": "ad366a0c384e0997203d4b8e7fdad5595fd06f55fe44ecfab665f1d067741887",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

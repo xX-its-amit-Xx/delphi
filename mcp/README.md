@@ -19,11 +19,13 @@ claude.ai or ChatGPT, add it as a custom connector with that URL.
 
 It runs on Fly.io (`fly.toml`, `Dockerfile`) and redeploys from
 [`.github/workflows/deploy-mcp.yml`](../.github/workflows/deploy-mcp.yml) whenever `main` changes
-the server, `docs/claims.json` or any nanopubs. To run the HTTP mode locally:
+the server, `docs/claims.json`, any nanopubs, or the Lean laws (`lean/registry/`, `lean/laws.json`,
+`lean/constraints.json`, `lean/Delphi/`). To run the HTTP mode locally:
 `DELPHI_HTTP_PORT=8080 node mcp/server.mjs`.
 
 **Without cloning**: any MCP client can run it straight from GitHub. npm fetches the repo at the
-given ref and installs only the server, `docs/claims.json` and the unsigned TriG files (~750 KB),
+given ref and installs only the server, `docs/claims.json`, the unsigned TriG files and the Lean law sources the
+`lean_*` tools read (~2 MB packed),
 so `local` means "the repo as of that commit".
 
 ```json
@@ -34,7 +36,7 @@ so `local` means "the repo as of that commit".
 }
 ```
 
-Pin a tag or commit (`github:fractastical/delphi#v0.2.0`) for reproducible answers; `npx` caches
+Pin a tag or commit (`github:fractastical/delphi#v0.3.0`) for reproducible answers; `npx` caches
 the package, so pass `--prefer-online` or clear `~/.npm/_npx` to pick up newer data. Claude Code:
 `claude mcp add delphisci -- npx -y github:fractastical/delphi`.
 
@@ -87,6 +89,29 @@ Use `local` while building; use `network` when citing something or checking what
 | `delphi_rank_claims` | Rank claims by one assessment type. Omit `type` to list the types. |
 | `delphi_graph` | The claim graph ([`docs/claim-graph.html`](../docs/claim-graph.html)): filter by thinker, work, year, status, kind, truth; sort by `truth`, `truth-asc`, `disagreement` (max − min p_true across models), `testability` or `year`; or `groupBy` thinker/work/decade/status/kind for counts and means. |
 | `delphi_sparql` | Anything else. Read-only `SELECT`; common prefixes are added if the query has none. |
+| `lean_laws_list` | The project's versioned Lean laws (physical and biological): `law_id`, version, kind, status, theorem, constraint ids. Filter by `kind`, `status`, `scope`, `lawset`, `text`. |
+| `lean_law_get` | One law in full: statement, the Lean source of its theorem and named hypotheses, constraint lemmas, version history, sources, non-vacuity witness, pinned commit and statement hash with a live drift flag. |
+| `lean_lawset_get` | A lawset release (`law_id`, version, content hash, pinned status), or `current`. |
+| `lean_check` | Evaluate a design (SI units) against a lawset: per-law verdicts and violations `{law_id, version, kind, status, inputs, message, binding}`. Floating point, **not a kernel check**. |
+| `lean_verify` | Re-hash pinned Lean statements; report drift, missing theorems and a stale `/api/lean/` mirror. |
+| `lean_propose` | **stdio only, never on the hosted server** (runs a Lean build): hand a new statement to `lean/registry/propose.mjs`; returns candidate / contested / rejected, never accepted. |
+
+### Lean laws
+
+The `lean_*` tools are the same handlers as our sim-engine MCP server
+([`sim-engine/tools/lean-tools.mjs`](../sim-engine/tools/lean-tools.mjs)), reading every law through one
+loader, [`lib/lean-source.mjs`](../lib/lean-source.mjs): the registry in `lean/registry/` (one file per
+law, lawsets in `lean/registry/lawsets/`), falling back to `lean/laws.json` + `lean/constraints.json`
+if the registry is absent. Every result is the provenance envelope `{result, provenance, scope}`; read
+`scope` before using a verdict. CLI: `node mcp/cli.mjs laws --kind biological --status accepted`,
+`law <law_id>`, `lawset current`, `check design.json --lawset 1.0.0`, `verify`, `propose Law.lean --meta meta.json`
+(the same subcommands as `node sim-engine/lean-cli.mjs`). Browsers and anything without a server: the
+static mirror `GET /api/lean/{index,current}.json`, `/api/lean/laws/<law_id>.json`,
+`/api/lean/lawsets/<version>.json` on the dashboard site.
+
+A new law must be reachable through all of these; `node lean/registry/check-exposed.mjs` fails otherwise
+(pre-commit hook in `.githooks/`, CI in `.github/workflows/lean-exposed.yml`). A change under `lean/`
+redeploys the hosted server.
 
 ### How ranking works
 

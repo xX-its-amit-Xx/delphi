@@ -193,7 +193,7 @@ out['verdicts'] = verdicts
 overall = 'inconclusive'
 out['overall'] = {'verdict': overall,
                   'sentence': ('The scaling test is underpowered in both regimes (too few taxa with measured W/S and speed, and the powered set spans under one decade of wing loading); '
-                               'the flying fish itself sits inside the envelope (its quoted glide speeds of 10-20 m/s are at or above the 9.9 m/s minimum lift-supported speed computed from its own measured wing loading and lift coefficient); '
+                               'the flying fish itself sits inside the envelope (its quoted glide speeds of 10-20 m/s are at or above the 9.9 m/s minimum lift-supported speed computed from the measured wing loading and lift coefficient of the one 0.060 kg Park & Choi specimen; at the population length-weight mass for its length, 0.100-0.132 kg, that minimum is 12.7-14.6 m/s, still inside the quoted range); '
                                'whether its muscles could power level flight cannot be told because no source gives the muscle numbers.')}
 
 json.dump(out, open(os.path.join(HERE, 'results.json'), 'w', encoding='utf-8'), indent=2, ensure_ascii=False)

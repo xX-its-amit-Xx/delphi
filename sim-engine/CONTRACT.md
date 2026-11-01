@@ -52,6 +52,7 @@ unlabelled one.
 | `physiology_chain` | Wraps `physiology/index.js` `createPhysiology`. |
 | `growth_trajectory` | Wraps `development/trajectory.mjs`. |
 | `lean_check` | Wraps `lean/eliminate/browser-check.mjs`. **Not a kernel check** — it evaluates the same formulas in floating point. |
+| `lean_laws_list`, `lean_law_get`, `lean_lawset_get`, `lean_propose`, `lean_verify` (and the current `lean_check`) | The versioned Lean law registry, from `tools/lean-tools.mjs`; see `lean/registry/README.md`. `lean_check` now returns registry-tagged verdicts. |
 
 Parameter lists are in `contract.json`; they are not duplicated here, for the drift reason above.
 
@@ -73,6 +74,39 @@ Two cautions travel with these numbers and are repeated in every scope string: t
 from the **gastrula**, not a 72 hpf fin bud, and a source–sink model is only one of two live
 hypotheses for Fgf8 — hindered diffusion by heparan-sulfate binding is the other and is not
 implemented.
+
+## Studio tools
+
+The Design Studio wrapper: agents and humans create, edit and co-design organisms, then test them in
+scenarios across development. Handlers in `tools/studio.mjs` (exported, so `server.mjs`, `cli.mjs` and the
+HTTP bridge call the same functions); the pure core runs unchanged in the browser
+(`node dashboard/build-engine.mjs` copies it to `dashboard/public/blueprint3d/engine/`; smoke page
+`engine/smoke.html`). Tests: `node sim-engine/test/studio.mjs` (`MUTATE=<name>` makes one check fail).
+
+| name | what it does |
+|---|---|
+| `organism_create` / `organism_get` | Organism document `{id, base:{parents:[{organism, weight}]}, edits[], notes}`; get resolves STATE at an age and conditions. |
+| `organism_list_parts` | body → organ system → organ → tissue (manifest mesh parts), plus ontology tissue/cell terms and gene symbols, with editable params and what each edit feeds. |
+| `organism_edit` | Validates the target (unknown ids rejected), appends the edit, returns Lean verdicts and `violations`. |
+| `scenario_list` / `scenario_run` / `scenario_timecourse` | Scenario modules in `scenarios/*.mjs` (interface in `scenarios/index.mjs`); timecourse runs every stage age in `anatomy-model/parametric/stages.json`. |
+| `optimize` | Seeded random-restart hill climb over `{target, param, min, max}`; rejects candidates with a new binding Lean violation or a broken hard constraint and returns every rejection with its law. No feasible candidate → `status: "no design meets the spec"`. |
+| `session_open` / `session_post` / `session_read` | Append-only JSONL co-design log in `sessions/` (gitignored). Authors are role labels (`human`, `agent:physics`), never personal identifiers. |
+
+**STATE** (`lib/state.mjs`): every field is `{value, unit, kind, source}`; a field the data do not support
+is `value: null, kind: "assumed"` with a `reason`. `body_density_kg_m3` and `caudal_area_m2` are null for
+every organism; `red_muscle_fraction`, `gill_area_m2` and `hb_P50_kPa` are `borrowed` (trout, mackerel).
+Age scaling carries the document's own values along each parent's growth track; ages outside the data
+are clamped and flagged.
+
+**Lean verdicts** go through `lib/lean-source.mjs` `checkDesign` (one path to the laws; floating point,
+not a kernel check). Each violation carries `law_id`, `law_version`, `status`, `lawset_version`,
+`lean_ref`, `kind` (physical / biological), `inputs`, `parts` (to light up in red), `severity`
+(red / amber for contested / advisory) and `baseline_violated`: whether the unedited base organism also
+violates it. Several laws compare implied scaling exponents with ONE flying-fish reference specimen, so a
+real zebrafish violates them; the optimizer's default constraint is "no NEW binding violation". Results
+outside a scenario's validity range are reported as `out_of_validity`, never as violations. Only the
+mass–length rows (C7b, E2) can currently be evaluated from STATE: STATE has no full lifting area, so the
+area laws come back cannot-evaluate rather than being fed pectoral area alone.
 
 ## Validation
 

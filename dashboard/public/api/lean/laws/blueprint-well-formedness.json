@@ -1,0 +1,150 @@
+{
+ "law_id": "blueprint-well-formedness",
+ "version": "1.0.0",
+ "kind": "biological",
+ "class": "theorem",
+ "status": "accepted",
+ "label": "An emitted anatomical blueprint graph is well-formed under its own rules",
+ "level": "phenotype (structure)",
+ "lean_ref": {
+  "module": "lean/Delphi/Blueprint.lean",
+  "theorem": "Delphi.Blueprint.wellFormed_of_check",
+  "structure": null,
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "5cc00099d991400c4326791161a1cb0fb34ba29d5a2f3d9ca9aff260e551701f",
+  "content_hash": "f8485f2e1ff1d8eaff3acc4ac94ade5f63df8d95b24e03341ad3f8b38cc05f20"
+ },
+ "statement_en": "For a finite graph of ontology terms with a body root, a level per node and part_of edges (part, whole): if every edge goes strictly down in level, every edge joins two nodes, and every non-root node has a whole, then part_of is acyclic (its transitive closure is transitive and strictly decreases the level, so nothing is part of itself) and every node reaches the root. With pinned taxon statements: no never_in_taxon on a kept term, a superclass or a whole names a taxon containing the blueprint taxon, and every in_taxon or stated_in_taxon names a containing taxon. A Boolean checker decides all of this, and its truth implies the well-formedness (wellFormed_of_check); each emitted blueprint gets a certificate the kernel evaluates by decide.",
+ "hypotheses": [
+  {
+   "name": "blueprint-well-formedness#assumed-1",
+   "statement": "That Uberon and the Cell Ontology are correct and that Ubergraph served their part_of, subClassOf, never_in_taxon and in_taxon statements correctly and completely on the retrieval date: the graph and the taxon rows are data, pinned by hash and query."
+  },
+  {
+   "name": "blueprint-well-formedness#assumed-2",
+   "statement": "That the five levels (body, organ system, organ, tissue, cell) are the right notion of depth; the theorems use only that edges strictly decrease it."
+  },
+  {
+   "name": "blueprint-well-formedness#assumed-3",
+   "statement": "Nothing about any organism: not that it is real, that the anatomy is correct or complete, that any part was measured, or anything about a transition between forms."
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "a theorem about a model: it applies wherever the design supplies the quantities it uses and accepts the hypotheses in scope.assumed",
+  "kernelChecked": [
+   "Generic (any node type): edges strictly down in level ⟹ the part_of closure is transitive, strictly decreases the level, and is acyclic (Graph.acyclic_of_levelsDown, Graph.transGen_trans, Graph.transGen_level_lt).",
+   "Generic: edges closed and every non-root node has a whole ⟹ every node reaches the root (Graph.rooted_of, strong induction on level).",
+   "Generic: the Boolean checker is sound for LevelsDown, Closed, Acyclic, Rooted and the taxon conditions (wellFormed_of_check).",
+   "Per blueprint: the kernel evaluates the checker on the emitted graph and the pinned taxon rows (decide +kernel), and fixes the distinct-term counts per level and the graph size (lean/Delphi/Certificates/*.lean)."
+  ],
+  "assumed": [
+   "That Uberon and the Cell Ontology are correct and that Ubergraph served their part_of, subClassOf, never_in_taxon and in_taxon statements correctly and completely on the retrieval date: the graph and the taxon rows are data, pinned by hash and query.",
+   "That the five levels (body, organ system, organ, tissue, cell) are the right notion of depth; the theorems use only that edges strictly decrease it.",
+   "Nothing about any organism: not that it is real, that the anatomy is correct or complete, that any part was measured, or anything about a transition between forms."
+  ],
+  "note": null
+ },
+ "constraint_scopes": {},
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "proved in this project; no paper states it in this form"
+  ],
+  "observations": [],
+  "faithfulness": "not assessed",
+  "flyingFishAudit": {
+   "holds": 11
+  },
+  "rejectable": null
+ },
+ "sources": [
+  "proved in this project; no paper states it in this form"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.Blueprint.Certificates.aFlyingFish_check",
+  "statement": "the flying-fish blueprint certificate passes the checker (decide +kernel)"
+ },
+ "constraints": [
+  "C6"
+ ],
+ "introduced_in": "1.0.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": {
+  "approved_by_role": "bootstrap-grandfathered",
+  "date": "2026-11-01",
+  "basis": "in force in lean/constraints.json / lean/laws.json before the registry existed; no per-law human review recorded by the registry"
+ },
+ "origin": "lean/registry/laws/blueprint-well-formedness.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "bootstrapped from lean/laws.json (status there: \"proved\")"
+  }
+ ],
+ "content_hash": "f8485f2e1ff1d8eaff3acc4ac94ade5f63df8d95b24e03341ad3f8b38cc05f20",
+ "lean": {
+  "theorem": "Delphi.Blueprint.wellFormed_of_check",
+  "module": "lean/Delphi/Blueprint.lean",
+  "line": 184,
+  "source": "/-- **Soundness of the checker.** If `check g D` evaluates to `true`, the graph is well-formed. -/\ntheorem wellFormed_of_check (g : Graph α) (D : TaxonData α τ) (h : check g D = true) : WellFormed g D := by\n  unfold check at h\n  have h1 := Bool.and_eq_true_iff.mp h\n  have h2 := Bool.and_eq_true_iff.mp h1.1\n  have h3 := Bool.and_eq_true_iff.mp h2.1\n  exact ⟨g.levelsDown_of_check h3.1, g.closed_of_check h3.2,\n    g.acyclic_of_levelsDown (g.levelsDown_of_check h3.1), g.rooted_of_check h3.1 h3.2 h2.2,\n    D.ok_of_check h1.2⟩",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.Blueprint.Graph",
+    "keyword": "structure",
+    "module": "lean/Delphi/Blueprint.lean",
+    "line": 44,
+    "source": "/-- A blueprint graph: nodes, a root, a level for each node, and `part_of` edges `(part, whole)`. -/\nstructure Graph (α : Type) where\n  nodes : List α\n  root : α\n  level : α → ℕ\n  partOf : List (α × α)"
+   },
+   {
+    "name": "Delphi.Blueprint.TaxonData",
+    "keyword": "structure",
+    "module": "lean/Delphi/Blueprint.lean",
+    "line": 112,
+    "source": "/-- Taxon statements pinned from the ontology for one blueprint. `ancestors` are the taxa that contain\nthe blueprint's taxon (itself included); `neverIn` holds `(kept term, forbidden taxon)` for every\n`never_in_taxon` statement on the term, a superclass or a whole; `inTaxon` holds `in_taxon` statements on\nkept terms; `stated` holds the `stated_in_taxon` evidence the blueprint file itself records. -/\nstructure TaxonData (α τ : Type) where\n  ancestors : List τ\n  neverIn : List (α × τ)\n  inTaxon : List (α × τ)\n  stated : List (α × τ)"
+   },
+   {
+    "name": "Delphi.Blueprint.WellFormed",
+    "keyword": "def",
+    "module": "lean/Delphi/Blueprint.lean",
+    "line": 180,
+    "source": "/-- Well-formed: edges strictly down, closed, acyclic, rooted, taxon constraints respected. -/\ndef WellFormed (g : Graph α) (D : TaxonData α τ) : Prop :=\n  g.LevelsDown ∧ g.Closed ∧ g.Acyclic ∧ g.Rooted ∧ D.Ok"
+   }
+  ]
+ },
+ "constraint_details": [
+  {
+   "id": "C6",
+   "relation": "check g D = true",
+   "lemma": "Delphi.Blueprint.wellFormed_of_check",
+   "law": "Delphi.Blueprint.wellFormed_of_check",
+   "module": "lean/Delphi/Blueprint.lean",
+   "status": "verified",
+   "appliesWhen": [],
+   "canEliminate": "a design whose part_of graph has a cycle or an orphan, or that keeps a term the pinned taxon statements exclude; it says nothing biological",
+   "lemma_source": "/-- **Soundness of the checker.** If `check g D` evaluates to `true`, the graph is well-formed. -/\ntheorem wellFormed_of_check (g : Graph α) (D : TaxonData α τ) (h : check g D = true) : WellFormed g D := by\n  unfold check at h\n  have h1 := Bool.and_eq_true_iff.mp h\n  have h2 := Bool.and_eq_true_iff.mp h1.1\n  have h3 := Bool.and_eq_true_iff.mp h2.1\n  exact ⟨g.levelsDown_of_check h3.1, g.closed_of_check h3.2,\n    g.acyclic_of_levelsDown (g.levelsDown_of_check h3.1), g.rooted_of_check h3.1 h3.2 h2.2,\n    D.ok_of_check h1.2⟩"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Blueprint.lean",
+  "decl": "Delphi.Blueprint.wellFormed_of_check",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "5cc00099d991400c4326791161a1cb0fb34ba29d5a2f3d9ca9aff260e551701f",
+  "current_statement_sha256": "5cc00099d991400c4326791161a1cb0fb34ba29d5a2f3d9ca9aff260e551701f",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

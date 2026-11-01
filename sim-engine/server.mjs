@@ -18,14 +18,23 @@ import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprot
 
 import * as morphogen from './tools/morphogen-diffusion.mjs';
 import * as protein from './tools/protein-structure.mjs';
-import { physiologySchema, physiologyChain, growthSchema, growthTrajectory, leanSchema, leanCheck } from './tools/wrappers.mjs';
+import { physiologySchema, physiologyChain, growthSchema, growthTrajectory } from './tools/wrappers.mjs';
+import { LEAN_TOOLS } from './tools/lean-tools.mjs';
+import { STUDIO_TOOLS } from './tools/studio.mjs';
+import { SPEC_TOOLS } from './tools/spec-tools.mjs';
 
 export const TOOLS = [
   { name: 'morphogen_diffusion', ...morphogen.schema, handler: args => morphogen.run(args) },
   { name: 'protein_structure', ...protein.schema, handler: args => protein.run(args) },
   { name: 'physiology_chain', ...physiologySchema, handler: args => physiologyChain(args) },
   { name: 'growth_trajectory', ...growthSchema, handler: args => growthTrajectory(args) },
-  { name: 'lean_check', ...leanSchema, handler: args => leanCheck(args) },
+  // Lean laws: lean_laws_list, lean_law_get, lean_lawset_get, lean_check, lean_propose, lean_verify.
+  // One loader (lib/lean-source.mjs); the same handlers serve mcp/server.mjs, http.mjs and lean-cli.mjs.
+  ...LEAN_TOOLS,
+  // Design Studio: organism documents, STATE, scenarios, optimisation, co-design sessions (tools/studio.mjs).
+  ...STUDIO_TOOLS,
+  // Functional criteria: parse_design_text, design_from_spec (tools/spec-tools.mjs, lib/spec.mjs, lib/parse-text.mjs).
+  ...SPEC_TOOLS,
 ];
 
 // flight_sim is deliberately absent. It would wrap the physics simulation's equations, which are not
@@ -60,8 +69,9 @@ if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
   // code: regenerate it rather than editing the schemas by hand in two places.
   if (process.argv.includes('--dump-contract')) {
     console.log(JSON.stringify({
-      server: 'delphisci-sim-engine', version: '0.1.0', transport: 'stdio',
-      envelope: { result: 'tool-specific', provenance: '[{quantity, value, kind, source}]', scope: 'string, mandatory' },
+      server: 'delphisci-sim-engine', version: '0.1.0', contract_version: (await import('./lib/envelope.mjs')).CONTRACT_VERSION, changelog: 'sim-engine/CHANGELOG.md', transport: 'stdio',
+      envelope: { contract_version: 'semver string', result: 'tool-specific', provenance: '[{quantity, value, kind, source}]', scope: 'string, mandatory', weakest_input: 'kind', counts: '{kind: n}' },
+      scenario_result: { metrics: '[{key,label,value,unit,better,kind,source}]', survives: 'true|false|null: the organism survives the perturbation', feasible: 'true|false|null: the behaviour asked about is possible', limiting: 'string|null', provenance: '[...]', scope: 'string', validity: '{inRange, notes}' },
       provenance_kinds: Object.fromEntries(Object.entries((await import('./lib/provenance.mjs')).KINDS)),
       tools: TOOLS.map(({ name, title, description, inputSchema }) => ({ name, title, description, inputSchema })),
     }, null, 1));

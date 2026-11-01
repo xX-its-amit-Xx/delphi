@@ -1,0 +1,117 @@
+{
+ "law_id": "kimura-fixation-probability",
+ "version": "1.0.0",
+ "kind": "biological",
+ "class": "theorem",
+ "status": "accepted",
+ "label": "Kimura fixation probability of a mutant allele",
+ "level": "genotype",
+ "lean_ref": {
+  "module": "lean/Delphi/Kimura.lean",
+  "theorem": "Delphi.NeutralChain.fixedBy_tendsto",
+  "structure": null,
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "61f5787bca77fef3009a18841c9741417ec05fe70582666142795ec93be96155",
+  "content_hash": "926e515291aad6b9e49a38ace2fd31ae1abd4ca314072484a8bbd535778c2467"
+ },
+ "statement_en": "The probability that a mutant allele eventually fixes in a finite population depends on its initial frequency, its selective advantage and the effective population size, and equals its initial frequency when it is neutral.",
+ "hypotheses": [
+  {
+   "name": "kimura-fixation-probability#assumed-1",
+   "statement": "Neutral case only (s = 0). Kimura 1962 with selection in the diffusion limit is not formalised."
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "a theorem about a model: it applies wherever the design supplies the quantities it uses and accepts the hypotheses in scope.assumed",
+  "kernelChecked": [
+   "Fixation probability i/M for any neutral absorbing chain, hence for the exact finite Wright-Fisher chain (Delphi.NeutralChain.fixedBy_tendsto)."
+  ],
+  "assumed": [
+   "Neutral case only (s = 0). Kimura 1962 with selection in the diffusion limit is not formalised."
+  ],
+  "note": null
+ },
+ "constraint_scopes": {},
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "On the probability of fixation of mutant genes in a population (1962)"
+  ],
+  "observations": [],
+  "faithfulness": "faithful-with-narrower-scope (1 provider: openai)",
+  "flyingFishAudit": {
+   "cannot-evaluate": 7
+  },
+  "rejectable": null
+ },
+ "sources": [
+  "On the probability of fixation of mutant genes in a population (1962)"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.wrightFisher",
+  "statement": "the Wright-Fisher binomial chain is a NeutralChain for every M > 0"
+ },
+ "constraints": [
+  "C2"
+ ],
+ "introduced_in": "1.0.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": {
+  "approved_by_role": "bootstrap-grandfathered",
+  "date": "2026-11-01",
+  "basis": "in force in lean/constraints.json / lean/laws.json before the registry existed; no per-law human review recorded by the registry"
+ },
+ "origin": "lean/registry/laws/kimura-fixation-probability.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "bootstrapped from lean/laws.json (status there: \"proved\")"
+  }
+ ],
+ "content_hash": "926e515291aad6b9e49a38ace2fd31ae1abd4ca314072484a8bbd535778c2467",
+ "lean": {
+  "theorem": "Delphi.NeutralChain.fixedBy_tendsto",
+  "module": "lean/Delphi/Kimura.lean",
+  "line": 258,
+  "source": "/-- **Neutral fixation probability (Kimura 1962, neutral case).** A neutral lineage that\nstarts with `i` of `M` copies is eventually fixed with probability `i / M`. -/\ntheorem fixedBy_tendsto (hM : 0 < M) (i : Fin (M + 1)) :\n    Tendsto (fun t => C.fixedBy t i) atTop (𝓝 (((i : ℕ) : ℝ) / M)) := by\n  obtain ⟨ρ, hρ0, hρ1, hρ⟩ := C.fixedBy_sub_le hM\n  rw [tendsto_iff_norm_sub_tendsto_zero]\n  refine squeeze_zero (fun t => norm_nonneg _) (fun t => ?_)\n    (tendsto_pow_atTop_nhds_zero_of_lt_one hρ0 hρ1)\n  simpa [Real.norm_eq_abs] using hρ t i",
+  "named_hypotheses": []
+ },
+ "constraint_details": [
+  {
+   "id": "C2",
+   "relation": "u = 1 / M",
+   "lemma": "Delphi.Constraints.neutral_fixation_rules_out",
+   "law": "Delphi.wrightFisher_fixation_one",
+   "module": "lean/Delphi/Kimura.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "neutral_wright_fisher"
+   ],
+   "canEliminate": "only a candidate that commits to a specific contradicting probability; it says nothing about which mutations arise or what they do",
+   "lemma_source": "/-- **C2, neutral fixation.** A candidate that confines the fixation probability of one new neutral\nmutant among `M` copies to an interval not containing `1/M` is ruled out. -/\ntheorem neutral_fixation_rules_out (M : ℕ) (hM : 0 < M) {a b : ℝ}\n    (hu : a ≤ (wrightFisher M hM).fixationProbability (oneCopy M hM) ∧\n      (wrightFisher M hM).fixationProbability (oneCopy M hM) ≤ b)\n    (h : b < 1 / (M : ℝ) ∨ 1 / (M : ℝ) < a) : False := by\n  rw [wrightFisher_fixation_one] at hu\n  rcases h with h | h <;> linarith [hu.1, hu.2]"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Kimura.lean",
+  "decl": "Delphi.NeutralChain.fixedBy_tendsto",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "61f5787bca77fef3009a18841c9741417ec05fe70582666142795ec93be96155",
+  "current_statement_sha256": "61f5787bca77fef3009a18841c9741417ec05fe70582666142795ec93be96155",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

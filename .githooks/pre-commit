@@ -1,0 +1,29 @@
+#!/bin/sh
+# DELPHI pre-commit hook. Enable once per clone (not done for you):
+#   git config core.hooksPath .githooks
+#
+# Lean law exposure: when a commit touches the Lean laws or the surfaces that serve them, every law must be in the
+# registry, the MCP tools (sim-engine and mcp/), both CLIs and the static /api/lean/ mirror, and nothing generated
+# may be stale. Node only; no Lean toolchain needed. See lean/registry/AGENTS-RULE.md.
+#
+# Bypass only for a commit that cannot affect laws: git commit --no-verify (CI runs the same check on the PR).
+
+changed=$(git diff --cached --name-only --diff-filter=ACMRD)
+echo "$changed" | grep -Eq '^(lean/|lib/lean-[a-z]+\.mjs|sim-engine/|mcp/|dashboard/build-lean-api\.mjs|dashboard/public/api/lean/|dashboard/public/blueprint3d/lean-client\.js|package\.json|\.dockerignore)' || exit 0
+
+command -v node >/dev/null 2>&1 || { echo "pre-commit: node not found; cannot run lean/registry/check-exposed.mjs" >&2; exit 1; }
+root=$(git rev-parse --show-toplevel)
+# The check reads the working tree. Unstaged edits to law files would make it test something other than the commit,
+# so refuse them rather than pass or fail on the wrong content.
+dirty=$(git diff --name-only -- lean/registry lean/laws.json lean/constraints.json lean/empirical.json lean/Delphi dashboard/public/api/lean sim-engine/contract.json)
+if [ -n "$dirty" ]; then
+  echo "pre-commit: unstaged changes in law sources or generated outputs; stage or stash them first:" >&2
+  echo "$dirty" | sed 's/^/  /' >&2
+  exit 1
+fi
+node "$root/lean/registry/check-exposed.mjs" || {
+  echo "" >&2
+  echo "pre-commit: Lean law exposure check failed (see above). Usual fix:" >&2
+  echo "  node dashboard/build-lean-api.mjs && node sim-engine/server.mjs --dump-contract > sim-engine/contract.json && git add dashboard/public/api/lean sim-engine/contract.json" >&2
+  exit 1
+}

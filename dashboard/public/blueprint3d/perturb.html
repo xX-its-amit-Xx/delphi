@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Perturb Harness &mdash; DELPHI</title>
+<meta name="description" content="Standalone test harness for the Perturb mode (perturb.js): one segmented GLB, the Perturb panel, and a clearly-labelled mock engine until sim-engine lands in ./engine/.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e7c86'/%3E%3Cpath d='M5 16c5-7 14-9 22-4-3 2-6 3-8 4 2 1 5 2 8 4-8 5-17 3-22-4z' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+/* tokens copied from explode.html so the module looks the same in both hosts */
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--soft:#eef2ef;--surface:#f2f4f1;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;
+ --suff:#eb6834;--req:#2a78d6;--expr:#9aa6a3;--fill:#14201f;--hollow:#fcfcfb}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--soft:#192b29;--surface:#101716;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;
+ --suff:#d95926;--req:#3987e5;--expr:#6b7b78;--fill:#e7efec;--hollow:#1a1a19}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--soft:#192b29;--surface:#101716;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;
+ --suff:#d95926;--req:#3987e5;--expr:#6b7b78;--fill:#e7efec;--hollow:#1a1a19}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 "Inter Tight",system-ui,sans-serif;display:flex;flex-direction:column}
+a{color:var(--accent)}
+header{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:9px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header b{font-family:Fraunces,serif;font-size:1.1rem}
+nav a{padding:3px 9px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.86rem}
+.ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.84rem;margin-left:auto}
+select,input[type=range],button{font:inherit;font-size:.86rem;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:4px 9px}
+input[type=range]{padding:0;width:110px;accent-color:var(--accent)}
+button{cursor:pointer}button.primary{border-color:var(--accent);color:var(--accent);font-weight:600}button:disabled{opacity:.5;cursor:default}
+main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 430px;min-height:0}
+@media (max-width:880px){main{grid-template-columns:minmax(0,1fr);grid-template-rows:48vh auto}html,body{overflow-x:hidden}#panel{border-left:0;border-top:1px solid var(--line);min-width:0;overflow-x:hidden}.ctl{margin-left:0;max-width:100%}.ctl select{max-width:calc(100vw - 32px)}}
+#stage{position:relative;min-height:0;min-width:0;overflow:hidden;background:var(--surface)}
+#c{position:absolute;inset:0;display:block;width:100%;height:100%;touch-action:none}
+#panel{border-left:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:16px}
+.ov{position:absolute;background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:.78rem;z-index:2}
+#hint{left:10px;bottom:10px;max-width:calc(100% - 20px)}
+#tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 8px;font-size:.78rem;display:none;z-index:5}
+#mockflag{left:10px;top:10px;border:1.5px dashed var(--warn);display:none;max-width:calc(100% - 20px)}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<header>
+  <b>Perturb harness</b>
+  <nav><a href="./explode.html">Open the Fish</a><a href="../">Mission Control</a></nav>
+  <div class="ctl">
+    <select id="modelSel" title="Which GLB to load" aria-label="model">
+      <option value="flying-fish-dev">Flying fish (with growth stages)</option>
+      <option value="zebrafish-dev">Zebrafish (with growth stages)</option>
+      <option value="tff">TFF (HYPOTHETICAL design)</option>
+      <option value="flying-fish">Flying fish (static)</option>
+    </select>
+    <button id="themeBtn">Theme</button>
+  </div>
+</header>
+<main>
+  <div id="stage"><canvas id="c"></canvas><div id="tip"></div>
+    <div id="mockflag" class="ov"><b>&#9888; MOCK ENGINE</b> &mdash; harness stand-in, not sim-engine</div>
+    <div id="hint" class="ov">Drag to turn, wheel to zoom, click a part to select it.</div></div>
+  <aside id="panel"><p>Loading&hellip;</p></aside>
+</main>
+
+<!--
+  MOCK ENGINE — lives ONLY in this harness, never in perturb.js. It implements the scenario interface agreed for
+  sim-engine (scenarios/index.mjs + lib/state.mjs + lib/organism.mjs) so the UI can be exercised before the real engine
+  is copied into ./engine/ by dashboard/build-engine.mjs. Every number below is a placeholder; titles and sources say MOCK.
+  The harness turns this text into a Blob module URL so the optimiser's Web Worker can import the same code.
+-->
+<script type="text/plain" id="mock-engine">
+export const MOCK = true;
+const K_SRC = 'MOCK (perturb.html harness): placeholder, not the engine';
+// size vs age: von Bertalanffy shape from development/trajectory.mjs (H. affinis), hatch floor 0.4 cm; MOCK use only
+const SLcm = a => Math.max(0.4, 23.3 * 0.927 * (1 - Math.exp(-3.12 * (a / 365 - 0.01))));
+export function createOrganism({ species, parents, manifest }) {
+  const values = {}; for (const [k, v] of Object.entries((manifest && manifest.parameters) || {})) if (typeof v === 'number') values[k] = v;
+  if (values.standard_length_m == null) values.standard_length_m = 0.203; if (values.body_mass_kg == null) values.body_mass_kg = 0.06;
+  if (values.pectoral_area_over_SL2 == null) values.pectoral_area_over_SL2 = 0.15475; if (values.flight_muscle_fraction == null) values.flight_muscle_fraction = 0.04;
+  return { schema: 'MOCK organism document (harness)', species, base: { parents, values }, edits: [] };
+}
+export function addEdit(doc, edit) { return { ...doc, edits: [...doc.edits, edit] }; }
+export function resolveState(doc, ageDays, conditions = {}) {
+  const v = { ...doc.base.values }; let finMul = 1, sizeMul = 1;
+  for (const e of doc.edits || []) {
+    const ap = x => e.op === 'set' ? e.value : e.op === 'scale' ? x * e.value : e.op === 'add' ? x + e.value : x;
+    if (e.param in v) v[e.param] = ap(v[e.param]);
+    else if (/pectoral_fin/.test(e.target?.id || '') || /UBERON_0000151/.test(e.target?.id || '')) finMul = ap(finMul);
+    else if (e.param === 'relative_size') sizeMul = ap(sizeMul);
+  }
+  const size = SLcm(ageDays) / SLcm(365);
+  const SL = v.standard_length_m * size * sizeMul;
+  const mass = v.body_mass_kg * Math.pow(size * sizeMul, 3.01);
+  const lifting = SL * SL * (v.pectoral_area_over_SL2 * finMul + 0.0446 + 0.1086);
+  const d = x => ({ value: x, kind: 'derived', source: K_SRC });
+  return { ageDays, SL_m: d(SL), mass_kg: d(mass), finArea_m2: d(lifting), finLength_SL: { value: v.pectoral_len_over_SL ?? 0.687, kind: 'assumed', source: K_SRC },
+    CLmax: { value: 0.78, kind: 'borrowed', source: 'Park and Choi 2010 L3 (MOCK reuse at every stage)' }, LD_max: { value: 4.37, kind: 'borrowed', source: 'Park and Choi 2010 L3' },
+    flight_muscle_fraction: { value: v.flight_muscle_fraction, kind: 'assumed', source: K_SRC }, conditions };
+}
+const val = (s, k) => (s[k] && typeof s[k] === 'object') ? s[k].value : s[k];
+const card = (eq) => ({ equations: eq, sources: ['MOCK: harness stand-in, no source'], validity: 'MOCK: exercises the UI only', validatedAgainst: [] });
+export const SCENARIOS = [
+  { key: 'mock-glide', title: 'MOCK glide from a launch height', group: 'behaviour',
+    params: [{ key: 'airspeed_m_s', label: 'airspeed', unit: 'm/s', default: 10, min: 3, max: 20, kind: 'assumed', source: K_SRC }, { key: 'launch_height_m', label: 'launch height', unit: 'm', default: 2, min: 0.5, max: 8, kind: 'assumed', source: K_SRC }],
+    requires: ['SL_m', 'mass_kg', 'finArea_m2'],
+    run(s, p) { const W = val(s, 'mass_kg') * 9.81, S = val(s, 'finArea_m2'); const vmin = Math.sqrt(2 * W / (1.225 * S * 0.78)); const SLm = val(s, 'SL_m');
+      return { metrics: [{ key: 'vmin', label: 'minimum glide speed', value: vmin, unit: 'm/s', better: 'lower', kind: 'derived', source: 'v = sqrt(2W/(rho S CLmax)) on MOCK state' },
+        { key: 'glide_distance', label: 'glide distance', value: p.launch_height_m * 4.37, unit: 'm', better: 'higher', kind: 'assumed', source: 'h × L/D with L/D held at 4.37 (MOCK)' },
+        { key: 'wing_loading', label: 'wing loading', value: W / S, unit: 'N/m²', better: 'lower', kind: 'derived', source: 'W/S on MOCK state' }],
+        survives: p.airspeed_m_s >= vmin, limiting: 'minimum speed', provenance: [{ quantity: 'CLmax', value: 0.78, kind: 'borrowed', source: 'Park and Choi 2010 L3' }],
+        scope: 'MOCK: steady glide only; no take-off, no gusts, no ground effect.', validity: { inRange: SLm >= 0.0168, notes: SLm >= 0.0168 ? '' : 'below 1.68 cm SL, the smallest fish in the fin-length fit' } }; },
+    modelCard: card(['v_min = sqrt(2 W / (rho S C_L,max))', 'distance = h × L/D']) },
+  { key: 'mock-temperature', title: 'MOCK water temperature', group: 'environment',
+    params: [{ key: 'water_temp_C', label: 'water temperature', unit: '°C', default: 25, min: 8, max: 36, kind: 'assumed', source: K_SRC }],
+    run(s, p) { const T = p.water_temp_C; const scope = Math.max(0, 1 - Math.pow((T - 26) / 9, 2)); const a = s.ageDays;
+      return { metrics: [{ key: 'aerobic_scope', label: 'relative aerobic scope', value: scope, unit: '', better: 'higher', kind: 'assumed', source: 'bell curve around 26 °C (MOCK)' },
+        { key: 'ctmax_margin', label: 'margin to CTmax', value: a < 10 ? null : 33 - T, unit: '°C', better: 'higher', kind: 'assumed', source: a < 10 ? 'no larval CTmax (MOCK: null on purpose)' : 'CTmax 33 °C (MOCK)' }],
+        survives: T <= 33, limiting: 'CTmax', provenance: [], scope: 'MOCK: steady temperature, no acclimation.', validity: { inRange: T >= 18 && T <= 30, notes: 'the MOCK curve is only "fitted" between 18 and 30 °C' } }; },
+    modelCard: card(['scope = 1 - ((T - 26)/9)^2']) },
+  { key: 'mock-depth', title: 'MOCK deep-sea pressure (swim bladder)', group: 'environment',
+    params: [{ key: 'depth_m', label: 'depth', unit: 'm', default: 20, min: 0, max: 300, kind: 'assumed', source: K_SRC }],
+    run(s, p) { const P = 1 + p.depth_m / 10.06; return { metrics: [{ key: 'bladder_volume', label: 'swim-bladder volume vs surface', value: 1 / P, unit: '×', better: 'higher', kind: 'derived', source: "Boyle's law P V = const (MOCK, isothermal)" }],
+      survives: p.depth_m <= 150, limiting: 'buoyancy loss', provenance: [], scope: 'MOCK: no gas secretion.', validity: { inRange: true, notes: '' } }; },
+    modelCard: card(['V/V0 = P0/P, P = 1 atm + depth/10.06 m']) },
+  { key: 'mock-digestion', title: 'MOCK digestion of one meal', group: 'physiology',
+    params: [{ key: 'meal_pct', label: 'meal size', unit: '% body mass', default: 3, min: 0.5, max: 10, kind: 'assumed', source: K_SRC }],
+    run(s, p) { const m = val(s, 'mass_kg'); return { metrics: [{ key: 'transit_h', label: 'gut transit time', value: 30 * Math.pow(m, 0.25) * Math.pow(p.meal_pct / 3, 0.3), unit: 'h', better: 'lower', kind: 'borrowed', source: 'mass^0.25 scaling borrowed from other teleosts (MOCK)' }],
+      survives: true, limiting: null, provenance: [], scope: 'MOCK.', validity: { inRange: true, notes: '' } }; },
+    modelCard: card(['t = 30 h × M^0.25 × (meal/3%)^0.3']) },
+];
+</script>
+<script type="application/json" id="mock-codesign">{"MOCK":true,"session":{"id":"mock-session","title":"MOCK session (harness sample)"},"posts":[
+ {"role":"agent","label":"physics agent","kind":"run","text":"MOCK: ran the glide scenario at 10 m/s on the base flying fish; survives at every stage after hatching."},
+ {"role":"human","label":"biologist","kind":"comment","text":"MOCK: can we see what a heavier adult does to the minimum speed?"},
+ {"role":"agent","label":"lean agent","kind":"check","text":"MOCK: C9 holds for the base design at 10 m/s (browser-check.mjs, not a kernel check)."}]}</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { mountPerturb, discoverEngine } from './perturb.js';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const params = new URLSearchParams(location.search);
+try { const t = localStorage.getItem('delphi-theme'); if (t) document.documentElement.dataset.theme = t; } catch { }
+if (params.get('theme')) document.documentElement.dataset.theme = params.get('theme');
+$('#themeBtn').onclick = () => { const c = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light'); const n = c === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = n; try { localStorage.setItem('delphi-theme', n); } catch { } if (pt) pt.refresh(); };
+
+const key = ['flying-fish-dev', 'zebrafish-dev', 'tff', 'flying-fish'].includes(params.get('model')) ? params.get('model') : 'flying-fish-dev';
+$('#modelSel').value = key; $('#modelSel').onchange = e => { const u = new URL(location.href); u.searchParams.set('model', e.target.value); location.href = u.toString(); };
+const glb = `model/${key}.glb`, mfUrl = key === 'flying-fish' ? 'model/manifest.json' : `model/${key}-manifest.json`;
+
+const renderer = new THREE.WebGLRenderer({ canvas: $('#c'), antialias: true, alpha: true, preserveDrawingBuffer: true }); renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(36, 1, 0.02, 100);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x6a7a80, 0.95)); const dl = new THREE.DirectionalLight(0xffffff, 1); dl.position.set(2, 3, 2); scene.add(dl);
+const root = new THREE.Group(); scene.add(root);
+const cam = { theta: -0.9, phi: 1.2, dist: 1.25 }; const objs = []; let MF = null, sel = null, pt = null; const listeners = new Set();
+const GROUP = n => n.replace(/_(L|R)_\d+$/, '').replace(/_\d+$/, '').replace(/_(L|R)$/, '');
+const resize = () => { const st = $('#stage'); renderer.setSize(st.clientWidth, st.clientHeight, false); camera.aspect = st.clientWidth / Math.max(1, st.clientHeight); camera.updateProjectionMatrix(); };
+addEventListener('resize', resize);
+
+const [mf, gl] = await Promise.all([fetch(mfUrl).then(r => r.json()), new Promise((res, rej) => new GLTFLoader().load(glb, g => res(g.scene), undefined, rej))]);
+MF = mf; root.add(gl);
+const box = new THREE.Box3().setFromObject(gl), size = box.getSize(new THREE.Vector3()); const s = 1 / size.x; gl.scale.setScalar(s); gl.position.sub(box.getCenter(new THREE.Vector3()).multiplyScalar(s));
+const entry = n => { const list = MF.objects || []; const nm = o => o.object || o.name; return list.find(o => nm(o) === n) || list.find(o => nm(o) === n.replace(/_(L|R)$/, '')) || null; };
+for (const ch of gl.children) { const e = entry(ch.name) || {}; ch.traverse(c => { if (c.isMesh) { c.userData.obj = ch.name; c.material = c.material.clone(); c.material.userData.base = { op: c.material.opacity, em: c.material.emissive ? c.material.emissive.getHex() : 0 }; } });
+  objs.push({ name: ch.name, mesh: ch, group: GROUP(ch.name), m: { label: e.label || ch.name, ontology_id: e.ontology_id || null, uberon_id: e.uberon_id || null, level: e.level || null, system: e.organ_system_id || null, system_label: e.organ_system || null, layer: e.layer || 'outer' } }); }
+$('#stage').dataset.objs = String(objs.length);
+resize();
+
+// picking + orbit (a small copy of explode.html's controls)
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(); let drag = null;
+const pickAt = e => { const r = renderer.domElement.getBoundingClientRect(); mouse.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(mouse, camera); const ms = []; for (const o of objs) o.mesh.traverse(c => { if (c.isMesh && c.visible) ms.push(c); }); const h = ray.intersectObjects(ms, false); return h.length ? objs.find(o => o.name === h[0].object.userData.obj) : null; };
+const el = renderer.domElement;
+el.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, th: cam.theta, ph: cam.phi, moved: false }; el.setPointerCapture(e.pointerId); });
+el.addEventListener('pointermove', e => { if (drag) { const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true; cam.theta = drag.th - dx * 0.006; cam.phi = Math.min(3.09, Math.max(0.05, drag.ph - dy * 0.006)); return; }
+  const o = pickAt(e), tip = $('#tip'); if (!o) { tip.style.display = 'none'; return; } const r = el.getBoundingClientRect(); tip.style.display = 'block'; tip.style.left = (e.clientX - r.left + 12) + 'px'; tip.style.top = (e.clientY - r.top + 12) + 'px'; tip.textContent = o.m.label; });
+el.addEventListener('pointerup', e => { if (drag && !drag.moved) { const o = pickAt(e); if (o) selectObj(o); } drag = null; });
+el.addEventListener('wheel', e => { e.preventDefault(); cam.dist = Math.min(6, Math.max(0.3, cam.dist * (1 + Math.sign(e.deltaY) * 0.08))); }, { passive: false });
+function selectObj(o) {
+  if (sel) sel.mesh.traverse(c => { if (c.isMesh && c.material.emissive) { c.material.emissive.setHex(c.material.userData.base.em); c.material.emissiveIntensity = 1; } });
+  sel = o; const acc = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  o.mesh.traverse(c => { if (c.isMesh && c.material.emissive) { c.material.emissive.set(acc); c.material.emissiveIntensity = 0.4; } });
+  $('#stage').dataset.sel = o.name; for (const f of listeners) f(o);
+}
+window.__pt = { selectByName: n => { const o = objs.find(x => x.name === n); if (o) selectObj(o); return !!o; } };
+(function frame() { const x = cam.dist * Math.sin(cam.phi) * Math.cos(cam.theta), y = cam.dist * Math.cos(cam.phi), z = cam.dist * Math.sin(cam.phi) * Math.sin(cam.theta); camera.position.set(x, y, z); camera.lookAt(0, 0, 0); renderer.render(scene, camera); requestAnimationFrame(frame); })();
+
+// engine: the real ./engine/ when dashboard/build-engine.mjs has copied it, else the MOCK above (forced with ?engine=mock;
+// ?engine=none shows the no-engine state)
+const want = params.get('engine');
+let engineUrls = null;
+if (want !== 'mock' && want !== 'none') engineUrls = await discoverEngine();
+if (!engineUrls && want !== 'none') { const u = URL.createObjectURL(new Blob([$('#mock-engine').textContent], { type: 'text/javascript' })); engineUrls = { scenarios: u, state: u, organism: u }; $('#mockflag').style.display = 'block'; }
+const codesign = engineUrls && engineUrls.scenarios.startsWith('blob:') ? JSON.parse($('#mock-codesign').textContent) : null;
+
+pt = mountPerturb({ THREE, scene, camera, renderer, root, meshes: () => objs, manifest: MF, species: key, panelEl: $('#panel'), esc,
+  getSelection: () => sel, onSelect: cb => { listeners.add(cb); return () => listeners.delete(cb); }, engineUrls: want === 'none' ? null : engineUrls, codesign, codesignUrl: params.get('codesign') || null });
+window.__pt.api = pt;
+</script>
+</body>
+</html>

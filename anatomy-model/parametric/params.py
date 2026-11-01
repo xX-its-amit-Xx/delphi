@@ -37,6 +37,114 @@ CAVEAT = ("MORPHOLOGICAL interpolation, not genetic hybridisation. Averaging two
 
 KINDS = ("measured", "derived", "assumed", "hypothetical", "secondary")
 
+# Everything here is modifiable as long as it is versioned (Amit's rule).  Bump GENERATOR_VERSION on
+# any change to what build.py emits, MANIFEST_VERSION when a manifest field is added / renamed / its
+# meaning changes, SCHEMA_VERSION when design-schema.json changes.  History: CHANGELOG.md.
+GENERATOR_VERSION = "2.0.0"
+MANIFEST_VERSION = 2
+SCHEMA_VERSION = 2
+
+# ---------------------------------------------------------------------------- per-kind caveats
+# The chimera sentence (CAVEAT) is only true of a blend of two species.  Every manifest carries a
+# MORPHOLOGICAL_NOT_GENETIC sentence, but the sentence has to be true of THAT file.
+GROWTH_BASIS = {
+    "flying-fish": (
+        "SL and mass at each age are fits, not measurements of one animal: von Bertalanffy growth "
+        "(Oxenford 1994 via FishBase) x SL/FL 0.927, and the Hirundichthys affinis length-weight fit "
+        "W = 0.0116 FL^3.01 (Barbados, physics/length-weight.csv); below 14 d the SL curve is an ASSUMED "
+        "linear ramp from an ASSUMED 4 mm hatch length. Pectoral length / SL is the MEASURED Daane 2021 fit "
+        "from 1.68 cm SL up and ASSUMED below it; pectoral span and area are carried by an ASSUMED "
+        "allometric transfer (Davenport 1992 area exponent 1.834); pelvic fins equal to the pectorals in "
+        "larvae is MEASURED (Hunte et al. 1995). Body depth, width, head and every other shape proportion "
+        "are HELD AT THE ADULT VALUES, which are themselves ASSUMED (schematic): no flying-fish body-shape "
+        "ontogeny was found. Ray, vertebra, swim-bladder and gonad appearance timings are ASSUMED except "
+        "the mature adult gonad (Oliveira 2015)."),
+    "zebrafish-adult": (
+        "SL comes from the Parichy 2009 larval rate (0.32 mm/d) and a von Bertalanffy fit; mass from the "
+        "Beaudouin 2015 length-weight fit (MEASURED within <= 15 mm SL, extrapolated above). Body depth at "
+        "the nape and head length per stage are MEASURED regressions (Parichy 2009 Table 3 / FishBase); "
+        "which fins are present at each stage is MEASURED (Parichy 2009 Table 4 milestones; pectoral rays "
+        "from 6.4 mm SL, Lalonde & Akimenko 2018). Pectoral fin length / SL is ASSUMED at every stage (no "
+        "fetched source measures it in a wild-type zebrafish); fin heights, vertebra fade-in and organ "
+        "sizes are ASSUMED."),
+}
+
+
+def caveat_for(res, has_stages=False, organism=None):
+    """The MORPHOLOGICAL_NOT_GENETIC sentence that is true of this particular file."""
+    parents = res.get("parents") or []
+    if res.get("kind") == "reference" and has_stages:
+        basis = GROWTH_BASIS.get(organism or res.get("id"), "")
+        return ("GROWTH SERIES of ONE species, not a cross, not a hybrid and not a developmental "
+                "simulation. Each morph target is the same generic-teleost body plan re-parameterised at "
+                "one age, and the viewer's blend between two targets is linear interpolation of vertex "
+                "positions; it does not model growth, cell behaviour, gene regulation or any developmental "
+                "mechanism, and the in-between shapes are not observations. " + basis)
+    if res.get("kind") == "reference":
+        return ("REFERENCE parameter set of one species, drawn on a generic-teleost body plan. Each "
+                "parameter's kind (measured / derived / assumed) is in provenance_per_parameter; the "
+                "geometry between the parameters is schematic. This is a shape, not an organism.")
+    if len(parents) >= 2:
+        return CAVEAT
+    pid = parents[0]["organism"] if parents else "its parent"
+    return ("MORPHOLOGICAL edit, not a genetic modification. This design is ONE parent (%s) with its "
+            "parameters moved by the named deltas; a delta is a change to a shape, not an allele, a "
+            "pathway or a developmental programme, and nothing here says such an animal could be bred, "
+            "is viable or is developmentally reachable. This is a shape, not an organism." % pid)
+
+
+# ---------------------------------------------------------------------------- adult mass, reconciled
+# The flying-fish growth series ends at an adult whose mass comes from a population length-weight fit,
+# while the resolved (base) parameter set is ONE wind-tunnel specimen.  They differ by 2.2x at almost
+# the same SL.  Both are kept, each for the purpose it is right for; see CHANGELOG 2.0.0.
+ADULT_MASS = {
+    "flying-fish": {
+        "what": "two adult masses for nearly the same SL, kept on purpose, each with its role",
+        "base_resolved_set": {
+            "SL_m": 0.203, "mass_kg": 0.060,
+            "source": "Park & Choi 2010 J Exp Biol 213:3269, Table 1 model L3: ONE Cypselurus hiraii, "
+                      "body mass measured fresh before stuffing (physics/prior-art/raw/wb-park-choi-2010.txt); "
+                      "the paper gives mass to 0.01 kg, so 0.060 means 0.055-0.065",
+            "role": "the base mesh's metres-per-unit, flight-muscle volume and derived wing loading. It is "
+                    "the mass physics/analysis.py uses for v_min = 9.85 m/s, because W, the fin areas and "
+                    "C_L,max all come from that one specimen and the paper reports its tunnel lift at 0 deg "
+                    "matching that weight (Fig. 4). Do not swap it for the growth-series mass in glide "
+                    "arithmetic: the areas and C_L,max belong to the 0.060 kg animal.",
+        },
+        "growth_series_adult": {
+            "target": "stage_365d", "SL_m": 0.20615, "mass_kg": 0.1316,
+            "source": "development/trajectory.mjs: von Bertalanffy SL(365 d), and W = 0.0116 FL^3.01 with "
+                      "FL = SL / 0.927 (Hirundichthys affinis, Barbados, FishBase; physics/length-weight.csv)",
+            "role": "mass of a TYPICAL adult on the population curve, used only for the stage targets "
+                    "(flight-muscle volume per stage), so the series is smooth from hatchling to adult",
+        },
+        "ratio": 2.19,
+        "is_it_units_or_definitions": (
+            "No. Checked against the sources: both lengths are STANDARD length (Park & Choi Table 1 'Standard "
+            "length, SL'; the trajectory converts the fork-length fit with SL/FL 0.927, and FL > SL, so the "
+            "conversion cannot inflate mass by 2x); both masses are wet (fresh) mass in kg (Park & Choi "
+            "weighed before stuffing, never frozen or fixed). Species differs (C. hiraii vs H. affinis) but "
+            "that does not explain it either: every fitted exocoetid length-weight relation in "
+            "physics/length-weight.csv gives 111-166 g at this size (Cheilopogon atrisignis n=570: 130 g; "
+            "C. unicolor n=1640: 115 g; Cypselurus poecilopterus n=2769: 166 g; H. oxycephalus n=682: 111 g; "
+            "H. affinis Barbados: 126 g at SL 0.203 m), and Fish 1990 (J Zool 221:391, Table I, Cypselurus "
+            "n=113, ethanol-preserved, so if anything light) gives SL = 0.460 M^0.355, i.e. 0.100 kg at SL "
+            "0.203 m. The L3 specimen is genuinely light for its length: condition factor 100 W / SL(cm)^3 = "
+            "0.72, against about 1.5 for the population fits. Cause not stated in the paper (it does say the "
+            "five fish were chosen for similar size, after a day on ice)."),
+        "impact_if_the_population_mass_were_used_for_the_specimen": (
+            "wing loading on A1+A2+A3 = 0.012688 m2: 46.4 -> 101.7 N/m2; v_min = sqrt(2W/(rho S C_Lmax)) "
+            "scales as sqrt(mass): 9.85 -> 14.6 m/s (Fish 1990's 0.100 kg: 12.7 m/s). The pre-registered "
+            "envelope verdict B (inside if 20 >= v_min and 10 <= 3 v_min) stays 'inside' for any mass up to "
+            "0.247 kg, but the sentence 'quoted speeds 10-20 m/s are at or above the 9.9 m/s minimum' would "
+            "no longer hold at the low end. Not changed here: physics/ is the physics thread's."),
+    },
+}
+ADULT_MASS["tff"] = dict(ADULT_MASS["flying-fish"])
+ADULT_MASS["tff"]["what"] = ("the TFF spec mass (0.060 kg, the Park & Choi specimen, physics/flier/tff/tff.json) "
+                             "vs the borrowed flying-fish growth curve's adult (0.1316 kg); same two sources and "
+                             "roles as the flying fish, see flying-fish-dev-manifest.json adult_mass")
+
 # ---------------------------------------------------------------------------- schema
 # key -> (unit, what it drives in the mesh, blend rule)
 SCHEMA = {
@@ -50,7 +158,7 @@ SCHEMA = {
     "peduncle_width_frac":      ("-", "caudal peduncle width / maximum body width", "arithmetic"),
     "pectoral_len_over_SL":     ("-", "longest pectoral fin ray, base to tip, / SL", "arithmetic"),
     "pectoral_span_over_SL":    ("-", "pectoral tip-to-tip span / SL (both fins, across the body)", "arithmetic"),
-    "pectoral_area_over_SL2":   ("-", "membrane area of BOTH pectoral fins / SL^2 (the Park & Choi / physics-flier convention)", "arithmetic"),
+    "pectoral_area_over_SL2":   ("-", "area of BOTH pectoral fins together / SL^2 (Park & Choi 2010 A1 = planform area of the pectoral fin PAIR; their mean chord c = A1/S over the full span S confirms A1 covers both fins)", "arithmetic"),
     "pectoral_ray_count":       ("count", "lepidotrichia per pectoral fin (one named mesh each)", "round"),
     "pelvic_len_over_SL":       ("-", "longest pelvic fin ray / SL", "arithmetic"),
     "pelvic_ray_count":         ("count", "rays per pelvic fin", "round"),
@@ -70,8 +178,11 @@ SCHEMA = {
 
 # derived, never set directly; recomputed from the mesh after it is built
 DERIVED = {
-    "pectoral_aspect_ratio":    "pectoral_span^2 / (area of ONE pectoral fin), the Park & Choi 2010 convention",
-    "lifting_area_m2":          "pectoral (both) + pelvic (both) + caudal membrane area, the physics/flier convention",
+    "pectoral_aspect_ratio":    "= span2_over_area_both (kept under this name for existing readers): tip-to-tip pectoral span^2 / area of BOTH pectoral fins together. This IS the Park & Choi 2010 convention, AR = S^2/A1 with A1 the planform area of the fin pair (L3: 0.261^2/0.006377 = 10.68). Before 2.0.0 this text wrongly said 'area of ONE fin'; the number was always the both-fins arithmetic.",
+    "span2_over_area_both":     "tip-to-tip pectoral span^2 / area of BOTH pectoral fins together = Park & Choi 2010 AR (S^2/A1)",
+    "aspect_ratio_one_fin":     "(span/2)^2 / (area of ONE pectoral fin) = span2_over_area_both / 2: one fin treated as a wing from the body midline to its tip. No fetched source uses it; it is here so 'one-fin AR' has one unambiguous meaning. NOTE span^2 / one-fin area (= 2 x Park & Choi) matches no source and is not stored.",
+    "span2_over_wing_area_fish1990": "tip-to-tip pectoral span^2 / (both pectoral + both pelvic fin areas): Fish 1990's AR, whose 'wing area' is pectoral + pelvic fins plus the body rectangles between each fin pair (J Zool 221:391, Methods). The body rectangles are not modelled, so this is an UPPER BOUND on the Fish-1990 value. Fish's 3.0-16.9 range is in this convention, not Park & Choi's.",
+    "lifting_area_m2":          "pectoral (both) + pelvic (both) + caudal membrane area measured on the mesh. NOTE: physics/flier's reference area 0.012688 m2 is Park & Choi's A = A1 + A2 + A3, where A3 = 0.004474 m2 is the BODY planform, not the caudal fin; the mesh's caudal membrane stands in for A3 here (see CHANGELOG 2.0.0, open item)",
     "wing_loading_N_m2":        "body_mass * 9.81 / lifting_area_m2",
     "caudal_lobe_asymmetry":    "caudal_lower_lobe_over_SL / caudal_upper_lobe_over_SL (1 = homocercal-looking)",
     "flight_muscle_volume_m3":  "flight_muscle_fraction * body_mass / 1060 kg/m3 (teleost muscle density, assumed)",
@@ -82,11 +193,44 @@ S_DAANE = ("Daane JM et al. 2021 Curr Biol doi:10.1016/j.cub.2021.08.054 Data S1
            "median of 49 museum specimens, recomputed in genotype/cache/daane2021_fin_ratios.json")
 S_PC = ("Park H & Choi H 2010 (physics/allometry.json, physics/flier/design.py src.real_fish): "
         "Cypselurus hiraii model L3, SL 0.203 m, mass 0.060 kg, pectoral span 0.261 m, pectoral "
-        "area 0.006377 m2, pectoral aspect ratio 9.0-10.7")
+        "area 0.006377 m2 (A1, both fins together), pectoral aspect ratio S^2/A1 9.0-10.7")
 S_SCHEM = "schematic (textbook-generic teleost); not a flying-fish or zebrafish measurement"
 S_ZF_PAR = ("Parichy DM et al. 2009 Dev Dyn Table 3 regressions / FishBase morphometrics, via "
             "development/zebrafish/trajectory.mjs proportions()")
 S_ZF_VERT = "anatomy-model/zebrafish/sources.json vertebrae_total (ZFIN / zebrafish anatomy literature)"
+
+
+ASPECT_RATIO_CONVENTIONS = {
+    "settled_from": "the papers themselves, 2026-10-31 (see CHANGELOG 2.0.0)",
+    "park_choi_2010": {
+        "citation": "Park H, Choi H 2010 J Exp Biol 213:3269-3279 doi:10.1242/jeb.046052 "
+                    "(physics/prior-art/raw/wb-park-choi-2010.txt)",
+        "AR": "S^2 / A1",
+        "S": "wing span of the pectoral fins, tip to tip (Fig. 2; 'S is the full span')",
+        "A1": "planform area of the pectoral fins: the PAIR. Evidence: List of symbols defines the mean chord "
+              "c = A1/S over the full span; Table 1 L3 gives c = 24 mm = 6377 mm2 / 261 mm (were A1 one fin, its chord over its own "
+              "half span would be 49 mm and c = A1/S would be half of it); and A1 = 6377 mm2 is "
+              "smaller than A = A1+A2+A3 = 12688 mm2, which it could not be if the pair were 12754 mm2",
+        "values": "L1 9.0, L2 9.7, L3 10.7 (Table 1, 'based on the pectoral fins only')",
+        "repo_name": "span2_over_area_both (also pectoral_aspect_ratio)",
+    },
+    "fish_1990": {
+        "citation": "Fish FE 1990 J Zool 221:391-403 doi:10.1111/j.1469-7998.1990.tb04009.x (full text: "
+                    "health-sciences.wcupa.edu/sciences-mathematics/biology/fFish/documents/1990JZWing design.pdf)",
+        "AR": "wing span^2 / wing area",
+        "span": "twice the fin base-to-tip distance plus the body width (tip to tip)",
+        "wing_area": "pectoral + pelvic fins continuous through the body: one side traced and doubled, plus the "
+                     "body rectangles between each fin pair (Methods; Fig. 1a)",
+        "values": "3.0-16.9 across 199 ethanol-preserved specimens of 33 species, 6 genera, maximum in "
+                  "Exocoetus; Cypselurus AR = 12.717 M^0.163 (Table III), i.e. about 8.0 at 0.06 kg",
+        "repo_name": "span2_over_wing_area_fish1990 (upper bound: body rectangles not modelled)",
+        "cross_check": "Park & Choi L3 in Fish's convention: 0.261^2 / (0.006377 + 0.001837 + body rectangles) "
+                       "<= 8.29, against Fish's Cypselurus regression 8.0 at that mass. The two papers agree once "
+                       "the area is matched; 10.68 vs 3.0-16.9 is NOT a like-for-like comparison",
+    },
+    "tff_design_ar_9": "physics/flier/design.py's AR 9.0 is span^2 / A with A = A1+A2+A3 (pectoral + pelvic + body "
+                       "planform): a third convention; the real L3 fish is 5.37 on it",
+}
 
 
 def p(value, kind, source, note=None):
@@ -106,8 +250,13 @@ REFERENCES = {
         "parameters": {
             "standard_length_m":        p(0.203, "measured", S_PC, "the Park & Choi L3 specimen; the committed "
                                           "flying-fish.glb is dimensionless, SL = 0.82 model units"),
-            "body_mass_kg":             p(0.060, "measured", S_PC),
-            "body_depth_over_SL":       p(0.170, "assumed", S_SCHEM, "2 * 0.085, the committed model's half-depth"),
+            "body_mass_kg":             p(0.060, "measured", S_PC, "ONE specimen, light for its length (condition "
+                                          "factor 0.72 vs ~1.5 for exocoetid length-weight fits). The growth "
+                                          "series' adult is 0.1316 kg at SL 0.206 m (population fit); both are "
+                                          "kept with their roles, see ADULT_MASS / manifest adult_mass"),
+            "body_depth_over_SL":       p(0.170, "assumed", S_SCHEM, "2 * 0.085, the committed model's half-depth; "
+                                          "held at this value at EVERY growth stage (no flying-fish body-depth "
+                                          "ontogeny was found)"),
             "body_width_over_SL":       p(0.136, "assumed", S_SCHEM, "2 * 0.068"),
             "body_section_exponent":    p(2.30, "assumed", S_SCHEM),
             "head_fraction_SL":         p(0.20, "assumed", S_SCHEM),
@@ -448,7 +597,9 @@ def all_ids():
 def schema_doc():
     return {
         "title": "DELPHI parametric organism / design schema",
-        "version": 1,
+        "version": SCHEMA_VERSION,
+        "generator_version": GENERATOR_VERSION,
+        "changelog": "anatomy-model/parametric/CHANGELOG.md",
         "generative_model": {
             "formula": "parameters = SUM over parents ( weight_i * parent_i.parameter ) + delta",
             "constraint": "weights sum to 1",
@@ -479,6 +630,7 @@ def schema_doc():
         },
         "parameters": {k: {"unit": v[0], "drives": v[1], "blend_rule": v[2]} for k, v in SCHEMA.items()},
         "derived_never_set_directly": DERIVED,
+        "aspect_ratio_conventions": ASPECT_RATIO_CONVENTIONS,
         "kinds": list(KINDS),
     }
 

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Part Edit Test</title>
+<style>
+:root{--bg:#f7f7f4;--fg:#1d1f22;--muted:#5d6168;--line:#d9d9d2;--card:#ffffff;--ok:#1f7a4d;--bad:#b3392f;--warn:#a8650b;--accent:#0e7c86}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15171a;--fg:#e6e6e3;--muted:#a0a4ab;--line:#30343a;--card:#1d2024;--ok:#5cc28f;--bad:#ef7f74;--warn:#e0a24a;--accent:#4fc1cb}}
+:root[data-theme="dark"]{--bg:#15171a;--fg:#e6e6e3;--muted:#a0a4ab;--line:#30343a;--card:#1d2024;--ok:#5cc28f;--bad:#ef7f74;--warn:#e0a24a;--accent:#4fc1cb}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:1200px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 4px}
+p.sub{margin:0 0 12px;color:var(--muted)}
+.views{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.view{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.view h2{font-size:13px;margin:0;padding:8px 10px;border-bottom:1px solid var(--line);font-weight:600}
+.view canvas{display:block;width:100%;height:340px}
+table{width:100%;border-collapse:collapse;margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-weight:600;color:var(--muted)}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.st{font-weight:600}.st.applied{color:var(--ok)}.st.refused{color:var(--bad)}.st.recorded{color:var(--warn)}
+.small{color:var(--muted);font-size:12px}
+#status{margin:10px 0;color:var(--muted)}
+@media (max-width:760px){.views{grid-template-columns:1fr}.view canvas{height:260px}table{display:block;overflow-x:auto}}
+</style>
+<script type="importmap">{"imports":{"three":"https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<main>
+  <h1>Part edit test: winged zebrafish</h1>
+  <p class="sub">partedit.js applies part-level edits to the GLB geometry. Left: the model as built. Right: the same model after the edits below. All values are measured on the mesh, in metres (standard_length_m / 0.82 model units). HYPOTHETICAL design, not an organism.</p>
+  <div class="views">
+    <div class="view"><h2>Before (as built)</h2><canvas id="cA"></canvas></div>
+    <div class="view"><h2>After applyEdits</h2><canvas id="cB"></canvas></div>
+  </div>
+  <div id="status">loading winged-zebrafish.glb ...</div>
+  <table id="tab"><thead><tr><th>#</th><th>edit</th><th>status</th><th>anchor / reason</th><th>before</th><th>after</th></tr></thead><tbody></tbody></table>
+  <p class="small" id="pair"></p>
+</main>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { applyEdits, measurePart, metresPerUnit } from './partedit.js';
+
+const EDITS = [
+  { target: { level: 'organ', id: 'pectoral_fin' }, param: 'span', op: 'scale', value: 1.5, mode: 'area', author: 'partedit-test', reason: 'longer, narrower pectoral fins at the same area' },
+  { target: { level: 'organ', id: 'pelvic_fin' }, param: 'area', op: 'scale', value: 2, author: 'partedit-test', reason: 'double pelvic fin area, aspect ratio kept' },
+  { target: { level: 'organ', id: 'dorsal_fin' }, param: 'length', op: 'scale', value: 1.4, author: 'partedit-test', reason: 'taller dorsal fin' },
+  { target: { level: 'organ', id: 'liver' }, param: 'volume', op: 'scale', value: 1.3, author: 'partedit-test', reason: 'larger liver' },
+  { target: { level: 'organ', id: 'swim_bladder' }, param: 'volume', op: 'scale', value: 16, author: 'partedit-test', reason: 'a swim bladder 16 times larger: should not fit inside the body' },
+  { target: { level: 'tissue', id: 'muscle_L' }, param: 'thickness', op: 'scale', value: 1.2, author: 'partedit-test', reason: 'thicker trunk muscle' },
+  { target: { level: 'cell', id: 'CL_0000057' }, param: 'proliferation_rate', op: 'scale', value: 2, author: 'partedit-test', reason: 'fibroblast proliferation' },
+];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmt = x => x == null ? '' : Math.abs(x) >= 1e-3 && Math.abs(x) < 1e3 ? x.toPrecision(4) : x.toExponential(3);
+
+function viewer(canvas) {
+  const r = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+  r.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(getComputedStyle(document.body).backgroundColor);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 1.6)); const d = new THREE.DirectionalLight(0xffffff, 1.4); d.position.set(1, 2, 1.5); scene.add(d);
+  const cam = new THREE.PerspectiveCamera(32, 1, 0.01, 20); cam.position.set(0.55, 1.15, 0.95); cam.lookAt(0.02, 0, 0);
+  const size = () => { const w = canvas.clientWidth, h = canvas.clientHeight; r.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); };
+  return { r, scene, cam, size, draw() { size(); r.render(scene, cam); } };
+}
+function style(root) {
+  root.traverse(o => { if (!o.isMesh) return; const m = o.material = o.material.clone(); m.side = THREE.DoubleSide;
+    if (/^skin/.test(o.name)) { m.transparent = true; m.opacity = 0.22; m.depthWrite = false; }
+    if (/_fin(_L|_R)?$/.test(o.name)) { m.transparent = true; m.opacity = 0.85; } });
+}
+const load = () => new Promise((res, rej) => new GLTFLoader().load('model/winged-zebrafish.glb', g => res(g.scene), undefined, rej));
+
+const status = document.getElementById('status');
+try {
+  const manifest = await (await fetch('model/winged-zebrafish-manifest.json')).json();
+  const [a, b] = await Promise.all([load(), load()]);
+  style(a); style(b);
+  const VA = viewer(document.getElementById('cA')), VB = viewer(document.getElementById('cB'));
+  VA.scene.add(a); VB.scene.add(b);
+  const t0 = performance.now();
+  const res = applyEdits(b, manifest, EDITS);
+  const ms = performance.now() - t0;
+  // highlight what moved
+  const moved = new Set(res.applied.flatMap(x => x.results.flatMap(r => r.moved || [])));
+  b.traverse(o => { if (o.isMesh && moved.has(o.name) && o.material.emissive) { o.material.emissive.setHex(0x0e7c86); o.material.emissiveIntensity = 0.45; } });
+  VA.draw(); VB.draw(); addEventListener('resize', () => { VA.draw(); VB.draw(); });
+  const sc = metresPerUnit(manifest);
+  status.textContent = `${res.applied.length} applied, ${res.refused.length} refused, ${res.recorded.length} recorded only, in ${ms.toFixed(0)} ms. Scale: ${sc.source}. Edited parts glow teal on the right.`;
+  const rows = [];
+  const line = (o, keys) => keys.filter(k => o[k] != null).map(k => `${k.replace(/_m3$| _m2$|_m2$|_m$/, '')} ${fmt(o[k])} ${k.endsWith('m3') ? 'm³' : k.endsWith('m2') ? 'm²' : 'm'}`).join('<br>');
+  EDITS.forEach((e, i) => {
+    const ap = res.applied.find(x => x.index === i), rf = res.refused.find(x => x.index === i), rc = res.recorded.find(x => x.index === i);
+    const ed = `<b>${esc(e.target.id)}</b> ${esc(e.param)}${e.mode ? ':' + esc(e.mode) : ''} ${esc(e.op)} ${esc(e.value)}<br><span class="small">${esc(e.reason)}</span>`;
+    if (ap) ap.results.forEach((r, j) => { const keys = ['length_m', 'width_m', 'area_m2', 'volume_m3', 'thickness_estimate_m'];
+      rows.push(`<tr><td>${j ? '' : i}</td><td>${j ? '<span class="small">' + esc(r.part) + '</span>' : ed + '<br><span class="small">' + esc(r.part) + '</span>'}</td><td class="st applied">applied</td><td class="small">${esc(r.anchor.method)}${r.warnings ? '<br><b>warning:</b> ' + esc(r.warnings.join('; ')) : ''}<br>factors ${esc(JSON.stringify(Object.fromEntries(Object.entries(r.factors).filter(([k, v]) => v != null && !/units/.test(k)))))}</td><td class="num">${line(r.before, keys)}</td><td class="num">${line(r.after, keys)}</td></tr>`); });
+    else if (rf) rows.push(`<tr><td>${i}</td><td>${ed}</td><td class="st refused">refused</td><td class="small" colspan="3">${esc(rf.reason)}</td></tr>`);
+    else if (rc) rows.push(`<tr><td>${i}</td><td>${ed}</td><td class="st recorded">recorded only</td><td class="small" colspan="3">${esc(rc.reason)}</td></tr>`);
+  });
+  document.querySelector('#tab tbody').innerHTML = rows.join('');
+  const pa = res.applied.find(x => x.pair), before = measurePart(a, 'pectoral_fin', manifest).pair;
+  if (pa) document.getElementById('pair').textContent = `Pectoral pair, build convention: tip-to-tip span ${fmt(before.tip_to_tip_span_m)} m -> ${fmt(pa.pair.tip_to_tip_span_m)} m; area (both) ${fmt(before.area_both_m2)} m² -> ${fmt(pa.pair.area_both_m2)} m²; aspect ratio ${fmt(before.aspect_ratio)} -> ${fmt(pa.pair.aspect_ratio)}. The manifest's own mesh measurement: span ${manifest.derived_from_the_mesh.pectoral_span_m} m, area ${manifest.derived_from_the_mesh.pectoral_area_both_m2} m².`;
+  window.__partedit = { ready: true, result: res, before };
+} catch (err) { status.textContent = 'failed: ' + (err && err.message || err); window.__partedit = { ready: true, error: String(err && err.message || err) }; }
+</script>
+</body>
+</html>

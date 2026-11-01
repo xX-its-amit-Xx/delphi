@@ -10,9 +10,9 @@ All in `dashboard/public/blueprint3d/model/`. Each `X.glb` has a sibling `X-mani
 
 | GLB | bytes | pieces | morph targets | what it is |
 |---|---|---|---|---|
-| `flying-fish-dev.glb` | 3 823 772 | 112 | 7 | flying fish with enlarged pectoral fins, 6 growth stages |
-| `zebrafish-dev.glb` | 3 569 608 | 100 | 7 | zebrafish, 6 growth stages |
-| `tff.glb` | 4 191 536 | 112 | 8 | **HYPOTHETICAL** TFF v2, 6 growth stages + 1 parent |
+| `flying-fish-dev.glb` | 3 885 304 | 112 | 7 | flying fish with enlarged pectoral fins, 6 growth stages |
+| `zebrafish-dev.glb` | 3 630 444 | 100 | 7 | zebrafish, 6 growth stages |
+| `tff.glb` | 4 259 740 | 112 | 8 | **HYPOTHETICAL** TFF v2, 6 growth stages + 1 parent |
 | `winged-zebrafish.glb` | 1 547 152 | 100 | 2 | design: zebrafish + fin-proportion delta |
 | `wingless-flying-fish.glb` | 1 651 808 | 112 | 2 | design: flying fish + halfbeak fin proportion |
 | `ff-zf-chimera.glb` | 2 077 112 | 106 | 3 | design: 0.5 flying fish / 0.5 zebrafish blend |
@@ -29,7 +29,9 @@ Every mesh in a file carries the **same** target list in the **same order**, nam
 
 Three kinds, distinguished by `morph_targets[i].kind`:
 
-* `resolved` — always index 0, always named `base_<organism-id>`. This is the adult / resolved design.
+* `resolved` — always index 0, always named `base_<file id>` (the manifest's `id`, which since generator
+  2.0.0 is the GLB's own basename: `base_flying-fish-dev`, `base_zebrafish-dev`, `base_tff`, ...; the
+  parameter set it was built from is the manifest's `parameter_set`). This is the adult / resolved design.
 * `stage` — a growth stage, with `age_days`, `stage`, `SL_m`, `mass_kg`, `size_rel`.
 * `parent` — one reference organism of a design, named `parent_<organism-id>`, with `size_rel`.
 
@@ -51,23 +53,23 @@ extremes.
 
 | target | age (days after hatching) | stage | SL (m) | size_rel |
 |---|---|---|---|---|
-| `stage_000d` | 0 | hatching | 0.00400 | 0.0194 |
-| `stage_003d` | 3 | larva | 0.00706 | 0.0343 |
-| `stage_010d` | 10 | larva | 0.01421 | 0.0689 |
-| `stage_030d` | 30 | juvenile | 0.04356 | 0.2113 |
-| `stage_090d` | 90 | juvenile | 0.11274 | 0.5469 |
-| `stage_365d` | 365 | adult | 0.20615 | 1.0 |
+| `stage_000d` | 0 | hatching | 0.00400 | 0.0197 |
+| `stage_003d` | 3 | larva | 0.00706 | 0.0348 |
+| `stage_010d` | 10 | larva | 0.01421 | 0.0700 |
+| `stage_030d` | 30 | juvenile | 0.04356 | 0.2146 |
+| `stage_090d` | 90 | juvenile | 0.11274 | 0.5554 |
+| `stage_365d` | 365 | adult | 0.20615 | 1.0155 |
 
 `zebrafish-dev.glb`:
 
 | target | age (days post-hatching) | stage | SL (m) | size_rel |
 |---|---|---|---|---|
-| `stage_000d` | 0 | hatching (2 dpf) | 0.00310 | 0.0798 |
+| `stage_000d` | 0 | hatching (2 dpf) | 0.00310 | 0.0799 |
 | `stage_003d` | 3 | larva (5 dpf) | 0.00420 | 0.1082 |
-| `stage_010d` | 10 | larva (12 dpf) | 0.00644 | 0.1659 |
-| `stage_025d` | 25 | juvenile (27 dpf) | 0.01128 | 0.2905 |
-| `stage_060d` | 60 | juvenile (62 dpf) | 0.02199 | 0.5663 |
-| `stage_180d` | 180 | adult (182 dpf) | 0.03883 | 1.0 |
+| `stage_010d` | 10 | larva (12 dpf) | 0.00644 | 0.1660 |
+| `stage_025d` | 25 | juvenile (27 dpf) | 0.01128 | 0.2907 |
+| `stage_060d` | 60 | juvenile (62 dpf) | 0.02199 | 0.5667 |
+| `stage_180d` | 180 | adult (182 dpf) | 0.03883 | 1.0008 |
 
 Parent targets: `tff.glb` → `parent_flying-fish`; `winged-zebrafish.glb` → `parent_zebrafish-adult`;
 `wingless-flying-fish.glb` → `parent_flying-fish`; `ff-zf-chimera.glb` → `parent_flying-fish`,
@@ -98,7 +100,10 @@ Caveat to surface in the UI: **interpolating between two stage targets is linear
 interpolate on, and growth is not linear.** The stage ages are spaced 0, 3, 10, 30, 90, 365 d precisely
 so that linear-in-age interpolation is a tolerable approximation of the real curve. If you want it
 exact, interpolate on `size_rel` instead: look up the true `SL(age)` with `development/trajectory.mjs`
-`at(age).SL_m`, divide by the adult `SL_m`, and find `f` between the two bracketing `size_rel` values.
+`at(age).SL_m`, divide by the BASE `SL_m` (the `resolved` target's `SL_m`), and find `f` between the two
+bracketing `size_rel` values. Since 2.0.0 `size_rel` = SL(stage) / SL(base), so the flying fish's 365 d
+target is 1.0155 (SL 0.20615 m against the base's 0.203 m) and every target shares the base's metres
+per model unit.
 Do that and the slider is honest at every intermediate frame, not just at the six keyframes.
 
 ### Driving a parent blend
@@ -117,11 +122,13 @@ For a one-parent design (`tff`, `winged-zebrafish`, `wingless-flying-fish`) the 
 on `base_Y` shows the parent with the design's deltas applied, and anything between shows a partial
 delta. Label that slider with the delta, not with a species name.
 
-**Whenever a weight appears in the UI, this sentence must appear with it:** *morphological
-interpolation, not genetic hybridisation — averaging two species' body parameters says nothing about
-whether such an animal could be bred, is viable, or is developmentally reachable; genomes do not
-average. Flying fish and zebrafish are not crossable.* The string is in every manifest as
-`MORPHOLOGICAL_NOT_GENETIC`; read it from there rather than retyping it.
+**Whenever a weight appears in the UI, the file's `MORPHOLOGICAL_NOT_GENETIC` sentence must appear with
+it.** Read it from the manifest rather than retyping it: since 2.0.0 it is written per kind and is only
+true of its own file. A two-parent blend carries the chimera sentence (*morphological interpolation, not
+genetic hybridisation ... Flying fish and zebrafish are not crossable*); a single-parent design says it
+is one parent plus named deltas, not a genetic modification; a growth series (`growth_series: true`)
+says it is one species, that the blend between stages is vertex interpolation and not a developmental
+mechanism, and which of its stage numbers are measured and which assumed.
 
 ### Pieces that have not formed yet
 
@@ -154,7 +161,15 @@ centred animation, translate the whole model by `-(1 - size_rel) * 0.5 * SL_unit
   `evidence: "none"` is flagged `NO_ANCESTOR_NO_EVIDENCE: true` — show that flag.
 * `derived_from_the_mesh` holds quantities measured on the exported geometry and must never be edited
   by hand: `pectoral_span_m`, `pectoral_area_both_m2`, `pectoral_aspect_ratio`, `lifting_area_m2`,
-  `wing_loading_N_m2`, `caudal_lobe_asymmetry`, `flight_muscle_volume_*`.
+  `wing_loading_N_m2`, `caudal_lobe_asymmetry`, `flight_muscle_volume_*`, and since 2.0.0 the aspect
+  ratio under every named convention: `span2_over_area_both` (= `pectoral_aspect_ratio` = Park & Choi's
+  S²/A1, A1 = BOTH pectoral fins), `aspect_ratio_one_fin` (= half of it) and
+  `span2_over_wing_area_fish1990` (span² / pectoral + pelvic area: Fish 1990's convention, upper bound).
+  Compare a fish with Park & Choi's 9.0–10.7 on the first, with Fish 1990's 3.0–16.9 on the last.
+* `adult_mass` (growth series and the TFF): when the adult stage's mass differs from the base set's, both
+  are shown with their sources and roles. Flying fish: base 0.060 kg (one Park & Choi specimen, the mass
+  the physics glide numbers use) vs 0.1316 kg at the 365 d target (population length–weight fit).
+* `manifest_version` / `generator_version`: bump history in `anatomy-model/parametric/CHANGELOG.md`.
 * `moved_parameters` / `lean_recheck.parameters` is the list a design's deltas touched — the exact set
   `lean/eliminate/browser-check.mjs` should be re-run on. A design inherits whatever constraints its
   parents satisfy; every delta needs re-checking.

@@ -1,0 +1,139 @@
+{
+ "law_id": "flight-climb-glide-law",
+ "version": "1.0.0",
+ "kind": "physical",
+ "class": "theorem",
+ "status": "accepted",
+ "label": "Climb from excess power and the range of a steady glide",
+ "level": "phenotype",
+ "lean_ref": {
+  "module": "lean/Delphi/Flight.lean",
+  "theorem": "Delphi.glide_range_le",
+  "structure": null,
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "02e40d2043c0977d1f6a3e5f426b30ff743f30b05c04ebaf74c551ae72e367b2",
+  "content_hash": "6ac1beea70e547754cd61b3766b9b7588cf781964ab9c81c375dd36419e67181"
+ },
+ "statement_en": "If available mechanical power is spent on level flight, on raising the weight at vertical speed c, and on non-negative losses, then c ≤ (P_avail − P_req)/W. A steady glide with no thrust, lift equal to weight and L/D ≤ (L/D)max from height h covers at most h (L/D)max horizontally; with drag reduced by a fraction δ near the surface and lift unaffected, at most h (L/D)max/(1 − δ).",
+ "hypotheses": [
+  {
+   "name": "flight-climb-glide-law#assumed-1",
+   "statement": "A single steady glide with no thrust and lift equal to weight; taxiing, repeated touch-and-go, wind and updrafts are outside the model."
+  },
+  {
+   "name": "flight-climb-glide-law#assumed-2",
+   "statement": "Losses non-negative; the ground-effect fraction δ and (L/D)max are inputs."
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "a theorem about a model: it applies wherever the design supplies the quantities it uses and accepts the hypotheses in scope.assumed",
+  "kernelChecked": [
+   "Power balance P_avail = P_req + W c + loss with loss ≥ 0 ⇒ c ≤ (P_avail − P_req)/W (climbRate_le); 0 ≤ (P_avail − P_req)/W ⇔ P_req ≤ P_avail (climb_nonneg_iff).",
+   "Energy balance W h = D x + loss, loss ≥ 0, lift = W, L/D ≤ (L/D)max ⇒ x ≤ h (L/D)max (glide_range_le); with drag (1 − δ) D ⇒ x ≤ h (L/D)max/(1 − δ) (glide_range_le_groundEffect)."
+  ],
+  "assumed": [
+   "A single steady glide with no thrust and lift equal to weight; taxiing, repeated touch-and-go, wind and updrafts are outside the model.",
+   "Losses non-negative; the ground-effect fraction δ and (L/D)max are inputs."
+  ],
+  "note": null
+ },
+ "constraint_scopes": {},
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "proved in this project; no paper states it in this form"
+  ],
+  "observations": [],
+  "faithfulness": "not assessed",
+  "flyingFishAudit": {
+   "holds": 3,
+   "cannot-evaluate": 9,
+   "violated": 3
+  },
+  "rejectable": null
+ },
+ "sources": [
+  "proved in this project; no paper states it in this form"
+ ],
+ "non_vacuity_witness": {
+  "lean": null,
+  "statement": "a theorem from standard axioms whose hypotheses are plain inequalities or decidable checks on the inputs; no separate witness structure (see scope.kernelChecked)"
+ },
+ "constraints": [
+  "C15",
+  "C16"
+ ],
+ "introduced_in": "1.0.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": {
+  "approved_by_role": "bootstrap-grandfathered",
+  "date": "2026-11-01",
+  "basis": "in force in lean/constraints.json / lean/laws.json before the registry existed; no per-law human review recorded by the registry"
+ },
+ "origin": "lean/registry/laws/flight-climb-glide-law.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "bootstrapped from lean/laws.json (status there: \"proved\")"
+  }
+ ],
+ "content_hash": "6ac1beea70e547754cd61b3766b9b7588cf781964ab9c81c375dd36419e67181",
+ "lean": {
+  "theorem": "Delphi.glide_range_le",
+  "module": "lean/Delphi/Flight.lean",
+  "line": 115,
+  "source": "/-- **Steady-glide range.** With no thrust, lift equal to weight, `L/D ≤ (L/D)_max` and the potential energy\n`W h` spent on drag work `D x` plus non-negative losses, the horizontal distance is at most `h (L/D)_max`. -/\ntheorem glide_range_le {W h D x LDmax loss Lift : ℝ} (_hW : 0 < W) (hD : 0 < D) (hh : 0 ≤ h)\n    (hlift : Lift = W) (hLD : Lift / D ≤ LDmax) (henergy : W * h = D * x + loss) (hloss : 0 ≤ loss) :\n    x ≤ h * LDmax := by\n  rw [hlift, div_le_iff₀ hD] at hLD\n  have hx : D * x ≤ W * h := by linarith\n  have : x ≤ W * h / D := by rw [le_div_iff₀ hD]; linarith\n  calc x ≤ W * h / D := this\n    _ ≤ LDmax * D * h / D := by apply div_le_div_of_nonneg_right _ hD.le; nlinarith\n    _ = h * LDmax := by field_simp",
+  "named_hypotheses": []
+ },
+ "constraint_details": [
+  {
+   "id": "C15",
+   "relation": "x ≤ h (L/D)max / (1 − δ)",
+   "lemma": "Delphi.Constraints.glide_range_rules_out",
+   "law": "Delphi.glide_range_le_groundEffect",
+   "module": "lean/Delphi/Flight.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "steady_unpowered_glide"
+   ],
+   "canEliminate": "a claim that a single unpowered glide from height h covers more than the energy bound allows; taxiing thrust, repeated touch-and-go and wind are outside the model and must be committed separately",
+   "lemma_source": "/-- **C15, glide range.** A claimed steady unpowered glide of distance `x > h (L/D)_max / (1 - δ)` from\nheight `h` with drag reduced by a fraction `δ` near the surface (`δ = 0` away from it) is ruled out. -/\ntheorem glide_range_rules_out {W h D x LDmax loss Lift δ : ℝ} (hW : 0 < W) (hD : 0 < D) (hh : 0 ≤ h)\n    (hδ0 : 0 ≤ δ) (hδ1 : δ < 1) (hlift : Lift = W) (hLD : Lift / D ≤ LDmax)\n    (henergy : W * h = (1 - δ) * D * x + loss) (hloss : 0 ≤ loss) (hx : h * LDmax / (1 - δ) < x) : False := by\n  have := glide_range_le_groundEffect hW hD hh hδ0 hδ1 hlift hLD henergy hloss\n  linarith"
+  },
+  {
+   "id": "C16",
+   "relation": "c ≤ (P_avail − P_req)/W",
+   "lemma": "Delphi.Constraints.climb_rules_out",
+   "law": "Delphi.climbRate_le",
+   "module": "lean/Delphi/Flight.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "power_balance_nonneg_losses"
+   ],
+   "canEliminate": "a powered design claiming a climb rate its excess power cannot deliver",
+   "lemma_source": "/-- **C16, climb.** A claimed climb rate `c` above `(P_avail - P_req)/W` under the power balance is ruled out. -/\ntheorem climb_rules_out {W Pavail Preq c loss : ℝ} (hW : 0 < W) (hbal : Pavail = Preq + W * c + loss)\n    (hloss : 0 ≤ loss) (h : climbRate W Pavail Preq < c) : False := by\n  have := climbRate_le hW hbal hloss\n  linarith"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Flight.lean",
+  "decl": "Delphi.glide_range_le",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "02e40d2043c0977d1f6a3e5f426b30ff743f30b05c04ebaf74c551ae72e367b2",
+  "current_statement_sha256": "02e40d2043c0977d1f6a3e5f426b30ff743f30b05c04ebaf74c551ae72e367b2",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

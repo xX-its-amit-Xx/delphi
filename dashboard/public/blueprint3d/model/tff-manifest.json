@@ -1,12 +1,17 @@
 {
  "model": "TFF v2 - HYPOTHETICAL truly flying fish",
  "id": "tff",
+ "parameter_set": "tff",
+ "manifest_version": 2,
+ "generator_version": "2.0.0",
+ "changelog": "anatomy-model/parametric/CHANGELOG.md",
  "kind": "design",
+ "growth_series": false,
  "hypothetical": true,
  "file": "dashboard/public/blueprint3d/model/tff.glb",
  "built_with": "Blender 4.2.23 LTS (bpy, headless); anatomy-model/parametric/build.py",
  "units_and_axes": "glTF Y-up; head at +X, back at +Y, the fish's left side at -Z. The adult / resolved set has SL = 0.82 model units; earlier growth stages are built at their TRUE relative size SL(age)/SL(adult), so development plays as real growth. standard_length_m = 0.2030 m sets the metres per model unit.",
- "MORPHOLOGICAL_NOT_GENETIC": "MORPHOLOGICAL interpolation, not genetic hybridisation. Averaging two species' body parameters says nothing about whether such an animal could be bred, is viable, or is developmentally reachable; genomes do not average. Flying fish and zebrafish are not crossable. This is a shape, not an organism.",
+ "MORPHOLOGICAL_NOT_GENETIC": "MORPHOLOGICAL edit, not a genetic modification. This design is ONE parent (flying-fish) with its parameters moved by the named deltas; a delta is a change to a shape, not an allele, a pathway or a developmental programme, and nothing here says such an animal could be bred, is viable or is developmentally reachable. This is a shape, not an organism. Its growth stages are NOT data: they are the flying fish's growth with the deltas ramped in on an assumed schedule (stages.json 'tff'.assumption).",
  "generative_model": "parameters = SUM over parents ( weight_i * parent_i.parameter ) + delta",
  "parents": [
   {
@@ -249,7 +254,7 @@
   "pectoral_area_over_SL2": {
    "value": 0.5982414486128625,
    "unit": "-",
-   "drives": "membrane area of BOTH pectoral fins / SL^2 (the Park & Choi / physics-flier convention)",
+   "drives": "area of BOTH pectoral fins together / SL^2 (Park & Choi 2010 A1 = planform area of the pectoral fin PAIR; their mean chord c = A1/S over the full span S confirms A1 covers both fins)",
    "blend_rule": "arithmetic",
    "ancestry": "100% flying-fish",
    "parents": [
@@ -541,6 +546,8 @@
   "pectoral_span_m": 0.66441,
   "pectoral_area_both_m2": 0.024653,
   "pectoral_aspect_ratio": 17.906,
+  "pelvic_area_both_m2": 0.007102,
+  "caudal_area_m2": 0.017296,
   "lifting_area_m2": 0.04905,
   "wing_loading_N_m2": 12.0,
   "caudal_lobe_asymmetry": 1.4211,
@@ -550,12 +557,19 @@
   "flight_muscle_note": "the pectoral girdle musculature is sized by VOLUME from flight_muscle_fraction x body_mass, then clipped to what fits inside the skin. fit_fraction < 1 means the requested muscle mass does not fit in this body at this schematic geometry.",
   "measured_how": "areas are membrane surface areas measured on the exported mesh; span is the tip-to-tip extent of the pectoral fins in the spanwise axis. The physical values use standard_length_m / 0.8200 model units.",
   "definitions": {
-   "pectoral_aspect_ratio": "pectoral_span^2 / (area of ONE pectoral fin), the Park & Choi 2010 convention",
-   "lifting_area_m2": "pectoral (both) + pelvic (both) + caudal membrane area, the physics/flier convention",
+   "pectoral_aspect_ratio": "= span2_over_area_both (kept under this name for existing readers): tip-to-tip pectoral span^2 / area of BOTH pectoral fins together. This IS the Park & Choi 2010 convention, AR = S^2/A1 with A1 the planform area of the fin pair (L3: 0.261^2/0.006377 = 10.68). Before 2.0.0 this text wrongly said 'area of ONE fin'; the number was always the both-fins arithmetic.",
+   "span2_over_area_both": "tip-to-tip pectoral span^2 / area of BOTH pectoral fins together = Park & Choi 2010 AR (S^2/A1)",
+   "aspect_ratio_one_fin": "(span/2)^2 / (area of ONE pectoral fin) = span2_over_area_both / 2: one fin treated as a wing from the body midline to its tip. No fetched source uses it; it is here so 'one-fin AR' has one unambiguous meaning. NOTE span^2 / one-fin area (= 2 x Park & Choi) matches no source and is not stored.",
+   "span2_over_wing_area_fish1990": "tip-to-tip pectoral span^2 / (both pectoral + both pelvic fin areas): Fish 1990's AR, whose 'wing area' is pectoral + pelvic fins plus the body rectangles between each fin pair (J Zool 221:391, Methods). The body rectangles are not modelled, so this is an UPPER BOUND on the Fish-1990 value. Fish's 3.0-16.9 range is in this convention, not Park & Choi's.",
+   "lifting_area_m2": "pectoral (both) + pelvic (both) + caudal membrane area measured on the mesh. NOTE: physics/flier's reference area 0.012688 m2 is Park & Choi's A = A1 + A2 + A3, where A3 = 0.004474 m2 is the BODY planform, not the caudal fin; the mesh's caudal membrane stands in for A3 here (see CHANGELOG 2.0.0, open item)",
    "wing_loading_N_m2": "body_mass * 9.81 / lifting_area_m2",
    "caudal_lobe_asymmetry": "caudal_lower_lobe_over_SL / caudal_upper_lobe_over_SL (1 = homocercal-looking)",
    "flight_muscle_volume_m3": "flight_muscle_fraction * body_mass / 1060 kg/m3 (teleost muscle density, assumed)"
   },
+  "span2_over_area_both": 17.906,
+  "aspect_ratio_one_fin": 8.953,
+  "span2_over_wing_area_fish1990": 13.902,
+  "aspect_ratio_note": "pectoral_aspect_ratio == span2_over_area_both == Park & Choi 2010's AR = S^2/A1 (A1 = BOTH pectoral fins; the L3 fish is 10.68). aspect_ratio_one_fin = (S/2)^2 / one fin's area = half of it. span2_over_wing_area_fish1990 divides by pectoral + pelvic area, Fish 1990's 'wing area' without the body rectangles between the fins, so it is an upper bound on a Fish-1990 AR; Fish's 3.0-16.9 range is in that convention. Definitions and evidence: design-schema.json aspect_ratio_conventions.",
   "parameter_vs_mesh_check": {
    "what": "the parameters ask for a span and an area; these are what the exported MESH actually has",
    "pectoral_span_m": {
@@ -569,7 +583,11 @@
     "mesh_over_parameter": 1.0
    },
    "fit_was_applied": true,
-   "verdict": "fit applied; the mesh is solved to the span and area parameters"
+   "verdict": "fit applied; the mesh is solved to the span and area parameters",
+   "span2_over_area_both": {
+    "parameter": 17.906,
+    "mesh": 17.906
+   }
   },
   "tff_spec_cross_check": {
    "source": "physics/flier/tff/tff.json (v2) + physics/flier/design.py",
@@ -602,14 +620,59 @@
     "spec": 9.0,
     "spec_definition": "span^2 / TOTAL LIFTING AREA",
     "built_same_definition": 9.0,
-    "built_pectoral_only": 17.906
+    "built_pectoral_only": 17.906,
+    "built_span2_over_area_both": 17.906,
+    "built_span2_over_wing_area_fish1990": 13.902,
+    "real_fish_L3_same_conventions": {
+     "span2_over_area_both": 10.682,
+     "span2_over_A1_A2": 8.293,
+     "span2_over_A1_A2_A3": 5.369
+    }
    },
    "MISMATCHES_FOUND": [
-    "DEFINITION MISMATCH in the spec itself: physics/flier/design.py keeps 'the fish's own aspect ratio' at 9.0-10.7 from Park & Choi, where AR = pectoral span^2 / PECTORAL area (0.261^2 / 0.006377 = 10.68). It then applies 9.0 to the TOTAL LIFTING AREA to get the span (span = sqrt(9 * W / 12)). Those are two different aspect ratios. On the real fish's own numbers span^2 / total lifting area is 5.37, not 10.7. Read the TFF's AR 9.0 as span^2/total-lifting-area; its pectoral-only AR is 17.9, i.e. its fins are far more slender than any measured flying fish's.",
+    "DEFINITION MISMATCH in the spec itself: physics/flier/design.py keeps 'the fish's own aspect ratio' at 9.0-10.7 from Park & Choi, where AR = span^2 / A1 with A1 the area of BOTH pectoral fins (0.261^2 / 0.006377 = 10.68). It then applies 9.0 to the TOTAL LIFTING AREA A1+A2+A3 to get the span (span = sqrt(9 * W / 12)). Those are two different aspect ratios. On the real fish's own numbers span^2 / (A1+A2+A3) is 5.37, not 10.7. Read the TFF's AR 9.0 as span^2/total-lifting-area; in Park & Choi's convention (both pectoral fins) it is 17.9, 1.7x the measured L3 specimen's 10.68. CORRECTED in generator 2.0.0: an earlier version said this made its fins 'more slender than any measured flying fish', comparing 17.9 with Fish 1990's 3.0-16.9. That comparison mixed conventions: Fish 1990 divides span^2 by pectoral + pelvic area plus the body between them (Methods), which on the TFF gives at most 13.9 (pelvic included, body rectangles not modelled), INSIDE Fish's range; the L3 fish is <= 8.29 on Fish's convention, matching Fish's Cypselurus regression (~8.0 at 0.06 kg).",
     "ROUNDING: the round multipliers x3.9 (area) and x2.5 (span) give wing loading 11.90 N/m2 and AR 8.60, not 12.0 and 9.0. This build uses the exact ratios 0.04905/0.012688 = 3.865857 and 0.664421/0.261 = 2.545674, which reproduce 12.0 and 9.0.",
     "TWO READINGS OF THE SPEC, AND NO MESH SATISFIES BOTH. (A) built here: the area multiplier 3.865857 is applied to EVERY lifting surface, so total lifting area = 0.04905 m2 and wing loading = 12.0 N/m2 exactly, span^2/total = 9.0 exactly, and the pectoral-only AR comes out at 17.9. (B) the alternative: put ALL the extra area in the pectorals, giving pectoral area 0.04905 m2 and pectoral AR = 0.664421^2/0.04905 = 9.0, which matches Park & Choi's own pectoral-AR convention - but then the total lifting area is 0.05536 m2 (pelvic and caudal stay real-sized) and wing loading falls to 10.63 N/m2, not 12.0. The spec names 12 N/m2 as the design decision, so (A) is shipped. This is the mismatch, not a build error.",
     "FLIGHT MUSCLE DOES NOT FIT: a flight-muscle fraction of 0.16 of 0.06 kg is 9.06e-6 m3 of muscle at 1060 kg/m3. Only 30% of that volume fits inside the flying fish's body at the pectoral girdle in this geometry; the rest was clipped. That is a geometric result of the spec, not a modelling choice, and it is the single most interesting thing the mesh says about the design."
    ]
+  }
+ },
+ "adult_mass": {
+  "what": "the TFF spec mass (0.060 kg, the Park & Choi specimen, physics/flier/tff/tff.json) vs the borrowed flying-fish growth curve's adult (0.1316 kg); same two sources and roles as the flying fish, see flying-fish-dev-manifest.json adult_mass",
+  "base_resolved_set": {
+   "SL_m": 0.203,
+   "mass_kg": 0.06,
+   "source": "Park & Choi 2010 J Exp Biol 213:3269, Table 1 model L3: ONE Cypselurus hiraii, body mass measured fresh before stuffing (physics/prior-art/raw/wb-park-choi-2010.txt); the paper gives mass to 0.01 kg, so 0.060 means 0.055-0.065",
+   "role": "the base mesh's metres-per-unit, flight-muscle volume and derived wing loading. It is the mass physics/analysis.py uses for v_min = 9.85 m/s, because W, the fin areas and C_L,max all come from that one specimen and the paper reports its tunnel lift at 0 deg matching that weight (Fig. 4). Do not swap it for the growth-series mass in glide arithmetic: the areas and C_L,max belong to the 0.060 kg animal."
+  },
+  "growth_series_adult": {
+   "target": "stage_365d",
+   "SL_m": 0.20615,
+   "mass_kg": 0.1316,
+   "source": "development/trajectory.mjs: von Bertalanffy SL(365 d), and W = 0.0116 FL^3.01 with FL = SL / 0.927 (Hirundichthys affinis, Barbados, FishBase; physics/length-weight.csv)",
+   "role": "mass of a TYPICAL adult on the population curve, used only for the stage targets (flight-muscle volume per stage), so the series is smooth from hatchling to adult"
+  },
+  "ratio": 2.19,
+  "is_it_units_or_definitions": "No. Checked against the sources: both lengths are STANDARD length (Park & Choi Table 1 'Standard length, SL'; the trajectory converts the fork-length fit with SL/FL 0.927, and FL > SL, so the conversion cannot inflate mass by 2x); both masses are wet (fresh) mass in kg (Park & Choi weighed before stuffing, never frozen or fixed). Species differs (C. hiraii vs H. affinis) but that does not explain it either: every fitted exocoetid length-weight relation in physics/length-weight.csv gives 111-166 g at this size (Cheilopogon atrisignis n=570: 130 g; C. unicolor n=1640: 115 g; Cypselurus poecilopterus n=2769: 166 g; H. oxycephalus n=682: 111 g; H. affinis Barbados: 126 g at SL 0.203 m), and Fish 1990 (J Zool 221:391, Table I, Cypselurus n=113, ethanol-preserved, so if anything light) gives SL = 0.460 M^0.355, i.e. 0.100 kg at SL 0.203 m. The L3 specimen is genuinely light for its length: condition factor 100 W / SL(cm)^3 = 0.72, against about 1.5 for the population fits. Cause not stated in the paper (it does say the five fish were chosen for similar size, after a day on ice).",
+  "impact_if_the_population_mass_were_used_for_the_specimen": "wing loading on A1+A2+A3 = 0.012688 m2: 46.4 -> 101.7 N/m2; v_min = sqrt(2W/(rho S C_Lmax)) scales as sqrt(mass): 9.85 -> 14.6 m/s (Fish 1990's 0.100 kg: 12.7 m/s). The pre-registered envelope verdict B (inside if 20 >= v_min and 10 <= 3 v_min) stays 'inside' for any mass up to 0.247 kg, but the sentence 'quoted speeds 10-20 m/s are at or above the 9.9 m/s minimum' would no longer hold at the low end. Not changed here: physics/ is the physics thread's.",
+  "computed_here": {
+   "base": {
+    "target": "base_tff",
+    "SL_m": 0.203,
+    "mass_kg": 0.06
+   },
+   "adult_stage": {
+    "target": "stage_365d",
+    "SL_m": 0.20615,
+    "mass_kg": 0.1316
+   },
+   "mass_ratio_stage_over_base": 2.193,
+   "SL_ratio_stage_over_base": 1.0155,
+   "wing_loading_on_this_mesh_N_m2": {
+    "base_mass": 12.0,
+    "adult_stage_mass": 25.522,
+    "how": "mass * 9.81 / lifting_area_m2, the stage's area scaled by (SL ratio)^2 from the base mesh"
+   }
   }
  },
  "span_area_fit": {
@@ -629,13 +692,16 @@
    "age_days": null,
    "size_rel": 1.0,
    "label": "TFF v2 - HYPOTHETICAL truly flying fish",
-   "note": "the resolved parameter set itself; weight 1 here = the adult / design as built"
+   "parameter_set": "tff",
+   "SL_m": 0.203,
+   "mass_kg": 0.06,
+   "note": "the resolved parameter set 'tff' itself; weight 1 here = the adult / design as built. Stage targets' size_rel is relative to THIS SL."
   },
   {
    "name": "stage_000d",
    "kind": "stage",
    "age_days": 0,
-   "size_rel": 0.0194,
+   "size_rel": 0.0197,
    "label": "HYPOTHETICAL TFF at the flying fish's hatching stage, 0 d, SL 4.0 mm",
    "stage": "hatching",
    "SL_m": 0.004,
@@ -649,6 +715,15 @@
     "swim_bladder": 0.45,
     "pectoral_muscle": 1
    },
+   "parameter_kinds": {
+    "standard_length_m": "assumed (linear ramp)",
+    "body_mass_kg": "derived from an assumed SL",
+    "body_depth_over_SL": "assumed (held at the adult value)",
+    "pectoral_len_over_SL": "assumed",
+    "pectoral_span_over_SL": "assumed transfer",
+    "pectoral_area_over_SL2": "assumed transfer",
+    "pelvic_len_over_SL": "measured (Hunte 1995)"
+   },
    "basis": {
     "SL_and_mass": "measured/secondary fits: von Bertalanffy (Oxenford 1994 via FishBase) x SL/FL 0.927, and W = 0.0116 FL^3.01 (physics/length-weight.csv). Below 14 d the SL curve is an ASSUMED linear ramp from an assumed 0.4 cm hatch length.",
     "fin_ratio": "assumed (linear ramp from an assumed 0.10 at hatching to the fit at 1.68 cm SL; no flying-fish data below 1.68 cm SL)",
@@ -657,7 +732,7 @@
     "pectoral_rays": "ASSUMED ABSENT: below 1.68 cm SL the fin is modelled as a fold + endoskeletal disc (zebrafish proxy: Hale 2014, Grandel 1998, Lalonde 2018). Rays shrunk to 2%.",
     "vertebrae": "ASSUMED: no flying-fish ossification sequence was found. Centra are faded in with SL and reach the full 40 at 3 cm SL. The COUNT 40 is itself illustrative.",
     "gonad": "assumed absent in larvae",
-    "body_depth": "HELD AT THE ADULT VALUE: no flying-fish body-depth ontogeny was found. Early stages are therefore adult-shaped but small, which is wrong in detail and is the largest honest gap here.",
+    "body_depth": "ASSUMED: held at the adult value 0.17 SL (itself an assumed, schematic number) at every stage. The repository holds no flying-fish body-depth measurement at any size (searched development/, physics/, genotype/, organisms/ on 2026-10-31). Early stages are therefore adult-shaped but small, which is wrong in detail and is the largest honest gap here.",
     "parts_present": [
      "pectoral fin",
      "pectoral fin fold + endoskeletal disc (larval fin)",
@@ -675,7 +750,7 @@
    "name": "stage_003d",
    "kind": "stage",
    "age_days": 3,
-   "size_rel": 0.03425,
+   "size_rel": 0.03478,
    "label": "HYPOTHETICAL TFF at the flying fish's larva stage, 3 d, SL 7.1 mm",
    "stage": "larva",
    "SL_m": 0.00706,
@@ -689,6 +764,15 @@
     "swim_bladder": 0.45,
     "pectoral_muscle": 1
    },
+   "parameter_kinds": {
+    "standard_length_m": "assumed (linear ramp)",
+    "body_mass_kg": "derived from an assumed SL",
+    "body_depth_over_SL": "assumed (held at the adult value)",
+    "pectoral_len_over_SL": "assumed",
+    "pectoral_span_over_SL": "assumed transfer",
+    "pectoral_area_over_SL2": "assumed transfer",
+    "pelvic_len_over_SL": "measured (Hunte 1995)"
+   },
    "basis": {
     "SL_and_mass": "measured/secondary fits: von Bertalanffy (Oxenford 1994 via FishBase) x SL/FL 0.927, and W = 0.0116 FL^3.01 (physics/length-weight.csv). Below 14 d the SL curve is an ASSUMED linear ramp from an assumed 0.4 cm hatch length.",
     "fin_ratio": "assumed (linear ramp from an assumed 0.10 at hatching to the fit at 1.68 cm SL; no flying-fish data below 1.68 cm SL)",
@@ -697,7 +781,7 @@
     "pectoral_rays": "ASSUMED ABSENT: below 1.68 cm SL the fin is modelled as a fold + endoskeletal disc (zebrafish proxy: Hale 2014, Grandel 1998, Lalonde 2018). Rays shrunk to 2%.",
     "vertebrae": "ASSUMED: no flying-fish ossification sequence was found. Centra are faded in with SL and reach the full 40 at 3 cm SL. The COUNT 40 is itself illustrative.",
     "gonad": "assumed absent in larvae",
-    "body_depth": "HELD AT THE ADULT VALUE: no flying-fish body-depth ontogeny was found. Early stages are therefore adult-shaped but small, which is wrong in detail and is the largest honest gap here.",
+    "body_depth": "ASSUMED: held at the adult value 0.17 SL (itself an assumed, schematic number) at every stage. The repository holds no flying-fish body-depth measurement at any size (searched development/, physics/, genotype/, organisms/ on 2026-10-31). Early stages are therefore adult-shaped but small, which is wrong in detail and is the largest honest gap here.",
     "parts_present": [
      "pectoral fin",
      "pectoral fin fold + endoskeletal disc (larval fin)",
@@ -715,7 +799,7 @@
    "name": "stage_010d",
    "kind": "stage",
    "age_days": 10,
-   "size_rel": 0.06893,
+   "size_rel": 0.07,
    "label": "HYPOTHETICAL TFF at the flying fish's larva stage, 10 d, SL 14.2 mm",
    "stage": "larva",
    "SL_m": 0.01421,
@@ -729,6 +813,15 @@
     "swim_bladder": 0.45,
     "pectoral_muscle": 1
    },
+   "parameter_kinds": {
+    "standard_length_m": "assumed (linear ramp)",
+    "body_mass_kg": "derived from an assumed SL",
+    "body_depth_over_SL": "assumed (held at the adult value)",
+    "pectoral_len_over_SL": "assumed",
+    "pectoral_span_over_SL": "assumed transfer",
+    "pectoral_area_over_SL2": "assumed transfer",
+    "pelvic_len_over_SL": "measured (Hunte 1995)"
+   },
    "basis": {
     "SL_and_mass": "measured/secondary fits: von Bertalanffy (Oxenford 1994 via FishBase) x SL/FL 0.927, and W = 0.0116 FL^3.01 (physics/length-weight.csv). Below 14 d the SL curve is an ASSUMED linear ramp from an assumed 0.4 cm hatch length.",
     "fin_ratio": "assumed (linear ramp from an assumed 0.10 at hatching to the fit at 1.68 cm SL; no flying-fish data below 1.68 cm SL)",
@@ -737,7 +830,7 @@
     "pectoral_rays": "ASSUMED ABSENT: below 1.68 cm SL the fin is modelled as a fold + endoskeletal disc (zebrafish proxy: Hale 2014, Grandel 1998, Lalonde 2018). Rays shrunk to 2%.",
     "vertebrae": "ASSUMED: no flying-fish ossification sequence was found. Centra are faded in with SL and reach the full 40 at 3 cm SL. The COUNT 40 is itself illustrative.",
     "gonad": "assumed absent in larvae",
-    "body_depth": "HELD AT THE ADULT VALUE: no flying-fish body-depth ontogeny was found. Early stages are therefore adult-shaped but small, which is wrong in detail and is the largest honest gap here.",
+    "body_depth": "ASSUMED: held at the adult value 0.17 SL (itself an assumed, schematic number) at every stage. The repository holds no flying-fish body-depth measurement at any size (searched development/, physics/, genotype/, organisms/ on 2026-10-31). Early stages are therefore adult-shaped but small, which is wrong in detail and is the largest honest gap here.",
     "parts_present": [
      "pectoral fin",
      "pectoral fin fold + endoskeletal disc (larval fin)",
@@ -755,7 +848,7 @@
    "name": "stage_030d",
    "kind": "stage",
    "age_days": 30,
-   "size_rel": 0.2113,
+   "size_rel": 0.21458,
    "label": "HYPOTHETICAL TFF at the flying fish's juvenile stage, 30 d, SL 43.6 mm",
    "stage": "juvenile",
    "SL_m": 0.04356,
@@ -767,6 +860,15 @@
     "vertebra_unformed": 0.15,
     "pectoral_muscle": 1
    },
+   "parameter_kinds": {
+    "standard_length_m": "secondary (fit)",
+    "body_mass_kg": "secondary (fit)",
+    "body_depth_over_SL": "assumed (held at the adult value)",
+    "pectoral_len_over_SL": "measured (Daane 2021 fit)",
+    "pectoral_span_over_SL": "assumed transfer",
+    "pectoral_area_over_SL2": "assumed transfer",
+    "pelvic_len_over_SL": "assumed"
+   },
    "basis": {
     "SL_and_mass": "measured/secondary fits: von Bertalanffy (Oxenford 1994 via FishBase) x SL/FL 0.927, and W = 0.0116 FL^3.01 (physics/length-weight.csv). Below 14 d the SL curve is an ASSUMED linear ramp from an assumed 0.4 cm hatch length.",
     "fin_ratio": "measured fit (Daane 2021, pooled)",
@@ -775,7 +877,7 @@
     "pectoral_rays": "rays present (within the Daane 1.68-24 cm SL range)",
     "vertebrae": "ASSUMED: no flying-fish ossification sequence was found. Centra are faded in with SL and reach the full 40 at 3 cm SL. The COUNT 40 is itself illustrative.",
     "gonad": "secondary: immature in juveniles (FishBase)",
-    "body_depth": "HELD AT THE ADULT VALUE: no flying-fish body-depth ontogeny was found. Early stages are therefore adult-shaped but small, which is wrong in detail and is the largest honest gap here.",
+    "body_depth": "ASSUMED: held at the adult value 0.17 SL (itself an assumed, schematic number) at every stage. The repository holds no flying-fish body-depth measurement at any size (searched development/, physics/, genotype/, organisms/ on 2026-10-31). Early stages are therefore adult-shaped but small, which is wrong in detail and is the largest honest gap here.",
     "parts_present": [
      "pectoral fin",
      "pelvic fins enlarged (\"wings\"; about equal to pectorals in H. affinis larvae)",
@@ -794,7 +896,7 @@
    "name": "stage_090d",
    "kind": "stage",
    "age_days": 90,
-   "size_rel": 0.54688,
+   "size_rel": 0.55537,
    "label": "HYPOTHETICAL TFF at the flying fish's juvenile stage, 90 d, SL 112.7 mm",
    "stage": "juvenile",
    "SL_m": 0.11274,
@@ -806,6 +908,15 @@
     "vertebra_unformed": 0.15,
     "pectoral_muscle": 1
    },
+   "parameter_kinds": {
+    "standard_length_m": "secondary (fit)",
+    "body_mass_kg": "secondary (fit)",
+    "body_depth_over_SL": "assumed (held at the adult value)",
+    "pectoral_len_over_SL": "measured (Daane 2021 fit)",
+    "pectoral_span_over_SL": "assumed transfer",
+    "pectoral_area_over_SL2": "assumed transfer",
+    "pelvic_len_over_SL": "assumed"
+   },
    "basis": {
     "SL_and_mass": "measured/secondary fits: von Bertalanffy (Oxenford 1994 via FishBase) x SL/FL 0.927, and W = 0.0116 FL^3.01 (physics/length-weight.csv). Below 14 d the SL curve is an ASSUMED linear ramp from an assumed 0.4 cm hatch length.",
     "fin_ratio": "measured fit (Daane 2021, pooled)",
@@ -814,7 +925,7 @@
     "pectoral_rays": "rays present (within the Daane 1.68-24 cm SL range)",
     "vertebrae": "ASSUMED: no flying-fish ossification sequence was found. Centra are faded in with SL and reach the full 40 at 3 cm SL. The COUNT 40 is itself illustrative.",
     "gonad": "secondary: immature in juveniles (FishBase)",
-    "body_depth": "HELD AT THE ADULT VALUE: no flying-fish body-depth ontogeny was found. Early stages are therefore adult-shaped but small, which is wrong in detail and is the largest honest gap here.",
+    "body_depth": "ASSUMED: held at the adult value 0.17 SL (itself an assumed, schematic number) at every stage. The repository holds no flying-fish body-depth measurement at any size (searched development/, physics/, genotype/, organisms/ on 2026-10-31). Early stages are therefore adult-shaped but small, which is wrong in detail and is the largest honest gap here.",
     "parts_present": [
      "pectoral fin",
      "pelvic fins enlarged (\"wings\"; about equal to pectorals in H. affinis larvae)",
@@ -833,7 +944,7 @@
    "name": "stage_365d",
    "kind": "stage",
    "age_days": 365,
-   "size_rel": 1,
+   "size_rel": 1.01552,
    "label": "HYPOTHETICAL TFF at the flying fish's adult stage, 365 d, SL 206.2 mm",
    "stage": "adult",
    "SL_m": 0.20615,
@@ -844,6 +955,15 @@
     "vertebra_unformed": 0.15,
     "pectoral_muscle": 1
    },
+   "parameter_kinds": {
+    "standard_length_m": "secondary (fit)",
+    "body_mass_kg": "secondary (fit)",
+    "body_depth_over_SL": "assumed (held at the adult value)",
+    "pectoral_len_over_SL": "measured (Daane 2021 fit)",
+    "pectoral_span_over_SL": "assumed transfer",
+    "pectoral_area_over_SL2": "assumed transfer",
+    "pelvic_len_over_SL": "assumed"
+   },
    "basis": {
     "SL_and_mass": "measured/secondary fits: von Bertalanffy (Oxenford 1994 via FishBase) x SL/FL 0.927, and W = 0.0116 FL^3.01 (physics/length-weight.csv). Below 14 d the SL curve is an ASSUMED linear ramp from an assumed 0.4 cm hatch length.",
     "fin_ratio": "measured fit (Daane 2021, pooled)",
@@ -852,7 +972,8 @@
     "pectoral_rays": "rays present (within the Daane 1.68-24 cm SL range)",
     "vertebrae": "ASSUMED: no flying-fish ossification sequence was found. Centra are faded in with SL and reach the full 40 at 3 cm SL. The COUNT 40 is itself illustrative.",
     "gonad": "measured mature (Oliveira 2015)",
-    "body_depth": "HELD AT THE ADULT VALUE: no flying-fish body-depth ontogeny was found. Early stages are therefore adult-shaped but small, which is wrong in detail and is the largest honest gap here.",
+    "body_depth": "ASSUMED: held at the adult value 0.17 SL (itself an assumed, schematic number) at every stage. The repository holds no flying-fish body-depth measurement at any size (searched development/, physics/, genotype/, organisms/ on 2026-10-31). Early stages are therefore adult-shaped but small, which is wrong in detail and is the largest honest gap here.",
+    "adult_mass": "population length-weight fit (0.1316 kg); the base mesh is the Park & Choi L3 specimen (0.06 kg at SL 0.203 m). Both kept with roles: manifest adult_mass.",
     "parts_present": [
      "pectoral fin",
      "pelvic fins enlarged (\"wings\"; about equal to pectorals in H. affinis larvae)",
@@ -876,6 +997,7 @@
    "mass_kg": null,
    "organism": "flying-fish",
    "shrunk_pieces": {},
+   "parameter_kinds": null,
    "basis": null
   }
  ],

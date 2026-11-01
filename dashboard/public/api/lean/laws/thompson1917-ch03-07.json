@@ -1,0 +1,161 @@
+{
+ "law_id": "thompson1917-ch03-07",
+ "version": "1.0.0",
+ "kind": "physical",
+ "class": "theorem",
+ "status": "accepted",
+ "label": "Weight tends to vary as the cube of linear dimensions during growth",
+ "level": "phenotype",
+ "lean_ref": {
+  "module": "lean/Delphi/Thompson.lean",
+  "theorem": "Delphi.cubeLaw_loglog_exponent",
+  "structure": null,
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "7cc70b3bcb9192f8110416a87fdf00d13a61bc33f4a38bc5582bdeb72d070b74",
+  "content_hash": "2e54b441d95290ca4e76eb543d1c79805e51ab50fbdd774b349e72d164a7a9ea"
+ },
+ "statement_en": "Whatever the law of increase in a linear dimension, volume and therefore weight tend to vary as the cube of linear dimensions, which mainly (though not wholly) explains why the human weight curve differs in shape from the stature curve.",
+ "hypotheses": [
+  {
+   "name": "thompson1917-ch03-07#assumed-1",
+   "statement": "A single linear dimension L and mass W of one body family; fixed shape and constant density are what W = k L^3 encodes."
+  },
+  {
+   "name": "thompson1917-ch03-07#assumed-2",
+   "statement": "Thompson's \"mainly (though not wholly)\" is not formalised: the theorem is exact, the law is approximate, and the tolerance band [2.5, 3.5] the claim test uses is a decision rule outside the module."
+  },
+  {
+   "name": "thompson1917-ch03-07#assumed-3",
+   "statement": "No data enters the module; the measured exponents are read from the claims thread's result files and pointed to."
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "a theorem about a model: it applies wherever the design supplies the quantities it uses and accepts the hypotheses in scope.assumed",
+  "kernelChecked": [
+   "If W L = k L^3 for all L > 0 with k > 0, then for L1 ≠ L2 the log-log slope (log W L2 − log W L1)/(log L2 − log L1) equals exactly 3 (cubeLaw_loglog_exponent) and W L2 / W L1 = (L2/L1)^3 (cubeLaw_ratio).",
+   "Contrapositive: two sizes with a log-log slope b ≠ 3 rule out W = k L^3 for every k (not_cubeLaw_of_exponent_ne_three)."
+  ],
+  "assumed": [
+   "A single linear dimension L and mass W of one body family; fixed shape and constant density are what W = k L^3 encodes.",
+   "Thompson's \"mainly (though not wholly)\" is not formalised: the theorem is exact, the law is approximate, and the tolerance band [2.5, 3.5] the claim test uses is a decision rule outside the module.",
+   "No data enters the module; the measured exponents are read from the claims thread's result files and pointed to."
+  ],
+  "note": null
+ },
+ "constraint_scopes": {
+  "C7b": {
+   "taxa": [
+    "Exocoetidae"
+   ],
+   "life_stages": [],
+   "ranges": {},
+   "basis": "evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope"
+  }
+ },
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "On Growth and Form (1917)"
+  ],
+  "observations": [],
+  "faithfulness": "not assessed",
+  "flyingFishAudit": {
+   "holds": 2,
+   "cannot-evaluate": 1
+  },
+  "rejectable": null
+ },
+ "sources": [
+  "On Growth and Form (1917)"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.Registry.cubeLaw_witness",
+  "file": "lean/registry/lean/Witnesses.lean",
+  "statement": "CubeLaw (fun L => L^3) 1"
+ },
+ "constraints": [
+  "C7",
+  "C7b"
+ ],
+ "introduced_in": "1.0.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": {
+  "approved_by_role": "bootstrap-grandfathered",
+  "date": "2026-11-01",
+  "basis": "in force in lean/constraints.json / lean/laws.json before the registry existed; no per-law human review recorded by the registry"
+ },
+ "origin": "lean/registry/laws/thompson1917-ch03-07.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "bootstrapped from lean/laws.json (status there: \"proved\")"
+  }
+ ],
+ "content_hash": "2e54b441d95290ca4e76eb543d1c79805e51ab50fbdd774b349e72d164a7a9ea",
+ "lean": {
+  "theorem": "Delphi.cubeLaw_loglog_exponent",
+  "module": "lean/Delphi/Thompson.lean",
+  "line": 52,
+  "source": "/-- **The log-log exponent of a cube law is exactly 3.** -/\ntheorem cubeLaw_loglog_exponent {W : ℝ → ℝ} {k : ℝ} (h : CubeLaw W k) {L₁ L₂ : ℝ} (h₁ : 0 < L₁)\n    (h₂ : 0 < L₂) (hne : L₁ ≠ L₂) : logSlope W L₁ L₂ = 3 := by\n  have hlog : log L₂ - log L₁ ≠ 0 := by\n    intro h0\n    exact hne (log_injOn_pos h₂ h₁ (sub_eq_zero.mp h0)).symm\n  unfold logSlope\n  rw [div_eq_iff hlog, h.2 L₁ h₁, h.2 L₂ h₂, log_mul h.1.ne' (pow_ne_zero 3 h₂.ne'),\n    log_mul h.1.ne' (pow_ne_zero 3 h₁.ne'), log_pow, log_pow]\n  push_cast\n  ring",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.CubeLaw",
+    "keyword": "def",
+    "module": "lean/Delphi/Thompson.lean",
+    "line": 36,
+    "source": "/-- Isometric growth at constant density: weight is `k` times the cube of the linear dimension. -/\ndef CubeLaw (W : ℝ → ℝ) (k : ℝ) : Prop := 0 < k ∧ ∀ L, 0 < L → W L = k * L ^ 3"
+   }
+  ]
+ },
+ "constraint_details": [
+  {
+   "id": "C7",
+   "relation": "W2 / W1 = (L2 / L1)^3",
+   "lemma": "Delphi.Constraints.cubeLaw_rules_out'",
+   "law": "Delphi.cubeLaw_ratio",
+   "module": "lean/Delphi/Thompson.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "isometric_constant_density"
+   ],
+   "canEliminate": "the mass side of Galileo's square-cube argument only: a giant with unchanged proportions and density must weigh (L2/L1)^3 times more. Strength scaling as L^2 is NOT formalised, so a candidate claiming the giant can support itself is not ruled out by this theorem",
+   "lemma_source": "/-- **C7, interval form.** Weight ratio confined to `[a, b]` and length ratio to `[c, d]` with `0 ≤ c`:\nruled out when `[a, b]` and `[c^3, d^3]` are disjoint. -/\ntheorem cubeLaw_rules_out' {W : ℝ → ℝ} {k : ℝ} (h : CubeLaw W k) {L₁ L₂ a b c d : ℝ} (h₁ : 0 < L₁)\n    (h₂ : 0 < L₂) (hr : a ≤ W L₂ / W L₁ ∧ W L₂ / W L₁ ≤ b) (hℓ : c ≤ L₂ / L₁ ∧ L₂ / L₁ ≤ d)\n    (hc : 0 ≤ c) (hne : b < c ^ 3 ∨ d ^ 3 < a) : False := by\n  have hq := cubeLaw_ratio h h₁ h₂\n  have hℓ0 : 0 ≤ L₂ / L₁ := le_trans hc hℓ.1\n  have hlo : c ^ 3 ≤ (L₂ / L₁) ^ 3 := pow_le_pow_left₀ hc hℓ.1 3\n  have hhi : (L₂ / L₁) ^ 3 ≤ d ^ 3 := pow_le_pow_left₀ hℓ0 hℓ.2 3\n  rcases hne with hne | hne <;> linarith [hr.1, hr.2]"
+  },
+  {
+   "id": "C7b",
+   "relation": "b = 3",
+   "lemma": "Delphi.Constraints.exponent_rules_out",
+   "law": "Delphi.cubeLaw_loglog_exponent",
+   "module": "lean/Delphi/Thompson.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "isometric_constant_density"
+   ],
+   "canEliminate": "a candidate that asserts isometry and a measured exponent whose interval excludes 3 (for example every NHANES window in the claims thread's test, if read as isometric)",
+   "lemma_source": "/-- **C7b, the exponent form.** A log-log exponent confined to an interval not containing `3`, under\nisometric scaling at constant density, is ruled out for every `k`. -/\ntheorem exponent_rules_out {W : ℝ → ℝ} {L₁ L₂ a b : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) (hne : L₁ ≠ L₂)\n    (hb : a ≤ logSlope W L₁ L₂ ∧ logSlope W L₁ L₂ ≤ b) (h : b < 3 ∨ 3 < a) : ∀ k, ¬ CubeLaw W k := by\n  intro k hk\n  have := cubeLaw_loglog_exponent hk h₁ h₂ hne\n  rcases h with h | h <;> linarith [hb.1, hb.2]"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Thompson.lean",
+  "decl": "Delphi.cubeLaw_loglog_exponent",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "7cc70b3bcb9192f8110416a87fdf00d13a61bc33f4a38bc5582bdeb72d070b74",
+  "current_statement_sha256": "7cc70b3bcb9192f8110416a87fdf00d13a61bc33f4a38bc5582bdeb72d070b74",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

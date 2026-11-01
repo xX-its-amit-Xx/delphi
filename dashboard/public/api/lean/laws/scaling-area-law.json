@@ -1,0 +1,157 @@
+{
+ "law_id": "scaling-area-law",
+ "version": "1.0.0",
+ "kind": "physical",
+ "class": "theorem",
+ "status": "accepted",
+ "label": "Area law and wing loading under isometry (R2, R3)",
+ "level": "phenotype",
+ "lean_ref": {
+  "module": "lean/Delphi/Scaling.lean",
+  "theorem": "Delphi.areaLaw_ratio",
+  "structure": null,
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "29fe667e391140bcb2de4c7213f82ea68205453f76a217fca898cf29ce623014",
+  "content_hash": "f1710658ab99e319ea9c11ef7f7caa44980a81f5fe997b2056f20b49a7f549a0"
+ },
+ "statement_en": "In an isometric family an area scales as the square of the linear dimension, S(L2)/S(L1) = (L2/L1)^2, and with the cube law the weight per unit area (wing loading, or stress W/A) scales as L2/L1.",
+ "hypotheses": [
+  {
+   "name": "scaling-area-law#assumed-1",
+   "statement": "Isometry of the area and of the mass (constant density): named hypotheses, measured to fail within one flying-fish species (Davenport 1992)."
+  },
+  {
+   "name": "scaling-area-law#assumed-2",
+   "statement": "Nothing about which family is isometric; the theorems bound only families that are."
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "a theorem about a model: it applies wherever the design supplies the quantities it uses and accepts the hypotheses in scope.assumed",
+  "kernelChecked": [
+   "If S L = k L^2 for all L > 0 (AreaLaw) then S(L2)/S(L1) = (L2/L1)^2 and log S(L2)/S(L1) = 2 log(L2/L1) (areaLaw_ratio, areaLaw_log).",
+   "With CubeLaw W: (W/S)(L2)/(W/S)(L1) = L2/L1, exponent 1 (wingLoading_ratio, wingLoading_log)."
+  ],
+  "assumed": [
+   "Isometry of the area and of the mass (constant density): named hypotheses, measured to fail within one flying-fish species (Davenport 1992).",
+   "Nothing about which family is isometric; the theorems bound only families that are."
+  ],
+  "note": null
+ },
+ "constraint_scopes": {
+  "C2a": {
+   "taxa": [
+    "Exocoetidae"
+   ],
+   "life_stages": [],
+   "ranges": {},
+   "basis": "evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope"
+  }
+ },
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "proved in this project; no paper states it in this form"
+  ],
+  "observations": [],
+  "faithfulness": "not assessed",
+  "flyingFishAudit": {
+   "violated": 4,
+   "cannot-evaluate": 19,
+   "holds": 1
+  },
+  "rejectable": null
+ },
+ "sources": [
+  "proved in this project; no paper states it in this form"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.Registry.areaLaw_witness",
+  "file": "lean/registry/lean/Witnesses.lean",
+  "statement": "AreaLaw (fun L => L^2) 1 (with CubeLaw from cubeLaw_witness)"
+ },
+ "constraints": [
+  "C2a",
+  "C2b"
+ ],
+ "introduced_in": "1.0.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": {
+  "approved_by_role": "bootstrap-grandfathered",
+  "date": "2026-11-01",
+  "basis": "in force in lean/constraints.json / lean/laws.json before the registry existed; no per-law human review recorded by the registry"
+ },
+ "origin": "lean/registry/laws/scaling-area-law.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "bootstrapped from lean/laws.json (status there: \"proved\")"
+  }
+ ],
+ "content_hash": "f1710658ab99e319ea9c11ef7f7caa44980a81f5fe997b2056f20b49a7f549a0",
+ "lean": {
+  "theorem": "Delphi.areaLaw_ratio",
+  "module": "lean/Delphi/Scaling.lean",
+  "line": 60,
+  "source": "/-- **R2, area law.** -/\ntheorem areaLaw_ratio {S : ℝ → ℝ} {k : ℝ} (h : AreaLaw S k) {L₁ L₂ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) :\n    S L₂ / S L₁ = (L₂ / L₁) ^ 2 := by\n  rw [h.2 L₁ h₁, h.2 L₂ h₂, div_pow, mul_div_mul_left _ _ h.1.ne']",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.AreaLaw",
+    "keyword": "def",
+    "module": "lean/Delphi/Scaling.lean",
+    "line": 50,
+    "source": "/-- Isometry of an area: `S L = k L²`. -/\ndef AreaLaw (S : ℝ → ℝ) (k : ℝ) : Prop := 0 < k ∧ ∀ L, 0 < L → S L = k * L ^ 2"
+   }
+  ]
+ },
+ "constraint_details": [
+  {
+   "id": "C2a",
+   "relation": "d log(area) / d log L = 2",
+   "lemma": "Delphi.Constraints.area_exponent_rules_out",
+   "law": "Delphi.areaLaw_log",
+   "module": "lean/Delphi/Scaling.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "isometric_areas"
+   ],
+   "canEliminate": "a candidate that asserts isometry of the area and an area exponent other than 2; an exponent of 2 is the hypothesis restated and is consistent",
+   "lemma_source": "/-- **C2a, area exponent.** Under isometry an area's log-log exponent on `L` is `2`. -/\ntheorem area_exponent_rules_out {S : ℝ → ℝ} {k : ℝ} (hS : AreaLaw S k) {L₁ L₂ b : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂)\n    (hne : L₁ ≠ L₂) (hb : Real.log (S L₂ / S L₁) = b * Real.log (L₂ / L₁)) (h : b ≠ 2) : False := by\n  have := areaLaw_log hS h₁ h₂\n  rw [hb] at this\n  exact h (mul_right_cancel₀ (log_ratio_ne_zero h₁ h₂ hne) this)"
+  },
+  {
+   "id": "C2b",
+   "relation": "area ratio = (L2/L1)^2",
+   "lemma": "Delphi.Constraints.area_ratio_rules_out",
+   "law": "Delphi.areaLaw_ratio",
+   "module": "lean/Delphi/Scaling.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "isometric_areas"
+   ],
+   "canEliminate": "a candidate committing an area ratio inconsistent with the square of its length ratio",
+   "lemma_source": "/-- **C2a, area scaling.** Under isometry an area scales as `L²`: a committed area ratio `r` at length ratio\n`ℓ` with `r ≠ ℓ²` is ruled out. -/\ntheorem area_ratio_rules_out {S : ℝ → ℝ} {k : ℝ} (hS : AreaLaw S k) {L₁ L₂ r ℓ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂)\n    (hr : S L₂ / S L₁ = r) (hℓ : L₂ / L₁ = ℓ) (hne : r ≠ ℓ ^ 2) : False := by\n  have := areaLaw_ratio hS h₁ h₂\n  rw [hr, hℓ] at this\n  exact hne this"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Scaling.lean",
+  "decl": "Delphi.areaLaw_ratio",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "29fe667e391140bcb2de4c7213f82ea68205453f76a217fca898cf29ce623014",
+  "current_statement_sha256": "29fe667e391140bcb2de4c7213f82ea68205453f76a217fca898cf29ce623014",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

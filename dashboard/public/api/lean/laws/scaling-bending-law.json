@@ -1,0 +1,186 @@
+{
+ "law_id": "scaling-bending-law",
+ "version": "1.0.0",
+ "kind": "physical",
+ "class": "theorem",
+ "status": "accepted",
+ "label": "Bending strength of an isometric member via the section modulus (R9)",
+ "level": "phenotype",
+ "lean_ref": {
+  "module": "lean/Delphi/Scaling.lean",
+  "theorem": "Delphi.bendingStress_ratio_body",
+  "structure": null,
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "3df634e32ab94e640b2a59d52ce81722dfc03b755a8c73433203cddc1b70cf0c",
+  "content_hash": "522f59337052da6b023e59420a9f7183823836b0e63980bf1f1efd3569a5ff5a"
+ },
+ "statement_en": "For a slender linear-elastic beam the maximum bending stress is the moment over the section modulus, σ_b = F ℓ / Z. With similar sections (Z ∝ L^3) and a lever arm ∝ L: if the load scales as the body (F ∝ L^3, R9a) then σ_b scales as L, the bending safety factor σ_max/σ_b equals σ_max k_Z/(k_F k_ℓ L) and above L_max,b = σ_max k_Z/(k_F k_ℓ n) the member cannot carry n times its load; if the load scales as an area (a lamina of constant thickness, F ∝ L^2, R9b) then σ_b is independent of size and no size limit follows.",
+ "hypotheses": [
+  {
+   "name": "scaling-bending-law#assumed-1",
+   "statement": "Slender linear-elastic (Euler-Bernoulli) beam; σ_b = M_b/Z with a point load at the free end (a distributed load changes the constant, not the L-dependence)."
+  },
+  {
+   "name": "scaling-bending-law#assumed-2",
+   "statement": "Geometrically similar sections (Z = k_Z d^3, d ∝ L) and lever arm ∝ L; elastic similarity (d ∝ ℓ^(3/2)) is a different hypothesis family, not formalised."
+  },
+  {
+   "name": "scaling-bending-law#assumed-3",
+   "statement": "Constant σ_max; static loads only (wind on a leaf is outside the model); which load family applies (R9a or R9b) is empirical and must be committed by the candidate."
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "a theorem about a model: it applies wherever the design supplies the quantities it uses and accepts the hypotheses in scope.assumed",
+  "kernelChecked": [
+   "R9a: with CubeLaw F, LeverLaw ℓ and SectionModulusLaw Z, σ_b(L2)/σ_b(L1) = L2/L1, log exponent 1 (bendingStress_ratio_body, bendingStress_log_body); σ_max/σ_b = σ_max k_Z/(k_F k_ℓ L) (bendingSafety_eq); above σ_max k_Z/(k_F k_ℓ n) the stress at n times the load exceeds σ_max (bending_cannot_carry).",
+   "R9b: with AreaLaw F instead, σ_b(L2)/σ_b(L1) = 1, log exponent 0 (bendingStress_ratio_sheet, bendingStress_log_sheet): no size limit follows."
+  ],
+  "assumed": [
+   "Slender linear-elastic (Euler-Bernoulli) beam; σ_b = M_b/Z with a point load at the free end (a distributed load changes the constant, not the L-dependence).",
+   "Geometrically similar sections (Z = k_Z d^3, d ∝ L) and lever arm ∝ L; elastic similarity (d ∝ ℓ^(3/2)) is a different hypothesis family, not formalised.",
+   "Constant σ_max; static loads only (wind on a leaf is outside the model); which load family applies (R9a or R9b) is empirical and must be committed by the candidate."
+  ],
+  "note": null
+ },
+ "constraint_scopes": {},
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "proved in this project; no paper states it in this form"
+  ],
+  "observations": [],
+  "faithfulness": "not assessed",
+  "flyingFishAudit": {
+   "violated": 4,
+   "cannot-evaluate": 19,
+   "holds": 1
+  },
+  "rejectable": null
+ },
+ "sources": [
+  "proved in this project; no paper states it in this form"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.Registry.sectionModulusLaw_witness",
+  "file": "lean/registry/lean/Witnesses.lean",
+  "statement": "SectionModulusLaw and LeverLaw have instances (sectionModulusLaw_witness, leverLaw_witness)"
+ },
+ "constraints": [
+  "C12",
+  "C12b",
+  "C12c"
+ ],
+ "introduced_in": "1.0.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": {
+  "approved_by_role": "bootstrap-grandfathered",
+  "date": "2026-11-01",
+  "basis": "in force in lean/constraints.json / lean/laws.json before the registry existed; no per-law human review recorded by the registry"
+ },
+ "origin": "lean/registry/laws/scaling-bending-law.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "bootstrapped from lean/laws.json (status there: \"proved\")"
+  }
+ ],
+ "content_hash": "522f59337052da6b023e59420a9f7183823836b0e63980bf1f1efd3569a5ff5a",
+ "lean": {
+  "theorem": "Delphi.bendingStress_ratio_body",
+  "module": "lean/Delphi/Scaling.lean",
+  "line": 254,
+  "source": "/-- **R9a, conclusion 1 (body-like load).** With the load scaling as the body (`CubeLaw F`), lever arm `∝ L` and\nsimilar sections (`Z ∝ L³`), bending stress scales as `L`. -/\ntheorem bendingStress_ratio_body {F ℓ Z : ℝ → ℝ} {kF kℓ kZ : ℝ} (hF : CubeLaw F kF) (hℓ : LeverLaw ℓ kℓ)\n    (hZ : SectionModulusLaw Z kZ) {L₁ L₂ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) :\n    bendingStress F ℓ Z L₂ / bendingStress F ℓ Z L₁ = L₂ / L₁ := by\n  unfold bendingStress\n  rw [hF.2 L₁ h₁, hF.2 L₂ h₂, hℓ.2 L₁ h₁, hℓ.2 L₂ h₂, hZ.2 L₁ h₁, hZ.2 L₂ h₂]\n  have := hF.1; have := hℓ.1; have := hZ.1\n  field_simp",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.SectionModulusLaw",
+    "keyword": "def",
+    "module": "lean/Delphi/Scaling.lean",
+    "line": 243,
+    "source": "/-- Geometrically similar sections: the section modulus is `k L³` (`Z = k_Z d³` with `d = k_d L`). -/\ndef SectionModulusLaw (Z : ℝ → ℝ) (k : ℝ) : Prop := 0 < k ∧ ∀ L, 0 < L → Z L = k * L ^ 3"
+   },
+   {
+    "name": "Delphi.LeverLaw",
+    "keyword": "def",
+    "module": "lean/Delphi/Scaling.lean",
+    "line": 246,
+    "source": "/-- The lever arm scales with the body: `ℓ = k L`. -/\ndef LeverLaw (ℓ : ℝ → ℝ) (k : ℝ) : Prop := 0 < k ∧ ∀ L, 0 < L → ℓ L = k * L"
+   }
+  ]
+ },
+ "constraint_details": [
+  {
+   "id": "C12",
+   "relation": "d log σ_b / d log L = 1",
+   "lemma": "Delphi.Constraints.bending_exponent_rules_out",
+   "law": "Delphi.bendingStress_log_body",
+   "module": "lean/Delphi/Scaling.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "linear_elastic_slender_beam",
+    "similar_sections",
+    "lever_arm_proportional",
+    "body_like_load",
+    "same_material"
+   ],
+   "canEliminate": "a candidate asserting a body-like load and similar sections with a bending-stress exponent other than 1; an exponent of 1 is the theorem and is consistent (WP-077/C1)",
+   "lemma_source": "/-- **C12, bending exponent, body-like load.** Under R9a the exponent of bending stress on `L` is `1`. -/\ntheorem bending_exponent_rules_out {F ℓ Z : ℝ → ℝ} {kF kℓ kZ : ℝ} (hF : CubeLaw F kF) (hℓ : LeverLaw ℓ kℓ)\n    (hZ : SectionModulusLaw Z kZ) {L₁ L₂ b : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) (hne : L₁ ≠ L₂)\n    (hb : Real.log (bendingStress F ℓ Z L₂ / bendingStress F ℓ Z L₁) = b * Real.log (L₂ / L₁)) (h : b ≠ 1) :\n    False := by\n  have := bendingStress_log_body hF hℓ hZ h₁ h₂\n  rw [hb] at this\n  exact h (mul_right_cancel₀ (log_ratio_ne_zero h₁ h₂ hne) this)"
+  },
+  {
+   "id": "C12b",
+   "relation": "σ_b ratio = L2/L1",
+   "lemma": "Delphi.Constraints.bending_ratio_rules_out",
+   "law": "Delphi.bendingStress_ratio_body",
+   "module": "lean/Delphi/Scaling.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "linear_elastic_slender_beam",
+    "similar_sections",
+    "lever_arm_proportional",
+    "body_like_load",
+    "same_material"
+   ],
+   "canEliminate": "a candidate committing a bending-stress ratio other than its length ratio under R9a",
+   "lemma_source": "/-- **C12b, bending ratio, body-like load.** A committed bending-stress ratio `r ≠ ℓ` is ruled out. -/\ntheorem bending_ratio_rules_out {F ℓ Z : ℝ → ℝ} {kF kℓ kZ : ℝ} (hF : CubeLaw F kF) (hℓ : LeverLaw ℓ kℓ)\n    (hZ : SectionModulusLaw Z kZ) {L₁ L₂ r q : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂)\n    (hr : bendingStress F ℓ Z L₂ / bendingStress F ℓ Z L₁ = r) (hq : L₂ / L₁ = q) (hne : r ≠ q) : False := by\n  have := bendingStress_ratio_body hF hℓ hZ h₁ h₂\n  rw [hr, hq] at this\n  exact hne this"
+  },
+  {
+   "id": "C12c",
+   "relation": "d log σ_b / d log L = 0",
+   "lemma": "Delphi.Constraints.bending_exponent_sheet_rules_out",
+   "law": "Delphi.bendingStress_log_sheet",
+   "module": "lean/Delphi/Scaling.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "linear_elastic_slender_beam",
+    "similar_sections",
+    "lever_arm_proportional",
+    "sheet_like_load",
+    "same_material"
+   ],
+   "canEliminate": "a candidate that commits to a constant-thickness blade and still claims bending stress rises with size (hence a bending size limit); under R9b no limit follows",
+   "lemma_source": "/-- **C12c, bending exponent, sheet-like load.** Under R9b the exponent is `0`: a candidate with a constant-thickness\nlamina that still commits to bending stress rising (or falling) with size is ruled out. -/\ntheorem bending_exponent_sheet_rules_out {F ℓ Z : ℝ → ℝ} {kF kℓ kZ : ℝ} (hF : AreaLaw F kF) (hℓ : LeverLaw ℓ kℓ)\n    (hZ : SectionModulusLaw Z kZ) {L₁ L₂ b : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) (hne : L₁ ≠ L₂)\n    (hb : Real.log (bendingStress F ℓ Z L₂ / bendingStress F ℓ Z L₁) = b * Real.log (L₂ / L₁)) (h : b ≠ 0) :\n    False := by\n  have := bendingStress_log_sheet hF hℓ hZ h₁ h₂\n  rw [hb] at this\n  exact h (mul_right_cancel₀ (log_ratio_ne_zero h₁ h₂ hne) this)"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Scaling.lean",
+  "decl": "Delphi.bendingStress_ratio_body",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "3df634e32ab94e640b2a59d52ce81722dfc03b755a8c73433203cddc1b70cf0c",
+  "current_statement_sha256": "3df634e32ab94e640b2a59d52ce81722dfc03b755a8c73433203cddc1b70cf0c",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

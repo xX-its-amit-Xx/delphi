@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Engine smoke test</title>
+<style>
+  :root { --bg: #fafaf8; --fg: #1c1c1a; --muted: #6b6b66; --ok: #1f7a3a; --bad: #b3261e; --line: #ddd; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #161615; --fg: #ecece8; --muted: #a0a09a; --ok: #6fcf8a; --bad: #ff8a80; --line: #333; } }
+  body { background: var(--bg); color: var(--fg); font: 14px/1.5 system-ui, sans-serif; margin: 0; padding: 16px; }
+  h1 { font-size: 18px; margin: 0 0 4px; } p { color: var(--muted); margin: 0 0 12px; }
+  li { margin: 2px 0; } .ok { color: var(--ok); } .bad { color: var(--bad); }
+  pre { border: 1px solid var(--line); padding: 8px; overflow-x: auto; font-size: 12px; max-height: 50vh; }
+</style>
+</head>
+<body>
+<h1>Studio engine: browser smoke test</h1>
+<p>Runs the same organism.mjs, state.mjs and scenario registry the MCP server runs (copied by dashboard/build-engine.mjs). No Lean laws here.</p>
+<ul id="checks"></ul>
+<pre id="out">running...</pre>
+<script type="module">
+const list = document.getElementById('checks'), out = document.getElementById('out');
+const check = (name, cond, detail = '') => { const li = document.createElement('li'); li.className = cond ? 'ok' : 'bad'; li.textContent = `${cond ? 'ok' : 'FAIL'}  ${name}${detail ? ' - ' + detail : ''}`; list.append(li); return cond; };
+try {
+  const O = await import('./lib/organism.mjs');
+  const S = await import('./lib/state.mjs');
+  const R = await import('./scenarios/index.mjs');
+  const bundle = await (await fetch('./data/bundle.json')).json();
+  check('bundle loaded', !!bundle.organisms['zebrafish-adult'], `${Object.keys(bundle.organisms).length} organisms`);
+  const doc = O.docFor(bundle, 'zebrafish-adult');
+  const st = S.resolveState(doc, 90, {}, bundle);
+  check('zebrafish STATE at 90 d', typeof st.SL_m.value === 'number', `SL ${(st.SL_m.value * 1000).toFixed(2)} mm, mass ${(st.mass_kg.value * 1000).toFixed(3)} g`);
+  const ref = S.resolveState(doc, 180, {}, bundle);
+  check('reference age reproduces the organism file', ref.SL_m.value === bundle.organisms['zebrafish-adult'].parameters.standard_length_m.value);
+  check('body density is null, not invented', st.body_density_kg_m3.value === null, st.body_density_kg_m3.reason.slice(0, 60) + '...');
+  let rejected = false; try { O.appendEdit(bundle, doc, { target: { level: 'organ', id: 'wing_L' }, param: 'scale', op: 'set', value: 1, author: 'human', reason: 'x' }); } catch { rejected = true; }
+  check('unknown part id rejected', rejected);
+  const { scenarios, errors } = await R.loadScenarios();
+  check('scenario registry loaded', scenarios.size > 0, `${[...scenarios.keys()].join(', ')}${errors.length ? `; ${errors.length} module error(s)` : ''}`);
+  const ex = scenarios.get('_example');
+  const run = ex ? R.runScenario(ex, st, { factor: 2 }) : { ok: false, error: '_example missing' };
+  check('_example interface test runs', run.ok, run.ok ? `${run.metrics[0].key} = ${run.metrics[0].value.toFixed(3)}` : run.error);
+  out.textContent = JSON.stringify({ state: Object.fromEntries(S.STATE_FIELDS.filter(k => k !== 'parts' && k !== 'ambient').map(k => [k, { value: st[k].value, kind: st[k].kind }])), run, registry_errors: errors, leanSpec: S.leanSpec(st) }, null, 1);
+  document.title = list.querySelector('.bad') ? 'Engine smoke: FAIL' : 'Engine smoke: ok';
+} catch (e) { check('engine loaded', false, e.message); out.textContent = e.stack; document.title = 'Engine smoke: FAIL'; }
+</script>
+</body>
+</html>

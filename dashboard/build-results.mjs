@@ -218,6 +218,20 @@ const corrections = [
     ],
     paths: ['genotype/map.vetted.slim.json (fin_size.verified_leads[].paralogue_check)', 'crosscheck-frontier/crosscheck.json (row G5)'],
   },
+  {
+    id: 'tff-aspect',
+    what: '"The TFF’s wings (aspect ratio 17.9) are more slender than any measured flying fish (3.0-16.9)"',
+    verdict: 'WITHDRAWN',
+    found_by: 'our own parametric-model fix pass, reading Fish (1990) and Park & Choi (2010) in full',
+    why: 'The two numbers used different definitions. 17.9 is span squared over the area of both pectoral fins (Park & Choi S^2/A1); Fish (1990) divides by pectoral plus pelvic fins plus the body between them. On Fish’s definition the TFF is at most 13.9, inside his range. What survives: 17.9 is 1.7 times the one measured specimen (10.68).',
+    caveat: 'The same pass found the adult flying-fish mass differs 2.2x between the one wind-tunnel specimen (0.060 kg) and the population length-weight fits (0.100-0.132 kg). The 9.9 m/s minimum flight speed holds only for the specimen; at population mass it is 12.7-14.6 m/s, still inside the quoted 10-20 m/s.',
+    metrics: [
+      ['TFF aspect ratio, Park & Choi convention', 17.906],
+      ['TFF aspect ratio, Fish 1990 convention (upper bound)', 13.902],
+      ['measured specimen, Park & Choi convention', 10.68],
+    ],
+    paths: ['anatomy-model/parametric/CHANGELOG.md', 'physics/flier/tff/SPEC-MISMATCHES.md (item 1)', 'physics/results.json (overall.sentence)'],
+  },
 ];
 
 // ---------------------------------------------------------------- 2. design test

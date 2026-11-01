@@ -9,7 +9,7 @@
 //              the TFF's deltas ramped in on the same schedule as the flying fish's own measured
 //              pectoral-fin ontogeny.  That ramp is a STATED ASSUMPTION, not data, and it is labelled
 //              as such in stages.json, in the GLB manifest and in the README.
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import * as FF from '../../development/trajectory.mjs';
@@ -17,6 +17,14 @@ import * as ZF from '../../development/zebrafish/trajectory.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const AREA_EXP = 1.834; // Davenport 1992 fin-area exponent, development/trajectory.mjs P.area.exp
+
+// size_rel is SL(stage) / SL(BASE), the base being the resolved parameter set the GLB's base mesh is
+// built from (resolved/<id>.json, written by params.py --dump). Before 2.0.0 it was SL(stage) / SL(adult
+// stage), which drew the flying fish's 365 d target (SL 0.20615 m) at the base's 0.203 m and gave that
+// target a different metres-per-unit from the base mesh. Now every target's m_per_unit equals the base's.
+const RESOLVED = (id) => JSON.parse(readFileSync(join(HERE, 'resolved', `${id}.json`), 'utf8')).parameters;
+const FF_BASE = RESOLVED('flying-fish');
+const ZF_BASE = RESOLVED('zebrafish-adult');
 
 const FF_ADULT_AGE = 365;
 const FF_AGES = [0, 3, 10, 30, 90, 365];
@@ -28,7 +36,7 @@ const FF_REF = { pect: 0.687, span: 1.2857, area: 0.15475, muscle: 0.040 };
 
 function ffStage(age) {
   const s = FF.at(age);
-  const sizeRel = s.SL_m / ffAd.SL_m;
+  const sizeRel = s.SL_m / FF_BASE.standard_length_m;
   // fin ratio is the MEASURED Daane fit; carry span and area with it
   const r = s.finLength_SL / ffAd.finLength_SL;
   const shrink = {};
@@ -52,6 +60,8 @@ function ffStage(age) {
     parameters: {
       standard_length_m: s.SL_m,
       body_mass_kg: s.mass_kg,
+      // ASSUMED: held at the base (adult) value, itself schematic; no flying-fish body-depth ontogeny found
+      body_depth_over_SL: FF_BASE.body_depth_over_SL,
       pectoral_len_over_SL: s.finLength_SL,
       pectoral_span_over_SL: FF_REF.span * r,
       pectoral_area_over_SL2: FF_REF.area * Math.pow(r, AREA_EXP),
@@ -60,6 +70,15 @@ function ffStage(age) {
         ? s.finLength_SL : 0.22,
     },
     shrink,
+    parameter_kinds: {
+      standard_length_m: age < 14 ? 'assumed (linear ramp)' : 'secondary (fit)',
+      body_mass_kg: age < 14 ? 'derived from an assumed SL' : 'secondary (fit)',
+      body_depth_over_SL: 'assumed (held at the adult value)',
+      pectoral_len_over_SL: s.SL_m * 100 >= 1.68 ? 'measured (Daane 2021 fit)' : 'assumed',
+      pectoral_span_over_SL: 'assumed transfer',
+      pectoral_area_over_SL2: 'assumed transfer',
+      pelvic_len_over_SL: s.stage === 'larva' || s.stage === 'hatching' ? 'measured (Hunte 1995)' : 'assumed',
+    },
     basis: {
       SL_and_mass: 'measured/secondary fits: von Bertalanffy (Oxenford 1994 via FishBase) x SL/FL 0.927, '
         + 'and W = 0.0116 FL^3.01 (physics/length-weight.csv). Below 14 d the SL curve is an ASSUMED linear '
@@ -77,8 +96,14 @@ function ffStage(age) {
         + 'and reach the full 40 at 3 cm SL. The COUNT 40 is itself illustrative.',
       gonad: s.stage === 'adult' ? 'measured mature (Oliveira 2015)'
         : (shrink.gonad === 0.35 ? 'secondary: immature in juveniles (FishBase)' : 'assumed absent in larvae'),
-      body_depth: 'HELD AT THE ADULT VALUE: no flying-fish body-depth ontogeny was found. Early stages are '
-        + 'therefore adult-shaped but small, which is wrong in detail and is the largest honest gap here.',
+      body_depth: `ASSUMED: held at the adult value ${FF_BASE.body_depth_over_SL} SL (itself an assumed, schematic `
+        + 'number) at every stage. The repository holds no flying-fish body-depth measurement at any size '
+        + '(searched development/, physics/, genotype/, organisms/ on 2026-10-31). Early stages are therefore '
+        + 'adult-shaped but small, which is wrong in detail and is the largest honest gap here.',
+      adult_mass: age === FF_ADULT_AGE
+        ? `population length-weight fit (0.1316 kg); the base mesh is the Park & Choi L3 specimen `
+          + `(${FF_BASE.body_mass_kg} kg at SL ${FF_BASE.standard_length_m} m). Both kept with roles: manifest adult_mass.`
+        : undefined,
       parts_present: parts,
     },
   };
@@ -90,7 +115,7 @@ const ZF_REF = { pect: 0.155, span: 0.42, area: 0.016, depth: 0.2535, head: 0.23
 
 function zfStage(age) {
   const s = ZF.at(age);
-  const sizeRel = s.SL_m / zfAd.SL_m;
+  const sizeRel = s.SL_m / zfAd.SL_m;   // drives the assumed fin / muscle ramps below (unchanged)
   const SLmm = s.SL_m * 1000;
   const pr = s.proportions || {};
   const depth = typeof pr.depthAtNape_SL === 'number' ? pr.depthAtNape_SL
@@ -125,7 +150,7 @@ function zfStage(age) {
     key: `stage_${String(age).padStart(3, '0')}d`,
     label: `${s.stage}, ${age} d after hatching (${s.dpf} dpf), SL ${SLmm.toFixed(2)} mm, ${s.zfs.name}`,
     age_days: age, stage: s.stage, SL_m: s.SL_m, mass_kg: s.mass_kg,
-    size_rel: sizeRel,
+    size_rel: s.SL_m / ZF_BASE.standard_length_m,
     parameters: {
       standard_length_m: s.SL_m,
       body_mass_kg: s.mass_kg,
@@ -213,9 +238,11 @@ function tffStage(age) {
 
 // ---------------------------------------------------------------- emit
 const out = {
+  _version: '2.0.0 (anatomy-model/parametric/CHANGELOG.md)',
   _README: 'Generated by anatomy-model/parametric/stages.mjs from the project growth trajectories. '
     + 'Per-stage parameter OVERRIDES on top of a reference parameter set (anatomy-model/parametric/params.py). '
-    + 'size_rel is SL(stage) / SL(adult): stages are built at TRUE relative size, so a larva is genuinely tiny. '
+    + 'size_rel is SL(stage) / SL(base resolved set, resolved/<id>.json): stages are built at TRUE relative size, '
+    + 'so a larva is genuinely tiny and every target shares the base mesh\'s metres per model unit. '
     + 'shrink maps a piece group to a scale factor applied about its own centroid, which is how a piece that has '
     + 'not formed yet is made to disappear without changing the mesh topology (topology must be identical across '
     + 'morph targets).',

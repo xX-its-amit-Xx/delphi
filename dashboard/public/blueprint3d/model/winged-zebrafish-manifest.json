@@ -1,12 +1,17 @@
 {
  "model": "winged zebrafish - zebrafish with the pectoral fin proportion moved toward the flying fish",
  "id": "winged-zebrafish",
+ "parameter_set": "winged-zebrafish",
+ "manifest_version": 2,
+ "generator_version": "2.0.0",
+ "changelog": "anatomy-model/parametric/CHANGELOG.md",
  "kind": "design",
+ "growth_series": false,
  "hypothetical": true,
  "file": "dashboard/public/blueprint3d/model/winged-zebrafish.glb",
  "built_with": "Blender 4.2.23 LTS (bpy, headless); anatomy-model/parametric/build.py",
  "units_and_axes": "glTF Y-up; head at +X, back at +Y, the fish's left side at -Z. The adult / resolved set has SL = 0.82 model units; earlier growth stages are built at their TRUE relative size SL(age)/SL(adult), so development plays as real growth. standard_length_m = 0.0388 m sets the metres per model unit.",
- "MORPHOLOGICAL_NOT_GENETIC": "MORPHOLOGICAL interpolation, not genetic hybridisation. Averaging two species' body parameters says nothing about whether such an animal could be bred, is viable, or is developmentally reachable; genomes do not average. Flying fish and zebrafish are not crossable. This is a shape, not an organism.",
+ "MORPHOLOGICAL_NOT_GENETIC": "MORPHOLOGICAL edit, not a genetic modification. This design is ONE parent (zebrafish-adult) with its parameters moved by the named deltas; a delta is a change to a shape, not an allele, a pathway or a developmental programme, and nothing here says such an animal could be bred, is viable or is developmentally reachable. This is a shape, not an organism.",
  "generative_model": "parameters = SUM over parents ( weight_i * parent_i.parameter ) + delta",
  "parents": [
   {
@@ -247,7 +252,7 @@
   "pectoral_area_over_SL2": {
    "value": 0.07126436858246527,
    "unit": "-",
-   "drives": "membrane area of BOTH pectoral fins / SL^2 (the Park & Choi / physics-flier convention)",
+   "drives": "area of BOTH pectoral fins together / SL^2 (Park & Choi 2010 A1 = planform area of the pectoral fin PAIR; their mean chord c = A1/S over the full span S confirms A1 covers both fins)",
    "blend_rule": "arithmetic",
    "ancestry": "100% zebrafish-adult",
    "parents": [
@@ -523,6 +528,8 @@
   "pectoral_span_m": 0.02553,
   "pectoral_area_both_m2": 0.000141,
   "pectoral_aspect_ratio": 4.628,
+  "pelvic_area_both_m2": 1.5e-05,
+  "caudal_area_m2": 3.5e-05,
   "lifting_area_m2": 0.000191,
   "wing_loading_N_m2": 35.712,
   "caudal_lobe_asymmetry": 1.0,
@@ -532,12 +539,19 @@
   "flight_muscle_note": "the pectoral girdle musculature is sized by VOLUME from flight_muscle_fraction x body_mass, then clipped to what fits inside the skin. fit_fraction < 1 means the requested muscle mass does not fit in this body at this schematic geometry.",
   "measured_how": "areas are membrane surface areas measured on the exported mesh; span is the tip-to-tip extent of the pectoral fins in the spanwise axis. The physical values use standard_length_m / 0.8200 model units.",
   "definitions": {
-   "pectoral_aspect_ratio": "pectoral_span^2 / (area of ONE pectoral fin), the Park & Choi 2010 convention",
-   "lifting_area_m2": "pectoral (both) + pelvic (both) + caudal membrane area, the physics/flier convention",
+   "pectoral_aspect_ratio": "= span2_over_area_both (kept under this name for existing readers): tip-to-tip pectoral span^2 / area of BOTH pectoral fins together. This IS the Park & Choi 2010 convention, AR = S^2/A1 with A1 the planform area of the fin pair (L3: 0.261^2/0.006377 = 10.68). Before 2.0.0 this text wrongly said 'area of ONE fin'; the number was always the both-fins arithmetic.",
+   "span2_over_area_both": "tip-to-tip pectoral span^2 / area of BOTH pectoral fins together = Park & Choi 2010 AR (S^2/A1)",
+   "aspect_ratio_one_fin": "(span/2)^2 / (area of ONE pectoral fin) = span2_over_area_both / 2: one fin treated as a wing from the body midline to its tip. No fetched source uses it; it is here so 'one-fin AR' has one unambiguous meaning. NOTE span^2 / one-fin area (= 2 x Park & Choi) matches no source and is not stored.",
+   "span2_over_wing_area_fish1990": "tip-to-tip pectoral span^2 / (both pectoral + both pelvic fin areas): Fish 1990's AR, whose 'wing area' is pectoral + pelvic fins plus the body rectangles between each fin pair (J Zool 221:391, Methods). The body rectangles are not modelled, so this is an UPPER BOUND on the Fish-1990 value. Fish's 3.0-16.9 range is in this convention, not Park & Choi's.",
+   "lifting_area_m2": "pectoral (both) + pelvic (both) + caudal membrane area measured on the mesh. NOTE: physics/flier's reference area 0.012688 m2 is Park & Choi's A = A1 + A2 + A3, where A3 = 0.004474 m2 is the BODY planform, not the caudal fin; the mesh's caudal membrane stands in for A3 here (see CHANGELOG 2.0.0, open item)",
    "wing_loading_N_m2": "body_mass * 9.81 / lifting_area_m2",
    "caudal_lobe_asymmetry": "caudal_lower_lobe_over_SL / caudal_upper_lobe_over_SL (1 = homocercal-looking)",
    "flight_muscle_volume_m3": "flight_muscle_fraction * body_mass / 1060 kg/m3 (teleost muscle density, assumed)"
   },
+  "span2_over_area_both": 4.628,
+  "aspect_ratio_one_fin": 2.314,
+  "span2_over_wing_area_fish1990": 4.19,
+  "aspect_ratio_note": "pectoral_aspect_ratio == span2_over_area_both == Park & Choi 2010's AR = S^2/A1 (A1 = BOTH pectoral fins; the L3 fish is 10.68). aspect_ratio_one_fin = (S/2)^2 / one fin's area = half of it. span2_over_wing_area_fish1990 divides by pectoral + pelvic area, Fish 1990's 'wing area' without the body rectangles between the fins, so it is an upper bound on a Fish-1990 AR; Fish's 3.0-16.9 range is in that convention. Definitions and evidence: design-schema.json aspect_ratio_conventions.",
   "parameter_vs_mesh_check": {
    "what": "the parameters ask for a span and an area; these are what the exported MESH actually has",
    "pectoral_span_m": {
@@ -551,9 +565,14 @@
     "mesh_over_parameter": 1.3178
    },
    "fit_was_applied": false,
-   "verdict": "NO FIT was applied: the pectoral geometry is driven by pectoral_len_over_SL (this is what keeps the reference faithful to the committed flying-fish.glb). The span and area parameters are therefore TARGETS THAT THE MESH DOES NOT MEET, and the ratios above say by how much. For the flying fish this exposes a real discrepancy: the committed mesh's pectoral membrane is much broader (lower aspect ratio) than the Park & Choi 2010 specimen it is compared with. Note the measured value is a projected planform area while the mesh value is membrane surface area, which accounts for a few per cent, not for a factor of two."
+   "verdict": "NO FIT was applied: the pectoral geometry is driven by pectoral_len_over_SL (this is what keeps the reference faithful to the committed flying-fish.glb). The span and area parameters are therefore TARGETS THAT THE MESH DOES NOT MEET, and the ratios above say by how much. For the flying fish this exposes a real discrepancy: the committed mesh's pectoral membrane is much broader (lower aspect ratio) than the Park & Choi 2010 specimen it is compared with. Note the measured value is a projected planform area while the mesh value is membrane surface area, which accounts for a few per cent, not for a factor of two.",
+   "span2_over_area_both": {
+    "parameter": 12.621,
+    "mesh": 4.628
+   }
   }
  },
+ "adult_mass": null,
  "span_area_fit": null,
  "morph_targets": [
   {
@@ -562,7 +581,10 @@
    "age_days": null,
    "size_rel": 1.0,
    "label": "winged zebrafish - zebrafish with the pectoral fin proportion moved toward the flying fish",
-   "note": "the resolved parameter set itself; weight 1 here = the adult / design as built"
+   "parameter_set": "winged-zebrafish",
+   "SL_m": 0.0388,
+   "mass_kg": 0.0006943,
+   "note": "the resolved parameter set 'winged-zebrafish' itself; weight 1 here = the adult / design as built. Stage targets' size_rel is relative to THIS SL."
   },
   {
    "name": "parent_zebrafish-adult",
@@ -575,6 +597,7 @@
    "mass_kg": null,
    "organism": "zebrafish-adult",
    "shrunk_pieces": {},
+   "parameter_kinds": null,
    "basis": null
   }
  ],

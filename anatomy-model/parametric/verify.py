@@ -6,6 +6,14 @@ Checks, per file: the GLB container parses; every mesh node name matches the man
 exactly; node extras carry label / ontology_id / layer / side / organ_system / level; morph targets
 are present on every mesh and named as the manifest says; the file is under 8 MB; and the builder's
 own inside-check (no internal piece outside the skin, at any stage) came back clean.
+
+Since generator 2.0.0 also (the "content" checks): the manifest carries manifest_version and
+generator_version; its id names its own GLB; its MORPHOLOGICAL_NOT_GENETIC sentence fits its kind (a growth
+series or a single-parent design must not carry the two-species chimera sentence); the aspect ratio is stored
+under every named convention and they are mutually consistent; and when a growth series' adult stage and the
+base set disagree in mass by more than 5%, adult_mass shows both with their roles.
+
+    PARAMETRIC_MODEL_DIR=<dir> python -I verify.py     # run against a fixture directory instead
 """
 import json
 import os
@@ -14,7 +22,8 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
-MODEL = os.path.join(REPO, "dashboard", "public", "blueprint3d", "model")
+MODEL = os.environ.get("PARAMETRIC_MODEL_DIR") or os.path.join(REPO, "dashboard", "public", "blueprint3d", "model")
+CHIMERA_SENTENCE = "Flying fish and zebrafish are not crossable"
 FILES = [("flying-fish-dev.glb", "flying-fish-dev-manifest.json"),
          ("zebrafish-dev.glb", "zebrafish-dev-manifest.json"),
          ("tff.glb", "tff-manifest.json"),
@@ -41,6 +50,50 @@ def read_gltf(path):
     if js is None:
         raise RuntimeError("no JSON chunk")
     return js, total, binlen, ver
+
+
+def content_checks(glb, man):
+    errs = []
+    for k in ("manifest_version", "generator_version"):
+        if man.get(k) in (None, ""):
+            errs.append("no %s (everything is modifiable only if versioned)" % k)
+    want_id = os.path.splitext(glb)[0]
+    if man.get("id") != want_id:
+        errs.append("manifest id %r does not name its file %r" % (man.get("id"), want_id))
+    cav = man.get("MORPHOLOGICAL_NOT_GENETIC") or ""
+    nparents = len(man.get("parents") or [])
+    stages = [t for t in man.get("morph_targets", []) if t.get("kind") == "stage"]
+    if man.get("kind") == "reference" and stages:
+        if CHIMERA_SENTENCE in cav or "GROWTH SERIES" not in cav:
+            errs.append("growth-series manifest carries the wrong MORPHOLOGICAL_NOT_GENETIC sentence")
+    elif nparents < 2 and CHIMERA_SENTENCE in cav:
+        errs.append("single-parent manifest carries the two-species chimera sentence")
+    elif nparents >= 2 and CHIMERA_SENTENCE not in cav:
+        errs.append("multi-species blend lacks the chimera caveat")
+    d = man.get("derived_from_the_mesh") or {}
+    ab, one, f90, par = (d.get("span2_over_area_both"), d.get("aspect_ratio_one_fin"),
+                         d.get("span2_over_wing_area_fish1990"), d.get("pectoral_aspect_ratio"))
+    if None in (ab, one, f90):
+        errs.append("aspect ratio not stored under every named convention")
+    else:
+        if par is not None and abs(par - ab) > 0.002:
+            errs.append("pectoral_aspect_ratio %s != span2_over_area_both %s" % (par, ab))
+        if abs(one - ab / 2.0) > 0.002:
+            errs.append("aspect_ratio_one_fin %s != span2_over_area_both / 2" % one)
+        if f90 > ab + 1e-9:
+            errs.append("span2_over_wing_area_fish1990 exceeds span2_over_area_both (more area cannot raise AR)")
+    base = next((t for t in man.get("morph_targets", []) if t.get("kind") == "resolved"), None)
+    adult = [t for t in stages if t.get("stage") == "adult"]
+    bm = (man.get("parameters") or {}).get("body_mass_kg")
+    if adult and bm and adult[-1].get("mass_kg"):
+        r = adult[-1]["mass_kg"] / bm
+        am = man.get("adult_mass") or {}
+        if abs(r - 1) > 0.05 and not (am.get("computed_here") and am.get("base_resolved_set")
+                                      and am.get("growth_series_adult")):
+            errs.append("adult stage mass is %.2fx the base mass and adult_mass does not show both with roles" % r)
+    if base is not None and base.get("name") != "base_" + want_id:
+        errs.append("base target %r is not base_<file id>" % base.get("name"))
+    return errs
 
 
 def main():
@@ -97,6 +150,11 @@ def main():
             errs.append("%d pieces not marked hypothetical in a design: %s" % (len(hyp), hyp[:4]))
         elif man.get("hypothetical"):
             print("  all %d pieces marked hypothetical" % len(mnames))
+        errs.extend(content_checks(glb, man))
+        if not errs:
+            print("  content: versioned (manifest %s, generator %s), id '%s', caveat fits kind, AR conventions "
+                  "consistent, adult mass reconciled" % (man.get("manifest_version"), man.get("generator_version"),
+                                                         man.get("id")))
         for e in errs:
             print("  FAIL:", e)
         for w in warns:

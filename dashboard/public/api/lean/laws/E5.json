@@ -1,0 +1,133 @@
+{
+ "law_id": "E5",
+ "version": "1.0.0",
+ "kind": "biological",
+ "class": "empirical-observation",
+ "status": "accepted",
+ "label": "The observed pectoral/SL range",
+ "level": "empirical observation",
+ "lean_ref": {
+  "module": "lean/Delphi/Empirical.lean",
+  "theorem": "Delphi.Empirical.finRatio_outside",
+  "structure": "Delphi.Empirical.measuredFinRatio",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "0755c49e59c58bca6d8e332b30775c62362d08b9b06b4c76f36b10ddfde62866",
+  "content_hash": "6f0a70fc94f23d2e1383febf6f38054f1ef06329ea972da30fc5e188af084eac"
+ },
+ "statement_en": "0.406 <= pectoral/SL <= 0.823 for a measured specimen; a design outside the range is above or below it.",
+ "hypotheses": [
+  {
+   "name": "Delphi.Empirical.measuredFinRatio",
+   "statement": "0.406 <= pectoral/SL <= 0.823 for a measured specimen; a design outside the range is above or below it.",
+   "value": {
+    "n_specimens": 49,
+    "SL_cm_min": 1.68,
+    "SL_cm_max": 24,
+    "pectoral_over_SL_min": 0.406,
+    "pectoral_over_SL_median": 0.687,
+    "pectoral_over_SL_max": 0.823,
+    "pectoral_over_SL_mean": 0.674
+   },
+   "source": "genotype/cache/daane2021_fin_ratios.json (Daane 2021 Data S1, sha256 4ffb805544d59c60)",
+   "observation": "Across 49 flying-fish specimens, pectoral fin length over standard length runs from 0.406 to 0.823, median 0.687 (standard lengths 1.68 to 24 cm)."
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "Exocoetidae"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "Daane 2021 Data S1: preserved flying-fish specimens",
+  "kernelChecked": [],
+  "assumed": [],
+  "note": "A statement about the RECORD. A design outside the range is outside everything measured, which is weaker than impossible, and no theorem here says such a fish cannot exist. Preserved museum specimens, lengths only: no mass, no fin area, no glide data. It is deliberately NOT a constraint in the ledger, so that nothing is ever reported as eliminated by it; it is a flag in the Design Studio."
+ },
+ "constraint_scopes": {},
+ "shared_scope": {
+  "atoms": [
+   "0.406 ≤ q.finRatio",
+   "q.finRatio ≤ 0.823"
+  ],
+  "quantities": {
+   "finRatio": {
+    "unit": "1",
+    "description": "pectoral fin length / standard length"
+   }
+  },
+  "bridge": "Delphi.Registry.bridge_E5",
+  "witness_values": {
+   "finRatio": "0.687"
+  }
+ },
+ "evidence": {
+  "sources": [
+   "genotype/cache/daane2021_fin_ratios.json (Daane 2021 Data S1, sha256 4ffb805544d59c60)",
+   "genotype/cache/daane2021_fin_ratios.json (Daane 2021 Data S1, sha256 4ffb805544d59c60)"
+  ],
+  "observations": [
+   "Across 49 flying-fish specimens, pectoral fin length over standard length runs from 0.406 to 0.823, median 0.687 (standard lengths 1.68 to 24 cm)."
+  ],
+  "faithfulness": null,
+  "flyingFishAudit": null,
+  "rejectable": "Reject it and the Studio loses a provenance flag; no verdict anywhere changes."
+ },
+ "sources": [
+  "genotype/cache/daane2021_fin_ratios.json (Daane 2021 Data S1, sha256 4ffb805544d59c60)",
+  "genotype/cache/daane2021_fin_ratios.json (Daane 2021 Data S1, sha256 4ffb805544d59c60)"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.Empirical.empirical_nonvacuous",
+  "statement": "Nonempty Record: the measured numbers satisfy every empirical entry at once"
+ },
+ "constraints": [],
+ "introduced_in": "1.0.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": {
+  "approved_by_role": "bootstrap-grandfathered",
+  "date": "2026-11-01",
+  "basis": "in force in lean/constraints.json / lean/laws.json before the registry existed; no per-law human review recorded by the registry"
+ },
+ "origin": "lean/registry/laws/E5.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "bootstrapped from lean/laws.json (status there: \"empirical (provenance, not impossibility)\")"
+  }
+ ],
+ "content_hash": "6f0a70fc94f23d2e1383febf6f38054f1ef06329ea972da30fc5e188af084eac",
+ "lean": {
+  "theorem": "Delphi.Empirical.finRatio_outside",
+  "module": "lean/Delphi/Empirical.lean",
+  "line": 190,
+  "source": "/-- A ratio outside the measured range is above or below it: a statement about the record, not about what is\npossible. No theorem here says such a fish cannot exist. -/\ntheorem finRatio_outside {r : ℝ} (h : ¬ measuredFinRatio r) : r < 0.406 ∨ 0.823 < r := by\n  unfold measuredFinRatio at h\n  rcases lt_or_ge r 0.406 with hlt | hge\n  · exact Or.inl hlt\n  · exact Or.inr (by by_contra hc; exact h ⟨hge, not_lt.mp hc⟩)",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.Empirical.measuredFinRatio",
+    "keyword": "def",
+    "module": "lean/Delphi/Empirical.lean",
+    "line": 186,
+    "source": "/-- Pectoral fin length over standard length, inside the range of the 49 measured flying-fish specimens. -/\ndef measuredFinRatio (r : ℝ) : Prop := 0.406 ≤ r ∧ r ≤ 0.823"
+   }
+  ]
+ },
+ "constraint_details": [],
+ "pin": {
+  "module": "lean/Delphi/Empirical.lean",
+  "decl": "Delphi.Empirical.measuredFinRatio",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "0755c49e59c58bca6d8e332b30775c62362d08b9b06b4c76f36b10ddfde62866",
+  "current_statement_sha256": "0755c49e59c58bca6d8e332b30775c62362d08b9b06b4c76f36b10ddfde62866",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

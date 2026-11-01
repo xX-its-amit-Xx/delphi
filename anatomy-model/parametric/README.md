@@ -10,6 +10,12 @@ glTF morph targets inside a single file per organism, so a viewer can play growt
 > parameters says nothing about whether such an animal could be bred, is viable, or is
 > developmentally reachable; genomes do not average. **Flying fish and zebrafish are not crossable.**
 > A weighted blend is never a "hybrid" without that sentence next to it.
+>
+> That sentence is for a **blend of two species**. Since generator 2.0.0 each manifest's
+> `MORPHOLOGICAL_NOT_GENETIC` is written for its own kind (`params.caveat_for`): a single-parent design
+> says it is one parent plus named deltas, not a genetic modification; a growth series says it is one
+> species, that blending stage targets is vertex interpolation and not a developmental mechanism, and
+> which of its stage numbers are measured and which assumed. Versions and history: `CHANGELOG.md`.
 
 ## The generative model
 
@@ -39,6 +45,7 @@ build.py           the Blender builder: parameter set -> GLB + manifest (+ morph
 diff_refactor.py   proves the refactor reproduces the committed flying fish
 refactor-diff.json the result                                        (generated)
 verify.py          structural check of every emitted GLB
+CHANGELOG.md       versions (GENERATOR/MANIFEST/SCHEMA_VERSION in params.py) and history
 INTEGRATION.md     for the viewer agent: file names, target names, how to drive it
 ```
 
@@ -68,7 +75,10 @@ Pectoral: `pectoral_len_over_SL`, `pectoral_span_over_SL`, `pectoral_area_over_S
 Axial: `vertebra_count`, `myomere_count`. Muscle: `flight_muscle_fraction`. Mesh: `mesh_detail`.
 
 Never set by hand, always measured on the exported mesh: `pectoral_aspect_ratio`
-(= span² / both-pectoral area), `lifting_area_m2`, `wing_loading_N_m2`, `caudal_lobe_asymmetry`,
+(= span² / both-pectoral area = Park & Choi 2010's S²/A1; also stored as `span2_over_area_both`, with
+`aspect_ratio_one_fin` = half of it and `span2_over_wing_area_fish1990` = span² / (pectoral + pelvic
+area), Fish 1990's convention; definitions and evidence in `design-schema.json`
+`aspect_ratio_conventions`), `lifting_area_m2`, `wing_loading_N_m2`, `caudal_lobe_asymmetry`,
 `flight_muscle_volume_*`.
 
 `flight_muscle_fraction` drives a real piece: `pectoral_muscle_L/R`, two new named meshes whose
@@ -99,8 +109,13 @@ zero-thickness shell and must be rendered double-sided.
 One GLB per organism, base mesh + one shape key per stage, so a viewer interpolates continuously.
 Stage parameters come from the project's real trajectories (`development/trajectory.mjs`,
 `development/zebrafish/trajectory.mjs`) and nothing else. Stages are built at **true relative size**
-(`size_rel = SL(age)/SL(adult)`), so the animation is real growth, not shape-only morphing — a
-flying-fish hatchling really is 1.9% of adult length.
+(`size_rel = SL(age)/SL(base)`, the base being the resolved parameter set the GLB's base mesh is built
+from), so the animation is real growth, not shape-only morphing — a flying-fish hatchling really is
+about 2% of adult length. The growth-series manifests have their own ids, `flying-fish-dev` and
+`zebrafish-dev` (`parameter_set` names the set they were built from), and an `adult_mass` block: the
+flying fish's base set is one Park & Choi 2010 specimen (SL 0.203 m, 0.060 kg, the mass the physics
+glide numbers use) while its 365 d target is the population length–weight fit (SL 0.206 m, 0.1316 kg).
+The 2.2x gap is not a units or length-definition error; see `CHANGELOG.md` 2.0.0.
 
 Pieces that have not formed are **shrunk to a point**, not deleted (topology must match across morph
 targets). What is shrunk, and why, is per stage in `stages.json` and in the manifest's
@@ -142,11 +157,13 @@ wing loading 12.000 N m⁻², lifting area 0.049050 m², span 0.66441 m, span²/
 Four things the build found, all in `derived_from_the_mesh.tff_spec_cross_check.MISMATCHES_FOUND`:
 
 1. **Two different aspect ratios wear the same name.** `physics/flier/design.py` keeps "the fish's own
-   aspect ratio" at 9.0–10.7 from Park & Choi, where AR = pectoral span² / **pectoral** area
-   (0.261²/0.006377 = 10.68). It then applies 9.0 to the **total lifting** area to get the span. On
-   the real fish's own numbers span²/total-lifting-area is 5.37, not 10.7. The TFF's AR 9.0 must be
-   read as span²/total-lifting-area; its **pectoral-only** aspect ratio is 17.9, i.e. its fins are far
-   more slender than any measured flying fish's.
+   aspect ratio" at 9.0–10.7 from Park & Choi, where AR = span² / A1 with A1 the area of **both**
+   pectoral fins (0.261²/0.006377 = 10.68). It then applies 9.0 to the **total lifting** area to get the
+   span. On the real fish's own numbers span²/total-lifting-area is 5.37, not 10.7. The TFF's AR 9.0
+   must be read as span²/total-lifting-area; on Park & Choi's both-pectoral convention it is 17.9, 1.7×
+   the measured specimen. *(Corrected in 2.0.0: this used to say "more slender than any measured flying
+   fish", against Fish 1990's 3.0–16.9. Fish 1990 divides by pectoral + pelvic area plus the body between
+   them, which puts the TFF at ≤ 13.9, inside that range.)*
 2. **The round multipliers do not reproduce the spec.** ×3.9 area and ×2.5 span give wing loading
    11.90 N m⁻² and AR 8.60, not 12.0 and 9.0. The exact ratios 3.865857 and 2.545674 do.
 3. **Two incompatible readings, and no mesh satisfies both.** (A) built here: spread the area
@@ -230,7 +247,10 @@ Stated plainly so nobody has to find them:
    to the committed model on purpose (that is what the refactor diff proves), so the discrepancy is
    reported rather than fitted away. Surface-vs-projected area accounts for a few per cent, not a
    factor of two.
-4. **Body depth is held constant with age for the flying fish.** No ontogenetic series was found.
+4. **Body depth is held constant with age for the flying fish.** No flying-fish body-depth measurement at
+   any size exists in the repository (searched 2026-10-31). Every stage now carries
+   `body_depth_over_SL` explicitly at the adult value with `parameter_kinds.body_depth_over_SL:
+   "assumed (held at the adult value)"`; the adult value is itself assumed (schematic).
 5. **The parametric zebrafish is not the detailed zebrafish.** `zebrafish-dev.glb` is the shared
    generic-teleost parametric body plan driven by zebrafish measurements, at 100 pieces. The
    189-piece `zebrafish-adult.glb` from `anatomy-model/zebrafish/build_adult.py` remains the

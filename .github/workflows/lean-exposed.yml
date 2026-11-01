@@ -1,0 +1,50 @@
+name: Lean laws exposed
+
+# Every Lean law must be reachable through the registry, the MCP tools (sim-engine and the hosted mcp/), both CLIs and
+# the static /api/lean/ mirror, and generated outputs must not be stale. Node only: this does not build Lean (the
+# Lean build check is separate), so it runs fast on every PR that could change a law or a surface serving one.
+
+on:
+  pull_request:
+    paths:
+      - "lean/**"
+      - "sim-engine/**"
+      - "mcp/**"
+      - "lib/lean-*.mjs"
+      - "dashboard/build-lean-api.mjs"
+      - "dashboard/public/api/lean/**"
+      - "dashboard/public/blueprint3d/lean-client.js"
+      - "package.json"
+      - "package-lock.json"
+      - ".dockerignore"
+      - ".github/workflows/lean-exposed.yml"
+  push:
+    branches: [main]
+    paths:
+      - "lean/**"
+      - "sim-engine/**"
+      - "mcp/**"
+      - "lib/lean-*.mjs"
+      - "dashboard/build-lean-api.mjs"
+      - "dashboard/public/api/lean/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-exposed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # sim-engine has its own package (the MCP SDK for --dump-contract and http.mjs discovery).
+      - run: npm ci
+        working-directory: sim-engine
+      - run: node lean/registry/check-exposed.mjs
+      - run: node sim-engine/test/lean-tools.mjs

@@ -50,6 +50,10 @@ FAITHFUL = "--faithful" in argv
 DO_RENDER = "--no-render" not in argv
 SAMPLES = int(_arg("--samples", "16"))
 DETAIL_OVR = _arg("--detail", "")
+# The manifest id is the FILE's id, not the parameter set's: flying-fish-dev.glb is a growth series built
+# from the flying-fish set, zebrafish-dev.glb one built from the zebrafish-adult set. Defaults to the GLB
+# basename so the id always names the file it describes; --organism stays the parameter-set id.
+ID = _arg("--id", os.path.splitext(os.path.basename(GLB_PATH))[0])
 
 RES = PRM.resolve(ORG)
 PSET = dict(RES["parameters"])
@@ -770,6 +774,8 @@ def build_fins(R, F, T, st, fit=None, measure_into=None):
             "pectoral_span_m": pect_span * F.m_per_unit,
             "pectoral_area_both_m2": pect_area * m2,
             "lifting_area_m2": (pect_area + pelv_area + caud_area) * m2,
+            "pelvic_area_both_m2": pelv_area * m2,
+            "caudal_area_m2": caud_area * m2,
         })
 
 
@@ -1222,7 +1228,7 @@ def main():
             if not me.shape_keys:
                 ob.shape_key_add(name="basis", from_mix=False)
             # the resolved design / adult itself, so the viewer's weights always sum to 1
-            sk = ob.shape_key_add(name="base_" + ORG, from_mix=False)
+            sk = ob.shape_key_add(name="base_" + ID, from_mix=False)
             for tname, reg, _ in targets:
                 sk = ob.shape_key_add(name=tname, from_mix=False)
                 V = reg.verts[name]
@@ -1271,6 +1277,8 @@ def write_manifest(base, F, targets, inside_report, fit):
         "pectoral_area_both_m2": round(MEAS.get("pectoral_area_both_m2", 0.0), 6),
         "pectoral_aspect_ratio": round(MEAS.get("pectoral_span_m", 0.0) ** 2 /
                                        max(MEAS.get("pectoral_area_both_m2", 1e-12), 1e-12), 3),
+        "pelvic_area_both_m2": round(MEAS.get("pelvic_area_both_m2", 0.0), 6),
+        "caudal_area_m2": round(MEAS.get("caudal_area_m2", 0.0), 6),
         "lifting_area_m2": round(la, 6),
         "wing_loading_N_m2": round(PSET["body_mass_kg"] * G / la, 3) if la > 0 else None,
         "caudal_lobe_asymmetry": round(PSET["caudal_lower_lobe_over_SL"] /
@@ -1309,6 +1317,22 @@ def write_manifest(base, F, targets, inside_report, fit):
                          "surface area, which accounts for a few per cent, not for a factor of two.")
     else:
         pv["verdict"] = "fit applied; the mesh is solved to the span and area parameters"
+    # aspect ratio, every convention named (design-schema.json aspect_ratio_conventions, CHANGELOG 2.0.0)
+    _sp, _pa, _pe = (MEAS.get("pectoral_span_m", 0.0), MEAS.get("pectoral_area_both_m2", 0.0),
+                     MEAS.get("pelvic_area_both_m2", 0.0))
+    s2ab = _sp ** 2 / _pa if _pa > 0 else None
+    derived["span2_over_area_both"] = round(s2ab, 3) if s2ab else None
+    derived["aspect_ratio_one_fin"] = round(s2ab / 2.0, 3) if s2ab else None
+    derived["span2_over_wing_area_fish1990"] = round(_sp ** 2 / (_pa + _pe), 3) if (_pa + _pe) > 0 else None
+    derived["aspect_ratio_note"] = (
+        "pectoral_aspect_ratio == span2_over_area_both == Park & Choi 2010's AR = S^2/A1 (A1 = BOTH pectoral "
+        "fins; the L3 fish is 10.68). aspect_ratio_one_fin = (S/2)^2 / one fin's area = half of it. "
+        "span2_over_wing_area_fish1990 divides by pectoral + pelvic area, Fish 1990's 'wing area' without the "
+        "body rectangles between the fins, so it is an upper bound on a Fish-1990 AR; Fish's 3.0-16.9 range is "
+        "in that convention. Definitions and evidence: design-schema.json aspect_ratio_conventions.")
+    pv["span2_over_area_both"] = {"parameter": round(PSET["pectoral_span_over_SL"] ** 2 /
+                                                     max(PSET["pectoral_area_over_SL2"], 1e-12), 3),
+                                  "mesh": derived["span2_over_area_both"]}
     derived["parameter_vs_mesh_check"] = pv
     if ORG == "tff":
         spec = {"source": "physics/flier/tff/tff.json (v2) + physics/flier/design.py",
@@ -1320,18 +1344,28 @@ def write_manifest(base, F, targets, inside_report, fit):
                 "aspect_ratio": {"spec": 9.0, "spec_definition": "span^2 / TOTAL LIFTING AREA",
                                  "built_same_definition": round(derived["pectoral_span_m"] ** 2 /
                                                                 max(derived["lifting_area_m2"], 1e-12), 3),
-                                 "built_pectoral_only": derived["pectoral_aspect_ratio"]}}
+                                 "built_pectoral_only": derived["pectoral_aspect_ratio"],
+                                 "built_span2_over_area_both": derived["span2_over_area_both"],
+                                 "built_span2_over_wing_area_fish1990": derived["span2_over_wing_area_fish1990"],
+                                 "real_fish_L3_same_conventions": {"span2_over_area_both": 10.682,
+                                                                   "span2_over_A1_A2": 8.293,
+                                                                   "span2_over_A1_A2_A3": 5.369}}}
         for k, v in spec.items():
             if isinstance(v, dict) and "spec" in v and isinstance(v.get("built"), (int, float)):
                 v["relative_error"] = round((v["built"] - v["spec"]) / v["spec"], 5)
         spec["MISMATCHES_FOUND"] = [
             "DEFINITION MISMATCH in the spec itself: physics/flier/design.py keeps 'the fish's own aspect "
-            "ratio' at 9.0-10.7 from Park & Choi, where AR = pectoral span^2 / PECTORAL area "
-            "(0.261^2 / 0.006377 = 10.68). It then applies 9.0 to the TOTAL LIFTING AREA to get the span "
-            "(span = sqrt(9 * W / 12)). Those are two different aspect ratios. On the real fish's own "
-            "numbers span^2 / total lifting area is 5.37, not 10.7. Read the TFF's AR 9.0 as "
-            "span^2/total-lifting-area; its pectoral-only AR is 17.9, i.e. its fins are far more slender "
-            "than any measured flying fish's.",
+            "ratio' at 9.0-10.7 from Park & Choi, where AR = span^2 / A1 with A1 the area of BOTH pectoral "
+            "fins (0.261^2 / 0.006377 = 10.68). It then applies 9.0 to the TOTAL LIFTING AREA A1+A2+A3 to get "
+            "the span (span = sqrt(9 * W / 12)). Those are two different aspect ratios. On the real fish's own "
+            "numbers span^2 / (A1+A2+A3) is 5.37, not 10.7. Read the TFF's AR 9.0 as span^2/total-lifting-area; "
+            "in Park & Choi's convention (both pectoral fins) it is %.1f, 1.7x the measured L3 specimen's 10.68. "
+            "CORRECTED in generator 2.0.0: an earlier version said this made its fins 'more slender than any "
+            "measured flying fish', comparing 17.9 with Fish 1990's 3.0-16.9. That comparison mixed conventions: "
+            "Fish 1990 divides span^2 by pectoral + pelvic area plus the body between them (Methods), which on "
+            "the TFF gives at most %.1f (pelvic included, body rectangles not modelled), INSIDE Fish's range; "
+            "the L3 fish is <= 8.29 on Fish's convention, matching Fish's Cypselurus regression (~8.0 at 0.06 kg)."
+            % (derived["span2_over_area_both"] or 0.0, derived["span2_over_wing_area_fish1990"] or 0.0),
             "ROUNDING: the round multipliers x3.9 (area) and x2.5 (span) give wing loading 11.90 N/m2 and "
             "AR 8.60, not 12.0 and 9.0. This build uses the exact ratios 0.04905/0.012688 = 3.865857 and "
             "0.664421/0.261 = 2.545674, which reproduce 12.0 and 9.0.",
@@ -1350,9 +1384,12 @@ def write_manifest(base, F, targets, inside_report, fit):
             "about the design." % (100.0 * (derived.get("flight_muscle_fit_fraction") or 0.0)),
         ]
         derived["tff_spec_cross_check"] = spec
-    morph = [{"name": "base_" + ORG, "kind": "resolved", "age_days": None, "size_rel": 1.0,
-              "label": RES["name"],
-              "note": "the resolved parameter set itself; weight 1 here = the adult / design as built"}]
+    has_stages = any(stg.get("kind", "stage") == "stage" for _, _, stg in targets)
+    morph = [{"name": "base_" + ID, "kind": "resolved", "age_days": None, "size_rel": 1.0,
+              "label": RES["name"], "parameter_set": ORG,
+              "SL_m": PSET["standard_length_m"], "mass_kg": PSET["body_mass_kg"],
+              "note": "the resolved parameter set '%s' itself; weight 1 here = the adult / design as built. "
+                      "Stage targets' size_rel is relative to THIS SL." % ORG}]
     for tname, reg, stg in targets:
         morph.append({"name": tname, "kind": stg.get("kind", "stage"),
                       "age_days": stg.get("age_days"), "size_rel": round(stg.get("size_rel", 1.0), 5),
@@ -1360,11 +1397,52 @@ def write_manifest(base, F, targets, inside_report, fit):
                       "SL_m": stg.get("SL_m"), "mass_kg": stg.get("mass_kg"),
                       "organism": stg.get("organism"),
                       "shrunk_pieces": stg.get("shrink", {}),
+                      "parameter_kinds": stg.get("parameter_kinds"),
                       "basis": stg.get("basis")})
+    if RES["kind"] == "reference" and has_stages:
+        _ages = [t["age_days"] for t in morph if t.get("kind") == "stage" and t.get("age_days") is not None]
+        model_label = "%s, growth series %d-%d d after hatching (parametric; base mesh = the %s parameter set)" % (
+            RES["name"].replace(", adult", ""), min(_ages), max(_ages), ORG)
+    else:
+        model_label = RES["name"]
+    caveat = PRM.caveat_for(RES, has_stages, ORG)
+    if RES["kind"] == "design" and has_stages:
+        caveat += (" Its growth stages are NOT data: they are the flying fish's growth with the deltas ramped "
+                   "in on an assumed schedule (stages.json '%s'.assumption)." % ORG)
+    # adult reconciliation: the base set vs the growth series' adult stage
+    adult = None
+    _ad = [stg for _, _, stg in targets if stg.get("kind", "stage") == "stage" and stg.get("stage") == "adult"]
+    if _ad:
+        a = _ad[-1]
+        dm = a["parameters"].get("body_mass_kg", PSET["body_mass_kg"]) / PSET["body_mass_kg"]
+        dl = a["parameters"].get("standard_length_m", PSET["standard_length_m"]) / PSET["standard_length_m"]
+        if abs(dm - 1) < 0.05 and abs(dl - 1) < 0.05:
+            adult = {"what": "the base parameter set and the growth series' adult stage agree within 5%",
+                     "base": {"SL_m": PSET["standard_length_m"], "mass_kg": PSET["body_mass_kg"]},
+                     "adult_stage": {"target": a["key"], "SL_m": a.get("SL_m"), "mass_kg": a.get("mass_kg")}}
+        else:
+            adult = dict(PRM.ADULT_MASS.get(ORG, {}))
+            adult["computed_here"] = {"base": {"target": "base_" + ID, "SL_m": PSET["standard_length_m"],
+                                               "mass_kg": PSET["body_mass_kg"]},
+                                      "adult_stage": {"target": a["key"], "SL_m": a.get("SL_m"),
+                                                      "mass_kg": a.get("mass_kg")},
+                                      "mass_ratio_stage_over_base": round(dm, 3),
+                                      "SL_ratio_stage_over_base": round(dl, 4),
+                                      "wing_loading_on_this_mesh_N_m2": {
+                                          "base_mass": derived["wing_loading_N_m2"],
+                                          "adult_stage_mass": (round(a["mass_kg"] * G * dl ** -2 / la, 3)
+                                                               if la > 0 and a.get("mass_kg") else None),
+                                          "how": "mass * 9.81 / lifting_area_m2, the stage's area scaled by "
+                                                 "(SL ratio)^2 from the base mesh"}}
     man = {
-        "model": RES["name"],
-        "id": ORG,
+        "model": model_label,
+        "id": ID,
+        "parameter_set": ORG,
+        "manifest_version": PRM.MANIFEST_VERSION,
+        "generator_version": PRM.GENERATOR_VERSION,
+        "changelog": "anatomy-model/parametric/CHANGELOG.md",
         "kind": RES["kind"],
+        "growth_series": bool(RES["kind"] == "reference" and has_stages),
         "hypothetical": HYPOTHETICAL,
         "file": (os.path.relpath(GLB_PATH, REPO).replace("\\", "/")
                  if os.path.splitdrive(GLB_PATH)[0].lower() == os.path.splitdrive(REPO)[0].lower()
@@ -1375,14 +1453,19 @@ def write_manifest(base, F, targets, inside_report, fit):
                            "their TRUE relative size SL(age)/SL(adult), so development plays as real "
                            "growth. standard_length_m = %.4f m sets the metres per model unit."
                            % (SL_REF_UNITS, SLm)),
-        "MORPHOLOGICAL_NOT_GENETIC": PRM.CAVEAT,
-        "generative_model": "parameters = SUM over parents ( weight_i * parent_i.parameter ) + delta",
+        "MORPHOLOGICAL_NOT_GENETIC": caveat,
+        "generative_model": ("parameters = SUM over parents ( weight_i * parent_i.parameter ) + delta"
+                             if RES["kind"] == "design" else
+                             "reference: every parameter is a literal value with a kind and a source "
+                             "(provenance_per_parameter); stage targets override some of them per age "
+                             "(anatomy-model/parametric/stages.json)"),
         "parents": RES["parents"],
         "moved_parameters": RES["moved_parameters"],
         "lean_recheck": RES.get("lean_recheck"),
         "parameters": PSET,
         "provenance_per_parameter": RES["provenance_per_parameter"],
         "derived_from_the_mesh": derived,
+        "adult_mass": adult,
         "span_area_fit": fit,
         "morph_targets": morph,
         "morph_target_rule": ("set the weights of the two bracketing targets to (1-f, f) and every other "

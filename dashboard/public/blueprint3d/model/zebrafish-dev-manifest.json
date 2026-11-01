@@ -1,13 +1,18 @@
 {
- "model": "zebrafish (Danio rerio), adult",
- "id": "zebrafish-adult",
+ "model": "zebrafish (Danio rerio), growth series 0-180 d after hatching (parametric; base mesh = the zebrafish-adult parameter set)",
+ "id": "zebrafish-dev",
+ "parameter_set": "zebrafish-adult",
+ "manifest_version": 2,
+ "generator_version": "2.0.0",
+ "changelog": "anatomy-model/parametric/CHANGELOG.md",
  "kind": "reference",
+ "growth_series": true,
  "hypothetical": false,
  "file": "dashboard/public/blueprint3d/model/zebrafish-dev.glb",
  "built_with": "Blender 4.2.23 LTS (bpy, headless); anatomy-model/parametric/build.py",
  "units_and_axes": "glTF Y-up; head at +X, back at +Y, the fish's left side at -Z. The adult / resolved set has SL = 0.82 model units; earlier growth stages are built at their TRUE relative size SL(age)/SL(adult), so development plays as real growth. standard_length_m = 0.0388 m sets the metres per model unit.",
- "MORPHOLOGICAL_NOT_GENETIC": "MORPHOLOGICAL interpolation, not genetic hybridisation. Averaging two species' body parameters says nothing about whether such an animal could be bred, is viable, or is developmentally reachable; genomes do not average. Flying fish and zebrafish are not crossable. This is a shape, not an organism.",
- "generative_model": "parameters = SUM over parents ( weight_i * parent_i.parameter ) + delta",
+ "MORPHOLOGICAL_NOT_GENETIC": "GROWTH SERIES of ONE species, not a cross, not a hybrid and not a developmental simulation. Each morph target is the same generic-teleost body plan re-parameterised at one age, and the viewer's blend between two targets is linear interpolation of vertex positions; it does not model growth, cell behaviour, gene regulation or any developmental mechanism, and the in-between shapes are not observations. SL comes from the Parichy 2009 larval rate (0.32 mm/d) and a von Bertalanffy fit; mass from the Beaudouin 2015 length-weight fit (MEASURED within <= 15 mm SL, extrapolated above). Body depth at the nape and head length per stage are MEASURED regressions (Parichy 2009 Table 3 / FishBase); which fins are present at each stage is MEASURED (Parichy 2009 Table 4 milestones; pectoral rays from 6.4 mm SL, Lalonde & Akimenko 2018). Pectoral fin length / SL is ASSUMED at every stage (no fetched source measures it in a wild-type zebrafish); fin heights, vertebra fade-in and organ sizes are ASSUMED.",
+ "generative_model": "reference: every parameter is a literal value with a kind and a source (provenance_per_parameter); stage targets override some of them per age (anatomy-model/parametric/stages.json)",
  "parents": [],
  "moved_parameters": [],
  "lean_recheck": null,
@@ -221,6 +226,8 @@
   "pectoral_span_m": 0.01336,
   "pectoral_area_both_m2": 3.4e-05,
   "pectoral_aspect_ratio": 5.177,
+  "pelvic_area_both_m2": 1.5e-05,
+  "caudal_area_m2": 3.5e-05,
   "lifting_area_m2": 8.4e-05,
   "wing_loading_N_m2": 80.659,
   "caudal_lobe_asymmetry": 1.0,
@@ -230,12 +237,19 @@
   "flight_muscle_note": "the pectoral girdle musculature is sized by VOLUME from flight_muscle_fraction x body_mass, then clipped to what fits inside the skin. fit_fraction < 1 means the requested muscle mass does not fit in this body at this schematic geometry.",
   "measured_how": "areas are membrane surface areas measured on the exported mesh; span is the tip-to-tip extent of the pectoral fins in the spanwise axis. The physical values use standard_length_m / 0.8200 model units.",
   "definitions": {
-   "pectoral_aspect_ratio": "pectoral_span^2 / (area of ONE pectoral fin), the Park & Choi 2010 convention",
-   "lifting_area_m2": "pectoral (both) + pelvic (both) + caudal membrane area, the physics/flier convention",
+   "pectoral_aspect_ratio": "= span2_over_area_both (kept under this name for existing readers): tip-to-tip pectoral span^2 / area of BOTH pectoral fins together. This IS the Park & Choi 2010 convention, AR = S^2/A1 with A1 the planform area of the fin pair (L3: 0.261^2/0.006377 = 10.68). Before 2.0.0 this text wrongly said 'area of ONE fin'; the number was always the both-fins arithmetic.",
+   "span2_over_area_both": "tip-to-tip pectoral span^2 / area of BOTH pectoral fins together = Park & Choi 2010 AR (S^2/A1)",
+   "aspect_ratio_one_fin": "(span/2)^2 / (area of ONE pectoral fin) = span2_over_area_both / 2: one fin treated as a wing from the body midline to its tip. No fetched source uses it; it is here so 'one-fin AR' has one unambiguous meaning. NOTE span^2 / one-fin area (= 2 x Park & Choi) matches no source and is not stored.",
+   "span2_over_wing_area_fish1990": "tip-to-tip pectoral span^2 / (both pectoral + both pelvic fin areas): Fish 1990's AR, whose 'wing area' is pectoral + pelvic fins plus the body rectangles between each fin pair (J Zool 221:391, Methods). The body rectangles are not modelled, so this is an UPPER BOUND on the Fish-1990 value. Fish's 3.0-16.9 range is in this convention, not Park & Choi's.",
+   "lifting_area_m2": "pectoral (both) + pelvic (both) + caudal membrane area measured on the mesh. NOTE: physics/flier's reference area 0.012688 m2 is Park & Choi's A = A1 + A2 + A3, where A3 = 0.004474 m2 is the BODY planform, not the caudal fin; the mesh's caudal membrane stands in for A3 here (see CHANGELOG 2.0.0, open item)",
    "wing_loading_N_m2": "body_mass * 9.81 / lifting_area_m2",
    "caudal_lobe_asymmetry": "caudal_lower_lobe_over_SL / caudal_upper_lobe_over_SL (1 = homocercal-looking)",
    "flight_muscle_volume_m3": "flight_muscle_fraction * body_mass / 1060 kg/m3 (teleost muscle density, assumed)"
   },
+  "span2_over_area_both": 5.177,
+  "aspect_ratio_one_fin": 2.588,
+  "span2_over_wing_area_fish1990": 3.628,
+  "aspect_ratio_note": "pectoral_aspect_ratio == span2_over_area_both == Park & Choi 2010's AR = S^2/A1 (A1 = BOTH pectoral fins; the L3 fish is 10.68). aspect_ratio_one_fin = (S/2)^2 / one fin's area = half of it. span2_over_wing_area_fish1990 divides by pectoral + pelvic area, Fish 1990's 'wing area' without the body rectangles between the fins, so it is an upper bound on a Fish-1990 AR; Fish's 3.0-16.9 range is in that convention. Definitions and evidence: design-schema.json aspect_ratio_conventions.",
   "parameter_vs_mesh_check": {
    "what": "the parameters ask for a span and an area; these are what the exported MESH actually has",
    "pectoral_span_m": {
@@ -249,24 +263,43 @@
     "mesh_over_parameter": 1.4167
    },
    "fit_was_applied": false,
-   "verdict": "NO FIT was applied: the pectoral geometry is driven by pectoral_len_over_SL (this is what keeps the reference faithful to the committed flying-fish.glb). The span and area parameters are therefore TARGETS THAT THE MESH DOES NOT MEET, and the ratios above say by how much. For the flying fish this exposes a real discrepancy: the committed mesh's pectoral membrane is much broader (lower aspect ratio) than the Park & Choi 2010 specimen it is compared with. Note the measured value is a projected planform area while the mesh value is membrane surface area, which accounts for a few per cent, not for a factor of two."
+   "verdict": "NO FIT was applied: the pectoral geometry is driven by pectoral_len_over_SL (this is what keeps the reference faithful to the committed flying-fish.glb). The span and area parameters are therefore TARGETS THAT THE MESH DOES NOT MEET, and the ratios above say by how much. For the flying fish this exposes a real discrepancy: the committed mesh's pectoral membrane is much broader (lower aspect ratio) than the Park & Choi 2010 specimen it is compared with. Note the measured value is a projected planform area while the mesh value is membrane surface area, which accounts for a few per cent, not for a factor of two.",
+   "span2_over_area_both": {
+    "parameter": 11.025,
+    "mesh": 5.177
+   }
+  }
+ },
+ "adult_mass": {
+  "what": "the base parameter set and the growth series' adult stage agree within 5%",
+  "base": {
+   "SL_m": 0.0388,
+   "mass_kg": 0.0006943
+  },
+  "adult_stage": {
+   "target": "stage_180d",
+   "SL_m": 0.03883,
+   "mass_kg": 0.0006943
   }
  },
  "span_area_fit": null,
  "morph_targets": [
   {
-   "name": "base_zebrafish-adult",
+   "name": "base_zebrafish-dev",
    "kind": "resolved",
    "age_days": null,
    "size_rel": 1.0,
    "label": "zebrafish (Danio rerio), adult",
-   "note": "the resolved parameter set itself; weight 1 here = the adult / design as built"
+   "parameter_set": "zebrafish-adult",
+   "SL_m": 0.0388,
+   "mass_kg": 0.0006943,
+   "note": "the resolved parameter set 'zebrafish-adult' itself; weight 1 here = the adult / design as built. Stage targets' size_rel is relative to THIS SL."
   },
   {
    "name": "stage_000d",
    "kind": "stage",
    "age_days": 0,
-   "size_rel": 0.07984,
+   "size_rel": 0.0799,
    "label": "hatching, 0 d after hatching (2 dpf), SL 3.10 mm, Hatching:Long-pec",
    "stage": "hatching",
    "SL_m": 0.0031,
@@ -284,6 +317,7 @@
     "vertebra_unformed": 0.15,
     "pectoral_muscle": 0.4684446582525697
    },
+   "parameter_kinds": null,
    "basis": {
     "SL_and_mass": "MEASURED: measured fit (Beaudouin 2015, <= ~15 mm); SL from Parichy 2009 larval rate 0.32 mm/d and a von Bertalanffy fit",
     "body_depth_and_head": "no proportion data below 3.4 mm SL",
@@ -299,7 +333,7 @@
    "name": "stage_003d",
    "kind": "stage",
    "age_days": 3,
-   "size_rel": 0.10816,
+   "size_rel": 0.10825,
    "label": "larva, 3 d after hatching (5 dpf), SL 4.20 mm, Larval:Day 5",
    "stage": "larva",
    "SL_m": 0.0042,
@@ -316,6 +350,7 @@
     "vertebra_unformed": 0.15,
     "pectoral_muscle": 0.5131266487959972
    },
+   "parameter_kinds": null,
    "basis": {
     "SL_and_mass": "MEASURED: measured fit (Beaudouin 2015, <= ~15 mm); SL from Parichy 2009 larval rate 0.32 mm/d and a von Bertalanffy fit",
     "body_depth_and_head": "measured regressions (Parichy 2009 Table 3)",
@@ -333,7 +368,7 @@
    "name": "stage_010d",
    "kind": "stage",
    "age_days": 10,
-   "size_rel": 0.16585,
+   "size_rel": 0.16598,
    "label": "larva, 10 d after hatching (12 dpf), SL 6.44 mm, Larval:Days 7-13",
    "stage": "larva",
    "SL_m": 0.00644,
@@ -346,6 +381,7 @@
     "vertebra_unformed": 0.15,
     "pectoral_muscle": 0.583331653128374
    },
+   "parameter_kinds": null,
    "basis": {
     "SL_and_mass": "MEASURED: measured fit (Beaudouin 2015, <= ~15 mm); SL from Parichy 2009 larval rate 0.32 mm/d and a von Bertalanffy fit",
     "body_depth_and_head": "measured regressions (Parichy 2009 Table 3)",
@@ -371,7 +407,7 @@
    "name": "stage_025d",
    "kind": "stage",
    "age_days": 25,
-   "size_rel": 0.2905,
+   "size_rel": 0.29072,
    "label": "juvenile, 25 d after hatching (27 dpf), SL 11.28 mm, Larval:Days 21-29",
    "stage": "juvenile",
    "SL_m": 0.01128,
@@ -383,6 +419,7 @@
     "vertebra_unformed": 0.15,
     "pectoral_muscle": 0.6901484433066283
    },
+   "parameter_kinds": null,
    "basis": {
     "SL_and_mass": "MEASURED: measured fit (Beaudouin 2015, <= ~15 mm); SL from Parichy 2009 larval rate 0.32 mm/d and a von Bertalanffy fit",
     "body_depth_and_head": "measured regressions (Parichy 2009 Table 3)",
@@ -413,7 +450,7 @@
    "name": "stage_060d",
    "kind": "stage",
    "age_days": 60,
-   "size_rel": 0.56631,
+   "size_rel": 0.56675,
    "label": "juvenile, 60 d after hatching (62 dpf), SL 21.99 mm, Juvenile:Days 45-89",
    "stage": "juvenile",
    "SL_m": 0.02199,
@@ -425,6 +462,7 @@
     "vertebra_unformed": 0.15,
     "pectoral_muscle": 0.8431742823216706
    },
+   "parameter_kinds": null,
    "basis": {
     "SL_and_mass": "MEASURED: extrapolated fit (Beaudouin 2015); SL from Parichy 2009 larval rate 0.32 mm/d and a von Bertalanffy fit",
     "body_depth_and_head": "secondary (FishBase morphometrics on 2 photographs, converted from %TL with SL = 78.8 and 81.4 %TL)",
@@ -455,7 +493,7 @@
    "name": "stage_180d",
    "kind": "stage",
    "age_days": 180,
-   "size_rel": 1,
+   "size_rel": 1.00077,
    "label": "adult, 180 d after hatching (182 dpf), SL 38.83 mm, Adult",
    "stage": "adult",
    "SL_m": 0.03883,
@@ -467,6 +505,7 @@
     "vertebra_unformed": 0.15,
     "pectoral_muscle": 1
    },
+   "parameter_kinds": null,
    "basis": {
     "SL_and_mass": "MEASURED: extrapolated fit (Beaudouin 2015); SL from Parichy 2009 larval rate 0.32 mm/d and a von Bertalanffy fit",
     "body_depth_and_head": "secondary (FishBase morphometrics on 2 photographs, converted from %TL with SL = 78.8 and 81.4 %TL)",

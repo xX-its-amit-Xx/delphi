@@ -1,0 +1,175 @@
+{
+ "law_id": "thompson1917-ch02-10",
+ "version": "1.0.0",
+ "kind": "physical",
+ "class": "theorem",
+ "status": "accepted",
+ "label": "Speed varies as the square root of linear size in swimming, flight and walking",
+ "level": "phenotype",
+ "lean_ref": {
+  "module": "lean/Delphi/Scaling.lean",
+  "theorem": "Delphi.vmin_ratio",
+  "structure": null,
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "d33fc448ff7213230e6a61c62c8e38d63620ff8f8a16b26a9b2276a6e08082fe",
+  "content_hash": "152c1cb5005e68997e372bed566853a44f48b63708db23b11c174062697ed1c4"
+ },
+ "statement_en": "Leaving aside differences in mechanical construction, swimming (Froude's law), flight (minimum stable speed) and walking (the leg swinging as a pendulum) all give the same result: an animal's velocity tends to vary as the square root of its linear dimensions.",
+ "hypotheses": [
+  {
+   "name": "thompson1917-ch02-10#assumed-1",
+   "statement": "That the compared animals move at equal Froude number, or fly at v_min with the same ρ and C_L,max."
+  },
+  {
+   "name": "thompson1917-ch02-10#assumed-2",
+   "statement": "The walking route (the leg as a pendulum) is not formalised."
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "a theorem about a model: it applies wherever the design supplies the quantities it uses and accepts the hypotheses in scope.assumed",
+  "kernelChecked": [
+   "Flight: v_min(L2)/v_min(L1) = sqrt(L2/L1) under R1, R2, constant ρ and C_L,max (vmin_ratio).",
+   "Swimming: at equal Froude number v = sqrt(Fr g L), so v(L2)/v(L1) = sqrt(L2/L1) (froude_ratio)."
+  ],
+  "assumed": [
+   "That the compared animals move at equal Froude number, or fly at v_min with the same ρ and C_L,max.",
+   "The walking route (the leg as a pendulum) is not formalised."
+  ],
+  "note": null
+ },
+ "constraint_scopes": {
+  "C9c": {
+   "taxa": [
+    "Exocoetidae"
+   ],
+   "life_stages": [],
+   "ranges": {},
+   "basis": "evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope"
+  }
+ },
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "On Growth and Form (1917)"
+  ],
+  "observations": [],
+  "faithfulness": "not assessed",
+  "flyingFishAudit": {
+   "violated": 4,
+   "cannot-evaluate": 19,
+   "holds": 1
+  },
+  "rejectable": null
+ },
+ "sources": [
+  "On Growth and Form (1917)"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.Registry.cubeLaw_witness",
+  "file": "lean/registry/lean/Witnesses.lean",
+  "statement": "CubeLaw and AreaLaw have instances"
+ },
+ "constraints": [
+  "C9b",
+  "C9c",
+  "C11"
+ ],
+ "introduced_in": "1.0.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": {
+  "approved_by_role": "bootstrap-grandfathered",
+  "date": "2026-11-01",
+  "basis": "in force in lean/constraints.json / lean/laws.json before the registry existed; no per-law human review recorded by the registry"
+ },
+ "origin": "lean/registry/laws/thompson1917-ch02-10.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "bootstrapped from lean/laws.json (status there: \"proved\")"
+  }
+ ],
+ "content_hash": "152c1cb5005e68997e372bed566853a44f48b63708db23b11c174062697ed1c4",
+ "lean": {
+  "theorem": "Delphi.vmin_ratio",
+  "module": "lean/Delphi/Scaling.lean",
+  "line": 149,
+  "source": "/-- **R4, conclusion 2.** Under R1, R2 and the same `ρ`, `C_L,max` for every member, `v_min` scales as `√L`. -/\ntheorem vmin_ratio {W S : ℝ → ℝ} {k₁ k₂ ρ Cmax : ℝ} (hW : CubeLaw W k₁) (hS : AreaLaw S k₂) (hρ : 0 < ρ)\n    (hCmax : 0 < Cmax) {L₁ L₂ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) :\n    vmin ρ Cmax (W L₂) (S L₂) / vmin ρ Cmax (W L₁) (S L₁) = Real.sqrt (L₂ / L₁) := by\n  unfold vmin\n  have hk₁ := hW.1; have hk₂ := hS.1\n  have hx₁ : 0 ≤ 2 * W L₁ / (ρ * S L₁ * Cmax) := by\n    rw [hW.2 L₁ h₁, hS.2 L₁ h₁]; positivity\n  rw [← Real.sqrt_div' _ (by rw [hW.2 L₁ h₁, hS.2 L₁ h₁]; positivity)]\n  congr 1\n  rw [hW.2 L₁ h₁, hW.2 L₂ h₂, hS.2 L₁ h₁, hS.2 L₂ h₂]\n  field_simp",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.AreaLaw",
+    "keyword": "def",
+    "module": "lean/Delphi/Scaling.lean",
+    "line": 50,
+    "source": "/-- Isometry of an area: `S L = k L²`. -/\ndef AreaLaw (S : ℝ → ℝ) (k : ℝ) : Prop := 0 < k ∧ ∀ L, 0 < L → S L = k * L ^ 2"
+   }
+  ]
+ },
+ "constraint_details": [
+  {
+   "id": "C9b",
+   "relation": "v_min ratio = sqrt(L2/L1), checked as ratio^2 = L2/L1",
+   "lemma": "Delphi.Constraints.vmin_scaling_rules_out",
+   "law": "Delphi.vmin_ratio",
+   "module": "lean/Delphi/Scaling.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "isometric_constant_density",
+    "isometric_areas",
+    "constant_lift_coefficient_max_and_density"
+   ],
+   "canEliminate": "a candidate committing a minimum-speed ratio other than the square root of its length ratio",
+   "lemma_source": "/-- **C9b, minimum-speed scaling.** Under R1, R2 and constant `ρ`, `C_L,max`, `v_min` scales as `√L`: a\ncommitted `v_min` ratio `r ≥ 0` at length ratio `ℓ` with `r² ≠ ℓ` is ruled out. -/\ntheorem vmin_scaling_rules_out {W S : ℝ → ℝ} {k₁ k₂ ρ Cmax : ℝ} (hW : CubeLaw W k₁) (hS : AreaLaw S k₂)\n    (hρ : 0 < ρ) (hCmax : 0 < Cmax) {L₁ L₂ r ℓ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂)\n    (hr : vmin ρ Cmax (W L₂) (S L₂) / vmin ρ Cmax (W L₁) (S L₁) = r) (hℓ : L₂ / L₁ = ℓ) (hr0 : 0 ≤ r)\n    (hne : r ^ 2 ≠ ℓ) : False := by\n  have := vmin_ratio hW hS hρ hCmax h₁ h₂\n  rw [hr, hℓ] at this\n  have hℓ0 : 0 ≤ ℓ := by rw [← hℓ]; positivity\n  exact hne (by rw [this, Real.sq_sqrt hℓ0])"
+  },
+  {
+   "id": "C9c",
+   "relation": "d log v_min / d log L = 1/2",
+   "lemma": "Delphi.Constraints.vmin_exponent_rules_out",
+   "law": "Delphi.vmin_log",
+   "module": "lean/Delphi/Scaling.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "isometric_constant_density",
+    "isometric_areas",
+    "constant_lift_coefficient_max_and_density"
+   ],
+   "canEliminate": "a candidate asserting isometry and constant aerodynamics with a minimum-speed exponent other than 1/2",
+   "lemma_source": "/-- **C9c, minimum-speed exponent.** Under R1, R2 and constant `ρ`, `C_L,max`, the exponent of `v_min` on `L` is `1/2`. -/\ntheorem vmin_exponent_rules_out {W S : ℝ → ℝ} {k₁ k₂ ρ Cmax : ℝ} (hW : CubeLaw W k₁) (hS : AreaLaw S k₂)\n    (hρ : 0 < ρ) (hCmax : 0 < Cmax) {L₁ L₂ b : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) (hne : L₁ ≠ L₂)\n    (hb : Real.log (vmin ρ Cmax (W L₂) (S L₂) / vmin ρ Cmax (W L₁) (S L₁)) = b * Real.log (L₂ / L₁))\n    (h : b ≠ 1 / 2) : False := by\n  have := vmin_log hW hS hρ hCmax h₁ h₂\n  rw [hb] at this\n  exact h (mul_right_cancel₀ (log_ratio_ne_zero h₁ h₂ hne) this)"
+  },
+  {
+   "id": "C11",
+   "relation": "speed ratio = sqrt(L2/L1), checked as ratio^2 = L2/L1",
+   "lemma": "Delphi.Constraints.froude_rules_out",
+   "law": "Delphi.froude_ratio",
+   "module": "lean/Delphi/Scaling.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "equal_froude_number"
+   ],
+   "canEliminate": "a candidate committing to equal Froude number and a speed ratio other than the square root of its length ratio",
+   "lemma_source": "/-- **C11, Froude.** At equal Froude number speed scales as `√L`: a committed speed ratio `r ≥ 0` at length\nratio `ℓ` with `r² ≠ ℓ` is ruled out. -/\ntheorem froude_rules_out {Fr g : ℝ} (hFr : 0 < Fr) (hg : 0 < g) {L₁ L₂ r ℓ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂)\n    (hr : froudeSpeed Fr g L₂ / froudeSpeed Fr g L₁ = r) (hℓ : L₂ / L₁ = ℓ) (hr0 : 0 ≤ r) (hne : r ^ 2 ≠ ℓ) :\n    False := by\n  have := froude_ratio hFr hg h₁ h₂\n  rw [hr, hℓ] at this\n  have hℓ0 : 0 ≤ ℓ := by rw [← hℓ]; positivity\n  exact hne (by rw [this, Real.sq_sqrt hℓ0])"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Scaling.lean",
+  "decl": "Delphi.vmin_ratio",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "d33fc448ff7213230e6a61c62c8e38d63620ff8f8a16b26a9b2276a6e08082fe",
+  "current_statement_sha256": "d33fc448ff7213230e6a61c62c8e38d63620ff8f8a16b26a9b2276a6e08082fe",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

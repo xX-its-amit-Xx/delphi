@@ -1,0 +1,158 @@
+{
+ "law_id": "thompson1917-ch02-06",
+ "version": "1.0.0",
+ "kind": "physical",
+ "class": "theorem",
+ "status": "accepted",
+ "label": "Power needed for flight grows as length^3.5 while muscle power grows as length^3",
+ "level": "phenotype",
+ "lean_ref": {
+  "module": "lean/Delphi/Scaling.lean",
+  "theorem": "Delphi.powerRequired_log",
+  "structure": null,
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "10f00a29f68abba5b889645c1c81bb94af9ac0946b2f188592c2567889f6958c",
+  "content_hash": "863226cfd2c6b5248f725aac6477422e67c3796fe8f2aeeaacaf06d5a74111af"
+ },
+ "statement_en": "A bird of fixed proportions must fly at a minimum speed proportional to the square root of its linear size, so the work needed for flight varies as the 3½ power of linear size while the work its muscles can supply varies only as the cube; flight thus becomes harder as birds get larger (about 1.4 times harder per doubling of length).",
+ "hypotheses": [
+  {
+   "name": "thompson1917-ch02-06#assumed-1",
+   "statement": "Constant C_L,max across sizes (Reynolds effects change it), constant ρ, constant L/D, and flight at v_min rather than a faster, more efficient speed."
+  },
+  {
+   "name": "thompson1917-ch02-06#assumed-2",
+   "statement": "The muscle premise of Thompson (muscle fraction f and mass-specific power p constant) is contested: contraction frequency falls with size, so the modern expectation is an exponent below 3. It is carried as a hypothesis, never proved or asserted."
+  },
+  {
+   "name": "thompson1917-ch02-06#assumed-3",
+   "statement": "The physics thread found one Cypselurus hiraii specimen inside its v_min envelope (v_min 9.85 m/s against field speeds 10-20 m/s) but could not test the sqrt(W/S) scaling with its data; the theorems are statements about the model, not confirmed facts."
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "a theorem about a model: it applies wherever the design supplies the quantities it uses and accepts the hypotheses in scope.assumed",
+  "kernelChecked": [
+   "Exact: lift = ½ ρ v² S C_L equal to weight with 0 < C_L ≤ C_L,max implies v ≥ sqrt(2W/(ρ S C_L,max)) (vmin_le).",
+   "Under R1, R2, constant ρ and C_L,max: v_min(L2)/v_min(L1) = sqrt(L2/L1), log exponent 1/2 (vmin_ratio, vmin_log).",
+   "With constant L/D, power required at v_min: ratio (L2/L1)^3 sqrt(L2/L1), log exponent 7/2 (powerRequired_ratio, powerRequired_log).",
+   "Under MusclePowerLaw (named hypothesis) and R1: power available ratio (L2/L1)^3 (powerAvailable_ratio); P_req/P_avail = c sqrt(L) with an explicit c (powerRatio_eq)."
+  ],
+  "assumed": [
+   "Constant C_L,max across sizes (Reynolds effects change it), constant ρ, constant L/D, and flight at v_min rather than a faster, more efficient speed.",
+   "The muscle premise of Thompson (muscle fraction f and mass-specific power p constant) is contested: contraction frequency falls with size, so the modern expectation is an exponent below 3. It is carried as a hypothesis, never proved or asserted.",
+   "The physics thread found one Cypselurus hiraii specimen inside its v_min envelope (v_min 9.85 m/s against field speeds 10-20 m/s) but could not test the sqrt(W/S) scaling with its data; the theorems are statements about the model, not confirmed facts."
+  ],
+  "note": null
+ },
+ "constraint_scopes": {},
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "On Growth and Form (1917)"
+  ],
+  "observations": [],
+  "faithfulness": "not assessed",
+  "flyingFishAudit": {
+   "violated": 4,
+   "cannot-evaluate": 19,
+   "holds": 1
+  },
+  "rejectable": null
+ },
+ "sources": [
+  "On Growth and Form (1917)"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.Registry.cubeLaw_witness",
+  "file": "lean/registry/lean/Witnesses.lean",
+  "statement": "CubeLaw and AreaLaw have instances"
+ },
+ "constraints": [
+  "C9",
+  "C10"
+ ],
+ "introduced_in": "1.0.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": {
+  "approved_by_role": "bootstrap-grandfathered",
+  "date": "2026-11-01",
+  "basis": "in force in lean/constraints.json / lean/laws.json before the registry existed; no per-law human review recorded by the registry"
+ },
+ "origin": "lean/registry/laws/thompson1917-ch02-06.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "bootstrapped from lean/laws.json (status there: \"proved\")"
+  }
+ ],
+ "content_hash": "863226cfd2c6b5248f725aac6477422e67c3796fe8f2aeeaacaf06d5a74111af",
+ "lean": {
+  "theorem": "Delphi.powerRequired_log",
+  "module": "lean/Delphi/Scaling.lean",
+  "line": 188,
+  "source": "/-- The `log` form of R5: exponent `7/2`. -/\ntheorem powerRequired_log {W S : ℝ → ℝ} {k₁ k₂ ρ Cmax LD : ℝ} (hW : CubeLaw W k₁) (hS : AreaLaw S k₂)\n    (hρ : 0 < ρ) (hCmax : 0 < Cmax) (hLD : 0 < LD) {L₁ L₂ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) :\n    Real.log (powerRequired (W L₂) (vmin ρ Cmax (W L₂) (S L₂)) LD /\n      powerRequired (W L₁) (vmin ρ Cmax (W L₁) (S L₁)) LD) = 7 / 2 * Real.log (L₂ / L₁) := by\n  rw [powerRequired_ratio hW hS hρ hCmax hLD h₁ h₂]\n  have hq : 0 < L₂ / L₁ := by positivity\n  rw [Real.log_mul (by positivity) (by positivity), Real.log_pow, Real.log_sqrt hq.le]\n  push_cast\n  ring",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.AreaLaw",
+    "keyword": "def",
+    "module": "lean/Delphi/Scaling.lean",
+    "line": 50,
+    "source": "/-- Isometry of an area: `S L = k L²`. -/\ndef AreaLaw (S : ℝ → ℝ) (k : ℝ) : Prop := 0 < k ∧ ∀ L, 0 < L → S L = k * L ^ 2"
+   }
+  ]
+ },
+ "constraint_details": [
+  {
+   "id": "C9",
+   "relation": "v ≥ sqrt(2 W / (ρ S C_L,max)), checked as v^2 ≥ 2W/(ρ S C_L,max)",
+   "lemma": "Delphi.Constraints.vmin_rules_out",
+   "law": "Delphi.vmin_le",
+   "module": "lean/Delphi/Scaling.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "lift_supported_flight"
+   ],
+   "canEliminate": "a design or claim of steady lift-supported flight below its own minimum speed",
+   "lemma_source": "/-- **C9, minimum speed.** Steady lift-supported flight at airspeed `v` with `v² < 2W/(ρ S C_L,max)` is ruled\nout (`v < v_min`). -/\ntheorem vmin_rules_out {ρ S C Cmax W v : ℝ} (hρ : 0 < ρ) (hS : 0 < S) (hC : 0 < C) (hCmax : C ≤ Cmax)\n    (hv : 0 ≤ v) (hlift : lift ρ v S C = W) (h : v ^ 2 < 2 * W / (ρ * S * Cmax)) : False := by\n  have h1 := vmin_le hρ hS hC hCmax hv hlift\n  have h2 : v < vmin ρ Cmax W S := by\n    unfold vmin\n    exact (Real.lt_sqrt hv).mpr h\n  linarith"
+  },
+  {
+   "id": "C10",
+   "relation": "d log P_req / d log L = 7/2",
+   "lemma": "Delphi.Constraints.powerRequired_exponent_rules_out",
+   "law": "Delphi.powerRequired_log",
+   "module": "lean/Delphi/Scaling.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "isometric_constant_density",
+    "isometric_areas",
+    "constant_lift_coefficient_max_and_density",
+    "constant_lift_to_drag"
+   ],
+   "canEliminate": "a candidate asserting the full set of hypotheses with a power-required exponent other than 3.5 (note: power AVAILABLE is not constrained; its L^3 rests on the contested muscle premise)",
+   "lemma_source": "/-- **C10, power required.** Under R1, R2, constant `ρ`, `C_L,max` and `L/D`, flight at `v_min`: a committed\nlog-log exponent `b ≠ 7/2` of `P_req` on `L` is ruled out. -/\ntheorem powerRequired_exponent_rules_out {W S : ℝ → ℝ} {k₁ k₂ ρ Cmax LD : ℝ} (hW : CubeLaw W k₁)\n    (hS : AreaLaw S k₂) (hρ : 0 < ρ) (hCmax : 0 < Cmax) (hLD : 0 < LD) {L₁ L₂ b : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂)\n    (hne : L₁ ≠ L₂)\n    (hb : Real.log (powerRequired (W L₂) (vmin ρ Cmax (W L₂) (S L₂)) LD /\n      powerRequired (W L₁) (vmin ρ Cmax (W L₁) (S L₁)) LD) = b * Real.log (L₂ / L₁)) (h : b ≠ 7 / 2) : False := by\n  have hlog := powerRequired_log hW hS hρ hCmax hLD h₁ h₂\n  rw [hb] at hlog\n  have hq : 0 < L₂ / L₁ := by positivity\n  have hq1 : L₂ / L₁ ≠ 1 := by\n    intro h0\n    exact hne ((div_eq_one_iff_eq h₁.ne').mp h0).symm\n  have hl : Real.log (L₂ / L₁) ≠ 0 := Real.log_ne_zero_of_pos_of_ne_one hq hq1\n  exact h (mul_right_cancel₀ hl hlog)"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Scaling.lean",
+  "decl": "Delphi.powerRequired_log",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "10f00a29f68abba5b889645c1c81bb94af9ac0946b2f188592c2567889f6958c",
+  "current_statement_sha256": "10f00a29f68abba5b889645c1c81bb94af9ac0946b2f188592c2567889f6958c",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

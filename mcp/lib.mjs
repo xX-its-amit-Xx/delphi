@@ -63,7 +63,7 @@ function localStore() {
   if (cache?.stamp === stamp) return cache.store;
   const store = new oxigraph.Store();
   for (const f of files) {
-    const trig = readFileSync(f, "utf8").replaceAll(TEMP_BASE, `${LOCAL_BASE}${relative(REPO, f)}/`);
+    const trig = readFileSync(f, "utf8").replaceAll(TEMP_BASE, `${LOCAL_BASE}${relative(REPO, f).replaceAll("\\", "/")}/`);
     store.load(trig, { format: "application/trig" });
   }
   cache = { stamp, store, files: files.length };

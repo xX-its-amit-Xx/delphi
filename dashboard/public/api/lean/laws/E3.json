@@ -1,0 +1,193 @@
+{
+ "law_id": "E3",
+ "version": "1.0.0",
+ "kind": "biological",
+ "class": "empirical-observation",
+ "status": "accepted",
+ "label": "Efficiency, cardiac output and arterial O2 lie in the measured teleost ranges",
+ "level": "empirical observation",
+ "lean_ref": {
+  "module": "lean/Delphi/Empirical.lean",
+  "theorem": "Delphi.Empirical.aerobicCeiling_le",
+  "structure": "Delphi.Empirical.TeleostAerobic",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "9d5907fa49322563369dae9374e86d2800e3e909eb048904d452c51355af2ef8",
+  "content_hash": "a0a18bd9d63b17d78bd4090b47736bd50d35ac958aadbb444ec2fa429544f1c4"
+ },
+ "statement_en": "eta <= 0.15, oxycaloric <= 19.35 J/ml, cardiac output <= 0.075 ml/s and arterial O2 <= 0.21 ml/ml imply an aerobic ceiling of at most 0.0458 W.",
+ "hypotheses": [
+  {
+   "name": "Delphi.Empirical.TeleostAerobic",
+   "statement": "eta <= 0.15, oxycaloric <= 19.35 J/ml, cardiac output <= 0.075 ml/s and arterial O2 <= 0.21 ml/ml imply an aerobic ceiling of at most 0.0458 W.",
+   "value": {
+    "bounds": {
+     "eta": 0.15,
+     "oxycaloric_J_per_ml": 19.35,
+     "cardiacOutput_ml_per_s": 0.075,
+     "arterialO2_ml_per_ml": 0.21
+    },
+    "ceiling_W": 0.0458,
+    "from": {
+     "efficiency": "efficiency: { value: 0.15, kind: 'proxy', species: 'Salmo salar (ventricular muscle)', source: 'gamperl2021: efficiency of ventricular muscle ~15% in salmon (7% in char); trout ventricle 15-25% (Harwood et al. 2002, cited there). No fetched value for fish skeletal muscle, so cardiac muscle is used.'",
+     "oxycaloric": "oxycalorific_J_per_mgO2: { value: 13.54, kind: 'secondary', source: 'gerry2014 (Fig. 1 legend): \"oxycaloric value of 13.54 J mg-1 O2\" citing their ref. 89' }",
+     "cardiacRange": "Q_range_ml_min_kg: { value: [20, 75], kind: 'secondary', species: 'O. mykiss', source: 'gerry2014 Discussion: ventral aortic flow-cuff values ~20 at rest to ~75 ml/min/kg maximum (citing refs)' }",
+     "haemoglobinCapacity": "cap_ml_per_ml: { value: (4 * 0.9 * 22.4) / 1000, kind: 'proxy', species: 'Oncorhynchus mykiss', source: 'derived from rummer2015 Table 1 [Hb] 0.9 mM per tetramer (Hct standardised to ~25%): 4 x 0.9 mmol/l x 22.4 ml/mmol = 0.0806 ml O2/ml' }"
+    },
+    "massUsed_kg": 0.06,
+    "chainValues": {
+     "cardiac_output_ml_per_s": "0.06564129",
+     "arterial_O2_content_ml_per_ml": "0.18723338",
+     "muscular_efficiency": "0.15",
+     "oxycaloric_J_per_ml_O2": "19.342857",
+     "aerobic_ceiling_W": "0.0357",
+     "weight_N": "0.5886",
+     "lift_to_drag_max": "4.37"
+    }
+   },
+   "source": "physiology/muscle.js (efficiency, oxycaloric), physiology/cardiac.js (cardiac output range), physiology/haemoglobin.js (blood O2 capacity), as cited in lean/eliminate/physiology-candidates.json",
+   "observation": "No teleost in the ranges the physiology chain cites has a sustained aerobic ceiling above 0.0458 W at the measured mass (0.06 kg). This is what makes the C14 eliminations binding: they hold for every animal the measured record allows, not only for one choice of proxies."
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "Teleostei"
+  ],
+  "life_stages": [],
+  "ranges": {
+   "mass_kg": {
+    "min": 0.06,
+    "max": 0.06,
+    "unit": "kg",
+    "note": "the cardiac-output ceiling (75 ml/min/kg) was converted to ml/s for a 0.06 kg fish; at any other mass the absolute bound 0.075 ml/s is not the measured one"
+   }
+  },
+  "basis": "physiology chain proxies from other teleosts, evaluated for a 0.06 kg fish",
+  "kernelChecked": [],
+  "assumed": [],
+  "note": "The bound is an upper bound at one mass, and the cardiac output ceiling is the maximum of a secondary range (20 to 75 ml/min/kg, gerry2014 Discussion). It bounds SUSTAINED AEROBIC power only: burst power on white-muscle stores is outside it, and that is what a flying fish is understood to use. Scaling it to another mass requires the cardiac output per kg, not this number."
+ },
+ "constraint_scopes": {},
+ "shared_scope": {
+  "atoms": [
+   "0 ≤ q.eta",
+   "q.eta ≤ 0.15",
+   "0 ≤ q.oxycaloric",
+   "q.oxycaloric ≤ 19.35",
+   "0 ≤ q.cardiacOutput",
+   "q.cardiacOutput ≤ 0.075",
+   "0 ≤ q.arterialO2",
+   "q.arterialO2 ≤ 0.21"
+  ],
+  "quantities": {
+   "eta": {
+    "unit": "1",
+    "description": "muscle mechanical efficiency"
+   },
+   "oxycaloric": {
+    "unit": "J/ml O2",
+    "description": "oxycaloric equivalent"
+   },
+   "cardiacOutput": {
+    "unit": "ml/s",
+    "description": "cardiac output of a 0.06 kg fish"
+   },
+   "arterialO2": {
+    "unit": "ml O2/ml blood",
+    "description": "arterial O2 content"
+   }
+  },
+  "bridge": "Delphi.Registry.bridge_E3",
+  "witness_values": {
+   "eta": "0.15",
+   "oxycaloric": "19.342857",
+   "cardiacOutput": "0.06564129",
+   "arterialO2": "0.18723338"
+  }
+ },
+ "evidence": {
+  "sources": [
+   "physiology/muscle.js (efficiency, oxycaloric), physiology/cardiac.js (cardiac output range), physiology/haemoglobin.js (blood O2 capacity), as cited in lean/eliminate/physiology-candidates.json",
+   "physiology/muscle.js (efficiency, oxycaloric), physiology/cardiac.js (cardiac output range), physiology/haemoglobin.js (blood O2 capacity), as cited in lean/eliminate/physiology-candidates.json"
+  ],
+  "observations": [
+   "No teleost in the ranges the physiology chain cites has a sustained aerobic ceiling above 0.0458 W at the measured mass (0.06 kg). This is what makes the C14 eliminations binding: they hold for every animal the measured record allows, not only for one choice of proxies."
+  ],
+  "faithfulness": null,
+  "flyingFishAudit": null,
+  "rejectable": "Reject it and C14 still rules, but only on the particular proxies a candidate commits, not on every teleost."
+ },
+ "sources": [
+  "physiology/muscle.js (efficiency, oxycaloric), physiology/cardiac.js (cardiac output range), physiology/haemoglobin.js (blood O2 capacity), as cited in lean/eliminate/physiology-candidates.json",
+  "physiology/muscle.js (efficiency, oxycaloric), physiology/cardiac.js (cardiac output range), physiology/haemoglobin.js (blood O2 capacity), as cited in lean/eliminate/physiology-candidates.json"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.Empirical.empirical_nonvacuous",
+  "statement": "Nonempty Record: the measured numbers satisfy every empirical entry at once"
+ },
+ "constraints": [
+  "E3"
+ ],
+ "introduced_in": "1.0.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": {
+  "approved_by_role": "bootstrap-grandfathered",
+  "date": "2026-11-01",
+  "basis": "in force in lean/constraints.json / lean/laws.json before the registry existed; no per-law human review recorded by the registry"
+ },
+ "origin": "lean/registry/laws/E3.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "bootstrapped from lean/laws.json (status there: \"empirical\")"
+  }
+ ],
+ "content_hash": "a0a18bd9d63b17d78bd4090b47736bd50d35ac958aadbb444ec2fa429544f1c4",
+ "lean": {
+  "theorem": "Delphi.Empirical.aerobicCeiling_le",
+  "module": "lean/Delphi/Empirical.lean",
+  "line": 145,
+  "source": "/-- **The aerobic ceiling of anything inside the measured ranges is at most 0.0458 W.** This is what makes\nthe C14 eliminations binding rather than a choice of proxies: no teleost the measured record allows, at this\nmass, has a larger sustained aerobic ceiling. -/\ntheorem aerobicCeiling_le (T : TeleostAerobic) :\n    T.eta * T.oxycaloric * T.cardiacOutput * T.arterialO2 ≤ 0.0458 := by\n  have hA : T.eta * T.oxycaloric ≤ 0.15 * 19.35 :=\n    mul_le_mul T.eta_le T.oxy_le T.oxy_nonneg (by norm_num)\n  have hB : T.cardiacOutput * T.arterialO2 ≤ 0.075 * 0.21 :=\n    mul_le_mul T.q_le T.ca_le T.ca_nonneg (by norm_num)\n  have hBnn : 0 ≤ T.cardiacOutput * T.arterialO2 := mul_nonneg T.q_nonneg T.ca_nonneg\n  have := mul_le_mul hA hB hBnn (by norm_num : (0:ℝ) ≤ 0.15 * 19.35)\n  calc T.eta * T.oxycaloric * T.cardiacOutput * T.arterialO2\n      = T.eta * T.oxycaloric * (T.cardiacOutput * T.arterialO2) := by ring\n    _ ≤ 0.15 * 19.35 * (0.075 * 0.21) := this\n    _ ≤ 0.0458 := by norm_num",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.Empirical.TeleostAerobic",
+    "keyword": "structure",
+    "module": "lean/Delphi/Empirical.lean",
+    "line": 128,
+    "source": "/-- Efficiency, oxycaloric equivalent, cardiac output (ml blood/s) and arterial O2 content (ml O2/ml blood)\ninside the ranges the physiology chain cites, for a fish of the measured mass. -/\nstructure TeleostAerobic where\n  eta : ℝ\n  oxycaloric : ℝ\n  cardiacOutput : ℝ\n  arterialO2 : ℝ\n  eta_nonneg : 0 ≤ eta\n  eta_le : eta ≤ 0.15\n  oxy_nonneg : 0 ≤ oxycaloric\n  oxy_le : oxycaloric ≤ 19.35\n  q_nonneg : 0 ≤ cardiacOutput\n  q_le : cardiacOutput ≤ 0.075\n  ca_nonneg : 0 ≤ arterialO2\n  ca_le : arterialO2 ≤ 0.21"
+   }
+  ]
+ },
+ "constraint_details": [
+  {
+   "id": "E3",
+   "relation": "P_req ≤ 0.0458 W",
+   "lemma": "Delphi.Empirical.no_aerobic_flight_above_ceiling",
+   "law": "Delphi.Empirical.aerobicCeiling_le",
+   "module": "lean/Delphi/Empirical.lean",
+   "status": "empirical",
+   "appliesWhen": [
+    "teleost_measured_ranges"
+   ],
+   "canEliminate": "any claim of sustained aerobic flight at this mass above the ceiling of every teleost the measured record allows",
+   "lemma_source": "/-- **No teleost inside the measured ranges can fly aerobically above that ceiling.** Composed with the Fick\nbound of lean/Delphi/Flight.lean: a sustained flight needing more than 0.0458 W is ruled out for every\nanimal the measured record allows, not only for one set of proxies. -/\ntheorem no_aerobic_flight_above_ceiling (T : TeleostAerobic) {W v LD P Cv : ℝ} (hCv : 0 ≤ Cv)\n    (hsus : P ≤ aerobicPower T.eta T.oxycaloric T.cardiacOutput T.arterialO2 Cv)\n    (hflight : powerRequired W v LD ≤ P) (hbig : 0.0458 < powerRequired W v LD) : False := by\n  have h := sustained_flight_requires T.eta_nonneg T.oxy_nonneg T.q_nonneg hCv hsus hflight\n  have := aerobicCeiling_le T\n  linarith"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Empirical.lean",
+  "decl": "Delphi.Empirical.TeleostAerobic",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "9d5907fa49322563369dae9374e86d2800e3e909eb048904d452c51355af2ef8",
+  "current_statement_sha256": "9d5907fa49322563369dae9374e86d2800e3e909eb048904d452c51355af2ef8",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

@@ -1,0 +1,142 @@
+{
+ "law_id": "maynardsmith-twofold-cost",
+ "version": "1.0.0",
+ "kind": "biological",
+ "class": "theorem",
+ "status": "accepted",
+ "label": "Twofold cost of sex",
+ "level": "population",
+ "lean_ref": {
+  "module": "lean/Delphi/MaynardSmith.lean",
+  "theorem": "Delphi.twofold_cost_of_sex",
+  "structure": null,
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "8f6ddbc4892999d64faa56a82da2ef7ad3bcbd915475e8495e0e81ef7bee78d1",
+  "content_hash": "59b9789b5c5239107ce4ffb89fb19e4e6a8235ea6d96468771562337de6ef6cd"
+ },
+ "statement_en": "An asexual mutant female in a sexual population with equal sex ratio produces twice as many grandchildren as a sexual female, so sex needs a compensating advantage of up to twofold to persist.",
+ "hypotheses": [
+  {
+   "name": "maynardsmith-twofold-cost#assumed-1",
+   "statement": "Anisogamy: males contribute nothing to offspring number or survival."
+  },
+  {
+   "name": "maynardsmith-twofold-cost#assumed-2",
+   "statement": "Equal fecundity and viability of sexual and asexual females and of their daughters."
+  },
+  {
+   "name": "maynardsmith-twofold-cost#assumed-3",
+   "statement": "Primary sex ratio exactly 1:1 in sexual broods; discrete non-overlapping generations; infinite population (deterministic fractions)."
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "a theorem about a model: it applies wherever the design supplies the quantities it uses and accepts the hypotheses in scope.assumed",
+  "kernelChecked": [
+   "For 0 < q < 1 and fecundity f > 0 the odds of asexual to sexual females satisfy odds(q_next) = 2 odds(q), and f cancels.",
+   "Iterated n generations the odds are 2^n times the initial odds."
+  ],
+  "assumed": [
+   "Anisogamy: males contribute nothing to offspring number or survival.",
+   "Equal fecundity and viability of sexual and asexual females and of their daughters.",
+   "Primary sex ratio exactly 1:1 in sexual broods; discrete non-overlapping generations; infinite population (deterministic fractions)."
+  ],
+  "note": null
+ },
+ "constraint_scopes": {},
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "The Evolution of Sex (1978)"
+  ],
+  "observations": [],
+  "faithfulness": "faithful (1 provider: openai)",
+  "flyingFishAudit": {
+   "cannot-evaluate": 4
+  },
+  "rejectable": null
+ },
+ "sources": [
+  "The Evolution of Sex (1978)"
+ ],
+ "non_vacuity_witness": {
+  "lean": null,
+  "statement": "a theorem from standard axioms whose hypotheses are plain inequalities or decidable checks on the inputs; no separate witness structure (see scope.kernelChecked)"
+ },
+ "constraints": [
+  "C5",
+  "C5b"
+ ],
+ "introduced_in": "1.0.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": {
+  "approved_by_role": "bootstrap-grandfathered",
+  "date": "2026-11-01",
+  "basis": "in force in lean/constraints.json / lean/laws.json before the registry existed; no per-law human review recorded by the registry"
+ },
+ "origin": "lean/registry/laws/maynardsmith-twofold-cost.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "bootstrapped from lean/laws.json (status there: \"proved\")"
+  }
+ ],
+ "content_hash": "59b9789b5c5239107ce4ffb89fb19e4e6a8235ea6d96468771562337de6ef6cd",
+ "lean": {
+  "theorem": "Delphi.twofold_cost_of_sex",
+  "module": "lean/Delphi/MaynardSmith.lean",
+  "line": 58,
+  "source": "/-- **Twofold cost of sex.** With equal fecundity and a `1 : 1` sex ratio, the odds of asexual to\nsexual females double every generation. Fecundity cancels. -/\ntheorem twofold_cost_of_sex {q f : ℝ} (hq0 : 0 < q) (hq1 : q < 1) (hf : 0 < f) :\n    odds (asexualNext q f) = 2 * odds q := by\n  have h1q : 0 < 1 - q := by linarith\n  have hden : 0 < q * f + (1 - q) * f / 2 := by positivity\n  unfold odds asexualNext\n  have hne : 1 - q * f / (q * f + (1 - q) * f / 2) ≠ 0 := by\n    rw [sub_ne_zero]\n    intro h\n    rw [eq_div_iff hden.ne'] at h\n    have : 0 < (1 - q) * f / 2 := by positivity\n    linarith\n  rw [div_eq_iff hne]\n  field_simp\n  ring",
+  "named_hypotheses": []
+ },
+ "constraint_details": [
+  {
+   "id": "C5",
+   "relation": "odds(q_n) = 2^n * odds(q_0), odds(q) = q / (1 - q)",
+   "lemma": "Delphi.Constraints.twofold_rules_out",
+   "law": "Delphi.twofold_cost_of_sex_n",
+   "module": "lean/Delphi/MaynardSmith.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "equal_fecundity_1to1"
+   ],
+   "canEliminate": "a candidate that commits to a spread faster or slower than the twofold doubling under the stated assumptions",
+   "lemma_source": "/-- **C5, the twofold cost.** A candidate that commits the asexual fraction to `q` now and `qn` after `n`\ngenerations, under equal fecundity and a 1:1 sex ratio, with `odds qn ≠ 2^n · odds q`, is ruled out. -/\ntheorem twofold_rules_out {q f : ℝ} (hq0 : 0 < q) (hq1 : q < 1) (hf : 0 < f) (n : ℕ) {qn : ℝ}\n    (hqn : asexualAfter q f n = qn) (h : odds qn ≠ 2 ^ n * odds q) : False := by\n  have := twofold_cost_of_sex_n hq0 hq1 hf n\n  rw [hqn] at this\n  exact h this"
+  },
+  {
+   "id": "C5b",
+   "relation": "odds(q_next) = 2 * odds(q)",
+   "lemma": "Delphi.Constraints.twofold_factor_rules_out",
+   "law": "Delphi.twofold_cost_of_sex",
+   "module": "lean/Delphi/MaynardSmith.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "equal_fecundity_1to1"
+   ],
+   "canEliminate": "a candidate that commits to a per-generation odds factor other than 2 under the stated assumptions; a factor of 2 is the theorem and is consistent",
+   "lemma_source": "/-- **C5b, the per-generation factor.** Under equal fecundity and a 1:1 sex ratio the odds of asexual\nfemales grow by exactly `2` per generation: a candidate committing to any other factor is ruled out. -/\ntheorem twofold_factor_rules_out {q f r : ℝ} (hq0 : 0 < q) (hq1 : q < 1) (hf : 0 < f)\n    (hr : odds (asexualNext q f) = r * odds q) (h : r ≠ 2) : False := by\n  have h2 := twofold_cost_of_sex hq0 hq1 hf\n  have hodds : 0 < odds q := div_pos hq0 (by linarith)\n  rw [h2] at hr\n  exact h (mul_right_cancel₀ hodds.ne' hr).symm"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/MaynardSmith.lean",
+  "decl": "Delphi.twofold_cost_of_sex",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "8f6ddbc4892999d64faa56a82da2ef7ad3bcbd915475e8495e0e81ef7bee78d1",
+  "current_statement_sha256": "8f6ddbc4892999d64faa56a82da2ef7ad3bcbd915475e8495e0e81ef7bee78d1",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

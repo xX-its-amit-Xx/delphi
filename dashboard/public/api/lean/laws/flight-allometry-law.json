@@ -1,0 +1,135 @@
+{
+ "law_id": "flight-allometry-law",
+ "version": "1.0.0",
+ "kind": "physical",
+ "class": "theorem",
+ "status": "accepted",
+ "label": "General allometry: measured exponents compose (W = a L^b)",
+ "level": "phenotype",
+ "lean_ref": {
+  "module": "lean/Delphi/Flight.lean",
+  "theorem": "Delphi.vmin_powerLaw_log",
+  "structure": null,
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "6c812a8d2cff343803bcc91d8550305c76d1421dcdf98e9d9401a3638954a7d6",
+  "content_hash": "b459e50de1bd5084184a5e41430d6b58e0ab0e52bd75f91f00c5fb03752fe4cc"
+ },
+ "statement_en": "For power laws f L = a L^b with real exponents: the ratio between two sizes is (L2/L1)^b, the log-log exponent is b, a quotient of power laws is a power law with exponent b1 − b2 (so wing loading W/S has exponent bW − bS), the cube law is the case b = 3, and under power laws for weight and lifting area with constant ρ and C_L,max the minimum-speed exponent is (bW − bS)/2.",
+ "hypotheses": [
+  {
+   "name": "flight-allometry-law#assumed-1",
+   "statement": "That weight and area follow single power laws over the size range in question with the exponents committed; the fitted exponents are separate regressions with their own errors."
+  },
+  {
+   "name": "flight-allometry-law#assumed-2",
+   "statement": "Nothing measured for Exocoetidae enters a statement; the exponents are candidate inputs."
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "a theorem about a model: it applies wherever the design supplies the quantities it uses and accepts the hypotheses in scope.assumed",
+  "kernelChecked": [
+   "PowerLaw f a b ⇒ f(L2)/f(L1) = (L2/L1)^b and log exponent b (powerLaw_ratio, powerLaw_log).",
+   "Quotients: PowerLaw (f/g) (a1/a2) (b1 − b2) (powerLaw_div); CubeLaw is PowerLaw with b = 3 (cubeLaw_powerLaw).",
+   "Under PowerLaw W and PowerLaw S with constant ρ, C_L,max: the v_min log exponent is (bW − bS)/2 (vmin_powerLaw_log)."
+  ],
+  "assumed": [
+   "That weight and area follow single power laws over the size range in question with the exponents committed; the fitted exponents are separate regressions with their own errors.",
+   "Nothing measured for Exocoetidae enters a statement; the exponents are candidate inputs."
+  ],
+  "note": null
+ },
+ "constraint_scopes": {},
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "proved in this project; no paper states it in this form"
+  ],
+  "observations": [],
+  "faithfulness": "not assessed",
+  "flyingFishAudit": {
+   "holds": 3,
+   "cannot-evaluate": 9,
+   "violated": 3
+  },
+  "rejectable": null
+ },
+ "sources": [
+  "proved in this project; no paper states it in this form"
+ ],
+ "non_vacuity_witness": {
+  "lean": "Delphi.Registry.powerLaw_witness",
+  "file": "lean/registry/lean/Witnesses.lean",
+  "statement": "PowerLaw (fun L => L^1.834) 1 1.834"
+ },
+ "constraints": [
+  "C13"
+ ],
+ "introduced_in": "1.0.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": {
+  "approved_by_role": "bootstrap-grandfathered",
+  "date": "2026-11-01",
+  "basis": "in force in lean/constraints.json / lean/laws.json before the registry existed; no per-law human review recorded by the registry"
+ },
+ "origin": "lean/registry/laws/flight-allometry-law.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "bootstrapped from lean/laws.json (status there: \"proved\")"
+  }
+ ],
+ "content_hash": "b459e50de1bd5084184a5e41430d6b58e0ab0e52bd75f91f00c5fb03752fe4cc",
+ "lean": {
+  "theorem": "Delphi.vmin_powerLaw_log",
+  "module": "lean/Delphi/Flight.lean",
+  "line": 75,
+  "source": "/-- Under power laws for weight and lifting area with constant `ρ`, `C_L,max`, the minimum-speed exponent is\n`(b_W - b_S)/2`. With Davenport's exponents this is `(2.981 - 1.834)/2`, not the isometric `1/2`. -/\ntheorem vmin_powerLaw_log {W S : ℝ → ℝ} {aW bW aS bS ρ Cmax : ℝ} (hW : PowerLaw W aW bW) (hS : PowerLaw S aS bS)\n    (hρ : 0 < ρ) (hCmax : 0 < Cmax) {L₁ L₂ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) :\n    Real.log (vmin ρ Cmax (W L₂) (S L₂) / vmin ρ Cmax (W L₁) (S L₁)) = (bW - bS) / 2 * Real.log (L₂ / L₁) := by\n  have hW₁ := powerLaw_pos hW h₁; have hW₂ := powerLaw_pos hW h₂\n  have hS₁ := powerLaw_pos hS h₁; have hS₂ := powerLaw_pos hS h₂\n  have hq := powerLaw_div hW hS\n  have hr : vmin ρ Cmax (W L₂) (S L₂) / vmin ρ Cmax (W L₁) (S L₁) = Real.sqrt ((W L₂ / S L₂) / (W L₁ / S L₁)) := by\n    unfold vmin\n    rw [← Real.sqrt_div' _ (by positivity)]\n    congr 1\n    field_simp\n  rw [hr, Real.log_sqrt (by positivity)]\n  have := powerLaw_log hq h₁ h₂\n  rw [this]\n  ring",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.PowerLaw",
+    "keyword": "def",
+    "module": "lean/Delphi/Flight.lean",
+    "line": 48,
+    "source": "/-- `f L = a L^b` for `L > 0`, with a real exponent. -/\ndef PowerLaw (f : ℝ → ℝ) (a b : ℝ) : Prop := 0 < a ∧ ∀ L, 0 < L → f L = a * L ^ b"
+   }
+  ]
+ },
+ "constraint_details": [
+  {
+   "id": "C13",
+   "relation": "bWS = bW − bS",
+   "lemma": "Delphi.Constraints.allometry_consistency_rules_out",
+   "law": "Delphi.powerLaw_div",
+   "module": "lean/Delphi/Flight.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "power_law_forms"
+   ],
+   "canEliminate": "a candidate committing three exponents that cannot all hold",
+   "lemma_source": "/-- **C13, allometric consistency.** If weight and lifting area are power laws with exponents `bW`, `bS`, the\nwing-loading exponent is `bW - bS`: a committed triple with `bWS ≠ bW - bS` is ruled out. -/\ntheorem allometry_consistency_rules_out {W S : ℝ → ℝ} {aW bW aS bS bWS : ℝ} (hW : PowerLaw W aW bW)\n    (hS : PowerLaw S aS bS) {L₁ L₂ : ℝ} (h₁ : 0 < L₁) (h₂ : 0 < L₂) (hne : L₁ ≠ L₂)\n    (hb : Real.log ((W L₂ / S L₂) / (W L₁ / S L₁)) = bWS * Real.log (L₂ / L₁)) (h : bWS ≠ bW - bS) : False := by\n  have := powerLaw_log (powerLaw_div hW hS) h₁ h₂\n  rw [hb] at this\n  exact h (mul_right_cancel₀ (log_ratio_ne_zero h₁ h₂ hne) this)"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Flight.lean",
+  "decl": "Delphi.vmin_powerLaw_log",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "6c812a8d2cff343803bcc91d8550305c76d1421dcdf98e9d9401a3638954a7d6",
+  "current_statement_sha256": "6c812a8d2cff343803bcc91d8550305c76d1421dcdf98e9d9401a3638954a7d6",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

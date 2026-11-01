@@ -1,0 +1,138 @@
+{
+ "law_id": "genotype-genetic-code",
+ "version": "1.0.0",
+ "kind": "biological",
+ "class": "theorem",
+ "status": "accepted",
+ "label": "A claimed amino-acid change is impossible below the code distance",
+ "level": "genotype",
+ "lean_ref": {
+  "module": "lean/Delphi/Genotype.lean",
+  "theorem": "Delphi.Genotype.claimed_substitutions_rules_out",
+  "structure": null,
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "statement_sha256": "ccddc5b24dfce569069919a592cca56878c33164f0ffe754efd65a960c4f6570",
+  "content_hash": "d0b050215082bad3247149e87354e415bd0525a359efe2658bc2531844a6e4c4"
+ },
+ "statement_en": "With the standard genetic code as a 64-codon table and minSubst a b the least number of positions in which a codon for a and a codon for b differ, no codon pair turns a into b in fewer than minSubst a b nucleotide substitutions. A claim of n substitutions with n < minSubst a b is therefore impossible. minSubst is computed over the table, so the kernel evaluates each instance: Phe to Leu takes 1, Trp to Stop 1, Met to Trp 2.",
+ "hypotheses": [
+  {
+   "name": "genotype-genetic-code#assumed-1",
+   "statement": "The standard genetic code. Mitochondrial and variant codes differ; selenocysteine insertion and RNA editing are outside the table."
+  },
+  {
+   "name": "genotype-genetic-code#assumed-2",
+   "statement": "One codon per position, substitutions within that codon; frameshifts, indels and multi-codon changes are not modelled."
+  },
+  {
+   "name": "genotype-genetic-code#assumed-3",
+   "statement": "That reachability in the code is only reachability: nothing here says a substitution occurred, was favoured, or had the claimed effect."
+  }
+ ],
+ "scope": {
+  "taxa": [
+   "any"
+  ],
+  "life_stages": [],
+  "ranges": {},
+  "basis": "a theorem about a model: it applies wherever the design supplies the quantities it uses and accepts the hypotheses in scope.assumed",
+  "kernelChecked": [
+   "The standard code as a 64-case table, hamming distance on codons, and minSubst as the least distance over the codons of the two amino acids.",
+   "That no codon pair realises a to b in fewer than minSubst a b substitutions, so a claim below that count is impossible.",
+   "Each instance by kernel evaluation of the table: Phe to Leu 1, Trp to Stop 1, Met to Trp 2."
+  ],
+  "assumed": [
+   "The standard genetic code. Mitochondrial and variant codes differ; selenocysteine insertion and RNA editing are outside the table.",
+   "One codon per position, substitutions within that codon; frameshifts, indels and multi-codon changes are not modelled.",
+   "That reachability in the code is only reachability: nothing here says a substitution occurred, was favoured, or had the claimed effect."
+  ],
+  "note": null
+ },
+ "constraint_scopes": {},
+ "shared_scope": null,
+ "evidence": {
+  "sources": [
+   "proved in this project; no paper states it in this form"
+  ],
+  "observations": [],
+  "faithfulness": "not assessed",
+  "flyingFishAudit": {
+   "holds": 5,
+   "cannot-evaluate": 9
+  },
+  "rejectable": null
+ },
+ "sources": [
+  "proved in this project; no paper states it in this form"
+ ],
+ "non_vacuity_witness": {
+  "lean": null,
+  "statement": "a theorem from standard axioms whose hypotheses are plain inequalities or decidable checks on the inputs; no separate witness structure (see scope.kernelChecked)"
+ },
+ "constraints": [
+  "G1"
+ ],
+ "introduced_in": "1.0.0",
+ "supersedes": null,
+ "superseded_by": null,
+ "retired_reason": null,
+ "contested_with": [],
+ "approval": {
+  "approved_by_role": "bootstrap-grandfathered",
+  "date": "2026-11-01",
+  "basis": "in force in lean/constraints.json / lean/laws.json before the registry existed; no per-law human review recorded by the registry"
+ },
+ "origin": "lean/registry/laws/genotype-genetic-code.json",
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "bootstrapped from lean/laws.json (status there: \"proved\")"
+  }
+ ],
+ "content_hash": "d0b050215082bad3247149e87354e415bd0525a359efe2658bc2531844a6e4c4",
+ "lean": {
+  "theorem": "Delphi.Genotype.claimed_substitutions_rules_out",
+  "module": "lean/Delphi/Genotype.lean",
+  "line": 130,
+  "source": "/-- **A missense claim with too few substitutions is impossible.** -/\ntheorem claimed_substitutions_rules_out {a b : AminoAcid} {n : ℕ} (h : n < minSubst a b) :\n    ¬ ∃ c d : Codon, code c = a ∧ code d = b ∧ hamming c d ≤ n := by\n  rintro ⟨c, d, hc, hd, hn⟩\n  have := minSubst_le hc hd\n  omega",
+  "named_hypotheses": [
+   {
+    "name": "Delphi.Genotype.Codon",
+    "keyword": "abbrev",
+    "module": "lean/Delphi/Genotype.lean",
+    "line": 54,
+    "source": "abbrev Codon := Base × Base × Base"
+   }
+  ]
+ },
+ "constraint_details": [
+  {
+   "id": "G1",
+   "relation": "n ≥ minSubst(a, b), the least Hamming distance between a codon for a and a codon for b",
+   "lemma": "Delphi.Genotype.claimed_substitutions_rules_out",
+   "law": "Delphi.Genotype.minSubst_le",
+   "module": "lean/Delphi/Genotype.lean",
+   "status": "verified",
+   "appliesWhen": [
+    "standard_genetic_code"
+   ],
+   "canEliminate": "a claim that one point mutation produced an amino-acid change the code needs two or three for (for example methionine to tryptophan)",
+   "lemma_source": "/-- **A missense claim with too few substitutions is impossible.** -/\ntheorem claimed_substitutions_rules_out {a b : AminoAcid} {n : ℕ} (h : n < minSubst a b) :\n    ¬ ∃ c d : Codon, code c = a ∧ code d = b ∧ hamming c d ≤ n := by\n  rintro ⟨c, d, hc, hd, hn⟩\n  have := minSubst_le hc hd\n  omega"
+  }
+ ],
+ "pin": {
+  "module": "lean/Delphi/Genotype.lean",
+  "decl": "Delphi.Genotype.claimed_substitutions_rules_out",
+  "commit": "ba62f1688beb79c27f21cd3a3c060f66c674c2df",
+  "theorem_found": true,
+  "pinned_statement_sha256": "ccddc5b24dfce569069919a592cca56878c33164f0ffe754efd65a960c4f6570",
+  "current_statement_sha256": "ccddc5b24dfce569069919a592cca56878c33164f0ffe754efd65a960c4f6570",
+  "entry_hash_ok": true,
+  "status": "ok"
+ },
+ "in_lawsets": [
+  "1.0.0"
+ ],
+ "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
+}

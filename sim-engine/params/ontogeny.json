@@ -1,0 +1,2602 @@
+{
+ "title": "Ontogeny of simulation state fields for zebrafish (Danio rerio) and flying fish (Exocoetidae), per developmental stage",
+ "built": "2026-11-01T02:41:32Z",
+ "builder": "session scratch builder (not in repo); SL, mass and fin ratios are read live from anatomy-model/parametric/stages.json so they match the anatomy model exactly",
+ "consumer": "sim-engine/lib/state.mjs resolveState(organismDoc, ageDays). Interpolation rule: ONTOGENY.md, section \"Interpolation rule\".",
+ "age_axis": "age_days = days after hatching (the stage keys of anatomy-model/parametric/stages.json). Zebrafish hatch at 2 dpf, so dpf = age_days + 2. Flying-fish incubation is assumed (development/stages.json).",
+ "kinds": {
+  "measured": "read in the cited primary source",
+  "measured-secondhand": "quoted inside another source",
+  "borrowed": "measured, but in another species, stage or condition (named in note)",
+  "derived": "computed from sourced inputs by the rule in note",
+  "calibrated": "tuned to reproduce a named sourced value",
+  "assumed": "no source for the number; reason in note"
+ },
+ "null_rule": "value null = not found (reason says what was searched). Never fill a null by interpolating across it.",
+ "value_forms": "number | [lo, hi] (a reported range) | boolean | category string",
+ "temperature": "zebrafish physiology sources are all 28-28.5 C; project baseline is 25 C and nothing here is temperature-corrected (conditions/baseline.json). Flying-fish growth embeds field temperatures (~27.8 C).",
+ "no_bird_data": "No Aves data anywhere in this file (holdout).",
+ "units_note": "metabolic rates in umol O2 g-1 h-1 (per g wet mass); 1 umol O2 g-1 h-1 = 0.1204 W/kg using 13.54 J/mg O2 (oxycaloric value in physiology/sources.json, gerry2014, secondhand)",
+ "sources": {
+  "repo-anatomy-stages": {
+   "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+   "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+   "access": "read from repo; its primary sources are listed in development/sources.json and development/zebrafish/sources.json"
+  },
+  "parichy-2009": {
+   "cite": "Parichy DM, Elizondo MR, Mills MG, Gordon TN, Engeszer RE (2009) Normal table of postembryonic zebrafish development: staging by externally visible anatomy of the living fish. Dev Dyn 238:2975-3015",
+   "doi_or_url": "https://doi.org/10.1002/dvdy.22113",
+   "access": "via repo development/zebrafish/stages.json (full text read by the development thread through PMC OAI, PMC3030279); Europe PMC serves no full text for it, so not re-read here"
+  },
+  "beaudouin-2015": {
+   "cite": "Beaudouin R, Goussen B, Piccini B, Augustine S, Devillers J, Brion F, Pery ARR (2015) An individual-based model of zebrafish population dynamics accounting for energy dynamics. PLoS ONE 10:e0125841",
+   "doi_or_url": "https://doi.org/10.1371/journal.pone.0125841",
+   "access": "full text, Europe PMC PMC4418570, fetched 2026-10-31"
+  },
+  "rombough-2002": {
+   "cite": "Rombough P (2002) Gills are needed for ionoregulation before they are needed for O2 uptake in developing zebrafish, Danio rerio. J Exp Biol 205:1787-1794",
+   "doi_or_url": "https://doi.org/10.1242/jeb.205.12.1787",
+   "access": "full text PDF, Wayback https://web.archive.org/web/20200320073551/https://jeb.biologists.org/content/jexbio/205/12/1787.full.pdf, fetched 2026-10-31"
+  },
+  "rombough-drader-2009": {
+   "cite": "Rombough P, Drader H (2009) Hemoglobin enhances oxygen uptake in larval zebrafish (Danio rerio) but only under conditions of extreme hypoxia. J Exp Biol 212:778-784",
+   "doi_or_url": "https://doi.org/10.1242/jeb.026575",
+   "access": "full text PDF, Wayback https://web.archive.org/web/20190430200148/https://jeb.biologists.org/content/jexbio/212/6/778.full.pdf, fetched 2026-10-31"
+  },
+  "pelster-burggren-1996": {
+   "cite": "Pelster B, Burggren WW (1996) Disruption of hemoglobin oxygen transport does not impact oxygen-dependent physiological processes in developing embryos of zebra fish (Danio rerio). Circ Res 79:358-362",
+   "doi_or_url": "https://doi.org/10.1161/01.res.79.2.358",
+   "access": "abstract only (Europe PMC, PMID 8756015), fetched 2026-10-31"
+  },
+  "grillitsch-2005": {
+   "cite": "Grillitsch S, Medgyesy N, Schwerte T, Pelster B (2005) The influence of environmental PO2 on hemoglobin oxygen saturation in developing zebrafish Danio rerio. J Exp Biol 208:309-316",
+   "doi_or_url": "https://doi.org/10.1242/jeb.01410",
+   "access": "full text PDF, Wayback https://web.archive.org/web/20180720053612/https://jeb.biologists.org/content/jexbio/208/2/309.full.pdf, fetched 2026-10-31"
+  },
+  "bagatto-2001": {
+   "cite": "Bagatto B, Pelster B, Burggren WW (2001) Growth and metabolism of larval zebrafish: effects of swim training. J Exp Biol 204:4335-4343",
+   "doi_or_url": "https://doi.org/10.1242/jeb.204.24.4335",
+   "access": "full text PDF, Wayback https://web.archive.org/web/20191120095228/https://jeb.biologists.org/content/jexbio/204/24/4335.full.pdf, fetched 2026-10-31"
+  },
+  "plaut-gordon-1994": {
+   "cite": "Plaut I, Gordon MS (1994) Swimming metabolism of wild-type and cloned zebrafish Brachydanio rerio. J Exp Biol 194:209-223",
+   "doi_or_url": "https://doi.org/10.1242/jeb.194.1.209",
+   "access": "full text PDF, Wayback https://web.archive.org/web/20200318101652/https://jeb.biologists.org/content/jexbio/194/1/209.full.pdf, fetched 2026-10-31"
+  },
+  "plaut-2000": {
+   "cite": "Plaut I (2000) Effects of fin size on swimming performance, swimming behaviour and routine activity of zebrafish Danio rerio. J Exp Biol 203:813-820",
+   "doi_or_url": "https://doi.org/10.1242/jeb.203.4.813",
+   "access": "full text PDF, Wayback https://web.archive.org/web/20200319005255/https://jeb.biologists.org/content/jexbio/203/4/813.full.pdf, fetched 2026-10-31"
+  },
+  "wakamatsu-2019": {
+   "cite": "Wakamatsu Y, Ogino K, Hirata H (2019) Swimming capability of zebrafish is governed by water temperature, caudal fin length and genetic background. Sci Rep 9:16307",
+   "doi_or_url": "https://doi.org/10.1038/s41598-019-52592-w",
+   "access": "full text, Europe PMC PMC6841939, fetched 2026-10-31"
+  },
+  "fiaz-2012": {
+   "cite": "Fiaz AW, Leon-Kloosterziel KM, Gort G, Schulte-Merker S, van Leeuwen JL, Kranenbarg S (2012) Swim-training changes the spatio-temporal dynamics of skeletogenesis in zebrafish larvae (Danio rerio). PLoS ONE 7:e34072",
+   "doi_or_url": "https://doi.org/10.1371/journal.pone.0034072",
+   "access": "full text, Europe PMC PMC3329525, fetched 2026-10-31"
+  },
+  "lindsey-2010": {
+   "cite": "Lindsey BW, Smith FM, Croll RP (2010) From inflation to flotation: contribution of the swimbladder to whole-body density and swimming depth during development of the zebrafish (Danio rerio). Zebrafish 7:85-96",
+   "doi_or_url": "https://doi.org/10.1089/zeb.2009.0616",
+   "access": "abstract only (Europe PMC, PMID 20415646), fetched 2026-10-31"
+  },
+  "robertson-2008": {
+   "cite": "Robertson GN, Lindsey BW, Dumbarton TC, Croll RP, Smith FM (2008) The contribution of the swimbladder to buoyancy in the adult zebrafish (Danio rerio): a morphometric analysis. J Morphol 269:666-673",
+   "doi_or_url": "https://doi.org/10.1002/jmor.10610",
+   "access": "abstract only (Europe PMC, PMID 18302241), fetched 2026-10-31"
+  },
+  "bigman-2021-data": {
+   "cite": "Bigman JS et al. (2021) Sci Adv 7:eabe5163; dataset PairedRSAData.csv (figshare 10.6084/m9.figshare.13821968)",
+   "doi_or_url": "https://ndownloader.figshare.com/files/26660168",
+   "access": "dataset fetched 2026-10-31; no Danio and no Exocoetidae rows"
+  },
+  "park-choi-2010": {
+   "cite": "Park H, Choi H (2010) Aerodynamic characteristics of flying fish in gliding flight. J Exp Biol 213:3269-3279",
+   "doi_or_url": "https://doi.org/10.1242/jeb.046052",
+   "access": "via repo physics/glide-data.csv (full text read by the physics thread); DOI re-verified in Europe PMC 2026-10-31"
+  },
+  "davenport-1992": {
+   "cite": "Davenport J (1992) Wing-loading, stability and morphometric relationships in flying fish (Exocoetidae) from the north-eastern Atlantic. J Mar Biol Assoc UK 72:25-39",
+   "doi_or_url": "https://doi.org/10.1017/S0025315400048761",
+   "access": "abstract only, via repo physics/allometry.json; DOI re-verified on Crossref 2026-10-31"
+  },
+  "daane-2021": {
+   "cite": "Daane JM et al. (2021) flying-fish fin measurements, Data S1A (MCZ museum specimens), as fitted in development/allometry.json",
+   "doi_or_url": "repo:development/allometry.json (raw: genotype/cache/daane2021_data_s1A_fin_measurements.csv)",
+   "access": "read from repo"
+  },
+  "hunte-1995": {
+   "cite": "Hunte et al. (1995) flyingfish larvae in neuston tows, as quoted in development/allometry.json pelvic_fin_length.fetched_corroboration",
+   "doi_or_url": "repo:development/allometry.json",
+   "access": "read from repo (fetched by the development thread)"
+  },
+  "repo-physiology": {
+   "cite": "DELPHI repo: physiology/ (gills.json, haemoglobin.js, muscle.js, sources.json): adult flying-fish physiology built from non-flying-fish proxies (rummer2015 trout Hb, doi 10.1371/journal.pone.0139477; gerry2014 trout slow-fibre fraction, doi 10.1371/journal.pone.0106030; Bigman 2021 mackerel gill area)",
+   "doi_or_url": "repo:physiology/",
+   "access": "read from repo; rummer2015 and gerry2014 DOIs re-verified in Europe PMC 2026-10-31"
+  }
+ },
+ "species": {
+  "zebrafish": {
+   "taxon": "Danio rerio",
+   "ncbi_taxid": 7955,
+   "growth_reference": "development/zebrafish/growth.json and allometry.json (SL and mass laws live there; not duplicated)",
+   "size_thresholds_SL_m": [
+    {
+     "event": "posterior swim bladder inflation",
+     "SL_m": 0.0035,
+     "source": {
+      "id": "parichy-2009",
+      "cite": "Parichy DM, Elizondo MR, Mills MG, Gordon TN, Engeszer RE (2009) Normal table of postembryonic zebrafish development: staging by externally visible anatomy of the living fish. Dev Dyn 238:2975-3015",
+      "doi_or_url": "https://doi.org/10.1002/dvdy.22113",
+      "locator": "Table 4 pSB, SSL 3.5 mm (repo)"
+     }
+    },
+    {
+     "event": "anterior swim bladder chamber appears",
+     "SL_m": 0.006,
+     "source": {
+      "id": "parichy-2009",
+      "cite": "Parichy DM, Elizondo MR, Mills MG, Gordon TN, Engeszer RE (2009) Normal table of postembryonic zebrafish development: staging by externally visible anatomy of the living fish. Dev Dyn 238:2975-3015",
+      "doi_or_url": "https://doi.org/10.1002/dvdy.22113",
+      "locator": "Table 4 aSB, SSL 6.0 mm (repo)"
+     }
+    },
+    {
+     "event": "first pectoral lepidotrichia",
+     "SL_m": 0.0064,
+     "source": {
+      "id": "repo",
+      "cite": "Lalonde & Akimenko 2018 Fig. 8, via development/zebrafish/stages.json",
+      "doi_or_url": "https://doi.org/10.1371/journal.pone.0192500",
+      "locator": "Fig. 8 legend (repo)"
+     }
+    },
+    {
+     "event": "juvenile (squamation complete, stage J)",
+     "SL_m": 0.011,
+     "source": {
+      "id": "parichy-2009",
+      "cite": "Parichy DM, Elizondo MR, Mills MG, Gordon TN, Engeszer RE (2009) Normal table of postembryonic zebrafish development: staging by externally visible anatomy of the living fish. Dev Dyn 238:2975-3015",
+      "doi_or_url": "https://doi.org/10.1002/dvdy.22113",
+      "locator": "Table 4 J, SSL 11.0 mm (repo)"
+     }
+    }
+   ],
+   "age_thresholds_dpf": [
+    {
+     "event": "gills required for O2 uptake (skin insufficient)",
+     "dpf": [
+      7,
+      14
+     ],
+     "source": {
+      "id": "rombough-2002",
+      "cite": "Rombough P (2002) Gills are needed for ionoregulation before they are needed for O2 uptake in developing zebrafish, Danio rerio. J Exp Biol 205:1787-1794",
+      "doi_or_url": "https://doi.org/10.1242/jeb.205.12.1787",
+      "locator": "Abstract"
+     }
+    },
+    {
+     "event": "gills required for ionoregulation",
+     "dpf": [
+      3,
+      7
+     ],
+     "source": {
+      "id": "rombough-2002",
+      "cite": "Rombough P (2002) Gills are needed for ionoregulation before they are needed for O2 uptake in developing zebrafish, Danio rerio. J Exp Biol 205:1787-1794",
+      "doi_or_url": "https://doi.org/10.1242/jeb.205.12.1787",
+      "locator": "Abstract"
+     }
+    }
+   ],
+   "stages": [
+    {
+     "key": "stage_000d",
+     "age_days": 0,
+     "dpf": 2,
+     "label": "hatching (Hatching:Long-pec)",
+     "fields": {
+      "SL_m": {
+       "value": 0.0031,
+       "unit": "m",
+       "kind": "measured-secondhand",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_000d].SL_m"
+       },
+       "note": "hatch length 3.1 mm (FishBase larvae page, Main Ref Kimmel et al. 1995), via development/zebrafish/growth.json"
+      },
+      "mass_kg": {
+       "value": 2.025e-7,
+       "unit": "kg",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_000d].mass_kg"
+       },
+       "note": "W_mg = exp(-5.24) SL_mm^3.22 (Beaudouin 2015, fitted on 60 fish 10-50 dpf up to ~15 mm SL); measured live larval masses are 25-50% lower at the same length (conflicts.zf_mass_larval): treat as an upper bound"
+      },
+      "body_density_kg_m3": {
+       "value": 1050,
+       "unit": "kg/m3",
+       "kind": "borrowed",
+       "source": {
+        "id": "robertson-2008",
+        "cite": "Robertson GN, Lindsey BW, Dumbarton TC, Croll RP, Smith FM (2008) The contribution of the swimbladder to buoyancy in the adult zebrafish (Danio rerio): a morphometric analysis. J Morphol 269:666-673",
+        "doi_or_url": "https://doi.org/10.1002/jmor.10610",
+        "locator": "abstract: \"Mean body density in the absence of the swimbladder was 1.05 +/- 0.04 g cm(-3)\" (adults)"
+       },
+       "note": "swim bladder not yet inflated at hatching, so adult bladder-free tissue density is borrowed. Lindsey 2010 (abstract) says inflation is what first lowers larval density but gives no pre-inflation number.",
+       "range": [
+        1010,
+        1090
+       ]
+      },
+      "wetted_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no measured skin or total surface area for any zebrafish stage in fetched sources (Rombough 2002 gives none; Grillitsch 2005 says only qualitatively that total surface area falls as the yolk sac is absorbed). If computed from geometry, label it derived.",
+       "see": [
+        "rombough-2002",
+        "grillitsch-2005"
+       ]
+      },
+      "frontal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: body width not measured at this stage in fetched sources (Parichy 2009 Table 3 gives depth only)"
+      },
+      "pectoral_area_both_m2": {
+       "value": 4.061e-8,
+       "unit": "m2",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_000d].parameters.pectoral_area_over_SL2 = 0.004226"
+       },
+       "note": "the anatomy model ASSUMES zebrafish pectoral proportions: no numeric pectoral fin length or area was found (development/zebrafish/allometry.json: Daane 2018 plots it only in Fig. 1A)"
+      },
+      "pectoral_span_m": {
+       "value": 0.00063,
+       "unit": "m",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_000d].parameters.pectoral_span_over_SL = 0.2032"
+       },
+       "note": "assumed in the anatomy model, as above"
+      },
+      "caudal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found for larvae or juveniles; caudal fin rays appear at 4.9 mm SSL (Parichy 2009 Table 4, repo)"
+      },
+      "red_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found"
+      },
+      "white_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found. 1 - red is not used: trout also has ~5% mosaic slow-like fibres inside the white zone (gerry2014)"
+      },
+      "gill_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: ABSTRACT:\"gill surface area\" AND zebrafish (2 hits, neither zebrafish morphometry); TITLE zebrafish AND gill AND (develop* OR morpholog*) (5 hits, none with area); Bigman 2021 dataset has no Danio row. Preussner et al. 2025 bioRxiv 10.1101/2025.06.02.657338 (lifelong zebrafish gill development) may hold it but its full text was not reachable (bioRxiv error 1015; Europe PMC abstract only)",
+       "see": [
+        "bigman-2021-data"
+       ]
+      },
+      "o2_uptake_site": {
+       "value": "skin",
+       "unit": "category",
+       "kind": "borrowed",
+       "source": {
+        "id": "rombough-2002",
+        "cite": "Rombough P (2002) Gills are needed for ionoregulation before they are needed for O2 uptake in developing zebrafish, Danio rerio. J Exp Biol 205:1787-1794",
+        "doi_or_url": "https://doi.org/10.1242/jeb.205.12.1787",
+        "locator": "Abstract: at 3 dpf neither hyperoxia nor 50% saline changed survival of gill-blocked larvae, \"suggesting that at this stage cutaneous exchange was sufficient to satisfy both ionoregulatory and respiratory requirements\""
+       },
+       "note": "2 dpf hatchling given the 3 dpf result (earliest age tested)"
+      },
+      "hb_needed_for_routine_O2": {
+       "value": false,
+       "unit": "boolean",
+       "kind": "measured",
+       "source": {
+        "id": "pelster-burggren-1996",
+        "cite": "Pelster B, Burggren WW (1996) Disruption of hemoglobin oxygen transport does not impact oxygen-dependent physiological processes in developing embryos of zebra fish (Danio rerio). Circ Res 79:358-362",
+        "doi_or_url": "https://doi.org/10.1161/01.res.79.2.358",
+        "locator": "abstract: \"Functional ablation of hemoglobin by carbon monoxide or phenylhydrazine did not reduce whole-animal O2 consumption\" (36-96 hpf)"
+       }
+      },
+      "hb_P50_kPa": {
+       "value": null,
+       "unit": "kPa",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Rombough & Drader 2009 (Discussion): \"The O2 binding affinity of the Hb of zebrafish larvae has not been determined\"; Europe PMC TITLE zebrafish AND (hemoglobin OR haemoglobin OR \"oxygen affinity\" OR \"oxygen binding\"): 10 hits, none reports a P50 for any stage"
+      },
+      "has_swimbladder": {
+       "value": false,
+       "unit": "boolean",
+       "kind": "measured",
+       "source": {
+        "id": "parichy-2009",
+        "cite": "Parichy DM, Elizondo MR, Mills MG, Gordon TN, Engeszer RE (2009) Normal table of postembryonic zebrafish development: staging by externally visible anatomy of the living fish. Dev Dyn 238:2975-3015",
+        "doi_or_url": "https://doi.org/10.1002/dvdy.22113",
+        "locator": "Table 4 via repo development/zebrafish/stages.json: posterior swim bladder (pSB) inflation at SSL 3.5 mm (pre 3.4, post 3.7 mm); hatch SL 3.1 mm"
+       },
+       "note": "Rombough & Drader 2009 Methods: \"Swimbladder inflation occurred at about 5 dpf\" at 28 C",
+       "chambers": 0
+      },
+      "routine_metabolic_rate": {
+       "value": [
+        85,
+        90
+       ],
+       "unit": "umol O2 g-1 h-1",
+       "kind": "measured",
+       "source": {
+        "id": "pelster-burggren-1996",
+        "cite": "Pelster B, Burggren WW (1996) Disruption of hemoglobin oxygen transport does not impact oxygen-dependent physiological processes in developing embryos of zebra fish (Danio rerio). Circ Res 79:358-362",
+        "doi_or_url": "https://doi.org/10.1161/01.res.79.2.358",
+        "locator": "abstract: whole-animal O2 consumption \"was approximately 85 to 90 mumol.g-1.h-1\" (embryos and early larvae, 36-96 hpf)"
+       },
+       "note": "abstract only: temperature and mass basis (yolk included or not) not stated there"
+      },
+      "standard_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found: only routine rates are measured in larvae (Rombough & Drader 2009; Pelster & Burggren 1996)"
+      },
+      "Ucrit_m_s": {
+       "value": null,
+       "unit": "m/s",
+       "kind": null,
+       "source": null,
+       "reason": "not usable: larval Ucrit (5-14 dpf) exists only as a plot (Fiaz 2012 Fig. 6B), and the authors state it \"is an overestimation of the maximum sustained swimming speed\" because larvae cling to the tube wall; not digitised",
+       "see": [
+        "fiaz-2012"
+       ]
+      }
+     }
+    },
+    {
+     "key": "stage_003d",
+     "age_days": 3,
+     "dpf": 5,
+     "label": "larva (Larval:Day 5)",
+     "fields": {
+      "SL_m": {
+       "value": 0.0042,
+       "unit": "m",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_003d].SL_m"
+       },
+       "note": "SL = 3.4 + 0.32 (dpf - 2.5) mm: Parichy 2009 measured larval rate 0.32 mm SL/d (individually reared, 28.5 C); linear form assumed"
+      },
+      "mass_kg": {
+       "value": 5.385e-7,
+       "unit": "kg",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_003d].mass_kg"
+       },
+       "note": "W_mg = exp(-5.24) SL_mm^3.22 (Beaudouin 2015, fitted on 60 fish 10-50 dpf up to ~15 mm SL); measured live larval masses are 25-50% lower at the same length (conflicts.zf_mass_larval): treat as an upper bound"
+      },
+      "body_density_kg_m3": {
+       "value": [
+        996,
+        1000
+       ],
+       "unit": "kg/m3",
+       "kind": "measured",
+       "source": {
+        "id": "lindsey-2010",
+        "cite": "Lindsey BW, Smith FM, Croll RP (2010) From inflation to flotation: contribution of the swimbladder to whole-body density and swimming depth during development of the zebrafish (Danio rerio). Zebrafish 7:85-96",
+        "doi_or_url": "https://doi.org/10.1089/zeb.2009.0616",
+        "locator": "abstract: density \"conserved within a narrow range between 1.00 +/- 0.001 and 0.996 +/- 0.001 g/cm(3)\"; swim bladder keeps fish \"within 1.7% of neutral buoyancy throughout larval development\""
+       },
+       "note": "post-inflation larvae; the abstract does not assign each end of the range to an age"
+      },
+      "wetted_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no measured skin or total surface area for any zebrafish stage in fetched sources (Rombough 2002 gives none; Grillitsch 2005 says only qualitatively that total surface area falls as the yolk sac is absorbed). If computed from geometry, label it derived.",
+       "see": [
+        "rombough-2002",
+        "grillitsch-2005"
+       ]
+      },
+      "frontal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: body width not measured at this stage in fetched sources (Parichy 2009 Table 3 gives depth only)"
+      },
+      "pectoral_area_both_m2": {
+       "value": 7.454e-8,
+       "unit": "m2",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_003d].parameters.pectoral_area_over_SL2 = 0.004226"
+       },
+       "note": "the anatomy model ASSUMES zebrafish pectoral proportions: no numeric pectoral fin length or area was found (development/zebrafish/allometry.json: Daane 2018 plots it only in Fig. 1A)"
+      },
+      "pectoral_span_m": {
+       "value": 0.0008535,
+       "unit": "m",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_003d].parameters.pectoral_span_over_SL = 0.2032"
+       },
+       "note": "assumed in the anatomy model, as above"
+      },
+      "caudal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found for larvae or juveniles; caudal fin rays appear at 4.9 mm SSL (Parichy 2009 Table 4, repo)"
+      },
+      "red_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found"
+      },
+      "white_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found. 1 - red is not used: trout also has ~5% mosaic slow-like fibres inside the white zone (gerry2014)"
+      },
+      "gill_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: ABSTRACT:\"gill surface area\" AND zebrafish (2 hits, neither zebrafish morphometry); TITLE zebrafish AND gill AND (develop* OR morpholog*) (5 hits, none with area); Bigman 2021 dataset has no Danio row. Preussner et al. 2025 bioRxiv 10.1101/2025.06.02.657338 (lifelong zebrafish gill development) may hold it but its full text was not reachable (bioRxiv error 1015; Europe PMC abstract only)",
+       "see": [
+        "bigman-2021-data"
+       ]
+      },
+      "o2_uptake_site": {
+       "value": "skin",
+       "unit": "category",
+       "kind": "measured",
+       "source": {
+        "id": "rombough-2002",
+        "cite": "Rombough P (2002) Gills are needed for ionoregulation before they are needed for O2 uptake in developing zebrafish, Danio rerio. J Exp Biol 205:1787-1794",
+        "doi_or_url": "https://doi.org/10.1242/jeb.205.12.1787",
+        "locator": "Abstract: at 7 dpf \"the skin still appeared capable of satisfying the O2 requirements\"; same at 3 dpf; 28 C"
+       },
+       "note": "5 dpf lies between the 3 and 7 dpf tests, both skin-sufficient for O2"
+      },
+      "hb_needed_for_routine_O2": {
+       "value": false,
+       "unit": "boolean",
+       "kind": "measured",
+       "source": {
+        "id": "rombough-drader-2009",
+        "cite": "Rombough P, Drader H (2009) Hemoglobin enhances oxygen uptake in larval zebrafish (Danio rerio) but only under conditions of extreme hypoxia. J Exp Biol 212:778-784",
+        "doi_or_url": "https://doi.org/10.1242/jeb.026575",
+        "locator": "Abstract: \"CO poisoning had no significant impact on rMO2 or Pc at any age\" (5-42 dpf, 28 C); Hb only lowers residual PO2 (Pr 6.7 vs 11.2 torr)"
+       },
+       "note": "matters for hypoxia/altitude perturbations: up to ~6 weeks, normoxic and moderately hypoxic O2 supply does not depend on Hb"
+      },
+      "hb_P50_kPa": {
+       "value": null,
+       "unit": "kPa",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Rombough & Drader 2009 (Discussion): \"The O2 binding affinity of the Hb of zebrafish larvae has not been determined\"; Europe PMC TITLE zebrafish AND (hemoglobin OR haemoglobin OR \"oxygen affinity\" OR \"oxygen binding\"): 10 hits, none reports a P50 for any stage"
+      },
+      "has_swimbladder": {
+       "value": true,
+       "unit": "boolean",
+       "kind": "measured",
+       "source": {
+        "id": "parichy-2009",
+        "cite": "Parichy DM, Elizondo MR, Mills MG, Gordon TN, Engeszer RE (2009) Normal table of postembryonic zebrafish development: staging by externally visible anatomy of the living fish. Dev Dyn 238:2975-3015",
+        "doi_or_url": "https://doi.org/10.1002/dvdy.22113",
+        "locator": "Table 4 (repo): pSB inflation SSL 3.5 mm; stage SL 4.2 mm"
+       },
+       "note": "marginal: at 5 dpf some larvae are not yet inflated (inflation \"at about 5 dpf\", Rombough & Drader 2009). Posterior chamber only until 6.0 mm SL.",
+       "chambers": 1
+      },
+      "routine_metabolic_rate": {
+       "value": 51.4,
+       "unit": "umol O2 g-1 h-1",
+       "kind": "derived",
+       "source": {
+        "id": "rombough-drader-2009",
+        "cite": "Rombough P, Drader H (2009) Hemoglobin enhances oxygen uptake in larval zebrafish (Danio rerio) but only under conditions of extreme hypoxia. J Exp Biol 212:778-784",
+        "doi_or_url": "https://doi.org/10.1242/jeb.026575",
+        "locator": "Eq. 1: rMO2 (nmol O2 h-1) = 46.1 M^0.825, M in mg, R2 0.909, N 109, 5-42 dpf, 28 C (Fig. 3)"
+       },
+       "note": "evaluated at the stage mass 0.538 mg as rMO2/M = 46.1 M^-0.175. MASS BASIS: Rombough weighed Bouin-fixed larvae (mean 160 ug at 7 dpf, 3.5 mg at 40-42 dpf), lighter than the live-mass law used for mass_kg. If fixed mass = f x live mass, the true rate per live gram is f^0.825 x this value (0.47 for f = 0.4): treat as an upper bound."
+      },
+      "standard_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found: only routine rates are measured in larvae (Rombough & Drader 2009; Pelster & Burggren 1996)"
+      },
+      "Ucrit_m_s": {
+       "value": null,
+       "unit": "m/s",
+       "kind": null,
+       "source": null,
+       "reason": "not usable: larval Ucrit (5-14 dpf) exists only as a plot (Fiaz 2012 Fig. 6B), and the authors state it \"is an overestimation of the maximum sustained swimming speed\" because larvae cling to the tube wall; not digitised",
+       "see": [
+        "fiaz-2012"
+       ]
+      }
+     }
+    },
+    {
+     "key": "stage_010d",
+     "age_days": 10,
+     "dpf": 12,
+     "label": "larva (Larval:Days 7-13; fin rays forming)",
+     "fields": {
+      "SL_m": {
+       "value": 0.00644,
+       "unit": "m",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_010d].SL_m"
+       },
+       "note": "SL = 3.4 + 0.32 (dpf - 2.5) mm: Parichy 2009 measured larval rate 0.32 mm SL/d (individually reared, 28.5 C); linear form assumed"
+      },
+      "mass_kg": {
+       "value": 0.000002133,
+       "unit": "kg",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_010d].mass_kg"
+       },
+       "note": "W_mg = exp(-5.24) SL_mm^3.22 (Beaudouin 2015, fitted on 60 fish 10-50 dpf up to ~15 mm SL); measured live larval masses are 25-50% lower at the same length (conflicts.zf_mass_larval): treat as an upper bound"
+      },
+      "body_density_kg_m3": {
+       "value": [
+        996,
+        1000
+       ],
+       "unit": "kg/m3",
+       "kind": "measured",
+       "source": {
+        "id": "lindsey-2010",
+        "cite": "Lindsey BW, Smith FM, Croll RP (2010) From inflation to flotation: contribution of the swimbladder to whole-body density and swimming depth during development of the zebrafish (Danio rerio). Zebrafish 7:85-96",
+        "doi_or_url": "https://doi.org/10.1089/zeb.2009.0616",
+        "locator": "abstract: density \"conserved within a narrow range between 1.00 +/- 0.001 and 0.996 +/- 0.001 g/cm(3)\"; swim bladder keeps fish \"within 1.7% of neutral buoyancy throughout larval development\""
+       },
+       "note": "post-inflation larvae; the abstract does not assign each end of the range to an age"
+      },
+      "wetted_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no measured skin or total surface area for any zebrafish stage in fetched sources (Rombough 2002 gives none; Grillitsch 2005 says only qualitatively that total surface area falls as the yolk sac is absorbed). If computed from geometry, label it derived.",
+       "see": [
+        "rombough-2002",
+        "grillitsch-2005"
+       ]
+      },
+      "frontal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: body width not measured at this stage in fetched sources (Parichy 2009 Table 3 gives depth only)"
+      },
+      "pectoral_area_both_m2": {
+       "value": 3.152e-7,
+       "unit": "m2",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_010d].parameters.pectoral_area_over_SL2 = 0.007599"
+       },
+       "note": "the anatomy model ASSUMES zebrafish pectoral proportions: no numeric pectoral fin length or area was found (development/zebrafish/allometry.json: Daane 2018 plots it only in Fig. 1A)"
+      },
+      "pectoral_span_m": {
+       "value": 0.001802,
+       "unit": "m",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_010d].parameters.pectoral_span_over_SL = 0.2799"
+       },
+       "note": "assumed in the anatomy model, as above"
+      },
+      "caudal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found for larvae or juveniles; caudal fin rays appear at 4.9 mm SSL (Parichy 2009 Table 4, repo)"
+      },
+      "red_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found"
+      },
+      "white_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found. 1 - red is not used: trout also has ~5% mosaic slow-like fibres inside the white zone (gerry2014)"
+      },
+      "gill_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: ABSTRACT:\"gill surface area\" AND zebrafish (2 hits, neither zebrafish morphometry); TITLE zebrafish AND gill AND (develop* OR morpholog*) (5 hits, none with area); Bigman 2021 dataset has no Danio row. Preussner et al. 2025 bioRxiv 10.1101/2025.06.02.657338 (lifelong zebrafish gill development) may hold it but its full text was not reachable (bioRxiv error 1015; Europe PMC abstract only)",
+       "see": [
+        "bigman-2021-data"
+       ]
+      },
+      "o2_uptake_site": {
+       "value": "skin-to-gill transition",
+       "unit": "category",
+       "kind": "derived",
+       "source": {
+        "id": "rombough-2002",
+        "cite": "Rombough P (2002) Gills are needed for ionoregulation before they are needed for O2 uptake in developing zebrafish, Danio rerio. J Exp Biol 205:1787-1794",
+        "doi_or_url": "https://doi.org/10.1242/jeb.205.12.1787",
+        "locator": "Abstract: skin sufficient for O2 at 7 dpf; \"At 14 days postfertilization ... gills were required for O2 uptake as well as for ionoregulation\""
+       },
+       "note": "12 dpf is bracketed by the 7 and 14 dpf tests"
+      },
+      "hb_needed_for_routine_O2": {
+       "value": false,
+       "unit": "boolean",
+       "kind": "measured",
+       "source": {
+        "id": "rombough-drader-2009",
+        "cite": "Rombough P, Drader H (2009) Hemoglobin enhances oxygen uptake in larval zebrafish (Danio rerio) but only under conditions of extreme hypoxia. J Exp Biol 212:778-784",
+        "doi_or_url": "https://doi.org/10.1242/jeb.026575",
+        "locator": "Abstract: \"CO poisoning had no significant impact on rMO2 or Pc at any age\" (5-42 dpf, 28 C); Hb only lowers residual PO2 (Pr 6.7 vs 11.2 torr)"
+       },
+       "note": "matters for hypoxia/altitude perturbations: up to ~6 weeks, normoxic and moderately hypoxic O2 supply does not depend on Hb"
+      },
+      "hb_P50_kPa": {
+       "value": null,
+       "unit": "kPa",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Rombough & Drader 2009 (Discussion): \"The O2 binding affinity of the Hb of zebrafish larvae has not been determined\"; Europe PMC TITLE zebrafish AND (hemoglobin OR haemoglobin OR \"oxygen affinity\" OR \"oxygen binding\"): 10 hits, none reports a P50 for any stage"
+      },
+      "has_swimbladder": {
+       "value": true,
+       "unit": "boolean",
+       "kind": "measured",
+       "source": {
+        "id": "parichy-2009",
+        "cite": "Parichy DM, Elizondo MR, Mills MG, Gordon TN, Engeszer RE (2009) Normal table of postembryonic zebrafish development: staging by externally visible anatomy of the living fish. Dev Dyn 238:2975-3015",
+        "doi_or_url": "https://doi.org/10.1002/dvdy.22113",
+        "locator": "Table 4 (repo): pSB at SSL 3.5 mm, anterior chamber (aSB) appears at SSL 6.0 mm"
+       },
+       "note": "two chambers",
+       "chambers": 2
+      },
+      "routine_metabolic_rate": {
+       "value": 40.4,
+       "unit": "umol O2 g-1 h-1",
+       "kind": "derived",
+       "source": {
+        "id": "rombough-drader-2009",
+        "cite": "Rombough P, Drader H (2009) Hemoglobin enhances oxygen uptake in larval zebrafish (Danio rerio) but only under conditions of extreme hypoxia. J Exp Biol 212:778-784",
+        "doi_or_url": "https://doi.org/10.1242/jeb.026575",
+        "locator": "Eq. 1: rMO2 (nmol O2 h-1) = 46.1 M^0.825, M in mg, R2 0.909, N 109, 5-42 dpf, 28 C (Fig. 3)"
+       },
+       "note": "evaluated at the stage mass 2.13 mg as rMO2/M = 46.1 M^-0.175. MASS BASIS: Rombough weighed Bouin-fixed larvae (mean 160 ug at 7 dpf, 3.5 mg at 40-42 dpf), lighter than the live-mass law used for mass_kg. If fixed mass = f x live mass, the true rate per live gram is f^0.825 x this value (0.47 for f = 0.4): treat as an upper bound."
+      },
+      "standard_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found: only routine rates are measured in larvae (Rombough & Drader 2009; Pelster & Burggren 1996)"
+      },
+      "Ucrit_m_s": {
+       "value": null,
+       "unit": "m/s",
+       "kind": null,
+       "source": null,
+       "reason": "not usable: larval Ucrit (5-14 dpf) exists only as a plot (Fiaz 2012 Fig. 6B), and the authors state it \"is an overestimation of the maximum sustained swimming speed\" because larvae cling to the tube wall; not digitised",
+       "see": [
+        "fiaz-2012"
+       ]
+      }
+     }
+    },
+    {
+     "key": "stage_025d",
+     "age_days": 25,
+     "dpf": 27,
+     "label": "juvenile onset (Parichy stage J, ~11 mm SL)",
+     "fields": {
+      "SL_m": {
+       "value": 0.01128,
+       "unit": "m",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_025d].SL_m"
+       },
+       "note": "SL = 3.4 + 0.32 (dpf - 2.5) mm: Parichy 2009 measured larval rate 0.32 mm SL/d (individually reared, 28.5 C); linear form assumed"
+      },
+      "mass_kg": {
+       "value": 0.00001295,
+       "unit": "kg",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_025d].mass_kg"
+       },
+       "note": "W_mg = exp(-5.24) SL_mm^3.22 (Beaudouin 2015, fitted on 60 fish 10-50 dpf up to ~15 mm SL)"
+      },
+      "body_density_kg_m3": {
+       "value": [
+        996,
+        1000
+       ],
+       "unit": "kg/m3",
+       "kind": "borrowed",
+       "source": {
+        "id": "lindsey-2010",
+        "cite": "Lindsey BW, Smith FM, Croll RP (2010) From inflation to flotation: contribution of the swimbladder to whole-body density and swimming depth during development of the zebrafish (Danio rerio). Zebrafish 7:85-96",
+        "doi_or_url": "https://doi.org/10.1089/zeb.2009.0616",
+        "locator": "abstract (larval range; see the 3 d and 10 d rows)"
+       },
+       "note": "larval range carried to juvenile onset"
+      },
+      "wetted_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no measured skin or total surface area for any zebrafish stage in fetched sources (Rombough 2002 gives none; Grillitsch 2005 says only qualitatively that total surface area falls as the yolk sac is absorbed). If computed from geometry, label it derived.",
+       "see": [
+        "rombough-2002",
+        "grillitsch-2005"
+       ]
+      },
+      "frontal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: body width not measured at this stage in fetched sources (Parichy 2009 Table 3 gives depth only)"
+      },
+      "pectoral_area_both_m2": {
+       "value": 0.000001104,
+       "unit": "m2",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_025d].parameters.pectoral_area_over_SL2 = 0.008675"
+       },
+       "note": "the anatomy model ASSUMES zebrafish pectoral proportions: no numeric pectoral fin length or area was found (development/zebrafish/allometry.json: Daane 2018 plots it only in Fig. 1A)"
+      },
+      "pectoral_span_m": {
+       "value": 0.003393,
+       "unit": "m",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_025d].parameters.pectoral_span_over_SL = 0.3008"
+       },
+       "note": "assumed in the anatomy model, as above"
+      },
+      "caudal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found for larvae or juveniles; caudal fin rays appear at 4.9 mm SSL (Parichy 2009 Table 4, repo)"
+      },
+      "red_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found"
+      },
+      "white_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found. 1 - red is not used: trout also has ~5% mosaic slow-like fibres inside the white zone (gerry2014)"
+      },
+      "gill_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: ABSTRACT:\"gill surface area\" AND zebrafish (2 hits, neither zebrafish morphometry); TITLE zebrafish AND gill AND (develop* OR morpholog*) (5 hits, none with area); Bigman 2021 dataset has no Danio row. Preussner et al. 2025 bioRxiv 10.1101/2025.06.02.657338 (lifelong zebrafish gill development) may hold it but its full text was not reachable (bioRxiv error 1015; Europe PMC abstract only)",
+       "see": [
+        "bigman-2021-data"
+       ]
+      },
+      "o2_uptake_site": {
+       "value": "gills",
+       "unit": "category",
+       "kind": "measured",
+       "source": {
+        "id": "rombough-2002",
+        "cite": "Rombough P (2002) Gills are needed for ionoregulation before they are needed for O2 uptake in developing zebrafish, Danio rerio. J Exp Biol 205:1787-1794",
+        "doi_or_url": "https://doi.org/10.1242/jeb.205.12.1787",
+        "locator": "Abstract: at 21 dpf \"larvae apparently are so dependent on gills for O2 uptake that they suffocate before the effects of ionoregulatory impairment become apparent\"; Discussion: median survival with gills blocked 1.9 h"
+       },
+       "note": "21 dpf result applied at 27 dpf"
+      },
+      "hb_needed_for_routine_O2": {
+       "value": false,
+       "unit": "boolean",
+       "kind": "measured",
+       "source": {
+        "id": "rombough-drader-2009",
+        "cite": "Rombough P, Drader H (2009) Hemoglobin enhances oxygen uptake in larval zebrafish (Danio rerio) but only under conditions of extreme hypoxia. J Exp Biol 212:778-784",
+        "doi_or_url": "https://doi.org/10.1242/jeb.026575",
+        "locator": "Abstract: \"CO poisoning had no significant impact on rMO2 or Pc at any age\" (5-42 dpf, 28 C); Hb only lowers residual PO2 (Pr 6.7 vs 11.2 torr)"
+       },
+       "note": "matters for hypoxia/altitude perturbations: up to ~6 weeks, normoxic and moderately hypoxic O2 supply does not depend on Hb"
+      },
+      "hb_P50_kPa": {
+       "value": null,
+       "unit": "kPa",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Rombough & Drader 2009 (Discussion): \"The O2 binding affinity of the Hb of zebrafish larvae has not been determined\"; Europe PMC TITLE zebrafish AND (hemoglobin OR haemoglobin OR \"oxygen affinity\" OR \"oxygen binding\"): 10 hits, none reports a P50 for any stage"
+      },
+      "has_swimbladder": {
+       "value": true,
+       "unit": "boolean",
+       "kind": "measured",
+       "source": {
+        "id": "parichy-2009",
+        "cite": "Parichy DM, Elizondo MR, Mills MG, Gordon TN, Engeszer RE (2009) Normal table of postembryonic zebrafish development: staging by externally visible anatomy of the living fish. Dev Dyn 238:2975-3015",
+        "doi_or_url": "https://doi.org/10.1002/dvdy.22113",
+        "locator": "Table 4 (repo): pSB at SSL 3.5 mm, anterior chamber (aSB) appears at SSL 6.0 mm"
+       },
+       "note": "two chambers",
+       "chambers": 2
+      },
+      "routine_metabolic_rate": {
+       "value": 29.4,
+       "unit": "umol O2 g-1 h-1",
+       "kind": "derived",
+       "source": {
+        "id": "rombough-drader-2009",
+        "cite": "Rombough P, Drader H (2009) Hemoglobin enhances oxygen uptake in larval zebrafish (Danio rerio) but only under conditions of extreme hypoxia. J Exp Biol 212:778-784",
+        "doi_or_url": "https://doi.org/10.1242/jeb.026575",
+        "locator": "Eq. 1: rMO2 (nmol O2 h-1) = 46.1 M^0.825, M in mg, R2 0.909, N 109, 5-42 dpf, 28 C (Fig. 3)"
+       },
+       "note": "evaluated at the stage mass 12.9 mg as rMO2/M = 46.1 M^-0.175. MASS BASIS: Rombough weighed Bouin-fixed larvae (mean 160 ug at 7 dpf, 3.5 mg at 40-42 dpf), lighter than the live-mass law used for mass_kg. If fixed mass = f x live mass, the true rate per live gram is f^0.825 x this value (0.47 for f = 0.4): treat as an upper bound. Stage mass is ABOVE the fitted 0.16-3.5 mg (extrapolated), although the age (27 dpf) is inside the fitted ages."
+      },
+      "standard_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found: only routine rates are measured in larvae (Rombough & Drader 2009; Pelster & Burggren 1996)"
+      },
+      "Ucrit_m_s": {
+       "value": null,
+       "unit": "m/s",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no juvenile control Ucrit vs size (Europe PMC: zebrafish AND (larva* OR juvenile*) AND Ucrit, open access: 77 hits, toxicology-dominated)"
+      }
+     }
+    },
+    {
+     "key": "stage_060d",
+     "age_days": 60,
+     "dpf": 62,
+     "label": "juvenile",
+     "fields": {
+      "SL_m": {
+       "value": 0.02199,
+       "unit": "m",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_060d].SL_m"
+       },
+       "note": "von Bertalanffy Linf 45.1 mm SL, K 3.97/yr (FishBase autoctr 4255, lab, unlimited food), t0 set for continuity at stage J"
+      },
+      "mass_kg": {
+       "value": 0.0001112,
+       "unit": "kg",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_060d].mass_kg"
+       },
+       "note": "W_mg = exp(-5.24) SL_mm^3.22 (Beaudouin 2015, fitted on 60 fish 10-50 dpf up to ~15 mm SL); EXTRAPOLATED above the fitted size"
+      },
+      "body_density_kg_m3": {
+       "value": 1010,
+       "unit": "kg/m3",
+       "kind": "borrowed",
+       "source": {
+        "id": "robertson-2008",
+        "cite": "Robertson GN, Lindsey BW, Dumbarton TC, Croll RP, Smith FM (2008) The contribution of the swimbladder to buoyancy in the adult zebrafish (Danio rerio): a morphometric analysis. J Morphol 269:666-673",
+        "doi_or_url": "https://doi.org/10.1002/jmor.10610",
+        "locator": "abstract: \"mean whole-body density was 1.01 +/- 0.09 g cm(-3)\" (fish 0.16-0.73 g)"
+       },
+       "note": "stage mass 0.11 g is just below the measured adult mass range"
+      },
+      "wetted_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no measured skin or total surface area for any zebrafish stage in fetched sources (Rombough 2002 gives none; Grillitsch 2005 says only qualitatively that total surface area falls as the yolk sac is absorbed). If computed from geometry, label it derived.",
+       "see": [
+        "rombough-2002",
+        "grillitsch-2005"
+       ]
+      },
+      "frontal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found at this size; nearest measured depth+width pair is Rombough & Drader 2009 at 40-42 dpf (anchors)"
+      },
+      "pectoral_area_both_m2": {
+       "value": 0.000005455,
+       "unit": "m2",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_060d].parameters.pectoral_area_over_SL2 = 0.01128"
+       },
+       "note": "the anatomy model ASSUMES zebrafish pectoral proportions: no numeric pectoral fin length or area was found (development/zebrafish/allometry.json: Daane 2018 plots it only in Fig. 1A)"
+      },
+      "pectoral_span_m": {
+       "value": 0.007634,
+       "unit": "m",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_060d].parameters.pectoral_span_over_SL = 0.3471"
+       },
+       "note": "assumed in the anatomy model, as above"
+      },
+      "caudal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found for larvae or juveniles; caudal fin rays appear at 4.9 mm SSL (Parichy 2009 Table 4, repo)"
+      },
+      "red_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found"
+      },
+      "white_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found. 1 - red is not used: trout also has ~5% mosaic slow-like fibres inside the white zone (gerry2014)"
+      },
+      "gill_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: ABSTRACT:\"gill surface area\" AND zebrafish (2 hits, neither zebrafish morphometry); TITLE zebrafish AND gill AND (develop* OR morpholog*) (5 hits, none with area); Bigman 2021 dataset has no Danio row. Preussner et al. 2025 bioRxiv 10.1101/2025.06.02.657338 (lifelong zebrafish gill development) may hold it but its full text was not reachable (bioRxiv error 1015; Europe PMC abstract only)",
+       "see": [
+        "bigman-2021-data"
+       ]
+      },
+      "o2_uptake_site": {
+       "value": "gills",
+       "unit": "category",
+       "kind": "borrowed",
+       "source": {
+        "id": "rombough-2002",
+        "cite": "Rombough P (2002) Gills are needed for ionoregulation before they are needed for O2 uptake in developing zebrafish, Danio rerio. J Exp Biol 205:1787-1794",
+        "doi_or_url": "https://doi.org/10.1242/jeb.205.12.1787",
+        "locator": "Abstract (21 dpf result)"
+       },
+       "note": "oldest tested age is 21 dpf; carried forward"
+      },
+      "hb_needed_for_routine_O2": {
+       "value": null,
+       "unit": "boolean",
+       "kind": null,
+       "source": null,
+       "reason": "not tested beyond 42 dpf; no zebrafish source in hand states adult Hb dependence"
+      },
+      "hb_P50_kPa": {
+       "value": null,
+       "unit": "kPa",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Rombough & Drader 2009 (Discussion): \"The O2 binding affinity of the Hb of zebrafish larvae has not been determined\"; Europe PMC TITLE zebrafish AND (hemoglobin OR haemoglobin OR \"oxygen affinity\" OR \"oxygen binding\"): 10 hits, none reports a P50 for any stage"
+      },
+      "has_swimbladder": {
+       "value": true,
+       "unit": "boolean",
+       "kind": "measured",
+       "source": {
+        "id": "parichy-2009",
+        "cite": "Parichy DM, Elizondo MR, Mills MG, Gordon TN, Engeszer RE (2009) Normal table of postembryonic zebrafish development: staging by externally visible anatomy of the living fish. Dev Dyn 238:2975-3015",
+        "doi_or_url": "https://doi.org/10.1002/dvdy.22113",
+        "locator": "Table 4 (repo): pSB at SSL 3.5 mm, anterior chamber (aSB) appears at SSL 6.0 mm"
+       },
+       "note": "two chambers",
+       "chambers": 2
+      },
+      "routine_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no measurement between 42 dpf (Rombough & Drader 2009, <= 3.5 mg) and adults (Plaut & Gordon 1994, 0.27-1.44 g). The larval law extrapolated to 111 mg gives 20 umol/g/h, below the adult range, so neither end can be carried (conflicts.zf_metabolic_scaling)"
+      },
+      "standard_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found: only routine rates are measured in larvae (Rombough & Drader 2009; Pelster & Burggren 1996)"
+      },
+      "Ucrit_m_s": {
+       "value": null,
+       "unit": "m/s",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no juvenile control Ucrit vs size (Europe PMC: zebrafish AND (larva* OR juvenile*) AND Ucrit, open access: 77 hits, toxicology-dominated)"
+      }
+     }
+    },
+    {
+     "key": "stage_180d",
+     "age_days": 180,
+     "dpf": 182,
+     "label": "adult",
+     "fields": {
+      "SL_m": {
+       "value": 0.03883,
+       "unit": "m",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_180d].SL_m"
+       },
+       "note": "von Bertalanffy Linf 45.1 mm SL, K 3.97/yr (FishBase autoctr 4255, lab, unlimited food), t0 set for continuity at stage J"
+      },
+      "mass_kg": {
+       "value": 0.0006943,
+       "unit": "kg",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_180d].mass_kg"
+       },
+       "note": "W_mg = exp(-5.24) SL_mm^3.22 (Beaudouin 2015, fitted on 60 fish 10-50 dpf up to ~15 mm SL); EXTRAPOLATED above the fitted size"
+      },
+      "body_density_kg_m3": {
+       "value": 1010,
+       "unit": "kg/m3",
+       "kind": "measured",
+       "source": {
+        "id": "robertson-2008",
+        "cite": "Robertson GN, Lindsey BW, Dumbarton TC, Croll RP, Smith FM (2008) The contribution of the swimbladder to buoyancy in the adult zebrafish (Danio rerio): a morphometric analysis. J Morphol 269:666-673",
+        "doi_or_url": "https://doi.org/10.1002/jmor.10610",
+        "locator": "abstract: \"mean whole-body density was 1.01 +/- 0.09 g cm(-3)\" over 0.16-0.73 g"
+       },
+       "note": "SD is large (0.09 g/cm3); swim bladder 5.1 +/- 1.4% of body volume"
+      },
+      "wetted_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no measured skin or total surface area for any zebrafish stage in fetched sources (Rombough 2002 gives none; Grillitsch 2005 says only qualitatively that total surface area falls as the yolk sac is absorbed). If computed from geometry, label it derived.",
+       "see": [
+        "rombough-2002",
+        "grillitsch-2005"
+       ]
+      },
+      "frontal_area_m2": {
+       "value": 0.00003798,
+       "unit": "m2",
+       "kind": "derived",
+       "source": {
+        "id": "plaut-2000",
+        "cite": "Plaut I (2000) Effects of fin size on swimming performance, swimming behaviour and routine activity of zebrafish Danio rerio. J Exp Biol 203:813-820",
+        "doi_or_url": "https://doi.org/10.1242/jeb.203.4.813",
+        "locator": "Table 1, wild-type (N = 21): maximum body height 9.3 +/- 1.2 mm, maximum body width 5.2 +/- 1.0 mm (SL 36.0 mm, mass 0.90 g)"
+       },
+       "note": "pi/4 x height x width (elliptical cross-section assumed)"
+      },
+      "pectoral_area_both_m2": {
+       "value": 0.00002412,
+       "unit": "m2",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_180d].parameters.pectoral_area_over_SL2 = 0.016"
+       },
+       "note": "the anatomy model ASSUMES zebrafish pectoral proportions: no numeric pectoral fin length or area was found (development/zebrafish/allometry.json: Daane 2018 plots it only in Fig. 1A)"
+      },
+      "pectoral_span_m": {
+       "value": 0.01631,
+       "unit": "m",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "zebrafish-adult.stages[stage_180d].parameters.pectoral_span_over_SL = 0.42"
+       },
+       "note": "assumed in the anatomy model, as above"
+      },
+      "caudal_area_m2": {
+       "value": 0.0000336,
+       "unit": "m2",
+       "kind": "derived",
+       "source": {
+        "id": "plaut-2000",
+        "cite": "Plaut I (2000) Effects of fin size on swimming performance, swimming behaviour and routine activity of zebrafish Danio rerio. J Exp Biol 203:813-820",
+        "doi_or_url": "https://doi.org/10.1242/jeb.203.4.813",
+        "locator": "Table 1 wild-type: caudal fin height 8.3 +/- 1.9 mm, aspect ratio 2.05 +/- 0.5 (aspect ratio = span^2 / area); the measured mean area itself is not printed"
+       },
+       "note": "area = height^2 / aspect ratio from the group means (a ratio of means, not the mean area)"
+      },
+      "red_muscle_fraction": {
+       "value": 0.05,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": "borrowed",
+       "source": {
+        "id": "repo-physiology",
+        "cite": "DELPHI repo: physiology/ (gills.json, haemoglobin.js, muscle.js, sources.json): adult flying-fish physiology built from non-flying-fish proxies (rummer2015 trout Hb, doi 10.1371/journal.pone.0139477; gerry2014 trout slow-fibre fraction, doi 10.1371/journal.pone.0106030; Bigman 2021 mackerel gill area)",
+        "doi_or_url": "repo:physiology/",
+        "locator": "physiology/muscle.js MUSCLE_PARAMS.red.fraction_of_myotome (gerry2014 Discussion, rainbow trout, secondhand)"
+       },
+       "note": "rainbow trout superficial slow muscle about 5% of the myotome; NOT a zebrafish measurement"
+      },
+      "white_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found. 1 - red is not used: trout also has ~5% mosaic slow-like fibres inside the white zone (gerry2014)"
+      },
+      "gill_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: ABSTRACT:\"gill surface area\" AND zebrafish (2 hits, neither zebrafish morphometry); TITLE zebrafish AND gill AND (develop* OR morpholog*) (5 hits, none with area); Bigman 2021 dataset has no Danio row. Preussner et al. 2025 bioRxiv 10.1101/2025.06.02.657338 (lifelong zebrafish gill development) may hold it but its full text was not reachable (bioRxiv error 1015; Europe PMC abstract only)",
+       "see": [
+        "bigman-2021-data"
+       ]
+      },
+      "o2_uptake_site": {
+       "value": "gills",
+       "unit": "category",
+       "kind": "borrowed",
+       "source": {
+        "id": "rombough-2002",
+        "cite": "Rombough P (2002) Gills are needed for ionoregulation before they are needed for O2 uptake in developing zebrafish, Danio rerio. J Exp Biol 205:1787-1794",
+        "doi_or_url": "https://doi.org/10.1242/jeb.205.12.1787",
+        "locator": "Abstract (21 dpf result)"
+       },
+       "note": "oldest tested age is 21 dpf; carried forward"
+      },
+      "hb_needed_for_routine_O2": {
+       "value": null,
+       "unit": "boolean",
+       "kind": null,
+       "source": null,
+       "reason": "not tested beyond 42 dpf; no zebrafish source in hand states adult Hb dependence"
+      },
+      "hb_P50_kPa": {
+       "value": null,
+       "unit": "kPa",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Rombough & Drader 2009 (Discussion): \"The O2 binding affinity of the Hb of zebrafish larvae has not been determined\"; Europe PMC TITLE zebrafish AND (hemoglobin OR haemoglobin OR \"oxygen affinity\" OR \"oxygen binding\"): 10 hits, none reports a P50 for any stage"
+      },
+      "has_swimbladder": {
+       "value": true,
+       "unit": "boolean",
+       "kind": "measured",
+       "source": {
+        "id": "parichy-2009",
+        "cite": "Parichy DM, Elizondo MR, Mills MG, Gordon TN, Engeszer RE (2009) Normal table of postembryonic zebrafish development: staging by externally visible anatomy of the living fish. Dev Dyn 238:2975-3015",
+        "doi_or_url": "https://doi.org/10.1002/dvdy.22113",
+        "locator": "Table 4 (repo): pSB at SSL 3.5 mm, anterior chamber (aSB) appears at SSL 6.0 mm"
+       },
+       "note": "two chambers",
+       "chambers": 2
+      },
+      "routine_metabolic_rate": {
+       "value": [
+        26.8,
+        68.7
+       ],
+       "unit": "umol O2 g-1 h-1",
+       "kind": "measured",
+       "source": {
+        "id": "plaut-gordon-1994",
+        "cite": "Plaut I, Gordon MS (1994) Swimming metabolism of wild-type and cloned zebrafish Brachydanio rerio. J Exp Biol 194:209-223",
+        "doi_or_url": "https://doi.org/10.1242/jeb.194.1.209",
+        "locator": "Summary: \"Standard metabolic rates were 0.60-1.54 ... ml O2 g-1 h-1\" for WT at 28 C (mean mass 0.84 g); Discussion: \"we assume that the SMR and RMR of zebrafish are virtually equal\""
+       },
+       "note": "converted at 44.62 umol per ml O2 (STPD assumed). Lucas & Priede 1992, quoted in Plaut & Gordon 1994: 0.39 ml g-1 h-1 = 17.4 umol g-1 h-1 at 24 C (groups of six)"
+      },
+      "standard_metabolic_rate": {
+       "value": [
+        26.8,
+        68.7
+       ],
+       "unit": "umol O2 g-1 h-1",
+       "kind": "measured",
+       "source": {
+        "id": "plaut-gordon-1994",
+        "cite": "Plaut I, Gordon MS (1994) Swimming metabolism of wild-type and cloned zebrafish Brachydanio rerio. J Exp Biol 194:209-223",
+        "doi_or_url": "https://doi.org/10.1242/jeb.194.1.209",
+        "locator": "Summary: SMR 0.60-1.54 ml O2 g-1 h-1, WT, 28 C (range over groups)"
+       },
+       "note": "converted at 44.62 umol/ml (STPD assumed)"
+      },
+      "Ucrit_m_s": {
+       "value": 0.56,
+       "unit": "m/s",
+       "kind": "measured",
+       "source": {
+        "id": "plaut-2000",
+        "cite": "Plaut I (2000) Effects of fin size on swimming performance, swimming behaviour and routine activity of zebrafish Danio rerio. J Exp Biol 203:813-820",
+        "doi_or_url": "https://doi.org/10.1242/jeb.203.4.813",
+        "locator": "Summary: wild-type Ucrit \"56.0 +/- 4.8 cm s-1 or 15.5 SL s-1 (mean +/- S.D., N=21)\"; 28 C, Brett-type tunnel, 4 cm/s steps every 5 min; adults 6-10 months, SL 31.8-39.7 mm"
+       },
+       "note": "Ucrit did not depend on SL within adults (Fig. 3; r2 0.03, P 0.51). Conflicting adult values: conflicts.zf_ucrit",
+       "alternatives": [
+        {
+         "value": 0.437,
+         "unit": "m/s",
+         "note": "long-finned",
+         "source": {
+          "id": "plaut-2000",
+          "locator": "Summary: 43.7 +/- 6.8 cm s-1, N=17"
+         }
+        },
+        {
+         "value": 0.238,
+         "unit": "m/s",
+         "note": "pet-store long-fin, 28 C, 1 cm/s per min steps; 22.3 (female) and 23.8 (male) cm/s",
+         "source": {
+          "id": "wakamatsu-2019",
+          "locator": "Results: 28 C: 23.8 +/- 0.7 cm/s, n = 10"
+         }
+        }
+       ]
+      }
+     }
+    }
+   ],
+   "allometries": [
+    {
+     "y": "routine O2 uptake rMO2",
+     "unit_y": "nmol O2 h-1 per fish",
+     "x": "body mass M",
+     "unit_x": "mg (Bouin-fixed wet mass)",
+     "a": 46.1,
+     "b": 0.825,
+     "r2": 0.909,
+     "n": 109,
+     "valid": {
+      "age_dpf": [
+       5,
+       42
+      ],
+      "mass_mg": [
+       0.16,
+       3.5
+      ],
+      "temperature_C": 28
+     },
+     "kind": "measured",
+     "source": {
+      "id": "rombough-drader-2009",
+      "cite": "Rombough P, Drader H (2009) Hemoglobin enhances oxygen uptake in larval zebrafish (Danio rerio) but only under conditions of extreme hypoxia. J Exp Biol 212:778-784",
+      "doi_or_url": "https://doi.org/10.1242/jeb.026575",
+      "locator": "Eq. 1 and Fig. 3"
+     },
+     "note": "control and CO-treated larvae pooled (slopes not different)"
+    },
+    {
+     "y": "wet mass W",
+     "unit_y": "mg",
+     "x": "SL",
+     "unit_x": "mm",
+     "a": 0.0053,
+     "b": 3.22,
+     "b_ci95": [
+      2.97,
+      3.46
+     ],
+     "valid": {
+      "age_dpf": [
+       10,
+       50
+      ],
+      "SL_mm": [
+       3.1,
+       15
+      ]
+     },
+     "kind": "measured",
+     "source": {
+      "id": "beaudouin-2015",
+      "cite": "Beaudouin R, Goussen B, Piccini B, Augustine S, Devillers J, Brion F, Pery ARR (2015) An individual-based model of zebrafish population dynamics accounting for energy dynamics. PLoS ONE 10:e0125841",
+      "doi_or_url": "https://doi.org/10.1371/journal.pone.0125841",
+      "locator": "Results, Juvenile allometry: slope 3.22 (2.97; 3.46), intercept -5.24 (-5.83; -4.65)"
+     },
+     "note": "already the repo law (development/zebrafish/allometry.json); natural log by inference (the paper does not state the base); lower SL bound given by the authors as \"the hatching length\""
+    }
+   ],
+   "anchors": [
+    {
+     "dpf": 7,
+     "mass_mg": 0.16,
+     "rMO2_nmol_h": 9,
+     "mass_basis": "Bouin-fixed",
+     "source": {
+      "id": "rombough-drader-2009",
+      "cite": "Rombough P, Drader H (2009) Hemoglobin enhances oxygen uptake in larval zebrafish (Danio rerio) but only under conditions of extreme hypoxia. J Exp Biol 212:778-784",
+      "doi_or_url": "https://doi.org/10.1242/jeb.026575",
+      "locator": "Results"
+     }
+    },
+    {
+     "dpf": [
+      40,
+      42
+     ],
+     "mass_mg": 3.5,
+     "TL_mm": 14.1,
+     "depth_mm": 1.4,
+     "width_mm": 1,
+     "rMO2_nmol_h": 125,
+     "mass_basis": "Bouin-fixed",
+     "source": {
+      "id": "rombough-drader-2009",
+      "cite": "Rombough P, Drader H (2009) Hemoglobin enhances oxygen uptake in larval zebrafish (Danio rerio) but only under conditions of extreme hypoxia. J Exp Biol 212:778-784",
+      "doi_or_url": "https://doi.org/10.1242/jeb.026575",
+      "locator": "Results"
+     }
+    },
+    {
+     "dpf": "~4-6 (yolk-sac group, training days 1-2)",
+     "mass_mg": [
+      0.331,
+      0.338
+     ],
+     "length_mm": [
+      3.9,
+      4
+     ],
+     "mass_basis": "live wet; length type not stated",
+     "source": {
+      "id": "bagatto-2001",
+      "cite": "Bagatto B, Pelster B, Burggren WW (2001) Growth and metabolism of larval zebrafish: effects of swim training. J Exp Biol 204:4335-4343",
+      "doi_or_url": "https://doi.org/10.1242/jeb.204.24.4335",
+      "locator": "Table 1, control"
+     }
+    },
+    {
+     "dpf": "~11-15 (swim-up group)",
+     "mass_mg": [
+      0.397,
+      0.488
+     ],
+     "length_mm": [
+      4.2,
+      4.6
+     ],
+     "mass_basis": "live wet",
+     "source": {
+      "id": "bagatto-2001",
+      "cite": "Bagatto B, Pelster B, Burggren WW (2001) Growth and metabolism of larval zebrafish: effects of swim training. J Exp Biol 204:4335-4343",
+      "doi_or_url": "https://doi.org/10.1242/jeb.204.24.4335",
+      "locator": "Table 1, control"
+     }
+    },
+    {
+     "dpf": "~26-32 (free-swimming group)",
+     "mass_mg": [
+      1.38,
+      3.69
+     ],
+     "length_mm": [
+      6.4,
+      8.2
+     ],
+     "mass_basis": "live wet",
+     "source": {
+      "id": "bagatto-2001",
+      "cite": "Bagatto B, Pelster B, Burggren WW (2001) Growth and metabolism of larval zebrafish: effects of swim training. J Exp Biol 204:4335-4343",
+      "doi_or_url": "https://doi.org/10.1242/jeb.204.24.4335",
+      "locator": "Table 1, control"
+     }
+    },
+    {
+     "stage": "adult, 6-10 months",
+     "SL_mm": 36,
+     "mass_g": 0.9,
+     "body_height_mm": 9.3,
+     "body_width_mm": 5.2,
+     "caudal_height_mm": 8.3,
+     "caudal_aspect_ratio": 2.05,
+     "source": {
+      "id": "plaut-2000",
+      "cite": "Plaut I (2000) Effects of fin size on swimming performance, swimming behaviour and routine activity of zebrafish Danio rerio. J Exp Biol 203:813-820",
+      "doi_or_url": "https://doi.org/10.1242/jeb.203.4.813",
+      "locator": "Table 1, wild-type"
+     }
+    },
+    {
+     "stage": "adult (pet-store WT)",
+     "SL_mm": 33.9,
+     "mass_g": 0.84,
+     "source": {
+      "id": "plaut-gordon-1994",
+      "cite": "Plaut I, Gordon MS (1994) Swimming metabolism of wild-type and cloned zebrafish Brachydanio rerio. J Exp Biol 194:209-223",
+      "doi_or_url": "https://doi.org/10.1242/jeb.194.1.209",
+      "locator": "Materials and methods"
+     }
+    }
+   ]
+  },
+  "flying_fish": {
+   "taxon": "Exocoetidae (growth: Hirundichthys affinis; fins: Daane 2021 species and Cypselurus hiraii)",
+   "ncbi_taxid": null,
+   "growth_reference": "development/growth.json, development/allometry.json, development/stages.json (not duplicated)",
+   "size_thresholds_SL_m": [
+    {
+     "event": "smallest measured flying-fish fin specimen (below this, fin values are assumed)",
+     "SL_m": 0.0168,
+     "source": {
+      "id": "daane-2021",
+      "cite": "Daane JM et al. (2021) flying-fish fin measurements, Data S1A (MCZ museum specimens), as fitted in development/allometry.json",
+      "doi_or_url": "repo:development/allometry.json (raw: genotype/cache/daane2021_data_s1A_fin_measurements.csv)",
+      "locator": "smallest row, H. rondeleti"
+     }
+    }
+   ],
+   "stages": [
+    {
+     "key": "stage_000d",
+     "age_days": 0,
+     "label": "hatching",
+     "fields": {
+      "SL_m": {
+       "value": 0.004,
+       "unit": "m",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_000d].SL_m"
+       },
+       "note": "ASSUMED linear ramp from an assumed 4 mm hatch length (no flying-fish hatch length found: development/growth.json early_life.hatch_size)"
+      },
+      "mass_kg": {
+       "value": 9.242e-7,
+       "unit": "kg",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_000d].mass_kg"
+       },
+       "note": "W_g = 0.0116 FL_cm^3.01 (H. affinis, Barbados, FishBase, reference unverified); input SL is assumed and the adult length-weight law is applied far below its range. Davenport 1992 (E. obtusirostris) gives b = 2.981."
+      },
+      "body_density_kg_m3": {
+       "value": null,
+       "unit": "kg/m3",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "wetted_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no flying-fish body surface area; Park & Choi 2010 give body planform area (A3), not wetted area (body_planform_area_m2 at the adult row)"
+      },
+      "frontal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no body depth x width for flying fish at any stage (development/stages.json calls body-depth ontogeny the largest gap)"
+      },
+      "pectoral_area_both_m2": {
+       "value": 6.78e-8,
+       "unit": "m2",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_000d].parameters.pectoral_area_over_SL2 = 0.004237"
+       },
+       "note": "ASSUMED: fin-length ratio ramps linearly from an assumed 0.10 SL at hatching to the Daane 2021 fit at 1.68 cm SL; no flying-fish fin data below 1.68 cm SL"
+      },
+      "pectoral_span_m": {
+       "value": 0.0007231,
+       "unit": "m",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_000d].parameters.pectoral_span_over_SL = 0.1808"
+       },
+       "note": "ASSUMED: fin-length ratio ramps linearly from an assumed 0.10 SL at hatching to the Daane 2021 fit at 1.68 cm SL; no flying-fish fin data below 1.68 cm SL"
+      },
+      "pelvic_len_over_SL": {
+       "value": 0.1,
+       "unit": "fraction of SL",
+       "kind": "derived",
+       "source": {
+        "id": "hunte-1995",
+        "cite": "Hunte et al. (1995) flyingfish larvae in neuston tows, as quoted in development/allometry.json pelvic_fin_length.fetched_corroboration",
+        "doi_or_url": "repo:development/allometry.json",
+        "locator": "H. affinis larvae: \"greatly enlarged, translucent pectoral and pelvic fins of approximately equal size\" (p. 26)"
+       },
+       "note": "set equal to the (assumed) pectoral ratio of this stage"
+      },
+      "caudal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no flying-fish caudal fin area at any size (Daane 2021 Data S1A has pectoral and pelvic lengths only)"
+      },
+      "red_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found"
+      },
+      "white_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found"
+      },
+      "gill_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found at any size; the adult mackerel proxy is not carried down because gill area scales below isometry and small larvae rely on skin first (zebrafish: Rombough 2002)"
+      },
+      "hb_P50_kPa": {
+       "value": null,
+       "unit": "kPa",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "has_swimbladder": {
+       "value": null,
+       "unit": "boolean",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage. The anatomy model draws a swim bladder (shrink.swim_bladder) without a source."
+      },
+      "routine_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "standard_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "Ucrit_m_s": {
+       "value": null,
+       "unit": "m/s",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage; development/stages.json first_gliding: no juvenile glide or swim speed found"
+      }
+     }
+    },
+    {
+     "key": "stage_003d",
+     "age_days": 3,
+     "label": "yolk-sac larva",
+     "fields": {
+      "SL_m": {
+       "value": 0.00706,
+       "unit": "m",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_003d].SL_m"
+       },
+       "note": "ASSUMED linear ramp from an assumed 4 mm hatch length (no flying-fish hatch length found: development/growth.json early_life.hatch_size)"
+      },
+      "mass_kg": {
+       "value": 0.000005114,
+       "unit": "kg",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_003d].mass_kg"
+       },
+       "note": "W_g = 0.0116 FL_cm^3.01 (H. affinis, Barbados, FishBase, reference unverified); input SL is assumed and the adult length-weight law is applied far below its range. Davenport 1992 (E. obtusirostris) gives b = 2.981."
+      },
+      "body_density_kg_m3": {
+       "value": null,
+       "unit": "kg/m3",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "wetted_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no flying-fish body surface area; Park & Choi 2010 give body planform area (A3), not wetted area (body_planform_area_m2 at the adult row)"
+      },
+      "frontal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no body depth x width for flying fish at any stage (development/stages.json calls body-depth ontogeny the largest gap)"
+      },
+      "pectoral_area_both_m2": {
+       "value": 9.209e-7,
+       "unit": "m2",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_003d].parameters.pectoral_area_over_SL2 = 0.01847"
+       },
+       "note": "ASSUMED: fin-length ratio ramps linearly from an assumed 0.10 SL at hatching to the Daane 2021 fit at 1.68 cm SL; no flying-fish fin data below 1.68 cm SL"
+      },
+      "pectoral_span_m": {
+       "value": 0.002849,
+       "unit": "m",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_003d].parameters.pectoral_span_over_SL = 0.4035"
+       },
+       "note": "ASSUMED: fin-length ratio ramps linearly from an assumed 0.10 SL at hatching to the Daane 2021 fit at 1.68 cm SL; no flying-fish fin data below 1.68 cm SL"
+      },
+      "pelvic_len_over_SL": {
+       "value": 0.2232,
+       "unit": "fraction of SL",
+       "kind": "derived",
+       "source": {
+        "id": "hunte-1995",
+        "cite": "Hunte et al. (1995) flyingfish larvae in neuston tows, as quoted in development/allometry.json pelvic_fin_length.fetched_corroboration",
+        "doi_or_url": "repo:development/allometry.json",
+        "locator": "H. affinis larvae: \"greatly enlarged, translucent pectoral and pelvic fins of approximately equal size\" (p. 26)"
+       },
+       "note": "set equal to the (assumed) pectoral ratio of this stage"
+      },
+      "caudal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no flying-fish caudal fin area at any size (Daane 2021 Data S1A has pectoral and pelvic lengths only)"
+      },
+      "red_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found"
+      },
+      "white_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found"
+      },
+      "gill_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found at any size; the adult mackerel proxy is not carried down because gill area scales below isometry and small larvae rely on skin first (zebrafish: Rombough 2002)"
+      },
+      "hb_P50_kPa": {
+       "value": null,
+       "unit": "kPa",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "has_swimbladder": {
+       "value": null,
+       "unit": "boolean",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage. The anatomy model draws a swim bladder (shrink.swim_bladder) without a source."
+      },
+      "routine_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "standard_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "Ucrit_m_s": {
+       "value": null,
+       "unit": "m/s",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage; development/stages.json first_gliding: no juvenile glide or swim speed found"
+      }
+     }
+    },
+    {
+     "key": "stage_010d",
+     "age_days": 10,
+     "label": "larva",
+     "fields": {
+      "SL_m": {
+       "value": 0.01421,
+       "unit": "m",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_010d].SL_m"
+       },
+       "note": "ASSUMED linear ramp from an assumed 4 mm hatch length (no flying-fish hatch length found: development/growth.json early_life.hatch_size)"
+      },
+      "mass_kg": {
+       "value": 0.00004192,
+       "unit": "kg",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_010d].mass_kg"
+       },
+       "note": "W_g = 0.0116 FL_cm^3.01 (H. affinis, Barbados, FishBase, reference unverified); input SL is assumed and the adult length-weight law is applied far below its range. Davenport 1992 (E. obtusirostris) gives b = 2.981."
+      },
+      "body_density_kg_m3": {
+       "value": null,
+       "unit": "kg/m3",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "wetted_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no flying-fish body surface area; Park & Choi 2010 give body planform area (A3), not wetted area (body_planform_area_m2 at the adult row)"
+      },
+      "frontal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no body depth x width for flying fish at any stage (development/stages.json calls body-depth ontogeny the largest gap)"
+      },
+      "pectoral_area_both_m2": {
+       "value": 0.00001702,
+       "unit": "m2",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_010d].parameters.pectoral_area_over_SL2 = 0.08431"
+       },
+       "note": "ASSUMED: fin-length ratio ramps linearly from an assumed 0.10 SL at hatching to the Daane 2021 fit at 1.68 cm SL; no flying-fish fin data below 1.68 cm SL"
+      },
+      "pectoral_span_m": {
+       "value": 0.01312,
+       "unit": "m",
+       "kind": "assumed",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_010d].parameters.pectoral_span_over_SL = 0.9232"
+       },
+       "note": "ASSUMED: fin-length ratio ramps linearly from an assumed 0.10 SL at hatching to the Daane 2021 fit at 1.68 cm SL; no flying-fish fin data below 1.68 cm SL"
+      },
+      "pelvic_len_over_SL": {
+       "value": 0.5107,
+       "unit": "fraction of SL",
+       "kind": "derived",
+       "source": {
+        "id": "hunte-1995",
+        "cite": "Hunte et al. (1995) flyingfish larvae in neuston tows, as quoted in development/allometry.json pelvic_fin_length.fetched_corroboration",
+        "doi_or_url": "repo:development/allometry.json",
+        "locator": "H. affinis larvae: \"greatly enlarged, translucent pectoral and pelvic fins of approximately equal size\" (p. 26)"
+       },
+       "note": "set equal to the (assumed) pectoral ratio of this stage"
+      },
+      "caudal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no flying-fish caudal fin area at any size (Daane 2021 Data S1A has pectoral and pelvic lengths only)"
+      },
+      "red_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found"
+      },
+      "white_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found"
+      },
+      "gill_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found at any size; the adult mackerel proxy is not carried down because gill area scales below isometry and small larvae rely on skin first (zebrafish: Rombough 2002)"
+      },
+      "hb_P50_kPa": {
+       "value": null,
+       "unit": "kPa",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "has_swimbladder": {
+       "value": null,
+       "unit": "boolean",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage. The anatomy model draws a swim bladder (shrink.swim_bladder) without a source."
+      },
+      "routine_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "standard_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "Ucrit_m_s": {
+       "value": null,
+       "unit": "m/s",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage; development/stages.json first_gliding: no juvenile glide or swim speed found"
+      }
+     }
+    },
+    {
+     "key": "stage_030d",
+     "age_days": 30,
+     "label": "juvenile",
+     "fields": {
+      "SL_m": {
+       "value": 0.04356,
+       "unit": "m",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_030d].SL_m"
+       },
+       "note": "von Bertalanffy FL = 23.3 (1 - exp(-3.12 (t - 0.01))) cm, H. affinis, Barbados (Oxenford 1994 via FishBase; flagged questionable there) x SL/FL 0.927 (FishBase, unverified)"
+      },
+      "mass_kg": {
+       "value": 0.001222,
+       "unit": "kg",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_030d].mass_kg"
+       },
+       "note": "W_g = 0.0116 FL_cm^3.01 (H. affinis, Barbados, FishBase, reference unverified). Davenport 1992 (E. obtusirostris) gives b = 2.981."
+      },
+      "body_density_kg_m3": {
+       "value": null,
+       "unit": "kg/m3",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "wetted_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no flying-fish body surface area; Park & Choi 2010 give body planform area (A3), not wetted area (body_planform_area_m2 at the adult row)"
+      },
+      "frontal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no body depth x width for flying fish at any stage (development/stages.json calls body-depth ontogeny the largest gap)"
+      },
+      "pectoral_area_both_m2": {
+       "value": 0.000249,
+       "unit": "m2",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_030d].parameters.pectoral_area_over_SL2 = 0.1312"
+       },
+       "note": "fin length from the Daane 2021 pooled fit (measured, 1.68-24 cm SL); span carried linearly and area as length^1.834 (Davenport 1992 exponent, abstract) from the Park & Choi adult: an assumed transfer, not measured at this size"
+      },
+      "pectoral_span_m": {
+       "value": 0.05119,
+       "unit": "m",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_030d].parameters.pectoral_span_over_SL = 1.175"
+       },
+       "note": "fin length from the Daane 2021 pooled fit (measured, 1.68-24 cm SL); span carried linearly and area as length^1.834 (Davenport 1992 exponent, abstract) from the Park & Choi adult: an assumed transfer, not measured at this size"
+      },
+      "pelvic_len_over_SL": {
+       "value": 0.374,
+       "unit": "fraction of SL",
+       "kind": "measured",
+       "source": {
+        "id": "daane-2021",
+        "cite": "Daane JM et al. (2021) flying-fish fin measurements, Data S1A (MCZ museum specimens), as fitted in development/allometry.json",
+        "doi_or_url": "repo:development/allometry.json (raw: genotype/cache/daane2021_data_s1A_fin_measurements.csv)",
+        "locator": "development/allometry.json pelvic_fin_length: Hirundichthys rondeleti mean pelvic/SL below 5 cm SL (n = 7)"
+       },
+       "note": "four-winger congener of H. affinis; the anatomy model uses a schematic 0.22 here instead",
+       "species": "Hirundichthys rondeleti"
+      },
+      "caudal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no flying-fish caudal fin area at any size (Daane 2021 Data S1A has pectoral and pelvic lengths only)"
+      },
+      "red_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found"
+      },
+      "white_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found"
+      },
+      "gill_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found at any size; the adult mackerel proxy is not carried down because gill area scales below isometry and small larvae rely on skin first (zebrafish: Rombough 2002)"
+      },
+      "hb_P50_kPa": {
+       "value": null,
+       "unit": "kPa",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "has_swimbladder": {
+       "value": null,
+       "unit": "boolean",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage. The anatomy model draws a swim bladder (shrink.swim_bladder) without a source."
+      },
+      "routine_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "standard_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "Ucrit_m_s": {
+       "value": null,
+       "unit": "m/s",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage; development/stages.json first_gliding: no juvenile glide or swim speed found"
+      }
+     }
+    },
+    {
+     "key": "stage_090d",
+     "age_days": 90,
+     "label": "juvenile",
+     "fields": {
+      "SL_m": {
+       "value": 0.11274,
+       "unit": "m",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_090d].SL_m"
+       },
+       "note": "von Bertalanffy FL = 23.3 (1 - exp(-3.12 (t - 0.01))) cm, H. affinis, Barbados (Oxenford 1994 via FishBase; flagged questionable there) x SL/FL 0.927 (FishBase, unverified)"
+      },
+      "mass_kg": {
+       "value": 0.0214,
+       "unit": "kg",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_090d].mass_kg"
+       },
+       "note": "W_g = 0.0116 FL_cm^3.01 (H. affinis, Barbados, FishBase, reference unverified). Davenport 1992 (E. obtusirostris) gives b = 2.981."
+      },
+      "body_density_kg_m3": {
+       "value": null,
+       "unit": "kg/m3",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "wetted_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no flying-fish body surface area; Park & Choi 2010 give body planform area (A3), not wetted area (body_planform_area_m2 at the adult row)"
+      },
+      "frontal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no body depth x width for flying fish at any stage (development/stages.json calls body-depth ontogeny the largest gap)"
+      },
+      "pectoral_area_both_m2": {
+       "value": 0.001845,
+       "unit": "m2",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_090d].parameters.pectoral_area_over_SL2 = 0.1452"
+       },
+       "note": "fin length from the Daane 2021 pooled fit (measured, 1.68-24 cm SL); span carried linearly and area as length^1.834 (Davenport 1992 exponent, abstract) from the Park & Choi adult: an assumed transfer, not measured at this size"
+      },
+      "pectoral_span_m": {
+       "value": 0.14,
+       "unit": "m",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_090d].parameters.pectoral_span_over_SL = 1.242"
+       },
+       "note": "fin length from the Daane 2021 pooled fit (measured, 1.68-24 cm SL); span carried linearly and area as length^1.834 (Davenport 1992 exponent, abstract) from the Park & Choi adult: an assumed transfer, not measured at this size"
+      },
+      "pelvic_len_over_SL": {
+       "value": 0.297,
+       "unit": "fraction of SL",
+       "kind": "measured",
+       "source": {
+        "id": "daane-2021",
+        "cite": "Daane JM et al. (2021) flying-fish fin measurements, Data S1A (MCZ museum specimens), as fitted in development/allometry.json",
+        "doi_or_url": "repo:development/allometry.json (raw: genotype/cache/daane2021_data_s1A_fin_measurements.csv)",
+        "locator": "development/allometry.json pelvic_fin_length: Hirundichthys rondeleti mean pelvic/SL at >= 10 cm SL (n = 6)"
+       },
+       "note": "four-winger congener of H. affinis; the anatomy model uses a schematic 0.22 here instead",
+       "species": "Hirundichthys rondeleti"
+      },
+      "caudal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no flying-fish caudal fin area at any size (Daane 2021 Data S1A has pectoral and pelvic lengths only)"
+      },
+      "red_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found"
+      },
+      "white_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found"
+      },
+      "gill_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found at any size; the adult mackerel proxy is not carried down because gill area scales below isometry and small larvae rely on skin first (zebrafish: Rombough 2002)"
+      },
+      "hb_P50_kPa": {
+       "value": null,
+       "unit": "kPa",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "has_swimbladder": {
+       "value": null,
+       "unit": "boolean",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage. The anatomy model draws a swim bladder (shrink.swim_bladder) without a source."
+      },
+      "routine_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "standard_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "Ucrit_m_s": {
+       "value": null,
+       "unit": "m/s",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage; development/stages.json first_gliding: no juvenile glide or swim speed found"
+      }
+     }
+    },
+    {
+     "key": "stage_365d",
+     "age_days": 365,
+     "label": "adult",
+     "fields": {
+      "SL_m": {
+       "value": 0.20615,
+       "unit": "m",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_365d].SL_m"
+       },
+       "note": "von Bertalanffy FL = 23.3 (1 - exp(-3.12 (t - 0.01))) cm, H. affinis, Barbados (Oxenford 1994 via FishBase; flagged questionable there) x SL/FL 0.927 (FishBase, unverified)"
+      },
+      "mass_kg": {
+       "value": 0.1316,
+       "unit": "kg",
+       "kind": "derived",
+       "source": {
+        "id": "repo-anatomy-stages",
+        "cite": "DELPHI repo: anatomy-model/parametric/stages.json (stage SL, mass and fin proportions, generated from development/trajectory.mjs and development/zebrafish/trajectory.mjs)",
+        "doi_or_url": "repo:anatomy-model/parametric/stages.json",
+        "locator": "flying-fish.stages[stage_365d].mass_kg"
+       },
+       "note": "W_g = 0.0116 FL_cm^3.01 (H. affinis, Barbados, FishBase, reference unverified). Davenport 1992 (E. obtusirostris) gives b = 2.981."
+      },
+      "body_density_kg_m3": {
+       "value": null,
+       "unit": "kg/m3",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "wetted_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no flying-fish body surface area; Park & Choi 2010 give body planform area (A3), not wetted area (body_planform_area_m2 at the adult row)"
+      },
+      "frontal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no body depth x width for flying fish at any stage (development/stages.json calls body-depth ontogeny the largest gap)"
+      },
+      "pectoral_area_both_m2": {
+       "value": 0.006377,
+       "unit": "m2",
+       "kind": "measured",
+       "source": {
+        "id": "park-choi-2010",
+        "cite": "Park H, Choi H (2010) Aerodynamic characteristics of flying fish in gliding flight. J Exp Biol 213:3269-3279",
+        "doi_or_url": "https://doi.org/10.1242/jeb.046052",
+        "locator": "Table 1 model L3 via repo physics/glide-data.csv: pectoral fin area A1 = 0.006377 m2 (both fins), Cypselurus hiraii, SL 0.203 m, 0.06 kg"
+       },
+       "note": "different genus and lighter (0.06 kg) than the H. affinis growth-curve adult (SL 0.20615 m, 0.1316 kg); the anatomy model gives 0.006577 m2 at this SL by scaling this specimen",
+       "species": "Cypselurus hiraii"
+      },
+      "pectoral_span_m": {
+       "value": 0.261,
+       "unit": "m",
+       "kind": "measured",
+       "source": {
+        "id": "park-choi-2010",
+        "cite": "Park H, Choi H (2010) Aerodynamic characteristics of flying fish in gliding flight. J Exp Biol 213:3269-3279",
+        "doi_or_url": "https://doi.org/10.1242/jeb.046052",
+        "locator": "Table 1 model L3 (repo physics/glide-data.csv): pectoral_fin_span_m 0.261"
+       },
+       "note": "tip-to-tip span of both fins on a stuffed specimen (dihedral set during stuffing)",
+       "species": "Cypselurus hiraii"
+      },
+      "pelvic_len_over_SL": {
+       "value": 0.297,
+       "unit": "fraction of SL",
+       "kind": "measured",
+       "source": {
+        "id": "daane-2021",
+        "cite": "Daane JM et al. (2021) flying-fish fin measurements, Data S1A (MCZ museum specimens), as fitted in development/allometry.json",
+        "doi_or_url": "repo:development/allometry.json (raw: genotype/cache/daane2021_data_s1A_fin_measurements.csv)",
+        "locator": "development/allometry.json pelvic_fin_length: Hirundichthys rondeleti mean pelvic/SL at >= 10 cm SL (n = 6)"
+       },
+       "note": "four-winger congener of H. affinis; the anatomy model uses a schematic 0.22 here instead",
+       "species": "Hirundichthys rondeleti"
+      },
+      "body_planform_area_m2": {
+       "value": 0.004474,
+       "unit": "m2",
+       "kind": "measured",
+       "source": {
+        "id": "park-choi-2010",
+        "cite": "Park H, Choi H (2010) Aerodynamic characteristics of flying fish in gliding flight. J Exp Biol 213:3269-3279",
+        "doi_or_url": "https://doi.org/10.1242/jeb.046052",
+        "locator": "Table 1 model L3 (repo physics/glide-data.csv): body_planform_area_m2 (A3)"
+       },
+       "species": "Cypselurus hiraii"
+      },
+      "caudal_area_m2": {
+       "value": null,
+       "unit": "m2",
+       "kind": null,
+       "source": null,
+       "reason": "not found: no flying-fish caudal fin area at any size (Daane 2021 Data S1A has pectoral and pelvic lengths only)"
+      },
+      "red_muscle_fraction": {
+       "value": 0.05,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": "borrowed",
+       "source": {
+        "id": "repo-physiology",
+        "cite": "DELPHI repo: physiology/ (gills.json, haemoglobin.js, muscle.js, sources.json): adult flying-fish physiology built from non-flying-fish proxies (rummer2015 trout Hb, doi 10.1371/journal.pone.0139477; gerry2014 trout slow-fibre fraction, doi 10.1371/journal.pone.0106030; Bigman 2021 mackerel gill area)",
+        "doi_or_url": "repo:physiology/",
+        "locator": "physiology/muscle.js MUSCLE_PARAMS.red.fraction_of_myotome (gerry2014, rainbow trout, secondhand)"
+       },
+       "note": "trout value; a burst-launching flying fish may differ in either direction"
+      },
+      "white_muscle_fraction": {
+       "value": null,
+       "unit": "fraction of myotomal muscle mass",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: zebrafish AND (\"red muscle\" OR \"slow muscle\") AND (proportion OR percent) AND myotome, open access (51 hits, none gives a fraction); no flying-fish fibre-type data found"
+      },
+      "gill_area_m2": {
+       "value": 0.1524,
+       "unit": "m2",
+       "kind": "borrowed",
+       "source": {
+        "id": "repo-physiology",
+        "cite": "DELPHI repo: physiology/ (gills.json, haemoglobin.js, muscle.js, sources.json): adult flying-fish physiology built from non-flying-fish proxies (rummer2015 trout Hb, doi 10.1371/journal.pone.0139477; gerry2014 trout slow-fibre fraction, doi 10.1371/journal.pone.0106030; Bigman 2021 mackerel gill area)",
+        "doi_or_url": "repo:physiology/",
+        "locator": "physiology/gills.json gill_area_per_body_mass: Scomber scombrus 1158 mm2/g (Gray 1954 via Bigman 2021) x stage mass"
+       },
+       "note": "Atlantic mackerel area per gram applied to the 0.13 kg adult; Bigman 2021 has no Exocoetidae row"
+      },
+      "hb_P50_kPa": {
+       "value": 3.306,
+       "unit": "kPa",
+       "kind": "borrowed",
+       "source": {
+        "id": "repo-physiology",
+        "cite": "DELPHI repo: physiology/ (gills.json, haemoglobin.js, muscle.js, sources.json): adult flying-fish physiology built from non-flying-fish proxies (rummer2015 trout Hb, doi 10.1371/journal.pone.0139477; gerry2014 trout slow-fibre fraction, doi 10.1371/journal.pone.0106030; Bigman 2021 mackerel gill area)",
+        "doi_or_url": "repo:physiology/",
+        "locator": "physiology/sources.json rummer2015 Table 1: rainbow trout P50 24.8 mmHg"
+       },
+       "note": "trout, at the source temperature, not 25 C"
+      },
+      "has_swimbladder": {
+       "value": null,
+       "unit": "boolean",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage. The anatomy model draws a swim bladder (shrink.swim_bladder) without a source."
+      },
+      "routine_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "standard_metabolic_rate": {
+       "value": null,
+       "unit": "umol O2 g-1 h-1",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage"
+      },
+      "Ucrit_m_s": {
+       "value": null,
+       "unit": "m/s",
+       "kind": null,
+       "source": null,
+       "reason": "not found. Europe PMC: all 71 records with flying fish / flyingfish / Exocoetidae / Cheilopogon / Cypselurus / Hirundichthys / Exocoetus / Parexocoetus in the title, plus (flying fish OR Exocoetidae) AND (swim bladder OR metabolic rate OR oxygen consumption OR gill area OR red muscle): no physiological measurement on any life stage; development/stages.json first_gliding: no juvenile glide or swim speed found"
+      }
+     }
+    }
+   ],
+   "allometries": [
+    {
+     "y": "pectoral fin length",
+     "unit_y": "cm",
+     "x": "SL",
+     "unit_x": "cm",
+     "a": 0.5969,
+     "b": 1.0579,
+     "se_b": 0.02,
+     "valid": {
+      "SL_cm": [
+       1.68,
+       24
+      ]
+     },
+     "kind": "measured",
+     "source": {
+      "id": "daane-2021",
+      "cite": "Daane JM et al. (2021) flying-fish fin measurements, Data S1A (MCZ museum specimens), as fitted in development/allometry.json",
+      "doi_or_url": "repo:development/allometry.json (raw: genotype/cache/daane2021_data_s1A_fin_measurements.csv)",
+      "locator": "development/allometry.json pectoral_fin_length.fit_power_law_pooled (n = 49, 3 species)"
+     }
+    },
+    {
+     "y": "lateral fin area",
+     "unit_y": "relative",
+     "x": "SL",
+     "unit_x": "any",
+     "a": null,
+     "b": 1.834,
+     "valid": {
+      "species": "Exocoetus obtusirostris",
+      "SL": "range not in the abstract"
+     },
+     "kind": "measured",
+     "source": {
+      "id": "davenport-1992",
+      "cite": "Davenport J (1992) Wing-loading, stability and morphometric relationships in flying fish (Exocoetidae) from the north-eastern Atlantic. J Mar Biol Assoc UK 72:25-39",
+      "doi_or_url": "https://doi.org/10.1017/S0025315400048761",
+      "locator": "abstract (via physics/allometry.json)"
+     },
+     "note": "exponent only; intercept not in the abstract"
+    },
+    {
+     "y": "body mass",
+     "unit_y": "relative",
+     "x": "SL",
+     "unit_x": "any",
+     "a": null,
+     "b": 2.981,
+     "valid": {
+      "species": "Exocoetus obtusirostris"
+     },
+     "kind": "measured",
+     "source": {
+      "id": "davenport-1992",
+      "cite": "Davenport J (1992) Wing-loading, stability and morphometric relationships in flying fish (Exocoetidae) from the north-eastern Atlantic. J Mar Biol Assoc UK 72:25-39",
+      "doi_or_url": "https://doi.org/10.1017/S0025315400048761",
+      "locator": "abstract"
+     }
+    },
+    {
+     "y": "wing loading",
+     "unit_y": "relative",
+     "x": "SL",
+     "unit_x": "any",
+     "a": null,
+     "b": 1.236,
+     "valid": {
+      "species": "Exocoetus obtusirostris"
+     },
+     "kind": "measured",
+     "source": {
+      "id": "davenport-1992",
+      "cite": "Davenport J (1992) Wing-loading, stability and morphometric relationships in flying fish (Exocoetidae) from the north-eastern Atlantic. J Mar Biol Assoc UK 72:25-39",
+      "doi_or_url": "https://doi.org/10.1017/S0025315400048761",
+      "locator": "abstract"
+     },
+     "note": "2.981 - 1.834 = 1.147, not 1.236; unresolved without the full text (development/allometry.json)"
+    }
+   ]
+  }
+ },
+ "conflicts": {
+  "zf_mass_larval": "Live larval masses (Bagatto 2001 Table 1: 0.33 mg at 3.9-4.0 mm, 1.38 mg at 6.4 mm, 3.69 mg at 8.2 mm) are 25-50% BELOW the Beaudouin 2015 law used for mass_kg (0.44, 2.1, 4.6 mg at those lengths, if Bagatto length is SL). Bouin-fixed masses (Rombough & Drader 2009: 0.16 mg at 7 dpf; 3.5 mg at 14.1 mm TL) are lower still, about 4-5x below the law at an assumed ~12 mm SL. Larval mass_kg is an upper bound.",
+  "zf_growth_rate": "Size at age depends on rearing: Bagatto 2001 larvae were 6.4 mm at ~26 dpf, while the repo curve (Parichy 0.32 mm/d) gives 11.0 mm at 26 dpf and Parichy group-reared rates (0.45-0.55 mm/d) reach 11 mm at 16-19 dpf. Age alone does not fix the state; SL does.",
+  "zf_adult_mass": "Adults of 34-36 mm SL weighed 0.84-0.90 g (Plaut & Gordon 1994; Plaut 2000), while the extrapolated Beaudouin law gives 0.54 g at 36 mm SL.",
+  "zf_ucrit": "Adult Ucrit 0.560 m/s wild-type and 0.437 m/s long-fin (Plaut 2000, 5-min steps) vs 0.238 m/s long-fin at the same 28 C (Wakamatsu 2019, 1-min steps, 170 ml tunnel): a ~2x protocol effect. Treat adult Ucrit as [0.24, 0.56] m/s.",
+  "zf_metabolic_scaling": "The larval law (46.1 M^0.825, 28 C) extrapolated to 0.84 g gives ~14 umol g-1 h-1, below Plaut & Gordon 1994 adult SMR 26.8-68.7 umol g-1 h-1 (28 C) but near Lucas & Priede 1992 (17.4 umol g-1 h-1 at 24 C, as quoted by Plaut & Gordon). No data bridge 3.5 mg to 0.27 g.",
+  "ff_species_mix": "Flying-fish rows mix H. affinis growth, Daane 2021 fin lengths (H. rondeleti, E. volitans, C. furcatus), Davenport 1992 exponents (E. obtusirostris) and the Park & Choi adult (C. hiraii, 0.06 kg at 0.203 m SL vs 0.13 kg for H. affinis at 0.206 m): mass at a given SL differs ~2x between sources."
+ }
+}

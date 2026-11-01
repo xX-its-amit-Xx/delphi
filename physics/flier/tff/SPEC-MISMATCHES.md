@@ -14,10 +14,15 @@ surfaced these. Full detail in the manifest's `tff_spec_cross_check.MISMATCHES_F
 (0.261² / 0.006377 = 10.68), then applies 9.0 to the **total lifting** area. The real flying fish's
 span² / total lifting area is 5.37, not 10.7.
 
-Carried through, the TFF's pectoral-only aspect ratio is **17.9** — more slender than any measured
-flying fish. Fish (1990) reports pectoral aspect ratio 3.0–16.9 across 199 specimens of six genera
-(we do not hold that full text; the figure comes from the collaborator's graph and is unverified here),
-so 17.9 lies outside even that range.
+Carried through, the TFF's pectoral-only aspect ratio (span² / area of both pectoral fins, the Park & Choi
+S²/A1 convention) is **17.9**, 1.7× the one measured specimen (10.68).
+
+*Corrected 2026-11-01:* this item previously said 17.9 was "more slender than any measured flying fish",
+against Fish (1990)'s range of 3.0–16.9. That compared two conventions. Fish (1990), now read in full, defines
+aspect ratio as span² / wing area where wing area is pectoral + pelvic fins plus the body strips between them
+(Park & Choi's L3 comes to ≤ 8.29 that way, matching Fish's 8.0 for *Cypselurus*). On Fish's convention the TFF
+is at most 13.9 (`span2_over_wing_area_fish1990`, an upper bound because body strips are not modelled), inside
+his range. The claim is withdrawn; see anatomy-model/parametric/CHANGELOG.md.
 
 A reader will take "aspect ratio 9, the fish's own" to mean the wings are shaped like a flying fish's.
 On the pectoral-only reading they are not. Which area the 9.0 belongs to needs restating.
