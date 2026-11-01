@@ -29,6 +29,24 @@ const wait = (p, ms) => p.waitForTimeout(ms);
 
 const CLIPS = [
   {
+    id: 'leanbio', url: '/leanbio/', keep: 13,
+    // The LeanBio repo: claims arriving, grounded, queued, and the ones that do not make it.
+    // Added for the product report's LeanBio tab, which otherwise had no moving footage of its
+    // own product and was borrowing a still.
+    drive: async (p) => {
+      await wait(p, 3500);
+      for (let i = 0; i < 8; i++) { await p.mouse.wheel(0, 430); await wait(p, 1200); }
+    }
+  },
+  {
+    id: 'mcp', url: '/studio-api/', keep: 13,
+    // The API surface a caller actually reads before calling it.
+    drive: async (p) => {
+      await wait(p, 3000);
+      for (let i = 0; i < 8; i++) { await p.mouse.wheel(0, 420); await wait(p, 1200); }
+    }
+  },
+  {
     id: 'validate', url: '/validate-show/', keep: 15,
     // The 7-act walkthrough, played by its own Play button.
     drive: async (p) => {

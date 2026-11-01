@@ -86,7 +86,21 @@ const ART = ['planes.jpg', 'fish.jpg', 'graph.jpg', 'form.jpg', 'blueprint.webm'
 const art = fs.existsSync(artDir) ? fs.readdirSync(artDir) : [];
 for (const f of ART) must(art.includes(f), `docs/art/${f} is referenced by the page but is not on disk`);
 // And every art reference in the page must be one of those files, so a typo cannot ship.
+// The headline film. The page is the product site, so the film belongs on it; assert both the
+// web cut and its poster rather than letting a missing one render as a dead black box.
+const FILM = ['pitch-2min.mp4', 'poster.jpg'];
+const filmDir = path.join(here, 'film');
+const film = fs.existsSync(filmDir) ? fs.readdirSync(filmDir) : [];
+for (const f of FILM) must(film.includes(f), `docs/film/${f} is referenced by the page but is not on disk`);
+const filmBytes = fs.statSync(path.join(filmDir, 'pitch-2min.mp4')).size;
+must(filmBytes > 1_000_000 && filmBytes < 20_000_000,
+  `docs/film/pitch-2min.mp4 is ${(filmBytes / 1048576).toFixed(1)} MB; expected a web cut between 1 and 20 MB`);
+
+// Every clip the page plays must exist too - two of these are newly recorded for tabs that had none.
 const pageHtml = fs.readFileSync(path.join(here, 'index.html'), 'utf8');
+for (const m of pageHtml.matchAll(/src="\.\.\/pitch-video\/clips\/([^"]+)"/g)) {
+  must(fs.existsSync(path.join(pub, 'pitch-video/clips', m[1])), `the page plays clips/${m[1]}, which is not on disk`);
+}
 for (const m of pageHtml.matchAll(/(?:src|href)="art\/([^"]+)"/g)) {
   must(ART.includes(m[1]), `the page references art/${m[1]}, which is not in the art inventory`);
 }
@@ -140,7 +154,7 @@ const data = {
   tool_names: toolNames,
   grand_questions: gq,
   five_results: FIVE,
-  assets: { shots, clips, art: ART },
+  assets: { shots, clips, art: ART, film: FILM, film_bytes: filmBytes },
 };
 
 if (CHECK) { console.log('docs/build.mjs --check: all sources read and asserted OK'); process.exit(0); }
