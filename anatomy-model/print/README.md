@@ -297,7 +297,9 @@ types across 12 structures**. The full registry, with every CL id, is carried in
 minimum and must drop into a recess in a part that is itself only a few millimetres.
 Neither is possible at 38.8 mm. Rather than shrink a token into something nobody can pick
 up, the 1:1 kit has none and the register is carried as **data** instead. They are
-viable at the larger kit scale, where an organ piece can carry a recess.
+viable at the larger kit scale, where an organ piece can carry a recess — **but no token
+or register-card STL has been published yet**: the 56 files of the 120 mm kit are case,
+carriers, organs and tissues only.
 
 Where an organ has **no** recorded cell type there is no token, and `manifest.json` says
 so per organ. That is an **absence of record, not evidence that the organ has no cell

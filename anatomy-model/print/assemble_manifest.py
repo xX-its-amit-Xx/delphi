@@ -191,6 +191,11 @@ if starter:
         serves_at="dashboard/public/blueprint3d/print/kit-1to1/starter/",
         kit=starter["kit"], scale=starter["scale"], sla_values=starter["sla"],
         hierarchy_note=starter["hierarchy_note"],
+        design=dict(id="winged-zebrafish-ff-fins",
+                    pectoral_len_over_SL=0.687,
+                    basis="MEASURED flying-fish median (Daane 2021 Data S1A, n=49), hypothetical transfer onto a zebrafish body",
+                    design_file="anatomy-model/print/design-winged-zebrafish-ff-fins.json",
+                    built_from="winged-zebrafish-ff-fins.glb, built by anatomy-model/print/build_ff_fins.py"),
         ANATOMY_DELIBERATELY_ABANDONED=(
             "At life size the small viscera (spleen 1.3 mm, heart 2.1 mm, head kidney "
             "1.6 mm, kidney a 0.4 mm thread), the individual vertebrae, the fin rays, "
@@ -252,10 +257,18 @@ if k120:
     out["kit_120mm"] = dict(
         serves_at="dashboard/public/blueprint3d/print/kit-120mm/",
         what="THE CONTAINMENT-HIERARCHY KIT. Organ systems are top-level carrier trays, "
-             "each organ seats into its system, the four tissue-level pieces seat in "
-             "turn, and the cell tokens are handleable at this scale. This is the kit "
-             "that teaches the hierarchy; the 1:1 starter cannot.",
+             "each organ seats into its system, and the four tissue-level pieces seat in "
+             "turn. This is the kit that teaches the hierarchy; the 1:1 starter cannot. "
+             "Cell tokens would be handleable at this scale, but they are NOT among "
+             "these 56 files: the 75-cell-type register is carried as data in "
+             "cell_tokens.registry.",
         scale=k120["scale"],
+        design=dict(id="winged-zebrafish-ff-fins",
+                    pectoral_len_over_SL=0.687,
+                    basis="MEASURED flying-fish median (Daane 2021 Data S1A, n=49), hypothetical transfer onto a zebrafish body",
+                    design_file="anatomy-model/print/design-winged-zebrafish-ff-fins.json",
+                    built_from="winged-zebrafish-ff-fins.glb, built by anatomy-model/print/build_ff_fins.py"),
+        not_the_same_design_as="print/winged-zebrafish-whole-120mm.stl and print/winged-zebrafish-glider-120mm.stl, which are the 0.35-fin winged-zebrafish design",
         n_parts=len(k120["parts"]),
         n_passed=sum(1 for v in k120["parts"].values() if v.get("PASSED")),
         n_failed=sum(1 for v in k120["parts"].values() if not v.get("PASSED")),

@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="../shared/shell.css">
 <script src="../shared/shell.js"></script>
 <title>DELPHI printable kit — assembly viewer</title>
-<meta name="description" content="How the 100 printable STL parts of the DELPHI winged-zebrafish kit assemble: an assembly animation, an explode slider, the organ-system hierarchy, per-part downloads, and the printability and scale problems stated plainly.">
+<meta name="description" content="The printable DELPHI winged-zebrafish kits: a 1:1 snap-together starter kit and a 120 mm organ-system hierarchy kit, each with an assembly animation, explode scrubber, grouped parts list, per-part downloads and every verification failure stated.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e7c86'/%3E%3Cpath d='M6 10h8v4H6zM18 10h8v4h-8zM6 18h8v4H6zM18 18h8v4h-8z' fill='white'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="print.css">
 <script type="importmap">{"imports":{"three":"https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
@@ -26,23 +26,24 @@
 
 <header class="top"><div class="wrap">
   <span class="brand">Printable kit</span>
-  <nav><a href="#assemble">Assembly</a><a href="#parts">Parts</a><a href="#printability">Printability</a><a href="#onepiece">One-piece files</a><a href="#honest">What is and is not real</a></nav>
+  <nav><a href="#assemble">Assembly</a><a href="#parts">Parts</a><a href="#failing">What fails</a><a href="#related">Related files</a><a href="#about">About this kit</a></nav>
 </div></header>
 
 <main class="wrap">
 
 <section id="intro">
-  <h1>A hundred printed pieces, and how they go together</h1>
-  <p class="lede">The kit is <b>100 binary STL files</b>, one per anatomical object, all exported about a <b>single shared origin</b> &mdash; load them all at <code>0,&nbsp;0,&nbsp;0</code> and they reassemble the animal exactly. The view below does that and plays the assembly, skeleton first; the slider takes it apart again. Every number on this page is read from the kit&rsquo;s own metadata by <code>dashboard/build-print-view.mjs</code>.</p>
+  <div class="kitbar">
+    <label class="inline kitpick"><span class="n">Kit</span>
+      <select id="kitSel" aria-label="Choose which printable kit to show"></select>
+    </label>
+    <span class="small mute" id="kitScale"></span>
+  </div>
+  <h1 id="kitTitle">Printable kits</h1>
+  <p class="lede" id="kitLede">Loading&hellip;</p>
 
   <div class="flagbox" id="honestyBanner">
     <h2 class="flaghead"><span class="flagicon" aria-hidden="true">!</span> Read this before you print anything</h2>
-    <div class="flaggrid">
-      <div class="fg"><b class="viol">This animal is hypothetical.</b> <span id="hypNote" class="mute">&hellip;</span></div>
-      <div class="fg"><b>The geometry is schematic,</b> with one exception. <span id="schemNote" class="mute">&hellip;</span></div>
-      <div class="fg"><b class="bad">The part files are about 4&nbsp;% undersized</b> against the whole-fish file. <span id="sizeNote" class="mute">&hellip;</span></div>
-      <div class="fg"><b class="warn">Eleven of the 100 parts will not print.</b> <span id="flagNote" class="mute">&hellip;</span></div>
-    </div>
+    <div class="flaggrid" id="bannerGrid"></div>
   </div>
 </section>
 
@@ -50,40 +51,27 @@
   <p class="small mute m0" id="loadLine">Loading the part files&hellip;</p>
 
   <div class="layout">
-    <!-- ------------------------------------------------------- the 3D stage -->
     <div class="stage">
       <div class="canvaswrap" id="canvasWrap">
         <canvas id="gl"></canvas>
         <div class="labels" id="labels" aria-hidden="true"></div>
-
-        <!-- the stage caption: which layer is arriving -->
         <div class="caption" id="caption">
           <span class="capstage" id="capStage">Loading</span>
           <span class="capcount" id="capCount"></span>
         </div>
-
-        <!-- always-visible honesty, so it cannot hide behind the animation -->
-        <div class="overnote">
-          <span class="pill hyp">Hypothetical animal</span>
-          <span class="pill bad">Parts ~4&nbsp;% undersized</span>
-          <span class="pill warn">11 parts unprintable</span>
-        </div>
-
-        <!-- loading progress, over the canvas until it is done -->
+        <div class="overnote" id="overNote"></div>
         <div class="loadover" id="loadOver">
-          <div class="lotitle">Loading 100 part files</div>
+          <div class="lotitle" id="loadTitle">Loading part files</div>
           <div class="bar"><i id="loadBar"></i></div>
-          <div class="lonum" id="loadNum">0 / 100 parts &middot; 0.00 / 2.86 MB</div>
+          <div class="lonum" id="loadNum"></div>
           <div class="lohint">The animation starts as soon as the first pieces are in. Later parts join in flight.</div>
         </div>
-
         <div class="emptyhint" id="glFail" hidden>
           <b>The 3D view could not start.</b>
-          <span class="mute">Every part is still downloadable from the list beside this view, and the two one-piece files are below.</span>
+          <span class="mute">Every part is still downloadable from the list beside this view.</span>
         </div>
       </div>
 
-      <!-- ------------------------------------------------------- transport -->
       <div class="transport">
         <div class="trow">
           <button id="playBtn" type="button" class="primary">Pause</button>
@@ -100,39 +88,27 @@
           <button id="fitBtn" type="button">Reframe</button>
           <label class="inline check"><input type="checkbox" id="spinChk"> <span>Spin at rest</span></label>
         </div>
-
         <div class="trow slider">
           <label class="scrub">
             <span class="n">Explode</span>
             <input type="range" id="explode" min="0" max="1000" value="1000" step="1"
-                   aria-label="Explode: 0 is the whole fish, 100 per cent is fully apart. This is also the animation scrubber.">
+                   aria-label="Explode: 0 is the assembled kit, 100 per cent is fully apart. This is also the animation scrubber.">
             <output id="explodeOut">100&nbsp;%</output>
           </label>
-          <div class="ends"><span>0&nbsp;% &mdash; the whole fish, every part at the shared origin</span><span>100&nbsp;% &mdash; fully apart</span></div>
-          <p class="small mute m0">One number drives both: scrubbing this slider seeks the animation, and playing the assembly runs the slider back down to&nbsp;0. The parts move outward from the body axis, with the left and right halves separating sideways.</p>
+          <div class="ends"><span>0&nbsp;% &mdash; assembled, every part at the shared origin</span><span>100&nbsp;% &mdash; fully apart</span></div>
+          <p class="small mute m0">One number drives both: scrubbing this slider seeks the animation, and playing the assembly runs it back down to&nbsp;0, in the kit&rsquo;s own assembly order.</p>
         </div>
-
         <div class="trow legend" id="legend"></div>
       </div>
     </div>
 
-    <!-- --------------------------------------------------- the parts list -->
     <aside class="side" id="parts">
       <div class="sidehead">
         <h3>Parts list <span class="mute small" id="listCount"></span></h3>
-        <input type="search" id="search" placeholder="Search label, object, ontology id&hellip;" aria-label="Search the parts list">
+        <input type="search" id="search" placeholder="Search label, file, system, ontology id&hellip;" aria-label="Search the parts list">
         <div class="filters">
-          <label class="inline"><span class="n">Group by</span>
-            <select id="groupSel">
-              <option value="system" selected>Organ system &rarr; organ</option>
-              <option value="organ">Organ</option>
-              <option value="layer">Layer (assembly order)</option>
-              <option value="print">Printability</option>
-            </select>
-          </label>
-          <label class="inline"><span class="n">Isolate</span>
-            <select id="isoSel"><option value="">Nothing &mdash; show all 100</option></select>
-          </label>
+          <label class="inline"><span class="n">Group by</span><select id="groupSel"></select></label>
+          <label class="inline"><span class="n">Isolate</span><select id="isoSel"></select></label>
           <label class="inline check"><input type="checkbox" id="hideChk"> <span>Hide the rest instead of fading it</span></label>
         </div>
         <p class="small mute m0" id="isoNote"></p>
@@ -143,48 +119,30 @@
   </div>
 </section>
 
-<section id="printability">
-  <h2>The eleven parts that will not print</h2>
-  <p class="small" id="printLine">&hellip;</p>
-  <div class="grid g2">
-    <div class="card">
-      <h3>What is wrong with them</h3>
-      <p class="small" id="printDef">&hellip;</p>
-      <p class="small mute" id="printDetail">&hellip;</p>
-      <div class="scroll"><table id="flagTable"></table></div>
-    </div>
-    <div class="card">
-      <h3>What was deliberately not done to the kit</h3>
-      <ul class="small" id="notDone"></ul>
-      <h3 style="margin-top:14px">And what the exporter warned about</h3>
-      <ul class="small mute" id="warnList"></ul>
-    </div>
-  </div>
+<section id="failing">
+  <h2 id="failHead">What fails</h2>
+  <p class="small" id="failLine">&hellip;</p>
+  <div class="scroll"><table id="failTable"></table></div>
 </section>
 
-<section id="onepiece">
-  <h2>The two one-piece files</h2>
-  <p class="small" id="opNote">&hellip;</p>
-  <div class="grid g2" id="opCards"></div>
+<section id="related">
+  <h2>Related files</h2>
+  <div class="grid g2" id="relCards"></div>
 </section>
 
-<section id="honest">
-  <h2>What is measured, what is assumed, what is wrong</h2>
-  <div class="grid g2">
-    <div class="card" id="sizeCard"><h3>The 4&nbsp;% size disagreement</h3><div id="sizeBody"></div></div>
-    <div class="card" id="evCard"><h3>The one evidence-backed proportion</h3><div id="evBody"></div></div>
-  </div>
-  <div class="card" style="margin-top:14px"><h3>How this page groups the kit</h3><div id="hierBody"></div></div>
-  <div class="card" style="margin-top:14px"><h3>Provenance</h3><div id="provBody"></div></div>
+<section id="about">
+  <h2 id="aboutHead">About this kit</h2>
+  <div class="grid g2" id="aboutCards"></div>
+  <div class="card" style="margin-top:14px"><h3>What none of these kits is</h3><ul class="small" id="notList"></ul></div>
 </section>
 
 </main>
 
 <footer class="wrap">
-  <p class="small mute">Page: <code>dashboard/public/print/</code>. Data: <code>dashboard/build-print-view.mjs</code> joins
-  <code>blueprint3d/print/parts-INFO.json</code> with <code>blueprint3d/model/winged-zebrafish-manifest.json</code> and measures every
-  STL bounding box itself. The STL files belong to the print thread and are read, never rewritten, by this page.
-  3D: three.js r160. <span id="genLine"></span></p>
+  <p class="small mute">Page: <code>dashboard/public/print/</code>. Data: <code>dashboard/build-print-view.mjs</code> reads
+  <code>anatomy-model/print/manifest.json</code> (the starter and 120&nbsp;mm kits) and, for the legacy set,
+  <code>blueprint3d/print/parts-INFO.json</code> with the GLB manifest, and measures every STL bounding box itself.
+  The STL files are read, never rewritten, by this page. 3D: three.js r160. <span id="genLine"></span></p>
 </footer>
 
 <script type="module" src="viewer.js"></script>
