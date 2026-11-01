@@ -7,7 +7,7 @@
 //   P1b  q10, reference_temperature_C, reference_sustained_power_W            (not supplied: no committed design values)
 //   P2   current_speed_m_s, critical_swimming_speed_m_s
 //   P2b  drag_coefficient, drag_area_m2, aerobicCeiling_W                      (not supplied: scenarios report drag, not Cd and A)
-//   P3   depth_m, bladder_volume_surface_ml, bladder_volume_at_depth_ml             (not supplied: hydrostatic convention mismatch, see below)
+//   P3   depth_m, bladder_volume_surface_ml, bladder_volume_at_depth_ml, water_density_kg_m3, g, surface_pressure_Pa (v2.0.0)
 //   P3b  depth_m, teleost
 //   P4   altitude_m, CLmax, airspeed_m_s, finArea_m2                           (not supplied: CLmax and the Lean area convention are not exposed)
 //   P4b  wind_along_track_m_s, horizontal_airspeed_m_s, glideHeight_m, LD_max, ground_distance_m (not supplied: see below)
@@ -51,12 +51,22 @@ export function perturbInputs(state, scenarioKey = null, params = {}, run = null
   }
   if (scenarioKey === 'pressure') {
     put('depth_m', params.depth_m, 'pressure scenario param depth_m');
-    // P3 (Boyle, closed bladder) is NOT fed: the pressure scenario computes V/V0 with real hydrostatics
-    // (P/P0 = 1 + rho g d / P_atm, about 1 + d/10.09 m), while the Lean law bounds it with the 1 atm per 10 m
-    // approximation and a 1e-12 tolerance. A correct Boyle volume therefore exceeds the law's bound by ~0.5-1 %
-    // at every depth and would show as a violation that is only a convention mismatch. Recomputing the volume
-    // with the law's own convention would make P3 hold by construction. Left cannot-evaluate until the law
-    // states its tolerance or the conventions agree (reported to the hub, 2026-11-01).
+    // P3 (Boyle, closed bladder; perturb-pressure v2.0.0, lawset >= 1.4.0) is parameterised by rho, g and the
+    // surface pressure, so it is fed the pressure scenario's OWN values: rho_w and P0 from its provenance, g
+    // recovered exactly from its own pressure_kPa = P0 + rho g z. The bladder volumes come from STATE
+    // (swimbladder_volume_fraction x body volume) and the scenario's gas_volume_fraction_of_surface.
+    // (Under v1, with "1 atm per 10 m" fixed, a correct Boyle volume showed as violated: convention mismatch.)
+    const pv = q => (run && run.ok ? run.provenance?.find(x => x.quantity === q)?.value : undefined);
+    const rhoW = pv('water density (kg/m3)'), P0 = pv('surface pressure (kPa)'), Pz = metric('pressure_kPa'), z = params.depth_m;
+    put('water_density_kg_m3', rhoW, 'pressure scenario provenance: water density (kg/m3)');
+    if (num(P0)) put('surface_pressure_Pa', P0 * 1000, 'pressure scenario provenance: surface pressure (kPa) x 1000');
+    if (num(Pz) && num(P0) && num(rhoW) && num(z) && z > 0) put('g', (Pz - P0) * 1000 / (rhoW * z), "recovered from the pressure scenario's own pressure_kPa = P0 + rho g z (it uses standard gravity)");
+    const svf = f('swimbladder_volume_fraction'), rhoB = f('body_density_kg_m3'), gvf = metric('gas_volume_fraction_of_surface');
+    if (num(svf) && num(rhoB) && num(M) && num(gvf)) {
+      const V0 = svf * (M / rhoB) * 1e6;
+      put('bladder_volume_surface_ml', V0, 'STATE swimbladder_volume_fraction x body volume (mass / body_density_kg_m3), in ml');
+      put('bladder_volume_at_depth_ml', V0 * gvf, 'bladder_volume_surface_ml x pressure scenario metric gas_volume_fraction_of_surface');
+    }
   }
   if (scenarioKey === 'altitude') put('altitude_m', params.altitude_m, 'altitude scenario param altitude_m');
   // C15 (glide_range_le, x <= h (L/D)max / (1 - ground effect)) bounds the STEADY glide only. The scenario's

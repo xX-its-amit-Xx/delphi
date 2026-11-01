@@ -127,7 +127,10 @@ export async function loadBundle({ fresh = false } = {}) {
   };
 
   const ontoPath = path.join(ROOT, 'sim-engine/params/ontogeny.json');
-  const ontogeny = fs.existsSync(ontoPath) ? JSON.parse(fs.readFileSync(ontoPath, 'utf8')) : null;
+  const addPath = path.join(ROOT, 'sim-engine/params/ontogeny-flyingfish-additions.json');
+  const ontogeny = fs.existsSync(ontoPath)
+    ? mergeOntogenyAdditions(JSON.parse(fs.readFileSync(ontoPath, 'utf8')), fs.existsSync(addPath) ? JSON.parse(fs.readFileSync(addPath, 'utf8')) : null, 'sim-engine/params/ontogeny-flyingfish-additions.json')
+    : null;
 
   _cache = {
     built: new Date().toISOString(),
@@ -137,4 +140,44 @@ export async function loadBundle({ fresh = false } = {}) {
     ontogeny,
   };
   return _cache;
+}
+
+// ---------------------------------------------------------------- ontogeny second layer
+// params/ontogeny-flyingfish-additions.json (FLYINGFISH-ADDITIONS.md) proposes per-field changes to the flying-fish
+// rows, each tagged with a `proposal`. Merged here as a second layer, so ontogeny.json and its builder stay
+// untouched. Every merged field records `merged_from` and the proposal; ontogeny.merge_log lists every decision.
+//   replace / new field / keep value; upgrade source  -> the addition is used
+//   fill null                                        -> used only where the base value is null
+//   bound only / corroborates / keep the ... proxy   -> base kept; the addition is attached as bound / corroborated_by / search_note
+//   stays null                                       -> base kept; if the base is null its reason is replaced by the wider search
+export function mergeOntogenyAdditions(onto, add, file) {
+  if (!onto || !add) return onto;
+  const out = JSON.parse(JSON.stringify(onto));
+  const log = [];
+  for (const [sp, spec] of Object.entries(add.species || {})) {
+    const target = out.species?.[sp];
+    if (!target) { log.push({ species: sp, action: 'skipped', why: 'species not in ontogeny.json' }); continue; }
+    for (const st of spec.stages || []) {
+      const row = target.stages.find(r => r.key === st.key);
+      if (!row) { log.push({ species: sp, stage: st.key, action: 'skipped', why: 'stage key not in ontogeny.json' }); continue; }
+      for (const [field, a] of Object.entries(st.fields || {})) {
+        const tag = String(a.proposal || '');
+        const base = row.fields[field];
+        const baseNull = !base || base.value === null || base.value === undefined;
+        const tagged = { ...a, merged_from: file, merge_proposal: tag };
+        let action;
+        if (/^(replace|new field)/.test(tag) || /upgrade source/.test(tag)) { row.fields[field] = { ...tagged, ...(base ? { replaced: { value: base.value, kind: base.kind, source: base.source } } : {}) }; action = base ? 'replaced' : 'added'; }
+        else if (/^fill null/.test(tag)) { if (baseNull) { row.fields[field] = tagged; action = 'filled'; } else { action = 'kept (base not null)'; } }
+        else if (/^bound only/.test(tag)) { if (base) row.fields[field] = { ...base, bound: tagged }; action = 'bound attached'; }
+        else if (/^corroborates/.test(tag)) { if (base) row.fields[field] = { ...base, corroborated_by: tagged }; action = 'corroboration attached'; }
+        else if (/^stays null/.test(tag)) { if (baseNull) row.fields[field] = { ...(base || { unit: a.unit }), value: null, kind: null, source: null, reason: a.reason || a.note || base?.reason, merged_from: file, merge_proposal: tag }; action = baseNull ? 'reason updated' : 'kept (base not null)'; }
+        else if (/^keep/.test(tag)) { if (base) row.fields[field] = { ...base, search_note: tagged }; action = 'search note attached'; }
+        else { action = 'skipped (unknown proposal tag)'; }
+        log.push({ species: sp, stage: st.key, field, proposal: tag, action });
+      }
+    }
+  }
+  out.merge_log = log;
+  out.layers = ['sim-engine/params/ontogeny.json', file];
+  return out;
 }

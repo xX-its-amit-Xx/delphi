@@ -354,11 +354,24 @@ await ok('unedited adult zebrafish at 28 C: P1 (thermal window) evaluates and ho
   assert.equal(Pv(r, 'P1').verdict, 'holds');
   assert.equal(r.result.lean_inputs.spec.ct_max_C, r.result.run.metrics.find(m => m.key === 'ctmax_C').value);
 });
-await ok('zebrafish at 45 C (above CTmax): P1 violated, shown as a CANDIDATE law (dashed), not red', async () => {
+// Severity follows the law's status as the registry states it (read, never hard-coded): accepted -> red,
+// contested -> amber, candidate -> dashed ('candidate').
+const SEVERITY = { accepted: 'red', contested: 'amber', candidate: 'candidate' };
+await ok('zebrafish at 45 C (above CTmax): P1 violated, with the severity its registry status implies (red once accepted)', async () => {
   const r = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'temperature', params: { water_temperature_C: M === 'p1' ? 30 : 45 } });
   const v = r.result.violations.find(x => x.lean_ref.constraint === 'P1');
-  assert.ok(v, 'P1 not violated'); assert.equal(v.status, 'candidate'); assert.equal(v.severity, 'candidate');
+  assert.ok(v, 'P1 not violated');
+  const status = r.result.verdicts.find(x => x.constraint === 'P1').status;
+  assert.equal(v.severity, SEVERITY[status] || 'advisory', `status ${status} -> severity ${v.severity}`);
   assert.ok(v.parts.includes('skin_L'));
+});
+await ok('P3 (Boyle, v2 with rho and g) holds for a correct Boyle volume at 100 m and 1000 m', async () => {
+  for (const d of [100, 1000]) {
+    const r = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'pressure', params: { depth_m: d } });
+    const sp = r.result.lean_inputs.spec;
+    assert.ok(sp.water_density_kg_m3 > 0 && sp.g > 9 && sp.bladder_volume_at_depth_ml > 0, 'P3 inputs missing');
+    assert.equal(r.result.verdicts.find(x => x.constraint === 'P3').verdict, M === 'p3' && d === 1000 ? 'violated' : 'holds', `depth ${d}`);
+  }
 });
 await ok('a current above Ucrit violates P2; below it P2 holds', async () => {
   const lo = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'current', params: { current_m_s: 0.3 } });
@@ -370,9 +383,24 @@ await ok('9000 m depth: the teleost depth cap (P3b) is contested, shown amber', 
   const v = r.result.violations.find(x => x.lean_ref.constraint === 'P3b');
   assert.ok(v, 'P3b not flagged'); assert.equal(v.severity, 'amber'); assert.equal(Pv(r, 'P3b').verdict, 'contested');
 });
-await ok('the Lean spec never carries a convention-mismatched input (no finArea_m2, no Boyle volumes)', async () => {
-  const r = await T.scenarioRun({ organism: 'flying-fish', scenario: 'pressure', params: { depth_m: 50 } });
-  for (const k of ['finArea_m2', 'bladder_volume_surface_ml', 'bladder_volume_at_depth_ml']) assert.ok(!(k in r.result.lean_inputs.spec), `${k} passed`);
+await ok('the Lean spec never carries a convention-mismatched input (no finArea_m2; Boyle volumes only with their rho and g)', async () => {
+  for (const org of ['flying-fish', 'zebrafish-adult']) {
+    const sp = (await T.scenarioRun({ organism: org, scenario: 'pressure', params: { depth_m: 50 } })).result.lean_inputs.spec;
+    assert.ok(!('finArea_m2' in sp), 'finArea_m2 passed');
+    if ('bladder_volume_at_depth_ml' in sp) assert.ok('water_density_kg_m3' in sp && 'g' in sp, 'Boyle volume without rho and g');
+  }
+});
+await ok('flying-fish additions are merged as a second layer: logged, labelled, adult red muscle now the flying-fish value', () => {
+  assert.ok(b.ontogeny.merge_log.length > 0 && b.ontogeny.layers.length === 2);
+  const s = st('flying-fish', 365);
+  assert.ok(/merged|ontogeny-flyingfish-additions|Khokiattiwong|dark/i.test(s.red_muscle_fraction.source + JSON.stringify(s.red_muscle_fraction)), 'red muscle not from the additions');
+  assert.equal(s.red_muscle_fraction.kind, M === 'ffadd' ? 'borrowed' : 'derived');
+  assert.ok(s.red_muscle_fraction.alternative && s.red_muscle_fraction.alternative.kind === 'borrowed', 'the trout proxy is kept as the alternative');
+});
+await ok('the adult flying-fish mass STATE uses stays the Park & Choi aerodynamic specimen (0.060 kg), with both roles labelled', () => {
+  const s = st('flying-fish', 365);
+  assert.equal(s.mass_kg.value, 0.06);
+  assert.ok((s.mass_kg.flags || []).some(f => /ROLE: aerodynamic specimen/.test(f) && /0\.1316/.test(f)));
 });
 
 await ok('regression (codesign-demo): approved winged-zebrafish fin, what-if 10 m/s launch from 1 m -> C15 holds on the Lean-covered part; the total is reported separately', async () => {

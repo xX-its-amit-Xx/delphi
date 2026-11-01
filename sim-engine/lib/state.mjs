@@ -209,6 +209,7 @@ export function resolveState(doc, ageDays, conditions = {}, bundle, opts = {}) {
   out.SL_m = F(SL, 'm', kOf('standard_length_m'), P.standard_length_m.source);
   const massFlags = [];
   if (leafList.some(L => L.o.track === 'zebrafish' && L.SLsp < 0.015) && bundle.ontogeny?.conflicts?.zf_mass_larval) massFlags.push('UPPER BOUND for larvae: ' + bundle.ontogeny.conflicts.zf_mass_larval);
+  if (leafList.some(L => L.o.track === 'flying-fish')) massFlags.push('ROLE: aerodynamic specimen mass (Park & Choi 2010 Cypselurus hiraii L3, 0.060 kg at 0.203 m SL), carried along the growth track. The population value for H. affinis (0.1316 kg at 0.206 m SL, Khokiattiwong 2000 length-weight law) is a different genus and is used for stage targets in ontogeny.json, not here (physics-thread decision).');
   out.mass_kg = F(M, 'kg', kOf('body_mass_kg'), P.body_mass_kg.source, massFlags.length ? { flags: massFlags } : {});
 
   const depth = val('body_depth_over_SL') * SL, width = val('body_width_over_SL') * SL, n = val('body_section_exponent');
@@ -273,8 +274,9 @@ export function resolveState(doc, ageDays, conditions = {}, bundle, opts = {}) {
 
   const red = bundle.physiology.red_fraction_of_myotome;
   const redOnto = onto('red_muscle_fraction');
-  out.red_muscle_fraction = F(red.value, '- (of myotomal muscle mass)', 'borrowed', `${red.source} [${red.species}; ${red.module}]; used for this organism without a measurement in it`,
+  const redEngine = F(red.value, '- (of myotomal muscle mass)', 'borrowed', `${red.source} [${red.species}; ${red.module}]; used for this organism without a measurement in it`,
     redOnto && redOnto.value === null ? { flags: [`ontogeny.json: ${redOnto.reason}. The adult trout value is borrowed across stage as well as species.`] } : {});
+  out.red_muscle_fraction = choose('red_muscle_fraction', redEngine, singleTrack ? redOnto : null, 'a value for this organism beats the trout proxy');
   const gpk = bundle.physiology.gill_area_m2_per_kg;
   const gs = (gill.gills_L + gill.gills_R) / 2;
   out.gill_area_m2 = F(gpk.value * M * gs, 'm2', 'borrowed', `${gpk.source} [${gpk.module}], applied per kg (isometric in mass, an assumption: gill area usually scales below M^1)${gs !== 1 ? `; x mean gill area factor ${gs.toPrecision(4)} from part edits` : ''}`, { weakest_input: weakest('borrowed', kOf('body_mass_kg')) });
@@ -288,7 +290,11 @@ export function resolveState(doc, ageDays, conditions = {}, bundle, opts = {}) {
   const thr = bundle.ontogeny?.species?.zebrafish?.size_thresholds_SL_m?.find(t => /posterior swim bladder inflation/.test(t.event));
   let sb, sbKind, sbSrc;
   if (singleTrack && zfLeaf && thr) { sb = zfLeaf.SLsp >= thr.SL_m; sbKind = 'measured'; sbSrc = `ontogeny.json size threshold: ${thr.event} at SL ${thr.SL_m} m (${thr.source.cite}, ${thr.source.locator}); species SL here ${zfLeaf.SLsp.toFixed(5)} m`; }
-  else { sb = interpBool(dominant.track, clampAge(dominant.track, age)); sbKind = dominant.track.kinds.swimbladder.kind; sbSrc = dominant.track.kinds.swimbladder.source; }
+  else {
+    const sbOnto = singleTrack ? onto('has_swimbladder', { category: true }) : null;
+    if (sbOnto && typeof sbOnto.value === 'boolean') { sb = sbOnto.value; sbKind = sbOnto.kind; sbSrc = sbOnto.source; }
+    else { sb = interpBool(dominant.track, clampAge(dominant.track, age)); sbKind = dominant.track.kinds.swimbladder.kind; sbSrc = dominant.track.kinds.swimbladder.source + (sbOnto ? `; ontogeny.json: ${sbOnto.reason}` : ''); }
+  }
   out.has_swimbladder = F(sb && sbPart > 0, 'bool', sbPart === 0 && parts.swim_bladder ? 'assumed' : sbKind, `${sbSrc}; and the part is present in the manifest${sbPart === 0 && parts.swim_bladder ? ' (removed by a part edit, scale 0)' : ''}`);
 
   // ---- fields scenario modules declare in `needs` (optional STATE fields)

@@ -25,7 +25,7 @@ const UNITS = {
   routine_metabolic_rate: 'umol O2 g-1 h-1', standard_metabolic_rate: 'umol O2 g-1 h-1', Ucrit_m_s: 'm/s',
 };
 // optional extra fields: checked for unit when present
-const EXTRA_UNITS = { o2_uptake_site: 'category', hb_needed_for_routine_O2: 'boolean', pelvic_len_over_SL: 'fraction of SL', body_planform_area_m2: 'm2' };
+const EXTRA_UNITS = { o2_uptake_site: 'category', hb_needed_for_routine_O2: 'boolean', pelvic_len_over_SL: 'fraction of SL', pectoral_len_over_SL: 'fraction of SL', body_planform_area_m2: 'm2' };
 // physical plausibility (inclusive) for numeric values
 const RANGE = {
   SL_m: [5e-4, 1], mass_kg: [1e-9, 10], body_density_kg_m3: [900, 1200], wetted_area_m2: [1e-8, 1], frontal_area_m2: [1e-9, 0.1],

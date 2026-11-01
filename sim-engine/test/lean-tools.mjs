@@ -78,6 +78,15 @@ await ok('lean_law_get returns the Lean source text of the theorem', async () =>
   assert.ok(Array.isArray(r.history) && r.history.length >= 1);
   assert.ok(Array.isArray(r.constraint_details) && r.constraint_details.some(c => c.id === 'C1' && /kimura_rate_rules_out/.test(c.lemma_source || '')));
 });
+await ok('an older lawset resolves its pinned (archived) law version, not the current file', async () => {
+  const pins = reg.lawsets.flatMap(ls => ls.laws.map(x => ({ ls: ls.version, ...x })));
+  const old = pins.find(x => { const cur = reg.laws.find(l => l.law_id === x.law_id); return cur && x.version && x.version !== cur.version; });
+  if (!old) return; // no superseded law yet
+  const inSet = (await T.lean_lawset_get({ version: old.ls })).result.laws.find(l => l.law_id === old.law_id);
+  assert.equal(inSet.version, old.version);
+  assert.equal((await T.lean_law_get({ id: old.law_id, version: old.version })).result.version, old.version);
+  assert.equal((await T.lean_laws_list({ lawset: old.ls })).result.laws.find(l => l.law_id === old.law_id).version, old.version);
+});
 await ok('lean_law_get on an unknown id fails loudly', async () => {
   await assert.rejects(() => T.lean_law_get({ id: 'no-such-law' }), /no law "no-such-law"/);
 });
