@@ -34,13 +34,39 @@ for (const id of tabIds) {
   await pg.evaluate(() => document.querySelector('.tabwrap')?.scrollIntoView());
   await pg.waitForTimeout(1200);
   await pg.screenshot({ path: `${OUT}/tab-${id}.jpg`, quality: 86, type: 'jpeg' });
-  // and the benchmark strip for that product, which is the part that must be legible
+  // the four sections, in blog view (the default)
+  const sx = await pg.$(`#panel-${id} .sx`);
+  if (sx && await sx.isVisible()) { await sx.scrollIntoViewIfNeeded(); await pg.waitForTimeout(600);
+    await pg.screenshot({ path: `${OUT}/blog-${id}.jpg`, quality: 86, type: 'jpeg' }); }
+}
+// Technical view: the benchmark strips only exist there, so switch before shooting them.
+await pg.click('[data-view-btn="tech"]');
+await pg.waitForTimeout(500);
+for (const id of tabIds) {
+  await pg.click(`#tab-${id}`);
+  await pg.waitForSelector(`#panel-${id}:not([hidden])`, { timeout: 10000 });
   const bench = await pg.$(`#panel-${id} .bench`);
-  if (bench) { await bench.scrollIntoViewIfNeeded(); await pg.waitForTimeout(700);
+  if (bench && await bench.isVisible()) { await bench.scrollIntoViewIfNeeded(); await pg.waitForTimeout(700);
     await pg.screenshot({ path: `${OUT}/bench-${id}.jpg`, quality: 86, type: 'jpeg' }); }
 }
+// and one nested glossary drill: open a term, then go two levels deeper
+await pg.click('[data-view-btn="blog"]');
+await pg.click('#tab-harness');
+await pg.waitForTimeout(800);
+const term = await pg.$('#panel-harness .nt');
+if (term) {
+  await term.click(); await pg.waitForTimeout(500);
+  const chip = await pg.$('.nest .nt-chip:not([disabled])');
+  if (chip) { await chip.click(); await pg.waitForTimeout(400); }
+  const chip2 = await pg.$('.nest .nt-chip:not([disabled])');
+  if (chip2) { await chip2.click(); await pg.waitForTimeout(400); }
+  await pg.screenshot({ path: `${OUT}/glossary-nested.jpg`, quality: 86, type: 'jpeg' });
+  console.error('glossary depth:', await pg.$$eval('.nest-crumbs > *', e => e.length));
+}
 console.error(`tabs shot: ${tabIds.join(', ')}`);
-// agent mode
+// agent mode lives in the Technical view (the humans/agents toggle is hidden in Blog view)
+await pg.click('[data-view-btn="tech"]');
+await pg.waitForTimeout(300);
 await pg.click('#mAgent');
 await pg.evaluate(() => document.getElementById('overview')?.scrollIntoView());
 await pg.waitForTimeout(1200);
