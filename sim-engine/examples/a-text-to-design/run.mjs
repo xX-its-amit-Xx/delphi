@@ -69,6 +69,10 @@ expect('re-run reproduces the design_from_spec glide value', CR && Math.abs(metr
 // known studio defects: recorded (not failed) so the README states them; a fix flips the README text
 const weakDefect = !!wGlide && wGlide.stages[0].weakest_provenance !== 'assumed';
 const feasDefect = !!W.optimizer && W.optimizer.feasible === 0 && W.optimizer.status === 'ok';
+// regression checks for defects reported to the hub and since fixed
+expect('what-if glide verdict carries the assumed launch speed as its weakest provenance', !weakDefect, `weakest_provenance=${wGlide?.stages?.[0]?.weakest_provenance}`);
+expect('optimizer summary counts feasible candidates (> 0 when a design was found)', !feasDefect, `feasible=${W.optimizer?.feasible}`);
+expect('parser reads the whole sentence (nothing unparsed)', P.unparsed.length === 0, JSON.stringify(P.unparsed));
 
 // ------------------------------------------------------------- README
 const critRows = exp => exp.criteria.flatMap(c => c.stages.map(s => [c.id, c.text, `${c.op}${c.target != null ? ' ' + c.target + ' ' + (c.unit || '') : ''}`, s.stage, s.verdict, typeof s.value === 'number' ? n(s.value) + ' ' + (s.unit || '') : String(s.value), s.weakest_provenance, s.limiting || '']));

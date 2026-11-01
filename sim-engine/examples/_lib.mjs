@@ -61,3 +61,20 @@ export function slim(env, { keepTrace = false } = {}) {
 
 /** Markdown table helper. */
 export const table = (head, rows) => `| ${head.join(' | ')} |\n|${head.map(() => '---').join('|')}|\n${rows.map(r => `| ${r.map(x => String(x ?? '').replace(/\|/g, '\|').replace(/\n/g, ' ')).join(' | ')} |`).join('\n')}`;
+
+// Crash guard: if an example throws (for example because a studio module is mid-edit), its README and
+// output.json are overwritten with the failure rather than left showing the previous run as if current.
+const entry = process.argv[1] ? path.dirname(path.resolve(process.argv[1])) : null;
+if (entry && path.dirname(entry) === import.meta.dirname) {
+  const onCrash = e => {
+    const at = new Date().toISOString();
+    try {
+      fs.writeFileSync(path.join(entry, 'output.json'), JSON.stringify({ meta: { example: path.basename(entry), ran_at: at, node: process.version, headline: `CRASHED: ${e?.message}`, checks: [{ name: 'script completed without an exception', pass: false, detail: e?.message }] }, error: String(e?.stack || e) }, null, 1));
+      fs.writeFileSync(path.join(entry, 'README.md'), `# ${path.basename(entry)}\n\n> **The last run (${at}) crashed before producing a result.** This is kept, not worked around: it is a studio failure, reported to the hub.\n\n\`\`\`\n${String(e?.stack || e).slice(0, 3000)}\n\`\`\`\n\nRe-run with \`node sim-engine/examples/${path.basename(entry)}/run.mjs\`.\n`);
+    } catch {}
+    console.log(`${path.basename(entry)}: CRASHED: ${e?.message}`);
+    process.exitCode = 1;
+  };
+  process.on('uncaughtException', onCrash);
+  process.on('unhandledRejection', onCrash);
+}

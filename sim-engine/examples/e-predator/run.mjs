@@ -10,7 +10,7 @@ const ORGS = ['zebrafish-adult', 'zebrafish-larva', 'flying-fish', 'tff', 'winge
 const { checks, expect } = checker();
 
 const runs = {};
-for (const o of ORGS) runs[o] = await scenarioRun({ organism: o, scenario: 'predator' });
+for (const o of ORGS) { try { runs[o] = await scenarioRun({ organism: o, scenario: 'predator' }); } catch (e) { runs[o] = { result: { run: { ok: false, error: e.message, metrics: [] } }, scope: `failed: ${e.message}` }; } }
 const R = Object.fromEntries(ORGS.map(o => {
   const run = runs[o].result.run, g = k => metric(run, k);
   return [o, { ok: run.ok, survives: run.survives ?? null, limiting: run.limiting ?? run.feasibility_note ?? null, error: run.error ?? null,
@@ -23,6 +23,7 @@ const yes = ORGS.filter(o => R[o].aerial?.value === true), no = ORGS.filter(o =>
 // ------------------------------------------------------------- expectations
 expect('predator ran for all seven organisms', ORGS.every(o => R[o].ok), JSON.stringify(ORGS.filter(o => !R[o].ok).map(o => [o, R[o].error])));
 expect('TFF can escape by air', R.tff.aerial?.value === true, JSON.stringify(R.tff.aerial));
+expect('reference flying fish can escape by air (its own ~10 m/s leap exceeds v_min)', R['flying-fish'].aerial?.value === true, JSON.stringify(R['flying-fish'].aerial));
 expect('no zebrafish (adult, larva, winged) can escape by air', ['zebrafish-adult', 'zebrafish-larva', 'winged-zebrafish'].every(o => R[o].aerial?.value !== true), JSON.stringify(['zebrafish-adult', 'zebrafish-larva', 'winged-zebrafish'].map(o => R[o].aerial?.value)));
 expect('wingless flying fish cannot escape by air', R['wingless-flying-fish'].aerial?.value === false, JSON.stringify(R['wingless-flying-fish'].aerial));
 expect('blend (ff-zf-chimera) gets no aerial verdict (no launch speed for a blend is invented)', R['ff-zf-chimera'].aerial?.value == null, JSON.stringify(R['ff-zf-chimera'].aerial));

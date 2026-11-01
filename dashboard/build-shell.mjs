@@ -55,6 +55,7 @@ const GROUPS = [
     { key: 'results',  href: 'results/',        text: 'Results' },
     { key: 'deck',     href: 'deck/',           text: 'Pitch deck' },
     { key: 'print',    href: 'print/',          text: 'Printable kit' },
+    { key: 'agents',   href: 'studio-api/',     text: 'For agents' },
     { key: 'evolve',   href: 'evolve/',         text: 'Enzymes' }
   ]},
   { key: 'evidence', label: 'Evidence', items: [

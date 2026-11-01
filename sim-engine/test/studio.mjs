@@ -346,6 +346,35 @@ await ok('fields scenarios declare in needs are present: lifting area (mesh), Qm
   for (const k of ['myotomal_muscle_fraction', 'pcrit_kPa']) { assert.equal(s[k].value, null); assert.ok(s[k].reason); }
 });
 
+console.log('\nperturbation laws (P1-P5) fed from scenarios (lib/perturb-map.mjs)');
+const Pv = (r, id) => r.result.verdicts.find(v => v.constraint === id);
+await ok('unedited adult zebrafish at 28 C: P1 (thermal window) evaluates and holds', async () => {
+  const r = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'temperature', params: { water_temperature_C: 28 } });
+  assert.ok(r.result.verdicts.some(v => /^P/.test(v.constraint) && v.verdict === 'holds'), 'no P law holds');
+  assert.equal(Pv(r, 'P1').verdict, 'holds');
+  assert.equal(r.result.lean_inputs.spec.ct_max_C, r.result.run.metrics.find(m => m.key === 'ctmax_C').value);
+});
+await ok('zebrafish at 45 C (above CTmax): P1 violated, shown as a CANDIDATE law (dashed), not red', async () => {
+  const r = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'temperature', params: { water_temperature_C: M === 'p1' ? 30 : 45 } });
+  const v = r.result.violations.find(x => x.lean_ref.constraint === 'P1');
+  assert.ok(v, 'P1 not violated'); assert.equal(v.status, 'candidate'); assert.equal(v.severity, 'candidate');
+  assert.ok(v.parts.includes('skin_L'));
+});
+await ok('a current above Ucrit violates P2; below it P2 holds', async () => {
+  const lo = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'current', params: { current_m_s: 0.3 } });
+  const hi = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'current', params: { current_m_s: 0.9 } });
+  assert.equal(Pv(lo, 'P2').verdict, 'holds'); assert.equal(Pv(hi, 'P2').verdict, 'violated');
+});
+await ok('9000 m depth: the teleost depth cap (P3b) is contested, shown amber', async () => {
+  const r = await T.scenarioRun({ organism: 'zebrafish-adult', scenario: 'pressure', params: { depth_m: M === 'p3b' ? 5000 : 9000 } });
+  const v = r.result.violations.find(x => x.lean_ref.constraint === 'P3b');
+  assert.ok(v, 'P3b not flagged'); assert.equal(v.severity, 'amber'); assert.equal(Pv(r, 'P3b').verdict, 'contested');
+});
+await ok('the Lean spec never carries a convention-mismatched input (no finArea_m2, no Boyle volumes)', async () => {
+  const r = await T.scenarioRun({ organism: 'flying-fish', scenario: 'pressure', params: { depth_m: 50 } });
+  for (const k of ['finArea_m2', 'bladder_volume_surface_ml', 'bladder_volume_at_depth_ml']) assert.ok(!(k in r.result.lean_inputs.spec), `${k} passed`);
+});
+
 console.log('\nserver and CLI');
 await ok('contract.json lists all twelve studio tools (regenerate with --dump-contract)', () => {
   const c = JSON.parse(fs.readFileSync(path.join(engine, 'contract.json'), 'utf8'));

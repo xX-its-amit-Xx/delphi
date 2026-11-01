@@ -598,6 +598,12 @@ let studioval = null;
       wildIndependentPasses: wildNumeric.filter(r => final(r) === 'pass').length,
       controlsHeld: scored.filter(r => /^(N[1-6]|O\d|P\d)$/.test(r.id)).every(r => final(r) === 'pass'),
       fails: scored.filter(r => final(r) === 'fail').map(r => ({ id: r.id, name: r.name, why: r.why })),
+      // verdicts as pre-registered and as amended after the results, side by side: an amendment never hides the original
+      tallyPre: Object.fromEntries(STAT.map(k => [k, scored.filter(r => r.status === k).length])),
+      tallyFinal: Object.fromEntries(STAT.map(k => [k, scored.filter(r => final(r) === k).length])),
+      changes: scored.filter(r => r.amended_status && r.amended_status !== r.status).map(r => ({
+        id: r.id, name: r.name, from: r.status, to: r.amended_status,
+        amendment: r.amendment || (/AMENDMENT (A\d)/.exec(r.why || '') || [])[1] || 'amendment', why: r.why })),
       circular: scored.filter(r => final(r) === 'circular').map(r => r.id),
       sources: ['sim-engine/validation/studio-results.json', 'sim-engine/validation/STUDIO-PREREGISTRATION.md', 'sim-engine/validation/STUDIO-AMENDMENTS.md']
     };

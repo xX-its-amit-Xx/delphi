@@ -35,7 +35,7 @@ export default {
   requires: ['stage'],
   needs: ['species', 'ageDays', 'temperature_C'],
   params: [
-    { key: 'light_hours', label: 'Hours of light per 24 h', unit: 'h', default: 14, min: 1, max: 23, kind: 'measured', source: 'larval data 14:10 LD (Prober 2006); adult data 12:12 LD (López-Olmeda 2006; Hurd 1998)' },
+    { key: 'light_hours', label: 'Hours of light per 24 h', unit: 'h', default: 14, min: 1, max: 23, kind: 'assumed', source: 'larval data 14:10 LD (Prober 2006); adult data 12:12 LD (López-Olmeda 2006; Hurd 1998) — default 14 h is the larval protocol condition [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]' },
   ],
   metrics: METRICS,
 

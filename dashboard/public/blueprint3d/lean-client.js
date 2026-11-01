@@ -95,6 +95,6 @@ export async function checkState(state, lawset = 'current') {
   rows.excluded = excluded;
   rows.violations = rows.filter(r => /^viol|contested|candidate-violated/.test(r.verdict))
     .map(r => ({ law_id: r.law_id, version: r.version, kind: r.kind, status: r.status, constraint: r.id, binding: r.binding, inputs: r.numbers || null,
-                 message: `${r.label || r.law_id}: ${r.relation || 'relation'} fails${r.note ? ` (${r.note})` : ''}${r.binding ? '' : ` [advisory: ${r.status}]`}` }));
+                 message: `${r.label || r.law_id}: ${r.relation || `constraint ${r.id}`} fails${r.note ? ` (${r.note})` : ''}${r.binding ? '' : ` [advisory: ${r.status}]`}` }));
   return rows;
 }

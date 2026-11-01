@@ -1,7 +1,7 @@
 {
  "meta": {
   "example": "b-impossible-spec",
-  "ran_at": "2026-11-01T02:59:35.993Z",
+  "ran_at": "2026-11-01T03:07:12.146Z",
   "node": "v24.13.0",
   "headline": "no design meets the spec: 57/57 rejected; C15 glide_range violated (bound 4.37 m from 1 m vs 1000 m), P1 thermal violated (CTmax 40.45 °C vs 45 °C)",
   "checks": [
@@ -59,12 +59,17 @@
     "name": "the best glide any sampled candidate reached is far below 1000 m",
     "pass": true,
     "detail": ""
+   },
+   {
+    "name": "every sampled rejection names the glide constraint",
+    "pass": true,
+    "detail": ""
    }
   ]
  },
  "text": "a zebrafish-derived fish that glides at least 1000 m from a 1 m launch and survives 10–45 °C as an adult",
  "parse": {
-  "contract_version": "0.3.0",
+  "contract_version": "0.3.1",
   "result": {
    "spec": {
     "start_from": [
@@ -299,7 +304,7 @@
   }
  },
  "design": {
-  "contract_version": "0.3.0",
+  "contract_version": "0.3.1",
   "result": {
    "status": "no design meets the spec",
    "validation": {
@@ -490,7 +495,7 @@
          "verdict": "failed",
          "value": 0,
          "unit": "m",
-         "limiting": null,
+         "limiting": "cannot glide: the reachable launch speed 10.00 m/s is below v_min 13.03 m/s, so lift cannot carry the weight",
          "lean_part": {
           "lean_bound_m": 0,
           "kinetic_phase_m": 0,
@@ -782,7 +787,7 @@
    },
    {
     "key": "glide_airspeed_m_s",
-    "label": "Descent airspeed at best L/D (rests on an assumed C_L(0 deg))",
+    "label": "Descent airspeed at best L/D (C_L(0 deg) 0.53, approximate)",
     "value": null,
     "unit": "m/s",
     "better": null,
@@ -797,7 +802,7 @@
     "unit": "s",
     "better": "higher",
     "kind": "derived",
-    "source": "(L/D)_eff (v0 - v_min)/g + h (L/D)/v_LD; v_LD uses the assumed C_L(0 deg)"
+    "source": "(L/D)_eff (v0 - v_min)/g + h (L/D)/v_LD; v_LD uses C_L(0 deg) 0.53 (approximate)"
    },
    {
     "key": "glide_ratio",
@@ -855,9 +860,9 @@
    },
    {
     "quantity": "C_L at 0 deg (best-L/D airspeed only)",
-    "value": 0.4,
-    "kind": "assumed",
-    "source": "dashboard/public/t/physics/sim/params.json CL_at_zero_deg (Park & Choi Fig. 5 not read)"
+    "value": 0.53,
+    "kind": "derived",
+    "source": "Park & Choi 2010 Fig. 4 text: lift at 0 deg ~ body weight for L3 -> C_L(0) = mg/(0.5 rho U^2 S) = 0.53 at U = 12 m/s (range 0.49-0.57); Fig. 5 itself not read"
    },
    {
     "quantity": "air density (kg/m3)",
@@ -893,7 +898,7 @@
     "quantity": "Fick E_O2 (J/ml)",
     "value": 19.34285714285714,
     "kind": "measured-secondhand",
-    "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89) / 0.7 mg O2 per ml (STPD) = 19.34 J/ml; physiology/muscle.js"
+    "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 mg O2 per ml (STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
    },
    {
     "quantity": "Hb O2 capacity (ml/ml)",
@@ -917,7 +922,7 @@
   "scope": "Still air over a flat surface; steady glide polar of stuffed flying fish in a wind tunnel; ranges are upper bounds (every metre at (L/D)max). Only glide_range_lean_bound_m is covered by the Lean theorem glide_range_le. Launch speed is the organism's own sourced leap/burst speed (or a labelled what-if). Takeoff (taxiing), control, stability, flapping and burst power are not modelled. survives = null (a glide attempt is not a lethal perturbation in this model); feasible = lift can carry the weight at the reachable launch speed (null if no sourced launch speed).",
   "validity": {
    "inRange": false,
-   "notes": "Mass 0.0006943 kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~0.4 kg): polar extrapolated. Chord Reynolds number ~4.5e+3 is far from the polar's ~1e5 (air kinematic viscosity 1.5e-5 m2/s assumed). glide_range_total_m exceeds the Lean bound whenever the kinetic phase is non-zero; only glide_range_lean_bound_m is covered by glide_range_le. Fick bound: arterial PO2 taken equal to air PO2 and gills taken to work in air; gills do not ventilate in air (physiology chain), so for a gill-breather this is a generous upper bound. TFF: NOTES-FOR-HUB.md item 2 says only 29.5% of the flight muscle the simulator charges fits in the body. This module uses no muscle power (the Fick bound is the cap), so the issue does not enter here; any muscle-based claim for the TFF must take it into account."
+   "notes": "Mass 0.0006943 kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~0.4 kg): polar extrapolated. Mean-chord Reynolds number ~4.6e+3 is outside 5e3-1e5 around the polar's Re ~1e4 (Park & Choi: 'gliding flying fish (Re ~10^4)'; air kinematic viscosity 1.46e-5 m2/s). glide_range_total_m exceeds the Lean bound whenever the kinetic phase is non-zero; only glide_range_lean_bound_m is covered by glide_range_le. Fick bound: arterial PO2 taken equal to air PO2 and gills taken to work in air; gills do not ventilate in air (physiology chain), so for a gill-breather this is a generous upper bound. TFF: NOTES-FOR-HUB.md item 2 says only 29.5% of the flight muscle the simulator charges fits in the body. This module uses no muscle power (the Fick bound is the cap), so the issue does not enter here; any muscle-based claim for the TFF must take it into account."
   }
  },
  "temperature_run": {
@@ -968,20 +973,20 @@
    {
     "key": "smr_factor",
     "label": "Standard metabolic rate relative to acclimation temperature (Q10)",
-    "value": 1.9320999999999997,
+    "value": 2.4336,
     "unit": "1",
     "better": null,
     "kind": "assumed",
-    "source": "Q10 1.39 ^ ((T - T_acclimation)/10) (Ripley DM, Quinn FA, Dickson J, Arthur J, Shiels HA (2022). Thermal preference does not align with optimal temperature for aerobic scope in zebrafish (Danio rerio). J Exp Biol 225:jeb243774)"
+    "source": "Q10 1.56 ^ ((T - T_acclimation)/10) (Correction: Thermal preference does not align with optimal temperature for aerobic scope in zebrafish (Danio rerio). J Exp Biol (2023) 226:jeb245488 (corrected Q10: SMR 1.56, MMR 1.34; correcting Ripley et al. 2022, J Exp Biol 225:jeb243774))"
    },
    {
     "key": "mmr_factor",
     "label": "Maximum metabolic rate relative to acclimation temperature (Q10)",
-    "value": 1.3224999999999998,
+    "value": 1.7956000000000003,
     "unit": "1",
     "better": null,
     "kind": "assumed",
-    "source": "Q10 1.15 ^ ((T - T_acclimation)/10) (Ripley DM, Quinn FA, Dickson J, Arthur J, Shiels HA (2022). Thermal preference does not align with optimal temperature for aerobic scope in zebrafish (Danio rerio). J Exp Biol 225:jeb243774)"
+    "source": "Q10 1.34 ^ ((T - T_acclimation)/10) (Correction: Thermal preference does not align with optimal temperature for aerobic scope in zebrafish (Danio rerio). J Exp Biol (2023) 226:jeb245488 (corrected Q10: SMR 1.56, MMR 1.34; correcting Ripley et al. 2022, J Exp Biol 225:jeb243774))"
    }
   ],
   "survives": false,
@@ -1008,10 +1013,10 @@
     "source": "Wakamatsu Y, Ogino K, Hirata H (2019). Swimming capability of zebrafish is governed by water temperature, caudal fin length and genetic background. Sci Rep 9:16307, Results (Fig. 3 values in text), https://doi.org/10.1038/s41598-019-52592-w"
    },
    {
-    "quantity": "Q10 SMR / MMR",
-    "value": "1.39 / 1.15",
+    "quantity": "Q10 SMR / MMR (corrected)",
+    "value": "1.56 / 1.34",
     "kind": "borrowed",
-    "source": "Ripley DM, Quinn FA, Dickson J, Arthur J, Shiels HA (2022). Thermal preference does not align with optimal temperature for aerobic scope in zebrafish (Danio rerio). J Exp Biol 225:jeb243774, https://doi.org/10.1242/jeb.243774"
+    "source": "Correction: Thermal preference does not align with optimal temperature for aerobic scope in zebrafish (Danio rerio). J Exp Biol (2023) 226:jeb245488 (corrected Q10: SMR 1.56, MMR 1.34; correcting Ripley et al. 2022, J Exp Biol 225:jeb243774), https://doi.org/10.1242/jeb.245488"
    }
   ],
   "scope": "Acute exposure (minutes to hours) of an acclimated zebrafish. CT limits are ramp-test endpoints (loss of equilibrium), not lethal temperatures or long-term limits; chronic exposure, growth, reproduction and interactions with hypoxia are not modelled. Fin or wing edits do not change these numbers: the scenario reads only species, stage and temperature. survives = CTmin < T < CTmax; feasible = null (swimming capacity is in ucrit_relative and feasibility_note). CT limits, Ucrit(T) and Q10 are read back from their source papers (kind calibrated): not independent predictions.",
@@ -1119,16 +1124,16 @@
   "sustained_power_W": 0.000001
  },
  "lean_check": {
-  "contract_version": "0.3.0",
+  "contract_version": "0.3.1",
   "result": {
-   "lawset": "1.1.0",
+   "lawset": "1.3.0",
    "kernel": "evaluates the same formulas; not a kernel check: kernel certificates exist only for the recorded examples",
    "summary": {
     "violated": 2,
     "binding_violations": 1,
     "holds": 0,
-    "out_of_scope": 6,
-    "cannot_evaluate": 21
+    "out_of_scope": 7,
+    "cannot_evaluate": 20
    },
    "verdicts": [
     {
@@ -1159,7 +1164,7 @@
      "missing": [
       "SL_m"
      ],
-     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
+     "scope_reason": "scoped to Exocoetidae (constraint C7b scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
      "evaluator_verdict": "cannot-evaluate"
     },
     {
@@ -1174,7 +1179,7 @@
      "missing": [
       "SL_m"
      ],
-     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
+     "scope_reason": "scoped to Exocoetidae (constraint C2a scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
      "evaluator_verdict": "cannot-evaluate"
     },
     {
@@ -1189,7 +1194,7 @@
      "missing": [
       "SL_m"
      ],
-     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
+     "scope_reason": "scoped to Exocoetidae (constraint C8e scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
      "evaluator_verdict": "cannot-evaluate"
     },
     {
@@ -1204,7 +1209,7 @@
      "missing": [
       "SL_m"
      ],
-     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
+     "scope_reason": "scoped to Exocoetidae (constraint C9c scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
      "evaluator_verdict": "cannot-evaluate"
     },
     {
@@ -1214,11 +1219,13 @@
      "status": "accepted",
      "constraint": "C8c",
      "band": "proved",
-     "verdict": "cannot-evaluate",
+     "verdict": "out-of-scope",
      "binding": true,
      "missing": [
       "SL_m"
-     ]
+     ],
+     "scope_reason": "scoped to Exocoetidae (constraint C8c scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
+     "evaluator_verdict": "cannot-evaluate"
     },
     {
      "law_id": "flight-climb-glide-law",
@@ -1496,7 +1503,7 @@
      "law_id": "perturb-depth-cap",
      "version": "1.0.0",
      "kind": "biological",
-     "status": "candidate",
+     "status": "contested",
      "constraint": "P3b",
      "band": "hypothesis",
      "verdict": "cannot-evaluate",
@@ -1585,7 +1592,7 @@
       "ct_max_C": 40.45,
       "sustained_power_W": 0.000001
      },
-     "message": "null: CTmin ≤ T ≤ CTmax whenever P > 0 fails for the committed numbers (outside the thermal window no positive sustained power exists (thermal_rules_out)) [advisory: law status is candidate, not accepted]"
+     "message": "Under the thermal-performance hypothesis (sustained power zero outside [CTmin, CTmax],...: CTmin ≤ T ≤ CTmax whenever P > 0 fails for the committed numbers (outside the thermal window no positive sustained power exists (thermal_rules_out)) [advisory: law status is candidate, not accepted]"
     }
    ],
    "excluded": [],
@@ -1632,7 +1639,7 @@
    },
    {
     "quantity": "git commit",
-    "value": "abfcf81cdd79e856c6d4032af92473ddfd48bd6d",
+    "value": "6aefa3d0811fe44f6f7a7e08c2eee4881e3bc1c8",
     "kind": "derived",
     "source": "git rev-parse HEAD (or DELPHI_GIT_SHA) at load time."
    },

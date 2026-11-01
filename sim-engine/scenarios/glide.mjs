@@ -14,7 +14,10 @@ export const PARK_CHOI = {
   doi: 'https://doi.org/10.1242/jeb.046052',
   CL_max: 0.78, // Table 2, alpha 35 deg, stuffed Cypselurus hiraii, 12 m/s wind tunnel
   LD_max: 4.37, // Table 2, alpha 0 deg
-  CL_at_zero_deg: 0.4, // ASSUMED in dashboard/public/t/physics/sim/params.json (Fig. 5 not read); sets only the best-L/D airspeed
+  // C_L at 0 deg: Park & Choi (Results, Fig. 4 text) measured the lift at 0 deg and found it 'nearly same' as the body
+  // weight for models L1 and L3, so C_L(0) = m g / (0.5 rho U^2 S) = 0.06 x 9.81 / (0.5 x 1.225 x 12^2 x 0.012688) = 0.53
+  // (0.49-0.57 with mass rounded to 0.01 kg). Replaces the 0.4 ASSUMED in the simulator's params.json. Sets only v_LD.
+  CL_at_zero_deg: 0.53,
   L3: { mass_kg: 0.06, ref_area_m2: 0.012688, span_m: 0.261, pectoral_area_m2: 0.006377 },
 };
 // Pectoral -> total lifting area transfer used by the flight simulator (NOTES-FOR-HUB.md item 3): the one
@@ -24,11 +27,11 @@ export const LIFT_OVER_PECTORAL = 0.012688 / 0.006377;
 // Fick aerobic bound; constants as in physics/flier/tff/design.py and the physiology chain.
 export const FICK = {
   eta: { value: 0.15, kind: 'borrowed', source: 'gamperl2021 via physiology/muscle.js: ventricular muscle efficiency ~15% in Atlantic salmon (no fetched value for fish skeletal muscle)' },
-  E_J_per_ml: { value: 13.54 / 0.7, kind: 'measured-secondhand', source: 'oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89) / 0.7 mg O2 per ml (STPD) = 19.34 J/ml; physiology/muscle.js' },
+  E_J_per_ml: { value: 13.54 / 0.7, kind: 'measured-secondhand', source: 'oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 mg O2 per ml (STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js' },
   Qmax_ml_min_kg: { value: 58.48, kind: 'borrowed', source: 'durnford2026 Table 1 (schoolmaster snapper, Ucrit group, 28 degC) maximum cardiac output 58.48 ml/min/kg (physiology/cardiac.js), x body mass. Lean C14 and physics/flier/tff/design.py use 0.0656 ml/s for 0.06 kg (65.6 ml/min/kg) instead' },
   hb_cap_ml_ml: { value: 0.206, kind: 'calibrated', source: 'physiology/index.js warmHbCapacity: set so the snapper maximal O2 extraction (durnford2026) fits the trout Hill curve. Calibrated, not measured' },
-  P50_kPa: { value: 24.8 / 7.50062, kind: 'borrowed', source: 'rummer2015 Table 1: rainbow trout P50 24.8 mmHg' },
-  n_H: { value: 1.34, kind: 'borrowed', source: 'rummer2015 Table 1: rainbow trout Hill n 1.34' },
+  P50_kPa: { value: 24.8 / 7.50062, kind: 'borrowed', source: 'rummer2015 Table 1: rainbow trout P50 24.8 mmHg (borrowed) / 7.50062 mmHg per kPa (standard unit conversion)' },
+  n_H: { value: 1.34, kind: 'borrowed', source: 'rummer2015 Results text: rainbow trout Hill n 1.34 (Table 1 shows 1.3 +/- 0.1)' },
 };
 export const hillSat = (P, P50, n) => (P > 0 ? P ** n / (P ** n + P50 ** n) : 0);
 
@@ -109,7 +112,7 @@ export function airDensity(state) {
 export function airPO2(state) {
   const f = ambientField(state, 'air_pO2_kPa', 'pO2_kPa');
   return f ? { value: f.value, kind: f.kind || 'derived', source: f.source || 'state.ambient pO2' }
-    : { value: 0.209 * 101.325, kind: 'assumed', source: 'conditions/baseline.json air_O2_fraction 0.209 x 101.325 kPa' };
+    : { value: 0.2095 * 101.325, kind: 'measured-secondhand', source: 'dry-air O2 fraction 0.2095 (20.95%, standard dry-air composition) x 101.325 kPa' };
 }
 export function polarOf(state) {
   const kind = isParkChoiSpecies(state) ? 'measured' : 'borrowed';
@@ -176,7 +179,7 @@ const METRICS = [
   { key: 'wing_loading_N_m2', label: 'Wing loading W/S (lifting area)', unit: 'N/m2', better: 'lower' },
   { key: 'v_min_m_s', label: 'Minimum lift-supported airspeed', unit: 'm/s', better: 'lower' },
   { key: 'launch_speed_margin_m_s', label: 'Launch speed minus v_min', unit: 'm/s', better: 'higher' },
-  { key: 'glide_airspeed_m_s', label: 'Descent airspeed at best L/D (rests on an assumed C_L(0 deg))', unit: 'm/s', better: null },
+  { key: 'glide_airspeed_m_s', label: 'Descent airspeed at best L/D (C_L(0 deg) 0.53, approximate)', unit: 'm/s', better: null },
   { key: 'glide_time_s', label: 'Time airborne (bound)', unit: 's', better: 'higher' },
   { key: 'glide_ratio', label: '(L/D)max used', unit: '1', better: 'higher' },
   { key: 'power_required_W', label: 'Power for level flight at v_min, W v_min/(L/D)max', unit: 'W', better: 'lower' },
@@ -197,7 +200,7 @@ export default {
   params: [
     LAUNCH_HEIGHT_PARAM,
     LAUNCH_OVERRIDE_PARAM,
-    { key: 'ground_effect', label: 'Apply the measured ground effect in the level phase (1 yes, 0 no)', unit: '1', default: 1, min: 0, max: 1, kind: 'measured', source: 'physics/ground-effect.json (park-choi-2010 text: drag -14% at r = 0.33 over water, model L3)' },
+    { key: 'ground_effect', label: 'Apply the measured ground effect in the level phase (1 yes, 0 no)', unit: '1', default: 1, min: 0, max: 1, kind: 'assumed', source: 'a modelling switch (the toggle itself is a design choice); the drag curve it switches on is measured: physics/ground-effect.json (park-choi-2010 text: drag -14% at r = 0.33 over water, model L3)' },
   ],
   requires: ['mass_kg'],
   metrics: METRICS,
@@ -215,7 +218,7 @@ export default {
     const prov = [
       { quantity: 'C_Lmax', value: PARK_CHOI.CL_max, kind: polar.kind, source: polar.source },
       { quantity: '(L/D)max', value: PARK_CHOI.LD_max, kind: polar.kind, source: polar.source },
-      { quantity: 'C_L at 0 deg (best-L/D airspeed only)', value: PARK_CHOI.CL_at_zero_deg, kind: 'assumed', source: 'dashboard/public/t/physics/sim/params.json CL_at_zero_deg (Park & Choi Fig. 5 not read)' },
+      { quantity: 'C_L at 0 deg (best-L/D airspeed only)', value: PARK_CHOI.CL_at_zero_deg, kind: 'derived', source: 'Park & Choi 2010 Fig. 4 text: lift at 0 deg ~ body weight for L3 -> C_L(0) = mg/(0.5 rho U^2 S) = 0.53 at U = 12 m/s (range 0.49-0.57); Fig. 5 itself not read' },
       { quantity: 'air density (kg/m3)', value: rho.value, kind: rho.kind, source: rho.source },
       { quantity: 'lifting area (m2)', value: S.value, kind: S.kind, source: S.source },
       { quantity: 'launch speed (m/s)', value: ls.value, kind: ls.value != null ? ls.kind : 'assumed', source: ls.value != null ? ls.source : `none: ${ls.reason}` },
@@ -242,9 +245,9 @@ export default {
     const notes = [];
     let inRange = true;
     const chord = span ? S.value / span : null;
-    const Re = chord ? (Math.max(v0, gp.vmin) * chord) / 1.5e-5 : null;
+    const Re = chord ? (Math.max(v0, gp.vmin) * chord) / 1.46e-5 : null; // ISA sea-level air kinematic viscosity 1.46e-5 m2/s
     if (m < 0.02 || m > 0.4) { inRange = false; notes.push(`Mass ${m} kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~0.4 kg): polar extrapolated.`); }
-    if (Re != null && (Re < 3e4 || Re > 1e6)) { inRange = false; notes.push(`Chord Reynolds number ~${Re.toExponential(1)} is far from the polar's ~1e5 (air kinematic viscosity 1.5e-5 m2/s assumed).`); }
+    if (Re != null && (Re < 5e3 || Re > 1e5)) { inRange = false; notes.push(`Mean-chord Reynolds number ~${Re.toExponential(1)} is outside 5e3-1e5 around the polar's Re ~1e4 (Park & Choi: 'gliding flying fish (Re ~10^4)'; air kinematic viscosity 1.46e-5 m2/s).`); }
     if (S.kind === 'assumed') notes.push("Lifting area is the pectoral area times one specimen's total/pectoral ratio (assumed transfer).");
     if (FF_RE.test(String(val(state, 'species') || ''))) notes.push('Taxiing (tail sculling with the body airborne), by which real flying fish reach 15-20 m/s airspeed before long glides, is not modelled: the launch speed is the ~10 m/s leap speed.');
     notes.push('glide_range_total_m exceeds the Lean bound whenever the kinetic phase is non-zero; only glide_range_lean_bound_m is covered by glide_range_le.');
@@ -263,8 +266,8 @@ export default {
       metric('wing_loading_N_m2', METRICS[4].label, W / S.value, 'N/m2', 'lower', 'derived', `m g / lifting area (${S.kind})`),
       metric('v_min_m_s', METRICS[5].label, gp.vmin, 'm/s', 'lower', 'derived', 'sqrt(2W/(rho S C_Lmax)), physics/results.json interpretation B'),
       metric('launch_speed_margin_m_s', METRICS[6].label, known ? v0 - gp.vmin : null, 'm/s', 'higher', 'derived', 'launch speed - v_min', why),
-      metric('glide_airspeed_m_s', METRICS[7].label, canGlide ? gp.vLD : null, 'm/s', null, 'assumed', 'v_min sqrt(C_Lmax / C_L(0 deg)); C_L(0 deg) = 0.4 assumed', why || 'cannot glide'),
-      metric('glide_time_s', METRICS[8].label, known ? (canGlide ? gp.time_s : 0) : null, 's', 'higher', 'derived', '(L/D)_eff (v0 - v_min)/g + h (L/D)/v_LD; v_LD uses the assumed C_L(0 deg)', why),
+      metric('glide_airspeed_m_s', METRICS[7].label, canGlide ? gp.vLD : null, 'm/s', null, 'derived', 'v_min sqrt(C_Lmax / C_L(0 deg)); C_L(0 deg) = 0.53 from Park & Choi lift-equals-weight at 0 deg (approximate)', why || 'cannot glide'),
+      metric('glide_time_s', METRICS[8].label, known ? (canGlide ? gp.time_s : 0) : null, 's', 'higher', 'derived', '(L/D)_eff (v0 - v_min)/g + h (L/D)/v_LD; v_LD uses C_L(0 deg) 0.53 (approximate)', why),
       metric('glide_ratio', METRICS[9].label, PARK_CHOI.LD_max, '1', 'higher', polar.kind, polar.source),
       metric('power_required_W', METRICS[10].label, Preq, 'W', 'lower', 'derived', 'physics/results.json interpretation C formula'),
       metric('aerobic_power_available_W', METRICS[11].label, fk.P_W, 'W', 'higher', 'derived', `eta E Q Ca, Ca ${fk.Ca_ml_ml.toFixed(4)} ml/ml at PO2 ${po2.value.toFixed(1)} kPa (Hill P50 ${P50.toFixed(2)} kPa, n 1.34), Q ${fk.Q_ml_s.toFixed(4)} ml/s`),
@@ -294,7 +297,7 @@ export default {
       { cite: 'Rummer JL, Brauner CJ (2015). Root effect haemoglobins in fish ... PLoS One 10:e0139477', doi_or_url: 'https://doi.org/10.1371/journal.pone.0139477' },
       { cite: 'Gerry SP, Ellerby DJ (2014). Resolving shifting patterns of muscle energy use in swimming fish. PLoS One 9:e106030', doi_or_url: 'https://doi.org/10.1371/journal.pone.0106030' },
     ],
-    validity: 'Flying-fish-sized gliders (0.02-0.4 kg), airspeeds 5-30 m/s, launch heights 0-10 m. The polar is from stuffed specimens at one Reynolds number (~1e5); a zebrafish-sized or larval animal is far outside it (inRange false), and cannot reach its v_min anyway.',
+    validity: 'Flying-fish-sized gliders (0.02-0.4 kg), mean-chord Re 5e3-1e5, launch heights 0-10 m. The polar is from stuffed specimens at one wind speed (12 m/s; Park & Choi: Re ~1e4); a zebrafish-sized or larval animal is far outside it (inRange false), and cannot reach its v_min anyway.',
     validatedAgainst: [
       { organism: 'Cypselurus hiraii (Park & Choi model L3)', observation: 'code regression against physics/results.json at rho 1.225', predicted: 'v_min 9.854 m/s, P_req 1.327 W', measured: 'physics/results.json: 9.854 m/s, 1.327 W (same equations: a code check, not a test against nature)', source: 'physics/results.json interpretation_B and interpretation_C' },
       { organism: 'Exocoetidae (several genera)', observation: 'glides up to 50 m at 15-20 m/s airspeed after taxiing (stroboscopic film, Edgerton & Breder 1941, quoted second-hand)', predicted: "at the organism's own 10 m/s leap speed: Lean part h x 4.37 (35 m from the 8 m maximum height) + kinetic phase under 1 m. 50 m is NOT reached without the taxiing acceleration, which is not modelled. (An earlier version reached 50 m only by setting the launch speed to 15-20 m/s, taken from the same observation: circular, withdrawn.)", measured: 'up to 50 m', source: 'makiguchi-2013 Introduction (https://doi.org/10.3354/ab00494). NOT REPRODUCED at the organism\'s own speed; the gap is the unmodelled taxiing phase' },

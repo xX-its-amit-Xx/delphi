@@ -1,7 +1,7 @@
 {
  "meta": {
   "example": "a-text-to-design",
-  "ran_at": "2026-11-01T03:01:18.116Z",
+  "ran_at": "2026-11-01T03:07:11.009Z",
   "node": "v24.13.0",
   "headline": "as written: no design meets the spec; what-if 10 m/s launch (assumed): meets the spec, glide 18.26 m with `body:body.pectoral_area_over_SL2` = 0.1547, `body:body.pectoral_span_over_SL` = 0.6163",
   "checks": [
@@ -74,12 +74,27 @@
     "name": "re-run reproduces the design_from_spec glide value",
     "pass": true,
     "detail": ""
+   },
+   {
+    "name": "what-if glide verdict carries the assumed launch speed as its weakest provenance",
+    "pass": true,
+    "detail": ""
+   },
+   {
+    "name": "optimizer summary counts feasible candidates (> 0 when a design was found)",
+    "pass": true,
+    "detail": ""
+   },
+   {
+    "name": "parser reads the whole sentence (nothing unparsed)",
+    "pass": true,
+    "detail": ""
    }
   ]
  },
  "text": "a zebrafish-derived fish that glides at least 5 m from a 1 m launch and survives 10–30 °C as an adult",
  "parse": {
-  "contract_version": "0.3.0",
+  "contract_version": "0.3.1",
   "result": {
    "spec": {
     "start_from": [
@@ -339,7 +354,7 @@
   }
  },
  "design_as_written": {
-  "contract_version": "0.3.0",
+  "contract_version": "0.3.1",
   "result": {
    "status": "no design meets the spec",
    "validation": {
@@ -821,7 +836,7 @@
   }
  },
  "design_whatif": {
-  "contract_version": "0.3.0",
+  "contract_version": "0.3.1",
   "result": {
    "status": "meets the spec",
    "validation": {
@@ -1153,7 +1168,7 @@
        "author": "agent:optimizer",
        "reason": "optimize glide.glide_range_total_m (maximize)",
        "ts": "optimize",
-       "lawset_version": "1.2.0"
+       "lawset_version": "1.3.0"
       },
       {
        "target": {
@@ -1166,7 +1181,7 @@
        "author": "agent:optimizer",
        "reason": "optimize glide.glide_range_total_m (maximize)",
        "ts": "optimize",
-       "lawset_version": "1.2.0"
+       "lawset_version": "1.3.0"
       }
      ],
      "notes": "built from a DesignSpec",
@@ -1277,9 +1292,9 @@
    },
    {
     "quantity": "C_L at 0 deg (best-L/D airspeed only)",
-    "value": 0.4,
-    "kind": "assumed",
-    "source": "dashboard/public/t/physics/sim/params.json CL_at_zero_deg (Park & Choi Fig. 5 not read)"
+    "value": 0.53,
+    "kind": "derived",
+    "source": "Park & Choi 2010 Fig. 4 text: lift at 0 deg ~ body weight for L3 -> C_L(0) = mg/(0.5 rho U^2 S) = 0.53 at U = 12 m/s (range 0.49-0.57); Fig. 5 itself not read"
    },
    {
     "quantity": "air density (kg/m3)",
@@ -1315,7 +1330,7 @@
     "quantity": "Fick E_O2 (J/ml)",
     "value": 19.34285714285714,
     "kind": "measured-secondhand",
-    "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89) / 0.7 mg O2 per ml (STPD) = 19.34 J/ml; physiology/muscle.js"
+    "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 mg O2 per ml (STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
    },
    {
     "quantity": "Hb O2 capacity (ml/ml)",
@@ -1351,15 +1366,15 @@
   "scope": "A local, seeded search (the optimize tool) over the editable parameters, climbing one metric; every other criterion is re-checked on the result at every requested stage. Not a global optimum. Verdicts are only as good as the scenario models and the STATE inputs they rest on; each criterion row carries the weakest provenance kind behind it and the model's limiting factor. Lean verdicts are floating-point evaluations of the Lean-backed formulas, not kernel checks; by default only NEW binding violations (absent from the unedited parents) fail a design. A \"no-model\" criterion is not met. A designed parameter set is a shape, not a viable organism: MORPHOLOGICAL interpolation, not genetic hybridisation.",
   "weakest_input": "assumed",
   "counts": {
-   "derived": 4,
+   "derived": 5,
    "borrowed": 4,
-   "assumed": 4,
+   "assumed": 3,
    "measured-secondhand": 2,
    "calibrated": 1
   }
  },
  "whatif_glide_rerun": {
-  "contract_version": "0.3.0",
+  "contract_version": "0.3.1",
   "result": {
    "scenario": "glide",
    "run": {
@@ -1436,21 +1451,21 @@
      },
      {
       "key": "glide_airspeed_m_s",
-      "label": "Descent airspeed at best L/D (rests on an assumed C_L(0 deg))",
-      "value": 8.566333551289398,
+      "label": "Descent airspeed at best L/D (C_L(0 deg) 0.53, approximate)",
+      "value": 7.44195503386021,
       "unit": "m/s",
       "better": null,
-      "kind": "assumed",
-      "source": "v_min sqrt(C_Lmax / C_L(0 deg)); C_L(0 deg) = 0.4 assumed"
+      "kind": "derived",
+      "source": "v_min sqrt(C_Lmax / C_L(0 deg)); C_L(0 deg) = 0.53 from Park & Choi lift-equals-weight at 0 deg (approximate)"
      },
      {
       "key": "glide_time_s",
       "label": "Time airborne (bound)",
-      "value": 2.2320863469149206,
+      "value": 2.3091610666143825,
       "unit": "s",
       "better": "higher",
       "kind": "derived",
-      "source": "(L/D)_eff (v0 - v_min)/g + h (L/D)/v_LD; v_LD uses the assumed C_L(0 deg)"
+      "source": "(L/D)_eff (v0 - v_min)/g + h (L/D)/v_LD; v_LD uses C_L(0 deg) 0.53 (approximate)"
      },
      {
       "key": "glide_ratio",
@@ -1508,9 +1523,9 @@
      },
      {
       "quantity": "C_L at 0 deg (best-L/D airspeed only)",
-      "value": 0.4,
-      "kind": "assumed",
-      "source": "dashboard/public/t/physics/sim/params.json CL_at_zero_deg (Park & Choi Fig. 5 not read)"
+      "value": 0.53,
+      "kind": "derived",
+      "source": "Park & Choi 2010 Fig. 4 text: lift at 0 deg ~ body weight for L3 -> C_L(0) = mg/(0.5 rho U^2 S) = 0.53 at U = 12 m/s (range 0.49-0.57); Fig. 5 itself not read"
      },
      {
       "quantity": "air density (kg/m3)",
@@ -1546,7 +1561,7 @@
       "quantity": "Fick E_O2 (J/ml)",
       "value": 19.34285714285714,
       "kind": "measured-secondhand",
-      "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89) / 0.7 mg O2 per ml (STPD) = 19.34 J/ml; physiology/muscle.js"
+      "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 mg O2 per ml (STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
      },
      {
       "quantity": "Hb O2 capacity (ml/ml)",
@@ -1570,7 +1585,7 @@
     "scope": "Still air over a flat surface; steady glide polar of stuffed flying fish in a wind tunnel; ranges are upper bounds (every metre at (L/D)max). Only glide_range_lean_bound_m is covered by the Lean theorem glide_range_le. Launch speed is the organism's own sourced leap/burst speed (or a labelled what-if). Takeoff (taxiing), control, stability, flapping and burst power are not modelled. survives = null (a glide attempt is not a lethal perturbation in this model); feasible = lift can carry the weight at the reachable launch speed (null if no sourced launch speed).",
     "validity": {
      "inRange": false,
-     "notes": "Mass 0.0006943 kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~0.4 kg): polar extrapolated. Chord Reynolds number ~1.1e+4 is far from the polar's ~1e5 (air kinematic viscosity 1.5e-5 m2/s assumed). glide_range_total_m exceeds the Lean bound whenever the kinetic phase is non-zero; only glide_range_lean_bound_m is covered by glide_range_le. Fick bound: arterial PO2 taken equal to air PO2 and gills taken to work in air; gills do not ventilate in air (physiology chain), so for a gill-breather this is a generous upper bound. TFF: NOTES-FOR-HUB.md item 2 says only 29.5% of the flight muscle the simulator charges fits in the body. This module uses no muscle power (the Fick bound is the cap), so the issue does not enter here; any muscle-based claim for the TFF must take it into account."
+     "notes": "Mass 0.0006943 kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~0.4 kg): polar extrapolated. glide_range_total_m exceeds the Lean bound whenever the kinetic phase is non-zero; only glide_range_lean_bound_m is covered by glide_range_le. Fick bound: arterial PO2 taken equal to air PO2 and gills taken to work in air; gills do not ventilate in air (physiology chain), so for a gill-breather this is a generous upper bound. TFF: NOTES-FOR-HUB.md item 2 says only 29.5% of the flight muscle the simulator charges fits in the body. This module uses no muscle power (the Fick bound is the cap), so the issue does not enter here; any muscle-based claim for the TFF must take it into account."
     }
    },
    "state": {
@@ -1632,7 +1647,7 @@
     "flags": [],
     "taxon": "Danio rerio"
    },
-   "lawset_version": "1.2.0",
+   "lawset_version": "1.3.0",
    "verdicts": [
     {
      "law_id": "thompson1917-ch02-06",
@@ -1644,10 +1659,11 @@
      "verdict": "cannot-evaluate",
      "binding": true,
      "missing": [
+      "finArea_m2",
       "CLmax",
       "airspeed_m_s"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "thompson1917-ch03-07",
@@ -1659,9 +1675,9 @@
      "verdict": "out-of-scope",
      "binding": true,
      "missing": [],
-     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
-     "evaluator_verdict": "out-of-scope",
-     "lawset_version": "1.2.0"
+     "scope_reason": "scoped to Exocoetidae (constraint C7b scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
+     "evaluator_verdict": "violated",
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "scaling-area-law",
@@ -1672,10 +1688,12 @@
      "band": "proved",
      "verdict": "out-of-scope",
      "binding": true,
-     "missing": [],
-     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
-     "evaluator_verdict": "out-of-scope",
-     "lawset_version": "1.2.0"
+     "missing": [
+      "finArea_m2"
+     ],
+     "scope_reason": "scoped to Exocoetidae (constraint C2a scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
+     "evaluator_verdict": "cannot-evaluate",
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "scaling-strength-law",
@@ -1686,10 +1704,12 @@
      "band": "proved",
      "verdict": "out-of-scope",
      "binding": true,
-     "missing": [],
-     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
-     "evaluator_verdict": "out-of-scope",
-     "lawset_version": "1.2.0"
+     "missing": [
+      "finArea_m2"
+     ],
+     "scope_reason": "scoped to Exocoetidae (constraint C8e scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
+     "evaluator_verdict": "cannot-evaluate",
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "thompson1917-ch02-10",
@@ -1703,9 +1723,9 @@
      "missing": [
       "mass_kg, finArea_m2, CLmax"
      ],
-     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
+     "scope_reason": "scoped to Exocoetidae (constraint C9c scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
      "evaluator_verdict": "cannot-evaluate",
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "scaling-strength-law",
@@ -1719,9 +1739,9 @@
      "missing": [
       "referenceSafetyFactor"
      ],
-     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
+     "scope_reason": "scoped to Exocoetidae (constraint C8c scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
      "evaluator_verdict": "cannot-evaluate",
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "flight-climb-glide-law",
@@ -1730,14 +1750,10 @@
      "status": "accepted",
      "constraint": "C15",
      "band": "proved",
-     "verdict": "cannot-evaluate",
+     "verdict": "holds",
      "binding": true,
-     "missing": [
-      "glideHeight_m",
-      "LD_max",
-      "glideDistance_m"
-     ],
-     "lawset_version": "1.2.0"
+     "missing": [],
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "flight-climb-glide-law",
@@ -1753,7 +1769,7 @@
       "powerAvailable_W (or flightMuscleFraction and musclePowerPerKg_W: the muscle premise R6, a named hypothesis)",
       "climbRate_m_s"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "fick-principle",
@@ -1771,7 +1787,7 @@
       "arterialO2",
       "airspeed_m_s and LD_max (or powerRequired_W)"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "flight-allometry-law",
@@ -1785,7 +1801,7 @@
      "missing": [
       "fitted exponents for weight, area and wing loading with intervals"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "thompson1917-ch02-06",
@@ -1799,7 +1815,7 @@
      "missing": [
       "the power-required exponent across sizes"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "genotype-genetic-code",
@@ -1813,7 +1829,7 @@
      "missing": [
       "genotype_edits"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "genotype-pleiotropy-closure",
@@ -1827,7 +1843,7 @@
      "missing": [
       "genotype_edits"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "genotype-developmental-ordering",
@@ -1841,7 +1857,7 @@
      "missing": [
       "developmental_claims"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "genotype-substitution-time",
@@ -1858,7 +1874,7 @@
       "substitution_budget.mutation_rate",
       "substitution_budget.generations_T"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "haldane-cost-of-selection",
@@ -1875,7 +1891,7 @@
       "substitution_budget.reproductive_excess",
       "substitution_budget.cost_per_substitution"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "E2",
@@ -1888,8 +1904,8 @@
      "binding": true,
      "missing": [],
      "scope_reason": "scoped to Exocoetidae (law E2 scope); the design is Danio rerio.",
-     "evaluator_verdict": "out-of-scope",
-     "lawset_version": "1.2.0"
+     "evaluator_verdict": "violated",
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "E3",
@@ -1905,7 +1921,7 @@
      ],
      "scope_reason": "mass_kg = 0.0006943 kg is outside the law's range [0.06, 0.06].",
      "evaluator_verdict": "cannot-evaluate",
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "E4",
@@ -1922,7 +1938,7 @@
       "oxycaloric_J_per_unit_O2",
       "airspeed_m_s and LD_max (or powerRequired_W)"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "E7",
@@ -1939,7 +1955,7 @@
      ],
      "scope_reason": "scoped to life stages embryo, larva; the design is at adult.",
      "evaluator_verdict": "cannot-evaluate",
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-thermal",
@@ -1951,12 +1967,10 @@
      "verdict": "cannot-evaluate",
      "binding": false,
      "missing": [
-      "body_temperature_C",
       "ct_min_C",
-      "ct_max_C",
-      "sustained_power_W"
+      "ct_max_C"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-thermal",
@@ -1968,13 +1982,11 @@
      "verdict": "cannot-evaluate",
      "binding": false,
      "missing": [
-      "body_temperature_C",
       "q10",
       "reference_temperature_C",
-      "reference_sustained_power_W",
-      "sustained_power_W"
+      "reference_sustained_power_W"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-current",
@@ -1986,10 +1998,9 @@
      "verdict": "cannot-evaluate",
      "binding": false,
      "missing": [
-      "current_speed_m_s",
-      "critical_swimming_speed_m_s"
+      "current_speed_m_s"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-current",
@@ -2006,7 +2017,7 @@
       "drag_area_m2",
       "aerobicCeiling_W (or efficiency, oxycaloric, cardiacOutput, arterialO2)"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-pressure",
@@ -2022,7 +2033,7 @@
       "bladder_volume_surface_ml",
       "bladder_volume_at_depth_ml"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-depth-cap",
@@ -2036,7 +2047,7 @@
      "missing": [
       "depth_m"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-isa-vmin",
@@ -2049,10 +2060,11 @@
      "binding": false,
      "missing": [
       "altitude_m",
+      "finArea_m2",
       "CLmax",
       "airspeed_m_s"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-wind-glide",
@@ -2066,11 +2078,9 @@
      "missing": [
       "wind_along_track_m_s (positive = tailwind)",
       "horizontal_airspeed_m_s (or airspeed_m_s)",
-      "glideHeight_m",
-      "LD_max",
       "ground_distance_m"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-energy-balance",
@@ -2088,14 +2098,47 @@
       "assimilation_efficiency",
       "mass_change"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     }
    ],
    "violations": [],
+   "lean_inputs": {
+    "spec": {
+     "SL_m": 0.0388,
+     "mass_kg": 0.0006943,
+     "gillArea_m2": 0.0008039993999999999,
+     "finLength_SL": 0.155,
+     "rho": 1.225,
+     "taxon": "Danio rerio",
+     "life_stage": "adult",
+     "body_temperature_C": 25,
+     "water_temperature_C": 25,
+     "water_density_kg_m3": 1023.4,
+     "critical_swimming_speed_m_s": 0.56,
+     "teleost": true,
+     "sustained_power_W": 0.00399160013,
+     "glideHeight_m": 1,
+     "LD_max": 4.37,
+     "glideDistance_m": 4.37,
+     "groundEffect": 0
+    },
+    "sources": {
+     "body_temperature_C": "STATE temperature_C (body = water temperature, ectotherm; conditions/baseline.json unless set)",
+     "water_temperature_C": "STATE temperature_C",
+     "water_density_kg_m3": "STATE ambient.water_density_kg_m3",
+     "critical_swimming_speed_m_s": "STATE ucrit_m_s (ontogeny.json)",
+     "teleost": "taxon Danio rerio",
+     "sustained_power_W": "routine metabolic power = STATE routine_metabolic_rate_umol_g_h x 0.1204 W/kg per umol g-1 h-1 (ontogeny.json units_note) x mass: the power the organism must sustain to stay alive",
+     "glideHeight_m": "glide scenario param launch_height_m",
+     "LD_max": "glide scenario metric glide_ratio ((L/D)max used)",
+     "glideDistance_m": "glide scenario metric glide_range_lean_bound_m (the Lean-covered part; glide_range_total_m is deliberately NOT passed: its kinetic phase is outside the theorem)",
+     "groundEffect": "the Lean-covered h (L/D) descent carries no ground effect (glide.mjs applies it only in the level phase)"
+    }
+   },
    "new_binding_violations": [],
    "out_of_validity": {
     "inRange": false,
-    "notes": "Mass 0.0006943 kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~0.4 kg): polar extrapolated. Chord Reynolds number ~1.1e+4 is far from the polar's ~1e5 (air kinematic viscosity 1.5e-5 m2/s assumed). glide_range_total_m exceeds the Lean bound whenever the kinetic phase is non-zero; only glide_range_lean_bound_m is covered by glide_range_le. Fick bound: arterial PO2 taken equal to air PO2 and gills taken to work in air; gills do not ventilate in air (physiology chain), so for a gill-breather this is a generous upper bound. TFF: NOTES-FOR-HUB.md item 2 says only 29.5% of the flight muscle the simulator charges fits in the body. This module uses no muscle power (the Fick bound is the cap), so the issue does not enter here; any muscle-based claim for the TFF must take it into account."
+    "notes": "Mass 0.0006943 kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~0.4 kg): polar extrapolated. glide_range_total_m exceeds the Lean bound whenever the kinetic phase is non-zero; only glide_range_lean_bound_m is covered by glide_range_le. Fick bound: arterial PO2 taken equal to air PO2 and gills taken to work in air; gills do not ventilate in air (physiology chain), so for a gill-breather this is a generous upper bound. TFF: NOTES-FOR-HUB.md item 2 says only 29.5% of the flight muscle the simulator charges fits in the body. This module uses no muscle power (the Fick bound is the cap), so the issue does not enter here; any muscle-based claim for the TFF must take it into account."
    }
   },
   "provenance": [
@@ -2113,9 +2156,9 @@
    },
    {
     "quantity": "C_L at 0 deg (best-L/D airspeed only)",
-    "value": 0.4,
-    "kind": "assumed",
-    "source": "dashboard/public/t/physics/sim/params.json CL_at_zero_deg (Park & Choi Fig. 5 not read)"
+    "value": 0.53,
+    "kind": "derived",
+    "source": "Park & Choi 2010 Fig. 4 text: lift at 0 deg ~ body weight for L3 -> C_L(0) = mg/(0.5 rho U^2 S) = 0.53 at U = 12 m/s (range 0.49-0.57); Fig. 5 itself not read"
    },
    {
     "quantity": "air density (kg/m3)",
@@ -2151,7 +2194,7 @@
     "quantity": "Fick E_O2 (J/ml)",
     "value": 19.34285714285714,
     "kind": "measured-secondhand",
-    "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89) / 0.7 mg O2 per ml (STPD) = 19.34 J/ml; physiology/muscle.js"
+    "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 mg O2 per ml (STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
    },
    {
     "quantity": "Hb O2 capacity (ml/ml)",
@@ -2350,7 +2393,7 @@
     "quantity": "ambient.pressure_kPa",
     "value": 101.325,
     "kind": "derived",
-    "source": "ISA surface pressure + rho_water g depth (hydrostatics)",
+    "source": "standard-atmosphere surface pressure (U.S. Standard Atmosphere 1976, P0 = 101.325 kPa) + rho_water g depth (hydrostatics, g = 9.80665 m/s2 standard gravity)",
     "unit": "kPa"
    },
    {
@@ -2449,15 +2492,15 @@
   "weakest_input": "assumed",
   "counts": {
    "borrowed": 9,
-   "assumed": 15,
-   "derived": 16,
+   "derived": 17,
+   "assumed": 14,
    "measured-secondhand": 3,
    "calibrated": 1,
    "measured": 5
   }
  },
  "zebrafish_glide_as_written": {
-  "contract_version": "0.3.0",
+  "contract_version": "0.3.1",
   "result": {
    "scenario": "glide",
    "run": {
@@ -2534,7 +2577,7 @@
      },
      {
       "key": "glide_airspeed_m_s",
-      "label": "Descent airspeed at best L/D (rests on an assumed C_L(0 deg))",
+      "label": "Descent airspeed at best L/D (C_L(0 deg) 0.53, approximate)",
       "value": null,
       "unit": "m/s",
       "better": null,
@@ -2549,7 +2592,7 @@
       "unit": "s",
       "better": "higher",
       "kind": "derived",
-      "source": "(L/D)_eff (v0 - v_min)/g + h (L/D)/v_LD; v_LD uses the assumed C_L(0 deg)"
+      "source": "(L/D)_eff (v0 - v_min)/g + h (L/D)/v_LD; v_LD uses C_L(0 deg) 0.53 (approximate)"
      },
      {
       "key": "glide_ratio",
@@ -2607,9 +2650,9 @@
      },
      {
       "quantity": "C_L at 0 deg (best-L/D airspeed only)",
-      "value": 0.4,
-      "kind": "assumed",
-      "source": "dashboard/public/t/physics/sim/params.json CL_at_zero_deg (Park & Choi Fig. 5 not read)"
+      "value": 0.53,
+      "kind": "derived",
+      "source": "Park & Choi 2010 Fig. 4 text: lift at 0 deg ~ body weight for L3 -> C_L(0) = mg/(0.5 rho U^2 S) = 0.53 at U = 12 m/s (range 0.49-0.57); Fig. 5 itself not read"
      },
      {
       "quantity": "air density (kg/m3)",
@@ -2645,7 +2688,7 @@
       "quantity": "Fick E_O2 (J/ml)",
       "value": 19.34285714285714,
       "kind": "measured-secondhand",
-      "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89) / 0.7 mg O2 per ml (STPD) = 19.34 J/ml; physiology/muscle.js"
+      "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 mg O2 per ml (STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
      },
      {
       "quantity": "Hb O2 capacity (ml/ml)",
@@ -2669,7 +2712,7 @@
     "scope": "Still air over a flat surface; steady glide polar of stuffed flying fish in a wind tunnel; ranges are upper bounds (every metre at (L/D)max). Only glide_range_lean_bound_m is covered by the Lean theorem glide_range_le. Launch speed is the organism's own sourced leap/burst speed (or a labelled what-if). Takeoff (taxiing), control, stability, flapping and burst power are not modelled. survives = null (a glide attempt is not a lethal perturbation in this model); feasible = lift can carry the weight at the reachable launch speed (null if no sourced launch speed).",
     "validity": {
      "inRange": false,
-     "notes": "Mass 0.0006943 kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~0.4 kg): polar extrapolated. Chord Reynolds number ~4.5e+3 is far from the polar's ~1e5 (air kinematic viscosity 1.5e-5 m2/s assumed). glide_range_total_m exceeds the Lean bound whenever the kinetic phase is non-zero; only glide_range_lean_bound_m is covered by glide_range_le. Fick bound: arterial PO2 taken equal to air PO2 and gills taken to work in air; gills do not ventilate in air (physiology chain), so for a gill-breather this is a generous upper bound. TFF: NOTES-FOR-HUB.md item 2 says only 29.5% of the flight muscle the simulator charges fits in the body. This module uses no muscle power (the Fick bound is the cap), so the issue does not enter here; any muscle-based claim for the TFF must take it into account."
+     "notes": "Mass 0.0006943 kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~0.4 kg): polar extrapolated. Mean-chord Reynolds number ~4.6e+3 is outside 5e3-1e5 around the polar's Re ~1e4 (Park & Choi: 'gliding flying fish (Re ~10^4)'; air kinematic viscosity 1.46e-5 m2/s). glide_range_total_m exceeds the Lean bound whenever the kinetic phase is non-zero; only glide_range_lean_bound_m is covered by glide_range_le. Fick bound: arterial PO2 taken equal to air PO2 and gills taken to work in air; gills do not ventilate in air (physiology chain), so for a gill-breather this is a generous upper bound. TFF: NOTES-FOR-HUB.md item 2 says only 29.5% of the flight muscle the simulator charges fits in the body. This module uses no muscle power (the Fick bound is the cap), so the issue does not enter here; any muscle-based claim for the TFF must take it into account."
     }
    },
    "state": {
@@ -2731,7 +2774,7 @@
     "flags": [],
     "taxon": "Danio rerio"
    },
-   "lawset_version": "1.2.0",
+   "lawset_version": "1.3.0",
    "verdicts": [
     {
      "law_id": "thompson1917-ch02-06",
@@ -2743,10 +2786,11 @@
      "verdict": "cannot-evaluate",
      "binding": true,
      "missing": [
+      "finArea_m2",
       "CLmax",
       "airspeed_m_s"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "thompson1917-ch03-07",
@@ -2758,9 +2802,9 @@
      "verdict": "out-of-scope",
      "binding": true,
      "missing": [],
-     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
-     "evaluator_verdict": "out-of-scope",
-     "lawset_version": "1.2.0"
+     "scope_reason": "scoped to Exocoetidae (constraint C7b scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
+     "evaluator_verdict": "violated",
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "scaling-area-law",
@@ -2771,10 +2815,12 @@
      "band": "proved",
      "verdict": "out-of-scope",
      "binding": true,
-     "missing": [],
-     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
-     "evaluator_verdict": "out-of-scope",
-     "lawset_version": "1.2.0"
+     "missing": [
+      "finArea_m2"
+     ],
+     "scope_reason": "scoped to Exocoetidae (constraint C2a scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
+     "evaluator_verdict": "cannot-evaluate",
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "scaling-strength-law",
@@ -2785,10 +2831,12 @@
      "band": "proved",
      "verdict": "out-of-scope",
      "binding": true,
-     "missing": [],
-     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
-     "evaluator_verdict": "out-of-scope",
-     "lawset_version": "1.2.0"
+     "missing": [
+      "finArea_m2"
+     ],
+     "scope_reason": "scoped to Exocoetidae (constraint C8e scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
+     "evaluator_verdict": "cannot-evaluate",
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "thompson1917-ch02-10",
@@ -2802,9 +2850,9 @@
      "missing": [
       "mass_kg, finArea_m2, CLmax"
      ],
-     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
+     "scope_reason": "scoped to Exocoetidae (constraint C9c scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
      "evaluator_verdict": "cannot-evaluate",
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "scaling-strength-law",
@@ -2818,9 +2866,9 @@
      "missing": [
       "referenceSafetyFactor"
      ],
-     "scope_reason": "scoped to Exocoetidae (compared with one reference specimen (Cypselurus hiraii, Park and Choi 2010 model L3)); the design is Danio rerio.",
+     "scope_reason": "scoped to Exocoetidae (constraint C8c scope: evaluated against one reference specimen (Cypselurus hiraii, Park and Choi 2010 Table 1 model L3); an isometric family is one body plan, so other clades are out of scope); the design is Danio rerio.",
      "evaluator_verdict": "cannot-evaluate",
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "flight-climb-glide-law",
@@ -2836,7 +2884,7 @@
       "LD_max",
       "glideDistance_m"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "flight-climb-glide-law",
@@ -2852,7 +2900,7 @@
       "powerAvailable_W (or flightMuscleFraction and musclePowerPerKg_W: the muscle premise R6, a named hypothesis)",
       "climbRate_m_s"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "fick-principle",
@@ -2870,7 +2918,7 @@
       "arterialO2",
       "airspeed_m_s and LD_max (or powerRequired_W)"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "flight-allometry-law",
@@ -2884,7 +2932,7 @@
      "missing": [
       "fitted exponents for weight, area and wing loading with intervals"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "thompson1917-ch02-06",
@@ -2898,7 +2946,7 @@
      "missing": [
       "the power-required exponent across sizes"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "genotype-genetic-code",
@@ -2912,7 +2960,7 @@
      "missing": [
       "genotype_edits"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "genotype-pleiotropy-closure",
@@ -2926,7 +2974,7 @@
      "missing": [
       "genotype_edits"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "genotype-developmental-ordering",
@@ -2940,7 +2988,7 @@
      "missing": [
       "developmental_claims"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "genotype-substitution-time",
@@ -2957,7 +3005,7 @@
       "substitution_budget.mutation_rate",
       "substitution_budget.generations_T"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "haldane-cost-of-selection",
@@ -2974,7 +3022,7 @@
       "substitution_budget.reproductive_excess",
       "substitution_budget.cost_per_substitution"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "E2",
@@ -2987,8 +3035,8 @@
      "binding": true,
      "missing": [],
      "scope_reason": "scoped to Exocoetidae (law E2 scope); the design is Danio rerio.",
-     "evaluator_verdict": "out-of-scope",
-     "lawset_version": "1.2.0"
+     "evaluator_verdict": "violated",
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "E3",
@@ -3004,7 +3052,7 @@
      ],
      "scope_reason": "mass_kg = 0.0006943 kg is outside the law's range [0.06, 0.06].",
      "evaluator_verdict": "cannot-evaluate",
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "E4",
@@ -3021,7 +3069,7 @@
       "oxycaloric_J_per_unit_O2",
       "airspeed_m_s and LD_max (or powerRequired_W)"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "E7",
@@ -3038,7 +3086,7 @@
      ],
      "scope_reason": "scoped to life stages embryo, larva; the design is at adult.",
      "evaluator_verdict": "cannot-evaluate",
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-thermal",
@@ -3050,12 +3098,10 @@
      "verdict": "cannot-evaluate",
      "binding": false,
      "missing": [
-      "body_temperature_C",
       "ct_min_C",
-      "ct_max_C",
-      "sustained_power_W"
+      "ct_max_C"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-thermal",
@@ -3067,13 +3113,11 @@
      "verdict": "cannot-evaluate",
      "binding": false,
      "missing": [
-      "body_temperature_C",
       "q10",
       "reference_temperature_C",
-      "reference_sustained_power_W",
-      "sustained_power_W"
+      "reference_sustained_power_W"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-current",
@@ -3085,10 +3129,9 @@
      "verdict": "cannot-evaluate",
      "binding": false,
      "missing": [
-      "current_speed_m_s",
-      "critical_swimming_speed_m_s"
+      "current_speed_m_s"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-current",
@@ -3105,7 +3148,7 @@
       "drag_area_m2",
       "aerobicCeiling_W (or efficiency, oxycaloric, cardiacOutput, arterialO2)"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-pressure",
@@ -3121,7 +3164,7 @@
       "bladder_volume_surface_ml",
       "bladder_volume_at_depth_ml"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-depth-cap",
@@ -3135,7 +3178,7 @@
      "missing": [
       "depth_m"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-isa-vmin",
@@ -3148,10 +3191,11 @@
      "binding": false,
      "missing": [
       "altitude_m",
+      "finArea_m2",
       "CLmax",
       "airspeed_m_s"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-wind-glide",
@@ -3169,7 +3213,7 @@
       "LD_max",
       "ground_distance_m"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     },
     {
      "law_id": "perturb-energy-balance",
@@ -3187,14 +3231,39 @@
       "assimilation_efficiency",
       "mass_change"
      ],
-     "lawset_version": "1.2.0"
+     "lawset_version": "1.3.0"
     }
    ],
    "violations": [],
+   "lean_inputs": {
+    "spec": {
+     "SL_m": 0.0388,
+     "mass_kg": 0.0006943,
+     "gillArea_m2": 0.0008039993999999999,
+     "finLength_SL": 0.155,
+     "rho": 1.225,
+     "taxon": "Danio rerio",
+     "life_stage": "adult",
+     "body_temperature_C": 25,
+     "water_temperature_C": 25,
+     "water_density_kg_m3": 1023.4,
+     "critical_swimming_speed_m_s": 0.56,
+     "teleost": true,
+     "sustained_power_W": 0.00399160013
+    },
+    "sources": {
+     "body_temperature_C": "STATE temperature_C (body = water temperature, ectotherm; conditions/baseline.json unless set)",
+     "water_temperature_C": "STATE temperature_C",
+     "water_density_kg_m3": "STATE ambient.water_density_kg_m3",
+     "critical_swimming_speed_m_s": "STATE ucrit_m_s (ontogeny.json)",
+     "teleost": "taxon Danio rerio",
+     "sustained_power_W": "routine metabolic power = STATE routine_metabolic_rate_umol_g_h x 0.1204 W/kg per umol g-1 h-1 (ontogeny.json units_note) x mass: the power the organism must sustain to stay alive"
+    }
+   },
    "new_binding_violations": [],
    "out_of_validity": {
     "inRange": false,
-    "notes": "Mass 0.0006943 kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~0.4 kg): polar extrapolated. Chord Reynolds number ~4.5e+3 is far from the polar's ~1e5 (air kinematic viscosity 1.5e-5 m2/s assumed). glide_range_total_m exceeds the Lean bound whenever the kinetic phase is non-zero; only glide_range_lean_bound_m is covered by glide_range_le. Fick bound: arterial PO2 taken equal to air PO2 and gills taken to work in air; gills do not ventilate in air (physiology chain), so for a gill-breather this is a generous upper bound. TFF: NOTES-FOR-HUB.md item 2 says only 29.5% of the flight muscle the simulator charges fits in the body. This module uses no muscle power (the Fick bound is the cap), so the issue does not enter here; any muscle-based claim for the TFF must take it into account."
+    "notes": "Mass 0.0006943 kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~0.4 kg): polar extrapolated. Mean-chord Reynolds number ~4.6e+3 is outside 5e3-1e5 around the polar's Re ~1e4 (Park & Choi: 'gliding flying fish (Re ~10^4)'; air kinematic viscosity 1.46e-5 m2/s). glide_range_total_m exceeds the Lean bound whenever the kinetic phase is non-zero; only glide_range_lean_bound_m is covered by glide_range_le. Fick bound: arterial PO2 taken equal to air PO2 and gills taken to work in air; gills do not ventilate in air (physiology chain), so for a gill-breather this is a generous upper bound. TFF: NOTES-FOR-HUB.md item 2 says only 29.5% of the flight muscle the simulator charges fits in the body. This module uses no muscle power (the Fick bound is the cap), so the issue does not enter here; any muscle-based claim for the TFF must take it into account."
    }
   },
   "provenance": [
@@ -3212,9 +3281,9 @@
    },
    {
     "quantity": "C_L at 0 deg (best-L/D airspeed only)",
-    "value": 0.4,
-    "kind": "assumed",
-    "source": "dashboard/public/t/physics/sim/params.json CL_at_zero_deg (Park & Choi Fig. 5 not read)"
+    "value": 0.53,
+    "kind": "derived",
+    "source": "Park & Choi 2010 Fig. 4 text: lift at 0 deg ~ body weight for L3 -> C_L(0) = mg/(0.5 rho U^2 S) = 0.53 at U = 12 m/s (range 0.49-0.57); Fig. 5 itself not read"
    },
    {
     "quantity": "air density (kg/m3)",
@@ -3250,7 +3319,7 @@
     "quantity": "Fick E_O2 (J/ml)",
     "value": 19.34285714285714,
     "kind": "measured-secondhand",
-    "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89) / 0.7 mg O2 per ml (STPD) = 19.34 J/ml; physiology/muscle.js"
+    "source": "oxycalorific 13.54 J/mg O2 (gerry2014, quoting its ref. 89; measured-secondhand) / 0.7 mg O2 per ml (STPD; a standard unit conversion) = 19.34 J/ml; physiology/muscle.js"
    },
    {
     "quantity": "Hb O2 capacity (ml/ml)",
@@ -3449,7 +3518,7 @@
     "quantity": "ambient.pressure_kPa",
     "value": 101.325,
     "kind": "derived",
-    "source": "ISA surface pressure + rho_water g depth (hydrostatics)",
+    "source": "standard-atmosphere surface pressure (U.S. Standard Atmosphere 1976, P0 = 101.325 kPa) + rho_water g depth (hydrostatics, g = 9.80665 m/s2 standard gravity)",
     "unit": "kPa"
    },
    {
@@ -3548,8 +3617,8 @@
   "weakest_input": "assumed",
   "counts": {
    "borrowed": 9,
-   "assumed": 14,
-   "derived": 16,
+   "derived": 17,
+   "assumed": 13,
    "calibrated": 2,
    "measured-secondhand": 3,
    "measured": 5

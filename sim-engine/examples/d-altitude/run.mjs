@@ -42,6 +42,7 @@ expect('every altitude ran for both organisms', ORGS.every(o => sweep[o].every(r
 expect('Lean altitude-coupling: glide-feasible heights form an interval from the ground (both)', ORGS.every(o => prefix(sweep[o])), JSON.stringify(ORGS.map(o => sweep[o].map(r => r.feasible))));
 expect('Lean altitude-coupling: infeasible at the ground => infeasible at every height (both)', ORGS.every(o => sweep[o][0].feasible === true || sweep[o].every(r => r.feasible !== true)), '');
 expect('TFF (lighter wing loading) glides at least as high as the flying fish', T.filter(r => r.feasible === true).length >= F.filter(r => r.feasible === true).length, '');
+expect('reference flying fish has a glide ceiling inside 0-5 km', typeof ceilings['flying-fish'].ceiling_m === 'number', JSON.stringify(ceilings['flying-fish'].ceiling_m));
 expect('v_min nondecreasing with height (both)', ORGS.every(o => nondec(sweep[o], r => r.v_min.value)), '');
 expect('aerobic power available nonincreasing with height (both)', ORGS.every(o => nondec(sweep[o], r => -r.p_aer.value)), '');
 expect('powered flight impossible at every height (margin < 1, both)', ORGS.every(o => sweep[o].every(r => r.margin.value < 1)), JSON.stringify(ORGS.map(o => sweep[o].map(r => r.margin.value))));

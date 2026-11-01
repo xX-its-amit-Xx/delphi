@@ -20,6 +20,9 @@ const CONSTRAINT_INPUTS = {
   C9: ['mass_kg', 'pectoralFinArea_m2'], C7b: ['SL_m', 'mass_kg'], C2a: ['SL_m', 'pectoralFinArea_m2'],
   C8e: ['SL_m', 'mass_kg', 'pectoralFinArea_m2'], C9c: ['SL_m', 'mass_kg', 'pectoralFinArea_m2'], C8c: ['SL_m'],
   C16: ['mass_kg', 'flightMuscleFraction'], C14: ['mass_kg', 'gillArea_m2'], E5: ['finLength_SL'], E2: ['SL_m', 'mass_kg'],
+  P1: ['body_temperature_C', 'ct_min_C', 'ct_max_C', 'sustained_power_W'], P1b: ['body_temperature_C', 'q10', 'reference_temperature_C', 'reference_sustained_power_W', 'sustained_power_W'],
+  P2: ['current_speed_m_s', 'critical_swimming_speed_m_s'], P2b: ['current_speed_m_s', 'drag_coefficient', 'drag_area_m2', 'aerobicCeiling_W'],
+  P3: ['depth_m', 'bladder_volume_surface_ml', 'bladder_volume_at_depth_ml'], P3b: ['depth_m', 'teleost'], P4: ['altitude_m', 'airspeed_m_s'], P4b: ['wind_along_track_m_s', 'ground_distance_m'],
 };
 const BIO = /bio|genot|develop|ontog|physiol|empirical-bio/i;
 
@@ -27,11 +30,11 @@ export async function lawsetVersion(lawset = 'current') {
   try { return LS.resolveLawset(lawset).version; } catch (e) { throw new Error(`lawset: ${e.message}`); }
 }
 
-export async function leanVerdicts(state, { lawset = 'current', baselineState = null, extraSpec = {} } = {}) {
+export async function leanVerdicts(state, { lawset = 'current', baselineState = null, extraSpec = {}, baselineExtraSpec = null } = {}) {
   const spec = { ...leanSpec(state), ...extraSpec };
   const r = await LS.checkDesign(spec, lawset);
   let baseline = null;
-  if (baselineState) baseline = new Set((await LS.checkDesign({ ...leanSpec(baselineState), ...extraSpec }, lawset)).violations.map(v => v.constraint));
+  if (baselineState) baseline = new Set((await LS.checkDesign({ ...leanSpec(baselineState), ...(baselineExtraSpec || extraSpec) }, lawset)).violations.map(v => v.constraint));
   const idx = LS.constraintIndex();
   const partsPresent = new Set(Object.keys(state.parts || {}));
   const verdicts = r.verdicts.map(v => ({ ...v, verdict: v.verdict === 'violated' && v.status === 'contested' ? 'contested' : v.verdict, lawset_version: r.lawset }));
@@ -46,7 +49,8 @@ export async function leanVerdicts(state, { lawset = 'current', baselineState = 
       kind: ['physical', 'biological'].includes(v.kind) ? v.kind : (BIO.test(String(v.kind || '')) ? 'biological' : 'physical'), law_kind: v.kind,
       inputs, numbers: v.inputs, parts, message: v.message, binding: v.binding,
       contested: v.status === 'contested',
-      severity: v.status === 'contested' ? 'amber' : (v.binding ? 'red' : 'advisory'),
+      // red: accepted law violated; amber: contested law; candidate: a proposed law (the UI draws it dashed)
+      severity: v.status === 'contested' ? 'amber' : v.binding ? 'red' : v.status === 'candidate' ? 'candidate' : 'advisory',
       baseline_violated: baseline ? baseline.has(v.constraint) : null,
     };
   });

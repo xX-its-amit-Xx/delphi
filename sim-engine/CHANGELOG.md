@@ -5,6 +5,30 @@ the scenario interface. Its version is `CONTRACT_VERSION` in `lib/envelope.mjs`.
 as `contract_version`, and `contract.json` states it. The rule: anything may change, provided it is
 versioned here. While the major version is 0, a minor bump may break callers; each entry says what breaks.
 
+## 0.3.1 (2026-11-01)
+
+**Added** (no breaking change)
+
+- The Lean perturbation laws (P1–P5, lawset 1.2.0) are now fed. `lib/perturb-map.mjs` maps STATE, the
+  scenario's params and its own computed metrics onto the exact names `checkPerturb` reads. `scenario_run`
+  returns them, with where each came from, as `lean_inputs: {spec, sources}`. `optimize` passes them for every
+  candidate.
+  - P1: the temperature param, the scenario's `ctmax_C`/`ctmin_C`, and routine metabolic power as sustained power.
+  - P2: the current param, and the scenario's `ucrit_m_s` (else STATE `ucrit_m_s`).
+  - P3b: the depth param and `teleost`.
+  - Not fed, and so cannot-evaluate:
+    - P1b, P2b, P4, P4b and P5: no committed Q10 reference, Cd and A, CLmax, L/D or assimilation efficiency.
+    - P3: the pressure scenario's real-hydrostatics Boyle volume exceeds the law's "1 atm per 10 m" bound by
+      about 0.5–1 % at every depth. That is a convention mismatch, not a violation.
+- Violation `severity` gains `candidate`: a law with status candidate, which the UI draws dashed. It sits
+  alongside `red` (accepted) and `amber` (contested).
+
+**Fixed**
+
+- `leanSpec` passed STATE `lifting_area_m2` as `finArea_m2`, which contradicts the documented convention (mesh
+  pectoral + pelvic + caudal, not the Lean reference's pectoral + pelvic + body planform). It is no longer
+  passed.
+
 ## 0.3.0 (2026-11-01)
 
 **Breaking**

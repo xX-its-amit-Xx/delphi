@@ -4,7 +4,7 @@
  "kind": "biological",
  "class": "theorem-from-hypothesis",
  "status": "contested",
- "label": null,
+ "label": "Under the osmolyte hypothesis (teleost internal osmolality rises linearly with depth...",
  "level": null,
  "lean_ref": {
   "module": "lean/Delphi/Perturb.lean",
@@ -35,7 +35,9 @@
    "Yancey PH, Gerringer ME, Drazen JC, Rowden AA, Jamieson A 2014, Marine fish may be biochemically constrained from inhabiting the deepest ocean depths. (PMID 24591588, doi:10.1073/pnas.1322003111); lean/perturb-sources.json#yancey2014",
    "Yancey PH 2020, Cellular responses in marine animals to hydrostatic pressure. (PMID 32096337, doi:10.1002/jez.2354); lean/perturb-sources.json#yancey2020"
   ],
-  "observations": []
+  "observations": [
+   "Contradicting observation: Pseudoliparis sp. indet. 1 at 8336 m, Izu-Ogasawara Trench (Jamieson et al. 2026 citing Jamieson et al. 2023)"
+  ]
  },
  "sources": [
   "Yancey PH, Gerringer ME, Drazen JC, Rowden AA, Jamieson A 2014, Marine fish may be biochemically constrained from inhabiting the deepest ocean depths. (PMID 24591588, doi:10.1073/pnas.1322003111); lean/perturb-sources.json#yancey2014",
@@ -63,17 +65,25 @@
     "taxon": "Teleostei",
     "measured": "a fish recorded at 8336 m depth",
     "contradicts": "perturb-depth-cap (Delphi.Perturb.no_teleost_below: under OsmolyteDepthCap no teleost lives below 8200 m; the witness line meets seawater at 8190 m)",
-    "source": "Jamieson AJ, Swanborn DJB, Bond T, Cundy MC, Fujiwara Y, Lindsay D, Stott MS, Kitazato H (2026). Faunal biodiversity of the lower abyssal and hadal zones of the Japan, Ryukyu and Izu-Ogasawara trenches (NW Pacific Ocean; 4534-9775 m). Biodiversity Data Journal 14:e182172. doi:10.3897/BDJ.14.e182172, PMCID PMC12976738, citing Jamieson et al. 2023b",
+    "source": "Jamieson AJ, Swanborn DJB, Bond T, Cundy MC, Fujiwara Y, Lindsay D, Stott MS, Kitazato H (2026). Faunal biodiversity of the lower abyssal and hadal zones of the Japan, Ryukyu and Izu-Ogasawara trenches (NW Pacific Ocean; 4534-9775 m). Biodiversity Data Journal 14:e182172. doi:10.3897/BDJ.14.e182172, PMID 41822858, PMCID PMC12976738; primary record: Jamieson et al. 2023, doi:10.1016/j.dsr.2023.104132 (not fetched)",
     "quote": "Pseudoliparis sp. indet. 1 at 8336 m in the Izu-Ogasawara Trench is the deepest recorded fish (Jamieson et al. 2023b).",
     "quote_kind": "secondhand (the 2026 paper restates the 2023b record; the 2023b primary was not fetched)",
     "fetched": "2026-11-01, Europe PMC REST fullTextXML for PMC12976738 (the abstract does not contain the sentence; the full text does)",
     "found_by": "sim-engine/scenarios/ENVIRONMENT.md and pressure.mjs (environment scenario thread), verified by the registry thread",
-    "margin": "8336 - 8200 = 136 m beyond the law's stated cap (146 m beyond the 8190 m witness line); the law may survive as an approximate ceiling but not as a hard limit",
+    "margin": "8336 - 8200 = 136 m below the law's stated cap (146 m below the 8190 m line of the witness); the law may survive as an approximate ceiling, not as a hard limit",
     "lean_check": {
-     "statement": "example (O : Delphi.Perturb.OsmolyteDepthCap) (hreg : O.osm 8336 ≤ O.sw) : False := Delphi.Perturb.no_teleost_below O hreg (by norm_num)",
-     "status": "not yet compiled: the hub asked for no Lean process while the perturbation mutation suite runs; the contradiction is a direct instance of the theorem's own statement (8200 < 8336)"
-    }
-   }
+     "file": "lean/registry/lean/P3bContested.lean",
+     "theorems": [
+      "Delphi.Registry.depthCap_contradicts_8336",
+      "Delphi.Registry.depthCap_measured_contradicts_8336"
+     ],
+     "statement": "(O : Delphi.Perturb.OsmolyteDepthCap) (hreg : O.osm 8336 ≤ O.sw) : False",
+     "status": "compiled 2026-11-01 with lake env lean; axioms propext, Classical.choice, Quot.sound only",
+     "fails_once": "the same file at 8100 m (inside the cap) is rejected (unsolved goals), so the contradiction comes from the observed depth, not from the proof script"
+    },
+    "also_recorded_in": "lean/perturb-sources.json#jamieson2026 (perturbation thread, verified independently)"
+   },
+   "proof": "lean/registry/lean/P3bContested.lean: Delphi.Registry.depthCap_contradicts_8336 (standard axioms)"
   }
  ],
  "approval": null,
@@ -88,6 +98,11 @@
    "version": "1.0.0",
    "date": "2026-11-01",
    "change": "contested by observation jamieson2023b-pseudoliparis-8336m: Pseudoliparis sp. indet. 1 (snailfish, Liparidae), Izu-Ogasawara Trench (Teleostei): a fish recorded at 8336 m depth; contradicts perturb-depth-cap (Delphi.Perturb.no_teleost_below: under OsmolyteDepthCap no teleost lives below 8200 m; the witness line meets seawater at 8190 m)"
+  },
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "contradiction with the 8336 m observation compiled in Lean (lean/registry/lean/P3bContested.lean); primary DOI and PMID added"
   }
  ],
  "content_hash": "21808ed7b8f0afcfcae3aa8dbb8047b2a49a40ee5a9b882cf85e1b6f079bae5c",
@@ -133,7 +148,8 @@
  },
  "in_lawsets": [
   "1.1.0",
-  "1.2.0"
+  "1.2.0",
+  "1.3.0"
  ],
  "scope_note": "Static mirror generated by dashboard/build-lean-api.mjs from lib/lean-source.mjs, the same loader the MCP tools (lean_laws_list, lean_law_get, lean_lawset_get) use. A law's status is a registry decision, not a truth value; \"proved\" means a Lean kernel proof about a model, never that the model describes an organism. Laws absent here are unchecked, not satisfied. Evaluation (lean_check) is not mirrored: the browser runs blueprint3d/browser-check.mjs locally via lean-client.js."
 }

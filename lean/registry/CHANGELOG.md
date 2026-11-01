@@ -4,6 +4,12 @@ Newest first. Each release is an immutable file `lawsets/lawset-<version>.json` 
 content hash, status and kind. `lawsets/current.json` names the current one. Laws are never deleted: a retired
 or contested law keeps its file, so a verdict computed against an older law set can be reproduced exactly.
 
+## 1.3.0 (2026-11-01)
+
+perturb-depth-cap stays contested, now with the contradiction compiled in Lean (lean/registry/lean/P3bContested.lean: OsmolyteDepthCap applied to a teleost at 8336 m proves False, standard axioms only; the same statement at 8100 m is rejected) and the observation's PMID 41822858 and primary DOI 10.1016/j.dsr.2023.104132 recorded. The law and the observation are both kept. No law version or hash changed.
+
+No law changes.
+
 ## 1.2.0 (2026-11-01)
 
 perturb-depth-cap contested: a teleost (Pseudoliparis sp., Liparidae) recorded at 8336 m in the Izu-Ogasawara Trench (Jamieson et al. 2026, BDJ 14:e182172, citing Jamieson et al. 2023b) lies below the law's 8200 m teleost cap, inside the law's own scope (Teleostei). P3b rows now give 'contested' (amber), never red. The law and the observation are both kept.

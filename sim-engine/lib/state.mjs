@@ -91,7 +91,12 @@ export function resolveAmbient(conditions = {}, bundle) {
   const fO2 = given('air_O2_fraction') ? conditions.air_O2_fraction : base.air_O2_fraction.value;
   const medium = conditions.medium || (alt > 0 ? 'air' : 'water');
   const src = (k, b) => (given(k) ? 'scenario condition (set by the caller)' : `conditions/baseline.json ${b}`);
-  // International Standard Atmosphere, troposphere (standard formula, not fetched); valid below 11 km.
+  // Standard atmosphere, troposphere (0-11 km geopotential): U.S. Standard Atmosphere, 1976 (NOAA-S/T-76-1562,
+  // NASA-TM-X-74335, https://ntrs.nasa.gov/citations/19770009539; identical to the ICAO/ISO 2533 standard
+  // atmosphere below 11 km): T = T0 - L h, P = P0 (1 - L h / T0)^(g0 M / (R* L)), rho = rho0 (1 - L h / T0)^(g0 M / (R* L) - 1),
+  // with T0 = 288.15 K, L = 0.0065 K/m (so L/T0 = 2.25577e-5 /m), P0 = 101.325 kPa, exponent 5.25588, density
+  // exponent 4.25588 (written 4.2559). h is geopotential height. These constants are NOT in conditions/baseline.json;
+  // only rho0 = 1.225 kg/m3 is read from there.
   const isa = 1 - 2.25577e-5 * alt;
   const P_atm = 101.325 * Math.pow(isa, 5.25588);
   const rho_air_sl = base.air_density_kg_m3.value;
@@ -109,8 +114,8 @@ export function resolveAmbient(conditions = {}, bundle) {
       altitude_m: F(alt, 'm', 'assumed', src('altitude_m', '(sea level)')),
       salinity_psu: F(S, 'psu', 'assumed', src('salinity_psu', 'salinity_psu (35, assumed)')),
       water_density_kg_m3: F(rho_w, 'kg/m3', 'assumed', bundle.physiology.seawater_density_kg_m3.source),
-      air_density_kg_m3: F(rho_air, 'kg/m3', alt ? 'derived' : 'assumed', alt ? `ISA troposphere rho = ${rho_air_sl} (1 - 2.25577e-5 h)^4.2559 (standard formula, not fetched); valid below 11 km` : 'conditions/baseline.json air_density_kg_m3 (1.225, assumed)', alt > 11000 ? { flags: ['altitude above 11 km: ISA troposphere formula out of range'] } : {}),
-      pressure_kPa: F(P, 'kPa', 'derived', medium === 'water' ? 'ISA surface pressure + rho_water g depth (hydrostatics)' : 'ISA troposphere P = 101.325 (1 - 2.25577e-5 h)^5.25588 (standard formula)'),
+      air_density_kg_m3: F(rho_air, 'kg/m3', alt ? 'derived' : 'assumed', alt ? `standard-atmosphere troposphere rho = ${rho_air_sl} (1 - 2.25577e-5 h)^4.2559: U.S. Standard Atmosphere 1976 (NASA-TM-X-74335, https://ntrs.nasa.gov/citations/19770009539), L = 0.0065 K/m, T0 = 288.15 K; rho0 from conditions/baseline.json; valid below 11 km` : 'conditions/baseline.json air_density_kg_m3 (1.225, assumed)', alt > 11000 ? { flags: ['altitude above 11 km: ISA troposphere formula out of range'] } : {}),
+      pressure_kPa: F(P, 'kPa', 'derived', medium === 'water' ? 'standard-atmosphere surface pressure (U.S. Standard Atmosphere 1976, P0 = 101.325 kPa) + rho_water g depth (hydrostatics, g = 9.80665 m/s2 standard gravity)' : 'standard-atmosphere troposphere P = 101.325 (1 - 2.25577e-5 h)^5.25588: U.S. Standard Atmosphere 1976 (NASA-TM-X-74335, https://ntrs.nasa.gov/citations/19770009539), = ICAO/ISO 2533 below 11 km'),
       pO2_kPa: F(pO2, 'kPa', 'derived', 'air_O2_fraction x (P_atm - pH2O(T)); for water, the O2 tension of surface water in equilibrium with air (as physiology/index.js). Hydrostatic pressure does not raise dissolved pO2 in an open water column; stratified or hypoxic water is not modelled.'),
       air_O2_fraction: F(fO2, '-', 'assumed', src('air_O2_fraction', 'air_O2_fraction (0.209)')),
       ...extra,
@@ -293,7 +298,7 @@ export function resolveState(doc, ageDays, conditions = {}, bundle, opts = {}) {
   out.myotomal_muscle_fraction = NULL('- (of body mass)', `no fetched value: physiology/index.js uses an unsourced placeholder (${bundle.physiology.axial_muscle_fraction_placeholder.value}, assumed) and ontogeny.json has none. Not passed off as data; set it with an edit if a scenario needs it.`);
   const sbv = bundle.ontogeny?.species?.zebrafish?.stages?.find(s => s.key === 'stage_180d')?.fields?.body_density_kg_m3;
   out.swimbladder_volume_fraction = singleTrack && zfLeaf && stageRow.stage === 'adult' && out.has_swimbladder.value && sbv && /swim bladder 5\.1/.test(sbv.note || '')
-    ? F(0.051, '- (of body volume)', 'measured', `Robertson et al. 2008 J Morphol 269:666-673 (doi 10.1002/jmor.10610): swim bladder 5.1 +/- 1.4 % of body volume in adult zebrafish, as quoted in ontogeny.json stage_180d body_density note`, { range: [0.037, 0.065] })
+    ? F(0.051, '- (of body volume)', 'measured', `Robertson et al. 2008 J Morphol 269:666-673 (doi 10.1002/jmor.10610): swim bladder 5.1 +/- 1.4 % of body volume in adult zebrafish, as quoted in ontogeny.json stage_180d body_density note`, { mean_pm_sd: [0.037, 0.065], note: '0.051 +/- 0.014 is mean +/- 1 SD (Robertson 2008), not a min-max range' })
     : NULL('- (of body volume)', zfLeaf ? 'measured only for adult zebrafish (Robertson 2008); not at this stage or for this design' : 'no swim-bladder volume measurement for this organism (ontogeny.json)');
   out.pcrit_kPa = NULL('kPa', 'not in ontogeny.json or physiology/: no critical O2 tension was fetched for zebrafish or flying fish');
   const rmr = routineMR(bundle.ontogeny, leafList, age, M, onto, singleTrack);
@@ -479,7 +484,8 @@ export function leanSpec(state) {
   // NOT passed: pectoral area. browser-check compares the LIFTING area (pectoral + pelvic + body planform)
   // with the reference specimen's; STATE has no pelvic or planform area, so passing pectoral area alone
   // would manufacture area-law violations (C2a, C8e). Those laws therefore come back cannot-evaluate.
-  if (state.lifting_area_m2 && typeof state.lifting_area_m2.value === 'number') s.finArea_m2 = state.lifting_area_m2.value;
+  // lifting_area_m2 (pectoral + pelvic + caudal, mesh) is NOT the Lean reference's convention (pectoral + pelvic +
+  // body planform), so it is deliberately not passed as finArea_m2.
   put('gillArea_m2', state.gill_area_m2);
   const fl = state._meta?.parameters?.pectoral_len_over_SL; if (fl && typeof fl.value === 'number') s.finLength_SL = fl.value;
   if (state.ambient?.air_density_kg_m3?.value) s.rho = state.ambient.air_density_kg_m3.value;
@@ -492,5 +498,8 @@ export const INPUT_PARTS = {
   SL_m: ['skin_L', 'skin_R'], mass_kg: ['skin_L', 'skin_R', 'muscle_L', 'muscle_R'],
   pectoralFinArea_m2: ['pectoral_fin_L', 'pectoral_fin_R'], finArea_m2: ['pectoral_fin_L', 'pectoral_fin_R', 'pelvic_fin_L', 'pelvic_fin_R', 'caudal_fin'],
   finLength_SL: ['pectoral_fin_L', 'pectoral_fin_R'], gillArea_m2: ['gills_L', 'gills_R'], flightMuscleFraction: ['pectoral_muscle_L', 'pectoral_muscle_R'],
+  // perturbation inputs (P laws): the whole body is what is too hot or too deep; the bladder and swimming muscle where specific
+  body_temperature_C: ['skin_L', 'skin_R'], sustained_power_W: ['muscle_L', 'muscle_R'], critical_swimming_speed_m_s: ['muscle_L', 'muscle_R', 'caudal_fin'],
+  current_speed_m_s: ['skin_L', 'skin_R'], depth_m: ['skin_L', 'skin_R'], bladder_volume_surface_ml: ['swim_bladder'], bladder_volume_at_depth_ml: ['swim_bladder'],
 };
 export { mapKind };

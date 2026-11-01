@@ -10,6 +10,7 @@ so a slide can never show a result that does not exist yet.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from pptx import Presentation
@@ -718,8 +719,9 @@ if LR:
         f"Law set {LR['lawset']} pins {LR['inLawsetTotal']} laws, each with its version, a content hash over what it says, the Lean module "
         "and theorem, and the commit and statement hash it was checked at. Promotion to accepted is never automated."
         + (f" {LR['discovered']} further candidates were mined from the project's own sourced data." if LR.get("discovered") else ""),
-        f"Served three ways from one loader: the hosted delphisci MCP server {LR.get('mcpVersion') or ''} (lean_laws_list, lean_law_get, "
-        "lean_lawset_get, lean_check, lean_verify); the CLI and local sim-engine; and a static JSON mirror at /api/lean/"
+        f"Served three ways from one loader: the delphisci MCP server {LR.get('mcpVersion') or ''} (lean_laws_list, lean_law_get, "
+        "lean_lawset_get, lean_check, lean_verify; the hosted copy has them only once this change is merged and redeployed, so check "
+        "its tools/list first); the CLI and local sim-engine; and a static JSON mirror at /api/lean/"
         + (f", currently serving law set {mir['lawset']} ({mir['count']} laws)" if mir else "")
         + (", one release behind the registry; lean_verify reports exactly this drift." if mir and mir.get("lawset") != LR["lawset"] else "."),
     ]
@@ -744,8 +746,9 @@ if SV:
     cd.categories = cats
     for k, lab, _ in used:
         tot = sum(g["counts"].get(k, 0) for g in SV["groups"])
-        cd.add_series(f"{tot} {lab}", [g["counts"].get(k, 0) or None for g in SV["groups"]][::-1])
-    gf = s.shapes.add_chart(XL_CHART_TYPE.BAR_STACKED, M, Inches(2.15), W - 2 * M, Inches(2.35), cd)
+        pre = (SV.get("tallyPre") or {}).get(k, tot)
+        cd.add_series(f"{tot} {lab}" + (f" (pre-registered: {pre})" if pre != tot else ""), [g["counts"].get(k, 0) or None for g in SV["groups"]][::-1])
+    gf = s.shapes.add_chart(XL_CHART_TYPE.BAR_STACKED, M, Inches(2.15), W - 2 * M, Inches(2.1), cd)
     ch = gf.chart
     ch.font.size = Pt(11)
     ch.font.color.rgb = MUTE
@@ -770,15 +773,21 @@ if SV:
     va.visible = False
     ch.category_axis.format.line.color.rgb = RGBColor(0xC3, 0xC2, 0xB7)
     items = [(f"{f['id']} · {f['name']}", f["why"], "fail", S2) for f in SV["fails"]]
-    items.append((f"{len(SV['circular'])} “passes” were the studio reading its own sources back",
-                  f"{', '.join(SV['circular'])}: in band only because the module interpolates, or quotes, the paper it is scored against. "
-                  "Reclassified after the results in a labelled amendment (A1).", "circular", S4))
-    rows(s, items, y=Inches(4.7), gap=Inches(0.56), vw=Inches(1.4))
+    items.append((f"{len(SV['circular'])} “passes” read the answer back",
+                  f"{', '.join(SV['circular'])}: in band only because the module is calibrated to, interpolates, or quotes the paper it is scored against. "
+                  "Scored circular, never counted as a pass.", "circular", S4))
+    if SV.get("changes"):
+        items.append((f"{len(SV['changes'])} verdicts changed by amendments written after the results",
+                      "; ".join(f"{c['id']} {c['from']} → {c['to']} ({c['amendment']})" for c in SV["changes"])
+                      + ". Both verdicts kept side by side; the pre-registration file is unchanged.", str(len(SV["changes"])), SERIOUS))
+    rows(s, items, y=Inches(4.4), gap=Inches(0.62), vw=Inches(1.4))
     trust = ("Tests fixed before any scenario module existed"
              + ("; the pre-registration still hashes to " + SV["preregSha"][:16] + "…" if SV.get("preregHashOk") else "")
              + ". Written by an agent that built none of the studio."
              + (f" Harness self-test: {SV['selftest']['ok']} of {SV['selftest']['total']} checks fail on a planted bad input." if SV.get("selftest") else "")
-             + (" Every negative, law and optimizer control held." if SV.get("controlsHeld") else " Not every control held."))
+             + (" Every negative, law and optimizer control held" if SV.get("controlsHeld") else " Not every control held")
+             + ("".join(f"; {c['id']} only under a post-results amendment ({c['amendment']})" for c in SV.get("changes", [])
+                        if re.match(r"^(N[1-6]|O\d|P\d)$", c["id"])) + "."))
     caption(s, trust + f"  Read from sim-engine/validation/studio-results.json, run {SV['generatedAt']}.", y=H - Inches(1.12))
 
 PK = N.get("printkit")

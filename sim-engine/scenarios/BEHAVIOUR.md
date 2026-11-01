@@ -19,6 +19,8 @@ How to read `kind`:
 - `calibrated`: a lookup value read straight back from its source (harness amendment A1), for example a sleep fraction or the 8 ms latency. It is shown, but it is not a prediction and never counts as a validation.
 - `assumed`: a placeholder. It appears only for null metrics, the fixed 26 °C speed reference and what-if overrides.
 
+**Parameter kinds.** A parameter's `kind` describes its default. Slider limits and on/off switches are design choices, so a parameter that is really a choice (K, the visual-angle and latency sliders, the lateral-line, hcrt and hcrtr switches, light hours, surface roughness) is labelled `assumed`, with its source string giving the measured value or range it sits in. The adhesion ceiling of 101.3 kPa is physics: one atmosphere.
+
 **`survives` and `feasible`.** `survives` means one thing in every scenario here: the organism survives the perturbation. `predator` sets it from the evasion geometry, and it is null when the outcome is probabilistic or rests on an unmeasured aerial escape. `digestion` sets it from the energy balance. `grip`, `sleep` and `daynight` leave it null, because they are not survival tests. Whether a behaviour works goes in `feasible`: an aerial escape is available (`predator`), the disc holds the body weight (`grip`), the animal can feed at all (`digestion`).
 
 Zebrafish ages: STATE `ageDays` counts days post-hatching, and zebrafish hatch at 2 dpf (`development/zebrafish/trajectory.mjs`). The scenarios use dpf = ageDays + 2.
@@ -34,10 +36,10 @@ Zebrafish ages: STATE `ageDays` counts days post-hatching, and zebrafish hatch a
    - Adult: 8 ms. This is a real adult measurement, made inside a paper whose title is about larvae. The Results section says: "Using a vibrational stimulus, we found similar results, with modal latency to startle being 8 ms (Fig. 5F, inset)". It was read on the PMC article page (https://pmc.ncbi.nlm.nih.gov/articles/PMC6672105/), because Europe PMC does not serve that full text.
    - Both values are labelled calibrated, because they are read back from the source. Every other species borrows them.
 2. **Peak escape speed.**
-   - Larva: 50 BL/s. This comes from a peak velocity of 200 mm/s and acceleration of 20 m/s², quoted by Turrini 2023 from Kim 2017 (secondhand), over a 4 mm larva.
+   - Larva: an absolute 0.2 m/s peak and 20 m/s² peak acceleration, quoted by Turrini 2023 from Kim 2017 (secondhand). The citing text gives no larval length, so BL/s is computed from the state's own SL. No larval length is assumed.
    - Adult zebrafish: 25.5 body lengths/s, from Danos & Lauder 2012 (read from the Wayback copy of JEB 215:1854). The paper reports a mean maximum Reynolds number of 27,800 for fish of 33 mm total length, which works out to U = 0.842 m/s. The value is applied per SL, which understates it by the SL/TL ratio. It replaces the borrowed pike bound of 11 BL/s, which was half the measured value. Other non-flier species borrow it.
    - Flying fish: 14.6 BL/s, Makiguchi's 3.87–5.15 m/s. That figure is a tail-beat estimate made with Wardle's formula, not a measured speed.
-   - Speeds scale with a borrowed muscle Vmax Q10 of 1.5 (smelt, via `physiology/`) around 26 °C.
+   - Speeds scale with a borrowed muscle Vmax Q10 of 1.5 (smelt, via `physiology/`) around 26 °C. The valid range is 23–28 °C: the escape data come from 23–27 °C (Burgess & Granato) and fish held at 27 °C (McKee & McHenry); Danos & Lauder give no temperature.
 3. **Larval outcome.** For larvae the outcome is a measured lookup: P(escape) = 0.70 per strike from an adult zebrafish, or 0.05 with the lateral line ablated (Stewart et al. 2013). survives is null because the outcome is probabilistic.
 4. **Post-larval geometry.** This is McKee & McHenry's (2020) looming-stimulus model, built on Weihs & Webb 1984 and Soto et al. 2015.
    - The prey reacts when the predator subtends θ = 14°, after a 0.76 s latency.

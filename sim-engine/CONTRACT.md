@@ -77,7 +77,7 @@ implemented.
 
 ## Studio tools
 
-**Contract version 0.3.0** (`lib/envelope.mjs` `CONTRACT_VERSION`; every envelope carries `contract_version`,
+**Contract version 0.3.1** (`lib/envelope.mjs` `CONTRACT_VERSION`; every envelope carries `contract_version`,
 and `contract.json` states it). History: `CHANGELOG.md`. Anything may change, provided it is versioned there.
 
 The Design Studio wrapper: agents and humans create, edit and co-design organisms, then test them in
@@ -151,7 +151,13 @@ laws scoped to one clade come back `out-of-scope` for other organisms instead of
 `law_id`, `law_version`, `status`, `lawset_version`, `lean_ref`, `kind` (physical / biological), `inputs`,
 `parts` (to light up in red), `severity` (red; amber for contested; advisory) and `baseline_violated`.
 
-Only the mass–length rows (C7b, E2) can be evaluated from STATE. The area rows need the Lean reference's
+**Perturbation laws (P1–P5)** read inputs that `lib/perturb-map.mjs` takes from STATE, the scenario's params and
+its own metrics, using the exact names `checkPerturb` reads. `scenario_run` returns them with their sources as
+`lean_inputs`. P1, P2 and P3b are fed; the others stay cannot-evaluate (`CHANGELOG.md` 0.3.1 says why for each).
+P laws have status `candidate`, so their violations carry `severity: "candidate"` (drawn dashed), not red.
+
+Only the mass–length rows (C7b, E2) can be evaluated from STATE alone.
+ The area rows need the Lean reference's
 lifting-area convention, which STATE does not have, so they come back cannot-evaluate rather than being fed a
 different area.
 

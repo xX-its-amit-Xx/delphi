@@ -13,6 +13,7 @@ import { loadBundle } from '../lib/data-node.mjs';
 import * as O from '../lib/organism.mjs';
 import { resolveState, stageAges, STATE_FIELDS, STATE_FIELDS_OPTIONAL } from '../lib/state.mjs';
 import { leanVerdicts, lawsetVersion } from '../lib/lean.mjs';
+import { perturbInputs } from '../lib/perturb-map.mjs';
 import { loadScenarios, describeScenario, runScenario } from '../scenarios/index.mjs';
 
 export const SESSIONS_DIR = process.env.STUDIO_SESSIONS_DIR ? path.resolve(process.env.STUDIO_SESSIONS_DIR) : path.resolve(import.meta.dirname, '..', 'sessions');
@@ -193,7 +194,11 @@ async function runOne(doc, bundle, s, args, ageDays) {
   const state = resolveState(doc, ageDays, args.conditions || {}, bundle, { measured: args.measured });
   const run = runScenario(s, state, args.params || {});
   const base = resolveState(baseOf(doc), ageDays, args.conditions || {}, bundle);
-  const lean = await leanVerdicts(state, { lawset: args.lawset, baselineState: base });
+  // The P laws read the scenario's params and its own computed quantities (lib/perturb-map.mjs).
+  const pi = perturbInputs(state, s.key, run.params || args.params || {}, run);
+  const pb = perturbInputs(base, s.key, run.params || args.params || {}, runScenario(s, base, args.params || {}));
+  const lean = await leanVerdicts(state, { lawset: args.lawset, baselineState: base, extraSpec: pi.spec, baselineExtraSpec: pb.spec });
+  lean.perturb_input_sources = pi.sources;
   return { state, run, lean };
 }
 
@@ -202,7 +207,7 @@ export async function scenarioRun(args = {}) {
   const s = await scenarioOrThrow(args.scenario);
   const { state, run, lean } = await runOne(doc, bundle, s, args, args.ageDays);
   const prov = [...(run.ok ? run.provenance : []), ...stateProvenance(state)];
-  return envelope({ scenario: s.key, run, state: stateSummary(state), lawset_version: lean.lawset_version, verdicts: lean.verdicts, violations: lean.violations,
+  return envelope({ scenario: s.key, run, state: stateSummary(state), lawset_version: lean.lawset_version, verdicts: lean.verdicts, violations: lean.violations, lean_inputs: { spec: lean.spec, sources: lean.perturb_input_sources },
     new_binding_violations: lean.new_binding_violations, out_of_validity: run.ok && !run.validity.inRange ? run.validity : null },
   prov, `${run.ok ? run.scope : `Scenario did not run: ${run.error}`} Out-of-validity results are reported under out_of_validity and are NOT law violations. ${STATE_SCOPE}`);
 }
@@ -251,7 +256,8 @@ export async function optimize(args = {}) {
   const lv = await lawsetVersion(args.lawset);
   const conditions = obj.conditions || {};
   const baseState = resolveState(baseOf(doc), obj.ageDays, conditions, bundle);
-  const baseLean = await leanVerdicts(baseState, { lawset: args.lawset });
+  const baseRun = runScenario(s, baseState, obj.params || {});
+  const baseLean = await leanVerdicts(baseState, { lawset: args.lawset, extraSpec: perturbInputs(baseState, s.key, baseRun.params || obj.params || {}, baseRun).spec });
   const baseViol = new Set(baseLean.violations.map(v => v.lean_ref.constraint));
   const others = new Map();
   for (const h of hard) if (h.scenario && !others.has(h.scenario)) others.set(h.scenario, await scenarioOrThrow(h.scenario));
@@ -264,7 +270,8 @@ export async function optimize(args = {}) {
   async function evaluateDoc(d, values) {
     evals++;
     const state = resolveState(d, obj.ageDays, conditions, bundle);
-    const lean = await leanVerdicts(state, { lawset: args.lawset });
+    const pre = runScenario(s, state, obj.params || {});
+    const lean = await leanVerdicts(state, { lawset: args.lawset, extraSpec: perturbInputs(state, s.key, pre.params || obj.params || {}, pre).spec });
     const binding = lean.violations.filter(v => v.binding && !v.contested);
     const broke = args.strict ? binding : binding.filter(v => !baseViol.has(v.lean_ref.constraint));
     if (broke.length) { rejected.push({ eval: evals, values, reason: 'lean', laws: broke.map(v => ({ law_id: v.law_id, law_version: v.law_version, constraint: v.lean_ref.constraint, theorem: v.lean_ref.theorem, message: v.message, parts: v.parts })) }); return null; }

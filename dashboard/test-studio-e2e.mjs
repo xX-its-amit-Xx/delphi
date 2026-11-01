@@ -79,8 +79,17 @@ const harness = (base, model) => `${base}/blueprint3d/perturb.html?model=${encod
 
 // wait until the panel booted (doc built) and the compute chain has gone quiet
 async function settle(page, { timeout = 90000, quiet = 1200 } = {}) {
-  await page.waitForFunction(() => { const S = window.__pt && window.__pt.api && window.__pt.api.state; return !!(S && S.doc && (S.now || !S.engine || !S.scenarioKey)); }, null, { timeout, polling: 250 })
-    .catch(async () => { const eng = await page.evaluate(() => document.querySelector('#ptEng')?.innerText || document.querySelector('#panel')?.innerText?.slice(0, 300) || '(no panel)').catch(() => '?'); throw new Fail(`perturb panel never finished booting within ${timeout / 1000}s; panel says: ${eng.replace(/\s+/g, ' ').slice(0, 300)}`, BP + 'perturb.js'); });
+  const tb = Date.now();
+  for (;;) {
+    const ok = await page.evaluate(() => { const S = window.__pt && window.__pt.api && window.__pt.api.state; return !!(S && S.doc && (S.now || !S.engine || !S.scenarioKey)); }).catch(() => false);
+    if (ok) break;
+    const fatal = page.errors.filter(e => /^pageerror|^HTTP 404/.test(e));
+    if (Date.now() - tb > timeout || (fatal.length && Date.now() - tb > 3000)) {
+      const eng = await page.evaluate(() => document.querySelector('#ptEng')?.innerText || document.querySelector('#panel')?.innerText?.slice(0, 300) || '(no panel)').catch(() => '?');
+      throw new Fail(`perturb panel did not boot (${((Date.now() - tb) / 1000).toFixed(0)}s); panel says: ${eng.replace(/\s+/g, ' ').slice(0, 200)}${page.errors.length ? '; errors: ' + [...new Set(page.errors)].slice(0, 4).join(' || ') : ''}`, guessFile(page.errors));
+    }
+    await page.waitForTimeout(250);
+  }
   const t0 = Date.now(); let last = null, since = Date.now();
   while (Date.now() - t0 < timeout) {
     const snap = await page.evaluate(() => { const S = window.__pt.api.state; const q = id => document.getElementById(id)?.innerHTML || ''; return S.runSeq + '|' + (S.opt && S.opt.running ? 'R' : '') + '|' + q('ptRes').length + '|' + q('ptLaw').length + '|' + q('ptTc').length + '|' + /running…/.test(q('ptRes')); });
@@ -323,7 +332,8 @@ test(5, 'lean: a law-breaking edit glows red, names law id + lawset version; out
     const named = cli.ids.filter(id => r.viols.some(v => v.text.includes(id)));
     must(named.length > 0, `the violations list does not name any of the law ids the engine reports (${cli.ids.join(', ')}); it shows: ${r.viols.map(v => v.lid).join(' | ')}`, BP + 'perturb.js');
     must(r.viols.every(v => v.red), `a violation of an accepted law does not render red: ${r.viols.filter(v => !v.red).map(v => v.lid).join(', ')}`, BP + 'perturb.js');
-    must(new RegExp('v' + current.replace(/\./g, '\\.')).test(r.head), `the law panel does not name law set v${current} (api/lean/current.json); header: "${r.head}"`, BP + 'perturb.js');
+    const judgedV = (/judged against law set v([\d.]+)/.exec(r.head) || [])[1];
+    must(judgedV === current, `the law panel judges against law set v${judgedV || '(not stated)'}, but api/lean/current.json is v${current}; header: "${r.head}"`, BP + 'perturb.js');
     must(glowing.length > 0, `no part glows red after the law-breaking edit (violations: ${r.viols.map(v => v.lid).join(', ')})`, BP + 'perturb.js');
     // out-of-scope: a flying-fish-calibrated law judged on zebrafish, or any row the scope rule excludes
     let scopeNote = null;
@@ -338,7 +348,7 @@ test(5, 'lean: a law-breaking edit glows red, names law id + lawset version; out
     }
     must(scopeNote, 'no out-of-scope law is shown (grey list) for flying fish or zebrafish: cannot confirm out-of-scope renders grey', BP + 'perturb.js');
     noErrors(page, 'lean flow');
-    return `violations named: ${named.join(', ')} (red); header "${r.head.replace(/\s+/g, ' ').slice(0, 60)}"; glowing red: ${glowing.slice(0, 4).join(', ')}${glowing.length > 4 ? ' +' + (glowing.length - 4) : ''}; ${scopeNote}`;
+    return `violations named: ${named.join(', ')} (red); judged against law set v${judgedV} (= current.json); glowing red: ${glowing.slice(0, 4).join(', ')}${glowing.length > 4 ? ' +' + (glowing.length - 4) : ''}; ${scopeNote}`;
   } catch (e) { e.shot = await shot(page, 'flow5', '#ptLaw'); throw e; } finally { await page.ctx.close().catch(() => { }); }
 });
 

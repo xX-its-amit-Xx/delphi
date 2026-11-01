@@ -63,7 +63,7 @@ console.log('predator');
   const A26 = run('predator', withT(FIX.zebrafish_adult, 26));
   check('adult zebrafish critical K = 2.11 at 26 C (McKee & McHenry 2020 "more than twice")', r => near(mv(r, 'critical_predator_speed_ratio'), 2.11, 0.03), A26, run('predator', withT(FIX.zebrafish_adult, 26), { theta_thresh_deg: 30 }));
   check('adult zebrafish escapes at K = 1.5 and is caught at K = 3', ([a, b]) => a.survives === true && b.survives === false, [A26, run('predator', withT(FIX.zebrafish_adult, 26), { predator_speed_ratio: 3 })], [run('predator', withT(FIX.zebrafish_adult, 26), { predator_speed_ratio: 3 }), A26]);
-  check('larval peak speed 0.2 m/s scaled to SL (secondhand, ~50 BL/s) at 26 C', r => near(mv(r, 'peak_escape_speed_BL_s'), 50, 0.01), run('predator', withT(FIX.zebrafish_larva, 26)), L);
+  check('larval peak speed is the absolute 0.2 m/s at 26 C (secondhand; no assumed larval length), BL/s = U/SL', r => near(mv(r, 'peak_escape_speed_m_s'), 0.2, 1e-6) && near(mv(r, 'peak_escape_speed_BL_s'), 0.2 / 0.0045, 0.01), run('predator', withT(FIX.zebrafish_larva, 26)), L);
   check('flying fish: glide minimum speed 9.4-10.4 m/s (field launch ~10 m/s)', r => mv(r, 'aerial_glide_min_speed_m_s') > 9.4 && mv(r, 'aerial_glide_min_speed_m_s') < 10.4, FF, A);
   const FF10 = run('predator', FIX.flying_fish_adult, { launch_speed_m_s: 10 });
   check('flying fish at the sourced 10 m/s leap: aerial escape available (feasible); adult zebrafish: not', ([f, z]) => mv(f, 'aerial_escape_available') === true && f.feasible === true && mv(z, 'aerial_escape_available') === false && z.feasible === false, [FF10, A], [A, FF10]);

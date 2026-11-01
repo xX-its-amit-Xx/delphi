@@ -15,7 +15,7 @@ export const DEPTH_LIMIT_M = (Y.osmSea - Y.osm0) / OSM_SLOPE; // 8,190 m
 // Lauridsen et al. 2022 (BMC Biol), Discussion: "most teleost fishes in the neritic zone possess a swim bladder of
 // up to 5% of total body volume ... average fish tissue ... is 5% denser than seawater" (both quoted from their refs).
 const LAUR = { cite: 'Lauridsen H et al. (2022). Buoyancy and hydrostatic balance in a West Indian Ocean coelacanth Latimeria chalumnae. BMC Biol 20:180', doi: 'https://doi.org/10.1186/s12915-022-01354-8', tissueOverSea: 1.05 };
-const SEAWATER = 1025; // kg/m3, dashboard/public/t/physics/sim/params.json rho_water (standard)
+const SEAWATER = 1025; // kg/m3: nominal surface sea-water density (1020-1029); a modelling choice, as params.json rho_water
 
 const val = (s, k) => (s && s[k] && s[k].value != null ? s[k].value : null);
 function metric(key, label, value, unit, better, kind, source, reason) {
@@ -61,7 +61,8 @@ export default {
       { quantity: 'water density (kg/m3)', value: rhoW, kind: 'assumed', source: amb.water_density_kg_m3 ? amb.water_density_kg_m3.source || 'state.ambient' : marine ? 'sea water 1025 (standard; params.json rho_water)' : 'fresh water 998.2 at 20 degC (NIST WebBook)' },
       { quantity: 'surface pressure (kPa)', value: P0, kind: 'assumed', source: 'standard sea-level atmosphere' },
       { quantity: 'TMAO 0 / 4850 m (mmol/kg)', value: '40 / 261', kind: 'measured-secondhand', source: `${Y.cite}, ${Y.doi}: abstract summary of earlier teleost data` },
-      { quantity: 'osmolality shallow / 7000 m / sea water (mOsm/kg)', value: '350 / 991 / 1100', kind: 'measured', source: `${Y.cite}, ${Y.doi}` },
+      { quantity: 'osmolality at 7000 m (mOsm/kg)', value: 991, kind: 'measured', source: `${Y.cite}, ${Y.doi}: hadal snailfish, this paper's measurement` },
+      { quantity: 'osmolality shallow species / sea water (mOsm/kg)', value: '350 / 1100', kind: 'measured-secondhand', source: `${Y.cite}, ${Y.doi}: 'typically 350 ... compared with seawater's 1,100' (summary values)` },
     ];
     // Swim bladder
     const hasSB = val(state, 'has_swimbladder');

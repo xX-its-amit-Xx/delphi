@@ -479,7 +479,8 @@ export function leanSpec(state) {
   // NOT passed: pectoral area. browser-check compares the LIFTING area (pectoral + pelvic + body planform)
   // with the reference specimen's; STATE has no pelvic or planform area, so passing pectoral area alone
   // would manufacture area-law violations (C2a, C8e). Those laws therefore come back cannot-evaluate.
-  if (state.lifting_area_m2 && typeof state.lifting_area_m2.value === 'number') s.finArea_m2 = state.lifting_area_m2.value;
+  // lifting_area_m2 (pectoral + pelvic + caudal, mesh) is NOT the Lean reference's convention (pectoral + pelvic +
+  // body planform), so it is deliberately not passed as finArea_m2.
   put('gillArea_m2', state.gill_area_m2);
   const fl = state._meta?.parameters?.pectoral_len_over_SL; if (fl && typeof fl.value === 'number') s.finLength_SL = fl.value;
   if (state.ambient?.air_density_kg_m3?.value) s.rho = state.ambient.air_density_kg_m3.value;
@@ -492,5 +493,8 @@ export const INPUT_PARTS = {
   SL_m: ['skin_L', 'skin_R'], mass_kg: ['skin_L', 'skin_R', 'muscle_L', 'muscle_R'],
   pectoralFinArea_m2: ['pectoral_fin_L', 'pectoral_fin_R'], finArea_m2: ['pectoral_fin_L', 'pectoral_fin_R', 'pelvic_fin_L', 'pelvic_fin_R', 'caudal_fin'],
   finLength_SL: ['pectoral_fin_L', 'pectoral_fin_R'], gillArea_m2: ['gills_L', 'gills_R'], flightMuscleFraction: ['pectoral_muscle_L', 'pectoral_muscle_R'],
+  // perturbation inputs (P laws): the whole body is what is too hot or too deep; the bladder and swimming muscle where specific
+  body_temperature_C: ['skin_L', 'skin_R'], sustained_power_W: ['muscle_L', 'muscle_R'], critical_swimming_speed_m_s: ['muscle_L', 'muscle_R', 'caudal_fin'],
+  current_speed_m_s: ['skin_L', 'skin_R'], depth_m: ['skin_L', 'skin_R'], bladder_volume_surface_ml: ['swim_bladder'], bladder_volume_at_depth_ml: ['swim_bladder'],
 };
 export { mapKind };

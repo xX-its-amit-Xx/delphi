@@ -37,9 +37,9 @@ export default {
   requires: ['mass_kg'],
   needs: ['parts (a part id matching sucker/suction/adhesive/disc)', 'adhesive_disc_area_m2', 'SL_m', 'ambient.pressure_kPa'],
   params: [
-    { key: 'disc_area_m2', label: 'Adhesive disc area (null = from STATE)', unit: 'm^2', default: null, min: 0, max: 0.05, kind: 'assumed', source: 'design input; clingfish discs measured 3.9-12.3 cm^2 at 70-120 mm SL (Wainwright 2013)' },
-    { key: 'adhesive_stress_kPa', label: 'Sustained suction stress at failure', unit: 'kPa', default: 30, min: 0.1, max: 101.3, kind: 'borrowed', source: 'clingfish: "peak stress ranged from 20 to 50 kPa" (Wainwright 2013); whole disc on smooth surfaces 30-40 kPa (Ditsche & Summers 2019). Climbing-goby pelvic suction is far lower: 0.63-1.5 kPa (Schoenfuss 2026 Table 1, e.g. S. stimpsoni 1.5 kPa) — set 1.5 for a goby-type sucker' },
-    { key: 'surface_Ra_um', label: 'Surface roughness Ra', unit: 'µm', default: 15, min: 0, max: 2000, kind: 'measured', source: 'clingfish adhere equally well from Ra 15 to 269 µm (Wainwright 2013 abstract); validity bound, not a force modifier' },
+    { key: 'disc_area_m2', label: 'Adhesive disc area (null = from STATE)', unit: 'm^2', default: null, min: 0, max: 0.05, kind: 'assumed', source: 'design input; clingfish discs measured 3.9-12.3 cm^2 at 70-120 mm SL (Wainwright 2013) [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]' },
+    { key: 'adhesive_stress_kPa', label: 'Sustained suction stress at failure', unit: 'kPa', default: 30, min: 0.1, max: 101.3, kind: 'borrowed', source: 'clingfish: "peak stress ranged from 20 to 50 kPa" (Wainwright 2013); whole disc on smooth surfaces 30-40 kPa (Ditsche & Summers 2019). Climbing-goby pelvic suction is far lower: 0.63-1.5 kPa (Schoenfuss 2026 Table 1, e.g. S. stimpsoni 1.5 kPa) — set 1.5 for a goby-type sucker [kind refers to the 30 kPa default; min 0.1 is a slider limit (design choice); max 101.3 kPa is physics: one standard atmosphere, the suction ceiling]' },
+    { key: 'surface_Ra_um', label: 'Surface roughness Ra', unit: 'µm', default: 15, min: 0, max: 2000, kind: 'assumed', source: 'clingfish adhere equally well from Ra 15 to 269 µm (Wainwright 2013 abstract); validity bound, not a force modifier — 15 µm is the finest tested condition, used as a validity input [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]' },
   ],
   metrics: METRICS,
 

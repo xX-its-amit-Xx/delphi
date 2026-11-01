@@ -105,6 +105,23 @@ await ok('lean_check: reference-specimen rows are out-of-scope for a zebrafish, 
   assert.equal(v(zf, 'C9'), 'violated', 'a taxon-free law still applies to the zebrafish');
   assert.equal(zf.summary.out_of_scope, zf.verdicts.filter(x => x.verdict === 'out-of-scope').length);
 });
+await ok('no violation message or law label contains "null" or "undefined" (every constraint forced to fire)', async () => {
+  // Designs chosen to make as many constraints as possible fire, across the flying-fish and zebrafish scopes.
+  const designs = [
+    DESIGN, { ...DESIGN, taxon: 'Cypselurus hiraii' }, { ...DESIGN, taxon: 'Danio rerio' },
+    { taxon: 'Cypselurus hiraii', SL_m: 2, mass_kg: 50, finArea_m2: 0.001, CLmax: 0.5, LD_max: 1, airspeed_m_s: 1,
+      glideHeight_m: 1, glideDistance_m: 1000, climbRate_m_s: 50, powerAvailable_W: 0.001,
+      efficiency: 0.2, oxycaloric_J_per_unit_O2: 20, cardiacOutput: 1e-9, arterialO2: 1e-9,
+      mass_exponent: 5, o2_store_ml: 0.001, flight_duration_s: 1000, lethality: { death_hpf: 10, scored_hpf: 100 } },
+  ];
+  let seen = 0;
+  for (const d of designs) for (const lawset of src.load().lawsets.map(s => s.version)) {
+    const r = (await T.lean_check({ design: d, lawset })).result;
+    for (const v of r.violations) { seen++; assert.ok(!/\b(null|undefined)\b/.test(v.message), `${v.constraint} (${lawset}): ${v.message.slice(0, 120)}`); }
+  }
+  assert.ok(seen > 5, `only ${seen} violations exercised`);
+  for (const l of (await T.lean_laws_list({})).result.laws) assert.ok(l.label && !/^(null|undefined)$/.test(String(l.label)), `${l.law_id} has no label`);
+});
 await ok('lean_check accepts the v1 {spec} argument', async () => {
   const a = (await T.lean_check({ design: DESIGN })).result, b = (await T.lean_check({ spec: DESIGN })).result;
   assert.deepEqual(a.violations.map(v => v.constraint), b.violations.map(v => v.constraint));

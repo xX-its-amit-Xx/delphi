@@ -42,9 +42,9 @@ export default {
   requires: ['stage'],
   needs: ['species', 'ageDays', 'temperature_C'],
   params: [
-    { key: 'light_hours', label: 'Hours of light per 24 h', unit: 'h', default: 14, min: 0, max: 24, kind: 'measured', source: '14:10 LD is the protocol of every zebrafish sleep measurement used here (Sorribes 2013; Prober 2006; Yokogawa 2007; Choudhary 2026)' },
-    { key: 'hcrt_overexpression', label: 'Hypocretin (hcrt) overexpression, larva (0/1)', unit: 'bool', default: 0, min: 0, max: 1, kind: 'measured', source: SRC.prober2006 },
-    { key: 'hcrtr_loss', label: 'Hypocretin receptor (hcrtr) loss of function, adult (0/1)', unit: 'bool', default: 0, min: 0, max: 1, kind: 'measured', source: SRC.yokogawa2007 },
+    { key: 'light_hours', label: 'Hours of light per 24 h', unit: 'h', default: 14, min: 0, max: 24, kind: 'assumed', source: '14:10 LD is the protocol of every zebrafish sleep measurement used here (Sorribes 2013; Prober 2006; Yokogawa 2007; Choudhary 2026) — 14 h is the protocol condition of the sources [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]' },
+    { key: 'hcrt_overexpression', label: 'Hypocretin (hcrt) overexpression, larva (0/1)', unit: 'bool', default: 0, min: 0, max: 1, kind: 'assumed', source: SRC.prober2006 + ' [a design switch: the user chooses it; only the effect it turns on is sourced]' },
+    { key: 'hcrtr_loss', label: 'Hypocretin receptor (hcrtr) loss of function, adult (0/1)', unit: 'bool', default: 0, min: 0, max: 1, kind: 'assumed', source: SRC.yokogawa2007 + ' [a design switch: the user chooses it; only the effect it turns on is sourced]' },
   ],
   metrics: METRICS,
 
@@ -116,7 +116,7 @@ export default {
         met('alt_def_sleep_fraction_day', r3(dayB), kB, altSrc),
         hours == null ? nul('sleep_hours_per_day', 'night fraction unavailable') : met('sleep_hours_per_day', r3(hours), 'derived', `stage-specific definition: day fraction x ${Lh} h + night fraction x ${24 - Lh} h`),
         lat === undefined ? nul('night_sleep_latency_min', 'sleep latency was measured in larvae only (Prober 2006)') : met('night_sleep_latency_min', lat, kc, SRC.prober2006),
-        met('sleep_criterion_s', crit, 'measured', larva ? 'Choudhary 2026: speed < 0.5 mm/s for >= 1 min (Prober 2006 likewise uses 1 min bins of zero movement)' : 'Yokogawa 2007: "an interval of inactivity (<6 pixels/s) lasting at least 6 s"'),
+        met('sleep_criterion_s', crit, 'calibrated', larva ? 'Choudhary 2026: speed < 0.5 mm/s for >= 1 min (Prober 2006 likewise uses 1 min bins of zero movement)' : 'Yokogawa 2007: "an interval of inactivity (<6 pixels/s) lasting at least 6 s"'),
       ],
       survives: null, feasible: null, limiting: null, provenance: prov,
       scope: 'Behavioural sleep (immobility with raised arousal threshold) as measured in laboratory zebrafish under 14:10 LD, under two definitions shown side by side. Not a mechanistic sleep model: no homeostatic pressure, deprivation, light pulses, melatonin, social or predator context. survives/feasible are null: sleep is not a survival test here.',

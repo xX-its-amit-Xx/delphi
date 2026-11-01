@@ -673,7 +673,7 @@ function build(D) {
           what it says, the Lean module and theorem, and the commit and statement hash it was checked at. Promotion to <em>accepted</em> is never automated.
           ${L.discovered ? `${L.discovered} further candidates were mined from the project&rsquo;s own sourced data and wait in the queue like any other proposal.` : ''}</div>
         <div class="scope" style="max-width:none"><h4>Served three ways, from one loader</h4>
-          <ul><li>MCP: the hosted <b>delphisci</b> server${L.mcpVersion ? ` ${esc(L.mcpVersion)}` : ''} adds <code>lean_laws_list</code>, <code>lean_law_get</code>, <code>lean_lawset_get</code>, <code>lean_check</code>, <code>lean_verify</code></li>
+          <ul><li>MCP: <b>delphisci</b>${L.mcpVersion ? ` ${esc(L.mcpVersion)}` : ''} adds <code>lean_laws_list</code>, <code>lean_law_get</code>, <code>lean_lawset_get</code>, <code>lean_check</code>, <code>lean_verify</code>. The hosted copy serves <code>main</code> as of its last deploy, so it has them only once this change is merged and redeployed: check its <code>tools/list</code> first</li>
           <li>CLI and the local sim-engine (MCP over stdio, or HTTP)</li>
           <li>a static JSON mirror at <code>/api/lean/</code>${L.mirror ? ` &mdash; <b>currently serving law set ${esc(L.mirror.lawset)}</b> (${L.mirror.count} laws)${L.mirror.lawset !== L.lawset ? ', one release behind the registry; <code>lean_verify</code> reports exactly this kind of drift' : ''}` : ''}</li></ul></div>
       </div>
@@ -693,6 +693,11 @@ function build(D) {
       ['no-target', 'no target to test against', 'var(--ghost)', true]
     ];
     const tot = k => V.groups.reduce((a, g) => a + (g.counts[k] || 0), 0);
+    const ctlAmended = (V.changes || []).filter(c => /^(N[1-6]|O\d|P\d)$/.test(c.id)).map(c => c.id);
+    // what each post-results amendment does, from sim-engine/validation/STUDIO-AMENDMENTS.md
+    const AMEND = { A1: 'stricter, a fit or read-back of the target paper is circular',
+      A2: 'reads the new <code>feasible</code> flag after the contract split it from <code>survives</code>',
+      A3: 'checks only the distance the module labels as covered by the Lean theorem' };
     const used = SEG.filter(([k]) => tot(k) > 0);
     const hatch = c => `background:repeating-linear-gradient(45deg,${c},${c} 5px,color-mix(in srgb,${c} 45%,var(--bg)) 5px,color-mix(in srgb,${c} 45%,var(--bg)) 10px)`;
     const tip = (g, k) => g.rows.filter(r => r.status === k).map(r => `${r.id} ${r.name}`).join('; ');
@@ -707,19 +712,22 @@ function build(D) {
             `<i style="flex:${g.counts[k]};${ht ? hatch(c) : 'background:' + c}" title="${esc(k)}: ${esc(tip(g, k))}"><em>${g.counts[k]}</em></i>`).join('')}</span></div>`).join('')}
       </div>
       <div class="striplegend" style="margin-top:10px">
-        ${used.map(([k, lab, c, ht]) => `<span><i style="${ht ? hatch(c) : 'background:' + c}"></i><b>${tot(k)}</b> ${esc(lab)}</span>`).join('')}
+        ${SEG.filter(([k]) => (V.tallyFinal || {})[k] || (V.tallyPre || {})[k]).map(([k, lab, c, ht]) => `<span><i style="${ht ? hatch(c) : 'background:' + c}"></i><b>${tot(k)}</b> ${esc(lab)}${V.tallyPre && V.tallyPre[k] !== tot(k) ? ` <span style="color:var(--mute)">(pre-registered: ${V.tallyPre[k]})</span>` : ''}</span>`).join('')}
       </div>
       <div class="split">
         <div class="rows">
           ${V.fails.map(f => `<div class="rrow"><span><b>${esc(f.id)} &middot; ${esc(f.name)}</b><span class="tag neg">fail</span><small>${esc(f.why)}</small></span><span class="v no">fail</span></div>`).join('')}
-          <div class="rrow"><span><b>${V.circular.length} &ldquo;passes&rdquo; were the studio reading its own sources back</b><span class="tag grey">amendment A1</span>
-            <small>${V.circular.map(esc).join(', ')}: in band only because the module interpolates, or quotes, the very paper it is scored against. Reclassified after the results, in a labelled amendment, rather than counted as passes.</small></span><span class="v" style="color:var(--series-4)">circular</span></div>
+          <div class="rrow"><span><b>${V.circular.length} &ldquo;passes&rdquo; read the answer back</b><span class="tag grey">not evidence</span>
+            <small>${V.circular.map(esc).join(', ')}: in band only because the module is calibrated to, interpolates, or quotes the very paper it is scored against. Scored <em>circular</em>, never counted as a pass.</small></span><span class="v" style="color:var(--series-4)">circular</span></div>
+          ${(V.changes || []).length ? `<div class="rrow"><span><b>${V.changes.length} verdicts changed by amendments written after the results</b><span class="tag neg">post hoc</span>
+            <small>${V.changes.map(c => `${esc(c.id)} ${esc(c.from)} &rarr; <b>${esc(c.to)}</b> (${esc(c.amendment)}${AMEND[c.amendment] ? ': ' + AMEND[c.amendment] : ''})`).join('; ')}.
+            Both verdicts are kept side by side; the pre-registration file is unchanged.</small></span><span class="v">${V.changes.length}</span></div>` : ''}
         </div>
         <div class="scope"><h4>Why the scoreboard can be trusted</h4><ul>
           <li>Tests fixed before any scenario module existed${V.preregHashOk ? `; the pre-registration still hashes to <span class="prov">${esc(V.preregSha.slice(0, 16))}&hellip;</span>` : ''}</li>
           <li>Written by an agent that built none of the studio</li>
           ${V.selftest ? `<li>Harness self-test: ${V.selftest.ok} of ${V.selftest.total} checks fail on a planted bad input, as designed</li>` : ''}
-          <li>${V.controlsHeld ? 'Every negative, law and optimizer control held: no fish at 10,000 m, no grip without a gripping organ, impossible specs answered &ldquo;no design meets the spec&rdquo;' : 'Not every control held; see the results file'}</li></ul></div>
+          <li>${V.controlsHeld ? 'Every negative, law and optimizer control held: no fish at 10,000 m, no grip without a gripping organ, impossible specs answered &ldquo;no design meets the spec&rdquo;' + (ctlAmended.length ? `; ${ctlAmended.map(esc).join(', ')} only under a post-results amendment` : '') : 'Not every control held; see the results file'}</li></ul></div>
       </div>
       ${srcs(V.sources.concat([`run ${V.generatedAt}`]))}`;
   };

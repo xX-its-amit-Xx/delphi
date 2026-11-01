@@ -13,7 +13,7 @@ export function atmosphere(h) {
 const pH2O = T => 0.61094 * Math.exp((17.625 * T) / (T + 243.04)); // kPa, Magnus form, as physiology/index.js and lib/state.mjs
 // Rogers et al. 2016 Pcrit database: mean +/- SD Pcrit in the 'control' subset 5.15 +/- 2.21 kPa (across species).
 const PCRIT = { mean: 5.15, sd: 2.21, cite: 'Rogers NJ, Urbina MA, Reardon EE, McKenzie DJ, Wilson RW (2016). A new analysis of hypoxia tolerance in fishes using a database of critical oxygen level (Pcrit). Conserv Physiol 4:cow012', doi: 'https://doi.org/10.1093/conphys/cow012' };
-const O2_FRACTION = 0.209; // conditions/baseline.json air_O2_fraction
+const O2_FRACTION = 0.2095; // standard dry-air O2 mole fraction 20.95% (baseline.json rounds it to 0.209)
 
 const METRICS = [
   { key: 'air_pressure_kPa', label: 'Barometric pressure', unit: 'kPa', better: null },
@@ -69,9 +69,9 @@ export default {
     if (!inRange) notes.push('Altitude outside the 0-11,000 m troposphere fit.');
     const prov = [
       { quantity: 'atmosphere T(h), p(h), rho(h)', value: 'T = 15.04 - 0.00649 h; p = 101.29 ((T+273.1)/288.08)^5.256; rho = p/(0.2869 (T+273.1))', kind: 'borrowed', source: `${NASA.cite}, ${NASA.url}: a mid-latitude standard atmosphere, not a measurement at any site` },
-      { quantity: 'air O2 fraction', value: O2_FRACTION, kind: 'assumed', source: 'conditions/baseline.json air_O2_fraction (standard dry air)' },
+      { quantity: 'air O2 fraction', value: O2_FRACTION, kind: 'measured-secondhand', source: 'standard dry-air composition, O2 20.95% by mole (conditions/baseline.json rounds to 0.209)' },
       { quantity: 'sea-level air density (kg/m3)', value: rhoState.value, kind: rhoState.kind, source: `${rhoState.source}; scaled by rho_fit(h)/rho_fit(0)` },
-      { quantity: 'water vapour pressure (kPa)', value: pH2O(Tw), kind: 'derived', source: 'Magnus form 0.61094 exp(17.625 T/(T+243.04)), as physiology/index.js' },
+      { quantity: 'water vapour pressure (kPa)', value: pH2O(Tw), kind: 'derived', source: 'Magnus form 0.61094 exp(17.625 T/(T+243.04)) (Alduchov & Eskridge 1996 coefficients), as physiology/index.js' },
       { quantity: 'Pcrit (kPa)', value: pcrit, kind: pcritState != null ? state.pcrit_kPa.kind || 'assumed' : 'borrowed', source: pcritState != null ? state.pcrit_kPa.source || 'state' : `${PCRIT.cite}, ${PCRIT.doi}: mean of the control subset across species (SD 2.21)` },
     ];
     notes.push('Water temperature is held at the state value; the cooling of a high lake with altitude is not modelled (the air temperature is reported but not applied to water).');
@@ -124,8 +124,8 @@ export default {
       metric('air_pressure_kPa', METRICS[0].label, a.p_kPa, 'kPa', null, 'derived', NASA.url),
       metric('air_temperature_C', METRICS[1].label, a.T_C, '°C', null, 'derived', NASA.url),
       metric('air_density_kg_m3', METRICS[2].label, rho, 'kg/m3', 'higher', 'derived', `${NASA.url}, scaled to the state's sea-level density`),
-      metric('air_pO2_kPa', METRICS[3].label, pO2air, 'kPa', 'higher', 'derived', '0.209 p(h), dry air (as physics/flier/tff/design.py)'),
-      metric('water_pO2_kPa', METRICS[4].label, pO2water, 'kPa', 'higher', 'derived', '0.209 (p(h) - pH2O(T_water)): surface water in equilibrium with moist air'),
+      metric('air_pO2_kPa', METRICS[3].label, pO2air, 'kPa', 'higher', 'derived', '0.2095 p(h), dry air (design.py uses 0.209)'),
+      metric('water_pO2_kPa', METRICS[4].label, pO2water, 'kPa', 'higher', 'derived', '0.2095 (p(h) - pH2O(T_water)): surface water in equilibrium with moist air'),
       metric('hypoxia_margin_kPa', METRICS[5].label, margin, 'kPa', 'higher', pcritState != null ? 'derived' : 'borrowed', pcritState != null ? 'water pO2 - state pcrit_kPa' : `water pO2 - 5.15 kPa (cross-species mean, ${PCRIT.cite})`),
       ...flightMetrics,
     ];
@@ -138,7 +138,7 @@ export default {
   modelCard: {
     equations: [
       'T(h) = 15.04 - 0.00649 h; p(h) = 101.29 ((T + 273.1)/288.08)^5.256 kPa; rho = p / (0.2869 (T + 273.1))',
-      'PO2_air = 0.209 p(h); PO2_water = 0.209 (p(h) - pH2O(T_water))',
+      'PO2_air = 0.2095 p(h); PO2_water = 0.2095 (p(h) - pH2O(T_water))',
       'v_min(h) = sqrt(2W/(rho(h) S C_Lmax)) = v_min(0) sqrt(rho(0)/rho(h))',
       'P_req(h) = W v_min(h)/(L/D)max; P_aerobic(h) <= eta E Q Ca(PO2_air(h))',
       'survives (aquatic): PO2_water - Pcrit > SD (true), < -SD (false), else null',
