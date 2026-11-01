@@ -2,6 +2,40 @@
 
 Versions follow `version` in the root `package.json` (the server's package) and `VERSION` in `mcp/server.mjs`.
 
+## 0.7.0 (2026-11-01)
+
+The validation framework reaches the hosted server. 20 tools -> 34 hosted (35 over local stdio; `lean_propose`
+is the difference). A collaborator with no clone can now run a generated design through it.
+
+- Added **`validate_generation`** — the entry point: generated organism + base organism + the desired
+  phenotype as text -> five named results, five gates, never summed, plus per-scale coverage and a verdict
+  sentence. The recipe, with real output from an unpacked tarball and the honest limits, is the first section
+  of `mcp/README.md`.
+- Added the components, each callable alone while iterating: `functional_resolution`, `physics_check`,
+  `validate_design`, `closest_relative_phenotype`, `closest_relative_genotype`, `sanity_check_design`,
+  `lean_by_component`, `validate_swarm_tasks`, `parse_design_text`, `edit_plan_methods`,
+  `lean_open_questions`, `lean_open_question`, `lean_open_question_guard`.
+- Hosted policy, enforced in code and not only documented: `network: false` and `blast: false` are forced on
+  every one of them for anonymous callers, `physics_check`'s ensemble `draws` is capped at 500, and nothing
+  that runs a Lean build or writes a file is registered at all. The per-tool decision and its reasoning —
+  including why `edit_plan` is **not** hosted while `edit_plan_methods` is — is in `mcp/README.md`.
+- `mcp/server.mjs` now exports `TOOLS` and only starts a transport when it is the program, so `mcp/cli.mjs`
+  can drive the same registrations. `mcp/cli.mjs` gains `tools` and `tool <name> [--json '<args>']`, which go
+  through those registrations, so the CLI cannot drift from the server's hosted policy.
+- Packaging: the files all 15 validation tools read at run time were traced, added to `package.json` `files`,
+  `.dockerignore` and the `deploy-mcp.yml` path filters, and then **proved** by running the hosted server from
+  an unpacked `npm pack` tarball and asserting on the content of every answer. The byte sizes from the package
+  match the working tree exactly. 36.1 MB packed, 78.0 MB unpacked, 6 977 files — still under the ~50 MB line,
+  so everything ships in the npm package as well as the image and there is no npx fallback.
+  - The first pass of that tracing missed `omics/genes.json`, and the result was a **silent** degradation:
+    `validate/functional/index.mjs` never throws, so the missing file came back as `{ran: false}` -> a
+    `cannot-assess` gate -> a 200, and `functional_resolution` returned 2.4 KB from the package against
+    130 KB from the tree. "It answered" is not the test; the content assertions are.
+- Could not be exposed: the four capability-map tools (`leanbio_personas`, `leanbio_use_cases`,
+  `leanbio_grand_questions`, `leanbio_tool_gap`). They are named in
+  `pipeline/leanbio/capability-map/lib.mjs` but no handler module exists and no register note landed, so
+  there is nothing to register.
+
 ## 0.6.0 (2026-11-01)
 
 - Added the multi-omics tools `omics_gene`, `omics_part`, `omics_search` (`sim-engine/tools/omics-tools.mjs`).

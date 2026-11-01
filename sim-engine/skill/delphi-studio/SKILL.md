@@ -194,8 +194,10 @@ skill. Then, in order:
    is a result; report it as one.
 9. Validate the finished design with `validate_generation` (part A), with the user's own words as
    `desired_phenotype`.
-10. `session_post {session, author, kind: "proposal", body, edit}`, then **stop**. A human approves in the
-    studio UI. `session_read {session, since}` shows what happened.
+10. `session_post {session, author, kind: "proposal", body, edit}`, then **stop**. A human approves, in
+    the studio UI or with `session_decide {session, proposal_id, decision, decided_by_role, reason}`,
+    whose role must start with `human` — **never call it yourself under a human role**.
+    `session_read {session, since}` shows what happened.
 
 Full guide: `sim-engine/AGENT-GUIDE.md` (section 0 is the validation quickstart). Contract:
 `sim-engine/CONTRACT.md` and `sim-engine/contract.json`. Collaborator page:

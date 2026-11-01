@@ -5,6 +5,53 @@ the scenario interface. Its version is `CONTRACT_VERSION` in `lib/envelope.mjs`.
 as `contract_version`, and `contract.json` states it. The rule: anything may change, provided it is
 versioned here. While the major version is 0, a minor bump may break callers; each entry says what breaks.
 
+## 0.8.0 (2026-11-01)
+
+**Added** (14 tools; 40 -> 54. Nothing removed, no schema changed.)
+
+Every outstanding registration note under `tools/` is applied, so the stdio MCP server, the HTTP bridge, the
+CLI and `contract.json` now all list the same tools. Before this, ten of them existed only as `POST
+/tool/<name>` on the HTTP bridge's `tools/` discovery and four had no tool name at all, so a collaborator
+could not run a design through the validation framework over MCP.
+
+- **`validate_generation`** (`tools/pipeline-tools.mjs`, PIPELINE-REGISTER.md). The entry point: generated
+  organism + base organism + the desired phenotype **as text** -> the five named results side by side, each
+  with its own gate, never summed, plus per-scale coverage and a verdict sentence. Recipe and real output:
+  `mcp/README.md`, first section.
+- **`functional_resolution`** (new `tools/functional-tools.mjs`). The fourth named result as a tool of its
+  own. Registration only: a JSON Schema and an envelope over `validate/functional-interface.mjs`
+  `functionalResolutionFor`, which is the entry point that file already stated. Nothing in
+  `validate/functional/` was touched.
+- **`physics_check`** (`tools/physics-tools.mjs`, PHYSICS-REGISTER.md). The fifth named result. A gate; it
+  never moves the composite score.
+- **The six remaining design-validation tools** (`tools/validate-tools.mjs`, VALIDATE-REGISTER.md):
+  `closest_relative_phenotype`, `closest_relative_genotype`, `sanity_check_design`, `lean_by_component`,
+  `validate_design`, `validate_swarm_tasks`. `design_score` was already registered; the `.filter()` that
+  held the other six back is gone.
+- **`edit_plan`, `edit_plan_methods`** (`tools/editplan-tools.mjs`, EDITPLAN-REGISTER.md). Zebrafish only;
+  a proposal, never a protocol.
+- **`lean_open_questions`, `lean_open_question`, `lean_open_question_guard`**
+  (`lean/registry/open-questions/openq-tools.mjs`). No register note was ever written for these; the module
+  already exported the tool table in the shape `TOOLS` expects.
+
+**Fixed**
+
+- `validate_generation` broke the envelope contract and so **could not be called over HTTP at all**: the
+  report carries `scope` but no `provenance` array, and `http.mjs envelopeProblem` therefore answered
+  `502 contract violation by validate_generation: envelope has no provenance array. Output withheld.` This
+  was a live 502 on the one tool the whole validation entry point rests on, while PIPELINE-REGISTER.md said
+  the bridge already served it. The envelope is now built in `tools/pipeline-tools.mjs` (the registration
+  surface) rather than in `validate/pipeline/index.mjs`, which belongs to another thread; the whole report
+  is unchanged under `result`.
+- `server.mjs` threw on import when `process.argv[1]` was undefined (`node -e`, `node --eval`), so
+  `await import('./sim-engine/server.mjs')` to read `TOOLS` crashed. Guarded, as `http.mjs` already was.
+
+**Also**
+
+- `sim-engine/cli.mjs` gains `tools` and `tool <name> [--json '<args>']`: a generic passthrough to every
+  registered tool, so a tool added to `server.mjs` is reachable from the shell with no change to the CLI.
+  The studio verbs are unchanged.
+
 ## 0.7.1 (2026-11-01)
 
 **Fixed** (correctness: an accepted law marked a real wild type as violating)

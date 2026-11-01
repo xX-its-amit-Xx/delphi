@@ -468,14 +468,14 @@ says which tools were live at the last check and which steps still have gaps.
 | 1. open a session | `session_open` | `{title, author, organism?}` (organism = a saved document id; create it first) | the session id |
 | 2. create or load the organism | `organism_create`, `organism_get` | `{id, parents: [{organism, weight}]}`, weights summing to 1; or `{organism, ageDays?, conditions?}` | the document; the resolved STATE with per-field provenance |
 | 3. see what can be edited | `organism_list_parts` | `{organism, level?}` | parts from body to gene, each with its editable params and what an edit affects |
-| 4. write the spec | (no tool yet, see section 7) | criteria as `optimize` `hard_constraints`: `{scenario, metric, op, value}`, `{scenario, survives: true}` or `{state_field, op, value}` | |
+| 4. write the spec | `parse_design_text`, `design_from_spec` (guide: `AGENT-GUIDE-SPEC.md`) | the brief as text, or criteria by hand as `optimize` `hard_constraints`: `{scenario, metric, op, value}`, `{scenario, survives: true}` or `{state_field, op, value}` | the parsed criteria, the `unparsed` remainder, and `validation.errors` naming any scenario, metric, unit, part or parameter the engine does not have |
 | 5. try an edit | `organism_edit` | `{organism, edit: {target: {level, id}, param, op, value, author, reason}}` | Lean verdicts, `violations`, `new_binding_violations`, `edit_effect` ("applied" or "recorded-only: no model consumes this edit") |
 | 6. perturb | `scenario_list`, `scenario_run`, `scenario_timecourse` | `{organism, scenario, params?, ageDays?, conditions?}`; timecourse runs every developmental stage | metrics, survives, limiting factor, Lean violations per stage |
 | 7. check the laws | `lean_laws_list`, `lean_law_get`, `lean_lawset_get`, `lean_check` | a filter; a `law_id`; a lawset version; a design/spec | law status, Lean source, pins; per-law verdicts |
 | 8. optimise | `optimize` | `{organism, objective: {scenario, metric, direction}, variables: [{target, param, min, max}], hard_constraints?, budget?, seed?}` | the best feasible design or "no design meets the spec", with every rejection and the law it broke |
 | 9. inspect provenance | (every envelope) | | `weakest_input`, `counts`, `scope`, and each provenance entry's `kind` and `source` |
 | 10. propose | `session_post` | `{session, author, kind: "proposal", body, edit}` | the entry, validated but **not applied** |
-| 11. a human approves | studio UI | a human posts `kind: "edit"` | read it back with `session_read {session, since}` |
+| 11. a human approves | `session_decide` (a human role only), or the studio UI | `{session, proposal_id, decision, decided_by_role, reason}`; the role must start with `human` | the proposal applied atomically or rejected, with `lawset_version` and the violations recorded either way; read it back with `session_read {session, since}` |
 
 Notes on the steps:
 
@@ -562,6 +562,26 @@ Read `weakest_input` before the number, and `scope` before you say anything abou
 ## 7. The tools, as of the last check
 
 Generated from the running code, not typed: the date below is when it was last regenerated.
+
+> **The table below was regenerated at 02:41Z and the tool set has moved since.** Re-checked at
+> **2026-11-01T06:06Z** by `node sim-engine/server.mjs --dump-contract`: contract version **0.8.0**, **54
+> tools in MCP `tools/list`**, and `GET /contract` on the bridge reports **no `http_only_tools` left** —
+> everything the bridge serves is now also in the MCP list. Fifteen tools are live that the table does
+> not name: `validate_generation`, `functional_resolution`, `physics_check`, `validate_design`,
+> `validate_swarm_tasks`, `sanity_check_design`, `closest_relative_phenotype`,
+> `closest_relative_genotype`, `lean_by_component`, `design_score`, `edit_plan`, `edit_plan_methods`,
+> `lean_open_questions`, `lean_open_question` and `lean_open_question_guard`; `leanbio_queue`,
+> `leanbio_ground`, `leanbio_claim`, `omics_gene`, `omics_part`, `omics_search`, `parse_design_text`,
+> `design_from_spec`, `session_decide`, `generate_candidates`, `generative_backends_status` and the
+> `swarm_*` tools are live too. All of them are local; see section 0.4 for the hosted/local split and the
+> three reasons for it. Ask the live list, not this table.
+>
+> Two gaps the table's closing notes record are **closed**, and the notes are wrong about them now:
+> there *is* a text-to-spec path (`parse_design_text {text}` and `design_from_spec`, guide
+> `AGENT-GUIDE-SPEC.md`), and there *is* an approval tool — `session_decide {session, proposal_id,
+> decision, decided_by_role, reason}`, which applies a proposal's edits atomically and needs a role
+> starting with `human`. An agent still never posts `kind: "edit"` and never calls `session_decide` as a
+> human role.
 
 <!-- tool-table:start -->
 Checked 2026-11-01T02:41:33Z against the live tool list (`discoverTools()` in http.mjs, which is `server.mjs` TOOLS plus `sim-engine/tools/*.mjs`).
