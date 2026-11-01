@@ -4,10 +4,325 @@ For Claude Code, a collaborator's swarm, the MorphoSwarm Frontier agents, or any
 call a tool. It tells you how to connect, what order to call things in, and the rules every number and
 every edit must follow.
 
+**If you have a generated design and want it scored, start at section 0 and stop there.** It is one call,
+five named results, and the six measured reasons not to over-read them. The rest of this guide is for
+co-designing an organism from scratch.
+
 **The tool list moves faster than this file.** The authority is always the live list: MCP
 `tools/list`, `GET /contract` on the HTTP bridge, or `node sim-engine/server.mjs --dump-contract`.
-If this guide and the live list disagree, the live list is right. Section 7 records which tools
-existed when this guide was last checked.
+If this guide and the live list disagree, the live list is right. Section 0 was verified by running every
+command in it; section 7 records which tools existed when the tool table was last regenerated.
+
+---
+
+## 0. Quickstart: run your generated design through DELPHI validation
+
+**You have a generated design. Three inputs, one call, five named results and their gates.** Everything
+in this section was run on **2026-11-01T06:06Z** against the servers it names; the outputs quoted are
+that run's real output, copied, not retyped.
+
+### 0.1 The one call
+
+```
+validate_generation {
+  "generated":          "winged-zebrafish",
+  "base":               "zebrafish-adult",
+  "desired_phenotype":  "a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult"
+}
+```
+
+`generated` and `base` each take a design id, an inline organism document, a path to an organism-document
+JSON, or FASTA / plain sequence. `desired_phenotype` is the prompt your generator was given, in plain
+English - hand it over verbatim. Anything the parser cannot read comes back verbatim under
+`verdict.unparsed_desired_phenotype`, because an unparsed requirement is an unchecked requirement.
+
+### 0.2 The five named results, and the gates
+
+They come back under `result.results`, side by side, each with its own gate. **They are never summed.**
+
+| named result | the question it answers | status on the headline run |
+|---|---|---|
+| `genotype_similarity` | is the edited sequence state close to a real organism's? | `cannot-assess` |
+| `phenotype_similarity` | is the shape inside the distribution of real measured specimens? | `pass` |
+| `lean_check` | does any **accepted** Lean-backed law rule the design out? | `cannot-assess` |
+| `functional_resolution` | can every difference from the closest **functional** analogue be accounted for from known annotation? | `fail` |
+| `physics_check` | does the design actually do what was asked? | `fail` |
+
+Three statuses, and the third is the point: `pass`, `fail`, **`cannot-assess`**. A `cannot-assess` is not
+a pass. The verdict object says which it was, and withholds the word "validated" when any gate failed,
+any gate could not be assessed, any biological scale could not be assessed, or no sequence was compared:
+
+```
+verdict.word_validated_withheld  true
+verdict.withheld_because         ["2 gate(s) failed", "2 gate(s) could not be assessed",
+                                  "3 biological scale(s) could not be assessed",
+                                  "no sequence was compared at any locus"]
+```
+
+The scorer's own composite arrives beside them as `composite_score_from_the_scorer`, carried through for
+reference and explicitly **not** the verdict:
+
+```
+composite_score_from_the_scorer  {"value": 0.878, "plausible": true, "version": "1.0.0",
+  "note": "the scorer thread's own frozen number, carried through for reference. It is NOT this
+           report's verdict, and no gate above feeds it."}
+```
+
+### 0.3 Three entry paths
+
+**A. Hosted MCP - any agent, nothing installed.** Verified: added, reported Connected, removed.
+
+```bash
+claude mcp add --transport http delphisci https://delphisci-mcp.fly.dev/mcp
+```
+
+Any other client: Streamable HTTP, no auth, 120 requests per minute per IP.
+
+```bash
+curl -s -X POST https://delphisci-mcp.fly.dev/mcp \
+  -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+curl -s https://delphisci-mcp.fly.dev/healthz
+#   {"ok":true,"files":4266,"built":"2026-11-01 05:47"}
+```
+
+**The hosted server does not serve `validate_generation`.** At the check above it served 16 tools -
+`delphi_overview`, `delphi_search_claims`, `delphi_get_claim`, `delphi_rank_claims`, `delphi_graph`,
+`delphi_claim_tests`, `delphi_morpholib`, `delphi_organisms`, `delphi_get_organism`, `delphi_sparql`,
+`delphi_forum_read`, `delphi_forum_register`, `delphi_forum_post`, `delphi_forum_respond`,
+`delphi_propose_claim`, `delphi_log_test_result` - and no `lean_*` and no validator. It is DELPHI's
+knowledge layer: what the project claims, how it was assessed, and the claim graph. Use it to read claims
+and to post to the forum; use path B to validate a design. Section 0.4 says why the split falls where it
+does.
+
+**B. Local clone - the full set, including the validator.**
+
+```bash
+git clone https://github.com/fractastical/delphisci && cd delphisci
+npm install
+(cd sim-engine && npm install)          # one dependency, @modelcontextprotocol/sdk
+
+claude mcp add delphi-sim-engine -- node "$PWD/sim-engine/server.mjs"   # 54 tools, the validator
+claude mcp add delphisci-local   -- node "$PWD/mcp/server.mjs"          # 21 tools, claims + lean_*
+```
+
+As a project `.mcp.json` instead (the repository's existing `.mcp.json` holds another server: merge the
+entry, do not replace the file):
+
+```json
+{
+  "mcpServers": {
+    "delphi-sim-engine": { "type": "stdio", "command": "node", "args": ["sim-engine/server.mjs"] }
+  }
+}
+```
+
+Verified over raw MCP stdio against `sim-engine/server.mjs`: `initialize`, then `tools/call`
+`validate_generation` with the three arguments above, returned `isError: false` and the envelope
+`{contract_version, result, provenance, scope, weakest_input, counts}` carrying the five gates of 0.2.
+
+**C. No MCP - the CLI or the HTTP bridge.**
+
+```bash
+node sim-engine/validate-cli.mjs \
+  "a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult" \
+  --base zebrafish-adult --generated winged-zebrafish
+# exit 0  every gate passed
+# exit 1  a gate failed            <- the headline run above
+# exit 2  nothing failed, but something could not be assessed
+```
+
+```bash
+node sim-engine/http.mjs            # http://127.0.0.1:7341, loopback only
+curl -s -X POST 127.0.0.1:7341/tool/validate_generation -H 'content-type: application/json' -d '{
+  "generated": "winged-zebrafish",
+  "base": "zebrafish-adult",
+  "desired_phenotype": "a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult"
+}' | jq '.result.results | map_values(.status)'
+```
+
+From JavaScript, with no server at all:
+
+```js
+import { validateGeneration } from './sim-engine/validate/pipeline/index.mjs';
+const report = await validateGeneration({ generated, base, desired_phenotype });
+```
+
+### 0.4 Which tools are hosted, and which are local-only
+
+Checked 2026-11-01T06:06Z. The authority is always the live list: `tools/list`, `GET /contract`, or
+`node sim-engine/server.mjs --dump-contract`.
+
+| surface | tools | holds |
+|---|---|---|
+| **hosted** `https://delphisci-mcp.fly.dev/mcp` | 16 | the five `delphi_*` read tools and `delphi_sparql`, the organism and morpholib readers, the claim-test log, and the six forum tools |
+| **local** `node mcp/server.mjs` (this branch) | 21 | the six `delphi_*` plus `lean_laws_list`, `lean_law_get`, `lean_lawset_get`, `lean_check`, `lean_verify`, `lean_source_status`, `lean_changes`, `lean_propose`, `leanbio_queue`, `leanbio_ground`, `leanbio_claim`, `omics_gene`, `omics_part`, `omics_search`, `design_score` |
+| **local** `node sim-engine/server.mjs` | 54, contract `0.8.0` | everything above except the `delphi_*` readers, plus the studio (`organism_*`, `scenario_*`, `optimize`, `session_*`), the validators (`validate_generation`, `functional_resolution`, `physics_check`, `validate_design`, `design_score`, `sanity_check_design`, `closest_relative_phenotype`, `closest_relative_genotype`, `lean_by_component`), `edit_plan`, `edit_plan_methods`, the open-questions tools and the generative and swarm tools |
+
+Three reasons a tool is local-only, and they are the whole rule:
+
+1. **It runs a Lean build.** `lean_propose` shells out to `lean/registry/propose.mjs`, which compiles a
+   submitted file. It is marked `local_only` in the contract, the HTTP bridge serves it only while bound
+   to loopback, and it is never on the hosted server.
+2. **It writes.** `organism_create`, `session_open`, `session_post`, `session_decide` and the `swarm_*`
+   tools append to JSONL and JSON under `sim-engine/sessions/`. A hosted, unauthenticated server has
+   nowhere honest to put that.
+3. **It reads repository data that is not in the deployed image.** `validate_generation`,
+   `functional_resolution`, `physics_check`, `design_score`, `edit_plan` and the `closest_relative_*`
+   tools read the five omics layers (about 914,000 rows), the FishShapes reference set, the captured
+   exons and the GRCz11 coordinate tables. The hosted image packs the claims, the unsigned TriG files
+   and the Lean law sources, about 2 MB, and nothing else.
+
+One more caveat about the hosted server: it serves upstream **`main`** as of its last deploy, and the
+branch you are reading lives on a fork. Its tool list is therefore neither a subset nor a superset of
+this branch's - it already has forum and organism tools this branch does not, and it lacks the `lean_*`
+tools this branch adds. Read its `tools/list`, not this table, before you depend on a name there.
+
+### 0.5 Read this before you trust any number above
+
+A collaborator who takes these five results at face value will be misled in six specific ways. Each one
+is measured, and each links to the page that proves it.
+
+**1. "Real organisms score plausible" is close to worthless on its own.** In the blind, held-out,
+family-out evaluation - 168 held-out families, scored family-out, by an evaluator who built neither the
+scorer nor the benchmark - **98 to 99.6 % of real organisms score at or above the 0.5 plausibility cut in
+every scorer version, and only 12 to 17 % of negatives score below it.** Every version passes "real
+things look real", and every version is close to calling everything plausible.
+-> [`sim-engine/validate/evaluation/SCORER-EVALUATION.md`](validate/evaluation/SCORER-EVALUATION.md),
+top line item 2; page `/scorer/`.
+
+**2. The composite has never beaten its own strongest single term.** v1.3.0's `rank_score` reaches P1
+AUC **0.875**; its joint Mahalanobis term used **alone** reaches **0.883** (difference -0.008, CI -0.020
+to 0.002; over all held-out items -0.007, CI -0.013 to -0.002, significantly *worse*). The joint term
+alone also passes all three primary endpoints by itself. On the primary ranking the composite is one term
+wearing a costume; the other four components earn their place only on secondary endpoints. Earlier
+versions were worse than the raw nearest-neighbour distance they were built from.
+-> same file, top line item 1.
+
+**3. `functional_resolution` covers about a third of the requirements, and the analogue it compares
+against has no functional data at all.** For the winged zebrafish against the flying fish, **22 of 73
+requirements are assessable, 30.1 %**. Of those 22, **2 are met and both ancestrally** (a residue the
+zebrafish already carried), 1 rests on a hypothesis, and **19 are unresolved**; 14 of the 19 carry the
+caveat that "unresolved" is the absence of a *search*, not of a resolution. And **0 of the 73 loci carry
+any flying-fish expression, proteomic or functional-assay data of any kind** - 2 carry so much as a
+*Hirundichthys* gene identifier. Every "requirement" is a sequence state of the analogue, never a
+measured function of it.
+-> [`sim-engine/validate/functional/RESULTS.md`](validate/functional/RESULTS.md).
+
+**4. No genome was compared, on any run.** All seven repository organisms carry `edits: []` - they are
+parameter sets, not base-plus-edit documents. So `sequence_basis` is **`document-only`**, `loci_covered`
+is **0**, `genome_fraction_assessed` is **0**, and `genotype_similarity` is `cannot-assess`. The report
+prints "NO SEQUENCE WAS ASSESSED" in words on every such call. The reconstruction path through the
+editplan thread's GRCz11 coordinates is wired and runs the moment a design carries a gene-level edit; it
+has never had one to run on.
+-> [`sim-engine/validate/pipeline/RESULTS.md`](validate/pipeline/RESULTS.md), "there are no generated
+genomes".
+
+**5. Every glide-based physics check grades `circular`.** In the physics controls all ten criterion rows
+carry `model_confidence: circular` or `circular-in-part`. The glide module's own model card says so:
+"PARTLY CIRCULAR ... Not independent evidence." The positive control's 36.5 m prediction at 15 m/s and
+the 50 m field glide it is checked against come from the same body of second-hand observations. **What is
+not circular is the four negative controls**, each of which turns on an inequality between two
+independently sourced quantities - a burst or taxi speed from field observation against a v_min computed
+from a wind-tunnel polar and a measured mass and area. That is why a physics `fail` carries weight here
+and a physics `pass` carries much less.
+-> [`sim-engine/validate/physics/RESULTS.md`](validate/physics/RESULTS.md); page `/t/physics/`.
+
+**6. 15 accepted laws evaluate nothing on a design.** Of the 36 accepted laws in lawset 1.8.1, 15 produce
+no row for any design. Until a guard was written for it on 2026-11-01, a law could be accepted, released
+in a lawset, served by every tool and every mirror, shown in the studio's law list - and run no
+arithmetic at all. The first run of the guard found a live case nobody had noticed: `aerobic-power-bound`,
+an **accepted** law, evaluated nothing, because it and `fick-principle` both claimed constraint `C14` and
+the generator broke the tie alphabetically, so a broken aerobic ceiling was reported under
+`fick-principle` for no better reason than the letter f. Each of the 15 now carries a written reason in
+`NO_DESIGN_ROW` in `lean/registry/check-exposed.mjs`, and the guard fails if a reason stops being true.
+On the headline run `lean_check` is `cannot-assess`: **25 laws cannot evaluate, 10 are out of scope, 0
+evaluated either way.** "No accepted-law violation found" is carried through unchanged and is not a pass.
+-> [`lean/registry/LIVE-LOOP-DEMO.md`](../lean/registry/LIVE-LOOP-DEMO.md) section 0;
+[`lean/registry/README.md`](../lean/registry/README.md) under `bind:accepted`; re-run it yourself with
+`node lean/registry/check-exposed.mjs`.
+
+And the standing one: `lean_check` is a floating-point evaluation of a Lean-backed formula, not a kernel
+proof. Say it that way.
+
+### 0.6 The worked example, and why five results beat one number
+
+Re-run it yourself; it takes about four seconds.
+
+```bash
+node sim-engine/validate-cli.mjs \
+  "a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult" \
+  --base zebrafish-adult --generated winged-zebrafish
+```
+
+Base: `zebrafish-adult`. Generated: `winged-zebrafish` - the same fish with its pectoral fins scaled up,
+length and span by 2.26x, planform area by 4.45x, and nothing else changed.
+
+**The scorer calls it plausible, 0.878. The physics says it cannot leave the water.** Both are in the
+same report, and neither is allowed to hide the other:
+
+```
+NAMED RESULTS (five, never summed)
+  genotype_similarity    CANNOT-ASSESS  the generated design carries no gene-level edit ... This is not a pass
+  phenotype_similarity   PASS           inside the calibrated shape distribution (body p 1)
+  lean_check             CANNOT-ASSESS  no Lean law could be evaluated on this design
+                                        (25 cannot-evaluate, 10 out of scope)
+  functional_resolution  FAIL           19 difference(s) from the closest functional analogue are UNRESOLVED
+  physics_check          FAIL           cannot glide: the reachable launch speed 0.67 m/s is below v_min
+                                        8.64 m/s, so lift cannot carry the weight [achieved in 0.0 % of
+                                        200 draws; median 0 m, 5-95 % 0 to 0]
+                                        lifting_area_supports_mass@adult -- the lifting area is 166.37x
+                                        too small: 1.91 cm2 against 317.76 cm2 needed to carry 0.007 N
+                                        at 0.67 m/s
+
+  [the scorer thread's own composite, for reference only, NOT this verdict: 0.878 (plausible), v1.0.0]
+
+  The word "validated" is WITHHELD: 2 gate(s) failed; 2 gate(s) could not be assessed;
+  3 biological scale(s) could not be assessed; no sequence was compared at any locus.
+```
+
+A single number would have shipped this design. Five named results show exactly where it fails, and the
+report prints the reason at the tissue scale in one line of its own: the design grew the wing and never
+touched the pectoral muscle that would have to move it. The 166x lifting-area shortfall and that tissue
+gap are one fact seen at two scales.
+
+Now run the control - the **real** flying fish as `generated`, same base, same sentence:
+
+```bash
+node sim-engine/validate-cli.mjs \
+  "a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult" \
+  --base zebrafish-adult --generated flying-fish     # exit 2
+```
+
+```
+  phenotype_similarity   PASS
+  functional_resolution  PASS           every difference has a demonstrated resolution
+  physics_check          CANNOT-ASSESS  INCOMPLETE: 2 of 3 hard criteria have NO MODEL and were NOT
+                                        checked (temperature/survives, temperature/survives)
+  [... composite: 0.933 (plausible), v1.0.0]
+  The word "validated" is WITHHELD: 3 gate(s) could not be assessed; ...
+```
+
+The glide criterion the winged zebrafish misses, the real animal meets - so the physics separates a real
+glider from a design that merely has bigger fins, which is what a control is for. But its overall physics
+gate is `cannot-assess`, not `pass`, and the reason is worth having: `scenarios/temperature.mjs` holds CT
+limits for zebrafish only and **refuses to substitute them** for another species, and no flying-fish
+thermal measurement was found. "Survives 10-30 C" is unanswerable for the real flying fish from the data
+on hand, and the report says that rather than borrowing a constant.
+
+### 0.7 Four rules your agent must not break
+
+- **Role labels, never personal identifiers.** Authors are `human`, `agent:physics`,
+  `agent:frontier.swarm-3`: `^[a-z][a-z0-9_-]{0,30}(:[a-z0-9_.-]{1,40}){0,3}$`. No names, e-mail
+  addresses, ORCIDs or handles, in a label or in comment text. The tools reject other forms.
+- **A `calibrated` number is never a result.** It was tuned to reproduce one named observation, so
+  reproducing that observation proves nothing. If a conclusion needs one, the conclusion is not
+  established - say so.
+- **Aves is a frozen holdout.** Birds are DELPHI's held-out test clade. Do not fetch, enter, compare
+  against or optimise toward bird data, do not use a bird as a parent, and do not post bird numbers to a
+  session. A law has to be tested on birds blind, later, by someone who built nothing.
+- **Agents propose; humans decide.** `session_post` with `kind: "proposal"`, never `kind: "edit"`. The
+  schema accepts `edit` from any author and applies it; the rule is what stops you, not the schema.
 
 ---
 
@@ -15,19 +330,19 @@ existed when this guide was last checked.
 
 | | Hosted `delphisci` MCP | Local `sim-engine` |
 |---|---|---|
-| What it is | The project's knowledge: claims, their maths, assessments, the claim graph, and (being added) the Lean law tools | The design and simulation backend: organism documents, edits, perturbation scenarios, optimisation, specs, codesign sessions, and the numeric models |
+| What it is | The project's knowledge: claims, their maths, assessments, the claim graph, the organism readers and the forum | The design and simulation backend: organism documents, edits, perturbation scenarios, optimisation, specs, codesign sessions, the validators and the numeric models |
 | Where | `https://delphisci-mcp.fly.dev/mcp` (Streamable HTTP, no auth, 120 req/min per IP) | Your clone: `node sim-engine/server.mjs` (stdio) or `node sim-engine/http.mjs` (HTTP on 127.0.0.1) |
 | Source | `mcp/` in the repo (its own README) | `sim-engine/` (this folder) |
 | Start here if | you want to read what DELPHI claims and which laws are proved | you want to design, perturb or optimise an organism |
 
-**Collaborators should start with the hosted server.** It needs nothing installed. The `lean_*` law
-tools are being added to it in a versioned change. **Honest caveat:** the hosted copy serves `main` as
-of its last deploy, so it gains the `lean_*` tools only after that change merges to `main` upstream and
-the deploy workflow runs. Until then, check `https://delphisci-mcp.fly.dev/healthz` and `tools/list`;
-if `lean_*` is not there, use the local sim-engine copy (section 7) or the static mirror at
-`/api/lean/` on the dashboard site, if it has been published. All three surfaces read laws through
-one loader (`lib/lean-source.mjs`), so they agree on law ids, versions and statuses. The mirror is
-read-only JSON: it lists laws and lawsets but cannot run a check.
+**Start with the hosted server to read what DELPHI claims; clone to validate a design.** The hosted
+server needs nothing installed, but at the 2026-11-01T06:06Z check it served 16 tools and **none of them
+was `lean_*` or a validator**: it serves upstream `main` as of its last deploy, and this branch's law and
+validator tools are not in `main` yet. So check `https://delphisci-mcp.fly.dev/healthz` and `tools/list`
+first, and for the laws use the local `mcp/server.mjs` or `sim-engine/server.mjs` copies (section 0.4 and
+section 7) or the static mirror at `/api/lean/` on the dashboard site. All of those read laws through one
+loader (`lib/lean-source.mjs`), so they agree on law ids, versions and statuses. The mirror is read-only
+JSON: it lists laws and lawsets but cannot run a check.
 
 A law's `status` (`accepted`, `proposed`, `contested`, `retired`) is a registry decision, not a truth
 value. Only `accepted` laws bind; the rest are shown as advisory. `lean_propose` never auto-accepts:

@@ -24,7 +24,14 @@ const SCOPE =
   'formalised in Lean is proved INTERNALLY CONSISTENT and is not thereby proved true of any organism. Where the ' +
   'arms are not actually contradictory, `exclusivity.kind` says so rather than forcing a contradiction. A FAILED ' +
   'THEOREM is a statement this project tried and could not establish, kept with its reason so nobody reproposes ' +
-  'it; read `what_survives` for what is still true after the failure.';
+  'it; read `what_survives` for what is still true after the failure. CHECK `attempted` on a failed theorem: ' +
+  'with `attempted: false` the statement was NEVER TRIED (the single Lean build lock was contended, or it was ' +
+  'abandoned on cost, or deliberately withheld), so the record says nothing about whether the statement is ' +
+  'true, and `proof_status` states that plainly; the counts report attempted and never-attempted separately so ' +
+  'a total cannot overstate how much has been tested. A NOT-CHECKABLE-IN-PRINCIPLE record is a fourth category: ' +
+  'sound, usually proved, but with no falsifiable direction over any design, so NO input would make it bind. It ' +
+  'deliberately carries no `missing_inputs` - a list of them would read as a to-do and misstate the finding - ' +
+  'and `false_positive_if_forced` says which real organisms a forced check would wrongly flag.';
 
 const prov = () => [
   p('open-question registry', 'lean/registry/open-questions/', 'derived',
@@ -71,6 +78,7 @@ export async function openQuestionsList(args = {}) {
     counts: s.counts, questions: qs,
     failed_theorems: includeFailed ? s.failed_theorems : undefined,
     requirements: includeFailed ? s.requirements : undefined,
+    not_checkable_in_principle: includeFailed ? s.not_checkable_in_principle : undefined,
     note: 'Use lean_open_question(id) for one full record: every arm\'s evidence with verbatim quotes, the belief breakdown, the exclusivity finding, and what would settle it.',
   }, prov(), SCOPE);
 }
@@ -82,7 +90,7 @@ export const openQuestionSchema = {
   inputSchema: {
     type: 'object',
     properties: {
-      id: { type: 'string', description: 'question_id (e.g. "oq-kcnk5b-vm-sign"), failure_id (e.g. "ft-glider-interface-convergence") or requirement_id.' },
+      id: { type: 'string', description: 'question_id (oq-*, e.g. "oq-kcnk5b-vm-sign"), failure_id (ft-*, e.g. "ft-glider-interface-convergence"), requirement_id (cr-*) or not_checkable_id (nc-*, e.g. "nc-hamilton-rule").' },
       recompute: { type: 'boolean', description: 'Recompute the belief proportion from the arms\' evidence and return it alongside the stored one, so a caller can verify the number rather than trust it.' },
     },
     required: ['id'],
@@ -91,10 +99,11 @@ export const openQuestionSchema = {
 export async function openQuestionGet(args = {}) {
   const reg = load();
   const id = String(args.id || '');
-  const rec = questionById(id, reg) || reg.failed.find(f => f.failure_id === id) || reg.requirements.find(r => r.requirement_id === id) || reg.requests.find(r => r.request_id === id);
+  const rec = questionById(id, reg) || reg.failed.find(f => f.failure_id === id) || reg.requirements.find(r => r.requirement_id === id)
+    || (reg.notCheckable || []).find(n => n.not_checkable_id === id) || reg.requests.find(r => r.request_id === id);
   if (!rec) {
     return envelope({ error: `no record "${id}"`,
-      available: { questions: reg.questions.map(q => q.question_id), failed_theorems: reg.failed.map(f => f.failure_id), requirements: reg.requirements.map(r => r.requirement_id) } }, prov(), SCOPE);
+      available: { questions: reg.questions.map(q => q.question_id), failed_theorems: reg.failed.map(f => f.failure_id), requirements: reg.requirements.map(r => r.requirement_id), not_checkable_in_principle: (reg.notCheckable || []).map(n => n.not_checkable_id) } }, prov(), SCOPE);
   }
   const out = { ...rec };
   if (args.recompute && rec.record_type === 'open-question') {

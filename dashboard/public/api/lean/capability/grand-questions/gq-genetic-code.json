@@ -1,0 +1,126 @@
+{
+ "map_version": "1.0.0",
+ "as_of": "2026-11-01",
+ "the_line": "Lean proves that a conclusion follows from stated premises. It does not adjudicate reality. Every theorem in this repo is of the form 'if these premises hold, then this follows', and a kernel proof of it is silent on whether any organism satisfies the premises. So a grand question has a formalisable core exactly to the extent that part of the disagreement about it is a disagreement about what follows from what, and an empirical remainder exactly to the extent that it is a disagreement about what the world is like. Most of these questions are mostly remainder. Two of them (the Price equation, Hamilton's rule) are disputes in which the formal part has been repeatedly confused with the empirical part for decades, and those are the ones where formalisation would do the most good. A capability map that let the first kind of progress be read as the second would be worse than no map.",
+ "id": "gq-genetic-code",
+ "name": "The origin of the genetic code",
+ "question": "Why does this code, and not one of the million alternatives, map 64 codons onto 20 amino acids?",
+ "formalisable_core": {
+  "has_core": true,
+  "strength": "narrow",
+  "statements": [
+   {
+    "claim": "If the standard code holds, then the minimum number of nucleotide substitutions between the codon sets of two amino acids is a determined number, and a claimed substitution path shorter than it is impossible.",
+    "settles": "Combinatorial facts about the code, by kernel decision over a finite table rather than by argument. Phenylalanine to leucine is one substitution; methionine to tryptophan is two; this repo proves both.",
+    "lean": "Delphi.Genotype.minSubst, Delphi.Genotype.claimed_substitutions_rules_out, phe_leu_one, met_trp_two, trp_stop_one",
+    "module": "lean/Delphi/Genotype.lean",
+    "law_id": "genotype-genetic-code",
+    "state": "proved-here"
+   },
+   {
+    "claim": "If an objective function over codon assignments is stated and the space of alternative codes is stated, then whether the standard code is optimal within that space is determined.",
+    "settles": "The 'one in a million' style of claim, as a decidable question for each stated objective and each stated space. It does NOT settle whether the objective is the one selection acted on, which is the whole difficulty.",
+    "state": "not-formalised"
+   }
+  ]
+ },
+ "empirical_remainder": {
+  "has_remainder": true,
+  "share": "most",
+  "items": [
+   {
+    "what": "Why the code is as it is: frozen accident, stereochemical affinity, coevolution with biosynthesis, or error minimisation.",
+    "why_not_provable": "A historical and chemical question. An optimality proof within a stated space is consistent with all four accounts.",
+    "measurement": "Aptamer and ribozyme experiments probing codon-amino-acid affinity; comparative analysis of variant codes."
+   },
+   {
+    "what": "Whether earlier, different codes existed and were replaced.",
+    "why_not_provable": "A historical fact with no surviving record.",
+    "measurement": "Not measurable. Constrained indirectly by the distribution of variant codes in extant organisms."
+   },
+   {
+    "what": "Which objective function, if any, selection was optimising.",
+    "why_not_provable": "Optimality is relative to an objective, and the objective is not observable.",
+    "measurement": "Not measurable directly; inferred from mistranslation-cost experiments."
+   }
+  ]
+ },
+ "in_repo": [
+  {
+   "kind": "lean-theorem",
+   "ref": "Delphi.Genotype.code, hamming, allCodons, codonsOf, minSubst and the decided instances",
+   "note": "The standard code as a total function with codon-space distance decided by the kernel, and an elimination theorem built on it. A genuinely settled formalisable core, narrow and real.",
+   "strength": "real"
+  },
+  {
+   "kind": "registry-law",
+   "ref": "genotype-genetic-code",
+   "note": "In the registry with its scope and non-vacuity witness, so an elimination against a claimed substitution count is reproducible against a pinned lawset.",
+   "strength": "real"
+  },
+  {
+   "kind": "enumeration",
+   "ref": "open-problems/problems.json WP-001",
+   "note": "'How did genetic code originate? What was the molecular mechanism that allows the association of the amino acids with their triplet codons?' enumerated verbatim from the source.",
+   "strength": "adjacent"
+  }
+ ],
+ "tools_needed": [
+  {
+   "name": "lean_module_code_optimality",
+   "status": "MISSING",
+   "note": "Optimality of the standard code within a STATED space under a STATED objective, with both stated as named hypotheses so the result cannot be read as explaining the code.",
+   "gap_id": "lean-code-optimality"
+  },
+  {
+   "name": "lean_law_get",
+   "status": "EXISTS",
+   "note": "The code law with its decided instances, which is what makes the narrowness of the result visible."
+  },
+  {
+   "name": "lean_check",
+   "status": "EXISTS",
+   "note": "Evaluates a claimed substitution count against the code law for a stated design."
+  }
+ ],
+ "open_problem_ids": [
+  "WP-001"
+ ],
+ "citations": [
+  "crick1968",
+  "koonin2009",
+  "freeland1998"
+ ],
+ "use_cases": [
+  "uc-trajectory-possible",
+  "uc-teach-a-law",
+  "uc-which-laws-violated"
+ ],
+ "citations_resolved": {
+  "crick1968": {
+   "ref": "Crick FH (1968). The origin of the genetic code. Journal of Molecular Biology 38:367-379.",
+   "doi": "10.1016/0022-2836(68)90392-6",
+   "pmid": "4887876",
+   "verified_via": "europepmc",
+   "quotable": "The origin of the genetic code",
+   "note": "FOUNDATIONAL, the frozen-accident hypothesis. No abstract in the record."
+  },
+  "koonin2009": {
+   "ref": "Koonin EV, Novozhilov AS (2009). Origin and evolution of the genetic code: the universal enigma. IUBMB Life 61:99-111.",
+   "doi": "10.1002/iub.146",
+   "pmid": "19117371",
+   "verified_via": "europepmc",
+   "quotable": "The genetic code is nearly universal, and the arrangement of the codons in the standard codon table is highly nonrandom",
+   "note": "modern synthesis of the competing theories"
+  },
+  "freeland1998": {
+   "ref": "Freeland SJ, Hurst LD (1998). The genetic code is one in a million. Journal of Molecular Evolution 47:238-248.",
+   "doi": "10.1007/pl00006381",
+   "pmid": "9732450",
+   "verified_via": "europepmc",
+   "quotable": "Statistical and biochemical studies of the genetic code have found evidence of nonrandom patterns in the distribution of codon assignments",
+   "note": "the error-minimisation argument against pure frozen accident; follow-up PMID 10742043"
+  }
+ },
+ "scope": "This is a map of what is formalisable, not a research programme and not a claim that the formalisable parts are the important parts. The (a)/(b) split is a judgement made here and is arguable for every entry; where it is contentious the dispute field says so. The list is not exhaust: there is no canonical set of grand questions in biology, and this one is weighted toward evolution, development and scaling because that is what this project reads. Several entries have no counterpart in open-problems/problems.json, which is a gap in that enumeration rather than evidence the question is settled. Nothing here is about the held-out exam clade."
+}

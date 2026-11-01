@@ -1,0 +1,203 @@
+{
+ "map_version": "1.0.0",
+ "as_of": "2026-11-01",
+ "the_line": "Lean proves that a conclusion follows from stated premises. It does not adjudicate reality. Every theorem in this repo is of the form 'if these premises hold, then this follows', and a kernel proof of it is silent on whether any organism satisfies the premises. So a grand question has a formalisable core exactly to the extent that part of the disagreement about it is a disagreement about what follows from what, and an empirical remainder exactly to the extent that it is a disagreement about what the world is like. Most of these questions are mostly remainder. Two of them (the Price equation, Hamilton's rule) are disputes in which the formal part has been repeatedly confused with the empirical part for decades, and those are the ones where formalisation would do the most good. A capability map that let the first kind of progress be read as the second would be worse than no map.",
+ "id": "gq-morphogenesis-scaling",
+ "name": "Morphogenesis and scaling (D'Arcy Thompson's question)",
+ "question": "Why is an organism the size and shape it is, and how does a form keep its proportions as it grows? This is literally this repository's subject.",
+ "formalisable_core": {
+  "has_core": true,
+  "strength": "strong",
+  "statements": [
+   {
+    "claim": "If weight follows a cube law in length, then the log-log slope of weight against length is exactly 3, so a measured exponent different from 3 rules out the cube law for that family.",
+    "settles": "The elimination in both directions: the law implies the exponent, and an exponent that is not 3 refutes the law. Proved here with the refutation form proved separately.",
+    "lean": "Delphi.cubeLaw_loglog_exponent, Delphi.not_cubeLaw_of_exponent_ne_three",
+    "module": "lean/Delphi/Thompson.lean",
+    "law_id": "thompson1917-ch03-07",
+    "state": "proved-here"
+   },
+   {
+    "claim": "If weight follows a cube law and cross-sectional area an area law with stated material strength, then there exists a size beyond which the structure cannot carry itself, and a claimed performance beyond it is impossible.",
+    "settles": "Galileo's and Thompson's size limit, as an existence theorem rather than an intuition, together with its elimination form for a stated organism.",
+    "lean": "Delphi.exists_size_limit, Delphi.cannot_carry, Delphi.Constraints.giant_rules_out",
+    "module": "lean/Delphi/Thompson.lean, lean/Delphi/Scaling.lean, lean/Delphi/Constraints.lean",
+    "law_id": "thompson1917-ch02-07, scaling-strength-law",
+    "state": "proved-here"
+   },
+   {
+    "claim": "If a within-species allometry is stated with its measured exponent, then that exponent is not 2, so the isometric area assumption is false for that species.",
+    "settles": "That the theorems above, which assume isometry, do not apply unmodified to real growth. This is an EMPIRICAL law in this registry, and holding it as a separate class from the theorems is what keeps the two honest.",
+    "lean": "Delphi.Empirical.not_isometric_area, Delphi.Empirical.loading_rises",
+    "module": "lean/Delphi/Empirical.lean",
+    "law_id": "E1",
+    "state": "proved-here"
+   },
+   {
+    "claim": "If the critical wavenumber at onset satisfies q^2 (du dv) = det J for stated diffusion coefficients and a stated Jacobian determinant, then q is uniquely determined and does not depend on tissue size; so a claim that plain Turing patterning scales with the domain does not follow from those premises.",
+    "settles": "Which proposed mechanisms imply size-invariant patterning, by settling one that does NOT. Proved here as a candidate law. The positive direction, that a stated expansion-repression feedback DOES imply scaling, is still not formalised.",
+    "lean": "Delphi.LeanBio.Round2.TuringWavelength.onset_wavenumber",
+    "module": "lean/registry/proposals/turing-wavelength/law.lean",
+    "law_id": "turing-wavelength",
+    "state": "proved-here"
+   }
+  ]
+ },
+ "empirical_remainder": {
+  "has_remainder": true,
+  "share": "most",
+  "items": [
+   {
+    "what": "Whether growth is isometric, and what the actual allometric exponents are for a given species, organ and stage.",
+    "why_not_provable": "Measurements, and this repo's own E1 proves the answer to the first part is no.",
+    "measurement": "Ontogenetic series with length, area and mass measured at several sizes in one species."
+   },
+   {
+    "what": "Which scaling mechanism operates: expansion-repression feedback, volume-dependent production, or something else.",
+    "why_not_provable": "Several mechanisms imply scaling. Which one a given tissue uses is empirical.",
+    "measurement": "Gradient and target-gene readouts in embryos of manipulated size, with the candidate feedback component removed."
+   },
+   {
+    "what": "How organs and organisms know when to stop growing, which is enumerated as an open problem here in its own right.",
+    "why_not_provable": "A mechanistic question about signalling.",
+    "measurement": "Size-sensing perturbation experiments with final size measured."
+   },
+   {
+    "what": "Whether this project's own morphogen model predicts real fin growth, which it does not.",
+    "why_not_provable": "The pre-registered test FAILED on the axis that mattered: the measurement is dorsoventral +50 per cent with anteroposterior unchanged, and the model predicted the opposite. A proof about the model would not have caught this and did not.",
+    "measurement": "Already made. The failure is recorded in sim-engine/PREREGISTRATION.md section 5a and nothing was tuned afterwards."
+   }
+  ]
+ },
+ "in_repo": [
+  {
+   "kind": "lean-theorem",
+   "ref": "Delphi.cubeLaw_ratio, cubeLaw_loglog_exponent, not_cubeLaw_of_exponent_ne_three, exists_size_limit, vmin_ratio, powerRequired_log, areaLaw_ratio, wingLoading_ratio, breakLoad_ratio, safetyFactor_scaled, stress_ratio, cannot_carry",
+   "note": "The scaling core of the repo: twelve or more proved statements covering ratios, log-log exponents, safety factors and the existence of a size limit.",
+   "strength": "real"
+  },
+  {
+   "kind": "lean-theorem",
+   "ref": "Delphi.Constraints (cubeLaw_rules_out, giant_rules_out, stress_ratio_rules_out, area_exponent_rules_out, bending_exponent_rules_out, froude_rules_out, allometry_consistency_rules_out)",
+   "note": "A dedicated elimination module turning each scaling theorem into a ruling-out over stated intervals, which is what the eliminate pipeline consumes.",
+   "strength": "real"
+  },
+  {
+   "kind": "registry-law",
+   "ref": "E1, E2, thompson1917-ch02-06, ch02-07, ch02-10, ch03-07, scaling-area-law, scaling-strength-law, scaling-bending-law",
+   "note": "Theorems and empirical observations held in separate classes within one lawset (currently 1.7.0), each with scope, hypotheses and a non-vacuity witness.",
+   "strength": "real"
+  },
+  {
+   "kind": "registry-law",
+   "ref": "turing-wavelength (candidate), Delphi.LeanBio.Round2.TuringWavelength.onset_wavenumber",
+   "note": "A proved negative: tissue size cannot enter the critical wavenumber, so plain Turing patterning does not scale. This is why the scaling question needs a mechanism beyond the instability itself.",
+   "strength": "real"
+  },
+  {
+   "kind": "tool",
+   "ref": "growth_trajectory, scenario_timecourse, organism_list_parts, optimize, design_score",
+   "note": "The question is served end to end: a design can be edited, grown through every stage in the parametric stage table, scored, and rejected by a law with the law named.",
+   "strength": "real"
+  },
+  {
+   "kind": "failed-validation",
+   "ref": "sim-engine/validation/hhip-fin-area.mjs and PREREGISTRATION.md section 5a",
+   "note": "The pre-registered falsifier failed, including a diagnosis of a reasoning error in the pre-registration itself. The strongest formalised question in the repo is also the one with the clearest recorded empirical failure, and both facts belong in the same entry.",
+   "strength": "real"
+  },
+  {
+   "kind": "enumeration",
+   "ref": "open-problems/problems.json WP-012, WP-025, WP-077, SCI100-14, SCI100-53",
+   "note": "Five enumerated problems on cell size, organ size and shape, leaf size, when to stop growing, and dinosaur size, all with sources.",
+   "strength": "real"
+  }
+ ],
+ "tools_needed": [
+  {
+   "name": "lean_check",
+   "status": "EXISTS",
+   "note": "Evaluates a design against the scaling and empirical rows, with out-of-scope distinguished from violated and cannot-evaluate from both."
+  },
+  {
+   "name": "scenario_timecourse",
+   "status": "EXISTS",
+   "note": "Runs the question at every developmental stage, which is what a scaling question actually requires."
+  },
+  {
+   "name": "lean_module_pattern_scaling",
+   "status": "MISSING",
+   "note": "The negative half is now a candidate law (plain Turing patterning cannot scale). The positive half, that a stated expansion-repression feedback implies size-invariant patterning, is still not formalised.",
+   "gap_id": "lean-pattern-scaling"
+  },
+  {
+   "name": "minimal_repair",
+   "status": "MISSING",
+   "note": "When a design violates a scaling law, the useful answer is the smallest change that fixes it, or a statement that none exists. optimize searches an objective and cannot answer either.",
+   "gap_id": "minimal-repair"
+  }
+ ],
+ "open_problem_ids": [
+  "WP-012",
+  "WP-025",
+  "WP-077",
+  "SCI100-14",
+  "SCI100-53"
+ ],
+ "citations": [
+  "thompson1917",
+  "umulis2013",
+  "benzvi2010",
+  "cheung2011",
+  "kleiber1932"
+ ],
+ "use_cases": [
+  "uc-which-laws-violated",
+  "uc-exponent-vs-band",
+  "uc-stage-failure",
+  "uc-minimal-repair",
+  "uc-teach-a-law"
+ ],
+ "citations_resolved": {
+  "thompson1917": {
+   "ref": "Thompson DW (1917). On Growth and Form. Cambridge University Press.",
+   "doi": "10.5962/bhl.title.11332",
+   "verified_via": "crossref",
+   "is_book": true,
+   "quotable": "On growth and form",
+   "note": "FOUNDATIONAL and this repo's subject. A BOOK (Crossref monograph, Biodiversity Heritage Library scan DOI), not an indexed article."
+  },
+  "umulis2013": {
+   "ref": "Umulis DM, Othmer HG (2013). Mechanisms of scaling in pattern formation. Development 140:4830-4843.",
+   "doi": "10.1242/dev.100511",
+   "pmid": "24301464",
+   "verified_via": "europepmc",
+   "quotable": "Many organisms and their constituent tissues and organs vary substantially in size but differ little in morphology",
+   "note": "the modern framing of the scaling question"
+  },
+  "benzvi2010": {
+   "ref": "Ben-Zvi D, Barkai N (2010). Scaling of morphogen gradients by an expansion-repression integral feedback control. PNAS 107:6924-6929.",
+   "doi": "10.1073/pnas.0912734107",
+   "pmid": "20356830",
+   "verified_via": "europepmc",
+   "quotable": "Despite substantial size variations, proportions of the developing body plan are maintained with a remarkable precision",
+   "note": "FOUNDATIONAL expansion-repression mechanism; the Drosophila wing-disc test is PMID 21835621"
+  },
+  "cheung2011": {
+   "ref": "Cheung D, Miles C, Kreitman M, Ma J (2011). Scaling of the Bicoid morphogen gradient by a volume-dependent production rate. Development 138:2741-2749.",
+   "doi": "10.1242/dev.064402",
+   "pmid": "21613328",
+   "verified_via": "europepmc",
+   "quotable": "An important feature of development is the formation of patterns that are proportional to the overall size of the embryo",
+   "note": "an alternative scaling mechanism to expansion-repression"
+  },
+  "kleiber1932": {
+   "ref": "Kleiber M (1932). Body size and metabolism. Hilgardia 6:315-353.",
+   "doi": "10.3733/hilg.v06n11p315",
+   "verified_via": "crossref",
+   "quotable": "Body size and metabolism",
+   "note": "FOUNDATIONAL, Kleiber's law. Crossref metadata only. The 1947 review is also verified: Physiological Reviews 27:511-541, PMID 20267758."
+  }
+ },
+ "scope": "This is a map of what is formalisable, not a research programme and not a claim that the formalisable parts are the important parts. The (a)/(b) split is a judgement made here and is arguable for every entry; where it is contentious the dispute field says so. The list is not exhaust: there is no canonical set of grand questions in biology, and this one is weighted toward evolution, development and scaling because that is what this project reads. Several entries have no counterpart in open-problems/problems.json, which is a gap in that enumeration rather than evidence the question is settled. Nothing here is about the held-out exam clade."
+}

@@ -25,6 +25,10 @@ export const ROOT = path.resolve(OQ, '../../..');
 export const QUESTIONS_DIR = path.join(OQ, 'questions');
 export const FAILED_DIR = path.join(OQ, 'failed');
 export const REQUIREMENTS_DIR = path.join(OQ, 'requirements');
+// A statement that no input can ever make bind: sound, often proved, but with no falsifiable direction over any
+// design. Neither waiting for data nor wrong, so it gets its own folder rather than a requirements record with a
+// caveat shouted inside its missing_inputs.
+export const NOT_CHECKABLE_DIR = path.join(OQ, 'not-checkable');
 export const REQUESTS_DIR = path.join(OQ, 'requests');
 export const SCHEMA = path.join(OQ, 'open-questions.schema.json');
 
@@ -57,6 +61,7 @@ export function hashedView(rec) {
   }
   if (rec.record_type === 'failed-theorem') return { ...base, failure_id: rec.failure_id, reason: rec.reason, reason_detail: rec.reason_detail, what_was_tried: rec.what_was_tried, what_survives: rec.what_survives, lean_ref: rec.lean_ref ?? null, sources: rec.sources ?? [], became_open_question: rec.became_open_question ?? null };
   if (rec.record_type === 'candidate-with-requirements') return { ...base, requirement_id: rec.requirement_id, law_id: rec.law_id ?? null, missing_inputs: rec.missing_inputs, would_constrain_if_supplied: rec.would_constrain_if_supplied, not_checkable_because: rec.not_checkable_because ?? null };
+  if (rec.record_type === 'not-checkable-in-principle') return { ...base, not_checkable_id: rec.not_checkable_id, law_id: rec.law_id ?? null, not_checkable_because: rec.not_checkable_because, why_no_input_would_help: rec.why_no_input_would_help, false_positive_if_forced: rec.false_positive_if_forced, what_it_would_take: rec.what_it_would_take ?? null, lean_ref: rec.lean_ref ?? null };
   return { ...base, request_id: rec.request_id, law_id: rec.law_id, blocked_by_open_questions: rec.blocked_by_open_questions ?? [] };
 }
 export const contentHash = rec => sha256(canonical(hashedView(rec)));
@@ -67,7 +72,8 @@ export function load() {
   const failed = readDir(FAILED_DIR).map(f => readJson(path.join(FAILED_DIR, f)));
   const requirements = readDir(REQUIREMENTS_DIR).map(f => readJson(path.join(REQUIREMENTS_DIR, f)));
   const requests = readDir(REQUESTS_DIR).map(f => readJson(path.join(REQUESTS_DIR, f)));
-  return { questions: q, failed, requirements, requests, all: [...q, ...failed, ...requirements, ...requests] };
+  const notCheckable = readDir(NOT_CHECKABLE_DIR).map(f => readJson(path.join(NOT_CHECKABLE_DIR, f)));
+  return { questions: q, failed, requirements, notCheckable, requests, all: [...q, ...failed, ...requirements, ...notCheckable, ...requests] };
 }
 export const questionById = (id, reg = load()) => reg.questions.find(q => q.question_id === id) || null;
 export const openQuestions = (reg = load()) => reg.questions.filter(q => q.status === 'open');
@@ -76,10 +82,10 @@ export const openQuestions = (reg = load()) => reg.questions.filter(q => q.statu
 /** Schema errors plus the invariants the schema cannot state. Returns a list of strings. */
 export function validateRecord(rec, { schema = readJson(SCHEMA) } = {}) {
   const errs = [];
-  const defKey = { 'open-question': 'openQuestion', 'failed-theorem': 'failedTheorem', 'candidate-with-requirements': 'requirements', 'promotion-request': 'promotionRequest' }[rec.record_type];
+  const defKey = { 'open-question': 'openQuestion', 'failed-theorem': 'failedTheorem', 'candidate-with-requirements': 'requirements', 'not-checkable-in-principle': 'notCheckableInPrinciple', 'promotion-request': 'promotionRequest' }[rec.record_type];
   if (!defKey) return [`unknown record_type ${JSON.stringify(rec.record_type)}`];
   errs.push(...validate(schema.$defs[defKey], rec, '$'));
-  const id = rec.question_id || rec.failure_id || rec.requirement_id || rec.request_id;
+  const id = rec.question_id || rec.failure_id || rec.requirement_id || rec.not_checkable_id || rec.request_id;
 
   if (rec.record_type === 'open-question') {
     // A one-armed open question is not a question. It is an unsupported claim wearing a question's clothes, and it
@@ -158,6 +164,25 @@ export function validateRecord(rec, { schema = readJson(SCHEMA) } = {}) {
     }
     if (rec.contradicted_by === 'wild-type-organism' && !(rec.wild_type_failures || []).length) {
       errs.push(`${id}: contradicted_by 'wild-type-organism' needs wild_type_failures: the organisms that contradict it`);
+    }
+    // NEVER ATTEMPTED is not a result about the statement. A reader must not be able to mistake "we ran out of
+    // build time" for "we tried and could not establish this", so such a record must say so in proof_status.
+    const NEVER_ATTEMPTED = ['not-attempted-no-build-time', 'abandoned-on-cost', 'deliberately-not-proposed', 'abandoned-for-lack-of-a-constant'];
+    if (NEVER_ATTEMPTED.includes(rec.reason)) {
+      if (!rec.proof_status) errs.push(`${id}: reason '${rec.reason}' means the statement was never attempted, which is NOT a result about it. proof_status must say plainly whether Lean ever checked it, so it cannot be read as "we tried and could not".`);
+      else if (!/never compiled|not attempted|unchecked|never checked|no lean|not been checked|never proved|not proved/i.test(rec.proof_status) && rec.attempted !== false) {
+        errs.push(`${id}: proof_status does not state that the statement is UNCHECKED, but reason '${rec.reason}' says it was never attempted. Say so explicitly, or set attempted: false.`);
+      }
+      if (/\bwe tried\b|could not establish|failed to prove/i.test(String(rec.what_survives || ''))) errs.push(`${id}: what_survives claims an attempt, but reason '${rec.reason}' says the statement was never attempted`);
+    }
+  }
+  if (rec.record_type === 'not-checkable-in-principle') {
+    // The whole point of the type: no input makes it bind, so an input list here would read as a to-do and
+    // misstate the finding.
+    if ((rec.missing_inputs || []).length) errs.push(`${id}: a not-checkable-in-principle record must NOT list missing_inputs -- no input makes it bind, and a list reads as a to-do ("supply these and the law will work"), which is exactly what this record denies. Put the content in why_no_input_would_help.`);
+    // If the reason reduces to "we need numbers", this is a requirements record after all.
+    if (/^\s*(we need|needs?|supply|requires?)\b/i.test(String(rec.why_no_input_would_help || '')) && !/no input|nothing would|would not help|cannot bind|never bind/i.test(String(rec.why_no_input_would_help || ''))) {
+      errs.push(`${id}: why_no_input_would_help reads as a request for data, which would make this a candidate-with-requirements record. State why NO input helps.`);
     }
   }
   const want = contentHash(rec);
@@ -343,12 +368,21 @@ export function summary({ reg = load() } = {}) {
   return {
     counts: { questions: reg.questions.length, open: reg.questions.filter(q => q.status === 'open').length,
       settled: reg.questions.filter(q => q.status === 'settled').length, abandoned: reg.questions.filter(q => q.status === 'abandoned').length,
-      failed_theorems: reg.failed.length, requirements: reg.requirements.length, promotion_requests: reg.requests.length },
+      failed_theorems: reg.failed.length,
+      // Reported separately, because "attempted and defeated" and "never attempted" are different claims and a
+      // single total would overstate how much has actually been tried.
+      failed_attempted: reg.failed.filter(f => f.attempted !== false).length,
+      failed_never_attempted: reg.failed.filter(f => f.attempted === false).length,
+      requirements: reg.requirements.length, not_checkable_in_principle: (reg.notCheckable || []).length,
+      promotion_requests: reg.requests.length },
     questions: reg.questions.map(q => ({ question_id: q.question_id, version: q.version, status: q.status, statement_en: q.statement_en,
       n_arms: (q.arms || []).length, arms: (q.arms || []).map(a => ({ arm_id: a.arm_id, position: a.position, formalised: !!(a.lean_ref && a.lean_ref.theorem), formalisable: a.formalisable, belief: a.belief ?? null })),
       proportion: q.proportion?.shares ?? null, exclusivity: q.exclusivity?.kind ?? null,
       touches: q.touches, settled: q.settled ? { arm_id: q.settled.arm_id, date: q.settled.date } : null, content_hash: q.content_hash })),
-    failed_theorems: reg.failed.map(f => ({ failure_id: f.failure_id, version: f.version, reason: f.reason, statement_en: f.statement_en, what_survives: f.what_survives, became_open_question: f.became_open_question ?? null, content_hash: f.content_hash })),
+    failed_theorems: reg.failed.map(f => ({ failure_id: f.failure_id, version: f.version, reason: f.reason, statement_en: f.statement_en, what_survives: f.what_survives,
+      attempted: f.attempted !== false, proof_status: f.proof_status ?? null, became_open_question: f.became_open_question ?? null, content_hash: f.content_hash })),
+    not_checkable_in_principle: (reg.notCheckable || []).map(n => ({ not_checkable_id: n.not_checkable_id, version: n.version, law_id: n.law_id ?? null, statement_en: n.statement_en,
+      not_checkable_because: n.not_checkable_because, why_no_input_would_help: n.why_no_input_would_help, false_positive_if_forced: n.false_positive_if_forced, what_it_would_take: n.what_it_would_take ?? null, content_hash: n.content_hash })),
     requirements: reg.requirements.map(r => ({ requirement_id: r.requirement_id, law_id: r.law_id ?? null, statement_en: r.statement_en, missing_inputs: r.missing_inputs, content_hash: r.content_hash })),
     promotion_requests: reg.requests.map(r => ({ request_id: r.request_id, law_id: r.law_id, blocked_by_open_questions: r.blocked_by_open_questions ?? [] })),
   };

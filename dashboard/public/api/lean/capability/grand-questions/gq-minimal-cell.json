@@ -1,0 +1,122 @@
+{
+ "map_version": "1.0.0",
+ "as_of": "2026-11-01",
+ "the_line": "Lean proves that a conclusion follows from stated premises. It does not adjudicate reality. Every theorem in this repo is of the form 'if these premises hold, then this follows', and a kernel proof of it is silent on whether any organism satisfies the premises. So a grand question has a formalisable core exactly to the extent that part of the disagreement about it is a disagreement about what follows from what, and an empirical remainder exactly to the extent that it is a disagreement about what the world is like. Most of these questions are mostly remainder. Two of them (the Price equation, Hamilton's rule) are disputes in which the formal part has been repeatedly confused with the empirical part for decades, and those are the ones where formalisation would do the most good. A capability map that let the first kind of progress be read as the second would be worse than no map.",
+ "id": "gq-minimal-cell",
+ "name": "The minimal cell",
+ "question": "What is the smallest set of genes that can make a self-replicating cell, and why those?",
+ "formalisable_core": {
+  "has_core": true,
+  "strength": "moderate",
+  "statements": [
+   {
+    "claim": "If a reaction network with stated stoichiometry and stated bounds is given, then whether a stated growth flux is achievable is a linear feasibility question, and infeasibility has a checkable certificate.",
+    "settles": "Whether a claimed minimal network can grow at a claimed rate, with a certificate rather than a solver's word. Infeasibility certificates are exactly the kind of object a proof assistant checks well.",
+    "state": "not-formalised"
+   },
+   {
+    "claim": "If a gene-dependency relation is stated, then a proposed reduced gene set is closed under it, or it is not; and a claim that a reduced set is sufficient does not follow unless it is closed.",
+    "settles": "The bookkeeping half of genome minimisation: a reduced set that is not closed under its own dependencies cannot be sufficient, whatever the biology. The closure machinery for this is proved here for a different relation.",
+    "lean": "Delphi.Genotype.closure_of_check",
+    "module": "lean/Delphi/Genotype.lean",
+    "law_id": "genotype-pleiotropy-closure",
+    "state": "proved-here"
+   }
+  ]
+ },
+ "empirical_remainder": {
+  "has_remainder": true,
+  "share": "most",
+  "items": [
+   {
+    "what": "Which genes are actually essential. JCVI-syn3.0 retains a large block of genes of unknown function, and that block is the question.",
+    "why_not_provable": "Essentiality is measured by deletion, one gene at a time, in a real organism.",
+    "measurement": "Transposon mutagenesis and systematic deletion with viability scored, as in the syn3.0 and syn3A work."
+   },
+   {
+    "what": "Whether a stated medium supports growth of the reduced organism.",
+    "why_not_provable": "A fact about chemistry and transport.",
+    "measurement": "Growth assays in defined media."
+   },
+   {
+    "what": "Whether the reconstructed network is complete, which every feasibility result presupposes.",
+    "why_not_provable": "A missing reaction makes a feasible network look infeasible and the proof correct but useless.",
+    "measurement": "Metabolomics and targeted enzymology to close gaps in the reconstruction."
+   }
+  ]
+ },
+ "in_repo": [
+  {
+   "kind": "lean-theorem",
+   "ref": "Delphi.Genotype.closure_of_check, Delphi.Blueprint.wellFormed_of_check",
+   "note": "Two proved closure and well-formedness criteria over stated graphs, both derived from Boolean checks, which is the idiom a gene-dependency closure statement would use.",
+   "strength": "shape-only"
+  },
+  {
+   "kind": "tool",
+   "ref": "omics_gene, omics_part, omics_search",
+   "note": "A 3,860-gene omics universe with pathway and anatomy annotation. It is zebrafish, not a minimal bacterium, so it is the wrong organism for this question and is listed only so the mismatch is explicit.",
+   "strength": "adjacent"
+  }
+ ],
+ "tools_needed": [
+  {
+   "name": "lean_module_flux_feasibility",
+   "status": "MISSING",
+   "note": "Flux feasibility with a checkable infeasibility certificate over a stated stoichiometric network. Buildable as mathematics; the hard part is getting a real network in.",
+   "gap_id": "lean-flux-feasibility"
+  },
+  {
+   "name": "scale_coverage",
+   "status": "MISSING",
+   "note": "For a minimal genome the question is literally 'what do we not know about each gene', and the large block of unknown-function genes in syn3.0 is the answer a coverage tool should be able to report.",
+   "gap_id": "scale-coverage"
+  },
+  {
+   "name": "omics_gene",
+   "status": "PARTIAL",
+   "note": "Serves per-gene layers for the DELPHI zebrafish universe only. It carries nothing about bacterial essentiality or stoichiometry.",
+   "gap_id": "scale-coverage"
+  }
+ ],
+ "open_problem_ids": [
+  "SMC-06"
+ ],
+ "citations": [
+  "hutchison2016",
+  "pelletier2021",
+  "breuer2019"
+ ],
+ "use_cases": [
+  "uc-not-known-at-scale",
+  "uc-formalise-model",
+  "uc-settled-vs-open"
+ ],
+ "citations_resolved": {
+  "hutchison2016": {
+   "ref": "Hutchison CA 3rd, Chuang RY, Noskov VN, Assad-Garcia N, Deerinck TJ, Ellisman MH, et al. (2016). Design and synthesis of a minimal bacterial genome. Science 351:aad6253.",
+   "doi": "10.1126/science.aad6253",
+   "pmid": "27013737",
+   "verified_via": "europepmc",
+   "quotable": "We used whole-genome design and complete chemical synthesis to minimize the 1079-kilobase pair synthetic genome of Mycoplasma mycoides JCVI-syn1.0",
+   "note": "FOUNDATIONAL, JCVI-syn3.0"
+  },
+  "pelletier2021": {
+   "ref": "Pelletier JF, Sun L, Wise KS, Assad-Garcia N, Karas BJ, Deerinck TJ, et al. (2021). Genetic requirements for cell division in a genomically minimal cell. Cell 184:2430-2440.e16.",
+   "doi": "10.1016/j.cell.2021.03.008",
+   "pmid": "33784496",
+   "verified_via": "europepmc",
+   "quotable": "Genomically minimal cells, such as JCVI-syn3.0, offer a platform to clarify genes underlying core physiological processes",
+   "note": "syn3A and cell division"
+  },
+  "breuer2019": {
+   "ref": "Breuer M, Earnest TM, Merryman C, Wise KS, Sun L, Lynott MR, et al. (2019). Essential metabolism for a minimal cell. eLife 8:e36842.",
+   "doi": "10.7554/elife.36842",
+   "pmid": "30657448",
+   "verified_via": "europepmc",
+   "quotable": "JCVI-syn3A, a robust minimal cell with a 543 kbp genome and 493 genes, provides a versatile platform to study the basics of life",
+   "note": "the syn3A essential-metabolism reconstruction. Europe PMC renders the second author as 'Earnest EE'; the published form is Earnest TM."
+  }
+ },
+ "scope": "This is a map of what is formalisable, not a research programme and not a claim that the formalisable parts are the important parts. The (a)/(b) split is a judgement made here and is arguable for every entry; where it is contentious the dispute field says so. The list is not exhaust: there is no canonical set of grand questions in biology, and this one is weighted toward evolution, development and scaling because that is what this project reads. Several entries have no counterpart in open-problems/problems.json, which is a gap in that enumeration rather than evidence the question is settled. Nothing here is about the held-out exam clade."
+}

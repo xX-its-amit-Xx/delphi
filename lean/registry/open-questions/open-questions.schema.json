@@ -213,9 +213,14 @@
         "statement_en": { "type": "string", "minLength": 1, "description": "the statement that was attempted, as attempted" },
         "reason": {
           "type": "string",
-          "enum": ["unprovable-as-stated", "vacuous", "contradicted-by-data", "provable-but-not-checkable", "abandoned-for-lack-of-a-constant", "unsourced", "fires-on-wild-type", "measurement-does-not-exist"],
-          "description": "the category of failure. 'provable-but-not-checkable' is NOT a rejection: CRITERIA.md routes it to a requirements record, and it appears here only when the missing inputs are known to be unobtainable."
+          "enum": ["unprovable-as-stated", "vacuous", "contradicted-by-data", "provable-but-not-checkable", "abandoned-for-lack-of-a-constant", "unsourced", "fires-on-wild-type", "measurement-does-not-exist", "not-attempted-no-build-time", "abandoned-on-cost", "deliberately-not-proposed"],
+          "description": "the category of failure. Two groups, and conflating them would be dishonest. ATTEMPTED AND DEFEATED: unprovable-as-stated, vacuous, contradicted-by-data, fires-on-wild-type, measurement-does-not-exist, unsourced. NEVER ATTEMPTED, so NOT a result about the statement: not-attempted-no-build-time (written but never compiled -- the single lake lock was contended), abandoned-on-cost (judged too expensive to prove, not doubted), deliberately-not-proposed (withheld on purpose, e.g. so propose.mjs records a contest properly), abandoned-for-lack-of-a-constant (one named number is missing). A record in the second group MUST carry `proof_status` saying plainly that Lean never checked it, so it cannot be read as 'we tried and could not'. 'provable-but-not-checkable' is NOT a rejection: CRITERIA.md routes it to a requirements record, and a statement no input can ever make bind is the separate `not-checkable-in-principle` type."
         },
+        "proof_status": {
+          "type": "string",
+          "description": "REQUIRED when the statement was never attempted. State plainly whether Lean ever saw it, e.g. 'written but NEVER COMPILED; believed provable but unchecked, so it must not be read as a result'. A reader must not be able to mistake an unattempted statement for a defeated one."
+        },
+        "attempted": { "type": "boolean", "description": "false for the never-attempted group. Defaults to true." },
         "reason_detail": { "type": "string", "minLength": 1 },
         "contradicted_by": {
           "type": "string",
@@ -253,6 +258,34 @@
         "would_constrain_if_supplied": { "type": "string", "minLength": 1 },
         "lean_ref": { "type": ["object", "null"] },
         "origin": { "type": "object" },
+        "history": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["version", "date", "change"] } },
+        "content_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "notCheckableInPrinciple": {
+      "type": "object",
+      "description": "A FOURTH category, distinct from the other three. The statement is sound and may be proved, but it has NO falsifiable direction over any design: no input makes it bind, so it is not waiting for data (`candidate-with-requirements`) and it is not wrong (`failed-theorem`). The distinction matters because an ingest that reads `missing_inputs` as a shopping list would turn this finding into a false to-do -- 'supply these three numbers and the law will work' -- which is exactly untrue. So `missing_inputs` is FORBIDDEN here, and `why_no_input_would_help` carries the content instead. Found when hamilton-rule was ruled not-checkable-in-principle rather than input-starved: a row on r*b > c would report 'violated' for any organism carrying a costly trait kin selection disfavours, which is an ordinary animal and not an impossible one.",
+      "required": ["record_type", "not_checkable_id", "version", "statement_en", "not_checkable_because", "why_no_input_would_help", "false_positive_if_forced", "history", "content_hash"],
+      "properties": {
+        "record_type": { "const": "not-checkable-in-principle" },
+        "not_checkable_id": { "type": "string", "pattern": "^nc-[a-z0-9][a-z0-9-]*$" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "law_id": { "type": ["string", "null"] },
+        "statement_en": { "type": "string", "minLength": 1 },
+        "proof_status": { "type": "string", "description": "whether the statement itself is proved. It usually IS: being unevaluable is not the same as being unproved." },
+        "not_checkable_because": { "type": "string", "minLength": 1, "description": "the shape of the statement that makes it unevaluable -- e.g. it classifies a DIRECTION of change rather than ruling a region out." },
+        "why_no_input_would_help": { "type": "string", "minLength": 1, "description": "THE POINT OF THIS TYPE. A positive statement of why this is not a data gap. If this reduces to 'we need numbers', the record belongs in requirements/ instead." },
+        "false_positive_if_forced": { "type": "string", "minLength": 1, "description": "what a naive row WOULD wrongly flag, in terms of real organisms. This is what makes the finding checkable by a reader rather than an assertion." },
+        "what_it_would_take": { "type": ["string", "null"], "description": "the different KIND of check that would work, if any -- e.g. a claim-level check against a design that explicitly claims the mechanism, rather than a design-level rule-out." },
+        "block_considered_and_rejected": { "type": ["string", "null"], "description": "where the rejected browser_check block is kept, so the decision is reviewable rather than merely reported." },
+        "missing_inputs": {
+          "description": "FORBIDDEN (or empty). No input makes this bind; listing inputs here would read as a to-do and misstate the finding.",
+          "oneOf": [{ "type": "array", "maxItems": 0 }, { "type": "null" }]
+        },
+        "origin": { "type": "object" },
+        "found_by": { "type": "string" },
+        "lean_ref": { "type": ["object", "null"] },
+        "sources": { "type": "array", "items": { "type": "string" } },
         "history": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["version", "date", "change"] } },
         "content_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
       }

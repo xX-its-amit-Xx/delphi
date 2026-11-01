@@ -193,4 +193,11 @@ function main() {
   console.log(`top gaps: ${map.gaps.slice(0, 5).map(g => `${g.rank}. ${g.name} (${g.unblocks.score}, ${g.effort})`).join('  ')}`);
 }
 
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}` || process.argv[1]?.endsWith('build.mjs')) main();
+// Run only when THIS file is the entry point. Comparing resolved paths matters: dashboard/build-lean-api.mjs
+// imports mirrorFiles() from here and is itself named build.mjs, so a name test would run this whole build
+// (and write files) as a side effect of generating the static mirror.
+const invokedDirectly = (() => {
+  try { return process.argv[1] && path.resolve(process.argv[1]) === fileURLToPathSafe(import.meta.url); } catch { return false; }
+})();
+function fileURLToPathSafe(u) { return path.resolve(decodeURIComponent(new URL(u).pathname.replace(/^\/([A-Za-z]:)/, '$1'))); }
+if (invokedDirectly) main();

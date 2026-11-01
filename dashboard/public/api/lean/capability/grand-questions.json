@@ -1,0 +1,2119 @@
+{
+ "map_version": "1.0.0",
+ "as_of": "2026-11-01",
+ "count": 14,
+ "the_line": "Lean proves that a conclusion follows from stated premises. It does not adjudicate reality. Every theorem in this repo is of the form 'if these premises hold, then this follows', and a kernel proof of it is silent on whether any organism satisfies the premises. So a grand question has a formalisable core exactly to the extent that part of the disagreement about it is a disagreement about what follows from what, and an empirical remainder exactly to the extent that it is a disagreement about what the world is like. Most of these questions are mostly remainder. Two of them (the Price equation, Hamilton's rule) are disputes in which the formal part has been repeatedly confused with the empirical part for decades, and those are the ones where formalisation would do the most good. A capability map that let the first kind of progress be read as the second would be worse than no map.",
+ "grand_questions": [
+  {
+   "id": "gq-genotype-phenotype",
+   "name": "The genotype-to-phenotype map",
+   "question": "Given a genome, what phenotype does it produce, and why can we not read one off the other?",
+   "formalisable_core": {
+    "has_core": true,
+    "strength": "moderate",
+    "statements": [
+     {
+      "claim": "If the standard genetic code holds and a claimed phenotypic change requires a stated set of amino-acid substitutions, then the number of nucleotide substitutions required is at least the sum of the codon-space distances, so a claimed substitution count below that is impossible.",
+      "settles": "Rules out a genotype-to-phenotype story whose mutational budget is arithmetically too small. The code is a finite table, so this is decidable rather than merely provable.",
+      "lean": "Delphi.Genotype.claimed_substitutions_rules_out",
+      "module": "lean/Delphi/Genotype.lean",
+      "law_id": "genotype-genetic-code",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If k substitutions are required, the per-site mutation rate is mu, the population size is M and T generations are available, then the expected waiting time is bounded below, so a claimed trajectory faster than that bound is impossible.",
+      "settles": "Turns 'is this genotype-to-phenotype route reachable in the time available' into an arithmetic question, once the route's substitution count is defined. The repo's own law note says plainly that it eliminates nothing until that count is defined.",
+      "lean": "Delphi.Genotype.expectedWaitingTime_bounds",
+      "module": "lean/Delphi/Genotype.lean",
+      "law_id": "genotype-substitution-time",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If a pleiotropy graph is stated and a view of it omits a set of nodes, then the view's closure under the part-of and affects relations is determined, so a claim that the view captures a phenotype's determinants either follows or does not.",
+      "settles": "What a partial map of the genotype-phenotype map is allowed to leave out. This is a statement about what a VIEW may omit, not about development, and the registry says so in the law's own note.",
+      "lean": "Delphi.Genotype.closure_of_check",
+      "module": "lean/Delphi/Genotype.lean",
+      "law_id": "genotype-pleiotropy-closure",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If a trait is additive with stated allele frequencies p_i and effect sizes alpha_i, then the additive genetic variance is the sum of 2 p_i q_i alpha_i squared, so a claimed heritability inconsistent with that sum is impossible under additivity.",
+      "settles": "The arithmetic half of the missing-heritability problem: whether a reported heritability is even consistent with the reported effect sizes under the model the authors state.",
+      "state": "not-formalised"
+     }
+    ]
+   },
+   "empirical_remainder": {
+    "has_remainder": true,
+    "share": "most",
+    "items": [
+     {
+      "what": "Whether the map is additive at all, and if not, the structure and dimension of the epistatic interaction.",
+      "why_not_provable": "A proof can only say what follows from an assumed functional form. Which functional form is right is a fact about organisms.",
+      "measurement": "Systematic double- and higher-order mutant panels in one organism, with the same phenotype measured throughout."
+     },
+     {
+      "what": "Which loci affect the trait, and with what effect sizes.",
+      "why_not_provable": "No premise set determines the actual architecture of an actual trait; this is the content of every GWAS.",
+      "measurement": "Association studies and, for causality, allele-replacement experiments."
+     },
+     {
+      "what": "Whether the trait is a well-defined measurable at all, or an aggregate that different studies operationalise differently.",
+      "why_not_provable": "This is a question about measurement practice, not about a formal system.",
+      "measurement": "Cross-laboratory harmonisation of the phenotype definition before any genetic analysis."
+     },
+     {
+      "what": "Whether most variation acts through a small number of core genes or diffusely through nearly all of them (the omnigenic question).",
+      "why_not_provable": "Both pictures are consistent with the same formalism; they differ in what the effect-size distribution actually is.",
+      "measurement": "Effect-size distributions across traits at sufficient sample size, with regulatory and expression data."
+     }
+    ]
+   },
+   "in_repo": [
+    {
+     "kind": "lean-theorem",
+     "ref": "Delphi.Genotype.minSubst, phe_leu_one, trp_stop_one, met_trp_two",
+     "note": "Codon-space distances computed by kernel decision over the finite code table, so the elimination is not merely asserted.",
+     "strength": "real"
+    },
+    {
+     "kind": "registry-law",
+     "ref": "genotype-genetic-code, genotype-substitution-time, genotype-pleiotropy-closure, genotype-developmental-ordering",
+     "note": "Four accepted or candidate laws bearing on the mutational and structural constraints of the map.",
+     "strength": "real"
+    },
+    {
+     "kind": "tool",
+     "ref": "omics_gene, omics_part, omics_search",
+     "note": "Omics layers for 3,860 zebrafish genes keyed to anatomy and cell-type identifiers, which is the data substrate a scale-coverage view of the map would read.",
+     "strength": "adjacent"
+    },
+    {
+     "kind": "claim",
+     "ref": "the genotype thread's settling of lat4a as slc43a2a",
+     "note": "A worked instance of the identifier half of the problem: a former gene symbol that no authority resolves, resolved by hand against an outside source.",
+     "strength": "adjacent"
+    }
+   ],
+   "tools_needed": [
+    {
+     "name": "scale_coverage",
+     "status": "MISSING",
+     "note": "For one gene, what is known and what is NOT known at each scale from molecule to population. The map's hard part is the missing middle, and nothing reports absence as a result.",
+     "gap_id": "scale-coverage"
+    },
+    {
+     "name": "lean_module_genotype_network",
+     "status": "MISSING",
+     "note": "Reachability and distance in a stated genotype space, generalising the codon-space distance already proved here to an arbitrary stated mutational neighbourhood.",
+     "gap_id": "lean-genotype-network"
+    },
+    {
+     "name": "data_gp_panel",
+     "status": "MISSING",
+     "note": "A combinatorial mutant panel with one consistently measured phenotype. Without it the additive-variance statement has nothing to be checked against.",
+     "gap_id": "data-gp-panel"
+    },
+    {
+     "name": "omics_gene",
+     "status": "EXISTS",
+     "note": "The per-gene omics view that a scale-coverage tool would build on."
+    }
+   ],
+   "open_problem_ids": [
+    "EVO-03"
+   ],
+   "citations": [
+    "boyle2017",
+    "manolio2009",
+    "wagner2011pleiotropy"
+   ],
+   "use_cases": [
+    "uc-not-known-at-scale",
+    "uc-trajectory-possible",
+    "uc-measured-or-assumed"
+   ]
+  },
+  {
+   "id": "gq-body-plan",
+   "name": "How a genome specifies a body plan",
+   "question": "How does a one-dimensional sequence specify a three-dimensional animal, reliably, at the right size, generation after generation?",
+   "disputed": true,
+   "dispute": "Whether patterning is best understood as positional information read from morphogen gradients (Wolpert) or as the output of a dynamical system whose transient behaviour carries the specification (Jaeger and Verd), and separately whether a given gradient is set by free diffusion with degradation or by hindered diffusion through binding.",
+   "formalisable_core": {
+    "has_core": true,
+    "strength": "moderate",
+    "statements": [
+     {
+      "claim": "If a morphogen is produced at a source, diffuses with coefficient D and is degraded first-order with rate k, then at steady state the gradient length is the square root of D over k, so a claimed gradient length inconsistent with the claimed D and k is impossible under this model.",
+      "settles": "Whether a published gradient length is consistent with the published coefficients, under the stated model. In this repo lambda works out at about 209 micrometres against an independently reported ~200, and that 4.4 per cent agreement is why the two fetched numbers are trusted at all.",
+      "module": "sim-engine/tools/morphogen-diffusion.mjs",
+      "state": "stated-not-proved"
+     },
+     {
+      "claim": "If a two-species reaction-diffusion system has stated kinetics and diffusion coefficients, then whether it satisfies the diffusion-driven-instability conditions is determined by those premises alone.",
+      "settles": "Turing's question exactly: it is a question about the premises, and the inequalities follow from them. Proved here as a candidate law, so it is in no law set and judges no design yet.",
+      "lean": "Delphi.LeanBio.Round2.TuringDDI.turing_instability",
+      "module": "lean/registry/proposals/turing-ddi/law.lean",
+      "law_id": "turing-ddi",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If a body plan is given as a part-of graph with levels, then it is a well-formed body plan only if the graph is levels-down, closed, rooted and its taxon data are consistent; and a Boolean check of those conditions implies well-formedness.",
+      "settles": "That a proposed body plan is a body plan at all. Modest, and the honest version of 'Lean checks the blueprint': it rules out incoherent descriptions, not biologically impossible animals.",
+      "lean": "Delphi.Blueprint.wellFormed_of_check",
+      "module": "lean/Delphi/Blueprint.lean",
+      "law_id": "blueprint-well-formedness",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If an expansion-repression feedback with stated parameters operates, then the pattern scales with domain size, so a claim that a mechanism without such feedback nevertheless scales does not follow from its stated premises.",
+      "settles": "Which proposed scaling mechanisms actually imply scaling, separating mechanism from the observation that scaling occurs.",
+      "state": "not-formalised"
+     }
+    ]
+   },
+   "empirical_remainder": {
+    "has_remainder": true,
+    "share": "most",
+    "items": [
+     {
+      "what": "Whether the actual mechanism is free diffusion with degradation, hindered diffusion through heparan-sulfate binding, cell-lineage specification, or mechanics.",
+      "why_not_provable": "All four are internally consistent models. Which one operates is a fact about tissue.",
+      "measurement": "Single-molecule and FCS measurement of the mobile fraction in the actual tissue at the actual stage, with binding perturbed."
+     },
+     {
+      "what": "The actual D and k in the actual tissue at the actual developmental stage.",
+      "why_not_provable": "A proof takes these as inputs. This repo's own numbers are gastrula measurements being used for a 72-hour fin bud, and every scope string says so.",
+      "measurement": "FCS or photoconversion in the fin bud itself, not the gastrula."
+     },
+     {
+      "what": "Whether thresholds are read as positional information at all, or whether the cell's state depends on the gradient's history.",
+      "why_not_provable": "This is the Wolpert-versus-dynamic dispute, and it is about what cells do, not about what follows from a model.",
+      "measurement": "Time-resolved single-cell readouts under gradients with the same final value but different histories."
+     },
+     {
+      "what": "Why body plans are conserved for hundreds of millions of years and then, rarely, are not.",
+      "why_not_provable": "A historical question about contingent events.",
+      "measurement": "Comparative developmental genetics across the relevant divergences; in part not measurable at all."
+     }
+    ]
+   },
+   "in_repo": [
+    {
+     "kind": "lean-theorem",
+     "ref": "Delphi.Blueprint.wellFormed_of_check and the Graph lemmas it rests on",
+     "note": "A proved well-formedness criterion for a part-of body-plan graph, with acyclicity derived from the levels-down condition rather than assumed.",
+     "strength": "real"
+    },
+    {
+     "kind": "registry-law",
+     "ref": "turing-ddi (candidate), Delphi.LeanBio.Round2.TuringDDI.turing_instability",
+     "note": "The diffusion-driven-instability conditions, proved from the stated kinetics and diffusion coefficients as a named hypothesis. Candidate, so in no law set.",
+     "strength": "real"
+    },
+    {
+     "kind": "registry-law",
+     "ref": "turing-wavelength (candidate), Delphi.LeanBio.Round2.TuringWavelength.onset_wavenumber",
+     "note": "The onset relation q^2 (du dv) = det J has a unique solution for given coefficients, so tissue size, which the relation does not mention, CANNOT enter the critical wavenumber. That is a proved negative result about the mechanism: plain Turing patterning does not scale with the domain, which is why a separate scaling mechanism is needed at all.",
+     "strength": "real"
+    },
+    {
+     "kind": "tool",
+     "ref": "morphogen_diffusion",
+     "note": "Steady-state reaction-diffusion on a fin-bud domain with sourced zebrafish coefficients, returning the field, lambda and the suprathreshold region.",
+     "strength": "real"
+    },
+    {
+     "kind": "dataset",
+     "ref": "sim-engine/params/zebrafish-morphogens.json",
+     "note": "Each coefficient carries its URL, a quote and whether it was read in the source. Shh has no measured zebrafish coefficient, so a Shh request borrows the Fgf8a value and is labelled borrowed; the engine never invents one.",
+     "strength": "real"
+    },
+    {
+     "kind": "failed-validation",
+     "ref": "sim-engine/PREREGISTRATION.md section 5a and validation/hhip-fin-area.mjs",
+     "note": "The pre-registered prediction FAILED: the measurement is dorsoventral +50 per cent with anteroposterior unchanged, and the model predicted the opposite axis. Nothing was tuned afterwards. This is the empirical remainder biting a formalised model, recorded rather than hidden.",
+     "strength": "real"
+    },
+    {
+     "kind": "enumeration",
+     "ref": "open-problems/problems.json ORX-07, WP-025",
+     "note": "Body-plan conservation with rare novelty, and how organs reach the correct shape and size, both enumerated with sources.",
+     "strength": "adjacent"
+    }
+   ],
+   "tools_needed": [
+    {
+     "name": "morphogen_diffusion",
+     "status": "PARTIAL",
+     "note": "Implements one of the two live hypotheses for Fgf8. The alternative, hindered diffusion by binding, is not implemented, so the tool cannot be used to choose between them.",
+     "gap_id": "lean-pattern-scaling"
+    },
+    {
+     "name": "lean_module_pattern_scaling",
+     "status": "MISSING",
+     "note": "A formal statement of which stated mechanisms imply size-invariant patterning, so the mechanism question separates from the observation.",
+     "gap_id": "lean-pattern-scaling"
+    },
+    {
+     "name": "adhesion_mechanics",
+     "status": "MISSING",
+     "note": "Force, contact and cell-matrix mechanics coupled to the morphogen field. Deliberately out of scope here; it is the module a collaborator would supply.",
+     "gap_id": "adhesion-mechanics"
+    },
+    {
+     "name": "lean_propose",
+     "status": "EXISTS",
+     "note": "The route for the Turing diffusion-driven-instability conditions, which have a registry entry but no theorem."
+    }
+   ],
+   "open_problem_ids": [
+    "ORX-07",
+    "WP-025",
+    "WP-012"
+   ],
+   "citations": [
+    "turing1952",
+    "wolpert1969",
+    "gregor2007",
+    "jaeger2020",
+    "benzvi2010",
+    "umulis2013"
+   ],
+   "use_cases": [
+    "uc-sim-vs-laws",
+    "uc-out-of-validity",
+    "uc-which-laws-violated"
+   ]
+  },
+  {
+   "id": "gq-major-transitions",
+   "name": "The major evolutionary transitions",
+   "question": "Why did replicators become chromosomes, cells become eukaryotes, individuals become societies? What makes a transition in individuality happen, and why so rarely?",
+   "formalisable_core": {
+    "has_core": true,
+    "strength": "narrow",
+    "statements": [
+     {
+      "claim": "If an asexual variant has a twofold reproductive advantage factor and starts at frequency q, then its frequency after n generations is determined, so a claim that sex persists without a compensating benefit of at least that size does not follow.",
+      "settles": "The arithmetic of the cost of sex, which is the quantitative core of the sex transition. It settles the size of the benefit that any explanation must supply; it does not identify the benefit.",
+      "lean": "Delphi.twofold_cost_of_sex, Delphi.twofold_cost_of_sex_n",
+      "module": "lean/Delphi/MaynardSmith.lean",
+      "law_id": "maynardsmith-twofold-cost",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If a transition requires a stated number of substitutions and the population and mutation parameters are stated, then the available time bounds whether it could occur at all.",
+      "settles": "Whether a proposed transition route is reachable, as a budget question. Our Haldane-cost law does exactly this FROM a named hypothesis, and the registry records that the hypothesis itself has been contested since 1957.",
+      "lean": "Delphi.Genotype.haldane_time_lower",
+      "module": "lean/Delphi/Genotype.lean",
+      "law_id": "haldane-cost-of-selection",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If a multilevel population has stated within- and between-group fitnesses and a stated group structure, then the direction of change in the group-level character follows from the Price partition, so a claimed direction inconsistent with the partition is impossible.",
+      "settles": "Whether a verbal argument about a transition's direction is an algebraic consequence of its own stated structure. Requires the Price equation, which this repo does not have.",
+      "state": "not-formalised"
+     }
+    ]
+   },
+   "empirical_remainder": {
+    "has_remainder": true,
+    "share": "most",
+    "items": [
+     {
+      "what": "Which selective force actually drove each transition.",
+      "why_not_provable": "A historical cause, and in several cases the evidence is a single lineage.",
+      "measurement": "Comparative phylogenetics plus experimental evolution of de novo transitions; for the deepest transitions, no measurement exists."
+     },
+     {
+      "what": "Whether each transition happened once or repeatedly, and what the ancestral states were.",
+      "why_not_provable": "Facts about a particular history.",
+      "measurement": "Phylogenomics; palaeontology where there is a record."
+     },
+     {
+      "what": "Whether sex is maintained by recombination's effect on deleterious mutation load, by host-parasite dynamics, or by something else.",
+      "why_not_provable": "Every candidate benefit is formally capable of exceeding the twofold cost. Which one does is empirical.",
+      "measurement": "Experimental evolution with recombination rate manipulated and load measured directly."
+     }
+    ]
+   },
+   "in_repo": [
+    {
+     "kind": "lean-theorem",
+     "ref": "Delphi.twofold_cost_of_sex and twofold_cost_of_sex_n",
+     "note": "The twofold cost proved both for one generation and iterated over n, with the frequency staying in the unit interval proved separately.",
+     "strength": "real"
+    },
+    {
+     "kind": "registry-law",
+     "ref": "maynardsmith-twofold-cost, haldane-cost-of-selection",
+     "note": "The second is explicitly a theorem FROM a named hypothesis, and its registry note says the hypothesis has been contested since 1957. That labelling is the point.",
+     "strength": "real"
+    },
+    {
+     "kind": "enumeration",
+     "ref": "open-problems/problems.json WP-002, WP-003, and candidates.json WP-002/C1",
+     "note": "The origin and the maintenance of sex are enumerated separately with sourced statements, and a formal candidate exists for WP-002.",
+     "strength": "real"
+    },
+    {
+     "kind": "registry-law",
+     "ref": "fisher-sex-ratio (candidate), Delphi.LeanBio.Round2.SexRatio.fisher_equal_investment; maynardsmith-hawk-dove (candidate), Delphi.LeanBio.Round2.HawkDove.hawk_dove_mixture",
+     "note": "Two frequency-dependent-selection results proved from named hypotheses (Shaw-Mohler fitness; the Hawk-Dove payoff matrix). They bear on sex allocation and on mixed strategies, not on the transitions themselves, so they are adjacent: the idiom and the machinery are here, pointed at a neighbouring question.",
+     "strength": "adjacent"
+    }
+   ],
+   "tools_needed": [
+    {
+     "name": "lean_module_price_equation",
+     "status": "MISSING",
+     "note": "Nearly every argument about a transition in individuality is a rearrangement of the Price partition. Without it the multilevel statements cannot be checked at all.",
+     "gap_id": "lean-price"
+    },
+    {
+     "name": "open_questions_list",
+     "status": "MISSING",
+     "note": "The literature enumeration in open-problems/ is reachable from no tool. The open-questions thread's lean_open_questions serves a different thing: this project's own seven open questions with Lean-formalised arms, not the field's.",
+     "gap_id": "open-questions-list"
+    },
+    {
+     "name": "lean_law_get",
+     "status": "EXISTS",
+     "note": "The cost-of-sex and Haldane-cost statements with their premises and sources."
+    }
+   ],
+   "open_problem_ids": [
+    "WP-002",
+    "WP-003",
+    "WP-055",
+    "WP-061"
+   ],
+   "citations": [
+    "szathmary1995nature",
+    "maynardsmith1995book",
+    "szathmary2015"
+   ],
+   "use_cases": [
+    "uc-trajectory-possible",
+    "uc-settled-vs-open",
+    "uc-rank-open-questions"
+   ]
+  },
+  {
+   "id": "gq-levels-of-selection",
+   "name": "Levels of selection and the Price equation",
+   "question": "When does selection act on the group rather than on the individual, and is the distinction a fact about the world or a choice of bookkeeping?",
+   "disputed": true,
+   "dispute": "Not about the algebra, which is an identity, but about whether the multilevel partition identifies real causes or is one of several equally valid accounting schemes (Okasha; Frank). The persistence of the dispute despite the algebra being settled is itself the evidence that the formal and causal questions have been run together.",
+   "formalisable_core": {
+    "has_core": true,
+    "strength": "strong",
+    "statements": [
+     {
+      "claim": "If fitness, character and the covariance operator are defined as stated, then the change in mean character equals the covariance of fitness with character over mean fitness, plus the fitness-weighted expectation of within-individual change. This is an identity, not a hypothesis.",
+      "settles": "Everything about the algebra. The Price equation is fully provable, and once proved, every claimed rearrangement of it is mechanically checkable as following or not following. This is the most Lean-tractable question on this list.",
+      "state": "not-formalised"
+     },
+     {
+      "claim": "If a population is partitioned into groups as stated, then the multilevel expansion of the Price equation into between-group and within-group terms follows; and a claim that group selection is REQUIRED to explain a given change is an additional causal assertion, not an algebraic consequence of the partition.",
+      "settles": "Exactly where the formal content stops and the causal reading begins. A proof of this would let a reviewer see, mechanically, which steps of a multilevel-selection argument are algebra and which are interpretation.",
+      "state": "not-formalised"
+     },
+     {
+      "claim": "If a character has zero between-group covariance with fitness under a stated partition, then the between-group term vanishes, so a claimed group-level effect under that partition does not follow.",
+      "settles": "A decidable elimination for a stated dataset and partition, in the shape this repo already uses for its other laws.",
+      "state": "not-formalised"
+     }
+    ]
+   },
+   "empirical_remainder": {
+    "has_remainder": true,
+    "share": "half",
+    "items": [
+     {
+      "what": "Whether the between-group covariance is non-zero in any particular real population.",
+      "why_not_provable": "The identity holds whatever the numbers are; the numbers are measurements.",
+      "measurement": "Fitness and character measured at both levels in a structured population, with group membership defined before the analysis."
+     },
+     {
+      "what": "Whether the multilevel partition picks out causes or is one valid bookkeeping among several.",
+      "why_not_provable": "This is a question about what causation is, not about what follows from the definitions. Formalisation would sharpen it and could not answer it.",
+      "measurement": "Not measurable. Settled, if at all, by intervention experiments that change group structure while holding individual properties fixed."
+     },
+     {
+      "what": "Which level of description is most predictive in practice.",
+      "why_not_provable": "Predictive performance is an empirical property of a model applied to data.",
+      "measurement": "Out-of-sample prediction contests between individual-level and multilevel models on the same populations."
+     }
+    ]
+   },
+   "in_repo": [
+    {
+     "kind": "lean-structure",
+     "ref": "Delphi.meanFitness, Delphi.variance, Delphi.select, Delphi.IsFreq",
+     "note": "The machinery a Price-equation module would be built from is already here, used by Fisher's fundamental theorem: a frequency vector, a selection operator proved to preserve frequency, a mean and a variance over a finite index type.",
+     "strength": "shape-only"
+    },
+    {
+     "kind": "lean-theorem",
+     "ref": "Delphi.fisher_fundamental_theorem",
+     "note": "Fisher's theorem is a special case of the kind of statement the Price equation generalises, and it is proved, so the proof idiom is established.",
+     "strength": "adjacent"
+    }
+   ],
+   "tools_needed": [
+    {
+     "name": "lean_module_price_equation",
+     "status": "MISSING",
+     "note": "The single largest formalisation hole identified by this map: an identity, fully provable, underpinning several other questions on this list, with the infrastructure for it already in Fisher.lean.",
+     "gap_id": "lean-price"
+    },
+    {
+     "name": "premise_check",
+     "status": "MISSING",
+     "note": "The use for it: given a published multilevel argument, which steps are algebra and which are added causal assertions.",
+     "gap_id": "premise-check"
+    },
+    {
+     "name": "lean_propose",
+     "status": "EXISTS",
+     "note": "The route by which a Price module would enter the registry, with mutation testing and joint consistency."
+    }
+   ],
+   "open_problem_ids": [],
+   "citations": [
+    "price1970",
+    "price1972ext",
+    "frank2012price",
+    "okasha2006"
+   ],
+   "use_cases": [
+    "uc-premise-follows",
+    "uc-formalise-model",
+    "uc-tautology-or-content"
+   ]
+  },
+  {
+   "id": "gq-hamiltons-rule",
+   "name": "Hamilton's rule and its generality",
+   "question": "Does relatedness times benefit exceeding cost explain altruism in general, or only under assumptions that rarely hold?",
+   "disputed": true,
+   "dispute": "Nowak, Tarnita and Wilson 2010 argued that inclusive-fitness theory has been of little explanatory value; 137 authors replied in Abbot et al. 2011; Gardner, West and Wild 2011 defended the rule's generality formally; Birch, and Birch and Okasha, argue that the dispute turns on the difference between a general form that is a tautologous rearrangement and a restricted form with substantive premises. Fifteen years of it, and the formal half has never been mechanically settled.",
+   "formalisable_core": {
+    "has_core": true,
+    "strength": "strong",
+    "statements": [
+     {
+      "claim": "If the change in mean breeding value takes the Price form dp = k(rb - c) with k > 0 and 0 <= r <= 1, where b and c are the partial regressions of fitness on the partner's and the actor's genotype, then the trait increases if and only if c < rb.",
+      "settles": "That the GENERAL form is a theorem under those definitions, and therefore has no empirical content on its own: it cannot be refuted by any data until the coefficients are measured. Proved here as a candidate law. Read the premise carefully: the Price form is a NAMED HYPOTHESIS of this law, not something derived from a proved Price identity, so what is settled is the biconditional and not the Price form itself. Deriving that premise is what the missing Price module would do.",
+      "lean": "Delphi.LeanBio.Round2.HamiltonRule.hamilton_rule",
+      "module": "lean/registry/proposals/hamilton-rule/law.lean",
+      "law_id": "hamilton-rule",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If interactions are pairwise, selection is weak, and fitness effects are additive, then rb greater than c with r the pedigree coefficient of relatedness implies the altruistic allele increases.",
+      "settles": "That the RESTRICTED form is a substantive theorem whose premises can fail. Its premises become visible and checkable, which is what the dispute needs.",
+      "state": "not-formalised"
+     },
+     {
+      "claim": "There exists a model with stated non-additive fitness effects, satisfying pairwise interaction and pedigree relatedness, in which rb exceeds c and the allele nevertheless decreases.",
+      "settles": "That the restricted form does NOT follow without additivity. This is a counter-model, not a failed proof attempt, and it is the formal content of one side of the dispute. No tool here can produce or certify one.",
+      "state": "not-formalised"
+     }
+    ]
+   },
+   "empirical_remainder": {
+    "has_remainder": true,
+    "share": "most",
+    "items": [
+     {
+      "what": "Whether real eusocial systems satisfy the restricted form's premises (additivity, weak selection, pairwise interaction).",
+      "why_not_provable": "A fact about particular social insects.",
+      "measurement": "Fitness effects measured for interacting pairs and for groups, with the interaction tested for additivity rather than assumed."
+     },
+     {
+      "what": "Whether relatedness is high in the populations where eusociality arose.",
+      "why_not_provable": "A measurement about pedigrees and population structure.",
+      "measurement": "Genotyping of colonies and estimation of within-colony relatedness, in the clades where eusociality originated."
+     },
+     {
+      "what": "Whether inclusive-fitness accounting or multilevel accounting is more useful in practice.",
+      "why_not_provable": "A question about scientific practice; both are formally valid if the general forms are theorems.",
+      "measurement": "Not measurable. Judged by whether each framing has generated predictions that were then tested."
+     }
+    ]
+   },
+   "in_repo": [
+    {
+     "kind": "registry-law",
+     "ref": "hamilton-rule 1.0.0 (candidate), Delphi.LeanBio.Round2.HamiltonRule.hamilton_rule",
+     "note": "The general form, proved as a biconditional from a named hypothesis that ASSUMES the Price form dp = k(rb - c). It is a candidate, so it is in no law set and judges no design. What it settles is that rb > c is equivalent to increase GIVEN that form; it does not establish the form, and it says nothing about the restricted form or about eusociality.",
+     "strength": "real"
+    },
+    {
+     "kind": "lean-structure",
+     "ref": "Delphi.variance, Delphi.meanFitness, Delphi.select over a Fintype index",
+     "note": "Finite-population frequency machinery suitable for a regression-based relatedness definition. Nothing about relatedness or social interaction exists here yet.",
+     "strength": "shape-only"
+    }
+   ],
+   "tools_needed": [
+    {
+     "name": "lean_module_price_equation",
+     "status": "MISSING",
+     "note": "The general form of Hamilton's rule is a rearrangement of the Price equation, so the Price module is a prerequisite and not an alternative.",
+     "gap_id": "lean-price"
+    },
+    {
+     "name": "lean_module_hamilton_rule",
+     "status": "MISSING",
+     "note": "The general form is now a candidate law. What is still missing: the Price identity its named hypothesis assumes, the restricted form proved from pairwise interaction, weak selection and additivity, and a counter-model showing the restricted form fails without additivity.",
+     "gap_id": "lean-hamilton"
+    },
+    {
+     "name": "lean_counter_model",
+     "status": "MISSING",
+     "note": "Needed for the third statement: certifying that the restricted form does NOT hold without additivity. Today the registry can prove a contradiction between two laws but cannot certify a non-consequence.",
+     "gap_id": "lean-counter-model"
+    },
+    {
+     "name": "data_relatedness_eusocial",
+     "status": "MISSING",
+     "note": "Within-colony relatedness and measured fitness effects for the origins of eusociality. The empirical half needs data this project does not have and has no route to.",
+     "gap_id": "data-relatedness"
+    }
+   ],
+   "open_problem_ids": [],
+   "citations": [
+    "hamilton1964",
+    "nowak2010",
+    "abbot2011",
+    "gardner2011",
+    "birch2014",
+    "birch2015",
+    "price1970"
+   ],
+   "use_cases": [
+    "uc-generality-claim",
+    "uc-counter-model",
+    "uc-tautology-or-content",
+    "uc-premise-follows"
+   ]
+  },
+  {
+   "id": "gq-fisher-ftns",
+   "name": "Fisher's fundamental theorem and its interpretation",
+   "question": "Does natural selection increase mean fitness at a rate equal to the additive genetic variance in fitness, and if so, under what conditions and in what sense?",
+   "disputed": true,
+   "dispute": "Fisher 1930 stated it as having 'the supreme position among the biological sciences'; Price 1972 made clear it concerns only the partial change due to allele-frequency change in a constant environment; Ewens 1989 and Ewens and Lessard 2015 gave the standard modern reading; Grafen 2018 offered a third; Basener and Sanford 2018 claimed it fails with mutation and Hancock and Cardinale 2024 replied directly. Every one of those positions is a claim about which premises the theorem needs, which is why this question's formalisable core is unusually large.",
+   "formalisable_core": {
+    "has_core": true,
+    "strength": "strong",
+    "statements": [
+     {
+      "claim": "If a haploid population has frequency vector p and constant fitnesses w, then after selection the change in mean fitness equals the variance of w under p divided by the mean of w.",
+      "settles": "The theorem under its narrowest honest reading. It is proved here, and what it establishes is a consequence of constant fitnesses and a finite type, not a fact about any population.",
+      "lean": "Delphi.fisher_fundamental_theorem, Delphi.fisher_fundamental_theorem'",
+      "module": "lean/Delphi/Fisher.lean",
+      "law_id": "fisher-ftns",
+      "state": "proved-here"
+     },
+     {
+      "claim": "Under the same premises, mean fitness is non-decreasing; and therefore a claimed DECLINE in mean fitness under constant fitnesses and no mutation is impossible.",
+      "settles": "The elimination form: a claimed trajectory of mean fitness that falls, with the premises stated, is ruled out. The repo proves the elimination separately from the equality.",
+      "lean": "Delphi.mean_fitness_nondecreasing, Delphi.Constraints.fisher_decline_rules_out",
+      "module": "lean/Delphi/Fisher.lean, lean/Delphi/Constraints.lean",
+      "law_id": "fisher-ftns",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If the additive genetic variance in fitness is zero, then the change in mean fitness is zero, so a claimed change under zero variance is impossible.",
+      "settles": "The degenerate case, proved separately, which is where overstated readings of the theorem break first.",
+      "lean": "Delphi.Constraints.fisher_zero_variance_rules_out",
+      "module": "lean/Delphi/Constraints.lean",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If mutation is added with a stated rate and a stated effect distribution, then the change in mean fitness is NOT in general equal to the additive variance over the mean, and the conditions under which the equality survives are determined.",
+      "settles": "The Basener-Sanford dispute's formal half: whether the theorem's scope extends to mutation-selection balance. It is a question about premises, and a formalisation would make each side's premises explicit instead of arguable.",
+      "state": "not-formalised"
+     }
+    ]
+   },
+   "empirical_remainder": {
+    "has_remainder": true,
+    "share": "most",
+    "items": [
+     {
+      "what": "Whether mean fitness actually increases in any real population over any real interval.",
+      "why_not_provable": "The theorem is silent on this, and the commonest misreading of it is to treat the proof as the answer.",
+      "measurement": "Longitudinal fitness measurement in a population with a stable definition of fitness, which is itself contested."
+     },
+     {
+      "what": "Whether the environment is constant, which the narrow form requires and which is almost never true.",
+      "why_not_provable": "An empirical property of the population's circumstances.",
+      "measurement": "Measurement of fitness-relevant environmental variation over the same interval as the fitness measurement."
+     },
+     {
+      "what": "Whether the additive approximation to the genetic variance is adequate for the trait in question.",
+      "why_not_provable": "Depends on the actual genetic architecture.",
+      "measurement": "Variance decomposition from a breeding design or a mutant panel."
+     },
+     {
+      "what": "What the actual mutation rate and effect distribution are, which decides whether the mutation-selection extension matters in practice.",
+      "why_not_provable": "Both are measurements of a particular organism in a particular environment.",
+      "measurement": "Mutation-accumulation lines with fitness assayed."
+     }
+    ]
+   },
+   "in_repo": [
+    {
+     "kind": "lean-theorem",
+     "ref": "Delphi.fisher_fundamental_theorem, fisher_fundamental_theorem', mean_fitness_nondecreasing, select_isFreq",
+     "note": "The theorem, an alternative form, monotonicity, and a proof that selection preserves the frequency simplex, so the statement is not vacuous on a degenerate input.",
+     "strength": "real"
+    },
+    {
+     "kind": "lean-theorem",
+     "ref": "Delphi.Constraints.fisher_rules_out, fisher_decline_rules_out, fisher_zero_variance_rules_out",
+     "note": "Three elimination forms, so the theorem can be used to rule out a claim and not only to assert one.",
+     "strength": "real"
+    },
+    {
+     "kind": "registry-law",
+     "ref": "fisher-ftns",
+     "note": "In the registry with its scope, its named hypotheses and its non-vacuity witness, reachable from the MCP tools, both CLIs and the static mirror.",
+     "strength": "real"
+    }
+   ],
+   "tools_needed": [
+    {
+     "name": "lean_law_get",
+     "status": "EXISTS",
+     "note": "The theorem's Lean source, premises, scope and witness, which is what makes the narrowness of the claim visible."
+    },
+    {
+     "name": "lean_propose",
+     "status": "EXISTS",
+     "note": "The route for the mutation-selection extension, which would enter as a new law rather than as a new version of this one."
+    },
+    {
+     "name": "premise_check",
+     "status": "MISSING",
+     "note": "To settle the published dispute one would need to formalise each side's stated premises and check which conclusions follow. Nothing extracts premises from a paper.",
+     "gap_id": "premise-check"
+    },
+    {
+     "name": "teach_claim",
+     "status": "MISSING",
+     "note": "This is the single best teaching example of the formalisable/empirical line, and there is no tool that packages it as one.",
+     "gap_id": "teach-claim"
+    }
+   ],
+   "open_problem_ids": [],
+   "citations": [
+    "fisher1930",
+    "price1972ftns",
+    "ewens1989",
+    "ewens2015",
+    "basener2018",
+    "hancock2024",
+    "grafen2018"
+   ],
+   "use_cases": [
+    "uc-tautology-or-content",
+    "uc-teach-a-law",
+    "uc-generality-claim",
+    "uc-premise-follows"
+   ]
+  },
+  {
+   "id": "gq-error-threshold",
+   "name": "The error threshold and Eigen's paradox",
+   "question": "A replicator needs an accurate copying machine, and an accurate copying machine needs a long genome, which needs accurate copying. How did the first one get started?",
+   "formalisable_core": {
+    "has_core": true,
+    "strength": "strong",
+    "statements": [
+     {
+      "claim": "If per-base copying fidelity is q, genome length is L and the master sequence's selective superiority is sigma, then the master sequence is maintained only if q to the power L exceeds one over sigma; equivalently L is less than the natural log of sigma over one minus q.",
+      "settles": "Whether a claimed prebiotic genome length is compatible with a claimed fidelity. This is an inequality between stated quantities, so it is fully provable, and it eliminates in exactly the shape this repo's other laws do.",
+      "state": "not-formalised"
+     },
+     {
+      "claim": "If a hypercycle of n stated catalytic couplings is posited, then the total information maintained follows from the per-member thresholds, so a claimed total exceeding their sum does not follow.",
+      "settles": "Whether a proposed escape from the paradox actually escapes it, given its own stated structure.",
+      "state": "not-formalised"
+     },
+     {
+      "claim": "If the fitness landscape contains lethal mutants in stated proportion, then the threshold's location changes in a determined direction, so a claim that the threshold disappears under lethality does not follow from lethality alone.",
+      "settles": "A specific published objection to the threshold's robustness, as a question about premises rather than about chemistry.",
+      "state": "not-formalised"
+     }
+    ]
+   },
+   "empirical_remainder": {
+    "has_remainder": true,
+    "share": "most",
+    "items": [
+     {
+      "what": "What the fidelity of an actual prebiotic replicator was.",
+      "why_not_provable": "A fact about a vanished chemistry.",
+      "measurement": "In vitro evolution of ribozyme polymerases, as a lower bound on what is achievable, not as a measurement of what happened."
+     },
+     {
+      "what": "Whether the quasispecies model's premises (deterministic dynamics, effectively infinite population, a fixed landscape) hold anywhere relevant.",
+      "why_not_provable": "The threshold follows from the premises; whether the premises described the prebiotic world is empirical and probably unknowable.",
+      "measurement": "Stochastic and finite-population experiments in RNA systems."
+     },
+     {
+      "what": "Whether compartments, hypercycles or something else resolved the paradox in fact.",
+      "why_not_provable": "A historical question.",
+      "measurement": "Not directly measurable; constrained by what can be made to work in vitro."
+     }
+    ]
+   },
+   "in_repo": [
+    {
+     "kind": "lean-structure",
+     "ref": "Delphi.NeutralChain, Delphi.wfKernel, Delphi.wrightFisher, Delphi.substitutionRate",
+     "note": "A finite-state Markov chain framework with fixation proved as a limit, which is the nearest existing idiom to a quasispecies threshold. It says nothing about error thresholds today.",
+     "strength": "shape-only"
+    },
+    {
+     "kind": "enumeration",
+     "ref": "open-problems/problems.json WP-001",
+     "note": "The origin-of-life problem, including the origin of the genetic code, enumerated with its source.",
+     "strength": "adjacent"
+    }
+   ],
+   "tools_needed": [
+    {
+     "name": "lean_module_error_threshold",
+     "status": "MISSING",
+     "note": "The threshold inequality, formalised, with the genome length and fidelity as named hypotheses carrying their sources. One of the cheapest high-value targets on this list: a single inequality over stated quantities.",
+     "gap_id": "lean-error-threshold"
+    },
+    {
+     "name": "lean_check",
+     "status": "PARTIAL",
+     "note": "Would evaluate a claimed fidelity and genome length against the threshold once the law existed. It cannot today, because no law in the registry constrains replication fidelity.",
+     "gap_id": "lean-error-threshold"
+    },
+    {
+     "name": "lean_sketch",
+     "status": "MISSING",
+     "note": "A statement of this shape (one inequality, two named empirical premises, a witness) is exactly what a skeleton generator would produce correctly.",
+     "gap_id": "lean-sketch"
+    }
+   ],
+   "open_problem_ids": [
+    "WP-001"
+   ],
+   "citations": [
+    "eigen1971",
+    "eigen1977",
+    "takeuchi2007"
+   ],
+   "use_cases": [
+    "uc-formalise-model",
+    "uc-trajectory-possible",
+    "uc-rank-open-questions"
+   ]
+  },
+  {
+   "id": "gq-metabolic-scaling",
+   "name": "Metabolic scaling and Kleiber's law",
+   "question": "Why does metabolic rate scale with body mass to a power near three-quarters rather than two-thirds, and is there a single exponent at all?",
+   "disputed": true,
+   "dispute": "West, Brown and Enquist 1997 derive 3/4 from a space-filling fractal network; Dodds, Rothman and Weitz 2001 argue 2/3 is the null hypothesis and 3/4 is not established; Kolokotrones et al. 2010 find the relation is curved, so no single exponent exists; White, Blackburn and Seymour 2009 find mammalian data support neither. Two separable disputes have been run together: whether the derivation follows from its premises, and what the exponent is.",
+   "formalisable_core": {
+    "has_core": true,
+    "strength": "moderate",
+    "statements": [
+     {
+      "claim": "If a distribution network is space-filling, has area-preserving branching and size-invariant terminal units, then the exponent relating throughput to volume is determined, so a claimed exponent inconsistent with those premises does not follow from them.",
+      "settles": "Whether the famous derivation is valid, separately from whether its premises describe real vasculature. The derivation's validity is a mathematical question nobody has mechanically checked, and asymmetric branching is already flagged as an open question in this repo's own enumeration.",
+      "state": "not-formalised"
+     },
+     {
+      "claim": "If a family of organisms grows isometrically by linear factor k, then mass scales as k cubed while cross-sectional area and breaking load scale as k squared, so a claimed load-bearing performance at a larger size is impossible beyond a determined limit.",
+      "settles": "The square-cube half of the problem, which is the part that actually eliminates designs. Proved here, for any isometric family.",
+      "lean": "Delphi.cubeLaw_loglog_exponent, Delphi.areaLaw_ratio, Delphi.breakLoad_ratio, Delphi.exists_size_limit",
+      "module": "lean/Delphi/Thompson.lean, lean/Delphi/Scaling.lean",
+      "law_id": "thompson1917-ch03-07, scaling-area-law, scaling-strength-law, thompson1917-ch02-07",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If the measured mass exponent for a clade lies in a stated band, then a claimed weight ratio outside the band implied by that exponent is ruled out.",
+      "settles": "Elimination against a measured band rather than against a theoretical exponent. This is an EMPIRICAL law here, labelled as such, and the repo's E1 proves that a within-species area exponent is not 2, so the theorem and the measurement are recorded as disagreeing.",
+      "lean": "Delphi.Empirical.weight_ratio_band, Delphi.Empirical.not_isometric_area",
+      "module": "lean/Delphi/Empirical.lean",
+      "law_id": "E2, E1",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If a stated aerobic supply chain delivers at most a stated rate, then a claimed sustained power demand above it is impossible.",
+      "settles": "The metabolic budget as an elimination, from the Fick principle as a named hypothesis. Proved here, and scoped so that it bounds sustained aerobic demand and explicitly not unpowered descent or burst effort.",
+      "lean": "Delphi.sustained_flight_requires, Delphi.Empirical.aerobicCeilingV2_le",
+      "module": "lean/Delphi/Flight.lean, lean/Delphi/Empirical.lean",
+      "law_id": "aerobic-power-bound, E3, fick-principle",
+      "state": "proved-here"
+     }
+    ]
+   },
+   "empirical_remainder": {
+    "has_remainder": true,
+    "share": "most",
+    "items": [
+     {
+      "what": "What the exponent is, and whether a single exponent is the right model at all.",
+      "why_not_provable": "Kolokotrones et al. report curvature, which means the question 'what is the exponent' may be malformed. No proof settles which functional form fits.",
+      "measurement": "Basal metabolic rate against mass across many species with phylogenetic correction, over enough mass range to detect curvature."
+     },
+     {
+      "what": "Whether real vascular networks satisfy space-filling, area-preserving branching and invariant terminal units.",
+      "why_not_provable": "These are anatomical facts.",
+      "measurement": "Quantitative vascular morphometry, including whether branching is asymmetric."
+     },
+     {
+      "what": "Whether organisms grow isometrically, which every theorem above assumes.",
+      "why_not_provable": "An empirical fact, and this repo's own E1 proves a within-species area exponent is not 2, so the answer is already known to be no.",
+      "measurement": "Ontogenetic series with area and mass measured at several sizes."
+     }
+    ]
+   },
+   "in_repo": [
+    {
+     "kind": "lean-theorem",
+     "ref": "Delphi.cubeLaw_loglog_exponent, areaLaw_ratio, breakLoad_ratio, bendingStress_ratio_body, exists_size_limit, vmin_ratio, powerRequired_log, allometry_consistency_rules_out",
+     "note": "Eight or more proved scaling statements plus a full elimination module (giant_rules_out, stress_ratio_rules_out, froude_rules_out). This is the strongest formalisation in the repo.",
+     "strength": "real"
+    },
+    {
+     "kind": "registry-law",
+     "ref": "E1, E2, E3, E4, scaling-area-law, scaling-strength-law, scaling-bending-law, flight-allometry-law, aerobic-power-bound, fick-principle",
+     "note": "Theorems and empirical bands held as separate classes, so a reader can tell which rows are derivations and which are measurements. E2 is scoped to one family because it rests on six length-weight studies of it.",
+     "strength": "real"
+    },
+    {
+     "kind": "enumeration",
+     "ref": "open-problems/problems.json ORX-14",
+     "note": "'Does incorporating asymmetric branching change or influence the predictions of the WBE model?' is enumerated here from a screened abstract. It is precisely the formalisable half of this dispute.",
+     "strength": "real"
+    },
+    {
+     "kind": "dataset",
+     "ref": "no metabolic-rate-against-mass dataset",
+     "note": "Stated so the gap is not mistaken for a tool failure: this repo has length, area, mass and aerobic-budget data, and nothing on metabolic rate against body mass across species.",
+     "strength": "shape-only"
+    }
+   ],
+   "tools_needed": [
+    {
+     "name": "lean_module_wbe_derivation",
+     "status": "MISSING",
+     "note": "Whether 3/4 follows from the fractal-network premises, with asymmetric branching as a variant. The formalisable half of a thirty-year dispute, and this repo's own enumeration already names it.",
+     "gap_id": "lean-wbe"
+    },
+    {
+     "name": "data_metabolic_rate_mass",
+     "status": "MISSING",
+     "note": "Metabolic rate against mass with phylogeny, over enough range to test for curvature. Not buildable here; it is a data acquisition.",
+     "gap_id": "data-metabolic-scaling"
+    },
+    {
+     "name": "lean_check",
+     "status": "EXISTS",
+     "note": "Evaluates the mass-length rows against a design or a measured organism, and returns cannot-evaluate rather than substituting a different area convention."
+    },
+    {
+     "name": "lean_laws_list",
+     "status": "EXISTS",
+     "note": "Separates theorem from empirical-observation by class, which is what keeps the two halves of this dispute apart."
+    }
+   ],
+   "open_problem_ids": [
+    "ORX-14",
+    "SCI100-53"
+   ],
+   "citations": [
+    "kleiber1932",
+    "west1997",
+    "dodds2001",
+    "kolokotrones2010",
+    "white2009",
+    "thompson1917"
+   ],
+   "use_cases": [
+    "uc-exponent-vs-band",
+    "uc-aerobic-budget",
+    "uc-tautology-or-content",
+    "uc-which-laws-violated"
+   ]
+  },
+  {
+   "id": "gq-genetic-code",
+   "name": "The origin of the genetic code",
+   "question": "Why does this code, and not one of the million alternatives, map 64 codons onto 20 amino acids?",
+   "formalisable_core": {
+    "has_core": true,
+    "strength": "narrow",
+    "statements": [
+     {
+      "claim": "If the standard code holds, then the minimum number of nucleotide substitutions between the codon sets of two amino acids is a determined number, and a claimed substitution path shorter than it is impossible.",
+      "settles": "Combinatorial facts about the code, by kernel decision over a finite table rather than by argument. Phenylalanine to leucine is one substitution; methionine to tryptophan is two; this repo proves both.",
+      "lean": "Delphi.Genotype.minSubst, Delphi.Genotype.claimed_substitutions_rules_out, phe_leu_one, met_trp_two, trp_stop_one",
+      "module": "lean/Delphi/Genotype.lean",
+      "law_id": "genotype-genetic-code",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If an objective function over codon assignments is stated and the space of alternative codes is stated, then whether the standard code is optimal within that space is determined.",
+      "settles": "The 'one in a million' style of claim, as a decidable question for each stated objective and each stated space. It does NOT settle whether the objective is the one selection acted on, which is the whole difficulty.",
+      "state": "not-formalised"
+     }
+    ]
+   },
+   "empirical_remainder": {
+    "has_remainder": true,
+    "share": "most",
+    "items": [
+     {
+      "what": "Why the code is as it is: frozen accident, stereochemical affinity, coevolution with biosynthesis, or error minimisation.",
+      "why_not_provable": "A historical and chemical question. An optimality proof within a stated space is consistent with all four accounts.",
+      "measurement": "Aptamer and ribozyme experiments probing codon-amino-acid affinity; comparative analysis of variant codes."
+     },
+     {
+      "what": "Whether earlier, different codes existed and were replaced.",
+      "why_not_provable": "A historical fact with no surviving record.",
+      "measurement": "Not measurable. Constrained indirectly by the distribution of variant codes in extant organisms."
+     },
+     {
+      "what": "Which objective function, if any, selection was optimising.",
+      "why_not_provable": "Optimality is relative to an objective, and the objective is not observable.",
+      "measurement": "Not measurable directly; inferred from mistranslation-cost experiments."
+     }
+    ]
+   },
+   "in_repo": [
+    {
+     "kind": "lean-theorem",
+     "ref": "Delphi.Genotype.code, hamming, allCodons, codonsOf, minSubst and the decided instances",
+     "note": "The standard code as a total function with codon-space distance decided by the kernel, and an elimination theorem built on it. A genuinely settled formalisable core, narrow and real.",
+     "strength": "real"
+    },
+    {
+     "kind": "registry-law",
+     "ref": "genotype-genetic-code",
+     "note": "In the registry with its scope and non-vacuity witness, so an elimination against a claimed substitution count is reproducible against a pinned lawset.",
+     "strength": "real"
+    },
+    {
+     "kind": "enumeration",
+     "ref": "open-problems/problems.json WP-001",
+     "note": "'How did genetic code originate? What was the molecular mechanism that allows the association of the amino acids with their triplet codons?' enumerated verbatim from the source.",
+     "strength": "adjacent"
+    }
+   ],
+   "tools_needed": [
+    {
+     "name": "lean_module_code_optimality",
+     "status": "MISSING",
+     "note": "Optimality of the standard code within a STATED space under a STATED objective, with both stated as named hypotheses so the result cannot be read as explaining the code.",
+     "gap_id": "lean-code-optimality"
+    },
+    {
+     "name": "lean_law_get",
+     "status": "EXISTS",
+     "note": "The code law with its decided instances, which is what makes the narrowness of the result visible."
+    },
+    {
+     "name": "lean_check",
+     "status": "EXISTS",
+     "note": "Evaluates a claimed substitution count against the code law for a stated design."
+    }
+   ],
+   "open_problem_ids": [
+    "WP-001"
+   ],
+   "citations": [
+    "crick1968",
+    "koonin2009",
+    "freeland1998"
+   ],
+   "use_cases": [
+    "uc-trajectory-possible",
+    "uc-teach-a-law",
+    "uc-which-laws-violated"
+   ]
+  },
+  {
+   "id": "gq-ageing",
+   "name": "Ageing as a single theory",
+   "question": "Is there one explanation of why organisms age, or several processes that happen to coincide?",
+   "formalisable_core": {
+    "has_core": true,
+    "strength": "narrow",
+    "statements": [
+     {
+      "claim": "If age-specific survival and fecundity schedules are stated, then the sensitivity of fitness to a change in mortality at age x is determined and declines with x, so a claimed selective force on a late-acting allele exceeding that sensitivity does not follow.",
+      "settles": "The arithmetic behind the evolutionary theories of ageing: that selection against late-acting deleterious effects is weak is a consequence of the schedules, not an additional hypothesis. It does not say that antagonistic pleiotropy or disposable soma is the mechanism.",
+      "state": "not-formalised"
+     },
+     {
+      "claim": "If a stated energy budget is allocated between somatic repair and reproduction, then a claimed simultaneous increase in both above the budget is impossible.",
+      "settles": "The disposable-soma trade-off as a budget elimination, in exactly the shape this repo's aerobic bound already uses. It settles that a free lunch is not available under the stated budget; it does not establish that the budget is the cause of ageing.",
+      "state": "not-formalised"
+     }
+    ]
+   },
+   "empirical_remainder": {
+    "has_remainder": true,
+    "share": "most",
+    "items": [
+     {
+      "what": "Whether ageing has one cause at all.",
+      "why_not_provable": "A fact about organisms, and the honest answer to this grand question is that its formalisable core is small: almost all of it is empirical.",
+      "measurement": "Interventions that separate candidate mechanisms in the same organism, with lifespan and healthspan measured."
+     },
+     {
+      "what": "Whether senescence is driven by accumulated molecular damage or by the continued action of wild-type genes past their useful window (hyperfunction).",
+      "why_not_provable": "Both accounts are internally consistent and make overlapping predictions. Which operates is empirical.",
+      "measurement": "Damage markers and pathway activity measured together under interventions that change lifespan, in a model organism."
+     },
+     {
+      "what": "What the actual age-specific schedules are in the wild, as opposed to in the laboratory.",
+      "why_not_provable": "A field measurement, and laboratory schedules differ systematically from wild ones.",
+      "measurement": "Longitudinal mark-recapture with age-specific mortality and fecundity recorded."
+     },
+     {
+      "what": "Whether the energy budget is actually binding, or whether repair and reproduction are not in competition in the relevant range.",
+      "why_not_provable": "A physiological fact.",
+      "measurement": "Direct calorimetry with reproduction manipulated."
+     }
+    ]
+   },
+   "in_repo": [
+    {
+     "kind": "lean-theorem",
+     "ref": "Delphi.Empirical.stored_power_le, Delphi.Empirical.aerobicCeilingV2_le, Delphi.sustained_flight_requires",
+     "note": "The budget-elimination idiom (a stated supply bounds a claimed sustained demand) is proved here for aerobic power and is the pattern a disposable-soma statement would reuse. It says nothing about ageing.",
+     "strength": "shape-only"
+    },
+    {
+     "kind": "enumeration",
+     "ref": "open-problems/problems.json WP-024",
+     "note": "'Why does biological aging occur?' enumerated with the competing hypotheses named in the source's own words.",
+     "strength": "adjacent"
+    }
+   ],
+   "tools_needed": [
+    {
+     "name": "lean_module_selection_sensitivity",
+     "status": "MISSING",
+     "note": "Age-specific sensitivity of fitness from stated schedules, which is the one piece of ageing theory that is pure arithmetic.",
+     "gap_id": "lean-selection-sensitivity"
+    },
+    {
+     "name": "data_mortality_schedules",
+     "status": "MISSING",
+     "note": "Age-specific survival and fecundity schedules. Without them the sensitivity statement has no instance, and a law with no satisfiable instance is refused by this registry.",
+     "gap_id": "data-mortality-schedules"
+    },
+    {
+     "name": "evidence_value",
+     "status": "MISSING",
+     "note": "For a question whose formalisable core is this thin, the useful tool is the one that says which measurement would move belief most, not the one that proves a theorem.",
+     "gap_id": "evidence-value"
+    }
+   ],
+   "open_problem_ids": [
+    "WP-024"
+   ],
+   "citations": [
+    "medawar1952",
+    "williams1957",
+    "kirkwood1977",
+    "gems2013",
+    "gems2022",
+    "blagosklonny2021",
+    "gems2013ros"
+   ],
+   "use_cases": [
+    "uc-what-would-settle",
+    "uc-rank-open-questions",
+    "uc-settled-vs-open"
+   ]
+  },
+  {
+   "id": "gq-evolvability",
+   "name": "Evolvability",
+   "question": "What makes a lineage able to generate useful variation, and is that capacity itself a product of selection?",
+   "formalisable_core": {
+    "has_core": true,
+    "strength": "moderate",
+    "statements": [
+     {
+      "claim": "If a genotype space is given with a stated mutational neighbourhood relation, then the set of phenotypes reachable within k mutations from a stated genotype is determined, so a claim that a phenotype is reachable in fewer is impossible.",
+      "settles": "Reachability and distance claims in a stated genotype space. This repo's codon-space distance is the one-step instance of exactly this, decided by the kernel over a finite table, so the generalisation has a working precedent here.",
+      "state": "not-formalised"
+     },
+     {
+      "claim": "If two systems have stated mutational neighbourhoods and a stated phenotype-accessibility measure, then one is more evolvable than the other under that measure, or the comparison does not follow.",
+      "settles": "That 'more evolvable' is a claim relative to a stated measure, and which comparisons are consequences of the stated structures. It does not settle which measure of evolvability is the biologically relevant one.",
+      "state": "not-formalised"
+     },
+     {
+      "claim": "If a pleiotropy graph is stated, then a claimed modular decomposition of it either follows or does not.",
+      "settles": "The modularity half of the modularity-evolvability link, as a graph-structural question. The closure machinery for views of such a graph is proved here.",
+      "lean": "Delphi.Genotype.closure_of_check",
+      "module": "lean/Delphi/Genotype.lean",
+      "law_id": "genotype-pleiotropy-closure",
+      "state": "proved-here"
+     }
+    ]
+   },
+   "empirical_remainder": {
+    "has_remainder": true,
+    "share": "most",
+    "items": [
+     {
+      "what": "Whether real genotype spaces have the stated neighbourhood structure.",
+      "why_not_provable": "A measurement of mutational accessibility.",
+      "measurement": "Deep mutational scanning with phenotype assayed for every variant in a defined neighbourhood."
+     },
+     {
+      "what": "Whether evolvability is itself under selection, or a by-product of selection for something else.",
+      "why_not_provable": "A causal claim about history. Pigliucci's question, and it is empirical.",
+      "measurement": "Experimental evolution with variability-generating mechanisms as the measured trait, over many lineages."
+     },
+     {
+      "what": "Which of the many proposed measures of evolvability predicts anything.",
+      "why_not_provable": "Predictive adequacy is empirical.",
+      "measurement": "Prospective tests: measure the candidate quantity, then observe which lineages adapt."
+     },
+     {
+      "what": "The relationship between robustness and evolvability, which is enumerated as an open problem in its own right here.",
+      "why_not_provable": "Both can be defined formally; whether they trade off in real systems is a fact about those systems.",
+      "measurement": "Paired measurement of mutational robustness and adaptive rate in the same systems."
+     }
+    ]
+   },
+   "in_repo": [
+    {
+     "kind": "lean-theorem",
+     "ref": "Delphi.Genotype.minSubst and the decided codon distances",
+     "note": "Graph distance in a finite genotype space, decided rather than asserted. The generalisation to an arbitrary stated neighbourhood is the missing module and would reuse this idiom directly.",
+     "strength": "adjacent"
+    },
+    {
+     "kind": "lean-theorem",
+     "ref": "Delphi.Genotype.closure_of_check, Delphi.Genotype.devOrdered_of_check",
+     "note": "Closure of a view under a stated relation, and acyclicity of a stated developmental ordering, both proved from Boolean checks.",
+     "strength": "real"
+    },
+    {
+     "kind": "enumeration",
+     "ref": "open-problems/problems.json EVO-01, EVO-02, EVO-03, EVO-04",
+     "note": "Four distinct evolvability problems enumerated with sources, including the robustness-evolvability relation and the pleiotropy-modularity-evolvability relation.",
+     "strength": "real"
+    },
+    {
+     "kind": "tool",
+     "ref": "generate_candidates",
+     "note": "A conditional flow-matching or DDPM model over 16,123 real body shapes generates candidate organisms. It samples a learned distribution; it does not explore a stated mutational neighbourhood, so it is not an evolvability tool.",
+     "strength": "adjacent"
+    }
+   ],
+   "tools_needed": [
+    {
+     "name": "lean_module_genotype_network",
+     "status": "MISSING",
+     "note": "Reachability and distance in a stated genotype space, generalising the proved codon-space case. This single module serves evolvability, the genotype-phenotype map and predicting evolution.",
+     "gap_id": "lean-genotype-network"
+    },
+    {
+     "name": "open_questions_list",
+     "status": "MISSING",
+     "note": "The literature enumeration in open-problems/ is reachable from no tool. The open-questions thread's lean_open_questions serves a different thing: this project's own seven open questions with Lean-formalised arms, not the field's.",
+     "gap_id": "open-questions-list"
+    },
+    {
+     "name": "omics_search",
+     "status": "EXISTS",
+     "note": "Finds genes by pathway and anatomy term, which is where a pleiotropy graph for a real organism would be assembled from."
+    }
+   ],
+   "open_problem_ids": [
+    "EVO-01",
+    "EVO-02",
+    "EVO-03",
+    "EVO-04"
+   ],
+   "citations": [
+    "wagner1996",
+    "pigliucci2008",
+    "payne2019",
+    "wagner2011pleiotropy"
+   ],
+   "use_cases": [
+    "uc-trajectory-possible",
+    "uc-rank-open-questions",
+    "uc-not-known-at-scale"
+   ]
+  },
+  {
+   "id": "gq-predicting-evolution",
+   "name": "Predicting evolution",
+   "question": "Can we say what a population will do next, and if not in detail, then what can we rule out?",
+   "formalisable_core": {
+    "has_core": true,
+    "strength": "strong",
+    "statements": [
+     {
+      "claim": "If a neutral allele is present in i copies among M in a stated Markov chain, then its fixation probability is i over M, so a claimed fixation probability outside that is impossible.",
+      "settles": "The neutral baseline against which any prediction is measured, proved as a limit of the chain rather than asserted.",
+      "lean": "Delphi.NeutralChain.fixedBy_tendsto, Delphi.fixationProbability_eq, Delphi.wrightFisher_fixation_one",
+      "module": "lean/Delphi/Kimura.lean",
+      "law_id": "kimura-fixation-probability",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If selection does not oppose a mutant, then its fixation probability is at least the neutral value, so a claimed probability below the neutral value for a non-deleterious mutant is impossible.",
+      "settles": "A one-sided bound that eliminates without needing the selection coefficient, which is usually the unmeasured quantity.",
+      "lean": "Delphi.FavoredChain.fixationProbability_ge, Delphi.wrightFisherSelection_fixation_one_ge",
+      "module": "lean/Delphi/Favored.lean",
+      "law_id": "favored-fixation-lower-bound",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If substitutions are neutral, then the substitution rate equals the mutation rate, independent of population size, so a claimed rate that depends on population size does not follow under neutrality.",
+      "settles": "Kimura's result, which is the single most used prediction in molecular evolution and the one most often stated without its premise.",
+      "lean": "Delphi.neutral_substitution_rate",
+      "module": "lean/Delphi/Kimura.lean",
+      "law_id": "kimura-substitution-rate",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If a claimed adaptive trajectory requires n substitutions in T generations at mutation rate mu in population M, then the expected waiting time bounds whether it is possible at all.",
+      "settles": "Prediction as elimination, which is the honest formalisable form of this question: not what will happen, but what cannot.",
+      "lean": "Delphi.Genotype.expectedWaitingTime_bounds, Delphi.Constraints.supply_rules_out",
+      "module": "lean/Delphi/Genotype.lean, lean/Delphi/Constraints.lean",
+      "law_id": "genotype-substitution-time",
+      "state": "proved-here"
+     }
+    ]
+   },
+   "empirical_remainder": {
+    "has_remainder": true,
+    "share": "most",
+    "items": [
+     {
+      "what": "The fitness landscape itself.",
+      "why_not_provable": "Landscapes are measured, not derived, and de Visser and Krug's point is that the metaphor was used for decades before anyone measured one.",
+      "measurement": "Combinatorially complete mutant sets with fitness assayed for every genotype."
+     },
+     {
+      "what": "Whether selection coefficients are constant, and whether epistasis is weak.",
+      "why_not_provable": "Facts about the organism and its environment.",
+      "measurement": "Competition assays across environments and genetic backgrounds."
+     },
+     {
+      "what": "The actual population size history, which every fixation calculation needs.",
+      "why_not_provable": "A demographic fact, usually inferred rather than observed.",
+      "measurement": "Genomic inference of effective population size, with its own model assumptions."
+     },
+     {
+      "what": "Whether prediction is even possible beyond the short term, given contingency.",
+      "why_not_provable": "An open empirical question about how much of evolution is repeatable.",
+      "measurement": "Parallel replicate evolution experiments, and natural replicates across independent colonisations."
+     }
+    ]
+   },
+   "in_repo": [
+    {
+     "kind": "lean-theorem",
+     "ref": "Delphi.NeutralChain (fixedBy, fixedBy_tendsto, fixationProbability_eq, wfKernel, wrightFisher, substitutionRate, neutral_substitution_rate)",
+     "note": "A full finite-population Markov chain development with fixation proved as a limit and the Wright-Fisher kernel constructed, not postulated.",
+     "strength": "real"
+    },
+    {
+     "kind": "lean-theorem",
+     "ref": "Delphi.FavoredChain (fixationProbability_ge, fixationProbability_le_one, binomialKernel, wrightFisherSelection, wrightFisher_toFavored_fixedBy)",
+     "note": "The with-selection chain and a proved lower bound, plus a proved relation back to the neutral chain so the two are not separate stories.",
+     "strength": "real"
+    },
+    {
+     "kind": "lean-theorem",
+     "ref": "Delphi.Constraints.kimura_rate_rules_out, kimura_rate_ratio_rules_out, neutral_fixation_rules_out, favored_fixation_rules_out, supply_rules_out, supply_rules_out'",
+     "note": "Six elimination theorems: the prediction turned into a ruling-out, which is what the eliminate pipeline consumes.",
+     "strength": "real"
+    },
+    {
+     "kind": "registry-law",
+     "ref": "kimura-substitution-rate, kimura-fixation-probability, kimura-heterozygosity, favored-fixation-lower-bound, genotype-substitution-time, haldane-cost-of-selection",
+     "note": "Six registry laws bearing directly on what a population can and cannot do in a given time.",
+     "strength": "real"
+    }
+   ],
+   "tools_needed": [
+    {
+     "name": "lean_check",
+     "status": "PARTIAL",
+     "note": "Can evaluate a substitution-budget claim. It cannot evaluate a claim about a fitness landscape, because no law here constrains one.",
+     "gap_id": "lean-genotype-network"
+    },
+    {
+     "name": "lean_law_get",
+     "status": "EXISTS",
+     "note": "The Kimura and favoured-fixation statements with their premises, which is what distinguishes the neutral prediction from its usual unconditional restatement."
+    },
+    {
+     "name": "lean_module_genotype_network",
+     "status": "MISSING",
+     "note": "To predict on a landscape one must first be able to state one formally. Nothing here can.",
+     "gap_id": "lean-genotype-network"
+    },
+    {
+     "name": "evidence_value",
+     "status": "MISSING",
+     "note": "Which measurement would most sharpen a prediction, which is the practical question behind this grand question.",
+     "gap_id": "evidence-value"
+    }
+   ],
+   "open_problem_ids": [
+    "SMC-09"
+   ],
+   "citations": [
+    "lassig2017",
+    "devisser2014",
+    "nosil2020"
+   ],
+   "use_cases": [
+    "uc-trajectory-possible",
+    "uc-what-would-settle",
+    "uc-tautology-or-content"
+   ]
+  },
+  {
+   "id": "gq-minimal-cell",
+   "name": "The minimal cell",
+   "question": "What is the smallest set of genes that can make a self-replicating cell, and why those?",
+   "formalisable_core": {
+    "has_core": true,
+    "strength": "moderate",
+    "statements": [
+     {
+      "claim": "If a reaction network with stated stoichiometry and stated bounds is given, then whether a stated growth flux is achievable is a linear feasibility question, and infeasibility has a checkable certificate.",
+      "settles": "Whether a claimed minimal network can grow at a claimed rate, with a certificate rather than a solver's word. Infeasibility certificates are exactly the kind of object a proof assistant checks well.",
+      "state": "not-formalised"
+     },
+     {
+      "claim": "If a gene-dependency relation is stated, then a proposed reduced gene set is closed under it, or it is not; and a claim that a reduced set is sufficient does not follow unless it is closed.",
+      "settles": "The bookkeeping half of genome minimisation: a reduced set that is not closed under its own dependencies cannot be sufficient, whatever the biology. The closure machinery for this is proved here for a different relation.",
+      "lean": "Delphi.Genotype.closure_of_check",
+      "module": "lean/Delphi/Genotype.lean",
+      "law_id": "genotype-pleiotropy-closure",
+      "state": "proved-here"
+     }
+    ]
+   },
+   "empirical_remainder": {
+    "has_remainder": true,
+    "share": "most",
+    "items": [
+     {
+      "what": "Which genes are actually essential. JCVI-syn3.0 retains a large block of genes of unknown function, and that block is the question.",
+      "why_not_provable": "Essentiality is measured by deletion, one gene at a time, in a real organism.",
+      "measurement": "Transposon mutagenesis and systematic deletion with viability scored, as in the syn3.0 and syn3A work."
+     },
+     {
+      "what": "Whether a stated medium supports growth of the reduced organism.",
+      "why_not_provable": "A fact about chemistry and transport.",
+      "measurement": "Growth assays in defined media."
+     },
+     {
+      "what": "Whether the reconstructed network is complete, which every feasibility result presupposes.",
+      "why_not_provable": "A missing reaction makes a feasible network look infeasible and the proof correct but useless.",
+      "measurement": "Metabolomics and targeted enzymology to close gaps in the reconstruction."
+     }
+    ]
+   },
+   "in_repo": [
+    {
+     "kind": "lean-theorem",
+     "ref": "Delphi.Genotype.closure_of_check, Delphi.Blueprint.wellFormed_of_check",
+     "note": "Two proved closure and well-formedness criteria over stated graphs, both derived from Boolean checks, which is the idiom a gene-dependency closure statement would use.",
+     "strength": "shape-only"
+    },
+    {
+     "kind": "tool",
+     "ref": "omics_gene, omics_part, omics_search",
+     "note": "A 3,860-gene omics universe with pathway and anatomy annotation. It is zebrafish, not a minimal bacterium, so it is the wrong organism for this question and is listed only so the mismatch is explicit.",
+     "strength": "adjacent"
+    }
+   ],
+   "tools_needed": [
+    {
+     "name": "lean_module_flux_feasibility",
+     "status": "MISSING",
+     "note": "Flux feasibility with a checkable infeasibility certificate over a stated stoichiometric network. Buildable as mathematics; the hard part is getting a real network in.",
+     "gap_id": "lean-flux-feasibility"
+    },
+    {
+     "name": "scale_coverage",
+     "status": "MISSING",
+     "note": "For a minimal genome the question is literally 'what do we not know about each gene', and the large block of unknown-function genes in syn3.0 is the answer a coverage tool should be able to report.",
+     "gap_id": "scale-coverage"
+    },
+    {
+     "name": "omics_gene",
+     "status": "PARTIAL",
+     "note": "Serves per-gene layers for the DELPHI zebrafish universe only. It carries nothing about bacterial essentiality or stoichiometry.",
+     "gap_id": "scale-coverage"
+    }
+   ],
+   "open_problem_ids": [
+    "SMC-06"
+   ],
+   "citations": [
+    "hutchison2016",
+    "pelletier2021",
+    "breuer2019"
+   ],
+   "use_cases": [
+    "uc-not-known-at-scale",
+    "uc-formalise-model",
+    "uc-settled-vs-open"
+   ]
+  },
+  {
+   "id": "gq-morphogenesis-scaling",
+   "name": "Morphogenesis and scaling (D'Arcy Thompson's question)",
+   "question": "Why is an organism the size and shape it is, and how does a form keep its proportions as it grows? This is literally this repository's subject.",
+   "formalisable_core": {
+    "has_core": true,
+    "strength": "strong",
+    "statements": [
+     {
+      "claim": "If weight follows a cube law in length, then the log-log slope of weight against length is exactly 3, so a measured exponent different from 3 rules out the cube law for that family.",
+      "settles": "The elimination in both directions: the law implies the exponent, and an exponent that is not 3 refutes the law. Proved here with the refutation form proved separately.",
+      "lean": "Delphi.cubeLaw_loglog_exponent, Delphi.not_cubeLaw_of_exponent_ne_three",
+      "module": "lean/Delphi/Thompson.lean",
+      "law_id": "thompson1917-ch03-07",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If weight follows a cube law and cross-sectional area an area law with stated material strength, then there exists a size beyond which the structure cannot carry itself, and a claimed performance beyond it is impossible.",
+      "settles": "Galileo's and Thompson's size limit, as an existence theorem rather than an intuition, together with its elimination form for a stated organism.",
+      "lean": "Delphi.exists_size_limit, Delphi.cannot_carry, Delphi.Constraints.giant_rules_out",
+      "module": "lean/Delphi/Thompson.lean, lean/Delphi/Scaling.lean, lean/Delphi/Constraints.lean",
+      "law_id": "thompson1917-ch02-07, scaling-strength-law",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If a within-species allometry is stated with its measured exponent, then that exponent is not 2, so the isometric area assumption is false for that species.",
+      "settles": "That the theorems above, which assume isometry, do not apply unmodified to real growth. This is an EMPIRICAL law in this registry, and holding it as a separate class from the theorems is what keeps the two honest.",
+      "lean": "Delphi.Empirical.not_isometric_area, Delphi.Empirical.loading_rises",
+      "module": "lean/Delphi/Empirical.lean",
+      "law_id": "E1",
+      "state": "proved-here"
+     },
+     {
+      "claim": "If the critical wavenumber at onset satisfies q^2 (du dv) = det J for stated diffusion coefficients and a stated Jacobian determinant, then q is uniquely determined and does not depend on tissue size; so a claim that plain Turing patterning scales with the domain does not follow from those premises.",
+      "settles": "Which proposed mechanisms imply size-invariant patterning, by settling one that does NOT. Proved here as a candidate law. The positive direction, that a stated expansion-repression feedback DOES imply scaling, is still not formalised.",
+      "lean": "Delphi.LeanBio.Round2.TuringWavelength.onset_wavenumber",
+      "module": "lean/registry/proposals/turing-wavelength/law.lean",
+      "law_id": "turing-wavelength",
+      "state": "proved-here"
+     }
+    ]
+   },
+   "empirical_remainder": {
+    "has_remainder": true,
+    "share": "most",
+    "items": [
+     {
+      "what": "Whether growth is isometric, and what the actual allometric exponents are for a given species, organ and stage.",
+      "why_not_provable": "Measurements, and this repo's own E1 proves the answer to the first part is no.",
+      "measurement": "Ontogenetic series with length, area and mass measured at several sizes in one species."
+     },
+     {
+      "what": "Which scaling mechanism operates: expansion-repression feedback, volume-dependent production, or something else.",
+      "why_not_provable": "Several mechanisms imply scaling. Which one a given tissue uses is empirical.",
+      "measurement": "Gradient and target-gene readouts in embryos of manipulated size, with the candidate feedback component removed."
+     },
+     {
+      "what": "How organs and organisms know when to stop growing, which is enumerated as an open problem here in its own right.",
+      "why_not_provable": "A mechanistic question about signalling.",
+      "measurement": "Size-sensing perturbation experiments with final size measured."
+     },
+     {
+      "what": "Whether this project's own morphogen model predicts real fin growth, which it does not.",
+      "why_not_provable": "The pre-registered test FAILED on the axis that mattered: the measurement is dorsoventral +50 per cent with anteroposterior unchanged, and the model predicted the opposite. A proof about the model would not have caught this and did not.",
+      "measurement": "Already made. The failure is recorded in sim-engine/PREREGISTRATION.md section 5a and nothing was tuned afterwards."
+     }
+    ]
+   },
+   "in_repo": [
+    {
+     "kind": "lean-theorem",
+     "ref": "Delphi.cubeLaw_ratio, cubeLaw_loglog_exponent, not_cubeLaw_of_exponent_ne_three, exists_size_limit, vmin_ratio, powerRequired_log, areaLaw_ratio, wingLoading_ratio, breakLoad_ratio, safetyFactor_scaled, stress_ratio, cannot_carry",
+     "note": "The scaling core of the repo: twelve or more proved statements covering ratios, log-log exponents, safety factors and the existence of a size limit.",
+     "strength": "real"
+    },
+    {
+     "kind": "lean-theorem",
+     "ref": "Delphi.Constraints (cubeLaw_rules_out, giant_rules_out, stress_ratio_rules_out, area_exponent_rules_out, bending_exponent_rules_out, froude_rules_out, allometry_consistency_rules_out)",
+     "note": "A dedicated elimination module turning each scaling theorem into a ruling-out over stated intervals, which is what the eliminate pipeline consumes.",
+     "strength": "real"
+    },
+    {
+     "kind": "registry-law",
+     "ref": "E1, E2, thompson1917-ch02-06, ch02-07, ch02-10, ch03-07, scaling-area-law, scaling-strength-law, scaling-bending-law",
+     "note": "Theorems and empirical observations held in separate classes within one lawset (currently 1.7.0), each with scope, hypotheses and a non-vacuity witness.",
+     "strength": "real"
+    },
+    {
+     "kind": "registry-law",
+     "ref": "turing-wavelength (candidate), Delphi.LeanBio.Round2.TuringWavelength.onset_wavenumber",
+     "note": "A proved negative: tissue size cannot enter the critical wavenumber, so plain Turing patterning does not scale. This is why the scaling question needs a mechanism beyond the instability itself.",
+     "strength": "real"
+    },
+    {
+     "kind": "tool",
+     "ref": "growth_trajectory, scenario_timecourse, organism_list_parts, optimize, design_score",
+     "note": "The question is served end to end: a design can be edited, grown through every stage in the parametric stage table, scored, and rejected by a law with the law named.",
+     "strength": "real"
+    },
+    {
+     "kind": "failed-validation",
+     "ref": "sim-engine/validation/hhip-fin-area.mjs and PREREGISTRATION.md section 5a",
+     "note": "The pre-registered falsifier failed, including a diagnosis of a reasoning error in the pre-registration itself. The strongest formalised question in the repo is also the one with the clearest recorded empirical failure, and both facts belong in the same entry.",
+     "strength": "real"
+    },
+    {
+     "kind": "enumeration",
+     "ref": "open-problems/problems.json WP-012, WP-025, WP-077, SCI100-14, SCI100-53",
+     "note": "Five enumerated problems on cell size, organ size and shape, leaf size, when to stop growing, and dinosaur size, all with sources.",
+     "strength": "real"
+    }
+   ],
+   "tools_needed": [
+    {
+     "name": "lean_check",
+     "status": "EXISTS",
+     "note": "Evaluates a design against the scaling and empirical rows, with out-of-scope distinguished from violated and cannot-evaluate from both."
+    },
+    {
+     "name": "scenario_timecourse",
+     "status": "EXISTS",
+     "note": "Runs the question at every developmental stage, which is what a scaling question actually requires."
+    },
+    {
+     "name": "lean_module_pattern_scaling",
+     "status": "MISSING",
+     "note": "The negative half is now a candidate law (plain Turing patterning cannot scale). The positive half, that a stated expansion-repression feedback implies size-invariant patterning, is still not formalised.",
+     "gap_id": "lean-pattern-scaling"
+    },
+    {
+     "name": "minimal_repair",
+     "status": "MISSING",
+     "note": "When a design violates a scaling law, the useful answer is the smallest change that fixes it, or a statement that none exists. optimize searches an objective and cannot answer either.",
+     "gap_id": "minimal-repair"
+    }
+   ],
+   "open_problem_ids": [
+    "WP-012",
+    "WP-025",
+    "WP-077",
+    "SCI100-14",
+    "SCI100-53"
+   ],
+   "citations": [
+    "thompson1917",
+    "umulis2013",
+    "benzvi2010",
+    "cheung2011",
+    "kleiber1932"
+   ],
+   "use_cases": [
+    "uc-which-laws-violated",
+    "uc-exponent-vs-band",
+    "uc-stage-failure",
+    "uc-minimal-repair",
+    "uc-teach-a-law"
+   ]
+  }
+ ],
+ "citations": {
+  "boyle2017": {
+   "ref": "Boyle EA, Li YI, Pritchard JK (2017). An Expanded View of Complex Traits: From Polygenic to Omnigenic. Cell 169:1177-1186.",
+   "doi": "10.1016/j.cell.2017.05.038",
+   "pmid": "28622505",
+   "verified_via": "europepmc",
+   "quotable": "A central goal of genetics is to understand the links between genetic variation and disease",
+   "note": "foundational statement of the omnigenic model"
+  },
+  "manolio2009": {
+   "ref": "Manolio TA, Collins FS, Cox NJ, Goldstein DB, Hindorff LA, Hunter DJ, McCarthy MI, et al. (2009). Finding the missing heritability of complex diseases. Nature 461:747-753.",
+   "doi": "10.1038/nature08494",
+   "pmid": "19812666",
+   "verified_via": "europepmc",
+   "quotable": "Genome-wide association studies have identified hundreds of genetic variants associated with complex human diseases and traits",
+   "note": "the canonical missing-heritability problem statement"
+  },
+  "wagner2011pleiotropy": {
+   "ref": "Wagner GP, Zhang J (2011). The pleiotropic structure of the genotype-phenotype map: the evolvability of complex organisms. Nature Reviews Genetics 12:204-213.",
+   "doi": "10.1038/nrg2949",
+   "pmid": "21331091",
+   "verified_via": "europepmc",
+   "quotable": "Because pleiotropy was found so frequently, the notion arose that pleiotropy is 'universal'",
+   "note": "structural account of why the genotype-phenotype map is hard"
+  },
+  "wolpert1969": {
+   "ref": "Wolpert L (1969). Positional information and the spatial pattern of cellular differentiation. Journal of Theoretical Biology 25:1-47.",
+   "doi": "10.1016/s0022-5193(69)80016-0",
+   "pmid": "4390734",
+   "verified_via": "europepmc",
+   "quotable": "Positional information and the spatial pattern of cellular differentiation",
+   "note": "FOUNDATIONAL, the French Flag paper. The Europe PMC record carries no abstract, so the quotable line is the title."
+  },
+  "turing1952": {
+   "ref": "Turing AM (1952). The chemical basis of morphogenesis. Philosophical Transactions of the Royal Society of London B 237:37-72.",
+   "doi": "10.1098/rstb.1952.0012",
+   "verified_via": "crossref",
+   "quotable": "The chemical basis of morphogenesis",
+   "note": "FOUNDATIONAL, verified by direct DOI lookup; Crossref returns metadata only. Europe PMC indexes only the 1990 Bull Math Biol reprint (PMID 2185858)."
+  },
+  "gregor2007": {
+   "ref": "Gregor T, Tank DW, Wieschaus EF, Bialek W (2007). Probing the limits to positional information. Cell 130:153-164.",
+   "doi": "10.1016/j.cell.2007.05.025",
+   "pmid": "17632062",
+   "verified_via": "europepmc",
+   "quotable": "The reproducibility and precision of biological patterning is limited by the accuracy with which concentration profiles of morphogen molecules can be established",
+   "note": "precision of Bicoid positional information"
+  },
+  "jaeger2020": {
+   "ref": "Jaeger J, Verd B (2020). Dynamic positional information: Patterning mechanism versus precision in gradient-driven systems. Current Topics in Developmental Biology 137:219-246.",
+   "doi": "10.1016/bs.ctdb.2019.11.017",
+   "pmid": "32143744",
+   "verified_via": "europepmc",
+   "quotable": "There is much talk about information in biology",
+   "note": "critique of the static positional-information framing"
+  },
+  "szathmary1995nature": {
+   "ref": "Szathmary E, Maynard Smith J (1995). The major evolutionary transitions. Nature 374:227-232.",
+   "doi": "10.1038/374227a0",
+   "verified_via": "crossref",
+   "quotable": "The major evolutionary transitions",
+   "note": "FOUNDATIONAL journal statement; verified by direct DOI lookup, metadata only."
+  },
+  "maynardsmith1995book": {
+   "ref": "Maynard Smith J, Szathmary E (1995). The Major Transitions in Evolution. Oxford University Press.",
+   "doi": "10.1093/oso/9780198502944.001.0001",
+   "verified_via": "crossref",
+   "is_book": true,
+   "quotable": "The Major Transitions in Evolution",
+   "note": "FOUNDATIONAL. A BOOK, not an indexed article. Crossref carries it as an OUP monograph with issued year 1997 (the Oxford paperback reissue); the first edition is 1995."
+  },
+  "szathmary2015": {
+   "ref": "Szathmary E (2015). Toward major evolutionary transitions theory 2.0. PNAS 112:10104-10111.",
+   "doi": "10.1073/pnas.1421398112",
+   "pmid": "25838283",
+   "verified_via": "europepmc",
+   "quotable": "The impressive body of work on the major evolutionary transitions in the last 20 y calls for a reconstruction of the theory",
+   "note": "the twenty-years-on reconstruction"
+  },
+  "price1970": {
+   "ref": "Price GR (1970). Selection and covariance. Nature 227:520-521.",
+   "doi": "10.1038/227520a0",
+   "verified_via": "crossref",
+   "quotable": "Selection and Covariance",
+   "note": "FOUNDATIONAL, the Price equation. Crossref metadata only; Crossref renders the title with initial capitals."
+  },
+  "price1972ext": {
+   "ref": "Price GR (1972). Extension of covariance selection mathematics. Annals of Human Genetics 35:485-490.",
+   "doi": "10.1111/j.1469-1809.1957.tb01874.x",
+   "pmid": "5073694",
+   "verified_via": "europepmc+crossref",
+   "quotable": "Extension of covariance selection mathematics",
+   "note": "the multilevel extension. The DOI genuinely carries a legacy '1957' string; confirmed independently by direct Crossref lookup, which returns year 1972, Annals of Human Genetics 35:485-490. No abstract in the record."
+  },
+  "frank2012price": {
+   "ref": "Frank SA (2012). Natural selection. IV. The Price equation. Journal of Evolutionary Biology 25:1002-1019.",
+   "doi": "10.1111/j.1420-9101.2012.02498.x",
+   "pmid": "22487312",
+   "verified_via": "europepmc",
+   "quotable": "The Price equation partitions total evolutionary change into two components",
+   "note": "review of the Price equation"
+  },
+  "okasha2006": {
+   "ref": "Okasha S (2006). Evolution and the Levels of Selection. Oxford University Press.",
+   "doi": "10.1093/acprof:oso/9780199267972.001.0001",
+   "verified_via": "crossref",
+   "is_book": true,
+   "quotable": "Evolution and the Levels of Selection",
+   "note": "A BOOK (Crossref type: monograph). Chapter listing confirmed, e.g. 'Selection at Multiple Levels: Concepts and Methods', pp 40-75."
+  },
+  "hamilton1964": {
+   "ref": "Hamilton WD (1964). The genetical evolution of social behaviour. I. Journal of Theoretical Biology 7:1-16.",
+   "doi": "10.1016/0022-5193(64)90038-4",
+   "pmid": "5875341",
+   "verified_via": "europepmc",
+   "quotable": "The genetical evolution of social behaviour. I.",
+   "note": "FOUNDATIONAL, Hamilton's rule. Part II also verified: PMID 5875340, DOI 10.1016/0022-5193(64)90039-6. No abstract in the record."
+  },
+  "nowak2010": {
+   "ref": "Nowak MA, Tarnita CE, Wilson EO (2010). The evolution of eusociality. Nature 466:1057-1062.",
+   "doi": "10.1038/nature09205",
+   "pmid": "20740005",
+   "verified_via": "europepmc",
+   "quotable": "Eusociality, in which some individuals reduce their own lifetime reproductive potential to raise the offspring of others",
+   "side": "against the generality and usefulness of inclusive-fitness theory"
+  },
+  "abbot2011": {
+   "ref": "Abbot P, Abe J, Alcock J, Alizon S, Alpedrinha JA, Andersson M, et al. (2011). Inclusive fitness theory and eusociality. Nature 471:E1-E4.",
+   "doi": "10.1038/nature09831",
+   "pmid": "21430721",
+   "verified_via": "europepmc",
+   "quotable": "Nowak et al. argue that inclusive fitness theory has been of little value in explaining the natural world",
+   "side": "for inclusive-fitness theory; the multi-author reply",
+   "note": "the record's page field reads 'E1-4; author reply E9-10'"
+  },
+  "gardner2011": {
+   "ref": "Gardner A, West SA, Wild G (2011). The genetical theory of kin selection. Journal of Evolutionary Biology 24:1020-1043.",
+   "doi": "10.1111/j.1420-9101.2011.02236.x",
+   "pmid": "21371156",
+   "verified_via": "europepmc",
+   "quotable": "Natural selection operates both directly, via the impact of a trait upon the individual's own fitness, and indirectly",
+   "side": "for the generality of Hamilton's rule, formally argued"
+  },
+  "birch2014": {
+   "ref": "Birch J (2014). Hamilton's Rule and Its Discontents. The British Journal for the Philosophy of Science 65:381-411.",
+   "doi": "10.1093/bjps/axt016",
+   "verified_via": "crossref",
+   "quotable": "Hamilton's Rule and Its Discontents",
+   "side": "separates the formal reading from the causal reading",
+   "note": "not in Europe PMC (philosophy journal); Crossref metadata only."
+  },
+  "birch2015": {
+   "ref": "Birch J, Okasha S (2015). Kin Selection and Its Critics. BioScience 65:22-32.",
+   "doi": "10.1093/biosci/biu196",
+   "verified_via": "crossref",
+   "quotable": "Kin Selection and Its Critics",
+   "side": "philosophical adjudication of the dispute",
+   "note": "Crossref dates the version of record 2014; the issue is 2015, vol 65 iss 1. Metadata only."
+  },
+  "fisher1930": {
+   "ref": "Fisher RA (1930). The Genetical Theory of Natural Selection. Oxford: Clarendon Press.",
+   "doi": "10.5962/bhl.title.27468",
+   "verified_via": "crossref",
+   "is_book": true,
+   "quotable": "The genetical theory of natural selection",
+   "note": "FOUNDATIONAL. A BOOK (Crossref monograph, Biodiversity Heritage Library scan DOI), not an indexed article."
+  },
+  "price1972ftns": {
+   "ref": "Price GR (1972). Fisher's 'fundamental theorem' made clear. Annals of Human Genetics 36:129-140.",
+   "doi": "10.1111/j.1469-1809.1972.tb00764.x",
+   "verified_via": "crossref",
+   "quotable": "Fisher's 'fundamental theorem' made clear",
+   "note": "the reinterpretation that rescued the theorem by restricting what it claims. Verified by direct DOI lookup, metadata only."
+  },
+  "ewens1989": {
+   "ref": "Ewens WJ (1989). An interpretation and proof of the Fundamental Theorem of Natural Selection. Theoretical Population Biology 36:167-180.",
+   "doi": "10.1016/0040-5809(89)90028-2",
+   "pmid": "2814903",
+   "verified_via": "europepmc",
+   "quotable": "Fisher's \"Fundamental Theorem of Natural Selection\" has long caused controversy in population genetics theory",
+   "side": "the standard modern interpretation"
+  },
+  "ewens2015": {
+   "ref": "Ewens WJ, Lessard S (2015). On the interpretation and relevance of the Fundamental Theorem of Natural Selection. Theoretical Population Biology 104:59-67.",
+   "doi": "10.1016/j.tpb.2015.07.002",
+   "pmid": "26220589",
+   "verified_via": "europepmc",
+   "quotable": "Price's (1972) paper was the first to lead to an understanding of th",
+   "note": "the quotable line is truncated exactly as the fetched abstract field returned it"
+  },
+  "basener2018": {
+   "ref": "Basener WF, Sanford JC (2018). The fundamental theorem of natural selection with mutations. Journal of Mathematical Biology 76:1589-1622.",
+   "doi": "10.1007/s00285-017-1190-x",
+   "pmid": "29116373",
+   "verified_via": "europepmc",
+   "quotable": "The mutation-selection process is the most fundamental mechanism of evolution",
+   "side": "claims the theorem fails once mutation is included",
+   "note": "the paper's own abstract misdates Fisher's proof to 1935 (it is 1930); that is the fetched text, not an error here."
+  },
+  "hancock2024": {
+   "ref": "Hancock ZB, Cardinale DS (2024). Back to the fundamentals: a reply to Basener and Sanford 2018. Journal of Mathematical Biology 88:54.",
+   "doi": "10.1007/s00285-024-02077-w",
+   "pmid": "38568223",
+   "verified_via": "europepmc",
+   "quotable": "Fisher's fundamental theorem of natural selection has haunted theoretical population genetic literature since it was proposed in 1930",
+   "side": "the direct critique of Basener & Sanford"
+  },
+  "grafen2018": {
+   "ref": "Grafen A (2018). The left hand side of the Fundamental Theorem of Natural Selection. Journal of Theoretical Biology 456:175-189.",
+   "doi": "10.1016/j.jtbi.2018.07.022",
+   "pmid": "30036527",
+   "verified_via": "europepmc",
+   "quotable": "The fundamental theorem of natural selection is explained here in very simple terms, suitable for students",
+   "side": "a third live position; Lessard & Ewens replied (PMID 30991074)"
+  },
+  "eigen1971": {
+   "ref": "Eigen M (1971). Selforganization of matter and the evolution of biological macromolecules. Naturwissenschaften 58:465-523.",
+   "doi": "10.1007/bf00623322",
+   "pmid": "4942363",
+   "verified_via": "europepmc",
+   "quotable": "Selforganization of matter and the evolution of biological macromolecules",
+   "note": "FOUNDATIONAL, the error threshold and Eigen's paradox. No abstract in the record."
+  },
+  "eigen1977": {
+   "ref": "Eigen M, Schuster P (1977). The hypercycle. A principle of natural self-organization. Part A: Emergence of the hypercycle. Naturwissenschaften 64:541-565.",
+   "doi": "10.1007/bf00450633",
+   "pmid": "593400",
+   "verified_via": "europepmc",
+   "quotable": "The hypercycle. A principle of natural self-organization. Part A: Emergence of the hypercycle.",
+   "note": "the hypercycle escape from the paradox. No abstract in the record."
+  },
+  "takeuchi2007": {
+   "ref": "Takeuchi N, Hogeweg P (2007). Error-threshold exists in fitness landscapes with lethal mutants. BMC Evolutionary Biology 7:15.",
+   "doi": "10.1186/1471-2148-7-15",
+   "pmid": "17286853",
+   "verified_via": "europepmc",
+   "quotable": "One of the important insights of quasi-species theory is an error-threshold",
+   "note": "whether the error threshold survives realistic landscapes; see also their 2005 phenotypic error-threshold paper, PMID 15691379"
+  },
+  "kleiber1932": {
+   "ref": "Kleiber M (1932). Body size and metabolism. Hilgardia 6:315-353.",
+   "doi": "10.3733/hilg.v06n11p315",
+   "verified_via": "crossref",
+   "quotable": "Body size and metabolism",
+   "note": "FOUNDATIONAL, Kleiber's law. Crossref metadata only. The 1947 review is also verified: Physiological Reviews 27:511-541, PMID 20267758."
+  },
+  "west1997": {
+   "ref": "West GB, Brown JH, Enquist BJ (1997). A general model for the origin of allometric scaling laws in biology. Science 276:122-126.",
+   "doi": "10.1126/science.276.5309.122",
+   "pmid": "9082983",
+   "verified_via": "europepmc",
+   "quotable": "Allometric scaling relations, including the 3/4 power law for metabolic rates, are characteristic of all organisms",
+   "side": "derives 3/4 from a fractal network model"
+  },
+  "dodds2001": {
+   "ref": "Dodds PS, Rothman DH, Weitz JS (2001). Re-examination of the '3/4-law' of metabolism. Journal of Theoretical Biology 209:9-27.",
+   "doi": "10.1006/jtbi.2000.2238",
+   "pmid": "11237567",
+   "verified_via": "europepmc",
+   "quotable": "Since simple dimensional analysis suggests alpha = 2/3, we consider this to be a null hyp",
+   "side": "argues 2/3 is the null hypothesis and 3/4 is not established"
+  },
+  "kolokotrones2010": {
+   "ref": "Kolokotrones T, Savage V, Deeds EJ, Fontana W (2010). Curvature in metabolic scaling. Nature 464:753-756.",
+   "doi": "10.1038/nature08920",
+   "pmid": "20360740",
+   "verified_via": "europepmc",
+   "quotable": "For more than three-quarters of a century it has been assumed that basal metabolic rate increases as body mass raised to some power p",
+   "side": "no single exponent exists; the relation is curved",
+   "note": "the exchange continued: MacKay comment PMID 21335012, reply PMID 21497609"
+  },
+  "white2009": {
+   "ref": "White CR, Blackburn TM, Seymour RS (2009). Phylogenetically informed analysis of the allometry of mammalian basal metabolic rate supports neither geometric nor quarter-power scaling. Evolution 63:2658-2667.",
+   "doi": "10.1111/j.1558-5646.2009.00747.x",
+   "pmid": "19519636",
+   "verified_via": "europepmc",
+   "quotable": "The form of the relationship between the basal metabolic rate (BMR) and body mass (M) of mammals has been at issue for almost seven decades",
+   "side": "empirical: neither 2/3 nor 3/4",
+   "note": "mammals only; the avian analyses by the same authors were deliberately not used, because this project holds a clade out as a blind exam."
+  },
+  "crick1968": {
+   "ref": "Crick FH (1968). The origin of the genetic code. Journal of Molecular Biology 38:367-379.",
+   "doi": "10.1016/0022-2836(68)90392-6",
+   "pmid": "4887876",
+   "verified_via": "europepmc",
+   "quotable": "The origin of the genetic code",
+   "note": "FOUNDATIONAL, the frozen-accident hypothesis. No abstract in the record."
+  },
+  "koonin2009": {
+   "ref": "Koonin EV, Novozhilov AS (2009). Origin and evolution of the genetic code: the universal enigma. IUBMB Life 61:99-111.",
+   "doi": "10.1002/iub.146",
+   "pmid": "19117371",
+   "verified_via": "europepmc",
+   "quotable": "The genetic code is nearly universal, and the arrangement of the codons in the standard codon table is highly nonrandom",
+   "note": "modern synthesis of the competing theories"
+  },
+  "freeland1998": {
+   "ref": "Freeland SJ, Hurst LD (1998). The genetic code is one in a million. Journal of Molecular Evolution 47:238-248.",
+   "doi": "10.1007/pl00006381",
+   "pmid": "9732450",
+   "verified_via": "europepmc",
+   "quotable": "Statistical and biochemical studies of the genetic code have found evidence of nonrandom patterns in the distribution of codon assignments",
+   "note": "the error-minimisation argument against pure frozen accident; follow-up PMID 10742043"
+  },
+  "medawar1952": {
+   "ref": "Medawar PB (1952). An Unsolved Problem of Biology. London: H.K. Lewis. Reprinted in The Uniqueness of the Individual, pp 44-70.",
+   "doi": "10.4324/9780429299759-3",
+   "verified_via": "crossref-reprint",
+   "is_book": true,
+   "quotable": "An Unsolved Problem of Biology",
+   "note": "FOUNDATIONAL but a BOOK/lecture. Only the Routledge reprint chapter DOI could be fetched (Crossref issued year 2019); the 1952 original has no verifiable DOI."
+  },
+  "williams1957": {
+   "ref": "Williams GC (1957). Pleiotropy, natural selection, and the evolution of senescence. Evolution 11:398-411.",
+   "doi": "10.1111/j.1558-5646.1957.tb02911.x",
+   "verified_via": "crossref",
+   "quotable": "PLEIOTROPY, NATURAL SELECTION, AND THE EVOLUTION OF SENESCENCE",
+   "note": "FOUNDATIONAL, antagonistic pleiotropy. Not in Europe PMC; verified by direct DOI lookup. The record's title is in capitals."
+  },
+  "kirkwood1977": {
+   "ref": "Kirkwood TB (1977). Evolution of ageing. Nature 270:301-304.",
+   "doi": "10.1038/270301a0",
+   "pmid": "593350",
+   "verified_via": "europepmc",
+   "quotable": "An evolutionary view of ageing suggests that mortality may be due to an energy-saving strategy of reduced error regulation in somatic cells",
+   "note": "FOUNDATIONAL, the disposable-soma theory"
+  },
+  "gems2013": {
+   "ref": "Gems D, Partridge L (2013). Genetics of longevity in model organisms: debates and paradigm shifts. Annual Review of Physiology 75:621-644.",
+   "doi": "10.1146/annurev-physiol-030212-183712",
+   "pmid": "23190075",
+   "verified_via": "europepmc",
+   "quotable": "Discovering the biological basis of aging is one of the greatest remaining challenges for science",
+   "note": "survey of the paradigm shifts"
+  },
+  "gems2022": {
+   "ref": "Gems D (2022). The hyperfunction theory: An emerging paradigm for the biology of aging. Ageing Research Reviews 74:101557.",
+   "doi": "10.1016/j.arr.2021.101557",
+   "pmid": "34990845",
+   "verified_via": "europepmc",
+   "quotable": "The process of senescence (aging) is predominantly determined by the action of wild-type genes",
+   "side": "hyperfunction, against damage accumulation"
+  },
+  "blagosklonny2021": {
+   "ref": "Blagosklonny MV (2021). The hyperfunction theory of aging: three common misconceptions. Oncoscience 8:103-107.",
+   "doi": "10.18632/oncoscience.545",
+   "pmid": "34549076",
+   "verified_via": "europepmc",
+   "quotable": "The hyperfunction theory of aging: three common misconceptions",
+   "side": "hyperfunction, stated by its originator",
+   "note": "no abstract in the record."
+  },
+  "gems2013ros": {
+   "ref": "Gems D, de la Guardia Y (2013). Alternative Perspectives on Aging in Caenorhabditis elegans: Reactive Oxygen Species or Hyperfunction? Antioxidants & Redox Signaling 19:321-329.",
+   "doi": "10.1089/ars.2012.4840",
+   "pmid": "22870907",
+   "verified_via": "europepmc",
+   "quotable": "An influential theory has it that aging is the result of an accumulation of molecular damage, caused in particular by reactive oxygen species",
+   "side": "states the damage (ROS) account explicitly as the rival"
+  },
+  "wagner1996": {
+   "ref": "Wagner GP, Altenberg L (1996). Perspective: Complex adaptations and the evolution of evolvability. Evolution 50:967-976.",
+   "doi": "10.1111/j.1558-5646.1996.tb02339.x",
+   "pmid": "28565291",
+   "verified_via": "europepmc",
+   "quotable": "The problem of complex adaptations is studied in two largely disconnected research traditions: evolutionary biology and evolutionary computer science",
+   "note": "FOUNDATIONAL. The Europe PMC title is in capitals in the record."
+  },
+  "pigliucci2008": {
+   "ref": "Pigliucci M (2008). Is evolvability evolvable? Nature Reviews Genetics 9:75-82.",
+   "doi": "10.1038/nrg2278",
+   "pmid": "18059367",
+   "verified_via": "europepmc",
+   "quotable": "biologists have increasingly been asking whether the ability to evolve--the evolvability--of biological systems, itself evolves",
+   "note": "the sceptical, conceptual review"
+  },
+  "payne2019": {
+   "ref": "Payne JL, Wagner A (2019). The causes of evolvability and their evolution. Nature Reviews Genetics 20:24-38.",
+   "doi": "10.1038/s41576-018-0069-z",
+   "pmid": "30385867",
+   "verified_via": "europepmc",
+   "quotable": "Evolvability is the ability of a biological system to produce phenotypic variation that is both heritable and adaptive",
+   "note": "the mechanistic modern review"
+  },
+  "lassig2017": {
+   "ref": "Lassig M, Mustonen V, Walczak AM (2017). Predicting evolution. Nature Ecology & Evolution 1:77.",
+   "doi": "10.1038/s41559-017-0077",
+   "pmid": "28812721",
+   "verified_via": "europepmc",
+   "quotable": "The face of evolutionary biology is changing: from reconstructing and analysing the past to predicting future evolutionary processes",
+   "note": "the programmatic review of evolutionary prediction"
+  },
+  "devisser2014": {
+   "ref": "de Visser JA, Krug J (2014). Empirical fitness landscapes and the predictability of evolution. Nature Reviews Genetics 15:480-490.",
+   "doi": "10.1038/nrg3744",
+   "pmid": "24913663",
+   "verified_via": "europepmc",
+   "quotable": "The genotype-fitness map (that is, the fitness landscape) is a key determinant of evolution, yet it has mostly been used as a superficial metaphor",
+   "note": "fitness-landscape basis of predictability"
+  },
+  "nosil2020": {
+   "ref": "Nosil P, Flaxman SM, Feder JL, Gompert Z (2020). Increasing our ability to predict contemporary evolution. Nature Communications 11:5592.",
+   "doi": "10.1038/s41467-020-19437-x",
+   "pmid": "33154385",
+   "verified_via": "europepmc",
+   "quotable": "Increasing our ability to predict contemporary evolution",
+   "note": "the Europe PMC record carries no abstract text."
+  },
+  "hutchison2016": {
+   "ref": "Hutchison CA 3rd, Chuang RY, Noskov VN, Assad-Garcia N, Deerinck TJ, Ellisman MH, et al. (2016). Design and synthesis of a minimal bacterial genome. Science 351:aad6253.",
+   "doi": "10.1126/science.aad6253",
+   "pmid": "27013737",
+   "verified_via": "europepmc",
+   "quotable": "We used whole-genome design and complete chemical synthesis to minimize the 1079-kilobase pair synthetic genome of Mycoplasma mycoides JCVI-syn1.0",
+   "note": "FOUNDATIONAL, JCVI-syn3.0"
+  },
+  "pelletier2021": {
+   "ref": "Pelletier JF, Sun L, Wise KS, Assad-Garcia N, Karas BJ, Deerinck TJ, et al. (2021). Genetic requirements for cell division in a genomically minimal cell. Cell 184:2430-2440.e16.",
+   "doi": "10.1016/j.cell.2021.03.008",
+   "pmid": "33784496",
+   "verified_via": "europepmc",
+   "quotable": "Genomically minimal cells, such as JCVI-syn3.0, offer a platform to clarify genes underlying core physiological processes",
+   "note": "syn3A and cell division"
+  },
+  "breuer2019": {
+   "ref": "Breuer M, Earnest TM, Merryman C, Wise KS, Sun L, Lynott MR, et al. (2019). Essential metabolism for a minimal cell. eLife 8:e36842.",
+   "doi": "10.7554/elife.36842",
+   "pmid": "30657448",
+   "verified_via": "europepmc",
+   "quotable": "JCVI-syn3A, a robust minimal cell with a 543 kbp genome and 493 genes, provides a versatile platform to study the basics of life",
+   "note": "the syn3A essential-metabolism reconstruction. Europe PMC renders the second author as 'Earnest EE'; the published form is Earnest TM."
+  },
+  "thompson1917": {
+   "ref": "Thompson DW (1917). On Growth and Form. Cambridge University Press.",
+   "doi": "10.5962/bhl.title.11332",
+   "verified_via": "crossref",
+   "is_book": true,
+   "quotable": "On growth and form",
+   "note": "FOUNDATIONAL and this repo's subject. A BOOK (Crossref monograph, Biodiversity Heritage Library scan DOI), not an indexed article."
+  },
+  "umulis2013": {
+   "ref": "Umulis DM, Othmer HG (2013). Mechanisms of scaling in pattern formation. Development 140:4830-4843.",
+   "doi": "10.1242/dev.100511",
+   "pmid": "24301464",
+   "verified_via": "europepmc",
+   "quotable": "Many organisms and their constituent tissues and organs vary substantially in size but differ little in morphology",
+   "note": "the modern framing of the scaling question"
+  },
+  "benzvi2010": {
+   "ref": "Ben-Zvi D, Barkai N (2010). Scaling of morphogen gradients by an expansion-repression integral feedback control. PNAS 107:6924-6929.",
+   "doi": "10.1073/pnas.0912734107",
+   "pmid": "20356830",
+   "verified_via": "europepmc",
+   "quotable": "Despite substantial size variations, proportions of the developing body plan are maintained with a remarkable precision",
+   "note": "FOUNDATIONAL expansion-repression mechanism; the Drosophila wing-disc test is PMID 21835621"
+  },
+  "cheung2011": {
+   "ref": "Cheung D, Miles C, Kreitman M, Ma J (2011). Scaling of the Bicoid morphogen gradient by a volume-dependent production rate. Development 138:2741-2749.",
+   "doi": "10.1242/dev.064402",
+   "pmid": "21613328",
+   "verified_via": "europepmc",
+   "quotable": "An important feature of development is the formation of patterns that are proportional to the overall size of the embryo",
+   "note": "an alternative scaling mechanism to expansion-repression"
+  }
+ },
+ "scope": "This is a map of what is formalisable, not a research programme and not a claim that the formalisable parts are the important parts. The (a)/(b) split is a judgement made here and is arguable for every entry; where it is contentious the dispute field says so. The list is not exhaust: there is no canonical set of grand questions in biology, and this one is weighted toward evolution, development and scaling because that is what this project reads. Several entries have no counterpart in open-problems/problems.json, which is a gap in that enumeration rather than evidence the question is settled. Nothing here is about the held-out exam clade."
+}

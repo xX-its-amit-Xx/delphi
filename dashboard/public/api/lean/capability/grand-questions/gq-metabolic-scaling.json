@@ -1,0 +1,186 @@
+{
+ "map_version": "1.0.0",
+ "as_of": "2026-11-01",
+ "the_line": "Lean proves that a conclusion follows from stated premises. It does not adjudicate reality. Every theorem in this repo is of the form 'if these premises hold, then this follows', and a kernel proof of it is silent on whether any organism satisfies the premises. So a grand question has a formalisable core exactly to the extent that part of the disagreement about it is a disagreement about what follows from what, and an empirical remainder exactly to the extent that it is a disagreement about what the world is like. Most of these questions are mostly remainder. Two of them (the Price equation, Hamilton's rule) are disputes in which the formal part has been repeatedly confused with the empirical part for decades, and those are the ones where formalisation would do the most good. A capability map that let the first kind of progress be read as the second would be worse than no map.",
+ "id": "gq-metabolic-scaling",
+ "name": "Metabolic scaling and Kleiber's law",
+ "question": "Why does metabolic rate scale with body mass to a power near three-quarters rather than two-thirds, and is there a single exponent at all?",
+ "disputed": true,
+ "dispute": "West, Brown and Enquist 1997 derive 3/4 from a space-filling fractal network; Dodds, Rothman and Weitz 2001 argue 2/3 is the null hypothesis and 3/4 is not established; Kolokotrones et al. 2010 find the relation is curved, so no single exponent exists; White, Blackburn and Seymour 2009 find mammalian data support neither. Two separable disputes have been run together: whether the derivation follows from its premises, and what the exponent is.",
+ "formalisable_core": {
+  "has_core": true,
+  "strength": "moderate",
+  "statements": [
+   {
+    "claim": "If a distribution network is space-filling, has area-preserving branching and size-invariant terminal units, then the exponent relating throughput to volume is determined, so a claimed exponent inconsistent with those premises does not follow from them.",
+    "settles": "Whether the famous derivation is valid, separately from whether its premises describe real vasculature. The derivation's validity is a mathematical question nobody has mechanically checked, and asymmetric branching is already flagged as an open question in this repo's own enumeration.",
+    "state": "not-formalised"
+   },
+   {
+    "claim": "If a family of organisms grows isometrically by linear factor k, then mass scales as k cubed while cross-sectional area and breaking load scale as k squared, so a claimed load-bearing performance at a larger size is impossible beyond a determined limit.",
+    "settles": "The square-cube half of the problem, which is the part that actually eliminates designs. Proved here, for any isometric family.",
+    "lean": "Delphi.cubeLaw_loglog_exponent, Delphi.areaLaw_ratio, Delphi.breakLoad_ratio, Delphi.exists_size_limit",
+    "module": "lean/Delphi/Thompson.lean, lean/Delphi/Scaling.lean",
+    "law_id": "thompson1917-ch03-07, scaling-area-law, scaling-strength-law, thompson1917-ch02-07",
+    "state": "proved-here"
+   },
+   {
+    "claim": "If the measured mass exponent for a clade lies in a stated band, then a claimed weight ratio outside the band implied by that exponent is ruled out.",
+    "settles": "Elimination against a measured band rather than against a theoretical exponent. This is an EMPIRICAL law here, labelled as such, and the repo's E1 proves that a within-species area exponent is not 2, so the theorem and the measurement are recorded as disagreeing.",
+    "lean": "Delphi.Empirical.weight_ratio_band, Delphi.Empirical.not_isometric_area",
+    "module": "lean/Delphi/Empirical.lean",
+    "law_id": "E2, E1",
+    "state": "proved-here"
+   },
+   {
+    "claim": "If a stated aerobic supply chain delivers at most a stated rate, then a claimed sustained power demand above it is impossible.",
+    "settles": "The metabolic budget as an elimination, from the Fick principle as a named hypothesis. Proved here, and scoped so that it bounds sustained aerobic demand and explicitly not unpowered descent or burst effort.",
+    "lean": "Delphi.sustained_flight_requires, Delphi.Empirical.aerobicCeilingV2_le",
+    "module": "lean/Delphi/Flight.lean, lean/Delphi/Empirical.lean",
+    "law_id": "aerobic-power-bound, E3, fick-principle",
+    "state": "proved-here"
+   }
+  ]
+ },
+ "empirical_remainder": {
+  "has_remainder": true,
+  "share": "most",
+  "items": [
+   {
+    "what": "What the exponent is, and whether a single exponent is the right model at all.",
+    "why_not_provable": "Kolokotrones et al. report curvature, which means the question 'what is the exponent' may be malformed. No proof settles which functional form fits.",
+    "measurement": "Basal metabolic rate against mass across many species with phylogenetic correction, over enough mass range to detect curvature."
+   },
+   {
+    "what": "Whether real vascular networks satisfy space-filling, area-preserving branching and invariant terminal units.",
+    "why_not_provable": "These are anatomical facts.",
+    "measurement": "Quantitative vascular morphometry, including whether branching is asymmetric."
+   },
+   {
+    "what": "Whether organisms grow isometrically, which every theorem above assumes.",
+    "why_not_provable": "An empirical fact, and this repo's own E1 proves a within-species area exponent is not 2, so the answer is already known to be no.",
+    "measurement": "Ontogenetic series with area and mass measured at several sizes."
+   }
+  ]
+ },
+ "in_repo": [
+  {
+   "kind": "lean-theorem",
+   "ref": "Delphi.cubeLaw_loglog_exponent, areaLaw_ratio, breakLoad_ratio, bendingStress_ratio_body, exists_size_limit, vmin_ratio, powerRequired_log, allometry_consistency_rules_out",
+   "note": "Eight or more proved scaling statements plus a full elimination module (giant_rules_out, stress_ratio_rules_out, froude_rules_out). This is the strongest formalisation in the repo.",
+   "strength": "real"
+  },
+  {
+   "kind": "registry-law",
+   "ref": "E1, E2, E3, E4, scaling-area-law, scaling-strength-law, scaling-bending-law, flight-allometry-law, aerobic-power-bound, fick-principle",
+   "note": "Theorems and empirical bands held as separate classes, so a reader can tell which rows are derivations and which are measurements. E2 is scoped to one family because it rests on six length-weight studies of it.",
+   "strength": "real"
+  },
+  {
+   "kind": "enumeration",
+   "ref": "open-problems/problems.json ORX-14",
+   "note": "'Does incorporating asymmetric branching change or influence the predictions of the WBE model?' is enumerated here from a screened abstract. It is precisely the formalisable half of this dispute.",
+   "strength": "real"
+  },
+  {
+   "kind": "dataset",
+   "ref": "no metabolic-rate-against-mass dataset",
+   "note": "Stated so the gap is not mistaken for a tool failure: this repo has length, area, mass and aerobic-budget data, and nothing on metabolic rate against body mass across species.",
+   "strength": "shape-only"
+  }
+ ],
+ "tools_needed": [
+  {
+   "name": "lean_module_wbe_derivation",
+   "status": "MISSING",
+   "note": "Whether 3/4 follows from the fractal-network premises, with asymmetric branching as a variant. The formalisable half of a thirty-year dispute, and this repo's own enumeration already names it.",
+   "gap_id": "lean-wbe"
+  },
+  {
+   "name": "data_metabolic_rate_mass",
+   "status": "MISSING",
+   "note": "Metabolic rate against mass with phylogeny, over enough range to test for curvature. Not buildable here; it is a data acquisition.",
+   "gap_id": "data-metabolic-scaling"
+  },
+  {
+   "name": "lean_check",
+   "status": "EXISTS",
+   "note": "Evaluates the mass-length rows against a design or a measured organism, and returns cannot-evaluate rather than substituting a different area convention."
+  },
+  {
+   "name": "lean_laws_list",
+   "status": "EXISTS",
+   "note": "Separates theorem from empirical-observation by class, which is what keeps the two halves of this dispute apart."
+  }
+ ],
+ "open_problem_ids": [
+  "ORX-14",
+  "SCI100-53"
+ ],
+ "citations": [
+  "kleiber1932",
+  "west1997",
+  "dodds2001",
+  "kolokotrones2010",
+  "white2009",
+  "thompson1917"
+ ],
+ "use_cases": [
+  "uc-exponent-vs-band",
+  "uc-aerobic-budget",
+  "uc-tautology-or-content",
+  "uc-which-laws-violated"
+ ],
+ "citations_resolved": {
+  "kleiber1932": {
+   "ref": "Kleiber M (1932). Body size and metabolism. Hilgardia 6:315-353.",
+   "doi": "10.3733/hilg.v06n11p315",
+   "verified_via": "crossref",
+   "quotable": "Body size and metabolism",
+   "note": "FOUNDATIONAL, Kleiber's law. Crossref metadata only. The 1947 review is also verified: Physiological Reviews 27:511-541, PMID 20267758."
+  },
+  "west1997": {
+   "ref": "West GB, Brown JH, Enquist BJ (1997). A general model for the origin of allometric scaling laws in biology. Science 276:122-126.",
+   "doi": "10.1126/science.276.5309.122",
+   "pmid": "9082983",
+   "verified_via": "europepmc",
+   "quotable": "Allometric scaling relations, including the 3/4 power law for metabolic rates, are characteristic of all organisms",
+   "side": "derives 3/4 from a fractal network model"
+  },
+  "dodds2001": {
+   "ref": "Dodds PS, Rothman DH, Weitz JS (2001). Re-examination of the '3/4-law' of metabolism. Journal of Theoretical Biology 209:9-27.",
+   "doi": "10.1006/jtbi.2000.2238",
+   "pmid": "11237567",
+   "verified_via": "europepmc",
+   "quotable": "Since simple dimensional analysis suggests alpha = 2/3, we consider this to be a null hyp",
+   "side": "argues 2/3 is the null hypothesis and 3/4 is not established"
+  },
+  "kolokotrones2010": {
+   "ref": "Kolokotrones T, Savage V, Deeds EJ, Fontana W (2010). Curvature in metabolic scaling. Nature 464:753-756.",
+   "doi": "10.1038/nature08920",
+   "pmid": "20360740",
+   "verified_via": "europepmc",
+   "quotable": "For more than three-quarters of a century it has been assumed that basal metabolic rate increases as body mass raised to some power p",
+   "side": "no single exponent exists; the relation is curved",
+   "note": "the exchange continued: MacKay comment PMID 21335012, reply PMID 21497609"
+  },
+  "white2009": {
+   "ref": "White CR, Blackburn TM, Seymour RS (2009). Phylogenetically informed analysis of the allometry of mammalian basal metabolic rate supports neither geometric nor quarter-power scaling. Evolution 63:2658-2667.",
+   "doi": "10.1111/j.1558-5646.2009.00747.x",
+   "pmid": "19519636",
+   "verified_via": "europepmc",
+   "quotable": "The form of the relationship between the basal metabolic rate (BMR) and body mass (M) of mammals has been at issue for almost seven decades",
+   "side": "empirical: neither 2/3 nor 3/4",
+   "note": "mammals only; the avian analyses by the same authors were deliberately not used, because this project holds a clade out as a blind exam."
+  },
+  "thompson1917": {
+   "ref": "Thompson DW (1917). On Growth and Form. Cambridge University Press.",
+   "doi": "10.5962/bhl.title.11332",
+   "verified_via": "crossref",
+   "is_book": true,
+   "quotable": "On growth and form",
+   "note": "FOUNDATIONAL and this repo's subject. A BOOK (Crossref monograph, Biodiversity Heritage Library scan DOI), not an indexed article."
+  }
+ },
+ "scope": "This is a map of what is formalisable, not a research programme and not a claim that the formalisable parts are the important parts. The (a)/(b) split is a judgement made here and is arguable for every entry; where it is contentious the dispute field says so. The list is not exhaust: there is no canonical set of grand questions in biology, and this one is weighted toward evolution, development and scaling because that is what this project reads. Several entries have no counterpart in open-problems/problems.json, which is a gap in that enumeration rather than evidence the question is settled. Nothing here is about the held-out exam clade."
+}

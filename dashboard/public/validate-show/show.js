@@ -154,7 +154,7 @@ function actAsk(container, { data }) {
   const ask = data.ask || {};
   const text = ask.text || '';
   const crits = ask.criteria || [], unp = ask.unparsed || [];
-  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;overflow:auto;padding:78px 16px 16px;display:flex;flex-direction:column;justify-content:center;gap:12px';
+  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;overflow:auto;padding:78px 16px 16px;display:flex;flex-direction:column;justify-content:safe center;gap:12px';
   container.appendChild(host);
 
   // Mark up the text: a clause is "parsed" when a criterion quotes it, "unparsed" when the validator
@@ -325,7 +325,7 @@ async function actAnalogue(container, { data, theme }) {
   const first = (an.analogues || [])[0] || null;
   const story = fn.not_expressible ? 'not-expressible' : !first ? 'none' : fn.status === 'lost' ? 'lost' : 'exists';
 
-  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:78px 16px 16px;overflow:auto;display:flex;flex-direction:column;justify-content:center;gap:11px';
+  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:78px 16px 16px;overflow:auto;display:flex;flex-direction:column;justify-content:safe center;gap:11px';
   container.appendChild(host);
 
   let d3 = null, org = null, ana = null, render, duration = 20, chapters = [], items = [];
@@ -428,7 +428,7 @@ function actPhysics(container, { data }) {
   const gate = data.physics_check || null;
   const standing = (data.standing_checks || []).filter(s => String(s.status || '').toLowerCase().startsWith('fail'));
 
-  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:78px 14px 14px;overflow:auto;display:flex;flex-direction:column;justify-content:center;gap:9px';
+  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:78px 14px 14px;overflow:auto;display:flex;flex-direction:column;justify-content:safe center;gap:9px';
   container.appendChild(host);
   const grid = el('div'); grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px';
   host.appendChild(grid);
@@ -436,7 +436,7 @@ function actPhysics(container, { data }) {
   const cards = conds.map(c => {
     const k = sKind(c.status);
     const d = el('div');
-    d.style.cssText = `border:1px solid rgba(255,255,255,.16);border-left:3px ${k === 'na' ? 'dashed' : 'solid'} ${k === 'fail' ? '#ef7a6e' : k === 'na' ? 'rgba(255,255,255,.34)' : '#58c07f'};border-radius:8px;padding:8px 9px;background:${k === 'na' ? 'rgba(255,255,255,.045)' : 'rgba(6,26,31,.56)'};color:#fff;display:flex;flex-direction:column;gap:5px;opacity:0.17;transition:opacity .35s ease`;
+    d.style.cssText = `border:1px solid rgba(255,255,255,.16);border-left:3px ${k === 'na' ? 'dashed' : 'solid'} ${k === 'fail' ? '#ef7a6e' : k === 'na' ? 'rgba(255,255,255,.34)' : '#58c07f'};border-radius:8px;padding:8px 9px;background:${k === 'na' ? 'rgba(255,255,255,.045)' : 'rgba(6,26,31,.56)'};color:#fff;display:flex;flex-direction:column;gap:5px;opacity:0.55;transition:opacity .35s ease`;
     if (k === 'na') d.style.backgroundImage = 'repeating-linear-gradient(45deg,transparent,transparent 6px,rgba(255,255,255,.1) 6px,rgba(255,255,255,.1) 7px)';
     const h = el('div'); h.style.cssText = 'font:500 13px/1.25 "IBM Plex Sans",sans-serif'; h.textContent = c.label; d.appendChild(h);
     const s = el('div'); s.style.cssText = `font:500 10.5px/1 "IBM Plex Mono",monospace;letter-spacing:.05em;text-transform:uppercase;color:${k === 'fail' ? '#ef7a6e' : k === 'na' ? 'rgba(255,255,255,.66)' : '#58c07f'}`;
@@ -457,7 +457,7 @@ function actPhysics(container, { data }) {
   if (ens.length) {
     const e = ens[0];
     ensNode = el('div');
-    ensNode.style.cssText = 'margin-top:9px;border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:9px 10px;background:rgba(6,26,31,.56);color:#fff;opacity:0;transition:opacity .35s ease';
+    ensNode.style.cssText = 'margin-top:9px;border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:9px 10px;background:rgba(6,26,31,.56);color:#fff;opacity:0.55;transition:opacity .35s ease';
     const t1 = el('div'); t1.style.cssText = 'font:500 12px/1.3 "IBM Plex Mono",monospace;margin-bottom:6px';
     t1.textContent = `Ensemble, ${e.draws} draws over the stated input distributions — achieved in ${((e.fraction_achieved ?? 0) * 100).toFixed(1)}% of them`;
     ensNode.appendChild(t1);
@@ -478,8 +478,8 @@ function actPhysics(container, { data }) {
   const duration = Math.max(20, LEAD + conds.length * PER + (ensNode ? 5 : 2));
   const render = t => {
     const shown = reduced() ? cards.length : Math.floor((t - LEAD) / PER) + 1;
-    cards.forEach((c, i) => { c.style.opacity = i < shown ? '1' : '0.17'; });
-    if (ensNode) ensNode.style.opacity = reduced() || t > LEAD + conds.length * PER ? '1' : '0';
+    cards.forEach((c, i) => { c.style.opacity = i < shown ? '1' : '0.55'; });
+    if (ensNode) ensNode.style.opacity = reduced() || t > LEAD + conds.length * PER ? '1' : '0.55';
   };
 
   const nf = conds.filter(c => c.status === 'fail').length;
@@ -519,13 +519,13 @@ function actPhysics(container, { data }) {
 // ACT 7 -- THE VERDICT. The five gates in turn, then the sentence. Never a number as the ending.
 function actVerdict(container, { data }) {
   const v = data.verdict || {}, gates = v.gates || [];
-  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:78px 14px 14px;overflow:auto;display:flex;flex-direction:column;justify-content:center;gap:8px';
+  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:78px 14px 14px;overflow:auto;display:flex;flex-direction:column;justify-content:safe center;gap:8px';
   container.appendChild(host);
 
   const nodes = gates.map(g => {
     const k = sKind(g.status);
     const d = el('div');
-    d.style.cssText = `border:1px solid rgba(255,255,255,.16);border-left:3px ${k === 'na' ? 'dashed' : 'solid'} ${k === 'fail' ? '#ef7a6e' : k === 'na' ? 'rgba(255,255,255,.34)' : '#58c07f'};border-radius:8px;padding:9px 11px;background:${k === 'na' ? 'rgba(255,255,255,.045)' : 'rgba(6,26,31,.56)'};color:#fff;opacity:0;transition:opacity .3s ease;display:flex;gap:10px;align-items:flex-start`;
+    d.style.cssText = `border:1px solid rgba(255,255,255,.16);border-left:3px ${k === 'na' ? 'dashed' : 'solid'} ${k === 'fail' ? '#ef7a6e' : k === 'na' ? 'rgba(255,255,255,.34)' : '#58c07f'};border-radius:8px;padding:9px 11px;background:${k === 'na' ? 'rgba(255,255,255,.045)' : 'rgba(6,26,31,.56)'};color:#fff;opacity:0.5;transition:opacity .3s ease;display:flex;gap:10px;align-items:flex-start`;
     if (k === 'na') d.style.backgroundImage = 'repeating-linear-gradient(45deg,transparent,transparent 6px,rgba(255,255,255,.1) 6px,rgba(255,255,255,.1) 7px)';
     const sm = SMAP[g.status] || ['na', '◌', g.status];
     const s = el('div'); s.style.cssText = `font:500 10.5px/1.5 "IBM Plex Mono",monospace;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;color:${k === 'fail' ? '#ef7a6e' : k === 'na' ? 'rgba(255,255,255,.7)' : '#58c07f'}`;
@@ -547,7 +547,7 @@ function actVerdict(container, { data }) {
   const duration = Math.max(18, LEAD + gates.length * PER + 6);
   const render = t => {
     const shown = reduced() ? gates.length : Math.floor((t - LEAD) / PER) + 1;
-    nodes.forEach((n, i) => { n.style.opacity = i < shown ? '1' : '0'; });
+    nodes.forEach((n, i) => { n.style.opacity = i < shown ? '1' : '0.5'; });
     sent.style.opacity = reduced() || t > LEAD + gates.length * PER + 0.4 ? '1' : '0';
   };
 
@@ -721,7 +721,7 @@ async function mountAct(i) {
     if (r.skip) {
       a.skip = r.reason;
       host.innerHTML = '';
-      const wrapn = el('div'); wrapn.style.cssText = 'position:absolute;inset:0;padding:78px 16px 16px;display:flex;flex-direction:column;justify-content:center;gap:10px;overflow:auto';
+      const wrapn = el('div'); wrapn.style.cssText = 'position:absolute;inset:0;padding:78px 16px 16px;display:flex;flex-direction:column;justify-content:safe center;gap:10px;overflow:auto';
       wrapn.appendChild(gapBox(`act ${a.no} not shown`, r.reason, r.detail || `expected ./${a.sibling[0]} exporting mountScene(), per SCENES.md`));
       host.appendChild(wrapn);
       scene = {

@@ -1,0 +1,206 @@
+{
+ "map_version": "1.0.0",
+ "as_of": "2026-11-01",
+ "the_line": "Lean proves that a conclusion follows from stated premises. It does not adjudicate reality. Every theorem in this repo is of the form 'if these premises hold, then this follows', and a kernel proof of it is silent on whether any organism satisfies the premises. So a grand question has a formalisable core exactly to the extent that part of the disagreement about it is a disagreement about what follows from what, and an empirical remainder exactly to the extent that it is a disagreement about what the world is like. Most of these questions are mostly remainder. Two of them (the Price equation, Hamilton's rule) are disputes in which the formal part has been repeatedly confused with the empirical part for decades, and those are the ones where formalisation would do the most good. A capability map that let the first kind of progress be read as the second would be worse than no map.",
+ "id": "gq-body-plan",
+ "name": "How a genome specifies a body plan",
+ "question": "How does a one-dimensional sequence specify a three-dimensional animal, reliably, at the right size, generation after generation?",
+ "disputed": true,
+ "dispute": "Whether patterning is best understood as positional information read from morphogen gradients (Wolpert) or as the output of a dynamical system whose transient behaviour carries the specification (Jaeger and Verd), and separately whether a given gradient is set by free diffusion with degradation or by hindered diffusion through binding.",
+ "formalisable_core": {
+  "has_core": true,
+  "strength": "moderate",
+  "statements": [
+   {
+    "claim": "If a morphogen is produced at a source, diffuses with coefficient D and is degraded first-order with rate k, then at steady state the gradient length is the square root of D over k, so a claimed gradient length inconsistent with the claimed D and k is impossible under this model.",
+    "settles": "Whether a published gradient length is consistent with the published coefficients, under the stated model. In this repo lambda works out at about 209 micrometres against an independently reported ~200, and that 4.4 per cent agreement is why the two fetched numbers are trusted at all.",
+    "module": "sim-engine/tools/morphogen-diffusion.mjs",
+    "state": "stated-not-proved"
+   },
+   {
+    "claim": "If a two-species reaction-diffusion system has stated kinetics and diffusion coefficients, then whether it satisfies the diffusion-driven-instability conditions is determined by those premises alone.",
+    "settles": "Turing's question exactly: it is a question about the premises, and the inequalities follow from them. Proved here as a candidate law, so it is in no law set and judges no design yet.",
+    "lean": "Delphi.LeanBio.Round2.TuringDDI.turing_instability",
+    "module": "lean/registry/proposals/turing-ddi/law.lean",
+    "law_id": "turing-ddi",
+    "state": "proved-here"
+   },
+   {
+    "claim": "If a body plan is given as a part-of graph with levels, then it is a well-formed body plan only if the graph is levels-down, closed, rooted and its taxon data are consistent; and a Boolean check of those conditions implies well-formedness.",
+    "settles": "That a proposed body plan is a body plan at all. Modest, and the honest version of 'Lean checks the blueprint': it rules out incoherent descriptions, not biologically impossible animals.",
+    "lean": "Delphi.Blueprint.wellFormed_of_check",
+    "module": "lean/Delphi/Blueprint.lean",
+    "law_id": "blueprint-well-formedness",
+    "state": "proved-here"
+   },
+   {
+    "claim": "If an expansion-repression feedback with stated parameters operates, then the pattern scales with domain size, so a claim that a mechanism without such feedback nevertheless scales does not follow from its stated premises.",
+    "settles": "Which proposed scaling mechanisms actually imply scaling, separating mechanism from the observation that scaling occurs.",
+    "state": "not-formalised"
+   }
+  ]
+ },
+ "empirical_remainder": {
+  "has_remainder": true,
+  "share": "most",
+  "items": [
+   {
+    "what": "Whether the actual mechanism is free diffusion with degradation, hindered diffusion through heparan-sulfate binding, cell-lineage specification, or mechanics.",
+    "why_not_provable": "All four are internally consistent models. Which one operates is a fact about tissue.",
+    "measurement": "Single-molecule and FCS measurement of the mobile fraction in the actual tissue at the actual stage, with binding perturbed."
+   },
+   {
+    "what": "The actual D and k in the actual tissue at the actual developmental stage.",
+    "why_not_provable": "A proof takes these as inputs. This repo's own numbers are gastrula measurements being used for a 72-hour fin bud, and every scope string says so.",
+    "measurement": "FCS or photoconversion in the fin bud itself, not the gastrula."
+   },
+   {
+    "what": "Whether thresholds are read as positional information at all, or whether the cell's state depends on the gradient's history.",
+    "why_not_provable": "This is the Wolpert-versus-dynamic dispute, and it is about what cells do, not about what follows from a model.",
+    "measurement": "Time-resolved single-cell readouts under gradients with the same final value but different histories."
+   },
+   {
+    "what": "Why body plans are conserved for hundreds of millions of years and then, rarely, are not.",
+    "why_not_provable": "A historical question about contingent events.",
+    "measurement": "Comparative developmental genetics across the relevant divergences; in part not measurable at all."
+   }
+  ]
+ },
+ "in_repo": [
+  {
+   "kind": "lean-theorem",
+   "ref": "Delphi.Blueprint.wellFormed_of_check and the Graph lemmas it rests on",
+   "note": "A proved well-formedness criterion for a part-of body-plan graph, with acyclicity derived from the levels-down condition rather than assumed.",
+   "strength": "real"
+  },
+  {
+   "kind": "registry-law",
+   "ref": "turing-ddi (candidate), Delphi.LeanBio.Round2.TuringDDI.turing_instability",
+   "note": "The diffusion-driven-instability conditions, proved from the stated kinetics and diffusion coefficients as a named hypothesis. Candidate, so in no law set.",
+   "strength": "real"
+  },
+  {
+   "kind": "registry-law",
+   "ref": "turing-wavelength (candidate), Delphi.LeanBio.Round2.TuringWavelength.onset_wavenumber",
+   "note": "The onset relation q^2 (du dv) = det J has a unique solution for given coefficients, so tissue size, which the relation does not mention, CANNOT enter the critical wavenumber. That is a proved negative result about the mechanism: plain Turing patterning does not scale with the domain, which is why a separate scaling mechanism is needed at all.",
+   "strength": "real"
+  },
+  {
+   "kind": "tool",
+   "ref": "morphogen_diffusion",
+   "note": "Steady-state reaction-diffusion on a fin-bud domain with sourced zebrafish coefficients, returning the field, lambda and the suprathreshold region.",
+   "strength": "real"
+  },
+  {
+   "kind": "dataset",
+   "ref": "sim-engine/params/zebrafish-morphogens.json",
+   "note": "Each coefficient carries its URL, a quote and whether it was read in the source. Shh has no measured zebrafish coefficient, so a Shh request borrows the Fgf8a value and is labelled borrowed; the engine never invents one.",
+   "strength": "real"
+  },
+  {
+   "kind": "failed-validation",
+   "ref": "sim-engine/PREREGISTRATION.md section 5a and validation/hhip-fin-area.mjs",
+   "note": "The pre-registered prediction FAILED: the measurement is dorsoventral +50 per cent with anteroposterior unchanged, and the model predicted the opposite axis. Nothing was tuned afterwards. This is the empirical remainder biting a formalised model, recorded rather than hidden.",
+   "strength": "real"
+  },
+  {
+   "kind": "enumeration",
+   "ref": "open-problems/problems.json ORX-07, WP-025",
+   "note": "Body-plan conservation with rare novelty, and how organs reach the correct shape and size, both enumerated with sources.",
+   "strength": "adjacent"
+  }
+ ],
+ "tools_needed": [
+  {
+   "name": "morphogen_diffusion",
+   "status": "PARTIAL",
+   "note": "Implements one of the two live hypotheses for Fgf8. The alternative, hindered diffusion by binding, is not implemented, so the tool cannot be used to choose between them.",
+   "gap_id": "lean-pattern-scaling"
+  },
+  {
+   "name": "lean_module_pattern_scaling",
+   "status": "MISSING",
+   "note": "A formal statement of which stated mechanisms imply size-invariant patterning, so the mechanism question separates from the observation.",
+   "gap_id": "lean-pattern-scaling"
+  },
+  {
+   "name": "adhesion_mechanics",
+   "status": "MISSING",
+   "note": "Force, contact and cell-matrix mechanics coupled to the morphogen field. Deliberately out of scope here; it is the module a collaborator would supply.",
+   "gap_id": "adhesion-mechanics"
+  },
+  {
+   "name": "lean_propose",
+   "status": "EXISTS",
+   "note": "The route for the Turing diffusion-driven-instability conditions, which have a registry entry but no theorem."
+  }
+ ],
+ "open_problem_ids": [
+  "ORX-07",
+  "WP-025",
+  "WP-012"
+ ],
+ "citations": [
+  "turing1952",
+  "wolpert1969",
+  "gregor2007",
+  "jaeger2020",
+  "benzvi2010",
+  "umulis2013"
+ ],
+ "use_cases": [
+  "uc-sim-vs-laws",
+  "uc-out-of-validity",
+  "uc-which-laws-violated"
+ ],
+ "citations_resolved": {
+  "turing1952": {
+   "ref": "Turing AM (1952). The chemical basis of morphogenesis. Philosophical Transactions of the Royal Society of London B 237:37-72.",
+   "doi": "10.1098/rstb.1952.0012",
+   "verified_via": "crossref",
+   "quotable": "The chemical basis of morphogenesis",
+   "note": "FOUNDATIONAL, verified by direct DOI lookup; Crossref returns metadata only. Europe PMC indexes only the 1990 Bull Math Biol reprint (PMID 2185858)."
+  },
+  "wolpert1969": {
+   "ref": "Wolpert L (1969). Positional information and the spatial pattern of cellular differentiation. Journal of Theoretical Biology 25:1-47.",
+   "doi": "10.1016/s0022-5193(69)80016-0",
+   "pmid": "4390734",
+   "verified_via": "europepmc",
+   "quotable": "Positional information and the spatial pattern of cellular differentiation",
+   "note": "FOUNDATIONAL, the French Flag paper. The Europe PMC record carries no abstract, so the quotable line is the title."
+  },
+  "gregor2007": {
+   "ref": "Gregor T, Tank DW, Wieschaus EF, Bialek W (2007). Probing the limits to positional information. Cell 130:153-164.",
+   "doi": "10.1016/j.cell.2007.05.025",
+   "pmid": "17632062",
+   "verified_via": "europepmc",
+   "quotable": "The reproducibility and precision of biological patterning is limited by the accuracy with which concentration profiles of morphogen molecules can be established",
+   "note": "precision of Bicoid positional information"
+  },
+  "jaeger2020": {
+   "ref": "Jaeger J, Verd B (2020). Dynamic positional information: Patterning mechanism versus precision in gradient-driven systems. Current Topics in Developmental Biology 137:219-246.",
+   "doi": "10.1016/bs.ctdb.2019.11.017",
+   "pmid": "32143744",
+   "verified_via": "europepmc",
+   "quotable": "There is much talk about information in biology",
+   "note": "critique of the static positional-information framing"
+  },
+  "benzvi2010": {
+   "ref": "Ben-Zvi D, Barkai N (2010). Scaling of morphogen gradients by an expansion-repression integral feedback control. PNAS 107:6924-6929.",
+   "doi": "10.1073/pnas.0912734107",
+   "pmid": "20356830",
+   "verified_via": "europepmc",
+   "quotable": "Despite substantial size variations, proportions of the developing body plan are maintained with a remarkable precision",
+   "note": "FOUNDATIONAL expansion-repression mechanism; the Drosophila wing-disc test is PMID 21835621"
+  },
+  "umulis2013": {
+   "ref": "Umulis DM, Othmer HG (2013). Mechanisms of scaling in pattern formation. Development 140:4830-4843.",
+   "doi": "10.1242/dev.100511",
+   "pmid": "24301464",
+   "verified_via": "europepmc",
+   "quotable": "Many organisms and their constituent tissues and organs vary substantially in size but differ little in morphology",
+   "note": "the modern framing of the scaling question"
+  }
+ },
+ "scope": "This is a map of what is formalisable, not a research programme and not a claim that the formalisable parts are the important parts. The (a)/(b) split is a judgement made here and is arguable for every entry; where it is contentious the dispute field says so. The list is not exhaust: there is no canonical set of grand questions in biology, and this one is weighted toward evolution, development and scaling because that is what this project reads. Several entries have no counterpart in open-problems/problems.json, which is a gap in that enumeration rather than evidence the question is settled. Nothing here is about the held-out exam clade."
+}

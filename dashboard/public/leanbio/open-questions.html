@@ -59,8 +59,11 @@ th{color:var(--mute);font-weight:600;font-size:.82rem}
   <div id="summary"></div>
   <div id="questions"></div>
   <h2 id="failed-h" hidden>Failed theorems</h2>
-  <p class="lede" id="failed-lede" hidden>Statements we tried and could not establish, kept with the reason so nobody reproposes them. Each says what <em>survives</em> the failure &mdash; a failure record that says only &ldquo;it failed&rdquo; throws away the result.</p>
+  <p class="lede" id="failed-lede" hidden>Statements we tried and could not establish, kept with the reason so nobody reproposes them. Each says what <em>survives</em> the failure &mdash; a failure record that says only &ldquo;it failed&rdquo; throws away the result. Read the badge: some of these were <strong>never attempted</strong> (the single Lean build lock was contended, or they were abandoned on cost), and those say nothing about whether the statement is true.</p>
   <div id="failed"></div>
+  <h2 id="nc-h" hidden>Not checkable in principle</h2>
+  <p class="lede" id="nc-lede" hidden>Sound statements &mdash; usually proved &mdash; with <strong>no falsifiable direction over any design</strong>. These are not waiting for data and they are not wrong: <em>no</em> input would make them bind, so each says what a forced check would wrongly flag.</p>
+  <div id="nc"></div>
   <h2 id="req-h" hidden>Needs more inputs</h2>
   <p class="lede" id="req-lede" hidden>Sound statements that nothing can currently check: the proof is fine, but no design property can be fed to it. Not failures &mdash; each lists the inputs that would make it bind.</p>
   <div id="req"></div>
@@ -115,7 +118,9 @@ const c = d.counts || {};
 $('#summary').innerHTML = `<div class="card"><div class="row" style="gap:18px">
   <div><div style="font-size:1.5rem;font-weight:650">${c.open ?? 0}</div><div class="muted">open questions</div></div>
   <div><div style="font-size:1.5rem;font-weight:650">${c.settled ?? 0}</div><div class="muted">settled</div></div>
-  <div><div style="font-size:1.5rem;font-weight:650">${c.failed_theorems ?? 0}</div><div class="muted">failed theorems</div></div>
+  <div><div style="font-size:1.5rem;font-weight:650">${c.failed_attempted ?? c.failed_theorems ?? 0}</div><div class="muted">attempted &amp; defeated</div></div>
+  <div><div style="font-size:1.5rem;font-weight:650">${c.failed_never_attempted ?? 0}</div><div class="muted">written, never tried</div></div>
+  <div><div style="font-size:1.5rem;font-weight:650">${c.not_checkable_in_principle ?? 0}</div><div class="muted">not checkable in principle</div></div>
   <div><div style="font-size:1.5rem;font-weight:650">${(d.questions || []).reduce((n, q) => n + q.arms.filter(a => a.formalised).length, 0)}</div><div class="muted">arms formalised in Lean</div></div>
 </div></div>`;
 
@@ -199,8 +204,22 @@ if ((d.failed_theorems || []).length) {
         <span class="pill" style="border-color:var(--bad);color:var(--bad)">${esc(REASON[f.reason] || f.reason)}</span>
       </div>
       <div class="row muted"><span class="tag">${esc(f.failure_id)}</span><span class="tag">v${esc(f.version)}</span>
+        ${f.attempted === false ? '<span class="pill" style="border-color:var(--warn);color:var(--warn)">never attempted</span>' : '<span class="pill">attempted and defeated</span>'}
         ${f.became_open_question ? `<span class="pill open">became ${esc(f.became_open_question)}</span>` : ''}</div>
+      ${f.attempted === false ? `<div class="note"><strong>Never attempted, so this is not a result about the statement.</strong> ${esc(f.proof_status || '')}</div>` : ''}
       <div class="settle"><strong>What survives.</strong> ${esc(f.what_survives)}</div>
+    </section>`).join('');
+}
+if ((d.not_checkable_in_principle || []).length) {
+  $('#nc-h').hidden = false; $('#nc-lede').hidden = false;
+  $('#nc').innerHTML = (d.not_checkable_in_principle || []).map(n => `
+    <section class="card">
+      <h3>${esc(n.statement_en)}</h3>
+      <div class="row muted"><span class="tag">${esc(n.not_checkable_id)}</span>${n.law_id ? `<span class="tag">${esc(n.law_id)}</span>` : ''}
+        <span class="pill" style="border-color:var(--viol);color:var(--viol)">no rule-out direction</span></div>
+      <div class="note"><strong>Why no input would help.</strong> ${esc(n.why_no_input_would_help)}</div>
+      <div class="settle"><strong>What a forced check would wrongly flag.</strong> ${esc(n.false_positive_if_forced)}</div>
+      ${n.what_it_would_take ? `<div class="settle"><strong>What would work instead.</strong> ${esc(n.what_it_would_take)}</div>` : ''}
     </section>`).join('');
 }
 if ((d.requirements || []).length) {

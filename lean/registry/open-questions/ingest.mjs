@@ -25,7 +25,7 @@ import { readJson, writeJson } from '../registry-lib.mjs';
 // Drop keys whose value is undefined: the validator tests `key in object`, so an explicitly-undefined optional
 // field fails its type check instead of being treated as absent.
 const defined = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
-import { ROOT, QUESTIONS_DIR, FAILED_DIR, REQUIREMENTS_DIR, contentHash, proportionOf, validateRecord, load } from './openq-lib.mjs';
+import { ROOT, QUESTIONS_DIR, FAILED_DIR, REQUIREMENTS_DIR, NOT_CHECKABLE_DIR, contentHash, proportionOf, validateRecord, load } from './openq-lib.mjs';
 
 const R = (...p) => path.join(ROOT, ...p);
 const TODAY = new Date().toISOString().slice(0, 10);
@@ -149,14 +149,94 @@ export function ingestDebate({ write = false } = {}) {
   return { source: dir, found: files.length, written, skipped };
 }
 
+/** Reasons that mean the statement was NEVER ATTEMPTED, so the record is not a result about it. */
+function neverAttempted(reasonText) {
+  const t = String(reasonText || '');
+  if (/never compiled|ran out of lake-lock|not attempted in Lean/i.test(t)) return { reason: 'not-attempted-no-build-time', attempted: false };
+  if (/deliberately NOT proposed|deliberately not proposed/i.test(t)) return { reason: 'deliberately-not-proposed', attempted: false };
+  if (/NEEDS-A-MISSING-CONSTANT|missing constant|exactly ONE number is absent/i.test(t)) return { reason: 'abandoned-for-lack-of-a-constant', attempted: false };
+  if (/abandoned on cost|abandoned for lack of lake-lock|order of magnitude beyond/i.test(t)) return { reason: 'abandoned-on-cost', attempted: false };
+  return null;
+}
+
 export async function ingestNotCheckable({ write = false } = {}) {
   const f = R('pipeline', 'leanbio', 'out', 'round2-open-questions.json');
   if (!exists(f)) return { source: f, found: 0, written: [], skipped: ['file does not exist yet'] };
   const raw = readJson(f);
-  const rows = Array.isArray(raw) ? raw : (raw.records || raw.laws || raw.questions || []);
+  const rows = Array.isArray(raw) ? raw : (raw.requirements || raw.records || raw.laws || raw.questions || []);
+  const failedRows = Array.isArray(raw) ? [] : (raw.failed_theorems || []);
   const written = [], skipped = [];
+
+  // ── statements NEVER ATTEMPTED, or abandoned on cost / a missing constant ──
+  // These are NOT "we tried and could not establish this". Conflating the two would overstate how much has been
+  // tried, so each carries attempted: false and a proof_status saying plainly that Lean never checked it.
+  for (const r of failedRows) {
+    const id = r.failure_id || ('ft-' + slug(r.law_id || r.statement_en || ''));
+    const na = neverAttempted(r.reason) || neverAttempted(r.reason_detail);
+    const out = defined({
+      record_type: 'failed-theorem', failure_id: id.startsWith('ft-') ? id : 'ft-' + slug(id), version: r.version || '1.0.0',
+      statement_en: r.statement_en,
+      reason: na ? na.reason : (r.reason_category || 'unprovable-as-stated'),
+      attempted: na ? false : undefined,
+      proof_status: na
+        ? (r.proof_status || `NEVER COMPILED: Lean has not checked this statement. ${String(r.reason || '').slice(0, 400)} It must NOT be read as a result about the statement -- nothing was established and nothing was refuted.`)
+        : r.proof_status,
+      reason_detail: String(r.reason || r.reason_detail || ''),
+      // The producing file writes what_was_tried as a STRING for some rows and an array for others; normalise.
+      what_was_tried: (Array.isArray(r.what_was_tried) ? r.what_was_tried.map(String).filter(Boolean)
+        : r.what_was_tried ? [String(r.what_was_tried)] : []).length
+        ? (Array.isArray(r.what_was_tried) ? r.what_was_tried.map(String).filter(Boolean) : [String(r.what_was_tried)])
+        : [na ? 'Nothing was attempted in Lean. The statement was written and queued; the reason it was not attempted is recorded in reason_detail.' : 'see reason_detail'],
+      what_survives: r.what_survives || (na
+        ? 'The STATEMENT survives intact as a candidate: it was never tested, so nothing about it has been learned, and it remains available to propose. What is recorded is the reason it was not attempted, so the next round does not rediscover the same queue item and so nobody mistakes an untried statement for a defeated one.'
+        : 'see reason_detail'),
+      lean_ref: r.lean_ref ?? null, sources: r.sources || [],
+      touches: r.law_id ? { law_ids: [r.law_id] } : undefined,
+      do_not_repropose: na ? false : true,
+      found_by: `Emitted by the LeanBio discovery agent (round 2) into pipeline/leanbio/out/round2-open-questions.json and ingested here. ${na ? 'Classified as NEVER ATTEMPTED: this is a record of a statement that was not tried, not of one that failed.' : ''}`,
+      origin: r.origin || { by_role: 'leanbio-discovery', kind: 'agent' },
+      history: r.history && r.history.length ? r.history : [{ version: '1.0.0', date: TODAY, change: 'ingested from pipeline/leanbio/out/round2-open-questions.json' }],
+    });
+    out.content_hash = contentHash(out);
+    const errs = validateRecord(out);
+    if (errs.length) { skipped.push(`${out.failure_id}: would not validate: ${errs.join('; ')}`); continue; }
+    if (write) writeJson(path.join(FAILED_DIR, out.failure_id + '.json'), out);
+    written.push({ file: `failed/${out.failure_id}.json`, reason: out.reason, attempted: out.attempted !== false });
+  }
+
   for (const r of rows) {
     if (!r.law_id || !r.statement_en) { skipped.push(`a row without law_id or statement_en`); continue; }
+
+    // ── THE FOURTH TYPE. A statement no input can ever make bind is not input-starved. Routing it to a
+    // requirements record would turn its most careful finding into a false to-do, so it gets its own type and
+    // its missing_inputs are DROPPED rather than carried with a caveat shouted inside them.
+    const inPrinciple = /not-checkable-in-principle|no rule-?out direction/i.test(`${r.verdict} ${r.not_checkable_because}`)
+      || (r.missing_inputs || []).some(x => /DOES NOT MAKE THE LAW BIND|no input makes/i.test(String(x)))
+      || /^\s*nothing\b/i.test(String(r.would_constrain_if_supplied || ''));
+    if (inPrinciple) {
+      const out = defined({
+        record_type: 'not-checkable-in-principle',
+        not_checkable_id: 'nc-' + slug(r.law_id), version: r.version || '1.0.0', law_id: r.law_id,
+        statement_en: r.statement_en,
+        proof_status: r.proof_status || 'The statement itself is sound and is a candidate law; being unevaluable over a design is not the same as being unproved.',
+        not_checkable_because: r.not_checkable_because,
+        why_no_input_would_help: `No input makes this bind. ${String(r.would_constrain_if_supplied || '')} The inputs the producing record listed (${(r.missing_inputs || []).map(x => String(x).split('--')[0].trim()).filter(Boolean).join('; ') || 'none'}) are the quantities the statement is ABOUT, not quantities whose absence is the problem: supplying them yields a law that still rules nothing out.`,
+        false_positive_if_forced: r.false_positive_if_forced || String(r.not_checkable_because || ''),
+        what_it_would_take: r.what_it_would_take || (/claim-level|explicitly CLAIMS/i.test(String(r.would_constrain_if_supplied || '')) ? String(r.would_constrain_if_supplied) : null),
+        block_considered_and_rejected: /block_considered_and_rejected|browser_check_absent/i.test(String(r.not_checkable_because || '')) ? "the law's meta, under browser_check_absent.block_considered_and_rejected" : null,
+        lean_ref: r.lean_ref ?? null, sources: r.sources || [],
+        found_by: `Emitted by the LeanBio discovery agent (round 2) as a requirements record whose own verdict read "${r.verdict}". Re-typed here: a statement no input can make bind is neither waiting for data nor wrong, and carrying it as a requirements record would have read as "supply these numbers and the law will work", which its own not_checkable_because denies. The producing agent had flagged this by shouting the caveat inside its missing_inputs strings; that workaround is what prompted the new type.`,
+        origin: r.origin || { by_role: 'leanbio-discovery', kind: 'agent' },
+        history: [...(r.history || []), { version: r.version || '1.0.0', date: TODAY, change: 're-typed from candidate-with-requirements to not-checkable-in-principle on ingest; missing_inputs dropped, since no input makes this statement bind and a list of them reads as a to-do' }],
+      });
+      out.content_hash = contentHash(out);
+      const errs = validateRecord(out);
+      if (errs.length) { skipped.push(`${out.not_checkable_id}: would not validate: ${errs.join('; ')}`); continue; }
+      if (write) writeJson(path.join(NOT_CHECKABLE_DIR, out.not_checkable_id + '.json'), out);
+      written.push({ file: `not-checkable/${out.not_checkable_id}.json`, type: 'not-checkable-in-principle', retyped_from: 'candidate-with-requirements' });
+      continue;
+    }
+
     const out = {
       record_type: 'candidate-with-requirements', requirement_id: 'cr-' + slug(r.law_id), version: '1.0.0',
       law_id: r.law_id, statement_en: r.statement_en, verdict: 'NEEDS-WORK',
@@ -169,6 +249,35 @@ export async function ingestNotCheckable({ write = false } = {}) {
       history: [{ version: '1.0.0', date: TODAY, change: 'ingested from pipeline/leanbio/out/round2-open-questions.json (the discovery agent\'s provable-but-not-checkable list)' }],
     };
     if (!out.missing_inputs.length) { skipped.push(`${r.law_id}: no missing_inputs, which is the whole content of a requirements record`); continue; }
+
+    // COLLISION. The debate agent and the discovery agent both ruled on several of the same laws, so a plain
+    // write would silently drop whichever landed first -- losing the debate's per-criterion verdicts or the
+    // discovery agent's input list. Two independent agents listing what a law needs is more informative than
+    // either alone, so merge: union the inputs (deduplicated on the quantity name before any '--' caveat) and
+    // keep both producers' provenance.
+    const existingPath = path.join(REQUIREMENTS_DIR, out.requirement_id + '.json');
+    if (exists(existingPath)) {
+      const prev = readJson(existingPath);
+      const nameOf = x => String(x).split('--')[0].trim().toLowerCase();
+      const seen = new Set((prev.missing_inputs || []).map(nameOf));
+      const added = out.missing_inputs.filter(x => !seen.has(nameOf(x)));
+      const merged = { ...prev,
+        missing_inputs: [...(prev.missing_inputs || []), ...added],
+        would_constrain_if_supplied: prev.would_constrain_if_supplied && prev.would_constrain_if_supplied.length > (out.would_constrain_if_supplied || '').length ? prev.would_constrain_if_supplied : out.would_constrain_if_supplied,
+        not_checkable_because: prev.not_checkable_because || out.not_checkable_because,
+        ruled_by: [...new Set([...(prev.ruled_by || [prev.origin?.by_role].filter(Boolean)), out.origin?.by_role].filter(Boolean))],
+        produced_by: prev.produced_by || out.produced_by,
+        discovery: out.produced_by || null,
+        version: prev.version,
+        history: [...(prev.history || []), { version: prev.version, date: TODAY, change: `merged a second, independent ruling on the same law from ${out.origin?.by_role || 'another agent'} (pipeline/leanbio/out/round2-open-questions.json): ${added.length} further missing input(s) added, ${out.missing_inputs.length - added.length} already listed. Both producers' provenance kept; neither ruling overwrites the other.` }],
+      };
+      merged.content_hash = contentHash(merged);
+      const mErrs = validateRecord(merged);
+      if (mErrs.length) { skipped.push(`${out.requirement_id}: merge would not validate: ${mErrs.join('; ')}`); continue; }
+      if (write) writeJson(existingPath, merged);
+      written.push({ file: `requirements/${out.requirement_id}.json`, law_id: r.law_id, merged_with: prev.origin?.by_role || 'existing record', inputs_added: added.length, inputs_total: merged.missing_inputs.length });
+      continue;
+    }
     out.content_hash = contentHash(out);
     const errs = validateRecord(out);
     if (errs.length) { skipped.push(`${r.law_id}: would not validate: ${errs.join('; ')}`); continue; }

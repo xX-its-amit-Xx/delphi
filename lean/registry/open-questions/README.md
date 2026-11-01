@@ -57,7 +57,8 @@ refused.
 | `open-questions.schema.json` | JSON Schema for all four record types |
 | `questions/<question_id>.json` | one open question (`oq-*`) |
 | `failed/<failure_id>.json` | one failed theorem (`ft-*`) |
-| `requirements/<requirement_id>.json` | one `candidate-with-requirements` record (`cr-*`): sound, but nothing can check it yet |
+| `requirements/<requirement_id>.json` | one `candidate-with-requirements` record (`cr-*`): sound, but nothing can check it **yet** |
+| `not-checkable/<not_checkable_id>.json` | one `not-checkable-in-principle` record (`nc-*`): sound, and **no** input would ever make it bind |
 | `requests/<request_id>.json` | one `promotion-request` (`pr-*`), queued for a human |
 | `lean/*.lean` | the arms, formalised. **Not a law module:** nothing here is in any law set |
 | `openq-lib.mjs` | the loader, the computed proportion, the guard, the validator. CLI: `list\|get\|failed\|recompute\|guard\|check` |
@@ -66,8 +67,33 @@ refused.
 | `ingest.mjs` | polls the debate and discovery agents' rulings into this schema |
 | `test.mjs` | the tests. Every one was made to fail once first |
 
-The four record types are fixed by `pipeline/leanbio/debate/CRITERIA.md` ("Record types emitted"), so a debate
-ruling always has a home here and a rejection is a result rather than a bin.
+The first four record types are fixed by `pipeline/leanbio/debate/CRITERIA.md` ("Record types emitted"), so a
+debate ruling always has a home here and a rejection is a result rather than a bin.
+
+## Two distinctions the types exist to protect
+
+**`candidate-with-requirements` vs `not-checkable-in-principle`.** The first is waiting for data; the second
+never will be. `hamilton-rule` arrived as a requirements record whose `missing_inputs` shouted the caveat inside
+the strings ("relatedness ... -- SUPPLYING THIS DOES NOT MAKE THE LAW BIND"), because it classifies the
+*direction* of change in a social trait and rules nothing out: a row on `r*b > c` would report "violated" for any
+organism carrying a costly trait kin selection disfavours, which is an ordinary animal, not an impossible one. An
+ingest reading `missing_inputs` as a shopping list would have converted that careful finding into a false to-do.
+So `not-checkable-in-principle` **forbids** `missing_inputs`, requires `why_no_input_would_help`, and requires
+`false_positive_if_forced` — what a forced check would wrongly flag, in terms of real organisms, so a reader can
+check the claim instead of taking it on trust. A record whose reason reduces to "we need numbers" is pushed back
+to `requirements/`.
+
+**Attempted and defeated vs never attempted.** Nine of the twelve `failed/` records were **never tried**: the
+single Lean build lock was contended, or they were abandoned on cost, or withheld on purpose so `propose.mjs`
+would record a contest properly. "We ran out of build time" is not a result about a statement, and filing it
+beside a statement five real animals refute would overstate how much has been tested. So those records carry
+`attempted: false` and a `proof_status` that must say plainly that Lean never checked them; the validator refuses
+one that omits it, one whose `proof_status` does not say "unchecked", and one whose `what_survives` claims an
+attempt. They also keep `do_not_repropose: false` — an untried statement must stay available to propose. The
+counts report `failed_attempted` and `failed_never_attempted` separately for the same reason.
+
+That invariant caught one of this folder's own records on its first run (`ft-teleost-sleep-law`, which had no
+`proof_status` although no Lean declaration was ever written).
 
 ## The proportion is COMPUTED, never asserted
 

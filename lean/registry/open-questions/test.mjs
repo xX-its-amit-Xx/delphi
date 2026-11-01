@@ -269,6 +269,62 @@ const reg = load();
   ok('6e a bare provable-but-not-checkable failure is rejected (it is a requirements record)', validateRecord(sloppy).some(e => /requirements record/.test(e)));
 }
 
+// ── 6bis. not-checkable-in-principle, and never-attempted vs defeated ───────
+// fails_once: hamilton-rule arrived as a `candidate-with-requirements` whose missing_inputs SHOUTED the caveat
+// inside the strings ("SUPPLYING THIS DOES NOT MAKE THE LAW BIND"). That validated against the requirements
+// schema, and an ingest reading missing_inputs as a shopping list would have turned the producing agent's most
+// careful finding into a false to-do. A type, not a workaround.
+{
+  // missing_inputs is forbidden on the type whose whole content is "no input helps"
+  const withInputs = { record_type: 'not-checkable-in-principle', not_checkable_id: 'nc-test', version: '1.0.0',
+    statement_en: 's', not_checkable_because: 'b', why_no_input_would_help: 'no input helps because it classifies a direction',
+    false_positive_if_forced: 'f', missing_inputs: ['relatedness'],
+    history: [{ version: '1.0.0', date: 'd', change: 'c' }], content_hash: 'a'.repeat(64) };
+  ok('6f a not-checkable-in-principle record must not list missing_inputs', validateRecord(withInputs).some(e => /must NOT list missing_inputs/.test(e)));
+  const noInputs = { ...withInputs, missing_inputs: [] };
+  ok('6g the same record without them passes that check', !validateRecord(noInputs).some(e => /must NOT list missing_inputs/.test(e)));
+  // if the reason is really "we need data", it belongs in requirements/
+  const shoppingList = { ...noInputs, why_no_input_would_help: 'We need the relatedness coefficient and the benefit.' };
+  ok('6h a record whose reason is really a data request is rejected', validateRecord(shoppingList).some(e => /candidate-with-requirements/.test(e)));
+
+  // NEVER ATTEMPTED must say so: "we ran out of build time" is not a result about the statement
+  const quietUnattempted = { record_type: 'failed-theorem', failure_id: 'ft-test-unattempted', version: '1.0.0',
+    statement_en: 's', reason: 'not-attempted-no-build-time', reason_detail: 'ran out of lake-lock window',
+    what_was_tried: ['queued'], what_survives: 'y'.repeat(40),
+    history: [{ version: '1.0.0', date: 'd', change: 'c' }], content_hash: 'a'.repeat(64) };
+  ok('6i a never-attempted record must carry proof_status', validateRecord(quietUnattempted).some(e => /proof_status must say plainly/.test(e)));
+  const misleading = { ...quietUnattempted, proof_status: 'The statement is believed provable.' };
+  ok('6j a proof_status that does not say it is UNCHECKED is rejected', validateRecord(misleading).some(e => /does not state that the statement is UNCHECKED/.test(e)));
+  const honest = { ...quietUnattempted, proof_status: 'NEVER COMPILED: Lean has not checked this statement.' };
+  honest.content_hash = contentHash(honest);
+  ok('6k an honest proof_status passes', validateRecord(honest).length === 0, JSON.stringify(validateRecord(honest)));
+  const overclaims = { ...honest, what_survives: 'We tried and could not establish it. ' + 'y'.repeat(40) };
+  ok('6l a never-attempted record claiming an attempt is rejected', validateRecord(overclaims).some(e => /claims an attempt/.test(e)));
+
+  // the REAL ingested records
+  const nc = reg.notCheckable || [];
+  ok('6m the hamilton-rule record is typed not-checkable-in-principle', nc.some(n => n.law_id === 'hamilton-rule'), JSON.stringify(nc.map(n => n.not_checkable_id)));
+  const ham = nc.find(n => n.law_id === 'hamilton-rule');
+  if (ham) {
+    ok('6n it carries no missing_inputs', !(ham.missing_inputs || []).length);
+    ok('6o it says what a forced row would wrongly flag', !!ham.false_positive_if_forced && ham.false_positive_if_forced.length > 30);
+    ok('6p it says why no input helps', /no input/i.test(ham.why_no_input_would_help));
+  }
+  const unattempted = reg.failed.filter(f => f.attempted === false);
+  ok('6q the never-attempted statements are marked attempted:false', unattempted.length >= 8, `${unattempted.length} marked`);
+  for (const f of unattempted) {
+    ok(`6r ${f.failure_id} says Lean never checked it`, /never compiled|not attempted|unchecked|never checked/i.test(String(f.proof_status || '')), String(f.proof_status || '').slice(0, 80));
+    ok(`6s ${f.failure_id} is reproposable (not do_not_repropose)`, f.do_not_repropose === false, 'an untried statement must stay available to propose');
+  }
+  // the counts must separate the two, or a total overstates how much was tried
+  const s = summary({ reg });
+  ok('6t the summary separates attempted from never-attempted failures', s.counts.failed_attempted + s.counts.failed_never_attempted === s.counts.failed_theorems
+    && s.counts.failed_never_attempted > 0, JSON.stringify(s.counts));
+  // merged requirements keep both producers
+  const merged = reg.requirements.filter(r => (r.ruled_by || []).length > 1);
+  ok('6u requirements ruled on by two agents keep both producers', merged.length > 0, `${merged.length} merged records`);
+}
+
 // ── 7. The surfaces serve the same records ──────────────────────────────────
 {
   const s = summary({ reg });

@@ -28,6 +28,136 @@ This project builds on the Project Delphi ontology and uses [nanopublications](h
 
 ## Design studio
 
+### Run your generated design through DELPHI validation
+
+**Three inputs, one call, five named results.** Hand the validator your generated design, the base
+organism it came from, and the desired phenotype in plain English — the same prompt your generator got.
+
+```
+validate_generation {
+  "generated":         "winged-zebrafish",
+  "base":              "zebrafish-adult",
+  "desired_phenotype": "a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult"
+}
+```
+
+Five results come back side by side, each with its own gate, **never summed**: `genotype_similarity`,
+`phenotype_similarity`, `lean_check`, `functional_resolution`, `physics_check`. Each is `pass`, `fail` or
+`cannot-assess`, and **`cannot-assess` is not `pass`**. This is the real output of that call, run
+2026-11-01:
+
+```
+genotype_similarity    CANNOT-ASSESS  no gene-level edit, so no edited sequence state to compare. Not a pass
+phenotype_similarity   PASS           inside the calibrated shape distribution (body p 1)
+lean_check             CANNOT-ASSESS  no Lean law could be evaluated (25 cannot-evaluate, 10 out of scope)
+functional_resolution  FAIL           19 differences from the closest functional analogue are UNRESOLVED
+physics_check          FAIL           cannot glide: reachable launch speed 0.67 m/s is below v_min 8.64 m/s,
+                                      so lift cannot carry the weight. The lifting area is 166.37x too small
+
+[the scorer thread's own composite, for reference only, NOT this verdict: 0.878 (plausible), v1.0.0]
+The word "validated" is WITHHELD: 2 gates failed; 2 could not be assessed; 3 biological scales could not
+be assessed; no sequence was compared at any locus.
+```
+
+**The scorer calls that design plausible at 0.878. The physics says it cannot leave the water.** Both
+sit in the same report and neither is allowed to hide the other. That contrast is the argument for five
+named results over one number, and the design is the project's own headline case: a zebrafish with its
+pectoral fins scaled up (length and span ×2.26, planform area ×4.45) and nothing else changed. The
+report names the reason at the tissue scale too — the wing grew and the pectoral muscle that would have
+to move it was never touched.
+
+Full worked example, including the control (the real flying fish as `generated`, which meets the glide
+criterion the design misses): [`sim-engine/AGENT-GUIDE.md`](sim-engine/AGENT-GUIDE.md) §0.6, or the page
+[`/studio-api/`](https://delphi-mission-control.ashenoy000.workers.dev/studio-api/).
+
+#### Three ways to make that call
+
+**Hosted MCP, for any agent, nothing installed:**
+
+```bash
+claude mcp add --transport http delphisci https://delphisci-mcp.fly.dev/mcp
+```
+
+**The hosted server does not have the validator.** At the 2026-11-01T06:06Z check it served 16 tools —
+the `delphi_*` claim, graph, organism and forum tools — and no `lean_*` and no `validate_generation`. It
+is DELPHI's knowledge layer. To validate a design, clone:
+
+```bash
+git clone https://github.com/fractastical/delphisci && cd delphisci
+npm install && (cd sim-engine && npm install)
+claude mcp add delphi-sim-engine -- node "$PWD/sim-engine/server.mjs"   # 54 tools, the validator
+claude mcp add delphisci-local   -- node "$PWD/mcp/server.mjs"          # 21 tools, claims + lean_*
+```
+
+**No MCP?** The CLI, or the HTTP bridge, with the same arguments and the same envelope:
+
+```bash
+node sim-engine/validate-cli.mjs "a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult" \
+     --base zebrafish-adult --generated winged-zebrafish     # exit 0 pass, 1 a gate failed, 2 cannot-assess
+
+node sim-engine/http.mjs            # 127.0.0.1:7341, loopback only
+curl -s -X POST 127.0.0.1:7341/tool/validate_generation -H 'content-type: application/json' \
+  -d '{"generated":"winged-zebrafish","base":"zebrafish-adult","desired_phenotype":"...as above..."}' \
+  | jq '.result.results | map_values(.status)'
+```
+
+A tool is local-only for one of three reasons, and that is the whole rule: it **runs a Lean build**
+(`lean_propose`, refused off loopback), it **writes** (`organism_create`, `session_*`, `swarm_*`, which
+append under `sim-engine/sessions/`), or it **reads repository data that is not in the deployed image**
+(`validate_generation`, `functional_resolution`, `physics_check`, `design_score`, `edit_plan`,
+`closest_relative_*`, which read the five omics layers, the FishShapes reference set, the captured exons
+and the GRCz11 coordinate tables; the hosted image packs about 2 MB of claims and law sources).
+
+#### Read this before you trust the numbers
+
+Not an appendix. A collaborator who takes these results at face value will be misled in six measured
+ways, each with the page that proves it.
+
+1. **"Real organisms score plausible" is close to worthless on its own.** Blind, held-out, family-out:
+   **98–99.6 % of real organisms score above the plausibility cut in every scorer version, and only
+   12–17 % of negatives score below it.**
+   → [`sim-engine/validate/evaluation/SCORER-EVALUATION.md`](sim-engine/validate/evaluation/SCORER-EVALUATION.md),
+   [`/scorer/`](https://delphi-mission-control.ashenoy000.workers.dev/scorer/)
+2. **The composite has never beaten its own strongest single term.** v1.3.0 `rank_score` P1 AUC **0.875**
+   against its joint Mahalanobis term alone at **0.883** (−0.008, CI −0.020 to 0.002; over all held-out
+   items −0.007, CI −0.013 to −0.002, significantly worse). The joint term alone passes all three primary
+   endpoints by itself. → same file
+3. **`functional_resolution` covers about a third of the requirements, and the analogue has no functional
+   data.** 22 of 73 assessable (**30.1 %**); 2 met, both ancestrally; 19 unresolved; and **0 of the 73
+   loci carry any flying-fish expression, proteomic or functional-assay data of any kind.**
+   → [`sim-engine/validate/functional/RESULTS.md`](sim-engine/validate/functional/RESULTS.md)
+4. **No genome was compared, on any run.** All seven repository organisms carry `edits: []`, so
+   `sequence_basis` is **`document-only`** and `loci_covered` is **0** on every call. The report prints
+   "NO SEQUENCE WAS ASSESSED" in words.
+   → [`sim-engine/validate/pipeline/RESULTS.md`](sim-engine/validate/pipeline/RESULTS.md)
+5. **Every glide-based physics check grades `circular`.** All ten criterion rows in the physics controls
+   carry `model_confidence: circular` or `circular-in-part`; the glide module's model card says "PARTLY
+   CIRCULAR … Not independent evidence." What is *not* circular is the four negative controls, each an
+   inequality between two independently sourced quantities — which is why a physics `fail` carries weight
+   here and a physics `pass` carries much less.
+   → [`sim-engine/validate/physics/RESULTS.md`](sim-engine/validate/physics/RESULTS.md),
+   [`/t/physics/`](https://delphi-mission-control.ashenoy000.workers.dev/t/physics/)
+6. **15 accepted laws evaluate nothing on a design** (of 36 accepted in lawset 1.8.1). Until a guard was
+   written on 2026-11-01, a law could be accepted, released, served by every surface and run no
+   arithmetic; its first run caught `aerobic-power-bound`, accepted, silently losing constraint `C14` to
+   `fick-principle` on an alphabetical tie-break. Each of the 15 now carries a written reason that the
+   guard re-checks. → [`lean/registry/LIVE-LOOP-DEMO.md`](lean/registry/LIVE-LOOP-DEMO.md) §0; re-run
+   `node lean/registry/check-exposed.mjs`
+
+And the standing one: `lean_check` is a floating-point evaluation of a Lean-backed formula, not a kernel
+proof.
+
+Four rules a collaborator's agent must keep: **role labels, never personal identifiers**
+(`agent:physics`, not a name); **a `calibrated` number is never a result**; **Aves is a frozen holdout**,
+so no bird data is fetched, entered, compared against or used as a parent; and **agents propose, humans
+decide** (`session_post` with `kind: "proposal"`, never `"edit"`).
+
+Hand your agent the Claude Code skill at
+[`sim-engine/skill/delphi-studio/SKILL.md`](sim-engine/skill/delphi-studio/SKILL.md) and it has all of
+the above: copy it into `.claude/skills/delphi-studio/`.
+
+### The rest of the studio
+
 Type what an organism must do in plain text ("glides 5 m, survives 10–30 °C as an adult"). The studio reads it into
 criteria, lets people and agents edit the organism at body, organ system, organ, tissue, cell or gene level, runs it
 through eleven perturbation scenarios (temperature, current, pressure, altitude, wind, glide, predator, grip, sleep,
@@ -41,13 +171,15 @@ Three ways in:
   on the dashboard (standalone harness: `/blueprint3d/perturb`). It runs the same engine code as the server, copied by
   `dashboard/build-engine.mjs`.
 - **From your own agent or shell (local):** the `sim-engine` MCP server (`node sim-engine/server.mjs`, stdio), its CLI
-  (`node sim-engine/cli.mjs`, `node sim-engine/lean-cli.mjs`) and its HTTP bridge (`node sim-engine/http.mjs`, localhost
-  only). Start with [`sim-engine/AGENT-GUIDE.md`](sim-engine/AGENT-GUIDE.md); the contract is
-  [`sim-engine/CONTRACT.md`](sim-engine/CONTRACT.md) and the page [`/studio-api/`](https://delphi-mission-control.ashenoy000.workers.dev/studio-api/).
+  (`node sim-engine/cli.mjs`, `node sim-engine/lean-cli.mjs`, `node sim-engine/validate-cli.mjs`) and its HTTP bridge
+  (`node sim-engine/http.mjs`, localhost only). Start with [`sim-engine/AGENT-GUIDE.md`](sim-engine/AGENT-GUIDE.md); the
+  contract is [`sim-engine/CONTRACT.md`](sim-engine/CONTRACT.md) and the page
+  [`/studio-api/`](https://delphi-mission-control.ashenoy000.workers.dev/studio-api/).
 - **Hosted:** the `delphisci` MCP server (`claude mcp add --transport http delphisci https://delphisci-mcp.fly.dev/mcp`).
   Version 0.3.0 in [`mcp/`](mcp/README.md) adds the `lean_*` law tools (`lean_laws_list`, `lean_law_get`,
-  `lean_lawset_get`, `lean_check`, `lean_verify`). The hosted copy serves `main` as of its last deploy, so check its
-  `tools/list` before relying on them; a read-only mirror of the laws is at `/api/lean/` on the dashboard.
+  `lean_lawset_get`, `lean_check`, `lean_verify`), but the hosted copy serves `main` as of its last deploy and did
+  **not** have them at the 2026-11-01 check, so read its `tools/list` before relying on them; a read-only mirror of the
+  laws is at `/api/lean/` on the dashboard.
 
 What it does not establish:
 
