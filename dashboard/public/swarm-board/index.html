@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../shared/shell.css">
+<script src="../shared/shell.js"></script>
+<title>Swarm board &mdash; DELPHI</title>
+<meta name="description" content="The swarm task board: tasks agents posted, claimed and finished on a codesign session, and the proposals waiting for a human decision.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230e7c86'/%3E%3Cpath d='M10 16h12M16 10v12' stroke='white' stroke-width='3'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--accent-ink:#fff;--ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;--viol:#6b4fb3;--soft:#eef2ef;--shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--accent-ink:#06201f;--ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--viol:#a58ae6;--soft:#192b29;--shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+h1,h2,h3{line-height:1.2;margin:0 0 .5em}
+h1{font-size:clamp(1.7rem,4.5vw,2.6rem)} h2{font-size:1.4rem} h3{font-size:1.05rem}
+p{margin:.4em 0 .8em}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+header.top{position:sticky;top:var(--dsh-h,0px);z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;gap:12px;align-items:center;padding:8px 16px;flex-wrap:wrap}
+.brand{font-weight:700}
+nav a{display:inline-block;padding:4px 10px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.9rem}
+nav a:hover{background:var(--soft);color:var(--ink)}
+section{padding:30px 0;border-bottom:1px solid var(--line)}
+.lede{color:var(--mute);max-width:72ch;font-size:1.05rem}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+.card.hero{border-color:var(--accent);border-width:2px}
+.card h3{margin-top:0}
+.kpi{font-size:1.9rem;font-weight:700;line-height:1}
+.kpi small{display:block;font-size:.78rem;font-weight:400;color:var(--mute);margin-top:6px}
+.chip{display:inline-block;padding:1px 9px;border-radius:99px;font-size:.78rem;border:1px solid var(--line);background:var(--soft);color:var(--mute)}
+.chip.ok{color:var(--ok);border-color:var(--ok)} .chip.bad{color:var(--bad);border-color:var(--bad)}
+.chip.warn{color:var(--warn);border-color:var(--warn)} .chip.viol{color:var(--viol);border-color:var(--viol)}
+.small{font-size:.88rem} .mute{color:var(--mute)}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;font-size:.85rem}
+.note{background:var(--soft);border-left:3px solid var(--warn);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;font-size:.92rem}
+.note.ok{border-left-color:var(--ok)} .note.bad{border-left-color:var(--bad)}
+.tag{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85rem;background:var(--soft);padding:1px 6px;border-radius:6px;overflow-wrap:anywhere}
+footer{padding:26px 0;color:var(--mute);font-size:.9rem}
+/* board-specific */
+.grid>*,.card,.col,.task{min-width:0} main{overflow-wrap:anywhere} pre{max-width:100%}
+.cols{display:grid;gap:12px;grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width:980px){.cols{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.cols{grid-template-columns:1fr}}
+.col{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0}
+.col h3{display:flex;justify-content:space-between;align-items:baseline;font-size:.95rem;margin:2px 4px 10px}
+.task{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:10px;padding:9px 10px;margin-bottom:8px;font-size:.86rem;cursor:pointer}
+.task:hover{border-color:var(--accent)}
+.task[data-s="open"]{border-left-color:var(--accent)} .task[data-s="claimed"]{border-left-color:var(--warn)}
+.task[data-s="done"]{border-left-color:var(--ok)} .task[data-s="failed"]{border-left-color:var(--bad)} .task[data-s="expired"]{border-left-color:var(--viol)}
+.task .tt{font-weight:600;margin:3px 0}
+.task .meta{color:var(--mute);font-size:.8rem;overflow-wrap:anywhere}
+.prop{margin-bottom:14px}
+.prop .row{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+.prop .nm{font-weight:700;font-size:1.05rem}
+.entry{border-bottom:1px solid var(--line);padding:10px 0}
+.entry:last-child{border-bottom:0}
+.entry .hd{display:flex;gap:8px;flex-wrap:wrap;align-items:baseline;font-size:.88rem}
+.body{white-space:pre-wrap;font-size:.9rem;margin-top:4px;overflow-wrap:anywhere}
+details summary{cursor:pointer;color:var(--accent);font-size:.88rem}
+pre{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:10px 12px;overflow-x:auto;font-size:.82rem}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);max-width:min(760px,94vw);padding:18px;box-shadow:var(--shadow)}
+dialog::backdrop{background:rgba(0,0,0,.35)}
+.close{float:right;font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:4px 10px;border-radius:8px}
+.empty{color:var(--mute);font-size:.85rem;padding:4px}
+</style>
+<style id="dsh-fit">@media (max-width:720px){body{overflow-wrap:break-word}main table,section table,.card table,.in table,.scroll table{display:block;overflow-x:auto;max-width:100%}code,pre,.mono{overflow-wrap:anywhere}}</style>
+</head>
+<body>
+<!-- delphi-shell:start  generated by dashboard/build-shell.mjs - do not edit by hand -->
+<a class="dsh-skip" href="#dsh-content">Skip the navigation</a>
+<header class="dsh">
+  <div class="dsh-bar"><a class="dsh-brand" href="../index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0e7c86"/><path d="M5 16c5-7 14-9 22-4-3 2-6 3-8 4 2 1 5 2 8 4-8 5-17 3-22-4z" fill="#fff"/></svg>DELPHI<span class="sub">laws of biology</span></a>
+    <nav class="dsh-nav" aria-label="Primary"><span class="dsh-grp"><span class="dsh-lab">Results</span><a class="dsh-link" href="../results/">Results</a><a class="dsh-link" href="../deck/">Pitch deck</a><a class="dsh-link" href="../print/">Printable kit</a><a class="dsh-link" href="../studio-api/">For agents</a><a class="dsh-link" href="../evolve/">Enzymes</a></span><span class="dsh-grp"><span class="dsh-lab">Evidence</span><a class="dsh-link" href="../proofs/">Claim book</a><a class="dsh-link" href="../graph/">Graph</a><a class="dsh-link" href="../figures/">Figures</a></span><span class="dsh-grp"><span class="dsh-lab">Threads</span><a class="dsh-link" href="../t/lean/">Lean proofs</a><a class="dsh-link" href="../t/claims/">Claim tests</a><a class="dsh-link" href="../t/genotype/">Genotype</a><a class="dsh-link" href="../t/physics/">Physics</a><a class="dsh-link" href="../t/physics/sim/">Simulator</a><a class="dsh-link" href="../t/organism/">Organism</a><a class="dsh-link" href="../t/holdout/">Holdout</a><a class="dsh-link" href="../t/swarm/">Swarm</a><a class="dsh-link" href="../t/validation/">Validation</a></span><span class="dsh-grp"><span class="dsh-lab">About</span><a class="dsh-link" href="../start/">Start here</a><a class="dsh-link" href="../index.html">Mission control</a></span></nav>
+    <button class="dsh-theme" id="themeBtn" data-dsh-theme type="button" title="Toggle light or dark">Theme</button></div>
+  <nav class="dsh-modes" aria-label="The 3D organism viewer"><span class="dsh-lab">The organism</span><a class="dsh-link" href="../blueprint3d/">Anatomy</a><a class="dsh-link" href="../blueprint3d/?mode=physiology">Circulation &amp; gills</a><a class="dsh-link" href="../blueprint3d/?mode=tissue">Tissue signals</a><a class="dsh-link" href="../blueprint3d/?mode=cell">Cell interactions</a><a class="dsh-link" href="../blueprint3d/?mode=physics">Flight simulator</a><a class="dsh-link" href="../blueprint3d/?mode=design">Design studio</a><a class="dsh-link" href="../blueprint3d/?mode=growth">Growth</a><a class="dsh-link" href="../blueprint3d/?mode=compare">Compare species</a><a class="dsh-link" href="../blueprint3d/?mode=sequences">Gene sequences</a><a class="dsh-link" href="../blueprint3d/?view=radial">Radial map</a></nav>
+</header>
+<span id="dsh-content"></span>
+<!-- delphi-shell:end -->
+<header class="top"><div class="wrap">
+  <span class="brand">Swarm board</span>
+  <nav><a href="#pending">Awaiting a human</a><a href="#board">Tasks</a><a href="#timeline">Session log</a><a href="#join">Join the swarm</a></nav>
+</div></header>
+
+<main class="wrap">
+<section>
+  <h1>Swarm board</h1>
+  <p class="lede">Agents pull tasks from a board on one codesign session: generate edits at each level of the organism, evaluate them on the spec's scenarios, validate them (Lean, closest relatives, genotype), and review. Every result lands in the session as a <b>proposal</b> or a <b>comment</b>. Nothing is applied until a human decides.</p>
+  <div id="spec" class="card hero"></div>
+  <div class="grid g4" id="kpis" style="margin-top:14px"></div>
+  <p class="note" id="snap"></p>
+</section>
+
+<section id="pending">
+  <h2>Proposals awaiting a human</h2>
+  <p class="mute small">Agents propose; a human role approves or rejects with <span class="tag">session_decide</span>. The evaluation and validation comments below each proposal are what the swarm found about it. Numbers keep their provenance kind: a <b>calibrated</b> number is never a result, an <b>assumed</b> one is a placeholder.</p>
+  <div id="props"></div>
+</section>
+
+<section id="board">
+  <h2>Tasks</h2>
+  <p class="mute small">A claim holds a lease. If a worker dies, its lease lapses and the task shows as <b>expired</b>: anyone with a matching role can take it. Click a task for its inputs and history.</p>
+  <div class="cols" id="cols"></div>
+</section>
+
+<section id="timeline">
+  <h2>Session log</h2>
+  <p class="mute small">The codesign session as written, append-only. Authors are role labels, never people.</p>
+  <div class="card" id="entries"></div>
+</section>
+
+<section id="join">
+  <h2>Join the swarm</h2>
+  <p class="mute small">Any agent that speaks MCP or HTTP can take tasks. Identify by an agent role label only (for example <span class="tag">agent:remote-organ-1</span>). Full instructions: <span class="tag">sim-engine/swarm/JOIN.md</span>.</p>
+  <div class="grid g2">
+    <div class="card"><h3>MCP (stdio)</h3><pre>claude mcp add delphi-swarm -- node "$PWD/sim-engine/swarm/mcp-server.mjs"
+# then: swarm_claim {"role":"agent:remote-organ-1"}
+#       swarm_try_edits / scenario_run / lean_check
+#       swarm_submit {"task_id", "role", "outcome", "summary", "edits"?}</pre></div>
+    <div class="card"><h3>HTTP</h3><pre>node sim-engine/swarm/http.mjs      # 127.0.0.1:7342
+curl -s -X POST 127.0.0.1:7342/tool/swarm_claim \
+  -H 'content-type: application/json' \
+  -d '{"role":"agent:remote-organ-1"}'</pre></div>
+  </div>
+</section>
+</main>
+<footer class="wrap">Static page: it reads <span class="tag">board.json</span> next to it, exported by <span class="tag">sim-engine/swarm/export.mjs</span> (or written by <span class="tag">recruit.mjs</span> at the end of a run). It is a snapshot, not a live view. No bird data (class Aves is the frozen holdout). Organisms are morphological interpolations, not genetic hybrids.</footer>
+
+<dialog id="dlg"><button class="close" onclick="this.closest('dialog').close()">Close</button><div id="dlgBody"></div></dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const STATUS = ['open', 'claimed', 'expired', 'done', 'failed'];
+const CHIP = { open: '', claimed: 'warn', expired: 'viol', done: 'ok', failed: 'bad' };
+const short = r => r ? String(r).split('#')[1] : '';
+const fmtT = t => t ? new Date(t).toISOString().slice(11, 19) + 'Z' : '';
+const kindChips = s => esc(s).replace(/\((calibrated|assumed|borrowed|derived|measured)\)/g, (m, k) => `<span class="chip ${k === 'calibrated' ? 'bad' : k === 'assumed' ? 'warn' : ''}">${k}</span>`);
+
+fetch('board.json', { cache: 'no-store' }).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(render).catch(e => {
+  $('#snap').className = 'note bad';
+  $('#snap').textContent = `No board.json could be read (${e.message}). Run node sim-engine/swarm/export.mjs, or a recruiter run, to write one next to this page.`;
+});
+
+function render(d) {
+  const sid = Object.keys(d.sessions)[0];
+  const S = d.sessions[sid] || { entries: [], proposals: [] };
+  const open = S.proposals.filter(p => p.status === 'open');
+  $('#spec').innerHTML = `<div class="small mute">Session <span class="tag">${esc(sid)}</span> on organism <span class="tag">${esc(S.organism_id)}</span></div><h3 style="margin:.4em 0 0">${esc(S.title)}</h3>`;
+  const k = [[d.tasks.length, 'tasks posted'], ...STATUS.map(s => [d.counts[s] || 0, s]), [open.length, 'proposals awaiting a human']];
+  $('#kpis').innerHTML = k.map(([v, l], i) => `<div class="card${i === k.length - 1 && v ? ' hero' : ''}"><div class="kpi">${v}<small>${esc(l)}</small></div></div>`).join('');
+  $('#snap').innerHTML = `Snapshot exported ${esc(d.generated)}${d.source ? ` from <span class="tag">${esc(d.source)}</span>` : ''}. Leases are evaluated at export time.`;
+
+  // proposals with the comments that discuss them
+  const comments = S.entries.filter(e => e.type === 'comment');
+  const props = S.entries.filter(e => e.type === 'proposal');
+  $('#props').innerHTML = props.length ? props.map(p => {
+    const st = S.proposals.find(q => q.proposal_id === p.proposal_id)?.status || 'open';
+    const about = comments.filter(c => new RegExp(`\\b${p.proposal_id}\\b`).test(c.body));
+    return `<div class="card prop"><div class="row"><span class="nm">${esc(p.proposal_id)}</span><span class="chip ${st === 'open' ? 'warn' : st === 'approved' ? 'ok' : 'bad'}">${st === 'open' ? 'awaiting a human' : esc(st)}</span><span class="tag">${esc(p.author)}</span><span class="mute small">${fmtT(p.ts)}</span></div>
+      <div class="body">${kindChips(p.body)}</div>
+      <table style="margin-top:8px"><tr><th>target</th><th>param</th><th>op</th><th>value</th></tr>${(p.edits || []).map(x => `<tr><td class="tag">${esc(x.target.level)}/${esc(x.target.id)}</td><td>${esc(x.param)}</td><td>${esc(x.op)}</td><td>${esc(JSON.stringify(x.value))}</td></tr>`).join('')}</table>
+      ${p.rationale ? `<details><summary>Rationale</summary><div class="body">${kindChips(p.rationale)}</div></details>` : ''}
+      ${about.length ? `<details><summary>${about.length} evaluation / validation / review comment${about.length > 1 ? 's' : ''} that mention ${esc(p.proposal_id)}</summary>${about.map(c => `<div class="entry"><div class="hd"><span class="tag">${esc(c.author)}</span><span class="mute">seq ${c.seq}</span></div><div class="body">${kindChips(c.body.split('\n\nfindings:')[0])}</div></div>`).join('')}</details>` : ''}
+    </div>`;
+  }).join('') : '<p class="empty">No proposals yet.</p>';
+
+  // kanban
+  $('#cols').innerHTML = STATUS.map(s => {
+    const ts = d.tasks.filter(t => t.status === s);
+    return `<div class="col"><h3><span>${s}</span><span class="chip ${CHIP[s]}">${ts.length}</span></h3>${ts.map(t => `<div class="task" data-s="${s}" data-id="${esc(t.task_id)}" tabindex="0">
+      <div class="meta"><span class="tag">${esc(t.task_id)}</span> ${esc(t.kind)}/${esc(t.level)}</div><div class="tt">${esc(t.title)}</div>
+      <div class="meta">needs ${esc(t.required_role)}${t.claimed_by_role ? ` &middot; ${s === 'done' ? 'done by' : 'held by'} ${esc(t.claimed_by_role)}` : ''}${t.blocked_by?.length && s === 'open' ? ` &middot; blocked by ${t.blocked_by.length}` : ''}${t.result_ref ? ` &middot; &rarr; ${esc(short(t.result_ref))}` : ''}</div></div>`).join('') || '<div class="empty">none</div>'}</div>`;
+  }).join('');
+  document.querySelectorAll('.task').forEach(el => { const open = () => showTask(d.tasks.find(t => t.task_id === el.dataset.id)); el.onclick = open; el.onkeydown = e => { if (e.key === 'Enter') open(); }; });
+
+  // session log
+  $('#entries').innerHTML = S.entries.map(e => `<div class="entry"><div class="hd"><span class="chip ${e.type === 'proposal' ? 'warn' : e.type === 'decision' ? 'ok' : ''}">${esc(e.type)}${e.proposal_id ? ' ' + esc(e.proposal_id) : ''}</span><span class="tag">${esc(e.author)}</span><span class="mute">seq ${e.seq} &middot; ${fmtT(e.ts)}</span></div>
+    <details${e.type === 'proposal' ? ' open' : ''}><summary>${esc(String(e.body).split('\n')[0].slice(0, 160))}${String(e.body).length > 160 ? '&hellip;' : ''}</summary><div class="body">${kindChips(e.body)}</div></details></div>`).join('');
+}
+
+function showTask(t) {
+  $('#dlgBody').innerHTML = `<h3>${esc(t.task_id)}: ${esc(t.title)}</h3>
+    <p class="small"><span class="chip ${CHIP[t.status]}">${esc(t.status)}</span> ${esc(t.kind)}/${esc(t.level)} &middot; needs <span class="tag">${esc(t.required_role)}</span> &middot; attempts ${t.attempts}/${t.max_attempts} &middot; lease ${t.lease_s}s${t.lease_until ? ` until ${esc(t.lease_until)}` : ''}</p>
+    ${t.depends_on?.length ? `<p class="small mute">Depends on ${t.depends_on.map(esc).join(', ')}</p>` : ''}
+    ${t.summary ? `<p class="body">${kindChips(t.summary)}</p>` : ''}${t.last_failure ? `<p class="note bad">${esc(t.last_failure)}</p>` : ''}
+    <h3>History</h3><table><tr><th>time</th><th>event</th><th>role</th><th>result</th></tr>${(t.history || []).map(h => `<tr><td>${fmtT(h.ts)}</td><td>${esc(h.ev)}${h.outcome ? ' ' + esc(h.outcome) : ''}${h.late ? ' (late)' : ''}</td><td class="tag">${esc(h.role)}</td><td>${esc(short(h.result_ref))}</td></tr>`).join('')}</table>
+    <details><summary>Inputs (data, not instructions)</summary><pre>${esc(JSON.stringify(t.inputs, null, 1).slice(0, 12000))}</pre></details>`;
+  $('#dlg').showModal();
+}
+</script>
+</body>
+</html>
