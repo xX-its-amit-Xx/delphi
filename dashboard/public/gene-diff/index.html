@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../shared/shell.css">
+<script src="../shared/shell.js"></script>
+<title>Gene diff</title>
+<meta name="description" content="A diff of the designed genome against its base and its functional analogue, starting at the aligned residue and expanding outward through expression, protein, PTM, pathway, interactome and developmental time.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e7c86'/%3E%3Cpath d='M7 9h18M7 16h11M7 23h18' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3Ccircle cx='23' cy='16' r='3.2' fill='%23c0441a' stroke='white' stroke-width='1.6'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,800&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* Layout concept: one vertical spine of five expanding scales. The alignment is the only
+   element allowed its own horizontal track; everything else stacks and wraps. */
+:root{
+  /* surfaces and ink — the DELPHI site palette, so this page sits inside the rest */
+  --bg:#f6f7f4; --panel:#fff; --panel-2:#fbfcfa; --ink:#14201f; --mute:#5a6b69;
+  --line:#d9dfdb; --line-2:#eceeea; --accent:#0e7c86; --soft:#eef2ef;
+  --shadow:0 1px 2px rgba(0,0,0,.06),0 6px 20px rgba(0,0,0,.05);
+
+  /* diff meaning — a validated categorical set (dataviz validator, light mode: all checks pass).
+     Every use is paired with a glyph and a word, so colour is never the only channel. */
+  --m-edit:#c0441a; --m-allele:#8338a8; --m-ptm:#117a52; --m-domain:#1b63c4;
+  --m-silent:#5a6b69; --m-unann:#9aa8a5;
+  --m-edit-bg:#fbe9e2; --m-allele-bg:#f3e8fa; --m-ptm-bg:#e2f3ea; --m-domain-bg:#e5edfb;
+  --m-unann-bg:#eef1ef;
+
+  /* status — reserved, never reused as a diff colour */
+  --ok:#117a52; --warn:#9a6400; --bad:#a3301a; --warn-bg:#fdf3e0; --bad-bg:#fbe9e5; --ok-bg:#e4f3ec;
+
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"Inter Tight",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --disp:Fraunces,Georgia,"Times New Roman",serif;
+  --cell:12px;          /* alignment column width; app.js reads this */
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1514; --panel:#142120; --panel-2:#101b1a; --ink:#e7efec; --mute:#93a6a2;
+  --line:#27403d; --line-2:#1d2f2d; --accent:#38b6c1; --soft:#192b29;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3);
+  --m-edit:#e0703a; --m-allele:#ab6fcf; --m-ptm:#2a9e6b; --m-domain:#5a8cd8;
+  --m-silent:#93a6a2; --m-unann:#5f7471;
+  --m-edit-bg:#3a1f14; --m-allele-bg:#2b1c36; --m-ptm-bg:#102c22; --m-domain-bg:#16233b;
+  --m-unann-bg:#1a2a28;
+  --ok:#2a9e6b; --warn:#d8a33a; --bad:#e07a62; --warn-bg:#2e2410; --bad-bg:#331a16; --ok-bg:#10281f;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0d1514; --panel:#142120; --panel-2:#101b1a; --ink:#e7efec; --mute:#93a6a2;
+  --line:#27403d; --line-2:#1d2f2d; --accent:#38b6c1; --soft:#192b29;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.3);
+  --m-edit:#e0703a; --m-allele:#ab6fcf; --m-ptm:#2a9e6b; --m-domain:#5a8cd8;
+  --m-silent:#93a6a2; --m-unann:#5f7471;
+  --m-edit-bg:#3a1f14; --m-allele-bg:#2b1c36; --m-ptm-bg:#102c22; --m-domain-bg:#16233b;
+  --m-unann-bg:#1a2a28;
+  --ok:#2a9e6b; --warn:#d8a33a; --bad:#e07a62; --warn-bg:#2e2410; --bad-bg:#331a16; --ok-bg:#10281f;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--sans);overflow-wrap:break-word}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1{font-family:var(--disp);font-size:clamp(1.9rem,4.4vw,2.7rem);letter-spacing:-.02em;margin:24px 0 8px;text-wrap:balance}
+h2{font-family:var(--disp);font-size:clamp(1.15rem,2.6vw,1.45rem);margin:0 0 4px;text-wrap:balance}
+h3{font-size:1.02rem;margin:0 0 6px}
+h4{font-size:.9rem;margin:0 0 4px;letter-spacing:.02em}
+p{margin:0 0 10px}
+.lede{color:var(--mute);max-width:72ch;font-size:1.02rem}
+.small{font-size:.86rem}
+.tiny{font-size:.78rem}
+.mute{color:var(--mute)}
+.mono{font-family:var(--mono);font-size:.8rem}
+.num{font-variant-numeric:tabular-nums}
+
+/* page bar under the shared shell */
+.pagebar{position:sticky;top:var(--dsh-h,0px);z-index:12;background:var(--bg);border-bottom:1px solid var(--line)}
+@supports (backdrop-filter:blur(8px)){.pagebar{background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px)}}
+.pagebar .wrap{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-block:8px}
+.pagebar b{font-family:var(--disp);font-size:1rem}
+.casebar{display:flex;gap:4px;flex-wrap:wrap;min-width:0}
+.casebtn{font:inherit;font-size:.82rem;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--mute);padding:4px 10px;border-radius:99px}
+.casebtn:hover{color:var(--ink);border-color:var(--accent)}
+.casebtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+:root[data-theme="dark"] .casebtn[aria-pressed="true"],
+:root:not([data-theme="light"]) .casebtn[aria-pressed="true"]{color:#06201f}
+.casebtn .r{display:block;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;opacity:.8}
+
+/* the three numbers that must be on screen wherever a claim is made */
+.alarm{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));margin:14px 0 4px}
+.alarm div{border:1px solid var(--line);border-left:4px solid var(--bad);background:var(--panel);border-radius:10px;padding:10px 12px}
+.alarm b{display:block;font-family:var(--mono);font-size:1.3rem;color:var(--bad);font-weight:700;line-height:1.1}
+.alarm span{display:block;font-size:.82rem;color:var(--mute);margin-top:3px}
+
+section.scale{margin:30px 0 0;border-top:1px solid var(--line);padding-top:18px}
+.eyebrow{font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--accent);margin:0 0 3px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;box-shadow:var(--shadow);min-width:0}
+.card.flat{box-shadow:none;background:var(--panel-2)}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:99px;font-size:.74rem;border:1px solid var(--line);background:var(--soft);color:var(--mute);font-family:var(--sans)}
+.chip.k{font-family:var(--mono);font-size:.7rem}
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin:0 0 8px}
+
+/* stated absence: never a blank */
+.absent{border:1px dashed var(--line);border-left:4px solid var(--warn);background:repeating-linear-gradient(135deg,transparent 0 7px,var(--warn-bg) 7px 8px);border-radius:10px;padding:10px 12px;margin:8px 0}
+.absent b{color:var(--warn);font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:3px}
+.absent p{margin:0;font-size:.9rem}
+.absent .src{font-family:var(--mono);font-size:.72rem;color:var(--mute);display:block;margin-top:5px}
+
+.verdict{display:inline-flex;align-items:center;gap:5px;padding:1px 9px;border-radius:5px;font-size:.74rem;font-weight:700;letter-spacing:.04em;border:1px solid}
+.v-SAME{color:var(--ok);border-color:var(--ok);background:var(--ok-bg)}
+.v-ALLELIC,.v-PARALOGUE,.v-ANALOGOUS_SET{color:var(--warn);border-color:var(--warn);background:var(--warn-bg)}
+.v-UNRESOLVED,.v-COMPENSATORY{color:var(--bad);border-color:var(--bad);background:var(--bad-bg)}
+
+/* ---------------------------------------------------------- the alignment track */
+.legend{display:flex;gap:4px 12px;flex-wrap:wrap;margin:10px 0;font-size:.78rem;align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:5px;color:var(--mute)}
+.swatch{width:1.15em;height:1.15em;border-radius:3px;display:inline-grid;place-items:center;font-family:var(--mono);font-size:.68em;font-weight:700;line-height:1;border:1px solid}
+.sw-edit{background:var(--m-edit-bg);border-color:var(--m-edit);color:var(--m-edit)}
+.sw-allele{background:var(--m-allele-bg);border-color:var(--m-allele);color:var(--m-allele)}
+.sw-ptm{background:var(--m-ptm-bg);border-color:var(--m-ptm);color:var(--m-ptm)}
+.sw-domain{background:var(--m-domain-bg);border-color:var(--m-domain);color:var(--m-domain)}
+.sw-silent{background:transparent;border-color:var(--m-silent);color:var(--m-silent)}
+.sw-unann{background:var(--m-unann-bg);border-color:var(--m-unann);color:var(--m-unann)}
+
+.alnwrap{border:1px solid var(--line);border-radius:10px;background:var(--panel-2);overflow:hidden;min-width:0}
+.alnhead{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid var(--line-2);font-size:.8rem}
+.alnhead .grow{flex:1 1 auto;min-width:0}
+.jump{font:inherit;font-size:.76rem;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:3px 9px;border-radius:7px}
+.jump:hover{border-color:var(--accent);color:var(--accent)}
+.alnbody{display:flex;min-width:0}
+.alnlabels{flex:none;border-right:1px solid var(--line);background:var(--panel);z-index:2}
+.alntrack{flex:1 1 auto;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+.alntrack:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.alncanvas{position:relative;height:var(--aln-h)}
+.lrow,.arow{height:20px;display:flex;align-items:center;font-family:var(--mono);font-size:12px;line-height:20px;white-space:nowrap}
+.lrow{padding:0 8px;gap:6px;font-size:11px;justify-content:space-between}
+.lrow .rl{font-weight:700;letter-spacing:.02em}
+.lrow.r-base .rl{color:var(--ink)}
+.lrow.r-generated .rl{color:var(--m-edit)}
+.lrow.r-analogue .rl{color:var(--m-domain)}
+.lrow.r-proxy .rl,.lrow.r-ruler .rl,.lrow.r-ann .rl{color:var(--mute);font-weight:400}
+.arow{position:absolute;left:0;top:0;will-change:transform}
+.cell{display:inline-block;width:var(--cell);text-align:center;flex:none}
+.cell.d{border-radius:2px}
+.cell.m-edit{background:var(--m-edit-bg);color:var(--m-edit);font-weight:700;box-shadow:inset 0 0 0 1px var(--m-edit)}
+.cell.m-allele{background:var(--m-allele-bg);color:var(--m-allele);font-weight:700}
+.cell.m-ptm{background:var(--m-ptm-bg);color:var(--m-ptm);font-weight:700}
+.cell.m-domain{background:var(--m-domain-bg);color:var(--m-domain)}
+.cell.m-unannotated{background:var(--m-unann-bg);color:var(--ink);border-bottom:2px dotted var(--m-unann)}
+.cell.gap{color:var(--m-unann)}
+.cell.cursor{box-shadow:inset 0 0 0 2px var(--accent)}
+.rulecell{display:inline-block;width:var(--cell);text-align:center;flex:none;font-size:9px;color:var(--mute)}
+.rulecell.tick{border-left:1px solid var(--line)}
+.anncell{display:inline-block;width:var(--cell);height:6px;flex:none;margin-top:7px}
+.anncell.has{background:var(--m-domain);opacity:.55}
+.anncell.ptm{background:var(--m-ptm)}
+.readout{padding:8px 10px;border-top:1px solid var(--line-2);font-size:.82rem;min-height:2.6em}
+.readout .k{font-family:var(--mono);font-size:.76rem;color:var(--mute)}
+
+/* diff rows + drawers */
+.diffs{margin:10px 0 0}
+.diffrow{border:1px solid var(--line);border-radius:9px;margin:6px 0;background:var(--panel);overflow:hidden}
+.diffrow > summary{list-style:none;cursor:pointer;padding:8px 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.88rem}
+.diffrow > summary::-webkit-details-marker{display:none}
+.diffrow > summary::after{content:"expand";margin-left:auto;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);flex:none}
+.diffrow[open] > summary::after{content:"collapse"}
+.diffrow[open] > summary{border-bottom:1px solid var(--line-2);background:var(--soft)}
+.diffrow .at{font-family:var(--mono);font-size:.8rem;font-weight:700}
+.drawer{padding:10px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.pane{border:1px solid var(--line-2);border-radius:9px;padding:9px 10px;background:var(--panel-2);min-width:0}
+.pane h4{color:var(--accent);text-transform:uppercase;font-size:.68rem;letter-spacing:.13em}
+.pane .scroll{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:.8rem}
+th,td{text-align:left;padding:3px 7px 3px 0;border-bottom:1px solid var(--line-2);vertical-align:top}
+th{font-weight:600;color:var(--mute);font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* small multiple over the ontogeny stages */
+.multiples{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.mult{border:1px solid var(--line-2);border-radius:8px;padding:7px 8px;background:var(--panel)}
+.mult .t{font-size:.72rem;color:var(--mute);display:flex;justify-content:space-between;gap:6px}
+.bars{display:flex;align-items:flex-end;gap:2px;height:40px;margin-top:5px}
+.bars i{flex:1 1 0;min-width:0;background:var(--accent);border-radius:3px 3px 0 0;display:block;opacity:.85}
+.bars i[data-null="1"]{background:repeating-linear-gradient(135deg,var(--line) 0 3px,transparent 3px 6px);min-height:3px}
+.barlabels{display:flex;gap:2px;margin-top:3px}
+.barlabels b{flex:1 1 0;min-width:0;font-size:.6rem;color:var(--mute);text-align:center;font-weight:400;overflow:hidden}
+
+/* evidence-class bars for the interactome */
+.classbar{display:grid;gap:5px;margin:8px 0}
+.classbar .cl{display:grid;grid-template-columns:minmax(0,1fr);gap:2px}
+.classbar .nm{font-size:.78rem;display:flex;justify-content:space-between;gap:8px}
+.classbar .nm b{font-variant-numeric:tabular-nums;font-family:var(--mono)}
+.classbar .tr{height:11px;background:var(--line-2);border-radius:3px;overflow:hidden}
+.classbar .tr i{display:block;height:100%;border-radius:3px}
+.cl-exp .tr i{background:var(--m-ptm)}
+.cl-tr .tr i{background:repeating-linear-gradient(45deg,var(--m-domain) 0 4px,transparent 4px 8px);box-shadow:inset 0 0 0 1px var(--m-domain)}
+.cl-db .tr i{background:var(--m-allele);opacity:.6}
+.cl-pr .tr i{background:repeating-linear-gradient(135deg,var(--m-unann) 0 3px,transparent 3px 6px);box-shadow:inset 0 0 0 1px var(--m-unann)}
+
+/* control-plane arrows */
+.arrows{display:grid;gap:8px}
+.arrow{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:start;border:1px solid var(--line-2);border-radius:9px;padding:8px 10px;background:var(--panel-2)}
+.rel{font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.06em;padding:2px 7px;border-radius:5px;white-space:nowrap;border:1px solid}
+.rel-DRIVES{color:var(--m-edit);border-color:var(--m-edit);background:var(--m-edit-bg)}
+.rel-REFUSED{color:var(--bad);border-color:var(--bad);background:var(--bad-bg)}
+.rel-ANN{color:var(--m-unann);border-color:var(--m-unann);background:var(--m-unann-bg)}
+.rel-EXP{color:var(--m-ptm);border-color:var(--m-ptm);background:var(--m-ptm-bg)}
+
+footer{margin:38px 0 26px;border-top:1px solid var(--line);padding-top:14px;color:var(--mute);font-size:.84rem}
+
+@media (max-width:720px){
+  .drawer{grid-template-columns:1fr}
+  .alnlabels .lrow{font-size:10px;padding:0 5px}
+  h1{margin-top:16px}
+}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
+</style>
+<style id="dsh-fit">@media (max-width:720px){body{overflow-wrap:break-word}main table,section table,.card table,.pane table{display:block;overflow-x:auto;max-width:100%}code,pre,.mono{overflow-wrap:anywhere}}</style>
+</head>
+<body>
+<!-- delphi-shell:start  generated by dashboard/build-shell.mjs - do not edit by hand -->
+<a class="dsh-skip" href="#dsh-content">Skip the navigation</a>
+<header class="dsh">
+  <div class="dsh-bar"><a class="dsh-brand" href="../index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#0e7c86"/><path d="M5 16c5-7 14-9 22-4-3 2-6 3-8 4 2 1 5 2 8 4-8 5-17 3-22-4z" fill="#fff"/></svg>DELPHI<span class="sub">laws of biology</span></a>
+    <nav class="dsh-nav" aria-label="Primary"><span class="dsh-grp"><span class="dsh-lab">Results</span><a class="dsh-link" href="../results/">Results</a><a class="dsh-link" href="../scorer/">Design scorer</a><a class="dsh-link" href="../deck/">Pitch deck</a><a class="dsh-link" href="../print/">Printable kit</a><a class="dsh-link" href="../studio-api/">For agents</a><a class="dsh-link" href="../swarm-board/">Swarm board</a><a class="dsh-link" href="../evolve/">Enzymes</a></span><span class="dsh-grp"><span class="dsh-lab">Evidence</span><a class="dsh-link" href="../proofs/">Claim book</a><a class="dsh-link" href="../leanbio/">LeanBio repo</a><a class="dsh-link" href="../graph/">Graph</a><a class="dsh-link" href="../figures/">Figures</a></span><span class="dsh-grp"><span class="dsh-lab">Threads</span><a class="dsh-link" href="../t/lean/">Lean proofs</a><a class="dsh-link" href="../t/claims/">Claim tests</a><a class="dsh-link" href="../t/genotype/">Genotype</a><a class="dsh-link" href="../t/physics/">Physics</a><a class="dsh-link" href="../t/physics/sim/">Simulator</a><a class="dsh-link" href="../t/organism/">Organism</a><a class="dsh-link" href="../t/holdout/">Holdout</a><a class="dsh-link" href="../t/swarm/">Swarm</a><a class="dsh-link" href="../t/validation/">Validation</a></span><span class="dsh-grp"><span class="dsh-lab">About</span><a class="dsh-link" href="../start/">Start here</a><a class="dsh-link" href="../record/">Development record</a><a class="dsh-link" href="../index.html">Mission control</a></span></nav>
+    <button class="dsh-theme" id="themeBtn" data-dsh-theme type="button" title="Toggle light or dark">Theme</button></div>
+  <nav class="dsh-modes" aria-label="The 3D organism viewer"><span class="dsh-lab">The organism</span><a class="dsh-link" href="../blueprint3d/">Anatomy</a><a class="dsh-link" href="../blueprint3d/?mode=physiology">Circulation &amp; gills</a><a class="dsh-link" href="../blueprint3d/?mode=tissue">Tissue signals</a><a class="dsh-link" href="../blueprint3d/?mode=cell">Cell interactions</a><a class="dsh-link" href="../blueprint3d/?mode=physics">Flight simulator</a><a class="dsh-link" href="../blueprint3d/?mode=design">Design studio</a><a class="dsh-link" href="../blueprint3d/?mode=growth">Growth</a><a class="dsh-link" href="../blueprint3d/?mode=compare">Compare species</a><a class="dsh-link" href="../blueprint3d/?mode=sequences">Gene sequences</a><a class="dsh-link" href="../blueprint3d/?view=radial">Radial map</a></nav>
+</header>
+<!-- delphi-shell:end -->
+<span id="dsh-content"></span>
+
+<div class="pagebar">
+  <div class="wrap">
+    <b>Gene diff</b>
+    <div class="casebar" id="casebar" role="group" aria-label="Design to diff"></div>
+    <a class="jump" href="../validate-show/" style="margin-left:auto">Validation runs</a>
+  </div>
+</div>
+
+<main class="wrap" id="main">
+  <h1>The diff, from one residue outward</h1>
+  <p class="lede">A design, its base genome and the orthologue of its closest functional analogue, aligned residue by
+  residue, then expanded through every scale this repository holds: expression, protein, modification, pathway,
+  interactome and developmental time. Nothing on this page was derived here. Every value names the file it came from,
+  and every gap is stated in place rather than left blank, because a blank column in an alignment reads as identity.</p>
+  <div id="app" aria-live="polite"></div>
+  <noscript><p class="absent"><b>This page needs JavaScript</b>The diff is rendered from
+  <span class="mono">gene-diff/data.json</span>, which is built by <span class="mono">dashboard/public/gene-diff/build.mjs</span>.
+  Read that file directly, or the ledger it views at <span class="mono">sim-engine/validate/functional/RESULTS.md</span>.</p></noscript>
+</main>
+
+<footer class="wrap">
+  <p id="prov"></p>
+  <p class="tiny">Class Aves is this project's frozen holdout. No bird sequence, annotation or orthologue is read by
+  the build or shown here. Built by <span class="mono">dashboard/public/gene-diff/build.mjs</span> from
+  <span class="mono">sequences/</span>, <span class="mono">genotype/</span>, <span class="mono">omics/</span> and
+  <span class="mono">sim-engine/validate/</span>; none of those are written by it.</p>
+</footer>
+<script src="app.js"></script>
+</body>
+</html>

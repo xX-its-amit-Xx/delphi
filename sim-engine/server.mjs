@@ -21,6 +21,7 @@ import * as protein from './tools/protein-structure.mjs';
 import { physiologySchema, physiologyChain, growthSchema, growthTrajectory } from './tools/wrappers.mjs';
 import { LEAN_TOOLS } from './tools/lean-tools.mjs';
 import { LEANBIO_TOOLS } from '../pipeline/leanbio/tools.mjs';
+import { CAPABILITY_TOOLS } from '../pipeline/leanbio/capability-map/tools.mjs';
 import { STUDIO_TOOLS } from './tools/studio.mjs';
 import { OMICS_TOOLS } from './tools/omics-tools.mjs';
 import { VALIDATE_TOOLS } from './tools/validate-tools.mjs';
@@ -43,6 +44,10 @@ export const TOOLS = [
   ...LEAN_TOOLS,
   // LeanBio: queue, grounding, claim records (pipeline/leanbio/tools.mjs).
   ...LEANBIO_TOOLS,
+  // The capability map: personas, use cases, grand questions split into formalisable core vs empirical
+  // remainder, and the ranked tool-gap analysis (pipeline/leanbio/capability-map/tools.mjs;
+  // tools/CAPABILITY-REGISTER.md). Read-only, no network, no writes.
+  ...CAPABILITY_TOOLS,
   // Design Studio: organism documents, STATE, scenarios, optimisation, co-design sessions (tools/studio.mjs).
   ...STUDIO_TOOLS,
   // Multi-omics: omics_gene, omics_part, omics_search over omics/index (tools/omics-tools.mjs).

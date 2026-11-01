@@ -9,6 +9,7 @@ import { GROUP_KEYS, SORT_KEYS, browseClaims } from "./graph.mjs";
 import { NETWORK_ENDPOINT, PREFIXES, getClaim, overview, rankClaims, searchClaims, sparql } from "./lib.mjs";
 import { LEAN_TOOLS } from "../sim-engine/tools/lean-tools.mjs";
 import { LEANBIO_TOOLS } from "../pipeline/leanbio/tools.mjs";
+import { CAPABILITY_TOOLS } from "../pipeline/leanbio/capability-map/tools.mjs";
 import { OMICS_TOOLS } from "../sim-engine/tools/omics-tools.mjs";
 import { VALIDATE_TOOLS } from "../sim-engine/tools/validate-tools.mjs";
 import { PIPELINE_TOOLS } from "../sim-engine/tools/pipeline-tools.mjs";
@@ -22,7 +23,7 @@ const TOOLS = [];
 // Exported so mcp/cli.mjs can call any registered tool by name without duplicating the policy above
 // (hosted network/BLAST forcing, the local-only exclusions). [name, description, inputSchema, fn].
 export { TOOLS };
-export const VERSION = "0.7.0";
+export const VERSION = "0.8.0";
 // Hosted (HTTP) mode never offers tools that run a Lean build or write files.
 const HOSTED = !!process.env.DELPHI_HTTP_PORT;
 
@@ -165,6 +166,47 @@ tool("leanbio_claim", lb.leanbio_claim.description, {
   id: z.string().describe("Claim id (docs/claims.json), e.g. \"maynardsmith-hitchhiking\", or \"draft:<repo path>\""),
   draft: z.boolean().default(true).describe("Include the unsigned nanopub draft (TriG)"),
 }, args => lb.leanbio_claim.handler(args));
+
+// The LeanBio capability map (pipeline/leanbio/capability-map/): who could use Lean for Bio, the concrete jobs
+// they would bring, the grand questions split into what a proof can settle and what only measurement can, and the
+// tools that do not exist yet. Read-only, no network, no writes, so these are served in hosted mode unchanged.
+const cap = Object.fromEntries(CAPABILITY_TOOLS.map(t => [t.name, t]));
+tool("leanbio_personas", cap.leanbio_personas.description, {
+  id: z.string().optional().describe("One persona by id, e.g. \"reviewer-editor\""),
+  text: z.string().optional().describe("Only personas whose name, who, today or would_ask mention this text"),
+  needs_tool: z.string().optional().describe("Only personas who need this tool name (real or proposed)"),
+  status: z.enum(["EXISTS", "PARTIAL", "MISSING"]).optional(),
+  brief: z.boolean().default(false).describe("Name, who and tool statuses only"),
+}, args => cap.leanbio_personas.handler(args));
+tool("leanbio_use_cases", cap.leanbio_use_cases.description, {
+  id: z.string().optional(),
+  persona: z.string().optional().describe("Only use cases for this persona id"),
+  answerable: z.enum(["yes", "partly", "no"]).optional(),
+  tool: z.string().optional().describe("Only use cases whose sequence names this tool"),
+  uses_gap: z.string().optional().describe("Only use cases waiting on this tool-gap id"),
+  uncomfortable: z.boolean().optional(),
+  worked_only: z.boolean().default(false),
+  text: z.string().optional(),
+  limit: z.number().int().min(1).max(200).default(50),
+}, args => cap.leanbio_use_cases.handler(args));
+tool("leanbio_grand_questions", cap.leanbio_grand_questions.description, {
+  id: z.string().optional().describe("One question by id, e.g. \"gq-hamiltons-rule\""),
+  disputed: z.boolean().optional().describe("Only the questions the literature actively disagrees about"),
+  has_repo_asset: z.boolean().optional(),
+  core_strength: z.enum(["strong", "moderate", "narrow"]).optional(),
+  section: z.enum(["core", "remainder", "in_repo", "tools", "all"]).default("all"),
+  with_citations: z.boolean().default(true),
+}, args => cap.leanbio_grand_questions.handler(args));
+tool("leanbio_tool_gap", cap.leanbio_tool_gap.description, {
+  id: z.string().optional(),
+  kind: z.enum(["tool", "lean-module", "data", "integration"]).optional(),
+  effort: z.enum(["small", "medium", "large", "research"]).optional(),
+  buildable_now: z.boolean().optional(),
+  unblocks_persona: z.string().optional(),
+  unblocks_question: z.string().optional(),
+  limit: z.number().int().min(1).max(100).default(30),
+  include_not_gaps: z.boolean().default(true),
+}, args => cap.leanbio_tool_gap.handler(args));
 
 // Multi-omics cards (sim-engine/tools/omics-tools.mjs over omics/index/, shipped in the image and the npm package).
 // Proxy-species data, kind borrowed; absence means not recorded.
