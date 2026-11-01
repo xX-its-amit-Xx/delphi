@@ -424,15 +424,9 @@ export async function mount(opts = {}) {
   const COND = B.baselineConditions || null; // conditions/baseline.json: locked, so env3d draws the stated sea
 
   // ---- DOM
-  // Inside the viewer's iframe the page opens on the banners and the prose, which pushes the 3D view
-  // below the fold. Move it up to just above the <h1>, leaving the pre-registration banner first: that
-  // banner is the record and must not be pushed down by anything.
-  try {
-    if (window.parent && window.parent !== window) {
-      const h1 = document.querySelector('main.wrap h1');
-      if (h1 && h1.parentNode && host.parentNode) h1.parentNode.insertBefore(host, h1);
-    }
-  } catch (e) { /* cross-origin parent: leave the layout alone */ }
+  // The page's own order already puts this block directly under the pre-registration banner and above
+  // the controls, standalone and embedded alike, so nothing is moved here. That banner stays first: it
+  // is the honesty contract and nothing is allowed to push it down.
   host.innerHTML = layoutHtml();
   const $ = sel => host.querySelector(sel);
   const stage = $('#s3Stage');
