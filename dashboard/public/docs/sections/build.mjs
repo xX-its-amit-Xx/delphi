@@ -167,7 +167,21 @@ const OPEN = {
   nanopubs: { lead: 'Questions about the record format itself, still open in this repo.', grand: [], ledger: [] },
 };
 
+// The agent form of every step: the exact call, what comes back, and the rule that governs it.
+// Authored separately so the human prose and the machine instruction cannot drift apart silently
+// — the build asserts one agent step per product and that every command names a real entry point.
+const AGENT = JSON.parse(fs.readFileSync(path.join(here, 'agent-steps.json'), 'utf8'));
+const ENTRY = /^node (sim-engine|mcp|lean|holdout|dashboard)\//;
+for (const [k, steps] of Object.entries(AGENT)) {
+  must(steps.length, `${k}: no agent steps`);
+  for (const st of steps) {
+    must(st.call && st.returns && st.rule, `${k}: an agent step is missing call/returns/rule`);
+    must(ENTRY.test(st.call), `${k}: agent step does not start at a real entry point: ${st.call.slice(0, 60)}`);
+  }
+}
+
 for (const [k, p] of Object.entries(PRODUCTS)) {
+  p.agent = AGENT[k] || [];
   for (const u of p.uses) must(['built', 'partial', 'proposed'].includes(u[0]), `${k}: use case "${u[1]}" has no valid status`);
   p.open = OPEN[k] || { lead: '', grand: [], ledger: [] };
 }

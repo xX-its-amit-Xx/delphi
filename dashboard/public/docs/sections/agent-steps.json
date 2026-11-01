@@ -1,0 +1,28 @@
+{
+"nanopubs": [
+ {"call":"node holdout/nanopubs/check.mjs <dir-or-file.trig>","returns":"exit 0 and an empty `unexpected` list, or a FAIL line per record naming each unexpected issue","rule":"Exit 0 with an empty `unexpected` list is the ONLY pass. Four issues are allowed by name on an unsigned draft: no signature, no assertion template, no provenance template, creation time older than one hour. Anything else fails."},
+ {"call":"node holdout/nanopubs/check.mjs --selftest","returns":"three fixtures: a bait record that must read valid, a truncated record that must read invalid, and a record whose own description forges an ISSUES: marker","rule":"Run this before trusting a pass. A validator nobody has watched fail is one you cannot rely on; all three must PASS."},
+ {"call":"node holdout/check-leaks.mjs <dir>","returns":"LEAK lines for held-out claim ids and taxa, plus allowlisted warnings; exit 1 if any LEAK","rule":"Run it over anything you are about to publish. Never allowlist a held-out id to make it pass - the allowlist is for files that filter the clade out."}
+],
+"leanbio": [
+ {"call":"node sim-engine/cli.mjs tool lean_laws_list","returns":"every law with its id, version, status and lawset","rule":"Read the laws before designing, not after being refused."},
+ {"call":"node sim-engine/cli.mjs tool lean_check --json '{\"design\":{\"SL_m\":0.19,\"mass_kg\":0.045,\"body_temp_C\":28}}'","returns":"a summary of violated / holds / out_of_scope / cannot_evaluate, then a verdict per law","rule":"Read `cannot_evaluate` first: each row names the input it would need. Supply it and call again, or report the absence. Do NOT substitute a default."},
+ {"call":"node lean/registry/check-exposed.mjs","returns":"OK, or a FAIL naming the surface that is stale","rule":"A new law must reach the registry, the handlers, the static mirror, both CLIs, both MCP servers and the contract. This fails if any one is stale."}
+],
+"mcp": [
+ {"call":"node sim-engine/server.mjs --dump-contract","returns":"every tool name, input schema and envelope shape","rule":"Read the contract rather than guessing a tool name. There are 58 tools on the engine and 39 hosted."},
+ {"call":"node mcp/cli.mjs claim <claim-id>","returns":"the claim IRI, its nanopub drafts and its fields, or {found:false} with the reason","rule":"A malformed id answers {found:false} naming why, rather than throwing. Treat the refusal as information."},
+ {"call":"node sim-engine/cli.mjs tool leanbio_grand_questions","returns":"14 questions, each split into a formalisable core and an empirical remainder","rule":"The split is the point: Lean can settle what follows from what, never what the world is like."}
+],
+"studio": [
+ {"call":"node sim-engine/cli.mjs tool parse_design_text --json '{\"text\":\"a zebrafish with large wing-like pectoral fins that can glide\"}'","returns":"a spec with start_from, criteria in SI units, and the clauses it could NOT parse","rule":"Check the unparsed clauses before using the spec. They are reported, never silently dropped - on that input three of them are."},
+ {"call":"node sim-engine/cli.mjs tool organism_list_parts --json '{\"organism\":\"zebrafish-adult\"}'","returns":"every part with its ontology id and whether its geometry is measured or schematic","rule":"A part marked schematic is a stand-in. Do not quote its dimensions as a measurement."},
+ {"call":"node sim-engine/cli.mjs tool edit_plan --json '{\"gene\":\"kcnk5b\",\"change\":\"p.W169L\"}'","returns":"guides, donors, pegRNAs and an off-target table","rule":"A proposal for a wet lab to check, never a protocol. With NVIDIA_API_KEY set, Evo2 RANKS the options; it never gates them."}
+],
+"harness": [
+ {"call":"node sim-engine/validate-cli.mjs --generated <seq> --base <id> --desired \"<prose>\"","returns":"five named results, per_scale_coverage, a verdict with withheld_because, and a composite marked not-the-verdict","rule":"Never sum the five. Read per_scale_coverage BEFORE any result: a scale with no coverage has not passed, it has not been looked at."},
+ {"call":"node sim-engine/cli.mjs tool closest_relative_phenotype --json '{\"organism\":\"winged-zebrafish\"}'","returns":"the chosen functional analogue, both distances, and nearest_partial_analogues when nothing qualifies","rule":"The analogue is CURATED, not searched: a registry of four functions, first match in source order. No database is queried and no model is prompted. If no_analogue is true, nothing is substituted."},
+ {"call":"node sim-engine/cli.mjs tool physics_check --json '{\"organism\":\"winged-zebrafish\"}'","returns":"a gate string with the reachable launch speed against v_min, plus standing checks reported beside the gate","rule":"The gate text is the answer. On our own design it reads FAIL: 0.67 m/s against 8.64 m/s required."},
+ {"call":"node sim-engine/cli.mjs tool functional_resolution --json '{...}'","returns":"a row per requirement: SAME, ALLELIC, PARALOGUE, ANALOGOUS_SET, COMPENSATORY or UNRESOLVED, plus coverage","rule":"Report the unassessable count. On our design 22 of 73 were assessable and 19 of those did not resolve."}
+]
+}

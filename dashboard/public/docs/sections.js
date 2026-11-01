@@ -30,6 +30,9 @@
     t.setAttribute('role', 'group');
     t.setAttribute('aria-label', 'Depth');
     t.innerHTML = `<button data-view-btn="blog">Blog</button><button data-view-btn="tech">Technical report</button>`;
+    // The humans/agents switch belongs in BOTH views: "how each step works" has an agent form
+    // whether or not the reader wants the deep technical body underneath it.
+    document.querySelector('.toggle')?.classList.add('keep-in-blog');
     bar.insertBefore(t, bar.querySelector('.toggle'));
     t.addEventListener('click', e => { const b = e.target.closest('[data-view-btn]'); if (b) setView(b.dataset.viewBtn); });
     let v = 'blog';
@@ -38,11 +41,24 @@
   }
 
   // ── renderers per sub-section ─────────────────────────────────────────────
+  // How it works, in BOTH forms. The humans/agents switch picks which is shown, and the two are
+  // authored separately so prose and machine instruction cannot drift apart silently.
   function how(p, demo) {
+    const human = `<div class="sx-cards">${p.how.map(([t, b], i) => `
+      <details class="sx-card"${i === 0 ? ' open' : ''}><summary><span class="sx-n">${i + 1}</span>${esc(t)}</summary>
+        <div class="sx-body"><p>${esc(b)}</p></div></details>`).join('')}</div>`;
+    const steps = p.agent || [];
+    const agent = steps.length ? `<div class="sx-cards">${steps.map((st, i) => `
+      <details class="sx-card"${i === 0 ? ' open' : ''}>
+        <summary><span class="sx-n">${i + 1}</span><code class="sx-call">${esc(st.call)}</code></summary>
+        <div class="sx-body">
+          <p class="sx-ret"><span>Returns</span>${esc(st.returns)}</p>
+          <p class="sx-rule"><span>Rule</span>${esc(st.rule)}</p>
+        </div></details>`).join('')}
+      <p class="sx-legend">Every command above is a real entry point, run from the repository root.</p></div>`
+      : '<p class="sx-muted">No agent form recorded for this product yet.</p>';
     return `${demo ? `<div class="sx-anim"><video src="${esc(demo)}" autoplay muted loop playsinline></video></div>` : ''}
-      <div class="sx-cards">${p.how.map(([t, b], i) => `
-        <details class="sx-card"${i === 0 ? ' open' : ''}><summary><span class="sx-n">${i + 1}</span>${esc(t)}</summary>
-          <div class="sx-body"><p>${esc(b)}</p></div></details>`).join('')}</div>`;
+      <div data-aud="human">${human}</div><div data-aud="agent">${agent}</div>`;
   }
   function uses(p) {
     return `<div class="sx-cards">${p.uses.map(([s, t, b]) => `
