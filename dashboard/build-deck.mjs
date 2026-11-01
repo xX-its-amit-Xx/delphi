@@ -674,7 +674,7 @@ try {
 } catch {}
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
-// LeanBio Forum: the deliverable this deck pitches. The repository still calls it DELPHI, and the
+// MorphoLemma: the deliverable this deck pitches. The repository still calls it DELPHI, and the
 // two names refer to the same system -- see README.md "The two names". Nothing below renames a file.
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -909,7 +909,7 @@ try {
 // are the walk. The mapping lives here, not in the renderer, so HTML and PowerPoint cannot drift.
 const deliverables = [
   {
-    n: 1, key: 'forum', name: 'LeanBio Forum',
+    n: 1, key: 'forum', name: 'MorphoLemma',
     what: 'The repository of biological laws — and, just as much, the framework for adding more.',
     how: 'A new theorem enters the same way every time: upload it nanopub-backed, it must hold in Lean, '
        + 'and it must survive agent debate on the existing evidence. Clear both and it becomes an axiom '

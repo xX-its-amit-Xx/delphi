@@ -16,7 +16,7 @@ four together.
 
 | # | Deliverable | Beats |
 |---|---|---|
-| 1 | **LeanBio Forum**, and the framework for adding to it — nanopub-backed submission, Lean, agent debate on existing evidence, then it enters as an axiom or it does not | 5, 6, 7 |
+| 1 | **MorphoLemma**, and the framework for adding to it — nanopub-backed submission, Lean, agent debate on existing evidence, then it enters as an axiom or it does not | 5, 6, 7 |
 | 2 | **MCP · API · CLI**, built around personas, use cases and the big questions | 8 |
 | 3 | **Design Studio (MorphoSwarm)** — named as in development, because it is | 9, 10 |
 | 4 | **Validation harness** — the part that says no | 11, 12, 13 |
@@ -30,7 +30,7 @@ four together.
 | 2 | 0:13 | 7.0 | **The asymmetry** | A Lean proof closes, kernel-checked. The same shape of claim in biology gets a dashed empty box: no check exists. | — |
 | 3 | 0:20 | 10.0 | **The desk** | A desk piled with maths papers — 688 of them this year, counted here rather than quoted. Every one slides off. What mathematics built: **292,237** theorems in mathlib across 34 subject areas. Biology's share of it: **0 of 34**. | `facts.json` ← `deck/FACTS.md` §1.1, §1.2, §2.3 |
 | 4 | 0:30 | 7.0 | **Nine in ten** | Ten programme bars; nine go dark. "Nine in ten drug programmes that enter Phase 1 never get approved." Both sources on screen, and the unit of analysis — the programme, not the trial. | `facts.json` ← `deck/FACTS.md` §3.4 |
-| 5 | 0:37 | 11.0 | **LeanBio Forum** | Deliverable 1. Upload your own nanopub-backed theorem. Gate 1: Lean. Gate 2: agent debate on existing evidence. Both, or neither — then it enters as a biological axiom. | `shots/leanbio-capability.jpg` |
+| 5 | 0:37 | 11.0 | **MorphoLemma** | Deliverable 1. Upload your own nanopub-backed theorem. Gate 1: Lean. Gate 2: agent debate on existing evidence. Both, or neither — then it enters as a biological axiom. | `shots/leanbio-capability.jpg` |
 | 6 | 0:48 | 11.0 | **The swarm expands the literature** | The real claim graph blooms out of four seed thinkers: 903 claims, 4,905 nanopub drafts, 16 tests, 57 Lean theorems, the real 387 links drawing between them, real theorem titles flashing past. | `tree.json`, built from `graph.json` |
 | 7 | 0:59 | 8.0 | **Three architectures, and the result** | Single / decentralised / centralised, each carrying its real stage-4 score and its real cost multiple. "Quality did not separate. Neither did honesty." Both caveats on screen in amber. | `facts.json` ← `swarm/benchmark/RESULTS.md` |
 | 8 | 1:07 | 5.0 | **MCP · API · CLI** | Deliverable 2. The counts, then a **real call with a real answer**: `node mcp/cli.mjs check …` returning `cannot-evaluate` and naming exactly what it is missing. "Thirty-five laws. It would not guess at one of them." | `cli-transcript.txt` |
@@ -128,7 +128,7 @@ change**, because both slates live inside existing frames rather than taking tim
 ## The one naming note
 
 The repository is still labelled **DELPHI** on every page, so DELPHI appears in the captured screens
-and clips. The film presents the system as **LeanBio Forum** and says on screen in beat 5 that the
+and clips. The film presents the system as **MorphoLemma** and says on screen in beat 5 that the
 screens have not caught up, rather than hiding it.
 
 ## Numbers and where each one comes from

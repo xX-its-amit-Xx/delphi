@@ -8,15 +8,18 @@
 
 This project was created for **Science Claw Hack @ MIT**.
 
-> ### The two names
+> ### The names
 >
-> **LeanBio Forum** and **DELPHI** are the same system. `DELPHI` is the name used throughout
-> this repository — every path, module, URL and record id uses it, and none of that is being
-> renamed. **LeanBio Forum** is the name the project is presented under: the pitch deck at
-> `dashboard/public/deck/`, and the public pages under `/leanbio/`. If you see one name in a file
-> and the other on a slide, they refer to the same thing.
-
-
+> **MorphoLemma** is the name the project is presented under: the product report at
+> `/docs/`, the pitch deck, and the public pages. It is the design studio and the
+> validation harness — the part that predicts an organism and then refuses it.
+>
+> **DELPHI** is the name used throughout this repository — every path, module, URL and
+> record id uses it, and none of that is being renamed. DELPHI is the Lean-for-biology
+> layer underneath: the law registry, the formalisation pipeline, the claim graph.
+>
+> So: **MorphoLemma, supported by DELPHI, which is Lean for biology.** If you see one name
+> in a file and another on a page, they are parts of one system.
 
 ## Product report — start here
 
