@@ -208,6 +208,22 @@ for (const [name, mod] of Object.entries(ALL)) {
   const zl = wind.run(zlarva, {});
   check('wind: larva cannot glide -> distances 0', zl.feasible === false && get(zl, 'ground_distance_total_m') === 0);
 }
+// ---- lean_inputs blocks (numeric inputs for the Lean laws P1b/P2b/P4/P4b) ------------------------------------
+{
+  const num = (li, k) => li && li[k] && typeof li[k].value === 'number' && Number.isFinite(li[k].value) && KINDS.includes(li[k].kind) && !!li[k].source;
+  const c = current.run(zebrafish, { current_m_s: 0.2 });
+  check('lean_inputs current: drag_coefficient, drag_area_m2, aerobic_ceiling_W numeric with kind+source', ['drag_coefficient', 'drag_area_m2', 'aerobic_ceiling_W'].every(k => num(c.lean_inputs, k)), JSON.stringify(c.lean_inputs));
+  check('lean_inputs current: drag_area = C_D x S_wet', near(c.lean_inputs.drag_area_m2.value, c.lean_inputs.drag_coefficient.value * 4.0e-4, 1e-12));
+  check('lean_inputs current: drag = 0.5 rho C_D A U^2 consistent with drag_at_current_N', near(get(c, 'drag_at_current_N'), 0.5 * 996.2 * c.lean_inputs.drag_area_m2.value * 0.04, 2e-6));
+  const t = temperature.run(zebrafish, { water_temperature_C: 33, acclimation_temperature_C: 28 });
+  check('lean_inputs temperature: q10, reference_temperature_C, reference_sustained_power_W, sustained_power_W numeric', ['q10', 'reference_temperature_C', 'reference_sustained_power_W', 'sustained_power_W'].every(k => num(t.lean_inputs, k)) && ['SMR', 'MMR'].includes(t.lean_inputs.q10_basis.value), JSON.stringify(t.lean_inputs));
+  check('lean_inputs temperature: sustained = reference x q10^((T-Tref)/10)', near(t.lean_inputs.sustained_power_W.value, t.lean_inputs.reference_sustained_power_W.value * t.lean_inputs.q10.value ** 0.5, 1e-12));
+  const w = wind.run(flyingfish, { headwind_m_s: 3, gust_m_s: 0 });
+  check('lean_inputs wind: descent_airspeed_m_s and descent_ground_distance_m numeric', num(w.lean_inputs, 'descent_airspeed_m_s') && num(w.lean_inputs, 'descent_ground_distance_m'), JSON.stringify(w.lean_inputs));
+  check('lean_inputs wind: descent ground = h L/D (1 - u/v_LD)', near(w.lean_inputs.descent_ground_distance_m.value, 1 * 4.37 * (1 - 3 / w.lean_inputs.descent_airspeed_m_s.value), 1e-9));
+  const a = altitude.run(flyingfish, { altitude_m: 2000 });
+  check('lean_inputs altitude: CLmax 0.78 and LD_max 4.37 as numbers', num(a.lean_inputs, 'CLmax') && num(a.lean_inputs, 'LD_max') && a.lean_inputs.CLmax.value === 0.78 && a.lean_inputs.LD_max.value === 4.37);
+}
 // ---- positive / negative glide controls on the REAL, unedited organisms (core resolveState, read-only) ----------
 {
   let rows = [];

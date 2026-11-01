@@ -10,6 +10,7 @@ export function atmosphere(h) {
   const p = 101.29 * Math.pow((T + 273.1) / 288.08, 5.256);      // kPa
   return { T_C: T, p_kPa: p, rho: p / (0.2869 * (T + 273.1)) };  // kg/m3
 }
+const LIN = (value, unit, kind, source, reason) => (value == null || (typeof value === 'number' && !Number.isFinite(value)) ? { value: null, unit, kind: 'assumed', source: 'none', reason: reason || 'not computable from the inputs given' } : { value, unit, kind, source });
 const pH2O = T => 0.61094 * Math.exp((17.625 * T) / (T + 243.04)); // kPa, Magnus form, as physiology/index.js and lib/state.mjs
 // Rogers et al. 2016 Pcrit database: mean +/- SD Pcrit in the 'control' subset 5.15 +/- 2.21 kPa (across species).
 const PCRIT = { mean: 5.15, sd: 2.21, cite: 'Rogers NJ, Urbina MA, Reardon EE, McKenzie DJ, Wilson RW (2016). A new analysis of hypoxia tolerance in fishes using a database of critical oxygen level (Pcrit). Conserv Physiol 4:cow012', doi: 'https://doi.org/10.1093/conphys/cow012' };
@@ -130,6 +131,12 @@ export default {
       ...flightMetrics,
     ];
     return {
+      lean_inputs: {
+        CLmax: LIN(PARK_CHOI.CL_max, '1', polarOf(state).kind, polarOf(state).source),
+        LD_max: LIN(PARK_CHOI.LD_max, '1', polarOf(state).kind, polarOf(state).source),
+        air_density_kg_m3: LIN(rho, 'kg/m3', 'derived', `${NASA.url}, scaled to the state's sea-level density`),
+        air_pO2_kPa: LIN(pO2air, 'kPa', 'derived', '0.2095 p(h)'),
+      },
       metrics, survives, feasible, feasibility_note: feasibilityNote, limiting, provenance: prov,
       scope: 'Standard (mid-latitude) atmosphere; air-equilibrated surface water; no acclimatisation (haematocrit, ventilation, cardiac output held fixed), no cold, no UV. survives = the fish survives living in water at this altitude (water pO2 against Pcrit); limiting explains survives only. feasible = it can glide at this altitude at its own reachable launch speed (feasibility_note says why not); powered flight is in powered_flight_margin. Pcrit is a cross-species mean unless the state provides one, so survives is null within one SD of it.',
       validity: { inRange, notes: notes.join(' ') },

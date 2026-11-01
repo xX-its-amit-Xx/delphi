@@ -17,6 +17,8 @@ const METRICS = [
   { key: 'gust_load_factor', label: 'Quasi-steady lift / weight in a gust peak', unit: '1', better: 'lower' },
 ];
 
+const LIN = (value, unit, kind, source, reason) => (value == null || (typeof value === 'number' && !Number.isFinite(value)) ? { value: null, unit, kind: 'assumed', source: 'none', reason: reason || 'not computable from the inputs given' } : { value, unit, kind, source });
+
 export const needs = [{ field: 'lifting_area_m2', why: 'as glide.mjs' }, { field: 'launch_speed_m_s', why: 'as glide.mjs' }];
 
 export default {
@@ -69,6 +71,13 @@ export default {
     if (m < 0.02 || m > 0.4) { inRange = false; notes.push(`Mass ${m} kg is outside the 0.02-0.4 kg range of the glide polar (extrapolated).`); }
     notes.push('Uniform wind, no shear, no wave-induced updrafts (not modelled); gusts quasi-steady (lift scales with airspeed squared, no unsteady aerodynamics).');
     notes.push('A headwind helps takeoff (takeoff_water_speed_m_s) but the launch speed itself is taken as airspeed, as in glide.mjs.');
+    const lean_inputs = {
+      descent_airspeed_m_s: LIN(canGlide ? gw.vLD : null, 'm/s', 'derived', 'best-L/D airspeed v_min sqrt(C_Lmax/C_L(0 deg)), C_L(0 deg) 0.53 (Park & Choi lift = weight at 0 deg, approximate)', known ? 'cannot glide' : ls.reason),
+      descent_ground_distance_m: LIN(canGlide ? gw.phaseB.air_m - u * gw.phaseB.t_s : known ? 0 : null, 'm', 'derived', 'descent phase only: h (L/D)max - headwind x h (L/D)max / v_LD', ls.reason),
+      launch_height_m: LIN(p.launch_height_m, 'm', 'assumed', 'launch_height_m parameter'),
+      headwind_m_s: LIN(u, 'm/s', 'assumed', 'headwind_m_s parameter (negative = tailwind)'),
+      LD_max: LIN(PARK_CHOI.LD_max, '1', polar.kind, polar.source),
+    };
     const feasible = !known ? null : !canGlide ? false : stallMargin >= 0;
     const limiting = !known ? `glide not evaluated: ${ls.reason}`
       : !canGlide ? `cannot glide: reachable launch speed ${v0.toFixed(2)} m/s is below v_min ${gw.vmin.toFixed(2)} m/s`
@@ -89,7 +98,7 @@ export default {
       metric('gust_load_factor', METRICS[9].label, n, '1', 'lower', 'derived', '(1 + gust/V)^2 at constant lift coefficient', cg),
     ];
     return {
-      metrics, survives: null, feasible, feasibility_note: limiting, limiting: null, provenance: prov,
+      metrics, lean_inputs, survives: null, feasible, feasibility_note: limiting, limiting: null, provenance: prov,
       scope: 'Kinematics of a glide in a uniform horizontal wind with the still-air polar at the organism\'s own launch speed; distances are upper bounds (as glide.mjs) and only glide_range_lean_bound_m (still air) is covered by the Lean theorem. No wind shear over waves, no updrafts, no unsteady gust response, no control or structural limit. survives = null (wind on a glide is not modelled as lethal); feasible = can glide and no stall in a gust lull.',
       validity: { inRange, notes: notes.join(' ') },
     };

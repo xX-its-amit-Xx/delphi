@@ -28,7 +28,10 @@ const Q10 = { SMR: 1.56, MMR: 1.34, range: [23, 35.5],
   cite: 'Correction: Thermal preference does not align with optimal temperature for aerobic scope in zebrafish (Danio rerio). J Exp Biol (2023) 226:jeb245488 (corrected Q10: SMR 1.56, MMR 1.34; correcting Ripley et al. 2022, J Exp Biol 225:jeb243774)',
   doi: 'https://doi.org/10.1242/jeb.245488' };
 
+import { fickPower, FICK } from './glide.mjs';
 const val = (s, k) => (s && s[k] && s[k].value != null ? s[k].value : null);
+const LIN = (value, unit, kind, source, reason) => (value == null || (typeof value === 'number' && !Number.isFinite(value)) ? { value: null, unit, kind: 'assumed', source: 'none', reason: reason || 'not computable from the inputs given' } : { value, unit, kind, source });
+
 function metric(key, label, value, unit, better, kind, source, reason) {
   const ok = typeof value === 'number' ? Number.isFinite(value) : typeof value === 'boolean';
   const m = { key, label, value: ok ? value : null, unit, better, kind: ok ? kind : 'assumed', source: ok ? source : 'none' };
@@ -102,6 +105,19 @@ export default {
       { quantity: 'Ucrit(T) curve, 28 degC-reared adults', value: JSON.stringify(WAK), kind: zkind, source: `${WAK_SRC}, ${WAK_DOI}` },
       { quantity: 'Q10 SMR / MMR (corrected)', value: '1.56 / 1.34', kind: smrOk ? zkind : 'borrowed', source: `${Q10.cite}, ${Q10.doi}` },
     );
+    // Lean inputs: the sustained (aerobic) power ceiling scales with the MAXIMUM metabolic rate, so the MMR Q10 is used.
+    const m = val(state, 'mass_kg');
+    const amb = (state && state.ambient) || {};
+    const pO2w = amb.pO2_kPa && amb.pO2_kPa.value != null ? amb.pO2_kPa.value : null;
+    const fk = m != null && pO2w != null ? fickPower({ mass_kg: m, pO2_kPa: pO2w, P50_kPa: val(state, 'hb_P50_kPa') ?? FICK.P50_kPa.value, Q_ml_s: val(state, 'cardiac_output_max_ml_s') }) : null;
+    const refP = fk ? fk.P_W : null;
+    const lean_inputs = {
+      q10: LIN(Q10.MMR, '1', smrOk ? 'calibrated' : 'assumed', `MMR Q10 1.34 (${Q10.cite}); 28 degC-acclimated fish, 23-35.5 degC`),
+      q10_basis: { value: 'MMR', unit: null, kind: 'calibrated', source: 'the sustained-power ceiling follows maximum metabolic rate; SMR Q10 (1.56) is reported as smr_factor' },
+      reference_temperature_C: LIN(Ta, '°C', 'assumed', 'acclimation_temperature_C parameter'),
+      reference_sustained_power_W: LIN(refP, 'W', 'derived', fk ? `Fick aerobic bound eta E Q Ca at the reference (acclimation) temperature: Q ${fk.Q_ml_s.toFixed(5)} ml/s (snapper per kg, borrowed, unless STATE gives cardiac output), Ca ${fk.Ca_ml_ml.toFixed(4)} ml/ml at water pO2 ${pO2w.toFixed(1)} kPa; an upper bound resting on a calibrated Hb capacity` : 'none', m == null ? 'mass_kg is null' : 'state.ambient.pO2_kPa is null'),
+      sustained_power_W: LIN(refP != null ? refP * Q10.MMR ** ((T - Ta) / 10) : null, 'W', 'derived', 'reference_sustained_power_W x q10^((T - T_ref)/10); the Q10 ignores the decline near CTmax', m == null ? 'mass_kg is null' : 'state.ambient.pO2_kPa is null'),
+    };
     const survives = T > ctmin && T < ctmax;
     const limiting = T >= ctmax ? `above CTmax (${ctmax.toFixed(1)} degC): loss of equilibrium in an acute ramp` : T <= ctmin ? `below CTmin (${ctmin.toFixed(1)} degC): loss of equilibrium in an acute ramp` : null;
     const feasibilityNote = ur.value != null && ur.value < 0.8 ? `swimming capacity reduced to ${(ur.value * 100).toFixed(0)}% of the 28 degC value`
@@ -117,7 +133,7 @@ export default {
       metric('mmr_factor', METRICS[5].label, Q10.MMR ** ((T - Ta) / 10), '1', null, smrOk ? 'calibrated' : 'assumed', `Q10 1.34 ^ ((T - T_acclimation)/10) (${Q10.cite})`),
     ];
     return {
-      metrics, survives, feasible: null, feasibility_note: feasibilityNote, limiting, provenance: prov,
+      metrics, lean_inputs, survives, feasible: null, feasibility_note: feasibilityNote, limiting, provenance: prov,
       scope: 'Acute exposure (minutes to hours) of an acclimated zebrafish. CT limits are ramp-test endpoints (loss of equilibrium), not lethal temperatures or long-term limits; chronic exposure, growth, reproduction and interactions with hypoxia are not modelled. Fin or wing edits do not change these numbers: the scenario reads only species, stage and temperature. survives = CTmin < T < CTmax; feasible = null (swimming capacity is in ucrit_relative and feasibility_note). CT limits, Ucrit(T) and Q10 are read back from their source papers (kind calibrated): not independent predictions.',
       validity: { inRange, notes: notes.join(' ') || 'within the measured ranges' },
     };
