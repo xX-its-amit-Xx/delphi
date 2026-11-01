@@ -1,7 +1,7 @@
 {
  "server": "delphisci-sim-engine",
  "version": "0.1.0",
- "contract_version": "0.7.1",
+ "contract_version": "0.8.0",
  "changelog": "sim-engine/CHANGELOG.md",
  "transport": "stdio",
  "envelope": {
@@ -1242,6 +1242,165 @@
    }
   },
   {
+   "name": "closest_relative_phenotype",
+   "title": "Closest real relative (phenotype)",
+   "description": "Embed the design's resolved STATE (SL, mass/SL^3, depth/SL, width/SL, peduncle fractions, fin sizes) and return the nearest real organisms/specimens with distance, dominant features and an out-of-distribution flag whose threshold is calibrated on held-out real specimens.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "organism": {
+      "description": "Organism: a saved document id, a repository organism/design id (zebrafish-adult, flying-fish, winged-zebrafish, tff, ff-zf-chimera, ...), or an inline organism document. Gene edits: target {level:\"gene\", id}, param \"allele\" with an HGVS-like value (p.W169L, p.Y285*, c.505del, p.T200K/+), \"knockout\" or \"expression_fold\"; genes outside the vetted map go in doc.genotype [{gene, change}].",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "specimen": {
+      "type": "object",
+      "description": "Instead of an organism: a raw specimen record {SL_m, mass_kg, depth_SL, width_SL, ped_depth_frac, ped_width_frac, pectoral_len_SL, ...} (e.g. a museum specimen)."
+     },
+     "ageDays": {
+      "type": "number"
+     },
+     "conditions": {
+      "type": "object"
+     },
+     "exclude": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "Reference ids or groups to leave out of the nearest-neighbour search (e.g. \"organism:zebrafish\" for a leave-lineage-out check)."
+     },
+     "k": {
+      "type": "integer"
+     }
+    }
+   }
+  },
+  {
+   "name": "closest_relative_genotype",
+   "title": "Closest real relative (genotype)",
+   "description": "For each gene-level edit, compare the edited protein against real orthologues (sequences/alignments first; NCBI BLAST on request): % identity, closest species, and whether the edited residue state exists in any real organism or known allele. A residue is a STATE, not a phenotype: nothing here predicts a phenotype.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "organism": {
+      "description": "Organism: a saved document id, a repository organism/design id (zebrafish-adult, flying-fish, winged-zebrafish, tff, ff-zf-chimera, ...), or an inline organism document. Gene edits: target {level:\"gene\", id}, param \"allele\" with an HGVS-like value (p.W169L, p.Y285*, c.505del, p.T200K/+), \"knockout\" or \"expression_fold\"; genes outside the vetted map go in doc.genotype [{gene, change}].",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "network": {
+      "type": "boolean",
+      "description": "Allow cached network calls (UniProt, Ensembl). Default true; results are cached in sim-engine/validate/cache/."
+     },
+     "blast": {
+      "type": "boolean",
+      "description": "For genes not in sequences/alignments: run NCBI BLAST (blastp nr, NOT Aves[Organism]; minutes; cached). Default false."
+     }
+    },
+    "required": [
+     "organism"
+    ]
+   }
+  },
+  {
+   "name": "sanity_check_design",
+   "title": "Genotype and phenotype sanity checks",
+   "description": "Genotype: reference residue, frame, premature stop, conserved site, annotated domain, causal-chain caveats. Phenotype: allometry within the range observed across 16 377 FishShapes specimens, mass fits the body envelope, flight muscle fits (mesh or analytic), partedit containment if supplied, stage consistency. Each check: passed / failed / flagged / could-not-run.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "organism": {
+      "description": "Organism: a saved document id, a repository organism/design id (zebrafish-adult, flying-fish, winged-zebrafish, tff, ff-zf-chimera, ...), or an inline organism document. Gene edits: target {level:\"gene\", id}, param \"allele\" with an HGVS-like value (p.W169L, p.Y285*, c.505del, p.T200K/+), \"knockout\" or \"expression_fold\"; genes outside the vetted map go in doc.genotype [{gene, change}].",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "specimen": {
+      "type": "object",
+      "description": "Instead of an organism: a raw specimen record {SL_m, mass_kg, depth_SL, width_SL, ped_depth_frac, ped_width_frac, pectoral_len_SL, ...} (e.g. a museum specimen)."
+     },
+     "ageDays": {
+      "type": "number"
+     },
+     "conditions": {
+      "type": "object"
+     },
+     "containment": {
+      "type": "array",
+      "items": {
+       "type": "object"
+      },
+      "description": "partedit.js containment results from the browser: [{part, refused}] (refused = reason string or false)."
+     },
+     "network": {
+      "type": "boolean",
+      "description": "Allow cached network calls (UniProt, Ensembl). Default true; results are cached in sim-engine/validate/cache/."
+     },
+     "family": {
+      "enum": [
+       "genotype",
+       "phenotype",
+       "both"
+      ]
+     }
+    }
+   }
+  },
+  {
+   "name": "lean_by_component",
+   "title": "Lean verdicts grouped by component",
+   "description": "Runs lean_check on the design and groups every verdict by body, organ system (with its parts) and gene, each with law id, version, status, verdict and the inputs that decided it. Accepted-law violations newly caused by the design are kept apart from those its real parents also have, and from candidate/contested laws.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "organism": {
+      "description": "Organism: a saved document id, a repository organism/design id (zebrafish-adult, flying-fish, winged-zebrafish, tff, ff-zf-chimera, ...), or an inline organism document. Gene edits: target {level:\"gene\", id}, param \"allele\" with an HGVS-like value (p.W169L, p.Y285*, c.505del, p.T200K/+), \"knockout\" or \"expression_fold\"; genes outside the vetted map go in doc.genotype [{gene, change}].",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "ageDays": {
+      "type": "number"
+     },
+     "conditions": {
+      "type": "object"
+     },
+     "lawset": {
+      "type": "string"
+     },
+     "network": {
+      "type": "boolean",
+      "description": "Allow cached network calls (UniProt, Ensembl). Default true; results are cached in sim-engine/validate/cache/."
+     }
+    },
+    "required": [
+     "organism"
+    ]
+   }
+  },
+  {
    "name": "design_score",
    "title": "Design score (pre-registered, validated)",
    "description": "One number with its components: phenotype plausibility vs closest real relatives (P), accepted-law Lean violations newly caused (L), genotype sequence sanity (G), spec performance if a spec is given (S) and evidence strength (E). Formula and weights fixed in sim-engine/validate/SCORER-PREREGISTRATION.md before validation; results of that validation in sim-engine/validate/SCORER-RESULTS.md.",
@@ -1314,6 +1473,112 @@
      "spec": {
       "type": "object",
       "description": "Optional DesignSpec (design_from_spec format) for the S component."
+     }
+    }
+   }
+  },
+  {
+   "name": "validate_design",
+   "title": "Validate a design (one call, TWO Lean rounds)",
+   "description": "Closest real relatives (phenotype and genotype), sanity checks, Lean by component and the design score in one report, and TWO Lean rounds instead of one: round 1 against the law set that was in force when the design was made (read off the lawset_version its edits record), then the CURRENT law set is re-resolved and round 2 is run against that. Both rounds are reported with their law-set version and timestamp, and the difference is named: newly_violated_since (laws admitted since that the design now breaks), newly_binding_since (violations it already had, now binding because the law was raised to accepted), no_longer_violated_since and newly_unjudged_since. A design that was valid last week and is not valid today is what a living law base is for, and it is visible here. The verdict never says \"valid\": it lists checks passed, failed, flagged and not run, and names the closest real relative. swarm:true adds validation sub-tasks for the swarm board.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "organism": {
+      "description": "Organism: a saved document id, a repository organism/design id (zebrafish-adult, flying-fish, winged-zebrafish, tff, ff-zf-chimera, ...), or an inline organism document. Gene edits: target {level:\"gene\", id}, param \"allele\" with an HGVS-like value (p.W169L, p.Y285*, c.505del, p.T200K/+), \"knockout\" or \"expression_fold\"; genes outside the vetted map go in doc.genotype [{gene, change}].",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "specimen": {
+      "type": "object",
+      "description": "Instead of an organism: a raw specimen record {SL_m, mass_kg, depth_SL, width_SL, ped_depth_frac, ped_width_frac, pectoral_len_SL, ...} (e.g. a museum specimen)."
+     },
+     "ageDays": {
+      "type": "number"
+     },
+     "conditions": {
+      "type": "object"
+     },
+     "exclude": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "Reference ids or groups to leave out of the nearest-neighbour search (e.g. \"organism:zebrafish\" for a leave-lineage-out check)."
+     },
+     "containment": {
+      "type": "array",
+      "items": {
+       "type": "object"
+      },
+      "description": "partedit.js containment results from the browser: [{part, refused}] (refused = reason string or false)."
+     },
+     "network": {
+      "type": "boolean",
+      "description": "Allow cached network calls (UniProt, Ensembl). Default true; results are cached in sim-engine/validate/cache/."
+     },
+     "blast": {
+      "type": "boolean",
+      "description": "For genes not in sequences/alignments: run NCBI BLAST (blastp nr, NOT Aves[Organism]; minutes; cached). Default false."
+     },
+     "lawset": {
+      "type": "string"
+     },
+     "version": {
+      "type": "string",
+      "description": "Scorer version (score-weights*.json): 1.0.0 (default, the blind-validated one), 1.1.0, 1.1.1 (adds rank_score), 1.2.0 (frozen for the blind benchmark run) or 1.3.0 (adds the joint correlation-aware term; see SCORER-RESULTS.md)."
+     },
+     "spec": {
+      "type": "object"
+     },
+     "swarm": {
+      "type": "boolean"
+     },
+     "made_under_lawset": {
+      "type": "string",
+      "description": "The law set to use for round 1, when the design itself does not record one (an unedited repository organism or an inline document). Omitted: the newest lawset_version stamped on the document's edits, else the current set, and lean_rounds.round1.lawset_basis says which."
+     },
+     "second_round": {
+      "type": "boolean",
+      "description": "Run the second Lean round (default true). false gives the single-round report only."
+     }
+    }
+   }
+  },
+  {
+   "name": "validate_swarm_tasks",
+   "title": "Validation sub-tasks for the swarm board",
+   "description": "The six validation sub-tasks (closest-relative-phenotype, closest-relative-genotype, sanity-geno, sanity-pheno, lean-by-component, adversarial-review) as JSON for swarm_post_task.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "organism": {
+      "description": "Organism: a saved document id, a repository organism/design id (zebrafish-adult, flying-fish, winged-zebrafish, tff, ff-zf-chimera, ...), or an inline organism document. Gene edits: target {level:\"gene\", id}, param \"allele\" with an HGVS-like value (p.W169L, p.Y285*, c.505del, p.T200K/+), \"knockout\" or \"expression_fold\"; genes outside the vetted map go in doc.genotype [{gene, change}].",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "specimen": {
+      "type": "object",
+      "description": "Instead of an organism: a raw specimen record {SL_m, mass_kg, depth_SL, width_SL, ped_depth_frac, ped_width_frac, pectoral_len_SL, ...} (e.g. a museum specimen)."
+     },
+     "exclude": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "Reference ids or groups to leave out of the nearest-neighbour search (e.g. \"organism:zebrafish\" for a leave-lineage-out check)."
      }
     }
    }
@@ -1877,6 +2142,371 @@
       "description": "Bypass the 10-minute health cache."
      }
     }
+   }
+  },
+  {
+   "name": "validate_generation",
+   "title": "Validate a generated organism against the desired phenotype, at every scale",
+   "description": "The unifying design validator. Input: the generated organism, the base organism, and the DESIRED PHENOTYPE AS TEXT (the same prompt the generator was given). It parses the text into a DesignSpec, identifies the closest FUNCTIONAL analogue from the desired function rather than from relatedness and fetches that analogue's genotype, sweeps the functional annotations at every biological scale (sequence/genomic, transcriptomic, proteomic, PTM, pathway, then cell, tissue, organ, organ system, body), then runs functional_resolution, lean_check and physics_check with the spec as the physics target.\n\nReturns five named results side by side, each with its own gate, NEVER summed, plus a per-scale coverage number and a verdict SENTENCE naming what passed, what failed and what could not be assessed.\n\nBe clear about the sequence limit before reading the output: this project has no generated whole genomes. A design is its base plus edits, so when a document or design id is supplied the generated sequence is reconstructed AT THE EDITED LOCI ONLY, and when the design carries no gene-level edit (the usual case) nothing is reconstructed at all. 'sequence_basis' and 'loci_covered' say which of the three cases applies on every call. Any unparsed part of the desired-phenotype text is returned verbatim: an unparsed requirement is an unchecked requirement.\n\nA validation REPORT, not a validity claim. Five named results are reported side by side with their own gates and are never summed; a composite score, if the scorer produced one, is carried through as the scorer's own number and is not this report's verdict. Every annotation in the multi-scale sweep is a proxy-species record (zebrafish, medaka, Mexican tetra) or an annotation borrowed from a human or mouse orthologue: none is a measurement of the designed organism and none is a measurement of the flying fish. Absence of a record means \"not recorded\", never \"not present\". Birds (Aves) are a frozen holdout and appear in no reference set, no analogue and no annotation. MORPHOLOGICAL designs are shapes, not organisms: a parameter delta is not an allele, a pathway or a developmental programme.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "desired_phenotype": {
+      "type": "string",
+      "description": "The desired phenotype as free text -- the same prompt the generator was given. Parsed by lib/parse-text.mjs; whatever cannot be parsed is returned verbatim and marked unchecked."
+     },
+     "generated": {
+      "description": "The generated organism: a design id (e.g. \"winged-zebrafish\"), an inline organism document, a path to an organism-document JSON, or a path to / string of FASTA or plain sequence.",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "base": {
+      "description": "The base organism, in any of the same forms (e.g. \"zebrafish-adult\").",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "network": {
+      "type": "boolean",
+      "description": "Allow network lookups (Ensembl, used only to reconstruct sequence at edited loci). Default false."
+     },
+     "lawset": {
+      "type": "string",
+      "description": "Lean lawset version for the Lean check. Default \"current\"."
+     },
+     "ageDays": {
+      "type": "number",
+      "description": "Evaluate at this age in days instead of the criterion's stages."
+     },
+     "conditions": {
+      "type": "object",
+      "description": "Ambient conditions override (see conditions/baseline.json for what is otherwise held fixed)."
+     },
+     "reference_set_excluding": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "Leave-out entries for the phenotype reference set (ids, \"species:\", \"family:\", \"order:\", \"organism:\")."
+     },
+     "extra_genes": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "Extra gene symbols to include in the multi-scale sweep beyond the focal panel and the edited genes."
+     }
+    },
+    "required": [
+     "desired_phenotype",
+     "generated",
+     "base"
+    ]
+   }
+  },
+  {
+   "name": "functional_resolution",
+   "title": "Functional-analogue ledger: how each difference is accounted for",
+   "description": "The FOURTH named result, beside genotype_similarity, phenotype_similarity, lean_check and physics_check. It picks the closest FUNCTIONAL analogue from the DESIRED FUNCTION (which real animal is recorded as doing the thing that was asked for) rather than from relatedness or shape, derives that analogue's requirement set, and then classifies every difference between the design and the analogue on a six-rung ladder: SAME > ALLELIC > PARALOGUE > ANALOGOUS_SET > COMPENSATORY > UNRESOLVED. DEMONSTRATED resolutions (SAME, ALLELIC, PARALOGUE, ANALOGOUS_SET) and HYPOTHESISED ones (COMPENSATORY) are reported apart and are NEVER summed: \"this gap could be compensated\" is a claim about an unobserved mechanism, not a resolution. An UNRESOLVED difference is a GATE failure: the design is not functionally accounted for, whatever the similarity scores say. Nothing here moves the composite design score. Read `coverage` before quoting any count. Coverage is partial (roughly 30 % of requirements are assessable on the headline case) and the analogue itself is data-poor: there is no flying-fish expression or functional-assay data at any locus, so `functional_data_we_hold` is the honest denominator, not the ledger length. Supply `desired_phenotype` whenever you have it: with no desired function the analogue is INFERRED from the design's declared identity and the result says so.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "organism": {
+      "description": "Organism: a saved document id, a repository organism/design id (zebrafish-adult, flying-fish, winged-zebrafish, tff, wingless-flying-fish, ff-zf-chimera, ...), or an inline organism document.",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "desired_phenotype": {
+      "type": "string",
+      "description": "The desired phenotype / function as free text -- the same prompt the generator was given. It is the signal that chooses the analogue. Omit it and the function is inferred from the design's identity, and the ledger says it was inferred."
+     },
+     "spec": {
+      "type": "object",
+      "description": "A DesignSpec instead of (or beside) the text; its criteria are also read for the function. Build one with parse_design_text."
+     },
+     "pectoral_len_over_SL": {
+      "type": "number",
+      "description": "The design's pectoral fin length as a fraction of SL, for the functional half of the analogue distance, when the document does not carry it."
+     },
+     "ageDays": {
+      "type": "number"
+     },
+     "conditions": {
+      "type": "object"
+     },
+     "network": {
+      "type": "boolean",
+      "description": "Allow cached network lookups. Default false; the ledger answers from shipped data and cache."
+     },
+     "lawset": {
+      "type": "string"
+     },
+     "reference_set_excluding": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "Leave-out entries, passed through unchanged (ids, \"species:\", \"family:\", \"order:\", \"organism:\")."
+     }
+    },
+    "required": [
+     "organism"
+    ]
+   }
+  },
+  {
+   "name": "physics_check",
+   "title": "Does the design actually do the thing? (physics simulation)",
+   "description": "The FIFTH named result, beside genotype_similarity, phenotype_similarity, lean_check and functional_resolution. Runs the engine's own scenario modules on the design at every requested life stage and reports, per criterion of the desired function, met / not met / NO MODEL, with the measured metric, the threshold and the limiting factor. KEEP THE DISTINCTION: lean_check says the design BREAKS NO LAW (necessary, never sufficient); this says the design ACTUALLY DOES THE THING. The target function comes from `spec` (a DesignSpec) when given and is then authoritative; with no spec it is inferred from the design's declared intent and said to be inferred. Also runs the standing physical checks for the organism as separate NAMED checks (can it reach its own v_min, does its lifting area support its mass, does drag power fit the aerobic ceiling, does the organ volume fit the body, is it stable in pitch) -- never folded into one number. Every check carries a model_confidence stating whether the model behind it is independently validated, rests on assumed inputs, or is CIRCULAR (scored against a number read back from the paper it is compared with); \"function achieved\" is never reported without it. Where the inputs have a spread, a seeded ensemble over the stated distributions reports the FRACTION of draws in which the function is achieved plus the median and the 5-95 % band: a design that achieves its function in 8 % of draws has not achieved it. A criterion no scenario can model comes back as `no model` and is listed under unchecked_requirements; it is never dropped and never counts as met. It is a GATE, not a score: physics_gate_failed is true when a hard criterion is not met, and nothing here moves the composite score.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "organism": {
+      "description": "Organism: a saved document id, a repository organism/design id (flying-fish, zebrafish-adult, tff, winged-zebrafish, wingless-flying-fish, ff-zf-chimera, ...), or an inline organism document.",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "specimen": {
+      "type": "object",
+      "description": "Instead of an organism: a raw specimen record. A specimen has no STATE, so no scenario can be run on it and the result is `ran: false` with the reason."
+     },
+     "spec": {
+      "type": "object",
+      "description": "A DesignSpec (lib/spec.mjs): {start_from, base_edits, criteria:[{scenario, params, metric, op, value, unit, stages, hard, weight, source_text}]}. AUTHORITATIVE when given: that IS the desired function. Build one from a text prompt with parse_design_text."
+     },
+     "ageDays": {
+      "type": "number",
+      "description": "Pin every criterion to one age instead of its declared stages."
+     },
+     "conditions": {
+      "type": "object",
+      "description": "Ambient conditions passed to resolveState (depth_m, altitude_m, temperature_C, headwind_m_s, ...)."
+     },
+     "draws": {
+      "type": "integer",
+      "description": "Ensemble draws per criterion per stage (default 200). 0 switches the ensemble off, and then no fraction-of-draws figure is reported."
+     },
+     "seed": {
+      "type": "string",
+      "description": "Ensemble seed (default 'delphi-v1'). The same seed gives the same ensemble."
+     },
+     "ensemble": {
+      "type": "boolean",
+      "description": "false switches the ensemble off (same as draws: 0)."
+     },
+     "launch_height_m": {
+      "type": "number",
+      "description": "Launch height for the standing flight checks (default 1 m, the glide scenario's own default; kind assumed)."
+     }
+    }
+   }
+  },
+  {
+   "name": "edit_plan",
+   "title": "Germline editing plan for a design's gene edits (proposal, not a protocol)",
+   "description": "For each gene-level edit on a design, the concrete zebrafish germline editing plan: the exact GRCz11 coordinates of the change (gene -> canonical transcript -> CDS -> codon -> chromosome position, with the reference codon CHECKED against the genome), SpCas9/SaCas9/Cas12a protospacers in the required window with their cut sites, a full ssODN donor with homology arms and silent PAM/seed blocking mutations, a base-editor route where the change is a transition and a designed pegRNA where it is a transversion, an off-target search against GRCz11 with the gene context of every mismatched site, and - as first-class output - what is NOT established, plus a \"what would falsify this plan\" section. Every number is labelled: on-target scores are a HEURISTIC (not Doench 2016 Rule Set 2, not a measured efficiency), off-target counts are a FLOOR from a heuristic aligner, HDR rates are other papers' loci. Danio rerio only: it refuses every other species, and will not produce a human or other mammalian plan.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "organism": {
+      "description": "Organism: a saved document id, a repository organism/design id (winged-zebrafish, flying-fish, ...), or an inline organism document. Its gene-level edits are each turned into an editing plan. Use `gene` + `change` instead to plan one edit directly.",
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ]
+     },
+     "gene": {
+      "type": "string",
+      "description": "Zebrafish gene symbol (resolved through Ensembl; an unresolvable symbol is a refusal, not a guess). Use with `change`."
+     },
+     "change": {
+      "type": "string",
+      "description": "The edit: a protein change \"p.W169L\" / \"p.Y285*\", or \"knockout\". Anything else is refused rather than guessed at."
+     },
+     "species": {
+      "type": "string",
+      "description": "Must be danio_rerio (the default). Any other value is refused: this tool does not plan human or other mammalian edits."
+     },
+     "window": {
+      "type": "integer",
+      "description": "For a point change: the cut site must be within this many bp of the edited codon (default 30). Cut-site proximity is the main lever on knock-in efficiency (Prykhozhij 2018)."
+     },
+     "arms": {
+      "enum": [
+       "symmetric",
+       "asymmetric",
+       "both"
+      ],
+      "description": "ssODN homology-arm style. Default: both (40/40 and the asymmetric variant)."
+     },
+     "offtarget": {
+      "type": "boolean",
+      "description": "Run the GRCz11 off-target search (NCBI blastn-short against the zebrafish genome assembly). Default true. It takes minutes per guide and is cached; set false for a fast structural answer."
+     },
+     "network": {
+      "type": "boolean",
+      "description": "Allow network calls (Ensembl REST, Kazusa, NCBI BLAST). Default true. Everything is cached under C:/Temp/editplan-cache (EDITPLAN_CACHE_DIR). No credentials are used."
+     },
+     "panel_only": {
+      "type": "boolean",
+      "description": "Return just the validation-report panel section, not the full plans."
+     }
+    }
+   }
+  },
+  {
+   "name": "edit_plan_methods",
+   "title": "How edit_plan computes every number, and what each number is not",
+   "description": "The scoring rules, the off-target search, the reagent precedents, the feasibility statements with their citations, and the falsifier list - without running a plan. Read this before quoting any number edit_plan produced.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {}
+   }
+  },
+  {
+   "name": "lean_open_questions",
+   "title": "List open questions and failed theorems",
+   "description": "Everything this project holds UNSETTLED (open questions, each with its arms and a computed belief proportion) and everything it tried and could not establish (failed theorems, each with its reason and what survives). Filter by status, by whether an arm is formalised in Lean, by a law_id or design property the question touches, or by free text.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "status": {
+      "oneOf": [
+       {
+        "type": "string",
+        "enum": [
+         "open",
+         "settled",
+         "abandoned"
+        ]
+       },
+       {
+        "type": "array",
+        "items": {
+         "type": "string",
+         "enum": [
+          "open",
+          "settled",
+          "abandoned"
+         ]
+        }
+       }
+      ],
+      "description": "One status or a list. Default: all."
+     },
+     "formalised": {
+      "type": "boolean",
+      "description": "true: only questions with at least one arm formalised in Lean."
+     },
+     "touches": {
+      "type": "string",
+      "description": "A law_id, constraint id, design property or scenario key the question bears on, e.g. \"perturb-depth-cap\", \"adult_mass\", \"sleep\"."
+     },
+     "text": {
+      "type": "string",
+      "description": "Substring of question_id, statement or an arm statement."
+     },
+     "include_failed": {
+      "type": "boolean",
+      "description": "Include failed theorems and requirement records. Default true."
+     }
+    }
+   }
+  },
+  {
+   "name": "lean_open_question",
+   "title": "Get one open question, failed theorem or requirement record",
+   "description": "One full record: every arm with its position, its Lean reference where it has been formalised, its evidence with VERBATIM quotes and locators, its computed belief and the breakdown behind it; whether the arms actually contradict; what would settle the question and whether that is feasible today; and what in this project rests on the answer. Accepts a question_id (oq-*), failure_id (ft-*) or requirement_id (cr-*).",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "id": {
+      "type": "string",
+      "description": "question_id (e.g. \"oq-kcnk5b-vm-sign\"), failure_id (e.g. \"ft-glider-interface-convergence\") or requirement_id."
+     },
+     "recompute": {
+      "type": "boolean",
+      "description": "Recompute the belief proportion from the arms' evidence and return it alongside the stored one, so a caller can verify the number rather than trust it."
+     }
+    },
+    "required": [
+     "id"
+    ]
+   }
+  },
+  {
+   "name": "lean_open_question_guard",
+   "title": "Would this law be refused for asserting an open arm?",
+   "description": "Run the open-question guard against a proposed law WITHOUT writing anything. Returns the arms it would be found to assert, and the full refusal text naming the question, its arms, the computed proportion and what would settle it. Ask this before writing the Lean, not after.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "law_id": {
+      "type": "string"
+     },
+     "statement_en": {
+      "type": "string",
+      "description": "The law's plain-English statement, as it would be written."
+     },
+     "lean_theorem": {
+      "type": "string",
+      "description": "Fully qualified theorem name, if there is one."
+     },
+     "lean_structure": {
+      "type": "string",
+      "description": "Fully qualified hypothesis structure name, if there is one."
+     },
+     "hypotheses": {
+      "type": "array",
+      "items": {
+       "type": "object"
+      },
+      "description": "As the law file would carry them."
+     },
+     "atoms": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "description": "shared_scope.atoms, if any."
+     },
+     "taxa": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "statement_en"
+    ]
    }
   }
  ]

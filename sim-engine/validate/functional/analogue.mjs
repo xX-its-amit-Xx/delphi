@@ -2,7 +2,8 @@
 //
 // WHY THIS EXISTS. This project's own findings say the naive "does the design look like its relatives" test is the
 // wrong one. sequences/gliders.json: independent gliders do NOT converge at the sequence level (0 of 532 interface
-// positions shared across gliding taxa). design-validation/REPORT.md: the winged zebrafish reproduces 1 of the 74
+// positions SEPARATE gliders from non-gliders; all 532 are shared with non-gliders, so these positions carry no
+// glider-specific signal at all). design-validation/REPORT.md: the winged zebrafish reproduces 1 of the 74
 // loci known to differ in flying fishes, and at a DIFFERENT residue. So the comparison that can carry weight is
 // against the closest organism that performs the FUNCTION, whatever its relatedness - and the answer has to come
 // with the distance in both senses, so nobody mistakes a functional analogue for a close relative.
@@ -109,7 +110,7 @@ export function registry() {
           supplies: 'powered flapping flight itself, with an aerobic power supply, in an animal whose sequences we may read',
           does_not_supply: 'anything transferable to a fin. There is no pectoral fin, no lepidotrichium and no fin fold in a bat, and our own glider analysis finds NO sequence convergence between gliding mammals and gliding fishes at the focal sites (the lat4a 326 state is F in all three bats, in mouse and in human - the same as in zebrafish and medaka).',
           evidence: [{ claim: 'the only extant non-avian powered fliers whose sequences we may read; three bat genomes are already in our focal-gene alignments (Myotis lucifugus, Pteropus vampyrus, Rhinolophus ferrumequinum)', source: 'sequences/genes.json, sequences/gliders.json panel', kind: 'curated' },
-            { claim: '0 of 532 interface positions are shared across gliding taxa; lat4a F326L is 20.1 A from the substrate', source: 'sequences/gliders.json (our own convergence analysis)', kind: 'measured' }] },
+            { claim: '0 of 532 interface positions separate gliders from non-gliders (all 532 are shared with non-gliders); lat4a F326L is 20.1 A from the substrate', source: 'sequences/gliders.json (our own convergence analysis)', kind: 'measured' }] },
         { id: 'flying-fish', name: 'flying fishes', taxon: 'Exocoetidae', satisfies: false, partial: true,
           supplies: 'the airborne half: a teleost that leaves the water and travels through air, with the enlarged pectoral fin that makes it possible, and a sequenced genome',
           does_not_supply: 'power. A flying fish glides; it does not flap. Nothing in its requirement set speaks to sustained powered flight, so borrowing that set for a powered-flight design would answer a question nobody asked.',

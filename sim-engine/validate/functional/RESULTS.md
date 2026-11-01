@@ -268,7 +268,7 @@ read**:
 - The nearest **partial** analogues are listed with what each does and does **not** supply:
   - **bats (Chiroptera)** supply powered flapping flight with an aerobic power supply, in animals whose sequences
     we may read. They supply **nothing transferable to a fin**: no pectoral fin, no lepidotrichium, no fin fold —
-    and our own convergence analysis finds **0 of 532 interface positions shared across gliding taxa**, with the
+    and our own convergence analysis finds **0 of 532 interface positions separating gliders from non-gliders** (all 532 are shared with non-gliders), with the
     `lat4a` 326 state being `F` in all three bats, in mouse and in human, the same as in zebrafish and medaka.
   - **flying fishes** supply the airborne half and a sequenced genome. They do not supply **power**: a flying fish
     glides, it does not flap.

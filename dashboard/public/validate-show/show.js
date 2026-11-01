@@ -154,7 +154,7 @@ function actAsk(container, { data }) {
   const ask = data.ask || {};
   const text = ask.text || '';
   const crits = ask.criteria || [], unp = ask.unparsed || [];
-  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;overflow:auto;padding:68px 16px 16px;display:flex;flex-direction:column;gap:12px';
+  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;overflow:auto;padding:78px 16px 16px;display:flex;flex-direction:column;justify-content:center;gap:12px';
   container.appendChild(host);
 
   // Mark up the text: a clause is "parsed" when a criterion quotes it, "unparsed" when the validator
@@ -325,7 +325,7 @@ async function actAnalogue(container, { data, theme }) {
   const first = (an.analogues || [])[0] || null;
   const story = fn.not_expressible ? 'not-expressible' : !first ? 'none' : fn.status === 'lost' ? 'lost' : 'exists';
 
-  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:62px 16px 16px;overflow:auto;display:flex;flex-direction:column;justify-content:center;gap:11px';
+  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:78px 16px 16px;overflow:auto;display:flex;flex-direction:column;justify-content:center;gap:11px';
   container.appendChild(host);
 
   let d3 = null, org = null, ana = null, render, duration = 20, chapters = [], items = [];
@@ -428,7 +428,7 @@ function actPhysics(container, { data }) {
   const gate = data.physics_check || null;
   const standing = (data.standing_checks || []).filter(s => String(s.status || '').toLowerCase().startsWith('fail'));
 
-  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:62px 14px 14px;overflow:auto;display:flex;flex-direction:column;justify-content:center;gap:9px';
+  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:78px 14px 14px;overflow:auto;display:flex;flex-direction:column;justify-content:center;gap:9px';
   container.appendChild(host);
   const grid = el('div'); grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px';
   host.appendChild(grid);
@@ -519,7 +519,7 @@ function actPhysics(container, { data }) {
 // ACT 7 -- THE VERDICT. The five gates in turn, then the sentence. Never a number as the ending.
 function actVerdict(container, { data }) {
   const v = data.verdict || {}, gates = v.gates || [];
-  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:62px 14px 14px;overflow:auto;display:flex;flex-direction:column;justify-content:center;gap:8px';
+  const host = el('div'); host.style.cssText = 'position:absolute;inset:0;padding:78px 14px 14px;overflow:auto;display:flex;flex-direction:column;justify-content:center;gap:8px';
   container.appendChild(host);
 
   const nodes = gates.map(g => {
@@ -721,7 +721,7 @@ async function mountAct(i) {
     if (r.skip) {
       a.skip = r.reason;
       host.innerHTML = '';
-      const wrapn = el('div'); wrapn.style.cssText = 'position:absolute;inset:0;padding:68px 16px 16px;display:flex;flex-direction:column;gap:10px;overflow:auto';
+      const wrapn = el('div'); wrapn.style.cssText = 'position:absolute;inset:0;padding:78px 16px 16px;display:flex;flex-direction:column;justify-content:center;gap:10px;overflow:auto';
       wrapn.appendChild(gapBox(`act ${a.no} not shown`, r.reason, r.detail || `expected ./${a.sibling[0]} exporting mountScene(), per SCENES.md`));
       host.appendChild(wrapn);
       scene = {
