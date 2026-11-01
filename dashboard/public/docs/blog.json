@@ -1,0 +1,81 @@
+{
+ "generated_by": "authored prose, layman's English, one post per product inside one MorphoLemma post",
+ "intro": {
+  "title": "We tried to design a flying fish, and built the thing that told us no",
+  "standfirst": "A hackathon project about the part of science that nobody demos: the check that says your idea does not work, and why.",
+  "body": [
+   "Biology has a strange gap in it. A mathematician who proves a theorem can hand it to a computer, and the computer will tell them — with total confidence, in seconds — whether the proof holds. A biologist who designs an organism has nothing like that. They have intuition, experience, and eventually an experiment that takes months and costs a fortune. There is no button that says *this cannot work, and here is the reason*.",
+   "That gap matters more now than it used to, because software is starting to design biology. If an AI proposes a new organism, a new protein, a new genetic edit, somebody has to check it. And checking it by running the experiment defeats the point of generating it quickly.",
+   "So we spent a hackathon building the missing check. We called it MorphoLemma. You describe an organism in plain English — the one we kept using was *a zebrafish with wings* — and the system works out what that would actually require: which organs, which tissues, which genes, which edits to the DNA, and what the animal would have to do at every stage of growing up. Then it checks that design against physics, against formal mathematical statements of biological law, and against the closest real animal that already does the thing you are asking for.",
+   "Then — and this is the part we are actually proud of — it refuses.",
+   "Our flying zebrafish does not fly. It cannot even leave the water. The simulator says it would reach 0.67 metres per second at launch when it needs 8.64, and that its wings are 166 times too small to carry it. We built the machine, pointed it at our own headline idea, and it told us no. We shipped that result as the centrepiece rather than quietly picking a design that worked.",
+   "That is the whole argument. A validator that always finds a way to say yes is not a validator. The useful thing is a system whose default answer is *I cannot tell you that*, and which then says exactly what it would need in order to tell you.",
+   "Below are the five pieces we built, each as its own short post. You can switch this page to **Technical skim** for the structure and the commands, or **Technical deep** for the full report with the runs, the data and the benchmarks."
+  ]
+ },
+ "posts": {
+  "nanopubs": {
+   "title": "Writing down a claim so a machine can argue with it",
+   "standfirst": "Most scientific claims live in prose. Prose cannot be checked. So we broke the literature into pieces small enough to be wrong.",
+   "img": "art/hero-nanopubs.jpg",
+   "body": [
+    "A scientific paper makes dozens of claims at once, tangled together in paragraphs. If you want to check one of them, you first have to work out what exactly is being claimed — and two careful readers will often disagree about that. The claim is not wrong, it is just not *pinned down*.",
+    "A nanopublication is the smallest useful fix for this. It is one claim, written as structured data, bundled with where it came from and who is standing behind it. One claim per record. Small enough that it can be wrong on its own, without taking a whole paper down with it.",
+    "We read Darwin, Thompson, Turing and Wolfram this way, and ended up with a browsable graph of claims where each one points back at the exact passage it came from. If you disagree with one, you have something specific to disagree with.",
+    "The rule we found ourselves enforcing hardest was not about format. It was this: every record has to say what it does *not* show. A claim like \"guide 3 is the best guide\" is useless — best by what measure, and silent about everything it cannot see. A claim like \"guide 3 is the only one with a perfect match at the intended locus; this does not establish that it cuts efficiently\" is a sentence someone can act on.",
+    "We also built a checker, and then made a point of watching it fail on purpose, because a validator nobody has seen fail is one you cannot trust. That turned out to matter. The checker had a bug where a record passed when it was written and failed an hour later — a timestamp rule nobody had thought about. Every unsigned draft in the project was quietly failing validation for a reason that had nothing to do with the records. We only found it because we ran the checker as a demo on this very page."
+   ]
+  },
+  "leanbio": {
+   "title": "Making a biological law into something a computer can verify",
+   "standfirst": "Mathematicians have proof assistants. We pointed one at biology and found out what breaks.",
+   "img": "art/hero-leanbio.jpg",
+   "body": [
+    "There is a tool called Lean that mathematicians use to write proofs a computer can check. You state your assumptions, you state your conclusion, and a small trusted program verifies every step. If it compiles, the logic holds. Not *probably* holds — holds.",
+    "Biology does not have this, mostly because biological statements are rarely precise enough to compile. Saying \"larger animals have proportionally thicker bones\" is true and useful and completely unverifiable until you say exactly what you mean by larger, thicker and proportionally.",
+    "So we built a registry of biological laws written precisely enough for Lean to check them, and a pipeline that takes a claim from the literature and tries to turn it into one. A claim only becomes a law if it passes two gates: it compiles, and it survives a debate among agents about whether the evidence actually supports it. Both, or it does not get in.",
+    "The interesting failures were not the ones that refused to compile. They were the ones that compiled perfectly and meant nothing.",
+    "It is embarrassingly easy to write a statement that is technically true because its assumptions can never all be satisfied at once, or because it does not actually depend on them. So the checker does something slightly brutal: it strips out all the assumptions and tries again. If the statement still compiles without them, the assumptions were decorative, and the formalisation fails — even though it is, strictly speaking, correct. Compiling was never the bar.",
+    "Every law also has to come with concrete numbers that satisfy it, proved rather than asserted. If you cannot produce a single example where your law applies, you have probably written something that is true and empty."
+   ]
+  },
+  "mcp": {
+   "title": "Handing the whole thing to an agent",
+   "standfirst": "If software is going to design biology, the checking tools have to be built for software to call.",
+   "img": "art/hero-mcp.jpg",
+   "body": [
+    "Most scientific software is built for a person sitting in front of it. That is a problem if the thing proposing experiments is an AI, because the AI ends up screen-scraping a tool meant for hands.",
+    "So every part of this system is exposed as tools an agent can call directly — the laws, the organisms, the simulators, the validator. Fifty-eight of them. The agent is a first-class user, not a second-class one.",
+    "We did not design that list by exposing whatever was easiest. We started from a map of who would actually use this and what they would ask: fourteen kinds of person, thirty-two specific questions, and the fourteen big open questions in biology that the tools touch. Then we built towards that, and published the gaps we had not filled rather than rounding them up.",
+    "The behaviour we care about most is what happens when the system does not know. Ask it to check a design and it does not return a confident number. It tells you which of the laws it could not evaluate, and for each one, exactly which measurement it was missing. That is a to-do list rather than a verdict.",
+    "A checker that always returns a score is one you cannot use, because you can never tell the difference between *this is fine* and *I had no idea*."
+   ]
+  },
+  "studio": {
+   "title": "From a sentence to an animal",
+   "standfirst": "You type \"a zebrafish with wings\". It works out what that would actually take, nine layers down.",
+   "img": "art/hero-studio.jpg",
+   "body": [
+    "The design studio takes a description in plain English and turns it into something specific enough to argue with. \"A zebrafish with wings that glides over the water\" becomes a set of numbered requirements in real units — how big, how heavy, how much wing area, at what stage of life.",
+    "Then it goes down. Organ systems, organs, tissues, cell types, the signalling pathways between them, the genes behind those, the specific edits to the DNA, and how all of it would have to change as the animal grows. Every layer is tied to a standard biological vocabulary, so each piece can be traced to a term that already means something to biologists.",
+    "It is honest about the parts it cannot parse. Feed it a sentence with four requirements and it will tell you it understood one and could not interpret three — rather than silently dropping them and producing a confident-looking design built on a quarter of what you asked for.",
+    "At the end the design leaves the screen as actual files. A mesh you can send to a 3D printer, and a genetic sequence you could in principle hand to a lab. We printed ours: a ten-part snap-together kit you can assemble by hand, and a 56-part version split along the body's own anatomical hierarchy.",
+    "The most useful thing it does today is probably not designing at all. It is telling you what data is missing. When we asked it to compare our design against a real flying fish, it reported that of 3,860 genes, nine carry an identifier for that species — and that there is no expression data, no mutant, no functional assay. That absence is a research agenda."
+   ]
+  },
+  "harness": {
+   "title": "The part that says no",
+   "standfirst": "We pointed our own validator at our own flagship design. It refused it. That is the result.",
+   "img": "art/hero-harness.jpg",
+   "body": [
+    "Here is the question everyone wants answered about a designed organism: is it plausible? And here is the problem: that question has no answer. Plausible compared to what, judged how, by whom?",
+    "So the validator answers a different question, one that can actually be settled. It finds the closest real animal that already performs the function you asked for — not the closest relative, the closest *performer* — and then annotates every way your design differs from it.",
+    "That distinction matters. If you design a gliding fish, your useful comparison is a real gliding fish, even one only distantly related. A close cousin that cannot glide tells you nothing about gliding. When nothing in the catalogue actually performs the function, the validator says so loudly instead of quietly substituting the nearest relative and letting you assume it meant something.",
+    "It reports five separate results — how similar the genes are, how similar the body is, whether it breaks any law, how many requirements it could actually check, and whether the physics works — and it never adds them up. Adding them up would let a good score on one hide a fatal problem in another.",
+    "We know this because we have the receipt. There is a single number the system can produce, a sort of overall plausibility score. We tested it by adding one extra requirement that our design *already met* — something that should have changed nothing. The score went from 0.47, not plausible, to 0.88, plausible. Same design, same data, one extra sentence of description. A number that moves like that is not measuring anything. It is still shown on the page, clearly labelled as not the verdict, so nobody assumes we are hiding it.",
+    "And the headline: our flying zebrafish fails. Launch speed 0.67 metres per second against the 8.64 it needs. Wing area 166 times too small. Of 73 functional requirements, only 22 could be assessed at all, and 19 of those did not resolve.",
+    "We could have designed something easier and shown it passing. The refusal is the demo."
+   ]
+  }
+ }
+}
