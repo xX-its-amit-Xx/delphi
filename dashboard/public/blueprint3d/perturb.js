@@ -12,7 +12,9 @@
 // Host interface: see mountPerturb() below and PERTURB-HOOK.md.
 // This file has no top-level DOM access, so perturb-worker.js can import its pure helpers.
 
-import { piecesFor, AIRSPEED } from './design.js';
+import { piecesFor, AIRSPEED, normaliseInterventions } from './design.js';
+import { NO_PREDICTION } from './genotype.js';
+import { normaliseChains, ladderHtml as chainLadderHtml, gradeChip, GRADE_ORDER } from './chains.js';
 
 export const KINDS = ['measured', 'measured-secondhand', 'borrowed', 'derived', 'calibrated', 'assumed'];
 const HERE = new URL('./', import.meta.url);
@@ -248,7 +250,7 @@ const CSS = `
 .pt .gene.S{border-color:var(--suff)}.pt .gene.R{border-color:var(--req)}
 .pt .prow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 8px;align-items:center;margin:6px 0;padding:6px 8px;border:1px solid var(--line);border-radius:8px}
 .pt .prow input[type=range]{width:100%;min-width:0}.pt .prow .v{font-family:"JetBrains Mono",monospace;font-size:.74rem;text-align:right}
-.pt .prow .full{grid-column:1/-1}.pt input[type=text],.pt input[type=number],.pt textarea{font:inherit;font-size:.8rem;border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:var(--panel);color:var(--ink);max-width:100%;min-width:0}
+.pt .prow .full{grid-column:1/-1}.pt input[type=text],.pt input[type=number],.pt input[type=search],.pt textarea{font:inherit;font-size:.8rem;border:1px solid var(--line);border-radius:6px;padding:3px 6px;background:var(--panel);color:var(--ink);max-width:100%;min-width:0}
 .pt input[type=number]{width:84px}.pt textarea{width:100%;min-height:48px}
 .pt .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:4px 0}
 .pt .badge{display:inline-block;font-size:.66rem;line-height:1.35;padding:0 6px;border-radius:99px;border:1px solid var(--line);color:var(--mute);white-space:nowrap;vertical-align:1px}
@@ -285,6 +287,16 @@ const CSS = `
 .pt .rej{color:var(--bad)}.pt .warnline{border:1.5px dashed var(--warn);border-radius:8px;padding:5px 8px;font-size:.8rem;margin:6px 0}
 .pt .mock{border:1.5px dashed var(--warn);background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--warn) 10%,transparent) 0 8px,transparent 8px 16px);border-radius:8px;padding:5px 9px;font-size:.78rem;margin:0 0 8px}
 .pt .slot:empty{display:none}
+.pt .chip{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.75rem;border:1px solid var(--line);background:var(--soft);color:var(--mute);margin:0 4px 4px 0}
+.pt .chip.ok{color:var(--ok);border-color:var(--ok)}.pt .chip.warn{color:var(--warn);border-color:var(--warn)}.pt .chip.bad{color:var(--bad);border-color:var(--bad)}
+.pt .prov{border-left:3px solid var(--accent);padding:4px 10px;margin:6px 0}.pt .prov.model{border-left-style:dashed;border-left-color:var(--mute)}.pt .prov>b{display:block;font-size:.8rem}
+.pt .ladder{border-left:3px solid var(--line);margin:8px 0 8px 6px;padding-left:12px}.pt .rung{position:relative;padding:6px 0 8px;border-bottom:1px dashed var(--line)}
+.pt .rung .rn{display:inline-block;width:18px;height:18px;border-radius:50%;background:var(--ink);color:var(--hollow,#fff);font-size:.72rem;text-align:center;line-height:18px;margin-left:-23px;margin-right:4px}
+.pt .rung.broken{background:color-mix(in srgb,var(--warn) 10%,transparent);border-left:3px solid var(--warn);margin-left:-15px;padding-left:12px}.pt .rung .k{color:var(--mute);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em}
+.pt .gchip{cursor:pointer;background:var(--panel)}.pt .gchip.on{box-shadow:0 0 0 2px var(--accent)}
+.pt .proxy{display:inline-block;font-size:.66rem;padding:0 6px;border-radius:99px;border:1px dashed var(--mute);color:var(--mute)}
+.pt .seqfail{border:1.5px solid var(--bad);border-radius:8px;padding:4px 8px;margin:4px 0;font-size:.8rem}.pt .seqfail b:first-child{color:var(--bad)}
+.pt .rule{border:1px solid var(--accent);border-radius:8px;padding:5px 8px;margin:6px 0;font-size:.8rem}
 `;
 const KIND_BADGE = k => { if (k === false) return ''; const kk = KINDS.includes(k) ? k : 'unknown'; return `<span class="badge ${kk}" title="provenance kind: ${k ? String(k) : 'not stated'}">${k ? String(k).replace(/[<>&"]/g, '') : 'kind?'}</span>`; };
 const fmtNum = v => v == null || !isFinite(v) ? '—' : Math.abs(v) >= 1e4 || (Math.abs(v) < 1e-3 && v !== 0) ? (+v).toExponential(2) : (+v).toPrecision(3).replace(/\.?0+$/, m => m.includes('.') ? '' : m);
@@ -329,6 +341,7 @@ export function mountPerturb(host) {
     <div class="slot" id="ptSpec"></div>
     <h2>Perturb &amp; optimise</h2><div id="ptEng"></div>
     <div class="sec" id="ptSel"></div>
+    <div class="sec" id="ptGeno"></div>
     <div class="sec" id="ptScn"></div>
     <div class="sec" id="ptRes"></div>
     <div class="sec" id="ptLaw"></div>
@@ -392,9 +405,9 @@ export function mountPerturb(host) {
     if (!o) return; S.piece = o; S.tissue = null; S.cell = null;
     const m = o.m || {}; const id = m.ontology_id || m.uberon_id || null;
     S.target = { level: 'organ', id: id || ('piece:' + (o.group || o.name)), label: (m.label || o.name).replace(/,? (left|right)( half)?\b.*$/, ''), piece: o.name, group: o.group || o.name };
-    renderSel(); recompute();
+    S.gene = null; renderSel(); renderGeno(); recompute();
   }
-  function setLevel(level, id, label) { S.target = { level, id, label, piece: S.piece ? S.piece.name : null, group: S.piece ? (S.piece.group || S.piece.name) : null }; renderSel(); }
+  function setLevel(level, id, label) { S.target = { level, id, label, piece: S.piece ? S.piece.name : null, group: S.piece ? (S.piece.group || S.piece.name) : null }; if (level !== 'gene') S.gene = null; renderSel(); renderGeno(); }
   function systemOf(o) { if (!o) return null; const r = rawEntry(o.name) || {}; const m = o.m || {}; const id = r.organ_system_id || m.system || null; const label = r.organ_system || m.system_label || (id && termOf(id)?.label) || null; return id ? { id, label: label || id } : null; }
 
   function geoTarget(t) { return { level: engLevel(t.level), id: t.level === 'body' ? 'body' : (t.level === 'organ' && t.piece) ? t.piece : t.id }; }
@@ -443,7 +456,7 @@ export function mountPerturb(host) {
     labels[edit.target.level + ':' + edit.target.id] = edit.target.label;
     if (S.engine && S.engine.addEdit) { try { const d = await S.engine.addEdit(S.doc, edit); if (d && d.edits) S.doc = d; else S.doc.edits.push(edit); } catch (e) { alertLine('the organism module refused the edit: ' + (e.message || e)); return; } }
     else S.doc.edits.push(edit);
-    S.undo.push(S.doc.edits.length - 1);
+    S.undo.push(S.doc.edits.length - 1); setTimeout(renderGeno, 0);
     if (!opts.silent) postLog({ role: 'human', label: 'human (Perturb UI)', kind: 'edit', text: `${edit.op} ${edit.param} of ${labelOf(edit.target)} → ${edit.value}${edit.reason ? ' — ' + edit.reason : ''}`, edit });
     renderSel(); recompute();
   }
@@ -795,16 +808,17 @@ export function mountPerturb(host) {
   function startOpt(over) {
     const f = { ...readOptForm(), ...(over || {}) }; const s = scen(); const m = (S.now.res.metrics || []).find(x => x.key === f.objective);
     if (!f.vary.length) { S.opt = { ...f, error: 'tick at least one edited parameter' }; renderOpt(); return; }
-    S.opt = { ...f, better: m ? m.better : 'higher', running: true, trace: [], rejected: [], best: null, error: null };
+    const spec = over && over.spec ? over.spec : null;
+    S.opt = { ...f, spec, better: m ? m.better : 'higher', running: true, trace: [], rejected: [], best: null, error: null, status: null, note: null };
     try { if (S.worker) S.worker.terminate(); S.worker = new Worker(new URL('perturb-worker.js', HERE), { type: 'module' }); }
     catch (e) { S.opt.running = false; S.opt.error = 'Web Worker unavailable: ' + e.message; renderOpt(); return; }
     S.worker.onmessage = e => { const d = e.data; const O = S.opt; if (!O) return;
       if (d.type === 'cand') { O.trace.push(d.cand); if (d.cand.rejected) O.rejected.push(d.cand); if (d.best) O.best = d.best; drawOptOut(); }
-      else if (d.type === 'done') { O.running = false; O.best = d.best; renderOpt(); postLog({ role: 'agent', label: 'optimiser (in-browser worker)', kind: 'optimise', text: `seed ${O.seed}, ${O.trace.length} evaluations, ${O.rejected.length} rejected by Lean laws; best ${O.objective} = ${O.best ? fmtNum(O.best.value) : 'none feasible'}` }); }
+      else if (d.type === 'done') { O.running = false; O.best = d.best; O.status = d.status; O.note = d.note; O.specNote = d.specNote; O.start = d.start; O.tolerance = d.tolerance; renderOpt(); postLog({ role: 'agent', label: 'optimiser (in-browser worker)', kind: 'optimise', text: `status ${O.status}: seed ${O.seed}, ${O.trace.length} evaluations including the start design, ${O.rejected.length} rejected; ${O.status === 'ok' ? 'best ' + O.objective + ' = ' + fmtNum(O.best.value) : (O.note || '')}` }); }
       else if (d.type === 'error') { O.running = false; O.error = d.message; renderOpt(); } };
     S.worker.onerror = e => { S.opt.running = false; S.opt.error = 'worker error: ' + (e.message || 'unknown'); renderOpt(); };
     S.worker.postMessage({ urls: S.engine.urls, checkerUrl: host.checkerUrl || new URL('browser-check.mjs', HERE).href, lawClientUrl: host.lawClientUrl || new URL('lean-client.js', HERE).href, lawsetVersion: S.lawsetSel || (S.laws && S.laws.lawset && S.laws.lawset.version) || undefined, doc: S.doc, scenarioKey: s.key, params: S.params, age: S.stages[S.stageIdx].age,
-      objective: f.objective, better: S.opt.better, strict: !!f.strict, species: host.species || null, vary: f.vary.map(i => ({ i, lo: Math.min(...f.bounds[i]), hi: Math.max(...f.bounds[i]) })), seed: f.seed, n: f.n });
+      objective: f.objective, better: S.opt.better, strict: !!f.strict, spec, tolerance: 1e-3, species: host.species || null, vary: f.vary.map(i => ({ i, lo: Math.min(...f.bounds[i]), hi: Math.max(...f.bounds[i]) })), seed: f.seed, n: f.n });
     renderOpt();
   }
   function stopOpt() { if (S.worker) S.worker.terminate(); S.worker = null; if (S.opt) S.opt.running = false; renderOpt(); }
@@ -825,9 +839,13 @@ export function mountPerturb(host) {
       g += `<text x="${R}" y="${H - 4}" text-anchor="end">evaluation (${T.length}/${O.n})</text></svg>`;
       h += `<div class="chart">${g}</div><div class="key"><span><span style="color:var(--accent)">●</span> feasible</span><span><span style="color:var(--bad)">✕</span> rejected by a Lean law</span><span>○ red ring: fails the scenario</span><span>— best so far</span></div>`;
     } else if (O.running) h += '<p class="tiny">starting the worker…</p>';
-    if (O.best) { const B0 = O.best; h += `<div class="okline"><b>Best design</b> ${esc(O.objective)} = <b>${fmtNum(B0.value)}</b> (seed ${O.seed})<div class="tw"><table>${B0.x.map(v => { const e = S.doc.edits[v.i]; return `<tr><td>${esc(e ? e.param : '#' + v.i)}</td><td class="num">${fmtNum(v.v)}</td></tr>`; }).join('')}</table></div>${O.running ? '' : '<button id="ptApplyBest" class="primary">apply best as edits</button>'}</div>`; }
-    else if (!O.running && T.length) h += `<div class="fail"><b>✕ no feasible candidate</b> in ${T.length} evaluations.</div>`;
-    if (O.rejected && O.rejected.length) h += `<details ${O.running ? '' : 'open'}><summary style="color:var(--bad)">Rejected by Lean laws (${O.rejected.length})</summary>${O.rejected.slice(0, 40).map(c => `<div class="viol"><span class="lid">✕ #${c.idx + 1}</span> <span class="tiny">${c.x.map(v => esc((S.doc.edits[v.i] || {}).param || v.i) + ' ' + fmtNum(v.v)).join(', ')}</span><div class="small">${c.laws.map(l => `<b>${esc(l.id)}</b> ${esc(l.domain === 'biological' ? 'biological law (Lean bio)' : l.domain === 'physical' ? 'physical law (Lean)' : l.domain === 'engine' ? 'refused by the engine' : 'law')}: ${esc(l.text || '')}`).join('<br>')}</div></div>`).join('')}</details>`;
+    if (O.running) { if (O.best) h += `<p class="tiny">running… best so far ${esc(O.objective)} = ${fmtNum(O.best.value)} (not yet compared with the start design)</p>`; }
+    else if (O.status === 'ok' && O.best) { const B0 = O.best; h += `<div class="okline"><b>Status: ok</b> · best design ${esc(O.objective)} = <b>${fmtNum(B0.value)}</b>${B0.improvement != null ? ` (start ${fmtNum(O.start.value)}, change ${fmtNum(B0.improvement)})` : ''} · seed ${O.seed}${O.note ? `<div class="tiny">${esc(O.note)}</div>` : ''}<div class="tw"><table>${B0.x.map(v => { const e = S.doc.edits[v.i]; return `<tr><td>${esc(e ? e.param : '#' + v.i)}</td><td class="num">${fmtNum(v.v)}</td></tr>`; }).join('')}</table></div><button id="ptApplyBest" class="primary">apply best as edits</button></div>`; }
+    else if (O.status === 'no improvement') h += `<div class="outnote"><b>Status: no improvement</b> · the start design is returned unchanged (${esc(O.objective)} = ${fmtNum(O.start && O.start.value)}). ${esc(O.note || '')}</div>`;
+    else if (O.status === 'no design meets the spec') { const why = {}; for (const c of [...(O.start && O.start.laws ? [{ laws: O.start.laws }] : []), ...O.rejected]) for (const l of c.laws || []) why[l.id] = l;
+      h += `<div class="fail"><b>✕ Status: no design meets the spec</b> · ${esc(O.note || '')}<div class="small">Ruled out by: ${Object.values(why).map(l => `<b>${esc(l.id)}</b> ${esc(l.domain === 'biological' ? 'biological law (Lean bio)' : l.domain === 'physical' ? 'physical law (Lean)' : l.domain === 'criterion' ? 'criterion' : l.domain === 'engine' ? 'engine' : 'law')}: ${esc(l.text || '')}`).join('<br>') || 'not stated'}</div></div>`; }
+    if (!O.running && O.specNote) h += `<div class="warnline">${esc(O.specNote)}</div>`;
+    if (O.rejected && O.rejected.length) h += `<details ${O.running ? '' : 'open'}><summary style="color:var(--bad)">Rejected candidates (${O.rejected.length}): laws, criteria, engine</summary>${O.rejected.slice(0, 40).map(c => `<div class="viol"><span class="lid">✕ #${c.idx + 1}</span> <span class="tiny">${c.x.map(v => esc((S.doc.edits[v.i] || {}).param || v.i) + ' ' + fmtNum(v.v)).join(', ')}</span><div class="small">${c.laws.map(l => `<b>${esc(l.id)}</b> ${esc(l.domain === 'biological' ? 'biological law (Lean bio)' : l.domain === 'physical' ? 'physical law (Lean)' : l.domain === 'engine' ? 'refused by the engine' : l.domain === 'criterion' ? 'criterion not met' : 'law')}: ${esc(l.text || '')}`).join('<br>')}</div></div>`).join('')}</details>`;
     el.innerHTML = h;
     const ab = el.querySelector('#ptApplyBest'); if (ab) ab.onclick = () => { for (const v of O.best.x) { const e = S.doc.edits[v.i]; if (e) { e.value = v.v; e.author = 'agent:optimiser'; e.reason = `optimiser best ${O.objective} (seed ${O.seed}, ${O.trace.length} evaluations)`; } } postLog({ role: 'human', label: 'human (Perturb UI)', kind: 'edit', text: 'applied the optimiser best design (seed ' + O.seed + ')' }); renderSel(); recompute(); };
   }
@@ -862,7 +880,7 @@ export function mountPerturb(host) {
     if (!main) return;
     const vary = (S.doc.edits || []).map((e, i) => ({ e, i })).filter(({ e }) => !spec.editable || !spec.editable.length || spec.editable.some(x => x.param === e.param && x.target.id === e.target.id)).map(x => x.i);
     const bounds = Object.fromEntries(vary.map(i => { const e = S.doc.edits[i]; const x = (spec.editable || []).find(q => q.param === e.param && q.target.id === e.target.id); return [i, x && x.min != null && x.max != null ? [x.min, x.max] : [e.value * 0.5, e.value * 1.5]]; }));
-    if (vary.length) { renderOpt(); startOpt({ objective: main.metric, vary, bounds, seed: 1, n: 40 }); }
+    if (vary.length) { renderOpt(); startOpt({ objective: main.metric, vary, bounds, seed: 1, n: 40, spec }); }
   }
 
   // --------------------------------------------------- co-design log
@@ -892,7 +910,137 @@ export function mountPerturb(host) {
     $('ptExportLog').onclick = () => download('codesign-session.json', { session: S.log.session, organism: S.doc, posts: all });
   }
 
-  function renderAll() { renderEng(); renderSel(); renderScn(); renderRes(); renderLaws(); renderTc(); renderOpt(); renderLog(); }
+  // --------------------------------------------------- genotype layer
+  // Every gene annotation here is a PROXY-organism record (zebrafish, medaka, sometimes other species): no flying-fish
+  // expression, phenotype or pathway record exists. The files: data.json genotype (= genotype/map.vetted.slim.json),
+  // pathways.json, causal-chains.json, interventions.json, sequence-layer.json, all served next to this page.
+  // The house rule is genotype.js's: a residue is a STATE, not a phenotype; only a calibrated intervention from
+  // interventions.json moves the mesh.
+  const GX = { loading: null, pw: null, chains: null, interv: null, seq: null };
+  function loadGeno() {
+    if (GX.loading) return GX.loading;
+    const j = u => fetch(new URL(u, HERE)).then(r => r.ok ? r.json() : null).catch(() => null);
+    GX.loading = Promise.all([j('pathways.json'), j('causal-chains.json'), j('interventions.json'), j('sequence-layer.json')]).then(([pw, cc, iv, sq]) => {
+      GX.pw = pw; GX.chains = normaliseChains(cc); GX.interv = normaliseInterventions(iv); GX.seq = sq; renderGeno(); });
+    return GX.loading;
+  }
+  const G = () => S.data && S.data.genotype && !S.data.genotype.gated && S.data.genotype.links ? S.data.genotype : null;
+  const RANK = { 'sufficient for': 0, 'required for': 1, 'expressed in': 2 };
+  // the ontology node behind a target (a part id maps to its manifest ontology id)
+  function nodeOf(tg) {
+    if (!tg) return null; const lv = engLevel(tg.level); if (lv === 'body' || lv === 'gene') return null;
+    if (lv === 'organ' || lv === 'tissue') { const o = meshes().find(x => x.name === tg.id) || meshes().find(x => (x.group || x.name) === String(tg.id).replace(/^piece:/, ''));
+      if (o && o.m) return o.m.ontology_id || o.m.uberon_id || null; const r = rawEntry(tg.id); if (r) return r.ontology_id || null; }
+    return tg.id;
+  }
+  function genesAt(node) {
+    const by = new Map(); const add = (sym, why, rank) => { const g = by.get(sym) || { sym, why: [], rank: 9 }; g.why.push(why); g.rank = Math.min(g.rank, rank); by.set(sym, g); };
+    const Gm = G(); for (const l of (Gm && Gm.links[node]) || []) add(l.symbol, l.link + ' (' + l.organism + ')', RANK[l.link] ?? 3);
+    for (const sym of (GX.chains && GX.chains.byNode[node]) || []) add(sym, 'causal chain lands here', 1.5);
+    return [...by.values()].sort((a, b) => a.rank - b.rank || a.sym.localeCompare(b.sym));
+  }
+  function touchedGenes() {
+    const out = new Map(); const add = (sym, why) => { const w = out.get(sym) || []; if (!w.includes(why)) w.push(why); out.set(sym, w); };
+    for (const e of [...((S.doc && S.doc.edits) || []), ...S.geo]) {
+      if (engLevel(e.target && e.target.level) === 'gene') { add(e.target.id, 'edited directly (' + e.param + ')'); continue; }
+      const node = nodeOf(e.target); if (!node) continue; const lab = labelOf(e.target);
+      for (const g of genesAt(node)) if (g.rank < 2) add(g.sym, g.why[0].replace(/ \(.*\)$/, '') + ' ' + lab);
+    }
+    return out;
+  }
+  const PROXY = org => `<span class="proxy" title="a proxy-organism record, not a flying-fish measurement">${esc(org || 'proxy')} proxy · not flying fish</span>`;
+  function renderGeno() {
+    const el = $('ptGeno'); if (!el || !S.doc) return;
+    if (!GX.pw && !GX.loading) loadGeno();
+    const t = S.target; const node = t.level === 'gene' ? null : nodeOf(engTarget(t)) || (t.level !== 'body' ? t.id : null);
+    let h = `<h4>Genotype</h4><p class="tiny">Proxy-organism annotations (mostly zebrafish, some medaka): none is a flying-fish measurement. From data.json's vetted map (${esc((G() && G().file) || 'genotype/map.vetted.slim.json')}), pathways.json, causal-chains.json, interventions.json and sequence-layer.json.</p>`;
+    // genes the current design's edits touch
+    const touched = touchedGenes();
+    h += `<details${touched.size && touched.size <= 12 ? ' open' : ''}><summary>Genes this design's edits touch (${touched.size})</summary>${touched.size ? (() => { const T = [...touched]; const direct = T.filter(([, w]) => w.some(x => /^edited directly/.test(x))); const sufficient = T.filter(x => !direct.includes(x) && x[1].some(y => /^sufficient|causal chain/.test(y))); const rest = T.filter(x => !direct.includes(x) && !sufficient.includes(x)); const chip = ([g, w]) => `<a class="gene gchip" data-gsym="${esc(g)}" title="${esc(w.join('; '))}">${esc(g)}</a>`;
+      return (direct.length ? `<div class="small"><b>edited directly</b>: ${direct.map(([g, w]) => chip([g, w]) + `<span class="tiny">${esc(w.filter(x => /^edited/.test(x)).join('; '))}</span>`).join(' ')}</div>` : '') + (sufficient.length ? `<div class="small"><b>sufficient for / causal chain at an edited part</b>: ${sufficient.map(chip).join('')}</div>` : '') + (rest.length ? `<div class="small"><b>required for an edited part</b>: ${rest.map(chip).join('')}</div>` : ''); })() : '<p class="tiny">No edit touches a gene record (only "sufficient for", "required for" and causal-chain links count; "expressed in" does not).</p>'}</details>`;
+    if (node) {
+      const genes = GX.chains || G() ? genesAt(node) : [];
+      const show = S.genesAll ? genes : genes.slice(0, 30);
+      h += `<p class="small" style="margin:6px 0 2px"><b>Genes recorded at ${esc(t.label)}</b> <span class="tiny">(${genes.length}; sufficient and required first)</span></p>${genes.length ? show.map(g => `<a class="gene gchip ${g.rank === 0 ? 'S' : g.rank < 2 ? 'R' : ''}${S.gene === g.sym ? ' on' : ''}" data-gsym="${esc(g.sym)}" title="${esc(g.why.join('; '))}">${esc(g.sym)}</a>`).join('') + (genes.length > 30 ? ` <button id="ptGAll" class="tiny">${S.genesAll ? 'fewer' : 'all ' + genes.length}</button>` : '') : '<p class="tiny">No gene record is stored for this node in the vetted map.</p>'}`;
+    }
+    const allSyms = [...new Set([...Object.keys((G() && G().gene_index) || {}), ...Object.keys((GX.chains && GX.chains.bySymbol) || {}), ...((GX.interv && GX.interv.all) || []).map(r => r.gene)])].sort();
+    h += `<div class="row"><input type="search" id="ptGQ" list="ptGList" placeholder="any gene: symbol…" aria-label="gene symbol"><datalist id="ptGList">${allSyms.map(g => `<option value="${esc(g)}">`).join('')}</datalist></div>`;
+    if (S.gene) h += geneCard(S.gene, node);
+    else h += `<p class="tiny">Click a gene for its annotations and gene-level edits.</p>`;
+    h += `<div class="row" style="margin-top:8px"><button id="ptValidate">Validate &amp; score</button><span class="tiny">design scorer, closest real relative, genotype sanity (validate-panel.js)</span></div><div id="ptValSlot"></div>`;
+    el.innerHTML = h;
+    el.querySelectorAll('[data-gsym]').forEach(a => a.onclick = () => { S.gene = a.dataset.gsym; renderGeno(); });
+    const ga = $('ptGAll'); if (ga) ga.onclick = () => { S.genesAll = !S.genesAll; renderGeno(); };
+    el.querySelectorAll('[data-gedit]').forEach(b => b.onclick = () => geneEdit(b.dataset.gedit));
+    el.querySelectorAll('[data-knob]').forEach(b => b.onclick = () => applyKnob(b.dataset.knob));
+    $('ptValidate').onclick = mountValidate;
+    const q = $('ptGQ'); if (q) q.onchange = () => { const v = q.value.trim(); if (v) { S.gene = v; renderGeno(); } };
+  }
+  function geneCard(sym, node) {
+    const Gm = G(); let h = `<div class="sec" style="border-top:1px dashed var(--line)"><h4>${esc(sym)}</h4>`;
+    // vetted map rows: at this node, and how many nodes the gene touches
+    const rows = node && Gm ? (Gm.links[node] || []).filter(l => l.symbol === sym).sort((a, b) => (RANK[a.link] ?? 3) - (RANK[b.link] ?? 3)) : [];
+    const gi = Gm && Gm.gene_index && Gm.gene_index[sym];
+    h += `<p class="small"><b>Vetted map</b> ${gi ? `· recorded at ${Object.keys(gi.nodes || {}).length} nodes (${esc((gi.organisms || []).join(', '))})` : '· no gene-index entry'}</p>`;
+    if (rows.length) h += `<div class="tw"><table><tr><th>link</th><th>record</th></tr>${rows.slice(0, 8).map(l => `<tr><td>${esc(l.link)}<br>${PROXY(l.organism)}</td><td class="tiny">${esc(l.finding || '')}<br>${esc(l.kind || '')} · ${esc(l.db || '')}${l.stage ? ' · stage ' + esc(l.stage) : ''}${l.url ? ` · <a href="${esc(l.url)}" target="_blank" rel="noopener">source</a>` : ''}</td></tr>`).join('')}</table></div>`;
+    if (Gm && Gm.causation_warning) h += `<p class="tiny">${esc(Gm.causation_warning)}</p>`;
+    // causal chain
+    const C = GX.chains, ce = C && C.bySymbol[sym];
+    if (!GX.pw && !C) h += '<p class="tiny">loading the genotype files…</p>';
+    else if (ce) h += `<details><summary>Causal chain to phenotype: strength ${gradeChip(ce.weakest, true)}</summary>${chainLadderHtml(C, ce, id => { const tt = termOf(id); return tt ? tt.label : null; })}</details>`;
+    else h += '<p class="tiny">No causal chain for this gene in causal-chains.json.</p>';
+    // pathways
+    const P = GX.pw; if (P) { const key = P.symbols && P.symbols[sym]; const list = key ? (P.genes[key] || []) : [];
+      const srcName = { G: 'GO:BP', R: 'Reactome', K: 'KEGG' };
+      h += list.length ? `<details><summary>Pathways (${list.length}): ${Object.entries(list.reduce((a, r) => (a[srcName[r[1]] || r[1]] = (a[srcName[r[1]] || r[1]] || 0) + 1, a), {})).map(([k, v]) => k + ' ' + v).join(', ')}</summary><p class="tiny">${esc(P.not_causation || '')} ${esc(P.constraint || '')}</p><ul class="t small" style="padding-left:1.1em">${list.slice(0, 24).map(r => { const pw = P.pathways[r[0]] || {}; return `<li>${esc(pw.name || r[0])} <span class="tiny">${esc(r[0])} · ${esc(srcName[r[1]] || r[1])} · evidence ${esc(r[2])}${r[3] ? ' · inferred by orthology from human' : ''}${r[2] === 'IEA' ? ' · electronic' : ''}</span></li>`; }).join('')}</ul>${list.length > 24 ? `<p class="tiny">+${list.length - 24} more in genotype/pathways.slim.json</p>` : ''}</details>` : '<p class="tiny">No pathway row for this gene in pathways.json.</p>'; }
+    // calibrated interventions
+    const I = GX.interv; if (I) { const mine = I.all.filter(r => r.gene === sym);
+      const guard = I.guards && I.guards.pairs.find(p => p.gene === sym);
+      h += mine.length ? `<details><summary>Interventions (${mine.length}; ${mine.filter(r => r.knob).length} calibrated)</summary>${guard ? `<p class="tiny">Paralog guard: ${esc(guard.note || '')} (${esc(guard.paralog)} is a different gene; its evidence is never used for ${esc(sym)}).</p>` : ''}${mine.slice(0, 12).map(r => `<div class="prow" style="display:block"><b class="small">${esc(r.parameter)}</b> <span class="tiny">${esc(r.level)} · ${esc(r.direction || '')} · grade ${esc(r.grade)}</span> ${PROXY(r.organism)}${r.knob ? ' <span class="badge calibrated">calibrated knob</span>' : ''}
+          <div class="tiny">${r.lesion ? esc(r.lesion) + ' · ' : ''}stage: ${esc(r.stage.text)} (${esc(r.stage.regime)})${r.effect && typeof r.effect.value === 'number' ? ` · effect ${esc(r.effect.value)} ${esc(r.effect.unit || '')}` : ' · no magnitude reported'}${r.lethality ? ' · lethality: ' + esc(typeof r.lethality === 'string' ? r.lethality : JSON.stringify(r.lethality)) : ''}</div>
+          ${r.sources.length ? `<div class="tiny">${r.sources.slice(0, 2).map(x => x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.ref)}</a>` : esc(x.ref)).join('; ')}</div>` : ''}
+          ${r.knob && r.knobEffect ? `<button data-knob="${esc(r.id)}" class="primary">apply: ${esc(r.knobEffect.label)}</button> <span class="tiny">moves the mesh (both pectoral fins), valid only in its measured stage window</span>` : r.knob ? '<div class="tiny">calibrated, but no morphology the model shows: recorded, not applied</div>' : ''}</div>`).join('')}</details>` : '<p class="tiny">No intervention for this gene in interventions.json.</p>'; }
+    // sequence layer, with its labelled failures
+    const Q = GX.seq; if (Q) { const ok = (Q.orthologues_resolved || []).find(x => x.gene === sym), bad = (Q.orthologues_not_resolved || []).find(x => x.gene === sym);
+      if (ok) h += `<div class="prov"><b>Sequence layer: orthologue present in flying fish</b><span class="small">${esc(ok.flying_fish_protein)} (${esc(ok.protein_length)} aa), ${(+ok.percent_identity_to_zebrafish).toFixed(1)} % identity to zebrafish, reciprocal best hit. Presence only: not place or time of action.</span></div>`;
+      if (bad) h += `<div class="seqfail"><b>✕ FAILED reciprocal best hit: not an orthologue call</b> ${esc(bad.flying_fish_protein)} best-hits back to <span class="mono">${esc(bad.reverse_best_zebrafish_symbol)}</span>, not ${esc(sym)}. ${esc(bad.note || bad.why || '')}</div>`;
+      if (/lat4a|slc43a2a/.test(sym) && Q.lat4a_convergent_site) h += `<p class="tiny">${esc(Q.lat4a_convergent_site.site)}; the annotated flying-fish protein carries ${esc(Q.lat4a_convergent_site.annotated_flying_fish_protein_carries)}.</p>`;
+      if (ok || bad) h += `<p class="tiny">${esc(Q.layer_boundary || '')} ${esc(Q.species_caveat || '')}</p>`; else h += '<p class="tiny">Not among the genes the sequence layer queried.</p>'; }
+    // gene-level edits: recorded in the organism document, never propagated
+    const mine = ((S.doc && S.doc.edits) || []).filter(e => engLevel(e.target.level) === 'gene' && e.target.id === sym);
+    h += `<div class="rule"><b>House rule:</b> a residue is a STATE, not a phenotype. ${esc(NO_PREDICTION)}</div>
+      <div class="prow" style="display:block"><b class="small">Gene-level edit</b> <span class="badge unknown">recorded only</span>
+      <div class="row"><label class="small">expression × <input type="number" id="ptGExpr" step="any" value="1" aria-label="expression fold"></label><button data-gedit="expression_fold">record</button></div>
+      <div class="row"><label class="small"><input type="checkbox" id="ptGKo"> knockout</label><button data-gedit="knockout">record</button></div>
+      <div class="row"><label class="small">residue / allele state <input type="text" id="ptGAllele" placeholder="e.g. F326L" aria-label="allele"></label><button data-gedit="allele">record</button></div>
+      <input type="text" id="ptGWhy" placeholder="reason (required)" style="width:100%" aria-label="reason">
+      ${mine.length ? `<div class="tiny">recorded: ${mine.map(e => esc(e.param + ' = ' + e.value + ' (' + e.author + ': ' + e.reason + ')')).join('; ')}</div>` : ''}</div></div>`;
+    return h;
+  }
+  async function geneEdit(param) {
+    const sym = S.gene; const why = ($('ptGWhy').value || '').trim(); if (!why) { const el = $('ptGWhy'); el.placeholder = 'a reason is required'; el.focus(); return; }
+    const value = param === 'expression_fold' ? +$('ptGExpr').value : param === 'knockout' ? !!$('ptGKo').checked : String($('ptGAllele').value || '').trim();
+    if (param === 'expression_fold' && !isFinite(value)) return; if (param === 'allele' && !value) return;
+    labels['gene:' + sym] = sym;
+    const before = S.doc.edits.length;
+    await addEdit({ target: { level: 'gene', id: sym, label: sym }, param, op: 'set', value, author: 'human', reason: why, ts: new Date().toISOString() });
+    if (S.doc.edits.length === before) { const el = $('ptGeno'); if (el) el.insertAdjacentHTML('beforeend', `<div class="fail"><b>✕</b> the organism module refused the gene edit (${esc(sym)} may not be in the engine's gene list)</div>`); }
+  }
+  async function applyKnob(id) {
+    const r = GX.interv && GX.interv.all.find(x => x.id === id); if (!r || !r.knobEffect) return;
+    const reason = `calibrated intervention ${r.id}: ${r.gene} ${r.level}, ${r.organism}, ${r.stage.text} (${r.stage.regime}); ${r.knobEffect.label}`;
+    for (const side of ['pectoral_fin_L', 'pectoral_fin_R']) if (meshes().some(o => o.name === side))
+      await addEdit({ target: { level: 'organ', id: side, label: 'pectoral fin ' + side.slice(-1) }, param: 'area', op: 'scale', value: r.knobEffect.factor, author: 'human', reason, ts: new Date().toISOString() });
+  }
+  async function mountValidate() {
+    const slot = $('ptValSlot'); if (!slot) return;
+    let mod = null; try { mod = await import(new URL('validate-panel.js', HERE).href); } catch { }
+    if (!mod || typeof mod.mountValidate !== 'function') { slot.innerHTML = '<div class="warnline">validate-panel.js has not landed yet (the validation agent writes it); nothing is scored rather than a stand-in.</div>'; return; }
+    try { await mod.mountValidate(slot, { doc: S.doc, geometry_edits: S.geo, species: host.species || null, manifest: MF(), ageDays: S.stages[S.stageIdx] ? S.stages[S.stageIdx].age : null, scenario: S.scenarioKey, params: S.params }); }
+    catch (e) { slot.innerHTML = `<div class="fail"><b>✕</b> validate-panel.js: ${esc(e.message || e)}</div>`; }
+  }
+
+  function renderAll() { renderEng(); renderSel(); renderGeno(); renderScn(); renderRes(); renderLaws(); renderTc(); renderOpt(); renderLog(); }
 
   return {
     select, refresh: () => { renderAll(); recompute(); }, get doc() { return S.doc; }, get state() { return S; },

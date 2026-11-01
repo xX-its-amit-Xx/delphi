@@ -139,9 +139,40 @@ the worker, restores partedit vertices (`resetEdits`), clears morph influences a
   scrubber sets the GLB's morph target (`stage_XXXd`), or scales `root` when the GLB has no morph targets.
 - **Optimise**: an objective metric (direction from `better`) and the edited parameters that may vary, with bounds.
   A seeded search runs in `perturb-worker.js`. The panel shows the trace (best so far, feasible dots, red crosses for
-  rejects), the best design with "apply best as edits", and the rejected candidates with the law each broke. By
-  default only a new violation of an accepted law rejects a candidate; "strict" also rejects inherited ones. A
-  candidate the engine refuses (for example a factor outside partedit's bounds) is listed as refused.
+  rejects) and the rejected candidates, each with the law or criterion it broke. By default only a new violation of
+  an accepted law rejects a candidate; "strict" also rejects inherited ones. A candidate the engine refuses (for
+  example a factor outside partedit's bounds) is listed as refused. The statuses match the engine's `optimize`
+  (sim-engine/tools/studio.mjs):
+  - The start design is scored first.
+  - `ok` means a candidate beats the start by more than the tolerance (relative, 1e-3). This is the only status that
+    offers "apply best as edits".
+  - `no improvement` means nothing beats the start; the start design is returned unchanged.
+  - `no design meets the spec` means neither the start nor any candidate passes. The panel lists the laws and
+    criteria that ruled the candidates out.
+
+  With a typed spec, every hard criterion is checked on every candidate with `spec.mjs` `evaluateDesign` and
+  `explainResult` (via `makeRegistry`). `survives` criteria test `run.survives`, `feasible` criteria test
+  `run.feasible`, and a criterion with no model never counts as met.
+- **Genotype**: a section under Selection.
+  - **Genes listed:** the genes recorded at the selected node, sufficient and required first. The source is
+    data.json's `genotype` block (`genotype/map.vetted.slim.json`) plus every causal chain that lands on the node. A
+    search box opens any gene.
+  - **Gene card:** each gene shows:
+    - its vetted-map rows, with a proxy-organism tag ("zebrafish proxy · not flying fish");
+    - the causal chain to phenotype, using `chains.js`'s ladder (chain strength, broken rung, caveats);
+    - its pathways from `pathways.json`, with IEA and orthology-inferred rows flagged and the not-causation note;
+    - its interventions, from `interventions.json` via `design.js normaliseInterventions` (paralog guard, stage
+      window, magnitude or "no magnitude reported");
+    - its sequence-layer call. A failed reciprocal best hit is shown in red as "FAILED: not an orthologue call".
+  - **Gene-level edits:** expression fold, knockout, residue/allele state. Each needs a reason and is recorded in the
+    organism document (engine level `gene`, recorded only), under the house rule from `genotype.js` (`NO_PREDICTION`).
+  - **Calibrated interventions:** only a calibrated intervention with a morphology effect moves the mesh. Today that
+    is one, hhip loss, pectoral fin area +65 %, applied to both pectoral fins with its source in the reason.
+  - **Genes touched:** the genes the design's edits touch: direct gene edits, plus sufficient/required/causal-chain
+    genes at edited parts. "Expressed in" does not count.
+  - **Validate & score:** imports `validate-panel.js` on click and calls `mountValidate(el, {doc, geometry_edits,
+    species, manifest, ageDays, scenario, params})`. Until the file exists it says so; nothing is fetched at load.
+  - **Data:** all of these files are already served from `blueprint3d/`, so nothing is copied into the engine bundle.
 - **Spec box**: `spec-box.js` mounts at the top. "Use this spec" picks the first soft criterion's scenario and metric
   and turns `editable` entries into varied edits with their bounds. It lists every other criterion as not enforced
   by the in-browser search.

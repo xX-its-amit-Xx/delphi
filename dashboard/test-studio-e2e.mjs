@@ -269,12 +269,14 @@ test(3, 'scenarios: every metric badged; null and out-of-range grey, not red', a
 
 // the edit known to break accepted laws, found with sim-engine/tools/studio.mjs organismEdit (see findLawBreaker)
 const BREAKER = { model: 'flying-fish-dev', organism: 'flying-fish', param: /^standard length\b|^standard_length_m\b/i, op: 'scale', value: 10, why: 'e2e: ten times longer body (breaks size-scaling laws)' };
+// a fresh child process each time: in --watch mode an in-process import would cache sim-engine (and its law sets)
 async function findLawBreaker() {
   try {
-    const T = await import(new URL('file:///' + path.join(here, '..', 'sim-engine', 'tools', 'studio.mjs').replace(/\\/g, '/')).href);
-    const r = await T.organismEdit({ organism: BREAKER.organism, edit: { target: { level: 'body' }, param: 'standard_length_m', op: BREAKER.op, value: BREAKER.value, author: 'human', reason: 'e2e probe' } });
-    const R = r.result || r; return { ids: (R.new_binding_violations || R.violations || []).map(v => v.law_id), lawset: R.lawset_version };
-  } catch (e) { return { ids: [], err: e.message }; }
+    const { execFileSync } = await import('node:child_process');
+    const out = execFileSync(process.execPath, [path.join(here, '..', 'sim-engine', 'cli.mjs'), 'organism', 'edit', '--organism', BREAKER.organism, '--level', 'body', '--param', 'standard_length_m', '--op', BREAKER.op, '--value', String(BREAKER.value), '--author', 'human', '--reason', 'e2e probe'], { encoding: 'utf8', maxBuffer: 64 << 20 });
+    const j = JSON.parse(out); const R = j.result || j; if (R.error || j.error) return { ids: [], err: String(R.error || j.error) };
+    return { ids: (R.new_binding_violations || R.violations || []).map(v => v.law_id), lawset: R.lawset_version };
+  } catch (e) { return { ids: [], err: (e.stderr || e.message || '').toString().slice(0, 300) }; }
 }
 
 test(4, 'timecourse: one point per stage; violated stages red', async (browser, base) => {
