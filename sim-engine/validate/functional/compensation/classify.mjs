@@ -460,6 +460,7 @@ export function compensationVerdict(input = {}) {
         why: `Published outcome for ${symbol} (${exact.case_id}): compensation was ${adaptation === false ? 'tested and NOT observed' : `recorded as ${JSON.stringify(adaptation)}`}` +
              `${rescued === false ? ', and the phenotype was not rescued' : ''}. The case table overrides inference.`,
         case_id: exact.case_id, case: exact, documented_direction: 'no-compensation',
+        confidence: exact.compensation_tested ? 'high' : 'medium',
         functional_rescue: rescued === true,
         extraEvidence: (exact.evidence || []).map(e => ({ src: e.src, locator: e.locator, quote: e.quote })),
         ...base

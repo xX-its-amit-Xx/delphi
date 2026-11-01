@@ -498,7 +498,7 @@ export async function mount(opts = {}) {
   traj.add(pathLine);
 
   const bandGeo = new THREE.BufferGeometry();
-  const bandMat = new THREE.MeshBasicMaterial({ color: 0x1bb07a, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false });
+  const bandMat = new THREE.MeshBasicMaterial({ color: 0xffc85c, transparent: true, opacity: 0.20, side: THREE.DoubleSide, depthWrite: false });
   const bandMesh = new THREE.Mesh(bandGeo, bandMat);
   bandMesh.visible = false; bandMesh.frustumCulled = false;
   traj.add(bandMesh);
@@ -722,6 +722,7 @@ export async function mount(opts = {}) {
       <li><span style="color:#1bb07a">▬</span> the <b>trajectory</b>: the RK4 run's own samples, one line vertex each, 0.02 s apart. The fish is placed by interpolating those samples in time, never by a keyframe.</li>
       <li><b>orientation</b>: pitch = atan2(v<sub>z</sub>, v<sub>x</sub>) of the solver's velocity, plus the solver's own angle-of-attack parameter for the phase (glide ${fx((B.fish.glide_alpha_deg || {}).value, 1)}° <span class="chip a">assumed</span>, leap ${fx((B.fish.pitch_at_leap_deg || {}).value, 1)}° <span class="chip m">measured</span>).</li>
       <li><b>bank = 0° everywhere.</b> The solver is two-dimensional (x, z): it computes no lateral force, so there is no computed reason to roll, and the fish is kept level rather than banked for looks.</li>
+      <li><b>the path ratio in the readout</b> is the instantaneous v<sub>x</sub>/(−v<sub>z</sub>) of the solver's own velocity while the fish is descending. It is a slope, <b>not</b> a lift-to-drag ratio, and near the top of an arc it is large simply because the fish is barely sinking; (L/D)max beside it is the measured polar's 4.37.</li>
       <li><b>speed, height, depth, v_min, the ground-effect drag factor</b> and the phase boundaries (<span style="color:#2a85a0">▬</span> swim, <span style="color:#eb7329">▬</span> taxi, <span style="color:#1bb07a">▬</span> glide, <span style="color:#b3392f">▬</span> down).</li>
       <li><b>size</b>: ${esc(spec.glb || '')} at ${f ? f.mpu.toPrecision(4) : '?'} m per model unit — ${f ? fx(f.length_m, 3) : '?'} m from snout to tail against the waves. ${f ? esc(f.scaleSource) : ''}</li>
       <li><span style="color:#d9a81a">▬</span> the <b>Lean bound</b> stake: ${fx(m.glide_range_lean_bound_m, 2)} m, the apex height × (L/D)max — the part of the range <code>sim-engine/scenarios/glide.mjs</code> reports as <code>glide_range_lean_bound_m</code>. Past that stake the fish is in the <b>kinetic phase</b> (${fx(m.kinetic_phase_m, 2)} m here), which the Lean theorem does <b>not</b> cover.</li>
@@ -765,7 +766,7 @@ ${creatures && creatures.SCOPE_NOTES ? `<details style="margin:8px 0 0"><summary
     hud().innerHTML =
       `<div><b>${esc(PHASE_LABEL[phase] || phase)}</b> &nbsp; t ${fx(s.t)} s &nbsp; x ${fx(s.x)} m &nbsp; ${s.z >= 0 ? 'height' : 'depth'} ${fx(Math.abs(s.z), 3)} m</div>
 <div>speed ${fx(s.v)} m/s${wind ? ` (airspeed ${fx(air)} with ${fx(wind, 1)} m/s headwind)` : ''} &nbsp; v<sub>min</sub> ${fx(m.v_min_m_s)} &nbsp; margin ${s.v - m.v_min_m_s >= 0 ? '+' : ''}${fx(s.v - m.v_min_m_s)} m/s</div>
-<div>${inAir ? `glide ratio now ${ratio == null ? '— (not descending)' : fx(ratio, 1)} &nbsp; (L/D)max ${fx(m.LD_max)} &nbsp; ground-effect drag ×${fx(geF, 3)}` : 'in the water: the glide ratio and the ground effect are aerodynamic and do not apply here'}</div>
+<div>${inAir ? `path ratio now (dx/dz) ${ratio == null ? '— not descending' : fx(ratio, 1)} &nbsp; (L/D)max ${fx(m.LD_max)} &nbsp; ground-effect drag ×${fx(geF, 3)}` : 'in the water: the path ratio and the ground effect are aerodynamic and do not apply here'}</div>
 <div>${m.airborne
           ? `Lean-covered ${fx(m.glide_range_lean_bound_m, 2)} m${over ? ` — <b style="color:#ffbe6a">EXCEEDED</b> by ${fx(past - st.tr.leanBound_m, 2)} m (kinetic phase, outside the theorem)` : (phase === 'glide' ? ` — inside it (${fx(past, 2)} m flown)` : '')}`
           : 'no glide in this run, so there is no Lean-covered range'}</div>`;

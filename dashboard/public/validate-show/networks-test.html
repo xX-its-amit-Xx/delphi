@@ -66,9 +66,18 @@ const PART_WORD = s => {
 async function buildCase(designId) {
   const man = await j(`model/${designId}-manifest.json`);
   const parentId = man.parents?.[0]?.organism || null;
+  /* the parent's resolved parameters live in whichever committed manifest declares
+     parameter_set === parentId; growth-series manifests are named after the organism, not the
+     stage, so an id like "<organism>-<stage>" also gets its last segment stripped */
   let parentParams = null;
-  for (const cand of [`model/${parentId}-manifest.json`, `model/${parentId}-dev-manifest.json`]) {
-    try { parentParams = (await j(cand)).parameters; break; } catch {}
+  const stripped = parentId && parentId.includes('-') ? parentId.slice(0, parentId.lastIndexOf('-')) : null;
+  for (const cand of [`model/${parentId}-manifest.json`, `model/${parentId}-dev-manifest.json`,
+                      stripped ? `model/${stripped}-dev-manifest.json` : null,
+                      stripped ? `model/${stripped}-manifest.json` : null].filter(Boolean)) {
+    try {
+      const m = await j(cand);
+      if (m.parameter_set === parentId && m.parameters) { parentParams = m.parameters; break; }
+    } catch {}
   }
   const moved = man.moved_parameters || [];
   const rec = man.design_record || {};

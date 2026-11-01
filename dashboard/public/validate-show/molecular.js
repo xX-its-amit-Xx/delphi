@@ -58,6 +58,9 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const norm = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 const fmt = (n, d = 1) => (n == null || Number.isNaN(n) ? '—' : Number(n).toFixed(d));
+const trim = (s, n) => { s = String(s ?? ''); if (s.length <= n) return s;
+  const cut = s.slice(0, n); const stop = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf(' '));
+  return cut.slice(0, stop > n * 0.5 ? stop : n).replace(/[,;:.\s]+$/, '') + '…'; };
 
 /* ---------------------------------------------------------------- data loading */
 async function loadMaybeGz(url) {
@@ -295,6 +298,7 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
     padding-block:14px;padding-left:max(16px,env(safe-area-inset-left,0px));
     padding-right:max(16px,env(safe-area-inset-right,0px))}
   @container (max-width:759px){.molsc .wrap{grid-template-columns:minmax(0,1fr)}}
+  @container (max-width:520px){.molsc .hud .tag:nth-child(n+3){display:none}}
   .molsc .stage{position:relative;background:var(--m-stage);border:1px solid var(--m-line);
     border-radius:8px;min-width:0;overflow:hidden}
   .molsc canvas{display:block;width:100%;height:auto}
@@ -547,18 +551,18 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
   function drawRuler() {
     const L = focus.protein?.length || (st.res ? st.res[st.res.length - 1] : 0);
     if (!L) { rulerEl.innerHTML = `<div class="gap"><h5>No sequence ruler</h5><p>UniProt has no protein sequence for this gene, so there is no axis to place anything on.</p></div>`; return; }
-    const w = 1000, h = 74, pad = 4;
+    const w = 1000, h = 104, pad = 6;
     const x = (p) => pad + (clamp(p, 1, L) / L) * (w - pad * 2);
     let s = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="domain and site map along the protein sequence">`;
-    s += `<line x1="${pad}" y1="40" x2="${w - pad}" y2="40" stroke="var(--m-line)" stroke-width="2"/>`;
+    s += `<line x1="${pad}" y1="56" x2="${w - pad}" y2="56" stroke="var(--m-line)" stroke-width="2"/>`;
     /* per-residue confidence strip, straight off the model's B-factors */
     if (st.plddt?.length) {
       const step = Math.max(1, Math.floor(st.plddt.length / 420));
       for (let i = 0; i < st.plddt.length; i += step) {
         const r = st.res[i];
-        s += `<rect x="${x(r).toFixed(2)}" y="12" width="${Math.max(1.2, (w - pad * 2) / L * step).toFixed(2)}" height="12" fill="${bandFor(st.plddt[i]).css}"/>`;
+        s += `<rect x="${x(r).toFixed(2)}" y="16" width="${Math.max(1.2, (w - pad * 2) / L * step).toFixed(2)}" height="18" fill="${bandFor(st.plddt[i]).css}"/>`;
       }
-      s += `<text x="${pad}" y="9" font-size="9" font-family="var(--m-mono)" fill="var(--m-dim)">pLDDT per residue</text>`;
+      s += `<text x="${pad}" y="11" font-size="14" font-family="var(--m-mono)" fill="var(--m-dim)">pLDDT per residue (AlphaFold’s confidence in its own prediction)</text>`;
     }
     const lanes = [];
     for (const d of domains.slice(0, 14)) {
@@ -566,23 +570,23 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
         let lane = 0;
         while (lanes[lane]?.some(([a, b]) => !(p.end < a || p.start > b))) lane++;
         (lanes[lane] ||= []).push([p.start, p.end]);
-        const y = 34 + lane * 9;
-        s += `<rect x="${x(p.start).toFixed(2)}" y="${y}" width="${Math.max(1.5, x(p.end) - x(p.start)).toFixed(2)}" height="6" rx="2" fill="var(--m-dim)" opacity="0.55"/>`;
+        const y = 48 + lane * 11;
+        s += `<rect x="${x(p.start).toFixed(2)}" y="${y}" width="${Math.max(1.5, x(p.end) - x(p.start)).toFixed(2)}" height="7" rx="2" fill="var(--m-dim)" opacity="0.55"/>`;
       }
     }
     for (const p of ptmPlaceable.slice(0, 160)) {
-      s += `<line x1="${x(p.position).toFixed(2)}" y1="26" x2="${x(p.position).toFixed(2)}" y2="32" stroke="#00a3a3" stroke-width="1.4"/>`;
+      s += `<line x1="${x(p.position).toFixed(2)}" y1="36" x2="${x(p.position).toFixed(2)}" y2="45" stroke="#00a3a3" stroke-width="1.8"/>`;
     }
     for (const d of ffDiffs.slice(0, 60)) {
-      s += `<line x1="${x(d.zf_position).toFixed(2)}" y1="26" x2="${x(d.zf_position).toFixed(2)}" y2="32" stroke="#c038a8" stroke-width="2"/>`;
+      s += `<line x1="${x(d.zf_position).toFixed(2)}" y1="36" x2="${x(d.zf_position).toFixed(2)}" y2="45" stroke="#c038a8" stroke-width="2.6"/>`;
     }
     if (sitePos != null) {
       const sx = x(sitePos).toFixed(2);
-      s += `<line x1="${sx}" y1="8" x2="${sx}" y2="58" stroke="#e8362f" stroke-width="2"/>`;
-      s += `<text x="${sx}" y="70" font-size="11" font-family="var(--m-mono)" fill="var(--m-ink)" text-anchor="${sitePos / L > 0.85 ? 'end' : (sitePos / L < 0.15 ? 'start' : 'middle')}">${esc(focusSub.substitution ? `${sub.wt}${sub.position}${sub.alt}` : String(sitePos))}</text>`;
+      s += `<line x1="${sx}" y1="14" x2="${sx}" y2="80" stroke="#e8362f" stroke-width="2.6"/>`;
+      s += `<text x="${sx}" y="96" font-size="16" font-family="var(--m-mono)" fill="var(--m-ink)" text-anchor="${sitePos / L > 0.85 ? 'end' : (sitePos / L < 0.15 ? 'start' : 'middle')}">${esc(focusSub.substitution ? `${sub.wt}${sub.position}${sub.alt}` : String(sitePos))}</text>`;
     }
-    s += `<text x="${pad}" y="${h - 2}" font-size="9" font-family="var(--m-mono)" fill="var(--m-dim)">1</text>`;
-    s += `<text x="${w - pad}" y="${h - 2}" font-size="9" font-family="var(--m-mono)" fill="var(--m-dim)" text-anchor="end">${L} aa</text>`;
+    s += `<text x="${pad}" y="${h - 2}" font-size="13" font-family="var(--m-mono)" fill="var(--m-dim)">1</text>`;
+    s += `<text x="${w - pad}" y="${h - 2}" font-size="13" font-family="var(--m-mono)" fill="var(--m-dim)" text-anchor="end">${L} aa</text>`;
     s += `</svg>`;
     rulerEl.innerHTML = s;
   }
@@ -618,7 +622,7 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
     }).join('');
     panels.push({ act: 0, html: `<div class="card"><h4>The protein, coloured by what we do not know</h4>
       <p><b>${esc(focus.symbol)}</b>${focus.protein?.length ? ` · ${focus.protein.length} aa` : ''}${focus.protein?.entry_status ? ` · ${esc(focus.protein.entry_status)}` : ''}.
-      ${focus.protein?.function ? esc(String(focus.protein.function).slice(0, 220)) : 'UniProt records no function sentence for this entry.'}</p>
+      ${focus.protein?.function ? esc(trim(focus.protein.function, 200)) : 'UniProt records no function sentence for this entry.'}</p>
       ${known.length > 1 ? `<p>${esc(known[0].via)} — ${known.length} genes, ranked by how much protein-level evidence this project holds. The first is shown:</p><ul>${strip}</ul>` : ''}
       ${st.absent ? gapBox({ what: '3D structure', reason: st.reason, source: (st.where_checked || []).join(', ') }) : `
       <dl class="kv"><dt>AlphaFold model</dt><dd>${esc(st.model || '—')} (v${esc(st.model_version_served)})</dd>
@@ -782,11 +786,11 @@ export async function mountScene({ container, THREE, data, act, theme = 'light',
   const duration = 30;
 
   const CAM = [
-    { t: 0, pos: [0, 24, 210], look: [0, 0, 0] },
-    { t: 6, pos: [70, 30, 150], look: [0, 0, 0] },
-    { t: 12, pos: [0, 70, 170], look: [0, 0, 0] },
-    { t: 18, pos: [30, 20, 230], look: [0, 0, 0] },
-    { t: 24, pos: [0, 10, 240], look: [0, 0, 0] },
+    { t: 0, pos: [0, 18, 158], look: [0, 0, 0] },
+    { t: 6, pos: [56, 22, 118], look: [0, 0, 0] },
+    { t: 12, pos: [0, 54, 132], look: [0, 0, 0] },
+    { t: 18, pos: [26, 16, 196], look: [0, 0, 0] },
+    { t: 24, pos: [0, 8, 178], look: [0, 0, 0] },
   ];
   const lerp = (a, b, k) => a + (b - a) * k;
 

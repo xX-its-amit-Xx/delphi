@@ -291,9 +291,20 @@ ok(/No birds anywhere/.test(LEGEND.no_birds), 'the legend states there are no bi
     ok(/upper envelope|maximum|not a mean|not a typical/i.test(F[k].statistic || ''), `${k} records that it is a maximum, not a typical value`);
   }
   ok(Object.values(F).every(x => x.kind === 'measured-secondhand'), 'every field figure is labelled second-hand (no primary observation is fetched)');
-  ok(OPEN_QUESTIONS.length >= 2 && OPEN_QUESTIONS.every(q => q.id && q.question && q.to_resolve),
+  ok(OPEN_QUESTIONS.length >= 3 && OPEN_QUESTIONS.every(q => q.id && q.question && q.to_resolve),
     'the unresolved comparisons are recorded as open questions with a way to resolve them');
   ok(/Edgerton & Breder 1941/.test(OPEN_QUESTIONS[0].to_resolve), 'the open question names the primary source that would settle it');
+  // The two ensembles in the repository report DIFFERENT QUANTITIES; this must not be read as disagreement.
+  const two = OPEN_QUESTIONS.find(q => q.id === 'ff-two-ensembles-different-quantities');
+  ok(two && two.status === 'settled', 'the two-ensemble comparison is recorded and settled');
+  ok(/glide_range_total_m/.test(two.settled) && /analytic two-phase BOUND/.test(two.settled),
+    "it records that validate/physics reports glide.mjs's analytic bound, not a trajectory");
+  ok(/analytic_total_m/.test(two.settled), 'it names the matching column in this module');
+  ok(/Both ensembles are single-hop/.test(two.settled), 'it rules out single-hop vs multi-hop as the explanation');
+  const sn2 = SCOPE_NOTES.join(' ');
+  ok(/A BOUND STRADDLING THE OBSERVATION IS NOT A VALIDATION/.test(sn2),
+    'SCOPE_NOTES records that a band on an upper bound straddling 50 m is not a validation');
+  ok(/DIFFERENT QUANTITY/.test(sn2), 'SCOPE_NOTES records that the other ensemble measures a different quantity');
   const sn = SCOPE_NOTES.join(' ');
   ok(/ONE HOP, NOT A SEQUENCE/.test(sn), 'SCOPE_NOTES records that the 50 m is one hop');
   ok(/WHAT WAS WRONG WAS THE STATISTIC/.test(sn), 'SCOPE_NOTES records that the error was the statistic, not the hop count');

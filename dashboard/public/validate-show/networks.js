@@ -582,7 +582,14 @@ function buildDevelopment(dev) {
   /* fallback: the staged life-history table, whose every field carries kind + source + locator */
   if (!out.present && Array.isArray(dev.stages?.stages)) {
     out.present = true;
-    out.source = 'development/stages.json (life stages; every field carries its own kind and source)';
+    /* The staged table is about a named organism. If that organism shares no name token with this
+       design's lineage, the table is a STAND-IN, and saying so is the whole point of the panel. */
+    const title = String(dev.stages.title || '');
+    const tTok = tokens(title);
+    const lin = dev.lineageTokens || [];
+    out.offLineage = lin.length > 0 && tTok.length > 0 && !lin.some(t => tTok.includes(t));
+    out.tableTitle = title;
+    out.source = `development/stages.json — "${title}" (life stages; every field carries its own kind, source and verbatim locator)`;
     out.stages = dev.stages.stages.map(s => {
       const fields = [];
       for (const [k, v] of Object.entries(s)) {
@@ -925,18 +932,26 @@ export async function mountScene({ container, THREE, data, act, theme, reducedMo
     const designId = (data && data.design && data.design.id) || (data && data.case && data.case.id) || null;
     const parentId = (data && data.design && data.design.base)
       || (data && data.case && data.case.parents && data.case.parents[0] && data.case.parents[0].organism) || null;
-    const [cir, gil, stagesJ, dm1, dm2] = await Promise.all([
+    /* candidate growth-series manifests for this design's lineage. A dev manifest is named after
+       the organism, not the stage, so an id like "<organism>-<stage>" also has its last segment
+       stripped. Generic: no organism name appears here. */
+    const devCandidates = uniq([designId, parentId].filter(Boolean).flatMap(id => {
+      const stripped = id.includes('-') ? id.slice(0, id.lastIndexOf('-')) : null;
+      return [`${id}-dev`, stripped ? `${stripped}-dev` : null].filter(Boolean);
+    }));
+    const [cir, gil, stagesJ, ...dms] = await Promise.all([
       tryJSON(new URL('physiology/circulation.json', base)),
       tryJSON(new URL('physiology/gills.json', base)),
       tryJSON(new URL('development/stages.json', base)),
-      designId ? tryJSON(new URL(`model/${designId}-dev-manifest.json`, base)) : null,
-      parentId ? tryJSON(new URL(`model/${parentId}-dev-manifest.json`, base)) : null,
+      ...devCandidates.map(n => tryJSON(new URL(`model/${n}-manifest.json`, base))),
     ]);
+    const hitIdx = dms.findIndex(Boolean);
     physio = { circulation: cir, gills: gil };
     devRaw = {
       stages: stagesJ,
-      devManifest: dm1 || dm2,
-      devManifestName: dm1 ? `${designId}-dev` : dm2 ? `${parentId}-dev` : null,
+      devManifest: hitIdx >= 0 ? dms[hitIdx] : null,
+      devManifestName: hitIdx >= 0 ? devCandidates[hitIdx] : null,
+      lineageTokens: uniq([designId, parentId].filter(Boolean).flatMap(id => tokens(id.replace(/-/g, ' ')))),
     };
     net = buildNetwork(subject, cards);
     exp = buildExpression(subject, cards);
@@ -1135,6 +1150,10 @@ export async function mountScene({ container, THREE, data, act, theme, reducedMo
           'Neither a growth-mesh stage set nor a staged life-history table could be read for this design or its parent, so no trajectory is drawn.');
       } else {
         const absent = dev.stages.filter(s => s.hasAbsent);
+        if (dev.offLineage) {
+          h += gapBlock('no staged data exists for this design’s own lineage',
+            `No growth-series stage set is committed for this design or its parent, so the stages below are the only staged table available — and it is about a different animal: <em>${esc(dev.tableTitle)}</em>. Read every stage below as a stand-in, not as this design's development.`);
+        }
         h += stats([
           { v: dev.stages.length, k: 'stages with records' },
           { v: absent.length, k: 'stages carrying a field with no source' },
@@ -1275,13 +1294,15 @@ export async function mountScene({ container, THREE, data, act, theme, reducedMo
     const p = reducedMotion ? 1 : clamp((tt - i * PER) / (PER * 0.55), 0, 1);
     hosts.forEach((h, k) => {
       h.dataset.on = k === i ? '1' : '0';
-      if (k !== i) return;
-      /* progressive reveal of the panel's blocks: deterministic from p, no transitions */
       const blocks = h.children;
       const n = blocks.length;
+      /* An inactive panel is reset to its canonical state rather than left holding the inline
+         styles from when it was last active — otherwise the DOM as a whole is not a pure function
+         of t and scrubbing away and back gives a different tree. */
+      const prog = k === i ? p : (k < i ? 1 : 0);
       for (let b = 0; b < n; b++) {
         const thresh = n <= 1 ? 0 : (b / n) * 0.92;
-        const on = p >= thresh;
+        const on = prog >= thresh;
         blocks[b].style.opacity = on ? '1' : '0';
         blocks[b].style.visibility = on ? 'visible' : 'hidden';
       }
@@ -1349,7 +1370,8 @@ export async function mountScene({ container, THREE, data, act, theme, reducedMo
   if (met.worst) items.push({ label: `oxygen chain link "${met.worst.step}"`, kind: met.worst.species ? 'proxy' : (met.worst.kind || 'assumed'), source: `${met.worst.what} — ${met.worst.source || 'no source'}${met.worst.species ? `, measured in ${met.worst.species}` : ''}; every ceiling computed from this chain inherits it` });
   for (const c of met.chain) if (c !== met.worst) items.push({ label: `oxygen chain link "${c.step}"`, kind: c.kind || 'assumed', source: `${c.what} — ${c.source || 'no source'}` });
   if (dev.present) {
-    items.push({ label: `developmental trajectory (${dev.stages.length} stages)`, kind: 'derived', source: dev.source });
+    items.push({ label: `developmental trajectory (${dev.stages.length} stages)`, kind: dev.offLineage ? 'proxy' : 'derived', source: dev.source });
+    if (dev.offLineage) items.push({ label: 'staged data for this design’s own lineage', kind: 'absent', source: `none committed; the table shown is about ${dev.tableTitle || 'another organism'} and stands in` });
     const absent = dev.stages.filter(s => s.hasAbsent).length;
     if (absent) items.push({ label: `${absent} stages resting partly on an unsourced assumption`, kind: 'assumed', source: 'each stage’s own basis fields; marked with a dashed ring on the curve' });
     if (dev.disagreements.length) items.push({ label: `${dev.disagreements.length} source disagreements in the stage table`, kind: 'observed', source: 'computed here: two entries for one field with non-overlapping ranges; shown, not averaged' });

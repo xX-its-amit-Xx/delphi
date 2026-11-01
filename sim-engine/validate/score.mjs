@@ -30,6 +30,7 @@ import { closestGenotype, STATE_NOT_PHENOTYPE } from './genotype.mjs';
 import { phenoSanity, genoSanity, stateEnvelope } from './sanity.mjs';
 import { leanByComponent } from './lean-components.mjs';
 import { functionalResolutionFor } from './functional-interface.mjs';
+import { physicsCheck } from './physics/index.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 // Weights, floor, alpha, cut and evidence map live in score-weights.json (versioned, frozen before validation).
@@ -180,6 +181,11 @@ export async function assess(args = {}) {
   // The FOURTH named result. Built by another thread in validate/functional/; absent until it lands, and then
   // reported as 'did not run' rather than assumed. It never moves the composite score (see SCORER-RESULTS.md).
   out.functional = await functionalResolutionFor(args.design_for_functional ?? (args.specimen ? { specimen: args.specimen } : args.organism), args);
+  // The FIFTH named result: does the design actually DO the thing? (validate/physics/, another thread.) Like the
+  // functional ledger it is a GATE beside the composite and never enters rank_score.
+  const designForPhysics = args.design_for_functional ?? (args.specimen ? { specimen: args.specimen } : args.organism);
+  try { out.physics = await physicsCheck(designForPhysics, args); }
+  catch (e) { out.physics = { ran: false, reason: `the physics module threw: ${e.message}` }; }
   out.raw = raw;
   out.ms = Date.now() - t0;
   return out;
@@ -239,8 +245,14 @@ export function namedResults(r, { claims = null } = {}) {
     gate: anyAccepted ? 'FAIL: an accepted law is violated by the designed organism; the design is not validated, whatever the similarity scores' : 'no accepted-law violation found (most laws may be cannot-evaluate or out-of-scope: see counts)',
     note: 'Floating-point evaluation of the Lean-backed formulas (lean/eliminate/browser-check.mjs), not a kernel check.' };
   const fr = r.functional || { ran: false, reason: 'the functional ledger was not computed' };
-  return { genotype_similarity, phenotype_similarity, lean_check, functional_resolution: fr,
-    lean_gate_failed: anyAccepted, functional_gate_failed: !!(fr.ran && fr.resolution?.unresolved > 0) };
+  const ph5 = r.physics || { ran: false, reason: 'the physics check was not computed' };
+  return { genotype_similarity, phenotype_similarity, lean_check, functional_resolution: fr, physics_simulation: ph5,
+    lean_gate_failed: anyAccepted, functional_gate_failed: !!(fr.ran && fr.resolution?.unresolved > 0),
+    // true only when a HARD criterion is NOT MET. A hard criterion with NO MODEL does not raise it: "we could not
+    // check it" is not "it failed" (that case is gate_status 'incomplete' + unchecked_requirements).
+    physics_gate_failed: !!(ph5.ran && ph5.physics_gate_failed),
+    // What the two Lean/physics results each license, kept together wherever they are reported:
+    gates_note: 'lean_check says the design BREAKS NO LAW, which is necessary and not sufficient. physics_simulation says whether it ACTUALLY DOES THE THING. Neither substitutes for the other, and neither is folded into the score.' };
 }
 /** Kept as the former name: callers that imported threeResults keep working, and now get the fourth result too. */
 export const threeResults = namedResults;
@@ -295,7 +307,7 @@ export async function designScoreTool(args = {}) {
 export async function validateDesign(args = {}) {
   const r = await assess(args);
   const named = namedResults(r);
-  const res = { design: r.design, results: { genotype_similarity: named.genotype_similarity, phenotype_similarity: named.phenotype_similarity, lean_check: named.lean_check, functional_resolution: named.functional_resolution }, lean_gate_failed: named.lean_gate_failed, functional_gate_failed: named.functional_gate_failed, verdict: r.verdict, score: r.score, closest_relative_phenotype: r.phenotype, closest_relative_genotype: r.genotype, sanity: r.sanity, lean_by_component: r.lean, scorer: r.scorer, ms: r.ms };
+  const res = { design: r.design, results: { genotype_similarity: named.genotype_similarity, phenotype_similarity: named.phenotype_similarity, lean_check: named.lean_check, functional_resolution: named.functional_resolution, physics_simulation: named.physics_simulation }, lean_gate_failed: named.lean_gate_failed, functional_gate_failed: named.functional_gate_failed, physics_gate_failed: named.physics_gate_failed, gates_note: named.gates_note, verdict: r.verdict, score: r.score, closest_relative_phenotype: r.phenotype, closest_relative_genotype: r.genotype, sanity: r.sanity, lean_by_component: r.lean, scorer: r.scorer, ms: r.ms };
   if (args.swarm) res.swarm = swarmTasks(args, r);
   return envelope(res, provOf(r), SCOPE);
 }
