@@ -29,6 +29,18 @@ const wait = (p, ms) => p.waitForTimeout(ms);
 
 const CLIPS = [
   {
+    id: 'assembly', url: '/print/', keep: 16,
+    // The 100 STL parts assembling in anatomical order, played by the page's own animation.
+    // This is the real print kit coming together, not a rendering of one - which is why the
+    // Design Studio tab shows it beside the STL downloads.
+    drive: async (p) => {
+      await wait(p, 5000);
+      const replay = p.locator('#replayBtn');
+      if (await replay.count()) await replay.click();
+      await wait(p, 16000);
+    }
+  },
+  {
     id: 'leanbio', url: '/leanbio/', keep: 13,
     // The LeanBio repo: claims arriving, grounded, queued, and the ones that do not make it.
     // Added for the product report's LeanBio tab, which otherwise had no moving footage of its

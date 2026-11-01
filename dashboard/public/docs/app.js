@@ -192,6 +192,14 @@
   }
   showTab(tabs.some(t => t.dataset.tab === initial) ? initial : (tabs[0]?.dataset.tab || ''), false);
 
+  // Changing only the hash on an already-loaded page is a SAME-DOCUMENT navigation: nothing
+  // re-runs, so /docs/#studio opened from /docs/#nanopubs used to leave the wrong tab showing
+  // while the URL claimed otherwise. Every deep link we hand out is of exactly that shape.
+  addEventListener('hashchange', () => {
+    const h = location.hash.slice(1);
+    if (tabs.some(t => t.dataset.tab === h)) showTab(h, false);
+  });
+
   /* ---------------------------------------------------------------- the real runs
      Three architectures per product, each card saying plainly whether it was executed just
      now or read from a recorded benchmark run. A card with no run says so and shows no number. */

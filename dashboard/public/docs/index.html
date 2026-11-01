@@ -290,6 +290,54 @@
   @media(max-width:980px){.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.arch{grid-template-columns:1fr}}
 
 
+
+
+  /* ── downloadable artefacts ───────────────────────────────────────────── */
+  .dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(252px,1fr));gap:12px;margin:16px 0 8px}
+  .dl a{display:block;text-decoration:none;border:1px solid var(--line);border-radius:12px;
+    padding:15px 17px;background:var(--panel);backdrop-filter:blur(10px);
+    transition:transform .4s cubic-bezier(.2,.7,.3,1),border-color .4s,box-shadow .4s}
+  .dl a:hover{transform:translateY(-3px);border-color:var(--line2);
+    box-shadow:0 26px 54px -38px rgba(0,0,0,1),0 0 44px -30px var(--cyan)}
+  .dl .n{display:block;font-family:var(--display);font-weight:800;font-size:15px;color:var(--ink);
+    letter-spacing:-.015em;margin-bottom:4px}
+  .dl .d{display:block;font-size:12.6px;color:var(--ink2);line-height:1.45}
+  .dl .s{display:inline-block;margin-top:9px;font-family:var(--mono);font-size:10px;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);
+    border:1px solid rgba(58,230,208,.3);border-radius:999px;padding:3px 9px}
+
+  /* ── the scroll-driven assembly ───────────────────────────────────────── */
+  .asm{position:relative;height:420vh;margin:40px 0 10px}
+  .asm-stage{position:sticky;top:0;height:100vh;display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(300px,420px);align-items:center;gap:30px;
+    padding:0 6px}
+  .asm-stage canvas{width:100%;height:76vh;display:block;cursor:grab}
+  .asm-cap{opacity:0;transform:translateY(10px);
+    transition:opacity .42s cubic-bezier(.2,.7,.3,1),transform .42s cubic-bezier(.2,.7,.3,1)}
+  .asm-kicker{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--cyan);border:1px solid rgba(58,230,208,.28);
+    background:rgba(58,230,208,.07);border-radius:999px;padding:4px 12px;margin-bottom:12px}
+  .asm-cap h3{font-family:var(--display);font-size:clamp(23px,3vw,34px);font-weight:800;
+    letter-spacing:-.03em;margin:0 0 10px;line-height:1.1;
+    background:linear-gradient(96deg,#fff,#b9d2ff 70%);-webkit-background-clip:text;
+    background-clip:text;color:transparent}
+  .asm-cap p{font-size:14.8px;line-height:1.6;color:var(--ink2);margin:0}
+  .asm-rail{position:absolute;left:50%;transform:translateX(-50%);bottom:7vh;z-index:3;
+    display:flex;gap:7px;align-items:center}
+  .asm-rail [data-dot]{width:7px;height:7px;border-radius:50%;background:rgba(120,150,210,.3);
+    transition:.4s}
+  .asm-rail [data-dot].on{background:var(--cyan);box-shadow:0 0 14px var(--cyan);width:22px;border-radius:999px}
+  .asm-prog{position:absolute;left:0;right:0;bottom:0;height:2px;background:rgba(120,150,210,.14);z-index:3}
+  .asm-prog i{display:block;height:100%;transform-origin:0 50%;transform:scaleX(0);
+    background:linear-gradient(90deg,var(--cyan),var(--accent),var(--accent2))}
+  .asm-fallback{padding:22px;border:1px solid var(--line);border-radius:12px;background:var(--panel);
+    color:var(--ink2);font-size:14px}
+  @media(max-width:900px){
+    .asm{height:360vh}
+    .asm-stage{grid-template-columns:1fr;gap:12px;align-content:center}
+    .asm-stage canvas{height:48vh}
+  }
+
   /* ── the headline film ────────────────────────────────────────────────── */
   .film{margin:34px 0 10px;border:1px solid var(--line2);border-radius:16px;overflow:hidden;
     background:var(--panel);backdrop-filter:blur(14px);position:relative;
@@ -382,6 +430,7 @@
   }
 
 </style>
+<script type="importmap">{"imports":{"three":"https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <style id="dsh-fit">@media (max-width:720px){body{overflow-wrap:break-word}main table,section table,.card table,.in table,.scroll table{display:block;overflow-x:auto;max-width:100%}code,pre,.mono{overflow-wrap:anywhere}}</style>
 </head>
 <body data-mode="human">
@@ -471,6 +520,20 @@ node sim-engine/server.mjs --dump-contract</pre>
     </ol>
   </div>
 </section>
+
+
+<div class="asm" id="assembly">
+  <div class="asm-stage">
+    <canvas aria-label="The winged zebrafish assembling and opening layer by layer"></canvas>
+    <div class="asm-cap" data-cap></div>
+    <div class="asm-rail">
+      <i data-dot="assemble"></i><i data-dot="outer"></i><i data-dot="muscle"></i>
+      <i data-dot="skeleton"></i><i data-dot="organ"></i>
+    </div>
+    <div class="asm-prog"><i data-prog></i></div>
+  </div>
+  <p class="asm-fallback" data-fallback hidden></p>
+</div>
 
 <div class="film">
   <div class="fcap"><b>The film</b><span>Two minutes. Every number on screen is read from the file that
@@ -604,6 +667,7 @@ node holdout/nanopubs/check.mjs &lt;dir-or-file.trig&gt;
     </ul>
   </div>
 
+  <div class="art"><img src="art/uc-locator.jpg" alt=""><span class="gen">Generated · Nano Banana 2.1</span><span class="label"><b>Cite or cut</b><span>An assertion with no locator is an opinion. Every literal over 40 characters has to point back at the exact line it came from.</span></span></div>
   <h3 id="unsure">When you are not sure</h3>
   <div class="card">
     <p><strong>The rule is the same at every layer of this system: an absence is a result, and it is
@@ -678,6 +742,7 @@ cd lean &amp;&amp; lake env lean &lt;file&gt;</pre>
   not asserted. If you cannot produce a witness, you have probably over-constrained the statement — and
   that is information about the claim, not about Lean.</p>
 
+  <div class="art"><img src="art/uc-layers.jpg" alt=""><span class="gen">Generated · Nano Banana 2.1</span><span class="label"><b>Two sources, one disagreement</b><span>Do not average them and do not pick. Find the weaker claim both support, or make the condition a load-bearing hypothesis.</span></span></div>
   <h3>Conflicting evidence, and conflicting nanopubs</h3>
   <div data-aud="human">
     <p>Conflict is the normal case in biology, and the instinct — pick the better paper, or split the
@@ -851,6 +916,7 @@ cd lean &amp;&amp; lake env lean &lt;file&gt;</pre>
     </tbody>
   </table>
 
+  <div class="art"><img src="art/uc-diff.jpg" alt=""><span class="gen">Generated · Nano Banana 2.1</span><span class="label"><b>Two strands, a handful of differences</b><span>The mesh and the sequence are ordinary files. What matters is which loci differ and which of those a real organism reproduces.</span></span></div>
   <h3>Exporting to your own validator</h3>
   <div data-aud="human">
     <p>Nothing here is a closed loop. The two artefacts worth carrying out are the <strong>mesh</strong>
@@ -881,6 +947,50 @@ cd lean &amp;&amp; lake env lean &lt;file&gt;</pre>
       </tr>
     </tbody>
   </table>
+
+  <h3>Print it</h3>
+  <p>The design leaves the screen as geometry. These are the files themselves, not renderings of
+  them &mdash; the same ones a printer takes.</p>
+
+  <div class="demo"><div class="cap"><b>Demo</b><span>The hundred printed parts assembling in
+    anatomical order, played by the print page's own animation.</span></div>
+    <video src="../pitch-video/clips/assembly.webm" autoplay muted loop playsinline></video>
+    <div class="note">Recorded from <code>/print/</code>, which carries the explode scrubber and
+      per-part downloads.</div></div>
+
+  <div class="dl">
+    <a href="../print/download/1-full-prototype-120mm.zip">
+      <span class="n">Full prototype &middot; 120&nbsp;mm</span>
+      <span class="d">Whole animal at 120&nbsp;mm standard length, plus the hollowed glider variant
+        (1.5&nbsp;mm walls, solid 1.8&nbsp;mm fins), with scale factors, volumes, centre of mass and
+        triangle counts.</span>
+      <span class="s">ZIP &middot; 7.0 MB</span></a>
+    <a href="../print/download/2-assembly-starter-kit-1to1.zip">
+      <span class="n">Assembly starter kit &middot; 1:1</span>
+      <span class="d">Ten numbered snap-together parts, plus the fit-test coupon. Print the coupon
+        first: it carries 1.4&nbsp;mm pegs from 0.05 to 0.16&nbsp;mm clearance, and every snap fit
+        depends on what your printer actually holds.</span>
+      <span class="s">ZIP &middot; 14.1 MB</span></a>
+    <a href="../print/">
+      <span class="n">120&nbsp;mm hierarchy kit &middot; 56 parts</span>
+      <span class="d">Split along the anatomical containment hierarchy rather than for assembly.
+        Per-part downloads and the viewer, since the archive is past the per-file limit.</span>
+      <span class="s">Viewer &middot; per part</span></a>
+    <a href="../print/download/README.txt">
+      <span class="n">Read this first</span>
+      <span class="d">What the design is, what our own validator says about it, and the two things
+        that bite: zero-thickness fin membranes, and clean-up with no manifold repair.</span>
+      <span class="s">TXT</span></a>
+  </div>
+
+  <div class="card warn"><h4>Before you print</h4>
+    <p style="margin:0">Fin membranes are <strong>zero-thickness surfaces</strong> in the
+    whole-animal meshes and must be thickened; the glider variant already has solid fins. Clean-up
+    was merge-by-distance and normals-outside only &mdash; there is no manifold repair, so where
+    non-manifold edges remain the signed volume is approximate and the centre of mass is an
+    area-weighted surface centroid, not a solid one. A superseded 100-part set built on a
+    <em>chosen</em> rather than measured fin ratio is deliberately not offered here.</p></div>
+
   <div class="card good">
     <h4>The round trip — the validation we most want and have not run</h4>
     <p style="margin:0">Feed the predicted sequence back into Design Studio in a <em>fresh</em> session and
@@ -924,6 +1034,7 @@ cd lean &amp;&amp; lake env lean &lt;file&gt;</pre>
     </tbody>
   </table>
 
+  <div class="art"><img src="art/uc-physics.jpg" alt=""><span class="gen">Generated · Nano Banana 2.1</span><span class="label"><b>It separates, and then it tumbles</b><span>The simulator does not ask whether the design is plausible. It asks whether this body leaves the water, and answers 0.67 m/s against 8.64 required.</span></span></div>
   <h3>Neighbour checking and functional explainability</h3>
   <div data-aud="human">
     <p>“Is this design plausible?” is not answerable. “What is the nearest thing that actually exists, and
@@ -960,6 +1071,7 @@ node sim-engine/cli.mjs tool functional_resolution --json '{…}'</pre>
     exists today is whole-mesh physics plus per-locus functional annotation.</p>
   </div>
 
+  <div class="art"><img src="art/uc-gate.jpg" alt=""><span class="gen">Generated · Nano Banana 2.1</span><span class="label"><b>The gate is shut, and says why</b><span>The word "validated" is withheld, and the reasons it is withheld are listed. A refusal that explains itself is the product.</span></span></div>
   <div class="card bad">
     <h4>Why there is no composite score</h4>
     <p>There is one, it is reported, and it is <strong>never the verdict</strong> — because adding one
@@ -1031,5 +1143,12 @@ node sim-engine/cli.mjs tool functional_resolution --json '{…}'</pre>
 </div>
 
 <script src="app.js"></script>
+<script type="module">
+  // The assembly viewer is a progressive enhancement: if the module, WebGL or the model is
+  // unavailable the section removes itself rather than leaving a dead black box on the page.
+  import('./assembly.js')
+    .then(m => m.mountAssembly(document.getElementById('assembly')))
+    .catch(err => { document.getElementById('assembly')?.remove(); console.error(err); });
+</script>
 </body>
 </html>
