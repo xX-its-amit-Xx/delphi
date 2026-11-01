@@ -57,6 +57,8 @@ export function serve(root) {
     let p = path.join(root, rel);
     if (!p.startsWith(root)) { res.writeHead(403); return res.end(); }
     if (fs.existsSync(p) && fs.statSync(p).isDirectory()) p = path.join(p, 'index.html');
+    // Extensionless routes (blueprint3d redirects to "explode") resolve to the .html file.
+    if (!fs.existsSync(p) && !path.extname(p) && fs.existsSync(p + '.html')) p += '.html';
     if (!fs.existsSync(p)) { res.writeHead(404); return res.end('not found'); }
     res.writeHead(200, { 'content-type': TYPES[path.extname(p)] || 'application/octet-stream', 'cache-control': 'no-store' });
     fs.createReadStream(p).pipe(res);
@@ -74,7 +76,13 @@ if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}` || proce
   try {
     for (const s of SHOTS) {
       if (only.length && !only.includes(s.id)) continue;
-      const page = await browser.newPage({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1 });
+      const page = await browser.newPage({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1, colorScheme: 'dark' });
+      // These pages all carry a dark palette under prefers-color-scheme and a [data-theme] override;
+      // the attribute is set too so a page that only honours the explicit toggle still comes out dark.
+      await page.addInitScript(() => {
+        document.addEventListener('DOMContentLoaded', () => document.documentElement.setAttribute('data-theme', 'dark'));
+        try { localStorage.setItem('theme', 'dark'); } catch {}
+      });
       const errors = [];
       page.on('pageerror', e => errors.push(String(e.message).slice(0, 200)));
       let note = null;

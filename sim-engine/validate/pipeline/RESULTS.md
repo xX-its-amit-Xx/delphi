@@ -83,6 +83,42 @@ The scorer's own composite for this design is **0.878, "plausible"**. It is carr
 is the same design the physics module says cannot leave the water. That gap is the reason the five results are
 reported side by side and never summed.
 
+> ### Note added 2026-11-01 (re-verified): 0.878 is reproducible, and it is not the only number this design has
+>
+> The hub measured three different composites for `winged-zebrafish` and suspected 0.878 was stale. **It is not.**
+> Every figure in this file was re-run on this tree and all five reproduce exactly: 0.8780, 0.4089, 0.8449, 0.9330,
+> 0.4676. Nothing here needed a correction of its digits. What *was* missing is the condition under which 0.878
+> holds, and it matters more than the number:
+>
+> | path | spec | `S` | composite |
+> |---|---|---|---|
+> | `design_score({organism:'winged-zebrafish'})` — no spec | none | did not run | **0.9217** |
+> | this file: *"glides ≥ 5 m … **and survives 10–30 C as an adult**"* | 3 criteria, 1 failed 2 met | 0.6667 | **0.8780** |
+> | `dashboard/public/validate-show/` walkthrough: *"…can glide over the water after leaping…"* | 1 criterion, failed | 0 → floor 0.01 | **0.4676** |
+>
+> All three are correct outputs of **scorer v1.0.0** on a **byte-identical input trait vector**. They differ only
+> because the `S` (spec) component enters the weighted geometric mean when, and only when, a spec is passed — and
+> `S` is computed from the criteria parsed out of the desired-phenotype **prose**.
+>
+> **So:** the headline 0.878 is higher than the walkthrough's 0.4676 for the same design *because this file's
+> prose also mentioned a temperature range*. Asking additionally for something the design does trivially — any
+> zebrafish survives 10–30 °C — moved the composite of a fish that cannot leave the water from 0.4676
+> ("implausible") to 0.878 ("plausible"). A number that can be raised by asking for more things the design already
+> does is not a measure of whether the design works. The composite was never this report's verdict; this is a
+> second, independent reason it must not become one.
+>
+> **This number was repeated upward.** 0.878 has been quoted to the user and to other agents, and into
+> `sim-engine/AGENT-GUIDE.md`, `sim-engine/skill/delphi-studio/SKILL.md`,
+> `sim-engine/tools/PIPELINE-REGISTER.md`, `dashboard/public/studio-api/` and `dashboard/public/start/`, in each
+> case without the spec condition and without the fact below. Both are now attached to the number in code
+> (`score.evaluation`, `score.components_that_ran`).
+>
+> **And the fact that was never attached to it at all:** scorer v1.0.0's composite **FAILED** the blind held-out
+> evaluation — 168 held-out families, family-out, independent evaluator, all three primary endpoints failed
+> (`sim-engine/validate/evaluation/SCORER-EVALUATION.md`). So does every other released version's composite,
+> v1.3.0 included. `0.878 "plausible"` is a reading from an instrument that has never passed its own
+> pre-registered test. See `sim-engine/validate/SCORER-VERSION.md`.
+
 ---
 
 ## Per-scale coverage (headline run)
@@ -205,6 +241,13 @@ Desired phenotype identical in all five: *"a zebrafish that glides at least 5 m 
 | subtraction | `wingless-flying-fish` | `flying-fish` | cannot-assess | **pass** | cannot-assess | cannot-assess | **FAIL** | 0.468 |
 
 The word "validated" is withheld in all five.
+
+**Every composite in this column is scorer v1.0.0 WITH the spec above, and is comparable only with another
+composite computed the same way** (re-verified 2026-11-01: 0.8780, 0.4089, 0.8449, 0.9330, 0.4676). With no spec
+the same five designs return 0.9217, 0.3492, 0.8201, 0.9217, 0.9217 — the subtraction case moves from
+"implausible" to "plausible" purely by not being asked for anything. v1.0.0's composite failed the blind held-out
+evaluation, as did every released version's; the grid and the per-version numbers are in
+`sim-engine/validate/SCORER-VERSION.md`.
 
 - **TFF** — 22 parameter differences; the only case where phenotype similarity fails: OOD flag set, with
   `pectoral_area_SL2`, `pectoral_span_SL`, `caudal_upper_SL` and `caudal_lower_SL` outside the envelope. Its glide

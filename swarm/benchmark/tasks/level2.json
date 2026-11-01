@@ -1,0 +1,49 @@
+{
+ "level": "leanbio",
+ "note": "Three English claims to formalize in Lean 4 with Mathlib only (no Delphi imports, so the grader never rebuilds the Delphi library). required_elements are regexes fixed BEFORE any arm ran; they are the mechanical half of 'does it say what the claim says'. No bird taxon appears.",
+ "toolchain": "lean-toolchain leanprover/lean4:v4.35.0, mathlib v4.35.0, compiled with `lake env lean` inside lean/",
+ "tasks": [
+  {
+   "id": "l2-t1",
+   "claim": "For a body in steady gliding flight, lift balances weight only at or above the minimum airspeed v_min = sqrt(2 * m * g / (rho * S * CLmax)), where m is mass, g gravitational acceleration, rho air density, S lifting area and CLmax the maximum lift coefficient. It follows that of two gliders with the same CLmax and the same air density, the one with the greater wing loading m/S strictly requires the greater minimum airspeed.",
+   "content_elements": [
+    { "re": "Real\\.sqrt|√", "what": "a square root appears" },
+    { "re": "2\\s*\\*", "what": "the factor 2 appears" },
+    { "re": "0\\s*<\\s*(rho|ρ)|(rho|ρ)\\s*(>|≥)\\s*0", "what": "air density is hypothesised positive" },
+    { "re": "0\\s*<\\s*(S|area)|\\b(S|area)\\s*(>|≥)\\s*0", "what": "lifting area is hypothesised positive" },
+    { "re": "0\\s*<\\s*(CLmax|cLmax|CL|clMax)|\\b(CLmax|cLmax|clMax)\\s*(>|≥)\\s*0", "what": "the lift coefficient is hypothesised positive" },
+    { "re": "<", "what": "a STRICT inequality is the conclusion (not a non-strict one)" },
+    { "re": "(m1|mA|m₁)[\\s\\S]*?(m2|mB|m₂)|/\\s*S", "what": "two gliders are compared, or wing loading m/S is formed" }
+   ],
+   "trap": "A statement that merely defines v_min and proves 0 <= v_min is TRUE and VACUOUS. The strict monotonicity in m/S is the content."
+  },
+  {
+   "id": "l2-t2",
+   "claim": "The aerobic power a fish can supply is bounded above by the Fick product P_avail = eta * E * Q * (Ca - Cv), where eta is the mechanical efficiency, E the oxycaloric equivalent, Q the cardiac output and (Ca - Cv) the arterio-venous oxygen difference. Therefore if the power a sustained activity demands strictly exceeds P_avail, that activity cannot be sustained aerobically.",
+   "content_elements": [
+    { "re": "(eta|η)\\s*\\*", "what": "efficiency enters as a multiplicative factor" },
+    { "re": "(Ca|ca)\\s*-\\s*(Cv|cv)", "what": "the arterio-venous difference appears as a difference" },
+    { "re": "(Q|q)\\s*\\*|\\*\\s*(Q|q)\\b", "what": "cardiac output enters as a multiplicative factor" },
+    { "re": "0\\s*<\\s*(eta|η)|(eta|η)\\s*(>|≥)\\s*0|0\\s*(<|≤)\\s*(eta|η)", "what": "efficiency is constrained (positive or in a band), so the premise is not vacuous" },
+    { "re": "(demand|P_?dem|Pdemand|required|P_?req)", "what": "a demanded power is named separately from the available power" },
+    { "re": "¬|Not\\b|→\\s*False|¬\\s*\\(", "what": "the conclusion is a negation: the activity cannot be sustained" },
+    { "re": "(Cv|cv)\\s*(<|≤)\\s*(Ca|ca)|0\\s*(<|≤)\\s*(Ca|ca)\\s*-\\s*(Cv|cv)", "what": "the arterio-venous difference is hypothesised non-negative, which is what stops the bound being vacuous" }
+   ],
+   "trap": "If the hypotheses are mutually contradictory the theorem is vacuously true and compiles. The witness declaration is what catches this, and `hypotheses_load_bearing` is what catches a conclusion that needs no hypotheses at all."
+  },
+  {
+   "id": "l2-t3",
+   "claim": "For a morphogen with diffusion coefficient D and first-order degradation rate constant k, the characteristic gradient length is lambda = sqrt(D/k). Therefore halving the degradation rate constant (equivalently, doubling the degradation half-life) multiplies lambda by exactly sqrt 2.",
+   "content_elements": [
+    { "re": "Real\\.sqrt|√", "what": "a square root appears" },
+    { "re": "(D|d)\\s*/\\s*(k|K)", "what": "the ratio D/k appears" },
+    { "re": "0\\s*<\\s*(k|K)|\\b(k|K)\\s*(>|≥)\\s*0", "what": "the rate constant is hypothesised positive (so D/k is defined)" },
+    { "re": "0\\s*(<|≤)\\s*(D|d)\\b|\\b(D|d)\\s*(>|≥)\\s*0", "what": "the diffusion coefficient is hypothesised non-negative" },
+    { "re": "Real\\.sqrt\\s*2|√\\s*2|sqrt 2", "what": "the factor sqrt 2 appears explicitly" },
+    { "re": "(k|K)\\s*/\\s*2|2\\s*\\*\\s*(k|K)|(k|K)\\s*\\*\\s*2", "what": "the halved (or doubled) rate constant appears" },
+    { "re": "=", "what": "the conclusion is an equality, not an inequality" }
+   ],
+   "trap": "Proving lambda >= 0, or proving the statement only for one numeric D and k, is not the claim. The claim is an exact equality for all admissible D and k."
+  }
+ ]
+}

@@ -64,9 +64,28 @@ reference and explicitly **not** the verdict:
 
 ```
 composite_score_from_the_scorer  {"value": 0.878, "plausible": true, "version": "1.0.0",
+  "components_that_ran": "P+L+G+S+E",
+  "depends_on_the_desired_phenotype_text": true,
+  "evaluation": {"version": "1.0.0", "blind_evaluated": true, "score_verdict": "FAIL",
+                 "warning": true, "label": "scorer v1.0.0: blind-evaluated (168 held-out
+                 families, family-out). The blind verdict on this composite is FAIL -- P1, P2
+                 and P3 all fail ..."},
   "note": "the scorer thread's own frozen number, carried through for reference. It is NOT this
-           report's verdict, and no gate above feeds it."}
+           report's verdict, and no gate above feeds it. ..."}
 ```
+
+**Read the two labels before you quote the number** (both added 2026-11-01; see
+`sim-engine/validate/SCORER-VERSION.md`):
+
+- **`evaluation`** — the composite of scorer v1.0.0 **FAILED** the blind held-out evaluation, and so did every
+  other released version's composite, v1.3.0 included. Only v1.3.0's `rank_score` — a different output — passed.
+  There is no scorer version whose composite has passed its own pre-registered test. `evaluation.warning` is
+  `true` on every released version today.
+- **`components_that_ran`** — the composite changes identity with its component set. Same design
+  (`winged-zebrafish`), same scorer v1.0.0, same input trait vector: **0.9217** with no spec (`S` does not run),
+  **0.878** with this page's three-criterion spec (1 failed, 2 met), **0.4676** with a glide-only spec (1 failed).
+  Two composites are comparable only when `version` *and* `components_that_ran` match. Asking additionally for
+  something the design does trivially **raises** the number.
 
 ### 0.3 Three entry paths
 
@@ -260,6 +279,11 @@ length and span by 2.26x, planform area by 4.45x, and nothing else changed.
 
 **The scorer calls it plausible, 0.878. The physics says it cannot leave the water.** Both are in the
 same report, and neither is allowed to hide the other:
+
+> That 0.878 holds for *this* desired-phenotype text. With no spec the same design at the same scorer version
+> reads 0.9217; with a glide-only ask it reads **0.4676, "implausible"**. The temperature clause in the ask —
+> which any zebrafish meets — is what lifts it over the 0.5 cut. And scorer v1.0.0's composite failed the blind
+> held-out evaluation, as every released version's does. `sim-engine/validate/SCORER-VERSION.md`.
 
 ```
 NAMED RESULTS (five, never summed)

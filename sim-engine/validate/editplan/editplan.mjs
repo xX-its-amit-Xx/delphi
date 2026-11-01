@@ -633,6 +633,31 @@ export async function offTargets(spacer, pam, opts = {}) {
 // varied ORIENTATION and ASYMMETRY together and its own text says they "have additive contributions", so it
 // does not isolate arm length. No zebrafish study isolates arm length from orientation, and none tested
 // symmetric 40/40 at all. Both donors are therefore emitted and the plan says to order both and compare.
+// CUT-SITE PROXIMITY: WHO THE NUMBER ACTUALLY BELONGS TO. This module ranks guides on cut-to-edit distance
+// and defaults to a 30 bp window, and it used to cite Prykhozhij 2018 for that. Re-reading Prykhozhij's full
+// text in this run shows the citation was over-stated: Prykhozhij contains NO zebrafish-measured
+// distance-versus-efficiency relationship. Its only quantitative distance claim is in its INTRODUCTION and
+// is explicitly murine, and it cites ONE reference for it. Its own zebrafish statements on distance are
+// qualitative. So the qualitative principle is Prykhozhij's; the numbers are Paquet's, in a different
+// system. Both are now named, in the right places.
+export const CUT_DISTANCE_EVIDENCE = {
+  one_line: 'Guides are ranked on this because cut-site proximity to the mutation improves knock-in efficiency - a QUALITATIVE zebrafish-supported principle (Prykhozhij 2018). The numeric thresholds behind the 30 bp window are NOT zebrafish numbers: see CUT_DISTANCE_EVIDENCE.',
+  qualitative_zebrafish: { citation: 'Prykhozhij et al. 2018, Nucleic Acids Res 46(17):e102, doi 10.1093/nar/gky512, PMID 29905858',
+    quoted: ['cut site proximity to the mutation and phosphorothioate oligo modifications also greatly improved knock-in efficiency (abstract)',
+      'knock-ins farther than 10 nt from the cut site are much less efficient (results; no numbers attached)',
+      'the cdh5 knock-in was located at the cut site, while the tp53 knock-ins were 11 and 13 nucleotides away from their cut sites'],
+    what_it_does_NOT_contain: 'any zebrafish-measured efficiency-versus-distance curve or percentage. Every statement above is qualitative.',
+    kind: 'measured (qualitative)' },
+  the_numbers_are_not_zebrafish: {
+    quoted_from_prykhozhij_introduction: 'The most efficient positions for a modification should be located <15 nt and ideally <10 nt away from the cut site, as at a distance of 20 nt away from the cut site, the efficiency drops to 20-30% of the maximum, as observed in murine cells.',
+    original_source: 'Paquet et al. 2016, Nature 533, doi 10.1038/nature17664, PMID 27120160, "Efficient introduction of specific homozygous and heterozygous mutations using CRISPR/Cas9" - the single reference Prykhozhij cites for that sentence (its reference 13).',
+    system: 'murine / mammalian cells, NOT zebrafish embryos',
+    also_cited_nearby: 'Liang et al. 2016, J Biotechnol 241:136-146, doi 10.1016/j.jbiotec.2016.11.011, PMID 27845164 - cited by Prykhozhij one sentence earlier for the inverse relationship in general, not for the 20-30 % figure.',
+    page_range_caveat: 'Prykhozhij\'s reference list renders Paquet as "533:1-18", evidently a formatting artifact. The true page range was not verified in this run; do not cite pages for Paquet from here.',
+    kind: 'measured-secondhand, transferred across species' },
+  correction_made_in_this_run: 'the <10 nt / 20 nt / 20-30 % figures were previously attributed, by implication, to Prykhozhij 2018 as zebrafish data. They are Paquet 2016 murine-cell data quoted in Prykhozhij\'s introduction. The ranking rule still uses proximity; the numeric justification is now cited to Paquet and labelled as a cross-species transfer.',
+};
+
 export const ARM_LENGTH_EVIDENCE = {
   question: 'how long should each homology arm of a zebrafish point-knock-in ssODN be, and should it be asymmetric?',
   boel_2018: { citation: 'Boel et al. 2018, Dis Model Mech 11:dmm035352, doi 10.1242/dmm.035352, PMID 30355591, PMC6215429', recommends: '120 nt TOTAL, symmetric',
@@ -650,12 +675,15 @@ export const ARM_LENGTH_EVIDENCE = {
   unresolved: 'The two papers disagree on asymmetry. No zebrafish study isolates arm length from strand orientation, and no zebrafish study tested symmetric 40/40. Richardson et al. 2016 (Nat Biotechnol 34:339-344, doi 10.1038/nbt.3481), the source of the 36/91 split, is HUMAN CELLS. Order both designs and compare; that is the only honest instruction.',
 };
 export const DONOR_DESIGN = {
-  symmetric: { left: 40, right: 40, kind: 'borrowed',
-    citation: 'Boel et al. 2018, Dis Model Mech 11:dmm035352, doi 10.1242/dmm.035352, PMID 30355591 ("HDR rates are strongly determined by repair-template composition, with the most influential factor being homology-arm length")',
-    borrowing: 'Boel found arm length to be the dominant factor but we did not read the optimal length off their figures; 40/40 is the conventional starting point, not their measured optimum.' },
+  symmetric: { left: 60, right: 60, kind: 'measured-secondhand',
+    citation: 'Boel et al. 2018, Dis Model Mech 11:dmm035352, doi 10.1242/dmm.035352, PMID 30355591, PMC6215429 - "Repair-template length significantly affects total repair rates, with 120 nt being identified as the most optimal length to promote HDR" (four zebrafish sgRNA sites, 60 vs 120 vs 180 nt total)',
+    per_arm_split_is_ours: 'Boel states the optimum as a TOTAL length of 120 nt. Splitting it 60+60 is OUR reading of "symmetrical"; the per-arm split is not given in the text we read.',
+    changed_in_this_run: 'was 40/40 (80 nt total), which was labelled a convention rather than a measurement and sat in the length range Boel measured to be up to tenfold worse. Corrected to Boel\'s measured optimum.',
+    borrowing: 'Boel\'s loci, not ours, and its readout is pooled 1-dpf embryos. Boel also found asymmetry gave NO benefit, which Prykhozhij 2018 contradicts; see ARM_LENGTH_EVIDENCE.' },
   asymmetric: { pam_distal: 36, pam_proximal: 91, kind: 'borrowed',
-    citation: 'Prykhozhij et al. 2018, Nucleic Acids Res 46:e102, doi 10.1093/nar/gky512, PMID 29905858 ("Anti-sense asymmetric oligo design was found to be the most successful optimization strategy") in ZEBRAFISH; the specific 36/91 nt split is Richardson et al. 2016, Nat Biotechnol 34:339-344, doi 10.1038/nbt.3481, measured in human cells',
-    borrowing: 'asymmetric + anti-sense is a zebrafish result (Prykhozhij 2018); the 36/91 nt numbers are a human-cell result borrowed here. The split is the assumption, the strategy is not.' },
+    citation: 'Prykhozhij et al. 2018, Nucleic Acids Res 46(17):e102, doi 10.1093/nar/gky512, PMID 29905858, PMC6158492 - asymmetric anti-sense was "substantially more efficient (3- to 10-fold)" in ZEBRAFISH; its own arms were 36 nt over the sgRNA site / 90 nt on the other side. The 36/91 nt split used here is Richardson et al. 2016, Nat Biotechnol 34:339-344, doi 10.1038/nbt.3481, measured in HUMAN CELLS.',
+    contradicted_by: 'Boel et al. 2018 found that "asymmetrically designed templates did not result in better HDR rates compared to symmetrically designed templates". The two zebrafish papers disagree and this plan does not pick a winner: see ARM_LENGTH_EVIDENCE and order both.',
+    borrowing: 'asymmetric + anti-sense is a zebrafish result (Prykhozhij 2018), but a CONFOUNDED one: it varied orientation and asymmetry together and says they "have additive contributions", so it does not isolate arm length. The 36/91 nt numbers are a human-cell result borrowed here.' },
 };
 /**
  * ssODN donor for a point change: the edited genomic sequence with homology arms, plus silent blocking
@@ -736,7 +764,7 @@ export function donorFor(res, guide, { arms = 'symmetric', left, right, block = 
     sequence_antisense_to_mRNA_5to3: strand === 1 ? revcomp(sense) : sense,
     strand_to_order: guide.strand === 1 ? 'reverse (complementary to the protospacer strand)' : 'forward (complementary to the protospacer strand)',
     strand_choice_note: 'two strand rules exist and they do not always agree. (a) complementary to the protospacer strand - what sequence_to_order_5to3 gives. (b) ANTI-SENSE to the mRNA, which Prykhozhij et al. 2018 (NAR 46:e102, doi 10.1093/nar/gky512) found to be the most successful single optimisation in zebrafish - that is sequence_antisense_to_mRNA_5to3. Order both and compare rather than trusting either.',
-    cut_site_proximity: `the cut site is ${Math.abs(guide.cut_site_chrom - res.target.genomic_positions[0])} bp from the edited codon. Prykhozhij 2018 found cut-site proximity to the mutation to greatly improve knock-in efficiency, which is why guides are ranked on it here.`,
+    cut_site_proximity: `the cut site is ${Math.abs(guide.cut_site_chrom - res.target.genomic_positions[0])} bp from the edited codon. ${CUT_DISTANCE_EVIDENCE.one_line}`,
     unedited_reference_same_span_5to3: unedited,
     changes_applied: applied,
     blocking_mutations: blocking,

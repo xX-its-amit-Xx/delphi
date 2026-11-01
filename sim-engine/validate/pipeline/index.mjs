@@ -229,7 +229,17 @@ export async function validateGeneration({ generated, base, desired_phenotype, o
     per_scale_coverage: scales.per_scale_coverage,
     results,
     verdict,
-    composite_score_from_the_scorer: scored?.score ? { value: scored.score.value, plausible: scored.score.plausible, version: scored.score.version, note: 'the scorer thread\'s own frozen number, carried through for reference. It is NOT this report\'s verdict, and no gate above feeds it.' } : null,
+    // Carried for reference only. The version AND whether that version's composite was ever blind-evaluated travel
+    // WITH the number (score.mjs evaluationLabel), because a composite read without them is read as a verdict.
+    // components_that_ran is part of the number's identity: the same design at the same version returns 0.9217 with
+    // no spec, 0.878 with a spec that goes 1 failed / 2 met, and 0.4676 with a spec whose single criterion fails.
+    // See sim-engine/validate/SCORER-VERSION.md.
+    composite_score_from_the_scorer: scored?.score ? { value: scored.score.value, plausible: scored.score.plausible, version: scored.score.version,
+      evaluation: scored.score.evaluation ?? null, components_that_ran: scored.score.components_that_ran ?? null,
+      depends_on_the_desired_phenotype_text: !!(desired.criteria_parsed),
+      note: 'the scorer thread\'s own frozen number, carried through for reference. It is NOT this report\'s verdict, and no gate above feeds it.'
+        + (scored.score.evaluation?.warning ? ` The blind held-out evaluation of scorer v${scored.score.version} did NOT pass this composite: ${scored.score.evaluation.label}` : '')
+        + (desired.criteria_parsed ? ` This value INCLUDES the spec component S, computed from the ${desired.criteria_parsed} criteria parsed out of the desired-phenotype TEXT; a criterion the design meets trivially raises it. Without a spec the same design at the same version returns a different number, and the two are not comparable.` : '') } : null,
     notes,
     ms: Date.now() - t0,
   };

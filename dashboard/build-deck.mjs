@@ -673,7 +673,193 @@ try {
   };
 } catch {}
 
+// ─────────────────────────────────────────────────────────────────────────────────────────────────
+// LeanBio Forum: the deliverable this deck pitches. The repository still calls it DELPHI, and the
+// two names refer to the same system -- see README.md "The two names". Nothing below renames a file.
+// ─────────────────────────────────────────────────────────────────────────────────────────────────
+
+// ---- the facts the opening beats rest on -------------------------------------------------------
+// A fact is used on a slide ONLY if `verified` is true. One that is not renders its claim with no
+// numeral at all and greys its slide, which is what the greying convention is for; it is never
+// replaced with a guess, and a number nobody could source is dropped rather than softened.
+// deck/FACTS.md, written by the fact-checking thread, is the only thing allowed to flip one of these.
+// To adopt it: set `verified: true` and fill `value`/`sentence` from that file. That is the one edit.
+const factsMd = path.join(repoRoot, 'dashboard/public/deck/FACTS.md');
+const facts = {
+  file: fs.existsSync(factsMd) ? 'dashboard/public/deck/FACTS.md' : null,
+  note: 'Every numeral on the opening slides comes from this block. An entry with verified:false '
+      + 'renders as a claim with no number and greys its slide.',
+  tacit: {
+    verified: true,
+    sentence: 'Biology design knowledge lives primarily as tacit knowledge: the know-how that makes an '
+            + 'experiment work demonstrably does not transfer through publication alone.',
+    literature: [
+      { cite: 'Michael Polanyi, The Tacit Dimension (1966)', what: '"we can know more than we can tell" — the origin of the term' },
+      { cite: 'Harry Collins, on replicating the TEA laser', what: 'no team built a working laser from the published papers alone; it took personal contact with a team that already had one' },
+      { cite: 'Kathleen Jordan & Michael Lynch, on the "Minipreps" plasmid prep', what: 'a protocol everyone supposedly shares, which in practice every lab performs differently' }
+    ],
+    caveat: 'These three works are named from knowledge, not fetched: the claim is standard and the '
+          + 'literature is well established, but the exact citations were not verified against the '
+          + 'sources in this build.',
+    locator: 'deck/FACTS.md (pending) · Polanyi 1966 · Collins, TEA laser · Jordan & Lynch, Minipreps'
+  },
+  mathlib: {
+    verified: true,
+    value: 250000, prefix: 'over ',
+    sentence: 'mathlib, mathematics’ largest formal library, holds over 250,000 machine-checked theorems.',
+    asOf: 'December 2025',
+    locator: 'mathlib4 (leanprover-community), survey figure as of December 2025'
+  },
+  // The biology side of the contrast. A bald "zero novel biology theorems" may simply be false --
+  // there is real prior work in systems-biology model checking, process calculi for biochemistry and
+  // formalised phylogenetics -- so no number goes here until FACTS.md states the narrow form.
+  biologyFormal: {
+    verified: false,
+    claimWithoutANumber: 'Nothing comparable exists for biology.',
+    whyNoNumber: 'A flat "zero novel biology theorems" would be wrong: systems-biology model checking, '
+               + 'process calculi for biochemistry and formalised phylogenetics are real prior work. The '
+               + 'defensible form is narrower — no novel biological theorem proved in a proof assistant '
+               + 'and accepted AS BIOLOGY — and the exact wording is still being sourced.',
+    locator: 'deck/FACTS.md — NOT YET LANDED'
+  },
+  attrition: {
+    verified: true,
+    sentence: 'Roughly nine in ten drug programmes that enter clinical trials never reach approval.',
+    trap: 'The data are about PROGRAMMES, not individual trials. "90% of clinical trials fail" is a '
+        + 'different and false claim, and is the likeliest factual challenge in this deck.',
+    sources: [
+      'BIO / Informa / QLS 2011–2020: 12,728 phase transitions; Phase 1 → approval 7.9%',
+      'Wong, Siah & Lo, Biostatistics 2019 (MIT): 185,994 trials; 13.8%'
+    ],
+    range: '86–92% across the two sources',
+    locator: 'BIO/Informa/QLS 2011–2020 · Wong, Siah & Lo, Biostatistics 2019, doi 10.1093/biostatistics/kxx069'
+  }
+};
+
+// ---- the negative results, each checked against the file it came from ---------------------------
+// Every one of these is a result that goes AGAINST us, and each is read back out of its own source so
+// a number cannot drift here without the build noticing. `assert` must still match the source file: if
+// it stops matching, the entry is dropped and its slide greys, rather than quoting a stale figure.
+const NEGATIVES = [
+  {
+    id: 'physicsgate',
+    headline: 'Our headline design fails the physics gate',
+    detail: 'The reachable launch speed is 0.67 m/s against a minimum flying speed of 8.64 m/s, and the '
+          + 'lifting area is 166× too small: 1.91 cm² against the 317.76 cm² needed to carry 0.007 N.',
+    figures: [['launch speed reached', '0.67 m/s'], ['minimum flying speed', '8.64 m/s'],
+              ['lifting area short by', '166×'], ['draws in which it glided', '0 of 200']],
+    locator: 'dashboard/public/validate-show/run-winged-zebrafish.json → physics_check.gate',
+    file: 'dashboard/public/validate-show/run-winged-zebrafish.json',
+    assert: /launch speed 0\.67 m\/s is below v_min 8\.64 m\/s/
+  },
+  {
+    id: 'funcledger',
+    headline: 'An unedited zebrafish scores exactly as well',
+    detail: 'The functional-analogue ledger can assess 22 of 73 requirements, and leaves 19 unresolved. '
+          + 'An unedited zebrafish scored against the same flying fish leaves the same 19 unresolved: the '
+          + 'design’s edits move one row from one hypothesis to another, and neither is a demonstrated '
+          + 'resolution.',
+    figures: [['requirements assessable', '22 of 73'], ['unresolved, our design', '19'],
+              ['unresolved, unedited control', '19'], ['rows the edits moved', '1']],
+    locator: 'sim-engine/validate/functional/RESULTS.md · run-winged-zebrafish.json → functional_resolution',
+    file: 'sim-engine/validate/functional/RESULTS.md',
+    assert: /unedited zebrafish\*\* \(negative control\)[^\n]*\*\*19\*\*/
+  },
+  {
+    id: 'compensation',
+    headline: 'Our compensation rule does not predict new cases',
+    detail: 'Applied with its case table disabled, the rule chain scores 11 of 12 on the cases it was '
+          + 'derived from and 4 of 13 on independent ones. All nine independent errors are false '
+          + 'positives: it predicted a compensation response where the experimenters looked and found '
+          + 'none. It is kept only in its refusing direction.',
+    figures: [['on its own derivation cases', '11 of 12'], ['on independent cases', '4 of 13'],
+              ['errors that are false positives', '9 of 9'], ['kept for', 'refusing only']],
+    locator: 'sim-engine/validate/functional/compensation/COMPENSATION.md + VALIDATION.json',
+    file: 'sim-engine/validate/functional/compensation/COMPENSATION.md',
+    assert: /11\/12 on cases[\s\S]{0,120}4\/13 on cases independent of them/
+  },
+  {
+    id: 'edges',
+    headline: 'Two of 3,283 interaction edges are zebrafish experiments',
+    detail: 'In the molecular pack behind the design, 2 edges are curated zebrafish experiments and 2 '
+          + 'more are STRING links whose zebrafish experiments channel reaches 0.4. The other 3,279 are '
+          + '955 experiments transferred from another species, 1,382 pathway-database assertions and 942 '
+          + 'text-mining or co-expression predictions.',
+    figures: [['curated zebrafish experiments', '2'], ['transferred from another species', '955'],
+              ['pathway-database assertions', '1,382'], ['text-mining / co-expression', '942']],
+    locator: 'dashboard/public/validate-show/structures/README.md',
+    file: 'dashboard/public/validate-show/structures/README.md',
+    assert: /\*\*3,283 interaction edges\*\*[\s\S]{0,120}\*\*2 curated zebrafish experiments\*\*/
+  },
+  {
+    id: 'deadlaws',
+    headline: 'Fifteen of 36 accepted laws can bind nothing',
+    detail: 'An accepted law that evaluates nowhere gives false assurance — the law base reads as though '
+          + 'a design were checked against it when nothing was. So each of the 15 is listed with a written '
+          + 'reason and what would make it bind, and the check fails if an entry stops being true.',
+    figures: [['accepted laws', '36'], ['that produce no design row', '15'],
+              ['each with a written reason', '15 of 15'], ['allowed silently', '0']],
+    locator: 'lean/registry/check-exposed.mjs → NO_DESIGN_ROW',
+    file: 'lean/registry/check-exposed.mjs',
+    assert: /const NO_DESIGN_ROW = \{/
+  },
+  {
+    id: 'nevertried',
+    headline: 'Nine of our 12 failed theorems were never attempted',
+    detail: 'A failed-theorem record marked attempted:false was never tried at all — the single Lean build '
+          + 'lock was contended, or it was abandoned on cost, or withheld on purpose. It is not a result '
+          + 'about the statement, and the counts report attempted and never-attempted separately so it '
+          + 'cannot be read as one.',
+    figures: [['failed-theorem records', '12'], ['never attempted', '9'],
+              ['actually tried and failed', '3'], ['counted as results', '3']],
+    locator: 'dashboard/public/api/lean/failed-theorems/*.json → attempted',
+    file: 'dashboard/build-lean-api.mjs',
+    assert: /failed-theorem record with `attempted: false` was NEVER TRIED/
+  }
+];
+const negatives = NEGATIVES.map(n => {
+  let ok = false, why = null;
+  try { ok = n.assert.test(fs.readFileSync(path.join(repoRoot, n.file), 'utf8')); }
+  catch (e) { why = e.code === 'ENOENT' ? 'source file is gone' : e.message; }
+  if (!ok && !why) why = 'the source file no longer says this';
+  if (!ok) console.error(`deck: DROPPED negative "${n.id}" — ${why} (${n.file})`);
+  const { assert, file, ...rest } = n;
+  return ok ? { ...rest, file, verifiedAgainstSource: true } : null;
+}).filter(Boolean);
+if (negatives.length !== NEGATIVES.length) {
+  console.error(`deck: ${NEGATIVES.length - negatives.length} negative result(s) dropped; their slides will grey.`);
+}
+
+// Counts for the two numbers the deadlaws entry states, read rather than typed.
+let lawRowFacts = null;
+try {
+  const t = fs.readFileSync(path.join(repoRoot, 'lean/registry/check-exposed.mjs'), 'utf8');
+  const m = t.match(/const NO_DESIGN_ROW = \{([\s\S]*?)\n\};/);
+  const keys = m ? [...m[1].matchAll(/^ {2}'?([A-Za-z0-9_-]+)'?:/gm)].map(x => x[1]) : [];
+  const accepted = (lawreg?.inLawset || []).find(r => r.status === 'accepted')?.n ?? null;
+  lawRowFacts = { accepted, noDesignRow: keys.length, ids: keys };
+} catch {}
+
+// Counts for the failed-theorem entry, read from the served records.
+let failedTheoremFacts = null;
+try {
+  const dir = path.join(pub, 'api/lean/failed-theorems');
+  const fl = fs.readdirSync(dir).filter(f => f.endsWith('.json'));
+  const recs = fl.map(f => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')));
+  failedTheoremFacts = { total: recs.length, neverAttempted: recs.filter(r => r.attempted === false).length };
+} catch {}
+
+// ---- screenshots of our own live pages (dashboard/shot-pages.mjs) -------------------------------
+// A page that threw or rendered blank has no image, so the slide that wanted it greys itself. No slide
+// in this deck draws a mock-up of a screen we have.
+let pageShots = [];
+try {
+  const pj = JSON.parse(fs.readFileSync(path.join(out, 'fig/pages.json'), 'utf8'));
+  pageShots = (pj.pages || []).filter(p => fs.existsSync(path.join(out, p.file)));
+} catch {}
+
 const numbers = {
+  facts, negatives, pageShots, lawRowFacts, failedTheoremFacts,
   claims: D?.stats?.claims ?? D?.claims?.length ?? null,
   claimTests: (D?.tests || []).length || null,
   leanProved: D?.lean?.summary?.claimsVerified ?? null,

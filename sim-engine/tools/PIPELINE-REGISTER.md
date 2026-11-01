@@ -71,6 +71,16 @@ Do not render a genotype panel as green on a `document-only` run.
 carried separately under `composite_score_from_the_scorer` and is **not** the verdict: on the headline case the
 frozen scorer says 0.878 "plausible" for a design the physics module says cannot leave the water.
 
+That entry now carries two fields a UI must render with the number, never without it (2026-11-01,
+`sim-engine/validate/SCORER-VERSION.md`):
+- `evaluation` — the version and its blind-evaluation verdict. For every released version, including v1.3.0, that
+  verdict on the **composite** is `FAIL`; `evaluation.warning` is `true`. A panel that shows the composite
+  without this is claiming a validated measurement that does not exist.
+- `components_that_ran` and `depends_on_the_desired_phenotype_text` — the composite is a function of the asked-for
+  spec, not of the design alone. The same design at the same version is 0.9217 with no spec, 0.878 with the
+  headline three-criterion ask, and 0.4676 with a glide-only ask. Do not put two composites on one axis unless
+  both fields match.
+
 **3. `cannot-assess` is not `pass`.** A component that did not run, or ran on no data, gets the third status. So
 does a Lean check where every law was `cannot-evaluate`. `verdict.word_validated_withheld` is `true` whenever any
 gate failed, any gate could not be assessed, any scale could not be assessed, any clause of the desired phenotype

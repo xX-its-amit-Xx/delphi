@@ -155,6 +155,14 @@ differences unresolved); `physics_check` **FAIL** — reachable launch speed 0.6
 8.64 m/s, lifting area 166.37× too small; `genotype_similarity` and `lean_check` **CANNOT-ASSESS**; the
 scorer's own composite **0.878, "plausible"**; the word "validated" **WITHHELD**.
 
+> **Never quote that composite bare** (note added 2026-11-01, `sim-engine/validate/SCORER-VERSION.md`). It is
+> scorer **v1.0.0**, whose composite **FAILED** the blind held-out evaluation — as does every released version's
+> composite, v1.3.0 included; only v1.3.0's `rank_score`, a different output, passed. And 0.878 holds only for
+> *this* desired-phenotype text: the same design at the same version reads **0.9217** with no spec and **0.4676,
+> "implausible"**, if the ask mentions only gliding. The temperature clause, which any zebrafish meets, is what
+> lifts it over the 0.5 cut. The number now arrives carrying `evaluation` and `components_that_ran`; quote those
+> with it or quote neither.
+
 **The scorer calls it plausible. The physics says it cannot leave the water.** Both are in the same
 report. That is why there are five results and not one number. Same call with
 `--generated flying-fish` (the real animal) meets the glide criterion but returns `cannot-assess` on the

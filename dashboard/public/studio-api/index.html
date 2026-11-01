@@ -97,8 +97,23 @@ verdict.withheld_because         ["2 gate(s) failed", "2 gate(s) could not be as
                                   "no sequence was compared at any locus"]</pre>
   <p class="small">The scorer's own composite arrives beside them, carried for reference and explicitly not the verdict:</p>
 <pre>composite_score_from_the_scorer  {"value": 0.878, "plausible": true, "version": "1.0.0",
+  "components_that_ran": "P+L+G+S+E",
+  "depends_on_the_desired_phenotype_text": true,
+  "evaluation": {"blind_evaluated": true, "score_verdict": "FAIL", "warning": true,
+                 "label": "scorer v1.0.0: blind-evaluated (168 held-out families,
+                 family-out). The blind verdict on this composite is FAIL -- P1, P2
+                 and P3 all fail ..."},
   "note": "the scorer thread's own frozen number, carried through for reference.
-           It is NOT this report's verdict, and no gate above feeds it."}</pre>
+           It is NOT this report's verdict, and no gate above feeds it. ..."}</pre>
+  <div class="note bad"><b>Two labels now travel with every composite, and they are the point.</b>
+  <span class="tag">evaluation</span> &mdash; scorer v1.0.0's composite <b>FAILED</b> the blind held-out
+  evaluation, and so does every released version's composite, v1.3.0 included; only v1.3.0's
+  <span class="tag">rank_score</span>, a different output, passed. No version of this composite has passed its
+  own pre-registered test. <span class="tag">components_that_ran</span> &mdash; the composite is a function of
+  what was asked for, not of the design alone: the same design at the same version reads <b>0.9217</b> with no
+  spec, <b>0.878</b> with this page's three-criterion ask, and <b>0.4676, &ldquo;implausible&rdquo;</b> if the ask
+  mentions only gliding. Adding a criterion the design meets trivially <i>raises</i> it. Never put two composites
+  on one axis unless both labels match. See <code>sim-engine/validate/SCORER-VERSION.md</code>.</div>
 </section>
 
 <section id="paths">
@@ -227,7 +242,7 @@ const report = await validateGeneration(
 <pre>node sim-engine/validate-cli.mjs \
   "a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult" \
   --base zebrafish-adult --generated winged-zebrafish</pre>
-  <div class="note bad"><b>The scorer calls it plausible, 0.878. The physics says it cannot leave the water.</b> Both are in the same report, and neither is allowed to hide the other.</div>
+  <div class="note bad"><b>The scorer calls it plausible, 0.878. The physics says it cannot leave the water.</b> Both are in the same report, and neither is allowed to hide the other. That 0.878 is scorer v1.0.0 <i>with this exact ask</i>: with no spec the same design reads 0.9217, and with a glide-only ask it reads 0.4676 &ldquo;implausible&rdquo; &mdash; the temperature clause, which any zebrafish meets, is what lifts it over the 0.5 cut. v1.0.0&rsquo;s composite failed the blind held-out evaluation, as every released version&rsquo;s does.</div>
 <pre>NAMED RESULTS (five, never summed)
   genotype_similarity    CANNOT-ASSESS  the generated design carries no gene-level edit ... This is not a pass
   phenotype_similarity   PASS           inside the calibrated shape distribution (body p 1)
