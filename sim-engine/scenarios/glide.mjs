@@ -128,6 +128,20 @@ export function polarOf(state) {
 // physics/prior-art/raw/pdf-takahashi-2013.txt). Below adult size the 30 BL/s upper end is used. Zebrafish: the
 // maximum swimming speed Umax = 1.15 Ucrit from current.mjs (calibrated). No other species has a value.
 const FF_RE = /exocoet|flying fish|cypselurus|hirundichthys|cheilopogon/i;
+// Taxi phase (adult flying fish). Sources, all fetched (physics/prior-art/raw):
+//  - leap: "approached and leaped from the water surface at approximately 10 m s-1" (makiguchi-2013 Discussion,
+//    citing Davenport 1994);
+//  - taxi end: taxiing "can probably accelerate the flying fish to a speed up to 15 - 20 m s-1 (Davenport 1994)"
+//    (Deng, Wang, Zhang, Mao 2019 bioRxiv 10.1101/765560, Introduction); flying fish "glide for up to 50 m ... at an
+//    air speed of 15 to 20 m s-1" (makiguchi-2013 Introduction citing Edgerton & Breder 1941 and Davenport 1990);
+//    "they use this taxiing to gain additional speed for successive gliding flights" (park-choi-2010 Introduction).
+//  - taxi length: average 9 m for cypselurid flying fish (deng-2019 Bioinspir Biomim Introduction, second-hand).
+// Not modelled mechanistically: the taxi power (Deng 2019 preprint CFD: 36 W at 10 m/s, 350 W to reach 16.5 m/s, a
+// model result) is burst/anaerobic and is NOT checked against this animal's muscle.
+export const LEAP_M_S = 10;
+export const TAXI_END_M_S = 15;
+export const TAXI_MAX_M_S = 20;
+const TAXI_SRC = 'adult flying fish: leap at ~10 m/s (makiguchi-2013 citing Davenport 1994), then taxi to take-off; take-off airspeed = 15 m/s, the LOWER end of the 15-20 m/s taxi-end / glide airspeed range (Davenport 1994 as quoted by Deng et al. 2019 bioRxiv https://doi.org/10.1101/765560; Edgerton & Breder 1941 as quoted by makiguchi-2013 https://doi.org/10.3354/ab00494). Family-level, second-hand; the taxi power is not checked';
 const ZF_RE = /danio rerio|zebrafish/i;
 export function organismLaunchSpeed(state) {
   const sp = String(val(state, 'species') || '');
@@ -139,9 +153,11 @@ export function organismLaunchSpeed(state) {
     // reference flying fish that is 'adult' from ~250 days after hatching (SL >= ~0.187 m). Adults take the measured
     // ~10 m/s leap speed; earlier stages scale 30 BL/s x SL (no leap speed is measured for them).
     const adult = /adult/i.test(String(val(state, 'stage') || ''));
-    const v = adult ? 10 : Math.min(10, 30 * SL);
-    const big = SL >= 0.33; // 10 m/s = 20-30 BL/s implies fish of 0.33-0.5 m
-    return { value: v, kind: adult && big ? 'measured-secondhand' : 'borrowed', source: adult ? `flying-fish leap speed ~10 m/s (makiguchi-2013 citing Davenport 1994, stroboscopic film; https://doi.org/10.3354/ab00494)${big ? '' : `; borrowed for this ${(SL * 1000).toFixed(0)} mm adult: the quoted 20-30 BL/s implies 0.33-0.5 m fish`}` : `30 BL/s x SL ${(SL * 1000).toFixed(0)} mm, capped at 10 m/s (upper end of the adult 20-30 BL/s leap speed, makiguchi-2013 citing Davenport 1994), borrowed for a non-adult stage` };
+    // Adults: leap at ~10 m/s, then TAXI (caudal lower lobe beating in the water, body airborne) up to the take-off
+    // airspeed. Taxi end speed = TAXI_END_M_S (15 m/s, the LOWER end of the measured 15-20 m/s range), never above 20.
+    if (adult) return { value: TAXI_END_M_S, kind: 'measured-secondhand', taxi: { leap_m_s: LEAP_M_S, end_m_s: TAXI_END_M_S, max_m_s: TAXI_MAX_M_S }, source: TAXI_SRC };
+    const v = Math.min(LEAP_M_S, 30 * SL);
+    return { value: v, kind: 'borrowed', source: `30 BL/s x SL ${(SL * 1000).toFixed(0)} mm, capped at the 10 m/s adult leap speed (makiguchi-2013 citing Davenport 1994: ~10 m/s, 20-30 BL/s), borrowed for a non-adult stage; no taxiing speed is measured for juveniles, so none is added` };
   }
   if (ZF_RE.test(sp)) {
     const age = val(state, 'ageDays');
@@ -251,7 +267,7 @@ export default {
     if (m < 0.02 || m > 0.4) { inRange = false; notes.push(`Mass ${m} kg is outside 0.02-0.4 kg (polar specimens 0.04-0.06 kg; field fliers to ~0.4 kg): polar extrapolated.`); }
     if (Re != null && (Re < 5e3 || Re > 1e5)) { inRange = false; notes.push(`Mean-chord Reynolds number ~${Re.toExponential(1)} is outside 5e3-1e5 around the polar's Re ~1e4 (Park & Choi: 'gliding flying fish (Re ~10^4)'; air kinematic viscosity 1.46e-5 m2/s).`); }
     if (S.kind === 'assumed') notes.push("Lifting area is the pectoral area times one specimen's total/pectoral ratio (assumed transfer).");
-    if (FF_RE.test(String(val(state, 'species') || ''))) notes.push('Taxiing (tail sculling with the body airborne), by which real flying fish reach 15-20 m/s airspeed before long glides, is not modelled: the launch speed is the ~10 m/s leap speed.');
+    if (FF_RE.test(String(val(state, 'species') || ''))) notes.push(ls.taxi ? `Adult flying fish: launch airspeed is the taxi end speed (${ls.taxi.end_m_s} m/s, lower end of the measured 15-20 m/s), reached by taxiing after a ~${ls.taxi.leap_m_s} m/s leap; the taxi distance (~9 m, second-hand) is not added to the glide range and the taxi power is not checked.` : 'No taxiing is credited to this stage.');
     notes.push('glide_range_total_m exceeds the Lean bound whenever the kinetic phase is non-zero; only glide_range_lean_bound_m is covered by glide_range_le.');
     notes.push('Fick bound: arterial PO2 taken equal to air PO2 and gills taken to work in air; gills do not ventilate in air (physiology chain), so for a gill-breather this is a generous upper bound.');
     notes.push('TFF: NOTES-FOR-HUB.md item 2 says only 29.5% of the flight muscle the simulator charges fits in the body. This module uses no muscle power (the Fick bound is the cap), so the issue does not enter here; any muscle-based claim for the TFF must take it into account.');
@@ -284,7 +300,7 @@ export default {
   modelCard: {
     equations: [
       'W = m g; v_min = sqrt(2 W / (rho S C_Lmax))',
-      "launch speed v0 = the organism's own: flying fish adult 10 m/s, other stages min(10 m/s, 30 BL/s x SL); zebrafish Umax = 1.15 Ucrit; otherwise not evaluated",
+      "launch speed v0 = the organism's own: adult flying fish = taxi end speed 15 m/s (leap ~10 m/s then taxi; lower end of the measured 15-20 m/s); other flying-fish stages min(10 m/s, 30 BL/s x SL), no taxi; zebrafish Umax = 1.15 Ucrit; otherwise not evaluated",
       'cannot glide if v0 < v_min: every range = 0, feasible = false',
       'Lean-covered part: d_lean = h (L/D)max   (glide_range_le: d <= h (L/D)/(1 - delta))',
       'kinetic phase (outside the theorem): x_A = (L/D)_eff (v0^2 - v_min^2)/(2g), (L/D)_eff = (L/D)max / f_ground(h/(b/2))',
@@ -294,7 +310,8 @@ export default {
     sources: [
       { cite: PARK_CHOI.cite, doi_or_url: PARK_CHOI.doi },
       { cite: 'Makiguchi Y et al. (2013). Take-off performance of flying fish Cypselurus heterurus doederleini measured with miniature acceleration data loggers. Aquat Biol 18:105-111 (leap speed ~10 m/s, 20-30 BL/s, citing Davenport 1994; glide up to 50 m at 15-20 m/s citing Edgerton & Breder 1941)', doi_or_url: 'https://doi.org/10.3354/ab00494' },
-      { cite: 'Deng J et al. (2019). Numerical prediction of aerodynamic performance for a flying fish during gliding flight. Bioinspir Biomim 14:046009 (maximum flight height 8 m, second-hand)', doi_or_url: 'https://doi.org/10.1088/1748-3190/ab23e6' },
+      { cite: 'Deng J et al. (2019). Numerical prediction of aerodynamic performance for a flying fish during gliding flight. Bioinspir Biomim 14:046009 (maximum flight height 8 m; average taxiing length 9 m, second-hand)', doi_or_url: 'https://doi.org/10.1088/1748-3190/ab23e6' },
+      { cite: 'Deng J, Wang S, Zhang L, Mao X (2019). Why does a flying fish taxi on sea surface before take-off? A hydrodynamic interpretation. bioRxiv 765560 (taxiing accelerates to 15-20 m/s, citing Davenport 1994)', doi_or_url: 'https://doi.org/10.1101/765560' },
       { cite: 'Durnford FPH, Porter ES, Gamperl AK (2026). Increased heart rate and blood oxygen extraction ... schoolmaster snapper. J Exp Biol', doi_or_url: 'https://doi.org/10.1242/jeb.252059' },
       { cite: 'Rummer JL, Brauner CJ (2015). Root effect haemoglobins in fish ... PLoS One 10:e0139477', doi_or_url: 'https://doi.org/10.1371/journal.pone.0139477' },
       { cite: 'Gerry SP, Ellerby DJ (2014). Resolving shifting patterns of muscle energy use in swimming fish. PLoS One 9:e106030', doi_or_url: 'https://doi.org/10.1371/journal.pone.0106030' },
@@ -302,7 +319,7 @@ export default {
     validity: 'Flying-fish-sized gliders (0.02-0.4 kg), mean-chord Re 5e3-1e5, launch heights 0-10 m. The polar is from stuffed specimens at one wind speed (12 m/s; Park & Choi: Re ~1e4); a zebrafish-sized or larval animal is far outside it (inRange false), and cannot reach its v_min anyway.',
     validatedAgainst: [
       { organism: 'Cypselurus hiraii (Park & Choi model L3)', observation: 'code regression against physics/results.json at rho 1.225', predicted: 'v_min 9.854 m/s, P_req 1.327 W', measured: 'physics/results.json: 9.854 m/s, 1.327 W (same equations: a code check, not a test against nature)', source: 'physics/results.json interpretation_B and interpretation_C' },
-      { organism: 'Exocoetidae (several genera)', observation: 'glides up to 50 m at 15-20 m/s airspeed after taxiing (stroboscopic film, Edgerton & Breder 1941, quoted second-hand)', predicted: "at the organism's own 10 m/s leap speed: Lean part h x 4.37 (35 m from the 8 m maximum height) + kinetic phase under 1 m. 50 m is NOT reached without the taxiing acceleration, which is not modelled. (An earlier version reached 50 m only by setting the launch speed to 15-20 m/s, taken from the same observation: circular, withdrawn.)", measured: 'up to 50 m', source: 'makiguchi-2013 Introduction (https://doi.org/10.3354/ab00494). NOT REPRODUCED at the organism\'s own speed; the gap is the unmodelled taxiing phase' },
+      { organism: 'Exocoetidae (several genera)', observation: 'glides up to 50 m at 15-20 m/s airspeed after taxiing (stroboscopic film, Edgerton & Breder 1941, quoted second-hand)', predicted: 'with the taxi end speed 15 m/s (L3 polar): ~33 m from 1 m (Lean part 4.37 m + kinetic phase ~29 m), ~64 m from the 8 m maximum height', measured: 'up to 50 m', source: 'makiguchi-2013 Introduction (https://doi.org/10.3354/ab00494). Inside the range, but PARTLY CIRCULAR: the 15 m/s take-off speed comes from the same body of observations (15-20 m/s) as the 50 m glide. Not independent evidence.' },
       { organism: 'Cheilopogon (Cypselurus) heterurus doederleini', observation: 'leap speed about 10 m/s (Davenport 1994, stroboscopic, quoted by Makiguchi)', predicted: 'v_min 9.85 m/s (L3): a fish leaving the water at 10 m/s is barely lift-supported, consistent with the taxiing seen before long glides', measured: '~10 m/s', source: 'makiguchi-2013. Consistent; not a pass/fail test' },
     ],
   },

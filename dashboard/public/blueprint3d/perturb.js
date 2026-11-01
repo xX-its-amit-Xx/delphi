@@ -15,6 +15,7 @@
 import { piecesFor, AIRSPEED, normaliseInterventions } from './design.js';
 import { NO_PREDICTION } from './genotype.js';
 import { normaliseChains, ladderHtml as chainLadderHtml, gradeChip, GRADE_ORDER } from './chains.js';
+import { renderOmics } from './omics-card.js';
 
 export const KINDS = ['measured', 'measured-secondhand', 'borrowed', 'derived', 'calibrated', 'assumed'];
 const HERE = new URL('./', import.meta.url);
@@ -969,6 +970,7 @@ export function mountPerturb(host) {
     else h += `<p class="tiny">Click a gene for its annotations and gene-level edits.</p>`;
     h += `<div class="row" style="margin-top:8px"><button id="ptValidate">Validate &amp; score</button><span class="tiny">design scorer, closest real relative, genotype sanity (validate-panel.js)</span></div><div id="ptValSlot"></div>`;
     el.innerHTML = h;
+    const om = $('ptOmics'); if (om) renderOmics(om, om.dataset.omicsSym);
     el.querySelectorAll('[data-gsym]').forEach(a => a.onclick = () => { S.gene = a.dataset.gsym; renderGeno(); });
     const ga = $('ptGAll'); if (ga) ga.onclick = () => { S.genesAll = !S.genesAll; renderGeno(); };
     el.querySelectorAll('[data-gedit]').forEach(b => b.onclick = () => geneEdit(b.dataset.gedit));
@@ -1006,6 +1008,8 @@ export function mountPerturb(host) {
       if (bad) h += `<div class="seqfail"><b>✕ FAILED reciprocal best hit: not an orthologue call</b> ${esc(bad.flying_fish_protein)} best-hits back to <span class="mono">${esc(bad.reverse_best_zebrafish_symbol)}</span>, not ${esc(sym)}. ${esc(bad.note || bad.why || '')}</div>`;
       if (/lat4a|slc43a2a/.test(sym) && Q.lat4a_convergent_site) h += `<p class="tiny">${esc(Q.lat4a_convergent_site.site)}; the annotated flying-fish protein carries ${esc(Q.lat4a_convergent_site.annotated_flying_fish_protein_carries)}.</p>`;
       if (ok || bad) h += `<p class="tiny">${esc(Q.layer_boundary || '')} ${esc(Q.species_caveat || '')}</p>`; else h += '<p class="tiny">Not among the genes the sequence layer queried.</p>'; }
+    // multi-omics (omics-card.js fills it after innerHTML is set; see renderGeno)
+    h += `<div id="ptOmics" data-omics-sym="${esc(sym)}"></div>`;
     // gene-level edits: recorded in the organism document, never propagated
     const mine = ((S.doc && S.doc.edits) || []).filter(e => engLevel(e.target.level) === 'gene' && e.target.id === sym);
     h += `<div class="rule"><b>House rule:</b> a residue is a STATE, not a phenotype. ${esc(NO_PREDICTION)}</div>

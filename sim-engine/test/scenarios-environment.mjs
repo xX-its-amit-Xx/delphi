@@ -93,13 +93,22 @@ for (const [name, mod] of Object.entries(ALL)) {
   check('glide: wing loading 46.39 N/m2 (physics/results.json L3)', near(get(r, 'wing_loading_N_m2'), 46.39, 0.01), get(r, 'wing_loading_N_m2'));
   check('glide: aerobic bound far below requirement (Lean C14 direction, >30x)', get(r, 'powered_flight_margin') < 1 / 30, get(r, 'powered_flight_margin'));
   const d = glide.run(flyingfish, {});
-  check('glide: flying fish launches at its own sourced 10 m/s, not a global default', near(get(d, 'launch_airspeed_m_s'), 10, 1e-9) && d.metrics.find(m => m.key === 'launch_airspeed_m_s').kind === 'borrowed');
+  check('glide: adult flying fish launches at the sourced taxi end speed 15 m/s (lower end of 15-20), not a global default', near(get(d, 'launch_airspeed_m_s'), 15, 1e-9) && d.metrics.find(m => m.key === 'launch_airspeed_m_s').kind === 'measured-secondhand');
   const ffl = glide.run({ ...flyingfish, stage: F('larva', null), SL_m: F(0.009, 'm'), mass_kg: F(5e-6, 'kg'), pectoral_area_both_m2: F(1.25e-5, 'm2'), pectoral_span_m: F(0.0116, 'm') }, {});
   check('glide: flying-fish larva launch speed scales with SL (30 BL/s) and cannot glide', near(get(ffl, 'launch_airspeed_m_s'), 0.27, 1e-9) && ffl.feasible === false);
   check('glide: flying fish (10 m/s > v_min 9.85) can glide; survives not claimed', d.feasible === true && d.survives === null);
   check('glide: Lean-covered part = h (L/D)max = 4.37 m from 1 m', near(get(d, 'glide_range_lean_bound_m'), 4.37, 1e-9), get(d, 'glide_range_lean_bound_m'));
   check('glide: total = Lean part + kinetic phase', near(get(d, 'glide_range_total_m'), get(d, 'glide_range_lean_bound_m') + get(d, 'kinetic_phase_m'), 1e-9));
-  check('glide: kinetic phase at 10 m/s is under 1 m', get(d, 'kinetic_phase_m') > 0 && get(d, 'kinetic_phase_m') < 1, get(d, 'kinetic_phase_m'));
+  check('glide: kinetic phase from 15 m/s (L3, 1 m: r = 7.7, no ground effect) = (L/D)(15^2 - v_min^2)/2g', near(get(d, 'kinetic_phase_m'), 4.37 * (225 - 9.854014478123764 ** 2) / (2 * 9.81), 1e-6), get(d, 'kinetic_phase_m'));
+  // POSITIVE CONTROLS at population mass (H. affinis female L-W, TL ~26 cm -> ~0.114 kg; every measured flying fish is heavier than the 60 g polar specimen):
+  const heavyIso = { ...flyingfish, mass_kg: F(0.12, 'kg'), SL_m: F(0.203 * 2 ** (1 / 3), 'm'), pectoral_area_both_m2: F(0.006377 * 2 ** (2 / 3), 'm2'), pectoral_span_m: F(0.261 * 2 ** (1 / 3), 'm') };
+  const heavyFins = { ...flyingfish, mass_kg: F(0.12, 'kg') }; // mass doubled, fins NOT scaled (the generative agent's case)
+  for (const [nm, st] of [['0.12 kg isometric', heavyIso], ['0.12 kg on the 60 g fins', heavyFins]]) {
+    const g = glide.run(st, {});
+    check(`POSITIVE CONTROL: adult flying fish at population mass (${nm}) can glide`, g.feasible === true && get(g, 'glide_range_total_m') > 0, `v0 ${get(g, 'launch_airspeed_m_s')} vs v_min ${get(g, 'v_min_m_s')}`);
+  }
+  const juv = glide.run({ ...flyingfish, stage: F('juvenile', null), SL_m: F(0.15, 'm') }, {});
+  check('glide: juveniles get no taxi credit (30 BL/s x SL, capped at the 10 m/s leap)', near(get(juv, 'launch_airspeed_m_s'), 4.5, 1e-9));
   for (const [fx, st] of [['flyingfish', flyingfish], ['zebrafish', zebrafish], ['larva', zlarva], ['winged', wingedZ]]) for (const h of [0, 1, 8]) {
     const g = glide.run(st, { launch_height_m: h });
     const lb = get(g, 'glide_range_lean_bound_m');
@@ -187,7 +196,7 @@ for (const [name, mod] of Object.entries(ALL)) {
   check('altitude: survives and flight are split (zebrafish survives, cannot glide; limiting not about flight)', zf.feasible === false && !/v_min|glide/i.test(String(zf.limiting || '')));
   const fh = [0, 1000, 3000, 5000, 8000].map(h => altitude.run(flyingfish, { altitude_m: h }).feasible);
   check('altitude: feasible heights downward closed (Lean feasible_downward_closed)', fh.every((f, i) => i === 0 || !(f === true && fh[i - 1] === false)), fh.join(','));
-  check('altitude: flying fish at 10 m/s loses lift-support with altitude', fh[0] === true && fh[2] === false, fh.join(','));
+  check('altitude: flying fish at its 15 m/s take-off loses lift-support by 8000 m (v_min 15.1 m/s there)', fh[0] === true && fh[4] === false, fh.join(','));
   const zh = altitude.run(zebrafish, { altitude_m: 10500 });
   check('altitude: at 10.5 km water pO2 near/below the borrowed Pcrit -> not true', zh.survives !== true);
 }
@@ -203,8 +212,10 @@ for (const [name, mod] of Object.entries(ALL)) {
   check('wind: change = -u x time', near(get(head, 'wind_distance_change_m'), -3 * get(head, 'glide_time_s'), 1e-9));
   check('wind: takeoff water speed = v_min - headwind', near(get(head, 'takeoff_water_speed_m_s'), get(head, 'v_min_m_s') - 3, 1e-9));
   check('wind: no glide-range key other than the Lean-covered one', !wind.metrics.some(m => /glide.*(range|dist)/.test(m.key) && m.key !== 'glide_range_lean_bound_m'));
-  const gust = wind.run(flyingfish, { headwind_m_s: 0, gust_m_s: 2 });
-  check('wind: 2 m/s gust lull at the 10 m/s launch (v_min 9.85) -> stall risk, feasible false', gust.feasible === false && get(gust, 'gust_stall_margin_m_s') < 0 && gust.survives === null);
+  const gust = wind.run(flyingfish, { headwind_m_s: 0, gust_m_s: 3 });
+  check('wind: 3 m/s gust lull at the best-L/D airspeed (11.95 m/s, v_min 9.85) -> stall risk, feasible false', gust.feasible === false && get(gust, 'gust_stall_margin_m_s') < 0 && gust.survives === null);
+  const calmg = wind.run(flyingfish, { headwind_m_s: 0, gust_m_s: 1 });
+  check('wind: 1 m/s gust is survivable for the flying fish', calmg.feasible === true);
   const zl = wind.run(zlarva, {});
   check('wind: larva cannot glide -> distances 0', zl.feasible === false && get(zl, 'ground_distance_total_m') === 0);
 }

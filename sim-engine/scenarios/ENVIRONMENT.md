@@ -43,7 +43,22 @@ adult zebrafish, a zebrafish larva, a winged zebrafish and an adult flying fish 
    - The sea-water density of 1025 kg/m³ and the Re 5e5 transition are stated as modelling choices.
    - The NIST URL now carries its unit parameters, and the Magnus coefficients are credited to Alduchov & Eskridge.
    - `design-choice` is not one of the six kinds that `lib/envelope.mjs` accepts, so those items are labelled `assumed`.
-6. **Smaller fixes** (D9): g is labelled `measured-secondhand`; the ground-effect breakpoints and the 998.2 kg/m³ freshwater density are sourced in place.
+6. **Taxi phase (adult flying fish), after the population-mass positive-control failure.** The adult launch airspeed is
+   now the taxi end speed: 15 m/s, the lower end of the 15-20 m/s range, never above 20. It is labelled measured-secondhand
+   (family-level, second-hand). The sources, all fetched:
+   - The leap at ~10 m/s (Makiguchi 2013 citing Davenport 1994).
+   - "taxiing ... can probably accelerate the flying fish to a speed up to 15 - 20 m s-1 (Davenport 1994)" (Deng et al. 2019 bioRxiv, doi:10.1101/765560).
+   - Glides "at an air speed of 15 to 20 m s-1" (Makiguchi 2013 citing Edgerton & Breder 1941).
+   - Park & Choi: taxiing is used "to gain additional speed".
+
+   Juveniles get no taxi credit. Not modelled: the taxi distance (~9 m, second-hand) is not added to the range, and the
+   taxi power (burst; a CFD figure of 350 W to reach 16.5 m/s is a model result) is not checked against the animal's
+   muscle. The 50 m glide validation is now inside the predicted range (~33 m from 1 m, ~64 m from 8 m) but is **partly
+   circular**, because the 15 m/s comes from the same observations.
+
+   New positive controls at population mass (0.12 kg, matching the H. affinis female length-weight relation at TL ~26 cm) must glide, both
+   isometrically scaled (v_min 11.1 m/s) and on the 60 g fins (v_min 13.9 m/s). Both would fail at the old 10 m/s.
+7. **Smaller fixes** (D9): g is labelled `measured-secondhand`; the ground-effect breakpoints and the 998.2 kg/m³ freshwater density are sourced in place.
 
 **Harness after the revision** (`node sim-engine/validation/studio-harness.mjs`): N1, N2, N4 and N5 pass. N5 checks the Lean-covered part. X1 and X2 are consistent. W2, W3 and W1 are circular, as expected.
 - **W9 fails** with an honest number: at the organism's own 10 m/s leap speed from 1 m, the Lean-covered distance is 4.37 m. That is below the 5-75 m band, because the taxiing that real flying fish use to reach 15-20 m/s is not modelled.
