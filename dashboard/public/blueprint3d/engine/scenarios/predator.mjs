@@ -52,14 +52,14 @@ export default {
   requires: ['SL_m'],
   needs: ['stage', 'species', 'ageDays', 'mass_kg', 'temperature_C', 'pectoral_area_both_m2', 'ambient.air_density_kg_m3'],
   params: [
-    { key: 'predator_speed_ratio', label: 'Predator approach speed / prey escape speed (K)', unit: 'ratio', default: 1.5, min: 0.1, max: 10, kind: 'measured-secondhand', source: 'McKee & McHenry 2020 Fig. 5 example K = 1.5 (a modelled case, not a measured predator speed); ' + SRC.mckee2020 },
-    { key: 'predator_width_SL', label: 'Predator body width in prey body lengths', unit: 'SL', default: 0.69, min: 0.05, max: 10, kind: 'derived', source: 'McKee & McHenry 2020 model width w = 2.5 cm ("comparable to the cichlid") / adult zebrafish L = 3.6 cm (Liu 2026)' },
-    { key: 'strike_distance_SL', label: 'Predator strike (suction) reach in prey body lengths', unit: 'SL', default: 0.56, min: 0.01, max: 10, kind: 'derived', source: 'McKee & McHenry 2020: "small values for the minimum distance (d min < 2 cm) were considered threatening", citing Wainwright et al. 2001; 2 cm / 3.6 cm' },
-    { key: 'theta_thresh_deg', label: 'Visual angle that triggers the escape', unit: 'deg', default: 14, min: 1, max: 90, kind: 'measured', source: 'McKee & McHenry 2020: best fits 10.3 deg < theta < 15.8 deg in adult zebrafish; 14 deg used in their model sweep' },
-    { key: 'visual_latency_s', label: 'Latency from visual threshold to escape', unit: 's', default: 0.76, min: 0, max: 3, kind: 'measured', source: 'McKee & McHenry 2020: "threshold values correspond to a range in latency between 740 ms and 780 ms" (adult zebrafish)' },
-    { key: 'lateral_line_intact', label: 'Lateral line intact (1) or ablated (0) — larval flow sensing', unit: 'bool', default: 1, min: 0, max: 1, kind: 'measured', source: 'Stewart et al. 2013: P(escape) 0.7 intact vs 0.05 after pharmacological ablation' },
-    { key: 'aerial_launch_height_m', label: 'Height at the start of the glide (as glide.mjs)', unit: 'm', default: 1, min: 0, max: 10, kind: 'assumed', source: 'glide.mjs default (design input)' },
-    { key: 'launch_speed_m_s', label: 'What-if water-exit speed for the aerial escape (0 = the organism’s own sourced speed, as glide.mjs)', unit: 'm/s', default: 0, min: 0, max: 30, kind: 'assumed', source: 'passed to glide.mjs launchSpeed as its override: 0 uses the organism’s sourced leap/burst speed (flying fish ~10 m/s as adults, makiguchi-2013 citing Davenport 1994; zebrafish Umax from current.mjs)' },
+    { key: 'predator_speed_ratio', label: 'Predator approach speed / prey escape speed (K)', unit: 'ratio', default: 1.5, min: 0.1, max: 10, kind: 'assumed', source: 'McKee & McHenry 2020 Fig. 5 example K = 1.5 (a modelled case, not a measured predator speed); ' + SRC.mckee2020 + ' — K = 1.5 is a modelled scenario, not a measured predator [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]' },
+    { key: 'predator_width_SL', label: 'Predator body width in prey body lengths', unit: 'SL', default: 0.69, min: 0.05, max: 10, kind: 'assumed', source: 'McKee & McHenry 2020 model width w = 2.5 cm ("comparable to the cichlid") / adult zebrafish L = 3.6 cm (Liu 2026) [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]' },
+    { key: 'strike_distance_SL', label: 'Predator strike (suction) reach in prey body lengths', unit: 'SL', default: 0.56, min: 0.01, max: 10, kind: 'assumed', source: 'McKee & McHenry 2020: "small values for the minimum distance (d min < 2 cm) were considered threatening", citing Wainwright et al. 2001; 2 cm / 3.6 cm [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]' },
+    { key: 'theta_thresh_deg', label: 'Visual angle that triggers the escape', unit: 'deg', default: 14, min: 1, max: 90, kind: 'assumed', source: 'McKee & McHenry 2020: best fits 10.3 deg < theta < 15.8 deg in adult zebrafish; 14 deg used in their model sweep — 14 deg is the modelling value inside the measured 10.3-15.8 deg range [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]' },
+    { key: 'visual_latency_s', label: 'Latency from visual threshold to escape', unit: 's', default: 0.76, min: 0, max: 3, kind: 'assumed', source: 'McKee & McHenry 2020: "threshold values correspond to a range in latency between 740 ms and 780 ms" (adult zebrafish) — 0.76 s is the midpoint of the measured 740-780 ms [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]' },
+    { key: 'lateral_line_intact', label: 'Lateral line intact (1) or ablated (0) — larval flow sensing', unit: 'bool', default: 1, min: 0, max: 1, kind: 'assumed', source: 'Stewart et al. 2013: P(escape) 0.7 intact vs 0.05 after pharmacological ablation [a design switch: the user chooses it; only the effect it turns on is sourced]' },
+    { key: 'aerial_launch_height_m', label: 'Height at the start of the glide (as glide.mjs)', unit: 'm', default: 1, min: 0, max: 10, kind: 'assumed', source: 'glide.mjs default (design input) [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]' },
+    { key: 'launch_speed_m_s', label: 'What-if water-exit speed for the aerial escape (0 = the organism’s own sourced speed, as glide.mjs)', unit: 'm/s', default: 0, min: 0, max: 30, kind: 'assumed', source: 'passed to glide.mjs launchSpeed as its override: 0 uses the organism’s sourced leap/burst speed (flying fish ~10 m/s as adults, makiguchi-2013 citing Davenport 1994; zebrafish Umax from current.mjs) [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]' },
   ],
   metrics: METRICS,
 
@@ -83,7 +83,7 @@ export default {
     const Q10 = 1.5, Tref = 26;
     const qT = T == null ? 1 : Math.pow(Q10, (T - Tref) / 10);
     if (T == null) notes.push('temperature null: speeds left at the 26 C reference.');
-    else if (T < 20 || T > 31) { inRange = false; notes.push(`temperature ${T} C outside 20-31 C where the escape data were taken.`); }
+    else if (T < 23 || T > 28) { inRange = false; notes.push(`temperature ${T} C outside 23-28 C: the escape data were taken at 23-27 C (Burgess & Granato) and with fish held at 27 C (McKee & McHenry); Danos & Lauder give no temperature.`); }
     P('speed Q10', Q10, 'borrowed', SRC.woytanowski2013 + '; muscle Vmax Q10 applied to whole-fish escape speed; 26 C reference assumed');
 
     // startle latency (Mauthner)
@@ -99,8 +99,8 @@ export default {
     // peak escape speed and acceleration
     let BLs, spdKind, spdSrc, acc = null, accKind = 'assumed', accSrc = 'no fetched value';
     if (larva) {
-      BLs = 0.2 / 0.004; spdKind = zebra ? 'measured-secondhand' : 'borrowed';
-      spdSrc = 'larval zebrafish "peak acceleration of 20,000 mm/s2 and a peak velocity of 200 mm/s" (Turrini 2023 citing Kim 2017), normalised by a 4 mm larva -> 50 BL/s; DanioVision tracking gives ~63 mm/s (van de Pol 2021), a frame-rate-limited lower bound';
+      BLs = 0.2 / SL; spdKind = zebra ? 'measured-secondhand' : 'borrowed'; // absolute 200 mm/s; BL/s follows the state's own SL (no assumed larval length)
+      spdSrc = 'larval zebrafish "peak acceleration of 20,000 mm/s2 and a peak velocity of 200 mm/s" (Turrini 2023 citing Kim 2017), used as an absolute speed (the larval length is not given in the citing text), so BL/s = 0.2 m/s / STATE SL; DanioVision tracking gives ~63 mm/s (van de Pol 2021), a frame-rate-limited lower bound';
       acc = 20 * qT; accKind = spdKind; accSrc = 'Turrini 2023 citing Kim 2017: 20,000 mm/s^2, x Q10 factor; held size-independent within the larval range (assumption)';
     } else if (flier && !zebra) {
       BLs = 4.51 / 0.308; spdKind = 'derived';
@@ -192,7 +192,7 @@ export default {
   modelCard: {
     equations: [
       'speed(T) = speed_ref x 1.5^((T - 26)/10)   (borrowed muscle Vmax Q10)',
-      'U_peak = BL_s x SL x 1.5^((T-26)/10);  larva BL_s = 0.2 m/s / 4 mm = 50;  flying fish 4.51/0.308 = 14.6;  adult zebrafish 25.5 (Danos & Lauder 2012: Re 27,800, TL 33 mm)',
+      'U_peak = BL_s x SL x 1.5^((T-26)/10);  larva U_peak = 0.2 m/s x Q10 factor (absolute; BL/s = U/SL);  flying fish 4.51/0.308 = 14.6;  adult zebrafish 25.5 (Danos & Lauder 2012: Re 27,800, TL 33 mm)',
       'd_thr = W / (2 tan(theta_thresh/2));   d_resp = d_thr - u t_lat;   u = K v',
       'd_min = d_resp if K <= cos(alpha);  else d_min = d_resp |sin alpha| / sqrt(K^2 - 2K cos alpha + 1); at the optimal alpha (cos alpha = 1/K) d_min = d_resp / K',
       'survives = d_min >= strike reach s;   K* = d_thr / (s + v t_lat)',
@@ -214,7 +214,7 @@ export default {
       { cite: 'Woytanowski & Coughlin 2013, Biol Open 2:274 (muscle Vmax Q10 ~1.5)', doi_or_url: 'https://doi.org/10.1242/bio.20133509' },
       { cite: 'Trujillo et al. 2022, J Exp Biol 225:jeb243973 (teleost latencies 5-150 ms, citing Domenici & Hale 2019)', doi_or_url: 'https://doi.org/10.1242/jeb.243973' },
     ],
-    validity: 'Zebrafish larvae 5-7 dpf and adults at 20-31 C; looming geometry fitted to adult zebrafish facing a 15 cm cichlid; aerial part only for post-larval designs with a pectoral area and mass in STATE. Values for non-zebrafish species are borrowed in body lengths.',
+    validity: 'Zebrafish larvae 5-7 dpf and adults at 23-28 C (sources: 23-27 C, 27 C; Danos & Lauder unstated); looming geometry fitted to adult zebrafish facing a 15 cm cichlid; aerial part only for post-larval designs with a pectoral area and mass in STATE. Values for non-zebrafish species are borrowed in body lengths.',
     validatedAgainst: [
       { organism: 'Danio rerio adult', observation: 'McKee & McHenry 2020: escape fails at all angles when the predator approaches at more than about twice the escape speed (w = 2.5 cm)', predicted: 'critical K = 2.11 with the paper\'s own inputs', measured: '"more than twice as fast"', source: 'doi:10.1093/iob/obaa023 — NOT independent: same model and inputs, so this checks the implementation only' },
       { organism: 'Cypselurus hiraii / Exocoetidae', observation: 'water-exit speed needed to glide vs field launch speed', predicted: 'v_min = 9.85 m/s (60 g, lifting area 0.01269 m^2, CLmax 0.78; via glide.mjs)', measured: 'about 10 m/s in the field (secondhand: Makiguchi 2013 citing Edgerton & Breder 1941, Davenport)', source: 'doi:10.3354/ab00494; doi:10.1242/jeb.046052 — consistent; the captive leap estimates (3.87-5.15 m/s) would NOT suffice' },

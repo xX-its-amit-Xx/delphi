@@ -22,10 +22,11 @@ export function ucritRel(T) {
   return { value: WAK.at(-1)[1] / WAK_REF };
 }
 
-// Ripley et al. 2022: 28 degC-acclimated zebrafish, acute tests at 23.0-35.5 degC: SMR Q10 1.39, MMR Q10 1.15.
-const Q10 = { SMR: 1.39, MMR: 1.15, range: [23, 35.5],
-  cite: 'Ripley DM, Quinn FA, Dickson J, Arthur J, Shiels HA (2022). Thermal preference does not align with optimal temperature for aerobic scope in zebrafish (Danio rerio). J Exp Biol 225:jeb243774',
-  doi: 'https://doi.org/10.1242/jeb.243774' };
+// Ripley et al. 2022 (28 degC-acclimated zebrafish, acute tests at 23.0-35.5 degC), AS CORRECTED in J Exp Biol (2023)
+// 226:jeb245488: "Original Q10 values: AS 0.98, SMR 1.39, MMR 1.15; corrected Q10 values: AS 1.17, SMR 1.56, MMR 1.34."
+const Q10 = { SMR: 1.56, MMR: 1.34, range: [23, 35.5],
+  cite: 'Correction: Thermal preference does not align with optimal temperature for aerobic scope in zebrafish (Danio rerio). J Exp Biol (2023) 226:jeb245488 (corrected Q10: SMR 1.56, MMR 1.34; correcting Ripley et al. 2022, J Exp Biol 225:jeb243774)',
+  doi: 'https://doi.org/10.1242/jeb.245488' };
 
 const val = (s, k) => (s && s[k] && s[k].value != null ? s[k].value : null);
 function metric(key, label, value, unit, better, kind, source, reason) {
@@ -99,7 +100,7 @@ export default {
       { quantity: 'CTmax at 20 / 30 degC acclimation', value: '39.2 / 41.7 degC', kind: zkind, source: `${CB.cite}, ${CB.doi}` },
       { quantity: 'CTmin at 20 / 30 degC acclimation', value: '6.2 / 10.6 degC', kind: zkind, source: `${CB.cite}, ${CB.doi}` },
       { quantity: 'Ucrit(T) curve, 28 degC-reared adults', value: JSON.stringify(WAK), kind: zkind, source: `${WAK_SRC}, ${WAK_DOI}` },
-      { quantity: 'Q10 SMR / MMR', value: '1.39 / 1.15', kind: smrOk ? zkind : 'borrowed', source: `${Q10.cite}, ${Q10.doi}` },
+      { quantity: 'Q10 SMR / MMR (corrected)', value: '1.56 / 1.34', kind: smrOk ? zkind : 'borrowed', source: `${Q10.cite}, ${Q10.doi}` },
     );
     const survives = T > ctmin && T < ctmax;
     const limiting = T >= ctmax ? `above CTmax (${ctmax.toFixed(1)} degC): loss of equilibrium in an acute ramp` : T <= ctmin ? `below CTmin (${ctmin.toFixed(1)} degC): loss of equilibrium in an acute ramp` : null;
@@ -112,8 +113,8 @@ export default {
       metric('ctmin_C', METRICS[1].label, ctmin, '°C', 'lower', ctKind, `linear in acclimation temperature between the two measured points (${CB.cite})`),
       metric('thermal_margin_C', METRICS[2].label, margin, '°C', 'higher', ctKind, 'min(CTmax - T, T - CTmin); negative = past a limit'),
       metric('ucrit_relative', METRICS[3].label, ur.value, '1', 'higher', zkind === 'measured' && Math.abs(Ta - 28) <= 1 ? 'calibrated' : 'borrowed', `linear interpolation of the measured means (${WAK_SRC})`, ur.reason),
-      metric('smr_factor', METRICS[4].label, Q10.SMR ** ((T - Ta) / 10), '1', null, smrOk ? 'calibrated' : 'assumed', `Q10 1.39 ^ ((T - T_acclimation)/10) (${Q10.cite})`),
-      metric('mmr_factor', METRICS[5].label, Q10.MMR ** ((T - Ta) / 10), '1', null, smrOk ? 'calibrated' : 'assumed', `Q10 1.15 ^ ((T - T_acclimation)/10) (${Q10.cite})`),
+      metric('smr_factor', METRICS[4].label, Q10.SMR ** ((T - Ta) / 10), '1', null, smrOk ? 'calibrated' : 'assumed', `Q10 1.56 ^ ((T - T_acclimation)/10) (${Q10.cite})`),
+      metric('mmr_factor', METRICS[5].label, Q10.MMR ** ((T - Ta) / 10), '1', null, smrOk ? 'calibrated' : 'assumed', `Q10 1.34 ^ ((T - T_acclimation)/10) (${Q10.cite})`),
     ];
     return {
       metrics, survives, feasible: null, feasibility_note: feasibilityNote, limiting, provenance: prov,
@@ -127,7 +128,7 @@ export default {
       'CTmin(Ta) = 6.2 + 0.44 (Ta - 20)',
       'thermal_margin = min(CTmax - T, T - CTmin); survives = CTmin < T < CTmax',
       'Ucrit(T)/Ucrit(28 °C) = linear interpolation of measured means, 12-36 °C',
-      'SMR(T)/SMR(Ta) = 1.39^((T - Ta)/10); MMR(T)/MMR(Ta) = 1.15^((T - Ta)/10)',
+      'SMR(T)/SMR(Ta) = 1.56^((T - Ta)/10); MMR(T)/MMR(Ta) = 1.34^((T - Ta)/10)  (corrected Q10, jeb245488)',
     ],
     sources: [
       { cite: CB.cite, doi_or_url: CB.doi },

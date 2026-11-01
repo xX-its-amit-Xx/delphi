@@ -6,7 +6,9 @@ import { ucritRel } from './temperature.mjs';
 
 // Zebrafish Ucrit / Umax (Widrick et al. 2018, PLoS One 13:e0199712, which measured Umax and compiled the literature):
 const UCRIT_ADULT_SL_S = 15.5;   // Plaut 2000 adult Ucrit, 28 degC, as compiled in Widrick 2018 Table 2 (measured-secondhand)
-const UCRIT_ADULT_RANGE = [10.3, 17.9]; // other studies in the same table (Fiaz, Seebacher, Gilbert, Conradsen), SL/s
+const UCRIT_ADULT_RANGE = [13.7, 17.9]; // adult column of the same table (Seebacher 13.7 ... Conradsen 17.9), SL/s; Fiaz's 10.3 is the 14 dpf column
+// Widrick 2018 Table 2 is titled 'maximal swimming speed (Umax)', but its adult entries mix protocols: Plaut 2000 used a
+// 65-min incremental (Ucrit-type) protocol, so its 15.5 SL/s is used here as Ucrit. That label is the module's reading, not the table's.
 const UMAX_OVER_UCRIT = 1.15;    // "Umax exceeds Ucrit by about 15%" (Widrick 2018 Introduction, citing Gilbert et al.)
 const UMAX_14DPF_SL_S = 12.1;    // Widrick 2018 Table 2, present study, 14 dpf, 25 degC (measured)
 const UCRIT_5DPF_M_S = 0.03;     // "Ucrit rises from ~3 cm/s in 5 dpf larvae ..." (Widrick 2018 Introduction, measured-secondhand)
@@ -17,11 +19,12 @@ const WID = { cite: 'Widrick JJ et al. (2018). An open source microcontroller ba
 // Li et al. 2021 (Proc R Soc B 288:20211601, Fig. 2b caption), who show undulating fish have MUCH HIGHER drag:
 // so these give a LOWER bound on drag and an UPPER bound on speed.
 const LI = { cite: 'Li G et al. (2021). Fishes regulate tail-beat kinematics to minimize speed-specific cost of transport. Proc R Soc B 288:20211601', doi: 'https://doi.org/10.1098/rspb.2021.1601' };
+// The switch at Re 5e5 is the conventional flat-plate transition (textbook, e.g. Schlichting; not fetched, not in Li 2021): a modelling choice.
 const cdPlate = Re => (Re < 5e5 ? 1.33 / Math.sqrt(Re) : 0.072 * Re ** -0.2);
 
 // Pure-water dynamic viscosity (Pa s) and density at 0.101325 MPa, NIST Chemistry WebBook fluid data (fetched).
 const NIST = [[5, 0.0015182, 999.97], [10, 0.0013059, 999.70], [15, 0.0011376, 999.10], [20, 0.0010016, 998.21], [25, 0.00089002, 997.05], [30, 0.00079722, 995.65], [35, 0.00071913, 994.03]];
-const NIST_URL = 'https://webbook.nist.gov/cgi/fluid.cgi?ID=C7732185&Type=IsoBar&P=0.101325&TLow=5&THigh=35&TInc=5 (NIST Chemistry WebBook, water, isobaric)';
+const NIST_URL = 'https://webbook.nist.gov/cgi/fluid.cgi?Action=Data&Wide=on&ID=C7732185&Type=IsoBar&Digits=5&P=0.101325&THigh=35&TLow=5&TInc=5&RefState=DEF&TUnit=C&PUnit=MPa&DUnit=kg%2Fm3&HUnit=kJ%2Fmol&WUnit=m%2Fs&VisUnit=Pa*s&STUnit=N%2Fm (NIST Chemistry WebBook, water, isobaric)';
 function water(T) {
   const t = Math.min(35, Math.max(5, T));
   for (let i = 1; i < NIST.length; i++) if (t <= NIST[i][0]) {
@@ -57,7 +60,7 @@ export function zebrafishUcrit28(dpf, SL_m) {
   const k14 = UMAX_14DPF_SL_S / UMAX_OVER_UCRIT;
   const k = dpf >= 28 ? UCRIT_ADULT_SL_S : k14 + ((UCRIT_ADULT_SL_S - k14) * (dpf - 14)) / 14;
   // Amendment A1: Plaut's 15.5 SL/s x SL is a read-back of the target paper -> calibrated.
-  return { value: k * SL_m, kind: 'calibrated', source: dpf >= 28 ? `Plaut 2000 adult Ucrit 15.5 SL/s at 28 degC, compiled in ${WID.cite} Table 2 (other studies 10.3-17.9 SL/s) x SL` : `SL-specific Ucrit linear from ${k14.toFixed(1)} SL/s (14 dpf) to 15.5 SL/s (28 dpf; Widrick: relative speed rises until 28 dpf then is flat) x SL` };
+  return { value: k * SL_m, kind: 'calibrated', source: dpf >= 28 ? `Plaut 2000 adult Ucrit 15.5 SL/s at 28 degC, compiled in ${WID.cite} Table 2 (other adult entries 13.7-17.9 SL/s; the table is titled Umax, Plaut's 65-min incremental protocol is a Ucrit-type test) x SL` : `SL-specific Ucrit linear from ${k14.toFixed(1)} SL/s (14 dpf) to 15.5 SL/s (28 dpf; Widrick: relative speed rises until 28 dpf then is flat) x SL` };
 }
 
 /** Speed at which flat-plate (rigid) drag power equals available power: an upper bound on sustained speed. */

@@ -11,6 +11,7 @@
 //   P3b  depth_m, teleost
 //   P4   altitude_m, CLmax, airspeed_m_s, finArea_m2                           (not supplied: CLmax and the Lean area convention are not exposed)
 //   P4b  wind_along_track_m_s, horizontal_airspeed_m_s, glideHeight_m, LD_max, ground_distance_m (not supplied: see below)
+//   C15  glideHeight_m, LD_max, glideDistance_m, groundEffect (glide scenario: the Lean-covered part only, never the total)
 //   P5   intake_J_per_day, routine_cost_J_per_day, activity_cost_J_per_day, assimilation_efficiency, mass_change (not supplied)
 
 const num = x => typeof x === 'number' && Number.isFinite(x);
@@ -58,6 +59,17 @@ export function perturbInputs(state, scenarioKey = null, params = {}, run = null
     // states its tolerance or the conventions agree (reported to the hub, 2026-11-01).
   }
   if (scenarioKey === 'altitude') put('altitude_m', params.altitude_m, 'altitude scenario param altitude_m');
+  // C15 (glide_range_le, x <= h (L/D)max / (1 - ground effect)) bounds the STEADY glide only. The scenario's
+  // glide_range_total_m adds a level kinetic-energy phase the theorem's hypotheses do not cover, so it is NEVER
+  // passed; only glide_range_lean_bound_m (the h (L/D) descent, no ground effect in that phase) is. This makes C15 a
+  // consistency check of the scenario's bound against the theorem (it holds unless the two formulas drift apart),
+  // not an independent test. Fed only when the scenario says the glide is feasible: a zero distance would hold vacuously.
+  if ((scenarioKey === 'glide' || scenarioKey === 'altitude') && run?.ok && run.feasible === true) {
+    put('glideHeight_m', params.launch_height_m, `${scenarioKey} scenario param launch_height_m`);
+    put('LD_max', metric('glide_ratio') ?? undefined, `${scenarioKey} scenario metric glide_ratio ((L/D)max used)`);
+    put('glideDistance_m', metric('glide_range_lean_bound_m'), `${scenarioKey} scenario metric glide_range_lean_bound_m (the Lean-covered part; glide_range_total_m is deliberately NOT passed: its kinetic phase is outside the theorem)`);
+    put('groundEffect', 0, 'the Lean-covered h (L/D) descent carries no ground effect (glide.mjs applies it only in the level phase)');
+  }
   // P4 needs CLmax and the Lean lifting-area convention; P4b needs L/D and a ground distance that is not the
   // scenario's own bound (checking a bound against itself proves nothing); P5 needs an assimilation efficiency
   // and activity cost no scenario commits. They stay cannot-evaluate rather than being filled by guesses.
