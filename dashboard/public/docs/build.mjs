@@ -82,7 +82,9 @@ must(clips.length > 5, `expected clips in pitch-video/clips, found ${clips.lengt
 // The generated art. Decoration, not evidence - but the page references each file by name, so a
 // missing one must fail the build rather than render as a broken frame.
 const artDir = path.join(here, 'art');
-const ART = ['planes.jpg', 'fish.jpg', 'graph.jpg', 'form.jpg', 'blueprint.webm', 'lab.webm'];
+const ART = ['planes.jpg', 'fish.jpg', 'graph.jpg', 'form.jpg', 'blueprint.webm', 'lab.webm',
+  // placed at the use case each one illustrates, not as decoration at the top of a tab
+  'uc-locator.jpg', 'uc-layers.jpg', 'uc-diff.jpg', 'uc-physics.jpg', 'uc-gate.jpg'];
 const art = fs.existsSync(artDir) ? fs.readdirSync(artDir) : [];
 for (const f of ART) must(art.includes(f), `docs/art/${f} is referenced by the page but is not on disk`);
 // And every art reference in the page must be one of those files, so a typo cannot ship.
