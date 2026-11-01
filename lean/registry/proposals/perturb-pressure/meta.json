@@ -1,16 +1,55 @@
 {
   "law_id": "perturb-pressure",
+  "version": "2.0.0",
+  "label": "Boyle's law: a closed swim bladder shrinks with depth (pressure p0 + rho g d)",
   "kind": "physical",
   "class": "theorem-from-hypothesis",
-  "statement_en": "Boyle's law for a closed swim bladder at fixed temperature with hydrostatic pressure p0 + k d: the volume at depth d is V0 p0 / P(d), so a closed bladder claiming more volume at depth is ruled out (quasi-static only).",
+  "statement_en": "With absolute pressure p0 + rho g d (surface pressure p0, water density rho and gravity g as named hypotheses) and P(d) V(d) constant (closed bladder, fixed temperature, quasi-static), the bladder volume at depth d is V(0) p0 / (p0 + rho g d); a closed bladder claiming more volume at depth is ruled out. The v1 '1 atm per 10 m' law is the instance rho g = 10132.5 Pa/m (oneAtmPer10m).",
   "lean": {
-    "theorem": "Delphi.Perturb.closed_bladder_rules_out",
-    "witness": "Delphi.Perturb.perturb_nonvacuous"
+    "structure": "Delphi.Hydro.WaterColumn",
+    "theorem": "Delphi.Hydro.closed_bladder_rules_out",
+    "witness": "Delphi.Hydro.waterColumn_nonvacuous",
+    "fields": {
+      "p0": "surfacePressure",
+      "rho": "waterDensity",
+      "g": "gravity"
+    }
+  },
+  "shared_scope": {
+    "atoms": [
+      "0 < q.surfacePressure",
+      "0 < q.waterDensity",
+      "0 < q.gravity"
+    ],
+    "quantities": {
+      "surfacePressure": {
+        "unit": "Pa",
+        "description": "absolute pressure at the surface"
+      },
+      "waterDensity": {
+        "unit": "kg/m^3",
+        "description": "water density of the column"
+      },
+      "gravity": {
+        "unit": "m/s^2",
+        "description": "gravitational acceleration"
+      }
+    },
+    "witness_values": {
+      "surfacePressure": "101325",
+      "waterDensity": "1025",
+      "gravity": "9.80665"
+    }
   },
   "hypotheses": [
     {
-      "name": "see theorem statement",
-      "statement": "the named hypothesis structure(s) in the theorem statement; instantiated with fetched numbers in Delphi.Perturb.measured"
+      "name": "Delphi.Hydro.WaterColumn",
+      "statement": "p0 > 0, rho > 0, g > 0; P(d) = p0 + rho g d",
+      "source": "hydrostatics; sea water 1025 kg/m^3 and fresh water 998.2 kg/m^3 (NIST) as the engine's pressure scenario cites them; 1 atm per 10 m (Yancey 2020) is the instance rho g = 10132.5 Pa/m"
+    },
+    {
+      "name": "hboyle",
+      "statement": "P(d) V(d) = c for every d >= 0 (closed bladder, fixed temperature, quasi-static; fails for rapid decompression, Kerr et al. 2023)"
     }
   ],
   "scope": {
@@ -19,26 +58,30 @@
     ],
     "life_stages": [],
     "ranges": {},
-    "basis": "gas physics (Boyle) with 1 atm per 10 m of seawater (Yancey 2020); quasi-static only: fails for rapid decompression (Kerr 2023)"
+    "basis": "gas physics (Boyle) in a water column of committed density and gravity; quasi-static only (Kerr et al. 2023)"
   },
   "evidence": {
     "sources": [
-      "Yancey PH 2020, Cellular responses in marine animals to hydrostatic pressure. (PMID 32096337, doi:10.1002/jez.2354); lean/perturb-sources.json#yancey2020",
-      "Kerr JR, White PR, Leighton TG, Silva LGM, Kemp PS 2023, Boyle's Law ignores dynamic processes in governing barotrauma in fish. (PMID 37926724, doi:10.1038/s41598-023-46125-9); lean/perturb-sources.json#kerr2023"
+      "lean/perturb-sources.json#yancey2020",
+      "lean/perturb-sources.json#kerr2023",
+      "sim-engine/scenarios/pressure.mjs (rho_w 1025 sea water, 998.2 fresh water NIST, g 9.80665)"
     ],
-    "observations": []
+    "observations": [
+      "v1 (k fixed at 0.1 atm/m) called a correct Boyle volume violated in sea water: 1025 x 9.80665 = 10053 Pa/m < 10132.5 Pa/m, so the real volume sits 0.5 to 1 percent above the v1 bound"
+    ]
   },
   "sources": [
-    "Yancey PH 2020, Cellular responses in marine animals to hydrostatic pressure. (PMID 32096337, doi:10.1002/jez.2354); lean/perturb-sources.json#yancey2020",
-    "Kerr JR, White PR, Leighton TG, Silva LGM, Kemp PS 2023, Boyle's Law ignores dynamic processes in governing barotrauma in fish. (PMID 37926724, doi:10.1038/s41598-023-46125-9); lean/perturb-sources.json#kerr2023"
+    "lean/perturb-sources.json#yancey2020",
+    "lean/perturb-sources.json#kerr2023",
+    "sim-engine/scenarios/pressure.mjs"
   ],
   "constraints": [
     "P3"
   ],
+  "supersedes": "perturb-pressure@1.0.0",
   "origin": {
-    "by_role": "perturbation-thread",
+    "by_role": "registry-thread",
     "kind": "agent",
-    "from": "lean/Delphi/Perturb.lean (registered by the registry thread)"
-  },
-  "label": "Boyle's law: a closed swim bladder shrinks with depth"
+    "from": "hub request: parameterise the pressure law by rho and g"
+  }
 }

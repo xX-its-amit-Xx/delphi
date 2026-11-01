@@ -4,6 +4,24 @@ Newest first. Each release is an immutable file `lawsets/lawset-<version>.json` 
 content hash, status and kind. `lawsets/current.json` names the current one. Laws are never deleted: a retired
 or contested law keeps its file, so a verdict computed against an older law set can be reproduced exactly.
 
+## 1.5.0 (2026-11-01)
+
+Five perturbation laws promoted from candidate to accepted by human approval (approved_by_role human:project-lead, 2026-11-01: approved by the project lead in the hub session after review of sources and mutation results): perturb-thermal (P1, P1b), perturb-current (P2, P2b), perturb-isa-vmin (P4), perturb-wind-glide (P4b), perturb-energy-balance (P5). Their violations are now red. Not approved and unchanged: perturb-pressure 2.0.0 (candidate) and perturb-depth-cap (contested).
+
+### Status
+- `perturb-current` candidate -> accepted
+- `perturb-energy-balance` candidate -> accepted
+- `perturb-isa-vmin` candidate -> accepted
+- `perturb-thermal` candidate -> accepted
+- `perturb-wind-glide` candidate -> accepted
+
+## 1.4.0 (2026-11-01)
+
+perturb-pressure 1.0.0 -> 2.0.0: Boyle's law for a closed swim bladder now takes pressure from the water column, P(d) = p0 + rho g d, with p0, rho and g as named hypotheses (Delphi.Hydro.WaterColumn, lean/Delphi/Hydrostatics.lean). Version 1.0.0 fixed the gradient at 1 atm per 10 m; in sea water (1025 kg/m^3) the real gradient is 10053 Pa/m, below 10132.5, so v1 called a correct Boyle volume violated by 0.5 to 1 percent. The v1 case is the instance oneAtmPer10m. v1 is superseded, not deleted: law-versions/perturb-pressure@1.0.0.json, and its Lean statement stays compiled. Constraint P3 now uses Delphi.Hydro.closed_bladder_rules_out; 4 new statement mutants are rejected (61/61 overall, 19/19 controls).
+
+### Changed
+- `perturb-pressure` 1.0.0 -> 2.0.0
+
 ## 1.3.0 (2026-11-01)
 
 perturb-depth-cap stays contested, now with the contradiction compiled in Lean (lean/registry/lean/P3bContested.lean: OsmolyteDepthCap applied to a teleost at 8336 m proves False, standard axioms only; the same statement at 8100 m is rejected) and the observation's PMID 41822858 and primary DOI 10.1016/j.dsr.2023.104132 recorded. The law and the observation are both kept. No law version or hash changed.

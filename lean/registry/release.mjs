@@ -11,7 +11,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { REG, LAWSETS_DIR, loadLaws, loadLawset, readJson, writeJson, contentHash, semverCmp, gitHead } from './registry-lib.mjs';
 
-export const ROLE_RE = /^[a-z][a-z0-9-]*$/;
+export const ROLE_RE = /^(human:)?[a-z][a-z0-9-]*$/; // a role, optionally marked human: (e.g. human:project-lead); never a personal identifier
 
 export function releaseProblems(laws) {
   const p = [];

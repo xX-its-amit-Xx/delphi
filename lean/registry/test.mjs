@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { REG, ROOT, LAWS_DIR, readJson, loadLaws, listLawsets, loadLawset, contentHash, statementText, validate, sha256, scratchDir } from './registry-lib.mjs';
+import { REG, ROOT, LAWS_DIR, readJson, loadLaws, listLawsets, loadLawset, contentHash, statementText, validate, sha256, scratchDir, loadLawVersion } from './registry-lib.mjs';
 import { releaseProblems } from './release.mjs';
 import { propose } from './propose.mjs';
 
@@ -50,19 +50,21 @@ const driftErrs = (ls, readSrc) => ls.filter(l => l.lean_ref.module && l.lean_re
 check('pins: each statement_sha256 matches the statement in its module', () => driftErrs(laws, p => fs.readFileSync(p, 'utf8')),
   () => driftErrs(laws.filter(l => l.law_id === 'E2'), p => fs.readFileSync(p, 'utf8').replace('hi : b ≤ (3.02 : ℝ)', 'hi : b ≤ (3.05 : ℝ)')));
 
-// 4. law-set reproducibility: every pinned law still exists, unchanged versions keep their hash, nothing deleted
-const lawsetErrs = (sets, ls) => {
-  const by = new Map(ls.map(l => [l.law_id, l])); const e = [];
+// 4. law-set reproducibility: every law each law set pins exists AT THE PINNED VERSION (current file or archived
+// snapshot in law-versions/) with the pinned hash; nothing is deleted
+const lawsetErrs = (sets, ls, loadAt = loadLawVersion) => {
+  const ids = new Set(ls.map(l => l.law_id)); const e = [];
   for (const s of sets) for (const p of s.laws) {
-    const l = by.get(p.law_id);
-    if (!l) e.push(`${s.version}: ${p.law_id} deleted (laws are never deleted)`);
-    else if (l.version === p.version && l.content_hash !== p.content_hash) e.push(`${s.version}: ${p.law_id} ${p.version} hash changed; the law set is no longer reproducible`);
+    if (!ids.has(p.law_id)) { e.push(`${s.version}: ${p.law_id} deleted (laws are never deleted)`); continue; }
+    const l = loadAt(p.law_id, p.version);
+    if (!l) e.push(`${s.version}: ${p.law_id}@${p.version} missing (superseded versions must be archived in law-versions/)`);
+    else if (contentHash(l) !== p.content_hash) e.push(`${s.version}: ${p.law_id}@${p.version} hash differs from the pin; the law set is no longer reproducible`);
   }
   return e;
 };
 const sets = listLawsets().map(v => loadLawset(v));
 check(`lawsets: ${sets.map(s => s.version).join(', ')} reproducible from the law files`, () => lawsetErrs(sets, laws),
-  () => { const b = clone(sets); b[0].laws[0].content_hash = '0'.repeat(64); return lawsetErrs(b, laws.filter(l => l.law_id !== 'E5')); });
+  () => { const b = clone(sets); b[0].laws[0].content_hash = '0'.repeat(64); return lawsetErrs(b, laws.filter(l => l.law_id !== 'E5'), (id, v) => id === 'perturb-pressure' && v === '1.0.0' ? null : loadLawVersion(id, v)); });
 const cur = readJson(path.join(REG, 'lawsets/current.json'));
 check('lawsets: current.json names an existing law set', () => sets.some(s => s.version === cur.version) ? [] : ['missing'], () => sets.some(s => s.version === '9.9.9') ? [] : ['missing']);
 
@@ -124,7 +126,12 @@ if (!process.env.REGISTRY_TEST_FAST) {
   const write = (n, t) => { const f = path.join(S, n); fs.writeFileSync(f, t); return f; };
   const fContra = write('contra.lean', band(3.1, 3.3)), fOk = write('ok.lean', band(2.95, 3.0));
   const fSorry = write('sorry.lean', band(2.95, 3.0, 'sorry, by norm_num'));
-  const [rc, rk, rs] = await Promise.all([propose(fContra, meta(3.1, 3.3), { mutants: false }), propose(fOk, meta(2.95, 3.0), { mutants: false }), propose(fSorry, meta(2.95, 3.0), { mutants: false })]);
+  // Sequential, not parallel: concurrent Mathlib-importing compiles can fail to read .olean files under memory
+  // pressure, which looks like a rejection (seen once on this box); one at a time removes that flake.
+  const rc = await propose(fContra, meta(3.1, 3.3), { mutants: false });
+  const rk = await propose(fOk, meta(2.95, 3.0), { mutants: false });
+  const rs = await propose(fSorry, meta(2.95, 3.0), { mutants: false });
+  if (rc.status !== 'contested') console.log('     contested-test detail:', rc.status, rc.reasons, (rc.steps.joint.output || '').slice(0, 400));
   check('propose: a band contradicting E2 ([3.1, 3.3] vs [2.90, 3.02]) is recorded as contested with E2, not accepted',
     () => rc.status === 'contested' && rc.law.contested_with.some(c => c.law_id === 'E2') ? [] : [`status ${rc.status}, contradicts ${JSON.stringify(rc.steps.joint.contradicts)}, reasons ${rc.reasons}`],
     () => rk.status === 'contested' ? [] : [`a consistent band [2.95, 3.0] is ${rk.status}, so the contested assertion fails on it`]);

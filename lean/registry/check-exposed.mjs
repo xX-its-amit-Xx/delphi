@@ -70,7 +70,16 @@ for (const c of reg.constraints) {
   if (!cidx[c.id]) fail('a:registry', c.id, `constraint ${c.id} (lean/constraints.json, lemma ${c.lemma}) is backed by no registry law`, `list "${c.id}" in the constraints of its law (lean/registry/laws/<law_id>.json)`);
   for (const n of [c.lemma, c.law]) if (n && !src.findDecl(n, c.module)) fail('a:lean', `${c.id}:${n}`, `constraint ${c.id} names ${n}, which is not declared in any Lean module`, 'fix the name in lean/constraints.json or restore the declaration');
 }
-for (const ls of reg.lawsets) for (const x of ls.laws) if (!ids.has(x.law_id)) fail('a:registry', x.law_id, `lawset ${ls.version} names "${x.law_id}", which has no law file`, 'restore the law file (laws are retired, never deleted)');
+for (const ls of reg.lawsets) for (const x of ls.laws) {
+  if (!ids.has(x.law_id)) fail('a:registry', x.law_id, `lawset ${ls.version} names "${x.law_id}", which has no law file`, 'restore the law file (laws are retired, never deleted)');
+  else if (x.version && !src.lawVersion(x.law_id, x.version)) fail('a:registry', `${x.law_id}@${x.version}`, `lawset ${ls.version} pins ${x.law_id}@${x.version}, which is neither the current law file nor an archived snapshot`, `archive it as lean/registry/law-versions/${x.law_id}@${x.version}.json`);
+}
+// Archived versions (law-versions/<id>@<v>.json) keep older lawsets reproducible: their theorems must still exist,
+// and they count as backing for the lemmas they name (a superseded lemma is not dead code).
+const archived = Object.values(reg.versions || {});
+for (const v of archived) {
+  if (v.lean_ref?.theorem && !src.findDecl(v.lean_ref.theorem, v.lean_ref.module)) fail('a:lean', `${v.law_id}@${v.version}`, `archived ${v.law_id}@${v.version} names ${v.lean_ref.theorem}, no longer in the Lean sources; older lawsets pinning it cannot reproduce`, 'restore the theorem (keep superseded lemmas compiled)');
+}
 for (const l of reg.laws) {
   const ref = l.lean_ref;
   if (ref?.theorem && !src.findDecl(ref.theorem, ref.module)) fail('a:lean', l.law_id, `law ${l.law_id} names theorem ${ref.theorem}, not found in the Lean sources`, 'fix lean_ref.theorem or restore the theorem');
@@ -78,13 +87,13 @@ for (const l of reg.laws) {
 }
 // Pinned statements: a registered theorem whose statement changed without a new law version is drift.
 for (const d of src.verify().drift) fail('drift', d.law_id, `law ${d.law_id}: ${d.status} (${d.decl || d.module})`, d.status === 'drift' ? 'the Lean statement changed: bump the law version and re-pin lean_ref.statement_sha256 (lean/registry), or revert the Lean edit' : 'fix lean_ref in the law file');
-const covered = new Set(reg.laws.map(l => l.lean_ref?.module).filter(Boolean));
+const covered = new Set([...reg.laws, ...archived].map(l => l.lean_ref?.module).filter(Boolean));
 const allModules = src.leanModules({ includeCertificates: false });
 for (const m of allModules) {
   if (INFRASTRUCTURE[m]) continue;
   if (!covered.has(m)) fail('a:lean', m, `Lean module ${m} backs no registry law`, `register its law(s) (${REGFIX.split(',')[0]}), or, if it truly holds no law, add it to INFRASTRUCTURE in lean/registry/check-exposed.mjs with a reason`);
 }
-const constraintLemmas = new Set(reg.constraints.map(c => c.lemma));
+const constraintLemmas = new Set([...reg.constraints.map(c => c.lemma), ...archived.map(v => v.lean_ref?.theorem).filter(Boolean)]);
 const tags = [];
 for (const m of src.leanModules({ includeCertificates: true })) {
   const text = fs.readFileSync(R(m), 'utf8');
@@ -120,6 +129,7 @@ else {
     if (!inIdx.has(id)) fail('c:mirror', id, `${id} missing from /api/lean/index.json`, 'node dashboard/build-lean-api.mjs');
     if (!has(`dashboard/public/api/lean/laws/${id.replace(/[^A-Za-z0-9._-]/g, '_')}.json`)) fail('c:mirror', id, `/api/lean/laws/${id}.json missing`, 'node dashboard/build-lean-api.mjs');
   }
+  for (const v of archived) if (!has(`dashboard/public/api/lean/laws/${v.law_id}@${v.version}.json`)) fail('c:mirror', `${v.law_id}@${v.version}`, `/api/lean/laws/${v.law_id}@${v.version}.json missing`, 'node dashboard/build-lean-api.mjs');
   const d = mirror.diff();
   if (d.length) fail('stale:mirror', `${d.length} files`, `static mirror is stale relative to the sources: ${d.slice(0, 6).map(x => `${x.file} (${x.why})`).join(', ')}${d.length > 6 ? ', ...' : ''}`, 'node dashboard/build-lean-api.mjs');
 }
@@ -183,7 +193,7 @@ if (!FAST && has('mcp/server.mjs')) {
 if (has('package.json')) {
   const files = readJson('package.json').files || [];
   const di = has('.dockerignore') ? fs.readFileSync(R('.dockerignore'), 'utf8') : '';
-  for (const need of ['lib/lean-source.mjs', 'lib/lean-scope.mjs', 'sim-engine/tools/lean-tools.mjs', 'sim-engine/lib/envelope.mjs', 'lean/registry', 'lean/laws.json', 'lean/constraints.json', 'lean/eliminate/browser-check.mjs', 'lean/Delphi']) {
+  for (const need of ['lib/lean-source.mjs', 'lib/lean-scope.mjs', 'sim-engine/tools/lean-tools.mjs', 'sim-engine/lib/envelope.mjs', 'lean/registry/laws/', 'lean/registry/lawsets/', 'lean/registry/law-versions/', 'lean/registry/registry-lib.mjs', 'lean/laws.json', 'lean/constraints.json', 'lean/eliminate/browser-check.mjs', 'lean/Delphi']) {
     if (!files.some(f => f === need || f.startsWith(need))) fail('e:package', need, `package.json "files" does not ship ${need}`, 'add it to "files" in package.json');
     if (di && !di.split(/\r?\n/).some(l => l.startsWith('!' + need))) fail('e:package', need, `.dockerignore does not let ${need} into the image`, `add !${need}... to .dockerignore`);
   }

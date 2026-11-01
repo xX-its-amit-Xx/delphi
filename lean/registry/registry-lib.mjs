@@ -185,3 +185,13 @@ export function errorLines(out) {
   for (const m of out.matchAll(/:(\d+):(\d+): error/g)) ls.push(+m[1]);
   return ls;
 }
+
+/** Superseded law versions are kept, never deleted: lean/registry/law-versions/<law_id>@<version>.json. */
+export const LAW_VERSIONS_DIR = path.join(REG, 'law-versions');
+/** The law file at an exact version: the current file if it is at that version, else the archived snapshot, else null. */
+export function loadLawVersion(lawId, version, { lawsDir = LAWS_DIR, versionsDir = LAW_VERSIONS_DIR } = {}) {
+  const cur = path.join(lawsDir, lawId + '.json');
+  if (fs.existsSync(cur)) { const l = readJson(cur); if (l.version === version) return l; }
+  const snap = path.join(versionsDir, `${lawId}@${version}.json`);
+  return fs.existsSync(snap) ? readJson(snap) : null;
+}
