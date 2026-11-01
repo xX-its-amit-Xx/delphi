@@ -14,7 +14,8 @@ and its history, never removes its file.
 | `lean/registry/law-versions/<law_id>@<version>.json` | every superseded version of a law, kept so older law sets stay reproducible (`loadLawVersion(id, version)` in registry-lib.mjs) |
 | `lean/registry/lawsets/lawset-<semver>.json` | a law-set release: `{version, created, previous, laws:[{law_id, version, content_hash, status, kind}]}` |
 | `lean/registry/lawsets/current.json` | `{version, file}`: the current law set |
-| `lean/registry/CHANGELOG.md` | one section per law-set release |
+| `lean/registry/CHANGELOG.md` | one section per law-set release (keep the `## <version> (<date>)` heading and `### <Section>` + `- ` bullets: `/api/lean/changes.json`, `changes.xml` and `lean_changes` are parsed from it) |
+| `lean/registry/SELF-UPDATE.md` | how servers follow new lawsets at runtime (remote source, TTL, content-hash integrity), the publish workflow, and a recorded demo |
 | `lean/registry/proposals/<law_id>/` | a proposal: `law.lean`, `meta.json`, and `result.json` written by propose.mjs |
 | `lean/registry/discovered/` | machine-proposed drafts written by discover.mjs (`index.json` + one folder per draft, same shape as a proposal) |
 | `lean/registry/build-registry.mjs` | bootstrap: builds `laws/` and lawset 1.0.0 from lean/laws.json, lean/constraints.json, lean/empirical.json and the Lean modules |

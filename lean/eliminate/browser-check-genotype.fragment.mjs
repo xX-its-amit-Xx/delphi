@@ -93,7 +93,7 @@ export function checkGenotype(s) {
     else if (!(M > 0) || !(mu > 0)) rows.push(result('G4', 'cannot-evaluate', { gene_copies_M: M, mutation_rate: mu }, ['a positive M and mutation rate']));
     else {
       const fastest = N / (M * mu), neutral = N / mu;
-      rows.push(result('G4', T >= fastest ? 'holds' : 'violated', { required_substitutions: N, gene_copies_M: M, mutation_rate: mu, generations_T: T, fastest_generations_every_mutant_fixes: fastest, neutral_generations: neutral }, [],
+      rows.push(result('G4', geTol(T, fastest) ? 'holds' : 'violated', { required_substitutions: N, gene_copies_M: M, mutation_rate: mu, generations_T: T, fastest_generations_every_mutant_fixes: fastest, neutral_generations: neutral }, [],
         'the fastest the model allows is every single mutant fixing; holding here is very weak, since the neutral case needs M times longer and nothing says the substitutions exist or help',
         { needed: { generations: fastest }, available: { generations: T } }));
     }
@@ -104,7 +104,7 @@ export function checkGenotype(s) {
     else if (!(e > 0) || !(c > 0)) rows.push(result('G5', 'cannot-evaluate', { reproductive_excess: e, cost_per_substitution: c }, ['a positive reproductive excess and cost per substitution']));
     else {
       const need = c * N / e;
-      rows.push(result('G5', T >= need ? 'holds' : 'violated', { required_substitutions: N, cost_per_substitution: c, reproductive_excess: e, generations_needed: need, generations_T: T }, [],
+      rows.push(result('G5', geTol(T, need) ? 'holds' : 'violated', { required_substitutions: N, cost_per_substitution: c, reproductive_excess: e, generations_needed: need, generations_T: T }, [],
         'conditional on Haldane 1957\'s cost accounting, which this project neither proves nor endorses; soft and truncation selection and standing variation all change the cost',
         { needed: { generations: need }, available: { generations: T } }));
     }

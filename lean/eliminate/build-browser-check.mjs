@@ -120,6 +120,13 @@ export function liftingAreaNeeded(W_N, v, rho, CLmax) { return 2 * W_N / (rho * 
 export function vmin(W_N, S, rho, CLmax) { return Math.sqrt(2 * W_N / (rho * S * CLmax)); }
 
 const num = x => typeof x === 'number' && Number.isFinite(x);
+// Floating-point tolerance for comparisons against a COMPUTED bound: the same formula evaluated in a different
+// operation order can differ by an ulp, and a correct design must not turn red on rounding. Relative 1e-9 of the
+// larger magnitude (sign-safe, so negative bounds work). Comparisons of raw inputs with fixed constants or of
+// integers stay exact. This is a check tolerance, not a law change (lean/registry/CHANGELOG.md, lawset 1.5.0 note).
+export const REL_TOL = 1e-9;
+function leTol(a, b) { return a <= b + REL_TOL * Math.max(Math.abs(a), Math.abs(b)); }
+function geTol(a, b) { return leTol(b, a); }
 // Result shape (Viz): {id, verdict, needed, available, missing_inputs, theorem, module, ...}. "needed" and "available" are the two
 // sides of the relation where it has that form (what the design must supply vs what it does), else null.
 const result = (id, verdict, numbers, missing, note, sides) => ({ id, ...META[id], verdict, needed: sides ? sides.needed : null, available: sides ? sides.available : null, missing_inputs: missing, missing, numbers, note: note || null, kernel: KERNEL_NOTE });
@@ -142,12 +149,12 @@ export function checkRaw(design) {
   { const miss = []; if (W === null) miss.push('mass_kg'); if (S === null) miss.push('finArea_m2'); if (!num(s.CLmax)) miss.push('CLmax'); if (!num(s.airspeed_m_s)) miss.push('airspeed_m_s');
     if (miss.length) out.push(result('C9', 'cannot-evaluate', { W_N: W, S_m2: S }, miss));
     else { const vm = vmin(W, S, s.rho, s.CLmax), need = liftingAreaNeeded(W, s.airspeed_m_s, s.rho, s.CLmax);
-      out.push(result('C9', s.airspeed_m_s >= vm ? 'holds' : 'violated', { W_N: W, S_m2: S, CLmax: s.CLmax, rho: s.rho, airspeed_m_s: s.airspeed_m_s, vmin_m_s: vm, liftingAreaNeeded_m2: need }, [], s.airspeed_m_s >= vm ? 'lift can equal weight at some C_L <= CLmax' : 'below the minimum speed: lift cannot reach the weight even at CLmax', { needed: { liftingArea_m2: need, or_airspeed_m_s: vm }, available: { liftingArea_m2: S, airspeed_m_s: s.airspeed_m_s } })); } }
+      out.push(result('C9', geTol(s.airspeed_m_s, vm) ? 'holds' : 'violated', { W_N: W, S_m2: S, CLmax: s.CLmax, rho: s.rho, airspeed_m_s: s.airspeed_m_s, vmin_m_s: vm, liftingAreaNeeded_m2: need }, [], geTol(s.airspeed_m_s, vm) ? 'lift can equal weight at some C_L <= CLmax' : 'below the minimum speed: lift cannot reach the weight even at CLmax', { needed: { liftingArea_m2: need, or_airspeed_m_s: vm }, available: { liftingArea_m2: S, airspeed_m_s: s.airspeed_m_s } })); } }
 
   // Scaling relative to the reference specimen (implied exponents): C7b mass, C2a lifting area, C8e wing loading, C9c v_min.
   const lr = num(s.SL_m) ? s.SL_m / REFERENCE.SL_m : null;
   const expo = (x, xref) => (lr && lr !== 1 && num(x) && x > 0) ? Math.log(x / xref) / Math.log(lr) : null;
-  const band = (b, target) => b === null ? 'cannot-evaluate' : (Math.abs(b - target) <= s.exponentBand ? 'holds' : 'violated');
+  const band = (b, target) => b === null ? 'cannot-evaluate' : (leTol(Math.abs(b - target), s.exponentBand) ? 'holds' : 'violated');
   { const b = expo(W, REFERENCE.mass_kg * s.g);
     out.push(result('C7b', lr === null ? 'cannot-evaluate' : lr === 1 ? 'cannot-evaluate' : band(b, 3), { lengthRatio: lr, impliedMassExponent: b, target: 3, band: s.exponentBand }, lr === null ? ['SL_m'] : lr === 1 ? ['a length different from the reference'] : W === null ? ['mass_kg'] : [], 'implied exponent log(W/W_ref)/log(SL/SL_ref) against the cube law; the band is the studio decision rule, not a theorem')); }
   { const b = expo(S, REFERENCE.liftingArea_m2);
@@ -161,12 +168,12 @@ export function checkRaw(design) {
   // C8c: Galileo's giant, needs a reference safety factor.
   { if (lr === null) out.push(result('C8c', 'cannot-evaluate', {}, ['SL_m']));
     else if (!num(s.referenceSafetyFactor)) out.push(result('C8c', 'cannot-evaluate', { lengthRatio: lr }, ['referenceSafetyFactor'], 'no breaking stress or section data exists for flying fish; a reference safety factor must be committed'));
-    else { const sf = s.referenceSafetyFactor / lr; out.push(result('C8c', sf >= 1 ? 'holds' : 'violated', { lengthRatio: lr, referenceSafetyFactor: s.referenceSafetyFactor, scaledSafetyFactor: sf }, [], 'scaled safety factor = reference / length ratio under isometric sections and the same material (R7)', { needed: { safetyFactor: 1 }, available: { safetyFactor: sf } })); } }
+    else { const sf = s.referenceSafetyFactor / lr; out.push(result('C8c', geTol(sf, 1) ? 'holds' : 'violated', { lengthRatio: lr, referenceSafetyFactor: s.referenceSafetyFactor, scaledSafetyFactor: sf }, [], 'scaled safety factor = reference / length ratio under isometric sections and the same material (R7)', { needed: { safetyFactor: 1 }, available: { safetyFactor: sf } })); } }
 
   // C15: glide range.
   { const miss = []; for (const k of ['glideHeight_m', 'LD_max', 'glideDistance_m']) if (!num(s[k])) miss.push(k);
     if (miss.length) out.push(result('C15', 'cannot-evaluate', {}, miss));
-    else { const bound = s.glideHeight_m * s.LD_max / (1 - s.groundEffect); out.push(result('C15', s.glideDistance_m <= bound ? 'holds' : 'violated', { glideHeight_m: s.glideHeight_m, LD_max: s.LD_max, groundEffect: s.groundEffect, bound_m: bound, glideDistance_m: s.glideDistance_m }, [], 'one steady unpowered glide; taxiing thrust, repeated touch-and-go and wind are outside the model', { needed: { glideDistance_m: s.glideDistance_m }, available: { glideRange_m: bound } })); } }
+    else { const bound = s.glideHeight_m * s.LD_max / (1 - s.groundEffect); out.push(result('C15', leTol(s.glideDistance_m, bound) ? 'holds' : 'violated', { glideHeight_m: s.glideHeight_m, LD_max: s.LD_max, groundEffect: s.groundEffect, bound_m: bound, glideDistance_m: s.glideDistance_m }, [], 'one steady unpowered glide; taxiing thrust, repeated touch-and-go and wind are outside the model', { needed: { glideDistance_m: s.glideDistance_m }, available: { glideRange_m: bound } })); } }
 
   // Power required and available, C16 climb, C14 aerobic.
   const LD = num(s.LD_max) ? s.LD_max : (num(s.LD) ? s.LD : null);
@@ -174,10 +181,10 @@ export function checkRaw(design) {
   const Pavail = num(s.powerAvailable_W) ? s.powerAvailable_W : (num(s.flightMuscleFraction) && num(s.musclePowerPerKg_W) && num(s.mass_kg) ? s.flightMuscleFraction * s.musclePowerPerKg_W * s.mass_kg : null);
   { const miss = []; if (Preq === null) miss.push('airspeed_m_s and LD_max (or powerRequired_W)'); if (Pavail === null) miss.push('powerAvailable_W (or flightMuscleFraction and musclePowerPerKg_W: the muscle premise R6, a named hypothesis)'); if (!num(s.climbRate_m_s)) miss.push('climbRate_m_s'); if (W === null) miss.push('mass_kg');
     if (miss.length) out.push(result('C16', 'cannot-evaluate', { powerRequired_W: Preq, powerAvailable_W: Pavail }, miss));
-    else { const bound = (Pavail - Preq) / W; out.push(result('C16', s.climbRate_m_s <= bound ? 'holds' : 'violated', { powerRequired_W: Preq, powerAvailable_W: Pavail, W_N: W, climbBound_m_s: bound, climbRate_m_s: s.climbRate_m_s }, [], Pavail !== null && !num(s.powerAvailable_W) ? 'P_avail formed from the muscle premise (f, p constant), which is a named hypothesis, not a theorem' : null, { needed: { power_W: Preq + W * s.climbRate_m_s }, available: { power_W: Pavail } })); } }
+    else { const bound = (Pavail - Preq) / W; out.push(result('C16', leTol(s.climbRate_m_s, bound) ? 'holds' : 'violated', { powerRequired_W: Preq, powerAvailable_W: Pavail, W_N: W, climbBound_m_s: bound, climbRate_m_s: s.climbRate_m_s }, [], Pavail !== null && !num(s.powerAvailable_W) ? 'P_avail formed from the muscle premise (f, p constant), which is a named hypothesis, not a theorem' : null, { needed: { power_W: Preq + W * s.climbRate_m_s }, available: { power_W: Pavail } })); } }
   { const miss = []; for (const k of ['efficiency', 'oxycaloric_J_per_unit_O2', 'cardiacOutput', 'arterialO2']) if (!num(s[k])) miss.push(k); if (Preq === null) miss.push('airspeed_m_s and LD_max (or powerRequired_W)');
     if (miss.length) out.push(result('C14', 'cannot-evaluate', { powerRequired_W: Preq, gillArea_m2: num(s.gillArea_m2) ? s.gillArea_m2 : null }, miss, num(s.gillArea_m2) ? 'gillArea_m2 given, but the gill-to-blood link (water O2 and gill area to arterial content) is not formalised; commit arterialO2 directly' : null));
-    else { const supply = s.efficiency * s.oxycaloric_J_per_unit_O2 * s.cardiacOutput * s.arterialO2; const need = Preq + (num(s.climbRate_m_s) && W !== null ? W * s.climbRate_m_s : 0); out.push(result('C14', supply >= need ? 'holds' : 'violated', { aerobicCeiling_W: supply, powerRequired_W: Preq, climbPower_W: need - Preq, efficiency: s.efficiency }, [], s.efficiency > 1 ? 'efficiency above 1 violates the named hypothesis 0 <= eta <= 1; the result is not meaningful' : 'sustained (aerobic) mechanical ceiling eta E Q Ca against level-flight power W v/(L/D) plus W x climb rate if a climb is claimed (climb_le_aerobic); units must multiply to watts', { needed: { power_W: need }, available: { power_W: supply } })); } }
+    else { const supply = s.efficiency * s.oxycaloric_J_per_unit_O2 * s.cardiacOutput * s.arterialO2; const need = Preq + (num(s.climbRate_m_s) && W !== null ? W * s.climbRate_m_s : 0); out.push(result('C14', geTol(supply, need) ? 'holds' : 'violated', { aerobicCeiling_W: supply, powerRequired_W: Preq, climbPower_W: need - Preq, efficiency: s.efficiency }, [], s.efficiency > 1 ? 'efficiency above 1 violates the named hypothesis 0 <= eta <= 1; the result is not meaningful' : 'sustained (aerobic) mechanical ceiling eta E Q Ca against level-flight power W v/(L/D) plus W x climb rate if a climb is claimed (climb_le_aerobic); units must multiply to watts', { needed: { power_W: need }, available: { power_W: supply } })); } }
 
   // C13 and C10 need exponents across sizes, which a single spec does not carry.
   out.push(result('C13', 'cannot-evaluate', {}, ['fitted exponents for weight, area and wing loading with intervals'], 'a single design has no exponents; see the audit for the measured Davenport triple'));

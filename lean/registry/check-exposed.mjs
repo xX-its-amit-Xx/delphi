@@ -22,6 +22,9 @@
 //   (d) reachable via the CLI (sim-engine/lean-cli.mjs `law <id>`, and mcp/cli.mjs `laws`)
 //   (e) returned by the hosted server's tools (mcp/server.mjs over stdio: lean_laws_list), and by the sim-engine HTTP
 //       bridge's tool discovery
+//   (f) self-update: every lean_* envelope carries source, lawset_version and fetched_at; lean_changes covers every
+//       lawset; .github/workflows/leanbio-publish.yml republishes the mirror and deploy-mcp.yml's path filters
+//       cover the law sources (lean/registry/SELF-UPDATE.md)
 // and when the static mirror or sim-engine/contract.json is stale relative to the sources (content comparison), or a
 // registered theorem's statement no longer matches its pinned lean_ref.statement_sha256 (drift).
 
@@ -46,6 +49,9 @@ const RULES_OUT_EXEMPT = {
   'Delphi.Constraints.cubeLaw_rules_out': 'unprimed form of cubeLaw_rules_out\' (constraint C7 uses the primed form); same law thompson1917-ch03-07',
   "Delphi.Constraints.supply_rules_out'": 'variant of supply_rules_out (constraint C3b); same law favored-fixation-lower-bound',
 };
+
+// This check is about the local tree: never let a configured remote law source (LEANBIO_REMOTE) stand in for it.
+process.env.LEANBIO_REMOTE = 'off';
 
 const failures = [];
 const notes = [];
@@ -117,6 +123,28 @@ for (const id of ids) {
   catch (e) { fail('b:handler', id, `lean_law_get(${id}) failed: ${e.message}`, 'see lib/lean-source.mjs getLaw'); }
 }
 try { await T.lean_lawset_get.handler({ version: 'current' }); } catch (e) { fail('b:handler', 'lean_lawset_get', e.message, 'lean/registry/lawsets/current.json'); }
+// Self-update: every lean_* envelope says where its laws came from (source, lawset_version, fetched_at), and the
+// status and changes tools answer.
+for (const t of tools.LEAN_TOOLS.filter(t => !t.local && t.name !== 'lean_check')) {
+  try {
+    const args = t.name === 'lean_law_get' ? { id: [...ids][0] } : {};
+    const r = await t.handler(args);
+    for (const k of ['source', 'lawset_version', 'fetched_at']) if (r[k] == null) throw new Error(`envelope has no ${k}`);
+    if (r.lawset_version !== reg.current) throw new Error(`envelope lawset_version ${r.lawset_version} is not the current lawset ${reg.current}`);
+  } catch (e) { fail('b:source', t.name, `${t.name}: ${e.message}`, 'wrap the handler with withSource() in sim-engine/tools/lean-tools.mjs'); }
+}
+try {
+  const c = (await T.lean_changes.handler({})).result;
+  const vs = new Set(c.entries.map(e => e.version));
+  for (const ls of reg.lawsets) if (!vs.has(ls.version)) fail('b:changes', ls.version, `lean_changes has no entry for lawset ${ls.version}`, 'add a "## <version> (<date>)" section to lean/registry/CHANGELOG.md (release.mjs writes one)');
+} catch (e) { fail('b:changes', 'lean_changes', e.message, 'lib/lean-source.mjs getChanges'); }
+// CI self-update: the mirror republishes and the hosted server redeploys when laws change.
+const wf = rel => (has(rel) ? fs.readFileSync(R(rel), 'utf8') : null);
+const pub = wf('.github/workflows/leanbio-publish.yml');
+if (!pub) fail('ci:publish', 'leanbio-publish.yml', '.github/workflows/leanbio-publish.yml is missing: the /api/lean/ mirror would not republish when laws change', 'restore the workflow (lean/registry/SELF-UPDATE.md)');
+else for (const need of ['lean/**', 'build-lean-api.mjs', 'check-exposed.mjs', 'wrangler', 'CLOUDFLARE_API_TOKEN']) if (!pub.includes(need)) fail('ci:publish', need, `leanbio-publish.yml does not mention ${need}`, 'see lean/registry/SELF-UPDATE.md');
+const dep = wf('.github/workflows/deploy-mcp.yml');
+if (dep) for (const need of ['lean/registry/**', 'lib/lean-source.mjs', 'sim-engine/tools/lean-tools.mjs']) if (!dep.includes(`"${need}"`)) fail('ci:deploy-mcp', need, `deploy-mcp.yml path filters do not cover ${need}`, 'add it under on.push.paths');
 try { await T.lean_check.handler({ design: {} }); } catch (e) { fail('b:handler', 'lean_check', e.message, 'lean/eliminate/browser-check.mjs'); }
 
 // ── (c) static mirror ────────────────────────────────────────────────────────
@@ -177,7 +205,7 @@ if (!FAST && has('mcp/server.mjs')) {
   try {
     const { Client } = await import(pathToFileURL(R('node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js')).href);
     const { StdioClientTransport } = await import(pathToFileURL(R('node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js')).href);
-    const env = { ...process.env }; delete env.DELPHI_HTTP_PORT;
+    const env = { ...process.env, LEANBIO_REMOTE: 'off' }; delete env.DELPHI_HTTP_PORT;
     const transport = new StdioClientTransport({ command: process.execPath, args: [R('mcp/server.mjs')], cwd: ROOT, env, stderr: 'pipe' });
     const client = new Client({ name: 'check-exposed', version: '1' });
     await client.connect(transport);

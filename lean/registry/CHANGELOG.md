@@ -4,6 +4,18 @@ Newest first. Each release is an immutable file `lawsets/lawset-<version>.json` 
 content hash, status and kind. `lawsets/current.json` names the current one. Laws are never deleted: a retired
 or contested law keeps its file, so a verdict computed against an older law set can be reproduced exactly.
 
+## Checker note (2026-11-01, no law set change)
+
+Floating-point tolerance in lean/eliminate/browser-check.mjs (generator and fragments), not a law change: no law
+version, hash or status changed, and law set 1.5.0 stands. A correct unpowered glide in a 3 m/s headwind was red
+on P4b because the distance and the bound, the same formula in a different operation order, differed by one ulp
+(3.1678027110201326 vs 3.167802711020132). Every comparison of a design value against a COMPUTED bound now uses
+a relative tolerance of 1e-9 of the larger magnitude (`leTol`, `geTol`, exported `REL_TOL`; sign-safe for
+negative bounds such as a climb bound). That covers C9, C15, C16, C14, C8c, the scaling bands (C7b, C2a, C8e,
+C9c), P1b, P2b, P3, P4, P4b, P5, E2, E3, E4, G4 and G5. Comparisons of raw inputs with fixed constants (P1
+window, P2 U_crit, P3b depth cap, E5) and integer comparisons (G1, G3, E7) stay exact. A design 0.1 percent over
+a bound is still red.
+
 ## 1.5.0 (2026-11-01)
 
 Five perturbation laws promoted from candidate to accepted by human approval (approved_by_role human:project-lead, 2026-11-01: approved by the project lead in the hub session after review of sources and mutation results): perturb-thermal (P1, P1b), perturb-current (P2, P2b), perturb-isa-vmin (P4), perturb-wind-glide (P4b), perturb-energy-balance (P5). Their violations are now red. Not approved and unchanged: perturb-pressure 2.0.0 (candidate) and perturb-depth-cap (contested).

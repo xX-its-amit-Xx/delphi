@@ -28,14 +28,14 @@ export function checkEmpirical(s, derived) {
   { const b = num(s.mass_exponent) ? s.mass_exponent : (derived && num(derived.impliedMassExponent) ? derived.impliedMassExponent : null);
     const src = num(s.mass_exponent) ? 'committed mass_exponent' : 'the exponent implied against the reference specimen';
     if (b === null) rows.push(empiricalRow('E2', 'cannot-evaluate', {}, ['mass_exponent (or a length different from the reference specimen)'], 'the band is [2.90, 3.02] over the six fitted field rows of five species'));
-    else rows.push(empiricalRow('E2', b >= 2.9 && b <= 3.02 ? 'holds' : 'violated', { exponent: b, from: src, band: [2.9, 3.02] }, [],
+    else rows.push(empiricalRow('E2', geTol(b, 2.9) && leTol(b, 3.02) ? 'holds' : 'violated', { exponent: b, from: src, band: [2.9, 3.02] }, [],
       'within the band every fitted flying-fish study spans; outside it, no fit in the project\'s table supports the design',
       { needed: { exponent_between: [2.9, 3.02] }, available: { exponent: b } })); }
 
   // E3: the ceiling of every teleost in the measured ranges.
   { const ceiling = 0.0458;
     if (Preq === null) rows.push(empiricalRow('E3', 'cannot-evaluate', {}, ['airspeed_m_s and LD_max (or powerRequired_W)'], 'the ceiling is ' + ceiling + ' W at 0.06 kg; a different mass needs the cardiac output per kg, which this row does not scale'));
-    else rows.push(empiricalRow('E3', Preq <= ceiling ? 'holds' : 'violated', { powerRequired_W: Preq, ceiling_W: ceiling, shortfall_factor: Preq > 0 ? Preq / ceiling : null }, [],
+    else rows.push(empiricalRow('E3', leTol(Preq, ceiling) ? 'holds' : 'violated', { powerRequired_W: Preq, ceiling_W: ceiling, shortfall_factor: Preq > 0 ? Preq / ceiling : null }, [],
       'stronger than the oxygen row C14, which rules only on the physiology a design commits: this one rules on every teleost the measured ranges allow',
       { needed: { power_W: Preq }, available: { power_W: ceiling } })); }
 
@@ -49,7 +49,7 @@ export function checkEmpirical(s, derived) {
     if (Preq === null) miss.push('airspeed_m_s and LD_max (or powerRequired_W)');
     if (miss.length) rows.push(empiricalRow('E4', 'cannot-evaluate', { o2_store_ml: S, flight_duration_s: t }, miss, 'no blood volume or venous O2 reserve is measured for a flying fish in this project, so a store must be committed'));
     else { const bound = E * S / t;
-      rows.push(empiricalRow('E4', Preq <= bound ? 'holds' : 'violated', { powerRequired_W: Preq, store_ml: S, oxycaloric_J_per_ml: E, duration_s: t, meanPowerFromStore_W: bound }, [],
+      rows.push(empiricalRow('E4', leTol(Preq, bound) ? 'holds' : 'violated', { powerRequired_W: Preq, store_ml: S, oxycaloric_J_per_ml: E, duration_s: t, meanPowerFromStore_W: bound }, [],
         'the aerobic part only: burst power on white-muscle stores is outside this bound, and that is what a flying fish is understood to use',
         { needed: { power_W: Preq }, available: { power_W: bound } })); } }
 
