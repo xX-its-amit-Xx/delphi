@@ -84,5 +84,11 @@ const doc = (base, edits, genotype) => { let d = { ...O.docFor(bundle, base), id
   const a = await designScore('zebrafish-adult', { version: '1.1.0', reference_set_excluding: M('leave-out-family') ? [] : ['family:Cyprinidae'] });
   check('leave-out-family', !/Cyprinidae|Danio/.test(`${a.closest_real_relative.taxon}`), `${a.closest_real_relative.name} ${a.closest_real_relative.taxon}`);
 }
+// three named results
+{
+  const { designScore } = await import('../score.mjs');
+  const r = await designScore(doc('flying-fish', [{ target: { level: 'body' }, param: 'standard_length_m', op: 'scale', value: M('three-results-lean-gate') ? 1 : 3 }]), { version: '1.2.0' });
+  check('three-results-lean-gate', r.lean_gate_failed === true && /^FAIL/.test(r.lean_check.gate) && r.lean_check.accepted_violations.every(v => v.inputs) && r.genotype_similarity && r.phenotype_similarity.closest_real_relative, r.lean_check.gate.slice(0, 50));
+}
 console.log(`\n${n - fails}/${n} passed${MUT ? ` (MUTATE=${MUT})` : ''}`);
 process.exit(fails);

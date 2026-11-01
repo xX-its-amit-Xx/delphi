@@ -55,6 +55,22 @@ function bar(label, c, weight) {
   return `<div class="vp-comp ${v >= 0.5 ? 'ok' : 'bad'}"><span class="vp-cl">${esc(label)}</span><span class="vp-bar"><i style="width:${(v * 100).toFixed(1)}%"></i></span><span class="vp-cv">${f(c.value)}</span><span class="vp-cw">w ${weight}</span></div>`;
 }
 
+/** The three separately reported results: genotype similarity, phenotype similarity, Lean on the designed organism. */
+function threeHtml(report) {
+  const R = report.results; if (!R) return '';
+  const g = R.genotype_similarity, p = R.phenotype_similarity, l = R.lean_check;
+  const gA = g.aggregate || {};
+  const gHtml = g.n_edits ? `<table class="vp-t"><tr><th>gene</th><th>edit</th><th>closest real orthologue</th><th>identity to reference</th><th>state in a real organism</th><th>site conservation</th></tr>${g.per_gene.map(x => `<tr><td>${esc(x.gene)}</td><td><code>${esc(x.edit)}</code></td><td>${x.closest_real_orthologue ? `${esc(x.closest_real_orthologue.species)} (${f(x.closest_real_orthologue.percent_identity_after_edit, 2)} %)` : '–'}</td><td>${f(x.percent_identity_to_unedited_reference, 2)} %</td><td>${x.edited_state_exists_in_real_organism == null ? '–' : x.edited_state_exists_in_real_organism ? `yes: ${esc([...x.in_natural_orthologues, ...x.known_alleles].join(', '))}` : 'no'}</td><td>${x.site_conservation ? `${Math.round(x.site_conservation.fraction_of_orthologues_with_reference_residue * 100)} % of ${x.site_conservation.n_rows}${x.site_conservation.conserved ? ' (conserved)' : ''}` : '–'}</td></tr>`).join('')}</table><p class="vp-fine">Aggregate: min identity ${f(gA.min_percent_identity_to_reference, 2)} % · ${gA.edits_whose_state_exists_in_a_real_organism}/${gA.edits_assessed} edited states exist in a real organism · ${gA.conserved_sites_changed} conserved site(s) changed. ${esc(g.rule)}</p>` : `<p class="vp-na">${esc(gA.note || 'no gene edits')}</p>`;
+  const cr = p.closest_real_relative;
+  const pHtml = `<p>${cr ? `Closest real relative: <b>${esc(cr.name)}</b> (${esc(cr.taxon)}), distance ${f(cr.distance)}; dominant: ${cr.dominant_features.map(d => `${esc(d.label)} ${Math.round(d.share * 100)} %`).join(', ')}` : 'No body comparison ran.'}${p.body && p.body.p_value != null ? ` · body p ${f(p.body.p_value)}${p.body.ood ? ' · <b class="bad">out of distribution</b>' : ''}` : ''}</p>${p.fins && p.fins.closest_on_pectoral_length ? `<p>Pectoral length: closest ${esc(p.fins.closest_on_pectoral_length.name)} (p ${f(p.fins.p_value)})${p.fins.envelope_outside.length ? ` · outside the real fin range: ${p.fins.envelope_outside.map(o => esc(o.feature)).join(', ')}` : ''}</p>` : ''}${p.physiology_envelope_outside && p.physiology_envelope_outside.length ? `<p class="warn">Physiology outside its sourced envelope: ${p.physiology_envelope_outside.map(o => `${esc(o.field)} ${f(o.value)} (range ${f(o.lo)}–${f(o.hi)})`).join('; ')}</p>` : ''}`;
+  const c = l.counts || {};
+  const lHtml = `<p class="${l.accepted_violations.length ? 'bad' : 'ok'}"><b>${esc(l.gate)}</b></p><p>On the designed organism (${esc(l.lawset || '')}): holds ${c.holds ?? '–'} · violated ${c.violated ?? '–'} · out of scope ${c.out_of_scope ?? '–'} · cannot evaluate ${c.cannot_evaluate ?? '–'}</p>${l.accepted_violations.length ? `<ul>${l.accepted_violations.map(v => `<li class="bad"><b>${esc(v.law_id)}</b> ${esc(v.constraint)}: ${esc(v.message || '')} <code>${esc(JSON.stringify(v.inputs))}</code></li>`).join('')}</ul>` : ''}`;
+  return `<div class="vp-card"><b>Three results, reported separately</b>
+ <details open><summary>1 · Genotype similarity</summary>${gHtml}</details>
+ <details open><summary>2 · Phenotype similarity</summary>${pHtml}</details>
+ <details open><summary>3 · Lean check on the designed organism</summary>${lHtml}</details></div>`;
+}
+
 /** Pure: report -> HTML (no DOM access), so it can be tested in node. */
 export function renderValidate(report, { source = '' } = {}) {
   if (!report) return `<div class="vp"><p class="vp-na">${esc(source)}</p></div>`;
@@ -74,6 +90,7 @@ export function renderValidate(report, { source = '' } = {}) {
  <p class="vp-verdict">${esc(report.verdict.statement)}</p>
  <p class="vp-fine">Weights and formula were fixed in sim-engine/validate/SCORER-PREREGISTRATION.md before the scorer was validated; how it did is in SCORER-RESULTS.md, failures included. Features the scorer does not read (ray and vertebra counts, gills, haemoglobin, density, internal organs beyond the flight-muscle budget) cannot lower it.</p>
 </div>
+${threeHtml(report)}
 <details open><summary>Closest real relatives</summary>${nb(ph.body, 'Body shape (FishShapes v1 + our organisms and stages)')}${nb(ph.fin, 'Pectoral fin length (Daane 2021 + our organisms)')}
  ${ph.fin_envelope?.outside?.length ? `<p class="warn">Outside the real fin range (uncalibrated envelope): ${ph.fin_envelope.outside.map(o => `${esc(o.label)} ${f(o.design)} vs ${f(o.min)}–${f(o.max)}`).join('; ')}</p>` : ''}<p class="vp-fine">Distance is shape similarity, not relatedness. Birds excluded (frozen holdout).</p></details>
 <details open><summary>Checks (${checks.filter(c => c.status === 'passed').length} passed · ${checks.filter(c => c.status === 'failed').length} failed · ${checks.filter(c => c.status === 'flagged').length} flagged · ${checks.filter(c => c.status === 'could-not-run').length} not run)</summary><ul class="vp-checks">${checks.map(c => `<li class="${STATUS_CLS[c.status] || ''}"><b>${esc(c.status)}</b> <code>${esc(c.id)}</code> ${esc(c.detail)}</li>`).join('')}</ul></details>
