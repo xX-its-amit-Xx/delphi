@@ -2521,7 +2521,7 @@
   {
    "name": "edit_plan",
    "title": "Germline editing plan for a design's gene edits (proposal, not a protocol)",
-   "description": "For each gene-level edit on a design, the concrete zebrafish germline editing plan: the exact GRCz11 coordinates of the change (gene -> canonical transcript -> CDS -> codon -> chromosome position, with the reference codon CHECKED against the genome), SpCas9/SaCas9/Cas12a protospacers in the required window with their cut sites, a full ssODN donor with homology arms and silent PAM/seed blocking mutations, a base-editor route where the change is a transition and a designed pegRNA where it is a transversion, an off-target search against GRCz11 with the gene context of every mismatched site, and - as first-class output - what is NOT established, plus a \"what would falsify this plan\" section. Every number is labelled: on-target scores are a HEURISTIC (not Doench 2016 Rule Set 2, not a measured efficiency), off-target counts are a FLOOR from a heuristic aligner, HDR rates are other papers' loci. Danio rerio only: it refuses every other species, and will not produce a human or other mammalian plan.",
+   "description": "For each gene-level edit on a design, the concrete zebrafish germline editing plan: the exact GRCz11 coordinates of the change (gene -> canonical transcript -> CDS -> codon -> chromosome position, with the reference codon CHECKED against the genome), SpCas9/SaCas9/Cas12a protospacers in the required window with their cut sites, a full ssODN donor with homology arms and silent PAM/seed blocking mutations, a base-editor route where the change is a transition and a designed pegRNA where it is a transversion, an off-target search against GRCz11 with the gene context of every close mismatched site, an `evo2` block that RANKS the edit and its silent blocking mutations by Evo2 (NVIDIA NIM / BioNeMo) sequence likelihood, a `ranking` section holding every order the plan computes with the rule behind each, and - as first-class output - what is NOT established, plus a \"what would falsify this plan\" section. Every number is labelled. There are TWO on-target scores and the difference matters: `on_target_doench2014` is a PUBLISHED model (Doench 2014 Rule Set 1, coefficients fetched from the paper and self-tested) fitted in mouse and human cells, so applying it to zebrafish is a cross-species transfer; `on_target` is OUR heuristic with weights we chose. Neither is Doench 2016 Rule Set 2, which cannot be reimplemented from published numbers. The off-target search is an EXHAUSTIVE local scan of the GRCz11 primary assembly - complete for substitutions, but blind to bulges, to alternative loci and to the laboratory strain's own genome. Evo2 likelihoods RANK and never gate, and are NOT phenotype predictions. HDR rates are other papers' loci. Danio rerio only: it refuses every other species, and will not produce a human or other mammalian plan.",
    "inputSchema": {
     "type": "object",
     "properties": {
@@ -2562,11 +2562,27 @@
      },
      "offtarget": {
       "type": "boolean",
-      "description": "Run the GRCz11 off-target search (NCBI blastn-short against the zebrafish genome assembly). Default true. It takes minutes per guide and is cached; set false for a fast structural answer."
+      "description": "Run the GRCz11 off-target search. Default true. By default this is a LOCAL EXHAUSTIVE scan of the whole GRCz11 primary assembly (~22 s per guide, cached) which is complete for substitutions at or under 4 mismatches. Set false for a fast structural answer; the plan then says the search did not run, and absence of listed off-targets is NOT evidence of specificity."
+     },
+     "offtarget_method": {
+      "enum": [
+       "auto",
+       "local",
+       "ncbi"
+      ],
+      "description": "Off-target backend. \"auto\" (default) uses the local exhaustive index if it is built, else NCBI BLAST. \"local\" requires the index (build once: node sim-engine/validate/editplan/grcz11-local.mjs build). \"ncbi\" forces the NCBI BLAST URL API, which is a heuristic aligner and which did not return at all in our runs (see edit_plan_methods off_target.ncbi_blast)."
+     },
+     "offtarget_guides": {
+      "type": "integer",
+      "description": "How many guides to search (default 3). The local search is cheap enough to search every guide a lab would weigh against the others."
+     },
+     "evo2": {
+      "type": "boolean",
+      "description": "Build the Evo2 (NVIDIA NIM / BioNeMo) block, which RANKS candidate edits and silent blocking mutations by sequence likelihood. Default true. With no NVIDIA_API_KEY every Evo2 field is {ran:false, reason} and the plan is complete without it: the model never gates anything. A likelihood is NOT a phenotype prediction and NOT evidence of safety or specificity."
      },
      "network": {
       "type": "boolean",
-      "description": "Allow network calls (Ensembl REST, Kazusa, NCBI BLAST). Default true. Everything is cached under C:/Temp/editplan-cache (EDITPLAN_CACHE_DIR). No credentials are used."
+      "description": "Allow network calls (Ensembl REST, Kazusa, and the off-target backend). Default true. Everything is cached under C:/Temp/editplan-cache (EDITPLAN_CACHE_DIR). No credentials are used; the Evo2 key, if present, is read from the environment only and never written anywhere."
      },
      "panel_only": {
       "type": "boolean",
