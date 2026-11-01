@@ -588,3 +588,11 @@ Rules:
    service. A research agent sent the project lead's email to NCBI as an etiquette parameter; that is now
    prohibited.
 5. **A choice between alternatives is an idea too.** Record what was chosen, what was rejected, and why.
+
+## Scratchpad filenames collide between sessions (added Nov 1)
+
+The session scratchpad is SHARED across DELPHI agent sessions. Two threads tonight independently wrote
+`serve.mjs` and `shots/`, and each silently destroyed the other's work — one lost 52 verification
+screenshots it had already reviewed, and a report pointing at them would have been worthless. Give every
+scratchpad file and directory a name unique to your thread (prefix it, or use a private directory such
+as `C:/Temp/delphi-<thread>-<purpose>/`). If you cite a file in a report, check it still exists first.

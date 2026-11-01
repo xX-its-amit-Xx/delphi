@@ -99,7 +99,17 @@ const OWNED = {
   't/organism/index.html':  'organism',
   't/physics/index.html':   'physics',
   't/swarm/index.html':     'swarm',
-  't/validation/index.html':'valid'
+  't/validation/index.html':'valid',
+  // Adopted the shell later, via other threads. Added to OWNED by the hub so the build keeps every
+  // header identical: the drift audit found these at 27-31 links against a 33-link nav, which is the
+  // original several-pages-several-headers problem growing back.
+  'print/index.html':       'print',
+  'studio-api/index.html':  'agents',
+  'swarm-board/index.html': 'swarmb',
+  'leanbio/index.html':     'leanbio',
+  'leanbio/capability.html': null,
+  'record/index.html':      'record',
+  'scorer/index.html':      'scorer'
 };
 
 /* ------------------------------------------------------------- link verifying */

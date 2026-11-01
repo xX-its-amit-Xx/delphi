@@ -408,10 +408,28 @@ export function mitSpecificity(offTargetHits) {
 }
 
 // ---------------------------------------------------------------- off-target search against GRCz11
-// NCBI BLAST URL API, blastn-short, against the zebrafish genome assembly database
-// (GPIPE/7955/current/all_top_level). Public, no credentials. Polite: one request in flight, >= 15 s between
-// polls. Results cached. RefSeq chromosome accessions are mapped back to Ensembl chromosome names and the
-// gene context of each hit is read from Ensembl /overlap/region.
+//
+// TWO BACKENDS. `offTargets()` dispatches; `method` picks one.
+//
+//   'local'  (PREFERRED, and the default when the index exists) - grcz11-local.mjs: a complete enumeration
+//            of both strands of the whole GRCz11 primary assembly. PAM-anchored, then a mismatch count with
+//            no seeding step, so unlike a heuristic aligner it cannot miss a site for want of an exact k-mer.
+//            For substitutions at or under the mismatch limit it is EXHAUSTIVE over the indexed sequences.
+//            ~22 s for the whole 1.37 Gb assembly on one core. No queue and no credentials.
+//   'ncbi'   NCBI BLAST URL API, blastn-short, against GPIPE/7955/current/all_top_level. Public, no
+//            credentials, polite. KEPT BUT NO LONGER THE DEFAULT, for the reason recorded in
+//            NCBI_QUEUE_EXPERIENCE below: every job we submitted sat in Status=WAITING on the public queue
+//            until the poll budget expired, so every plan reported `ran: false` and its off-target table
+//            stayed empty. It is also a heuristic aligner, so its counts were a floor even when it did run.
+//
+// Both backends feed the same Hsu 2013 aggregation and the same Ensembl /overlap/region gene annotation.
+export const NCBI_QUEUE_EXPERIENCE =
+  'Recorded so the next person does not repeat it: four blastn-short jobs submitted to the NCBI BLAST URL API ' +
+  'against GPIPE/7955/current/all_top_level each returned an RID and then sat in Status=WAITING for the full ' +
+  '10-minute poll budget (40 polls x 15 s) without completing, so every editing plan in the first run reported ' +
+  'off_target.ran = false. The API was used correctly and politely; the public queue simply did not schedule the ' +
+  'jobs. This is why the local exhaustive search exists and is now the default: a search that reliably returns is ' +
+  'worth more than a search that is nominally better-known.';
 const BLAST = 'https://blast.ncbi.nlm.nih.gov/Blast.cgi';
 export const OFFTARGET_DB = 'GPIPE/7955/current/all_top_level';
 /** NC_007112.7 -> "1" ... NC_007136.7 -> "25" (zebrafish GRCz11 RefSeq chromosome accessions are consecutive). */
@@ -421,7 +439,7 @@ export function refseqToEnsemblChr(acc) {
   const n = +m[1] - 11;
   return n >= 1 && n <= 25 ? String(n) : null;
 }
-export async function offTargets(spacer, pam, { network = true, maxPolls = 40, pollMs = 15000, maxMismatches = 4, geneContext = true } = {}) {
+async function offTargetsNCBI(spacer, pam, { network = true, maxPolls = 40, pollMs = 15000, maxMismatches = 4, geneContext = true } = {}) {
   const key = { tool: 'editplan-offtarget', program: 'blastn-short', db: OFFTARGET_DB, query: spacer, word_size: 7 };
   const c = cacheGet(key); if (c) return { ...c.value, cached: true };
   if (!network) return { ran: false, reason: 'off-target search not cached and network disabled' };
