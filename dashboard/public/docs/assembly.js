@@ -69,10 +69,13 @@ export async function mountAssembly(host) {
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(34, 16 / 9, 0.01, 100);
-  scene.add(new THREE.AmbientLight(0x8fa8d0, 1.5));
+  // Lit for a pale stage: brighter, warmer ambient, and a soft sky/ground fill, so the
+  // vertex-coloured fish reads on the bright page instead of as a silhouette.
+  scene.add(new THREE.AmbientLight(0xffffff, 1.9));
+  scene.add(new THREE.HemisphereLight(0xe8fbff, 0xfff1d6, 1.1));
   const key = new THREE.DirectionalLight(0xbfd8ff, 2.6); key.position.set(2.4, 2.2, 3.0); scene.add(key);
-  const rim = new THREE.DirectionalLight(0x6ee7d8, 1.5); rim.position.set(-3, 0.6, -2.2); scene.add(rim);
-  const under = new THREE.DirectionalLight(0x9b7bff, 0.8); under.position.set(0, -2.6, 1); scene.add(under);
+  const rim = new THREE.DirectionalLight(0x0aa38a, 1.2); rim.position.set(-3, 0.6, -2.2); scene.add(rim);
+  const under = new THREE.DirectionalLight(0xf5b829, 0.6); under.position.set(0, -2.6, 1); scene.add(under);
 
   let manifest = {};
   try {
