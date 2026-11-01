@@ -173,8 +173,10 @@ be mistaken for the measured one it replaced. `perturbRun` never mutates `basePa
   solver:        which solver was used }
 ```
 
-`result.pts` is `[[x, height], …]` in metres, subsampled at 50 ms — plot them directly. Pass
-`keepTrajectories: false` when you only want statistics.
+`result.pts` is `[{x, z}, …]` in metres (`x` = ground distance, `z` = height above mean sea level),
+subsampled at 50 ms — the same shape `scene3d.js`'s band renderer already reads, so its own
+`hostRun` solver and the default one are interchangeable. Pass `keepTrajectories: false` when you
+only want statistics.
 
 ### Drawing it
 

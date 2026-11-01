@@ -47,6 +47,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { metresPerUnit } from '../../../blueprint3d/partedit.js';
 
 const MODEL_DIR = '../../../blueprint3d/model/';
+// Sea-tile resolution. 64 m of tile at 80 segments is a 0.8 m cell: the wave the fish RIDES is read from
+// env3d's analytic surface, not from this mesh, so the mesh only has to look like water. Overridable with
+// ?s3seg= for the performance check.
+const OCEAN_SEGMENTS = (() => {
+  const q = +new URLSearchParams(location.search).get('s3seg');
+  return q >= 8 && q <= 176 ? Math.round(q) : 80;
+})();
 
 // Each entry names the MESH it draws and the SOLVER ENTRY it is flown with. They are separate things and the
 // legend says which is which: a mesh standing in for a design with no committed polar is never flown as if it
@@ -462,12 +469,12 @@ export async function mount(opts = {}) {
   // limits and then SLID along x to stay under the fish. The slide is only ever done while the fish is clear
   // of the water, so its ride on the surface is never interrupted by one, and every height query is corrected
   // by the tile's offset, so the fish sits on the surface it is drawn on.
-  let ocean = null, oceanSize = 0, tileX = 0;
+  let ocean = null, oceanSize = 0, tileX = 0, oceanSegments = OCEAN_SEGMENTS, oceanCut = false;
   function makeOceanOf(size) {
     if (ocean && ocean.dispose) ocean.dispose();
     oceanSize = size; tileX = 0;
     ocean = (env && typeof env.makeOcean === 'function')
-      ? env.makeOcean({ scene, THREE, size, segments: 112, conditions: COND })
+      ? env.makeOcean({ scene, THREE, size, segments: oceanSegments, conditions: COND })
       : fallbackOcean({ scene, THREE });
     if (!ocean || typeof ocean.heightAt !== 'function' || typeof ocean.update !== 'function') {
       throw new Error('the ocean module does not satisfy makeOcean -> {mesh, update(t), heightAt(x,z)}');
@@ -774,9 +781,11 @@ export async function mount(opts = {}) {
     st.frames++;
     if (now - st.fpsAt > 500) {
       st.fps = st.frames / ((now - st.fpsAt) / 1000); st.frames = 0; st.fpsAt = now;
-      if (prSteps < 2 && st.fps > 0 && st.fps < 48 && now > 2500) {
-        prSteps++; pr = prSteps === 1 ? Math.min(pr, 1) : 0.7;
-        renderer.setPixelRatio(pr); resize();
+      // Step 1 and 2: render at a lower resolution. Step 3: coarsen the SEA MESH (the wave the fish rides
+      // is read from env3d's analytic surface, not from this mesh, so coarsening it changes no number).
+      if (st.fps > 0 && now > 2500) {
+        if (prSteps < 2 && st.fps < 42) { prSteps++; pr = prSteps === 1 ? Math.min(pr, 1) : 0.8; renderer.setPixelRatio(pr); resize(); }
+        else if (prSteps >= 2 && !oceanCut && st.fps < 34) { oceanCut = true; oceanSegments = 48; makeOceanOf(oceanSize || 64); renderLegend(); }
       }
     }
 
@@ -1128,6 +1137,21 @@ export async function mount(opts = {}) {
     seek(t) { st.t = clamp(+t, 0, st.T); },
     setCamera(c) { st.cam = c; if (orbit) orbit.enabled = (c === 'orbit'); const el = $('#s3cam'); if (el) el.value = c; },
     setSpecies, runEnsemble, resolve,
+    scene, renderer, camera, THREE,
+    /** Triangles per visible object, for the performance check. */
+    census() {
+      const rows = [];
+      scene.traverse(o => {
+        if (!o.isMesh && !o.isPoints && !o.isLine) return;
+        let vis = o.visible, p = o.parent;
+        while (vis && p) { vis = p.visible; p = p.parent; }
+        const g = o.geometry;
+        const n = g && g.index ? g.index.count / 3 : (g && g.attributes.position ? g.attributes.position.count / 3 : 0);
+        rows.push({ name: o.name || o.type, kind: o.isMesh ? 'mesh' : o.isPoints ? 'points' : 'line', tris: Math.round(n), visible: vis });
+      });
+      rows.sort((a, b) => b.tris - a.tris);
+      return rows;
+    },
     dispose() { cancelAnimationFrame(raf); ro.disconnect(); renderer.dispose(); },
   };
   return { ok: true, webgl: true };

@@ -157,7 +157,7 @@ function renderDists() {
   $('#dists').innerHTML = '<table><tr><th>quantity</th><th>shape</th><th>spread</th><th>kind of the spread</th><th>kind of the shape</th><th>where it comes from</th></tr>'
     + E.distributions.map(d => {
       const k = c => `<span class="chip ${c === 'measured' ? 'm' : c === 'measured-secondhand' ? 's' : c === 'borrowed' ? 's' : 'a'}">${esc(c)}</span>`;
-      const sp = d.band ? `${d.band[0]}&ndash;${d.band[1]} ${esc(d.unit)}` : d.cv != null ? `CV ${(d.cv * 100).toFixed(2)}%` : d.sd != null ? `sd ${d.sd} ${esc(d.unit)}` : 'derived from the sea state';
+      const sp = esc(d.spread).replace(/-/, '&ndash;');
       return `<tr><td style="min-width:16rem"><b>${esc(d.label)}</b><div class="small mute">${esc(d.unit)}${d.applies && d.applies !== 'all animals' ? ' &middot; ' + esc(d.applies) : ''}</div></td><td class="small">${esc(d.shape)}</td><td class="small">${sp}</td><td>${k(d.band_kind)}</td><td>${k(d.shape_kind)}</td><td style="min-width:22rem"><details><summary class="small mute">source</summary><div class="small mute">${esc(d.source)}</div></details></td></tr>`;
     }).join('') + '</table>';
 }
@@ -193,7 +193,7 @@ function drawPlot() {
   ctx.lineWidth = 1; ctx.strokeStyle = css('--s1') + '33';
   for (const r of E.runs) {
     const p = r.result.pts; if (!p) continue;
-    ctx.beginPath(); for (let i = 0; i < p.length; i++) { const fx = X(p[i][0]), fy = Y(Math.max(0, p[i][1])); i ? ctx.lineTo(fx, fy) : ctx.moveTo(fx, fy); } ctx.stroke();
+    ctx.beginPath(); for (let i = 0; i < p.length; i++) { const fx = X(p[i].x), fy = Y(Math.max(0, p[i].z)); i ? ctx.lineTo(fx, fy) : ctx.moveTo(fx, fy); } ctx.stroke();
   }
   // the 5-95% band of the RANGE, marked on the surface line, plus the median
   const band = (a, b, col) => { ctx.fillStyle = col; ctx.fillRect(X(a), H - m.b - 7, Math.max(1, X(b) - X(a)), 7); };
@@ -202,7 +202,7 @@ function drawPlot() {
   ctx.beginPath(); ctx.moveTo(X(xs.median), H - m.b - 9); ctx.lineTo(X(xs.median), H - m.b); ctx.stroke();
   // the deterministic single run, dashed
   const dp = E.deterministic.pts;
-  if (dp) { ctx.setLineDash([6, 4]); ctx.strokeStyle = css('--s2'); ctx.lineWidth = 2; ctx.beginPath(); for (let i = 0; i < dp.length; i++) { const fx = X(dp[i][0]), fy = Y(Math.max(0, dp[i][1])); i ? ctx.lineTo(fx, fy) : ctx.moveTo(fx, fy); } ctx.stroke(); ctx.setLineDash([]); }
+  if (dp) { ctx.setLineDash([6, 4]); ctx.strokeStyle = css('--s2'); ctx.lineWidth = 2; ctx.beginPath(); for (let i = 0; i < dp.length; i++) { const fx = X(dp[i].x), fy = Y(Math.max(0, dp[i].z)); i ? ctx.lineTo(fx, fy) : ctx.moveTo(fx, fy); } ctx.stroke(); ctx.setLineDash([]); }
   // the 8 m recorded maximum flight height, and the 50 m quoted glide
   ctx.setLineDash([2, 4]); ctx.strokeStyle = css('--mute'); ctx.lineWidth = 1;
   if (8 < y1) { ctx.beginPath(); ctx.moveTo(m.l, Y(8)); ctx.lineTo(W - m.r, Y(8)); ctx.stroke(); ctx.fillStyle = css('--mute'); ctx.fillText('8 m: the highest flight ever recorded', m.l + 6, Y(8) - 5); }
@@ -221,17 +221,17 @@ host.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#0b2b36');   // harness only; env3d.js owns the real sky
 const camera = new THREE.PerspectiveCamera(55, 16 / 9, 0.1, 500);
-camera.position.set(5.5, 1.4, 8.5); camera.lookAt(0, -1.6, 0);
+camera.position.set(3.2, 0.9, 5.6); camera.lookAt(0, -1.7, 0);
 scene.add(new THREE.HemisphereLight(0xdff1ff, 0x204050, 1.1));
-const dir = new THREE.DirectionalLight(0xffffff, 0.7); dir.position.set(6, 14, 4); scene.add(dir);
+const dir = new THREE.DirectionalLight(0xffffff, 1.1); dir.position.set(6, 14, 4); scene.add(dir);
 // A flat water plane at y = 0, only so "below the surface" means something. env3d.js owns the real one.
 const water = new THREE.Mesh(new THREE.PlaneGeometry(220, 220),
   new THREE.MeshBasicMaterial({ color: 0x9fd4e2, transparent: true, opacity: 0.22, side: THREE.DoubleSide }));
 water.rotation.x = -Math.PI / 2; water.name = 'harness-water-plane'; water.userData.decorative = true; scene.add(water);
 
 let creatures = mountCreatures({ THREE, scene, rng: seedFromUrl(), schoolCount: 28, gliders: 2,
-  schoolSizeMultiplier: 9, schoolBounds: { x: [-7, 7], y: [-4.2, -0.6], z: [-5, 5] },
-  ambient: { predatorRadius_m: 5, predatorDepth_m: -2, gliderColour: 0xdfe9ef } });
+  schoolSizeMultiplier: 18, schoolBounds: { x: [-4.5, 4.5], y: [-3.6, -0.6], z: [-3.5, 3.5] },
+  ambient: { predatorRadius_m: 4, predatorDepth_m: -2, predatorSL_m: 1.4 } });
 $('#scenecap').innerHTML = `School: ${creatures.info.school.count} instanced ${esc(creatures.info.school.species)}, one draw call, scale ${creatures.info.school.scale.toExponential(3)} m per model unit. `
   + `<span class="mute">${esc(creatures.info.school.scale_source)}</span> Seed <span class="mono">${esc(creatures.info.seed)}</span>. All of it decorative.`;
 
@@ -253,7 +253,7 @@ async function loadGlb() {
   const sc = glbScale(glbManifest, sp.SL_m);
   // useGeometry swaps the school in one step: the new one is in the scene before the old one is
   // disposed, so no frame can render a disposed mesh.
-  const school = creatures.useGeometry(glbGeo, glbManifest, { species: 'flying-fish', count: 18, sizeMultiplier: 2.2, bounds: { x: [-7, 7], y: [-4.2, -0.6], z: [-5, 5] } });
+  const school = creatures.useGeometry(glbGeo, glbManifest, { species: 'flying-fish', count: 16, sizeMultiplier: 3.4, bounds: { x: [-4.5, 4.5], y: [-3.6, -0.6], z: [-3.5, 3.5] } });
   const morphs = Object.keys(glbGeo.morphAttributes || {}).length;
   $('#glbinfo').innerHTML = `GLB geometry reused, instanced ${school.count}x in one draw call: ${glbGeo.attributes.position.count} vertices, scale ${sc.scale.toFixed(5)} m/unit`
     + (morphs ? `, ${morphs} morph attribute set(s) stripped (a growth-series GLB; an InstancedMesh cannot carry morph targets)` : '')

@@ -484,8 +484,8 @@ export function makeOcean({ THREE, scene, size = 48, segments, conditions } = {}
     // A tight specular lobe: water is close to a mirror, so the sun must make a narrow glitter
     // path, not a wash across the whole near field. DECORATIVE (D6) but chosen from the look of
     // a real sun glitter path, not from a Fresnel calculation.
-    specular: 0x8fb6cf,
-    shininess: 420,
+    specular: 0x3a5266,
+    shininess: 900,
     emissive: new THREE.Color(0.012, 0.042, 0.060),  // so the sea is never pure black without lights
     side: THREE.FrontSide,
     flatShading: false
@@ -1284,12 +1284,26 @@ export function makeUnderwater({ THREE, scene } = {}) {
   absorb.renderOrder = 900;
   absorb.frustumCulled = false;
 
-  // DECORATIVE (D5): what the water itself glows back at you.
+  // DECORATIVE (D5): what the water itself glows back at you. Its own sphere, because it carries
+  // a vertical gradient in vertex colours: light scatters down from the surface, so looking up is
+  // bright and looking into the deep is dark. (The absorb shell must stay pure transmittance.)
+  const scatterGeo = new THREE.SphereGeometry(400, 16, 12);
+  {
+    const sp = scatterGeo.getAttribute('position');
+    const sc = new Float32Array(sp.count * 3);
+    for (let i = 0; i < sp.count; i++) {
+      const f = clamp(sp.getY(i) / 400 * 0.5 + 0.5, 0, 1);      // 0 at the nadir, 1 at the zenith
+      const w = 0.10 + 0.90 * Math.pow(f, 1.6);
+      sc[i * 3] = w; sc[i * 3 + 1] = w; sc[i * 3 + 2] = w;
+    }
+    scatterGeo.setAttribute('color', new THREE.BufferAttribute(sc, 3));
+  }
   const scatterMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(0.055, 0.243, 0.290), side: THREE.BackSide, transparent: true,
+    color: new THREE.Color(0.055, 0.243, 0.290), vertexColors: true,
+    side: THREE.BackSide, transparent: true,
     opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, depthTest: false, fog: false
   });
-  const scatter = new THREE.Mesh(shellGeo, scatterMat);      // shares shellGeo on purpose
+  const scatter = new THREE.Mesh(scatterGeo, scatterMat);
   scatter.name = 'env3d.underwater.scatter';
   scatter.renderOrder = 901;
   scatter.frustumCulled = false;
@@ -1378,7 +1392,7 @@ export function makeUnderwater({ THREE, scene } = {}) {
   pgeo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), BOX * 2);
   const pmat = new THREE.PointsMaterial({
     map: canvasTexture(THREE, sprayBlobCanvas(32), { wrap: false }),
-    color: 0xc9e8f2, size: 0.085, sizeAttenuation: true,
+    color: 0xd8f0f8, size: 0.11, sizeAttenuation: true,
     transparent: true, opacity: 0.0, depthWrite: false, fog: false
   });
   const motes = new THREE.Points(pgeo, pmat);
@@ -1408,13 +1422,16 @@ export function makeUnderwater({ THREE, scene } = {}) {
 
     // in-scatter grows as direct transmission falls (DECORATIVE shape, D5)
     const tAvg = (transmittance.r + transmittance.g + transmittance.b) / 3;
-    scatterMat.opacity = clamp((1 - tAvg) * 0.34, 0, 0.34);
+    scatterMat.opacity = clamp((1 - tAvg) * 0.30, 0, 0.30);
 
     // the surface above dims with depth; use the green channel as the "how much light is left" cue
     const lightLeft = Math.exp(-K.g * depth);
-    ceilMat.uniforms.uOpacity.value = clamp(0.72 * lightLeft + 0.08, 0, 0.80);
-    shaftMat.opacity = clamp(0.22 * lightLeft, 0, 0.24);
-    pmat.opacity = clamp(0.16 + 0.42 * (1 - lightLeft), 0, 0.6);
+    // sqrt, not linear: the real fall-off would make both cues invisible by 15 m, and a scene
+    // with no shimmer overhead does not read as underwater. DECORATIVE (D5).
+    const lightCue = Math.sqrt(lightLeft);
+    ceilMat.uniforms.uOpacity.value = clamp(0.62 * lightCue + 0.06, 0, 0.70);
+    shaftMat.opacity = clamp(0.26 * lightCue, 0, 0.26);
+    pmat.opacity = clamp(0.20 + 0.45 * (1 - lightLeft), 0, 0.68);
 
     // Skip layers that have faded to nothing: each one is a near-full-screen blend, which is the
     // expensive thing under a software rasteriser.

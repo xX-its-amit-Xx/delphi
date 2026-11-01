@@ -397,8 +397,9 @@ const CSS = `
 .pp input[type=text],.pp input[type=number],.pp select{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:4px 6px}
 .pp input[type=number]{width:11ch;font-variant-numeric:tabular-nums}
 .pp input[type=range]{width:100%;accent-color:var(--accent);margin:0}
-.pp h4{margin:16px 0 2px;font-size:1rem;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.pp h4 .pp-n{font-weight:400;color:var(--mute);font-size:.8rem}
+.pp details.pp-group{margin:14px 0 0}
+.pp details.pp-group>summary{cursor:pointer;font-size:1rem;padding:4px 0;list-style:revert}
+.pp details.pp-group>summary .pp-n{font-weight:400;color:var(--mute);font-size:.8rem}
 .pp .pp-blurb{color:var(--mute);font-size:.82rem;margin:0 0 8px}
 .pp .pp-row{border-top:1px solid var(--line);padding:8px 0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,190px);gap:4px 12px;align-items:start}
 .pp .pp-row.pp-moved{background:color-mix(in srgb,var(--warn) 9%,transparent);border-left:3px solid var(--warn);padding-left:8px;margin-left:-11px}
@@ -499,16 +500,50 @@ export function mountParams(el, opts) {
   function msg(t, cls) { msgEl.className = 'pp-msg ' + (cls || ''); msgEl.textContent = t || ''; }
 
   // ---- rows ---------------------------------------------------------------------------------
+  // Every group is OPEN by default: a panel whose point is that nothing is missing must not start
+  // by hiding two thirds of itself. The toggles and the filter are for navigating it afterwards.
   for (const g of GROUPS) {
     const list = schema.filter(p => p.group === g.id);
     if (!list.length) continue;
-    const h = doc.createElement('h4');
+    const det = doc.createElement('details'); det.open = true; det.className = 'pp-group'; det.dataset.group = g.id;
+    const sum = doc.createElement('summary');
     const nSet = list.filter(p => p.settable).length;
-    h.innerHTML = esc(g.label) + ' <span class="pp-n">' + list.length + ' parameters, ' + nSet + ' tunable, ' + (list.length - nSet) + ' hard-coded</span>';
-    body.appendChild(h);
-    const bl = doc.createElement('p'); bl.className = 'pp-blurb'; bl.textContent = g.blurb; body.appendChild(bl);
-    for (const p of list) body.appendChild(buildRow(p));
+    sum.innerHTML = '<b>' + esc(g.label) + '</b> <span class="pp-n">' + list.length + ' parameters, ' + nSet + ' tunable, ' + (list.length - nSet) + ' hard-coded &mdash; ' + esc(g.blurb) + '</span>';
+    det.appendChild(sum);
+    for (const p of list) det.appendChild(buildRow(p));
+    body.appendChild(det);
   }
+  // filter row, above everything it scopes
+  const filt = doc.createElement('div'); filt.className = 'pp-bar';
+  filt.innerHTML = '<input type="text" data-f="q" placeholder="filter by name, kind or source" size="26">' +
+    '<label class="pp-meta" style="display:inline-flex;gap:5px;align-items:center"><input type="checkbox" data-f="onlymoved"> only parameters moved off source</label>' +
+    '<label class="pp-meta" style="display:inline-flex;gap:5px;align-items:center"><input type="checkbox" data-f="onlytunable"> hide the hard-coded ones</label>' +
+    '<span class="pp-grow"></span><button type="button" data-a="expand">Expand all</button><button type="button" data-a="collapse">Collapse all</button>' +
+    '<span class="pp-meta" data-f="shown"></span>';
+  body.insertBefore(filt, body.firstChild);
+  const applyFilter = () => {
+    const q = filt.querySelector('[data-f="q"]').value.trim().toLowerCase();
+    const om = filt.querySelector('[data-f="onlymoved"]').checked;
+    const ot = filt.querySelector('[data-f="onlytunable"]').checked;
+    const mv = new Set(movedKeys(schema, values));
+    let shown = 0;
+    for (const p of schema) {
+      const row = rows.get(p.key); if (!row) continue;
+      const hit = !q || (p.key + ' ' + p.label + ' ' + p.kind + ' ' + p.raw_kind + ' ' + p.source + ' ' + (p.used_by || '')).toLowerCase().includes(q);
+      const on = hit && (!om || mv.has(p.key)) && (!ot || p.settable);
+      row.style.display = on ? '' : 'none';
+      if (on) shown++;
+    }
+    for (const d of body.querySelectorAll('details.pp-group')) {
+      const any = [...d.querySelectorAll('.pp-row')].some(r => r.style.display !== 'none');
+      d.style.display = any ? '' : 'none';
+      if (q && any) d.open = true;
+    }
+    filt.querySelector('[data-f="shown"]').textContent = shown === schema.length ? 'showing all ' + schema.length : 'showing ' + shown + ' of ' + schema.length;
+  };
+  for (const f of ['q', 'onlymoved', 'onlytunable']) filt.querySelector('[data-f="' + f + '"]').addEventListener('input', applyFilter);
+  filt.querySelector('[data-a="expand"]').onclick = () => { for (const d of body.querySelectorAll('details.pp-group')) d.open = true; };
+  filt.querySelector('[data-a="collapse"]').onclick = () => { for (const d of body.querySelectorAll('details.pp-group')) d.open = false; };
 
   function buildRow(p) {
     const row = doc.createElement('div');
@@ -609,7 +644,8 @@ export function mountParams(el, opts) {
     if (names.includes(cur)) sel.value = cur;
   }
 
-  function refresh() { for (const p of schema) if (p.settable) refreshRow(p.key); updateCounts(); refreshSets(); }
+  function refresh() { for (const p of schema) if (p.settable) refreshRow(p.key); updateCounts(); refreshSets(); applyFilter(); }
+  applyFilter();
 
   // ---- diff view ----------------------------------------------------------------------------
   function renderDiff() {

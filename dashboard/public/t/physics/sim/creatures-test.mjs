@@ -159,8 +159,9 @@ ok(/No birds anywhere/.test(LEGEND.no_birds), 'the legend states there are no bi
   ok(t.max_height_m >= 1, 'max height is at least the launch height');
   ok(t.can_glide === true, '17.5 m/s is above v_min, so the L3 fish can glide');
   ok(t.pts.length > 10, 'a trajectory is returned, not just the summary');
-  ok(t.pts[0][0] === 0 && Math.abs(t.pts[0][1] - 1) < 1e-9, 'the trajectory starts at the launch point');
-  ok(t.pts[t.pts.length - 1][1] <= 0.001, 'the trajectory ends at the water surface');
+  ok(t.pts[0].x === 0 && Math.abs(t.pts[0].z - 1) < 1e-9, 'the trajectory starts at the launch point');
+  ok(t.pts[t.pts.length - 1].z <= 0.001, 'the trajectory ends at the water surface');
+  ok(t.pts.every(q => typeof q.x === 'number' && typeof q.z === 'number'), 'points are {x, z} objects, the form scene3d.js band renderer reads');
   // A faster launch must fly further, and a headwind must shorten the GROUND range.
   const fast = glideTrajectory(Object.assign({}, p, { launch_airspeed_m_s: { value: 20 } }));
   const slow = glideTrajectory(Object.assign({}, p, { launch_airspeed_m_s: { value: 15 } }));
@@ -174,7 +175,7 @@ ok(/No birds anywhere/.test(LEGEND.no_birds), 'the legend states there are no bi
   const a = analyticBound(p);
   ok(t.range_m < a.total_m, `the integrated range (${t.range_m.toFixed(1)} m) is below glide.mjs's analytic bound (${a.total_m.toFixed(1)} m): the bound behaves as a bound`);
   ok(t.range_m > 0.5 * a.total_m, `the integrated range is not absurdly below the bound either (${(100 * t.range_m / a.total_m).toFixed(0)}% of it)`);
-  const vEnd = Math.hypot(...(() => { const n = t.pts.length; const dx = t.pts[n - 1][0] - t.pts[n - 2][0], dz = t.pts[n - 1][1] - t.pts[n - 2][1]; return [dx, dz]; })()) / 0.05;
+  const vEnd = (() => { const n = t.pts.length; return Math.hypot(t.pts[n - 1].x - t.pts[n - 2].x, t.pts[n - 1].z - t.pts[n - 2].z) / 0.05; })();
   ok(vEnd > 5, `the fish re-enters the water still moving fast (~${vEnd.toFixed(0)} m/s), which is why the residual energy never becomes distance`);
   // Missing inputs are refused, never defaulted.
   const bad = glideTrajectory({ mass_kg: { value: 0.06 } });

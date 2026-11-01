@@ -226,6 +226,7 @@ export const DISTRIBUTIONS = [
     shape: 'normal',
     shape_kind: 'assumed',
     band_kind: 'assumed',
+    spread_text: sea => `sd = Hs/4 = ${elevationSd(sea).toFixed(2)} m`,
     source: 'Added to the launch height. sigma = Hs/4, which is the DEFINITION of significant wave height for a narrow-band Gaussian sea (a standard relation, not a repository source). Hs itself is ASSUMED (SEA_STATE: 1.0 m); the repository contains no sea state and wind.mjs states "no wave-induced updrafts (not modelled)". The only measured height anchor nearby is the 8 m maximum recorded flight HEIGHT (Deng et al. 2019 Introduction, second-hand, physics/glide-data.csv), which bounds height aloft, not launch height. The repository\'s own launch height, glide.mjs LAUNCH_HEIGHT_PARAM = 1 m, is itself labelled assumed.',
     draw(rng, base, ctx) { return { value: rng.normal(0, elevationSd(ctx.sea)) }; },
   },
@@ -236,6 +237,7 @@ export const DISTRIBUTIONS = [
     shape: 'normal',
     shape_kind: 'assumed',
     band_kind: 'assumed',
+    spread_text: sea => `sd ${slopeSdDeg(sea).toFixed(2)} deg from the assumed sea state`,
     source: 'Linear deep-water sinusoid of amplitude Hs/2 and wavelength lambda sampled at a uniformly random phase: maximum slope atan(pi Hs / lambda), rms that over sqrt(2). The GEOMETRY is standard; both inputs (SEA_STATE Hs 1.0 m, lambda 30 m) are ASSUMED, so this whole quantity is assumed. The fish leaves a sloping, moving water surface; wind.mjs does not model this at all.',
     draw(rng, base, ctx) { return { value: rng.normal(0, slopeSdDeg(ctx.sea)) }; },
   },
@@ -247,6 +249,7 @@ export const DISTRIBUTIONS = [
     shape_kind: 'assumed',
     band_kind: 'assumed',
     gust_amplitude_m_s: 2,
+    spread_text: () => 'sd = half the assumed gust amplitude = 1 m/s',
     source: 'Mean = conditions.headwind_m_s if the host supplies one, otherwise 0 (no headwind is added silently). sd = half the gust amplitude. BOTH numbers come from sim-engine/scenarios/wind.mjs, where headwind_m_s (default 5) and gust_m_s (default +-2) are labelled kind "assumed", source "design input"; wind.mjs also notes the gusts are treated quasi-steady with no unsteady aerodynamics and no shear. So this is assumed on assumed. Its only measured neighbour is Hertel\'s calculated 10 m/s headwind case (physics/glide-data.csv, row_kind "theory"), which is a model result, not an observed wind.',
     draw(rng, base, ctx) {
       const mean = ctx.conditions && ctx.conditions.headwind_m_s != null ? +ctx.conditions.headwind_m_s : 0;
@@ -431,8 +434,10 @@ function fge(d, h, on) {
  * Integrate one unpowered glide with the simulator's glide-phase dynamics.
  *   glideTrajectory(params, {dt, tmax, sample, groundEffect}) ->
  *   {range_m, time_s, max_height_m, can_glide, v_min_m_s, wing_loading_N_m2,
- *    launch_airspeed_m_s, launch_height_m, headwind_m_s, pts: [[x, z], ...], stop}
- * pts are [ground x in m, height above mean sea level in m], subsampled at `sample` seconds.
+ *    launch_airspeed_m_s, launch_height_m, headwind_m_s, pts: [{x, z}, ...], stop}
+ * pts are {x: ground distance in m, z: height above mean sea level in m}, subsampled at `sample`
+ * seconds. The {x, z} object form is deliberate: it is what scene3d.js's band renderer reads, so a
+ * host solver passed as `run` and this default solver are interchangeable.
  */
 export function glideTrajectory(params, opts = {}) {
   const d = derive(params);
@@ -467,19 +472,19 @@ export function glideTrajectory(params, opts = {}) {
   const f = (st, k) => { acc(st, a); k[0] = st[2]; k[1] = st[3]; k[2] = a[0]; k[3] = a[1]; };
   const mix = (st, k, hh) => { for (let i = 0; i < 4; i++) tmp[i] = st[i] + hh * k[i]; return tmp; };
 
-  const pts = [[0, h0]];
+  const pts = [{ x: 0, z: h0 }];
   let t = 0, maxH = h0, next = sample, stop = 'surface';
   while (t < tmax) {
     f(s, k1); f(mix(s, k1, dt / 2), k2); f(mix(s, k2, dt / 2), k3); f(mix(s, k3, dt), k4);
     for (let i = 0; i < 4; i++) s[i] += (dt / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]);
     t += dt;
     if (s[1] > maxH) maxH = s[1];
-    if (t >= next) { pts.push([s[0], s[1]]); next += sample; }
+    if (t >= next) { pts.push({ x: s[0], z: s[1] }); next += sample; }
     if (s[1] <= 0) { stop = 'surface'; break; }
     if (s[0] > xmax) { stop = 'x limit'; break; }
     if (t >= tmax) { stop = 't limit'; break; }
   }
-  pts.push([s[0], Math.max(0, s[1])]);
+  pts.push({ x: s[0], z: Math.max(0, s[1]) });
   return {
     range_m: s[0], time_s: t, max_height_m: maxH, stop,
     can_glide: v0 >= d.vmin,
@@ -595,7 +600,11 @@ export function makeEnsemble(opts = {}) {
   return {
     seed: String(seed), draws, runs, deterministic, stats, sea,
     species_gate: { is_flier: isFlier(baseParams), note: isFlier(baseParams) ? 'the 15-20 m/s taxi band applies' : 'the 15-20 m/s taxi band does NOT apply: no sourced launch-speed spread for this animal, so the launch speed is left at the base value' },
-    distributions: dists.map(d => ({ key: d.key, label: d.label, unit: d.unit, shape: d.shape, band: d.band || null, sd: d.sd ?? null, cv: d.cv ?? null, band_kind: d.band_kind, shape_kind: d.shape_kind, applies: d.applies || 'all animals', source: d.source })),
+    distributions: dists.map(d => ({
+      key: d.key, label: d.label, unit: d.unit, shape: d.shape, band: d.band || null, sd: d.sd ?? null, cv: d.cv ?? null,
+      spread: d.spread_text ? d.spread_text(sea) : d.band ? `${d.band[0]}-${d.band[1]} ${d.unit}` : d.cv != null ? `CV ${(d.cv * 100).toFixed(2)}%` : d.sd != null ? `sd ${d.sd} ${d.unit}` : 'see the source',
+      band_kind: d.band_kind, shape_kind: d.shape_kind, applies: d.applies || 'all animals', source: d.source,
+    })),
     note: UNCERTAINTY_NOTE,
     scope: SCOPE_NOTES,
     solver: run === glideTrajectory
@@ -658,18 +667,24 @@ export function glbScale(manifest, fallbackSL_m) {
   return { scale: 1, source: 'no manifest and no SL: left at 1 model unit (the impostor geometry is already 1 unit long)' };
 }
 
-/** A low-poly fusiform fish impostor, 1 unit from snout to caudal tip, head at +X, back at +Y,
- *  matching the GLB manifests' axes ("glTF Y-up; head at +X, back at +Y, the fish's left at -Z").
- *  Used when no GLB geometry is handed in. 10 triangles. */
+/** A low-poly fish impostor, 1 unit from snout to caudal tip, head at +X, back at +Y, the fish's
+ *  left at -Z: the GLB manifests' own axes ("glTF Y-up; head at +X, back at +Y, the fish's left
+ *  side at -Z"), so an impostor and a real GLB geometry are interchangeable in `makeSchool`.
+ *  18 triangles: a fusiform body, a forked caudal fin, spread pectorals and a small dorsal. The
+ *  pectorals matter -- without them a fish at scene distance is a 3-pixel sliver that reads as a
+ *  scratch on the glass rather than an animal. Used only when no GLB geometry is handed in.
+ *  (A flying fish, not a bird. There is no bird impostor in this file and there must not be one.) */
 export function impostorGeometry(THREE) {
   const nose = [0.5, 0, 0], tb = [-0.3, 0, 0];
-  const r = [[0.05, 0.085, 0], [0.05, 0, 0.055], [0.05, -0.07, 0], [0.05, 0, -0.055]];
-  const tail = [[-0.5, 0.17, 0], [-0.5, -0.17, 0]];
+  const r = [[0.08, 0.1, 0], [0.08, 0, 0.07], [0.08, -0.085, 0], [0.08, 0, -0.07]];
   const tri = [];
   const push = (...ps) => { for (const p of ps) tri.push(p[0], p[1], p[2]); };
+  const both = (a, b, c) => { push(a, b, c); push(a, c, b); };   // a thin fin needs both faces
   for (let i = 0; i < 4; i++) { const a = r[i], b = r[(i + 1) % 4]; push(nose, a, b); push(tb, b, a); }
-  push(tb, tail[0], tail[1]);                              // caudal fin, both faces
-  push(tb, tail[1], tail[0]);
+  both(tb, [-0.5, 0.2, 0], [-0.44, 0, 0]);                 // forked caudal, upper lobe
+  both(tb, [-0.44, 0, 0], [-0.5, -0.26, 0]);               // lower lobe, longer: the taxi lobe
+  for (const s of [1, -1]) both([0.12, 0.02, s * 0.05], [-0.18, 0.06, s * 0.42], [-0.04, -0.02, s * 0.30]);
+  both([0.0, 0.09, 0], [-0.22, 0.2, 0], [-0.24, 0.07, 0]); // small dorsal, for a readable silhouette
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(tri, 3));
   g.computeVertexNormals();
@@ -720,7 +735,7 @@ export function makeSchool(o = {}) {
   const sizeMul = o.sizeMultiplier ?? 1;
   const scale = sc.scale * sizeMul;
 
-  const mat = o.material || new THREE.MeshLambertMaterial({ color: o.colour ?? 0x8fb6c8 });
+  const mat = o.material || new THREE.MeshLambertMaterial({ color: o.colour ?? 0xbcd9e6, emissive: o.emissive ?? 0x16323c, side: THREE.DoubleSide });
   const ownedMat = !o.material;
   const mesh = new THREE.InstancedMesh(geo, mat, count);
   mesh.name = 'decorative-school-' + species;
@@ -847,7 +862,7 @@ export function makeAmbient(o = {}) {
   const owned = !o.geometry;
 
   // --- the predator: one fish, below the surface, on a slow decorative circuit ---------------
-  const predMat = new THREE.MeshLambertMaterial({ color: o.predatorColour ?? 0x45525c });
+  const predMat = new THREE.MeshLambertMaterial({ color: o.predatorColour ?? 0x55646f, emissive: 0x11191f, side: THREE.DoubleSide });
   const predator = new THREE.Mesh(geo, predMat);
   predator.name = 'decorative-predator';
   predator.visible = false;
@@ -865,7 +880,7 @@ export function makeAmbient(o = {}) {
   // DECORATIVE: the position is a lookup into a cached path, nothing is integrated per frame, and
   // the fish, the spacing and the loop period are invented.
   const nG = Math.max(0, Math.min(o.gliders ?? 2, 8));
-  const gliderMat = new THREE.MeshLambertMaterial({ color: o.gliderColour ?? 0x7d93a6 });
+  const gliderMat = new THREE.MeshLambertMaterial({ color: o.gliderColour ?? 0xd8e7ef, emissive: 0x1b2d38, side: THREE.DoubleSide });
   const gliders = [];
   let path = null, pathLen = 0;
   if (nG > 0) {
@@ -913,8 +928,8 @@ export function makeAmbient(o = {}) {
         const u = ((tt + g.t0) % g.period) / g.period;
         const k = Math.min(path.length - 1, Math.floor(u * path.length));
         const p = path[k], pn = path[Math.min(path.length - 1, k + 1)];
-        g.mesh.position.set(g.x0 + g.dir * p[0], Math.max(0.15, p[1]), g.z);
-        _d.set(g.dir * (pn[0] - p[0]), pn[1] - p[1], 0);
+        g.mesh.position.set(g.x0 + g.dir * p.x, Math.max(0.15, p.z), g.z);
+        _d.set(g.dir * (pn.x - p.x), pn.z - p.z, 0);
         if (_d.lengthSq() > 1e-12) { _d.normalize(); g.mesh.quaternion.setFromUnitVectors(_X, _d); }
         g.mesh.visible = u < 0.94;
       }

@@ -387,17 +387,24 @@ function fitCanvas(c, hcss) {
   const narrow = W < 470;
   return { ctx, W, H: hcss, narrow, m: { l: narrow ? 46 : 58, r: narrow ? 12 : 18, t: 12, b: narrow ? 42 : 46 } };
 }
-function hatch(ctx, x, y, w, h, color, dir, gap = 6) {
+// A hatch is the accessibility channel, so it has to survive being drawn over any ramp step. Each
+// line is laid down twice: a wide stroke in the chart surface colour, then the hatch colour on top.
+// The halo keeps the texture legible on the darkest cell and in greyscale.
+function hatch(ctx, x, y, w, h, color, dir, gap = 6, halo = true) {
   ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
-  ctx.strokeStyle = color; ctx.lineWidth = 1.4; ctx.globalAlpha = 0.95;
   const n = Math.ceil((w + h) / gap);
-  ctx.beginPath();
-  for (let i = -1; i <= n; i++) {
-    const o = x + i * gap;
-    if (dir === 45) { ctx.moveTo(o, y + h); ctx.lineTo(o + h, y); }
-    else { ctx.moveTo(o, y); ctx.lineTo(o + h, y + h); }
-  }
-  ctx.stroke(); ctx.restore();
+  const path = () => {
+    ctx.beginPath();
+    for (let i = -1; i <= n; i++) {
+      const o = x + i * gap;
+      if (dir === 45) { ctx.moveTo(o, y + h); ctx.lineTo(o + h, y); }
+      else { ctx.moveTo(o, y); ctx.lineTo(o + h, y + h); }
+    }
+    ctx.stroke();
+  };
+  if (halo) { ctx.strokeStyle = css('--panel', '#fff'); ctx.lineWidth = 3.2; ctx.globalAlpha = 0.85; path(); }
+  ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.globalAlpha = 1; path();
+  ctx.restore();
 }
 function axesFrame(F, x0, x1, y0, y1, xl, yl, xTicks, yTicks, fmtX, fmtY) {
   const { ctx, W, H, m } = F;
@@ -436,10 +443,14 @@ export function drawCurve(c, o) {
   const top = F.m.t, bot = F.H - F.m.b;
   const spans = (pred) => { const out = []; let s = null; for (let i = 0; i < rows.length; i++) { const on = pred(rows[i]); if (on && s == null) s = i; if ((!on || i === rows.length - 1) && s != null) { out.push([s, on ? i : i - 1]); s = null; } } return out; };
   const bandAt = (i0, i1) => { const a = A.X(xs[Math.max(0, i0)]), b = A.X(xs[Math.min(xs.length - 1, i1)]); const half = (xs.length > 1 ? Math.abs(A.X(xs[1]) - A.X(xs[0])) : 10) / 2; return [a - half, Math.max(4, (b - a) + 2 * half)]; };
-  for (const [i0, i1] of spans(r => r && !r.feasible)) { const [bx, bw] = bandAt(i0, i1); ctx.fillStyle = isDark() ? 'rgba(255,255,255,.05)' : 'rgba(11,11,11,.045)'; ctx.fillRect(bx, top, bw, bot - top); hatch(ctx, bx, top, bw, bot - top, css('--mute', '#898781'), 45, 7); }
-  for (const [i0, i1] of spans(r => r && r.lean_violating)) { const [bx, bw] = bandAt(i0, i1); hatch(ctx, bx, top, bw, bot - top, css('--viol', '#6b4fb3'), 135, 7); }
+  // A band is a large area, so its texture is sparse and unsaturated: dense angled fields over a
+  // whole plot read as noise (and are a vestibular risk). No halo here; the surface is plain.
+  ctx.save(); ctx.globalAlpha = 0.55;
+  for (const [i0, i1] of spans(r => r && !r.feasible)) { const [bx, bw] = bandAt(i0, i1); ctx.fillStyle = isDark() ? 'rgba(255,255,255,.04)' : 'rgba(11,11,11,.035)'; ctx.fillRect(bx, top, bw, bot - top); hatch(ctx, bx, top, bw, bot - top, css('--mute', '#898781'), 45, 11, false); }
+  for (const [i0, i1] of spans(r => r && r.lean_violating)) { const [bx, bw] = bandAt(i0, i1); hatch(ctx, bx, top, bw, bot - top, css('--viol', '#6b4fb3'), 135, 11, false); }
+  ctx.restore();
 
-  const cols = SERIES();
+  const cols = SERIES(), labelled = [];
   series.forEach((s, si) => {
     const pts = rows.map((r, i) => (r && typeof r[s.key] === 'number' && isFinite(r[s.key])) ? [A.X(xs[i]), A.Y(r[s.key])] : null).filter(Boolean);
     if (!pts.length) return;
@@ -449,8 +460,15 @@ export function drawCurve(c, o) {
     const e = pts[pts.length - 1];
     ctx.beginPath(); ctx.arc(e[0], e[1], 4.5, 0, 7); ctx.fillStyle = cols[si]; ctx.fill();
     ctx.lineWidth = 2; ctx.strokeStyle = css('--panel', '#fff'); ctx.stroke();
+    // one selective direct label per series, at the endpoint, nudged clear of its neighbours
     const lastV = [...rows].reverse().find(r => r && typeof r[s.key] === 'number');
-    if (lastV && !F.narrow) { ctx.fillStyle = css('--mute', '#898781'); ctx.textAlign = 'right'; ctx.font = '600 11px system-ui'; ctx.fillText(sig(lastV[s.key]), e[0] - 7, e[1] - 7); }
+    if (lastV && !F.narrow) {
+      let ly = e[1] - 7;
+      while (labelled.some(y => Math.abs(y - ly) < 13)) ly += 13;
+      labelled.push(ly);
+      ctx.fillStyle = css('--mute', '#898781'); ctx.textAlign = 'right'; ctx.font = '600 11px system-ui';
+      ctx.fillText(sig(lastV[s.key]), e[0] - 8, ly);
+    }
     ctx.restore();
   });
   return F;
