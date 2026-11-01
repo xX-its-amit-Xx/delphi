@@ -93,11 +93,13 @@ const doc = (base, edits, genotype) => { let d = { ...O.docFor(bundle, base), id
 // Every version must survive BOTH benchmark-shaped inputs: a bare {specimen} and a {params} item. The shipped
 // entry point is score.mjs designScore; a crash here makes a blind benchmark run meaningless rather than a fail.
 {
-  const { designScore } = await import('../score.mjs');
+  const { designScore, RELEASED_VERSIONS } = await import('../score.mjs');
   const SPEC = { SL_m: 0.0388, mass_kg: 0.0006943, depth_SL: 0.2535, width_SL: 0.135, ped_depth_frac: 0.38, ped_width_frac: 0.4 };
   const PARAMS = { standard_length_m: 0.0388, body_mass_kg: 0.0006943, body_depth_over_SL: 0.2535, body_width_over_SL: 0.135, peduncle_depth_frac: 0.38, peduncle_width_frac: 0.4 };
   const bad = [];
-  for (const version of ['1.0.0', '1.1.0', '1.1.1', '1.2.0']) {
+  // Read from RELEASED_VERSIONS rather than a literal list: this loop was written as ['1.0.0'...'1.2.0'] and silently
+  // stopped covering v1.3.0 the day v1.3.0 was released, which is how the tool-path throw survived.
+  for (const version of RELEASED_VERSIONS) {
     for (const [shape, design] of [['specimen', { specimen: M('every-version-no-crash') ? { depth_SL: 0.25 } : SPEC }], ['params', { params: PARAMS }]]) {
       let r = null, err = null;
       try { r = await designScore(design, { version, network: false }); } catch (e) { err = e.message; }
@@ -107,7 +109,7 @@ const doc = (base, edits, genotype) => { let d = { ...O.docFor(bundle, base), id
   }
   // No MUTATE knob: this check was SEEN to fail against the pre-fix file, 7 of these 8 combinations
   // (SCORER-RESULTS.md, deviation 3). The guards it covers are exercised by 'three-results-guards' below.
-  check('every-version-no-crash', bad.length === 0, bad.join(' | ') || 'all 8 version/shape combinations returned a numeric score');
+  check('every-version-no-crash', bad.length === 0, bad.join(' | ') || `all ${RELEASED_VERSIONS.length * 2} version/shape combinations returned a numeric score`);
 
   // The guards themselves: threeResults must survive blocks that did not run. MUTATE makes state_envelope.outside
   // throw on access, which is what an unguarded `.outside.map(...)` did, so the check is seen to be sensitive.
@@ -205,5 +207,58 @@ const doc = (base, edits, genotype) => { let d = { ...O.docFor(bundle, base), id
     wz.score === 0.9217 && wz.physics_simulation.ran && wz.physics_gate_failed === true && wz.physics_simulation.function_achieved === false,
     `winged zebrafish: score ${wz.score} (plausible) but function_achieved ${wz.physics_simulation.function_achieved}`);
 }
+// ---------------------------------------------------------------------------------------------------------------
+// THE VERSION MATRIX. Every released scorer version, called through the SHIPPED TOOL PATH (designScoreTool, the
+// handler MCP/HTTP actually run), on every input shape the tool accepts. This exists because of two real failures:
+//   1. v1.2.0 and v1.3.0 -- the two NEWEST released versions -- threw "provenance must be an array" through
+//      designScoreTool while working fine from library code, because the v12/v13 modules never built `_prov`.
+//      Nothing called the tool with a version, so nothing noticed.
+//   2. A crash in score.mjs silently killed 7 of 8 version x shape combinations in a blind evaluation run
+//      (SCORER-EVALUATION.md, Deviations: "a11e1311 crashed every v1.1+ item").
+// A version that is released and not callable is a lie about what this repository ships, so the matrix FAILS on any
+// throw rather than reporting it as a result.
+{
+  const { designScoreTool, RELEASED_VERSIONS, BLIND_EVALUATION, evaluationLabel } = await import('../score.mjs');
+  const SHAPES = {
+    organism: { organism: 'winged-zebrafish' },
+    specimen: { specimen: { SL_m: 0.0388, mass_kg: 0.0006943, depth_SL: 0.2535, width_SL: 0.135, ped_depth_frac: 0.38, ped_width_frac: 0.4, pectoral_len_SL: 0.35 }, taxon: 'Teleostei', label: 'matrix specimen' },
+  };
+  check('released-versions-listed', RELEASED_VERSIONS.length >= 5 && RELEASED_VERSIONS.includes('1.3.0') && RELEASED_VERSIONS.includes('1.0.0'),
+    `RELEASED_VERSIONS = ${RELEASED_VERSIONS.join(', ')}`);
+  const threw = [], scored = [];
+  for (const v of RELEASED_VERSIONS) for (const [shape, args] of Object.entries(SHAPES)) {
+    // MUTATE=every-released-version-is-callable asks for a version that does not exist, so the matrix must fail.
+    const version = M('every-released-version-is-callable') ? '9.9.9' : v;
+    try {
+      const t = await designScoreTool({ ...args, version });
+      if (!Array.isArray(t.provenance)) throw new Error('the envelope came back without a provenance array');
+      if (!t.result) throw new Error('the envelope came back with no result');
+      scored.push(`v${v}/${shape}=${t.result.score}`);
+    } catch (e) { threw.push(`v${version}/${shape}: ${e.message}`); }
+  }
+  check('every-released-version-is-callable', threw.length === 0,
+    threw.length ? `THREW: ${threw.join(' | ')}` : `${scored.length} version x shape combinations, none threw: ${scored.join(' ')}`);
+  // No version may be released without an entry saying whether its composite was blind-evaluated, because the label
+  // is what stops an un-evaluated number being quoted as if it had been tested.
+  const unlabelled = RELEASED_VERSIONS.filter(v => !BLIND_EVALUATION[M('every-version-has-an-evaluation-label') ? 'nope' : v]);
+  check('every-version-has-an-evaluation-label', unlabelled.length === 0, unlabelled.length ? `no BLIND_EVALUATION entry for ${unlabelled.join(', ')}` : 'all released versions carry one');
+  // The default version's composite must arrive carrying its own label, warning included.
+  const def = await designScoreTool({ organism: 'winged-zebrafish' });
+  const lab = def.result.scorer && evaluationLabel(M('default-composite-is-labelled') ? '1.1.1' : def.result.scorer.version);
+  check('default-composite-is-labelled',
+    def.result.scorer.version === '1.0.0' && lab.blind_evaluated === true && lab.score_verdict === 'FAIL' && lab.warning === true,
+    `default v${def.result.scorer.version}: blind ${lab.blind_evaluated}, composite verdict ${lab.score_verdict}`);
+  // v1.1.1 is callable but was never in the blind run. That must be visible, not inferred from its absence.
+  check('unevaluated-version-says-so', evaluationLabel(M('unevaluated-version-says-so') ? '1.3.0' : '1.1.1').blind_evaluated === false
+    && /NOT BLIND-EVALUATED/.test(evaluationLabel(M('unevaluated-version-says-so') ? '1.3.0' : '1.1.1').label), 'v1.1.1 is labelled as never blind-evaluated');
+  // The composite is comparable only within one version AND one set of components. A spec changes it: the same
+  // design, same version, goes 0.9217 -> 0.878 when a spec with 1 failed and 2 met criteria runs.
+  const { parseDesignText } = await import('../../lib/parse-text.mjs');
+  const spec = parseDesignText('a zebrafish that glides at least 5 m from a 1 m launch and survives 10-30 C as an adult').spec;
+  const withSpec = await designScoreTool({ organism: 'winged-zebrafish', spec: M('spec-changes-the-composite') ? undefined : spec });
+  check('spec-changes-the-composite', withSpec.result.score === 0.878 && def.result.score === 0.9217 && withSpec.result.components.S.ran === true,
+    `no spec ${def.result.score} (S did not run) vs spec ${withSpec.result.score} (S = ${withSpec.result.components.S.value})`);
+}
+
 console.log(`\n${n - fails}/${n} passed${MUT ? ` (MUTATE=${MUT})` : ''}`);
 process.exit(fails);

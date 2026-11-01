@@ -52,7 +52,7 @@ function kvTable(rows, head) {
   const body = rows.filter(r => r && r[1] != null && r[1] !== '').map(([k, v, cls]) =>
     el('tr', null, [el('th', { text: k }), el('td', { class: cls || null, text: String(v) })]));
   if (!body.length) return null;
-  return el('div', { class: 'scroll' }, el('table', null, frag([
+  return el('div', { class: 'scroll' }, el('table', { class: 'kv' }, frag([
     head ? el('caption', { class: 'tiny mute', style: 'text-align:left;padding-bottom:4px', text: head }) : null,
     el('tbody', null, frag(body)),
   ])));
@@ -66,6 +66,7 @@ const MEANING = {
   domain: { label: 'inside an annotated domain', glyph: '▬', cls: 'sw-domain' },
   silent: { label: 'no amino-acid change', glyph: '○', cls: 'sw-silent' },
   unannotated: { label: 'difference with no annotation at that site', glyph: '·', cls: 'sw-unann' },
+  gap: { label: 'no residue in one row — a gap, not a difference', glyph: '–', cls: 'sw-gap' },
 };
 function legend(counts) {
   const kids = Object.entries(MEANING).map(([k, m]) => {
@@ -75,6 +76,8 @@ function legend(counts) {
       `${m.label}${n != null ? ` (${n})` : ''}`,
     ]);
   });
+  kids.push(el('span', { class: 'tiny', style: 'flex-basis:100%', text:
+    'Colour marks what kind of site a difference falls on, never which residue it is, and it always carries a glyph and a word. A column is counted as differing when the base, the generated protein or the analogue orthologue disagree; the proxy row is context and takes no part in that.' }));
   return el('div', { class: 'legend', role: 'list' }, frag(kids));
 }
 
@@ -149,10 +152,13 @@ function alignmentView(g, onOpenColumn) {
         let cls = 'cell';
         if (ch === '-' || ch === '.') cls += ' gap';
         if (d) {
-          const differsHere =
-            (r.role === 'generated' && d.genDiff) ||
-            (r.role === 'analogue' && d.anaDiff) ||
-            (r.role === 'base' && (d.genDiff || d.anaDiff));
+          /* a gap column marks only the row that is missing a residue; the row that has one
+             is not divergent there and must not be dimmed as though it were */
+          const differsHere = d.meaning === 'gap'
+            ? (ch === '-' || ch === '.')
+            : (r.role === 'generated' && d.genDiff) ||
+              (r.role === 'analogue' && d.anaDiff) ||
+              (r.role === 'base' && (d.genDiff || d.anaDiff));
           if (differsHere) cls += ' d m-' + d.meaning;
         }
         if (c === cursor) cls += ' cursor';
@@ -227,7 +233,8 @@ function alignmentView(g, onOpenColumn) {
 
   const head = el('div', { class: 'alnhead' }, [
     el('span', { class: 'mono', text: `${cols} alignment columns` }),
-    el('span', { class: 'mute tiny grow', text: `${g.diffs.length} differ across the drawn rows · ${(g.annotatedCols || []).length} with an annotation at the site` }),
+    el('span', { class: 'mute tiny grow', text: `${g.diffs.length} differ across the drawn rows · ${(g.annotatedCols || []).length} with an annotation at the site`
+      + (g.anaGapCols ? ` · ${g.anaGapCols} of those are a gap, not a different residue` : '') }),
     el('button', { class: 'jump', type: 'button', onclick: () => { const c = nextAnnotated(-1); if (c) { track.focus(); moveTo(c); } } }, 'Previous site'),
     el('button', { class: 'jump', type: 'button', onclick: () => { const c = nextAnnotated(1); if (c) { track.focus(); moveTo(c); } } }, 'Next site'),
   ]);
@@ -386,7 +393,7 @@ function paneDevelopment(D, expr) {
 }
 
 /* ================================================= scale 1 + 2: one gene's diff */
-function geneBlock(g, D) {
+function geneBlock(g, D, caseId) {
   const G = D.genes[g.gene] || {};
   const ed = g.edit || {};
   const box = el('div', { class: 'card' });
@@ -542,6 +549,11 @@ function geneBlock(g, D) {
   const unann = g.meaningCount.unannotated || 0;
   if (unann) diffList.appendChild(el('p', { class: 'tiny mute' },
     `${num(unann)} further column(s) differ with no annotation at that site. They are drawn in the alignment and counted here, and are not listed: an unannotated difference is a difference we cannot say anything else about.`));
+  if (g.gapNote) diffList.appendChild(el('div', { class: 'absent' }, [
+    el('b', null, [el('i', { class: 'swatch sw-gap', text: MEANING.gap.glyph, 'aria-hidden': 'true' }), ' a gap is not a difference']),
+    el('p', { text: g.gapNote }),
+    el('span', { class: 'src', text: 'counted by dashboard/public/gene-diff/build.mjs from the aligned rows' }),
+  ]));
 
   box.appendChild(diffList);
 
@@ -554,19 +566,22 @@ function geneBlock(g, D) {
       g.percentIdentity != null ? ['identity of the base to the analogue orthologue', pct(g.percentIdentity)] : null,
     ].filter(Boolean), 'identity — sequences/engineered-diff.json and the alignment’s own matrix'));
   }
-  if (G.links && (G.links.card || G.links.zfin)) {
-    box.appendChild(el('p', { class: 'tiny' }, frag([
-      G.links.card ? el('a', { href: G.links.card, text: 'omics card' }) : null,
-      document.createTextNode(' · '),
-      el('a', { href: '../validate-show/', text: 'validation run' }),
-      G.links.zfin ? document.createTextNode(' · ') : null,
-      G.links.zfin ? el('a', { href: G.links.zfin, rel: 'noreferrer', text: 'ZFIN' }) : null,
-      G.links.ensembl ? document.createTextNode(' · ') : null,
-      G.links.ensembl ? el('a', { href: G.links.ensembl, rel: 'noreferrer', text: 'Ensembl' }) : null,
-      G.links.uniprot ? document.createTextNode(' · ') : null,
-      G.links.uniprot ? el('a', { href: G.links.uniprot, rel: 'noreferrer', text: 'UniProt' }) : null,
-    ].filter(Boolean))));
-  }
+  box.appendChild(el('p', { class: 'tiny' }, frag([
+    el('a', { href: `../validate-show/?case=${encodeURIComponent(caseId)}`, text: 'this design’s validation run' }),
+    document.createTextNode(' · '),
+    el('a', { href: '../t/genotype/', text: 'genotype thread' }),
+    G.links && G.links.zfin ? document.createTextNode(' · ') : null,
+    G.links && G.links.zfin ? el('a', { href: G.links.zfin, rel: 'noreferrer', text: 'ZFIN' }) : null,
+    G.links && G.links.ensembl ? document.createTextNode(' · ') : null,
+    G.links && G.links.ensembl ? el('a', { href: G.links.ensembl, rel: 'noreferrer', text: 'Ensembl' }) : null,
+    G.links && G.links.uniprot ? document.createTextNode(' · ') : null,
+    G.links && G.links.uniprot ? el('a', { href: G.links.uniprot, rel: 'noreferrer', text: 'UniProt' }) : null,
+  ].filter(Boolean))));
+  box.appendChild(isAbsent(G.card)
+    ? absent(G.card)
+    : el('p', { class: 'tiny mute mono', text: `omics card: omics/index/genes/${g.gene}.json.gz · ${G.card.zfinId} · built ${G.card.built} · rows by layer: `
+        + Object.entries(G.card.summary || {}).map(([k, v]) => `${k} ${v.rows}`).join(', ')
+        + (G.card.conflicts && G.card.conflicts.length ? ` · ${G.card.conflicts.length} recorded conflict(s)` : '') }));
   return box;
 }
 
@@ -772,7 +787,7 @@ function casePage(c, D) {
       [c.role],
       c.isCommitted ? ['committed case'] : ['control'],
       !isAbsent(d) && d.kind ? [`genotype: ${d.kind}`] : null,
-      !isAbsent(d) ? [`${d.nEdits} edited locus${d.nEdits === 1 ? '' : 'es'}`] : null,
+      !isAbsent(d) ? [`${d.nEdits} edited ${d.nEdits === 1 ? 'locus' : 'loci'}`] : null,
       !isAbsent(a) && a.direction ? [a.direction] : null,
     ]),
     c.desiredPhenotype ? el('p', { class: 'small', text: `desired phenotype: ${typeof c.desiredPhenotype === 'string' ? c.desiredPhenotype : c.desiredPhenotype.text}` }) : null,
@@ -813,7 +828,7 @@ function casePage(c, D) {
     s1.appendChild(absent(c.sequence));
     if (c.sequence.statusCaveat) s1.appendChild(el('p', { class: 'tiny mute', text: c.sequence.statusCaveat }));
   } else {
-    for (const g of c.sequence.genes) s1.appendChild(geneBlock(g, D));
+    for (const g of c.sequence.genes) s1.appendChild(geneBlock(g, D, c.id));
   }
   out.appendChild(s1);
 
@@ -857,7 +872,9 @@ function selectCase(id, push) {
   app.appendChild(casePage(c, DATA));
   for (const b of document.querySelectorAll('#casebar .casebtn')) b.setAttribute('aria-pressed', String(b.dataset.case === id));
   if (push && /^[A-Za-z0-9._~-]+$/.test(id)) { try { location.hash = id; } catch (e) { /* ignore */ } }
-  app.scrollIntoView({ block: 'start', behavior: 'auto' });
+  /* only scroll when the reader switched case; the first render must leave the page at its top,
+     so the still frame shows the title and the three numbers rather than mid-alignment */
+  if (push) app.scrollIntoView({ block: 'start', behavior: 'auto' });
 }
 
 function boot(D) {

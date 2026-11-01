@@ -37,6 +37,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import * as LOCAL from './grcz11-local.mjs';
+import * as DOENCH from './doench2014.mjs';
+export { DOENCH };
 
 const HERE = import.meta.dirname;
 const ROOT = path.resolve(HERE, '..', '..', '..');
@@ -334,6 +336,12 @@ export function enumerateGuides(win, nuc, { targetPositions = [], maxCutDistance
       const protoEndChrom = toChrom(N.pam_side === '3prime' ? i + sl - 1 : i + pl + sl - 1);
       const dist = targetPositions.length ? Math.min(...targetPositions.map(p => Math.abs(cutChrom - p))) : null;
       if (dist != null && dist > maxCutDistance) continue;
+      // The 30-mer Doench 2014 Rule Set 1 was fitted on: 4 nt 5' of the protospacer, the 20-nt protospacer,
+      // the 3-nt NGG PAM, 3 nt 3' of the PAM, all on the protospacer strand. `seq` is already the
+      // protospacer strand, so one slice does it. null (not a guess) when the window does not reach,
+      // or when the nuclease geometry is not the one the model was fitted on.
+      const canRS1 = N.pam_side === '3prime' && sl === 20 && N.pam === 'NGG';
+      const c30 = canRS1 && i >= 4 && i + 26 <= L ? seq.slice(i - 4, i + 26) : null;
       out.push({
         nuclease: N.name, pam_motif: N.pam, strand, spacer, pam,
         protospacer_plus_pam: N.pam_side === '3prime' ? spacer + pam : pam + spacer,
@@ -344,6 +352,10 @@ export function enumerateGuides(win, nuc, { targetPositions = [], maxCutDistance
         pam_chrom: [Math.min(toChrom(pamStartIdx), toChrom(pamStartIdx + pl - 1)), Math.max(toChrom(pamStartIdx), toChrom(pamStartIdx + pl - 1))],
         cut_site_chrom: cutChrom, cut_convention: N.cut, cut_citation: N.citation,
         distance_cut_to_edit_bp: dist,
+        context_30mer: c30,
+        context_30mer_note: c30 ? DOENCH.CONTEXT_SPEC
+          : canRS1 ? 'the genomic window does not extend 4 nt 5\' of the protospacer and 3 nt 3\' of the PAM, so no Doench 2014 score is computed for this guide'
+          : `Doench 2014 Rule Set 1 does not apply to ${N.name} (SpCas9 / 20-nt spacer / NGG only), so no 30-mer context is built`,
       });
     }
   }
@@ -351,14 +363,30 @@ export function enumerateGuides(win, nuc, { targetPositions = [], maxCutDistance
 }
 
 // ---------------------------------------------------------------- 3. scoring
-// ON-TARGET: a HEURISTIC, not a validated efficiency model. It is NOT Doench 2016 Rule Set 2: that model's
-// 600+ fitted coefficients (Azimuth) were not sourced in this run, so no number here is called a Rule Set 2
-// score. What follows is a transparent rule built from published OBSERVATIONS, each cited, combined by a
-// weighting WE chose. Provenance kind: assumed (the combination), from measured observations.
+// ON-TARGET. There are now TWO numbers, and the difference between them is the point:
+//
+//   on_target              OUR HEURISTIC. Weights WE chose, over published observations. Still here because
+//                          it is the only thing that covers SaCas9 and Cas12a, for which nothing is
+//                          published. Labelled 'heuristic' everywhere it appears. See ON_TARGET_RULE.
+//   on_target_doench2014   A PUBLISHED MODEL, with coefficients fetched from Doench et al. 2014's
+//                          Supplementary Table 9 in this run and self-tested against the reference vectors.
+//                          SpCas9 / 20-nt / NGG only. See doench2014.mjs.
+//
+// Doench 2016 "Rule Set 2" was pursued first and is NOT implemented, for a reason that is now established
+// rather than assumed: the Azimuth model is a pickled scikit-learn GradientBoostingRegressor of 100
+// depth-3 trees over 627 features, so there is no coefficient vector in existence to transcribe (Doench
+// 2016's Supplementary Table 17 is Gini feature importance, a ranking, not weights). CRISPOR and CHOPCHOP
+// serve no callable REST API, so neither could be asked for a Rule Set 2 score either. See
+// doench2014.mjs RULE_SET_2 for exactly what was checked. No number in this module is ever called a Rule
+// Set 2 score, and the heuristic is never called a published one.
 export const ON_TARGET_RULE = {
   id: 'editplan-gc-position-heuristic/v1',
   label: 'heuristic',
-  what_it_is_not: 'not Doench 2016 Rule Set 2, not Azimuth, not a measured cutting efficiency, not calibrated on any zebrafish data',
+  THIS_IS_OURS: 'The weights in the formula below were chosen BY US. They were not fitted to any data, ours or anyone else\'s. ' +
+    'Where a published model applies, use `on_target_doench2014` (Doench 2014 Rule Set 1) instead; this heuristic exists ' +
+    'because Rule Set 1 covers only SpCas9 with a 20-nt spacer and an NGG PAM, and nothing published covers SaCas9 or Cas12a.',
+  what_it_is_not: 'not Doench 2016 Rule Set 2, not Doench 2014 Rule Set 1, not Azimuth, not a measured cutting efficiency, not calibrated on any zebrafish data, not fitted to anything',
+  published_alternative: 'on_target_doench2014 (Doench 2014 Rule Set 1) where the nuclease geometry allows it; see doench2014.mjs',
   terms: [
     { term: 'gc', rule: 'GC fraction of the spacer; full credit in [0.40,0.70], falling linearly to 0 at 0.20 and 0.90', observation: 'guides with very low or very high GC cut poorly', citation: 'Doench et al. 2014, Nat Biotechnol 32:1262-1267, doi 10.1038/nbt.3026; Wang et al. 2014, Science 343:80-84, doi 10.1126/science.1246981' },
     { term: 'polyT', rule: 'TTTT or longer run anywhere in the spacer scores 0 on this term', observation: 'a run of 4+ T terminates U6/T7 transcription and such guides fail', citation: 'Graf et al. 2019, Cell Reports 26:1098-1103, doi 10.1016/j.celrep.2019.01.024; Wang et al. 2014 (poly-T depletion)' },
@@ -378,7 +406,7 @@ export function onTargetHeuristic(spacer) {
   const g5 = s[0] === 'G' ? 1 : 0;
   const homo = /(.)\1{4,}/.test(s) ? 1 : 0;
   const score = Math.max(0, Math.min(1, 0.55 * gc + 0.25 * polyT + 0.12 * g20 + 0.05 * g5 + 0.03 * (1 - homo)));
-  return { score: +score.toFixed(3), kind: 'heuristic', rule_id: ON_TARGET_RULE.id,
+  return { score: +score.toFixed(3), kind: 'heuristic', label: 'HEURISTIC - weights chosen by us, not fitted, not published', rule_id: ON_TARGET_RULE.id,
     terms: { gc_fraction: +gcFrac.toFixed(3), gc_term: +gc.toFixed(3), polyT_ok: !!polyT, g_at_pam_proximal_end: !!g20, g_at_5prime: !!g5, long_homopolymer: !!homo },
     flags: [...(polyT ? [] : ['poly-T run of 4 or more: this guide will likely fail U6/T7 transcription; drop it']),
             ...(gcFrac < 0.3 || gcFrac > 0.8 ? [`GC ${(gcFrac * 100).toFixed(0)} % is outside the range where published datasets see good activity`] : []),
@@ -495,6 +523,15 @@ async function annotateGeneContext(sites, { network = true, limit = 40 } = {}) {
     const r = await fetchCached({ url: `${ENS}/overlap/region/${SPECIES}/${s.chromosome}:${Math.max(1, s.hit_from - 2000)}-${s.hit_to + 2000}?feature=gene;content-type=application/json` }, { network });
     s.gene_context = Array.isArray(r.value) ? r.value.map(g => ({ id: g.id, symbol: g.external_name || null, biotype: g.biotype, start: g.start, end: g.end })) : { error: r.error };
     s.gene_context_window = '+/- 2 kb around the site';
+    // Ensembl REST returns a transient 500/503 under load often enough that a single attempt leaves holes in
+    // the table. Retry twice with a back-off. A site whose annotation still fails says so; it is never
+    // silently reported as intergenic, because "no genes returned" and "the request failed" are different facts.
+    for (let attempt = 0; attempt < 2 && s.gene_context?.error && /HTTP 5\d\d/.test(s.gene_context.error); attempt++) {
+      await new Promise(r2 => setTimeout(r2, 1500 * (attempt + 1)));
+      const again = await fetchCached({ url: `${ENS}/overlap/region/${SPECIES}/${s.chromosome}:${Math.max(1, s.hit_from - 2000)}-${s.hit_to + 2000}?feature=gene;content-type=application/json` }, { network });
+      if (Array.isArray(again.value)) s.gene_context = again.value.map(g => ({ id: g.id, symbol: g.external_name || null, biotype: g.biotype, start: g.start, end: g.end }));
+      else s.gene_context = { error: again.error, attempts: attempt + 2, note: 'Ensembl /overlap/region did not answer for this site. This is NOT a finding that the site is intergenic: the gene context here is UNKNOWN.' };
+    }
   }
   if (sites.length > limit) for (const s of sites.slice(limit)) s.gene_context = { not_attempted: `only the first ${limit} sites (sorted by mismatch count) were annotated, to bound the number of Ensembl calls` };
   return sites;
@@ -573,8 +610,45 @@ export async function offTargets(spacer, pam, opts = {}) {
 }
 
 // ---------------------------------------------------------------- 4. HDR donor (ssODN)
-// Arm lengths: symmetric 40/40 nt is what the published zebrafish point-knock-in protocols use; the
-// asymmetric 36/91 variant is a transfer from human cells (Richardson 2016) and is labelled as borrowed.
+// ARM LENGTHS: CORRECTED IN THIS RUN against the two zebrafish papers, which were re-read rather than
+// paraphrased. The previous default here was 40/40 nt with the note "40/40 is the conventional starting
+// point, not their measured optimum". That was honest about being a guess but it was the WRONG guess, and
+// the measured number was available: Boel et al. 2018 titrated total ssODN length at four zebrafish sgRNA
+// sites and reports "In three out of four sgRNA targets, the HDR rate for symmetrical templates increased
+// significantly when extending the template length from 60 to 120 nucleotides (nt), with the maximum
+// improvement being tenfold", that 180 nt "moderately decreased HDR rates in most cases", and the
+// conclusion "Repair-template length significantly affects total repair rates, with 120 nt being identified
+// as the most optimal length to promote HDR". So the default is now 60/60 (120 nt total), which is Boel's
+// measured optimum rather than a convention. 40/40 (80 nt total) sat in the range Boel measured to be up to
+// tenfold worse.
+//   CAVEAT, kept because it is real: Boel states the optimum as a TOTAL length of 120 nt. The 60+60 per-arm
+//   split is OUR reading of "symmetrical" and is not stated as a split in the text that was read. It is
+//   marked `per_arm_split_is_ours` below.
+//
+// SYMMETRIC vs ASYMMETRIC: THE TWO ZEBRAFISH PAPERS DISAGREE, and the plan now says so instead of picking a
+// winner. Boel 2018: "Asymmetrically designed templates did not result in better HDR rates compared to
+// symmetrically designed templates", and "no specific type of repair template performed consistently best
+// across all four sgRNA target sites". Prykhozhij 2018: asymmetric anti-sense was "substantially more
+// efficient (3- to 10-fold)". The disagreement is not resolvable from these two papers, because Prykhozhij
+// varied ORIENTATION and ASYMMETRY together and its own text says they "have additive contributions", so it
+// does not isolate arm length. No zebrafish study isolates arm length from orientation, and none tested
+// symmetric 40/40 at all. Both donors are therefore emitted and the plan says to order both and compare.
+export const ARM_LENGTH_EVIDENCE = {
+  question: 'how long should each homology arm of a zebrafish point-knock-in ssODN be, and should it be asymmetric?',
+  boel_2018: { citation: 'Boel et al. 2018, Dis Model Mech 11:dmm035352, doi 10.1242/dmm.035352, PMID 30355591, PMC6215429', recommends: '120 nt TOTAL, symmetric',
+    quoted: ['In three out of four sgRNA targets, the HDR rate for symmetrical templates increased significantly when extending the template length from 60 to 120 nucleotides (nt), with the maximum improvement being tenfold',
+      'Repair-template length significantly affects total repair rates, with 120 nt being identified as the most optimal length to promote HDR',
+      'Asymmetrically designed templates did not result in better HDR rates compared to symmetrically designed templates',
+      'no specific type of repair template performed consistently best across all four sgRNA target sites'],
+    designs_tested: '60, 120 and 180 nt total, symmetric and asymmetric, in target and non-target orientation, at four sgRNA sites (smad6a, tprkb, pls3, slc2a10). Its asymmetric design was 90/30 nt.',
+    kind: 'measured' },
+  prykhozhij_2018: { citation: 'Prykhozhij et al. 2018, Nucleic Acids Res 46(17):e102, doi 10.1093/nar/gky512, PMID 29905858, PMC6158492 ("Optimized knock-in of point mutations in zebrafish using CRISPR/Cas9")', recommends: 'ASYMMETRIC anti-sense, 36 nt over the sgRNA site / 90 nt on the other side',
+    quoted: ['substantially more efficient (3- to 10-fold) as measured by AS-PCR and next-generation sequencing'],
+    confound: 'it varied orientation AND asymmetry together, and its own text says these "have additive contributions", so it does not isolate arm length. Its symmetric comparator had a 60 nt short arm.',
+    erratum: 'an erratum exists (Nucleic Acids Res 2018 Jul 24;46(17):9252, doi 10.1093/nar/gky674, PMC6158599) and was NOT read in this run, so we cannot say whether it changes any number quoted here.',
+    kind: 'measured' },
+  unresolved: 'The two papers disagree on asymmetry. No zebrafish study isolates arm length from strand orientation, and no zebrafish study tested symmetric 40/40. Richardson et al. 2016 (Nat Biotechnol 34:339-344, doi 10.1038/nbt.3481), the source of the 36/91 split, is HUMAN CELLS. Order both designs and compare; that is the only honest instruction.',
+};
 export const DONOR_DESIGN = {
   symmetric: { left: 40, right: 40, kind: 'borrowed',
     citation: 'Boel et al. 2018, Dis Model Mech 11:dmm035352, doi 10.1242/dmm.035352, PMID 30355591 ("HDR rates are strongly determined by repair-template composition, with the most influential factor being homology-arm length")',

@@ -57,6 +57,7 @@ const GROUPS = [
     { key: 'deck',     href: 'deck/',           text: 'Pitch deck' },
     { key: 'print',    href: 'print/',          text: 'Printable kit' },
     { key: 'agents',   href: 'studio-api/',     text: 'Validate a design' },
+    { key: 'genediff', href: 'gene-diff/',      text: 'Gene diff' },
     { key: 'swarmb',   href: 'swarm-board/',    text: 'Swarm board' },
     { key: 'evolve',   href: 'evolve/',         text: 'Enzymes' }
   ]},
@@ -109,7 +110,8 @@ const OWNED = {
   'leanbio/index.html':     'leanbio',
   'leanbio/capability.html': null,
   'record/index.html':      'record',
-  'scorer/index.html':      'scorer'
+  'scorer/index.html':      'scorer',
+  'gene-diff/index.html':   'genediff'
 };
 
 /* ------------------------------------------------------------- link verifying */

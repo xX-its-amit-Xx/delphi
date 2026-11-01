@@ -44,6 +44,45 @@ export const DEFAULT_VERSION = '1.0.0';
 export const SCORER = SCORERS[DEFAULT_VERSION];
 const KIND_ORDER = ['assumed', 'borrowed', 'measured-secondhand', 'calibrated', 'derived', 'measured'];
 
+/** EVERY released scorer version, in release order. SCORERS holds only the versions that run through assess() in
+ *  this file; 1.2.0 and 1.3.0 are separate modules reached through designScore(design, {version}). This list is the
+ *  one place that says what "released" means, so the version matrix test can enumerate it. */
+export const RELEASED_VERSIONS = Object.freeze(['1.0.0', '1.1.0', '1.1.1', '1.2.0', '1.3.0']);
+
+/** Did this version go through the BLIND held-out run, and what did that run say about the number this file emits?
+ *  Source: sim-engine/validate/evaluation/SCORER-EVALUATION.md (168 held-out families, family-out), written by the
+ *  independent evaluator. Read the two verdict fields before quoting any composite:
+ *    - the composite `score` FAILED the pre-registered primary endpoints in EVERY released version, 1.3.0 included;
+ *    - only v1.3.0's `rank_score` passed, and rank_score is a DIFFERENT output with a different rule.
+ *  So "a newer scorer version" is not "a scorer version whose composite passed". There is no such version. This
+ *  table exists so a composite can never be emitted without that fact attached to it. */
+export const BLIND_EVALUATION = Object.freeze({
+  '1.0.0': Object.freeze({ blind_evaluated: true, run: '2026-11-01T04-37-49Z_w1.0.0', input: 'specimen',
+    score_verdict: 'FAIL', score_detail: 'P1, P2 and P3 all fail (P1 AUC 0.690 against 0.843 for the nearest-neighbour distance it is built from)', rank_score_verdict: null }),
+  '1.1.0': Object.freeze({ blind_evaluated: true, run: '2026-11-01T04-58-15Z_w1.1.0', input: 'specimen',
+    score_verdict: 'FAIL', score_detail: 'all three primary endpoints fail (P1 AUC 0.688)', rank_score_verdict: null }),
+  '1.1.1': Object.freeze({ blind_evaluated: false, run: null, input: null, score_verdict: null, rank_score_verdict: null,
+    reason: 'v1.1.1 was never run against the held-out benchmark: it is absent from the verdict table in SCORER-EVALUATION.md. Its numbers carry no blind evidence at all.' }),
+  '1.2.0': Object.freeze({ blind_evaluated: true, run: '2026-11-01T04-58-08Z_w1.2.0', input: '{params, lean_spec, doc}',
+    score_verdict: 'FAIL', score_detail: 'only P2 passes (P1 AUC 0.683)', rank_score_verdict: 'FAIL', rank_score_detail: 'P3 fails (rank_score P1 0.838)' }),
+  '1.3.0': Object.freeze({ blind_evaluated: true, run: '2026-11-01T05-12-45Z_w1.3.0', input: '{params, lean_spec, doc}',
+    score_verdict: 'FAIL', score_detail: 'only P2 passes (P1 AUC 0.736)', rank_score_verdict: 'PASS', rank_score_detail: 'P1 0.875, P2 99.7 %, P3 0.836 > 0.691 -- but rank_score does not beat the joint Mahalanobis term used alone (P1 0.883), so on the primary ranking the composite is one term wearing a costume' }),
+});
+
+/** The label that must travel with every composite this repository emits. A number whose version was never
+ *  blind-evaluated says so on its face; a number whose version WAS evaluated carries that run's verdict, which is
+ *  FAIL on the composite in every released version. A composite is never the verdict (see SCOPE and gates_note). */
+export function evaluationLabel(version) {
+  const e = BLIND_EVALUATION[version];
+  if (!e) return { version, blind_evaluated: null, label: `scorer v${version}: NOT A RELEASED VERSION; no blind evaluation exists for it`, warning: true };
+  if (!e.blind_evaluated) return { version, blind_evaluated: false, ...e,
+    label: `scorer v${version}: NOT BLIND-EVALUATED -- ${e.reason} Treat this number as a development figure.`, warning: true };
+  return { version, blind_evaluated: true, ...e,
+    label: `scorer v${version}: blind-evaluated (${e.run}, 168 held-out families, family-out). The blind verdict on this composite is ${e.score_verdict} -- ${e.score_detail}.`
+      + (e.rank_score_verdict ? ` rank_score, a different output: ${e.rank_score_verdict} (${e.rank_score_detail}).` : ''),
+    warning: e.score_verdict !== 'PASS' };
+}
+
 export function composite(components, SC = SCORER) {
   let s = 0, w = 0;
   for (const [k, c] of Object.entries(components)) if (c && c.ran && typeof c.value === 'number') { s += SC.weights[k] * Math.log(Math.max(c.value, SC.floor)); w += SC.weights[k]; }
@@ -176,7 +215,17 @@ export async function assess(args = {}) {
   };
   out.state_envelope = stEnv;
   out.score = { value: score == null ? null : +score.toFixed(4), plausible: score != null && score >= SC.plausible_threshold, components: C, version: SC.version, ...(rank ? { rank_score: rank.value, rank } : {}),
-    formula: 'exp(sum w_i ln max(c_i,0.01) / sum w_i) over components that ran; w = P .35, L .25, G .15, S .15, E .10' };
+    formula: 'exp(sum w_i ln max(c_i,0.01) / sum w_i) over components that ran; w = P .35, L .25, G .15, S .15, E .10',
+    // Attached to the number itself, not left for the reader to look up: which version produced it, and whether
+    // that version's composite was ever blind-evaluated and what the blind run said about it.
+    evaluation: evaluationLabel(SC.version),
+    // The components that RAN are part of the number's identity. The same design at the same version returns a
+    // different composite depending on whether a spec was passed, because S enters the weighted mean only when it
+    // runs: winged-zebrafish is 0.9217 with no spec, 0.878 with a spec whose three criteria go 1 failed / 2 met,
+    // and 0.4676 with a spec whose single glide criterion fails. Two composites are comparable only when this
+    // list matches. See sim-engine/validate/SCORER-VERSION.md.
+    components_that_ran: Object.entries(C).filter(([, c]) => c && c.ran).map(([k]) => k).join('+'),
+    comparability: 'Comparable only with another composite from the same version AND the same components_that_ran. Adding a spec changes the number; adding a spec criterion that is trivially met RAISES it.' };
   out.phenotype = pheno; out.genotype = geno; out.sanity = { phenotype: pSan, genotype: gSan }; out.lean = lean;
   // The FOURTH named result. Built by another thread in validate/functional/; absent until it lands, and then
   // reported as 'did not run' rather than assumed. It never moves the composite score (see SCORER-RESULTS.md).
@@ -200,6 +249,22 @@ function provOf(r) {
     p('flight-muscle capacity', null, 'borrowed', 'sanity.mjs FLIGHT_MUSCLE_CAPACITY: from the tff and ff-zf-chimera mesh clips, transferred to other bodies'),
     p('score weights', SCORER.version, 'assumed', 'score.mjs SCORER, fixed in SCORER-PREREGISTRATION.md before validation')];
   if (r.score?.components?.E) R.push(p('evidence: weakest input kind', r.score.components.E.weakest_kind, 'derived', 'resolved STATE field kinds'));
+  return R;
+}
+
+/** Provenance for the v1.2.0+ return shape. Those versions return the finished designScore result rather than the
+ *  assess() result provOf() reads, so the rows are rebuilt from the scorer descriptor they carry. Every row names a
+ *  real file; nothing is invented to satisfy the envelope. */
+function provOfVersioned(r, version) {
+  const SC = r.scorer || {};
+  const R = [p('FishShapes v1 specimens', null, 'measured', 'Price et al. 2022 Ecology 103:e3829, doi 10.1002/ecy.3829; Zenodo 6642650 (sim-engine/validate/data/fishshapes-features.json)'),
+    p('fin envelope rule', null, 'assumed', 'phenotype.mjs finEnvelope: fixed, uncalibrated rule, for traits with no dev envelope'),
+    p('flight-muscle capacity', null, 'borrowed', 'sanity.mjs FLIGHT_MUSCLE_CAPACITY: from the tff and ff-zf-chimera mesh clips, transferred to other bodies'),
+    p('score weights', SC.version || version, 'assumed', `${SC.weights_file || 'sim-engine/validate/score-weights.json'}, fixed in ${SC.preregistration || 'SCORER-PREREGISTRATION.md'} before validation`),
+    p('blind evaluation of this version', BLIND_EVALUATION[version]?.blind_evaluated ? BLIND_EVALUATION[version].score_verdict : 'not blind-evaluated', 'derived', 'sim-engine/validate/evaluation/SCORER-EVALUATION.md (168 held-out families, family-out, independent evaluator)')];
+  if (SC.envelopes_file) R.push(p('per-trait envelopes', null, 'derived', `${SC.envelopes_file}: log10 ranges over the dev reference set`));
+  if (SC.joint_model_file) R.push(p('joint trait model', null, 'derived', `${SC.joint_model_file} with ${SC.joint_calibration_file}: one Gaussian on log traits fitted on DEV positives (sim-engine/validate/joint.mjs); unimodal, no allometric curvature, no fins or physiology`));
+  if (r.components?.E?.weakest_kind) R.push(p('evidence: weakest input kind', r.components.E.weakest_kind, 'derived', 'resolved STATE field kinds'));
   return R;
 }
 
@@ -273,8 +338,15 @@ export const paramsToSpecimen = params => Object.fromEntries(Object.entries(para
  *  Leave-out scoring: everything named in reference_set_excluding is removed from the nearest-neighbour search, so a
  *  real organism is never scored against itself (see phenotype.mjs excludeMatcher). Weights: score-weights.json. */
 export async function designScore(design, opts = {}) {
-  if (opts.version === '1.2.0') return (await import('./score-v12.mjs')).designScoreV12(design, opts);
-  if (opts.version === '1.3.0') return (await import('./score-v13.mjs')).designScoreV13(design, opts);
+  if (opts.version === '1.2.0' || opts.version === '1.3.0') {
+    const m = opts.version === '1.2.0' ? await import('./score-v12.mjs') : await import('./score-v13.mjs');
+    const r = opts.version === '1.2.0' ? await m.designScoreV12(design, opts) : await m.designScoreV13(design, opts);
+    // v1.2.0 and v1.3.0 are separate modules and never built the `_prov` row list that provOf() builds from an
+    // assess() result. designScoreTool then called envelope(res, undefined, SCOPE), which threw
+    // "provenance must be an array" -- so the two NEWEST released versions were not callable through the shipped
+    // design_score tool at all, while still being callable from library code. Hence provOfVersioned().
+    return r._prov ? r : { ...r, score_evaluation: evaluationLabel(opts.version), _prov: provOfVersioned(r, opts.version) };
+  }
   // A {params} item (the benchmark's own shape) is accepted by every version: the traits a version can read are
   // mapped to the specimen record, and the rest are reported as unread rather than silently dropped.
   if (design && typeof design === 'object' && design.params && !design.doc && !('specimen' in design)) {

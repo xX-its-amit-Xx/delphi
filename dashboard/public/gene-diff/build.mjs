@@ -354,13 +354,21 @@ function sequenceScaleFor(caseId, ledgerDesign) {
     const editAt = new Map(); if (aaChange) editAt.set(aaChange.col, aaChange);
 
     const anaSeq = anaKey ? al.alignment[anaKey] : null;
+    const GAP = ch => ch === '-' || ch === '.';
     const diffs = [], meaningCount = {};
+    let anaGapCols = 0;
     for (let c = 1; c <= cols; c++) {
       const b = baseAligned[c - 1], g = genAligned[c - 1], a = anaSeq ? anaSeq[c - 1] : null;
       const genDiff = g !== b;
       const anaDiff = anaSeq != null && a !== b;
       if (!genDiff && !anaDiff) continue;
+      /* A gap in the analogue row is NOT a residue difference. On a projected row it is
+       * sequence the projection did not cover, and colouring it as divergence would make
+       * the analogue look further away than the data says. It gets its own class. */
+      const anaIsGap = anaSeq != null && (GAP(a) || GAP(b));
+      if (anaIsGap) anaGapCols++;
       const meaning = editAt.has(c) ? 'edit'
+        : (anaIsGap && !genDiff) ? 'gap'
         : alleleAt.has(c) ? 'allele'
         : ptmAt.has(c) ? 'ptm'
         : domainAt[c] ? 'domain'
@@ -368,15 +376,18 @@ function sequenceScaleFor(caseId, ledgerDesign) {
       meaningCount[meaning] = (meaningCount[meaning] || 0) + 1;
       diffs.push({
         col: c, pos: baseIdx.colToPos[c], base: b, generated: g, analogue: a,
-        genDiff, anaDiff, meaning,
+        genDiff, anaDiff, anaIsGap, meaning,
         domain: domainAt[c] ? { name: domainAt[c].name, acc: domainAt[c].acc, url: domainAt[c].url, db: domainAt[c].db, posStart: domainAt[c].posStart, posEnd: domainAt[c].posEnd } : null,
         ptm: ptmAt.get(c) || null,
         allele: alleleAt.get(c) || null,
         edit: editAt.get(c) || null,
       });
     }
-    /* annotated diffs are the ones that get a drawer; the rest are counted, not listed */
-    const annotatedCols = diffs.filter(d => d.meaning !== 'unannotated' || d.genDiff).map(d => d.col);
+    /* annotated diffs are the ones that get a drawer; the rest are counted, not listed.
+     * A gap column is never a drawer: there is no residue there to say anything about. */
+    const annotatedCols = diffs
+      .filter(d => d.meaning !== 'unannotated' && d.meaning !== 'gap' || d.genDiff)
+      .map(d => d.col);
     /* the same site can arrive from several databases; keep one refusal per site and reason */
     const seen = new Set();
     tracks.notPlaced = tracks.notPlaced.filter(n => {
@@ -390,7 +401,9 @@ function sequenceScaleFor(caseId, ledgerDesign) {
       editplan: editplanFor(gene, ed),
       aligner: al.aligner, coordinateSystem: al.coordinate_system,
       columns: cols, rows, tracks, diffs, annotatedCols,
-      meaningCount,
+      meaningCount, anaGapCols,
+      gapNote: anaGapCols ? `${anaGapCols} of the ${diffs.length} non-identical columns are a gap in one of the two rows rather than a different residue`
+        + (PROJECTED.has(gene) ? ', and this analogue row is a tblastn projection, so its gaps are sequence the projection did not cover, not deletions' : '') + '.' : null,
       percentIdentity: anaKey && al.percent_identity?.matrix
         ? (al.percent_identity.matrix.danio_rerio || {})[anaKey] ?? null : null,
       identityToSpecies: eff?.identity_to_species || null,

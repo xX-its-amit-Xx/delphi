@@ -96,6 +96,16 @@ for (const c of data.cases) {
     /* the diff list and the meaning counts agree */
     const sum = Object.values(g.meaningCount).reduce((a, b) => a + b, 0);
     eq(`${c.id}/${g.gene}: meaning counts sum to the diff count`, sum, g.diffs.length);
+    /* a gap in a row is never counted or drawn as a residue difference */
+    const gapsMiscalled = g.diffs.filter(d =>
+      (d.base === '-' || d.analogue === '-') && d.meaning !== 'gap' && d.meaning !== 'edit');
+    eq(`${c.id}/${g.gene}: no gap column is classified as a residue difference`, gapsMiscalled.length, 0,
+      gapsMiscalled.slice(0, 3).map(d => `col ${d.col} ${d.meaning}`).join(','));
+    ok(`${c.id}/${g.gene}: no gap column gets a drawer`,
+      (g.annotatedCols || []).every(col => {
+        const d = g.diffs.find(x => x.col === col);
+        return d && d.meaning !== 'gap';
+      }));
     ok(`${c.id}/${g.gene}: no diff column is outside the alignment`,
       g.diffs.every(d => d.col >= 1 && d.col <= g.columns));
     checkedGenes++; checkedCols += g.columns;
@@ -156,7 +166,14 @@ const port = server.address().port;
 const PW_ROOTS = ['C:/Temp/partedit-deps', 'C:/Temp/just-another-bot-fight'];
 let chromium = null;
 for (const root of PW_ROOTS) {
-  try { ({ chromium } = await import(new URL(`file:///${root}/node_modules/playwright-core/index.js`))); break; } catch { /* next */ }
+  for (const f of ['index.mjs', 'index.js']) {
+    try {
+      const m = await import(`file:///${root}/node_modules/playwright-core/${f}`);
+      chromium = m.chromium || (m.default && m.default.chromium);
+      if (chromium) break;
+    } catch { /* next */ }
+  }
+  if (chromium) break;
 }
 if (!chromium) { console.log('\nplaywright-core not found in ' + PW_ROOTS.join(' or ')); server.close(); process.exit(1); }
 
@@ -223,18 +240,38 @@ const paneHeads = await page.$$eval('.diffs details[open] .pane h4', ns => ns.ma
 for (const want of ['expression', 'protein', 'modification', 'pathway', 'developmental time'])
   ok(`the drawer carries the ${want} scale`, paneHeads.some(h => h.toLowerCase().includes(want)), paneHeads.join(' | '));
 
+/* the deep links must resolve on this site, not 404 */
+const hrefs = await page.$$eval('#main a[href^="../"]', ns => [...new Set(ns.map(n => n.getAttribute('href')))]);
+for (const h of hrefs) {
+  const u = `http://127.0.0.1:${port}/gene-diff/${h}`;
+  const r = await page.request.get(u);
+  ok(`link resolves: ${h}`, r.ok(), `HTTP ${r.status()}`);
+}
+ok('each gene row links to this design’s validation run', hrefs.some(h => h.startsWith('../validate-show/?case=')), hrefs.join(' '));
+
 await page.screenshot({ path: join(SHOTS, 'desktop-winged-zebrafish.png'), fullPage: false });
 await page.screenshot({ path: join(SHOTS, 'desktop-winged-zebrafish-full.png'), fullPage: true });
 await page.close();
 
 console.log('\npage, phone 390x844');
 page = await visit(390, 844, 'phone', 'winged-zebrafish');
-const overflow = await page.evaluate(() => ({
-  doc: document.documentElement.scrollWidth, win: window.innerWidth,
-  wide: [...document.querySelectorAll('body *')]
-    .filter(n => n.scrollWidth > window.innerWidth + 1 && getComputedStyle(n).overflowX !== 'auto' && getComputedStyle(n).overflowX !== 'scroll')
-    .slice(0, 6).map(n => `${n.tagName.toLowerCase()}.${(n.className || '').toString().split(' ')[0]} ${n.scrollWidth}`),
-}));
+const overflow = await page.evaluate(() => {
+  /* an element wider than the viewport is a bug only when nothing between it and the body
+     scrolls horizontally: the alignment canvas is meant to be 17,412 px wide inside its track. */
+  const inTrack = n => {
+    for (let p = n; p && p !== document.body; p = p.parentElement) {
+      const o = getComputedStyle(p).overflowX;
+      if (o === 'auto' || o === 'scroll' || o === 'hidden') return true;
+    }
+    return false;
+  };
+  return {
+    doc: document.documentElement.scrollWidth, win: window.innerWidth,
+    wide: [...document.querySelectorAll('body *')]
+      .filter(n => n.scrollWidth > window.innerWidth + 1 && !inTrack(n))
+      .slice(0, 6).map(n => `${n.tagName.toLowerCase()}.${(n.className || '').toString().split(' ')[0]} ${n.scrollWidth}`),
+  };
+});
 ok('no horizontal page scroll at 390 px', overflow.doc <= overflow.win + 1, `document ${overflow.doc}px, viewport ${overflow.win}px`);
 ok('no element overflows without its own scroll track', overflow.wide.length === 0, overflow.wide.join(' | '));
 await page.screenshot({ path: join(SHOTS, 'phone-winged-zebrafish.png'), fullPage: false });
