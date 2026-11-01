@@ -36,6 +36,9 @@ const designTaxon = d => d.taxon || d.species || (d.organism && (d.organism.spec
 const designStage = d => d.life_stage || d.lifeStage || d.stage || null;
 
 /** Scope of a constraint (its own, where the check is narrower than the law, else the law's). */
+/** Does this generated checker know that law set? Callers can ask before judging. */
+export function lawsetKnown(version) { return Object.prototype.hasOwnProperty.call(LAWSETS, version || LAWSET_VERSION); }
+
 export function scopeOf(constraintId) {
   const lid = CONSTRAINT_LAW[constraintId]; const info = lid && LAW_INFO[lid];
   if (!info) return null;
@@ -61,11 +64,24 @@ export function scopeCheck(constraintId, design = {}, spec = {}) {
   return { in_scope: true, reason: null, scope: sc };
 }
 
-/** Judge formula rows against a law set. opts: {lawset: 'x.y.z' (default LAWSET_VERSION), includeCandidates: false}. */
+/**
+ * Judge formula rows against a law set. opts: {lawset: 'x.y.z' (default LAWSET_VERSION), includeCandidates: false}.
+ *
+ * FAILS SOFT on an unknown law set. A law set released after this file was generated (lean/registry/lawsets/current.json
+ * bumped, browser-check.mjs not regenerated) must not break every caller: that happened once, and every checkDesign
+ * threw mid-release. Instead every row comes back 'unknown-lawset' (display 'grey', so nothing is judged red or green)
+ * with the reason and the versions this file knows, and `lawsetKnown(v)` lets a caller ask first. release.mjs
+ * regenerates this file, and check-exposed fails if current.json names a version this file does not know.
+ */
 export function judgeRows(rows, design = {}, spec = {}, opts = {}) {
   const ver = opts.lawset || LAWSET_VERSION;
   const ls = LAWSETS[ver];
-  if (!ls) throw new Error('unknown law set ' + ver + '; known: ' + Object.keys(LAWSETS).join(', '));
+  if (!ls) {
+    const reason = `law set ${ver} is unknown to this generated checker (it knows ${Object.keys(LAWSETS).join(', ')}): regenerate it with node lean/eliminate/build-browser-check.mjs. Nothing was judged.`;
+    return rows.map(r => ({ ...r, verdict: 'unknown-lawset', computed_verdict: r.verdict, lawset: ver, lawset_known: false,
+      law: CONSTRAINT_LAW[r.id] ? { law_id: CONSTRAINT_LAW[r.id], version: null, kind: LAW_INFO[CONSTRAINT_LAW[r.id]].kind, status: 'unknown-lawset' } : null,
+      scope_check: null, display: 'grey', note: r.note ? r.note + ' | ' + reason : reason, unknown_lawset_reason: reason }));
+  }
   return rows.map(r => {
     const lid = CONSTRAINT_LAW[r.id];
     if (!lid) return { ...r, lawset: ver, law: null, computed_verdict: r.verdict, scope_check: null, display: r.verdict === 'violated' ? 'red' : r.verdict === 'holds' ? 'green' : 'none' };

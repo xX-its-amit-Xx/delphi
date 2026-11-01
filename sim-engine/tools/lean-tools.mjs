@@ -86,7 +86,7 @@ export async function lawsetGet(args = {}) {
 // ── lean_check ─────────────────────────────────────────────────────────────
 export const checkSchema = {
   title: 'Check a design against a lawset (NOT a kernel check)',
-  description: 'Evaluates a resolved state/design (SI units, fields documented at the top of lean/eliminate/browser-check.mjs) against one lawset. Evaluation is the generated browser-check (floating point); law_id, version, kind and status come from the registry. Returns per-law verdicts (holds, violated, cannot-evaluate, out-of-scope) and violations [{law_id, version, kind, status, inputs, message, binding}]. Violations of non-accepted laws are advisory (binding:false). A row is out-of-scope when the law scope (taxa, life stages, ranges) excludes the design, or when it compares the design with the single flying-fish reference specimen and the design is not a flying fish; give taxon (e.g. "Danio rerio") in the design.',
+  description: 'Evaluates a resolved state/design (SI units, fields documented at the top of lean/eliminate/browser-check.mjs) against one lawset. Evaluation is the generated browser-check (floating point); law_id, version, kind and status come from the registry. Returns per-law verdicts (holds, violated, cannot-evaluate, out-of-scope, unknown-lawset) and violations [{law_id, version, kind, status, inputs, message, binding}]. Violations of non-accepted laws are advisory (binding:false). A row is out-of-scope when the law scope (taxa, life stages, ranges) excludes the design, or when it compares the design with the single flying-fish reference specimen and the design is not a flying fish; give taxon (e.g. "Danio rerio") in the design.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -107,7 +107,8 @@ export async function check(args = {}) {
     'design satisfies the relation under its named hypotheses, never that the design is feasible; "violated" means the ' +
     'committed numbers break the relation under those hypotheses; "out-of-scope" means the law or the comparison is ' +
     'scoped (taxa, life stage, ranges) away from this design and says nothing either way (pass taxon to evaluate ' +
-    'flying-fish-scoped rows). Laws listed in laws_without_browser_evaluation were ' +
+    'flying-fish-scoped rows); "unknown-lawset" means the generated checker does not embed this law set, so NOTHING ' +
+    'was evaluated and no row may be read as either a pass or a failure. Laws listed in laws_without_browser_evaluation were ' +
     'not evaluated at all. Kernel certificates exist only for the recorded examples under lean/Delphi/Certificates/.');
 }
 

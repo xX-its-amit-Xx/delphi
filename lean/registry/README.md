@@ -132,7 +132,7 @@ The design should carry `taxon` (e.g. 'Danio rerio', 'Exocoetidae', 'Cypselurus 
 
 | field | meaning |
 |---|---|
-| `verdict` | `holds`, `violated` (red), `cannot-evaluate`, **`contested`** (amber: the formula says violated but the law is contested), **`candidate-violated`** (grey/flagged: a candidate law the formula says is violated), **`out-of-scope`** (grey), **`not-in-lawset`** (the law is proposed, retired, or absent from the chosen law set) |
+| `verdict` | `holds`, `violated` (red), `cannot-evaluate`, **`unknown-lawset`** (grey: the law set asked for is not in this generated file; nothing was judged, `unknown_lawset_reason` says so), **`contested`** (amber: the formula says violated but the law is contested), **`candidate-violated`** (grey/flagged: a candidate law the formula says is violated), **`out-of-scope`** (grey), **`not-in-lawset`** (the law is proposed, retired, or absent from the chosen law set) |
 | `computed_verdict` | what the formula said before the law-set judgement |
 | `lawset` | the law-set version this row was judged against: show "judged against law set vX.Y.Z" |
 | `law` | `{law_id, version, kind: 'physical'\|'biological', status}` in that law set |
@@ -141,6 +141,26 @@ The design should carry `taxon` (e.g. 'Danio rerio', 'Exocoetidae', 'Cypselurus 
 
 Only `display: 'red'` means "violates a law". A Studio page that still maps `/^viol/` to red keeps working:
 `contested` and `out-of-scope` do not match it, and `candidate-violated` does not either.
+
+## Releasing: order matters
+
+A law set is only in force once `lawsets/current.json` names it, and the generated checker embeds the law sets it
+knows. Moving the pointer first broke every caller once ("unknown law set 1.6.0" out of `checkDesign`, mid-release).
+Three guards now make that impossible rather than remembered:
+
+1. **release.mjs regenerates, then points.** It writes `lawset-<v>.json` and the CHANGELOG entry, runs
+   `lean/eliminate/build-browser-check.mjs` and `dashboard/build-lean-api.mjs`, asks the regenerated checker whether
+   it knows the new version, and only then writes `current.json` (rebuilding the mirror once more, since the mirror
+   embeds the pointer). If regeneration fails, or the checker does not know the version, it exits non-zero and leaves
+   `current.json` alone: the new lawset file sits on disk unreferenced and callers keep judging against the old one.
+   `--no-regen` skips regeneration and therefore also refuses to move the pointer.
+   `regenerateCheckers(version)` and `lawsetsKnownToChecker()` are exported for a caller that wants the gate alone.
+2. **The checker fails soft.** `judgeRows` (so `check`) no longer throws on an unknown law set: every row comes back
+   `verdict: 'unknown-lawset'`, `display: 'grey'`, with `unknown_lawset_reason` naming the versions the file knows.
+   `lawsetKnown(version)` lets a caller ask first. A half-landed release degrades to "nothing judged" instead of an
+   exception.
+3. **Tests.** `test.mjs` checks that the generated checker knows the version `current.json` names, and that an
+   unknown law set degrades instead of throwing (its broken input is the old throwing behaviour).
 
 ## Proposing a law (propose.mjs)
 

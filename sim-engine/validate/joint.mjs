@@ -12,7 +12,11 @@
 // fish from an unusual family can also sit far out (reported: see the calibration's own tail).
 import fs from 'node:fs';
 import path from 'node:path';
-import { BLOCKS } from './data/build-joint-model.mjs';
+// The two trait blocks, because the two large sources measure different traits. The builder imports these.
+export const BLOCKS = {
+  fishshapes: ['standard_length_m', 'body_mass_kg', 'body_depth_over_SL', 'body_width_over_SL', 'peduncle_depth_frac', 'peduncle_width_frac', 'head_depth_over_body_depth', 'lower_jaw_over_SL', 'mouth_width_over_SL'],
+  fishbase: ['body_depth_over_SL', 'caudal_fin_aspect_ratio', 'caudal_fin_height_over_SL', 'eye_diameter_over_SL', 'head_length_over_SL', 'preanal_over_SL', 'predorsal_over_SL', 'preorbital_over_SL', 'prepectoral_over_SL', 'prepelvic_over_SL'],
+};
 
 const DIR = import.meta.dirname;
 export const RIDGE = 1e-8;           // x mean(diag), for numerical safety only; stated in the preregistration

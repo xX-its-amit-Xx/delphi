@@ -7,7 +7,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { REG, ROOT, LAWS_DIR, readJson, loadLaws, listLawsets, loadLawset, contentHash, statementText, validate, sha256, scratchDir, loadLawVersion } from './registry-lib.mjs';
-import { releaseProblems } from './release.mjs';
+import { releaseProblems, lawsetsKnownToChecker } from './release.mjs';
 import { propose } from './propose.mjs';
 
 let failures = 0;
@@ -66,6 +66,18 @@ const sets = listLawsets().map(v => loadLawset(v));
 check(`lawsets: ${sets.map(s => s.version).join(', ')} reproducible from the law files`, () => lawsetErrs(sets, laws),
   () => { const b = clone(sets); b[0].laws[0].content_hash = '0'.repeat(64); return lawsetErrs(b, laws.filter(l => l.law_id !== 'E5'), (id, v) => id === 'perturb-pressure' && v === '1.0.0' ? null : loadLawVersion(id, v)); });
 const cur = readJson(path.join(REG, 'lawsets/current.json'));
+// The release-order rule: the GENERATED checker must know the version current.json names. When current.json was
+// bumped to 1.6.0 while lean/eliminate/browser-check.mjs still knew only up to 1.5.0, every checkDesign threw
+// "unknown law set 1.6.0" and the studio, the scorer and the examples broke mid-release. release.mjs now refuses to
+// move current.json until the regenerated checker knows the version, judgeRows fails soft, and this is the check.
+const knownToChecker = () => {
+  const known = lawsetsKnownToChecker();
+  if (known === null) return ['could not read LAWSETS out of lean/eliminate/browser-check.mjs'];
+  return known.includes(cur.version) ? [] : [`lawsets/current.json names ${cur.version}, which the generated lean/eliminate/browser-check.mjs does not know (it knows ${known.join(', ')}): run node lean/eliminate/build-browser-check.mjs`];
+};
+check('release order: the generated browser-check knows the law set current.json names', knownToChecker,
+  () => { const known = lawsetsKnownToChecker() || []; const fake = '99.0.0'; return known.includes(fake) ? [] : [`current.json naming ${fake} would be caught: the checker knows ${known.join(', ')}`]; });
+
 check('lawsets: current.json names an existing law set', () => sets.some(s => s.version === cur.version) ? [] : ['missing'], () => sets.some(s => s.version === '9.9.9') ? [] : ['missing']);
 
 // 5. approval rule: accepted needs a human approval by ROLE
@@ -117,6 +129,17 @@ const judgeAs = (status, opts = {}) => { const ls = clone(BC.LAWSETS[BC.LAWSET_V
 check(`status: accepted red, candidate not red (flagged), candidate red with includeCandidates, contested amber, retired not judged (law ${lid}, constraint ${cid})`,
   () => [judgeAs('accepted').display === 'red' || 'accepted', judgeAs('candidate').verdict === 'candidate-violated' || 'candidate', judgeAs('candidate', { includeCandidates: true }).display === 'red' || 'candidate+include', judgeAs('contested').display === 'amber' || 'contested', judgeAs('retired').verdict === 'not-in-lawset' || 'retired'].filter(x => x !== true),
   () => [judgeAs('contested').display === 'red' || 'contested is not red'].filter(x => x !== true));
+
+// Fail-soft: an unknown law set must degrade, never throw. The broken input is the OLD behaviour (a throw), which
+// this check must catch; that is what broke every caller mid-release.
+const softCheck = judge => {
+  let rows;
+  try { rows = judge(); } catch (e) { return ['threw instead of degrading: ' + e.message]; }
+  return rows.length && rows.every(r => r.verdict === 'unknown-lawset' && r.display === 'grey' && r.unknown_lawset_reason) ? [] : ['rows were judged, or carry no reason'];
+};
+check('fail soft: an unknown law set yields unknown-lawset rows (grey) instead of throwing',
+  () => softCheck(() => BC.check({ taxon: 'Exocoetidae', SL_m: 0.2, mass_kg: 0.06 }, { lawset: '99.0.0' })),
+  () => softCheck(() => { throw new Error('unknown law set 99.0.0; known: 1.0.0'); }));
 
 // 7 and 8. proposals through Lean: a contradictory law is contested; a sorry is rejected
 if (!process.env.REGISTRY_TEST_FAST) {

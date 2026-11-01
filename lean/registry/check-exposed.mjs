@@ -113,6 +113,18 @@ for (const m of src.leanModules({ includeCertificates: true })) {
 }
 for (const t of tags) if (!ids.has(t.id)) fail('a:registry', t.id, `${t.module} tags "@law ${t.id}" but the registry has no such law_id`, REGFIX);
 
+// The generated checker must embed the law set current.json names. Without this, every checkDesign call returns
+// 'unknown-lawset' (it used to throw), so the studio, the scorer and the examples silently evaluate nothing.
+// Read as text via release.mjs, so this check does not import the large generated module.
+if (reg.origin === 'registry' && reg.current) {
+  let known = null;
+  try { known = (await imp('lean/registry/release.mjs')).lawsetsKnownToChecker(); }
+  catch (e) { notes.push(`could not ask lean/registry/release.mjs which law sets the checker knows: ${e.message}`); }
+  if (known === null) fail('stale:checker', 'LAWSETS', 'could not read `export const LAWSETS` out of lean/eliminate/browser-check.mjs', 'node lean/eliminate/build-browser-check.mjs');
+  else if (!known.includes(reg.current)) fail('stale:checker', reg.current, `lawsets/current.json names ${reg.current}, which the generated lean/eliminate/browser-check.mjs does not embed (it knows ${known.join(', ') || 'none'}): every check would evaluate nothing`, 'node lean/eliminate/build-browser-check.mjs');
+  for (const ls of reg.lawsets) if (known && !known.includes(ls.version)) notes.push(`law set ${ls.version} is not embedded in the generated checker; lean_check against it returns unknown-lawset`);
+}
+
 // ── (b) handlers ─────────────────────────────────────────────────────────────
 const tools = await imp('sim-engine/tools/lean-tools.mjs');
 const T = Object.fromEntries(tools.LEAN_TOOLS.map(t => [t.name, t]));
@@ -158,6 +170,11 @@ else {
     if (!has(`dashboard/public/api/lean/laws/${id.replace(/[^A-Za-z0-9._-]/g, '_')}.json`)) fail('c:mirror', id, `/api/lean/laws/${id}.json missing`, 'node dashboard/build-lean-api.mjs');
   }
   for (const v of archived) if (!has(`dashboard/public/api/lean/laws/${v.law_id}@${v.version}.json`)) fail('c:mirror', `${v.law_id}@${v.version}`, `/api/lean/laws/${v.law_id}@${v.version}.json missing`, 'node dashboard/build-lean-api.mjs');
+  // The page's own copy of the evaluator is maintained by another build step (dashboard/build-graph.mjs) and is not
+  // failed on here; lean-client.js prefers the mirror's copy. A lag is still worth saying out loud.
+  const pageChecker = 'dashboard/public/blueprint3d/browser-check.mjs';
+  if (has(pageChecker) && fs.readFileSync(R(pageChecker), 'utf8').replace(/\r\n/g, '\n') !== fs.readFileSync(R('lean/eliminate/browser-check.mjs'), 'utf8').replace(/\r\n/g, '\n'))
+    notes.push(`${pageChecker} lags lean/eliminate/browser-check.mjs (another thread's dashboard/build-graph.mjs copies it). lean-client.js uses /api/lean/browser-check.mjs instead, so law verdicts are unaffected; anything importing the page copy directly (perturb.js fallback) evaluates with the older build.`);
   const d = mirror.diff();
   if (d.length) fail('stale:mirror', `${d.length} files`, `static mirror is stale relative to the sources: ${d.slice(0, 6).map(x => `${x.file} (${x.why})`).join(', ')}${d.length > 6 ? ', ...' : ''}`, 'node dashboard/build-lean-api.mjs');
 }

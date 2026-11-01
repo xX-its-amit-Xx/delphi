@@ -1,0 +1,46 @@
+{
+ "version": "1.3.0",
+ "frozen": "2026-11-01T05:01:26.427Z (sha256 of SCORER-PREREGISTRATION-v1.3.0.md bac949e83129d91d4e7d1c83d0549ec6a91a36539cb30cfd350f6fc671aabe6e; joint-model 6c6462433802a600; joint-calibration d94b7ead1cfda584)",
+ "weights": {
+  "P": 0.35,
+  "L": 0.25,
+  "G": 0.15,
+  "S": 0.15,
+  "E": 0.1
+ },
+ "floor": 0.01,
+ "alpha": 0.05,
+ "plausible_threshold": 0.5,
+ "evidence": {
+  "measured": 1,
+  "derived": 0.9,
+  "measured-secondhand": 0.8,
+  "calibrated": 0.7,
+  "borrowed": 0.6,
+  "assumed": 0.5
+ },
+ "decay_decades": 0.05,
+ "coverage_target": 4,
+ "no_evidence_P": 0.25,
+ "sanity_failed_value": 0.05,
+ "refused_score": 0.01,
+ "rank": {
+  "floor": 0.0001
+ },
+ "preregistration": "sim-engine/validate/SCORER-PREREGISTRATION-v1.3.0.md",
+ "changes_from_1.2.0": [
+  "ONE new term in P: p_joint, a correlation-aware joint plausibility term (joint.mjs). Everything else is v1.2.0 unchanged.",
+  "p_joint = empirical tail probability of the Mahalanobis distance of the log10 trait vector under a multivariate Gaussian fitted on benchmark DEV positives, with the design’s own family (every family: entry in reference_set_excluding) held out of the fit exactly, by subtracting that family’s sufficient statistics",
+  "two trait blocks, because the two large sources measure different traits: fishshapes (9 traits) and fishbase (10 traits); the block with more traits present is used, and the marginal sub-block covers whatever subset is present (minimum 3 traits)",
+  "calibration: q = D^2/d of real DEV positives under LEAVE-OWN-FAMILY-OUT, 101 quantiles per (block, dimension), so p answers \"how often is a real fish whose family the model never saw at least this far out?\"",
+  "p_joint enters P under the same alpha transform as the other calibrated p-values: min(1, p/0.05); P stays a min over its parts, times the coverage factor",
+  "the joint term reports WHICH trait pair is in an impossible combination (the off-diagonal contributions to D^2, with the correlation among real fish), so a low score is explainable",
+  "weights, floor, alpha, cut, evidence map, per-trait envelopes, definitional and organ rules, Lean gate, coverage factor and rank_score: unchanged from v1.2.0"
+ ],
+ "joint": {
+  "ridge": "1e-8 x mean(diag), numerical only",
+  "min_traits": 3,
+  "min_fit_n": 200,
+  "model": "multivariate Gaussian on log10 traits, complete cases per block"
+ }
+}

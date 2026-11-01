@@ -123,5 +123,21 @@ const doc = (base, edits, genotype) => { let d = { ...O.docFor(bundle, base), id
   try { t3 = threeResults(stub); } catch (e) { t3err = e.message; }
   check('three-results-guards', !t3err && t3 && t3.phenotype_similarity.physiology_envelope_outside === null && t3.lean_check.by_component.length === 1, t3err || 'blocks that did not run are reported as null, not crashed on');
 }
+// v1.3.0 joint term: it must see a shuffled decoy (correlations broken, every marginal realistic), which is what
+// per-trait envelopes cannot do. MUTATE feeds a REAL specimen instead, so the check is seen to be sensitive.
+{
+  const { jointTerm, fitBlock, inverse } = await import('../joint.mjs');
+  const real = { standard_length_m: 0.0961, body_mass_kg: 0.0101, body_depth_over_SL: 0.2437, body_width_over_SL: 0.1049, peduncle_depth_frac: 0.3416, peduncle_width_frac: 0.3932 };
+  // same marginals, recombined: a long thin body with a deep-bodied fish's depth and a deep peduncle
+  const decoy = { standard_length_m: 0.0961, body_mass_kg: 0.0101, body_depth_over_SL: 0.62, body_width_over_SL: 0.1049, peduncle_depth_frac: 0.95, peduncle_width_frac: 0.3932 };
+  const rr = jointTerm(real, {}), rd = jointTerm(M('joint-sees-broken-correlations') ? real : decoy, {});
+  check('joint-sees-broken-correlations', rr.ran && rd.ran && rr.p_value > 0.05 && rd.p_value < 0.01 && rd.top_broken_pairs.length > 0,
+    `real p ${rr.p_value}, recombined p ${rd.p_value}${rd.top_broken_pairs?.[0] ? ` (worst pair ${rd.top_broken_pairs[0].traits.join(' x ')}, r=${rd.top_broken_pairs[0].correlation_in_real_fish})` : ''}`);
+  // family-held-out fitting must be an exact subtraction, not a refit on everything
+  const all = fitBlock('fishshapes', {}), out = fitBlock('fishshapes', { excludeFamilies: M('joint-family-held-out') ? [] : ['Cyprinidae'] });
+  check('joint-family-held-out', all.ran && out.ran && out.n < all.n && out.held_out_families.length === 1 && Math.abs(out.mu[0] - all.mu[0]) > 1e-9,
+    `n ${all.n} -> ${out.n} with Cyprinidae held out`);
+  check('joint-inverse', (() => { const A = [[2, 0.3], [0.3, 1]], I = inverse(A); const p = I[0][0] * A[0][0] + I[0][1] * A[1][0]; return Math.abs(p - (M('joint-inverse') ? 0 : 1)) < 1e-9; })());
+}
 console.log(`\n${n - fails}/${n} passed${MUT ? ` (MUTATE=${MUT})` : ''}`);
 process.exit(fails);

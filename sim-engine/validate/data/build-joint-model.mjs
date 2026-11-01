@@ -19,12 +19,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 
-export const BLOCKS = {
-  fishshapes: ['standard_length_m', 'body_mass_kg', 'body_depth_over_SL', 'body_width_over_SL', 'peduncle_depth_frac', 'peduncle_width_frac', 'head_depth_over_body_depth', 'lower_jaw_over_SL', 'mouth_width_over_SL'],
-  fishbase: ['body_depth_over_SL', 'caudal_fin_aspect_ratio', 'caudal_fin_height_over_SL', 'eye_diameter_over_SL', 'head_length_over_SL', 'preanal_over_SL', 'predorsal_over_SL', 'preorbital_over_SL', 'prepectoral_over_SL', 'prepelvic_over_SL'],
-};
+// The block definitions live in joint.mjs (the scorer must never import a build script).
+import { BLOCKS } from '../joint.mjs';
+export { BLOCKS };
 
-if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
+{
   const DEV = path.resolve(import.meta.dirname, '..', 'benchmark', 'dev', 'items.jsonl');
   const raw = fs.readFileSync(DEV);
   const items = raw.toString('utf8').split('\n').filter(Boolean).map(l => JSON.parse(l)).filter(d => d.label === 'positive');

@@ -5,8 +5,7 @@
 //   node sim-engine/validate/data/build-joint-calibration.mjs
 import fs from 'node:fs';
 import path from 'node:path';
-import { BLOCKS } from './build-joint-model.mjs';
-import { fitBlock, mahalanobis, MIN_TRAITS } from '../joint.mjs';
+import { BLOCKS, fitBlock, mahalanobis, MIN_TRAITS } from '../joint.mjs';
 
 const DEV = path.resolve(import.meta.dirname, '..', 'benchmark', 'dev', 'items.jsonl');
 const items = fs.readFileSync(DEV, 'utf8').split('\n').filter(Boolean).map(l => JSON.parse(l)).filter(d => d.label === 'positive');
