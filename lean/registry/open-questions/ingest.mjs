@@ -22,6 +22,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { readJson, writeJson } from '../registry-lib.mjs';
+// Drop keys whose value is undefined: the validator tests `key in object`, so an explicitly-undefined optional
+// field fails its type check instead of being treated as absent.
+const defined = o => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
 import { ROOT, QUESTIONS_DIR, FAILED_DIR, REQUIREMENTS_DIR, contentHash, proportionOf, validateRecord, load } from './openq-lib.mjs';
 
 const R = (...p) => path.join(ROOT, ...p);
@@ -70,7 +73,7 @@ export function ingestDebate({ write = false } = {}) {
         : /vacuous|tautolog/i.test(String(rec.why)) ? 'vacuous'
         : /unsourced|no source/i.test(String(rec.why)) ? 'unsourced'
         : /circular|fitted to the data/i.test(String(rec.why)) ? 'unprovable-as-stated' : 'contradicted-by-data';
-      const out = {
+      const out = defined({
         record_type: 'failed-theorem', failure_id: 'ft-' + slug(rec.law_id), version: '1.0.0',
         statement_en: rec.statement_en, reason,
         contradicted_by: wild ? 'wild-type-organism' : 'a-proof',
@@ -86,7 +89,7 @@ export function ingestDebate({ write = false } = {}) {
         found_by: `Ruled REJECT by the LeanBio debate (${rec.criteria_version}) and routed here as a failed-theorem under CRITERIA.md "Record types emitted". ${wild ? 'The defeat is a WILD-TYPE failure inside the statement\'s own scope, which settles the matter against the statement rather than opening a question: no two measurements disagree here, a real animal simply does not obey it.' : ''}`,
         origin: { by_role: 'leanbio-debate', kind: 'agent' }, debate: prov,
         history: [{ version: '1.0.0', date: TODAY, change: `ingested from ${prov.from} (verdict ${rec.verdict}, failed gate ${rec.failed_gate || 'n/a'}, criteria ${rec.criteria_version})` }],
-      };
+      });
       out.content_hash = contentHash(out);
       const errs = validateRecord(out);
       if (errs.length) { skipped.push(`${f}: would not validate: ${errs.join('; ')}`); continue; }
@@ -94,7 +97,7 @@ export function ingestDebate({ write = false } = {}) {
       written.push({ file: `failed/${out.failure_id}.json`, type: 'failed-theorem', reason, contradicted_by: out.contradicted_by });
 
     } else if (rec.type === 'candidate-with-requirements') {
-      const out = {
+      const out = defined({
         record_type: 'candidate-with-requirements', requirement_id: 'cr-' + slug(rec.law_id), version: '1.0.0',
         law_id: rec.law_id, statement_en: rec.statement_en, verdict: 'NEEDS-WORK',
         not_checkable_because: (rec.requirements || []).length && /shared scope|no atoms|not checkable/i.test(String(rec.requirements))
@@ -104,7 +107,7 @@ export function ingestDebate({ write = false } = {}) {
         lean_ref: rec.lean ? { module: rec.lean.file || null, theorem: rec.lean.declaration || null, witness: rec.lean.witness || null } : null,
         origin: { by_role: 'leanbio-debate', kind: 'agent' }, debate: prov,
         history: [{ version: '1.0.0', date: TODAY, change: `ingested from ${prov.from} (verdict ${rec.verdict}, criteria ${rec.criteria_version})` }],
-      };
+      });
       out.content_hash = contentHash(out);
       const errs = validateRecord(out);
       if (errs.length) { skipped.push(`${f}: would not validate: ${errs.join('; ')}`); continue; }
@@ -113,7 +116,7 @@ export function ingestDebate({ write = false } = {}) {
 
     } else if (rec.type === 'open-question') {
       // An open question from the debate: arms come from the ruling, the PROPORTION is computed here.
-      const out = {
+      const out = defined({
         record_type: 'open-question', question_id: 'oq-' + slug(rec.law_id), version: '1.0.0',
         statement_en: rec.question || rec.statement_en, status: 'open',
         arms: (rec.arms || []).map((a, i) => ({ arm_id: a.arm_id || slug(a.position || ('arm-' + i)), position: a.position || (i === 0 ? 'for' : 'against'),
@@ -127,7 +130,7 @@ export function ingestDebate({ write = false } = {}) {
         found_by: `Ruled REJECT-because-the-evidence-points-both-ways by the LeanBio debate (${rec.criteria_version}) and routed here as an open-question under CRITERIA.md "Record types emitted". No arm may constrain a design while the question is open.`,
         origin: { by_role: 'leanbio-debate', kind: 'agent' }, debate: prov,
         history: [{ version: '1.0.0', date: TODAY, change: `ingested from ${prov.from} (verdict ${rec.verdict}, criteria ${rec.criteria_version})` }],
-      };
+      });
       skipped.push(`${f}: open-question needs hand review before writing (arms and what_would_settle_it must be checked against the sources); draft prepared, not written`);
       written.push({ file: `questions/${out.question_id}.json`, type: 'open-question', note: 'DRAFT ONLY, not written: needs hand review' });
     } else skipped.push(`${f}: type ${rec.type} is handled by the registry, not here`);

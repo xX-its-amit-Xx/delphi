@@ -93,6 +93,15 @@ export function validateRecord(rec, { schema = readJson(SCHEMA) } = {}) {
       if (a.formalisable === false && !a.not_formalisable_because) errs.push(`${id}/${a.arm_id}: formalisable false needs not_formalisable_because`);
       for (const [i, e] of (a.evidence || []).entries()) {
         if (!['support', 'contradict', undefined].includes(e.side)) errs.push(`${id}/${a.arm_id}/evidence[${i}]: side must be support or contradict`);
+        // belief-params.json `not_used[0]`: "A Lean proof of the claim's mathematical reading: it proves a
+        // model's consequence, not that organisms obey the model." A proof that an arm is CONSISTENT is not
+        // evidence that the arm is TRUE, so it must not raise that arm's belief. (Amit's ruling, 2026-11-01: the
+        // belief gate applies to empirical regularities, not to model theorems.) The `lean-conflict` class is
+        // sanctioned by belief-params.json for CONTRADICTION only, so it is allowed on the contradict side.
+        // A Lean fact about the arms belongs in `exclusivity`, which is not an input to the proportion.
+        const looksLean = /\blean\b|\bformalis|\btheorem\b|compiled/i.test(`${e.kind} ${e.claim}`);
+        if ((e.side ?? 'support') === 'support' && looksLean) errs.push(`${id}/${a.arm_id}/evidence[${i}]: a Lean proof must not be SUPPORTING evidence for an arm (belief-params.json not_used[0]: it proves a model's consequence, not that organisms obey the model). Record the Lean fact in `+'`exclusivity`'+` instead, which is not an input to the computed proportion.`);
+        if (e.belief_class === 'lean-conflict' && (e.side ?? 'support') !== 'contradict') errs.push(`${id}/${a.arm_id}/evidence[${i}]: belief-params.json defines the lean-conflict class for CONTRADICTION only`);
       }
       // An arm claiming a Lean ref must name a module that exists, or the record overstates what was formalised.
       if (a.lean_ref && a.lean_ref.module && !exists(R(a.lean_ref.module))) errs.push(`${id}/${a.arm_id}: lean_ref.module ${a.lean_ref.module} does not exist`);

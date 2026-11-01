@@ -37,6 +37,13 @@ function num(v, unit) {
 const xfmt = f => (f == null ? '—' : f >= 1 ? `${f.toFixed(2)}x larger` : `${(1 / f).toFixed(2)}x smaller`);
 
 // Status is NEVER colour alone: each state carries a glyph and a word as well.
+// The metric that is characteristic of each scenario, so two conditions failing the same check still
+// read differently. Keyed by scenario name, so a new design changes nothing here.
+const SIGNATURE = {
+  glide: 'glide_range_total_m', wind: 'ground_distance_total_m', altitude: 'air_density_kg_m3',
+  temperature: 'thermal_margin_C', current: 'ucrit_m_s', predator: 'escape_probability',
+  pressure: 'negative_buoyancy_fraction',
+};
 const SMAP = {
   pass: ['pass', '✓', 'pass'], 'pass-with-gaps': ['pass-with-gaps', '✓', 'pass, with gaps'],
   fail: ['fail', '✕', 'fail'], 'cannot-evaluate': ['na', '◌', 'not assessed'],
@@ -63,15 +70,22 @@ function gapBox(scale, reason, where) {
 // ---------------------------------------------------------------------------------------------------
 // three.js: ONE copy, created once, handed to every scene including the siblings'.
 const loader = new GLTFLoader();
+// ONE WebGL context for the whole page. Creating one per act made the browser drop earlier contexts
+// ("THREE.WebGLRenderer: Context Lost") once a few acts had been visited, which blanked the 3D scenes.
+let _renderer = null;
+function sharedRenderer() {
+  if (!_renderer) _renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
+  return _renderer;
+}
 const glbCache = new Map();
 const jsonCache = new Map();
 const getJSON = u => (jsonCache.has(u) ? jsonCache.get(u) : (jsonCache.set(u, fetch(u).then(r => (r.ok ? r.json() : null)).catch(() => null)), jsonCache.get(u)));
-const getGLB = u => (glbCache.has(u) ? glbCache.get(u) : (glbCache.set(u, new Promise(res => loader.load(u, g => res(g), () => res(null), () => res(null)))), glbCache.get(u)));
+const getGLB = u => (glbCache.has(u) ? glbCache.get(u) : (glbCache.set(u, new Promise(res => loader.load(u, g => res(g), undefined, () => res(null)))), glbCache.get(u)));
 
 /** A small three.js stage: water below, air above, one fish. Returns helpers an act drives from `t`. */
 function makeStage3D(container, { theme }) {
   const w = () => container.clientWidth || 640, h = () => container.clientHeight || 400;
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
+  const renderer = sharedRenderer();
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
   renderer.setSize(w(), h(), false);
   renderer.domElement.style.cssText = 'display:block;width:100%;height:100%';
@@ -93,8 +107,9 @@ function makeStage3D(container, { theme }) {
     render() { renderer.render(scene, camera); },
     resize: onResize,
     dispose() {
-      scene.traverse(o => { o.geometry?.dispose?.(); const m = o.material; (Array.isArray(m) ? m : m ? [m] : []).forEach(x => x.dispose?.()); });
-      renderer.dispose(); renderer.forceContextLoss?.(); renderer.domElement.remove();
+      // Dispose this act's own geometry and materials, but NOT the shared renderer or its context.
+      scene.traverse(o => { if (o.userData.shared) return; o.geometry?.dispose?.(); const m = o.material; (Array.isArray(m) ? m : m ? [m] : []).forEach(x => x.dispose?.()); });
+      renderer.domElement.remove();
     },
   };
 }
@@ -112,9 +127,11 @@ async function loadOrganism(glbName, manifestName) {
   // in metres is reported in the panel below, from the manifest; the on-screen size is a framing choice.
   const box = new THREE.Box3().setFromObject(root);
   const c = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
-  root.position.sub(c);
   const k = 0.52 / Math.max(size.x, 0.001);
   root.scale.setScalar(k);
+  // Scale first, then offset by the SCALED centre: position is not affected by the object's own scale,
+  // so subtracting the unscaled centre after scaling pushed the fish far outside the camera's view.
+  root.position.copy(c).multiplyScalar(-k);
   return { root, manifest: man, byName, metresPerUnit: mpu, modelSize: size, frameScale: k };
 }
 
@@ -347,9 +364,9 @@ async function actAnalogue(container, { data, theme }) {
     const des = data.design || {};
     // The analogue's own mesh when the repo holds one for it; otherwise the act stays with the design and
     // says the analogue has no mesh here rather than drawing a stand-in.
-    const anaId = first.id || null;
-    const anaGlb = { 'flying-fish': ['flying-fish.glb', 'manifest.json'], 'zebrafish-adult': ['zebrafish-adult.glb', 'manifest-adult.json'] }[anaId] || null;
-    [org, ana] = await Promise.all([loadOrganism(des.glb, des.manifest), anaGlb ? loadOrganism(anaGlb[0], anaGlb[1]) : Promise.resolve(null)]);
+    const anaId = first.repo_organism || first.id || null;
+    const anaGlb = first.mesh || null;   // resolved by gen.mjs; null means this repo holds no such mesh
+    [org, ana] = await Promise.all([loadOrganism(des.glb, des.manifest), anaGlb ? loadOrganism(anaGlb.glb, anaGlb.manifest) : Promise.resolve(null)]);
     if (org) { d3.pivot.add(org.root); org.root.position.x = -0.3; }
     if (ana) { d3.pivot.add(ana.root); ana.root.position.x = 0.3; }
 
@@ -387,7 +404,7 @@ async function actAnalogue(container, { data, theme }) {
     items = [
       { label: `analogue: ${first.name || anaId}`, kind: 'curated', source: first.source || an.chosen_from || 'pipeline analogue.analogues' },
       { label: 'why it was chosen', kind: 'derived', source: 'chosen by function, not relatedness (analogue.rule)' },
-      ...(ana ? [{ label: `analogue mesh ${anaGlb[0]}`, kind: 'derived', source: anaGlb[1] }] : [{ label: 'analogue mesh', kind: 'absent', source: 'this repo holds no mesh for the analogue, so none is drawn and no stand-in is used' }]),
+      ...(ana ? [{ label: `analogue mesh ${anaGlb.glb}`, kind: 'derived', source: `${anaGlb.manifest} (repo organism ${anaGlb.organism})` }] : [{ label: 'analogue mesh', kind: 'absent', source: 'this repo holds no mesh for the analogue, so none is drawn and no stand-in is used' }]),
       ...(first.data_poor_statement ? [{ label: 'the analogue’s own evidence', kind: 'absent', source: first.data_poor_statement }] : []),
       { label: 'sea plane, lighting, camera move', kind: 'decorative', source: 'drawn to orient the viewer; affects no number' },
     ];
@@ -419,7 +436,7 @@ function actPhysics(container, { data }) {
   const cards = conds.map(c => {
     const k = sKind(c.status);
     const d = el('div');
-    d.style.cssText = `border:1px solid rgba(255,255,255,.16);border-left:3px ${k === 'na' ? 'dashed' : 'solid'} ${k === 'fail' ? '#ef7a6e' : k === 'na' ? 'rgba(255,255,255,.34)' : '#58c07f'};border-radius:8px;padding:8px 9px;background:${k === 'na' ? 'rgba(255,255,255,.045)' : 'rgba(6,26,31,.56)'};color:#fff;display:flex;flex-direction:column;gap:5px;opacity:0;transition:opacity .35s ease`;
+    d.style.cssText = `border:1px solid rgba(255,255,255,.16);border-left:3px ${k === 'na' ? 'dashed' : 'solid'} ${k === 'fail' ? '#ef7a6e' : k === 'na' ? 'rgba(255,255,255,.34)' : '#58c07f'};border-radius:8px;padding:8px 9px;background:${k === 'na' ? 'rgba(255,255,255,.045)' : 'rgba(6,26,31,.56)'};color:#fff;display:flex;flex-direction:column;gap:5px;opacity:0.17;transition:opacity .35s ease`;
     if (k === 'na') d.style.backgroundImage = 'repeating-linear-gradient(45deg,transparent,transparent 6px,rgba(255,255,255,.1) 6px,rgba(255,255,255,.1) 7px)';
     const h = el('div'); h.style.cssText = 'font:500 13px/1.25 "IBM Plex Sans",sans-serif'; h.textContent = c.label; d.appendChild(h);
     const s = el('div'); s.style.cssText = `font:500 10.5px/1 "IBM Plex Mono",monospace;letter-spacing:.05em;text-transform:uppercase;color:${k === 'fail' ? '#ef7a6e' : k === 'na' ? 'rgba(255,255,255,.66)' : '#58c07f'}`;
@@ -427,6 +444,11 @@ function actPhysics(container, { data }) {
     const key = (c.checks || []).find(k => k.status === 'fail') || (c.checks || []).find(k => k.status === 'pass') || (c.checks || [])[0];
     if (key) { const v = el('div'); v.style.cssText = 'font:400 11px/1.4 "IBM Plex Mono",monospace;color:rgba(255,255,255,.8)'; v.textContent = `${key.label}: ${num(key.value, key.unit)}`; d.appendChild(v); }
     else if (c.reason) { const v = el('div'); v.style.cssText = 'font:400 10.5px/1.4 "IBM Plex Mono",monospace;color:rgba(255,255,255,.66)'; v.textContent = String(c.reason).slice(0, 120); d.appendChild(v); }
+    const sig = (c.metrics || []).find(m => m.key === SIGNATURE[c.scenario]);
+    if (sig && typeof sig.value === 'number') {
+      const v2 = el('div'); v2.style.cssText = 'font:400 11px/1.4 "IBM Plex Mono",monospace;color:rgba(255,255,255,.62)';
+      v2.textContent = `${sig.label || sig.key}: ${num(sig.value, sig.unit)}`; d.appendChild(v2);
+    }
     grid.appendChild(d); return d;
   });
 
@@ -456,7 +478,7 @@ function actPhysics(container, { data }) {
   const duration = Math.max(20, LEAD + conds.length * PER + (ensNode ? 5 : 2));
   const render = t => {
     const shown = reduced() ? cards.length : Math.floor((t - LEAD) / PER) + 1;
-    cards.forEach((c, i) => { c.style.opacity = i < shown ? '1' : '0'; });
+    cards.forEach((c, i) => { c.style.opacity = i < shown ? '1' : '0.17'; });
     if (ensNode) ensNode.style.opacity = reduced() || t > LEAD + conds.length * PER ? '1' : '0';
   };
 
@@ -590,8 +612,8 @@ const ACTS = [
   { id: 'design', no: 2, title: 'The design', mount: (c, x) => actDesign(c, x) },
   { id: 'analogue', no: 3, title: 'The analogue', mount: (c, x) => actAnalogue(c, x) },
   { id: 'molecules', no: 4, title: 'Molecules', sibling: ['molecular.js', 'molecules', 'The molecular scale'] },
-  { id: 'networks', no: 5, title: 'Networks and development', sibling: ['networks.js', 'networks', 'Gene regulation, pathways, metabolism and development'] },
-  { id: 'physics', no: 6, title: 'Physics, condition by condition', mount: (c, x) => actPhysics(c, x) },
+  { id: 'networks', no: 5, title: 'Networks and development', short: 'Networks', sibling: ['networks.js', 'networks', 'Gene regulation, pathways, metabolism and development'] },
+  { id: 'physics', no: 6, title: 'Physics, condition by condition', short: 'Physics', mount: (c, x) => actPhysics(c, x) },
   { id: 'verdict', no: 7, title: 'The verdict', mount: (c, x) => actVerdict(c, x) },
 ];
 
@@ -760,7 +782,7 @@ function renderScrub() {
     s.style.left = `${i * w}%`; s.style.width = `${w}%`;
     s.dataset.on = i === S.cur ? '1' : '0';
     if (a.skip) s.dataset.skip = '1';
-    s.append(el('span', null, `${a.no}. ${a.title}${a.skip ? ' (empty)' : ''}`));
+    s.append(el('span', null, `${a.no}. ${a.short || a.title}${a.skip ? ' (empty)' : ''}`));
     s.addEventListener('click', ev => { ev.stopPropagation(); gotoAct(i, 0); });
     sc.appendChild(s);
   });

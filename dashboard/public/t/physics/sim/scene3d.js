@@ -721,7 +721,10 @@ export async function mount(opts = {}) {
         ok: true, drawn: s.drawn_H_s_m, trueHs: s.true_H_s_m, wind: s.wind_m_s,
         windSource: s.wind_source, peakLambda: s.true_peak_wavelength_m,
         peakPeriod: s.true_peak_period_s,
-        ratio: s.true_H_s_m > 0 ? s.true_H_s_m / s.drawn_H_s_m : null,
+        // which way the scaling goes. In the locked baseline (wind_waves "calm") the TRUE sea is flat
+        // and what is drawn is env3d's calm floor, i.e. rougher than the conditions, not gentler.
+        down: s.true_H_s_m > s.drawn_H_s_m,
+        ratio: s.drawn_H_s_m > 0 ? s.true_H_s_m / s.drawn_H_s_m : null,
       };
     } catch (e) { return { ok: false }; }
   }
@@ -729,7 +732,9 @@ export async function mount(opts = {}) {
     const el = $('#s3seaNote'); if (!el) return;
     const s = seaFacts();
     el.innerHTML = s.ok
-      ? `<b>The sea is drawn to scale for the fish, not for the wind.</b> Significant wave height drawn <b>${fx(s.drawn, 3)} m</b>; the true Pierson–Moskowitz height at ${fx(s.wind, 1)} m/s of wind is <b>${fx(s.trueHs, 3)} m</b>${s.peakLambda ? `, peak wavelength ${fx(s.peakLambda, 0)} m` : ''}. env3d scales it (<code>0.12 × H<sub>s</sub></code>, clamped to 0.06–0.45 m) so a 0.2 m fish is not swallowed by one wave. <b>Do not read the sea state off this picture</b> — and note the solver has no sea state at all, so no number here depends on either figure.`
+      ? `<b>The sea you see is not the sea the numbers would meet.</b> Significant wave height <b>drawn ${fx(s.drawn, 3)} m</b>; the <b>true</b> Pierson–Moskowitz height for ${fx(s.wind, 1)} m/s of wind is <b>${fx(s.trueHs, 3)} m</b>${s.peakLambda > 0 ? `, peak wavelength ${fx(s.peakLambda, 0)} m` : ''}. ${s.down
+          ? `env3d scales it down (<code>0.12 × H<sub>s</sub></code>, clamped to 0.06–0.45 m, here a factor of ${fx(s.ratio, 1)}) so a 0.2 m fish is not swallowed by a single wave.`
+          : `The locked baseline is <b>calm</b>, so the true sea is flat and what you see is env3d's 0.06 m floor — the drawn sea is <b>rougher</b> than the stated conditions, drawn only so the surface is visible at all.`} <b>Do not read a sea state off this picture.</b> The solver has no sea state at all, so no number on this page depends on either figure.`
       : `The sea is decorative: ${esc((ocean && ocean.source) || 'a stand-in until env3d.js reports its sea')}. The solver has no sea state, so no number depends on it.`;
   }
 
@@ -751,7 +756,7 @@ export async function mount(opts = {}) {
     const cLegend = creaturesLegend(), cScope = creaturesScope();
     const sea = seaFacts();
     const seaLine = sea.ok
-      ? `env3d.js ocean. The wave <b>speeds</b> are the real deep-water ones for their wavelengths (&omega; = &radic;(gk)). The wave <b>height and wavelengths are not</b>: env3d draws H<sub>s</sub> = <b>${fx(sea.drawn, 3)} m</b> where the Pierson–Moskowitz sea for ${fx(sea.wind, 1)} m/s of wind is <b>${fx(sea.trueHs, 3)} m</b> &mdash; a factor of ${sea.ratio != null ? fx(sea.ratio, 1) : '?'} &mdash; and a 13/7.3/4.1/2.3 m band of wavelengths in place of the true ${sea.peakLambda != null ? fx(sea.peakLambda, 0) + ' m' : '83 m'} spectral peak. <b>It is scaled so a 0.2 m fish stays visible</b>: at the true scale the fish would be swallowed by one wave. ${esc(sea.windSource || '')} Tile ${fx(oceanSize, 0)} m, cell ${ocean.cellSize ? fx(ocean.cellSize, 2) : '?'} m.`
+      ? `env3d.js ocean. The wave <b>speeds</b> are the real deep-water ones for their wavelengths (&omega; = &radic;(gk)). The wave <b>heights and wavelengths are not</b>: H<sub>s</sub> drawn <b>${fx(sea.drawn, 3)} m</b> against a true Pierson–Moskowitz <b>${fx(sea.trueHs, 3)} m</b> at ${fx(sea.wind, 1)} m/s of wind${sea.down ? ` (scaled down by ${fx(sea.ratio, 1)}×)` : ' (the baseline is calm, so what is drawn is env3d’s 0.06 m floor and is ROUGHER than the stated conditions)'}, and a 13/7.3/4.1/2.3 m band of wavelengths in place of the true ${sea.peakLambda > 0 ? fx(sea.peakLambda, 0) + ' m' : '83 m at 10 m/s'} spectral peak — a 0.2 m fish would vanish in one real wave. ${esc(sea.windSource || '')} Tile ${fx(oceanSize, 0)} m, cell ${ocean.cellSize ? fx(ocean.cellSize, 2) : '?'} m.`
       : esc((ocean && ocean.source) || 'the fallback ocean in scene3d.js');
     const ens = st.ensemble;
     $('#s3legend').innerHTML = `

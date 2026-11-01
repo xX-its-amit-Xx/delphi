@@ -281,7 +281,7 @@
         { "name": "lean_module_price_equation", "status": "MISSING", "note": "The general form of Hamilton's rule is a rearrangement of the Price equation, so the Price module is a prerequisite and not an alternative.", "gap_id": "lean-price" },
         { "name": "lean_module_hamilton_rule", "status": "MISSING", "note": "Both forms, with the general form proved from the Price identity and the restricted form proved from its stated premises.", "gap_id": "lean-hamilton" },
         { "name": "lean_counter_model", "status": "MISSING", "note": "Needed for the third statement: certifying that the restricted form does NOT hold without additivity. Today the registry can prove a contradiction between two laws but cannot certify a non-consequence.", "gap_id": "lean-counter-model" },
-        { "name": "data_relatedness", "status": "MISSING", "note": "Within-colony relatedness and measured fitness effects for the origins of eusociality. The empirical half needs data this project does not have and has no route to.", "gap_id": "data-relatedness" }
+        { "name": "data_relatedness_eusocial", "status": "MISSING", "note": "Within-colony relatedness and measured fitness effects for the origins of eusociality. The empirical half needs data this project does not have and has no route to.", "gap_id": "data-relatedness" }
       ],
       "open_problem_ids": [],
       "citations": ["hamilton1964", "nowak2010", "abbot2011", "gardner2011", "birch2014", "birch2015", "price1970"],
@@ -308,16 +308,16 @@
           {
             "claim": "Under the same premises, mean fitness is non-decreasing; and therefore a claimed DECLINE in mean fitness under constant fitnesses and no mutation is impossible.",
             "settles": "The elimination form: a claimed trajectory of mean fitness that falls, with the premises stated, is ruled out. The repo proves the elimination separately from the equality.",
-            "lean": "Delphi.mean_fitness_nondecreasing, Delphi.Eliminate.fisher_decline_rules_out",
-            "module": "lean/Delphi/Fisher.lean, lean/Delphi/Audit.lean",
+            "lean": "Delphi.mean_fitness_nondecreasing, Delphi.Constraints.fisher_decline_rules_out",
+            "module": "lean/Delphi/Fisher.lean, lean/Delphi/Constraints.lean",
             "law_id": "fisher-ftns",
             "state": "proved-here"
           },
           {
             "claim": "If the additive genetic variance in fitness is zero, then the change in mean fitness is zero, so a claimed change under zero variance is impossible.",
             "settles": "The degenerate case, proved separately, which is where overstated readings of the theorem break first.",
-            "lean": "Delphi.Eliminate.fisher_zero_variance_rules_out",
-            "module": "lean/Delphi/Audit.lean",
+            "lean": "Delphi.Constraints.fisher_zero_variance_rules_out",
+            "module": "lean/Delphi/Constraints.lean",
             "state": "proved-here"
           },
           {
@@ -334,12 +334,12 @@
           { "what": "Whether mean fitness actually increases in any real population over any real interval.", "why_not_provable": "The theorem is silent on this, and the commonest misreading of it is to treat the proof as the answer.", "measurement": "Longitudinal fitness measurement in a population with a stable definition of fitness, which is itself contested." },
           { "what": "Whether the environment is constant, which the narrow form requires and which is almost never true.", "why_not_provable": "An empirical property of the population's circumstances.", "measurement": "Measurement of fitness-relevant environmental variation over the same interval as the fitness measurement." },
           { "what": "Whether the additive approximation to the genetic variance is adequate for the trait in question.", "why_not_provable": "Depends on the actual genetic architecture.", "measurement": "Variance decomposition from a breeding design or a mutant panel." },
-          { "what": "What the actual mutation rate and effect distribution are, which decides whether the mutation-selection extension matters in practice.", "why_not_provable": "Measurements.", "measurement": "Mutation-accumulation lines with fitness assayed." }
+          { "what": "What the actual mutation rate and effect distribution are, which decides whether the mutation-selection extension matters in practice.", "why_not_provable": "Both are measurements of a particular organism in a particular environment.", "measurement": "Mutation-accumulation lines with fitness assayed." }
         ]
       },
       "in_repo": [
         { "kind": "lean-theorem", "ref": "Delphi.fisher_fundamental_theorem, fisher_fundamental_theorem', mean_fitness_nondecreasing, select_isFreq", "note": "The theorem, an alternative form, monotonicity, and a proof that selection preserves the frequency simplex, so the statement is not vacuous on a degenerate input.", "strength": "real" },
-        { "kind": "lean-theorem", "ref": "Delphi.Eliminate.fisher_rules_out, fisher_decline_rules_out, fisher_zero_variance_rules_out", "note": "Three elimination forms, so the theorem can be used to rule out a claim and not only to assert one.", "strength": "real" },
+        { "kind": "lean-theorem", "ref": "Delphi.Constraints.fisher_rules_out, fisher_decline_rules_out, fisher_zero_variance_rules_out", "note": "Three elimination forms, so the theorem can be used to rule out a claim and not only to assert one.", "strength": "real" },
         { "kind": "registry-law", "ref": "fisher-ftns", "note": "In the registry with its scope, its named hypotheses and its non-vacuity witness, reachable from the MCP tools, both CLIs and the static mirror.", "strength": "real" }
       ],
       "tools_needed": [
@@ -457,7 +457,7 @@
       ],
       "tools_needed": [
         { "name": "lean_module_wbe_derivation", "status": "MISSING", "note": "Whether 3/4 follows from the fractal-network premises, with asymmetric branching as a variant. The formalisable half of a thirty-year dispute, and this repo's own enumeration already names it.", "gap_id": "lean-wbe" },
-        { "name": "data_metabolic_scaling", "status": "MISSING", "note": "Metabolic rate against mass with phylogeny, over enough range to test for curvature. Not buildable here; it is a data acquisition.", "gap_id": "data-metabolic-scaling" },
+        { "name": "data_metabolic_rate_mass", "status": "MISSING", "note": "Metabolic rate against mass with phylogeny, over enough range to test for curvature. Not buildable here; it is a data acquisition.", "gap_id": "data-metabolic-scaling" },
         { "name": "lean_check", "status": "EXISTS", "note": "Evaluates the mass-length rows against a design or a measured organism, and returns cannot-evaluate rather than substituting a different area convention." },
         { "name": "lean_laws_list", "status": "EXISTS", "note": "Separates theorem from empirical-observation by class, which is what keeps the two halves of this dispute apart." }
       ],
@@ -537,7 +537,7 @@
         "items": [
           { "what": "Whether ageing has one cause at all.", "why_not_provable": "A fact about organisms, and the honest answer to this grand question is that its formalisable core is small: almost all of it is empirical.", "measurement": "Interventions that separate candidate mechanisms in the same organism, with lifespan and healthspan measured." },
           { "what": "Whether senescence is driven by accumulated molecular damage or by the continued action of wild-type genes past their useful window (hyperfunction).", "why_not_provable": "Both accounts are internally consistent and make overlapping predictions. Which operates is empirical.", "measurement": "Damage markers and pathway activity measured together under interventions that change lifespan, in a model organism." },
-          { "what": "What the actual age-specific schedules are in the wild, as opposed to in the laboratory.", "why_not_provable": "Field measurements.", "measurement": "Longitudinal mark-recapture with age-specific mortality and fecundity recorded." },
+          { "what": "What the actual age-specific schedules are in the wild, as opposed to in the laboratory.", "why_not_provable": "A field measurement, and laboratory schedules differ systematically from wild ones.", "measurement": "Longitudinal mark-recapture with age-specific mortality and fecundity recorded." },
           { "what": "Whether the energy budget is actually binding, or whether repair and reproduction are not in competition in the relevant range.", "why_not_provable": "A physiological fact.", "measurement": "Direct calorimetry with reproduction manipulated." }
         ]
       },
@@ -642,8 +642,8 @@
           {
             "claim": "If a claimed adaptive trajectory requires n substitutions in T generations at mutation rate mu in population M, then the expected waiting time bounds whether it is possible at all.",
             "settles": "Prediction as elimination, which is the honest formalisable form of this question: not what will happen, but what cannot.",
-            "lean": "Delphi.Genotype.expectedWaitingTime_bounds, Delphi.Eliminate.supply_rules_out",
-            "module": "lean/Delphi/Genotype.lean, lean/Delphi/Audit.lean",
+            "lean": "Delphi.Genotype.expectedWaitingTime_bounds, Delphi.Constraints.supply_rules_out",
+            "module": "lean/Delphi/Genotype.lean, lean/Delphi/Constraints.lean",
             "law_id": "genotype-substitution-time",
             "state": "proved-here"
           }
@@ -662,7 +662,7 @@
       "in_repo": [
         { "kind": "lean-theorem", "ref": "Delphi.NeutralChain (fixedBy, fixedBy_tendsto, fixationProbability_eq, wfKernel, wrightFisher, substitutionRate, neutral_substitution_rate)", "note": "A full finite-population Markov chain development with fixation proved as a limit and the Wright-Fisher kernel constructed, not postulated.", "strength": "real" },
         { "kind": "lean-theorem", "ref": "Delphi.FavoredChain (fixationProbability_ge, fixationProbability_le_one, binomialKernel, wrightFisherSelection, wrightFisher_toFavored_fixedBy)", "note": "The with-selection chain and a proved lower bound, plus a proved relation back to the neutral chain so the two are not separate stories.", "strength": "real" },
-        { "kind": "lean-theorem", "ref": "Delphi.Eliminate.kimura_rate_rules_out, kimura_rate_ratio_rules_out, neutral_fixation_rules_out, favored_fixation_rules_out, supply_rules_out, supply_rules_out'", "note": "Six elimination theorems: the prediction turned into a ruling-out, which is what the eliminate pipeline consumes.", "strength": "real" },
+        { "kind": "lean-theorem", "ref": "Delphi.Constraints.kimura_rate_rules_out, kimura_rate_ratio_rules_out, neutral_fixation_rules_out, favored_fixation_rules_out, supply_rules_out, supply_rules_out'", "note": "Six elimination theorems: the prediction turned into a ruling-out, which is what the eliminate pipeline consumes.", "strength": "real" },
         { "kind": "registry-law", "ref": "kimura-substitution-rate, kimura-fixation-probability, kimura-heterozygosity, favored-fixation-lower-bound, genotype-substitution-time, haldane-cost-of-selection", "note": "Six registry laws bearing directly on what a population can and cannot do in a given time.", "strength": "real" }
       ],
       "tools_needed": [
@@ -739,8 +739,8 @@
           {
             "claim": "If weight follows a cube law and cross-sectional area an area law with stated material strength, then there exists a size beyond which the structure cannot carry itself, and a claimed performance beyond it is impossible.",
             "settles": "Galileo's and Thompson's size limit, as an existence theorem rather than an intuition, together with its elimination form for a stated organism.",
-            "lean": "Delphi.exists_size_limit, Delphi.cannot_carry, Delphi.Eliminate.giant_rules_out",
-            "module": "lean/Delphi/Thompson.lean, lean/Delphi/Scaling.lean, lean/Delphi/Audit.lean",
+            "lean": "Delphi.exists_size_limit, Delphi.cannot_carry, Delphi.Constraints.giant_rules_out",
+            "module": "lean/Delphi/Thompson.lean, lean/Delphi/Scaling.lean, lean/Delphi/Constraints.lean",
             "law_id": "thompson1917-ch02-07, scaling-strength-law",
             "state": "proved-here"
           },
@@ -771,7 +771,7 @@
       },
       "in_repo": [
         { "kind": "lean-theorem", "ref": "Delphi.cubeLaw_ratio, cubeLaw_loglog_exponent, not_cubeLaw_of_exponent_ne_three, exists_size_limit, vmin_ratio, powerRequired_log, areaLaw_ratio, wingLoading_ratio, breakLoad_ratio, safetyFactor_scaled, stress_ratio, cannot_carry", "note": "The scaling core of the repo: twelve or more proved statements covering ratios, log-log exponents, safety factors and the existence of a size limit.", "strength": "real" },
-        { "kind": "lean-theorem", "ref": "Delphi.Eliminate (cubeLaw_rules_out, giant_rules_out, stress_ratio_rules_out, area_exponent_rules_out, bending_exponent_rules_out, froude_rules_out, allometry_consistency_rules_out)", "note": "A dedicated elimination module turning each scaling theorem into a ruling-out over stated intervals, which is what the eliminate pipeline consumes.", "strength": "real" },
+        { "kind": "lean-theorem", "ref": "Delphi.Constraints (cubeLaw_rules_out, giant_rules_out, stress_ratio_rules_out, area_exponent_rules_out, bending_exponent_rules_out, froude_rules_out, allometry_consistency_rules_out)", "note": "A dedicated elimination module turning each scaling theorem into a ruling-out over stated intervals, which is what the eliminate pipeline consumes.", "strength": "real" },
         { "kind": "registry-law", "ref": "E1, E2, thompson1917-ch02-06, ch02-07, ch02-10, ch03-07, scaling-area-law, scaling-strength-law, scaling-bending-law", "note": "Theorems and empirical observations held in separate classes within one lawset (currently 1.7.0), each with scope, hypotheses and a non-vacuity witness.", "strength": "real" },
         { "kind": "tool", "ref": "growth_trajectory, scenario_timecourse, organism_list_parts, optimize, design_score", "note": "The question is served end to end: a design can be edited, grown through every stage in the parametric stage table, scored, and rejected by a law with the law named.", "strength": "real" },
         { "kind": "failed-validation", "ref": "sim-engine/validation/hhip-fin-area.mjs and PREREGISTRATION.md section 5a", "note": "The pre-registered falsifier failed, including a diagnosis of a reasoning error in the pre-registration itself. The strongest formalised question in the repo is also the one with the clearest recorded empirical failure, and both facts belong in the same entry.", "strength": "real" },

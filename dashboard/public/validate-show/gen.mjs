@@ -107,6 +107,15 @@ const humanise = p => String(p).replace(/_over_SL2$/, ' / SL^2').replace(/_over_
 const labelOf = p => (PARAM_LABELS[p] ? PARAM_LABELS[p][0] : humanise(p));
 const partOf = p => (PARAM_LABELS[p] ? PARAM_LABELS[p][1] : null);
 const readJSON = f => JSON.parse(fs.readFileSync(f, 'utf8'));
+const MANIFEST_OF = { 'flying-fish': 'manifest.json', 'zebrafish-adult': 'manifest-adult.json', tff: 'tff-manifest.json' };
+const meshFor = id => {
+  if (!id) return null;
+  const manifest = MANIFEST_OF[id] || `${id}-manifest.json`;
+  if (!fs.existsSync(path.join(MODELS, manifest))) return null;
+  const mf = readJSON(path.join(MODELS, manifest));
+  const glb = mf?.file ? path.basename(mf.file) : `${id}.glb`;
+  return fs.existsSync(path.join(MODELS, glb)) ? { organism: id, glb, manifest } : null;
+};
 const r4 = n => (typeof n === 'number' && Number.isFinite(n) ? +n.toFixed(6) : n);
 const rx = n => (typeof n === 'number' && Number.isFinite(n) ? (n >= 100 || n < 0.01 ? n.toPrecision(3) : n.toFixed(2)) : '?');
 
@@ -441,7 +450,15 @@ async function main() {
         lean_recheck: resolved.lean_recheck ?? null,
       },
       differences: V.differences ?? null,
-      analogue: { ...an, rule: 'chosen by FUNCTION, not relatedness. The phylogenetic and functional distances are reported separately and never combined.' },
+      analogue: {
+        ...an,
+        analogues: (an.analogues || []).map(a => ({
+          ...a,
+          // Resolved HERE so the page never guesses a filename: null means this repo genuinely holds no
+          // mesh for that analogue, and the act says so instead of drawing a stand-in.
+          mesh: meshFor(a.repo_organism || a.organism || a.id),
+        })),
+        rule: 'chosen by FUNCTION, not relatedness. The phylogenetic and functional distances are reported separately and never combined.' },
       scales, unassessable_scales: unassessable,
       scales_note: V.scales?.note ?? null,
       anatomy_reached: V.scales?.anatomy_reached ?? null,

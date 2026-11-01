@@ -1,0 +1,74 @@
+{
+ "record_type": "candidate-with-requirements",
+ "requirement_id": "cr-disc-flying-fish-fin-ratio-gap",
+ "version": "1.0.0",
+ "law_id": "disc-flying-fish-fin-ratio-gap",
+ "statement_en": "Every measured flying fish has pectoral/SL at least 0.406, and every measured non-flying-fish beloniform (flying halfbeaks, halfbeaks, needlefish) at most 0.389: the groups do not overlap (n = 49 flying fish, 60 others).",
+ "verdict": "NEEDS-WORK",
+ "missing_inputs": [
+  "Narrow scope to taxa: [Exocoetidae, Hemiramphidae, Belonidae, as sampled in Daane 2021 Data S1A], life_stages: [adult], and state it is museum specimens (n = 109). Drop the claim over Beloniformes as an order.",
+  "Fix the source citation: re-fetch Data S1A, record its true sha256 (the cached file hashes to 4f654c701f6196dc, not the cited 9c941299f5869e56), and cite a table or column locator plus a DOI/PMID for Daane 2021.  [WITHDRAWN: the cited hash is correct; the hash check itself was the bug - see corrections]",
+  "Declare meta.constants explicitly with kind 'derived' (not an inferred 'cited'), stating the derivation: min/max of pectoral length over standard length across the 49 flying-fish and 60 other rows. Give the unrounded values 0.40625 and 0.38842975, and note the rounding is conservative (0.406 < 0.40625 and 0.389 > 0.38843, so the stated gap is slightly narrower than the measured one).",
+  "Make the law checkable per organism by declaring a per-animal quantity (pectoralOverSL) and a group-membership input, so the atoms read 'flying fish: pectoralOverSL ≥ 0.406; non-flying beloniform: pectoralOverSL ≤ 0.389'. Add measured pectoral/SL values to wildtype.json for the in-scope species so C6 can evaluate. Alternatively supply held-out specimens, which also addresses C7.",
+  "Keep the record-bound wording in statement_en and caveats, and add that the 0.389 to 0.406 band is an unobserved gap in the sample, not a forbidden region (transitional or juvenile forms are not excluded)."
+ ],
+ "would_constrain_if_supplied": "Once the listed inputs are declared, this statement binds designs through disc-flying-fish-fin-ratio-gap and can be reproposed. Until then it is sound and unevaluable, which is why it is recorded here rather than as a failure.",
+ "lean_ref": {
+  "module": "lean/registry/discovered/disc-flying-fish-fin-ratio-gap/meta.json",
+  "theorem": "Delphi.Proposed.FinRatioGap.FinRatioGap",
+  "witness": "Delphi.Proposed.FinRatioGap.witness"
+ },
+ "origin": {
+  "by_role": "leanbio-debate",
+  "kind": "agent"
+ },
+ "debate": {
+  "from": "pipeline/leanbio/debate/out/records/disc-flying-fish-fin-ratio-gap.json",
+  "verdict": "NEEDS-WORK",
+  "criteria_version": "leanbio-debate-criteria/1.2.0",
+  "criteria_sha256": "13ee79891caebd62799dc8947b73de041c9488c39a395861d34cf157a0f10169",
+  "emitted_at": "2026-11-01T05:44:19.853Z",
+  "failed_gate": null,
+  "criteria": {
+   "C1_binds_something_real": {
+    "verdict": "pass",
+    "reason": "a witness satisfies the law, and the in-range design {\"flyingFishMinFinRatio\":0,\"otherBeloniformMaxFinRatio\":0.389} is rejected by 0.406 ≤ q.flyingFishMinFinRatio; q.otherBeloniformMaxFinRatio < q.flyingFishMinFinRatio"
+   },
+   "C2_constants_sourced": {
+    "verdict": "pass",
+    "reason": "all 2 non-structural constant(s) declared with an allowed kind and a source; every constant was found in its cited source by a GET"
+   },
+   "C3_scope_honest": {
+    "verdict": "fail",
+    "reason": "Scope declares taxa Beloniformes with no life stages, but the evidence is 109 museum specimens from one dataset (Daane 2021 Data S1A) covering flying fish plus only flying halfbeaks, halfbeaks and needlefish. Sauries (Scomberesocidae) and Adrianichthyidae are unsampled, and no life stage is recorded, so juveniles are implicitly claimed. The proponent itself conceded that 'Beloniformes' overstates the evidence."
+   },
+   "C4_independent": {
+    "verdict": "pass",
+    "reason": "No accepted law overlaps this scope, so it restates nothing. It is an empirical separation of two groups, not a definition or an algebraic rearrangement. The critic's point that it is partly a correlate of how 'flying fish' are grouped (gliding implies long pectorals) is a minor mechanism-independence concern, not a restatement."
+   },
+   "C5_consistent": {
+    "verdict": "pass",
+    "reason": "propose.mjs constructed a joint witness with every accepted law whose scope overlaps"
+   },
+   "C6_wild_type_survives": {
+    "verdict": "unclear",
+    "reason": "24 wild-type organism(s) are in scope but none carries flyingFishMinFinRatio, otherBeloniformMaxFinRatio: the law cannot be evaluated against a real animal, so it may not be promoted"
+   },
+   "C7_not_circular": {
+    "verdict": "pass",
+    "reason": "The thresholds are the min and max of the same 109 specimens, with nothing held out, so this is a record bound. It is not presented as an impossibility. statement_en says 'every measured' and 'n = 49 ... 60', evidence.caveats says 'not an impossibility; one new specimen can break it', and the proponent declared 'record-bound'. The criteria do not reject an honestly labelled record bound. The critic's 'fatal' rating treats a record bound as disqualifying in itself, which the criteria do not."
+   }
+  },
+  "ruling": "No hard gate fails, but C6 is unclear and C3 fails, so the law cannot be promoted. The law is an honestly labelled record bound over a single dataset: the flying-fish minimum pectoral/SL of 0.40625 exceeds the non-flying-beloniform maximum of 0.38843 in 109 specimens. It is not sold as an impossibility, so it is not a C7 reject, and it restates no accepted law. The scope claims the whole order Beloniformes on one museum dataset, and the atoms are group extremes that no wild-type organism carries, so the studio cannot test it against any animal. The sourcing is also doubtful, because the evidence checker found the cached CSV's hash does not match the cited one.",
+  "debate_limitations": "PROVENANCE BOUND on this ruling: in the round that produced it, the debate's critic and evidence-checker workers made ZERO web tool calls despite having them (recorded in pipeline/leanbio/debate/DEBATE-RESULTS.md). So no counterexample in this round came from the literature: every rejection was caught by a mechanical check against data already in the repository. The \"debated\" label therefore means \"survived the repo's own gates\", not \"survived a literature search for counterexamples\"."
+ },
+ "history": [
+  {
+   "version": "1.0.0",
+   "date": "2026-11-01",
+   "change": "ingested from pipeline/leanbio/debate/out/records/disc-flying-fish-fin-ratio-gap.json (verdict NEEDS-WORK, criteria leanbio-debate-criteria/1.2.0)"
+  }
+ ],
+ "content_hash": "40821a1b63bf5651a443e3a0fd8dbee9604817cbbb225a640c3bd90e6a2b007d",
+ "scope_note": "Static mirror of lean/registry/open-questions/. An OPEN QUESTION is a question this project holds unsettled, with an arm per live position, each arm's evidence quoted from its primary source, and a belief `proportion` COMPUTED by pipeline/leanbio/belief.mjs rather than asserted. A proportion orders the arms; it is NOT a probability that an arm is true, and belief-params.json says plainly that its parameters are hand-set and not fitted. No arm of an open question is in any law set, and the guard in openq-lib.mjs refuses to accept a law that asserts one. A FAILED THEOREM is a statement this project tried and could not establish, kept with its reason so nobody reproposes it; `what_survives` says what is still true after the failure. Arms formalised in Lean are proved internally consistent and are NOT proved true of any organism."
+}

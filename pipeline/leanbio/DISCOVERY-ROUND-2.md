@@ -214,12 +214,49 @@ value would be a fabricated constant, which is worse than no law. Supply that on
 
 ---
 
-## 4a. Three CI criteria failures, all of which are findings
+## 4a. Three CI criteria failures, all of which were findings — and both rulings
 
-`node pipeline/leanbio/check.mjs` ends on 3 problems after this round. **None is an accident and none should be
-silenced.** They are left red deliberately, with the argument attached, for a person to rule on.
+`node pipeline/leanbio/check.mjs` ended on 3 problems. None was an accident, none was silenced, and all three went to
+a person. **Both were ruled on (2026-11-01) and both rulings are now implemented in code, tests and documentation**,
+so the check is green honestly rather than by exemption. The argument that was put is kept below, followed by the
+ruling, because the reasoning is the part worth keeping.
 
-### (i) Two candidates fail criterion 3 (belief ≥ 0.5) — and I believe the criterion is miscalibrated for them
+> **Ruling 1 (criterion 3).** The belief gate applies only to laws asserting an **empirical regularity**. A model
+> theorem is judged on soundness, scope and whether it binds — not on whether the claim it was distilled from survives
+> contact with data. `kimura-heterozygosity` and `fisher-sex-ratio` stay as candidates.
+>
+> **House rule, now written beside its existing half in `pipeline/leanbio/README.md` §6 and in
+> `CONTRIBUTING-LEANBIO.md` criterion 3:** *a Lean proof is not evidence, because it proves a model's consequence
+> rather than that organisms obey the model — and equally, a refuted empirical claim does not refute a model theorem
+> derived from it.*
+>
+> **Ruling 2 (criterion 4).** A `data:<path>` origin is allowed alongside `draft:<path>`. A law distilled from the
+> repo's own measured data is a legitimate lineage, and a criterion that rejects it while accepting an
+> aphorism-derived one is backwards.
+
+**Implemented, not just documented:**
+
+- `check.mjs` gates belief on `assertsEmpiricalRegularity` (`class` `empirical-observation` or `named-hypothesis`)
+  and accepts a resolving `dataOrigin`. The `isLeanBio` predicate is now shared by the problem and note paths so the
+  two can never disagree about which laws they are discussing.
+- **Nothing is exempted silently.** `criteriaNotes` prints every ungated belief score with its class *and its
+  contradicting evidence*, so the two low-belief laws are still visible on every run — they are no longer failures,
+  but they are not invisible either. Same for the data origin: the note states that its source must resolve, and does.
+- `test.mjs` tests the gate **both ways**: that it fires for an empirical law and does *not* for a model theorem, and
+  that a dangling data path is rejected while a real one is accepted. A scoped gate that nobody tests is a deleted
+  gate.
+- Scoping the notes mattered for honesty: they first reported four `disc-*` laws as having a data origin, which was
+  subtly wrong — those laws are silent because the LeanBio criteria never applied to them at all, a different reason.
+  Asserting the wrong reason for a correct pass is still a false record.
+
+**My procedural fault stands on the record and the ruling does not touch it:** `kimura-heterozygosity` and
+`fisher-sex-ratio` were never in the queue, because their belief was below the threshold, and I proposed them anyway
+without checking. The ruling vindicates the laws, not the process that reached them. The right behaviour would have
+been to notice the absence, raise the question, and *then* propose.
+
+The argument as it was put:
+
+### (i) Two candidates failed criterion 3 (belief ≥ 0.5) — the criterion was miscalibrated for them
 
 | claim | both assessors' `p_true` | belief | why |
 |---|---|---|---|
@@ -244,18 +281,18 @@ because it proves a model's consequence, not that organisms obey the model*. **T
 added: a refuted empirical claim does not refute a model theorem derived from it.** Criterion 3 gates on claim-level
 belief, so it gates `theorem-from-hypothesis` laws on something they never assert.
 
-I am **not** proposing to loosen criterion 3, and I did not touch `belief-params.json`. Two defensible rulings exist
-and the choice is a person's: either criterion 3 applies only to laws that assert an empirical regularity (and
-`theorem-from-hypothesis` laws are gated on hypothesis sourcing instead), or these two candidates must be withdrawn.
-Until that is decided they stay `candidate` with the failure visible.
+I did **not** loosen the threshold and did not touch `belief-params.json`: the gate still fires at 0.5, for the laws
+it should fire for. What changed is its SCOPE, which is the ruling above. The alternative ruling was equally
+defensible and was on the table — withdraw both candidates — and it was a person's call to make, not mine.
 
-### (ii) `development-growth-asymptote` fails criterion 4 (the law id must be the record id)
+### (ii) `development-growth-asymptote` failed criterion 4 (the law id must be the record id)
 
 It has no LeanBio record because it did not come from a claim or a draft — it came from the repo's own measured data
 file, `development/growth.json`. Criterion 4 assumes every law descends from a claim or a nanopub draft. **A law
 derived from repo measurements has no place in that lineage**, and the ironic result is that the one law of this round
-that actually binds a design is the one the criteria reject. The fix is a decision about the criterion (allow a
-`data:<path>` record origin alongside `draft:<path>`), not a rename of the law.
+that actually binds a design is the one the criteria reject. The fix was a decision about the criterion, and it was made:
+a `data:<path>` origin now sits alongside `draft:<path>`, with the lineage check being that the source file resolves
+in the tree. The law was not renamed.
 
 ### (iii) The queue shrank from 452 to 411
 

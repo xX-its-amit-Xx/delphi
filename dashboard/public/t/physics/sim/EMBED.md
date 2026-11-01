@@ -289,9 +289,14 @@ points at `t/physics/sim/`, and the 3D view mounts itself there. Two things are 
   the computed trajectory flown in 3D by the anatomy meshes, with the same run as 2D charts below"**.
 * the viewer may want to pass `&theme=` as it already does. Nothing else.
 
-**When the page detects it is in an iframe it moves the 3D block up itself**, to just above the `<h1>`
-and immediately below the pre-registration banner, so the viewer opens on the scene rather than on a
-screen of prose. The banner stays first: it is the record and nothing is allowed to push it down.
+**The page's own order puts the scene above the fold**, standalone and embedded alike:
+
+> pre-registration / validation banner &rarr; **3D view** &rarr; the controls &rarr; the prose &rarr; the 2D charts
+
+The banner stays first: it is the honesty contract and nothing is allowed to push it down. Checked at
+1366&times;900, where the whole 504 px scene is visible without scrolling (stage 316&ndash;820 of 900).
+At phone width the banner alone is ~450 px tall, so the scene still needs a scroll; the banner was not
+shortened to buy that space.
 
 If WebGL is unavailable the 3D block replaces itself with one sentence saying so and the page is the
 2D charts exactly as before, so an embedder never has to test for it.
@@ -309,6 +314,17 @@ Stated in full in a legend under the controls, and in the header comment of `sce
 | the ground-effect drag factor at the frame's height (the measured curve) | the camera's smoothing and placement, the sliding of the sea tile |
 | `glide_range_lean_bound_m` (apex × (L/D)max) kept apart from the kinetic phase, as `glide.mjs` keeps them | the school, the predator and the distant gliders (`creatures.js`, which flags them too) |
 | the fish's size: metres per model unit from the GLB's manifest via `blueprint3d/partedit.js` `metresPerUnit` | the drawn sea state (the solver has no sea state; `baseline.json` locks the conditions to calm) |
+
+**The sea on screen is not the sea the numbers would meet, and the page says so under the picture.**
+`env3d` draws a readability-scaled sea &mdash; `H_s_drawn = clamp(0.12 x H_s_PM, 0.06, 0.45) m`, with a
+13/7.3/4.1/2.3 m band of wavelengths in place of the true spectral peak &mdash; because the real peak
+wavelength (83 m at 10 m/s) would swallow a 0.2 m fish whole. A permanent note under the stage names
+**both** figures from `ocean.info.sea`: at the locked calm baseline it reads *drawn 0.060 m, true
+0.000 m &mdash; what you see is env3d's 0.06 m floor and is **rougher** than the stated conditions*;
+at the what-if 9 m/s it reads *drawn 0.208 m, true 1.735 m, peak wavelength 67 m, scaled down by a
+factor of 8.3*. Either way it ends **"Do not read a sea state off this picture"**, and says the solver
+has no sea state, so no number depends on either figure. A viewer judging *could it really fly in
+that?* from a scaled sea would be reading a flattered sea.
 
 There is **no hand-authored keyframe anywhere**. A species whose run never lifts off is shown not
 lifting off, and the banner says why; a design with no committed fin polar
@@ -356,5 +372,20 @@ No equation, constant, threshold or pre-registered parameter was changed.
 |---|---|
 | `cseed` | the ensemble seed (read through `creatures.js` `seedFromUrl`), so a band is reproducible |
 | `s3seg` | sea-mesh resolution, 8–176, for the performance check; the default adapts downwards on slow hardware |
+
+### env3d contract points this view honours
+
+* `camera.far` is set from `env3d.RECOMMENDED_CAMERA_FAR` (60000). Below it the 30 km horizon disc is
+  clipped and the horizon silently vanishes. There is a check for this.
+* `makeSky` owns `scene.fog`, `scene.background` and the scene's lights, so this file adds **none** of
+  its own when `env3d` is present (checked: 2 lights in the scene, both `makeSky`'s). The fallback sky
+  in `scene3d.js` brings its own, and only when `env3d.js` is absent.
+* `setDepth(m)` is the **viewer's** depth, and `<= 0` disables the underwater layers; it is called with
+  the camera's depth below the surface, and 0 whenever the camera is in the air.
+* `normalAt(x, z, out)` writes into `out`. This view does not call it, so it allocates nothing.
+* The ocean is one fixed 64 m tile (cell ~0.57 m) **slid** along x to stay under the fish rather than
+  stretched over a 300 m run, because a stretched tile loses the cell size that lets a 0.2 m fish sit on
+  a wave. It is only ever slid while the fish is clear of the water, so its ride is never stepped, and
+  every height query subtracts the tile offset.
 
 Everything in section 2 still works unchanged.

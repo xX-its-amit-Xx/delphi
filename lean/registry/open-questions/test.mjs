@@ -144,6 +144,80 @@ const reg = load();
   ok('3i an open question carrying a settled block is rejected', validateRecord(both).some(e => /must not carry a settled/.test(e)));
 }
 
+// ── 3bis. THE ASYMMETRY: a wild-type failure settles; two measurements do not ─
+// fails_once: before `wild_type_contradicted` existed, the teleost depth cap sat here as a clean two-arm
+// question whose first arm a real snailfish refutes. That is not a question with a weak arm, it is a question
+// with ONE live arm, which is an unsupported claim wearing a question's clothes. The rule comes from
+// pipeline/leanbio/debate/CRITERIA.md 1.2.0 and the asymmetry is the whole point: a wild type contradicting a
+// law settles it; two measurements of the same system contradicting EACH OTHER settles nothing.
+{
+  const base = structuredClone(reg.questions.find(q => q.question_id === 'oq-kcnk5b-vm-sign'));
+
+  // an arm a wild type refutes must SAY it is refuted, not merely carry a lower belief
+  const quiet = structuredClone(base);
+  quiet.arms[0].wild_type_contradicted = { organisms: ['Danio rerio (wild type)'], basis: 'test', within_scope: true };
+  ok('3j an arm a wild type refutes must be marked refuted_as_stated', validateRecord(quiet).some(e => /refuted as stated/.test(e)));
+
+  // ... and it needs the organisms
+  const noOrg = structuredClone(base);
+  noOrg.arms[0].wild_type_contradicted = { organisms: [], basis: 'test', within_scope: true, refuted_as_stated: true };
+  ok('3k wild_type_contradicted needs the organisms', validateRecord(noOrg).some(e => /needs the organisms/.test(e)));
+
+  // a question with only ONE live arm is not a question
+  const oneLive = structuredClone(base);
+  oneLive.arms[0].wild_type_contradicted = { organisms: ['x'], basis: 'test', within_scope: true, refuted_as_stated: true };
+  oneLive.arms[1].wild_type_contradicted = { organisms: ['y'], basis: 'test', within_scope: true, refuted_as_stated: true };
+  ok('3l a question with one live arm is rejected', validateRecord(oneLive).some(e => /only one arm/.test(e)));
+
+  // every arm refuted = a failed theorem, not a question
+  const allDead = structuredClone(base);
+  for (const a of allDead.arms) a.wild_type_contradicted = { organisms: ['x'], basis: 'test', within_scope: true, refuted_as_stated: true };
+  ok('3m a question whose every arm a wild type refutes must be a failed theorem', validateRecord(allDead).some(e => /not an open question/.test(e)));
+
+  // a question cannot be SETTLED in favour of an arm real animals refute
+  const badSettle = structuredClone(base); badSettle.status = 'settled';
+  badSettle.arms[0].wild_type_contradicted = { organisms: ['x'], basis: 'test', within_scope: true, refuted_as_stated: true };
+  badSettle.settled = { arm_id: 'hyperpolarising', date: '2026-11-01', settled_by: 'x', approved_by_role: 'project-lead',
+    evidence: [{ claim: 'c', source: 's', locator: 'l', quote: 'q', kind: 'k', belief_class: 'literature' }] };
+  ok('3n a question cannot be settled in favour of a wild-type-refuted arm', validateRecord(badSettle).some(e => /cannot be settled in favour of an arm real animals refute/.test(e)));
+
+  // an out-of-scope organism does NOT refute an arm (the asymmetry has a scope condition)
+  const outOfScope = structuredClone(base);
+  outOfScope.arms[0].wild_type_contradicted = { organisms: ['some bird'], basis: 'outside the arm\'s declared taxa', within_scope: false };
+  ok('3o an out-of-scope organism does not refute an arm', !validateRecord(outOfScope).some(e => /refuted as stated|only one arm/.test(e)));
+
+  // THE OTHER SIDE: two measurements disagreeing does NOT make a failed theorem
+  const mismeasured = { record_type: 'failed-theorem', failure_id: 'ft-test-two-measurements', version: '1.0.0',
+    statement_en: 'Something two labs measured differently.', reason: 'contradicted-by-data',
+    contradicted_by: 'another-measurement-of-the-same-system', reason_detail: 'one lab got a different number',
+    what_was_tried: ['measured it'], what_survives: 'y'.repeat(40),
+    history: [{ version: '1.0.0', date: '2026-11-01', change: 'c' }], content_hash: 'a'.repeat(64) };
+  ok('3p a failure resting only on a disagreeing measurement is rejected', validateRecord(mismeasured).some(e => /OPEN QUESTION/.test(e)),
+    'two measurements disagreeing with each other must become a question, not a failure');
+  const justified = { ...mismeasured, reason_detail: 'settled because the second measurement superseded the first on the same apparatus; this is not an open question' };
+  ok('3q the same failure WITH a justification is accepted', !validateRecord(justified).some(e => /OPEN QUESTION/.test(e)));
+  // a wild-type failure must name its organisms
+  const wildNoOrg = { ...mismeasured, reason: 'fires-on-wild-type', contradicted_by: 'wild-type-organism', reason_detail: 'x', wild_type_failures: [] };
+  ok('3r a wild-type failure must name the organisms', validateRecord(wildNoOrg).some(e => /needs wild_type_failures/.test(e)));
+
+  // the REAL depth-cap record exercises all of this
+  const depth = reg.questions.find(q => q.question_id === 'oq-teleost-depth-cap');
+  if (depth) {
+    const refuted = depth.arms.filter(a => a.wild_type_contradicted && a.wild_type_contradicted.within_scope !== false);
+    ok('3s the depth cap has a wild-type-refuted arm', refuted.length === 1, `${refuted.length} refuted arms`);
+    ok('3t and still has two live arms, so it is a real question', depth.arms.length - refuted.length >= 2, `${depth.arms.length - refuted.length} live`);
+    ok('3u the refuted arm says it is refuted as stated', refuted.every(a => a.wild_type_contradicted.refuted_as_stated === true));
+  }
+  // the ingested wild-type failure is a FAILURE, not a question
+  const heterurus = reg.failed.find(f => f.failure_id === 'ft-disc-heterurus-mass-exponent');
+  if (heterurus) {
+    ok('3v the ingested wild-type rejection is a failed theorem', heterurus.contradicted_by === 'wild-type-organism');
+    ok('3w and names the organisms that refute it', (heterurus.wild_type_failures || []).length > 0, JSON.stringify(heterurus.wild_type_failures));
+    ok('3x and carries the round\'s provenance bound', /ZERO web tool calls/.test(JSON.stringify(heterurus.debate || {})),
+      'the debate round made no web calls; a record that hides that overstates what "debated" means');
+  }
+}
+
 // ── 4. The proportion is COMPUTED, not asserted ─────────────────────────────
 // fails_once: a hand-written `proportion` block went stale the moment an evidence item was added, and nothing
 // noticed. Recomputing from the arms' evidence must reproduce what is on disk.

@@ -25,11 +25,24 @@ CI checks the ones marked (CI); a reviewer checks the rest.
 2. **Grounded entities (CI).** `node pipeline/leanbio/run.mjs` has grounded the record: at least one entity mapped to an
    ontology identifier (HGNC, ZFIN, UniProt, UBERON, CL, GO, CHEBI, MESH, NCBITaxon, ...). Ambiguous groundings are
    listed, not hidden. Commit the updated `pipeline/leanbio/cache/` so CI can re-run offline.
-3. **Belief at or above the threshold (CI).** The record's belief (`pipeline/leanbio/belief-params.json`, currently
-   `queue.min_belief` = 0.5) is computed and committed. Belief is an ordering heuristic over independent evidence, not a
-   probability; do not add duplicate evidence to raise it (CI deduplicates by source anyway).
+3. **Belief at or above the threshold, for a law that asserts an empirical regularity (CI).** The record's belief
+   (`pipeline/leanbio/belief-params.json`, currently `queue.min_belief` = 0.5) is computed and committed. Belief is an
+   ordering heuristic over independent evidence, not a probability; do not add duplicate evidence to raise it (CI
+   deduplicates by source anyway).
+   **This gate applies only when the law's `class` is `empirical-observation` or `named-hypothesis`** — a law that
+   asserts organisms do something. A `theorem` or `theorem-from-hypothesis` law asserts only that its conclusion
+   follows from its named hypotheses, so claim-level belief is evidence neither for nor against it; *a refuted
+   empirical claim does not refute a model theorem derived from it*, which is the converse of the rule in
+   `pipeline/leanbio/README.md` §6 that a Lean proof is not evidence. A model theorem is judged instead on soundness
+   (criteria 5-7), scope (criterion 8), and whether it binds anything (criterion 10 and its `browser_check` block).
+   Nothing is exempted silently: `check.mjs` prints a criteria note for every ungated score with its class and its
+   contradicting evidence, and `test.mjs` tests the gate both ways. House rule, 2026-11-01; see
+   `pipeline/leanbio/DISCOVERY-ROUND-2.md` §4a for the two laws that forced it.
 4. **The law id is the record id (CI).** Use the claim id (e.g. `maynardsmith-hitchhiking`) so the law, the claim and its
-   nanopubs link without a lookup table.
+   nanopubs link without a lookup table. A draft-derived law uses `draft:<path>`. A law distilled from the repo's own
+   measured data rather than from a claim or a draft has origin **`data:<path>`**, and its lineage check is that the
+   source file resolves in the tree; criteria 2 and 3 do not apply to it, since it has no grounded record and no
+   claim-level belief. Rejecting such a law while accepting an aphorism-derived one is backwards (2026-11-01).
 5. **A Lean statement in the registry's form.** Empirical premises are **named hypotheses** (a `structure` or `Prop`
    structure, each with its source in `meta.json` `hypotheses[].source`), never `axiom`. No `sorry`, `admit`, `axiom`,
    `unsafe` or `native_decide`; `#print axioms` shows only `propext`, `Classical.choice`, `Quot.sound`.

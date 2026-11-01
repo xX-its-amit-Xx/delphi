@@ -280,7 +280,7 @@ async function resolveSubject(data, base) {
     }
     genes = swept.concat(uniq(extra));
     geneRule = `the ${swept.length} gene${swept.length === 1 ? '' : 's'} this run swept${parts.length ? `, shown among the genes the part index records for ${parts.map(p => p.label).join(' / ')}` : ''}`
-      + (data.gene_set.coverage_statement ? `. ${data.gene_set.coverage_statement}` : '');
+      + (data.gene_set.coverage_statement ? `. ${String(data.gene_set.coverage_statement).replace(/\.\s*$/, '')}` : '');
     geneSourceLabel = `data.gene_set.swept (${data.gene_set.rule || 'the run’s own sweep rule'}), topped up from omics/parts.json`;
   } else {
     /* no gene-level edits: the design is a shape change. Bridge part -> genes through the real
