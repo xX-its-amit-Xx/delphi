@@ -154,6 +154,12 @@ export function resolveState(doc, ageDays, conditions = {}, bundle, opts = {}) {
     const o = bundle.organisms[id];
     return { id, w, o, track: bundle.tracks[o.track] };
   });
+  // A taxon-based document has no parent organism and so no growth track. STATE is age-scaled parameters,
+  // and there is nothing here to scale or to scale it by, so this refuses with the reason rather than
+  // resolving a state full of nulls that later stages would read as measurements of this animal.
+  if (!leafList.length) {
+    throw new Error(`organism "${doc.id}" has a taxon base (${doc.base?.taxon || 'unknown taxon'}) with no reference parameter set, so STATE cannot be resolved: there is no body-plan parameter to age-scale and no ontogeny track to scale it by. The taxon still reaches the law check, which decides clade scope from it. To resolve a STATE, add a reference parameter set for this taxon to the engine's bundle.`);
+  }
   const dominant = leafList.slice().sort((a, b) => b.w - a.w)[0];
   const age = ageDays == null ? dominant.o.ref_age_days : Number(ageDays);
   if (!Number.isFinite(age)) throw new Error('ageDays must be a number (days after hatching)');

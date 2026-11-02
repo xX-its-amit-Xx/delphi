@@ -661,7 +661,7 @@
   {
    "name": "organism_create",
    "title": "Create an organism document",
-   "description": "New organism document from weighted parents (reference organisms or designs; weights sum to 1). Saved under sim-engine/sessions/organisms/.",
+   "description": "New organism document, EITHER from weighted parents (reference organisms or designs; weights sum to 1) OR from a taxon. A TAXON base is for an organism this engine holds no measured parameters for: it carries the taxon, which is what law scope is decided from, and every parameter is null with a reason, so any check needing a length, mass or area returns cannot-evaluate rather than a number nobody measured. Saved under sim-engine/sessions/organisms/.",
    "inputSchema": {
     "type": "object",
     "properties": {
@@ -686,6 +686,10 @@
        ]
       }
      },
+     "taxon": {
+      "type": "string",
+      "description": "A taxon name (scientific name, clade or common name the clade table knows) INSTEAD of parents, for an organism outside this engine's bundle."
+     },
      "notes": {
       "type": "string"
      },
@@ -694,8 +698,45 @@
      }
     },
     "required": [
-     "id",
-     "parents"
+     "id"
+    ]
+   }
+  },
+  {
+   "name": "organism_from_blueprint",
+   "title": "Organism document from a blueprint (any taxon)",
+   "description": "Turns an organism-design blueprint into an organism document, for ANY organism. The blueprint resolves a plain-language description to an NCBI taxon and an Uberon/CL hierarchy, for any clade. What arrives here is REAL: the taxon and the ontology terms. What does not arrive is parameters -- this engine holds measured body-plan parameters only for its own teleosts -- so they are null with a reason and every dimensional check returns cannot-evaluate. The result says, per tool, what runs and what refuses. Blueprints resolving inside the held-out clade are refused.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "blueprint": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "object"
+       }
+      ],
+      "description": "Path to a blueprint JSON (organism-design/examples/*.json) or the parsed object."
+     },
+     "id": {
+      "type": "string",
+      "description": "Document id; defaults to a slug of the blueprint description."
+     },
+     "notes": {
+      "type": "string"
+     },
+     "save": {
+      "type": "boolean",
+      "description": "Save under sim-engine/sessions/organisms/."
+     },
+     "overwrite": {
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "blueprint"
     ]
    }
   },

@@ -85,8 +85,19 @@ const EDIT = { type: 'object', description: 'One edit. author is a ROLE label (h
   required: ['target', 'param', 'op', 'value', 'author', 'reason'] };
 
 export const SCHEMAS = {
-  organism_create: { title: 'Create an organism document', description: 'New organism document from weighted parents (reference organisms or designs; weights sum to 1). Saved under sim-engine/sessions/organisms/.',
-    inputSchema: { type: 'object', properties: { id: { type: 'string' }, parents: { type: 'array', items: { type: 'object', properties: { organism: { type: 'string' }, weight: { type: 'number' } }, required: ['organism', 'weight'] } }, notes: { type: 'string' }, overwrite: { type: 'boolean' } }, required: ['id', 'parents'] } },
+  organism_create: { title: 'Create an organism document',
+    description: 'New organism document, EITHER from weighted parents (reference organisms or designs; weights sum to 1) OR from a taxon. '
+      + 'A TAXON base is for an organism this engine holds no measured parameters for: it carries the taxon, which is what law scope is '
+      + 'decided from, and every parameter is null with a reason, so any check needing a length, mass or area returns cannot-evaluate '
+      + 'rather than a number nobody measured. Saved under sim-engine/sessions/organisms/.',
+    inputSchema: { type: 'object', properties: { id: { type: 'string' }, parents: { type: 'array', items: { type: 'object', properties: { organism: { type: 'string' }, weight: { type: 'number' } }, required: ['organism', 'weight'] } }, taxon: { type: 'string', description: 'A taxon name (scientific name, clade or common name the clade table knows) INSTEAD of parents, for an organism outside this engine\'s bundle.' }, notes: { type: 'string' }, overwrite: { type: 'boolean' } }, required: ['id'] } },
+  organism_from_blueprint: { title: 'Organism document from a blueprint (any taxon)',
+    description: 'Turns an organism-design blueprint into an organism document, for ANY organism. The blueprint resolves a plain-language '
+      + 'description to an NCBI taxon and an Uberon/CL hierarchy, for any clade. What arrives here is REAL: the taxon and the ontology '
+      + 'terms. What does not arrive is parameters -- this engine holds measured body-plan parameters only for its own teleosts -- so they '
+      + 'are null with a reason and every dimensional check returns cannot-evaluate. The result says, per tool, what runs and what refuses. '
+      + 'Blueprints resolving inside the held-out clade are refused.',
+    inputSchema: { type: 'object', properties: { blueprint: { anyOf: [{ type: 'string' }, { type: 'object' }], description: 'Path to a blueprint JSON (organism-design/examples/*.json) or the parsed object.' }, id: { type: 'string', description: 'Document id; defaults to a slug of the blueprint description.' }, notes: { type: 'string' }, save: { type: 'boolean', description: 'Save under sim-engine/sessions/organisms/.' }, overwrite: { type: 'boolean' } }, required: ['blueprint'] } },
   organism_get: { title: 'Get an organism document and its STATE', description: 'Returns the document and, at the given age and conditions, the resolved STATE with per-field provenance.',
     inputSchema: { type: 'object', properties: { organism: ORG, ageDays: AGE, conditions: COND, measured: MEASURED }, required: ['organism'] } },
   organism_list_parts: { title: 'Editable part hierarchy', description: 'body -> organ system -> organ -> tissue (mesh parts from the organism manifest) plus ontology tissue/cell terms and gene symbols, with the editable params at each level and what each edit affects.',
@@ -125,12 +136,109 @@ export const SCHEMAS = {
 export async function organismCreate(args = {}) {
   const bundle = await loadBundle();
   if (bundle.organisms[args.id]) throw new Error(`"${args.id}" is a repository organism id; choose another id`);
-  const doc = O.createOrganism({ id: args.id, parents: args.parents, notes: args.notes || '' }, bundle);
+  const doc = O.createOrganism({ id: args.id, parents: args.parents, taxon: args.taxon || null, blueprint: args.blueprint || null, notes: args.notes || '' }, bundle);
   if (fs.existsSync(savedPath(doc.id)) && !args.overwrite) throw new Error(`organism "${doc.id}" already exists (pass overwrite:true to replace it)`);
   saveDoc(doc);
-  return envelope({ doc, saved: `sessions/organisms/${doc.id}.json` },
-    doc.base.parents.map(x => p(`parent ${x.organism}`, x.weight, 'assumed', 'weight chosen by the caller')),
-    'A document only: no STATE is resolved and nothing is checked against the Lean laws until organism_get or organism_edit. ' + O.HARD_CAVEAT);
+  const taxonBase = O.isTaxonBase(doc);
+  return envelope({ doc, saved: `sessions/organisms/${doc.id}.json`, taxon_base: taxonBase },
+    taxonBase
+      ? [p('taxon', doc.base.taxon, 'assumed', 'named by the caller; the clade it places into decides law scope (lib/lean-scope.mjs over the generated clade table)'),
+         p('reference parameter set', null, 'assumed', `none: this engine holds measured parameters only for ${Object.keys(bundle.organisms).join(', ')}`)]
+      : doc.base.parents.map(x => p(`parent ${x.organism}`, x.weight, 'assumed', 'weight chosen by the caller')),
+    'A document only: no STATE is resolved and nothing is checked against the Lean laws until organism_get or organism_edit. '
+    + (taxonBase ? O.TAXON_BASE_CAVEAT : O.HARD_CAVEAT));
+}
+
+/**
+ * organism_from_blueprint: ANY organism, from a blueprint, into the studio.
+ *
+ * This is the general entry point. organism-design/blueprint.mjs resolves any plain-language description
+ * to an NCBI taxon and an ontology hierarchy, for any clade -- it was never fish-specific. What was
+ * fish-specific is everything after it: a document had to be a blend of THIS ENGINE'S organisms, all of
+ * which are teleosts, so no organism outside that bundle could be named at all. The engine's own refusal
+ * said as much ("not a saved document nor one of flying-fish, zebrafish-adult, ...").
+ *
+ * A blueprint-based document carries the taxon and the parts, and NO parameters. That split is the whole
+ * point:
+ *   - the TAXON is real and is used: law scope is decided from it, and since the clade table was
+ *     generalised a law scoped to any clade is judged correctly for any organism;
+ *   - the PARTS are real: they are existing Uberon/CL terms with their placements;
+ *   - the PARAMETERS do not exist, so they are null with a reason, and every check needing one returns
+ *     cannot-evaluate. A mouse has no standard length in this engine, and inventing one would put a
+ *     fabricated number into the state, the scenarios and the score.
+ */
+export async function organismFromBlueprint(args = {}) {
+  const bundle = await loadBundle();
+  let B = args.blueprint;
+  let from = 'inline';
+  if (typeof B === 'string') {
+    const f = path.resolve(B);
+    if (!fs.existsSync(f)) throw new Error(`blueprint file not found: ${B}`);
+    B = JSON.parse(fs.readFileSync(f, 'utf8'));
+    from = path.relative(path.resolve(import.meta.dirname, '..', '..'), f).replace(/\\/g, '/');
+  }
+  if (!B || typeof B !== 'object') throw new Error('blueprint must be a path to a blueprint JSON, or the parsed object');
+  const taxon = B.reading?.taxon?.label;
+  if (!taxon) throw new Error('this blueprint names no taxon (reading.taxon.label): it cannot be placed into a clade, so no law scope could be decided for it');
+  if (B.holdout && B.holdout.inside) throw new Error(`this blueprint resolves inside the held-out clade ${B.holdout.clade}; builders must not work on held-out organisms`);
+
+  const nodes = Array.isArray(B.nodes) ? B.nodes : [];
+  const byLevel = {};
+  for (const n of nodes) (byLevel[n.level] ||= []).push(n);
+  const id = args.id || String(B.input?.description || taxon).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+
+  const doc = O.createOrganism({
+    id: slug(id, 'organism id'),
+    taxon,
+    blueprint: { from, description: B.input?.description ?? null, built: B.built ?? null, taxid: B.reading?.taxon?.taxid ?? null },
+    notes: args.notes || `from the blueprint for "${B.input?.description ?? taxon}"`,
+  }, bundle);
+
+  // The hierarchy, carried verbatim. These are ontology terms, not this engine's parts: they have no
+  // geometry and nothing scales them, so they are recorded under `blueprint_parts` rather than `parts`,
+  // which would imply the engine can resolve and edit them.
+  doc.blueprint_parts = nodes.map(n => ({ id: n.id, iri: n.iri, label: n.label, level: n.level, parent: n.parent, ontology: n.ontology }));
+  if (B.absence?.requested?.length) {
+    doc.requested_absences = B.absence.requested.map(a => ({ matched: a.matched, term: a.term, read_as: a.read_as }));
+  }
+  if (args.save) {
+    if (bundle.organisms[doc.id]) throw new Error(`"${doc.id}" is a repository organism id; choose another id`);
+    if (fs.existsSync(savedPath(doc.id)) && !args.overwrite) throw new Error(`organism "${doc.id}" already exists (pass overwrite:true to replace it)`);
+    saveDoc(doc);
+  }
+
+  const place = await (async () => {
+    const S = await import('../../lib/lean-scope.mjs');
+    const pl = S.placeTaxon(taxon);
+    return { placed: pl.placed, clades: pl.ancestors.slice(0, 8), taxid: pl.taxid };
+  })();
+
+  return envelope({
+    doc,
+    taxon,
+    taxon_placed_in_clade_table: place.placed,
+    clades: place.clades,
+    clade_note: place.placed
+      ? 'The taxon is placed, so every law that scopes to one of these clades will be judged for this organism, and a law scoped elsewhere is reported out of scope with its clade named.'
+      : 'The taxon is NOT in the clade table, so law scope is UNKNOWN rather than decided for every scoped law. Add it in lean/registry/build-taxonomy.mjs and rerun that builder.',
+    counts: Object.fromEntries(Object.entries(byLevel).map(([k, v]) => [k, v.length])),
+    parameters: null,
+    saved: args.save ? `sessions/organisms/${doc.id}.json` : null,
+    what_runs_now: {
+      lean_check: 'runs: the taxon decides clade scope. Laws needing a body-plan quantity return cannot-evaluate, naming the missing input.',
+      organism_get: 'refuses: STATE is age-scaled parameters and there is no parameter and no ontogeny track for this taxon.',
+      physics_check: 'refuses: it runs scenarios over a resolved STATE.',
+      closest_relative_phenotype: 'refuses unless a reference set covers this clade.',
+      functional_resolution: 'runs, and fails its gate unless the requested function is in the registry.',
+    },
+  }, [
+    p('taxon', taxon, 'measured', `resolved by organism-design/blueprint.mjs from the description, against NCBI Taxonomy via Ubergraph${place.taxid ? ` (taxid ${place.taxid})` : ''}`),
+    p('hierarchy terms', nodes.length, 'measured', `Uberon/CL/GO terms with part_of placements, from ${from}`),
+    p('body-plan parameters', null, 'assumed', `none: this engine holds measured parameters only for ${Object.keys(bundle.organisms).join(', ')}`),
+  ],
+  'A document, not an organism and not a measurement. The taxon and the ontology terms are real; there is '
+  + 'NO parameter set, so nothing dimensional has been established and no check that needs a length, a '
+  + 'mass or an area can return a result for it. ' + O.TAXON_BASE_CAVEAT);
 }
 
 export async function organismGet(args = {}) {
@@ -441,7 +549,7 @@ export async function sessionRead(args = {}) {
 
 // ---------------------------------------------------------------- registration list
 export const STUDIO_TOOLS = [
-  ['organism_create', organismCreate], ['organism_get', organismGet], ['organism_list_parts', organismListParts], ['organism_edit', organismEdit],
+  ['organism_create', organismCreate], ['organism_from_blueprint', organismFromBlueprint], ['organism_get', organismGet], ['organism_list_parts', organismListParts], ['organism_edit', organismEdit],
   ['scenario_list', scenarioList], ['scenario_run', scenarioRun], ['scenario_timecourse', scenarioTimecourse], ['optimize', optimize],
   ['session_open', sessionOpen], ['session_post', sessionPost], ['session_decide', sessionDecide], ['session_read', sessionRead],
 ].map(([name, handler]) => ({ name, ...SCHEMAS[name], handler }));

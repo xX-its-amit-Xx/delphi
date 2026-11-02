@@ -149,6 +149,16 @@ export async function physicsCheck(design, opts = {}) {
 
   const { scenarios, errors: scenarioErrors } = await loadScenarios();
   const stages = stageAges(bundle, doc);
+  // A document whose base is a TAXON has no reference parameter set and no ontogeny track, so there is no
+  // stage to run a scenario at. That must be a refusal with a reason, like every other input this module
+  // cannot handle. It used to reach the end of the function and throw on `stages.at(-1).ageDays`, which
+  // reaches a caller as a TypeError about `ageDays` -- a message that says nothing about the real cause
+  // and reads like a bug in the caller's arguments.
+  if (!stages.length) {
+    return { ...base,
+      reason: `the design "${doc.id}" has no resolvable life stage: ${doc.base?.taxon ? `its base is the taxon ${doc.base.taxon}, for which this engine holds no reference parameter set and no growth track` : 'no parent organism supplies a growth track'}. Physics runs scenarios over a resolved STATE, and there is no STATE to run them over. Nothing was substituted for it.`,
+      taxon: doc.base?.taxon ?? null };
+  }
   const draws = opts.ensemble === false ? 0 : Math.max(0, opts.draws ?? 200);
   const seed = opts.seed ?? 'delphi-v1';
   const conditions = opts.conditions || {};

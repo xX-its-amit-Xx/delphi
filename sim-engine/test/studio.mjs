@@ -539,5 +539,105 @@ await ok('the CLI runs a scenario and prints JSON', () => {
 });
 
 fs.rmSync(TMP, { recursive: true, force: true });
+
+// ---------------------------------------------------------------- any base organism
+// The studio used to accept only blends of this engine's own teleosts, so no organism outside the bundle
+// could be named at all. These lock in the general path and, just as importantly, the honest refusals
+// along it: a taxon with no reference parameter set must not acquire plausible-looking numbers.
+console.log('\nany base organism (taxon base, blueprint documents, clade-gated reference sets)');
+
+await ok('a taxon-base document is valid, carries the taxon and has NO parameters', async () => {
+  const bundle = await loadBundle();
+  const doc = O.createOrganism({ id: 'test-taxon-base', taxon: 'Mus musculus', notes: 'test' }, bundle);
+  assert.equal(O.isTaxonBase(doc), true);
+  assert.equal(doc.base.taxon, 'Mus musculus');
+  assert.deepEqual(doc.base.parents, []);
+  O.validateDoc(bundle, doc);
+  const R = O.resolveParameters(bundle, doc);
+  assert.equal(R.taxon_base, true);
+  const keys = Object.keys(R.params);
+  assert.ok(keys.length > 5, 'the schema should still list every parameter');
+  for (const k of keys) {
+    assert.equal(R.params[k].value, null, `${k} must be null, not a default`);
+    assert.match(R.params[k].reason, /no reference parameter set for Mus musculus/);
+  }
+});
+
+await ok('the parameter schema is asked for by name, not read off one zebrafish', async () => {
+  const bundle = await loadBundle();
+  assert.equal(O.SCHEMA_SOURCE, 'zebrafish-adult');
+  assert.deepEqual(O.paramSchema(bundle), Object.keys(bundle.organisms[O.SCHEMA_SOURCE].parameters));
+  assert.ok(O.BODY_PLANS.teleost, 'the teleost body plan should be declared');
+});
+
+await ok('a taxon-base document refuses an edit instead of editing null', async () => {
+  const bundle = await loadBundle();
+  const doc = O.createOrganism({ id: 'test-taxon-edit', taxon: 'Mus musculus' }, bundle);
+  doc.edits.push({ target: { level: 'body', id: 'body' }, param: 'standard_length_m', op: 'set', value: 0.09, author: 'human:test', reason: 'test' });
+  assert.throws(() => O.validateDoc(bundle, doc), /no parameter to edit/);
+});
+
+await ok('STATE refuses for a taxon base, naming what is missing', async () => {
+  const bundle = await loadBundle();
+  const doc = O.createOrganism({ id: 'test-taxon-state', taxon: 'Mus musculus' }, bundle);
+  assert.throws(() => S.resolveState(doc, null, {}, bundle), /no reference parameter set.*STATE cannot be resolved/s);
+});
+
+await ok('organism_from_blueprint turns any blueprint into a document with its real clades', async () => {
+  const bp = path.resolve(engine, '..', 'organism-design/examples/a-mouse-with-no-limbs.json');
+  if (!fs.existsSync(bp)) { console.log('      (blueprint example absent, skipped)'); return; }
+  const r = (await T.organismFromBlueprint({ blueprint: bp })).result;
+  assert.equal(r.taxon, 'Mus musculus');
+  assert.equal(r.taxon_placed_in_clade_table, true);
+  assert.ok(r.clades.includes('Rodentia'), `expected Rodentia among ${r.clades.join(', ')}`);
+  assert.equal(r.parameters, null, 'no parameters may be reported for a blueprint document');
+  assert.ok(r.counts.organ > 0 && r.counts.cell > 0, 'the hierarchy should carry organs and cells');
+  assert.ok(r.doc.blueprint_parts.length > 100);
+  // the absence read by the blueprint survives into the document
+  assert.ok(Array.isArray(r.doc.requested_absences) && r.doc.requested_absences.length === 1);
+});
+
+await ok('a blueprint inside the held-out clade is refused', async () => {
+  await assert.rejects(T.organismFromBlueprint({ blueprint: { reading: { taxon: { label: 'Some bird' } }, holdout: { inside: true, clade: 'Aves' }, nodes: [] } }), /held-out clade/);
+});
+
+await ok('a reference set refuses a query outside its clade instead of naming a neighbour', async () => {
+  const V = await import('../tools/validate-tools.mjs');
+  const tool = V.VALIDATE_TOOLS.find(t => t.name === 'closest_relative_phenotype');
+  const out = await tool.handler({ specimen: { SL_m: 0.09, mass_kg: 0.02, depth_SL: 0.28, width_SL: 0.25, ped_depth_frac: 0.5, ped_width_frac: 0.5, taxon: 'Mus musculus' } });
+  const r = out.result;
+  assert.equal(r.cannot_assess, true);
+  // The bug this guards: a mouse specimen came back with closest_real_relative Nannacara anomala, a
+  // cichlid, at distance 0.577. No species name may appear in a result for an organism out of clade.
+  assert.ok(!('closest_real_relative' in r), 'no nearest relative may be reported out of clade');
+  assert.deepEqual(r.reference_set_covers, ['Teleostei']);
+  assert.match(r.reason, /outside it/);
+  assert.ok(r.design_clades.some(c => /Muridae|Rodentia|Murinae/.test(c)), 'the reason should name the design\'s own clades');
+});
+
+await ok('an in-clade query is unaffected, and a design inherits its parent taxon for the gate', async () => {
+  const V = await import('../tools/validate-tools.mjs');
+  const tool = V.VALIDATE_TOOLS.find(t => t.name === 'closest_relative_phenotype');
+  const r = (await tool.handler({ organism: 'winged-zebrafish' })).result;
+  assert.ok(!r.cannot_assess, 'a teleost design must still be assessed');
+  assert.equal(r.taxon, 'Danio rerio', 'a design should resolve its dominant parent\'s taxon');
+  assert.deepEqual(r.taxon_inside_reference_clade, ['Teleostei']);
+  assert.ok(r.closest_real_relative, 'an in-clade query still reports a nearest relative');
+});
+
+await ok('physics refuses a taxon base with a reason, not a TypeError', async () => {
+  const { TOOLS } = await import('../server.mjs');
+  const tool = TOOLS.find(t => t.name === 'physics_check');
+  const bundle = await loadBundle();
+  const doc = O.createOrganism({ id: 'test-taxon-physics', taxon: 'Mus musculus' }, bundle);
+  const r = (await tool.handler({ organism: doc })).result;
+  assert.equal(r.ran, false);
+  assert.match(r.reason, /no resolvable life stage/);
+  assert.match(r.reason, /Mus musculus/);
+  assert.ok(!/ageDays/.test(r.reason), 'the reason must not be the old TypeError about ageDays');
+});
+
+
+
 console.log(`\n${pass} passed, ${fail} failed${M ? ` (MUTATE=${M})` : ''}`);
 process.exit(fail ? 1 : 0);

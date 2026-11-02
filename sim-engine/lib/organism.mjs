@@ -16,6 +16,43 @@ import * as PE from './partedit-link.mjs';
 
 export const LEVELS = ['body', 'system', 'organ', 'tissue', 'cell', 'gene'];
 export const OPS = ['set', 'scale', 'add'];
+// THE PARAMETER SCHEMA. Which parameters an organism document has was, until now, read off
+// `bundle.organisms['zebrafish-adult'].parameters` in three places: the schema of every organism in this
+// engine was literally whatever keys one zebrafish happened to carry. That is fine while every organism
+// is a fish and silently wrong as soon as one is not, so the schema is now asked for by name.
+//
+// SCHEMA_SOURCE names the organism whose keys define the teleost body plan. It is still zebrafish-adult
+// -- nothing about the data changed -- but it is now a stated choice with a reason, which means the next
+// body plan is a new entry here rather than a rewrite of three call sites.
+export const SCHEMA_SOURCE = 'zebrafish-adult';
+export const BODY_PLANS = {
+  teleost: {
+    schema_from: SCHEMA_SOURCE,
+    note: 'Ray-finned fish body plan: standard length, body depth and width, caudal peduncle, paired and median fin areas. These are the parameters the engine can age-scale and the scenarios can read.',
+  },
+};
+/** The parameter keys a document carries, in the order the schema organism declares them. */
+export function paramSchema(bundle) {
+  const o = bundle.organisms[SCHEMA_SOURCE];
+  if (!o) throw new Error(`the parameter schema organism "${SCHEMA_SOURCE}" is missing from the bundle`);
+  return Object.keys(o.parameters);
+}
+
+// A document whose base is a TAXON rather than a blend of this engine's organisms. It is what lets any
+// organism enter the studio: a blueprint resolves any NCBI taxon, and a taxon-based document carries that
+// taxon through to the law check, where clade scope now works for any clade.
+//
+// What it deliberately does NOT do is invent parameters. There is no reference parameter set for a mouse,
+// so every parameter is null with a reason naming what is missing. A null parameter is a cannot-evaluate
+// everywhere downstream, which is the honest answer; a plausible-looking number would be a fabrication
+// that every later stage would quote as though it had been measured.
+export const TAXON_BASE_CAVEAT =
+  'This document names a TAXON and carries no reference parameter set, because this engine holds measured '
+  + 'parameters only for the organisms in its bundle. Every parameter is therefore null, and every check '
+  + 'that needs one returns cannot-evaluate. The taxon IS used: law scope is decided from it, so a law '
+  + 'calibrated on another clade is reported out of scope rather than applied. Nothing here is a '
+  + 'measurement of this organism, and no number has been substituted for one.';
+
 export const HARD_CAVEAT = 'MORPHOLOGICAL interpolation, not genetic hybridisation (anatomy-model/parametric/design-schema.json): a blended or edited parameter set is a shape, not an organism; it says nothing about whether such an animal could be bred, is viable, or is developmentally reachable.';
 
 // State fields an edit may override directly (body level, or the organ/tissue that owns them).
@@ -61,7 +98,7 @@ export function leaves(bundle, parents, w = 1, out = {}) {
 }
 
 export function parameterNames(bundle) {
-  return Object.keys(bundle.organisms['zebrafish-adult'].parameters).filter(k => !NOT_EDITABLE.has(k));
+  return paramSchema(bundle).filter(k => !NOT_EDITABLE.has(k));
 }
 
 /** The manifests behind a document, primary (first parent's) first. A design without its own manifest
@@ -157,7 +194,7 @@ const peParams = (manifest, target) => (manifest ? PE.editableParams(manifest, t
 export function editableParams(bundle, doc, resolved) {
   const out = [];
   const add = (param, effect, unit, note) => out.push({ param, effect, unit, ...(note ? { note } : {}) });
-  const ref = bundle.organisms['zebrafish-adult'].parameters;
+  const ref = bundle.organisms[SCHEMA_SOURCE].parameters;
   if (resolved.level === 'body') {
     for (const k of parameterNames(bundle)) add(k, 'parameter', unitOf(k), null);
     for (const [k, v] of Object.entries(STATE_OVERRIDES)) if (v.owners.includes('body')) add(k, 'state', v.unit);
@@ -189,9 +226,16 @@ function unitOf(k) {
 }
 
 // ---------------------------------------------------------------- documents
-export function createOrganism({ id, parents, notes = '' }, bundle) {
+export function createOrganism({ id, parents, taxon = null, blueprint = null, notes = '' }, bundle) {
   if (typeof id !== 'string' || !/^[a-z0-9][a-z0-9_-]{0,62}$/.test(id)) throw new Error('id must be a lower-case slug (a-z, 0-9, -, _)');
-  if (!Array.isArray(parents) || !parents.length) throw new Error('base.parents must be a non-empty list of {organism, weight}');
+  // A TAXON base: no parents, because there is no reference parameter set for this organism. Allowed so
+  // that any organism can enter the studio and reach the law check with its clade intact.
+  if (taxon != null && (!Array.isArray(parents) || !parents.length)) {
+    if (typeof taxon !== 'string' || !taxon.trim()) throw new Error('base.taxon must be a non-empty taxon name');
+    return { id, base: { taxon: taxon.trim(), parents: [], ...(blueprint ? { blueprint } : {}) }, edits: [], notes,
+      caveat: TAXON_BASE_CAVEAT };
+  }
+  if (!Array.isArray(parents) || !parents.length) throw new Error('base.parents must be a non-empty list of {organism, weight}, or base.taxon for an organism this engine holds no parameters for');
   for (const p of parents) { organismOrThrow(bundle, p.organism); if (!(typeof p.weight === 'number' && p.weight > 0)) throw new Error('each parent weight must be a positive number'); }
   const sum = parents.reduce((a, p) => a + p.weight, 0);
   if (Math.abs(sum - 1) > 1e-6) throw new Error(`parent weights must sum to 1 (got ${sum})`);
@@ -201,7 +245,13 @@ export function createOrganism({ id, parents, notes = '' }, bundle) {
 /** A document for one of the bundle's own organisms or designs, unedited. */
 export function docFor(bundle, organismId) {
   organismOrThrow(bundle, organismId);
-  return createOrganism({ id: organismId, parents: [{ organism: organismId, weight: 1 }], notes: `the repository's own ${organismId}, unedited` }, bundle);
+  const d = createOrganism({ id: organismId, parents: [{ organism: organismId, weight: 1 }], notes: `the repository's own ${organismId}, unedited` }, bundle);
+  // Carry the bundle's taxon onto the document. Law scope is decided from the taxon, and before this a
+  // repository organism reached the checker without one, so a clade-scoped law could not tell a flying
+  // fish from an unnamed design and declined to judge both.
+  const t = bundle.organisms[organismId].taxon || bundle.organisms[organismId].species || null;
+  if (t) d.base.taxon = t;
+  return d;
 }
 
 export function validateEdit(bundle, doc, edit) {
@@ -238,7 +288,10 @@ export function appendEdit(bundle, doc, edit, now = () => new Date().toISOString
 
 export function validateDoc(bundle, doc) {
   if (!doc || typeof doc !== 'object' || !doc.base) throw new Error('not an organism document');
-  createOrganism({ id: doc.id, parents: doc.base.parents }, bundle);
+  createOrganism({ id: doc.id, parents: doc.base.parents, taxon: doc.base.taxon, blueprint: doc.base.blueprint }, bundle);
+  if (isTaxonBase(doc) && doc.edits.length) {
+    throw new Error(`organism "${doc.id}" has a taxon base (${doc.base.taxon}) and therefore no parameter to edit: an edit would be applied to null. Give the engine a reference parameter set for this taxon first.`);
+  }
   doc.edits.forEach((e, i) => { try { validateEdit(bundle, doc, e); } catch (err) { throw new Error(`edit ${i}: ${err.message}`); } });
   return true;
 }
@@ -247,11 +300,28 @@ const applyOp = (op, cur, v) => (op === 'set' ? v : op === 'scale' ? cur * v : c
 
 /** Resolve the document at its reference age: blended parameters with provenance, part scales,
  *  state overrides, and the edits that have no physical effect (recorded only). */
+/** Is this a document whose base is a taxon rather than a blend of the engine's own organisms? */
+export function isTaxonBase(doc) {
+  return !!(doc && doc.base && doc.base.taxon && (!Array.isArray(doc.base.parents) || !doc.base.parents.length));
+}
+
 export function resolveParameters(bundle, doc) {
   validateDoc(bundle, doc);
+  if (isTaxonBase(doc)) {
+    // No parents, so nothing to blend. Every parameter is reported as absent WITH THE REASON, rather
+    // than defaulted: a default here would travel through the state, the scenarios and the score as if
+    // it had been measured on this animal.
+    const params = {};
+    for (const k of paramSchema(bundle)) {
+      params[k] = { value: null, kind: 'assumed', source: 'none',
+        reason: `no reference parameter set for ${doc.base.taxon}: this engine holds measured parameters only for ${Object.keys(bundle.organisms).join(', ')}` };
+    }
+    return { params, partScale: {}, geometry: [], overrides: {}, recorded: [], leaves: {},
+      taxon: doc.base.taxon, taxon_base: true, caveat: TAXON_BASE_CAVEAT };
+  }
   const schemaRule = k => (/_count$/.test(k) ? 'round' : 'arithmetic');
   const params = {};
-  for (const k of Object.keys(bundle.organisms['zebrafish-adult'].parameters)) {
+  for (const k of paramSchema(bundle)) {
     let v = 0; const kinds = []; const src = [];
     for (const p of doc.base.parents) {
       const e = bundle.organisms[p.organism].parameters[k];

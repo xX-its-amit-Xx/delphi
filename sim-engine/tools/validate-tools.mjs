@@ -9,6 +9,7 @@ const KIND_ORDER = ['assumed', 'borrowed', 'measured-secondhand', 'calibrated', 
 import { loadBundle } from '../lib/data-node.mjs';
 import { resolveState } from '../lib/state.mjs';
 import { getDoc } from './studio.mjs';
+import * as O from '../lib/organism.mjs';
 import { rawFromState, closestPhenotype, loadReferences } from '../validate/phenotype.mjs';
 import { closestGenotype, STATE_NOT_PHENOTYPE } from '../validate/genotype.mjs';
 import { phenoSanity, genoSanity } from '../validate/sanity.mjs';
@@ -29,6 +30,95 @@ const COMMON = {
 };
 const SCOPE_PH = 'Nearest real relatives in a 6-feature body space (FishShapes v1, 16 377 teleost specimens, measured; our 3 real organisms and their ontogeny stages) and on pectoral fin length (Daane 2021 sheet A, 9 beloniform species, measured). The other fin features have only our own two lineages as references, so they get an uncalibrated envelope rule. Distance is not relatedness: a nearest neighbour is the most similar shape, not an ancestor. Birds (Aves) excluded: frozen holdout.';
 
+// ---------------------------------------------------------------- reference-set taxon scope
+//
+// A reference set is calibrated on a clade, and comparing a design with a reference set that does not
+// cover its clade produces an answer that is confident and meaningless. Before this gate existed, a mouse
+// specimen -- SL 9 cm, mass 20 g, with `taxon: "Mus musculus"` stated in the record -- came back with
+// `closest_real_relative: Nannacara anomala`, a cichlid, at distance 0.577. The out-of-distribution flag
+// did fire, but the headline field still named a fish as the closest real relative to a mouse, and the
+// taxon in the query was never read.
+//
+// So each reference set now DECLARES the clades it covers, and a query naming a taxon outside them gets
+// cannot-assess with both clades named. This is not a measurement failure and must not read as one: it is
+// a statement that this project holds no reference set for that animal.
+//
+// The clades come from the data, not from an opinion: FishShapes v1 is 16,377 teleost specimens, and the
+// fin axis is nine beloniform species from Daane 2021. Membership is decided by the generated clade table
+// (lib/lean-scope.mjs), the same one the law scope uses, so "inside Teleostei" means the same thing in
+// both places.
+const REFERENCE_SCOPES = {
+  phenotype: {
+    taxa: ['Teleostei'],
+    basis: 'FishShapes v1 (doi 10.1002/ecy.3829) is 16 377 TELEOST specimens, and the fin axis is 9 beloniform species (Daane et al. 2021 sheet A). There is no non-teleost shape reference in this project.',
+    what_is_missing: 'a body-shape reference set covering the design\'s clade, with its own out-of-distribution calibration',
+  },
+  genotype: {
+    taxa: ['Teleostei'],
+    basis: 'sequences/alignments/*.json are Ensembl 116 canonical proteins for zebrafish, medaka and two flying fishes, plus human as an outgroup. Orthologue comparison outside Teleostei has no alignment to run against here.',
+    what_is_missing: 'orthologue alignments for the design\'s clade',
+  },
+};
+
+/**
+ * The taxon a validate call is about: the specimen record, the argument, the document's base, or -- for a
+ * DESIGN -- the taxon of the organism it is a blend of.
+ *
+ * That last step matters. In the bundle only the three reference organisms carry a taxon; the four designs
+ * carry parents instead, so `winged-zebrafish` reached the clade gate with no taxon at all and the gate
+ * skipped itself on exactly the designs it most needs to cover. A design blended from Danio rerio is a
+ * Danio rerio design for the purpose of asking whether a teleost reference set covers it.
+ *
+ * Where parents disagree the taxon is the dominant one by weight, and the gate reports which, because a
+ * 50/50 chimera is not unambiguously inside either parent's clade and a reader should see the choice.
+ */
+async function queryTaxon(args, doc) {
+  const direct = args?.taxon || args?.specimen?.taxon || doc?.base?.taxon || doc?.taxon || doc?.species;
+  if (direct) return { taxon: direct, from: 'stated' };
+  const parents = doc?.base?.parents;
+  if (!Array.isArray(parents) || !parents.length) return { taxon: null, from: null };
+  const bundle = await loadBundle();
+  const leaves = O.leaves(bundle, parents);
+  const ranked = Object.entries(leaves).sort((a, b) => b[1] - a[1]);
+  for (const [id, w] of ranked) {
+    const t = bundle.organisms[id]?.taxon || bundle.organisms[id]?.species;
+    if (t) return { taxon: t, from: `the design's dominant parent ${id} (weight ${+w.toFixed(3)})${ranked.length > 1 ? `, of ${ranked.length} reference organisms it blends` : ''}` };
+  }
+  return { taxon: null, from: null };
+}
+
+/**
+ * Decide whether a reference set may be used for this query.
+ * -> { ok:true } | { ok:false, cannot_assess: {...} }
+ */
+async function referenceScopeGate(which, args, doc) {
+  const sc = REFERENCE_SCOPES[which];
+  const { taxon, from: taxonFrom } = await queryTaxon(args, doc);
+  const S = await import('../../lib/lean-scope.mjs');
+  if (!taxon) {
+    // Nothing to check against. The call proceeds, because most callers pass a design built from this
+    // engine's own teleosts, but the result says the scope was never checked rather than implying it was.
+    return { ok: true, taxon: null, taxon_scope_unchecked: `no taxon was given, so it was NOT checked against this reference set's clades (${sc.taxa.join(', ')}). ${sc.basis} Pass taxon to have it checked.` };
+  }
+  const pl = sc.taxa.map(t => ({ clade: t, ...S.taxonPlacement(taxon, t) }));
+  if (pl.some(x => x.within)) return { ok: true, taxon, taxon_from: taxonFrom, in_clade: pl.filter(x => x.within).map(x => x.clade) };
+  const place = S.placeTaxon(taxon);
+  if (pl.every(x => !x.known)) {
+    return { ok: false, cannot_assess: {
+      cannot_assess: true, taxon, reference_set_covers: sc.taxa, reason:
+        `the clade table cannot place "${taxon}", so whether this reference set covers it is UNKNOWN rather than decided. Nothing was compared and no nearest relative is reported. Add the taxon in lean/registry/build-taxonomy.mjs and rerun it.`,
+      taxon_from: taxonFrom, what_is_missing: sc.what_is_missing, basis: sc.basis, kind: 'unplaced' } };
+  }
+  return { ok: false, cannot_assess: {
+    cannot_assess: true, taxon, reference_set_covers: sc.taxa,
+    design_clades: place.placed ? place.ancestors.slice(0, 6) : [],
+    reason:
+      `this reference set covers ${sc.taxa.join(', ')}, and ${taxon} is outside it`
+      + (place.placed ? ` (the NCBI taxonomy places it inside ${place.ancestors.slice(0, 4).join(', ')})` : '')
+      + `. No nearest relative is reported, because the nearest shape in a reference set that does not cover the animal is not a relative of it -- it is the least bad row in the wrong table. This is cannot-assess, not a measurement that failed.`,
+    taxon_from: taxonFrom, what_is_missing: sc.what_is_missing, basis: sc.basis, kind: 'out-of-clade' } };
+}
+
 async function stateOf(args) {
   const bundle = await loadBundle(); const { doc } = await getDoc(args.organism);
   return { bundle, doc, state: resolveState(doc, args.ageDays, args.conditions || {}, bundle) };
@@ -39,10 +129,23 @@ export const VALIDATE_TOOLS = [
     description: 'Embed the design\'s resolved STATE (SL, mass/SL^3, depth/SL, width/SL, peduncle fractions, fin sizes) and return the nearest real organisms/specimens with distance, dominant features and an out-of-distribution flag whose threshold is calibrated on held-out real specimens.',
     inputSchema: { type: 'object', properties: { organism: ORG, specimen: SPECIMEN, ageDays: COMMON.ageDays, conditions: COMMON.conditions, exclude: COMMON.exclude, k: { type: 'integer' } } },
     handler: async args => {
+      // The clade gate runs BEFORE any neighbour is computed. Computing one and then labelling it
+      // unusable still puts a species name in the result, and a species name in a result gets quoted.
+      let doc = null;
+      if (args.organism) { try { doc = (await getDoc(args.organism)).doc; } catch { /* reported by stateOf below */ } }
+      const gate = await referenceScopeGate('phenotype', args, doc);
+      if (!gate.ok) {
+        return envelope(gate.cannot_assess,
+          [p('reference set', 'FishShapes v1', 'measured', 'doi 10.1002/ecy.3829; Zenodo 6642650 -- not used for this query, which is outside its clade')],
+          SCOPE_PH + ' THIS CALL RETURNED NO COMPARISON: the reference set does not cover the design\'s clade, which is reported as cannot-assess rather than as a distant neighbour.');
+      }
       const raw = args.specimen || rawFromState((await stateOf(args)).state);
       const R = await loadReferences();
       const r = await closestPhenotype(raw, { k: args.k || 5, exclude: args.exclude || [] });
-      return envelope({ ...r, calibration: { body: { n: R.calibration.body.n, held_out_species: R.calibration.body.held_out_species, p50: R.calibration.body.p50, p95: R.calibration.body.p95, threshold: R.calibration.body.threshold, rule: R.calibration.body.threshold_rule }, fin: { n: R.calibration.fin.n, threshold: R.calibration.fin.threshold, rule: R.calibration.fin.threshold_rule } } },
+      return envelope({ ...r, taxon: gate.taxon ?? null, reference_set_covers: REFERENCE_SCOPES.phenotype.taxa,
+        ...(gate.taxon_scope_unchecked ? { taxon_scope_unchecked: gate.taxon_scope_unchecked } : {}),
+        ...(gate.in_clade ? { taxon_inside_reference_clade: gate.in_clade, taxon_from: gate.taxon_from } : {}),
+        calibration: { body: { n: R.calibration.body.n, held_out_species: R.calibration.body.held_out_species, p50: R.calibration.body.p50, p95: R.calibration.body.p95, threshold: R.calibration.body.threshold, rule: R.calibration.body.threshold_rule }, fin: { n: R.calibration.fin.n, threshold: R.calibration.fin.threshold, rule: R.calibration.fin.threshold_rule } } },
         [p('FishShapes v1', R.sources.fishshapes_rows, 'measured', 'doi 10.1002/ecy.3829; Zenodo 6642650'), p('OOD threshold', R.calibration.body.threshold, 'derived', R.calibration.body.threshold_rule)], SCOPE_PH);
     } },
   { name: 'closest_relative_genotype', title: 'Closest real relative (genotype)',
@@ -50,6 +153,12 @@ export const VALIDATE_TOOLS = [
     inputSchema: { type: 'object', properties: { organism: ORG, network: COMMON.network, blast: COMMON.blast }, required: ['organism'] },
     handler: async args => {
       const { doc } = await getDoc(args.organism);
+      const gate = await referenceScopeGate('genotype', args, doc);
+      if (!gate.ok) {
+        return envelope(gate.cannot_assess,
+          [p('alignments', 'sequences/alignments/*.json', 'measured', 'Ensembl 116 teleost proteins -- not used for this query, which is outside their clade')],
+          STATE_NOT_PHENOTYPE + ' THIS CALL RETURNED NO COMPARISON: there is no orthologue alignment for the design\'s clade here, reported as cannot-assess.');
+      }
       const r = await closestGenotype(doc, { network: args.network !== false, blast: !!args.blast });
       return envelope(r, [p('alignments', 'sequences/alignments/*.json', 'measured', 'Ensembl 116 / NCBI / figshare proteins, MAFFT L-INS-i (sequences/README.md)')], STATE_NOT_PHENOTYPE + ' Birds were never fetched (frozen holdout) and every comparison filters them explicitly.');
     } },
