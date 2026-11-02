@@ -7,6 +7,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+// The clade table the law-scope fragment is generated with (lean/registry/build-taxonomy.mjs).
+import { TAXA as TAXONOMY_TAXA, ALIASES as TAXONOMY_ALIASES } from '../../lib/lean-taxonomy.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '../..');
@@ -143,6 +145,8 @@ const LAWSET_FRAGMENT = fs.readFileSync(path.join(here, 'browser-check-lawset.fr
   .split('__LAWSETS__').join(JSON.stringify(LAWSETS, null, 1))
   .split('__CONSTRAINT_LAW__').join(JSON.stringify(CONSTRAINT_LAW, null, 1))
   .split('__LAW_INFO__').join(JSON.stringify(LAW_INFO, null, 1))
+  .split('__TAXONOMY_TAXA__').join(JSON.stringify(TAXONOMY_TAXA))
+  .split('__TAXONOMY_ALIASES__').join(JSON.stringify(TAXONOMY_ALIASES, null, 1))
   .replace(/^\/\/ FRAGMENT[\s\S]*?placeholders[^\n]*\n/m, '// ---- law-set judgement (generated from lean/eliminate/browser-check-lawset.fragment.mjs; data from lean/registry) ----\n');
 
 const BASE = JSON.parse(fs.readFileSync(path.join(root, 'conditions/baseline.json'), 'utf8'));

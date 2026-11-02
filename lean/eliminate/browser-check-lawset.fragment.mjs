@@ -12,26 +12,48 @@ export const LAWSETS = __LAWSETS__;
 export const CONSTRAINT_LAW = __CONSTRAINT_LAW__;
 export const LAW_INFO = __LAW_INFO__;
 
-// Minimal taxonomy, the same placement rules as lib/lean-scope.mjs (keep the two in step).
-const SCOPE_PARENT = { Exocoetidae: 'Beloniformes', Beloniformes: 'Teleostei', 'Danio rerio': 'Teleostei', Danio: 'Teleostei', Liparidae: 'Teleostei', Teleostei: 'Actinopterygii', Actinopterygii: 'Vertebrata', Vertebrata: 'Metazoa', Metazoa: 'any' };
-const FLYING_FISH_GENERA = ['Cypselurus', 'Exocoetus', 'Hirundichthys', 'Cheilopogon', 'Parexocoetus', 'Fodiator', 'Prognichthys', 'Oxyporhamphus'];
+// Clade placements, generated into this file by build-browser-check.mjs from lib/lean-taxonomy.mjs, which
+// lean/registry/build-taxonomy.mjs builds from the NCBI taxonomy as Ubergraph serves it. The same data
+// lib/lean-scope.mjs uses, so the browser and node agree on who is inside what by construction rather
+// than by two hand-maintained tables being kept in step -- which is what this replaces, and they were a
+// ladder of nine fish clades plus hard-coded genus lists.
+//
+// A clade outside that ladder was previously UNSATISFIABLE in a scope, and an organism outside it was
+// reported as out-of-scope rather than as unplaceable. Both are fixed here: see lib/lean-scope.mjs.
+const TAXA = __TAXONOMY_TAXA__;
+const TAXA_ALIASES = __TAXONOMY_ALIASES__;
+
 function taxonNorm(t) {
   if (!t) return null;
-  const s = String(t).trim(); const genus = s.split(/\s+/)[0];
-  if (FLYING_FISH_GENERA.includes(genus)) return 'Exocoetidae';
-  if (['Pseudoliparis', 'Notoliparis', 'Liparis'].includes(genus)) return 'Liparidae';
-  if (/^zebrafish$/i.test(s) || /^Danio rerio\b/.test(s)) return 'Danio rerio';
-  if (/^flying[- ]?fish$/i.test(s)) return 'Exocoetidae';
-  return s;
+  const s = String(t).trim();
+  if (TAXA[s]) return s;
+  const direct = TAXA_ALIASES[s] || TAXA_ALIASES[s.toLowerCase()];
+  if (direct && TAXA[direct]) return direct;
+  const bare = s.split(/[(,;]/)[0].trim();
+  if (bare !== s) {
+    if (TAXA[bare]) return bare;
+    const a = TAXA_ALIASES[bare] || TAXA_ALIASES[bare.toLowerCase()];
+    if (a && TAXA[a]) return a;
+  }
+  const genus = bare.split(/\s+/)[0];
+  if (genus && genus !== bare) {
+    if (TAXA[genus]) return genus;
+    const g = TAXA_ALIASES[genus] || TAXA_ALIASES[genus.toLowerCase()];
+    if (g && TAXA[g]) return g;
+  }
+  return null;
 }
-export function taxonWithin(t, anc) {
-  if (anc === 'any') return true;
-  let x = taxonNorm(t); const a = taxonNorm(anc);
-  if (!x) return false; if (x === a) return true;
-  const seen = new Set();
-  while (SCOPE_PARENT[x] && !seen.has(x)) { seen.add(x); x = SCOPE_PARENT[x]; if (x === a) return true; }
-  return false;
+/** -> {within, known}. `known:false` means the table cannot place the taxon; it is NOT `within:false`. */
+export function taxonPlacement(t, anc) {
+  if (anc === 'any') return { within: true, known: true };
+  const k = taxonNorm(t);
+  if (!k) return { within: false, known: false };
+  const a = TAXA[anc] ? anc : (TAXA_ALIASES[anc] || TAXA_ALIASES[String(anc).toLowerCase()] || anc);
+  return { within: k === a || TAXA[k].ancestors.indexOf(a) >= 0, known: true };
 }
+export function taxonWithin(t, anc) { return taxonPlacement(t, anc).within; }
+export function taxonAncestors(t) { const k = taxonNorm(t); return k ? TAXA[k].ancestors : null; }
+
 const designTaxon = d => d.taxon || d.species || (d.organism && (d.organism.species || d.organism.taxon)) || null;
 const designStage = d => d.life_stage || d.lifeStage || d.stage || null;
 
@@ -51,8 +73,17 @@ export function scopeCheck(constraintId, design = {}, spec = {}) {
   const taxa = sc.taxa || ['any'];
   if (!taxa.includes('any')) {
     const t = designTaxon(design);
-    if (!t) return { in_scope: false, reason: `scoped to ${taxa.join(', ')}${sc.basis ? ' (' + sc.basis + ')' : ''}; the design names no taxon, so this row is not judged. Pass taxon to judge it.`, scope: sc };
-    if (!taxa.some(a => taxonWithin(t, a))) return { in_scope: false, reason: `scoped to ${taxa.join(', ')}${sc.basis ? ' (' + sc.basis + ')' : ''}; the design is ${t}.`, scope: sc };
+    if (!t) return { in_scope: false, taxon_reason: 'absent', reason: `scoped to ${taxa.join(', ')}${sc.basis ? ' (' + sc.basis + ')' : ''}; the design names no taxon, so this row is not judged. Pass taxon to judge it.`, scope: sc };
+    const pl = taxa.map(a => taxonPlacement(t, a));
+    if (!pl.some(x => x.within)) {
+      // Unplaceable is reported as unplaceable. "the design is X" would assert a clade check that did not
+      // happen, and would send a reader looking at their organism instead of at the table.
+      if (pl.every(x => !x.known)) {
+        return { in_scope: false, taxon_reason: 'unplaced', reason: `scoped to ${taxa.join(', ')}${sc.basis ? ' (' + sc.basis + ')' : ''}; the clade table cannot place "${t}", so whether this law applies is UNKNOWN rather than decided -- this is not a statement that the design is outside the scope. Add the taxon in lean/registry/build-taxonomy.mjs and rerun it.`, scope: sc, taxon_unplaced: t };
+      }
+      const anc = taxonAncestors(t);
+      return { in_scope: false, taxon_reason: 'outside', reason: `scoped to ${taxa.join(', ')}${sc.basis ? ' (' + sc.basis + ')' : ''}; the design is ${t}${anc && anc.length ? `, which the NCBI taxonomy places inside ${anc.slice(0, 4).join(', ')}` : ''}.`, scope: sc };
+    }
   }
   const st = designStage(design);
   if (st && (sc.life_stages || []).length && !sc.life_stages.includes(st)) return { in_scope: false, reason: `scoped to life stages ${sc.life_stages.join(', ')}; the design is at ${st}.`, scope: sc };

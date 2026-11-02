@@ -132,8 +132,11 @@ export function parseAxioms(out) {
 }
 
 /** Taxon containment used for shared scope (a small explicit hierarchy; anything else must match exactly). */
-const PARENT = { Exocoetidae: 'Beloniformes', Beloniformes: 'Teleostei', 'Danio rerio': 'Teleostei', Liparidae: 'Teleostei', Teleostei: 'Actinopterygii', Actinopterygii: 'Vertebrata', Vertebrata: 'Metazoa', Metazoa: 'any' };
-export function taxonWithin(t, anc) { if (anc === 'any' || t === anc) return true; let x = t; const seen = new Set(); while (PARENT[x] && !seen.has(x)) { seen.add(x); x = PARENT[x]; if (x === anc) return true; } return false; }
+// Clade membership comes from the generated table (lean/registry/build-taxonomy.mjs), not from a parent
+// map maintained here. The eight-entry map this replaces could not place an organism outside this
+// project's fish, and returned false for "I cannot place it" exactly as for "different clade".
+export { taxonWithin, taxonPlacement, cladeIsKnown, knownClades } from '../../lib/lean-scope.mjs';
+import { taxonWithin } from '../../lib/lean-scope.mjs';
 export function scopesOverlap(a, b) {
   const ta = (a && a.taxa && a.taxa.length) ? a.taxa : ['any'], tb = (b && b.taxa && b.taxa.length) ? b.taxa : ['any'];
   return ta.some(x => tb.some(y => taxonWithin(x, y) || taxonWithin(y, x)));

@@ -20,6 +20,7 @@ const src = await imp('lib/lean-source.mjs');
 const { LEAN_TOOLS } = await imp('sim-engine/tools/lean-tools.mjs');
 const T = Object.fromEntries(LEAN_TOOLS.map(t => [t.name, t.handler]));
 const reg = src.load({ fresh: true });
+const split = JSON.parse(fs.readFileSync(path.join(ROOT, 'holdout/split.json'), 'utf8'));
 const DESIGN = { SL_m: 0.2, mass_kg: 0.06, finArea_m2: 0.01, CLmax: 0.8, airspeed_m_s: 3 };
 
 console.log(`\nloader (${reg.origin}, ${reg.laws.length} laws, current lawset ${reg.current})`);
@@ -201,6 +202,88 @@ await ok('lean_verify reports per-law pin status', async () => {
   const r = (await T.lean_verify({})).result;
   assert.ok(Array.isArray(r.laws) && r.laws.length > 0);
   assert.ok(typeof r.ok === 'boolean');
+});
+
+console.log(`
+clade placement (lib/lean-scope.mjs over the generated lean/lean-taxonomy.mjs table)`);
+const SC = await imp('lib/lean-scope.mjs');
+
+await ok('any organism in the table places into its real NCBI clades, not a hand-written ladder', () => {
+  // The ladder this replaced held nine fish clades. These are the placements it could not make.
+  for (const [t, clade] of [['Mus musculus', 'Mammalia'], ['Mus musculus', 'Rodentia'], ['Mus musculus', 'Vertebrata'],
+    ['Mus musculus', 'Metazoa'], ['Danio rerio', 'Teleostei'], ['Cypselurus hiraii', 'Exocoetidae'],
+    ['Oryzias latipes', 'Beloniformes'], ['Drosophila melanogaster', 'Insecta'], ['Xenopus laevis', 'Tetrapoda']]) {
+    const p = SC.taxonPlacement(t, clade);
+    assert.ok(p.known, `${t} is not placed by the table`);
+    assert.equal(p.within, true, `${t} should be inside ${clade}`);
+  }
+});
+await ok('clades a design is NOT inside stay outside, both ways across the vertebrate split', () => {
+  for (const [t, clade] of [['Mus musculus', 'Teleostei'], ['Mus musculus', 'Exocoetidae'],
+    ['Danio rerio', 'Mammalia'], ['Danio rerio', 'Exocoetidae'], ['Oryzias latipes', 'Exocoetidae'],
+    ['Drosophila melanogaster', 'Vertebrata']]) {
+    const p = SC.taxonPlacement(t, clade);
+    assert.ok(p.known, `${t} is not placed by the table`);
+    assert.equal(p.within, false, `${t} should NOT be inside ${clade}`);
+  }
+});
+await ok('genus membership is read from the taxonomy, not from a hard-coded genus list', () => {
+  // FLYING_FISH_GENERA and SNAILFISH_GENERA used to carry this by hand.
+  assert.equal(SC.taxonWithin('Cypselurus hiraii', 'Exocoetidae'), true);
+  assert.equal(SC.taxonWithin('Exocoetus volitans', 'Exocoetidae'), true);
+  assert.ok(SC.placeTaxon('Hirundichthys speculiger').placed, 'Hirundichthys is unplaced');
+});
+await ok('common names and decorated taxon strings resolve', () => {
+  assert.equal(SC.taxonWithin('zebrafish', 'Teleostei'), true);
+  assert.equal(SC.taxonWithin('flying fish', 'Exocoetidae'), true);
+  assert.equal(SC.taxonWithin('mouse', 'Mammalia'), true);
+  // data-node.mjs writes species strings like this one, with the clade and a citation in parentheses.
+  assert.equal(SC.taxonWithin('flying fish (Exocoetidae, generic; adult parameters from Cypselurus hiraii)', 'Beloniformes'), true);
+});
+await ok('an unplaceable taxon is UNKNOWN, never silently outside the clade', () => {
+  // The bug this guards: returning false for "not in my table" exactly as for "different clade", which
+  // greyed out a law while its reason claimed the clade had been checked.
+  const p = SC.taxonPlacement('Blorpus maximus', 'Mammalia');
+  assert.equal(p.known, false, 'an unknown taxon must not be reported as placed');
+  assert.equal(p.within, false);
+  const r = SC.outOfScope({ id: 'X' }, { law_id: 'demo', scope: { taxa: ['Mammalia'] } }, { taxon: 'Blorpus maximus' });
+  assert.equal(r.kind, 'unplaced', 'an unplaceable taxon must be reported as unplaced, not as a clade verdict');
+  assert.match(r.reason, /UNKNOWN rather than decided/);
+  assert.ok(!/the design is Blorpus/.test(r.reason), 'the reason must not read as a clade judgement');
+});
+await ok('a law scoped to a NON-FISH clade is satisfiable, which it was not before', () => {
+  const mam = { law_id: 'demo-mammal', scope: { taxa: ['Mammalia'] } };
+  assert.equal(SC.outOfScope({ id: 'X' }, mam, { taxon: 'Mus musculus' }), null, 'a mammal law must apply to a mouse');
+  const vert = { law_id: 'demo-vert', scope: { taxa: ['Vertebrata'] } };
+  assert.equal(SC.outOfScope({ id: 'X' }, vert, { taxon: 'Mus musculus' }), null, 'a vertebrate law must apply to a mouse');
+  assert.equal(SC.outOfScope({ id: 'X' }, vert, { taxon: 'Danio rerio' }), null, 'a vertebrate law must apply to a zebrafish');
+  const r = SC.outOfScope({ id: 'X' }, mam, { taxon: 'Danio rerio' });
+  assert.equal(r.kind, 'taxon');
+  assert.match(r.reason, /NCBI taxonomy places inside/);
+});
+await ok('every clade our own law scopes name is placeable', () => {
+  const named = new Set();
+  for (const l of reg.laws) {
+    for (const t of (l.scope?.taxa || [])) if (t !== 'any') named.add(t);
+    for (const cs of Object.values(l.constraint_scopes || {})) for (const t of (cs.taxa || [])) if (t !== 'any') named.add(t);
+  }
+  for (const t of named) assert.ok(SC.cladeIsKnown(t), `law scope names clade "${t}", which the table cannot place: the scope would match nothing`);
+});
+await ok('the generated browser table agrees with the node one', async () => {
+  const bc = await imp('lean/eliminate/browser-check.mjs');
+  if (typeof bc.taxonPlacement !== 'function') { assert.ok(false, 'the generated checker exports no taxonPlacement'); return; }
+  for (const [t, clade] of [['Mus musculus', 'Mammalia'], ['Danio rerio', 'Teleostei'], ['Cypselurus hiraii', 'Exocoetidae'],
+    ['Mus musculus', 'Teleostei'], ['zebrafish', 'Vertebrata']]) {
+    assert.equal(bc.taxonPlacement(t, clade).within, SC.taxonPlacement(t, clade).within,
+      `browser and node disagree on ${t} within ${clade}`);
+  }
+  assert.equal(bc.taxonPlacement('Blorpus maximus', 'Mammalia').known, false);
+});
+await ok('no held-out taxon is in the clade table', async () => {
+  const T = await imp('lib/lean-taxonomy.mjs');
+  const heldNames = new Set(split.taxa.filter(t => t.assignment === 'holdout').map(t => t.name));
+  for (const k of Object.keys(T.TAXA)) assert.ok(!heldNames.has(k), `held-out taxon ${k} is a key in the clade table`);
+  for (const [k, v] of Object.entries(T.TAXA)) for (const a of v.ancestors) assert.ok(!heldNames.has(a), `held-out taxon ${a} is an ancestor of ${k}`);
 });
 
 console.log('\nCLI');
