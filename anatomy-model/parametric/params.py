@@ -490,6 +490,18 @@ def resolve(design_id, designs=None, references=None):
                 "parameter_detail": params, "provenance_per_parameter": prov,
                 "moved_parameters": [], "caveat": None, "record": ref}
 
+    if design_id not in designs:
+        # A bare KeyError here reads like a bug in the caller. It is not: this is a parametric
+        # TELEOST builder, and the only bodies it can make are the reference fish below and blends
+        # of them. Asked for a mouse it must say so, because the failure mode that matters is not
+        # an exception -- it is emitting a fish-shaped mesh and letting it be labelled a mouse.
+        raise KeyError(
+            "unknown organism or design %r. This is a parametric teleost builder: it can only "
+            "produce the reference organisms %s and designs blended from them (%s). There is no "
+            "generic body generator here, so an organism outside that set has no mesh in this "
+            "repository -- the mesh step is out of scope for it, not broken. Add a reference "
+            "parameter set under REFERENCES, or a design under DESIGNS, to extend it."
+            % (design_id, sorted(references), sorted(designs)))
     d = designs[design_id]
     parents = d["parents"]
     wsum = sum(x["weight"] for x in parents)

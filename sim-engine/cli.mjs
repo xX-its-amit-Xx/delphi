@@ -18,6 +18,7 @@
 //   node sim-engine/cli.mjs tool validate_generation --json '{"desired_phenotype":"...","generated":"winged-zebrafish","base":"zebrafish-adult"}'
 // Any command also takes --json '<raw arguments object>', merged over the flags.
 import * as T from './tools/studio.mjs';
+import { errorEnvelope } from './lib/envelope.mjs';
 
 const argv = process.argv.slice(2);
 const [group, cmd] = argv;
@@ -79,7 +80,7 @@ if (group === 'tools' || group === 'tool') {
     const out = await t.handler({ ...flat, ...raw });
     process.stdout.write(JSON.stringify(out, null, flags.compact ? 0 : 1) + '\n');
   } catch (e) {
-    process.stdout.write(JSON.stringify({ error: e.message, tool: name }, null, 1) + '\n');
+    process.stdout.write(JSON.stringify(errorEnvelope(name, e, { tool: name }), null, 1) + '\n');
     process.exit(1);
   }
   process.exit(0);
@@ -95,6 +96,6 @@ try {
   const out = await fn();
   process.stdout.write(JSON.stringify(out, null, flags.compact ? 0 : 1) + '\n');
 } catch (e) {
-  process.stdout.write(JSON.stringify({ error: e.message, command: key }, null, 1) + '\n');
+  process.stdout.write(JSON.stringify(errorEnvelope(key, e, { command: key }), null, 1) + '\n');
   process.exit(1);
 }

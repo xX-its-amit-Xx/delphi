@@ -102,6 +102,9 @@ export function normaliseLedger(raw) {
   return {
     ran: true,
     closest_functional_analogue: raw.closest_functional_analogue ?? null,
+    // A desired phenotype that names no function in the registry. Carried explicitly because
+    // normaliseLedger copies named fields only, and this one changes what the whole ledger means.
+    ...(raw.desired_phenotype_unmatched ? { desired_phenotype_unmatched: raw.desired_phenotype_unmatched } : {}),
     requirement_set: Array.isArray(raw.requirement_set) ? raw.requirement_set : [],
     entries, counts,
     // The headline split: demonstrated resolutions and hypothesised ones are reported separately, always.
@@ -113,7 +116,12 @@ export function normaliseLedger(raw) {
     ...(mismatch.length ? { counts_disagreed_with_module: mismatch } : {}),
     // A gate, in the spirit of the Lean gate: an unresolved difference means the design is not accounted for,
     // whatever the similarity scores say. It does NOT move the frozen composite score (see SCORER-RESULTS.md).
-    gate: unresolved > 0
+    // The first gate question is not "how many differences are unresolved" but "is this ledger even
+    // about the function that was requested". A ledger built on a function nobody asked for cannot pass,
+    // however tidy its counts are, so it is checked before them.
+    gate: raw.desired_phenotype_unmatched
+      ? `FAIL: the desired phenotype names no function in the registry (${(raw.desired_phenotype_unmatched.registry_functions || []).join(', ')}), so this ledger is about a DIFFERENT function and establishes nothing about the one requested. Not a measurement failure: an out-of-scope request.`
+      : unresolved > 0
       ? `FAIL: ${unresolved} difference(s) from the closest functional analogue are UNRESOLVED; the design is not functionally accounted for, whatever the similarity scores`
       : entries.length === 0 ? 'no differences were classified: the ledger is empty, which is not evidence that there are none'
         : hypothesised > 0 ? `no UNRESOLVED difference, but ${hypothesised} rest on a COMPENSATORY hypothesis rather than a demonstrated resolution`

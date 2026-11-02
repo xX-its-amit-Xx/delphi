@@ -125,6 +125,46 @@ for (const g of grams) {
   if (longer) { subsumed.push({ matched: g, term: a, read_instead_as: { matched: longer.matched, term: longer.term }, source: { file: 'organism-design/lexicon.json', entry: 'anatomy_words.' + g } }); continue; }
   found.anatomy.push({ matched: g, term: a, source: { file: 'organism-design/lexicon.json', entry: 'anatomy_words.' + g } });
 }
+// 1b-neg. A description can ask for a structure to be ABSENT, and reading "a mouse with no limbs"
+// as a mouse WITH limbs is the worst mistake this file can make: it would hand everything downstream
+// the opposite of the design that was asked for. It did exactly that until this block existed, because
+// "no" and "not" sit in the GRAMMAR stop-list below and were skipped before the structure was read.
+//
+// Negation is read PER OCCURRENCE, from a cue within three words before the structure, so
+// "with fins and no limbs" keeps the fins and drops the limbs. A structure negated in some places and
+// not others is NOT guessed at: it is kept and the ambiguity is reported, because silently choosing
+// one reading is how a tool ends up asserting something nobody asked for.
+const NEG_CUES = new Set(['no', 'not', 'non', 'without', 'lacks', 'lack', 'lacking', 'missing', 'absent', 'devoid', 'none', 'minus']);
+const negCueBefore = o => { for (let i = Math.max(0, o[0] - 3); i < o[0]; i++) if (NEG_CUES.has(words[i])) return words[i]; return null; };
+found.absent = [];
+found.anatomy = found.anatomy.filter(a => {
+  const os = occ(a.matched);
+  if (!os.length) return true;
+  const cues = os.map(negCueBefore);
+  if (cues.every(Boolean)) {
+    for (const [st] of os) for (let i = Math.max(0, st - 3); i < st; i++) if (NEG_CUES.has(words[i])) covered[i] = true;
+    found.absent.push({ matched: a.matched, term: a.term, negation_cue: cues[0], read_as: 'requested absence', source: a.source });
+    return false;
+  }
+  if (cues.some(Boolean)) a.negation_ambiguous = {
+    occurrences: os.length, negated: cues.filter(Boolean).length, cues: [...new Set(cues.filter(Boolean))],
+    read_as: 'present, because at least one occurrence is not negated; the tool does not pick a reading for you',
+  };
+  return true;
+});
+// Privative suffix: "a limbless mouse". Read through -less to the same lexicon entry.
+for (const w of [...new Set(words.filter(w => w.length > 6 && w.endsWith('less')))]) {
+  const base = w.slice(0, -4);
+  const key = typeof lexicon.anatomy_words[base] === 'string' ? base
+            : typeof lexicon.anatomy_words[base + 's'] === 'string' ? base + 's' : null;
+  if (!key) continue;
+  const term = lexicon.anatomy_words[key];
+  cover(w);
+  found.anatomy = found.anatomy.filter(a => a.term !== term);
+  if (found.absent.some(x => x.term === term)) continue;
+  found.absent.push({ matched: w, term, negation_cue: '-less', read_as: 'requested absence', source: { file: 'organism-design/lexicon.json', entry: 'anatomy_words.' + key, note: 'read through the privative suffix -less' } });
+}
+
 // 1c. functions (stem match with a real inflection, so "hear" does not match "heart") and habitat.
 for (const [stem, v] of Object.entries(lexicon.function_words)) {
   if (stem.startsWith('_')) continue;
@@ -310,6 +350,65 @@ if (organs.length) {
   for (const o of organs) { const all = perC[o.iri] || []; if (all.length > LIM.cells) cut.cells.push({ parent: o.iri, parent_label: o.label, kept: LIM.cells, available: all.length, omitted: all.length - LIM.cells, omitted_labels: all.slice(LIM.cells).map(r => r.l), via: cq.id }); }
 }
 
+// ---------------------------------------------------------------- 3e. requested absences
+// A structure the description asked NOT to have is removed from the hierarchy, together with
+// everything the ontology places inside it: drop the limb and keep the limb muscle and the limb bone
+// and you have published a mouse with no limbs that has limb bones in it.
+//
+// The ontology closure does the work, not a name match: a node goes if it IS the absent term, or if
+// Ubergraph states it is a subclass or a part of it. Then the removal cascades down our own tree, so
+// the tissues and cell types hanging off a removed organ go with it. Every removal is listed in the
+// output; nothing disappears quietly.
+const absence = {
+  requested: found.absent,
+  note: 'Structures the description asked to be absent. Each was removed from the hierarchy with everything the ontology places inside it, and every removed node is listed here.',
+  removed: [],
+  removed_placements: 0,
+  via: null,
+  caveat: null,
+};
+if (found.absent.length) {
+  const absIris = found.absent.map(a => OBO + a.term);
+  const nodeIris = [...new Set(nodes.map(n => n.iri))];
+  const r = await sparql(`which structures in the blueprint lie inside the structures the description asked to be absent (${found.absent.map(a => a.matched).join(', ')})`,
+    `SELECT DISTINCT ?n ?a WHERE { VALUES ?n { ${nodeIris.map(i => `<${i}>`).join(' ')} } VALUES ?a { ${absIris.map(i => `<${i}>`).join(' ')} } { ?n rdfs:subClassOf ?a } UNION { ?n obo:BFO_0000050 ?a } }`);
+  absence.via = r.id;
+  const why = new Map();              // node iri -> the absent term it falls under
+  for (const i of absIris) why.set(i, i);
+  for (const row of r.rows) if (!why.has(row.n)) why.set(row.n, row.a);
+  // cascade: a node whose parent is gone is gone too (repeat until stable)
+  const gone = new Set([...why.keys()].filter(i => nodeIris.includes(i)));
+  for (let pass = 0; pass < 8; pass++) {
+    const before = gone.size;
+    for (const n of nodes) if (n.parent && gone.has(n.parent)) gone.add(n.iri);
+    if (gone.size === before) break;
+  }
+  const removed = nodes.filter(n => gone.has(n.iri));
+  absence.removed_placements = removed.length;
+  absence.removed = [...new Set(removed.map(n => n.iri))].map(i => ({
+    iri: i,
+    label: termLabels[i] || removed.find(n => n.iri === i).label,
+    levels: [...new Set(removed.filter(n => n.iri === i).map(n => n.level))],
+    inside: why.get(i) || 'a removed parent',
+    placements: removed.filter(n => n.iri === i).length,
+  }));
+  for (let i = nodes.length - 1; i >= 0; i--) if (gone.has(nodes[i].iri)) nodes.splice(i, 1);
+  // A system left with nothing under it is dropped, or the page shows a heading with no content.
+  for (let pass = 0; pass < 3; pass++) for (let i = nodes.length - 1; i >= 0; i--) {
+    const n = nodes[i];
+    if (n.level === 'organ_system' && !nodes.some(m => m.parent === n.iri)) nodes.splice(i, 1);
+  }
+  systems = systems.filter(x => nodes.some(n => n.iri === x.iri));
+  // The honest limit of all this. The ontology can delete a limb from a diagram; it cannot say whether
+  // what is left is an animal. Saying so here is cheaper than letting a reader assume otherwise.
+  absence.caveat =
+    'Removing a structure is a change to this diagram, not a biological prediction. Nothing here checks '
+    + 'that the remainder is viable, that a real developmental programme could produce it, or that the '
+    + 'structures left behind do not depend on the one removed. The ontologies state part_of and '
+    + 'subClassOf; they state no consequences of deletion. Those questions belong to the law check and '
+    + 'the validation harness, and a blueprint that has passed this step has been tested by neither.';
+}
+
 // ---------------------------------------------------------------- 4. genome sketch (labelled)
 const cellIris = [...new Set(nodes.filter(n => n.level === 'cell').map(n => n.iri))];
 const sketch = { label: 'SKETCH', note: 'Not a genome. These are marker gene products (Protein Ontology terms) that the Cell Ontology or its Provisional Cell Ontology extension records as expressed by the listed cell types (relation RO_0002292 "expresses"), reduced to the most specific term per cell. Most cell types carry no such annotation, so absence means nothing. Predicting a genome from a description is out of scope and would be labelled a sketch too.', cells_with_markers: 0, cells_total: cellIris.length, markers: [] };
@@ -334,8 +433,9 @@ const out = {
   tool: 'organism-design/blueprint.mjs',
   built: new Date().toISOString(),
   input: { description },
-  reading: { taxon, taxon_words: found.taxon, anatomy_words: found.anatomy, anatomy_words_subsumed: subsumed, function_words: found.functions, habitat_words: found.habitat, conflicts, words_not_recognised: notRead, organ_system_query: organSystemQuery, organ_query: organQuery },
+  reading: { taxon, taxon_words: found.taxon, anatomy_words: found.anatomy, anatomy_words_subsumed: subsumed, absent_structures: found.absent, function_words: found.functions, habitat_words: found.habitat, conflicts, words_not_recognised: notRead, organ_system_query: organSystemQuery, organ_query: organQuery },
   holdout,
+  absence,
   limits: LIM,
   counts,
   counts_distinct: countsDistinct,
@@ -363,6 +463,7 @@ const out = {
     'A description is read at the most specific lexicon entry that matches it, longest phrase first; a shorter reading wholly inside a longer one is recorded under reading.anatomy_words_subsumed instead of being added again.',
     'Words the lexicon does not know are listed under reading.words_not_recognised. The tool reads a word list, not English: an unrecognised word means the blueprint says nothing about whatever that word named.',
     'Everything the per-parent limits cut is listed under "pruning", and structures named in the description are never cut. A named structure absent from the blueprint was either unrecognised or taxon-excluded, and both are reported.',
+    'A structure the description asks NOT to have is read as an absence, not as a mention: it is kept out of the blueprint and everything the ontology places inside it is removed, all of it listed under "absence". Whether the remainder is a viable animal is not checked here, and nothing in this file should be read as saying it is.',
     'The genome sketch is marker gene products from the Cell Ontology, not a genome.',
     'Descriptions that resolve inside the held-out clade are refused and leave no file behind; the check and its query are recorded under "holdout" for every built blueprint.'
   ]
@@ -372,4 +473,4 @@ const outPath = arg('out', path.join(here, 'examples', slug + '.json'));
 fs.mkdirSync(path.dirname(outPath), { recursive: true });
 fs.writeFileSync(outPath, JSON.stringify(out, null, 1));
 const cached = Object.values(queries).filter(q => q.cached).length;
-console.log(`${outPath}\n  taxon: ${taxon.label} (${taxon.term}); ${countsDistinct.organ_system} systems, ${countsDistinct.organ} organs, ${countsDistinct.tissue} tissues, ${countsDistinct.cell} cell types (distinct terms; ${counts.tissue} and ${counts.cell} placements); markers for ${sketch.cells_with_markers} cell types; ${Object.keys(queries).length} queries (${cached} from cache)${found.anatomy.length ? '\n  structures read from the description: ' + found.anatomy.map(a => `${a.matched} -> ${a.label || a.term}`).join(', ') : ''}${notRead.length ? '\n  words not recognised, so nothing in the blueprint stands for them: ' + notRead.join(', ') : ''}${conflicts.length ? '\n  conflicts: ' + conflicts.map(c => c.label).join(', ') : ''}\n  cut by the per-parent limits: ${out.pruning.totals.organs} organs, ${out.pruning.totals.tissues} tissues, ${out.pruning.totals.cells} cell types (all listed under "pruning")${holdout.contains ? '\n  note: the taxon contains the held-out clade ' + holdout.clade : ''}`);
+console.log(`${outPath}\n  taxon: ${taxon.label} (${taxon.term}); ${countsDistinct.organ_system} systems, ${countsDistinct.organ} organs, ${countsDistinct.tissue} tissues, ${countsDistinct.cell} cell types (distinct terms; ${counts.tissue} and ${counts.cell} placements); markers for ${sketch.cells_with_markers} cell types; ${Object.keys(queries).length} queries (${cached} from cache)${found.anatomy.length ? '\n  structures read from the description: ' + found.anatomy.map(a => `${a.matched} -> ${a.label || a.term}`).join(', ') : ''}${found.absent.length ? '\n  structures the description asked NOT to have: ' + found.absent.map(a => `${a.matched} -> ${a.term} (cue "${a.negation_cue}")`).join(', ') + ` -- removed ${absence.removed.length} terms, ${absence.removed_placements} placements from the hierarchy` : ''}${notRead.length ? '\n  words not recognised, so nothing in the blueprint stands for them: ' + notRead.join(', ') : ''}${conflicts.length ? '\n  conflicts: ' + conflicts.map(c => c.label).join(', ') : ''}\n  cut by the per-parent limits: ${out.pruning.totals.organs} organs, ${out.pruning.totals.tissues} tissues, ${out.pruning.totals.cells} cell types (all listed under "pruning")${holdout.contains ? '\n  note: the taxon contains the held-out clade ' + holdout.clade : ''}`);

@@ -243,10 +243,12 @@ export function functionalDistance(fn, { designFinSL = null, designId = null } =
 export function closestFunctionalAnalogue(design, target, { designFinSL = null } = {}) {
   const R = registry();
   const base = baseOf(design);
-  let fnKey = null, signal = null, matched = null;
+  let fnKey = null, signal = null, matched = null, unmatched = null;
+  let suppliedText = null;
   if (typeof target === 'string' && R[target]) { fnKey = target; signal = 'specified: the caller named a registry function'; }
   else {
     const text = typeof target === 'string' ? target : (target?.desired_phenotype || target?.text || target?.function || null);
+    if (typeof text === 'string' && text.trim()) suppliedText = text;
     if (typeof text === 'string' && R[text]) { fnKey = text; signal = 'specified: the spec named a registry function'; }
     else {
       const t = functionFromText(text);
@@ -254,10 +256,37 @@ export function closestFunctionalAnalogue(design, target, { designFinSL = null }
     }
   }
   if (!fnKey) {
-    // No desired phenotype reached us. Infer from what the design IS, and label it inferred - never pretend the
-    // function was given.
+    // TWO DIFFERENT SITUATIONS, which this module used to collapse into one sentence that was false in
+    // the second case. Collapsing them is how a caller asking about limbless locomotion was told that
+    // the closest functional analogue is a flying fish, under a signal saying no text had arrived.
+    //
+    //  (a) nothing was supplied: inferring the function from the design's identity is reasonable, and
+    //      saying so is enough.
+    //  (b) a desired phenotype WAS supplied and names a function this registry does not cover. There is
+    //      nothing to infer from. The registry holds four functions, all of them about fish and flight,
+    //      so most of biology lands here. The function is still filled in to keep the ledger's shape,
+    //      but it answers a question nobody asked, and every field below says so.
     fnKey = base.id === 'tff' ? 'sustained_powered_flight' : 'glides_over_water';
-    signal = `INFERRED, not specified: no desired-phenotype text reached this module, so the function was taken from the design's identity (${base.id || 'unknown'}). A different desired phenotype would change the requirement set and so the whole ledger.`;
+    if (suppliedText) {
+      unmatched = {
+        desired_phenotype: suppliedText,
+        registry_functions: Object.keys(R),
+        rule: 'analogue.mjs TEXT_RULES matched none of them',
+        consequence:
+          'The registry covers four functions, all about fish, fins and flight. A desired phenotype outside '
+          + 'them has NO analogue here, and the function reported below was NOT asked for: it was taken from '
+          + 'the design identity only so the ledger keeps its shape. Every requirement, difference and count '
+          + 'derived from it is about that other function. Nothing in this ledger is evidence about the '
+          + 'phenotype that was requested, and the gate fails for that reason rather than on any measurement.',
+      };
+      signal =
+        `UNMATCHED, not inferred: a desired phenotype WAS supplied ("${String(suppliedText).slice(0, 120)}") and it `
+        + `names no function in this registry (${Object.keys(R).join(', ')}). The function below `
+        + `("${fnKey}") came from the design's identity (${base.id || 'unknown'}) and is NOT the one requested, `
+        + 'so this ledger does not answer the question that was asked.';
+    } else {
+      signal = `INFERRED, not specified: no desired-phenotype text reached this module, so the function was taken from the design's identity (${base.id || 'unknown'}). A different desired phenotype would change the requirement set and so the whole ledger.`;
+    }
   }
   const fn = R[fnKey];
   const satisfying = fn.taxa.filter(t => t.satisfies && !t.partial);
@@ -268,6 +297,7 @@ export function closestFunctionalAnalogue(design, target, { designFinSL = null }
   return {
     function: { id: fn.id, label: fn.label, operational: fn.operational, threshold: fn.threshold, threshold_note: fn.threshold_note || null },
     function_signal: signal, function_text_match: matched,
+    desired_phenotype_unmatched: unmatched,
     base: base,
     id: chosen?.id ?? null, name: chosen?.name ?? null, taxon: chosen?.taxon ?? null,
     no_analogue: !chosen,

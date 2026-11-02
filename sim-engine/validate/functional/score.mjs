@@ -46,6 +46,9 @@ export async function ledgerFor(design, { target = null, designFinSL = null } = 
       function: reqSet.analogue.function.label, function_id: reqSet.analogue.function.id,
       function_operational_definition: reqSet.analogue.function.operational,
       function_signal: reqSet.analogue.function_signal,
+      // Carried through the whitelist deliberately: this is the field that says the ledger is
+      // about a function the caller did not ask for. Dropping it here left the gate passing.
+      desired_phenotype_unmatched: reqSet.analogue.desired_phenotype_unmatched || null,
       basis: reqSet.analogue.basis, source: reqSet.analogue.source, evidence: reqSet.analogue.evidence,
       distance: reqSet.analogue.distance,
       other_satisfying_taxa: reqSet.analogue.other_satisfying_taxa,

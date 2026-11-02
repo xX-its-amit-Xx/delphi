@@ -104,15 +104,30 @@ await ok('lean_check: violations carry law_id, version, kind, status, inputs, me
   assert.match(r.kernel, /not a kernel check/);
 });
 await ok('lean_check: reference-specimen rows are out-of-scope for a zebrafish, evaluated for a flying fish', async () => {
+  // DESIGN's SL_m (0.2) sits within a few per cent of the C7b reference specimen, and the law is
+  // NOT evaluated there: its implied exponent is ln(X/X_ref)/ln(L/L_ref), so near L = L_ref the
+  // denominator goes to zero and the exponent is numerically meaningless. That dead band is correct
+  // behaviour, and it used to make this test fail by giving the flying fish 'out-of-scope' for a
+  // reason that has nothing to do with taxon. The two reasons are now asserted apart: a length away
+  // from the reference for the taxon contrast, and DESIGN itself for the dead band.
+  const FF_IN_SCOPE = { ...DESIGN, SL_m: 0.3 };
   const zf = (await T.lean_check({ design: { ...DESIGN, taxon: 'Danio rerio' } })).result;
-  const ff = (await T.lean_check({ design: { ...DESIGN, taxon: 'Cypselurus hiraii' } })).result;
+  const ff = (await T.lean_check({ design: { ...FF_IN_SCOPE, taxon: 'Cypselurus hiraii' } })).result;
+  const ffNearRef = (await T.lean_check({ design: { ...DESIGN, taxon: 'Cypselurus hiraii' } })).result;
   const v = (r, c) => r.verdicts.find(x => x.constraint === c)?.verdict;
   assert.equal(v(zf, 'C7b'), 'out-of-scope');
-  assert.ok(zf.verdicts.find(x => x.constraint === 'C7b').scope_reason.includes('Exocoetidae'));
+  assert.ok(zf.verdicts.find(x => x.constraint === 'C7b').scope_reason.includes('Exocoetidae'),
+    'a zebrafish is out of scope because of its CLADE');
   assert.equal(v(ff, 'C7b'), 'violated');
+  // In the dead band it is out of scope for the OPPOSITE reason: right clade, useless ratio.
+  assert.equal(v(ffNearRef, 'C7b'), 'out-of-scope');
+  const nearReason = ffNearRef.verdicts.find(x => x.constraint === 'C7b').scope_reason;
+  assert.ok(/length_ratio_vs_reference/.test(nearReason) && !/Exocoetidae/.test(nearReason),
+    `near-reference exclusion must name the ratio, not the clade: ${nearReason}`);
   assert.ok(!zf.violations.some(x => x.constraint === 'C7b'), 'out-of-scope rows are never violations');
   assert.equal(v(zf, 'C9'), 'violated', 'a taxon-free law still applies to the zebrafish');
   assert.equal(zf.summary.out_of_scope, zf.verdicts.filter(x => x.verdict === 'out-of-scope').length);
+  assert.equal(ff.summary.out_of_scope, ff.verdicts.filter(x => x.verdict === 'out-of-scope').length);
 });
 await ok('no violation message or law label contains "null" or "undefined" (every constraint forced to fire)', async () => {
   // Designs chosen to make as many constraints as possible fire, across the flying-fish and zebrafish scopes.

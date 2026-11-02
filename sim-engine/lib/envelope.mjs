@@ -16,6 +16,32 @@ export const KINDS = Object.freeze({
   assumed: 'Not measured and not fetched. A placeholder. Any conclusion resting on it inherits that.',
 });
 
+// A tool answer that produced no result: an input the tool declines, or a call that failed. It
+// carries the SAME envelope as a success, because the alternative -- a bare {error} -- is what an
+// agent gets today from the handful of handlers that throw instead of returning a reason, and an
+// agent cannot tell a declined call from a broken contract without the version on it.
+//
+// `error` stays a plain string: callers regex it (sim-engine/examples/codesign-demo/run.mjs tests
+// `/human/.test(bypass.error)`), so making it an object would break them for no gain.
+//
+// It does NOT guess whether the cause was a refusal or a bug. The message is the tool's own words.
+export function errorEnvelope(where, err, extra = {}) {
+  return {
+    contract_version: CONTRACT_VERSION,
+    error: typeof err === 'string' ? err : (err?.message || String(err)),
+    ...extra,
+    result: null,
+    provenance: [],
+    scope:
+      'This call produced no result. The message is the tool\'s own and is not classified here as a '
+      + 'refusal or a failure, because the two are not reliably distinguishable from outside: a tool '
+      + 'that declines an input it does not cover and a tool that broke both arrive here. Nothing in '
+      + 'this envelope is a finding, and an empty result is not a negative result.',
+    weakest_input: 'none',
+    counts: {},
+  };
+}
+
 export function p(quantity, value, kind, source, extra = {}) {
   if (!(kind in KINDS)) throw new Error(`unknown provenance kind "${kind}" for ${quantity}; allowed: ${Object.keys(KINDS).join(', ')}`);
   if (!source || typeof source !== 'string') throw new Error(`provenance for "${quantity}" needs a source string`);

@@ -5,8 +5,8 @@
 // make a model work. `kind` is the whole contract: if a tool cannot say which kind a number is, it
 // must not emit the number.
 
-import { KINDS, p, envelope } from './envelope.mjs';
-export { KINDS, p, envelope };
+import { KINDS, p, envelope, errorEnvelope } from './envelope.mjs';
+export { KINDS, p, envelope, errorEnvelope };
 
 // Load the fetched parameter table and look one up by id, carrying its provenance across.
 import fs from 'node:fs';

@@ -56,7 +56,14 @@ const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const strong = [];
 for (const t of held) {
   if (t.rank === 'class') continue; // the class name itself is a weak signal (see `weak`): naming it is how a builder says it filtered it out
-  strong.push({ kind: 'taxon', re: new RegExp(`\\b${esc(t.name)}\\b`, 'i'), what: `${t.name} (${t.rank})` });
+  // A GENUS is matched case-sensitively; a species binomial is not. Taxonomic convention capitalises
+  // the genus and lower-cases the species epithet, so a case-insensitive genus pattern fires on every
+  // binomial that happens to reuse the word as an epithet: `Troglodytes` hit `Pan troglodytes` (a
+  // chimpanzee) and `Fulica` hit `Heliornis fulica` (a sungrebe, not a coot). Those are not leaks, and
+  // two entries in leak-allowlist.json already exist to silence this one word -- which is the real cost:
+  // a checker that cries wolf gets read as noise, and the clade it guards is the whole experiment.
+  // Lower-case genus spellings are still caught, by the slug pattern below and by the weak signals.
+  strong.push({ kind: 'taxon', re: new RegExp(`\\b${esc(t.name)}\\b`, t.rank === 'genus' ? '' : 'i'), what: `${t.name} (${t.rank})` });
   if (t.slug && t.slug.includes('-')) strong.push({ kind: 'taxon', re: new RegExp(`\\b${esc(t.slug)}\\b`, 'i'), what: `slug ${t.slug}` });
   if (t.ids.ncbi) strong.push({ kind: 'taxon', re: new RegExp(`(taxid|taxon|ncbi)[^\\n]{0,20}\\b${t.ids.ncbi}\\b`, 'i'), what: `NCBI taxid ${t.ids.ncbi} (${t.name})` });
   if (t.ids.gbif) strong.push({ kind: 'taxon', re: new RegExp(`(gbif|usageKey|taxonKey|taxon_key)[^\\n]{0,20}\\b${t.ids.gbif}\\b`, 'i'), what: `GBIF key ${t.ids.gbif} (${t.name})` });

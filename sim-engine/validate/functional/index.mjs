@@ -42,6 +42,10 @@ export async function functionalResolution(design, opts = {}) {
     const d = desiredFrom(design, opts);
     const L = await ledgerFor(design, { target: d ? d.text : null, designFinSL: finSL(design, opts) });
     L.desired_phenotype = d ? { text: d.text, from_spec: d.from_spec } : { text: null, note: 'no desired phenotype reached this module, so the function was INFERRED from the design\'s identity and the ledger says so' };
+    // Lifted to the ledger root so a caller reading only the top level still sees that the ledger is
+    // about a function it did not ask for. One level down inside the analogue, it was missed.
+    const un = L.closest_functional_analogue?.desired_phenotype_unmatched;
+    if (un) L.desired_phenotype_unmatched = un;
     return L;
   } catch (e) {
     return { ran: false, reason: `functional ledger failed: ${e.message}`, stack_head: String(e.stack || '').split('\n').slice(0, 3).join(' | ') };

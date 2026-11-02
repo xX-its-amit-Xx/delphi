@@ -5,6 +5,7 @@ import Delphi.Favored
 import Delphi.Blueprint
 import Delphi.Thompson
 import Delphi.Certificates.AFlyingFish
+import Delphi.Certificates.AMouseWithNoLimbs
 import Delphi.Scaling
 import Delphi.Flight
 import Delphi.Genotype
