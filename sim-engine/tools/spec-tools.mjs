@@ -53,10 +53,52 @@ export async function parseDesignTextTool(args = {}) {
   const r = parseDesignText(args.text);
   const reg = await registry();
   const v = validateSpec(r.spec, reg);
-  return envelope({ ...r, validation: { ok: v.ok, errors: v.errors, warnings: v.warnings, normalised_spec: v.spec }, engine: reg.sources },
-    [p('parser', 'sim-engine/lib/parse-text.mjs', 'derived', 'Rule-based; no model, no network. The same text always gives the same spec.')],
+
+  // AN ORGANISM THIS ENGINE HAS NO PARAMETERS FOR IS STILL AN ORGANISM.
+  //
+  // The parser names it (`organism_not_in_bundle`) and stops there, deliberately: it is rule-based with
+  // no network and no table. Here, in node, the clade table is already loaded, so the name is placed and
+  // the spec gains a `taxon`. That is the difference between "a mouse with no limbs" being refused at the
+  // door -- which is what happened, with a reply listing the six fish on offer -- and reaching the law
+  // check as Mus musculus, where clade scope now works for any clade.
+  //
+  // It does NOT invent a design. There is no parameter set, so no criterion can be evaluated and
+  // `validation.ok` stays false; what the caller gets is the taxon, where it sits, and the two tools that
+  // can carry it forward. The alternative that was never on the table is mapping the request onto the
+  // nearest fish, because the nearest fish is not this animal.
+  const named = [...new Set(r.unparsed.map(u => u.organism_not_in_bundle).filter(Boolean))];
+  let taxonInfo = null;
+  if (named.length) {
+    const S = await import('../../lib/lean-scope.mjs');
+    const placed = named.map(n => ({ named: n, ...S.placeTaxon(n) }));
+    const first = placed.find(x => x.placed) || placed[0];
+    taxonInfo = {
+      organisms_named: named,
+      taxon: first.placed ? first.key : null,
+      taxid: first.taxid ?? null,
+      clades: first.placed ? first.ancestors.slice(0, 8) : [],
+      placed: !!first.placed,
+      reason: first.placed
+        ? `"${first.asked}" is placed in the clade table as ${first.key}. The spec carries it as \`taxon\`, so every law scoped to one of its clades is judged for it and a law scoped elsewhere is reported out of scope with its clade named. No reference parameter set exists for it, so no criterion can be evaluated and validation stays false.`
+        : `"${first.asked}" is not in the clade table, so it cannot be placed in a clade and no law scope can be decided for it. Add it in lean/registry/build-taxonomy.mjs and rerun that builder.`,
+      next: first.placed
+        ? ['organism_create {id, taxon} -- a taxon-based document',
+           'organism_from_blueprint {blueprint} -- the full ontology hierarchy for a described organism, via organism-design/blueprint.mjs',
+           'lean_check {design:{taxon, ...}} -- clade-correct law verdicts']
+        : ['node lean/registry/build-taxonomy.mjs -- place the taxon first'],
+      what_is_missing: 'a reference parameter set (body-plan quantities and a growth track) for this clade; without one the engine can name the organism and check its laws, but cannot resolve a STATE, run a scenario or score it',
+    };
+    if (first.placed) r.spec.taxon = first.key;
+  }
+
+  return envelope({ ...r, ...(taxonInfo ? { taxon_resolution: taxonInfo } : {}),
+    validation: { ok: v.ok, errors: v.errors, warnings: v.warnings, normalised_spec: v.spec }, engine: reg.sources },
+    [p('parser', 'sim-engine/lib/parse-text.mjs', 'derived', 'Rule-based; no model, no network. The same text always gives the same spec.'),
+     ...(taxonInfo ? [p('taxon placement', taxonInfo.taxon, taxonInfo.placed ? 'derived' : 'assumed',
+       'lib/lean-taxonomy.mjs, generated from the NCBI taxonomy via Ubergraph by lean/registry/build-taxonomy.mjs')] : [])],
     'A parse of the words, not an understanding of the request. Anything the rules do not cover is in `unparsed` and was NOT turned into a criterion; ' +
-    'defaults the parser applied are in `assumptions`. Validation checks names, units and ranges against the scenario modules; it says nothing about whether the design can meet the criteria.');
+    'defaults the parser applied are in `assumptions`. Validation checks names, units and ranges against the scenario modules; it says nothing about whether the design can meet the criteria. ' +
+    (taxonInfo ? 'An organism outside the engine\'s bundle is named and placed in a clade under `taxon_resolution`, which is a placement and NOT a parameter set: nothing dimensional is known about it here.' : ''));
 }
 
 // ── design_from_spec ───────────────────────────────────────────────────────

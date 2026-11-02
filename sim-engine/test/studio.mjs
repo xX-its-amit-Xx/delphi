@@ -639,5 +639,33 @@ await ok('physics refuses a taxon base with a reason, not a TypeError', async ()
 
 
 
+
+await ok('parse_design_text places an organism outside the bundle instead of refusing it', async () => {
+  const SP = await import('../tools/spec-tools.mjs');
+  const r = (await SP.parseDesignTextTool({ text: 'I want to generate a mouse with no limbs.' })).result;
+  // Before this, the reply listed the six fish on offer and the request went no further.
+  assert.ok(r.taxon_resolution, 'an out-of-bundle organism should be resolved, not just refused');
+  assert.equal(r.taxon_resolution.placed, true);
+  assert.equal(r.taxon_resolution.taxon, 'Mus musculus');
+  assert.equal(r.taxon_resolution.taxid, 10090);
+  assert.ok(r.taxon_resolution.clades.includes('Rodentia'));
+  assert.equal(r.spec.taxon, 'Mus musculus', 'the spec must carry the taxon forward');
+  // and it must NOT pretend the design can be evaluated
+  assert.equal(r.validation.ok, false, 'no parameter set exists, so validation must stay false');
+  assert.ok(/no reference parameter set/.test(JSON.stringify(r.unparsed)), 'the clause stays unparsed, with the reason');
+  assert.ok(r.taxon_resolution.next.some(x => /organism_from_blueprint/.test(x)), 'it should say how to carry it forward');
+});
+
+await ok('a taxon the clade table cannot place is reported as unplaced, not mapped to a fish', async () => {
+  const SP = await import('../tools/spec-tools.mjs');
+  const r = (await SP.parseDesignTextTool({ text: 'a seahorse that survives 4 °C' })).result;
+  if (!r.taxon_resolution) { assert.ok(false, 'seahorse should be named as out-of-bundle'); return; }
+  // Either placed (if the table knows it) or explicitly unplaced -- never silently mapped onto a
+  // reference organism, which is the behaviour the parser's own comment forbids.
+  assert.ok(!/zebrafish|flying-fish/.test(String(r.spec.taxon || '')), 'must not map onto a bundle organism');
+  if (!r.taxon_resolution.placed) assert.match(r.taxon_resolution.reason, /not in the clade table/);
+});
+
+
 console.log(`\n${pass} passed, ${fail} failed${M ? ` (MUTATE=${M})` : ''}`);
 process.exit(fail ? 1 : 0);
