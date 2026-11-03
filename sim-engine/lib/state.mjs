@@ -529,7 +529,28 @@ function declaredState(bundle, doc, ageDays, conditions, decl, opts = {}) {
 
   const stages = (decl.life_stages ?? []);
   const age = ageDays == null ? (stages.length ? stages[stages.length - 1].ageDays : 0) : Number(ageDays);
-  const stageRow = stages.find(s => s.ageDays === age) ?? stages[stages.length - 1] ?? null;
+  // Exact age first, then the latest stage the age has reached, then the last stage. With one declared stage
+  // every branch gives that stage, so a design that declares no track resolves exactly as it did before.
+  const reached = stages.filter(s => s.ageDays <= age).sort((a, b) => b.ageDays - a.ageDays)[0] ?? null;
+  const stageRow = stages.find(s => s.ageDays === age) ?? reached ?? stages[stages.length - 1] ?? null;
+
+  // A STAGE MAY DECLARE ITS OWN PARAMETERS, which is what makes a growth track expressible: the same design
+  // states a mass at the egg and a mass at the adult, and STATE resolves to a different one at each age.
+  // Nothing is interpolated here. A value holds for the stage that declared it and for no age in between,
+  // because an interpolated mass would be a THIRD kind of number -- neither measured nor declared -- and the
+  // provenance machinery has nowhere to put one. A caller that wants a smooth curve must say it drew one.
+  const stageDeclared = [];
+  if (stageRow?.parameters) {
+    const badStage = Object.keys(stageRow.parameters).filter(k => !KNOWN.has(k));
+    if (badStage.length) throw new Error(`life stage "${stageRow.key}" declares parameter(s) ${badStage.join(', ')}, which are not STATE fields, so nothing would ever read them. The fields a stage can declare are: ${[...KNOWN].sort().join(', ')}.`);
+    for (const [k, v] of Object.entries(stageRow.parameters)) {
+      if (typeof v !== 'object' || v === null) throw new Error(`life stage "${stageRow.key}" parameter ${k} must be {value, source}`);
+      if (typeof v.value !== 'number' || !Number.isFinite(v.value)) throw new Error(`life stage "${stageRow.key}" parameter ${k} needs a finite numeric \`value\``);
+      if (typeof v.source !== 'string' || !v.source.trim()) throw new Error(`life stage "${stageRow.key}" parameter ${k} has no \`source\`.`);
+      out[k] = F(v.value, v.unit ?? null, 'assumed', `DECLARED by the design for life stage "${stageRow.label ?? stageRow.key}" at age ${stageRow.ageDays} d, not measured: ${v.source.trim()}`, { declared: true, stage: stageRow.key });
+      stageDeclared.push(k);
+    }
+  }
   out.ageDays = F(age, 'd', 'assumed', stages.length ? 'declared life stage' : 'no life stage was declared; age 0 stands for "the design as stated", not a measured age');
   out.stage = { value: stageRow?.key ?? 'unstaged', unit: null, kind: 'assumed', source: stageRow ? `declared life stage "${stageRow.label ?? stageRow.key}"` : 'no life stage declared' };
   out.species = { value: doc.base?.taxon ?? null, unit: null, kind: 'assumed', source: 'the taxon this design was created with' };
@@ -545,7 +566,11 @@ function declaredState(bundle, doc, ageDays, conditions, decl, opts = {}) {
     if (f && typeof f.value === 'number' && !Number.isFinite(f.value)) out[k] = NULL(f.unit, `computed a non-finite value from its inputs (${f.source})`);
   }
   return { ...out, _meta: { parameters: {}, recorded_only_edits: [], flags: [], leaves: {}, taxon: doc.base?.taxon ?? null,
-    declared: { count: Object.keys(decl.parameters).length, fields: Object.keys(decl.parameters), life_stages: stages.length },
+    declared: { count: Object.keys(decl.parameters).length, fields: Object.keys(decl.parameters), life_stages: stages.length,
+      stage: stageRow?.key ?? null, stage_fields: stageDeclared,
+      stage_note: stageDeclared.length
+        ? `${stageDeclared.join(', ')} came from life stage "${stageRow.label ?? stageRow.key}" and override the design-wide declaration at this age. No value is interpolated between stages.`
+        : (stages.length > 1 ? 'no stage declares its own parameters, so every age resolves to the same quantities and a growth track would be flat' : null) },
     caveat: `Every quantity in this STATE that has a value was DECLARED by the design, not measured: this engine holds measured body-plan parameters for its own teleosts only. Each carries kind "assumed" and the source the designer gave. Anything built on them is a statement about those declarations as much as about the organism.` } };
 }
 

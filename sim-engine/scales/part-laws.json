@@ -1,0 +1,1004 @@
+{
+ "what": "Which Lean law reaches which part of a body, and through which quantity. This is the table behind the law chips in the theatre view: click a wing and you are shown the machine-checked statements that constrain a wing, each linking to its own proof.",
+ "contract_version": "0.11.0",
+ "built_against": "lean/laws.json (41 entries) and dashboard/public/api/lean/laws/<id>.json",
+ "WHAT_AN_ENTRY_DOES_AND_DOES_NOT_SAY": "An entry says: this law is ABOUT this quantity of this kind of part. It does NOT say the law applies to the organism in front of you, and it does not say the part is correct. Whether the law applies is decided per run from two other things the emitter reads and never overrides: the law record's own `scope.taxa`, and whether the design actually supplies the quantities in `needs`. A law in this table whose scope excludes the organism comes out as `out-of-scope`, not as support. A law whose quantities the design never declared comes out as `constrains-but-not-evaluated`, with the missing fields named.",
+ "the_distinction_this_table_exists_to_keep": "A part with a law chip is not a validated part. It is a part some machine-checked statement can be pointed at. The flying-fish audit found three laws HOLDING, nine it could not evaluate and three VIOLATED on one body: a law reaching a part is the beginning of a question, not an endorsement.",
+ "statuses": {
+  "supports": "in scope, the design supplies the quantities, and a check returned a verdict consistent with the law",
+  "violates": "in scope, quantities supplied, and the verdict contradicts the law",
+  "constrains-but-not-evaluated": "in scope and about this part, but the design does not supply the quantities; the missing ones are named",
+  "out-of-scope": "the law's own scope.taxa does not include this organism — most often a law whose numbers are one flying fish's",
+  "wrong-quantity": "the law is about a quantity that does not represent this organism's physics at all; the only entry so far is a steady maximum lift coefficient for an insect",
+  "no-law-reaches-this-part": "no entry in this table matches the part. The commonest status in every run, and it is reported, not hidden"
+ },
+ "quantity_vocabulary": {
+  "note": "`needs` names STATE or declared fields. The emitter looks them up in the generation's resolved STATE and in base.declared.parameters; a field present only as a declaration carries kind `assumed` into the chip, so a chip can never read as measured when a person typed the number."
+ },
+ "entries": [
+  {
+   "law_id": "blueprint-well-formedness",
+   "theorem": "Delphi.Blueprint.wellFormed_of_check",
+   "level": "phenotype (structure)",
+   "reaches": "every part",
+   "about": "the part graph itself: that each term is a node, each parent relation is one Uberon or CL relation, and the graph has no cycle",
+   "match_level": [
+    "body",
+    "organ_system",
+    "organ",
+    "tissue",
+    "cell"
+   ],
+   "match": [
+    "."
+   ],
+   "needs": [],
+   "how": "Structural only. It certifies that the blueprint is a well-formed graph over ontology terms — it says nothing about whether the part could exist, work, or bear a load. It is the one law in the set that reaches every part of every organism, and the weakest thing anyone could want to know about any of them."
+  },
+  {
+   "law_id": "scaling-area-law",
+   "theorem": "Delphi.areaLaw_ratio",
+   "level": "phenotype",
+   "reaches": "surfaces",
+   "about": "area under isometry: A scales as L squared",
+   "match_level": [
+    "organ",
+    "tissue"
+   ],
+   "match": [
+    "wing",
+    "patagium",
+    "membrane",
+    "fin",
+    "skin",
+    "integument",
+    "epiderm",
+    "cuticle",
+    "surface",
+    "gill",
+    "lung",
+    "alveol",
+    "blade"
+   ],
+   "needs": [
+    "SL_m",
+    "liftingArea_m2"
+   ],
+   "how": "If the design scales a lifting or exchange surface by changing a length, this fixes the area ratio it gets — under isometry, which is a hypothesis about the design, not a fact about the animal. The flying-fish audit returns `violated` here for skin and fins, because that fish is NOT isometric: the law is right and the hypothesis is false, which is the useful outcome."
+  },
+  {
+   "law_id": "scaling-strength-law",
+   "theorem": "Delphi.breakLoad_ratio",
+   "level": "phenotype",
+   "reaches": "load-bearing parts",
+   "about": "breaking load under isometry: it scales as L squared while weight scales as L cubed",
+   "match_level": [
+    "organ",
+    "tissue"
+   ],
+   "match": [
+    "bone",
+    "skelet",
+    "cartilag",
+    "limb",
+    "leg",
+    "forelimb",
+    "hindlimb",
+    "femur",
+    "tibia",
+    "humerus",
+    "cuticle",
+    "exoskelet",
+    "fin ray",
+    "lepidotrich",
+    "styliform",
+    "tendon",
+    "ligament",
+    "joint"
+   ],
+   "needs": [
+    "SL_m",
+    "mass_kg"
+   ],
+   "how": "The reason a design cannot simply be made bigger. Weight grows faster than the cross-section carrying it, so a part that holds at one size fails at another with no change in material or shape."
+  },
+  {
+   "law_id": "scaling-bending-law",
+   "theorem": "Delphi.bendingStress_ratio_body",
+   "level": "phenotype",
+   "reaches": "slender load-bearing parts",
+   "about": "bending stress in a cantilever as the body scales",
+   "match_level": [
+    "organ",
+    "tissue"
+   ],
+   "match": [
+    "limb",
+    "leg",
+    "forelimb",
+    "hindlimb",
+    "femur",
+    "tibia",
+    "humerus",
+    "radius",
+    "ulna",
+    "digit",
+    "phalan",
+    "fin ray",
+    "wing",
+    "spar",
+    "antenn",
+    "tail",
+    "vertebr",
+    "rib"
+   ],
+   "needs": [
+    "SL_m",
+    "mass_kg"
+   ],
+   "how": "A wing or a leg held out from the body is a cantilever, and the stress at its root rises with size under isometry. This is the law that should be consulted first by anyone who wants to put a lifting surface on the end of a limb."
+  },
+  {
+   "law_id": "thompson1917-ch03-07",
+   "theorem": "Delphi.cubeLaw_loglog_exponent",
+   "level": "phenotype",
+   "reaches": "the whole body",
+   "about": "the slope of log mass against log length is 3 under isometry",
+   "match_level": [
+    "body"
+   ],
+   "match": [
+    "."
+   ],
+   "needs": [
+    "SL_m",
+    "mass_kg"
+   ],
+   "how": "The cube law as an exponent, which makes it testable: a measured slope that is not 3 is a measurement of how the organism departs from isometry. E1 is the observation that this project's fish do depart."
+  },
+  {
+   "law_id": "thompson1917-ch02-10",
+   "theorem": "Delphi.vmin_ratio",
+   "level": "phenotype",
+   "reaches": "the lifting surface",
+   "about": "how minimum flight speed scales with size",
+   "match_level": [
+    "organ",
+    "tissue"
+   ],
+   "match": [
+    "wing",
+    "patagium",
+    "membrane",
+    "pectoral fin",
+    "fin",
+    "blade"
+   ],
+   "needs": [
+    "SL_m",
+    "mass_kg",
+    "liftingArea_m2",
+    "CLmax"
+   ],
+   "how": "A bigger animal of the same shape must fly faster to stay up. Combined with a launch speed the design declares, this is often what decides a flight claim."
+  },
+  {
+   "law_id": "flight-allometry-law",
+   "theorem": "Delphi.vmin_powerLaw_log",
+   "level": "phenotype",
+   "reaches": "the lifting surface",
+   "about": "minimum speed from wing loading and a maximum lift coefficient",
+   "match_level": [
+    "organ",
+    "tissue"
+   ],
+   "match": [
+    "wing",
+    "patagium",
+    "membrane",
+    "flight membrane",
+    "pectoral fin",
+    "fin",
+    "interdigital",
+    "web",
+    "blade"
+   ],
+   "needs": [
+    "mass_kg",
+    "liftingArea_m2",
+    "CLmax",
+    "rho"
+   ],
+   "how": "The law behind `lifting_area_supports_mass`. It needs a maximum lift coefficient, which is where a design most often stops: the coefficient is a MEASURED property of a real wing, the table of them is scoped by clade, and borrowing one across clades is the failure that table exists to prevent."
+  },
+  {
+   "law_id": "flight-climb-glide-law",
+   "theorem": "Delphi.glide_range_le",
+   "level": "phenotype",
+   "reaches": "the lifting surface and the whole body",
+   "about": "climb rate from excess power, and the horizontal range of a steady glide from a height",
+   "match_level": [
+    "body",
+    "organ"
+   ],
+   "match": [
+    "wing",
+    "patagium",
+    "membrane",
+    "pectoral fin",
+    "fin",
+    "blade"
+   ],
+   "needs": [
+    "mass_kg",
+    "LD_max",
+    "glideHeight_m"
+   ],
+   "how": "Scope.taxa is `any`: it is a theorem about a model and applies wherever the design supplies the quantities and accepts the hypotheses. That makes it the most portable flight law here — and it is about a GLIDE. Powered flight is a power question and goes to the aerobic bound."
+  },
+  {
+   "law_id": "aerobic-power-bound",
+   "theorem": "Delphi.sustained_flight_requires",
+   "level": "physiology",
+   "reaches": "flight muscle, and the respiratory and circulatory parts that supply it",
+   "about": "sustained flight requires aerobic supply at least the required mechanical power over the efficiency",
+   "match_level": [
+    "organ_system",
+    "organ",
+    "tissue"
+   ],
+   "match": [
+    "muscle",
+    "myo",
+    "flight muscle",
+    "lung",
+    "trachea",
+    "gill",
+    "respirat",
+    "heart",
+    "cardi",
+    "circulatory",
+    "blood",
+    "vascul",
+    "mitochondri"
+   ],
+   "needs": [
+    "mass_kg",
+    "efficiency",
+    "cardiacOutput",
+    "arterialO2"
+   ],
+   "how": "The law that separates a glide from flight. A lifting surface large enough to hold the animal up says nothing about whether the animal can keep it up, and this is the only law in the set that asks. It takes Fick's principle as a NAMED HYPOTHESIS (fick_aerobic_supply) rather than proving it."
+  },
+  {
+   "law_id": "altitude-coupling",
+   "theorem": "Delphi.Altitude.feasible_downward_closed",
+   "level": "phenotype+physiology",
+   "reaches": "the whole body and the respiratory parts",
+   "about": "that the feasible set is downward closed in altitude: feasible high implies feasible low",
+   "match_level": [
+    "body",
+    "organ_system",
+    "organ"
+   ],
+   "match": [
+    "lung",
+    "trachea",
+    "gill",
+    "respirat",
+    "blood",
+    "haemoglob",
+    "hemoglob"
+   ],
+   "match_body": true,
+   "needs": [
+    "rho"
+   ],
+   "how": "Couples the two layers: thinner air both reduces lift and reduces oxygen, so a design feasible at altitude is feasible below it. Useful mainly as a sanity direction on a scenario sweep."
+  },
+  {
+   "law_id": "physiology-laplace",
+   "theorem": "Delphi.Physiology.laplace_pressure_limit",
+   "level": "physiology",
+   "reaches": "vessels and hollow organs",
+   "about": "the pressure a thin-walled tube or sphere can hold, from radius, wall thickness and wall strength",
+   "match_level": [
+    "organ",
+    "tissue"
+   ],
+   "match": [
+    "heart",
+    "cardi",
+    "aorta",
+    "artery",
+    "vein",
+    "vessel",
+    "vascul",
+    "capillar",
+    "bladder",
+    "alveol",
+    "lung",
+    "swim bladder",
+    "gas bladder",
+    "tube",
+    "duct",
+    "ventricle",
+    "atrium"
+   ],
+   "needs": [
+    "vessel_radius_m",
+    "wall_thickness_m",
+    "wall_strength_Pa"
+   ],
+   "how": "Proved, with NO INSTANCE anywhere in this project: no vessel radius, wall thickness or wall strength exists for any organism here. It is in this table so that a part it would constrain carries the chip that says which three numbers are missing — a law with no instance is a request for data, and silence about it is worse."
+  },
+  {
+   "law_id": "physiology-q10",
+   "theorem": "Delphi.Physiology.q10_ratio",
+   "level": "physiology",
+   "reaches": "metabolising parts and the whole body",
+   "about": "how a rate changes with a ten-degree change in temperature",
+   "match_level": [
+    "body",
+    "organ_system",
+    "organ",
+    "cell"
+   ],
+   "match": [
+    "muscle",
+    "mitochondri",
+    "metabol",
+    "heart",
+    "gut",
+    "liver",
+    "hepat"
+   ],
+   "match_body": true,
+   "needs": [
+    "q10"
+   ],
+   "how": "Proved, no instance: no candidate commits a Q10 and the conditions file fixes 25 C. Every rate in every run is therefore at one temperature, and a design whose selling point is a rate should say which temperature it means."
+  },
+  {
+   "law_id": "muscle-power-premise",
+   "theorem": null,
+   "level": "physiology",
+   "reaches": "muscle",
+   "about": "mass-specific muscle power",
+   "match_level": [
+    "organ",
+    "tissue",
+    "cell"
+   ],
+   "match": [
+    "muscle",
+    "myo",
+    "flight muscle",
+    "sarcomere",
+    "myofib"
+   ],
+   "needs": [
+    "flightMuscleFraction",
+    "musclePowerPerKg_W"
+   ],
+   "how": "STATED, NOT PROVED: a named hypothesis (MusclePowerLaw in lean/Delphi/Scaling.lean), replaced for the Studio by the aerobic bound. A chip for it must read as an assumption, because that is all it is."
+  },
+  {
+   "law_id": "fick-principle",
+   "theorem": null,
+   "level": "physiology",
+   "reaches": "the respiratory and circulatory parts",
+   "about": "oxygen delivery as flow times the arteriovenous difference",
+   "match_level": [
+    "organ_system",
+    "organ",
+    "tissue"
+   ],
+   "match": [
+    "lung",
+    "trachea",
+    "gill",
+    "respirat",
+    "heart",
+    "cardi",
+    "blood",
+    "vascul",
+    "haemoglob",
+    "hemoglob"
+   ],
+   "needs": [
+    "cardiacOutput",
+    "arterialO2"
+   ],
+   "how": "STATED, NOT PROVED: the aerobic bound takes it as its named hypothesis fick_aerobic_supply. Everything the aerobic bound concludes rests on it."
+  },
+  {
+   "law_id": "gill-o2-uptake",
+   "theorem": null,
+   "level": "physiology",
+   "reaches": "gills",
+   "about": "oxygen uptake across a gill",
+   "match_level": [
+    "organ",
+    "tissue"
+   ],
+   "match": [
+    "gill",
+    "branchi",
+    "lamella"
+   ],
+   "needs": [],
+   "how": "NOT FORMALISED. Listed so a gill is not shown as unconstrained when the truth is that the statement constraining it has not been written."
+  },
+  {
+   "law_id": "taxiing-thrust",
+   "theorem": null,
+   "level": "phenotype",
+   "reaches": "propulsive surfaces",
+   "about": "thrust produced while still in contact with the water",
+   "match_level": [
+    "organ",
+    "tissue"
+   ],
+   "match": [
+    "caudal",
+    "tail fin",
+    "hypural",
+    "pectoral fin",
+    "fin",
+    "flagell",
+    "cilia",
+    "paddle"
+   ],
+   "needs": [],
+   "how": "NOT FORMALISED. The flying-fish runs needed it and did without it."
+  },
+  {
+   "law_id": "aspect-ratio-induced-drag",
+   "theorem": null,
+   "level": "phenotype",
+   "reaches": "the lifting surface",
+   "about": "induced drag falling with aspect ratio",
+   "match_level": [
+    "organ",
+    "tissue"
+   ],
+   "match": [
+    "wing",
+    "patagium",
+    "membrane",
+    "pectoral fin",
+    "fin",
+    "blade"
+   ],
+   "needs": [
+    "span_m",
+    "liftingArea_m2"
+   ],
+   "how": "NOT FORMALISED. Without it, nothing here distinguishes a long narrow wing from a short broad one of the same area, which is most of what a wing design IS."
+  },
+  {
+   "law_id": "elastic-similarity",
+   "theorem": null,
+   "level": "phenotype",
+   "reaches": "the skeleton and the limbs",
+   "about": "scaling that holds elastic deflection constant instead of stress",
+   "match_level": [
+    "organ",
+    "tissue"
+   ],
+   "match": [
+    "bone",
+    "skelet",
+    "limb",
+    "leg",
+    "forelimb",
+    "hindlimb",
+    "femur",
+    "tibia",
+    "cartilag"
+   ],
+   "needs": [],
+   "how": "NOT FORMALISED. The named alternative to isometry for real skeletons, so its absence is why every scaling chip here says `under isometry`."
+  },
+  {
+   "law_id": "walking-pendulum-speed",
+   "theorem": null,
+   "level": "phenotype",
+   "reaches": "legs",
+   "about": "the speed at which a leg of a given length stops working as a pendulum",
+   "match_level": [
+    "organ",
+    "tissue"
+   ],
+   "match": [
+    "leg",
+    "hindlimb",
+    "limb",
+    "femur",
+    "tibia",
+    "tarsus",
+    "foot",
+    "pes",
+    "paw",
+    "claw"
+   ],
+   "needs": [
+    "leg_length_m"
+   ],
+   "how": "NOT FORMALISED. The locomotion layer reports a Froude number for a walking gait and calls the verdict `reported` rather than a pass, precisely because this is missing."
+  },
+  {
+   "law_id": "fin-length-ratio",
+   "theorem": null,
+   "level": "phenotype",
+   "reaches": "the pectoral fin",
+   "about": "fin length as a fraction of standard length",
+   "match_level": [
+    "organ"
+   ],
+   "match": [
+    "pectoral",
+    "fin ray",
+    "styliform"
+   ],
+   "needs": [
+    "fin_length_over_SL"
+   ],
+   "how": "NOT FORMALISED as a law; E5 records the OBSERVATION that a candidate's ratio falls outside the measured band, which is provenance rather than impossibility."
+  },
+  {
+   "law_id": "genotype-developmental-ordering",
+   "theorem": "Delphi.Genotype.devOrdered_of_check",
+   "level": "developmental",
+   "reaches": "every part, through the order in which parts may appear",
+   "about": "that a claimed developmental ordering has no cycle and respects the dependencies declared for it",
+   "match_level": [
+    "body",
+    "organ_system",
+    "organ",
+    "tissue",
+    "cell"
+   ],
+   "match": [
+    "."
+   ],
+   "needs": [
+    "developmental_claims"
+   ],
+   "how": "The only law in the set that is about TIME, which makes it the one the time-lapse rests on. It certifies that an ordering is consistent; it does not supply one, does not predict a rate, and says nothing about how long a stage takes. A developmental animation is therefore a declared ordering being checked for consistency, never a simulation of development."
+  },
+  {
+   "law_id": "genotype-pleiotropy-closure",
+   "theorem": "Delphi.Genotype.closure_of_check",
+   "level": "genotype-to-phenotype",
+   "reaches": "the molecule rung and the parts a molecule is annotated to",
+   "about": "what a view of a genotype may omit: that the set shown is closed under the declared pleiotropy relation",
+   "match_level": [
+    "cell",
+    "molecule"
+   ],
+   "match": [
+    "."
+   ],
+   "needs": [
+    "genotype_edits"
+   ],
+   "how": "A statement about the COMPLETENESS OF A VIEW, not about development. If a molecule is shown as affecting one part, this is what certifies that its other declared effects were not quietly dropped from the picture — which is exactly the failure a per-part panel invites."
+  },
+  {
+   "law_id": "genotype-genetic-code",
+   "theorem": "Delphi.Genotype.claimed_substitutions_rules_out",
+   "level": "genotype",
+   "reaches": "the molecule rung",
+   "about": "what a claimed set of substitutions rules out, given the genetic code",
+   "match_level": [
+    "molecule",
+    "cell"
+   ],
+   "match": [
+    "."
+   ],
+   "needs": [
+    "genotype_edits"
+   ],
+   "how": "Operates on a claimed edit. For a construct with an unedited donor genome there is nothing for it to operate on, and that is the honest answer rather than a refusal."
+  },
+  {
+   "law_id": "genotype-substitution-time",
+   "theorem": "Delphi.Genotype.expectedWaitingTime_bounds",
+   "level": "genotype",
+   "reaches": "the molecule rung",
+   "about": "bounds on the expected waiting time for a required number of substitutions",
+   "match_level": [
+    "molecule"
+   ],
+   "match": [
+    "."
+   ],
+   "needs": [
+    "substitution_budget"
+   ],
+   "how": "A bound on SPEED only. Its own law record says it eliminates nothing unless the number of required substitutions is defined, and it is not defined for any wing claim in this repository."
+  },
+  {
+   "law_id": "kimura-substitution-rate",
+   "theorem": "Delphi.neutral_substitution_rate",
+   "level": "genotype",
+   "reaches": "the genome, not any part",
+   "about": "the long-run neutral substitution rate equalling the mutation rate",
+   "match_level": [
+    "molecule"
+   ],
+   "match": [
+    "nucleoid",
+    "chromosome",
+    "genome",
+    "dna"
+   ],
+   "needs": [
+    "substitution_budget"
+   ],
+   "how": "A molecular clock. It constrains how fast a sequence changes and reaches no morphology at all: a chip for it belongs on the genome, and putting it on a wing would be the kind of borrowed authority this table exists to prevent."
+  },
+  {
+   "law_id": "kimura-fixation-probability",
+   "theorem": "Delphi.NeutralChain.fixedBy_tendsto",
+   "level": "genotype",
+   "reaches": "the genome, not any part",
+   "about": "a neutral mutant fixing with probability equal to its initial frequency",
+   "match_level": [
+    "molecule"
+   ],
+   "match": [
+    "nucleoid",
+    "chromosome",
+    "genome",
+    "dna"
+   ],
+   "needs": [
+    "substitution_budget"
+   ],
+   "how": "Reaches no morphology. Shown on the genome rung with the two population laws, where a reader can see that the formalised core of this project is strongest exactly where it is furthest from a body."
+  },
+  {
+   "law_id": "favored-fixation-lower-bound",
+   "theorem": "Delphi.FavoredChain.fixationProbability_ge",
+   "level": "genotype",
+   "reaches": "the genome, not any part",
+   "about": "a lower bound on the fixation probability of a favoured mutant",
+   "match_level": [
+    "molecule"
+   ],
+   "match": [
+    "nucleoid",
+    "chromosome",
+    "genome",
+    "dna"
+   ],
+   "needs": [
+    "substitution_budget"
+   ],
+   "how": "Reaches no morphology."
+  },
+  {
+   "law_id": "haldane-cost-of-selection",
+   "theorem": "Delphi.Genotype.haldane_time_lower",
+   "level": "genotype",
+   "reaches": "the genome, not any part",
+   "about": "a lower bound on the time to fix many substitutions",
+   "match_level": [
+    "molecule"
+   ],
+   "match": [
+    "nucleoid",
+    "chromosome",
+    "genome",
+    "dna"
+   ],
+   "needs": [
+    "substitution_budget"
+   ],
+   "how": "Proved FROM A NAMED HYPOTHESIS that is never proved here and has been contested since 1957. A chip for it must carry that, or it reads as settled when it is not."
+  },
+  {
+   "law_id": "gene-regulatory-dynamics",
+   "theorem": null,
+   "level": "genotype-to-phenotype",
+   "reaches": "the pathway rung",
+   "about": "the dynamics of a regulatory network",
+   "match_level": [
+    "molecule",
+    "pathway",
+    "cell"
+   ],
+   "match": [
+    "."
+   ],
+   "needs": [],
+   "how": "NOT FORMALISED, and it is the hole the whole scale ladder sits over. Nothing in the Lean set connects a molecule to a tissue. The ladder's molecular rungs are therefore LITERATURE, graded and quoted, and the theatre must never draw them in the same colour as a proof."
+  },
+  {
+   "law_id": "E1",
+   "theorem": "Delphi.Empirical.not_isometric_area",
+   "level": "empirical observation",
+   "reaches": "the pectoral fin and the body surface",
+   "about": "that measured fin area does not scale isometrically",
+   "match_level": [
+    "organ",
+    "tissue"
+   ],
+   "match": [
+    "pectoral",
+    "fin",
+    "skin",
+    "integument"
+   ],
+   "needs": [],
+   "how": "An OBSERVATION of Cypselurus hiraii, not a law. It is the evidence that the isometry hypothesis in the scaling laws is false for that fish, which is why those chips come back `violated` on that body."
+  },
+  {
+   "law_id": "E2",
+   "theorem": "Delphi.Empirical.weight_ratio_band",
+   "level": "empirical observation",
+   "reaches": "the whole body",
+   "about": "a measured band for the weight ratio",
+   "match_level": [
+    "body"
+   ],
+   "match": [
+    "."
+   ],
+   "needs": [
+    "mass_exponent"
+   ],
+   "how": "A measured band from one species. Outside that species it is a number, not a constraint."
+  },
+  {
+   "law_id": "E3",
+   "theorem": "Delphi.Empirical.aerobicCeilingV2_le",
+   "level": "empirical observation",
+   "reaches": "flight muscle and the aerobic parts",
+   "about": "a measured ceiling on aerobic power",
+   "match_level": [
+    "organ",
+    "tissue"
+   ],
+   "match": [
+    "muscle",
+    "myo",
+    "mitochondri",
+    "heart",
+    "gill",
+    "lung"
+   ],
+   "needs": [
+    "cardiacOutput",
+    "arterialO2"
+   ],
+   "how": "The empirical input the aerobic bound needs. Measured in fish; borrowing it for an insect or a mammal is exactly the move the clade-scoped tables forbid."
+  },
+  {
+   "law_id": "E4",
+   "theorem": "Delphi.Empirical.stored_power_le",
+   "level": "empirical observation",
+   "reaches": "muscle",
+   "about": "a measured ceiling on stored (anaerobic) power",
+   "match_level": [
+    "organ",
+    "tissue"
+   ],
+   "match": [
+    "muscle",
+    "myo",
+    "tendon"
+   ],
+   "needs": [
+    "o2_store_ml",
+    "flight_duration_s"
+   ],
+   "how": "The burst counterpart of E3: what a muscle can give for a few seconds. For a glide launch this is often the quantity that matters and the one least often declared."
+  },
+  {
+   "law_id": "E5",
+   "theorem": "Delphi.Empirical.finRatio_outside",
+   "level": "empirical observation",
+   "reaches": "the pectoral fin",
+   "about": "a candidate's fin ratio falling outside the measured band",
+   "match_level": [
+    "organ"
+   ],
+   "match": [
+    "pectoral",
+    "fin ray",
+    "styliform"
+   ],
+   "needs": [
+    "fin_length_over_SL"
+   ],
+   "how": "PROVENANCE, NOT IMPOSSIBILITY — its own record says so. A design outside a measured band is unusual, and unusual is not forbidden."
+  },
+  {
+   "law_id": "E7",
+   "theorem": "Delphi.Empirical.cannot_score_of_lethal_before",
+   "level": "empirical observation",
+   "reaches": "every part, through the life stage it appears in",
+   "about": "that a trait appearing after a lethal stage cannot be scored",
+   "match_level": [
+    "body",
+    "organ_system",
+    "organ",
+    "tissue",
+    "cell"
+   ],
+   "match": [
+    "."
+   ],
+   "needs": [
+    "lethality"
+   ],
+   "how": "The other law about time, and the one that matters most for a time-lapse: a part that appears after the organism would have died is not a part. Pairs with the developmental ordering law."
+  },
+  {
+   "law_id": "E6",
+   "theorem": "Delphi.Empirical.requiredFor_not_propagated_of_check",
+   "level": "project convention",
+   "reaches": "nothing anatomical",
+   "about": "a convention about how a `required_for` edge is not propagated",
+   "match_level": [],
+   "match": [],
+   "needs": [],
+   "how": "Its own record says it is a PROJECT CONVENTION, not an observation. It reaches no part and is listed here so that it is visibly excluded rather than quietly absent."
+  },
+  {
+   "law_id": "fisher-ftns",
+   "theorem": "Delphi.fisher_fundamental_theorem",
+   "level": "population",
+   "reaches": "nothing anatomical",
+   "about": "the rate of increase in mean fitness equalling the additive genetic variance in fitness",
+   "match_level": [],
+   "match": [],
+   "needs": [],
+   "how": "A population-level theorem. It bears on whether a design could SPREAD, which is the ecology layer's question, and on no part of the body."
+  },
+  {
+   "law_id": "maynardsmith-twofold-cost",
+   "theorem": "Delphi.twofold_cost_of_sex",
+   "level": "population",
+   "reaches": "nothing anatomical",
+   "about": "the twofold cost of sex",
+   "match_level": [],
+   "match": [],
+   "needs": [],
+   "how": "Population-level. Listed and excluded."
+  }
+ ],
+ "deliberately_absent": {
+  "performance_layer": "The three performance kinds — a two-term hazard for lifespan, Stokes drag for manipulation, conservation of mass for a carbon balance — are NOT in this table, because none of them is a Lean law. They are arithmetic in sim-engine/validate/performance/, resting on statements nobody disputes but which no one here has formalised. The theatre shows them as checks, in a different colour from a proof, and the gap is the honest state of the repository.",
+  "locomotion_layer": "Purcell's scallop theorem is the strongest verdict anything here returns and it is NOT formalised in Lean either. It is cited to the 1977 paper and applied in JavaScript. A reader who wants to know which of this project's conclusions rest on a kernel-checked proof must be able to see that this one does not.",
+  "size_limit_example": "Two of Thompson's chapter-2 laws (1917) are left out of this table on purpose: the power-required scaling and the size limit. Their worked examples are drawn from a held-out clade, and the holdout gate classifies both claims as held-out. Both remain in the registry and in lean_check; neither is drawn onto any designed body here."
+ },
+ "quantities": {
+  "note": "`needs` uses lean_check's OWN spec field names (lean/eliminate/browser-check.mjs), because that is what evaluates each law. Each name says where a design gets it. An earlier version used names of its own invention -- length_m, lift_coefficient, aerobic_power_W -- and only 4 of 29 existed anywhere, so a chip told the designer to supply fields that no design could ever supply.",
+  "where": {
+   "state": "a STATE field; declare it in base.declared.parameters (or a life stage's parameters) and it is read from the resolved STATE",
+   "table": "looked up by clade from a repository table, never declared by the design",
+   "check-input": "an argument lean_check takes directly in its spec; it is not part of STATE, so it is supplied to the check, not to the organism",
+   "document": "a field of the organism document (genotype edits, developmental claims, a substitution budget), not a number",
+   "nowhere": "NO FIELD ANYWHERE IN THIS REPOSITORY CAN HOLD IT. No design can satisfy the law until one exists; this is a capability gap, not something the designer forgot"
+  },
+  "fields": {
+   "SL_m": {
+    "where": "state",
+    "state_field": "SL_m"
+   },
+   "mass_kg": {
+    "where": "state",
+    "state_field": "mass_kg"
+   },
+   "liftingArea_m2": {
+    "where": "state",
+    "state_field": "lifting_area_m2"
+   },
+   "flightMuscleFraction": {
+    "where": "state",
+    "state_field": "flight_muscle_fraction"
+   },
+   "airspeed_m_s": {
+    "where": "state",
+    "state_field": "launch_airspeed_m_s"
+   },
+   "rho": {
+    "where": "state",
+    "state_field": "ambient.air_density_kg_m3",
+    "note": "from the ambient conditions, defaulting to 1.225 kg/m3 at sea level"
+   },
+   "cardiacOutput": {
+    "where": "state",
+    "state_field": "cardiac_output_max_ml_s"
+   },
+   "CLmax": {
+    "where": "table",
+    "table": "sim-engine/validate/physics/lift-coefficients.json",
+    "note": "by clade, with borrowable_to scopes; an insect is listed as inapplicable, not unmeasured"
+   },
+   "LD_max": {
+    "where": "check-input"
+   },
+   "glideHeight_m": {
+    "where": "check-input"
+   },
+   "efficiency": {
+    "where": "check-input"
+   },
+   "arterialO2": {
+    "where": "check-input",
+    "note": "gillArea_m2 is accepted by lean_check but the gill-to-blood link is NOT formalised, so it never produces this"
+   },
+   "musclePowerPerKg_W": {
+    "where": "check-input",
+    "note": "only under the named hypothesis MusclePowerLaw"
+   },
+   "referenceSafetyFactor": {
+    "where": "check-input"
+   },
+   "fin_length_over_SL": {
+    "where": "check-input"
+   },
+   "mass_exponent": {
+    "where": "check-input"
+   },
+   "o2_store_ml": {
+    "where": "check-input"
+   },
+   "flight_duration_s": {
+    "where": "check-input"
+   },
+   "lethality": {
+    "where": "document"
+   },
+   "developmental_claims": {
+    "where": "document"
+   },
+   "genotype_edits": {
+    "where": "document"
+   },
+   "substitution_budget": {
+    "where": "document"
+   },
+   "vessel_radius_m": {
+    "where": "nowhere"
+   },
+   "wall_thickness_m": {
+    "where": "nowhere"
+   },
+   "wall_strength_Pa": {
+    "where": "nowhere"
+   },
+   "q10": {
+    "where": "nowhere",
+    "note": "proved with no instance: no candidate commits a Q10 and the conditions file fixes 25 C"
+   },
+   "span_m": {
+    "where": "nowhere"
+   },
+   "leg_length_m": {
+    "where": "nowhere"
+   }
+  }
+ },
+ "check_evaluates": {
+  "note": "A check whose finding evaluates a law's relation, named exactly. Only entries whose correspondence is stated in the check's own code or in this file belong here; a law that merely sounds related does not. The verdict is the check's: floating-point arithmetic on the design's numbers, the same relation as the theorem, NOT a kernel check.",
+  "map": {
+   "physics_check/lifting_area_supports_mass": {
+    "law_id": "flight-allometry-law",
+    "why": "the standing check compares wing loading with the limit 1/2 rho v^2 CLmax, which is the vmin_le relation of Delphi.vmin_powerLaw_log",
+    "verdicts": {
+     "met": "holds",
+     "not met": "violated",
+     "fail": "violated"
+    }
+   }
+  }
+ }
+}

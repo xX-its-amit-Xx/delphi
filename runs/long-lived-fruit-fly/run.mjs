@@ -65,8 +65,51 @@ await R.finding(1, 'blueprint.mjs', 'pass',
     conflicts: (b1.reading.conflicts ?? []).map(c => ({ label: c.label, axiom: c.axiom })),
     words_not_recognised: b1.reading.words_not_recognised });
 
-const doc1 = await R.mcp('organism_from_blueprint', { blueprint: 'runs/long-lived-fruit-fly/gen/gen1.blueprint.json', id: 'long-lived-fly-gen1', save: true, overwrite: true },
-  { generation: 1, why: 'the blueprint into the studio' });
+// A DECLARED LIFE HISTORY, and the one in these runs that is actually a development.
+//
+// Drosophila is holometabolous: egg, larva, pupa, adult are four different animals, not one animal at four
+// sizes. Each stage declares its own mass and length, so the engine resolves a different STATE at each age.
+// Two things about this track are worth more than the numbers in it.
+//
+// It is NOT MONOTONIC. A third-instar larva is longer and heavier than the adult it becomes. Any viewer, any
+// chart and any scaling law that assumes growth only goes up is wrong about this animal, and the isometric
+// scaling the theatre draws with is wrong at the pupal transition in a way nothing here can fix.
+//
+// And it is still NOT DEVELOPMENT. Four declared masses are four declared masses. Nothing here makes a cell
+// divide, forms an imaginal disc or turns a larva into a fly: the engine resolves a state at an age because
+// a person typed one, and the only law in the set that is about time certifies that a declared ordering has
+// no cycle. Call it a growth track and it is honest; call it ontogeny and it is a lie.
+const FLY_STAGES = [
+  { key: 'egg', label: 'egg', ageDays: 0, parameters: {
+    mass_kg: { value: 1.0e-8, unit: 'kg', source: 'DESIGN INPUT: order of ten micrograms. Stated by the designer; nothing was weighed for this.' },
+    SL_m: { value: 0.0005, unit: 'm', source: 'DESIGN INPUT: order of half a millimetre long. Stated, not measured.' } } },
+  { key: 'larva', label: 'third-instar larva', ageDays: 5, parameters: {
+    mass_kg: { value: 1.5e-6, unit: 'kg', source: 'DESIGN INPUT: order of one and a half milligrams at the end of larval feeding -- the heaviest the animal ever is. Stated, not measured.' },
+    SL_m: { value: 0.0045, unit: 'm', source: 'DESIGN INPUT: order of four and a half millimetres, LONGER than the adult. Stated, not measured, and the direction is the point.' } } },
+  { key: 'pupa', label: 'pupa', ageDays: 9, parameters: {
+    mass_kg: { value: 1.2e-6, unit: 'kg', source: 'DESIGN INPUT: lighter than the larva, because a pupa does not feed. Stated, not measured.' },
+    SL_m: { value: 0.0030, unit: 'm', source: 'DESIGN INPUT: order of three millimetres. Stated, not measured.' } } },
+  { key: 'adult', label: 'adult', ageDays: 12, parameters: {
+    mass_kg: { value: 1.0e-6, unit: 'kg', source: 'DESIGN INPUT: order of a milligram. The lifespan claim is about THIS stage and no other. Stated, not measured.' },
+    SL_m: { value: 0.0025, unit: 'm', source: 'DESIGN INPUT: order of two and a half millimetres, SHORTER than the larva it came from. Stated, not measured.' } } },
+];
+
+const doc1 = await R.mcp('organism_from_blueprint', { blueprint: 'runs/long-lived-fruit-fly/gen/gen1.blueprint.json', id: 'long-lived-fly-gen1', save: true, overwrite: true,
+  declared: { parameters: {
+    mass_kg: { value: 1.0e-6, unit: 'kg', source: 'DESIGN INPUT: the adult mass, as the design-wide default. Each life stage overrides it. Stated, not measured.' },
+  }, life_stages: FLY_STAGES } },
+  { generation: 1, why: 'the blueprint into the studio, with a declared four-stage life history so an age axis exists at all' });
+const track = [];
+for (const s of FLY_STAGES) {
+  const st = await R.mcp('organism_get', { organism: 'long-lived-fly-gen1', ageDays: s.ageDays }, { generation: 1, why: `the STATE the engine resolves at the ${s.label}` });
+  // organism_get returns a flattened state: { values, nulls, flags, taxon }.
+  const v = st?.state?.values ?? {};
+  track.push({ stage: s.key, ageDays: s.ageDays, mass_kg: v.mass_kg ?? null, SL_m: v.SL_m ?? null,
+    stage_resolved: v.stage ?? null, kind: 'assumed (declared by the design)' });
+}
+await R.finding(1, 'organism_get (per life stage)', track.every(t => t.mass_kg != null) ? 'resolved' : 'incomplete',
+  `a STATE resolves at each of the four declared stages, and the track is NOT MONOTONIC: ${track.map(t => `${t.stage} ${t.mass_kg} kg / ${t.SL_m} m`).join(', ')}. The larva is heavier and longer than the adult it becomes, so a growth curve for this animal goes up and then down. Every value carries kind "${track[0]?.kind}" -- declared, not measured -- and nothing here simulates the transition between any two of them.`,
+  { track, what_it_is_not: 'Four declared masses at four declared ages. No cell divides, no imaginal disc forms, and the only Lean law about time (genotype-developmental-ordering) certifies that a declared ordering is acyclic -- it does not supply one.' });
 const lean1 = await R.mcp('lean_check', { design: { taxon: doc1?.taxon ?? 'Drosophila melanogaster', id: 'long-lived-fly-gen1' } }, { generation: 1, why: 'do any laws reach an insect' });
 const tally1 = (lean1.rows ?? lean1.verdicts ?? []).reduce((a, r) => ({ ...a, [r.verdict]: (a[r.verdict] ?? 0) + 1 }), {});
 await R.finding(1, 'lean_check', 'ran', `${Object.entries(tally1).map(([k, v]) => `${v} ${k}`).join(', ')}. No law in the set bears on lifespan for any clade, so even a law base written about insects would not have answered this.`, { tally: tally1 });

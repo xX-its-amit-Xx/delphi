@@ -18,8 +18,24 @@ import { TOOLS } from '../../mcp/server.mjs';
 export const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..', '..');
 const byName = Object.fromEntries(TOOLS.map(([name, description, inputSchema, fn]) => [name, { name, fn }]));
 
+// RUNNING A SIMULATION OPENS THE THEATRE. A run is a person watching an organism being checked, so the
+// harness turns DELPHI_OPEN on unless the caller already set it -- `DELPHI_OPEN=0 node runs/<x>/run.mjs`
+// runs headless, and the test suite never goes through this file at all. With it on, opening the session
+// builds the scale ladder, serves dashboard/public and opens the 3D view in live mode; after every
+// generation the ladder is rebuilt, and the open page redraws within a few seconds of the write.
+if (process.env.DELPHI_OPEN == null) process.env.DELPHI_OPEN = '1';
+const LIVE = () => process.env.DELPHI_OPEN !== '0';
+
 export function makeRun({ dir, question, author, session: wantSession = true, only = null }) {
   const HERE = dir;
+  const RUN_NAME = path.basename(dir);
+  let rebuildLive = null;
+  const relive = () => {
+    if (!LIVE()) return;
+    try { execFileSync(process.execPath, [path.join(ROOT, 'sim-engine', 'scales', 'build.mjs'), '--run', RUN_NAME, '--quiet'],
+      { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'], timeout: 180000 }); }
+    catch (e) { if (!rebuildLive) console.log(`  (the live theatre could not be rebuilt: ${String(e?.stderr ?? e?.message ?? e).slice(0, 160)})`); rebuildLive = 'failed'; }
+  };
   const LOG = path.join(HERE, 'log'), GEN = path.join(HERE, 'gen');
   for (const d of [LOG, GEN]) fs.mkdirSync(d, { recursive: true });
   // A full run starts from an empty log directory, so files from an earlier run with different step
@@ -82,6 +98,7 @@ export function makeRun({ dir, question, author, session: wantSession = true, on
     record.push(out);
     fs.writeFileSync(path.join(GEN, `gen${g.generation}.json`), JSON.stringify(out, null, 1));
     note({ type: 'generation', ...out });
+    relive();
     return out;
   }
 
@@ -100,8 +117,10 @@ export function makeRun({ dir, question, author, session: wantSession = true, on
 
   async function open() {
     if (!wantSession) return null;
-    const s = await mcp('session_open', { title: question.slice(0, 90), author }, { why: 'the Design Studio co-design log this run writes to' });
+    const s = await mcp('session_open', { title: question.slice(0, 90), author, run: RUN_NAME }, { why: 'the Design Studio co-design log this run writes to, and the 3D theatre it opens' });
     session = s.session;
+    if (s.theatre?.url) console.log(`theatre: ${s.theatre.url}${s.theatre.launched ? '  (opened)' : ''}`);
+    else if (s.theatre?.why_not && LIVE()) console.log(`theatre not opened: ${s.theatre.why_not}`);
     fs.writeFileSync(path.join(HERE, 'session.txt'), session + '\n');
     console.log(`session: ${session}  (sim-engine/sessions/${session}.jsonl)`);
     return session;

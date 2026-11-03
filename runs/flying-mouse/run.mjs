@@ -30,6 +30,9 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { TOOLS } from '../../mcp/server.mjs';
 
+// Running this opens the 3D theatre on it, live. DELPHI_OPEN=0 runs headless. See runs/_lib/studio-run.mjs.
+if (process.env.DELPHI_OPEN == null) process.env.DELPHI_OPEN = '1';
+
 const HERE = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
 const ROOT = path.resolve(HERE, '..', '..');
 const LOG = path.join(HERE, 'log');
@@ -107,6 +110,10 @@ function writeGen(g) {
   const out = { ...g, question: QUESTION, diff_from_previous: diff };
   record.push(out);
   fs.writeFileSync(path.join(GEN, `gen${g.generation}.json`), JSON.stringify(out, null, 1));
+  // The live theatre: rebuild this run's scale ladder so an open page redraws. Off with DELPHI_OPEN=0.
+  if (process.env.DELPHI_OPEN !== '0') {
+    try { execFileSync(process.execPath, [path.join(ROOT, 'sim-engine', 'scales', 'build.mjs'), '--run', 'flying-mouse', '--quiet'], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'], timeout: 180000 }); } catch {}
+  }
   note({ type: 'generation', ...out });
   return out;
 }
@@ -342,7 +349,20 @@ async function gen4() {
     mass_kg: { value: 0.025, unit: 'kg', source: 'DESIGN INPUT: the mass the wings are asked to carry. Stated by the designer; no mouse was weighed for this.' },
     lifting_area_m2: { value: 0.0070, unit: 'm2', source: 'DESIGN INPUT: 70 cm2 of membrane, the area this design proposes.' },
     launch_airspeed_m_s: { value: 8.9, unit: 'm/s', source: 'DESIGN INPUT: sqrt(2gh) for the h = 4 m launch height Bishop 2006 used for Glaucomys volans, ignoring drag, so an upper bound on what a drop can give. Not a measured airspeed of anything.' },
-  }, life_stages: [{ key: 'adult', label: 'adult', ageDays: 60 }] };
+  },
+  // A declared growth track, so the age axis resolves a different STATE at each stage rather than one
+  // number repeated. The lifting area is declared ONLY at the adult, because this design is a claim about an
+  // adult mouse: a pup has no membrane and the honest result at that age is a null with a reason, not a
+  // smaller wing. Every value is a design input; no mouse was weighed for any of them.
+  life_stages: [
+    { key: 'neonate', label: 'neonate', ageDays: 1, parameters: {
+      mass_kg: { value: 0.0015, unit: 'kg', source: 'DESIGN INPUT: order of a gram and a half at birth. Stated by the designer; no mouse was weighed.' } } },
+    { key: 'juvenile', label: 'juvenile, around weaning', ageDays: 21, parameters: {
+      mass_kg: { value: 0.010, unit: 'kg', source: 'DESIGN INPUT: order of ten grams around weaning. Stated, not measured.' } } },
+    { key: 'adult', label: 'adult', ageDays: 60, parameters: {
+      mass_kg: { value: 0.025, unit: 'kg', source: 'DESIGN INPUT: the mass the wings are asked to carry. Stated by the designer; no mouse was weighed for this.' },
+      lifting_area_m2: { value: 0.0070, unit: 'm2', source: 'DESIGN INPUT: 70 cm2 of membrane, the area this design proposes. Declared at the adult stage only, because the claim is about an adult.' } } },
+  ] };
 
   const doc = await mcp('organism_create', { id: 'flying-mouse-declared', taxon: 'Mus musculus', overwrite: true, declared,
     notes: 'the generation-1 animal with the three aerodynamic quantities declared, so the whole physics pipeline can be run on it' },
@@ -387,7 +407,8 @@ async function gen4() {
 // ---------------------------------------------------------------- run
 console.log(`\n=== ${QUESTION}\n`);
 if (!flag('no-session')) {
-  const s = await mcp('session_open', { title: 'flying mouse: can a mouse grow wings that support its flight', author }, { why: 'the Design Studio co-design log this run writes to' });
+  const s = await mcp('session_open', { title: 'flying mouse: can a mouse grow wings that support its flight', author, run: 'flying-mouse' }, { why: 'the Design Studio co-design log this run writes to, and the 3D theatre it opens' });
+  if (s?.theatre?.url) console.log(`theatre: ${s.theatre.url}${s.theatre.launched ? '  (opened)' : ''}`);
   session = s.session;
   console.log(`session: ${session}  (sim-engine/sessions/${session}.jsonl)`);
   fs.writeFileSync(path.join(HERE, 'session.txt'), session + '\n');

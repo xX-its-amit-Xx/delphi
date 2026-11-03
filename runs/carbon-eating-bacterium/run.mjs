@@ -64,7 +64,20 @@ const doc1 = await R.mcp('organism_from_blueprint', { blueprint: 'runs/carbon-ea
   declared: { parameters: {
     mass_kg: { value: 1.5e-15, unit: 'kg', source: 'DESIGN INPUT: of order a picogram for a 2 um rod. Stated by the designer; no cell was weighed.' },
     body_density_kg_m3: { value: 1100, unit: 'kg/m3', source: 'DESIGN INPUT: slightly denser than water, as cells generally are. Stated, not measured.' },
-  }, life_stages: [{ key: 'growing', label: 'exponential growth', ageDays: 1 }] } },
+  },
+  // A GROWTH TRACK, NOT A DEVELOPMENT. A bacterium has no ontogeny: it does not pass through stages on the
+  // way to being itself, it divides. What it does have is growth phases, and a cell in stationary phase is
+  // smaller than one in exponential phase. Each stage declares its own mass, so the engine resolves a
+  // different STATE at each age and the theatre's age axis shows something real rather than one flat number.
+  // Every value is a design input, and the three of them are the shape of a curve nobody here measured.
+  life_stages: [
+    { key: 'lag', label: 'lag phase', ageDays: 0, parameters: {
+      mass_kg: { value: 1.0e-15, unit: 'kg', source: 'DESIGN INPUT: a cell not yet growing, taken as a third smaller than the exponential-phase cell. Stated by the designer; no cell was weighed.' } } },
+    { key: 'growing', label: 'exponential growth', ageDays: 1, parameters: {
+      mass_kg: { value: 1.5e-15, unit: 'kg', source: 'DESIGN INPUT: of order a picogram for a 2 um rod. Stated by the designer; no cell was weighed.' } } },
+    { key: 'stationary', label: 'stationary phase', ageDays: 3, parameters: {
+      mass_kg: { value: 1.2e-15, unit: 'kg', source: 'DESIGN INPUT: smaller again once division outpaces synthesis. Stated, not measured, and the direction matters more than the number: this track does not only go up.' } } },
+  ] } },
   { generation: 1, why: 'the blueprint into the Design Studio, with the two quantities the design is willing to state' });
 await R.finding(1, 'organism_from_blueprint', doc1?.error ? 'refused' : 'pass',
   doc1?.error ? `refuses: ${String(doc1.error).slice(0, 200)}`

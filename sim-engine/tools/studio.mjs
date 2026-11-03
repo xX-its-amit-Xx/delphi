@@ -120,8 +120,15 @@ export const SCHEMAS = {
       budget: { type: 'integer', description: 'Evaluations (default 60, max 400), including the start design.' }, restarts: { type: 'integer' }, seed: { type: 'integer' }, strict: { type: 'boolean' }, lawset: LAWSET,
       tolerance: { type: 'number', description: 'Relative improvement over the START design a candidate must exceed (default 0.001 = 0.1 %). Below it the result is status "no improvement" and the start design is returned unchanged.' },
     }, required: ['organism', 'objective', 'variables'] } },
+  studio_theatre: { title: 'Open the 3D scale theatre', description: 'Builds the scale ladder for a run (every part of the organism, the Lean laws that reach each one, the checks that looked at it and the graded literature chain from a protein up to it), serves dashboard/public and returns the url of the interactive 3D view. Opens a browser unless open:false.',
+    inputSchema: { type: 'object', properties: { run: { type: 'string', description: 'A run name under runs/ (e.g. "xenobot"). Omitted, the page opens on the first run in the index.' },
+      generation: { type: 'number' }, open: { type: 'boolean', description: 'Open a browser (default true).' },
+      rebuild: { type: 'boolean', description: 'Rebuild the ladder first (default true). false shows the last bake.' },
+      url_only: { type: 'boolean', description: 'Only return the url: do not rebuild and do not open anything.' } } } },
   session_open: { title: 'Open a co-design session', description: 'Append-only JSONL log under sim-engine/sessions/. Optionally bound to a saved organism document that kind:"edit" posts modify.',
-    inputSchema: { type: 'object', properties: { title: { type: 'string' }, organism: { type: 'string', description: 'Saved organism document id (create it first).' }, author: { type: 'string' } }, required: ['title', 'author'] } },
+    inputSchema: { type: 'object', properties: { title: { type: 'string' }, organism: { type: 'string', description: 'Saved organism document id (create it first).' }, author: { type: 'string' },
+      run: { type: 'string', description: 'A run name under runs/. Given one, opening the session rebuilds the scale ladder for that run and the returned theatre url opens on it.' },
+      open_theatre: { type: 'boolean', description: 'Force the 3D theatre to open in a browser (true) or not (false). Default: open when DELPHI_OPEN is set to anything but "0", which the run harness and the interactive CLI do and the test suite does not.' } }, required: ['title', 'author'] } },
   session_post: { title: 'Post to a co-design session', description: "kind 'comment' | 'finding' (one tool run: the tool, its verdict and its numbers, stored structured -- evidence, changes nothing, any role) | 'proposal' (edits + rationale + the scenario results that motivated them; validated, NOT applied; gets a proposal_id for session_decide) | 'edit' (applied at once; only for author roles starting with 'human'). author is a role label, never a personal identifier.",
     inputSchema: { type: 'object', properties: { session: { type: 'string' }, author: { type: 'string' }, kind: { enum: ['comment', 'finding', 'proposal', 'edit'] }, body: { type: 'string' },
       tool: { type: 'string', description: 'finding: the tool or check that produced it, e.g. "physics_check", "lean_check", "blueprint.mjs".' },
@@ -466,6 +473,23 @@ function readSession(id) {
 function append(id, entry) { fs.appendFileSync(sessionPath(id), JSON.stringify(entry) + '\n'); }
 const SESSION_SCOPE = 'A co-design log. Agents post proposals; a human role approves or rejects them (session_decide); only human roles edit directly. Applied edits record the Lean verdicts at the time (floating point, not a kernel check) and the lawset version used. Authors are role labels, not people.';
 
+/**
+ * The 3D theatre for a run: build its scale ladder, serve the dashboard and hand back the url.
+ *
+ * Separate from session_open so that a reader can be sent to the view WITHOUT opening a session -- looking at
+ * what a finished run concluded is not itself a design act and should not append anything anywhere.
+ */
+export async function studioTheatre(args = {}) {
+  const { launch, theatreUrl, ensureServer } = await import('./theatre.mjs');
+  if (args.url_only) {
+    const s = await ensureServer();
+    return envelope({ theatre: { url: theatreUrl({ port: s.port, run: args.run ?? null, generation: args.generation ?? null, live: true }), port: s.port, launched: false,
+      why_not: 'url_only was set, so nothing was opened and nothing was rebuilt' } }, [p('theatre', 'url', 'derived', 'the served port')], SESSION_SCOPE);
+  }
+  const t = await launch({ run: args.run ?? null, generation: args.generation ?? null, open: args.open ?? true, rebuild: args.rebuild !== false });
+  return envelope({ theatre: t }, [p('theatre', t.url ?? 'not served', 'derived', 'sim-engine/scales/build.mjs then a local static server')], SESSION_SCOPE);
+}
+
 export async function sessionOpen(args = {}) {
   O.checkAuthor(args.author);
   if (typeof args.title !== 'string' || !args.title.trim()) throw new Error('title is required');
@@ -475,7 +499,19 @@ export async function sessionOpen(args = {}) {
   const id = `${base}-${crypto.randomBytes(3).toString('hex')}`;
   const entry = { seq: 0, type: 'open', ts: new Date().toISOString(), title: args.title, organism: args.organism || null, author: args.author, lawset_version: await lawsetVersion() };
   append(id, entry);
-  return envelope({ session: id, entry }, [p('session', id, 'assumed', 'opened by the caller')], SESSION_SCOPE);
+  // Opening a session LAUNCHES THE THEATRE, because a person running a simulation should not have to know
+  // that a dashboard exists in order to watch their organism being checked. It rebuilds the scale ladder for
+  // the run named in `run` (or whatever the caller passes), serves dashboard/public and opens the page.
+  //
+  // It only opens a browser when DELPHI_OPEN is set to something other than "0" -- the run harness and the
+  // interactive CLI set it, the test suite does not -- and it NEVER fails the session: every problem comes
+  // back as a field saying what did not happen and the command to do it by hand.
+  let theatre = null;
+  try {
+    const { launch } = await import('./theatre.mjs');
+    theatre = await launch({ run: args.run ?? null, open: args.open_theatre ?? null, rebuild: Boolean(args.run) });
+  } catch (e) { theatre = { launched: false, why_not: `the theatre module could not be loaded: ${String(e?.message ?? e)}` }; }
+  return envelope({ session: id, entry, theatre }, [p('session', id, 'assumed', 'opened by the caller')], SESSION_SCOPE);
 }
 
 // Agents propose, humans decide. Direct edits and decisions need a role starting with 'human'.
@@ -586,5 +622,5 @@ export async function sessionRead(args = {}) {
 export const STUDIO_TOOLS = [
   ['organism_create', organismCreate], ['organism_from_blueprint', organismFromBlueprint], ['organism_get', organismGet], ['organism_list_parts', organismListParts], ['organism_edit', organismEdit],
   ['scenario_list', scenarioList], ['scenario_run', scenarioRun], ['scenario_timecourse', scenarioTimecourse], ['optimize', optimize],
-  ['session_open', sessionOpen], ['session_post', sessionPost], ['session_decide', sessionDecide], ['session_read', sessionRead],
+  ['studio_theatre', studioTheatre], ['session_open', sessionOpen], ['session_post', sessionPost], ['session_decide', sessionDecide], ['session_read', sessionRead],
 ].map(([name, handler]) => ({ name, ...SCHEMAS[name], handler }));

@@ -7,10 +7,32 @@ node runs/long-lived-fruit-fly/run.mjs
 | gen | asked | what the system said |
 |----|----|----|
 | 0 | a fruit fly that lives longer | **fail** / **absent**: the organism is placed as *Drosophila melanogaster*, the requirement is not read at all, and 0 of 12 scenarios measure anything like a lifespan. |
-| 1 | *D. melanogaster* with wings and antennae | **pass**: 5 organ systems, 26 organs, 24 tissues, 45 cell types. All correct, none of it about lifespan. |
+| 1 | *D. melanogaster* with wings and antennae | **pass** on the counts: 5 organ systems, 26 organs, 24 tissues, 45 cell types. **Not** correct: see below. A four-stage life history is declared, and the engine resolves a STATE at each stage. |
 | 2 | walking, and flying | walk **not contradicted**; fly **partly evaluated** — the lift coefficient is refused, correctly. |
 | 3 | where it lives and what eats it | **assembled**: 4,503 occurrence records, 29 recorded predators, the Boston insect community. |
 | 4 | does it actually live longer? | **marginally-longer** in the wild, **longer** in a vial: 1.09x against 2.00x, from the same arithmetic with one input changed. |
+
+## The correction
+
+An earlier version of this table called generation 1 "all correct". It was not, and nobody had read the
+labels. The blueprint for *Drosophila melanogaster* contains **bone marrow, hyaline cartilage, a penis and a
+uropygial gland** (a preen gland, which no insect has), and contains **no brain, no gut, no muscle, no thorax, no abdomen
+and no fat body**. The counts passed every gate.
+
+It surfaced when the scale theatre joined the literature chain to the body: the chain's organs — the adult
+fat body and the adult brain, where the longevity experiments act — had nothing to land on.
+`sim-engine/scales/audit-taxon.mjs` explains it. Of 131 parts, **2** carry an `in_taxon` restriction specific
+enough to be evidence that a fly has them; 44 are restricted only to Bilateria (the uropygial gland's
+asserted constraint is Bilateria, which contains a fly), and 85 carry no restriction at all. The blueprint
+keeps a part unless a constraint removes it, and for an insect the constraints almost never can. Insect
+anatomy largely lives in FBbt, which nothing here queries.
+
+## The life history
+
+Egg 0 d, third-instar larva 5 d, pupa 9 d, adult 12 d, each with a declared mass and length. The track is
+**not monotonic**: the larva is longer and heavier than the adult it becomes, so the theatre's age slider
+shows the body shrinking at metamorphosis. It is a declared growth track and not development: nothing
+divides, nothing forms, and the order of appearance is not modelled.
 
 ## The answer
 
@@ -32,7 +54,13 @@ The system refuses in four separate places rather than answering a nearby questi
 hazard, E[T] = 1/(h_int + h_ext) -- and is explicit that the other two are still missing: the exponential
 shape is assumed rather than fitted, and nothing anywhere connects a genotype edit to a hazard rate. The actual
 *Drosophila* longevity literature is largely about insulin/IGF signalling, dietary restriction and
-mitochondrial function, and nothing in this repository represents a pathway at all.
+mitochondrial function. Until `runs/_chains/` nothing in this repository represented a pathway at all. The
+chain now walks all seven rungs -- dFOXO, insulin receptor signalling, the fat body cell, a fat-body-to-brain
+DILP6 signal, the adult fat body, the adult brain, adult lifespan -- 17 links, each quoted and graded, the
+strongest a single experiment (Bai 2012) holding molecule, interaction, tissue and organ together. It is
+literature, not proof, and it still supplies **no hazard rate**: every source reports a median or maximum
+lifespan, so the performance layer's intrinsic hazard remains a declared number. Mechanism present,
+parameterisation absent.
 
 ## The defect this run found
 

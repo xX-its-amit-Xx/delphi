@@ -5,6 +5,29 @@ the scenario interface. Its version is `CONTRACT_VERSION` in `lib/envelope.mjs`.
 as `contract_version`, and `contract.json` states it. The rule: anything may change, provided it is
 versioned here. While the major version is 0, a minor bump may break callers; each entry says what breaks.
 
+## 0.11.0 (2026-11-03)
+
+**Added** (1 tool; 62 -> 63. Two schema fields, one STATE capability. Nothing removed, nothing renamed.)
+
+- **`studio_theatre`** (`tools/studio.mjs`, `tools/theatre.mjs`, `scales/`). Builds a run's scale ladder,
+  serves `dashboard/public` and returns the url of the 3D scale theatre: every part of the organism on a
+  schematic body plan, the Lean laws that reach each part (each chip opens the theorem's source, its pin,
+  and the unsigned nanopub draft its claim sits in), the checks that looked at it, and the graded literature
+  chain from a protein up to it. Opens a browser unless `open: false`. stdio only.
+- **`session_open` takes `run` and `open_theatre`**, and its result carries a `theatre` block. Opening a
+  session now launches the theatre when `DELPHI_OPEN` is set to anything but `"0"`; the run harness and the
+  interactive CLI set it, the test suite does not. With it unset there are no side effects at all -- no
+  build, no server, no process left behind. Never fails the session.
+- **A life stage may declare its own `parameters`** (`lib/state.mjs`). This is what makes a growth track
+  expressible: the engine resolves a different STATE at each declared age. Values are never interpolated
+  between stages, because an interpolated mass would be a third kind of number -- neither measured nor
+  declared. With one stage, or none declaring parameters, resolution is unchanged.
+
+**Found, and reported rather than hidden.** For *Drosophila melanogaster* the blueprint contains bone
+marrow, hyaline cartilage, a penis and a uropygial gland, and no brain, gut, muscle or fat body.
+`scales/audit-taxon.mjs` shows why: 2 of 131 parts carry an `in_taxon` restriction specific enough to place
+them in a fly. The run that called that generation "all correct" was wrong; its README is corrected.
+
 ## 0.10.0 (2026-11-03)
 
 **Added** (1 tool; 61 -> 62. Two schema fields. Nothing removed, nothing renamed.)

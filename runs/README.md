@@ -11,7 +11,16 @@ node dashboard/public/blueprint3d/studio-live/gen.mjs  # bake the replays the li
 node runs/_lib/shoot.mjs --run <name>                  # screenshots, one per generation
 ```
 
-Watch any of them: **`dashboard/public/blueprint3d/studio-live.html`**, which polls a running studio
+**Running one opens the 3D scale theatre on it, live** (`dashboard/public/blueprint3d/studio-live/theatre.html`):
+the organism on a schematic body plan, every part clickable, each showing the Lean laws that reach it (with
+the proof), the checks that looked at it and the graded chain from a protein up to it. The page redraws
+after every generation. `DELPHI_OPEN=0` runs headless. See [`sim-engine/scales/`](../sim-engine/scales/README.md).
+
+The molecule-to-organ chains are in [`_chains/`](_chains/): 68 links across the four runs, each quoted from
+a fetched, logged document and re-verified by a second agent that deleted or downgraded what it could not
+confirm, with 30 missing rungs declared rather than guessed across.
+
+Or watch the session log: **`dashboard/public/blueprint3d/studio-live.html`**, which polls a running studio
 (`node sim-engine/http.mjs`) and replays the baked session otherwise, saying in the badge which it is doing.
 
 ## The runs

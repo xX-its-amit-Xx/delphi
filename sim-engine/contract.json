@@ -1,7 +1,7 @@
 {
  "server": "delphisci-sim-engine",
  "version": "0.1.0",
- "contract_version": "0.10.0",
+ "contract_version": "0.11.0",
  "changelog": "sim-engine/CHANGELOG.md",
  "transport": "stdio",
  "envelope": {
@@ -1150,6 +1150,35 @@
    }
   },
   {
+   "name": "studio_theatre",
+   "title": "Open the 3D scale theatre",
+   "description": "Builds the scale ladder for a run (every part of the organism, the Lean laws that reach each one, the checks that looked at it and the graded literature chain from a protein up to it), serves dashboard/public and returns the url of the interactive 3D view. Opens a browser unless open:false.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "run": {
+      "type": "string",
+      "description": "A run name under runs/ (e.g. \"xenobot\"). Omitted, the page opens on the first run in the index."
+     },
+     "generation": {
+      "type": "number"
+     },
+     "open": {
+      "type": "boolean",
+      "description": "Open a browser (default true)."
+     },
+     "rebuild": {
+      "type": "boolean",
+      "description": "Rebuild the ladder first (default true). false shows the last bake."
+     },
+     "url_only": {
+      "type": "boolean",
+      "description": "Only return the url: do not rebuild and do not open anything."
+     }
+    }
+   }
+  },
+  {
    "name": "session_open",
    "title": "Open a co-design session",
    "description": "Append-only JSONL log under sim-engine/sessions/. Optionally bound to a saved organism document that kind:\"edit\" posts modify.",
@@ -1165,6 +1194,14 @@
      },
      "author": {
       "type": "string"
+     },
+     "run": {
+      "type": "string",
+      "description": "A run name under runs/. Given one, opening the session rebuilds the scale ladder for that run and the returned theatre url opens on it."
+     },
+     "open_theatre": {
+      "type": "boolean",
+      "description": "Force the 3D theatre to open in a browser (true) or not (false). Default: open when DELPHI_OPEN is set to anything but \"0\", which the run harness and the interactive CLI do and the test suite does not."
      }
     },
     "required": [

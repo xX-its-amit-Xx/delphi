@@ -23,6 +23,10 @@ import { browseClaims } from "./graph.mjs";
 import { getClaim, overview, rankClaims, searchClaims, sparql } from "./lib.mjs";
 import { COMMANDS as LEAN } from "../sim-engine/lean-cli.mjs";
 
+// A person at a terminal who opens a Design Studio session gets the 3D theatre opened for them. A pipe, a
+// script or a CI job does not: stdout is not a TTY there, and DELPHI_OPEN stays unset unless they set it.
+if (process.env.DELPHI_OPEN == null && process.stdout.isTTY) process.env.DELPHI_OPEN = '1';
+
 const [cmd, ...rest] = process.argv.slice(2);
 const opts = {};
 const positional = [];
