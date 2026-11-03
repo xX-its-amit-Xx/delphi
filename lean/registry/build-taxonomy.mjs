@@ -113,6 +113,16 @@ const ANCHOR_NAMES = [
   'Ecdysozoa', 'Arthropoda', 'Hexapoda', 'Insecta', 'Diptera', 'Drosophila', 'Nematoda',
   'Lophotrochozoa', 'Mollusca', 'Gastropoda', 'Annelida', 'Platyhelminthes',
   'Cnidaria', 'Hydrozoa', 'Porifera', 'Echinodermata',
+  // OUTSIDE THE ANIMALS. The table ran from Metazoa downward, so every bacterium, archaeon, fungus and
+  // plant was simply unplaceable -- and "unplaceable" propagates: no clade scope can be decided for it, no
+  // reference set can say whether it is covered, and lift-coefficients.json cannot even refuse it properly.
+  // A system that claims to work for any base organism cannot stop at the animals. These are the ranks the
+  // NCBI taxonomy actually uses above and beside Metazoa.
+  'cellular organisms', 'Bacteria', 'Archaea', 'Eukaryota', 'Opisthokonta', 'Fungi', 'Dikarya',
+  'Ascomycota', 'Saccharomycetes', 'Viridiplantae', 'Streptophyta', 'Magnoliopsida',
+  'Pseudomonadota', 'Gammaproteobacteria', 'Betaproteobacteria', 'Alphaproteobacteria',
+  'Enterobacterales', 'Enterobacteriaceae', 'Escherichia', 'Bacillota', 'Bacilli',
+  'Cyanobacteriota', 'Actinomycetota', 'Burkholderiales', 'Burkholderiaceae',
 ];
 
 // The species THIS project works on. They are not in organisms/merged/taxa.json, which is the Darwin
@@ -122,6 +132,10 @@ const SPECIES_NAMES = [
   'Danio rerio', 'Oryzias latipes', 'Xenopus laevis', 'Drosophila melanogaster',
   'Canis lupus familiaris', 'Exocoetus volitans', 'Hirundichthys speculiger',
   'Cypselurus hiraii', 'Hirundichthys affinis',
+  // The use-case organisms under runs/. A design is placed by its taxon, so a taxon the table cannot
+  // place is a design the law layer cannot scope.
+  'Escherichia coli', 'Cupriavidus necator', 'Ideonella sakaiensis', 'Mus musculus',
+  'Saccharomyces cerevisiae', 'Caenorhabditis elegans',
 ];
 
 // HOMONYMS. Several of these names are used by more than one clade, and the collisions are not subtle:

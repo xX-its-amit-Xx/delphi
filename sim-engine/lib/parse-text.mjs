@@ -73,7 +73,16 @@ const ORGANISMS = [
   [/\bzebra[\s-]?fish(?:es)?\b|\bdanio(?:\s+rerio)?\b/i, 'zebrafish-adult'],
 ];
 // Organisms people name that the engine does not have. Never mapped to a "close" one.
-const OTHER_ORGANISMS = /\b(salmon|trout|tuna|shark|goldfish|medaka|carp|cod|guppy|tilapia|catfish|eel|seahorse|stickleback|killifish|cichlid|bat|bats|insect|dragonfly|squid|octopus|frog|lizard|mouse|human|dolphin|whale|ray|manta|flying squirrel|sugar glider|gecko)\b/i;
+// Organism names. The compounds ending in "fly" are here for a reason beyond naming the organism: they have
+// to be taken out of the clause before familyGlide reads it.
+//
+// "I want a fruit fly that lives longer" came back with a GLIDE criterion. familyGlide matches
+// /\bfl(?:y|ies|ight)\b/, the word `fly` in `fruit fly` is free-standing, and so the parser read the name of
+// the animal as a requirement that it be able to fly -- a criterion nobody asked for, attached to a request
+// about lifespan, on a design that would then have been judged against it. One-word compounds (dragonfly,
+// butterfly) were always safe because no word boundary falls inside them; the two-word ones were not.
+// A name is not a verb.
+const OTHER_ORGANISMS = /\b(fruit[\s-]?fl(?:y|ies)|drosophila|house[\s-]?fl(?:y|ies)|crane[\s-]?fl(?:y|ies)|horse[\s-]?fl(?:y|ies)|black[\s-]?fl(?:y|ies)|sand[\s-]?fl(?:y|ies)|tsetse(?:[\s-]?fl(?:y|ies))?|may[\s-]?fl(?:y|ies)|salmon|trout|tuna|shark|goldfish|medaka|carp|cod|guppy|tilapia|catfish|eel|seahorse|stickleback|killifish|cichlid|bat|bats|insect|dragonfly|squid|octopus|frog|lizard|mouse|human|dolphin|whale|ray|manta|flying squirrel|sugar glider|gecko)\b/i;
 
 // Ambiguous bird words count as birds only after an article or "like" ("a swift", "like a duck").
 const AMBIGUOUS_BIRD = new Set(['swallow', 'swift', 'swifts', 'duck', 'crow', 'robin', 'tern', 'finch', 'hen', 'dove', 'raven', 'hawk', 'kingfisher', 'gull']);

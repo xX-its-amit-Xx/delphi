@@ -110,6 +110,52 @@ for (const g of grams) {
   const lx = key && lexicon.taxon_words[key];
   if (lx) { cover(g); if (!found.taxon.some(x => 'NCBITaxon_' + x.taxid === lx)) found.taxon.push({ matched: g, taxid: +lx.replace('NCBITaxon_', ''), source: { file: 'organism-design/lexicon.json', entry: 'taxon_words.' + key } }); }
 }
+// 1a-sci. A SCIENTIFIC NAME IS A NAME. The lexicon and the inventory between them know a few hundred
+// organisms by common name, and anything else was unreadable -- including, absurdly, the exact binomial the
+// tool itself prints in its own output. "a fruit fly" resolved; "Drosophila melanogaster" did not, and the
+// refusal above was advising callers to use a scientific name while the reader could not read one. The same
+// shape as the lexicon not knowing "styliform cartilage" after recommending it.
+//
+// So any Linnaean-looking name in the description is asked of the NCBI taxonomy directly: a capitalised
+// word, optionally followed by a lowercase epithet. One query, exact labels only, no guessing -- a name
+// that matches nothing stays unrecognised, and a name that matches more than one taxon is reported
+// ambiguous rather than resolved to whichever came back first. This is what makes the tool usable outside
+// the animals the inventory happens to cover: bacteria, archaea, fungi and plants all have binomials.
+{
+  const raw = description.split(/[\s,;.()]+/).filter(Boolean);
+  const cand = new Set();
+  for (let i = 0; i < raw.length; i++) {
+    const w = raw[i];
+    if (!/^[A-Z][a-z]{2,}$/.test(w)) continue;
+    if (i === 0 && raw.length > 1 && !/^[a-z]{2,}$/.test(raw[1] ?? '')) continue; // a capitalised first word alone is usually just the sentence
+    cand.add(w);
+    const next = raw[i + 1];
+    if (next && /^[a-z-]{2,}$/.test(next)) cand.add(`${w} ${next}`);
+  }
+  const unknown = [...cand].filter(c => !found.taxon.some(t => (t.name ?? '').toLowerCase() === c.toLowerCase()) && !invIndex.has(c.toLowerCase()));
+  if (unknown.length) {
+    const re = n => `^(${n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})( <[^>]*>)?$`;
+    const r = await sparql(`do any of these read as scientific names in the NCBI taxonomy: ${unknown.join(', ')}`,
+      `SELECT ?t ?l WHERE { ?t rdfs:label ?l . FILTER(REGEX(STR(?t),'NCBITaxon_[0-9]+$')) FILTER(${unknown.map(n => `REGEX(STR(?l), '${re(n)}')`).join(' || ')}) }`);
+    const byName = new Map();
+    for (const row of r.rows) {
+      const base = row.l.replace(/ <[^>]*>$/, '');
+      if (!byName.has(base)) byName.set(base, []);
+      byName.get(base).push({ term: short(row.t), label: row.l });
+    }
+    // Longest first, so "Drosophila melanogaster" wins over the genus "Drosophila" sitting inside it.
+    for (const name of [...byName.keys()].sort((a, b) => b.length - a.length)) {
+      const hits = byName.get(name);
+      if (hits.length > 1) { found.taxon.push({ matched: name, ambiguous: hits.map(h => h.label), read_as: null, source: { file: 'NCBI taxonomy via Ubergraph', entry: 'scientific name' }, note: `"${name}" is carried by ${hits.length} different taxa in the NCBI taxonomy (${hits.map(h => h.label).join('; ')}), so it was NOT resolved. Use the qualified label.`, verified_by: r.id }); continue; }
+      const lower = name.toLowerCase();
+      if (found.taxon.some(x => (x.matched ?? '').toLowerCase().includes(lower))) continue;
+      cover(lower);
+      const taxid = +hits[0].term.replace('NCBITaxon_', '');
+      if (!found.taxon.some(x => x.taxid === taxid)) found.taxon.push({ matched: name, taxid, label: hits[0].label, source: { file: 'NCBI taxonomy via Ubergraph', entry: 'scientific name read from the description' }, verified_by: r.id });
+    }
+  }
+}
+
 // 1b. anatomy words. Grams run longest first, so a phrase is read at the most specific entry that
 // matches it: "enlarged pectoral fins" resolves to pectoral fin, and the "fins" sitting inside that
 // phrase is not added a second time as a generic fin. The less specific reading is recorded, not
@@ -194,7 +240,46 @@ if (found.taxon.length) {
   for (const ft of found.taxon) { const k = 'NCBITaxon_' + ft.taxid; ft.label = info[k]?.label || null; ft.verified_by = r.id; }
   if (best) taxon = { term: best, taxid: +best.replace('NCBITaxon_', ''), label: info[best].label, iri: OBO + best, chosen_because: 'most specific of the taxon words found (subclass of the others)', verified_by: r.id };
 }
-if (!taxon) taxon = { term: 'NCBITaxon_33208', taxid: 33208, label: 'Metazoa', iri: OBO + 'NCBITaxon_33208', chosen_because: 'no taxon word recognised in the description; defaulting to all animals, so no taxon constraint removes any structure' };
+// NO TAXON RECOGNISED IS A REFUSAL, NOT A DEFAULT.
+//
+// This used to fall back to Metazoa -- all animals -- whenever no taxon word was recognised, on the
+// reasoning that the widest taxon removes no structure by taxon constraint. The reasoning is fine and the
+// behaviour was indefensible, because the fallback does not only relax the constraints: it decides what the
+// organism IS. Asked for "a bacterium that eats carbon and swims", the tool recognised none of `bacterium`,
+// `eats` or `carbon`, defaulted the taxon to Metazoa, and returned a blueprint with 8 organ systems, 38
+// organs and 138 cell types -- an animal, with organs, for a request that said bacterium. The JSON did say
+// `chosen_because: no taxon word recognised`, in one field, several hundred lines from the organ list that
+// contradicted the request; and `bacterium` sat in words_not_recognised the whole time, with nothing
+// connecting the two.
+//
+// So: if the description names something the lexicon cannot read, say so and stop. The widest possible
+// taxon is still available, by asking for it with --assume-taxon, because "I want a generic animal" is a
+// real request -- it is just not the same request as "I want a bacterium".
+if (!taxon) {
+  const assume = arg('assume-taxon', null);
+  if (!assume) {
+    const candidates = notRead.filter(w => !/^(that|with|which|and|the|for|can|able|its)$/.test(w));
+    console.error(`no taxon recognised in "${description}".\n`
+      + `\nThe lexicon reads a word list, not English, and nothing in this description resolved to an organism.`
+      + `${candidates.length ? `\nWords it could not read, any of which might have been the organism: ${candidates.join(', ')}` : ''}`
+      + `\n\nThis used to default to Metazoa and build a generic ANIMAL -- organ systems, organs, cell types --`
+      + `\nwhatever had been asked for. A blueprint of the wrong kingdom is worse than no blueprint.`
+      + `\n\nEither name a taxon the lexicon or organisms/merged/taxa.json knows (a scientific name works:`
+      + `\n"Escherichia coli", "Drosophila melanogaster"), add the word to organism-design/lexicon.json under`
+      + `\ntaxon_words, or ask for the old behaviour explicitly:`
+      + `\n\n  node organism-design/blueprint.mjs "${description}" --assume-taxon Metazoa\n`);
+    process.exit(2);
+  }
+  const want = /^NCBITaxon_\d+$/.test(assume) ? assume : null;
+  const r = await sparql(`resolve the taxon assumed by --assume-taxon ${assume}`,
+    want ? `SELECT ?t ?l WHERE { VALUES ?t { obo:${want} } ?t rdfs:label ?l }`
+      : `SELECT ?t ?l WHERE { ?t rdfs:label ?l . FILTER(REGEX(STR(?t),'NCBITaxon_[0-9]+$')) FILTER(REGEX(STR(?l), '^(${assume.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})( <[^>]*>)?$')) } LIMIT 2`);
+  if (!r.rows.length) { console.error(`--assume-taxon ${assume}: no NCBI taxon has that exact label.`); process.exit(2); }
+  if (r.rows.length > 1) { console.error(`--assume-taxon ${assume}: ambiguous, ${r.rows.length} taxa carry that label. Use the NCBITaxon_<id> form.`); process.exit(2); }
+  taxon = { term: short(r.rows[0].t), taxid: +short(r.rows[0].t).replace('NCBITaxon_', ''), label: r.rows[0].l, iri: r.rows[0].t,
+    chosen_because: `no taxon word was recognised in the description; the caller assumed ${r.rows[0].l} with --assume-taxon. NOTHING IN THE DESCRIPTION SAYS THIS IS THE ORGANISM.`,
+    assumed: true, unrecognised_words: notRead, verified_by: r.id };
+}
 
 // Holdout guard: the frozen exam clade (holdout/exam.json) is off limits to builders. A description that resolves
 // to a taxon inside it is refused; one that merely contains it (e.g. "vertebrate") is flagged.

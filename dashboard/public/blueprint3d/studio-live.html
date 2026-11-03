@@ -83,6 +83,7 @@ footer{border-top:1px solid var(--line);margin-top:22px;padding:14px 16px;color:
   <b>DELPHI</b>
   <nav><a href="index.html">Blueprint 3D</a> <a href="perturb.html">Design Studio</a> <a href="../validate-show/">Validation</a></nav>
   <div class="right">
+    <select id="runsel" title="Which Design Studio run to show"></select>
     <span class="badge" id="mode">loading</span>
     <button id="play" aria-pressed="false" title="Replay the run entry by entry, at the pace it was recorded">Replay</button>
     <button id="all" aria-pressed="true">Show all</button>
@@ -132,9 +133,18 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;
 // The page tries a running sim-engine/http.mjs (POST /tool/session_read). If one answers it shows the session as
 // it stands and keeps polling for entries after the last seq it has. If not, it shows the baked replay and says
 // so in the badge -- a page that cannot tell you whether it is live is worse than one that is honestly stale.
-let data;
-try { data = await (await fetch('studio-live/run.json', {cache:'no-cache'})).json(); }
-catch (e) { $('#q').textContent = 'studio-live/run.json is missing'; $('#lede').textContent = 'Build it with: node dashboard/public/blueprint3d/studio-live/gen.mjs'; return; }
+let data, runIndex = null;
+const wanted = new URLSearchParams(location.search).get('run');
+try { runIndex = await (await fetch('studio-live/index.json', {cache:'no-cache'})).json(); } catch (e) { runIndex = null; }
+const file = runIndex && runIndex.runs.length
+  ? (runIndex.runs.find(r => r.run === wanted) || runIndex.runs[0]).file
+  : 'run.json';
+try { data = await (await fetch('studio-live/' + file, {cache:'no-cache'})).json(); }
+catch (e) { $('#q').textContent = 'studio-live/' + file + ' is missing'; $('#lede').textContent = 'Build it with: node dashboard/public/blueprint3d/studio-live/gen.mjs'; return; }
+if (runIndex) {
+  $('#runsel').innerHTML = runIndex.runs.map(r => '<option value="' + esc(r.run) + '"' + (r.file === file ? ' selected' : '') + '>' + esc(r.question || r.run) + '</option>').join('');
+  $('#runsel').addEventListener('change', e => { location.search = '?run=' + encodeURIComponent(e.target.value); });
+} else { $('#runsel').style.display = 'none'; }
 
 const LIVE_BASE = new URLSearchParams(location.search).get('studio') || 'http://127.0.0.1:8787';
 let live = false, lastSeq = -1;
@@ -207,6 +217,12 @@ function renderSide(){
   html += row('flight structure present', (p.flight_structures_present||[]).length ? '<span class="add">' + (p.flight_structures_present||[]).map(esc).join(', ') + '</span>' : '<span class="rem">none</span>');
   html += row('measured parameters', p.parameters === null ? '<span class="rem">null &mdash; this engine holds measured body-plan parameters for its own teleosts only</span>' : esc(JSON.stringify(p.parameters)));
   if (p.declared) for (const [k, v] of Object.entries(p.declared)) html += row('declared: ' + k, '<span class="num">' + (v.min === v.max ? v.min : v.min + '&ndash;' + v.max) + ' ' + esc(v.unit||'') + '</span><br><span style="color:var(--mute);font-size:.82em">' + esc(v.source) + '</span>');
+  if (p.locomotion) html += row('locomotion', Object.entries(p.locomotion).map(([k, v]) =>
+    '<b>' + esc(k) + '</b>: ' + esc(typeof v === 'object' && v ? (v.verdict || JSON.stringify(v)) : v)
+    + (v && v.reynolds ? ' <span style="color:var(--mute)">Re ' + Number(v.reynolds.max).toExponential(1) + '</span>' : '')).join('<br>'));
+  if (p.ecology) html += row('ecology', Object.entries(p.ecology).map(([k, v]) => esc(k.replace(/_/g, ' ')) + ': <span class="num">' + esc(String(v)) + '</span>').join('<br>'));
+  if (p.task) html += row('task asked for', esc(p.task.asked) + '<br><span class="' + (p.task.representable ? 'add' : 'rem') + '">' + (p.task.representable ? 'representable' : 'NOT representable') + '</span> &mdash; ' + esc(p.task.why));
+  if (p.subject_note) html += row('whose phenotype is this?', '<span class="rem">' + esc(p.subject_note) + '</span>');
   if (d && d.gates_changed && d.gates_changed.length) html += row('gates that changed', d.gates_changed.map(esc).join('<br>'));
   html += row('what this generation taught', esc(g.what_it_taught));
   $('#pheno').innerHTML = html;
@@ -223,8 +239,11 @@ function renderSide(){
   gh += row('what this is', esc(gt.note));
   $('#geno').innerHTML = gh;
 
-  $('#meshnote').innerHTML = '<b>No surface mesh.</b> ' + esc((g.mesh && g.mesh.why) || '') + ' What is drawn above is the ontology hierarchy of this generation.';
-  draw(data.hierarchies[g.blueprint]);
+  const h = g.blueprint ? data.hierarchies[g.blueprint] : null;
+  $('#meshnote').innerHTML = '<b>No surface mesh.</b> ' + esc((g.mesh && g.mesh.why) || '')
+    + (h ? ' What is drawn above is the ontology hierarchy of this generation.'
+         : ' <b>And no hierarchy either:</b> this generation produced no blueprint, so there is nothing to draw. A refusal has no shape.');
+  draw(h);
 }
 
 function select(g){ sel = g; for (const b of document.querySelectorAll('.gcard')) b.setAttribute('aria-pressed', String(+b.dataset.g === g)); renderSide(); }
@@ -242,7 +261,7 @@ function draw(h){
     + '<span><i style="background:var(--gene);width:12px;height:12px"></i>named in the description, or the flight structure</span>'
     + '<span>' + h.nodes.length + ' nodes &middot; drag to turn</span>' : '';
   if (!window.THREE) { cv.replaceWith(Object.assign(document.createElement('div'), { className:'note', innerHTML:'three.js did not load from cdnjs, so this view cannot draw. The hierarchy is in <span class="mono">studio-live/run.json</span>.' })); return; }
-  if (!h) return;
+  if (!h) { if (renderer && scene) { scene = new THREE.Scene(); } return; }
   if (!renderer) {
     renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
     camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);

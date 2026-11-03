@@ -1,0 +1,1811 @@
+{
+ "tool": "scenario_list",
+ "generation": 0,
+ "why": "is there any scenario that measures a lifespan?",
+ "args": {},
+ "ms": 9,
+ "result": {
+  "contract_version": "0.9.0",
+  "result": {
+   "scenarios": [
+    {
+     "key": "_example",
+     "title": "Interface test (not a scenario)",
+     "group": "physiology",
+     "file": "_example.mjs",
+     "params": [
+      {
+       "key": "factor",
+       "label": "multiplier",
+       "unit": "-",
+       "default": 1,
+       "min": 0,
+       "max": 10,
+       "kind": "assumed",
+       "source": "interface test parameter"
+      }
+     ],
+     "requires": [
+      "mass_kg",
+      "gill_area_m2"
+     ],
+     "metrics": [
+      {
+       "key": "gill_area_per_mass",
+       "label": "gill area / mass x factor",
+       "unit": "m2/kg",
+       "better": "higher"
+      },
+      {
+       "key": "mass_g",
+       "label": "mass",
+       "unit": "g",
+       "better": null
+      }
+     ],
+     "modelCard": {
+      "equations": [
+       "gill_area_per_mass = gill_area_m2 / mass_kg x factor"
+      ],
+      "sources": [],
+      "validity": "none: interface test",
+      "validatedAgainst": []
+     },
+     "interface_test": true
+    },
+    {
+     "key": "altitude",
+     "title": "High altitude: air density and O2 partial pressure for gliding, flight and aerobic supply",
+     "group": "environment",
+     "file": "altitude.mjs",
+     "params": [
+      {
+       "key": "altitude_m",
+       "label": "Altitude above sea level",
+       "unit": "m",
+       "default": 2000,
+       "min": 0,
+       "max": 11000,
+       "kind": "assumed",
+       "source": "design input; 11,000 m is the top of the troposphere fit"
+      },
+      {
+       "key": "launch_height_m",
+       "label": "Launch height above the surface",
+       "unit": "m",
+       "default": 1,
+       "min": 0,
+       "max": 10,
+       "kind": "assumed",
+       "source": "design input; maximum recorded flying-fish flight height 8 m (deng-2019 Introduction, second-hand)"
+      },
+      {
+       "key": "launch_airspeed_override_m_s",
+       "label": "What-if launch airspeed (0 = the organism's own sourced speed)",
+       "unit": "m/s",
+       "default": 0,
+       "min": 0,
+       "max": 30,
+       "kind": "assumed",
+       "source": "0 uses the organism's sourced leap/burst speed (flying fish ~10 m/s, makiguchi-2013; zebrafish Umax from current.mjs); any other value is a labelled what-if"
+      }
+     ],
+     "requires": [
+      "mass_kg"
+     ],
+     "metrics": [
+      {
+       "key": "air_pressure_kPa",
+       "label": "Barometric pressure",
+       "unit": "kPa",
+       "better": null
+      },
+      {
+       "key": "air_temperature_C",
+       "label": "Standard-atmosphere air temperature",
+       "unit": "°C",
+       "better": null
+      },
+      {
+       "key": "air_density_kg_m3",
+       "label": "Air density",
+       "unit": "kg/m3",
+       "better": "higher"
+      },
+      {
+       "key": "air_pO2_kPa",
+       "label": "O2 partial pressure of dry air",
+       "unit": "kPa",
+       "better": "higher"
+      },
+      {
+       "key": "water_pO2_kPa",
+       "label": "O2 tension of air-equilibrated surface water at this altitude",
+       "unit": "kPa",
+       "better": "higher"
+      },
+      {
+       "key": "hypoxia_margin_kPa",
+       "label": "Water pO2 minus a cross-species mean Pcrit (borrowed)",
+       "unit": "kPa",
+       "better": "higher"
+      },
+      {
+       "key": "v_min_m_s",
+       "label": "Minimum lift-supported airspeed at this altitude",
+       "unit": "m/s",
+       "better": "lower"
+      },
+      {
+       "key": "v_min_ratio",
+       "label": "v_min relative to sea level",
+       "unit": "1",
+       "better": "lower"
+      },
+      {
+       "key": "launch_airspeed_m_s",
+       "label": "Launch speed reachable by this organism",
+       "unit": "m/s",
+       "better": "higher"
+      },
+      {
+       "key": "glide_range_lean_bound_m",
+       "label": "Glide distance covered by the Lean bound, h (L/D)max (independent of altitude)",
+       "unit": "m",
+       "better": "higher"
+      },
+      {
+       "key": "kinetic_phase_m",
+       "label": "Level kinetic-energy phase at this altitude (OUTSIDE the Lean theorem)",
+       "unit": "m",
+       "better": "higher"
+      },
+      {
+       "key": "power_required_W",
+       "label": "Power for level flight at v_min",
+       "unit": "W",
+       "better": "lower"
+      },
+      {
+       "key": "aerobic_power_available_W",
+       "label": "Fick aerobic power bound at this altitude (air breathing)",
+       "unit": "W",
+       "better": "higher"
+      },
+      {
+       "key": "powered_flight_margin",
+       "label": "Aerobic power available / required",
+       "unit": "1",
+       "better": "higher"
+      },
+      {
+       "key": "arterial_O2_content_ratio",
+       "label": "Arterial O2 content relative to sea level (PaO2 = PiO2)",
+       "unit": "1",
+       "better": "higher"
+      }
+     ],
+     "modelCard": {
+      "equations": [
+       "T(h) = 15.04 - 0.00649 h; p(h) = 101.29 ((T + 273.1)/288.08)^5.256 kPa; rho = p / (0.2869 (T + 273.1))",
+       "PO2_air = 0.2095 p(h); PO2_water = 0.2095 (p(h) - pH2O(T_water))",
+       "v_min(h) = sqrt(2W/(rho(h) S C_Lmax)) = v_min(0) sqrt(rho(0)/rho(h))",
+       "P_req(h) = W v_min(h)/(L/D)max; P_aerobic(h) <= eta E Q Ca(PO2_air(h))",
+       "survives (aquatic): PO2_water - Pcrit > SD (true), < -SD (false), else null",
+       "feasible (glide): organism launch speed >= v_min(h)"
+      ],
+      "sources": [
+       {
+        "cite": "NASA Glenn Research Center, Earth Atmosphere Model, metric units (troposphere curve fit, valid to 11,000 m)",
+        "doi_or_url": "https://www.grc.nasa.gov/www/k-12/airplane/atmosmet.html"
+       },
+       {
+        "cite": "West JB, Lahiri S, Maret KH, Peters RM, Pizzo CJ (1983). Barometric pressures at extreme altitudes on Mt. Everest: physiological significance. J Appl Physiol 54:1188-1194 (validation)",
+        "doi_or_url": "https://doi.org/10.1152/jappl.1983.54.5.1188"
+       },
+       {
+        "cite": "Rogers NJ, Urbina MA, Reardon EE, McKenzie DJ, Wilson RW (2016). A new analysis of hypoxia tolerance in fishes using a database of critical oxygen level (Pcrit). Conserv Physiol 4:cow012",
+        "doi_or_url": "https://doi.org/10.1093/conphys/cow012"
+       },
+       {
+        "cite": "Park H, Choi H (2010). Aerodynamic characteristics of flying fish in gliding flight. J Exp Biol 213:3269-3279",
+        "doi_or_url": "https://doi.org/10.1242/jeb.046052"
+       }
+      ],
+      "validity": "0-11,000 m. The standard atmosphere under-predicts pressure at low latitudes by a few percent (validation below). The flight side inherits glide.mjs validity.",
+      "validatedAgainst": [
+       {
+        "organism": "none (atmosphere check)",
+        "observation": "barometric pressure measured on Mt. Everest at 5,400 / 6,300 / 8,050 / 8,848 m: 400.4 / 351.0 / 283.6 / 253.0 Torr",
+        "predicted": "51.29 / 45.36 / 35.43 / 31.53 kPa",
+        "measured": "53.38 / 46.80 / 37.81 / 33.73 kPa",
+        "source": "West et al. 1983 (https://doi.org/10.1152/jappl.1983.54.5.1188). PASS within 10% (errors -3.1% to -6.5%), systematically LOW: the paper attributes this to latitude (pressure at altitude is higher near the equator). pO2 at altitude is under-predicted by the same fraction."
+       },
+       {
+        "organism": "any fish",
+        "observation": "gliding or flight performance at altitude",
+        "predicted": "v_min rises 1/sqrt(rho): +16% at 3,000 m, +29% at 5,000 m",
+        "measured": "none: no fish flies at altitude, and no fetched measurement exists",
+        "source": "no organism-level validation is possible"
+       }
+      ]
+     },
+     "interface_test": false
+    },
+    {
+     "key": "current",
+     "title": "Swimming against a current: critical swimming speed and a drag-power bound",
+     "group": "environment",
+     "file": "current.mjs",
+     "params": [
+      {
+       "key": "current_m_s",
+       "label": "Current speed",
+       "unit": "m/s",
+       "default": 0.2,
+       "min": 0,
+       "max": 3,
+       "kind": "assumed",
+       "source": "design input"
+      }
+     ],
+     "requires": [
+      "SL_m",
+      "mass_kg"
+     ],
+     "metrics": [
+      {
+       "key": "ucrit_m_s",
+       "label": "Critical swimming speed at this temperature",
+       "unit": "m/s",
+       "better": "higher"
+      },
+      {
+       "key": "ucrit_bl_s",
+       "label": "Critical swimming speed in body lengths",
+       "unit": "BL/s",
+       "better": "higher"
+      },
+      {
+       "key": "umax_m_s",
+       "label": "Maximum (short ramp) swimming speed",
+       "unit": "m/s",
+       "better": "higher"
+      },
+      {
+       "key": "speed_margin_m_s",
+       "label": "Ucrit minus current speed",
+       "unit": "m/s",
+       "better": "higher"
+      },
+      {
+       "key": "current_fraction_of_ucrit",
+       "label": "Current speed / Ucrit",
+       "unit": "1",
+       "better": "lower"
+      },
+      {
+       "key": "reynolds_number",
+       "label": "Body Reynolds number at the current speed",
+       "unit": "1",
+       "better": null
+      },
+      {
+       "key": "drag_at_current_N",
+       "label": "Rigid-body skin-friction drag at the current speed (lower bound)",
+       "unit": "N",
+       "better": "lower"
+      },
+      {
+       "key": "drag_power_at_current_W",
+       "label": "Rigid-body drag power at the current speed (lower bound)",
+       "unit": "W",
+       "better": "lower"
+      },
+      {
+       "key": "red_muscle_power_W",
+       "label": "Whole red-muscle maximal power (upper bound on aerobic swimming power)",
+       "unit": "W",
+       "better": "higher"
+      },
+      {
+       "key": "ucrit_upper_bound_m_s",
+       "label": "Physical upper bound on sustained speed (rigid drag = red-muscle power)",
+       "unit": "m/s",
+       "better": "higher"
+      }
+     ],
+     "modelCard": {
+      "equations": [
+       "Ucrit(T, age) = k(age) x SL x r(T); k = 15.5 SL/s for >= 28 dpf (Plaut 2000), 10.5 SL/s at 14 dpf (Umax 12.1 / 1.15), linear between; 0.03 m/s at 5 dpf, linear to 14 dpf",
+       "r(T) = Ucrit(T)/Ucrit(28 °C), measured (Wakamatsu 2019)",
+       "Umax = 1.15 Ucrit; feasible (hold station) = current <= Ucrit; survives = null",
+       "Re = rho U SL / mu; C_D = 1.33 Re^-0.5 (Re < 5e5) or 0.072 Re^-0.2, on wetted area",
+       "D = 0.5 rho C_D S_wet U^2 (lower bound); P_red = f_myo f_red m 134 x 1.88^((T-20)/10) W",
+       "U_bound: 0.5 rho C_D(U) S_wet U^3 = P_red (upper bound on sustained speed)"
+      ],
+      "sources": [
+       {
+        "cite": "Widrick JJ et al. (2018). An open source microcontroller based flume for evaluating swimming performance of larval, juvenile, and adult zebrafish. PLoS One 13:e0199712",
+        "doi_or_url": "https://doi.org/10.1371/journal.pone.0199712"
+       },
+       {
+        "cite": "Wakamatsu Y, Ogino K, Hirata H (2019). Sci Rep 9:16307 (Ucrit vs temperature, fin length)",
+        "doi_or_url": "https://doi.org/10.1038/s41598-019-52592-w"
+       },
+       {
+        "cite": "Li G et al. (2021). Fishes regulate tail-beat kinematics to minimize speed-specific cost of transport. Proc R Soc B 288:20211601",
+        "doi_or_url": "https://doi.org/10.1098/rspb.2021.1601"
+       },
+       {
+        "cite": "NIST Chemistry WebBook, Thermophysical Properties of Fluid Systems: water at 0.101325 MPa, 5-35 °C",
+        "doi_or_url": "https://webbook.nist.gov/chemistry/fluid/"
+       },
+       {
+        "cite": "Rome LC et al. (1992), scup red muscle power, via physiology/muscle.js (abstract)",
+        "doi_or_url": "physiology/sources.json id rome1992"
+       }
+      ],
+      "validity": "Zebrafish from 5 dpf to adult and SL <= 45.1 mm (Linf), 12-36 °C (temperature curve), Re ~1e2-1e5. For other species, and for blended designs larger than a zebrafish, only the physical bound and drag are computed.",
+      "validatedAgainst": [
+       {
+        "organism": "Danio rerio adults (literature summary)",
+        "observation": "Ucrit 40-55 cm/s in adults (Widrick 2018 Introduction, citing refs 10-13)",
+        "predicted": "46.5 cm/s for SL 30 mm at 28 °C",
+        "measured": "40-55 cm/s (second-hand)",
+        "source": "https://doi.org/10.1371/journal.pone.0199712. PASS, but partly circular: the 15.5 SL/s comes from one of the cited studies (Plaut 2000)"
+       },
+       {
+        "organism": "Danio rerio, long-finned pet-store (PET) strain, adults, 28 °C",
+        "observation": "Ucrit 23.8 ± 0.7 cm/s (males and females 22-24 cm/s)",
+        "predicted": "~46 cm/s for a 30 mm SL wild-type adult",
+        "measured": "22-24 cm/s",
+        "source": "Wakamatsu 2019 (https://doi.org/10.1038/s41598-019-52592-w). FAIL by about 2x. The paper shows long caudal fins and genetic background lower Ucrit; SL was not reported in the text, so the BL/s comparison could not be made exactly. A design with long fins will be over-predicted."
+       },
+       {
+        "organism": "Danio rerio adults",
+        "observation": "measured Ucrit must lie below the physical upper bound",
+        "predicted": "see test/scenarios-environment.mjs (bound computed for the fixture)",
+        "measured": "15.5 SL/s",
+        "source": "consistency check, not a test against an independent measurement"
+       }
+      ]
+     },
+     "interface_test": false
+    },
+    {
+     "key": "daynight",
+     "title": "Day/night activity and circadian clock (zebrafish measurements)",
+     "group": "behaviour",
+     "file": "daynight.mjs",
+     "params": [
+      {
+       "key": "light_hours",
+       "label": "Hours of light per 24 h",
+       "unit": "h",
+       "default": 14,
+       "min": 1,
+       "max": 23,
+       "kind": "assumed",
+       "source": "larval data 14:10 LD (Prober 2006); adult data 12:12 LD (López-Olmeda 2006; Hurd 1998) — default 14 h is the larval protocol condition [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]"
+      }
+     ],
+     "requires": [
+      "stage"
+     ],
+     "metrics": [
+      {
+       "key": "rhythm_present",
+       "label": "Day/night locomotor rhythm expressed",
+       "unit": "bool",
+       "better": null
+      },
+      {
+       "key": "activity_day_s_per_min",
+       "label": "Time moving per minute, light phase (larva)",
+       "unit": "s/min",
+       "better": null
+      },
+      {
+       "key": "activity_night_s_per_min",
+       "label": "Time moving per minute, dark phase (larva)",
+       "unit": "s/min",
+       "better": null
+      },
+      {
+       "key": "day_night_activity_ratio",
+       "label": "Activity per hour, light / dark",
+       "unit": "ratio",
+       "better": null
+      },
+      {
+       "key": "diurnal_activity_fraction",
+       "label": "Share of 24 h activity in the light phase",
+       "unit": "fraction",
+       "better": null
+      },
+      {
+       "key": "free_running_period_h",
+       "label": "Free-running circadian period",
+       "unit": "h",
+       "better": null
+      }
+     ],
+     "modelCard": {
+      "equations": [
+       "larva: activity 7 s/min (light), 0.5 s/min (dark) -> ratio 14",
+       "adult: f12(T) = 0.87 + (0.77 - 0.87)(T - 20)/6, T clamped to 20-26 C; ratio = f12/(1 - f12)",
+       "share of activity in light for L light hours = ratio L / (ratio L + 24 - L)",
+       "free-running period: larva 25.08 h (DD), adult 23.25 h (dim LL); constant over 18-28.5 C"
+      ],
+      "sources": [
+       {
+        "cite": "Prober et al. 2006, J Neurosci 26:13400",
+        "doi_or_url": "https://doi.org/10.1523/JNEUROSCI.4332-06.2006"
+       },
+       {
+        "cite": "López-Olmeda, Madrid & Sánchez-Vázquez 2006, Chronobiol Int 23:537",
+        "doi_or_url": "https://doi.org/10.1080/07420520600651065"
+       },
+       {
+        "cite": "Hurd et al. 1998, Physiol Behav 65:465",
+        "doi_or_url": "https://doi.org/10.1016/S0031-9384(98)00183-8"
+       },
+       {
+        "cite": "Chaigne et al. 2024, PLoS Genet",
+        "doi_or_url": "https://doi.org/10.1371/journal.pgen.1011172"
+       },
+       {
+        "cite": "Lahiri et al. 2005, PLoS Biol 3:e351",
+        "doi_or_url": "https://doi.org/10.1371/journal.pbio.0030351"
+       },
+       {
+        "cite": "Hurd & Cahill 2002, J Biol Rhythms 17:307",
+        "doi_or_url": "https://doi.org/10.1177/074873002129002618"
+       }
+      ],
+      "validity": "Zebrafish larvae from 5 dpf at about 28.5 C (14:10 LD) and adults at 20-26 C (12:12 LD); period compensation 18-28.5 C. Other species borrow zebrafish values.",
+      "validatedAgainst": [
+       {
+        "organism": "Danio rerio (all lookups)",
+        "observation": "activity per minute, adult shares at 20/26 C and both periods are read back from their sources",
+        "predicted": "the source values",
+        "measured": "the source values",
+        "source": "labelled calibrated (amendment A1): not validations"
+       },
+       {
+        "organism": "Danio rerio larva",
+        "observation": "free-running period in constant light (Chaigne 2024)",
+        "predicted": "25.08 h (the DD value)",
+        "measured": "24.93 ± 1.87 h in LL (n = 66)",
+        "source": "doi:10.1371/journal.pgen.1011172 — consistent; same paper, different lighting condition"
+       },
+       {
+        "organism": "Danio rerio adult",
+        "observation": "diurnality at 25 C, 12:12 LD (Hurd 1998)",
+        "predicted": "share of activity in light 0.79",
+        "measured": "86% of fish most active in the light",
+        "source": "doi:10.1016/S0031-9384(98)00183-8 — same direction; different quantities (share of activity vs share of fish), so only a sign check"
+       },
+       {
+        "organism": "Danio rerio larva",
+        "observation": "light/dark contrast from an independent lab (Choudhary 2026 sleep fractions)",
+        "predicted": "activity ratio 14 (Prober)",
+        "measured": "wake ratio (1-0.196)/(1-0.839) = 5.0",
+        "source": "doi:10.1038/s41467-026-72222-0 — DISAGREES by about 3x; wakefulness is not the same as movement time, but the gap is large"
+       }
+      ]
+     },
+     "interface_test": false
+    },
+    {
+     "key": "digestion",
+     "title": "Feeding and digestion: intake, SDA, routine cost and gut passage time",
+     "group": "physiology",
+     "file": "digestion.mjs",
+     "params": [
+      {
+       "key": "ration_pct_bw_day",
+       "label": "Daily ration, dry feed (null = stage average)",
+       "unit": "% body mass/day",
+       "default": null,
+       "min": 0,
+       "max": 400,
+       "kind": "measured-secondhand",
+       "source": "null -> Licitra 2024 recommendation at 28.5 C: \"for larvae ... 9-10% of BW per day, minimum; for juveniles, 6-8% of BW; for adults, 5% of BW\" (midpoints 9.5, 7, 5) [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]"
+      },
+      {
+       "key": "diet_energy_kJ_g",
+       "label": "Energy density of the dry diet",
+       "unit": "kJ/g",
+       "default": 20,
+       "min": 1,
+       "max": 30,
+       "kind": "measured-secondhand",
+       "source": "Licitra 2024: rates \"based on the use of a dry diet containing 20 kj/g (as fed basis)\" [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]"
+      },
+      {
+       "key": "faecal_loss_fraction",
+       "label": "Fraction of ingested energy lost in faeces",
+       "unit": "fraction",
+       "default": 0.228,
+       "min": 0,
+       "max": 0.9,
+       "kind": "borrowed",
+       "source": "Sumule 2003, Japanese flounder larvae on enriched Artemia: \"22.8% to faecal loss\" (35.4% on non-enriched); Sumule O, Koshio S, Teshima S, Ishikawa M 2003. Energy budget of Japanese flounder larvae. Aquac Res 34:877. doi:10.1046/j.1365-2109.2003.00896.x (abstract read) [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]"
+      },
+      {
+       "key": "sda_coefficient",
+       "label": "SDA as a fraction of meal energy",
+       "unit": "fraction",
+       "default": 0.1014,
+       "min": 0,
+       "max": 0.5,
+       "kind": "borrowed",
+       "source": "McLeod & Clark 2016, larval clownfish Amphiprion percula at 28.5 C: \"SDA coefficient (%) 10.14 ± 1.34\" (12.96 at 31.5 C); no zebrafish or cyprinid coefficient found; McLeod IM, Clark TD 2016. Limited capacity for faster digestion in larval coral reef fish at an elevated temperature. PLoS One 11:e0155360. doi:10.1371/journal.pone.0155360 (PMC4871548, Table 4) [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]"
+      }
+     ],
+     "requires": [
+      "mass_kg"
+     ],
+     "metrics": [
+      {
+       "key": "routine_metabolic_rate_mgO2_kg_h",
+       "label": "Routine/standard metabolic rate",
+       "unit": "mg O2/kg/h",
+       "better": null
+      },
+      {
+       "key": "routine_cost_J_day",
+       "label": "Routine metabolic cost",
+       "unit": "J/day",
+       "better": "lower"
+      },
+      {
+       "key": "energy_intake_J_day",
+       "label": "Energy ingested at the average ration",
+       "unit": "J/day",
+       "better": "higher"
+      },
+      {
+       "key": "sda_cost_J_day",
+       "label": "Specific dynamic action (cost of digesting)",
+       "unit": "J/day",
+       "better": "lower"
+      },
+      {
+       "key": "net_energy_J_day",
+       "label": "Net energy after faeces, SDA and routine metabolism",
+       "unit": "J/day",
+       "better": "higher"
+      },
+      {
+       "key": "maintenance_ration_pct_bw_day",
+       "label": "Ration that just balances routine metabolism",
+       "unit": "% body mass/day",
+       "better": "lower"
+      },
+      {
+       "key": "gut_passage_time_h",
+       "label": "Gut passage time (75% of guts empty)",
+       "unit": "h",
+       "better": null
+      }
+     ],
+     "modelCard": {
+      "equations": [
+       "adult zebrafish: MO2 = 228.5 x 1.39^((T - 26)/10) mg O2/kg/h",
+       "larval/juvenile zebrafish: MO2 = exp(ln 40 + (ln 4.5 - ln 40)(d - 10)/90) umol/g/h x 32 x 2.5^((T - 28)/10), d = dpf clamped to 10-100",
+       "routine cost (J/day) = MO2 x M x 24 x 13.54",
+       "intake (J/day) = ration/100 x M(g) x E_diet;  SDA = c_SDA x intake;  faeces = f_F x intake",
+       "net = intake (1 - f_F - c_SDA) - routine;  survives = net >= 0",
+       "maintenance ration = 100 x routine / (M(g) x E_diet x (1 - f_F - c_SDA))",
+       "larval gut passage time = 16 h x exp(-0.0775 (T - 28))"
+      ],
+      "sources": [
+       {
+        "cite": "Hejlesen et al. 2024, Biol Open 13:bio060375 (adult SMR 119 umol/min/kg, 26 C)",
+        "doi_or_url": "https://doi.org/10.1242/bio.060375"
+       },
+       {
+        "cite": "Ripley et al. 2022, J Exp Biol 225:jeb243774 (SMR Q10 1.39)",
+        "doi_or_url": "https://doi.org/10.1242/jeb.243774"
+       },
+       {
+        "cite": "Barrionuevo & Burggren 1999, Am J Physiol 276:R505 (MO2 through development; Q10)",
+        "doi_or_url": "https://doi.org/10.1152/ajpregu.1999.276.2.R505"
+       },
+       {
+        "cite": "Licitra et al. 2024, Biology 13:209 (rations; 20 kJ/g; maintenance ~2%)",
+        "doi_or_url": "https://doi.org/10.3390/biology13040209"
+       },
+       {
+        "cite": "McLeod & Clark 2016, PLoS One 11:e0155360 (SDA coefficient 10.14%)",
+        "doi_or_url": "https://doi.org/10.1371/journal.pone.0155360"
+       },
+       {
+        "cite": "Sumule et al. 2003, Aquac Res 34:877 (faecal loss 22.8%)",
+        "doi_or_url": "https://doi.org/10.1046/j.1365-2109.2003.00896.x"
+       },
+       {
+        "cite": "Zada et al. 2022, Front Cell Dev Biol 10:901824 (75% guts empty at 16 h, 7 dpf, 28 C)",
+        "doi_or_url": "https://doi.org/10.3389/fcell.2022.901824"
+       },
+       {
+        "cite": "Bernreuther et al. 2009, J Fish Biol 75:1525 (evacuation exponent 0.0775 /C)",
+        "doi_or_url": "https://doi.org/10.1111/j.1095-8649.2009.02353.x"
+       },
+       {
+        "cite": "Durnford et al. 2026, J Exp Biol (snapper resting MO2, borrowed for flying fish)",
+        "doi_or_url": "https://doi.org/10.1242/jeb.252059"
+       },
+       {
+        "cite": "Gerry & Ellerby 2014, PLoS One 9:e106030 (13.54 J/mg O2)",
+        "doi_or_url": "https://doi.org/10.1371/journal.pone.0106030"
+       },
+       {
+        "cite": "Ferreira et al. 2019, J Exp Biol 222:jeb194217 (adult zebrafish SDA +78% at 7-8 h; validation only)",
+        "doi_or_url": "https://doi.org/10.1242/jeb.194217"
+       }
+      ],
+      "validity": "Zebrafish 5 dpf to adult at 23-31 C on a 20 kJ/g dry diet. Flying fish: every input borrowed. Gut passage time only for zebrafish larvae.",
+      "validatedAgainst": [
+       {
+        "organism": "Danio rerio adult",
+        "observation": "maintenance feed intake (Licitra 2024, citing Fronte, unpublished): \"a maintenance FI of ~2% of BW\"",
+        "predicted": "about 0.6% BW/day at 28.5 C",
+        "measured": "~2% BW/day (secondhand, unpublished data)",
+        "source": "doi:10.3390/biology13040209 — FAILS low by about 3x: SMR excludes spontaneous activity, and diet digestibility and the borrowed SDA/faecal fractions are untested"
+       },
+       {
+        "organism": "Danio rerio",
+        "observation": "routine MO2 near 100 dpf from two labs",
+        "predicted": "Barrionuevo d100 at 28 C: 4.5 umol/g/h = 144 mg/kg/h",
+        "measured": "Hejlesen 2024 adult SMR at 26 C: 228.5 mg/kg/h",
+        "source": "doi:10.1152/ajpregu.1999.276.2.R505 vs doi:10.1242/bio.060375 — the measured inputs disagree by 1.6x (more after temperature correction); the model jumps at 100 dpf where it switches source"
+       },
+       {
+        "organism": "Danio rerio adult",
+        "observation": "SDA time course (Ferreira 2019: peak +78% at 7-8 h, still elevated at 10 h, 2.12% ration)",
+        "predicted": "a 10% SDA coefficient at 2.12% ration implies a triangular response lasting about 33 h if the peak is +78% of SMR at 28 C",
+        "measured": "still elevated at 10 h; end not reported in the abstract",
+        "source": "doi:10.1242/jeb.194217 — not refuted, not confirmed"
+       }
+      ]
+     },
+     "interface_test": false
+    },
+    {
+     "key": "glide",
+     "title": "Glide from a launch height at the organism's own launch speed (still air), with the aerobic bound on powered flight",
+     "group": "environment",
+     "file": "glide.mjs",
+     "params": [
+      {
+       "key": "launch_height_m",
+       "label": "Launch height above the surface",
+       "unit": "m",
+       "default": 1,
+       "min": 0,
+       "max": 10,
+       "kind": "assumed",
+       "source": "design input; maximum recorded flying-fish flight height 8 m (deng-2019 Introduction, second-hand)"
+      },
+      {
+       "key": "launch_airspeed_override_m_s",
+       "label": "What-if launch airspeed (0 = the organism's own sourced speed)",
+       "unit": "m/s",
+       "default": 0,
+       "min": 0,
+       "max": 30,
+       "kind": "assumed",
+       "source": "0 uses the organism's sourced leap/burst speed (flying fish ~10 m/s, makiguchi-2013; zebrafish Umax from current.mjs); any other value is a labelled what-if"
+      },
+      {
+       "key": "ground_effect",
+       "label": "Apply the measured ground effect in the level phase (1 yes, 0 no)",
+       "unit": "1",
+       "default": 1,
+       "min": 0,
+       "max": 1,
+       "kind": "assumed",
+       "source": "a modelling switch (the toggle itself is a design choice); the drag curve it switches on is measured: physics/ground-effect.json (park-choi-2010 text: drag -14% at r = 0.33 over water, model L3)"
+      }
+     ],
+     "requires": [
+      "mass_kg"
+     ],
+     "metrics": [
+      {
+       "key": "glide_range_lean_bound_m",
+       "label": "Glide distance covered by the Lean bound, h (L/D)max",
+       "unit": "m",
+       "better": "higher"
+      },
+      {
+       "key": "kinetic_phase_m",
+       "label": "Level kinetic-energy phase (OUTSIDE the Lean theorem; assumption flagged)",
+       "unit": "m",
+       "better": "higher"
+      },
+      {
+       "key": "glide_range_total_m",
+       "label": "Sum: Lean-covered part + kinetic phase (the sum is NOT covered by the theorem)",
+       "unit": "m",
+       "better": "higher"
+      },
+      {
+       "key": "launch_airspeed_m_s",
+       "label": "Launch speed reachable by this organism",
+       "unit": "m/s",
+       "better": "higher"
+      },
+      {
+       "key": "wing_loading_N_m2",
+       "label": "Wing loading W/S (lifting area)",
+       "unit": "N/m2",
+       "better": "lower"
+      },
+      {
+       "key": "v_min_m_s",
+       "label": "Minimum lift-supported airspeed",
+       "unit": "m/s",
+       "better": "lower"
+      },
+      {
+       "key": "launch_speed_margin_m_s",
+       "label": "Launch speed minus v_min",
+       "unit": "m/s",
+       "better": "higher"
+      },
+      {
+       "key": "glide_airspeed_m_s",
+       "label": "Descent airspeed at best L/D (C_L(0 deg) 0.53, approximate)",
+       "unit": "m/s",
+       "better": null
+      },
+      {
+       "key": "glide_time_s",
+       "label": "Time airborne (bound)",
+       "unit": "s",
+       "better": "higher"
+      },
+      {
+       "key": "glide_ratio",
+       "label": "(L/D)max used",
+       "unit": "1",
+       "better": "higher"
+      },
+      {
+       "key": "power_required_W",
+       "label": "Power for level flight at v_min, W v_min/(L/D)max",
+       "unit": "W",
+       "better": "lower"
+      },
+      {
+       "key": "aerobic_power_available_W",
+       "label": "Fick aerobic power bound eta E Q Ca",
+       "unit": "W",
+       "better": "higher"
+      },
+      {
+       "key": "powered_flight_margin",
+       "label": "Aerobic power available / power required",
+       "unit": "1",
+       "better": "higher"
+      }
+     ],
+     "modelCard": {
+      "equations": [
+       "W = m g; v_min = sqrt(2 W / (rho S C_Lmax))",
+       "launch speed v0 = the organism's own: adult flying fish = taxi end speed 15 m/s (leap ~10 m/s then taxi; lower end of the measured 15-20 m/s); other flying-fish stages min(10 m/s, 30 BL/s x SL), no taxi; zebrafish Umax = 1.15 Ucrit; otherwise not evaluated",
+       "cannot glide if v0 < v_min: every range = 0, feasible = false",
+       "Lean-covered part: d_lean = h (L/D)max   (glide_range_le: d <= h (L/D)/(1 - delta))",
+       "kinetic phase (outside the theorem): x_A = (L/D)_eff (v0^2 - v_min^2)/(2g), (L/D)_eff = (L/D)max / f_ground(h/(b/2))",
+       "total = d_lean + x_A (labelled as not covered by the theorem)",
+       "P_req = W v_min / (L/D)max; P_aerobic <= eta E_O2 Q C_a(PO2)"
+      ],
+      "sources": [
+       {
+        "cite": "Park H, Choi H (2010). Aerodynamic characteristics of flying fish in gliding flight. J Exp Biol 213:3269-3279",
+        "doi_or_url": "https://doi.org/10.1242/jeb.046052"
+       },
+       {
+        "cite": "Makiguchi Y et al. (2013). Take-off performance of flying fish Cypselurus heterurus doederleini measured with miniature acceleration data loggers. Aquat Biol 18:105-111 (leap speed ~10 m/s, 20-30 BL/s, citing Davenport 1994; glide up to 50 m at 15-20 m/s citing Edgerton & Breder 1941)",
+        "doi_or_url": "https://doi.org/10.3354/ab00494"
+       },
+       {
+        "cite": "Deng J et al. (2019). Numerical prediction of aerodynamic performance for a flying fish during gliding flight. Bioinspir Biomim 14:046009 (maximum flight height 8 m; average taxiing length 9 m, second-hand)",
+        "doi_or_url": "https://doi.org/10.1088/1748-3190/ab23e6"
+       },
+       {
+        "cite": "Deng J, Wang S, Zhang L, Mao X (2019). Why does a flying fish taxi on sea surface before take-off? A hydrodynamic interpretation. bioRxiv 765560 (taxiing accelerates to 15-20 m/s, citing Davenport 1994)",
+        "doi_or_url": "https://doi.org/10.1101/765560"
+       },
+       {
+        "cite": "Durnford FPH, Porter ES, Gamperl AK (2026). Increased heart rate and blood oxygen extraction ... schoolmaster snapper. J Exp Biol",
+        "doi_or_url": "https://doi.org/10.1242/jeb.252059"
+       },
+       {
+        "cite": "Rummer JL, Brauner CJ (2015). Root effect haemoglobins in fish ... PLoS One 10:e0139477",
+        "doi_or_url": "https://doi.org/10.1371/journal.pone.0139477"
+       },
+       {
+        "cite": "Gerry SP, Ellerby DJ (2014). Resolving shifting patterns of muscle energy use in swimming fish. PLoS One 9:e106030",
+        "doi_or_url": "https://doi.org/10.1371/journal.pone.0106030"
+       }
+      ],
+      "validity": "Flying-fish-sized gliders (0.02-0.4 kg), mean-chord Re 5e3-1e5, launch heights 0-10 m. The polar is from stuffed specimens at one wind speed (12 m/s; Park & Choi: Re ~1e4); a zebrafish-sized or larval animal is far outside it (inRange false), and cannot reach its v_min anyway.",
+      "validatedAgainst": [
+       {
+        "organism": "Cypselurus hiraii (Park & Choi model L3)",
+        "observation": "code regression against physics/results.json at rho 1.225",
+        "predicted": "v_min 9.854 m/s, P_req 1.327 W",
+        "measured": "physics/results.json: 9.854 m/s, 1.327 W (same equations: a code check, not a test against nature)",
+        "source": "physics/results.json interpretation_B and interpretation_C"
+       },
+       {
+        "organism": "Exocoetidae (several genera)",
+        "observation": "glides up to 50 m at 15-20 m/s airspeed after taxiing (stroboscopic film, Edgerton & Breder 1941, quoted second-hand)",
+        "predicted": "with the taxi end speed 15 m/s (L3 polar): ~33 m from 1 m (Lean part 4.37 m + kinetic phase ~29 m), ~64 m from the 8 m maximum height",
+        "measured": "up to 50 m",
+        "source": "makiguchi-2013 Introduction (https://doi.org/10.3354/ab00494). Inside the range, but PARTLY CIRCULAR: the 15 m/s take-off speed comes from the same body of observations (15-20 m/s) as the 50 m glide. Not independent evidence."
+       },
+       {
+        "organism": "Cheilopogon (Cypselurus) heterurus doederleini",
+        "observation": "leap speed about 10 m/s (Davenport 1994, stroboscopic, quoted by Makiguchi)",
+        "predicted": "v_min 9.85 m/s (L3): a fish leaving the water at 10 m/s is barely lift-supported, consistent with the taxiing seen before long glides",
+        "measured": "~10 m/s",
+        "source": "makiguchi-2013. Consistent; not a pass/fail test"
+       }
+      ]
+     },
+     "interface_test": false
+    },
+    {
+     "key": "grip",
+     "title": "Climbing and grip: suction adhesion, only where a structure exists",
+     "group": "behaviour",
+     "file": "grip.mjs",
+     "params": [
+      {
+       "key": "disc_area_m2",
+       "label": "Adhesive disc area (null = from STATE)",
+       "unit": "m^2",
+       "default": null,
+       "min": 0,
+       "max": 0.05,
+       "kind": "assumed",
+       "source": "design input; clingfish discs measured 3.9-12.3 cm^2 at 70-120 mm SL (Wainwright 2013) [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]"
+      },
+      {
+       "key": "adhesive_stress_kPa",
+       "label": "Sustained suction stress at failure",
+       "unit": "kPa",
+       "default": 30,
+       "min": 0.1,
+       "max": 101.3,
+       "kind": "borrowed",
+       "source": "clingfish: \"peak stress ranged from 20 to 50 kPa\" (Wainwright 2013); whole disc on smooth surfaces 30-40 kPa (Ditsche & Summers 2019). Climbing-goby pelvic suction is far lower: 0.63-1.5 kPa (Schoenfuss 2026 Table 1, e.g. S. stimpsoni 1.5 kPa) — set 1.5 for a goby-type sucker [kind refers to the 30 kPa default; min 0.1 is a slider limit (design choice); max 101.3 kPa is physics: one standard atmosphere, the suction ceiling]"
+      },
+      {
+       "key": "surface_Ra_um",
+       "label": "Surface roughness Ra",
+       "unit": "µm",
+       "default": 15,
+       "min": 0,
+       "max": 2000,
+       "kind": "assumed",
+       "source": "clingfish adhere equally well from Ra 15 to 269 µm (Wainwright 2013 abstract); validity bound, not a force modifier — 15 µm is the finest tested condition, used as a validity input [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]"
+      }
+     ],
+     "requires": [
+      "mass_kg"
+     ],
+     "metrics": [
+      {
+       "key": "has_gripping_structure",
+       "label": "Gripping (suction/adhesive) structure present",
+       "unit": "bool",
+       "better": "higher"
+      },
+      {
+       "key": "adhesive_force_N",
+       "label": "Suction adhesive force",
+       "unit": "N",
+       "better": "higher"
+      },
+      {
+       "key": "safety_factor_body_weights",
+       "label": "Adhesive force / body weight",
+       "unit": "body weights",
+       "better": "higher"
+      },
+      {
+       "key": "ceiling_safety_factor",
+       "label": "Upper bound at full ambient-pressure suction",
+       "unit": "body weights",
+       "better": "higher"
+      },
+      {
+       "key": "net_climbing_speed_m_s",
+       "label": "Net climbing speed (goby-type inching, incl. rests)",
+       "unit": "m/s",
+       "better": "higher"
+      }
+     ],
+     "modelCard": {
+      "equations": [
+       "sigma_eff = min(sigma, p_ambient)",
+       "F = sigma_eff x A_disc;   SF = F / (m g);   ceiling SF = p_ambient A_disc / (m g)",
+       "feasible (holds on a vertical surface) = SF >= 1;  survives = null (not a survival test)",
+       "net climbing speed = 0.10 BL/s x SL (goby, only if SF >= 1)",
+       "no gripping part -> all forces null, feasible = false"
+      ],
+      "sources": [
+       {
+        "cite": "Wainwright et al. 2013, Biol Lett 9:20130234 (clingfish 20-50 kPa; 80-230 x BW; disc 3.9-12.3 cm^2; 8.2-42 g)",
+        "doi_or_url": "https://doi.org/10.1098/rsbl.2013.0234"
+       },
+       {
+        "cite": "Ditsche & Summers 2019, Phil Trans R Soc B 374:20190204 (30-40 kPa; cavitation ~100 kPa)",
+        "doi_or_url": "https://doi.org/10.1098/rstb.2019.0204"
+       },
+       {
+        "cite": "Schoenfuss et al. 2026, Integr Org Biol 8:obag044 (goby pelvic suction 0.63-1.5 kPa; adult climbing speeds)",
+        "doi_or_url": "https://doi.org/10.1093/iob/obag044"
+       },
+       {
+        "cite": "Blob et al. 2019, Integr Org Biol 1:obz029 (juvenile goby net climbing 0.10-0.14 BL/s)",
+        "doi_or_url": "https://doi.org/10.1093/iob/obz029"
+       },
+       {
+        "cite": "McFarland et al. 2026, Sci Adv 12:eaeh7851 (pelvic suction cup evolved three times)",
+        "doi_or_url": "https://doi.org/10.1126/sciadv.aeh7851"
+       }
+      ],
+      "validity": "Suction discs with clingfish-like sealing on surfaces up to Ra 269 µm, sea-level to shallow water. Goby-type suckers need adhesive_stress_kPa about 1.5.",
+      "validatedAgainst": [
+       {
+        "organism": "Gobiesox maeandricus (northern clingfish)",
+        "observation": "adhesive force as multiples of body weight",
+        "predicted": "60-242 body weights from 20-50 kPa x 3.9-12.3 cm^2 over 8.2-42 g (extreme pairings)",
+        "measured": "\"80 to 230 times body weight\"",
+        "source": "doi:10.1098/rsbl.2013.0234 — consistent, but close to an identity: the paper computed stress from the same forces and areas, so this checks the arithmetic, not the physics"
+       },
+       {
+        "organism": "climbing gobies (Sicyopterus stimpsoni etc.)",
+        "observation": "safety factor",
+        "predicted": "not computable: no disc area or mass paired with the 1.5 kPa suction in fetched text",
+        "measured": "absolute safety factor not found",
+        "source": "doi:10.1093/iob/obag044 — no validation"
+       }
+      ]
+     },
+     "interface_test": false
+    },
+    {
+     "key": "predator",
+     "title": "Addition of a predator: fast-start escape, evasion geometry and aerial escape",
+     "group": "behaviour",
+     "file": "predator.mjs",
+     "params": [
+      {
+       "key": "predator_speed_ratio",
+       "label": "Predator approach speed / prey escape speed (K)",
+       "unit": "ratio",
+       "default": 1.5,
+       "min": 0.1,
+       "max": 10,
+       "kind": "assumed",
+       "source": "McKee & McHenry 2020 Fig. 5 example K = 1.5 (a modelled case, not a measured predator speed); McKee A, McHenry MJ 2020. Integr Org Biol 2:obaa023. doi:10.1093/iob/obaa023 (PMC7750966, full text read) — K = 1.5 is a modelled scenario, not a measured predator [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]"
+      },
+      {
+       "key": "predator_width_SL",
+       "label": "Predator body width in prey body lengths",
+       "unit": "SL",
+       "default": 0.69,
+       "min": 0.05,
+       "max": 10,
+       "kind": "assumed",
+       "source": "McKee & McHenry 2020 model width w = 2.5 cm (\"comparable to the cichlid\") / adult zebrafish L = 3.6 cm (Liu 2026) [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]"
+      },
+      {
+       "key": "strike_distance_SL",
+       "label": "Predator strike (suction) reach in prey body lengths",
+       "unit": "SL",
+       "default": 0.56,
+       "min": 0.01,
+       "max": 10,
+       "kind": "assumed",
+       "source": "McKee & McHenry 2020: \"small values for the minimum distance (d min < 2 cm) were considered threatening\", citing Wainwright et al. 2001; 2 cm / 3.6 cm [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]"
+      },
+      {
+       "key": "theta_thresh_deg",
+       "label": "Visual angle that triggers the escape",
+       "unit": "deg",
+       "default": 14,
+       "min": 1,
+       "max": 90,
+       "kind": "assumed",
+       "source": "McKee & McHenry 2020: best fits 10.3 deg < theta < 15.8 deg in adult zebrafish; 14 deg used in their model sweep — 14 deg is the modelling value inside the measured 10.3-15.8 deg range [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]"
+      },
+      {
+       "key": "visual_latency_s",
+       "label": "Latency from visual threshold to escape",
+       "unit": "s",
+       "default": 0.76,
+       "min": 0,
+       "max": 3,
+       "kind": "assumed",
+       "source": "McKee & McHenry 2020: \"threshold values correspond to a range in latency between 740 ms and 780 ms\" (adult zebrafish) — 0.76 s is the midpoint of the measured 740-780 ms [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]"
+      },
+      {
+       "key": "lateral_line_intact",
+       "label": "Lateral line intact (1) or ablated (0) — larval flow sensing",
+       "unit": "bool",
+       "default": 1,
+       "min": 0,
+       "max": 1,
+       "kind": "assumed",
+       "source": "Stewart et al. 2013: P(escape) 0.7 intact vs 0.05 after pharmacological ablation [a design switch: the user chooses it; only the effect it turns on is sourced]"
+      },
+      {
+       "key": "aerial_launch_height_m",
+       "label": "Height at the start of the glide (as glide.mjs)",
+       "unit": "m",
+       "default": 1,
+       "min": 0,
+       "max": 10,
+       "kind": "assumed",
+       "source": "glide.mjs default (design input) [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]"
+      },
+      {
+       "key": "launch_speed_m_s",
+       "label": "What-if water-exit speed for the aerial escape (0 = the organism’s own sourced speed, as glide.mjs)",
+       "unit": "m/s",
+       "default": 0,
+       "min": 0,
+       "max": 30,
+       "kind": "assumed",
+       "source": "passed to glide.mjs launchSpeed as its override: 0 uses the organism’s sourced leap/burst speed (flying fish ~10 m/s as adults, makiguchi-2013 citing Davenport 1994; zebrafish Umax from current.mjs) [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]"
+      }
+     ],
+     "requires": [
+      "SL_m"
+     ],
+     "metrics": [
+      {
+       "key": "startle_latency_ms",
+       "label": "Mauthner (startle) latency",
+       "unit": "ms",
+       "better": "lower"
+      },
+      {
+       "key": "peak_escape_speed_m_s",
+       "label": "Peak escape speed",
+       "unit": "m/s",
+       "better": "higher"
+      },
+      {
+       "key": "peak_escape_speed_BL_s",
+       "label": "Peak escape speed",
+       "unit": "body lengths/s",
+       "better": "higher"
+      },
+      {
+       "key": "peak_escape_acceleration_m_s2",
+       "label": "Peak escape acceleration",
+       "unit": "m/s^2",
+       "better": "higher"
+      },
+      {
+       "key": "escape_probability",
+       "label": "Escape probability per strike (larva, measured lookup)",
+       "unit": "fraction",
+       "better": "higher"
+      },
+      {
+       "key": "response_distance_m",
+       "label": "Predator distance when the escape starts (visual looming)",
+       "unit": "m",
+       "better": "higher"
+      },
+      {
+       "key": "min_distance_to_predator_m",
+       "label": "Closest approach of predator (optimal escape angle)",
+       "unit": "m",
+       "better": "higher"
+      },
+      {
+       "key": "critical_predator_speed_ratio",
+       "label": "Predator/prey speed ratio above which the predator gets within strike reach",
+       "unit": "ratio",
+       "better": "higher"
+      },
+      {
+       "key": "aerial_glide_min_speed_m_s",
+       "label": "Minimum air speed to stay aloft at CLmax",
+       "unit": "m/s",
+       "better": "lower"
+      },
+      {
+       "key": "aerial_escape_available",
+       "label": "Aerial escape available (launch speed >= glide minimum speed)",
+       "unit": "bool",
+       "better": "higher"
+      },
+      {
+       "key": "aerial_escape_distance_m",
+       "label": "Aerial escape distance (glide.mjs range bound)",
+       "unit": "m",
+       "better": "higher"
+      }
+     ],
+     "modelCard": {
+      "equations": [
+       "speed(T) = speed_ref x 1.5^((T - 26)/10)   (borrowed muscle Vmax Q10)",
+       "U_peak = BL_s x SL x 1.5^((T-26)/10);  larva U_peak = 0.2 m/s x Q10 factor (absolute; BL/s = U/SL);  flying fish 4.51/0.308 = 14.6;  adult zebrafish 25.5 (Danos & Lauder 2012: Re 27,800, TL 33 mm)",
+       "d_thr = W / (2 tan(theta_thresh/2));   d_resp = d_thr - u t_lat;   u = K v",
+       "d_min = d_resp if K <= cos(alpha);  else d_min = d_resp |sin alpha| / sqrt(K^2 - 2K cos alpha + 1); at the optimal alpha (cos alpha = 1/K) d_min = d_resp / K",
+       "survives = d_min >= strike reach s;   K* = d_thr / (s + v t_lat)",
+       "larva: P(escape) = 0.70 (lateral line intact) or 0.05 (ablated), measured lookup",
+       "takeoff check: aerial escape available if U_launch >= v_min = sqrt(2 m g / (rho_air CLmax A_lift)); U_launch = glide.mjs launchSpeed (whatever glide reports: at writing 15 m/s taxi-end airspeed for adult flying fish, min(10 m/s, 30 BL/s) below adult size, zebrafish Umax) unless a what-if is set",
+       "d_air = glide.mjs glideParts(glidePath(v0 = U_launch, h = launch height, ground effect on)).total  (= glide.mjs glide_range_total_m), 0 if the takeoff check fails"
+      ],
+      "sources": [
+       {
+        "cite": "Burgess & Granato 2007, J Neurosci 27:4984 (SLC latency 5.3 ms larva; adult modal 8 ms)",
+        "doi_or_url": "https://doi.org/10.1523/JNEUROSCI.0615-07.2007"
+       },
+       {
+        "cite": "McKee & McHenry 2020, Integr Org Biol 2:obaa023 (visual threshold, latency, escape speed, evasion model)",
+        "doi_or_url": "https://doi.org/10.1093/iob/obaa023"
+       },
+       {
+        "cite": "Stewart, Cardenas & McHenry 2013, J Exp Biol 216:388 (larval P(escape) 0.7 / 0.05)",
+        "doi_or_url": "https://doi.org/10.1242/jeb.072751"
+       },
+       {
+        "cite": "Turrini et al. 2023, Int J Mol Sci 24:9833, citing Kim et al. 2017 Nat Methods (larval 200 mm/s, 20 m/s^2)",
+        "doi_or_url": "https://doi.org/10.3390/ijms24129833"
+       },
+       {
+        "cite": "van de Pol et al. 2021, Front Physiol 12:738804 (larval startle ~63 mm/s, DanioVision)",
+        "doi_or_url": "https://doi.org/10.3389/fphys.2021.738804"
+       },
+       {
+        "cite": "Danos & Lauder 2012, J Exp Biol 215:1854 (adult zebrafish C-start: max Re 27,800 at TL 33 mm -> 0.84 m/s)",
+        "doi_or_url": "https://doi.org/10.1242/jeb.068957"
+       },
+       {
+        "cite": "Schuster 2023, J Comp Physiol A (teleost context: pike < 11 BL/s; archerfish 24 BL/s); no longer used for a value",
+        "doi_or_url": "https://doi.org/10.1007/s00359-023-01658-2"
+       },
+       {
+        "cite": "Liu et al. 2026, Biomimetics 11:156 (adult zebrafish L = 3.6 cm)",
+        "doi_or_url": "https://doi.org/10.3390/biomimetics11020156"
+       },
+       {
+        "cite": "Makiguchi et al. 2013, Aquat Biol 18:105 (flying fish leap under shark pursuit; 21.2 Hz; 3.87-5.15 m/s estimate; field 10 m/s quoted)",
+        "doi_or_url": "https://doi.org/10.3354/ab00494"
+       },
+       {
+        "cite": "Park & Choi 2010, J Exp Biol 213:3269 (CLmax 0.78, L/D 4.37)",
+        "doi_or_url": "https://doi.org/10.1242/jeb.046052"
+       },
+       {
+        "cite": "Woytanowski & Coughlin 2013, Biol Open 2:274 (muscle Vmax Q10 ~1.5)",
+        "doi_or_url": "https://doi.org/10.1242/bio.20133509"
+       },
+       {
+        "cite": "Trujillo et al. 2022, J Exp Biol 225:jeb243973 (teleost latencies 5-150 ms, citing Domenici & Hale 2019)",
+        "doi_or_url": "https://doi.org/10.1242/jeb.243973"
+       }
+      ],
+      "validity": "Zebrafish larvae 5-7 dpf and adults at 23-28 C (sources: 23-27 C, 27 C; Danos & Lauder unstated); looming geometry fitted to adult zebrafish facing a 15 cm cichlid; aerial part only for post-larval designs with a pectoral area and mass in STATE. Values for non-zebrafish species are borrowed in body lengths.",
+      "validatedAgainst": [
+       {
+        "organism": "Danio rerio adult",
+        "observation": "McKee & McHenry 2020: escape fails at all angles when the predator approaches at more than about twice the escape speed (w = 2.5 cm)",
+        "predicted": "critical K = 2.11 with the paper's own inputs",
+        "measured": "\"more than twice as fast\"",
+        "source": "doi:10.1093/iob/obaa023 — NOT independent: same model and inputs, so this checks the implementation only"
+       },
+       {
+        "organism": "Cypselurus hiraii / Exocoetidae",
+        "observation": "water-exit speed needed to glide vs field launch speed",
+        "predicted": "v_min = 9.85 m/s (60 g, lifting area 0.01269 m^2, CLmax 0.78; via glide.mjs)",
+        "measured": "about 10 m/s in the field (secondhand: Makiguchi 2013 citing Edgerton & Breder 1941, Davenport)",
+        "source": "doi:10.3354/ab00494; doi:10.1242/jeb.046052 — consistent; the captive leap estimates (3.87-5.15 m/s) would NOT suffice"
+       },
+       {
+        "organism": "Exocoetidae (several genera)",
+        "observation": "single glide distance: up to 50 m at 15-20 m/s airspeed (secondhand, Makiguchi 2013 citing Edgerton & Breder 1941)",
+        "predicted": "with a 15-20 m/s what-if launch: 32.9-71.8 m (identical to glide.mjs for the L3 specimen, 1 m launch height); at a 10 m/s leap what-if (no taxi): 5.0 m; at the glide.mjs adult default (15 m/s taxi-end) 32.9 m",
+        "measured": "up to 50 m",
+        "source": "doi:10.3354/ab00494 — inside the 15-20 m/s band, but partly circular: the 15-20 m/s airspeed comes from the same observation, and real fish reach it by taxiing, which is not modelled. An earlier version used its own energy-height formula (22 m); it was replaced so predator and glide report one number"
+       },
+       {
+        "organism": "Danio rerio adult",
+        "observation": "peak C-start speed",
+        "predicted": "0.84 m/s at TL 33 mm (input from Danos & Lauder 2012)",
+        "measured": "Re 27,800 -> 0.84 m/s",
+        "source": "doi:10.1242/jeb.068957 — a read-back, not a validation (amendment A1); replaces the earlier borrowed pike bound of 11 BL/s (0.41 m/s), which was half the measured value"
+       },
+       {
+        "organism": "Danio rerio larva",
+        "observation": "peak escape speed",
+        "predicted": "0.2 m/s (input, secondhand)",
+        "measured": "~63 mm/s by DanioVision (van de Pol 2021)",
+        "source": "doi:10.3389/fphys.2021.738804 — a 3x disagreement between two measurements that reflects tracking frame rate; not an independent test"
+       }
+      ]
+     },
+     "interface_test": false
+    },
+    {
+     "key": "pressure",
+     "title": "Depth and hydrostatic pressure: swim-bladder compression and the piezolyte depth ceiling",
+     "group": "environment",
+     "file": "pressure.mjs",
+     "params": [
+      {
+       "key": "depth_m",
+       "label": "Depth below the surface",
+       "unit": "m",
+       "default": 10,
+       "min": 0,
+       "max": 11000,
+       "kind": "assumed",
+       "source": "design input; 11,000 m is the deepest ocean"
+      }
+     ],
+     "requires": [
+      "has_swimbladder"
+     ],
+     "metrics": [
+      {
+       "key": "pressure_kPa",
+       "label": "Absolute hydrostatic pressure",
+       "unit": "kPa",
+       "better": null
+      },
+      {
+       "key": "gas_volume_fraction_of_surface",
+       "label": "Swim-bladder gas volume relative to the surface (no secretion)",
+       "unit": "1",
+       "better": "higher"
+      },
+      {
+       "key": "body_density_at_depth_kg_m3",
+       "label": "Whole-body density at depth (bladder sized for neutral buoyancy at the surface)",
+       "unit": "kg/m3",
+       "better": null
+      },
+      {
+       "key": "negative_buoyancy_fraction",
+       "label": "Net sinking force as a fraction of body weight",
+       "unit": "1",
+       "better": "lower"
+      },
+      {
+       "key": "tmao_required_mmol_kg",
+       "label": "Muscle TMAO of marine teleosts at this depth (trend)",
+       "unit": "mmol/kg",
+       "better": null
+      },
+      {
+       "key": "osmolality_predicted_mOsm_kg",
+       "label": "Internal osmolality of marine teleosts at this depth (trend)",
+       "unit": "mOsm/kg",
+       "better": null
+      },
+      {
+       "key": "depth_limit_margin_m",
+       "label": "Distance above the predicted teleost depth ceiling",
+       "unit": "m",
+       "better": "higher"
+      }
+     ],
+     "modelCard": {
+      "equations": [
+       "P(z) = P0 + rho_w g z",
+       "V_gas(z)/V_gas(0) = P0/P(z) (Boyle, isothermal, no secretion)",
+       "phi0 = 1 - rho_w/rho_t (bladder sized for neutral buoyancy at the surface), rho_t = 1.05 x 1025 kg/m3",
+       "rho_body(z) = rho_t (1 - phi0) / (1 - phi0 + phi0 P0/P(z)); sinking fraction = (rho_body - rho_w)/rho_body",
+       "TMAO(z) = 40 + 0.04557 z mmol/kg; osmolality(z) = 350 + 0.09157 z mOsm/kg",
+       "ceiling: osmolality(z) = 1100 mOsm/kg  =>  z = 8,190 m"
+      ],
+      "sources": [
+       {
+        "cite": "Yancey PH, Gerringer ME, Drazen JC, Rowden AA, Jamieson A (2014). Marine fish may be biochemically constrained from inhabiting the deepest ocean depths. PNAS 111:4461-4465 (abstract)",
+        "doi_or_url": "https://doi.org/10.1073/pnas.1322003111"
+       },
+       {
+        "cite": "Lauridsen H et al. (2022). Buoyancy and hydrostatic balance in a West Indian Ocean coelacanth Latimeria chalumnae. BMC Biol 20:180",
+        "doi_or_url": "https://doi.org/10.1186/s12915-022-01354-8"
+       },
+       {
+        "cite": "Jamieson AJ, Swanborn DJB, Bond T et al. (2026). Faunal biodiversity of the lower abyssal and hadal zones of the Japan, Ryukyu and Izu-Ogasawara trenches (NW Pacific Ocean). Biodiversity Data Journal 14:e182172 (deepest recorded fish, 8,336 m)",
+        "doi_or_url": "https://doi.org/10.3897/BDJ.14.e182172"
+       }
+      ],
+      "validity": "Depth 0-7,000 m for the TMAO and osmolality trends (deeper is extrapolation, inRange false). The ceiling applies to marine teleosts. Boyle compression is exact physics for the gas but ignores gas secretion and the bladder wall.",
+      "validatedAgainst": [
+       {
+        "organism": "Notoliparis kermadecensis (hadal snailfish), 7,000 m",
+        "observation": "muscle TMAO",
+        "predicted": "359 mmol/kg (line fitted only to 0-4,850 m teleost data, extrapolated 2,150 m)",
+        "measured": "386 ± 18 mmol/kg (n = 5)",
+        "source": "https://doi.org/10.1073/pnas.1322003111. PASS within 1.5 SD (-7%); the 7,000 m osmolality point IS used to set the ceiling, so the ceiling itself is not independently tested by it"
+       },
+       {
+        "organism": "Pseudoliparis sp. indet. 1 (snailfish), Izu-Ogasawara Trench",
+        "observation": "deepest recorded fish, 8,336 m (Jamieson et al. 2023b, as stated in Jamieson et al. 2026)",
+        "predicted": "no teleost below 8,190 m",
+        "measured": "a fish at 8,336 m",
+        "source": "https://doi.org/10.3897/BDJ.14.e182172 (measured-secondhand). FAIL as a hard limit by 146 m (1.8%); consistent as an approximate ceiling, and with no fish recorded at 8,400-11,000 m (Yancey 2014 abstract)"
+       }
+      ]
+     },
+     "interface_test": false
+    },
+    {
+     "key": "sleep",
+     "title": "Sleep: amount by stage, light phase and temperature (zebrafish measurements, two definitions shown)",
+     "group": "behaviour",
+     "file": "sleep.mjs",
+     "params": [
+      {
+       "key": "light_hours",
+       "label": "Hours of light per 24 h",
+       "unit": "h",
+       "default": 14,
+       "min": 0,
+       "max": 24,
+       "kind": "assumed",
+       "source": "14:10 LD is the protocol of every zebrafish sleep measurement used here (Sorribes 2013; Prober 2006; Yokogawa 2007; Choudhary 2026) — 14 h is the protocol condition of the sources [kind refers to the default; min/max are slider limits chosen for the design studio (design choice), not data]"
+      },
+      {
+       "key": "hcrt_overexpression",
+       "label": "Hypocretin (hcrt) overexpression, larva (0/1)",
+       "unit": "bool",
+       "default": 0,
+       "min": 0,
+       "max": 1,
+       "kind": "assumed",
+       "source": "Prober DA, Rihel J, Onah AA, Sung RJ, Schier AF 2006. J Neurosci 26:13400. doi:10.1523/JNEUROSCI.4332-06.2006 (PMC6675014, full text read) [a design switch: the user chooses it; only the effect it turns on is sourced]"
+      },
+      {
+       "key": "hcrtr_loss",
+       "label": "Hypocretin receptor (hcrtr) loss of function, adult (0/1)",
+       "unit": "bool",
+       "default": 0,
+       "min": 0,
+       "max": 1,
+       "kind": "assumed",
+       "source": "Yokogawa T et al. 2007. Characterization of sleep in zebrafish and insomnia in hypocretin receptor mutants. PLoS Biol 5:e277. doi:10.1371/journal.pbio.0050277 (PMC2020497, full text read) [a design switch: the user chooses it; only the effect it turns on is sourced]"
+      }
+     ],
+     "requires": [
+      "stage"
+     ],
+     "metrics": [
+      {
+       "key": "sleep_fraction_night",
+       "label": "Night sleep fraction, 6 s immobility criterion (one definition across ages)",
+       "unit": "fraction",
+       "better": null
+      },
+      {
+       "key": "sleep_fraction_day",
+       "label": "Day sleep fraction, 6 s immobility criterion",
+       "unit": "fraction",
+       "better": null
+      },
+      {
+       "key": "alt_def_sleep_fraction_night",
+       "label": "Night sleep fraction, stage-specific definition (larva: < 0.5 mm/s for >= 1 min; adult: 6 s)",
+       "unit": "fraction",
+       "better": null
+      },
+      {
+       "key": "alt_def_sleep_fraction_day",
+       "label": "Day sleep fraction, stage-specific definition",
+       "unit": "fraction",
+       "better": null
+      },
+      {
+       "key": "sleep_hours_per_day",
+       "label": "Sleep per 24 h (stage-specific definition, day and night from one paper)",
+       "unit": "h",
+       "better": null
+      },
+      {
+       "key": "night_sleep_latency_min",
+       "label": "Latency to the first night sleep bout (larva)",
+       "unit": "min",
+       "better": null
+      },
+      {
+       "key": "sleep_criterion_s",
+       "label": "Immobility criterion of the stage-specific definition",
+       "unit": "s",
+       "better": null
+      }
+     ],
+     "modelCard": {
+      "equations": [
+       "6 s series (night): larva 0.5817, juvenile 0.5425, adult 0.3337 (Sorribes 2013); day: adult 0.051 (Yokogawa 2007); x 0.75 at night with hcrtr loss",
+       "alternative larva (1 min): f_day = 0.196 x (8.1/5.9)^((28 - T)/4);  f_night = 0.839 x (84.2/79.8)^((28 - T)/4),  T clamped to 24-28 C",
+       "alternative adult (6 s, Yokogawa): f_day = 0.051;  f_night = 0.581",
+       "sleep h/day = f_day x L + f_night x (24 - L) on the alternative series",
+       "larval night sleep latency = 13 min (WT) or 77 min (hcrt overexpression)"
+      ],
+      "sources": [
+       {
+        "cite": "Sorribes et al. 2013, Front Neural Circuits 7:178 (6 s criterion at every age; night sleep 58.17 / 54.25 / 33.37 %)",
+        "doi_or_url": "https://doi.org/10.3389/fncir.2013.00178"
+       },
+       {
+        "cite": "Choudhary et al. 2026, Nat Commun 17:4068 (larval sleep fractions, 1 min criterion; 24 vs 28 C runs)",
+        "doi_or_url": "https://doi.org/10.1038/s41467-026-72222-0"
+       },
+       {
+        "cite": "Prober et al. 2006, J Neurosci 26:13400 (larval 1 min criterion; hcrt overexpression; onset at 5 dpf)",
+        "doi_or_url": "https://doi.org/10.1523/JNEUROSCI.4332-06.2006"
+       },
+       {
+        "cite": "Yokogawa et al. 2007, PLoS Biol 5:e277 (adult 6 s criterion and fractions; hcrtr mutant)",
+        "doi_or_url": "https://doi.org/10.1371/journal.pbio.0050277"
+       }
+      ],
+      "validity": "Zebrafish larvae 5-10 dpf, juveniles 4-6 weeks and adults, at 28.5 C (6 s series) or 24-28 C (larval alternative) under 14:10 LD. Other species borrow zebrafish values; no flying fish sleep data were found.",
+      "validatedAgainst": [
+       {
+        "organism": "Danio rerio adult",
+        "observation": "night sleep with the SAME 6 s criterion in two labs",
+        "predicted": "33.4% (Sorribes, primary series)",
+        "measured": "58.1 ± 3.3% (Yokogawa 2007)",
+        "source": "doi:10.1371/journal.pbio.0050277 — DISAGREES 1.7x: same nominal criterion, different arenas, tracking thresholds and strains. Both are shown; neither is a model prediction"
+       },
+       {
+        "organism": "Danio rerio larva",
+        "observation": "night sleep under two definitions",
+        "predicted": "58.2% with the 6 s criterion (Sorribes)",
+        "measured": "83.9% with < 0.5 mm/s for >= 1 min (Choudhary 2026)",
+        "source": "doi:10.1038/s41467-026-72222-0 — not a validation: the definitions differ (a speed threshold counts slow drifting as sleep, a pixel threshold does not); shown side by side"
+       },
+       {
+        "organism": "Danio rerio larva",
+        "observation": "share of 24 h inactive (Prober 2006: about 30% of time in each of three activity states)",
+        "predicted": "46% of 24 h asleep (alternative series)",
+        "measured": "~30% inactive",
+        "source": "doi:10.1523/JNEUROSCI.4332-06.2006 — FAILS by 1.5x; different criteria again"
+       },
+       {
+        "organism": "Danio rerio",
+        "observation": "larva sleeps more than adult at night",
+        "predicted": "58.2% vs 33.4% (6 s series)",
+        "measured": "same (Sorribes Table 1)",
+        "source": "doi:10.3389/fncir.2013.00178 — read-back (calibrated, amendment A1), not a validation"
+       }
+      ]
+     },
+     "interface_test": false
+    },
+    {
+     "key": "temperature",
+     "title": "Water temperature: critical thermal limits, swimming capacity and metabolic rate",
+     "group": "environment",
+     "file": "temperature.mjs",
+     "params": [
+      {
+       "key": "water_temperature_C",
+       "label": "Exposure water temperature",
+       "unit": "°C",
+       "default": 25,
+       "min": 0,
+       "max": 45,
+       "kind": "assumed",
+       "source": "design input; default = conditions/baseline.json water_temperature_C (25, assumed)"
+      },
+      {
+       "key": "acclimation_temperature_C",
+       "label": "Temperature the animal is acclimated to",
+       "unit": "°C",
+       "default": 25,
+       "min": 15,
+       "max": 35,
+       "kind": "assumed",
+       "source": "design input; default = conditions/baseline.json (25). Measured acclimation range of the CT data: 20-30 degC"
+      }
+     ],
+     "requires": [
+      "species"
+     ],
+     "metrics": [
+      {
+       "key": "ctmax_C",
+       "label": "Critical thermal maximum at this acclimation",
+       "unit": "°C",
+       "better": "higher"
+      },
+      {
+       "key": "ctmin_C",
+       "label": "Critical thermal minimum at this acclimation",
+       "unit": "°C",
+       "better": "lower"
+      },
+      {
+       "key": "thermal_margin_C",
+       "label": "Distance to the nearer critical limit",
+       "unit": "°C",
+       "better": "higher"
+      },
+      {
+       "key": "ucrit_relative",
+       "label": "Ucrit relative to the 28 °C value (measured curve)",
+       "unit": "1",
+       "better": "higher"
+      },
+      {
+       "key": "smr_factor",
+       "label": "Standard metabolic rate relative to acclimation temperature (Q10)",
+       "unit": "1",
+       "better": null
+      },
+      {
+       "key": "mmr_factor",
+       "label": "Maximum metabolic rate relative to acclimation temperature (Q10)",
+       "unit": "1",
+       "better": null
+      }
+     ],
+     "modelCard": {
+      "equations": [
+       "CTmax(Ta) = 39.2 + 0.25 (Ta - 20)   [°C; Ta = acclimation temperature, 20-30 °C]",
+       "CTmin(Ta) = 6.2 + 0.44 (Ta - 20)",
+       "thermal_margin = min(CTmax - T, T - CTmin); survives = CTmin < T < CTmax",
+       "Ucrit(T)/Ucrit(28 °C) = linear interpolation of measured means, 12-36 °C",
+       "SMR(T)/SMR(Ta) = 1.56^((T - Ta)/10); MMR(T)/MMR(Ta) = 1.34^((T - Ta)/10)  (corrected Q10, jeb245488)"
+      ],
+      "sources": [
+       {
+        "cite": "Cortemeglia C, Beitinger TL (2005). Temperature tolerances of wild-type and red transgenic zebra danios. Trans Am Fish Soc 134:1431-1437 (abstract)",
+        "doi_or_url": "https://doi.org/10.1577/T04-197.1"
+       },
+       {
+        "cite": "Wakamatsu Y, Ogino K, Hirata H (2019). Swimming capability of zebrafish is governed by water temperature, caudal fin length and genetic background. Sci Rep 9:16307, Results (Fig. 3 values in text)",
+        "doi_or_url": "https://doi.org/10.1038/s41598-019-52592-w"
+       },
+       {
+        "cite": "Correction: Thermal preference does not align with optimal temperature for aerobic scope in zebrafish (Danio rerio). J Exp Biol (2023) 226:jeb245488 (corrected Q10: SMR 1.56, MMR 1.34; correcting Ripley et al. 2022, J Exp Biol 225:jeb243774)",
+        "doi_or_url": "https://doi.org/10.1242/jeb.245488"
+       },
+       {
+        "cite": "Morgan R, Finnøen MH, Jutfelt F (2018). CTmax is repeatable and doesn't reduce growth in zebrafish. Sci Rep 8:7099 (validation)",
+        "doi_or_url": "https://doi.org/10.1038/s41598-018-25593-4"
+       },
+       {
+        "cite": "Andreassen AH et al. (2022). Brain dysfunction during warming is linked to oxygen limitation in larval zebrafish. PNAS 119:e2207052119 (validation; larval CTmax)",
+        "doi_or_url": "https://doi.org/10.1073/pnas.2207052119"
+       },
+       {
+        "cite": "Rome LC et al. 1992 via physiology/muscle.js: scup red muscle power Q10 1.88 (used only in the failed alternative model)",
+        "doi_or_url": "physiology/sources.json id rome1992"
+       }
+      ],
+      "validity": "Zebrafish only (any design whose species includes Danio rerio); larvae from 5 dpf and adults; acclimation 20-30 °C; exposure 12-36 °C for Ucrit, 23-35.5 °C for Q10. Flying fish: no data, metrics null.",
+      "validatedAgainst": [
+       {
+        "organism": "Danio rerio adults, 28 °C acclimation, 0.3 °C/min ramp",
+        "observation": "CTmax, first trial",
+        "predicted": "41.2 °C",
+        "measured": "40.97 ± 0.10 °C (n = 40)",
+        "source": "Morgan et al. 2018 Results (https://doi.org/10.1038/s41598-018-25593-4). PASS: +0.23 °C, inside the ±0.5 °C criterion; different lab, strain and ramp rate from the calibration data"
+       },
+       {
+        "organism": "Danio rerio adults, 28 °C",
+        "observation": "CTmax (loss of equilibrium)",
+        "predicted": "41.2 °C",
+        "measured": "41.0 ± 0.1 °C (n = 15)",
+        "source": "Andreassen et al. 2022 Results (https://doi.org/10.1073/pnas.2207052119). PASS (+0.2 °C)"
+       },
+       {
+        "organism": "Danio rerio larvae, 5 dpf, 28 °C",
+        "observation": "CTmax (loss of response)",
+        "predicted": "41.2 °C (adult slope borrowed)",
+        "measured": "41.4 ± 0.1 °C (n = 12); 9 dpf 41.3 ± 0.2",
+        "source": "Andreassen et al. 2022. PASS (-0.2 °C); different endpoint (loss of response) from adults"
+       },
+       {
+        "organism": "Danio rerio adults, 28 °C-reared",
+        "observation": "Ucrit at 12-30 °C, tested against an ALTERNATIVE model: Ucrit ∝ (red-muscle power)^(1/3) with power Q10 1.88 (rome1992)",
+        "predicted": "Ucrit(16)/Ucrit(28) = 0.78; Ucrit(12)/Ucrit(28) = 0.71",
+        "measured": "0.92 and 0.49 (Wakamatsu 2019)",
+        "source": "FAIL in both directions (too sensitive on the 16-30 °C plateau, not sensitive enough below 16 °C). That is why the module uses the measured curve, not a Q10 power law."
+       }
+      ]
+     },
+     "interface_test": false
+    },
+    {
+     "key": "wind",
+     "title": "Wind on a glide: headwind, tailwind and horizontal gusts",
+     "group": "environment",
+     "file": "wind.mjs",
+     "params": [
+      {
+       "key": "headwind_m_s",
+       "label": "Steady headwind (negative = tailwind)",
+       "unit": "m/s",
+       "default": 5,
+       "min": -20,
+       "max": 20,
+       "kind": "assumed",
+       "source": "design input"
+      },
+      {
+       "key": "gust_m_s",
+       "label": "Horizontal gust amplitude (+/-)",
+       "unit": "m/s",
+       "default": 2,
+       "min": 0,
+       "max": 10,
+       "kind": "assumed",
+       "source": "design input; quasi-steady treatment"
+      },
+      {
+       "key": "launch_height_m",
+       "label": "Launch height above the surface",
+       "unit": "m",
+       "default": 1,
+       "min": 0,
+       "max": 10,
+       "kind": "assumed",
+       "source": "design input; maximum recorded flying-fish flight height 8 m (deng-2019 Introduction, second-hand)"
+      },
+      {
+       "key": "launch_airspeed_override_m_s",
+       "label": "What-if launch airspeed (0 = the organism's own sourced speed)",
+       "unit": "m/s",
+       "default": 0,
+       "min": 0,
+       "max": 30,
+       "kind": "assumed",
+       "source": "0 uses the organism's sourced leap/burst speed (flying fish ~10 m/s, makiguchi-2013; zebrafish Umax from current.mjs); any other value is a labelled what-if"
+      }
+     ],
+     "requires": [
+      "mass_kg"
+     ],
+     "metrics": [
+      {
+       "key": "glide_range_lean_bound_m",
+       "label": "Still-air glide distance covered by the Lean bound, h (L/D)max",
+       "unit": "m",
+       "better": "higher"
+      },
+      {
+       "key": "kinetic_phase_m",
+       "label": "Level kinetic-energy phase, still air (OUTSIDE the Lean theorem)",
+       "unit": "m",
+       "better": "higher"
+      },
+      {
+       "key": "ground_distance_total_m",
+       "label": "Ground distance with wind, both phases (NOT covered by the Lean theorem)",
+       "unit": "m",
+       "better": "higher"
+      },
+      {
+       "key": "wind_distance_change_m",
+       "label": "Ground distance minus still-air distance (-u x time airborne)",
+       "unit": "m",
+       "better": "higher"
+      },
+      {
+       "key": "glide_time_s",
+       "label": "Time airborne (bound)",
+       "unit": "s",
+       "better": "higher"
+      },
+      {
+       "key": "launch_airspeed_m_s",
+       "label": "Launch speed reachable by this organism",
+       "unit": "m/s",
+       "better": "higher"
+      },
+      {
+       "key": "v_min_m_s",
+       "label": "Minimum lift-supported airspeed",
+       "unit": "m/s",
+       "better": "lower"
+      },
+      {
+       "key": "takeoff_water_speed_m_s",
+       "label": "Speed over the water needed to reach v_min airspeed",
+       "unit": "m/s",
+       "better": "lower"
+      },
+      {
+       "key": "gust_stall_margin_m_s",
+       "label": "Glide airspeed minus gust minus v_min (negative = stall in a lull)",
+       "unit": "m/s",
+       "better": "higher"
+      },
+      {
+       "key": "gust_load_factor",
+       "label": "Quasi-steady lift / weight in a gust peak",
+       "unit": "1",
+       "better": "lower"
+      }
+     ],
+     "modelCard": {
+      "equations": [
+       "launch speed v0 = organism's own (glide.mjs); cannot glide if v0 < v_min (all distances 0)",
+       "level phase: t_A = (L/D)_eff (v0 - v_min)/g; x_A,ground = (L/D)_eff (v0^2 - v_min^2)/(2g) - u t_A  (outside the Lean theorem)",
+       "descent from h at v_LD: t_B = h (L/D)/v_LD; x_B,ground = h (L/D) - u t_B  (the still-air part h (L/D) is the Lean-covered bound)",
+       "takeoff water speed = v_min - u",
+       "gust: stall margin = V - gust - v_min; load factor n = (1 + gust/V)^2"
+      ],
+      "sources": [
+       {
+        "cite": "Park H, Choi H (2010). Aerodynamic characteristics of flying fish in gliding flight. J Exp Biol 213:3269-3279",
+        "doi_or_url": "https://doi.org/10.1242/jeb.046052"
+       },
+       {
+        "cite": "Makiguchi Y et al. (2013). Aquat Biol 18:105-111 (flying-fish leap speed ~10 m/s, citing Davenport 1994)",
+        "doi_or_url": "https://doi.org/10.3354/ab00494"
+       },
+       {
+        "cite": "Deng J et al. (2019). Bioinspir Biomim 14:046009 (Introduction, quoting Hertel 1966: a theoretical 48 m flight at 20 m/s into a 10 m/s headwind)",
+        "doi_or_url": "https://doi.org/10.1088/1748-3190/ab23e6"
+       }
+      ],
+      "validity": "As glide.mjs (0.02-0.4 kg, 0-10 m launch heights), uniform winds up to 20 m/s.",
+      "validatedAgainst": [
+       {
+        "organism": "any flying fish",
+        "observation": "glide distance measured with a known wind",
+        "predicted": "n/a",
+        "measured": "none found: no fetched source reports a glide distance together with the wind speed",
+        "source": "no validation possible; the only wind figure is Hertel 1966's THEORETICAL 48 m trajectory for Cypselurus californicus (0.38 kg, C_L 0.6, 20 m/s airspeed, 10 m/s headwind, ~10 m height), quoted second-hand by Deng 2019. It is a model, not an observation, and needs a wing area the sources do not give, so it was not compared."
+       }
+      ]
+     },
+     "interface_test": false
+    }
+   ],
+   "errors": []
+  },
+  "provenance": [
+   {
+    "quantity": "scenario registry",
+    "value": [
+     "_example",
+     "altitude",
+     "current",
+     "daynight",
+     "digestion",
+     "glide",
+     "grip",
+     "predator",
+     "pressure",
+     "sleep",
+     "temperature",
+     "wind"
+    ],
+    "kind": "derived",
+    "source": "sim-engine/scenarios/*.mjs, validated by scenarios/index.mjs"
+   }
+  ],
+  "scope": "A listing. Each scenario states its own validity and sources in its model card; _example is an interface test, not a model.",
+  "weakest_input": "derived",
+  "counts": {
+   "derived": 1
+  }
+ }
+}

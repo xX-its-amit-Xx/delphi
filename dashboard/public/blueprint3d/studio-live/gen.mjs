@@ -21,7 +21,23 @@ import path from 'node:path';
 
 const HERE = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
 const ROOT = path.resolve(HERE, '..', '..', '..', '..');
-const run = process.argv.includes('--run') ? process.argv[process.argv.indexOf('--run') + 1] : 'flying-mouse';
+// With no --run, every run under runs/ that has a summary.json is baked, plus an index the page's run
+// selector reads. A use case that has not been run yet simply is not in the index; nothing is invented for it.
+const ROOT_RUNS = path.join(ROOT, 'runs');
+const only = process.argv.includes('--run') ? process.argv[process.argv.indexOf('--run') + 1] : null;
+const all = fs.readdirSync(ROOT_RUNS).filter(d => !d.startsWith('_') && fs.existsSync(path.join(ROOT_RUNS, d, 'summary.json')));
+const runs = only ? [only] : all;
+if (!runs.length) { console.error('no runs with a summary.json under runs/'); process.exit(1); }
+const index = [];
+for (const r of runs) bake(r);
+if (!only) {
+  fs.writeFileSync(path.join(HERE, 'index.json'), JSON.stringify({
+    what: 'The runs studio-live.html can show. Each entry points at the baked replay of one Design Studio run.',
+    built: new Date().toISOString(), runs: index }, null, 1));
+  console.log(`index.json  ${index.length} runs`);
+}
+
+function bake(run) {
 const RUN = path.join(ROOT, 'runs', run);
 if (!fs.existsSync(RUN)) { console.error(`no run at runs/${run}`); process.exit(1); }
 
@@ -38,6 +54,9 @@ const gens = fs.readdirSync(path.join(RUN, 'gen')).filter(f => /^gen\d+\.json$/.
 
 const hierarchies = {};
 for (const g of gens) {
+  // A generation can have no blueprint at all -- the bacterium's generation 0 is a refusal, and a refusal
+  // has no hierarchy to draw. The page shows the panels and says so rather than failing to build.
+  if (!g.blueprint) continue;
   const bpPath = path.join(RUN, g.blueprint.replace(/^gen\//, 'gen/'));
   if (!fs.existsSync(bpPath)) continue;
   const bp = rd(bpPath);
@@ -75,8 +94,13 @@ const out = {
     verdicts: 'Every verdict on this page is the string the tool itself returned, with the numbers it returned, copied from the session log. Nothing is recomputed here and nothing is rounded for display except where the page shows a fixed number of decimals.',
   },
 };
-const dest = path.join(HERE, 'run.json');
+const dest = path.join(HERE, `${run}.json`);
 fs.writeFileSync(dest, JSON.stringify(out, null, 1));
+// runs/flying-mouse was the first, and run.json is the name the page fell back to before there were several.
+if (run === 'flying-mouse') fs.writeFileSync(path.join(HERE, 'run.json'), JSON.stringify(out, null, 1));
 const kb = (fs.statSync(dest).size / 1024).toFixed(0);
+index.push({ run, question: summary.question, file: `${run}.json`, generations: gens.length,
+  layers: summary.layers_exercised ?? null, headline: summary.headline ?? null, verdict: summary.verdict ?? null });
 console.log(`${path.relative(ROOT, dest).replace(/\\/g, '/')}  ${kb} KB`);
-console.log(`  ${gens.length} generations, ${entries.length} session entries, ${Object.keys(hierarchies).length} hierarchies (${Object.values(hierarchies).map(h => h.nodes.length).join(', ')} nodes)`);
+console.log(`  ${gens.length} generations, ${entries.length} session entries, ${Object.keys(hierarchies).length} hierarchies (${Object.values(hierarchies).map(h => h.nodes.length).join(', ') || 'none'} nodes)`);
+}

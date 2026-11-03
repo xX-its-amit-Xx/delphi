@@ -5,6 +5,52 @@ the scenario interface. Its version is `CONTRACT_VERSION` in `lib/envelope.mjs`.
 as `contract_version`, and `contract.json` states it. The rule: anything may change, provided it is
 versioned here. While the major version is 0, a minor bump may break callers; each entry says what breaks.
 
+## 0.9.0 (2026-11-03)
+
+**Added** (2 tools; 59 -> 61. Two new validation layers. Nothing removed, no existing schema changed.)
+
+Until now every check in this engine asked the same shape of question: take a design, and say something
+about it at an instant. A part list is a statement about an instant. So is a lift coefficient, a law verdict
+and a phenotype distance. Two kinds of question were not expressible at all, and both of them came up the
+moment anyone asked for something other than a fish.
+
+- **`locomotion_check`** (`tools/locomotion-tools.mjs`, `validate/locomotion/`). HOW the organism moves, as
+  distinct from what it is made of: an organism asked to swim, walk or fly is being asked for a CYCLE,
+  repeated, and two designs with identical part lists can differ in whether they go anywhere. Three kinds of
+  result, kept apart because they are different kinds of claim. THEOREM: Purcell's scallop theorem (Am J
+  Phys 45(1):3-11, doi 10.1119/1.10903), which returns `impossible` for a time-reversible stroke at low
+  Reynolds number -- not slow, not inefficient: zero net displacement per cycle, at any beat frequency, for
+  any organism. ARITHMETIC: cycle frequency times net distance per cycle against the declared speed.
+  REGIME: Reynolds and Froude numbers, REPORTED AND NEVER FAILING A DESIGN, because equal Froude number is
+  necessary and not sufficient for dynamic similarity and the quoted 0.5 transition is a human number.
+  Flight delegates to `flight_support_check` so there is one lift-coefficient policy and not two. Served
+  hosted: pure arithmetic, no network, no writes.
+- **`ecology_check`** (`tools/ecology-tools.mjs`, `validate/ecology/`). Whether the WORLD permits the
+  organism, as distinct from whether biology does. Assembles four things from real records -- where GBIF
+  records the clade, what else GBIF records in a stated box (scoped to the design's own class), what GloBI
+  records as eating or interacting with it, and the intersection of the last two -- and refuses to predict
+  competitive exclusion from any of it, because neither database contains a single population parameter.
+  Occurrence counts are presence and sampling effort, never abundance; an interaction record is an
+  observation somebody reported, not a rate. A competitive outcome is produced ONLY from growth rates,
+  carrying capacities and competition coefficients the caller declares with sources, through Lotka-Volterra
+  mutual invasibility -- two species, no space, no environmental variation, no evolution, and the result
+  says the outcome is a property of those four numbers. Every result is filtered by the frozen holdout clade
+  before anything is written or cached. LOCAL ONLY: it calls two public APIs and writes a cache, and the
+  hosted server does neither on an anonymous caller's behalf.
+
+**Changed** (behaviour, no schema)
+
+- `parse_design_text` no longer reads the name of an animal as a verb. `familyGlide` matches the
+  free-standing word `fly`, `fruit fly` contains one, and "I want a fruit fly that lives longer" came back
+  with a GLIDE criterion -- a requirement nobody asked for, attached to a request about lifespan, which the
+  design would then have been judged against. Two-word insect names ending in "fly" are organism names and
+  are taken out of the clause before the criterion families read it.
+- The clade table (`lib/lean-taxonomy.mjs`) reaches outside the animals: 310 -> 339 taxa, with Bacteria,
+  Archaea, Fungi and Viridiplantae anchors. It ran from Metazoa downward, so every prokaryote, fungus and
+  plant was unplaceable -- and unplaceable propagates: no clade scope can be decided, no reference set can
+  say whether it is covered, and the lift-coefficient table could not even refuse one properly. Verdict
+  counts for every existing design are unchanged (`lean_by_component` for winged-zebrafish is identical).
+
 ## 0.8.1 (2026-11-03)
 
 **Added** (1 tool; 58 -> 59, plus the 13 Design Studio tools now registered on the MCP server. One schema

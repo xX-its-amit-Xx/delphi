@@ -15,6 +15,7 @@ import { VALIDATE_TOOLS } from "../sim-engine/tools/validate-tools.mjs";
 import { PIPELINE_TOOLS } from "../sim-engine/tools/pipeline-tools.mjs";
 import { FUNCTIONAL_TOOLS } from "../sim-engine/tools/functional-tools.mjs";
 import { PHYSICS_TOOLS } from "../sim-engine/tools/physics-tools.mjs";
+import { LOCOMOTION_TOOLS } from "../sim-engine/tools/locomotion-tools.mjs";
 import { EDITPLAN_TOOLS } from "../sim-engine/tools/editplan-tools.mjs";
 import { SPEC_TOOLS } from "../sim-engine/tools/spec-tools.mjs";
 import { OPENQ_TOOLS } from "../lean/registry/open-questions/openq-tools.mjs";
@@ -322,6 +323,11 @@ tool("physics_check", pc.description, {
 const fsc = PHYSICS_TOOLS.find(t => t.name === "flight_support_check");
 tool("flight_support_check", fsc.description, jsonShape(fsc.inputSchema), args => fsc.handler(args));
 
+// The locomotion layer. Pure arithmetic and one theorem over declared inputs; no network, no writes, so it
+// is served hosted unchanged. It delegates its flight modes to flight_support_check above.
+const lc = LOCOMOTION_TOOLS[0];
+tool("locomotion_check", lc.description, jsonShape(lc.inputSchema), args => lc.handler(args));
+
 // The components of the report, each callable alone.
 tool("validate_design", vt.validate_design.description, {
   organism: ORGANISM, specimen: SPECIMEN, ageDays: z.number().optional(), conditions: z.record(z.string(), z.any()).optional(),
@@ -420,6 +426,13 @@ function jsonShape(schema) {
   }));
 }
 if (!HOSTED) {
+  // The ecology layer calls two public APIs and writes their responses to a cache. The hosted server makes
+  // no outbound call on an anonymous caller's behalf and writes nothing for them, so it is local only --
+  // the same rule the Design Studio tools below are registered under.
+  const { ECOLOGY_TOOLS } = await import("../sim-engine/tools/ecology-tools.mjs");
+  const ec = ECOLOGY_TOOLS[0];
+  tool("ecology_check", ec.description, jsonShape(ec.inputSchema), args => ec.handler(args));
+
   const { STUDIO_TOOLS } = await import("../sim-engine/tools/studio.mjs");
   for (const t of STUDIO_TOOLS) tool(t.name, `${t.title}. ${t.description}`, jsonShape(t.inputSchema), args => t.handler(args));
 }
