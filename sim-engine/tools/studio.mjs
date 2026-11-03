@@ -122,8 +122,12 @@ export const SCHEMAS = {
     }, required: ['organism', 'objective', 'variables'] } },
   session_open: { title: 'Open a co-design session', description: 'Append-only JSONL log under sim-engine/sessions/. Optionally bound to a saved organism document that kind:"edit" posts modify.',
     inputSchema: { type: 'object', properties: { title: { type: 'string' }, organism: { type: 'string', description: 'Saved organism document id (create it first).' }, author: { type: 'string' } }, required: ['title', 'author'] } },
-  session_post: { title: 'Post to a co-design session', description: "kind 'comment' | 'proposal' (edits + rationale + the scenario results that motivated them; validated, NOT applied; gets a proposal_id for session_decide) | 'edit' (applied at once; only for author roles starting with 'human'). author is a role label, never a personal identifier.",
-    inputSchema: { type: 'object', properties: { session: { type: 'string' }, author: { type: 'string' }, kind: { enum: ['comment', 'proposal', 'edit'] }, body: { type: 'string' },
+  session_post: { title: 'Post to a co-design session', description: "kind 'comment' | 'finding' (one tool run: the tool, its verdict and its numbers, stored structured -- evidence, changes nothing, any role) | 'proposal' (edits + rationale + the scenario results that motivated them; validated, NOT applied; gets a proposal_id for session_decide) | 'edit' (applied at once; only for author roles starting with 'human'). author is a role label, never a personal identifier.",
+    inputSchema: { type: 'object', properties: { session: { type: 'string' }, author: { type: 'string' }, kind: { enum: ['comment', 'finding', 'proposal', 'edit'] }, body: { type: 'string' },
+      tool: { type: 'string', description: 'finding: the tool or check that produced it, e.g. "physics_check", "lean_check", "blueprint.mjs".' },
+      verdict: { type: 'string', description: 'finding: the outcome in one word as the tool itself reported it -- pass, fail, cannot-assess, out-of-scope, refused, holds, violated.' },
+      generation: { type: 'number', description: 'finding: which iteration of the design this was measured on, so a log can be read as a sequence rather than a pile.' },
+      detail: { type: 'object', description: 'finding: the numbers and reasons, verbatim from the tool result. Stored as given; nothing here is recomputed.' },
       edits: { type: 'array', items: EDIT, description: 'Edits (author is taken from the post).' }, edit: EDIT, rationale: { type: 'string', description: 'Required for a proposal.' },
       evidence: { type: 'array', items: { type: 'object' }, description: 'Scenario results (or other tool results) that motivated the proposal; stored verbatim.' }, lawset: LAWSET }, required: ['session', 'author', 'kind'] } },
   session_decide: { title: 'Approve or reject a proposal', description: "Applies (approve) or rejects a proposal posted to a session. decided_by_role must be a role label starting with 'human' (agents propose, humans decide). Approval applies every edit of the proposal atomically to the session's organism and records the lawset version and the Lean violations at that moment.",
@@ -491,13 +495,30 @@ async function applyEdits(organism, edits, extra, lawset) {
 
 export async function sessionPost(args = {}) {
   O.checkAuthor(args.author);
-  if (!['comment', 'proposal', 'edit'].includes(args.kind)) throw new Error("kind must be 'comment', 'proposal' or 'edit'");
+  if (!['comment', 'finding', 'proposal', 'edit'].includes(args.kind)) throw new Error("kind must be 'comment', 'finding', 'proposal' or 'edit'");
   const log = readSession(args.session);
   const head = log[0];
   const lv = await lawsetVersion(args.lawset);
   const entry = { seq: log.length, type: args.kind, ts: new Date().toISOString(), author: args.author, body: args.body || '', lawset_version: lv };
   if (args.kind === 'comment' && !entry.body) throw new Error('a comment needs a body');
-  if (args.kind !== 'comment') {
+  // A FINDING is what a tool said, kept as the tool said it.
+  //
+  // Before this, the only way to record a validation result in a session was a comment -- prose, in which a
+  // verdict and a number become a sentence somebody wrote. A log of prose cannot be read back as a sequence:
+  // you cannot ask it which gates failed at generation 2, or whether a refusal was the same refusal as last
+  // time. So a finding carries the tool, its verdict in the tool's own vocabulary, the generation it was
+  // measured on, and the numbers verbatim.
+  //
+  // It needs no human role and no approval, because it changes nothing: it is evidence. Edits still go through
+  // proposal -> session_decide, and that is the line this does not cross. A finding cannot carry edits.
+  if (args.kind === 'finding') {
+    if (typeof args.tool !== 'string' || !args.tool.trim()) throw new Error('a finding needs `tool`: which tool or check produced it');
+    if (typeof args.verdict !== 'string' || !args.verdict.trim()) throw new Error("a finding needs `verdict`: the outcome in the tool's own word (pass, fail, cannot-assess, refused, ...)");
+    if (!entry.body) throw new Error('a finding needs a body: one line saying what the verdict means for the design');
+    if (args.edits || args.edit) throw new Error('a finding records evidence and cannot carry edits; post a proposal for those (evidence goes in `detail`)');
+    Object.assign(entry, { tool: args.tool, verdict: args.verdict, generation: args.generation ?? null, detail: args.detail ?? {} });
+  }
+  if (args.kind !== 'comment' && args.kind !== 'finding') {
     const edits = (args.edits || (args.edit ? [args.edit] : [])).map(e => ({ ...e, author: args.author, reason: e.reason || args.rationale || args.body }));
     if (!edits.length) throw new Error(`a ${args.kind} needs edits`);
     if (!head.organism) throw new Error('this session has no organism; open one with organism set');
@@ -543,7 +564,19 @@ export async function sessionRead(args = {}) {
   let doc = null;
   if (log[0].organism) { try { doc = (await getDoc(log[0].organism)).doc; } catch (e) { doc = { error: e.message }; } }
   const proposals = log.filter(e => e.type === 'proposal').map(e => { const d = log.find(x => x.type === 'decision' && x.proposal_id === e.proposal_id); return { proposal_id: e.proposal_id, author: e.author, edits: e.edits.length, status: d ? (d.decision === 'approve' ? 'approved' : 'rejected') : 'open', decided_by_role: d?.decided_by_role ?? null }; });
-  return envelope({ session: args.session, title: log[0].title, entries, count: log.length, proposals, organism: doc },
+  // Findings, grouped by the generation they were measured on, so the log reads as a sequence of attempts
+  // rather than a pile of entries: which gates were asked at each step, and what each one answered.
+  const gens = new Map();
+  for (const e of log.filter(x => x.type === 'finding')) {
+    const g = e.generation ?? null;
+    if (!gens.has(g)) gens.set(g, { generation: g, findings: [], verdicts: {} });
+    const row = gens.get(g);
+    row.findings.push({ seq: e.seq, tool: e.tool, verdict: e.verdict, author: e.author, body: e.body });
+    row.verdicts[e.tool] = e.verdict;
+  }
+  const generations = [...gens.values()].sort((a, b) => (a.generation ?? -1) - (b.generation ?? -1));
+  return envelope({ session: args.session, title: log[0].title, entries, count: log.length, proposals,
+    findings: { count: log.filter(x => x.type === 'finding').length, generations }, organism: doc },
     [p('session log', log.length, 'assumed', `sim-engine/sessions/${args.session}.jsonl`)], SESSION_SCOPE);
 }
 

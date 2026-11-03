@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design Studio, live &mdash; DELPHI</title>
+<meta name="description" content="A Design Studio run as it happened: the agent's reasoning, every tool verdict with its numbers, the genotype and phenotype changing between generations, and the ontology hierarchy of each attempt in 3D.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e7c86'/%3E%3Ccircle cx='16' cy='16' r='4' fill='white'/%3E%3Ccircle cx='7' cy='9' r='2.2' fill='white'/%3E%3Ccircle cx='25' cy='8' r='2.2' fill='white'/%3E%3Ccircle cx='24' cy='25' r='2.2' fill='white'/%3E%3Cpath d='M16 16L7 9M16 16L25 8M16 16L24 25' stroke='white' stroke-width='1.4'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--soft:#eef2ef;--surface:#fcfcfb;
+ --ok:#2f7d4f;--bad:#b3392f;--warn:#a8650b;
+ --l0:#a6dde4;--l1:#5fc3cd;--l2:#139aab;--l3:#0c6f7c;--l4:#073f47;
+ --gene:#eb6834;--edge:#9aa6a3;--edge2:#c7cfcc;--named:#14201f}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--soft:#192b29;--surface:#1a1a19;
+ --ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;
+ --l0:#0d4a52;--l1:#167886;--l2:#22a3b3;--l3:#6fcbd6;--l4:#b5e6ec;
+ --gene:#d95926;--edge:#6b7b78;--edge2:#3a4a47;--named:#e7efec}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--soft:#192b29;--surface:#1a1a19;
+ --ok:#58c07f;--bad:#ef7a6e;--warn:#e0a24a;--l0:#0d4a52;--l1:#167886;--l2:#22a3b3;--l3:#6fcbd6;--l4:#b5e6ec;--gene:#d95926;--edge:#6b7b78;--edge2:#3a4a47;--named:#e7efec}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 "Inter Tight",system-ui,sans-serif}
+a{color:var(--accent)}
+code,.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.86em}
+header{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:9px 16px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5}
+header b{font-family:Fraunces,serif;font-size:1.1rem}
+nav a{padding:3px 9px;border-radius:99px;text-decoration:none;color:var(--mute);font-size:.86rem}
+nav a:hover{background:var(--soft);color:var(--ink)}
+.right{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.badge{font-size:.76rem;padding:2px 9px;border-radius:99px;border:1px solid var(--line);background:var(--soft);color:var(--mute)}
+.badge.live{border-color:var(--ok);color:var(--ok)}
+.badge.replay{border-color:var(--warn);color:var(--warn)}
+button{font:inherit;font-size:.86rem;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:4px 10px;cursor:pointer}
+button[aria-pressed=true]:not(.gcard){background:var(--accent);border-color:var(--accent);color:#fff}
+.wrap{max-width:1500px;margin:0 auto;padding:16px}
+h1{font-family:Fraunces,serif;font-size:1.5rem;margin:.1em 0 .25em}
+.lede{color:var(--mute);max-width:78ch;margin:0 0 14px}
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin:0 0 16px}
+.gcard{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:10px 12px;cursor:pointer;text-align:left;font:inherit}
+.gcard[aria-pressed=true]{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in oklab,var(--accent) 25%,transparent)}
+.gcard h3{margin:0 0 4px;font-size:.95rem;font-family:Fraunces,serif}
+.gcard .asked{color:var(--mute);font-size:.83rem;margin:0 0 7px}
+.v{display:inline-block;font-size:.74rem;padding:1px 7px;border-radius:99px;margin:1px 3px 1px 0;border:1px solid var(--line)}
+.v.pass,.v.carries,.v.ran{color:var(--ok);border-color:var(--ok)}
+.v.fail,.v.refused,.v["does-not-carry"]{color:var(--bad);border-color:var(--bad)}
+.v.bad{color:var(--bad);border-color:var(--bad)}
+.v.mid{color:var(--warn);border-color:var(--warn)}
+main{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:1040px){main{grid-template-columns:1fr}}
+.panel{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}
+.panel>h2{margin:0;padding:9px 12px;font-size:.92rem;font-family:Fraunces,serif;border-bottom:1px solid var(--line);background:var(--soft);display:flex;gap:8px;align-items:center}
+.panel>h2 .n{margin-left:auto;color:var(--mute);font-size:.8rem;font-weight:400;font-family:"Inter Tight"}
+.feed{max-height:70vh;overflow:auto;padding:4px 0}
+.e{padding:9px 12px;border-bottom:1px solid var(--line)}
+.e:last-child{border-bottom:0}
+.e .hd{display:flex;gap:7px;align-items:baseline;flex-wrap:wrap;font-size:.8rem;color:var(--mute)}
+.e .tool{color:var(--ink);font-weight:600;font-family:"JetBrains Mono",monospace;font-size:.8rem}
+.e .body{margin:4px 0 0}
+.e.think{background:var(--soft)}
+.e.think .body{font-style:italic}
+.e .gen{border:1px solid var(--line);border-radius:99px;padding:0 6px}
+details.det{margin-top:5px}
+details.det summary{cursor:pointer;color:var(--mute);font-size:.8rem}
+pre{margin:5px 0 0;padding:8px;background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:260px;font-family:"JetBrains Mono",monospace;font-size:.76rem;line-height:1.45}
+#view{width:100%;height:430px;display:block;background:var(--surface);border-bottom:1px solid var(--line)}
+.legend{display:flex;gap:10px;flex-wrap:wrap;padding:8px 12px;font-size:.78rem;color:var(--mute);border-bottom:1px solid var(--line)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:middle}
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+th,td{text-align:left;padding:5px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:500;width:40%}
+td.num{font-family:"JetBrains Mono",monospace}
+.add{color:var(--ok)}.rem{color:var(--bad)}
+.note{padding:9px 12px;color:var(--mute);font-size:.84rem}
+.warnbox{border:1px solid var(--warn);border-radius:10px;background:color-mix(in oklab,var(--warn) 9%,transparent);padding:9px 12px;margin:0 0 14px;font-size:.87rem}
+footer{border-top:1px solid var(--line);margin-top:22px;padding:14px 16px;color:var(--mute);font-size:.83rem}
+</style>
+</head>
+<body>
+<header>
+  <b>DELPHI</b>
+  <nav><a href="index.html">Blueprint 3D</a> <a href="perturb.html">Design Studio</a> <a href="../validate-show/">Validation</a></nav>
+  <div class="right">
+    <span class="badge" id="mode">loading</span>
+    <button id="play" aria-pressed="false" title="Replay the run entry by entry, at the pace it was recorded">Replay</button>
+    <button id="all" aria-pressed="true">Show all</button>
+  </div>
+</header>
+
+<div class="wrap">
+<h1 id="q">Design Studio, live</h1>
+<p class="lede" id="lede"></p>
+<div class="warnbox" id="honesty"></div>
+<div class="strip" id="strip"></div>
+
+<main>
+  <section class="panel">
+    <h2>What the studio did <span class="n" id="feedn"></span></h2>
+    <div class="feed" id="feed"></div>
+  </section>
+
+  <section>
+    <div class="panel" style="margin-bottom:16px">
+      <h2>The design, generation <span id="gsel">0</span></h2>
+      <canvas id="view"></canvas>
+      <div class="legend" id="legend"></div>
+      <div class="note" id="meshnote"></div>
+    </div>
+    <div class="panel" style="margin-bottom:16px">
+      <h2>Phenotype</h2>
+      <table id="pheno"></table>
+    </div>
+    <div class="panel">
+      <h2>Genotype <span class="n">marker gene products, from the Cell Ontology</span></h2>
+      <table id="geno"></table>
+    </div>
+  </section>
+</main>
+</div>
+
+<footer id="foot"></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+<script>
+(async function(){
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ---------------------------------------------------------------- data: a live studio first, the replay otherwise
+// The page tries a running sim-engine/http.mjs (POST /tool/session_read). If one answers it shows the session as
+// it stands and keeps polling for entries after the last seq it has. If not, it shows the baked replay and says
+// so in the badge -- a page that cannot tell you whether it is live is worse than one that is honestly stale.
+let data;
+try { data = await (await fetch('studio-live/run.json', {cache:'no-cache'})).json(); }
+catch (e) { $('#q').textContent = 'studio-live/run.json is missing'; $('#lede').textContent = 'Build it with: node dashboard/public/blueprint3d/studio-live/gen.mjs'; return; }
+
+const LIVE_BASE = new URLSearchParams(location.search).get('studio') || 'http://127.0.0.1:8787';
+let live = false, lastSeq = -1;
+async function pollLive(){
+  try {
+    const r = await fetch(LIVE_BASE + '/tool/session_read', { method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({ session: data.session, since: lastSeq < 0 ? undefined : lastSeq }) });
+    if (!r.ok) throw new Error(r.status);
+    const j = await r.json();
+    const fresh = (j.result && j.result.entries) || [];
+    if (!live) { live = true; setMode(); }
+    if (fresh.length) { for (const e of fresh) if (!data.entries.some(x => x.seq === e.seq)) data.entries.push(e); data.entries.sort((a,b)=>a.seq-b.seq); renderFeed(); }
+    lastSeq = data.entries.length ? data.entries[data.entries.length-1].seq : lastSeq;
+  } catch (e) { if (live) { live = false; setMode(); } }
+}
+function setMode(){
+  const m = $('#mode');
+  m.className = 'badge ' + (live ? 'live' : 'replay');
+  m.textContent = live ? 'live: ' + data.session : 'replay of ' + data.session;
+  m.title = live ? 'Polling POST ' + LIVE_BASE + '/tool/session_read every 3 s' : data.live_hint;
+}
+
+// ---------------------------------------------------------------- header
+$('#q').textContent = data.question || 'Design Studio, live';
+$('#lede').innerHTML = esc(data.verdict || '') + ' <span class="mono">(' + esc(data.tool_calls) + ' tool calls; log in ' + esc(data.sources.logs) + ')</span>';
+$('#honesty').innerHTML = '<b>What is real here.</b> ' + esc(data.honesty.verdicts) + ' <b>Declared inputs.</b> ' + esc(data.honesty.declared) + ' <b>No mesh.</b> ' + esc(data.honesty.mesh);
+$('#foot').innerHTML = 'Sources: ' + Object.entries(data.sources).map(([k,v]) => k + ' <span class="mono">' + esc(v) + '</span>').join(' &middot; ')
+  + '<br>Built by <span class="mono">' + esc(data.built_by) + '</span> at ' + esc(data.built) + '.';
+
+const vclass = v => /^(pass|carries|ran|contradicted)$/.test(v) ? 'pass'
+  : /^(fail|refused|does-not-carry)$/.test(v) ? 'bad'
+  : /cannot|qualified|part-of-the-stated-range|empty/.test(v) ? 'mid' : '';
+
+// ---------------------------------------------------------------- generation strip
+let sel = 0;
+const gens = data.generations;
+$('#strip').innerHTML = gens.map(g => '<button class="gcard" data-g="' + g.generation + '" aria-pressed="' + (g.generation===sel) + '">'
+  + '<h3>Generation ' + g.generation + '</h3><p class="asked">' + esc(g.asked) + '</p>'
+  + Object.entries(g.gates || {}).map(([k,v]) => '<span class="v ' + vclass(v) + '" title="' + esc(k) + ': ' + esc(v) + '">' + esc(k.replace(/_/g,' ')) + ': ' + esc(String(v).slice(0,34)) + '</span>').join('')
+  + '</button>').join('');
+$('#strip').addEventListener('click', ev => { const b = ev.target.closest('.gcard'); if (b) select(+b.dataset.g); });
+
+// ---------------------------------------------------------------- the feed
+let shown = Infinity;
+function renderFeed(){
+  const es = data.entries.filter(e => e.type === 'comment' || e.type === 'finding');
+  const vis = es.slice(0, shown === Infinity ? es.length : shown);
+  $('#feedn').textContent = vis.length + ' of ' + es.length + ' entries';
+  $('#feed').innerHTML = vis.map(e => {
+    if (e.type === 'comment') return '<div class="e think"><div class="hd"><span>thinking</span><span>' + esc((e.ts||'').slice(11,19)) + '</span></div><p class="body">' + esc(e.body) + '</p></div>';
+    const d = e.detail && Object.keys(e.detail).length ? '<details class="det"><summary>what the tool returned</summary><pre>' + esc(JSON.stringify(e.detail, null, 1)) + '</pre></details>' : '';
+    return '<div class="e"><div class="hd"><span class="tool">' + esc(e.tool) + '</span><span class="v ' + vclass(e.verdict) + '">' + esc(e.verdict) + '</span>'
+      + (e.generation != null ? '<span class="gen">gen ' + e.generation + '</span>' : '') + '<span>' + esc((e.ts||'').slice(11,19)) + '</span></div>'
+      + '<p class="body">' + esc(e.body) + '</p>' + d + '</div>';
+  }).join('');
+  if (shown !== Infinity) $('#feed').scrollTop = $('#feed').scrollHeight;
+}
+
+// ---------------------------------------------------------------- phenotype + genotype for the selected generation
+function renderSide(){
+  const g = gens.find(x => x.generation === sel) || gens[0];
+  $('#gsel').textContent = g.generation;
+  const p = g.phenotype || {}, d = g.diff_from_previous;
+  const row = (k, v) => '<tr><th>' + esc(k) + '</th><td>' + v + '</td></tr>';
+  const delta = n => d && d.phenotype && d.phenotype[n] ? ' <span class="' + (d.phenotype[n] > 0 ? 'add' : 'rem') + '">' + (d.phenotype[n] > 0 ? '+' : '') + d.phenotype[n] + '</span>' : '';
+  let html = row('taxon', '<span class="mono">' + esc(p.taxon) + '</span>');
+  for (const lvl of ['organ_system','organ','tissue','cell']) if (p.counts && p.counts[lvl] != null) html += row(lvl.replace('_',' ') + 's', '<span class="num">' + p.counts[lvl] + '</span>' + delta(lvl));
+  html += row('asked for', (p.structures_requested||[]).map(esc).join(', ') || '&mdash;');
+  html += row('refused by the ontology', (p.structures_refused||[]).length ? '<span class="rem">' + (p.structures_refused||[]).map(esc).join(', ') + '</span>' : '&mdash;');
+  html += row('flight structure present', (p.flight_structures_present||[]).length ? '<span class="add">' + (p.flight_structures_present||[]).map(esc).join(', ') + '</span>' : '<span class="rem">none</span>');
+  html += row('measured parameters', p.parameters === null ? '<span class="rem">null &mdash; this engine holds measured body-plan parameters for its own teleosts only</span>' : esc(JSON.stringify(p.parameters)));
+  if (p.declared) for (const [k, v] of Object.entries(p.declared)) html += row('declared: ' + k, '<span class="num">' + (v.min === v.max ? v.min : v.min + '&ndash;' + v.max) + ' ' + esc(v.unit||'') + '</span><br><span style="color:var(--mute);font-size:.82em">' + esc(v.source) + '</span>');
+  if (d && d.gates_changed && d.gates_changed.length) html += row('gates that changed', d.gates_changed.map(esc).join('<br>'));
+  html += row('what this generation taught', esc(g.what_it_taught));
+  $('#pheno').innerHTML = html;
+
+  const gt = g.genotype || {}, ms = gt.markers || [];
+  let gh = row('cell types with markers', '<span class="num">' + (gt.cells_with_markers ?? 0) + '</span>')
+    + row('distinct marker gene products', '<span class="num">' + ms.length + '</span>');
+  if (d && (d.genotype_markers_added||[]).length) gh += row('added this generation', '<span class="add">' + d.genotype_markers_added.map(esc).join(', ') + '</span>');
+  if (d && (d.genotype_markers_removed||[]).length) gh += row('removed this generation', '<span class="rem">' + d.genotype_markers_removed.map(esc).join(', ') + '</span>');
+  if (d && !(d.genotype_markers_added||[]).length && !(d.genotype_markers_removed||[]).length) gh += row('change from the previous generation', 'none');
+  gh += row('coverage', esc(gt.cells_of || ((gt.cells_with_markers ?? 0) + ' cell types')) + ' carry an `expresses` annotation at all');
+  gh += row('marker gene products', '<span class="mono">' + (ms.length ? ms.map(esc).join(', ') : '&mdash;') + '</span>');
+  if ((gt.by_cell || []).length) gh += row('per cell type', '<span class="mono">' + gt.by_cell.map(c => esc(c.cell) + ': ' + c.products.map(esc).join(', ')).join('<br>') + '</span>');
+  gh += row('what this is', esc(gt.note));
+  $('#geno').innerHTML = gh;
+
+  $('#meshnote').innerHTML = '<b>No surface mesh.</b> ' + esc((g.mesh && g.mesh.why) || '') + ' What is drawn above is the ontology hierarchy of this generation.';
+  draw(data.hierarchies[g.blueprint]);
+}
+
+function select(g){ sel = g; for (const b of document.querySelectorAll('.gcard')) b.setAttribute('aria-pressed', String(+b.dataset.g === g)); renderSide(); }
+
+// ---------------------------------------------------------------- the 3D hierarchy
+// Not a mesh. Each node of the blueprint is a point placed by its level (depth on one axis) and spread on a
+// ring within its level, with an edge to its parent. Structures the description named, and the flight
+// structure when there is one, are drawn larger so a generation that gained one is visible at a glance.
+const LEVELS = ['body','organ_system','organ','tissue','cell'];
+const COL = n => getComputedStyle(document.documentElement).getPropertyValue('--l' + n).trim() || '#139aab';
+let renderer, scene, camera, spin = true;
+function draw(h){
+  const cv = $('#view');
+  $('#legend').innerHTML = h ? LEVELS.map((l,i) => '<span><i style="background:' + COL(i) + '"></i>' + l.replace('_',' ') + '</span>').join('')
+    + '<span><i style="background:var(--gene);width:12px;height:12px"></i>named in the description, or the flight structure</span>'
+    + '<span>' + h.nodes.length + ' nodes &middot; drag to turn</span>' : '';
+  if (!window.THREE) { cv.replaceWith(Object.assign(document.createElement('div'), { className:'note', innerHTML:'three.js did not load from cdnjs, so this view cannot draw. The hierarchy is in <span class="mono">studio-live/run.json</span>.' })); return; }
+  if (!h) return;
+  if (!renderer) {
+    renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+    camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+    let down = false, px = 0, py = 0, ry = 0.5, rx = 0.25;
+    const resize = () => { const w = cv.clientWidth, ht = 430; renderer.setSize(w, ht, false); renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); camera.aspect = w / ht; camera.updateProjectionMatrix(); };
+    addEventListener('resize', resize);
+    cv.addEventListener('pointerdown', e => { down = true; spin = false; px = e.clientX; py = e.clientY; });
+    addEventListener('pointerup', () => { down = false; });
+    addEventListener('pointermove', e => { if (!down) return; ry += (e.clientX - px) * 0.008; rx += (e.clientY - py) * 0.006; px = e.clientX; py = e.clientY; });
+    resize();
+    const loop = () => { if (spin) ry += 0.0022; const r = 27;
+      camera.position.set(Math.sin(ry) * r * Math.cos(rx), Math.sin(rx) * r + 2, Math.cos(ry) * r * Math.cos(rx));
+      camera.lookAt(0, 0, 0); if (scene) renderer.render(scene, camera); requestAnimationFrame(loop); };
+    loop();
+  }
+  scene = new THREE.Scene();
+  const pos = new Map();
+  const byLevel = LEVELS.map(l => h.nodes.filter(n => n.level === l));
+  byLevel.forEach((list, li) => {
+    const y = 6.4 - li * 3.2, rad = li === 0 ? 0 : 1.9 + li * 2.1;
+    list.forEach((n, i) => {
+      const a = (i / Math.max(1, list.length)) * Math.PI * 2 + li * 0.7;
+      pos.set(n.id, new THREE.Vector3(Math.cos(a) * rad, y, Math.sin(a) * rad));
+    });
+  });
+  // edges
+  const ep = [];
+  for (const n of h.nodes) { const a = pos.get(n.id), b = n.parent ? pos.get(n.parent) : null; if (a && b) ep.push(a.x,a.y,a.z,b.x,b.y,b.z); }
+  const eg = new THREE.BufferGeometry(); eg.setAttribute('position', new THREE.Float32BufferAttribute(ep, 3));
+  scene.add(new THREE.LineSegments(eg, new THREE.LineBasicMaterial({ color: getComputedStyle(document.documentElement).getPropertyValue('--edge2').trim() || '#c7cfcc', transparent: true, opacity: 0.5 })));
+  // points, one draw per level
+  byLevel.forEach((list, li) => {
+    const plain = list.filter(n => !n.asked && !n.flight), big = list.filter(n => n.asked || n.flight);
+    for (const [set, size, col] of [[plain, 0.16 + li * 0.02, COL(li)], [big, 0.55, getComputedStyle(document.documentElement).getPropertyValue('--gene').trim() || '#eb6834']]) {
+      if (!set.length) continue;
+      const g2 = new THREE.BufferGeometry();
+      g2.setAttribute('position', new THREE.Float32BufferAttribute(set.flatMap(n => { const v = pos.get(n.id); return [v.x, v.y, v.z]; }), 3));
+      scene.add(new THREE.Points(g2, new THREE.PointsMaterial({ color: col, size, sizeAttenuation: true })));
+    }
+  });
+}
+
+// ---------------------------------------------------------------- replay
+let timer = null;
+$('#play').addEventListener('click', () => {
+  const on = $('#play').getAttribute('aria-pressed') === 'true';
+  if (on) { clearInterval(timer); timer = null; $('#play').setAttribute('aria-pressed','false'); shown = Infinity; $('#all').setAttribute('aria-pressed','true'); renderFeed(); return; }
+  $('#play').setAttribute('aria-pressed','true'); $('#all').setAttribute('aria-pressed','false');
+  shown = 0; renderFeed();
+  const es = data.entries.filter(e => e.type === 'comment' || e.type === 'finding');
+  timer = setInterval(() => {
+    shown++;
+    const e = es[shown - 1];
+    if (e && e.generation != null && e.generation !== sel) select(e.generation);
+    renderFeed();
+    if (shown >= es.length) { clearInterval(timer); timer = null; $('#play').setAttribute('aria-pressed','false'); $('#all').setAttribute('aria-pressed','true'); shown = Infinity; renderFeed(); }
+  }, 900);
+});
+$('#all').addEventListener('click', () => { clearInterval(timer); timer = null; $('#play').setAttribute('aria-pressed','false'); $('#all').setAttribute('aria-pressed','true'); shown = Infinity; renderFeed(); });
+
+setMode(); renderFeed(); select(0);
+pollLive(); setInterval(pollLive, 3000);
+})();
+</script>
+</body>
+</html>

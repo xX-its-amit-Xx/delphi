@@ -28,6 +28,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { modelConfidence, SIM_ROOT } from './provenance.mjs';
+import { placeTaxon } from '../../../lib/lean-scope.mjs';
+import * as O from '../../lib/organism.mjs';
 
 const ROOT = path.resolve(SIM_ROOT, '..');
 const val = (s, k) => (s?.[k]?.value ?? null);
@@ -47,6 +49,71 @@ export const PRINT_STATIC_MARGINS = {
 };
 
 const CHECK = (id, label, o) => ({ id, label, status: 'no model', measured: null, unit: null, threshold: null, op: null, limiting_factor: null, gating: false, ...o });
+
+// ---------------------------------------------------------------- maximum lift coefficient, by clade
+//
+// C_Lmax was `const CLmax = 0.78` here, with a comment saying that using it for any other body is borrowed.
+// Nothing enforced the comment. Asked whether a mouse's wings carry a mouse, this check would have answered
+// with a stuffed flying fish's lift curve and returned a number -- the same failure as naming a cichlid as a
+// mouse's closest relative, in the one place where the answer is the point of the design.
+//
+// A lift coefficient is a property of a wing. It cannot be derived from the other STATE fields and it cannot
+// be guessed, so a clade with no measurement must yield a refusal. The entries live in lift-coefficients.json
+// with their sources; the narrowest clade containing the design's taxon wins; and the coefficient is only
+// `measured` when the design's taxon IS the animal it was measured on. Everything else is a labelled borrow.
+const LIFT = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, 'lift-coefficients.json'), 'utf8'));
+
+/**
+ * The taxon a design is about. A design built by blending reference organisms carries no taxon of its own, so
+ * the dominant parent's is used -- the same rule validate-tools.mjs applies when it decides whether a reference
+ * set may speak about a design. `from` says which it was, because "the taxon of the thing it is mostly made of"
+ * is a weaker statement than "its taxon" and the coefficient chosen from it inherits that weakness.
+ */
+export function designTaxon(doc, bundle) {
+  const direct = doc?.base?.taxon ?? doc?.taxon ?? doc?.species ?? null;
+  if (direct) return { taxon: direct, from: 'stated on the design' };
+  const parents = doc?.base?.parents;
+  if (!Array.isArray(parents) || !parents.length || !bundle) return { taxon: null, from: null };
+  const ranked = Object.entries(O.leaves(bundle, parents)).sort((a, b) => b[1] - a[1]);
+  for (const [id, w] of ranked) {
+    const t = bundle.organisms[id]?.taxon || bundle.organisms[id]?.species;
+    if (t) return { taxon: t, from: `the design's dominant parent ${id} (weight ${+w.toFixed(3)}${ranked.length > 1 ? `, of ${ranked.length} reference organisms it blends` : ''})` };
+  }
+  return { taxon: null, from: null };
+}
+
+/** The C_Lmax entry covering `taxon`, or a reason there is none. */
+export function liftCoefficientFor(taxon) {
+  if (!taxon) return { ok: false, reason: 'the design carries no taxon, so no lift coefficient can be chosen for it: C_Lmax is a property of a particular wing on a particular animal, and this check will not pick one by default' };
+  const place = placeTaxon(taxon);
+  if (!place.placed) return { ok: false, taxon, reason: `"${taxon}" is not in the clade table (lib/lean-taxonomy.mjs), so it cannot be placed in any clade and no lift coefficient can be matched to it` };
+  const within = [place.key, ...place.ancestors];
+  // An entry covers a taxon either by its own clade, or by a borrow it declares -- never by default.
+  const reach = e => {
+    if (within.includes(e.clade)) return { clade: e.clade, via: null };
+    const b = (e.borrowable_to || []).find(x => within.includes(x.clade));
+    return b ? { clade: b.clade, via: b } : null;
+  };
+  const hits = LIFT.entries.map(e => ({ e, r: reach(e) })).filter(x => x.r);
+  if (!hits.length) {
+    return { ok: false, taxon, key: place.key, clades: place.ancestors.slice(0, 6),
+      reason: `no measured maximum lift coefficient in this repository covers ${place.key}. sim-engine/validate/physics/lift-coefficients.json holds coefficients for ${LIFT.entries.map(e => [e.clade, ...(e.borrowable_to || []).map(b => b.clade)].join('/')).join(' and ')}, and the NCBI taxonomy places ${place.key} inside none of them. Without a C_Lmax the required lifting area is undefined, and no other animal's value is a substitute: it is a different wing.` };
+  }
+  // Narrowest wins: the entry whose covering clade sits closest to the taxon in its own ancestor list.
+  const pick = hits.sort((a, b) => within.indexOf(a.r.clade) - within.indexOf(b.r.clade))[0];
+  const best = pick.e, via = pick.r.via;
+  const species = best.measured_on?.match(/\b([A-Z][a-z]+ [a-z]+)\b/)?.[1] ?? null;
+  const exact = !!species && place.key.startsWith(species);
+  return { ok: true, C_Lmax: best.C_Lmax, sd: best.sd ?? null, entry: best, taxon: place.key, clade: best.clade,
+    kind: exact ? 'measured' : 'borrowed',
+    measured_on_species: species, borrowed_via: via ? { clade: via.clade, reason: via.reason, limit: via.limit } : null,
+    note: exact
+      ? `C_Lmax ${best.C_Lmax} measured on ${best.measured_on} (${best.source}).`
+      : via
+        ? `C_Lmax ${best.C_Lmax} is BORROWED ACROSS A DECLARED SCOPE: measured on ${best.measured_on}, whose clade is ${best.clade}, and applied to ${place.key} under the entry's own borrowable_to ${via.clade}. The stated reason: ${via.reason}`
+        : `C_Lmax ${best.C_Lmax} is BORROWED: it was measured on ${best.measured_on} and is applied here to ${place.key} because the NCBI taxonomy places both inside ${best.clade}. ${best.scope_note ?? ''}`.trim(),
+    caveat: best.caveat, area_convention: best.area_convention };
+}
 
 /**
  * Run the standing checks.
@@ -78,21 +145,42 @@ export function standingChecks({ state, runs = {}, scenarios = {}, doc = null, b
 
   // ---- 2. does the lifting area it has support its mass at the speed it can reach?
   {
-    const v0 = mval(g, 'launch_airspeed_m_s'), WL = mval(g, 'wing_loading_N_m2');
+    const WL = mval(g, 'wing_loading_N_m2');
+    // The launch speed normally comes from the glide scenario. That scenario is a teleost scenario and needs
+    // teleost STATE fields, so for a design outside those organisms it never runs -- and then this check used
+    // to refuse for want of a speed even when the designer had stated one. A speed the caller SUPPLIED is a
+    // legitimate input as long as nobody calls it a measurement, so it is taken, and labelled.
+    const vRun = mval(g, 'launch_airspeed_m_s');
+    const vSupplied = val(state, 'launch_airspeed_m_s');
+    const v0 = vRun ?? num(vSupplied);
+    const vFrom = vRun != null ? 'the glide scenario' : vSupplied != null ? `supplied in STATE (${state?.launch_airspeed_m_s?.kind ?? 'unknown kind'}: ${state?.launch_airspeed_m_s?.source ?? 'no source given'})` : null;
     const S = val(state, 'lifting_area_m2') ?? (val(state, 'pectoral_area_both_m2') != null ? val(state, 'pectoral_area_both_m2') * (0.012688 / 0.006377) : null);
     const m = val(state, 'mass_kg');
     const rho = state?.ambient?.air_density_kg_m3?.value ?? 1.225;
-    const CLmax = 0.78; // Park & Choi 2010 Table 2, stuffed Cypselurus hiraii at alpha 35 deg
+    const dt = designTaxon(doc, bundle);
+    const taxon = dt.taxon;
+    const cl = liftCoefficientFor(taxon);
+    if (cl.ok) cl.note += ` Taxon ${taxon}, from ${dt.from}.`;
     const mc = modelConfidence({ scenario: gs, run: g, metricKey: 'glide_range_total_m',
-      extra: { assumed_inputs: ['C_Lmax 0.78 is measured on a stuffed Cypselurus hiraii in a wind tunnel; using it for any other body is borrowed'] } });
-    if (v0 == null || S == null || m == null || !(v0 > 0)) out.push(CHECK('lifting_area_supports_mass', 'Lifting area supports the mass at the reachable launch speed', {
-      unit: 'm2', limiting_factor: v0 == null || !(v0 > 0) ? 'no sourced launch speed for this organism: the required area is undefined' : 'mass or lifting area is null in STATE', model_confidence: mc }));
+      extra: { assumed_inputs: cl.ok ? [cl.note, ...(cl.caveat ? [cl.caveat] : [])] : [cl.reason] } });
+    // NO COEFFICIENT, NO NUMBER. This is the branch that used to be unreachable.
+    if (!cl.ok) out.push(CHECK('lifting_area_supports_mass', 'Lifting area supports the mass at the reachable launch speed', {
+      unit: 'm2', limiting_factor: cl.reason, taxon,
+      detail: { what_is_missing: 'a maximum lift coefficient measured on a wing of this kind, in sim-engine/validate/physics/lift-coefficients.json',
+        clades_searched: cl.clades ?? null, coefficients_available: LIFT.entries.map(e => ({ clade: e.clade, C_Lmax: e.C_Lmax, measured_on: e.measured_on })) },
+      model_confidence: mc }));
+    else if (v0 == null || S == null || m == null || !(v0 > 0)) out.push(CHECK('lifting_area_supports_mass', 'Lifting area supports the mass at the reachable launch speed', {
+      unit: 'm2', limiting_factor: v0 == null || !(v0 > 0) ? 'no launch speed for this organism, from the glide scenario or supplied: the required area is undefined' : 'mass or lifting area is null in STATE',
+      taxon, detail: { C_Lmax: cl.C_Lmax, C_Lmax_kind: cl.kind, C_Lmax_note: cl.note }, model_confidence: mc }));
     else {
-      const Sreq = (2 * m * 9.81) / (rho * v0 * v0 * CLmax);
+      const Sreq = (2 * m * 9.81) / (rho * v0 * v0 * cl.C_Lmax);
       out.push(CHECK('lifting_area_supports_mass', 'Lifting area supports the mass at the reachable launch speed', {
-        status: S >= Sreq ? 'met' : 'not met', measured: S, unit: 'm2', threshold: Sreq, op: '>=',
-        limiting_factor: S >= Sreq ? null : `the lifting area is ${(Sreq / S).toFixed(2)}x too small: ${(S * 1e4).toFixed(2)} cm2 against ${(Sreq * 1e4).toFixed(2)} cm2 needed to carry ${(m * 9.81).toFixed(3)} N at ${v0.toFixed(2)} m/s`,
-        detail: { wing_loading_N_m2: WL, wing_loading_limit_N_m2: 0.5 * rho * v0 * v0 * CLmax, area_convention: 'STATE lifting_area_m2 is pectoral + pelvic + caudal (mesh); Park & Choi refer their coefficients to pectoral + pelvic + body planform. The conventions differ and this check does not correct for it.' },
+        status: S >= Sreq ? 'met' : 'not met', measured: S, unit: 'm2', threshold: Sreq, op: '>=', taxon,
+        limiting_factor: S >= Sreq ? null : `the lifting area is ${(Sreq / S).toFixed(2)}x too small: ${(S * 1e4).toFixed(2)} cm2 against ${(Sreq * 1e4).toFixed(2)} cm2 needed to carry ${(m * 9.81).toFixed(3)} N at ${v0.toFixed(2)} m/s with C_Lmax ${cl.C_Lmax}`,
+        detail: { wing_loading_N_m2: WL ?? (m * 9.81) / S, wing_loading_limit_N_m2: 0.5 * rho * v0 * v0 * cl.C_Lmax,
+          launch_airspeed_m_s: v0, launch_airspeed_from: vFrom,
+          C_Lmax: cl.C_Lmax, C_Lmax_sd: cl.sd, C_Lmax_kind: cl.kind, C_Lmax_note: cl.note, C_Lmax_caveat: cl.caveat, C_Lmax_source: cl.entry.source, C_Lmax_doi: cl.entry.doi ?? null,
+          area_convention: `STATE lifting_area_m2 is pectoral + pelvic + caudal (mesh); the coefficient is referred to ${cl.area_convention}. The conventions differ and this check does not correct for it.` },
         model_confidence: mc }));
     }
   }

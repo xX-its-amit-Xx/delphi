@@ -1,0 +1,44 @@
+{
+ "what": "Maximum lift coefficients, per clade, each from a named measurement on a named animal. The standing check lifting_area_supports_mass needs a C_Lmax to turn a mass and a speed into a required area, and C_Lmax is a property of a wing, not of physics: it cannot be derived and it cannot be guessed.",
+ "why_this_file_exists": "standing.mjs carried `const CLmax = 0.78` -- Park & Choi's wind-tunnel value for a stuffed flying fish -- and applied it to every design it was handed, with a comment in the code saying that using it for any other body is borrowed. Nothing enforced that comment. Asked whether a mouse's wings carry a mouse, the check would have answered using a flying fish's lift curve and reported a number. A clade with no measurement must produce a refusal, not someone else's coefficient.",
+ "how_it_is_read": "The design's taxon is placed in the clade table (lib/lean-taxonomy.mjs, generated from the NCBI taxonomy) and the NARROWEST entry whose `clade` contains it wins. An entry may also declare `borrowable_to`: wider clades it MAY be applied to, each with the reason, which is how a borrow becomes a stated decision instead of a silent default. A taxon in neither `clade` nor `borrowable_to` gets no coefficient: the check returns `no model` and names what is missing. kind is 'measured' only when the design's taxon IS the species measured; anything else is a borrow and says so, with the distance.",
+ "units": "dimensionless; each coefficient is referred to the reference area stated in `area_convention`, and a coefficient used with a differently-defined area is wrong by the ratio of the two areas",
+ "entries": [
+  {
+   "clade": "Exocoetidae",
+   "C_Lmax": 0.78,
+   "kind": "measured",
+   "measured_on": "one stuffed Cypselurus hiraii specimen in a wind tunnel, at angle of attack 35 deg",
+   "source": "Park H, Choi H 2010, Aerodynamic characteristics of flying fish in gliding flight, J Exp Biol 213:3269-3279, Table 2",
+   "doi": "10.1242/jeb.046052",
+   "area_convention": "pectoral + pelvic + body planform",
+   "caveat": "A stuffed specimen held at a fixed attitude. It measures the shape, not the living animal's control of it.",
+   "borrowable_to": [
+    {
+     "clade": "Teleostei",
+     "reason": "The flying-fish lift curve is what the teleost glider designs in this repository are built toward: winged-zebrafish, tff and the ff-zf chimera all move the pectoral fin proportion toward Exocoetidae, so Park & Choi's coefficient is the stated reference these designs are measured against rather than an unrelated animal's. It remains a borrow across an order and is labelled one.",
+     "limit": "Teleostei only. It is not offered to tetrapods: a membrane stretched between limbs is not a stiff pectoral fin, and no part of Park & Choi's measurement transfers to it."
+    }
+   ]
+  },
+  {
+   "clade": "Theria <mammals>",
+   "C_Lmax": 1.48,
+   "sd": 0.18,
+   "kind": "measured",
+   "measured_on": "live Petaurus breviceps (sugar glider, a marsupial) in free glides, mean angle of attack 44.15 +/- 3.12 deg",
+   "source": "Bishop KL 2007, Aerodynamic force generation, performance and control of body orientation during gliding in sugar gliders (Petaurus breviceps), J Exp Biol 210:2593-2606",
+   "doi": "10.1242/jeb.002071",
+   "area_convention": "the whole outstretched body-and-membrane planform, as digitised from the gliding animal",
+   "caveat": "THIS IS A STALLED-MEMBRANE GLIDE COEFFICIENT, NOT A STEADY-FLIGHT MAXIMUM, and the source is explicit that it was not enough. In the same glides the animals accelerated downward at 1.0 +/- 0.5 m/s2 and forward at 2.1 +/- 0.6 m/s2: Bishop states that body weight was NOT fully supported by aerodynamic force and that some of the lift went into forward acceleration. The angles of attack are far above where an engineered wing stalls. Bishop KL 2006 (J Exp Biol 209:689-701, doi 10.1242/jeb.02062) reports the same for Glaucomys volans, gliding at 35.4-53.5 deg with the wings stalled and accelerating downward, and finds flying squirrels reach higher lift coefficients than sugar gliders -- so 1.48 is, if anything, generous for a mammal without a flying squirrel's specialisations.",
+   "scope_note": "Measured in a marsupial glider and offered across Theria, which is marsupials and placentals together. For any taxon other than Petaurus breviceps this is a BORROW across a clade, and the check labels it so. It is the closest measurement in this repository to a gliding mammal; it is not a measurement of the animal being designed.",
+   "clade_note": "Written as the clade table writes it. NCBI carries a second Theria (a genus of moths), so the mammal clade is the qualified label; an unqualified 'Theria' would be ambiguous and the table refuses to guess.",
+   "borrowable_to": []
+  }
+ ],
+ "not_here": [
+  "No powered-flight coefficient for any mammal. Powered flight needs a coefficient measured through a wingbeat, and this repository has none; a gliding coefficient cannot stand in for one, because the question a flapping wing answers is about power, not only about area.",
+  "Nothing for Aves. Birds are the frozen held-out clade (holdout/exam.json) and no bird measurement enters this repository.",
+  "No coefficient for insects, bats or any other flier not listed above."
+ ]
+}

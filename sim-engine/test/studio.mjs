@@ -667,5 +667,37 @@ await ok('a taxon the clade table cannot place is reported as unplaced, not mapp
 });
 
 
+
+await ok('a session finding records what a tool said, in the tool own vocabulary', async () => {
+  const ST = await import('../tools/studio.mjs');
+  const s = (await ST.sessionOpen({ title: 'finding kind test', author: 'agent:test' })).result;
+  const e = (await ST.sessionPost({ session: s.session, author: 'agent:test', kind: 'finding',
+    tool: 'flight_support_check', verdict: 'does-not-carry', generation: 1,
+    body: 'lift reaches 0.39x the weight at the best corner of the stated ranges',
+    detail: { lift_over_weight: { best: 0.388 }, C_Lmax: 1.48 } })).result;
+  assert.equal(e.entry.type, 'finding');
+  assert.equal(e.entry.verdict, 'does-not-carry');
+  assert.equal(e.entry.generation, 1);
+  assert.equal(e.entry.detail.C_Lmax, 1.48, 'the numbers are stored as the tool gave them, not reformatted');
+  // A finding is evidence: it needs no human role and no approval, because it changes nothing.
+  const read = (await ST.sessionRead({ session: s.session })).result;
+  assert.equal(read.findings.count, 1);
+  assert.equal(read.findings.generations[0].generation, 1);
+  assert.equal(read.findings.generations[0].verdicts.flight_support_check, 'does-not-carry');
+});
+
+await ok('a finding cannot carry edits, and is refused without a tool or a verdict', async () => {
+  const ST = await import('../tools/studio.mjs');
+  const s = (await ST.sessionOpen({ title: 'finding guards test', author: 'agent:test' })).result;
+  const base = { session: s.session, author: 'agent:test', kind: 'finding', body: 'x' };
+  await assert.rejects(ST.sessionPost({ ...base, verdict: 'pass' }), /needs .tool./);
+  await assert.rejects(ST.sessionPost({ ...base, tool: 't' }), /needs .verdict./);
+  await assert.rejects(ST.sessionPost({ ...base, tool: 't', verdict: 'pass', body: '' }), /needs a body/);
+  // the line this must not cross: evidence never becomes a change to the organism
+  await assert.rejects(ST.sessionPost({ ...base, tool: 't', verdict: 'pass',
+    edits: [{ target: { level: 'body' }, param: 'x', op: 'set', value: 1, author: 'agent:test', reason: 'r' }] }), /cannot carry edits/);
+});
+
+
 console.log(`\n${pass} passed, ${fail} failed${M ? ` (MUTATE=${M})` : ''}`);
 process.exit(fail ? 1 : 0);

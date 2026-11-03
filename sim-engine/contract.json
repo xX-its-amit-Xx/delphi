@@ -1,7 +1,7 @@
 {
  "server": "delphisci-sim-engine",
  "version": "0.1.0",
- "contract_version": "0.8.0",
+ "contract_version": "0.8.1",
  "changelog": "sim-engine/CHANGELOG.md",
  "transport": "stdio",
  "envelope": {
@@ -1160,7 +1160,7 @@
   {
    "name": "session_post",
    "title": "Post to a co-design session",
-   "description": "kind 'comment' | 'proposal' (edits + rationale + the scenario results that motivated them; validated, NOT applied; gets a proposal_id for session_decide) | 'edit' (applied at once; only for author roles starting with 'human'). author is a role label, never a personal identifier.",
+   "description": "kind 'comment' | 'finding' (one tool run: the tool, its verdict and its numbers, stored structured -- evidence, changes nothing, any role) | 'proposal' (edits + rationale + the scenario results that motivated them; validated, NOT applied; gets a proposal_id for session_decide) | 'edit' (applied at once; only for author roles starting with 'human'). author is a role label, never a personal identifier.",
    "inputSchema": {
     "type": "object",
     "properties": {
@@ -1173,12 +1173,29 @@
      "kind": {
       "enum": [
        "comment",
+       "finding",
        "proposal",
        "edit"
       ]
      },
      "body": {
       "type": "string"
+     },
+     "tool": {
+      "type": "string",
+      "description": "finding: the tool or check that produced it, e.g. \"physics_check\", \"lean_check\", \"blueprint.mjs\"."
+     },
+     "verdict": {
+      "type": "string",
+      "description": "finding: the outcome in one word as the tool itself reported it -- pass, fail, cannot-assess, out-of-scope, refused, holds, violated."
+     },
+     "generation": {
+      "type": "number",
+      "description": "finding: which iteration of the design this was measured on, so a log can be read as a sequence rather than a pile."
+     },
+     "detail": {
+      "type": "object",
+      "description": "finding: the numbers and reasons, verbatim from the tool result. Stored as given; nothing here is recomputed."
      },
      "edits": {
       "type": "array",
@@ -2557,6 +2574,152 @@
       "description": "Launch height for the standing flight checks (default 1 m, the glide scenario's own default; kind assumed)."
      }
     }
+   }
+  },
+  {
+   "name": "flight_support_check",
+   "title": "Do the wings carry the animal? (any clade, from declared inputs)",
+   "description": "The one aerodynamic question, asked of ANY animal: does lift at the stated airspeed carry the stated weight? L = 1/2 rho v^2 S C_L >= m g. Nothing in that is clade-specific except C_L, which is a property of a particular wing and is taken by clade from a named measurement (sim-engine/validate/physics/lift-coefficients.json) -- never defaulted. No sourced coefficient for the clade means NO NUMBER, because the alternative is answering a question about a mouse with a flying fish lift curve. Use this where physics_check refuses: physics_check runs scenario modules over a resolved STATE and the engine holds body-plan parameters for its own teleosts only, so for any other animal it stops before reaching the aerodynamics. EVERY quantity must arrive with a source; a bare number is refused by name, and a range is swept so the verdict covers it. It is a STEADY-STATE AREA CHECK: it cannot answer powered flight (a power question, not an area question) and says so when asked, and it models no control, no stability and no ability to reach the speed in the first place.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "taxon": {
+      "type": "string",
+      "description": "The animal this is about (scientific name or a clade the clade table knows). Decides the lift coefficient; without it there is no coefficient and no answer."
+     },
+     "mass_kg": {
+      "anyOf": [
+       {
+        "type": "object",
+        "properties": {
+         "value": {
+          "type": "number"
+         },
+         "source": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "value",
+         "source"
+        ]
+       },
+       {
+        "type": "object",
+        "properties": {
+         "min": {
+          "type": "number"
+         },
+         "max": {
+          "type": "number"
+         },
+         "source": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "min",
+         "max",
+         "source"
+        ]
+       }
+      ],
+      "description": "Body mass. A quantity WITH ITS SOURCE: {value, source} or {min, max, source} for a range, which is swept. A bare number is refused."
+     },
+     "lifting_area_m2": {
+      "anyOf": [
+       {
+        "type": "object",
+        "properties": {
+         "value": {
+          "type": "number"
+         },
+         "source": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "value",
+         "source"
+        ]
+       },
+       {
+        "type": "object",
+        "properties": {
+         "min": {
+          "type": "number"
+         },
+         "max": {
+          "type": "number"
+         },
+         "source": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "min",
+         "max",
+         "source"
+        ]
+       }
+      ],
+      "description": "The area that generates lift, measured the same way the coefficient is referred to. A quantity WITH ITS SOURCE: {value, source} or {min, max, source} for a range, which is swept. A bare number is refused."
+     },
+     "airspeed_m_s": {
+      "anyOf": [
+       {
+        "type": "object",
+        "properties": {
+         "value": {
+          "type": "number"
+         },
+         "source": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "value",
+         "source"
+        ]
+       },
+       {
+        "type": "object",
+        "properties": {
+         "min": {
+          "type": "number"
+         },
+         "max": {
+          "type": "number"
+         },
+         "source": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "min",
+         "max",
+         "source"
+        ]
+       }
+      ],
+      "description": "The airspeed at which it is asked to be flying. A quantity WITH ITS SOURCE: {value, source} or {min, max, source} for a range, which is swept. A bare number is refused."
+     },
+     "air_density_kg_m3": {
+      "type": "object",
+      "description": "Optional {value, source}. ISA sea level (1.225 kg/m3) if omitted, and the result says it was not supplied."
+     },
+     "powered": {
+      "type": "boolean",
+      "description": "true if the question is about POWERED flight. The check then refuses and says what a power answer would need, rather than returning an area result to a power question."
+     },
+     "question": {
+      "type": "string",
+      "description": "The question as asked, in words. Only read for whether it is about powered flight."
+     }
+    },
+    "required": [
+     "taxon"
+    ]
    }
   },
   {

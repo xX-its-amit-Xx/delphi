@@ -317,6 +317,11 @@ tool("physics_check", pc.description, {
   launch_height_m: z.number().optional(),
 }, args => pc.handler(HOSTED ? { ...args, draws: Math.min(args.draws ?? 200, 500) } : args));
 
+// The aerodynamics on its own, for an animal physics_check cannot reach. No network, no writes, pure
+// arithmetic over declared inputs and one sourced coefficient, so it is served hosted unchanged.
+const fsc = PHYSICS_TOOLS.find(t => t.name === "flight_support_check");
+tool("flight_support_check", fsc.description, jsonShape(fsc.inputSchema), args => fsc.handler(args));
+
 // The components of the report, each callable alone.
 tool("validate_design", vt.validate_design.description, {
   organism: ORGANISM, specimen: SPECIMEN, ageDays: z.number().optional(), conditions: z.record(z.string(), z.any()).optional(),
@@ -379,6 +384,45 @@ tool("lean_open_question_guard", oq.lean_open_question_guard.description, {
   atoms: z.array(z.string()).optional().describe("shared_scope.atoms, if any."),
   taxa: z.array(z.string()).optional(),
 }, args => oq.lean_open_question_guard.handler(args));
+
+// -- The Design Studio -------------------------------------------------------------------------------
+// The studio was reachable from sim-engine/cli.mjs and from the browser page, and NOT over MCP: an agent with
+// only this server could parse a request into a spec, place its organism in a clade and check the laws, and then
+// had no way to build the document those answers are about. The gap was invisible because every individual tool
+// worked.
+//
+// These are registered LOCAL ONLY, under the same rule as everything else that writes: organism_create,
+// organism_from_blueprint, organism_edit and the session log write files under sim-engine/sessions/, and the
+// hosted server writes nothing on an anonymous caller's behalf. Running `node mcp/cli.mjs tools` locally lists
+// them; the hosted tool list is unchanged.
+//
+// The schemas are JSON Schema (studio.mjs is shared with the browser, which has no zod). This converts the top
+// level only -- enough for MCP to advertise the argument names, types and which are required -- and the handler
+// validates in full, as it already did for every other caller. Nested shapes are passed through as objects
+// rather than being described twice and drifting.
+function JS2Z(s, name) {
+  const t = Array.isArray(s?.type) ? s.type[0] : s?.type;
+  let z0;
+  if (s?.enum) z0 = z.enum(s.enum.map(String));
+  else if (s?.anyOf) z0 = z.union(s.anyOf.map((x, i) => JS2Z(x, `${name}[${i}]`)).map(x => (x.isOptional?.() ? x.unwrap() : x)));
+  else if (t === 'string') z0 = z.string();
+  else if (t === 'number' || t === 'integer') z0 = z.number();
+  else if (t === 'boolean') z0 = z.boolean();
+  else if (t === 'array') z0 = z.array(s.items ? (x => (x.isOptional?.() ? x.unwrap() : x))(JS2Z(s.items, name + '[]')) : z.any());
+  else if (t === 'object') z0 = z.record(z.string(), z.any());
+  else z0 = z.any();
+  return s?.description ? z0.describe(s.description) : z0;
+}
+function jsonShape(schema) {
+  return Object.fromEntries(Object.entries(schema?.properties ?? {}).map(([k, v]) => {
+    const zz = JS2Z(v, k);
+    return [k, (schema.required ?? []).includes(k) ? zz : zz.optional()];
+  }));
+}
+if (!HOSTED) {
+  const { STUDIO_TOOLS } = await import("../sim-engine/tools/studio.mjs");
+  for (const t of STUDIO_TOOLS) tool(t.name, `${t.title}. ${t.description}`, jsonShape(t.inputSchema), args => t.handler(args));
+}
 
 // Only start a transport when this file is the program. mcp/cli.mjs imports TOOLS from here, and connecting
 // stdio on import would make the CLI hang waiting for MCP frames.

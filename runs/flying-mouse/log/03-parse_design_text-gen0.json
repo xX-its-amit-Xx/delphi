@@ -1,0 +1,138 @@
+{
+ "tool": "parse_design_text",
+ "generation": 0,
+ "why": "the front door: text to a DesignSpec",
+ "args": {
+  "text": "I want to make a flying mouse: a mouse that grows wings that can actually support its flight."
+ },
+ "ms": 111,
+ "result": {
+  "contract_version": "0.8.1",
+  "result": {
+   "spec": {
+    "start_from": [],
+    "criteria": [
+     {
+      "scenario": "glide",
+      "op": "feasible",
+      "params": {},
+      "hard": true,
+      "weight": 1,
+      "source_text": "I want to make a flying mouse: a mouse that grows wings that can actually support its flight",
+      "stages": [
+       "adult"
+      ],
+      "id": "c1"
+     }
+    ],
+    "editable": [],
+    "constraints": {
+     "lean": "must-hold"
+    },
+    "taxon": "Mus musculus"
+   },
+   "unparsed": [
+    {
+     "text": "mouse",
+     "organism_not_in_bundle": "mouse",
+     "of_clause": "I want to make a flying mouse: a mouse that grows wings that can actually support its flight",
+     "reason": "organism \"mouse\" has no reference parameter set in this engine (it holds measured parameters for: zebrafish, flying fish, winged zebrafish, wingless flying fish, TFF, the ff-zf chimera). It is not mapped to a \"close\" one, because the nearest fish is not this animal. A taxon-based design can still be built from it: see spec.taxon, organism_create {taxon} and organism_from_blueprint. The rest of this clause IS parsed: any criterion in it is on the spec, and will be judged once a parameter set for this clade exists."
+    },
+    {
+     "text": "I want to make a flying mouse: a mouse that grows wings that can actually support its flight",
+     "reason": "part of this clause was not understood: \"I want to make a flying a that grows wings that actually support its flight\"",
+     "leftover": "I want to make a flying a that grows wings that actually support its flight"
+    }
+   ],
+   "refused": [],
+   "assumptions": [
+    "glide with no distance: read as \"the organism can glide\" (run().feasible)",
+    "no organism named: start_from is empty (validation will ask for one, e.g. \"a zebrafish ...\" or \"70% zebrafish 30% flying fish\")",
+    "no stage stated for 1 criterion: adult assumed (say \"as a larva\", \"at all stages\" or \"at 30 dpf\")",
+    "no editable parameters stated: the optimizer has nothing to vary (say e.g. \"vary the pectoral fin area from 0.02 to 0.08\")",
+    "Lean constraints not mentioned: they hold anyway (constraints.lean is always \"must-hold\")"
+   ],
+   "taxon_resolution": {
+    "organisms_named": [
+     "mouse"
+    ],
+    "taxon": "Mus musculus",
+    "taxid": 10090,
+    "clades": [
+     "Mus <subgenus>",
+     "Mus <genus>",
+     "Murinae",
+     "Muridae",
+     "Muroidea",
+     "Myomorpha",
+     "Rodentia",
+     "Glires"
+    ],
+    "placed": true,
+    "reason": "\"mouse\" is placed in the clade table as Mus musculus. The spec carries it as `taxon`, so every law scoped to one of its clades is judged for it and a law scoped elsewhere is reported out of scope with its clade named. No reference parameter set exists for it, so no criterion can be evaluated and validation stays false.",
+    "next": [
+     "organism_create {id, taxon} -- a taxon-based document",
+     "organism_from_blueprint {blueprint} -- the full ontology hierarchy for a described organism, via organism-design/blueprint.mjs",
+     "lean_check {design:{taxon, ...}} -- clade-correct law verdicts"
+    ],
+    "what_is_missing": "a reference parameter set (body-plan quantities and a growth track) for this clade; without one the engine can name the organism and check its laws, but cannot resolve a STATE, run a scenario or score it"
+   },
+   "validation": {
+    "ok": false,
+    "errors": [
+     {
+      "path": "start_from",
+      "message": "start_from needs at least one {organism, weight}"
+     }
+    ],
+    "warnings": [],
+    "normalised_spec": {
+     "start_from": [],
+     "criteria": [
+      {
+       "scenario": "glide",
+       "op": "feasible",
+       "params": {},
+       "hard": true,
+       "weight": 1,
+       "source_text": "I want to make a flying mouse: a mouse that grows wings that can actually support its flight",
+       "stages": [
+        "adult"
+       ],
+       "id": "c1"
+      }
+     ],
+     "editable": [],
+     "constraints": {
+      "lean": "must-hold"
+     }
+    }
+   },
+   "engine": [
+    "scenarios/: altitude, current, daynight, digestion, glide, grip, predator, pressure, sleep, temperature, wind",
+    "lib/data-node.mjs bundle",
+    "lib/organism.mjs",
+    "lib/state.mjs"
+   ]
+  },
+  "provenance": [
+   {
+    "quantity": "parser",
+    "value": "sim-engine/lib/parse-text.mjs",
+    "kind": "derived",
+    "source": "Rule-based; no model, no network. The same text always gives the same spec."
+   },
+   {
+    "quantity": "taxon placement",
+    "value": "Mus musculus",
+    "kind": "derived",
+    "source": "lib/lean-taxonomy.mjs, generated from the NCBI taxonomy via Ubergraph by lean/registry/build-taxonomy.mjs"
+   }
+  ],
+  "scope": "A parse of the words, not an understanding of the request. Anything the rules do not cover is in `unparsed` and was NOT turned into a criterion; defaults the parser applied are in `assumptions`. Validation checks names, units and ranges against the scenario modules; it says nothing about whether the design can meet the criteria. An organism outside the engine's bundle is named and placed in a clade under `taxon_resolution`, which is a placement and NOT a parameter set: nothing dimensional is known about it here.",
+  "weakest_input": "derived",
+  "counts": {
+   "derived": 2
+  }
+ }
+}

@@ -540,20 +540,34 @@ export function parseDesignText(text) {
     }
     orgsHere.sort((a, b) => a.index - b.index);
     if (orgsHere.length) { orgSeen.push(...orgsHere.map(({ index, ...o }) => o)); cl.takeAll(/\b(?:based\s+on|starting\s+from|start\s+from|derived\s+from|mix(?:ed)?|blend(?:ed)?|hybrid|cross)\b/i); }
-    const other = OTHER_ORGANISMS.exec(cl.text);
-    if (other) {
-      // An organism this engine holds no parameters for is NOT a dead end any more. This parser stays
-      // rule-based with no network and no table lookup, so it does one thing: it NAMES the organism, in
-      // `organism_not_in_bundle`, and leaves resolving it to the caller. parse_design_text then places it
-      // in a clade and returns a taxon-based spec, so "a mouse with no limbs" reaches the law check with
-      // Mus musculus intact instead of being refused at the door.
-      //
-      // It is still unparsed, because no reference parameter set exists and so no criterion can be
-      // evaluated against this clause. What changed is that the reason says what is missing and what the
-      // organism is, rather than listing the six fish on offer.
-      unparsed.push({ text: raw, organism_not_in_bundle: other[1],
-        reason: `organism "${other[1]}" has no reference parameter set in this engine (it holds measured parameters for: zebrafish, flying fish, winged zebrafish, wingless flying fish, TFF, the ff-zf chimera). It is not mapped to a "close" one, because the nearest fish is not this animal. A taxon-based design can still be built from it: see spec.taxon, organism_create {taxon} and organism_from_blueprint.` });
-      continue;
+    // An organism this engine holds no parameters for is NOT a dead end. This parser stays rule-based
+    // with no network and no table lookup, so it does one thing: it NAMES the organism, in
+    // `organism_not_in_bundle`, and leaves resolving it to the caller. parse_design_text then places it
+    // in a clade and puts it on the spec, so "a mouse with no limbs" reaches the law check with
+    // Mus musculus intact instead of being refused at the door.
+    //
+    // AND ITS REQUIREMENTS ARE STILL REQUIREMENTS. This block used to `continue`, which named the
+    // organism and threw away everything else in the clause:
+    //
+    //   "a zebrafish that grows wings that can actually support its flight" -> one glide criterion
+    //   "a mouse     that grows wings that can actually support its flight" -> criteria: []
+    //
+    // One word changed and the request to FLY was silently dropped. An empty criteria list is the worst
+    // available answer, because nothing downstream can fail: a spec that asks for nothing is satisfied
+    // by anything, and the refusal that should have come from physics never gets the chance.
+    //
+    // So the organism is named, blanked out of the clause so the criterion families do not read it as a
+    // structure word, and the clause then goes through those families like any other. What stays true is
+    // that no reference parameter set exists: start_from is still empty, so validateSpec rejects the spec
+    // and no criterion can be evaluated. The difference is that the spec now records WHAT was asked.
+    const ORG_G = new RegExp(OTHER_ORGANISMS.source, 'gi');
+    const notInBundle = [...new Set([...cl.text.matchAll(ORG_G)].map(m => m[1].toLowerCase()))];
+    if (notInBundle.length) {
+      cl.takeAll(OTHER_ORGANISMS);
+      for (const name of notInBundle) {
+        unparsed.push({ text: name, organism_not_in_bundle: name, of_clause: raw,
+          reason: `organism "${name}" has no reference parameter set in this engine (it holds measured parameters for: zebrafish, flying fish, winged zebrafish, wingless flying fish, TFF, the ff-zf chimera). It is not mapped to a "close" one, because the nearest fish is not this animal. A taxon-based design can still be built from it: see spec.taxon, organism_create {taxon} and organism_from_blueprint. The rest of this clause IS parsed: any criterion in it is on the spec, and will be judged once a parameter set for this clade exists.` });
+      }
     }
 
     // 4. weight / softness for this clause

@@ -5,6 +5,49 @@ the scenario interface. Its version is `CONTRACT_VERSION` in `lib/envelope.mjs`.
 as `contract_version`, and `contract.json` states it. The rule: anything may change, provided it is
 versioned here. While the major version is 0, a minor bump may break callers; each entry says what breaks.
 
+## 0.8.1 (2026-11-03)
+
+**Added** (1 tool; 58 -> 59, plus the 13 Design Studio tools now registered on the MCP server. One schema
+widened; nothing removed, nothing renamed, no existing field changed meaning.)
+
+- **`flight_support_check`** (`tools/physics-tools.mjs`, `validate/physics/flight-support.mjs`). The one
+  aerodynamic question -- does lift at a stated airspeed carry a stated weight -- for ANY clade, from inputs
+  the caller declares with their sources. It exists because `physics_check` runs scenario modules over a
+  resolved STATE and the engine holds body-plan parameters for its own teleosts only, so for any other
+  animal it stops before reaching aerodynamics, which is the part that is not clade-specific. Every quantity
+  must arrive as `{value, source}` or `{min, max, source}`; a bare number is refused by name, a range is
+  swept and the verdict covers it. Asked about POWERED flight it refuses and says what a power answer would
+  need. Served hosted: no network, no writes.
+- **The Design Studio over MCP.** `organism_create`, `organism_from_blueprint`, `organism_get`,
+  `organism_list_parts`, `organism_edit`, `scenario_list`, `scenario_run`, `scenario_timecourse`,
+  `optimize`, `session_open`, `session_post`, `session_decide`, `session_read` are registered on the stdio
+  server. They write under `sim-engine/sessions/`, so they are LOCAL ONLY and absent from the hosted tool
+  list, under the standing rule. Before this an agent with only this server could parse a request into a
+  spec, place its organism in a clade and check the laws, and then had no way to build the document those
+  answers were about.
+- **`session_post` gains `kind: "finding"`** (schema widened; existing kinds unchanged). A finding records
+  ONE tool run: `tool`, `verdict` in the tool's own vocabulary, `generation`, and `detail` carrying the
+  numbers verbatim. It needs no human role and carries no edits, because it changes nothing -- it is
+  evidence. The only way to record a validation result in a session used to be a comment, and a log of prose
+  cannot be read back as a sequence: you could not ask it which gates failed at generation 2.
+  `session_read` now returns `findings.generations`, the findings grouped by the design they were measured
+  on. **Breaking for a caller that enumerates `kind`**: nothing else.
+
+**Changed** (behaviour, no schema)
+
+- `physics_check`'s `lifting_area_supports_mass` no longer defaults its maximum lift coefficient. It was
+  `const CLmax = 0.78` -- a stuffed *Cypselurus hiraii* measured in a wind tunnel -- applied to whatever
+  design it was handed, with a comment in the source saying that using it for any other body is borrowed and
+  nothing enforcing that comment. Coefficients now come by clade from
+  `validate/physics/lift-coefficients.json` with their sources, through the generated clade table, and a
+  clade with no entry gets `no model` naming what is missing. The teleost designs are unchanged: the
+  Exocoetidae entry declares `borrowable_to: Teleostei` with its reason, so `winged-zebrafish`, `tff`,
+  `flying-fish` and `ff-zf-chimera` return the same statuses, areas and thresholds as before, now labelled
+  as a declared borrow. A design with no taxon of its own takes its dominant parent's, and says so.
+- `parse_design_text` no longer discards the criteria in a clause that names an organism the engine has no
+  parameters for. "a mouse that ... supports its flight" returned `criteria: []`; the same sentence with
+  "zebrafish" returned a glide criterion.
+
 ## 0.8.0 (2026-11-01)
 
 **Added** (18 tools; 40 -> 58. Nothing removed, no schema changed.)

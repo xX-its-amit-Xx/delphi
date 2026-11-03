@@ -123,7 +123,11 @@ const CORPUS = [
   { text: 'a zebrafish that survives cold water', expect: { criteria: [] }, unparsed: /without a number/ },
   { text: 'a zebrafish that flies under its own power', expect: { criteria: [] }, unparsed: /powered flight/ },
   { text: 'a zebrafish that is pretty and survives 20 °C', expect: { criteria: [T(20)] }, unparsed: /pretty/ },
-  { text: 'a salmon that survives 4 °C', expect: { start_from: [], criteria: [] }, unparsed: /salmon.*no reference parameter set in this engine/ },
+  // The organism has no parameter set, so start_from stays empty and the spec cannot validate -- but the
+  // REQUIREMENT in the clause is read. This case asserted criteria: [] and so pinned the bug: naming an
+  // out-of-bundle organism used to discard every criterion in its clause, which turned "a mouse that can
+  // support its flight" into a spec that asks for nothing at all.
+  { text: 'a salmon that survives 4 °C', expect: { start_from: [], criteria: [{ scenario: 'temperature', params: { water_temperature_C: 4 }, op: 'survives' }] }, unparsed: /salmon.*no reference parameter set in this engine/ },
   { text: '', expect: { criteria: [] }, unparsed: /empty/ },
   // ── adversarial: birds (frozen holdout) and Lean waivers → refused
   { text: "copy a bird's wing onto a zebrafish", expect: { criteria: [] }, refused: 1, refusedReason: /frozen holdout/, invalid: /frozen holdout/ },

@@ -248,13 +248,23 @@ const termLabels = {};
   for (const f of found.functions) { f.label = termLabels[OBO + f.go] || null; f.verified_by = r.id; }
   for (const h of found.habitat) { h.label = termLabels[OBO + h.term] || null; h.verified_by = r.id; }
 }
+// Structures that got into the blueprint because a FUNCTION word was recognised, not because the description
+// named them. This mattered the first time a request was refused: "a mouse with wings" had its wing removed by
+// a taxon constraint, and the blueprint still contained a styliform cartilage and a styliform element, promoted
+// from the word "flight" -- so the design had gained two structures nobody asked for in place of the one it
+// asked for, and nothing in the output said so. A substitution that is not reported is indistinguishable from
+// the request having been honoured.
+const promotedFromFunction = new Map();
 // Functions: does the ontology itself link a structure to the process (capable_of or capable_of_part_of)?
 for (const f of found.functions) {
   const r = await sparql(`structures the ontologies record as capable of "${f.label}" (${f.go}) or a subtype of it, allowed for ${taxon.label}`, `SELECT DISTINCT ?s ?l ?rel WHERE { VALUES ?rel { obo:RO_0002215 obo:RO_0002216 } ?g rdfs:subClassOf obo:${f.go} . ?s ?rel ?g ; rdfs:label ?l . FILTER(STRSTARTS(STR(?s),'${OBO}UBERON_') || STRSTARTS(STR(?s),'${OBO}CL_')) ${taxonFilter('?s')} } LIMIT 40`);
   f.ontology_structures = r.rows.map(x => ({ iri: x.s, label: x.l, relation: short(x.rel) === 'RO_0002215' ? 'capable_of' : 'capable_of_part_of' }));
   f.ontology_structures_query = r.id;
   // Only organ-level structures from the ontology link are promoted into the blueprint (not cells, not whole systems).
-  for (const x of f.ontology_structures.filter(x => x.iri.includes('UBERON_') && !/system$/.test(x.label)).slice(0, 3)) anatomyIris.add(x.iri);
+  for (const x of f.ontology_structures.filter(x => x.iri.includes('UBERON_') && !/system$/.test(x.label)).slice(0, 3)) {
+    anatomyIris.add(x.iri);
+    promotedFromFunction.set(x.iri, { label: x.label, relation: x.relation, function: f.label, go: f.go, asked_as: f.matched_words, query: f.ontology_structures_query });
+  }
 }
 // Taxon check on the named anatomy: a structure the description names but the taxon cannot have is reported, not silently kept.
 let anatomyCheckQuery = null;
@@ -267,6 +277,110 @@ if (anatomyIris.size) {
 }
 const conflicts = [...anatomyIris].filter(i => !anatomyOk.get(i)).map(i => ({ iri: i, label: termLabels[i] || short(i), note: `Uberon's taxon constraints say "${termLabels[i] || short(i)}" does not occur in ${taxon.label}; kept out of the blueprint and reported here.` }));
 const keptAnatomy = [...anatomyIris].filter(i => anatomyOk.get(i));
+
+// ---------------------------------------------------------------- 2b. WHY a structure was dropped
+//
+// A conflict used to say only "Uberon's taxon constraints say X does not occur in <taxon>", which names
+// neither the axiom nor the clade it is asserted over -- and the clade is most of the story. never_in_taxon is
+// asserted over a CLADE, frequently one far wider than the request, and a clade is the kind of thing that can
+// contain a counterexample. "wing" and "patagium" are both never_in_taxon Glires; Glires is every rodent and
+// every rabbit; the flying squirrels are rodents.
+//
+// So three things are added here, each from a query whose text is stored:
+//   never_in_taxon   the forbidding clades, named, with the fact that the taxonomy puts our taxon inside them
+//   alternatives     structures the ontology DOES allow for this taxon for the same function (section 2 already
+//                    computed them per function word; nothing linked them to the structure that was refused)
+//   counterexamples  taxa inside the forbidding clade whose own common name, in the project's inventory, is a
+//                    word for the function being asked for -- read with the SAME lexicon that read the request
+//
+// A counterexample is evidence, not an override. The structure stays out of the blueprint and what happens to
+// the axiom is a decision for a person, not a side effect of a blueprint run. Saying nothing was the real
+// failure: a refusal with no reason cannot be checked, and an unfalsifiable refusal is not a result.
+let conflictWhyQuery = null;
+if (conflicts.length) {
+  const V = conflicts.map(c => `<${c.iri}>`).join(' ');
+  const r = await sparql(`why the taxon constraints exclude ${conflicts.map(c => c.label).join(', ')} for ${taxon.label}: the never_in_taxon clades, named`,
+    `SELECT DISTINCT ?s ?nt ?ntl WHERE { VALUES ?s { ${V} } { ?s obo:RO_0002161 ?nt } UNION { ?s rdfs:subClassOf ?anc . ?anc obo:RO_0002161 ?nt } UNION { ?s obo:BFO_0000050 ?anc . ?anc obo:RO_0002161 ?nt } ${T} rdfs:subClassOf ?nt . ?nt rdfs:label ?ntl }`);
+  conflictWhyQuery = r.id;
+
+  // The lexicon's own synonyms for each requested function: `fly`, `flies`, `flight` and `flying` are separate
+  // keys that all carry GO_0060361, so the words that can be recognised in a common name are exactly the words
+  // that could have been recognised in the request. One word list, used on both sides.
+  const functionWords = found.functions.map(f => ({
+    go: f.go, label: f.label, asked: f.matched_words,
+    stems: Object.entries(lexicon.function_words).filter(([k, v]) => !k.startsWith('_') && v.go === f.go).map(([k]) => k),
+  }));
+  const nameMatches = (names, stems) => {
+    const ws = names.join(' ').toLowerCase().split(/[^a-z-]+/).filter(Boolean);
+    const hit = [];
+    for (const stem of stems) {
+      const re = new RegExp('^' + stem.replace(/[-]/g, '\\-') + '(s|es|ed|ing|ion|ions|ation|ive|ory|al|ly|esis|tion|tive|e)?$');
+      if (stem.includes(' ')) { if (names.join(' ').toLowerCase().includes(stem)) hit.push(stem); }
+      else for (const w of ws) if (re.test(w)) hit.push(w);
+    }
+    return [...new Set(hit)];
+  };
+
+  for (const c of conflicts) {
+    const mine = r.rows.filter(x => x.s === c.iri);
+    const clades = [...new Map(mine.map(x => [x.nt, { iri: x.nt, label: x.ntl }])).values()];
+    c.never_in_taxon = clades;
+    c.axiom = clades.length
+      ? `Uberon asserts never_in_taxon ${clades.map(n => `"${n.label}"`).join(' and ')} for "${c.label}" (on the term, a superclass, or a whole it is part of), and the NCBI taxonomy places ${taxon.label} inside ${clades.length > 1 ? 'those clades' : 'that clade'}.`
+      : `"${c.label}" carries no never_in_taxon axiom that reaches ${taxon.label}. It was dropped by its in_taxon statements: the ontology asserts it only for taxa that neither contain nor are contained by ${taxon.label}.`;
+    c.note = `${c.axiom} The structure is kept out of the blueprint and reported here; nothing in the hierarchy stands for it.`;
+    c.verified_by = r.id;
+
+    // What the ontology WOULD allow here for the same function.
+    c.function_alternatives = functionWords.flatMap(f => {
+      const fn = found.functions.find(x => x.go === f.go);
+      const allowed = (fn.ontology_structures || []).filter(x => x.iri.includes('UBERON_'));
+      return allowed.length ? [{ function: f.label, go: f.go, asked_as: f.asked,
+        allowed_for_this_taxon: allowed.map(x => ({ iri: x.iri, label: x.label, relation: x.relation })),
+        query: fn.ontology_structures_query,
+        reading: `the ontology refuses "${c.label}" for ${taxon.label} and at the same time records ${allowed.length} structure(s) it allows for ${taxon.label} that it links to "${f.label}". Naming one of those instead is the next thing to try.` }] : [];
+    });
+
+    // The axiom against the project's own inventory.
+    c.counterexamples = [];
+    if (clades.length && functionWords.length) {
+      const inv = inventory.filter(t => t.identifiers?.ncbi_taxid);
+      const byId = new Map(inv.map(t => [`${OBO}NCBITaxon_${t.identifiers.ncbi_taxid}`, t]));
+      const inside = await sparql(`taxa in the project inventory that the NCBI taxonomy places inside ${clades.map(n => n.label).join(', ')} -- the clade(s) the "${c.label}" axiom is asserted over`,
+        `SELECT DISTINCT ?t ?nt WHERE { VALUES ?t { ${[...byId.keys()].map(i => `<${i}>`).join(' ')} } VALUES ?nt { ${clades.map(n => `<${n.iri}>`).join(' ')} } ?t rdfs:subClassOf ?nt }`);
+      for (const row of inside.rows) {
+        const t = byId.get(row.t);
+        const names = [t.accepted_name, ...(t.vernacular || []), ...(t.names_as_written || [])].filter(Boolean).map(String);
+        for (const f of functionWords) {
+          const words_matched = nameMatches(names, f.stems);
+          if (!words_matched.length) continue;
+          c.counterexamples.push({
+            taxon: t.accepted_name, rank: t.rank, taxid: t.identifiers.ncbi_taxid,
+            inside_clade: clades.find(n => n.iri === row.nt)?.label ?? short(row.nt),
+            common_names: names, words_matched, function: f.label, go: f.go,
+            source: { file: 'organisms/merged/taxa.json', key: t.key },
+            verified_by: inside.id,
+            reading: `"${c.label}" is asserted never_in_taxon ${clades.find(n => n.iri === row.nt)?.label ?? short(row.nt)}. ${t.accepted_name} is inside that clade, and this repository's own inventory writes its common name as ${names.map(n => `"${n}"`).join(', ')} -- a name for ${f.label}. Either that name is wrong or the axiom is too wide. This tool does not decide which.`,
+          });
+        }
+      }
+      if (c.counterexamples.length) c.axiom_status = 'contradicted by the project inventory: see counterexamples';
+    }
+  }
+}
+const conflictCounterexamples = conflicts.flatMap(c => c.counterexamples || []);
+
+// Which function-promoted structures actually survived into the blueprint, and -- where the description named
+// a structure for the same function and that structure was refused -- the fact that these stand in its place.
+const promoted = [...promotedFromFunction.entries()].filter(([iri]) => anatomyOk.get(iri))
+  .map(([iri, v]) => ({ iri, ...v, in_blueprint: true,
+    note: `"${v.label}" is in the blueprint because the description used the word "${v.asked_as.join('/')}", which the lexicon reads as the function "${v.function}" (${v.go}), and the ontology records this structure as ${v.relation} that function and allows it for ${taxon.label}. The description did not name it.` }));
+for (const c of conflicts) {
+  const sameFunction = promoted.filter(x => (c.function_alternatives || []).some(f => f.go === x.go));
+  if (!sameFunction.length) continue;
+  c.substituted_by = sameFunction.map(x => ({ iri: x.iri, label: x.label, relation: x.relation, function: x.function, go: x.go }));
+  c.substitution_warning = `"${c.label}" was asked for and refused, and ${sameFunction.length === 1 ? 'one structure is' : `${sameFunction.length} structures are`} in the blueprint in its place -- ${sameFunction.map(x => `"${x.label}"`).join(', ')} -- promoted from the function word "${c.function_alternatives[0].asked_as.join('/')}" rather than named by the description. READ THE HIERARCHY ACCORDINGLY: it is not the design that was requested, and the presence of a flight-related structure in it is not the ontology accepting the request.`;
+}
 
 // ---------------------------------------------------------------- 3. the hierarchy
 addNode({ id: 'body', iri: BODY, label: termLabels[BODY] || 'multicellular organism', level: 'body', parent: null, relation: null, ontology: 'UBERON', taxon: taxon.term, taxon_label: taxon.label });
@@ -433,7 +547,7 @@ const out = {
   tool: 'organism-design/blueprint.mjs',
   built: new Date().toISOString(),
   input: { description },
-  reading: { taxon, taxon_words: found.taxon, anatomy_words: found.anatomy, anatomy_words_subsumed: subsumed, absent_structures: found.absent, function_words: found.functions, habitat_words: found.habitat, conflicts, words_not_recognised: notRead, organ_system_query: organSystemQuery, organ_query: organQuery },
+  reading: { taxon, taxon_words: found.taxon, anatomy_words: found.anatomy, anatomy_words_subsumed: subsumed, absent_structures: found.absent, function_words: found.functions, habitat_words: found.habitat, conflicts, conflict_why_query: conflictWhyQuery, conflict_counterexamples: conflictCounterexamples, structures_promoted_from_function_words: promoted, words_not_recognised: notRead, organ_system_query: organSystemQuery, organ_query: organQuery },
   holdout,
   absence,
   limits: LIM,
@@ -473,4 +587,4 @@ const outPath = arg('out', path.join(here, 'examples', slug + '.json'));
 fs.mkdirSync(path.dirname(outPath), { recursive: true });
 fs.writeFileSync(outPath, JSON.stringify(out, null, 1));
 const cached = Object.values(queries).filter(q => q.cached).length;
-console.log(`${outPath}\n  taxon: ${taxon.label} (${taxon.term}); ${countsDistinct.organ_system} systems, ${countsDistinct.organ} organs, ${countsDistinct.tissue} tissues, ${countsDistinct.cell} cell types (distinct terms; ${counts.tissue} and ${counts.cell} placements); markers for ${sketch.cells_with_markers} cell types; ${Object.keys(queries).length} queries (${cached} from cache)${found.anatomy.length ? '\n  structures read from the description: ' + found.anatomy.map(a => `${a.matched} -> ${a.label || a.term}`).join(', ') : ''}${found.absent.length ? '\n  structures the description asked NOT to have: ' + found.absent.map(a => `${a.matched} -> ${a.term} (cue "${a.negation_cue}")`).join(', ') + ` -- removed ${absence.removed.length} terms, ${absence.removed_placements} placements from the hierarchy` : ''}${notRead.length ? '\n  words not recognised, so nothing in the blueprint stands for them: ' + notRead.join(', ') : ''}${conflicts.length ? '\n  conflicts: ' + conflicts.map(c => c.label).join(', ') : ''}\n  cut by the per-parent limits: ${out.pruning.totals.organs} organs, ${out.pruning.totals.tissues} tissues, ${out.pruning.totals.cells} cell types (all listed under "pruning")${holdout.contains ? '\n  note: the taxon contains the held-out clade ' + holdout.clade : ''}`);
+console.log(`${outPath}\n  taxon: ${taxon.label} (${taxon.term}); ${countsDistinct.organ_system} systems, ${countsDistinct.organ} organs, ${countsDistinct.tissue} tissues, ${countsDistinct.cell} cell types (distinct terms; ${counts.tissue} and ${counts.cell} placements); markers for ${sketch.cells_with_markers} cell types; ${Object.keys(queries).length} queries (${cached} from cache)${found.anatomy.length ? '\n  structures read from the description: ' + found.anatomy.map(a => `${a.matched} -> ${a.label || a.term}`).join(', ') : ''}${found.absent.length ? '\n  structures the description asked NOT to have: ' + found.absent.map(a => `${a.matched} -> ${a.term} (cue "${a.negation_cue}")`).join(', ') + ` -- removed ${absence.removed.length} terms, ${absence.removed_placements} placements from the hierarchy` : ''}${notRead.length ? '\n  words not recognised, so nothing in the blueprint stands for them: ' + notRead.join(', ') : ''}${conflicts.length ? '\n  conflicts (named but refused by the taxon constraints): ' + conflicts.map(c => `${c.label} -- never_in_taxon ${(c.never_in_taxon || []).map(n => n.label).join(' + ') || '(none; dropped on in_taxon)'}`).join('; ') : ''}${conflictCounterexamples.length ? '\n  counterexamples to those axioms, from organisms/merged/taxa.json: ' + conflictCounterexamples.map(x => `${x.taxon} ("${x.words_matched.join('/')}") inside ${x.inside_clade}`).join('; ') : ''}${conflicts.some(c => c.substituted_by) ? '\n  SUBSTITUTED, and the hierarchy must be read accordingly: ' + conflicts.filter(c => c.substituted_by).map(c => `"${c.label}" was refused and ` + c.substituted_by.map(x => `"${x.label}"`).join(' + ') + ' stands in its place, promoted from the function word rather than named by the description').join('; ') : ''}${conflicts.some(c => (c.function_alternatives || []).length) ? '\n  structures the ontology DOES allow here for the same function: ' + [...new Set(conflicts.flatMap(c => (c.function_alternatives || []).flatMap(f => f.allowed_for_this_taxon.map(a => a.label))))].join(', ') : ''}\n  cut by the per-parent limits: ${out.pruning.totals.organs} organs, ${out.pruning.totals.tissues} tissues, ${out.pruning.totals.cells} cell types (all listed under "pruning")${holdout.contains ? '\n  note: the taxon contains the held-out clade ' + holdout.clade : ''}`);
