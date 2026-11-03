@@ -10,16 +10,27 @@ node runs/long-lived-fruit-fly/run.mjs
 | 1 | *D. melanogaster* with wings and antennae | **pass**: 5 organ systems, 26 organs, 24 tissues, 45 cell types. All correct, none of it about lifespan. |
 | 2 | walking, and flying | walk **not contradicted**; fly **partly evaluated** — the lift coefficient is refused, correctly. |
 | 3 | where it lives and what eats it | **assembled**: 4,503 occurrence records, 29 recorded predators, the Boston insect community. |
+| 4 | does it actually live longer? | **marginally-longer** in the wild, **longer** in a vial: 1.09x against 2.00x, from the same arithmetic with one input changed. |
 
 ## The answer
 
-**The request is about time-to-death and no layer models it.** Not a missing parameter set, not an
+**2x in a vial, 1.09x in the wild.** Doubling the intrinsic lifespan of an animal with an extrinsic hazard
+of 0.08/day buys 9 % of a life, because the ceiling set by everything outside the animal is 12.5 days
+whatever happens inside it. Abolishing intrinsic mortality *entirely* would give 1.21x the baseline. That is
+the Medawar-Williams argument arriving as arithmetic over three declared rates, and it is the first result
+in these runs that needed two layers at once: the ecology layer names what is eating the fly, and the
+performance layer says what that costs the design.
+
+It is also the first question here that had NO LAYER AT ALL. What follows is what that looked like.
+
+**The request is about time-to-death and no SCENARIO models it.** Not a missing parameter set, not an
 out-of-scope clade: a missing dimension. There is no mortality rate, no survival curve, no senescence model
 and no cause of death anywhere in `sim-engine/` or the Lean law set — only growth tracks, for two teleosts.
 The system refuses in four separate places rather than answering a nearby question it can do.
 
-A lifespan layer would need a mortality model with intrinsic and extrinsic terms, a survival curve to fit,
-and some way to connect a genotype edit to a hazard rate. None of the three exists here. The actual
+`performance_check { kind: "lifespan" }` now supplies the first of those three -- a constant two-term
+hazard, E[T] = 1/(h_int + h_ext) -- and is explicit that the other two are still missing: the exponential
+shape is assumed rather than fitted, and nothing anywhere connects a genotype edit to a hazard rate. The actual
 *Drosophila* longevity literature is largely about insulin/IGF signalling, dietary restriction and
 mitochondrial function, and nothing in this repository represents a pathway at all.
 

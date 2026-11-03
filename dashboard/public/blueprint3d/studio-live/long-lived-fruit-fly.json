@@ -1,16 +1,16 @@
 {
  "what": "A replay of one Design Studio run: Can we design a fruit fly that lives longer?",
  "built_by": "node dashboard/public/blueprint3d/studio-live/gen.mjs",
- "built": "2026-11-03T06:32:32.360Z",
+ "built": "2026-11-03T07:29:31.801Z",
  "is_live": false,
  "live_hint": "studio-live.html polls POST /tool/session_read on a running sim-engine/http.mjs and shows that instead when it answers. Start one with: node sim-engine/http.mjs",
  "run": "long-lived-fruit-fly",
  "question": "Can we design a fruit fly that lives longer?",
- "session": "can-we-design-a-fruit-fly-that-lives-lon-edaa14",
- "verdict": "29 taxa are on record as eating this clade -- damselflies, orb-weavers, dragonflies, bush-crickets -- each traceable to a study. That is the nearest this system gets to the question, and it is not very near: a list of predators is not a mortality rate, and without a rate a longer intrinsic lifespan is not a longer life.",
- "tool_calls": 20,
+ "session": "can-we-design-a-fruit-fly-that-lives-lon-5692ba",
+ "verdict": "The question has an answer now, and it is a sharp one: doubling the intrinsic lifespan gives 2.00x in a vial and 1.09x in the wild, because the ceiling set by extrinsic mortality is 12.5 days whatever happens inside the animal. That is the Medawar-Williams argument arriving as arithmetic over three declared rates, and it is the first result in these runs that needed two layers at once: the ecology layer names what is eating the fly, and the performance layer says what that costs the design.",
+ "tool_calls": 28,
  "sources": {
-  "session": "sim-engine/sessions/can-we-design-a-fruit-fly-that-lives-lon-edaa14.jsonl",
+  "session": "sim-engine/sessions/can-we-design-a-fruit-fly-that-lives-lon-5692ba.jsonl",
   "generations": "runs/long-lived-fruit-fly/gen/gen*.json",
   "logs": "runs/long-lived-fruit-fly/log/",
   "journal": "runs/long-lived-fruit-fly/journal.jsonl"
@@ -19,7 +19,7 @@
   {
    "seq": 0,
    "type": "open",
-   "ts": "2026-11-03T06:32:30.793Z",
+   "ts": "2026-11-03T07:29:30.956Z",
    "title": "Can we design a fruit fly that lives longer?",
    "organism": null,
    "author": "agent:long-lived-fly",
@@ -28,7 +28,7 @@
   {
    "seq": 1,
    "type": "comment",
-   "ts": "2026-11-03T06:32:30.819Z",
+   "ts": "2026-11-03T07:29:30.986Z",
    "author": "agent:long-lived-fly",
    "body": "generation 0: Put the request through the front door first. The interesting part is not what the parser makes of \"fruit fly\" -- it is what it makes of \"lives longer\", which is the entire request.",
    "lawset_version": "1.8.1"
@@ -36,7 +36,7 @@
   {
    "seq": 2,
    "type": "finding",
-   "ts": "2026-11-03T06:32:30.887Z",
+   "ts": "2026-11-03T07:29:31.054Z",
    "author": "agent:long-lived-fly",
    "body": "the organism is named (fruit fly) and placed as Drosophila melanogaster, and the REQUIREMENT is not read at all: 0 criteria. \"Lives longer\" is not in the spec vocabulary, so the clause stays unparsed. That is correct behaviour and it is the whole finding: there is no scenario, no metric and no threshold anywhere in this engine for how long an organism lives.",
    "lawset_version": "1.8.1",
@@ -56,10 +56,6 @@
       "organism_not_in_bundle": "fruit fly",
       "of_clause": "I want a fruit fly that lives longer",
       "reason": "organism \"fruit fly\" has no reference parameter set in this engine (it holds measured parameters for: zebrafish, flying fish, winged zebrafish, wingless flying fish, TFF, the ff-zf chimera). It is not mapped to a \"close\" one, because the nearest fish is not this animal. A taxon-based design can still be built from it: see spec.taxon, organism_create {taxon} and organism_from_blueprint. The rest of this clause IS parsed: any criterion in it is on the spec, and will be judged once a parameter set for this clade exists."
-     },
-     {
-      "text": "I want a fruit fly that lives longer",
-      "reason": "no criterion, organism or edit recognised"
      }
     ],
     "validation_ok": false,
@@ -69,7 +65,45 @@
   {
    "seq": 3,
    "type": "finding",
-   "ts": "2026-11-03T06:32:30.899Z",
+   "ts": "2026-11-03T07:29:31.065Z",
+   "author": "agent:long-lived-fly",
+   "body": "the front door now ROUTES the requirement instead of dropping it: 0 requirement(s) for physics_check, 1 for performance_check, 0 that no layer takes. \"lives longer\" goes to performance_check { kind: \"lifespan\" }, and the quantities that check needs are the designer's to declare. Before this the whole clause came back unparsed, which read as a parse failure when it was a capability gap -- two different things the routing block now tells apart.",
+   "lawset_version": "1.8.1",
+   "tool": "parse_design_text/routing",
+   "verdict": "routed",
+   "generation": 0,
+   "detail": {
+    "routing": {
+     "scenario_criteria": [],
+     "performance_criteria": [
+      {
+       "requirement": "lives longer",
+       "kind": "lifespan",
+       "tool": "performance_check",
+       "how": "performance_check { kind: \"lifespan\", ... } -- the quantities it needs are the designer's to declare, with sources"
+      }
+     ],
+     "structures": "organism-design/blueprint.mjs reads the structures named in the text and resolves them to Uberon/CL terms for the taxon; organism_from_blueprint brings the result into the studio",
+     "laws": "lean_check decides clade scope from the taxon and reports every law as holds / violated / out-of-scope / cannot-evaluate",
+     "movement": "locomotion_check -- how it moves, which no part list can settle: the scallop theorem, the cycle arithmetic and the Reynolds/Froude regimes",
+     "world": "ecology_check -- where the clade is recorded, what else is there, and what is recorded eating it. It will not predict exclusion without declared population parameters.",
+     "unparsed": [
+      {
+       "text": "fruit fly",
+       "reason": "organism \"fruit fly\" has no reference parameter set in this engine (it holds measured parameters for: zebrafish, flying fish, winged zebrafish, wingless flying fish, TFF, the ff-zf chimera). It is not mapped to a \"close\" one, because the nearest fish is not this animal. A taxon-based design can still be built from it: see spec.taxon, organism_create {taxon} and organism_from_blueprint. The rest of this clause IS parsed: any criterion in it is on the spec, and will be judged once a parameter set for this clade exists.",
+       "a_layer_exists": true,
+       "tool": "performance_check { kind: \"lifespan\" }",
+       "verdict": "the organism has no reference parameter set; declare one with organism_create { taxon, declared }"
+      }
+     ],
+     "summary": "0 requirement(s) for physics_check, 1 for performance_check, 0 that no layer takes."
+    }
+   }
+  },
+  {
+   "seq": 4,
+   "type": "finding",
+   "ts": "2026-11-03T07:29:31.068Z",
    "author": "agent:long-lived-fly",
    "body": "12 scenario modules exist and 0 of them measure anything like a lifespan: none. The scenarios are glide, current, temperature, depth, altitude, predator, grip and the rest -- every one of them a question asked of an organism at an age, not a question about how many ages it gets. The engine has growth tracks (ontogeny.json, for two teleosts) and no senescence model for anything. There is no mortality rate, no survival curve and no cause of death in this repository.",
    "lawset_version": "1.8.1",
@@ -96,17 +130,17 @@
    }
   },
   {
-   "seq": 4,
+   "seq": 5,
    "type": "comment",
-   "ts": "2026-11-03T06:32:30.900Z",
+   "ts": "2026-11-03T07:29:31.069Z",
    "author": "agent:long-lived-fly",
    "body": "generation 1: Build the organism anyway. A gap is easier to argue with when the thing beside it is real: the anatomy layer has a great deal to say about Drosophila melanogaster and none of it bears on how long the animal lives.",
    "lawset_version": "1.8.1"
   },
   {
-   "seq": 5,
+   "seq": 6,
    "type": "finding",
-   "ts": "2026-11-03T06:32:30.973Z",
+   "ts": "2026-11-03T07:29:31.141Z",
    "author": "agent:long-lived-fly",
    "body": "Drosophila melanogaster resolves and the hierarchy is substantial: 5 organ systems, 26 organs, 24 tissues, 45 cell types, all Uberon and Cell Ontology terms with the query that produced each one. Every term is a structure. Not one of them is a rate, and lifespan is a rate.",
    "lawset_version": "1.8.1",
@@ -132,9 +166,9 @@
    }
   },
   {
-   "seq": 6,
+   "seq": 7,
    "type": "finding",
-   "ts": "2026-11-03T06:32:31.008Z",
+   "ts": "2026-11-03T07:29:31.173Z",
    "author": "agent:long-lived-fly",
    "body": "17 cannot-evaluate, 18 out-of-scope. No law in the set bears on lifespan for any clade, so even a law base written about insects would not have answered this.",
    "lawset_version": "1.8.1",
@@ -149,17 +183,17 @@
    }
   },
   {
-   "seq": 7,
+   "seq": 8,
    "type": "comment",
-   "ts": "2026-11-03T06:32:31.009Z",
+   "ts": "2026-11-03T07:29:31.174Z",
    "author": "agent:long-lived-fly",
-   "body": "generation 2: The fly walks and flies. Ask the locomotion layer both, partly to exercise it on an insect and partly because the flight branch should refuse: the only lift coefficients in this repository are a flying fish and a sugar glider, and an insect is neither.",
+   "body": "generation 2: The fly walks and flies. Ask the locomotion layer both, partly to exercise it on an insect and partly because both flight branches should refuse, for two different reasons worth telling apart: powered flight is a power question this layer cannot take, and the area question underneath it runs into a coefficient policy that records Insecta as inapplicable rather than unmeasured.",
    "lawset_version": "1.8.1"
   },
   {
-   "seq": 8,
+   "seq": 9,
    "type": "finding",
-   "ts": "2026-11-03T06:32:31.012Z",
+   "ts": "2026-11-03T07:29:31.176Z",
    "author": "agent:long-lived-fly",
    "body": "nothing this layer can check contradicts the design. That is NOT a finding that it moves: there is no muscle here, no metabolism, no control and no energy budget, and 2 of the 4 checks are regime indicators that never fail anything.",
    "lawset_version": "1.8.1",
@@ -210,11 +244,11 @@
    }
   },
   {
-   "seq": 9,
+   "seq": 10,
    "type": "finding",
-   "ts": "2026-11-03T06:32:31.013Z",
+   "ts": "2026-11-03T07:29:31.177Z",
    "author": "agent:long-lived-fly",
-   "body": "PARTLY EVALUATED: 1 of the 2 checks could not be run at all -- lift_carries_the_weight (the question asked is about POWERED flight, and this check cannot answer it. It compares lift with weight at a given airspeed, which is an area question; powered flight is a power question -- whether the flight muscle can supply the induced and profile power through a wingbeat, continuously, at that animal's mass. That needs a coefficient measured through a wingbeat and a muscle power density for the clade, and this repository has neither.). The checks that did run found no contradiction, and a check that did not run is not a check that passed. The flight branch refuses, and the refusal is the right one: the question asked is about POWERED flight, and this check cannot answer it. It compares lift with weight at a given airspeed, which is an area question; powered flight is a power question -- whether the flight muscle can supply the induced and profile power through a wingbeat, continuously, at that animal's mass. That needs a coefficient measured through a wingbeat and a muscle power density for the clade, and this repository has neither.",
+   "body": "PARTLY EVALUATED: 1 of the 2 checks could not be run at all -- lift_carries_the_weight (the question asked is about POWERED flight, and this check cannot answer it. It compares lift with weight at a given airspeed, which is an area question; powered flight is a power question -- whether the flight muscle can supply the induced and profile power through a wingbeat, continuously, at that animal's mass. That needs a coefficient measured through a wingbeat and a muscle power density for the clade, and this repository has neither.). The checks that did run found no contradiction, and a check that did not run is not a check that passed. The refusal is about POWERED flight, which is the deeper of the two reasons this could not be answered: an area inequality is not a power budget.",
    "lawset_version": "1.8.1",
    "tool": "locomotion_check (fly)",
    "verdict": "partly-evaluated",
@@ -224,22 +258,37 @@
     "lift": {
      "verdict": "cannot-evaluate",
      "limiting_factor": "the question asked is about POWERED flight, and this check cannot answer it. It compares lift with weight at a given airspeed, which is an area question; powered flight is a power question -- whether the flight muscle can supply the induced and profile power through a wingbeat, continuously, at that animal's mass. That needs a coefficient measured through a wingbeat and a muscle power density for the clade, and this repository has neither."
-    },
-    "why_this_is_correct": "The repository holds exactly two measured maximum lift coefficients: a stuffed Cypselurus hiraii and a live Petaurus breviceps. An insect at Re of order 100 with a flapping wing is aerodynamically unlike both -- unsteady, with leading-edge vortex lift that a steady coefficient does not represent at all. Returning a number here by borrowing one of the two would be exactly the failure this layer was built to stop."
+    }
    }
   },
   {
-   "seq": 10,
+   "seq": 11,
+   "type": "finding",
+   "ts": "2026-11-03T07:29:31.178Z",
+   "author": "agent:long-lived-fly",
+   "body": "asked a pure area question about an insect, the coefficient policy refuses -- and refuses for a reason that is NOT \"nobody measured one\": a steady maximum lift coefficient is the WRONG QUANTITY for Drosophila melanogaster, which the NCBI taxonomy places inside Insecta. This is a decision, not a missing measurement: NOT a missing measurement. A steady maximum lift coefficient is the wrong quantity for a flapping insect wing, and adding one would answer the question with a model its own source says does not apply. Dickinson, Lehmann and Sane measured for",
+   "lawset_version": "1.8.1",
+   "tool": "locomotion_check (glide) / lift coefficient",
+   "verdict": "cannot-evaluate",
+   "generation": 2,
+   "detail": {
+    "verdict": "cannot-evaluate",
+    "reason": "a steady maximum lift coefficient is the WRONG QUANTITY for Drosophila melanogaster, which the NCBI taxonomy places inside Insecta. This is a decision, not a missing measurement: NOT a missing measurement. A steady maximum lift coefficient is the wrong quantity for a flapping insect wing, and adding one would answer the question with a model its own source says does not apply. Dickinson, Lehmann and Sane measured forces on a dynamically scaled robotic Drosophila melanogaster wing and reported that the enhanced aerodynamic performance of insects comes from three interacting mechanisms -- delayed stall during the translational phase, and rotational circulation and wake capture during stroke reversals. The second and third exist only because the wing rotates and reverses, and a steady coefficient represents neither. Using one here would compute a lift that omits a large part of where an insect's lift actually comes from, and present the shortfall as a property of the animal. A right answer needs a quasi-steady model with translational, rotational and added-mass terms, and the wing kinematics to drive it; or a measured force trace through the wingbeat, which is what the robotic-wing experiments produce; either way a stroke amplitude, a wingbeat frequency and an angle-of-attack schedule, none of which this repository holds for any insect. Source: Dickinson MH, Lehmann FO, Sane SP 1999, Wing rotation and the aerodynamic basis of insect flight, Science 284(5422):1954-1960 (doi 10.1126/science.284.5422.1954).",
+    "why_this_matters": "Dickinson, Lehmann and Sane showed on a dynamically scaled robotic Drosophila wing that an insect gets a large part of its lift from rotational circulation and wake capture, which exist only because the wing reverses. A steady maximum lift coefficient represents neither. Borrowing the flying fish or the sugar glider would have produced a number; adding an insect number would have produced a number too, and both would be answering with a model the source says does not apply. The table therefore records Insecta as INAPPLICABLE with what a right check would need, which is a different claim from a missing measurement and sends a caller somewhere different."
+   }
+  },
+  {
+   "seq": 12,
    "type": "comment",
-   "ts": "2026-11-03T06:32:31.015Z",
+   "ts": "2026-11-03T07:29:31.179Z",
    "author": "agent:long-lived-fly",
    "body": "generation 3: Ecology is the one layer with any purchase here, and only sideways: a longer-lived fly is a fly exposed to predation for longer. The databases cannot tell us the lifespan, but they can tell us what is on record as eating this animal and whether any of it is in the place we are asking about.",
    "lawset_version": "1.8.1"
   },
   {
-   "seq": 11,
+   "seq": 13,
    "type": "finding",
-   "ts": "2026-11-03T06:32:31.029Z",
+   "ts": "2026-11-03T07:29:31.190Z",
    "author": "agent:long-lived-fly",
    "body": "GBIF holds 4,503 occurrence records for Drosophila melanogaster Meigen, 1830, concentrated in KR, US, SE. In Greater Boston GBIF holds 58,684 records; the 10 most-recorded non-Aves species are listed. None of the 29 taxa GloBI records as eating Drosophila melanogaster Meigen, 1830 appear in this box's top 10 by record count. Read that as a gap in two databases before reading it as an empty niche: the box list is truncated, record-ranked and missing every Aves species. No population parameters were declared, so whether this design could establish against what is there has NOT been evaluated. That question needs numbers no occurrence database contains.",
    "lawset_version": "1.8.1",
@@ -292,6 +341,79 @@
     "predation_pressure": "None of the 29 taxa GloBI records as eating Drosophila melanogaster Meigen, 1830 appear in this box's top 10 by record count. Read that as a gap in two databases before reading it as an empty niche: the box list is truncated, record-ranked and missing every Aves species.",
     "the_sideways_point": "GloBI records real predators of this clade with studies behind them. What it cannot give is a predation RATE, and a lifespan question needs a rate: an organism that lives twice as long in a jar may live no longer at all in a place where something eats it every week. The layer supplies the list and refuses the rate."
    }
+  },
+  {
+   "seq": 14,
+   "type": "comment",
+   "ts": "2026-11-03T07:29:31.191Z",
+   "author": "agent:long-lived-fly",
+   "body": "generation 4: The lifespan layer exists now. It needs three rates: what kills the fly from the inside, what the design proposes to change that to, and what kills it from the outside. The third is the one the ecology layer bears on -- 29 taxa are on record eating this clade -- and turning a predator list into a hazard is a judgement somebody has to make and state, so the run states it.",
+   "lawset_version": "1.8.1"
+  },
+  {
+   "seq": 15,
+   "type": "finding",
+   "ts": "2026-11-03T07:29:31.192Z",
+   "author": "agent:long-lived-fly",
+   "body": "The design changes the INTRINSIC hazard by a factor of 0.5 -- a 2x longer intrinsic lifespan. With the extrinsic hazard at 0.08 /day, expected lifetime goes from 10.345-10.345 days to 11.321-11.321 days: a factor of 1.094 to 1.094. Extrinsic mortality dominates. Abolishing intrinsic mortality ENTIRELY would give 12.5 days, only 1.208x the baseline, so no change to the intrinsic term can buy much here: the animal is not dying of being old.",
+   "lawset_version": "1.8.1",
+   "tool": "performance_check (lifespan, in the wild)",
+   "verdict": "marginally-longer",
+   "generation": 4,
+   "detail": {
+    "fold_change": {
+     "worst_case": 1.0943396226415094,
+     "best_case": 1.0943396226415094
+    },
+    "expected_lifetime_days": {
+     "baseline": [
+      10.344827586206897,
+      10.344827586206897
+     ],
+     "designed": [
+      11.320754716981131,
+      11.320754716981131
+     ]
+    },
+    "extrinsic_ceiling_days": 12.5,
+    "headroom": 1.2083333333333333,
+    "model": "Constant two-term hazard, E[T] = 1/(h_intrinsic + h_extrinsic). Exact arithmetic over the declared rates.",
+    "model_caveat": "A CONSTANT hazard makes the lifetime exponential, and real survival curves are not: hazards rise with age, which is what senescence IS, and a Gompertz or Weibull form would capture that. Fitting one needs survival data this repository holds for no organism. So the shape here is assumed, not fitted, and the expectation is a first-order statement that is most wrong exactly where senescence matters most -- at the old end of the curve.",
+    "cannot_say": [
+     "HOW the design would live longer: no pathway, no gene, no mechanism is represented anywhere in this repository",
+     "whether the intrinsic hazard the design claims is achievable at all",
+     "what the change costs: life-history theory expects a longer-lived design to pay in fecundity or growth, and nothing here prices that",
+     "whether the extrinsic hazard stays put: an organism that lives longer is exposed longer, and may be exposed differently"
+    ]
+   }
+  },
+  {
+   "seq": 16,
+   "type": "finding",
+   "ts": "2026-11-03T07:29:31.193Z",
+   "author": "agent:long-lived-fly",
+   "body": "The design changes the INTRINSIC hazard by a factor of 0.5 -- a 2x longer intrinsic lifespan. With the extrinsic hazard at 0.000001 /day, expected lifetime goes from 59.996-59.996 days to 119.986-119.986 days: a factor of 2 to 2. There is headroom: with intrinsic mortality abolished entirely the expectation would be 1.00e+6 days, 1.67e+4x the baseline, so the intrinsic term is worth working on in this environment. THIS IS THE POINT OF THE PAIR: the same design, the same intrinsic change, and the answer is 2.00x in a vial against 1.09x where the animal actually lives. A longevity result is a statement about an environment as much as about an organism, and the two numbers come from the same arithmetic with one input changed.",
+   "lawset_version": "1.8.1",
+   "tool": "performance_check (lifespan, in protection)",
+   "verdict": "longer",
+   "generation": 4,
+   "detail": {
+    "fold_change": {
+     "worst_case": 1.9998800143982727,
+     "best_case": 1.9998800143982727
+    },
+    "expected_lifetime_days": {
+     "baseline": [
+      59.99640021598704,
+      59.99640021598704
+     ],
+     "designed": [
+      119.98560172779268,
+      119.98560172779268
+     ]
+    },
+    "headroom": 16667.666666666668
+   }
   }
  ],
  "generations": [
@@ -317,11 +439,12 @@
    },
    "gates": {
     "parse_design_text": "fail",
+    "routing": "routed to performance_check",
     "scenario_list": "absent"
    },
    "lean": {},
    "blueprint": null,
-   "what_it_taught": "The request is about time-to-death and this system has no layer for it. Not a missing parameter set, not an out-of-scope clade: a missing dimension. Every other use case in runs/ was refused by something; this one is refused by an absence.",
+   "what_it_taught": "The request is about time-to-death, which no SCENARIO measures and no law covers -- and it is no longer a dead end. The parser reads it as a lifespan requirement and the routing block sends it to performance_check, the layer built for exactly the three things these runs asked for that nothing could express.",
    "question": "Can we design a fruit fly that lives longer?",
    "diff_from_previous": null
   },
@@ -489,6 +612,9 @@
      },
      "fly": {
       "verdict": "partly-evaluated"
+     },
+     "glide": {
+      "verdict": "partly-evaluated"
      }
     }
    },
@@ -508,11 +634,12 @@
    },
    "gates": {
     "locomotion_check (walk)": "not-contradicted",
-    "locomotion_check (fly)": "partly-evaluated"
+    "locomotion_check (fly)": "partly-evaluated",
+    "locomotion_check (glide)": "partly-evaluated"
    },
    "lean": {},
    "blueprint": "gen/gen1.blueprint.json",
-   "what_it_taught": "Walking is not contradicted and flight is refused for want of a lift coefficient measured on anything like an insect. Neither bears on lifespan. The locomotion layer is a second dimension beside shape, and the request was about a third one that still has no layer.",
+   "what_it_taught": "Walking is not contradicted; powered flight is refused as a power question rather than an area one; and the glide question gets the refusal that matters -- a steady lift coefficient is the WRONG QUANTITY for a flapping insect wing, which is a decision with a citation behind it rather than a gap in the data. Neither bears on lifespan, which generation 4 answers.",
    "question": "Can we design a fruit fly that lives longer?",
    "diff_from_previous": {
     "phenotype": {
@@ -526,7 +653,8 @@
     "genotype_markers_removed": [],
     "gates_changed": [
      "locomotion_check (walk): not asked -> not-contradicted",
-     "locomotion_check (fly): not asked -> partly-evaluated"
+     "locomotion_check (fly): not asked -> partly-evaluated",
+     "locomotion_check (glide): not asked -> partly-evaluated"
     ]
    }
   },
@@ -585,6 +713,67 @@
     "genotype_markers_removed": [],
     "gates_changed": [
      "ecology_check: not asked -> assembled"
+    ]
+   }
+  },
+  {
+   "generation": 4,
+   "asked": "does the design actually live longer -- in a vial, and where it lives?",
+   "phenotype": {
+    "taxon": "Drosophila melanogaster",
+    "counts": {
+     "body": 1,
+     "organ_system": 5,
+     "organ": 26,
+     "tissue": 24,
+     "cell": 45
+    },
+    "parameters": null,
+    "structures_requested": [],
+    "structures_refused": [],
+    "flight_structures_present": [],
+    "lifespan": {
+     "intrinsic_fold_asked": 2,
+     "realised_fold_in_the_wild": 1.0943396226415094,
+     "realised_fold_in_protection": 1.9998800143982727,
+     "extrinsic_ceiling_days": 12.5
+    }
+   },
+   "genotype": {
+    "markers": [
+     "collagen alpha-1(I) chain",
+     "collagen alpha-1(III) chain",
+     "collagen alpha-1(VI) chain",
+     "collagen alpha-1(X) chain"
+    ],
+    "cells_with_markers": 2,
+    "note": "unchanged: nothing in this repository connects a marker to a hazard rate, which is the mechanism gap the lifespan layer states rather than hides."
+   },
+   "mesh": {
+    "glb": null,
+    "why": "unchanged."
+   },
+   "gates": {
+    "performance_check (wild)": "marginally-longer",
+    "performance_check (protected)": "longer"
+   },
+   "lean": {},
+   "blueprint": "gen/gen1.blueprint.json",
+   "what_it_taught": "The question has an answer now, and it is a sharp one: doubling the intrinsic lifespan gives 2.00x in a vial and 1.09x in the wild, because the ceiling set by extrinsic mortality is 12.5 days whatever happens inside the animal. That is the Medawar-Williams argument arriving as arithmetic over three declared rates, and it is the first result in these runs that needed two layers at once: the ecology layer names what is eating the fly, and the performance layer says what that costs the design.",
+   "question": "Can we design a fruit fly that lives longer?",
+   "diff_from_previous": {
+    "phenotype": {
+     "body": 0,
+     "organ_system": 0,
+     "organ": 0,
+     "tissue": 0,
+     "cell": 0
+    },
+    "genotype_markers_added": [],
+    "genotype_markers_removed": [],
+    "gates_changed": [
+     "performance_check (wild): not asked -> marginally-longer",
+     "performance_check (protected): not asked -> longer"
     ]
    }
   }

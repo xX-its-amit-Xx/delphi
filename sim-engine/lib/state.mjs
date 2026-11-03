@@ -158,7 +158,22 @@ export function resolveState(doc, ageDays, conditions = {}, bundle, opts = {}) {
   // and there is nothing here to scale or to scale it by, so this refuses with the reason rather than
   // resolving a state full of nulls that later stages would read as measurements of this animal.
   if (!leafList.length) {
-    throw new Error(`organism "${doc.id}" has a taxon base (${doc.base?.taxon || 'unknown taxon'}) with no reference parameter set, so STATE cannot be resolved: there is no body-plan parameter to age-scale and no ontogeny track to scale it by. The taxon still reaches the law check, which decides clade scope from it. To resolve a STATE, add a reference parameter set for this taxon to the engine's bundle.`);
+    // A DECLARED PARAMETER SET. The engine holds measured body-plan parameters for its own teleosts only,
+    // and for four runs that meant every design outside them stopped here -- correctly, because nothing
+    // should invent a mass. But "nobody measured it" and "nobody can state it" are different, and the rest
+    // of this repository already settled that distinction everywhere else: flight_support_check,
+    // locomotion_check and ecology_check all take quantities the caller declares WITH A SOURCE and refuse a
+    // bare number. STATE now takes them too.
+    //
+    // What a declared value is not: measured. Every one of them enters with kind `assumed` and its source
+    // string, so the weakest-input machinery, the model_confidence and every envelope downstream carry the
+    // fact that a person stated this rather than measured it. The fields nobody declares stay null with
+    // their reason, exactly as before, and a scenario needing one still refuses.
+    const decl = doc.base?.declared;
+    if (!decl?.parameters || !Object.keys(decl.parameters).length) {
+      throw new Error(`organism "${doc.id}" has a taxon base (${doc.base?.taxon || 'unknown taxon'}) with no reference parameter set and no declared one, so STATE cannot be resolved: there is no body-plan parameter to age-scale and no ontogeny track to scale it by. The taxon still reaches the law check, which decides clade scope from it. Two ways forward: add a reference parameter set for this taxon to the engine's bundle, or DECLARE the quantities this design needs -- organism_create/organism_from_blueprint take \`declared: { parameters: { mass_kg: { value, source }, ... }, life_stages: [...] }\`, each value with a source, and they enter STATE as kind "assumed" so nothing downstream can mistake them for measurements.`);
+    }
+    return declaredState(bundle, doc, ageDays, conditions, decl, opts);
   }
   const dominant = leafList.slice().sort((a, b) => b.w - a.w)[0];
   const age = ageDays == null ? dominant.o.ref_age_days : Number(ageDays);
@@ -484,7 +499,64 @@ function interpStage(track, age) { let s = track.dense[0].stage; for (const r of
 function interpBool(track, age) { let s = track.dense[0].swimbladder; for (const r of track.dense) if (r.ageDays <= age) s = r.swimbladder; return s; }
 
 /** The stage ages a timecourse should visit: the union of every parent's stages.json ages. */
+/**
+ * A STATE for a taxon base, built from quantities the caller declared.
+ *
+ * Every STATE field starts null with the same reason it always had; the declared ones are written over the
+ * top with kind `assumed` and the caller's source. An unknown field name is an error rather than a silently
+ * ignored key, because a declared `body_mass_kg` that nothing reads is worse than a refusal: the caller
+ * believes they supplied a mass and every check downstream reports it missing.
+ */
+function declaredState(bundle, doc, ageDays, conditions, decl, opts = {}) {
+  // Fields that exist ONLY when declared. launch_airspeed_m_s is normally produced by the glide scenario,
+  // which is a teleost scenario and never runs for anything else -- so for a design outside the bundle the
+  // standing check asked for a speed that nothing could ever supply. It is not added to
+  // STATE_FIELDS_OPTIONAL because on the measured path it is a scenario OUTPUT, not a state field, and a
+  // design must not be able to declare away a number the engine would otherwise compute for it.
+  const DECLARABLE_EXTRA = ['launch_airspeed_m_s', 'flight_muscle_fraction', 'body_depth_over_SL', 'body_width_over_SL'];
+  const KNOWN = new Set([...STATE_FIELDS, ...STATE_FIELDS_OPTIONAL, ...DECLARABLE_EXTRA].filter(k => !['ambient', 'parts', 'species', 'design_id', 'stage', 'ageDays', 'temperature_C'].includes(k)));
+  const out = {};
+  for (const k of KNOWN) out[k] = NULL(null, `no reference parameter set for ${doc.base?.taxon ?? 'this taxon'}, and this field was not declared`);
+
+  const bad = Object.keys(decl.parameters).filter(k => !KNOWN.has(k));
+  if (bad.length) throw new Error(`declared parameter(s) ${bad.join(', ')} are not STATE fields, so nothing would ever read them. The fields a design can declare are: ${[...KNOWN].sort().join(', ')}.`);
+  for (const [k, v] of Object.entries(decl.parameters)) {
+    if (typeof v !== 'object' || v === null) throw new Error(`declared parameter ${k} must be {value, source}`);
+    if (typeof v.value !== 'number' || !Number.isFinite(v.value)) throw new Error(`declared parameter ${k} needs a finite numeric \`value\``);
+    if (typeof v.source !== 'string' || !v.source.trim()) throw new Error(`declared parameter ${k} has no \`source\`. A quantity with no provenance cannot be told apart from a guess once it is inside a STATE.`);
+    out[k] = F(v.value, v.unit ?? null, 'assumed', `DECLARED by the design, not measured: ${v.source.trim()}`, { declared: true });
+  }
+
+  const stages = (decl.life_stages ?? []);
+  const age = ageDays == null ? (stages.length ? stages[stages.length - 1].ageDays : 0) : Number(ageDays);
+  const stageRow = stages.find(s => s.ageDays === age) ?? stages[stages.length - 1] ?? null;
+  out.ageDays = F(age, 'd', 'assumed', stages.length ? 'declared life stage' : 'no life stage was declared; age 0 stands for "the design as stated", not a measured age');
+  out.stage = { value: stageRow?.key ?? 'unstaged', unit: null, kind: 'assumed', source: stageRow ? `declared life stage "${stageRow.label ?? stageRow.key}"` : 'no life stage declared' };
+  out.species = { value: doc.base?.taxon ?? null, unit: null, kind: 'assumed', source: 'the taxon this design was created with' };
+  out.design_id = { value: doc.id, unit: null, kind: 'derived', source: 'the design document' };
+
+  const amb = resolveAmbient(conditions, bundle, {});
+  out.temperature_C = amb.temperature;
+  out.ambient = amb.ambient;
+  out.parts = {};
+
+  for (const k of [...STATE_FIELDS, ...STATE_FIELDS_OPTIONAL]) {
+    const f = out[k];
+    if (f && typeof f.value === 'number' && !Number.isFinite(f.value)) out[k] = NULL(f.unit, `computed a non-finite value from its inputs (${f.source})`);
+  }
+  return { ...out, _meta: { parameters: {}, recorded_only_edits: [], flags: [], leaves: {}, taxon: doc.base?.taxon ?? null,
+    declared: { count: Object.keys(decl.parameters).length, fields: Object.keys(decl.parameters), life_stages: stages.length },
+    caveat: `Every quantity in this STATE that has a value was DECLARED by the design, not measured: this engine holds measured body-plan parameters for its own teleosts only. Each carries kind "assumed" and the source the designer gave. Anything built on them is a statement about those declarations as much as about the organism.` } };
+}
+
 export function stageAges(bundle, doc) {
+  // A design with a declared life-stage list has stages; one with neither parents nor declarations has none,
+  // and the callers already report that as "no resolvable life stage" rather than crashing.
+  const decl = doc?.base?.declared;
+  if (decl?.life_stages?.length && (!Array.isArray(doc.base.parents) || !doc.base.parents.length)) {
+    return decl.life_stages.map(s => ({ ageDays: s.ageDays, key: s.key, label: s.label ?? s.key, track: 'declared' }))
+      .sort((a, b) => a.ageDays - b.ageDays);
+  }
   const R = resolveParameters(bundle, doc);
   const set = new Map();
   for (const id of Object.keys(R.leaves)) {

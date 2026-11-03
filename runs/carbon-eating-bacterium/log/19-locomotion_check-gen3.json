@@ -1,0 +1,221 @@
+{
+ "tool": "locomotion_check",
+ "generation": 3,
+ "why": "does a rotary flagellum escape the theorem, and does its cycle produce the speed?",
+ "args": {
+  "taxon": "Cupriavidus necator",
+  "mode": "swim",
+  "medium": "water",
+  "body_length_m": {
+   "value": 0.000002,
+   "source": "DESIGN INPUT: unchanged from generation 2."
+  },
+  "speed_m_s": {
+   "min": 0.00001,
+   "max": 0.00005,
+   "source": "DESIGN INPUT, swept: unchanged from generation 2."
+  },
+  "gait": {
+   "reciprocal": false,
+   "degrees_of_freedom": 3,
+   "description": "a rotating helical flagellum driven by a reversible motor: the helix traces a loop in configuration space, not a line retraced",
+   "cycle_hz": {
+    "min": 50,
+    "max": 150,
+    "source": "DESIGN INPUT, swept: the rotation rate the design asks of its motor. Not a measurement of any flagellum here."
+   },
+   "distance_per_cycle_m": {
+    "min": 2e-7,
+    "max": 5e-7,
+    "source": "DESIGN INPUT, swept: net advance per revolution, a fraction of a body length. Not measured here."
+   },
+   "source": "DESIGN INPUT: the second design, chosen because the theorem in generation 2 named exactly this escape"
+  }
+ },
+ "ms": 0,
+ "result": {
+  "contract_version": "0.10.0",
+  "result": {
+   "tool": "locomotion_check",
+   "version": "0.1.0",
+   "taxon": "Cupriavidus necator",
+   "mode": "swim",
+   "ran": true,
+   "checks": [
+    {
+     "id": "reynolds_regime",
+     "label": "Which physics the motion happens in",
+     "kind": "regime",
+     "verdict": "reported",
+     "measured": [
+      0.000019924151696606788,
+      0.00009962075848303393
+     ],
+     "unit": "1 (dimensionless)",
+     "limiting_factor": null,
+     "detail": {
+      "regime_low": "creeping (viscous forces dominate)",
+      "regime_high": "creeping (viscous forces dominate)",
+      "formula": "Re = rho v L / mu",
+      "medium": "fresh water at 20 C",
+      "density_kg_m3": 998.2,
+      "dynamic_viscosity_Pa_s": 0.001002,
+      "medium_source": "standard reference values for pure water at 20 C and 1 atm (CRC Handbook of Chemistry and Physics, fluid properties tables)",
+      "medium_caveat": "Pure water at 20 C. Culture medium, pond water, mucus, biofilm and cytoplasm are all more viscous, some by orders of magnitude, and a Reynolds number computed with this value is an UPPER bound on the real one for a swimmer in any of them.",
+      "boundaries": "There is no sharp boundary. Re = 1 is the conventional marker for where viscous forces dominate inertial ones and Re ~ 1000 for where inertia dominates; between them both matter and neither limit applies. The scallop theorem is a statement about the STOKES limit (Re -> 0), and applying it at Re = 0.9 rather than Re = 0.001 is a judgement, so the check reports the number and says how far into the limit the design actually is."
+     },
+     "reading": "Re runs from 1.99e-5 to 9.96e-5 across the stated ranges: creeping (viscous forces dominate) at one end, creeping (viscous forces dominate) at the other."
+    },
+    {
+     "id": "reciprocal_stroke_at_low_reynolds",
+     "label": "Purcell scallop theorem",
+     "kind": "theorem",
+     "verdict": "holds",
+     "measured": null,
+     "unit": null,
+     "limiting_factor": null,
+     "reading": "the stroke is declared non-reciprocal (3 degrees of freedom), so the theorem does not forbid it at any Reynolds number.",
+     "detail": {
+      "reynolds_max": 0.00009962075848303393,
+      "degrees_of_freedom": 3,
+      "declared_reciprocal": false,
+      "source": "Purcell EM 1977, Am J Phys 45(1):3-11",
+      "doi": "10.1119/1.10903"
+     }
+    },
+    {
+     "id": "cycle_produces_the_speed",
+     "label": "Stride or beat produces the stated speed",
+     "kind": "arithmetic",
+     "verdict": "consistent",
+     "measured": [
+      0.000009999999999999999,
+      0.000075
+     ],
+     "unit": "m/s",
+     "limiting_factor": null,
+     "detail": {
+      "speed_from_cycle_m_s": [
+       0.000009999999999999999,
+       0.000075
+      ],
+      "speed_declared_m_s": [
+       0.00001,
+       0.00005
+      ],
+      "cycle_hz": [
+       50,
+       150
+      ],
+      "cycle_hz_source": "DESIGN INPUT, swept: the rotation rate the design asks of its motor. Not a measurement of any flagellum here.",
+      "distance_per_cycle_m": [
+       2e-7,
+       5e-7
+      ],
+      "distance_per_cycle_source": "DESIGN INPUT, swept: net advance per revolution, a fraction of a body length. Not measured here.",
+      "note": "Distance per cycle is NET displacement per cycle, not the path length the appendage travels. A stroke that sweeps far and returns the body nowhere has a large path and a distance per cycle of zero -- which is the scallop theorem restated as arithmetic."
+     }
+    }
+   ],
+   "verdict": "not-contradicted",
+   "medium": {
+    "key": "water",
+    "label": "fresh water at 20 C",
+    "density_kg_m3": 998.2,
+    "dynamic_viscosity_Pa_s": 0.001002,
+    "kind": "measured-secondhand",
+    "source": "standard reference values for pure water at 20 C and 1 atm (CRC Handbook of Chemistry and Physics, fluid properties tables)",
+    "caveat": "Pure water at 20 C. Culture medium, pond water, mucus, biofilm and cytoplasm are all more viscous, some by orders of magnitude, and a Reynolds number computed with this value is an UPPER bound on the real one for a swimmer in any of them."
+   },
+   "inputs": {
+    "body_length_m": {
+     "min": 0.000002,
+     "max": 0.000002,
+     "unit": "m",
+     "kind": "assumed",
+     "source": "DESIGN INPUT: unchanged from generation 2."
+    },
+    "speed_m_s": {
+     "min": 0.00001,
+     "max": 0.00005,
+     "unit": "m/s",
+     "kind": "assumed",
+     "source": "DESIGN INPUT, swept: unchanged from generation 2."
+    },
+    "gait": {
+     "reciprocal": false,
+     "degrees_of_freedom": 3,
+     "description": "a rotating helical flagellum driven by a reversible motor: the helix traces a loop in configuration space, not a line retraced",
+     "cycle_hz": {
+      "min": 50,
+      "max": 150,
+      "source": "DESIGN INPUT, swept: the rotation rate the design asks of its motor. Not a measurement of any flagellum here."
+     },
+     "distance_per_cycle_m": {
+      "min": 2e-7,
+      "max": 5e-7,
+      "source": "DESIGN INPUT, swept: net advance per revolution, a fraction of a body length. Not measured here."
+     },
+     "source": "DESIGN INPUT: the second design, chosen because the theorem in generation 2 named exactly this escape"
+    }
+   },
+   "reynolds": {
+    "min": 0.000019924151696606788,
+    "max": 0.00009962075848303393
+   },
+   "flight": null,
+   "reading": "nothing this layer can check contradicts the design. That is NOT a finding that it moves: there is no muscle here, no metabolism, no control and no energy budget, and 1 of the 3 checks are regime indicators that never fail anything.",
+   "what_this_layer_cannot_say": [
+    "whether the organism can generate the forces its gait requires: there is no muscle model and no actuator model",
+    "whether it can pay for the motion: no metabolic rate, no cost of transport, no energy budget",
+    "whether it can control the motion or stay the right way up: no stability model",
+    "whether the gait is one a nervous system could produce or a developmental program could build"
+   ]
+  },
+  "provenance": [
+   {
+    "quantity": "medium",
+    "value": "fresh water at 20 C",
+    "kind": "measured-secondhand",
+    "source": "standard reference values for pure water at 20 C and 1 atm (CRC Handbook of Chemistry and Physics, fluid properties tables)"
+   },
+   {
+    "quantity": "body length",
+    "value": [
+     0.000002,
+     0.000002
+    ],
+    "kind": "assumed",
+    "source": "DESIGN INPUT: unchanged from generation 2."
+   },
+   {
+    "quantity": "speed",
+    "value": [
+     0.00001,
+     0.00005
+    ],
+    "kind": "assumed",
+    "source": "DESIGN INPUT, swept: unchanged from generation 2."
+   },
+   {
+    "quantity": "scallop theorem",
+    "value": "holds",
+    "kind": "derived",
+    "source": "Purcell EM 1977, Life at low Reynolds number, Am J Phys 45(1):3-11, doi 10.1119/1.10903. A theorem about the Stokes limit, not a measurement of any organism."
+   },
+   {
+    "quantity": "locomotion_check version",
+    "value": "0.1.0",
+    "kind": "derived",
+    "source": "sim-engine/validate/locomotion/index.mjs"
+   }
+  ],
+  "scope": "How a design moves, as distinct from what it is made of. One theorem (the scallop theorem, which can declare a design impossible), arithmetic over declared quantities, and empirical regime indicators that are reported and never fail anything. It models no muscle, no metabolism, no control and no energy budget: a design this layer does not contradict has not been shown to move, only shown not to be self-contradictory in the ways this layer can see.",
+  "weakest_input": "assumed",
+  "counts": {
+   "measured-secondhand": 1,
+   "assumed": 2,
+   "derived": 2
+  }
+ }
+}

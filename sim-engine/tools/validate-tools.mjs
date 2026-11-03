@@ -73,7 +73,12 @@ const REFERENCE_SCOPES = {
  * 50/50 chimera is not unambiguously inside either parent's clade and a reader should see the choice.
  */
 async function queryTaxon(args, doc) {
+  // A CONSTRUCT is not an instance of its donor. base.taxon carries the donor, because the cells really are
+  // that taxon, so a question about SEQUENCE is still answerable; a question about body shape, range or
+  // relatives is about an animal this thing is not. The flag travels so the gate can tell them apart.
+  const mf = doc?.base?.made_from;
   const direct = args?.taxon || args?.specimen?.taxon || doc?.base?.taxon || doc?.taxon || doc?.species;
+  if (mf) return { taxon: mf.taxon ?? direct, from: `the DONOR this construct is made from (${mf.what ?? 'a construct'}), not the subject itself`, construct: mf };
   if (direct) return { taxon: direct, from: 'stated' };
   const parents = doc?.base?.parents;
   if (!Array.isArray(parents) || !parents.length) return { taxon: null, from: null };
@@ -92,6 +97,18 @@ async function queryTaxon(args, doc) {
  * -> { ok:true } | { ok:false, cannot_assess: {...} }
  */
 async function referenceScopeGate(which, args, doc) {
+  // Before any clade question: is the subject even an organism? A reference set of real specimens can be
+  // asked which real animal a design's BODY is nearest to, and that question is meaningless for an assembly
+  // of cells in a shape the donor never makes. Sequence is different: the genome is the donor's, unedited.
+  const mf = doc?.base?.made_from;
+  if (mf && which !== 'genotype') {
+    return { ok: false, cannot_assess: {
+      reason: `the subject is a CONSTRUCT, not an organism: ${mf.what}. Its donor is ${mf.taxon}, and this reference set compares real specimens of real animals. The nearest real body to a ${mf.what} is not a question with an answer here, and answering it about ${mf.taxon} would be answering about the donor -- an animal with organ systems, a life cycle and a range, none of which this has.`,
+      subject: 'construct', donor: mf.taxon, what: mf.what,
+      does_not_inherit: mf.does_not_inherit ?? null,
+      what_would_be_needed: 'a reference set of constructs, or a comparison that does not assume the subject is an organism',
+      what_IS_answerable: 'genotype: the cells carry the donor genome unedited, so sequence-level questions are about something real.' } };
+  }
   const sc = REFERENCE_SCOPES[which];
   const { taxon, from: taxonFrom } = await queryTaxon(args, doc);
   const S = await import('../../lib/lean-scope.mjs');

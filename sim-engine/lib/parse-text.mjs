@@ -82,7 +82,7 @@ const ORGANISMS = [
 // about lifespan, on a design that would then have been judged against it. One-word compounds (dragonfly,
 // butterfly) were always safe because no word boundary falls inside them; the two-word ones were not.
 // A name is not a verb.
-const OTHER_ORGANISMS = /\b(fruit[\s-]?fl(?:y|ies)|drosophila|house[\s-]?fl(?:y|ies)|crane[\s-]?fl(?:y|ies)|horse[\s-]?fl(?:y|ies)|black[\s-]?fl(?:y|ies)|sand[\s-]?fl(?:y|ies)|tsetse(?:[\s-]?fl(?:y|ies))?|may[\s-]?fl(?:y|ies)|salmon|trout|tuna|shark|goldfish|medaka|carp|cod|guppy|tilapia|catfish|eel|seahorse|stickleback|killifish|cichlid|bat|bats|insect|dragonfly|squid|octopus|frog|lizard|mouse|human|dolphin|whale|ray|manta|flying squirrel|sugar glider|gecko)\b/i;
+const OTHER_ORGANISMS = /\b(xenobot|xenobots|biobot|biobots|anthrobot|anthrobots|bacterium|bacteria|archaeon|archaea|yeast|fungus|alga|algae|nematode|fruit[\s-]?fl(?:y|ies)|drosophila|house[\s-]?fl(?:y|ies)|crane[\s-]?fl(?:y|ies)|horse[\s-]?fl(?:y|ies)|black[\s-]?fl(?:y|ies)|sand[\s-]?fl(?:y|ies)|tsetse(?:[\s-]?fl(?:y|ies))?|may[\s-]?fl(?:y|ies)|salmon|trout|tuna|shark|goldfish|medaka|carp|cod|guppy|tilapia|catfish|eel|seahorse|stickleback|killifish|cichlid|bat|bats|insect|dragonfly|squid|octopus|frog|lizard|mouse|human|dolphin|whale|ray|manta|flying squirrel|sugar glider|gecko)\b/i;
 
 // Ambiguous bird words count as birds only after an article or "like" ("a swift", "like a duck").
 const AMBIGUOUS_BIRD = new Set(['swallow', 'swift', 'swifts', 'duck', 'crow', 'robin', 'tern', 'finch', 'hen', 'dove', 'raven', 'hawk', 'kingfisher', 'gull']);
@@ -214,6 +214,60 @@ function familyTemperature(cl, out, problems) {
     out.push({ scenario: 'temperature', params: { water_temperature_C: round(si(q, '°C')) }, op: 'survives', ...(q.unit !== '°C' ? { value_as_given: { value: q.value, unit: q.unit } } : {}) });
   }
   cl.take(/\b(?:water\s+)?temperatures?\b|\bwater\b|\bdown\s+to\b|\bup\s+to\b/i);
+}
+
+// ── the performance families ───────────────────────────────────────────────
+//
+// Three things people asked for that this parser had no words for, so the requirement never reached any
+// check and the whole clause came back unparsed. They are NOT scenario criteria: no scenario module runs
+// them, and putting them in spec.criteria would make validateSpec reject a spec that is perfectly good.
+// They go in their own list, and parse_design_text routes them to performance_check by name.
+//
+// The deliberate limit: these read a REQUEST, not a design. "Lives longer" becomes a lifespan requirement
+// with no numbers in it, because the sentence contains none; the numbers performance_check needs are the
+// designer's to declare. A parser that invented a hazard rate here would be making up the answer.
+function familyPerformance(cl, out, problems) {
+  // lifespan
+  if (cl.has(/\b(?:live|lives|living|life|lifespan|life[\s-]?span|longevity|senescen\w*|age|ages|ageing|aging)\b/i)) {
+    const longer = cl.take(/\b(?:lives?|live|living)\s+(?:a\s+)?(?:lot\s+|much\s+|significantly\s+)?longer\b|\blonger[\s-]lived\b|\bincreased?\s+(?:lifespan|life[\s-]?span|longevity)\b|\bextend(?:ed|s|ing)?\s+(?:its\s+)?(?:lifespan|life[\s-]?span|longevity)\b/i);
+    // days, weeks and months are not in the unit table -- it carries only h and min, and ages are read by
+    // their own regex in takeStages. A lifespan is stated in days, so read it the same way rather than
+    // widening the unit table, which would change how every age in every other family is parsed.
+    const DAYS = { d: 1, day: 1, days: 1, week: 7, weeks: 7, month: 30.44, months: 30.44, year: 365.25, years: 365.25 };
+    const dm = cl.take(/\b(?:for\s+)?(?:at\s+least\s+|at\s+most\s+|over\s+|under\s+|up\s+to\s+)?(\d+(?:\.\d+)?)\s*(d|days?|weeks?|months?|years?)\b/i);
+    const q = dm ? { value: +dm[1] * (DAYS[dm[2].toLowerCase()] ?? 1), raw: dm[0] } : quantities(cl).find(x => x.dim === 'time');
+    const fold = cl.take(/\b(?:twice|double|2x|3x|ten\s+times|tenfold)\b/i);
+    if (longer || q || fold) {
+      const c = { kind: 'lifespan', op: longer || fold ? 'increase' : 'at-least', asked: (longer?.[0] ?? fold?.[0] ?? q?.raw ?? '').trim() };
+      if (q) { if (q.index != null) cl.blank(q.index, q.length); c.value = round(q.value ?? si(q, 'd')); c.unit = 'd'; }
+      cl.take(/\blifespan\b|\blife[\s-]?span\b|\blongevity\b|\bthan\s+(?:a\s+)?(?:normal|wild[\s-]?type|usual)\s*(?:one)?\b/i);
+      out.push(c);
+    } else if (!cl.has(/\bage[sd]?\s+of\b|\bat\s+\d/i)) {
+      problems.push('a word about life, ageing or lifespan with nothing the parser can turn into a requirement (say "lives longer", "lives at least 90 days", or "twice the lifespan")');
+    }
+  }
+  // A TASK: something the organism does TO something else.
+  //
+  // The verb is only taken WITH ITS OBJECT, in one match. A bare verb is not a task and taking it would rob
+  // the other families of words they need: `transport` appears in "minimize cost of transport", which is an
+  // objective, and `move` in "moves 2 m", which is a distance. The first version of this took the verb on
+  // its own and broke both. A family that consumes words speculatively is a family that silently changes
+  // what every other family sees.
+  const TASK_OBJ = String.raw`(?:loose\s+|small\s+|fine\s+)?(particles?|debris|microplastics?|grains?|beads?|cells?|sediment|silt|objects?)`;
+  const task = cl.take(new RegExp(String.raw`\b(sweeps?|sweeping|pushes?|pushing|moves?|moving|collects?|collecting|gathers?|gathering|piles?|piling|herds?|herding|transports?|transporting|clears?|clearing)\s+(?:up\s+|together\s+)?${TASK_OBJ}`, 'i'));
+  if (task) {
+    const dest = cl.take(/\b(?:into|in\s?to|to)\s+(?:a\s+|the\s+)?(piles?|heaps?|clumps?|stacks?|rows?)\b/i);
+    out.push({ kind: 'manipulation', op: 'feasible', verb: task[1].trim(), object: task[2] ?? null, destination: dest?.[1] ?? null,
+      asked: [task[0], dest?.[0]].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim() });
+  }
+  // METABOLISM: what it consumes. Same rule -- the verb is taken only with a substrate the vocabulary
+  // knows, so "digests a meal within 12 hours" stays with familyTime, which is the family that can read it.
+  const SUBSTRATE = String.raw`(carbon\s+dioxide|co2|carbon|methane|plastics?|pet|hydrocarbons?|crude\s+oil|oil|cellulose|lignin|nitrogen|sugars?|glucose|acetate|formate)`;
+  const eat = cl.take(new RegExp(String.raw`\b(eats?|eating|consumes?|consuming|fixes?|fixing|degrades?|degrading|metaboli[sz]es?|metaboli[sz]ing|feeds?\s+on|feeding\s+on|digests?|digesting)\s+(?:on\s+)?${SUBSTRATE}`, 'i'));
+  if (eat) {
+    out.push({ kind: 'mass_balance', op: 'balances', verb: eat[1].trim(), substrate: eat[2] ?? null, asked: eat[0].trim(),
+      ...(/^carbon$/i.test(eat[2] ?? '') ? { ambiguous: ['fixing CO2 from the air (autotrophy)', 'oxidising hydrocarbons', 'depolymerising plastic', 'consuming elemental carbon'], note: '"carbon" alone names four different organisms; the parser does not choose between them and nothing downstream does either' } : {}) });
+  }
 }
 
 const SURVIVE_VERB = /\b(?:surviv(?:e|es|ing|al)|tolerat(?:e|es|ing)|withstand(?:s|ing)?|lives?\s+through)\b/i;
@@ -514,7 +568,7 @@ export function splitClauses(text) {
 
 export function parseDesignText(text) {
   const assumptions = [], unparsed = [], refused = [];
-  const spec = { start_from: [], criteria: [], editable: [], constraints: { lean: 'must-hold' } };
+  const spec = { start_from: [], criteria: [], performance_criteria: [], editable: [], constraints: { lean: 'must-hold' } };
   if (typeof text !== 'string' || !text.trim()) return { spec, unparsed: [{ text: String(text ?? ''), reason: 'empty input' }], refused, assumptions };
 
   let lastCriteria = [];
@@ -589,7 +643,8 @@ export function parseDesignText(text) {
     const stages = takeStages(cl, assumptions);
     const problems = [];
     takeEditable(cl, spec.editable, problems, assumptions);
-    const found = [];
+    const found = [], perf = [];
+    familyPerformance(cl, perf, problems);
     familyObjective(cl, found, problems);
     familyGlide(cl, found, problems);
     familyGrip(cl, found, problems);
@@ -627,13 +682,14 @@ export function parseDesignText(text) {
       if (stages) c.stages = stages;
       else { c.stages = ['adult']; c._defaultStage = true; }
     }
+    for (const pc of perf) spec.performance_criteria.push({ ...pc, source_text: raw, tool: 'performance_check' });
     spec.criteria.push(...crit);
     if (crit.length) lastCriteria = crit;
 
     // 6. anything left over
     const left = cl.leftover();
     if (problems.length) unparsed.push({ text: raw, reason: problems.join('; ') });
-    else if (!isFillerOnly(left)) {
+    else if (!isFillerOnly(left) && !(perf.length && isFillerOnly(left.replace(/(a|an|the|that|which|can|able|its|loose|into|longer|more)/gi, ' ')))) {
       const unk = new RegExp(String.raw`${NUM}\s*([^\s\d,.;]+)`).exec(left);
       const reason = unk && FILLER.has(unk[2].toLowerCase()) ? `a number with no unit near "${unk[0]}" (say e.g. "4 °C", "0.3 m/s", "30 m")`
         : unk && !unitOf(unk[2]) ? `"${unk[0]}": unknown unit "${unk[2]}"` : crit.length ? `part of this clause was not understood: "${left}"` : 'no criterion, organism or edit recognised';

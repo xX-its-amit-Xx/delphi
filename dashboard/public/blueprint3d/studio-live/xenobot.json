@@ -1,16 +1,16 @@
 {
  "what": "A replay of one Design Studio run: Can we design a xenobot that sweeps loose particles into a pile?",
  "built_by": "node dashboard/public/blueprint3d/studio-live/gen.mjs",
- "built": "2026-11-03T06:32:32.368Z",
+ "built": "2026-11-03T07:29:31.810Z",
  "is_live": false,
  "live_hint": "studio-live.html polls POST /tool/session_read on a running sim-engine/http.mjs and shows that instead when it answers. Start one with: node sim-engine/http.mjs",
  "run": "xenobot",
  "question": "Can we design a xenobot that sweeps loose particles into a pile?",
- "session": "can-we-design-a-xenobot-that-sweeps-loos-2f0954",
+ "session": "can-we-design-a-xenobot-that-sweeps-loos-615c2d",
  "verdict": "Asked about the construct, the occurrence databases have nothing, which is the correct and only possible answer: they record where people found things, and nobody has ever found one. Asked about the donor they answer fully, and none of that answer is about the construct. An ecology layer handed a synthetic object can say where its parts came from and nothing whatever about where it could live.",
- "tool_calls": 19,
+ "tool_calls": 28,
  "sources": {
-  "session": "sim-engine/sessions/can-we-design-a-xenobot-that-sweeps-loos-2f0954.jsonl",
+  "session": "sim-engine/sessions/can-we-design-a-xenobot-that-sweeps-loos-615c2d.jsonl",
   "generations": "runs/xenobot/gen/gen*.json",
   "logs": "runs/xenobot/log/",
   "journal": "runs/xenobot/journal.jsonl"
@@ -19,7 +19,7 @@
   {
    "seq": 0,
    "type": "open",
-   "ts": "2026-11-03T06:32:31.360Z",
+   "ts": "2026-11-03T07:29:31.504Z",
    "title": "Can we design a xenobot that sweeps loose particles into a pile?",
    "organism": null,
    "author": "agent:xenobot",
@@ -28,7 +28,7 @@
   {
    "seq": 1,
    "type": "comment",
-   "ts": "2026-11-03T06:32:31.387Z",
+   "ts": "2026-11-03T07:29:31.527Z",
    "author": "agent:xenobot",
    "body": "generation 0: Start with the question every layer asks first and this subject cannot answer: what taxon is it? A xenobot is built from Xenopus laevis cells, so the CELLS have a taxon. The thing does not. Find out what each layer does when handed the taxon of its parts.",
    "lawset_version": "1.8.1"
@@ -36,7 +36,7 @@
   {
    "seq": 2,
    "type": "finding",
-   "ts": "2026-11-03T06:32:31.476Z",
+   "ts": "2026-11-03T07:29:31.608Z",
    "author": "agent:xenobot",
    "body": "the blueprint comes back for Xenopus laevis: 13 organ systems, 67 organs, 214 tissues, 259 cell types. Every term is correct and the whole thing is about the wrong subject. That is a frog. A xenobot has no organ systems, no heart, no gut and no nervous system; it is a ball of skin and heart cells with cilia on the outside. The anatomy layer can describe the DONOR and has no way to express \"an assembly of cells from this donor, in an arrangement the donor never makes\".",
    "lawset_version": "1.8.1",
@@ -60,12 +60,59 @@
   {
    "seq": 3,
    "type": "finding",
-   "ts": "2026-11-03T06:32:31.528Z",
+   "ts": "2026-11-03T07:29:31.655Z",
    "author": "agent:xenobot",
-   "body": "the document is created and it is a document about Xenopus laevis, placed in Xenopus <subgenus> < Xenopus <genus> < Xenopodinae. The studio accepts it because it has no way to be told that the subject is a construct: there is no field for \"made from, but not an instance of\".",
+   "body": "the document now says what the subject IS: a construct made from Xenopus laevis, inheriting 3 things and explicitly not inheriting 5. base.taxon still carries the DONOR, because the cells really are that taxon and the genome is unedited, so sequence questions stay answerable; everything organismal does not, and the tools that cannot tell the difference now refuse instead of answering about a frog.",
    "lawset_version": "1.8.1",
-   "tool": "organism_from_blueprint",
-   "verdict": "pass-but-wrong-subject",
+   "tool": "organism_from_blueprint (as a construct)",
+   "verdict": "pass",
+   "generation": 0,
+   "detail": {
+    "made_from": {
+     "taxon": "Xenopus laevis",
+     "what": "a ciliated spheroid of donor skin and heart cells, 0.5-1 mm across, in a shape the donor never makes",
+     "source": "DESIGN INPUT: what this construct IS, stated by the designer. Nothing in the ontologies describes it, because it is not anatomy.",
+     "inherits": [
+      "the donor genome, unedited",
+      "the donor cell types",
+      "whatever those cells do on their own"
+     ],
+     "does_not_inherit": [
+      "organ systems",
+      "a gut, a mouth or gonads",
+      "a life cycle or a growth track",
+      "the donor range, community or predators",
+      "the donor body plan"
+     ]
+    },
+    "caveat": "This document describes a CONSTRUCT: an assembly made FROM a taxon, which is not an instance of that taxon. The distinction is the whole point of the field. A xenobot is built from Xenopus laevis cells and is not a frog: it has no organ systems, no gut, no gonads and a working life of days, and the donor's anatomy, life history, ecology and predators are facts about the donor and not about it. base.taxon still carries the DONOR, because the cells really are that taxon and the genome really is unedited, so genotype questions are answerable; everything organismal is not. Any tool that reads a taxon from this document must say which of the two it is answering about, and the ones that cannot tell the difference refuse."
+   }
+  },
+  {
+   "seq": 4,
+   "type": "finding",
+   "ts": "2026-11-03T07:29:31.657Z",
+   "author": "agent:xenobot",
+   "body": "refuses for the right reason now: the subject is a CONSTRUCT, not an organism: a ciliated spheroid of donor skin and heart cells, 0.5-1 mm across, in a shape the donor never makes. Its donor is Xenopus laevis, and this reference set compares real specimens of real animals. The nearest real body to a a ciliated sp",
+   "lawset_version": "1.8.1",
+   "tool": "closest_relative_phenotype",
+   "verdict": "refused-as-construct",
+   "generation": 0,
+   "detail": {
+    "subject": "construct",
+    "reason": "the subject is a CONSTRUCT, not an organism: a ciliated spheroid of donor skin and heart cells, 0.5-1 mm across, in a shape the donor never makes. Its donor is Xenopus laevis, and this reference set compares real specimens of real animals. The nearest real body to a a ciliated spheroid of donor skin and heart cells, 0.5-1 mm across, in a shape the donor never makes is not a question with an answer here, and answering it about Xenopus laevis would be answering about the donor -- an animal with organ systems, a life cycle and a range, none of which this has.",
+    "what_IS_answerable": "genotype: the cells carry the donor genome unedited, so sequence-level questions are about something real."
+   }
+  },
+  {
+   "seq": 5,
+   "type": "finding",
+   "ts": "2026-11-03T07:29:31.659Z",
+   "author": "agent:xenobot",
+   "body": "the hierarchy attached to this document is still the DONOR's -- Xenopus laevis, 13 organ systems, 68 organs -- and that is now a stated fact rather than a silent one. A xenobot has none of them. The anatomy layer can describe the donor and has no vocabulary for an assembly of its cells; what changed is that the document says so, so nothing downstream reads the frog as the subject.",
+   "lawset_version": "1.8.1",
+   "tool": "organism_from_blueprint (donor hierarchy)",
+   "verdict": "wrong-subject-by-construction",
    "generation": 0,
    "detail": {
     "taxon": "Xenopus laevis",
@@ -77,21 +124,28 @@
      "tissue": 276,
      "cell": 370
     },
-    "parameters": null
+    "parameters": null,
+    "does_not_inherit": [
+     "organ systems",
+     "a gut, a mouth or gonads",
+     "a life cycle or a growth track",
+     "the donor range, community or predators",
+     "the donor body plan"
+    ]
    }
   },
   {
-   "seq": 4,
+   "seq": 6,
    "type": "comment",
-   "ts": "2026-11-03T06:32:31.529Z",
+   "ts": "2026-11-03T07:29:31.660Z",
    "author": "agent:xenobot",
    "body": "generation 1: The locomotion layer is the first one that does not need to know what kind of thing this is. It needs a length, a speed, a medium and a gait. A xenobot has all four, and the taxon it carries is only used for the flight modes. Ask it about ciliary swimming.",
    "lawset_version": "1.8.1"
   },
   {
-   "seq": 5,
+   "seq": 7,
    "type": "finding",
-   "ts": "2026-11-03T06:32:31.531Z",
+   "ts": "2026-11-03T07:29:31.662Z",
    "author": "agent:xenobot",
    "body": "nothing this layer can check contradicts the design. That is NOT a finding that it moves: there is no muscle here, no metabolism, no control and no energy budget, and 1 of the 3 checks are regime indicators that never fail anything. Re is of order 5.0e-1, which the convention in media.json puts inside the creeping regime, though at the very top of it where inertia is beginning to matter. The asymmetry between the power and recovery strokes is exactly what the theorem requires: two paths, not one path retraced. That asymmetry is the reason cilia are shaped the way they are, and it is a property of the GAIT, which no part list contains.",
    "lawset_version": "1.8.1",
@@ -128,9 +182,9 @@
    }
   },
   {
-   "seq": 6,
+   "seq": 8,
    "type": "finding",
-   "ts": "2026-11-03T06:32:31.532Z",
+   "ts": "2026-11-03T07:29:31.663Z",
    "author": "agent:xenobot",
    "body": "the same construct with a single-hinge flap instead of cilia: impossible. IMPOSSIBLE, by a theorem and not by a simulation: the stroke is time-reversible (declared reciprocal) and Re <= 0.498 everywhere in the stated ranges. In the Stokes limit the displacement over a cycle depends on the PATH through configuration space and not on the rate, so a path that retraces itself returns the body exactly where it started. Net displacement per cycle is zero, at any beat frequency. This is the control for the check above -- a layer that returned \"fine\" for both would not be telling us anything about either.",
    "lawset_version": "1.8.1",
@@ -146,17 +200,17 @@
    }
   },
   {
-   "seq": 7,
+   "seq": 9,
    "type": "comment",
-   "ts": "2026-11-03T06:32:31.533Z",
+   "ts": "2026-11-03T07:29:31.664Z",
    "author": "agent:xenobot",
    "body": "generation 2: The design was asked to DO something: move loose particles into piles. That is not a shape, not a gait and not a scenario in this engine. Ask the functional layer, which is the one that exists to say what a design is for.",
    "lawset_version": "1.8.1"
   },
   {
-   "seq": 8,
+   "seq": 10,
    "type": "finding",
-   "ts": "2026-11-03T06:32:31.546Z",
+   "ts": "2026-11-03T07:29:31.677Z",
    "author": "agent:xenobot",
    "body": "the function registry holds four functions, all of them about fish and flight, and nothing about manipulating objects. The closest analogue it can name is flying fishes. A task -- a thing the organism DOES TO THE WORLD, as distinct from a way it moves -- has no representation here at all.",
    "lawset_version": "1.8.1",
@@ -172,17 +226,125 @@
    }
   },
   {
-   "seq": 9,
+   "seq": 11,
+   "type": "finding",
+   "ts": "2026-11-03T07:29:31.699Z",
+   "author": "agent:xenobot",
+   "body": "the task is read and routed: 0 requirement(s) for physics_check, 1 for performance_check, 0 that no layer takes. The requirement \"sweeps loose particles into a pile\" goes to performance_check { kind: \"manipulation\" }. Before this the words went nowhere and the clause came back unparsed.",
+   "lawset_version": "1.8.1",
+   "tool": "parse_design_text/routing",
+   "verdict": "routed",
+   "generation": 2,
+   "detail": {
+    "routing": {
+     "scenario_criteria": [],
+     "performance_criteria": [
+      {
+       "requirement": "sweeps loose particles into a pile",
+       "kind": "manipulation",
+       "tool": "performance_check",
+       "how": "performance_check { kind: \"manipulation\", ... } -- the quantities it needs are the designer's to declare, with sources"
+      }
+     ],
+     "structures": "organism-design/blueprint.mjs reads the structures named in the text and resolves them to Uberon/CL terms for the taxon; organism_from_blueprint brings the result into the studio",
+     "laws": "lean_check decides clade scope from the taxon and reports every law as holds / violated / out-of-scope / cannot-evaluate",
+     "movement": null,
+     "world": "ecology_check -- where the clade is recorded, what else is there, and what is recorded eating it. It will not predict exclusion without declared population parameters.",
+     "unparsed": [
+      {
+       "text": "xenobot",
+       "reason": "organism \"xenobot\" has no reference parameter set in this engine (it holds measured parameters for: zebrafish, flying fish, winged zebrafish, wingless flying fish, TFF, the ff-zf chimera). It is not mapped to a \"close\" one, because the nearest fish is not this animal. A taxon-based design can still be built from it: see spec.taxon, organism_create {taxon} and organism_from_blueprint. The rest of this clause IS parsed: any criterion in it is on the spec, and will be judged once a parameter set for this clade exists.",
+       "a_layer_exists": true,
+       "tool": "performance_check { kind: \"manipulation\" }",
+       "verdict": "the organism has no reference parameter set; declare one with organism_create { taxon, declared }"
+      }
+     ],
+     "summary": "0 requirement(s) for physics_check, 1 for performance_check, 0 that no layer takes."
+    },
+    "performance_criteria": [
+     {
+      "kind": "manipulation",
+      "op": "feasible",
+      "verb": "sweeps",
+      "object": "particles",
+      "destination": "pile",
+      "asked": "sweeps loose particles into a pile",
+      "source_text": "a xenobot that sweeps loose particles into a pile",
+      "tool": "performance_check"
+     }
+    ]
+   }
+  },
+  {
+   "seq": 12,
+   "type": "finding",
+   "ts": "2026-11-03T07:29:31.701Z",
+   "author": "agent:xenobot",
+   "body": "The answer changes inside the stated ranges: 0.132x the force needed at the worst corner and 13.236x at the best. Narrow an input and ask again.",
+   "lawset_version": "1.8.1",
+   "tool": "performance_check (manipulation)",
+   "verdict": "only-in-part-of-the-stated-range",
+   "generation": 2,
+   "detail": {
+    "drag_per_particle_N": [
+     3.777451006676368e-11,
+     1.888725503338184e-10
+    ],
+    "force_needed_N": [
+     3.777451006676368e-11,
+     3.777451006676368e-9
+    ],
+    "thrust_available_N": [
+     5e-10,
+     5e-10
+    ],
+    "margin": {
+     "worst": 0.13236439046232146,
+     "best": 13.236439046232146
+    },
+    "model": "Stokes drag, F = 6*pi*mu*a*v. Exact for a sphere in the creeping limit.",
+    "model_caveat": "Drag on an isolated sphere in an unbounded fluid. A particle resting on a surface also has friction and adhesion, which are often LARGER than the drag and are not modelled here; particles in a pile shield one another, which this does not model either; and a non-spherical particle has a different coefficient. Treat the force here as a lower bound on what the task needs.",
+    "cannot_say": [
+     "whether the design can GET to the particle, aim at it, or hold on to it: there is no control model",
+     "whether a pile forms: moving particles and accumulating them are different problems, and the second is about where they are released",
+     "how long it would take, or whether the organism can pay for it"
+    ]
+   }
+  },
+  {
+   "seq": 13,
+   "type": "finding",
+   "ts": "2026-11-03T07:29:31.702Z",
+   "author": "agent:xenobot",
+   "body": "At every corner of the stated ranges the declared thrust exceeds the drag: 5.00e-10 N against the 3.78e-10 N needed to move 2 particles of radius 0.00001-0.00005 m at 0.0002 m/s through water. Margin 1.324x to 13.236x. The design did not get stronger between these two calls: the CLAIM got narrower, from twenty particles at once to two. That is the loop working as intended -- the check named the corner that failed, and the honest response was to stop claiming that corner.",
+   "lawset_version": "1.8.1",
+   "tool": "performance_check (manipulation, narrowed)",
+   "verdict": "can-move-it",
+   "generation": 2,
+   "detail": {
+    "margin": {
+     "worst": 1.3236439046232145,
+     "best": 13.236439046232146
+    },
+    "force_needed_N": [
+     3.777451006676368e-11,
+     3.777451006676368e-10
+    ],
+    "changed": "particles_per_pile 1-20 -> 1-2"
+   }
+  },
+  {
+   "seq": 14,
    "type": "comment",
-   "ts": "2026-11-03T06:32:31.546Z",
+   "ts": "2026-11-03T07:29:31.702Z",
    "author": "agent:xenobot",
    "body": "generation 3: Last, the ecology layer, which should refuse hardest of all. Occurrence records are records of somebody finding the thing somewhere. A xenobot has never been anywhere outside a dish, so there is nothing to find and nothing to find it.",
    "lawset_version": "1.8.1"
   },
   {
-   "seq": 10,
+   "seq": 15,
    "type": "finding",
-   "ts": "2026-11-03T06:32:31.548Z",
+   "ts": "2026-11-03T07:29:31.704Z",
    "author": "agent:xenobot",
    "body": "asked about \"Xenobot\" the layer refuses: GBIF could not match \"Xenobot\" to its backbone taxonomy. Without a key there are no occurrence records to read.",
    "lawset_version": "1.8.1",
@@ -196,9 +358,9 @@
    }
   },
   {
-   "seq": 11,
+   "seq": 16,
    "type": "finding",
-   "ts": "2026-11-03T06:32:31.557Z",
+   "ts": "2026-11-03T07:29:31.713Z",
    "author": "agent:xenobot",
    "body": "GBIF holds 16,295 occurrence records for Xenopus laevis (Daudin, 1802), concentrated in BE, ZA, US. In the Western Cape, South Africa GBIF holds 20,688 records; the 8 most-recorded non-Aves species are listed. None of the 35 taxa GloBI records as eating Xenopus laevis (Daudin, 1802) appear in this box's top 8 by record count. Read that as a gap in two databases before reading it as an empty niche: the box list is truncated, record-ranked and missing every Aves species. No population parameters were declared, so whether this design could establish against what is there has NOT been evaluated. That question needs numbers no occurrence database contains. Every number here is about Xenopus laevis. A xenobot is 0.5 mm of ciliated donor tissue with no mouth, no gut, no gonads and a working life of days; it shares the genome and nothing else that an ecologist would use. Transferring this community, these predators or this range to the construct would be the error this whole run is about, so the run states the records and does not transfer them.",
    "lawset_version": "1.8.1",
@@ -332,11 +494,12 @@
    },
    "gates": {
     "blueprint.mjs": "wrong-subject",
-    "organism_from_blueprint": "pass-but-wrong-subject"
+    "organism_from_blueprint": "pass",
+    "closest_relative_phenotype": "refused-as-construct"
    },
    "lean": {},
    "blueprint": "gen/gen0.blueprint.json",
-   "what_it_taught": "Handed a construct, every layer that wants a taxon takes the donor's and carries on. Nothing is wrong with any individual answer and the subject is wrong throughout. This is the failure mode the rest of this repository has spent two runs removing from the clade logic, appearing again one level up: not a wrong clade, a wrong KIND of thing.",
+   "what_it_taught": "The document can now say what the subject IS. Handed a construct, every layer that wanted a taxon used to take the donor's and carry on -- not a wrong clade, a wrong KIND of thing. With made_from stated, the phenotype reference set refuses as a construct and names what IS answerable (the genome is the donor's, unedited), and the donor hierarchy is labelled as the donor's rather than presented as the subject's.",
    "question": "Can we design a xenobot that sweeps loose particles into a pile?",
    "diff_from_previous": null
   },
@@ -463,8 +626,25 @@
     "flight_structures_present": [],
     "task": {
      "asked": "push loose particles into piles",
-     "representable": false,
-     "why": "no task layer exists; the functional registry holds four fish-and-flight functions"
+     "representable": true,
+     "why": "the parser reads it as a manipulation requirement and performance_check answers it from Stokes drag against a declared thrust",
+     "verdict": "only-in-part-of-the-stated-range",
+     "margin": {
+      "worst": 0.13236439046232146,
+      "best": 13.236439046232146
+     },
+     "force_needed_N": [
+      3.777451006676368e-11,
+      3.777451006676368e-9
+     ],
+     "after_narrowing": {
+      "verdict": "can-move-it",
+      "margin": {
+       "worst": 1.3236439046232145,
+       "best": 13.236439046232146
+      },
+      "changed": "particles_per_pile 1-20 -> 1-2"
+     }
     }
    },
    "genotype": {
@@ -489,11 +669,14 @@
     "why": "unchanged."
    },
    "gates": {
-    "functional_resolution": "ran, no verdict"
+    "functional_resolution": "ran, no verdict",
+    "routing": "routed to performance_check",
+    "performance_check (manipulation)": "only-in-part-of-the-stated-range",
+    "performance_check (narrowed)": "can-move-it"
    },
    "lean": {},
    "blueprint": "gen/gen0.blueprint.json",
-   "what_it_taught": "The task is not expressible. Shape has a layer and motion now has one; what the organism DOES has neither a vocabulary nor a check, and for this subject that is the whole design brief.",
+   "what_it_taught": "The task IS expressible now. The functional registry still holds nothing like it -- four fish-and-flight functions -- but the parser reads \"sweeps loose particles into a pile\" as a manipulation requirement, the routing block sends it to performance_check, and the answer comes from Stokes drag against a declared thrust: The answer changes inside the stated ranges: 0.132x the force needed at the worst corner and 13.236x at the best. Narrow an input and ask again. Shape had a layer, motion got one, and what the organism DOES now has one too.",
    "question": "Can we design a xenobot that sweeps loose particles into a pile?",
    "diff_from_previous": {
     "phenotype": {
@@ -506,7 +689,10 @@
     "genotype_markers_added": [],
     "genotype_markers_removed": [],
     "gates_changed": [
-     "functional_resolution: not asked -> ran, no verdict"
+     "functional_resolution: not asked -> ran, no verdict",
+     "routing: not asked -> routed to performance_check",
+     "performance_check (manipulation): not asked -> only-in-part-of-the-stated-range",
+     "performance_check (narrowed): not asked -> can-move-it"
     ]
    }
   },

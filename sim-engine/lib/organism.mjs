@@ -53,6 +53,54 @@ export const TAXON_BASE_CAVEAT =
   + 'calibrated on another clade is reported out of scope rather than applied. Nothing here is a '
   + 'measurement of this organism, and no number has been substituted for one.';
 
+export const DECLARED_CAVEAT =
+  'This document names a TAXON and carries a DECLARED parameter set: quantities the designer stated, each '
+  + 'with a source saying where it came from. Nobody measured them on this organism, and the engine holds '
+  + 'measured parameters only for the organisms in its bundle. Every declared value enters STATE with kind '
+  + '"assumed", so the weakest-input machinery and every model_confidence downstream carry the fact that a '
+  + 'person stated it. A result computed from them is a statement about those declarations as much as about '
+  + 'the organism; fields nobody declared stay null and the checks that need them still refuse.';
+
+export const CONSTRUCT_CAVEAT =
+  'This document describes a CONSTRUCT: an assembly made FROM a taxon, which is not an instance of that '
+  + 'taxon. The distinction is the whole point of the field. A xenobot is built from Xenopus laevis cells '
+  + 'and is not a frog: it has no organ systems, no gut, no gonads and a working life of days, and the '
+  + 'donor\'s anatomy, life history, ecology and predators are facts about the donor and not about it. '
+  + 'base.taxon still carries the DONOR, because the cells really are that taxon and the genome really is '
+  + 'unedited, so genotype questions are answerable; everything organismal is not. Any tool that reads a '
+  + 'taxon from this document must say which of the two it is answering about, and the ones that cannot '
+  + 'tell the difference refuse.';
+
+/** A made_from block: {taxon, what, inherits: [...], does_not_inherit: [...], source}. */
+export function validateMadeFrom(m) {
+  if (typeof m !== 'object' || m === null) throw new Error('made_from must be an object');
+  if (typeof m.taxon !== 'string' || !m.taxon.trim()) throw new Error('made_from.taxon is required: the donor the construct is built from');
+  if (typeof m.what !== 'string' || !m.what.trim()) throw new Error('made_from.what is required: what the construct IS, in a phrase (e.g. "a ciliated spheroid of donor skin and heart cells")');
+  if (typeof m.source !== 'string' || !m.source.trim()) throw new Error('made_from.source is required: where the description of this construct comes from');
+  return m;
+}
+
+/** A declared block: {parameters: {field: {value, source, unit?}}, life_stages: [{key,label,ageDays}]}. */
+export function validateDeclared(d) {
+  if (typeof d !== 'object' || d === null) throw new Error('declared must be an object');
+  if (d.parameters != null) {
+    if (typeof d.parameters !== 'object') throw new Error('declared.parameters must be an object of {field: {value, source}}');
+    for (const [k, v] of Object.entries(d.parameters)) {
+      if (typeof v !== 'object' || v === null || typeof v.value !== 'number' || !Number.isFinite(v.value)) throw new Error(`declared.parameters.${k} needs a finite numeric \`value\``);
+      if (typeof v.source !== 'string' || !v.source.trim()) throw new Error(`declared.parameters.${k} has no \`source\`. A quantity with no provenance cannot be told apart from a guess once it is inside a STATE.`);
+    }
+  }
+  if (d.life_stages != null) {
+    if (!Array.isArray(d.life_stages) || !d.life_stages.length) throw new Error('declared.life_stages must be a non-empty array of {key, label, ageDays}');
+    for (const s of d.life_stages) {
+      if (typeof s?.key !== 'string' || !s.key.trim()) throw new Error('each declared life stage needs a `key`');
+      if (typeof s?.ageDays !== 'number' || !Number.isFinite(s.ageDays) || s.ageDays < 0) throw new Error(`declared life stage "${s?.key}" needs a finite non-negative \`ageDays\``);
+    }
+  }
+  if (!d.parameters && !d.life_stages) throw new Error('declared must carry `parameters`, `life_stages`, or both');
+  return d;
+}
+
 export const HARD_CAVEAT = 'MORPHOLOGICAL interpolation, not genetic hybridisation (anatomy-model/parametric/design-schema.json): a blended or edited parameter set is a shape, not an organism; it says nothing about whether such an animal could be bred, is viable, or is developmentally reachable.';
 
 // State fields an edit may override directly (body level, or the organ/tissue that owns them).
@@ -226,14 +274,17 @@ function unitOf(k) {
 }
 
 // ---------------------------------------------------------------- documents
-export function createOrganism({ id, parents, taxon = null, blueprint = null, notes = '' }, bundle) {
+export function createOrganism({ id, parents, taxon = null, made_from = null, blueprint = null, declared = null, notes = '' }, bundle) {
   if (typeof id !== 'string' || !/^[a-z0-9][a-z0-9_-]{0,62}$/.test(id)) throw new Error('id must be a lower-case slug (a-z, 0-9, -, _)');
   // A TAXON base: no parents, because there is no reference parameter set for this organism. Allowed so
   // that any organism can enter the studio and reach the law check with its clade intact.
   if (taxon != null && (!Array.isArray(parents) || !parents.length)) {
     if (typeof taxon !== 'string' || !taxon.trim()) throw new Error('base.taxon must be a non-empty taxon name');
-    return { id, base: { taxon: taxon.trim(), parents: [], ...(blueprint ? { blueprint } : {}) }, edits: [], notes,
-      caveat: TAXON_BASE_CAVEAT };
+    if (declared != null) validateDeclared(declared);
+    if (made_from != null) validateMadeFrom(made_from);
+    return { id, base: { taxon: taxon.trim(), parents: [], ...(made_from ? { made_from } : {}), ...(blueprint ? { blueprint } : {}), ...(declared ? { declared } : {}) },
+      edits: [], notes,
+      caveat: made_from ? CONSTRUCT_CAVEAT : declared ? DECLARED_CAVEAT : TAXON_BASE_CAVEAT };
   }
   if (!Array.isArray(parents) || !parents.length) throw new Error('base.parents must be a non-empty list of {organism, weight}, or base.taxon for an organism this engine holds no parameters for');
   for (const p of parents) { organismOrThrow(bundle, p.organism); if (!(typeof p.weight === 'number' && p.weight > 0)) throw new Error('each parent weight must be a positive number'); }
@@ -288,7 +339,7 @@ export function appendEdit(bundle, doc, edit, now = () => new Date().toISOString
 
 export function validateDoc(bundle, doc) {
   if (!doc || typeof doc !== 'object' || !doc.base) throw new Error('not an organism document');
-  createOrganism({ id: doc.id, parents: doc.base.parents, taxon: doc.base.taxon, blueprint: doc.base.blueprint }, bundle);
+  createOrganism({ id: doc.id, parents: doc.base.parents, taxon: doc.base.taxon, made_from: doc.base.made_from, blueprint: doc.base.blueprint, declared: doc.base.declared }, bundle);
   if (isTaxonBase(doc) && doc.edits.length) {
     throw new Error(`organism "${doc.id}" has a taxon base (${doc.base.taxon}) and therefore no parameter to edit: an edit would be applied to null. Give the engine a reference parameter set for this taxon first.`);
   }
@@ -301,6 +352,9 @@ const applyOp = (op, cur, v) => (op === 'set' ? v : op === 'scale' ? cur * v : c
 /** Resolve the document at its reference age: blended parameters with provenance, part scales,
  *  state overrides, and the edits that have no physical effect (recorded only). */
 /** Is this a document whose base is a taxon rather than a blend of the engine's own organisms? */
+/** A design whose subject is a CONSTRUCT: made from a taxon's cells, not an instance of that taxon. */
+export function isConstruct(doc) { return !!(doc && doc.base && doc.base.made_from); }
+
 export function isTaxonBase(doc) {
   return !!(doc && doc.base && doc.base.taxon && (!Array.isArray(doc.base.parents) || !doc.base.parents.length));
 }

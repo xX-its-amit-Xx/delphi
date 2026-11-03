@@ -1,0 +1,123 @@
+{
+ "tool": "performance_check",
+ "generation": 5,
+ "why": "the first set of numbers the designer proposed",
+ "args": {
+  "kind": "mass_balance",
+  "taxon": "Cupriavidus necator",
+  "carbon_uptake_mol_per_day": {
+   "value": 1e-14,
+   "source": "DESIGN INPUT: the carbon the design claims to take up per cell per day. Stated by the designer; no uptake rate was measured here."
+  },
+  "carbon_into_biomass_mol_per_day": {
+   "value": 8e-15,
+   "source": "DESIGN INPUT: the carbon the design claims to turn into new biomass -- an 80 percent yield, which is where a designer optimistic about a chassis tends to land."
+  },
+  "carbon_respired_mol_per_day": {
+   "value": 4e-15,
+   "source": "DESIGN INPUT: the carbon the design concedes it respires."
+  }
+ },
+ "ms": 0,
+ "result": {
+  "contract_version": "0.10.0",
+  "result": {
+   "tool": "performance_check",
+   "version": "0.1.0",
+   "kind": "mass_balance",
+   "taxon": "Cupriavidus necator",
+   "ran": true,
+   "verdict": "violates-conservation",
+   "carbon_in_mol_per_day": [
+    1e-14,
+    1e-14
+   ],
+   "carbon_out_mol_per_day": [
+    1.2000000000000001e-14,
+    1.2000000000000001e-14
+   ],
+   "biomass_yield_C_per_C": [
+    0.8,
+    0.8
+   ],
+   "reading": "Carbon leaving exceeds carbon entering at every corner of the stated ranges: 1.20e-14-1.20e-14 mol C/day out against 1e-14 mol C/day in. That is not an optimistic design, it is an impossible one -- the shortfall has to come from somewhere, and there is nowhere.",
+   "inputs": {
+    "carbon_uptake_mol_per_day": {
+     "min": 1e-14,
+     "max": 1e-14,
+     "unit": "mol C/day",
+     "kind": "assumed",
+     "source": "DESIGN INPUT: the carbon the design claims to take up per cell per day. Stated by the designer; no uptake rate was measured here."
+    },
+    "carbon_into_biomass_mol_per_day": {
+     "min": 8e-15,
+     "max": 8e-15,
+     "unit": "mol C/day",
+     "kind": "assumed",
+     "source": "DESIGN INPUT: the carbon the design claims to turn into new biomass -- an 80 percent yield, which is where a designer optimistic about a chassis tends to land."
+    },
+    "carbon_respired_mol_per_day": {
+     "min": 4e-15,
+     "max": 4e-15,
+     "unit": "mol C/day",
+     "kind": "assumed",
+     "source": "DESIGN INPUT: the carbon the design concedes it respires."
+    }
+   },
+   "model": "Conservation of mass on the carbon: uptake >= biomass + respired.",
+   "model_caveat": "A steady-state balance over one day on ONE element. It says nothing about the energy budget, which is where carbon fixation is actually expensive -- the Calvin cycle costs ATP and reducing equivalents, and an organism can be in carbon balance and nowhere near energy balance. It says nothing about nitrogen, phosphorus or any other limiting element, nothing about whether the uptake rate is achievable by any transporter, and nothing about rate: a balance that holds per day may be unreachable per second.",
+   "what_this_cannot_say": [
+    "whether the organism can achieve the declared uptake rate: no transporter kinetics, no surface-area limit, no diffusion model",
+    "whether the energy to fix that carbon is available",
+    "whether any other element balances"
+   ]
+  },
+  "provenance": [
+   {
+    "quantity": "carbon_uptake_mol_per_day",
+    "value": [
+     1e-14,
+     1e-14
+    ],
+    "kind": "assumed",
+    "source": "DESIGN INPUT: the carbon the design claims to take up per cell per day. Stated by the designer; no uptake rate was measured here."
+   },
+   {
+    "quantity": "carbon_into_biomass_mol_per_day",
+    "value": [
+     8e-15,
+     8e-15
+    ],
+    "kind": "assumed",
+    "source": "DESIGN INPUT: the carbon the design claims to turn into new biomass -- an 80 percent yield, which is where a designer optimistic about a chassis tends to land."
+   },
+   {
+    "quantity": "carbon_respired_mol_per_day",
+    "value": [
+     4e-15,
+     4e-15
+    ],
+    "kind": "assumed",
+    "source": "DESIGN INPUT: the carbon the design concedes it respires."
+   },
+   {
+    "quantity": "model",
+    "value": "Conservation of mass on the carbon: uptake >= biomass + respired.",
+    "kind": "derived",
+    "source": "A steady-state balance over one day on ONE element. It says nothing about the energy budget, which is where carbon fixation is actually expensive -- the Calvin cycle costs ATP and reducing equivalents, and an organism can be in carbon balance and nowhere near energy balance. It says nothing about nitrogen, phosphorus or any other limiting element, nothing about whether the uptake rate is achievable by any transporter, and nothing about rate: a balance that holds per day may be unreachable per second."
+   },
+   {
+    "quantity": "performance_check version",
+    "value": "0.1.0",
+    "kind": "derived",
+    "source": "sim-engine/validate/performance/index.mjs"
+   }
+  ],
+  "scope": "What the design accomplishes, as distinct from its shape or its gait. Three checks, each resting on something that cannot be argued with -- a constant-hazard expectation, Stokes drag, and conservation of mass -- evaluated over quantities the caller declares with sources. It models no mechanism: it does not say HOW the organism would live longer, exert a force or fix carbon, only whether the numbers a designer states are consistent with each other and with physics. A design this layer does not contradict has not been shown to work.",
+  "weakest_input": "assumed",
+  "counts": {
+   "assumed": 3,
+   "derived": 2
+  }
+ }
+}

@@ -60,12 +60,23 @@ await R.finding(1, 'blueprint.mjs', 'thin',
     words_not_recognised: b1.reading.words_not_recognised,
     what_this_means: 'For an animal this layer returns 13 organ systems and several hundred cell types. The same tool, the same queries and the same ontologies return a handful of terms for a bacterium. The layer is not clade-general even though the code is: the DATA stops at the animals.' });
 
-const doc1 = await R.mcp('organism_from_blueprint', { blueprint: 'runs/carbon-eating-bacterium/gen/gen1.blueprint.json', id: 'carbon-bacterium-gen1', save: true, overwrite: true },
-  { generation: 1, why: 'the blueprint into the Design Studio' });
+const doc1 = await R.mcp('organism_from_blueprint', { blueprint: 'runs/carbon-eating-bacterium/gen/gen1.blueprint.json', id: 'carbon-bacterium-gen1', save: true, overwrite: true,
+  declared: { parameters: {
+    mass_kg: { value: 1.5e-15, unit: 'kg', source: 'DESIGN INPUT: of order a picogram for a 2 um rod. Stated by the designer; no cell was weighed.' },
+    body_density_kg_m3: { value: 1100, unit: 'kg/m3', source: 'DESIGN INPUT: slightly denser than water, as cells generally are. Stated, not measured.' },
+  }, life_stages: [{ key: 'growing', label: 'exponential growth', ageDays: 1 }] } },
+  { generation: 1, why: 'the blueprint into the Design Studio, with the two quantities the design is willing to state' });
 await R.finding(1, 'organism_from_blueprint', doc1?.error ? 'refused' : 'pass',
   doc1?.error ? `refuses: ${String(doc1.error).slice(0, 200)}`
     : `the document exists: taxon ${doc1.taxon}, placed in ${(doc1.clades ?? []).slice(0, 4).join(' < ')}. The clade table reaches outside the animals as of this run -- it ran from Metazoa downward before, so every bacterium, archaeon, fungus and plant was unplaceable, and unplaceable propagates: no clade scope can be decided, no reference set can say whether it is covered.`,
   { taxon: doc1?.taxon, placed: doc1?.taxon_placed_in_clade_table, clades: doc1?.clades, counts: doc1?.counts, parameters: doc1?.parameters });
+
+const got1 = await R.mcp('organism_get', { organism: 'carbon-bacterium-gen1' }, { generation: 1, why: 'does a STATE resolve now that two quantities are declared?' });
+await R.finding(1, 'organism_get', got1?.error ? 'refused' : 'ran',
+  got1?.error ? 'refuses: ' + String(got1.error).slice(0, 220)
+    : 'a STATE resolves for a bacterium. Two fields have values because the design declared them, every other field is null with its reason, and each declared value carries kind "assumed" and the source the designer gave -- so nothing downstream can mistake a stated picogram for a weighed one. Before this a taxon base resolved no STATE at all and organism_get refused outright, which meant no scenario, no standing check and no physics could be asked about any organism outside the bundle.',
+  { declared: got1?.state?.values ? Object.entries(got1.state.values).filter(([, v]) => v !== null && typeof v !== 'object').slice(0, 6) : null,
+    caveat: got1?.doc?.caveat ?? null });
 
 const lean1 = await R.mcp('lean_check', { design: { taxon: doc1?.taxon ?? 'Cupriavidus necator', id: 'carbon-bacterium-gen1' } }, { generation: 1, why: 'which laws apply to a bacterium' });
 const tally1 = (lean1.rows ?? lean1.verdicts ?? []).reduce((a, r) => ({ ...a, [r.verdict]: (a[r.verdict] ?? 0) + 1 }), {});
@@ -81,9 +92,9 @@ R.writeGen({ generation: 1, asked: 'Cupriavidus necator that fixes carbon dioxid
     cells_of: `${b1.genome_sketch?.cells_with_markers ?? 0} of ${b1.genome_sketch?.cells_total ?? 0} cell types`,
     note: 'Marker gene products the Cell Ontology records for the chosen cell types. For a prokaryote there are essentially no such annotations, which is the same gap as the anatomy: these are animal ontologies.' },
   mesh: { glb: null, why: 'no surface mesh: the builder is a parametric teleost builder and Blender is absent here. For a rod-shaped bacterium a mesh would be a cylinder, which is a thing a modelling tool can make and not a thing this system knows.' },
-  gates: { 'blueprint.mjs': 'thin', organism_from_blueprint: doc1?.error ? 'refused' : 'pass', lean_check: 'ran, no opinion' },
+  gates: { 'blueprint.mjs': 'thin', organism_from_blueprint: doc1?.error ? 'refused' : 'pass', organism_get: got1?.error ? 'refused' : 'ran', lean_check: 'ran, no opinion' },
   lean: tally1, blueprint: 'gen/gen1.blueprint.json',
-  what_it_taught: 'A scientific name now resolves and the clade table now reaches bacteria, so a prokaryote gets all the way into the studio and the law check. What it finds there is that the anatomy ontologies, the cell ontology and the law set are all animal artefacts. The pipeline is clade-general; its contents are not.' });
+  what_it_taught: 'A scientific name now resolves, the clade table reaches bacteria, and a declared parameter set resolves a STATE, so a prokaryote gets all the way into the studio, the law check and organism_get. What it finds there is that the anatomy ontologies, the cell ontology and the law set are all animal artefacts. The pipeline is clade-general; its contents are not.' });
 
 // ===================================================================================================
 // GENERATION 2 -- the locomotion layer, and a theorem that ends the argument.
@@ -182,5 +193,45 @@ R.writeGen({ generation: 4, asked: 'could this organism establish anywhere, agai
   gates: { ecology_check: eco.verdict ?? 'assembled', competition: cm?.verdict ?? 'cannot-evaluate' }, lean: {}, blueprint: 'gen/gen1.blueprint.json',
   what_it_taught: `On the designer's own four numbers the strain cannot invade when rare: at the resident guild's carrying capacity its per-capita growth rate is negative, so it is excluded. That outcome is a property of those four numbers and not a measurement of anything, and the run says so twice. What the real databases contribute is the other half: where the clade is actually recorded, what is actually in the chosen box, and what is actually recorded as interacting with it -- facts with studies behind them, and no population parameter anywhere among them.` });
 
-R.finish({ layers_exercised: ['blueprint', 'studio', 'lean', 'locomotion', 'ecology'],
-  headline: 'Asked for a bacterium, the blueprint tool used to build an animal. Asked to swim with a paddle, the locomotion layer returns impossible by theorem. Asked whether it could live somewhere, the ecology layer assembles real records and refuses to predict exclusion from them.' });
+// ===================================================================================================
+// GENERATION 5 -- the thing the request actually asked for. "Eats carbon" finally reaches a check.
+// ===================================================================================================
+await R.thinking(5, 'Four generations in and nothing has yet checked the thing the request was about. "Eats carbon" was unreadable to the parser and unanswerable by every layer. Both are fixed: the parser reads it as a mass-balance requirement, the routing block sends it to performance_check, and conservation of mass does the rest.');
+
+const spec5 = await R.mcp('parse_design_text', { text: 'Cupriavidus necator that eats carbon dioxide and swims' }, { generation: 5, why: 'does the front door read the metabolism now?' });
+await R.finding(5, 'parse_design_text/routing', spec5.routing?.performance_criteria?.length ? 'routed' : 'unrouted',
+  'the metabolism is read and routed: ' + spec5.routing?.summary + ' Where the words went before was nowhere: the clause came back unparsed and the request to EAT CARBON, which is the entire design, reached no check at all.',
+  { routing: spec5.routing, performance_criteria: spec5.spec?.performance_criteria });
+
+const bad = await R.mcp('performance_check', { kind: 'mass_balance', taxon: 'Cupriavidus necator',
+  carbon_uptake_mol_per_day: { value: 1.0e-14, source: 'DESIGN INPUT: the carbon the design claims to take up per cell per day. Stated by the designer; no uptake rate was measured here.' },
+  carbon_into_biomass_mol_per_day: { value: 8.0e-15, source: 'DESIGN INPUT: the carbon the design claims to turn into new biomass -- an 80 percent yield, which is where a designer optimistic about a chassis tends to land.' },
+  carbon_respired_mol_per_day: { value: 4.0e-15, source: 'DESIGN INPUT: the carbon the design concedes it respires.' },
+}, { generation: 5, why: 'the first set of numbers the designer proposed' });
+await R.finding(5, 'performance_check (mass balance)', bad.verdict, bad.reading,
+  { carbon_in: bad.carbon_in_mol_per_day, carbon_out: bad.carbon_out_mol_per_day, yield: bad.biomass_yield_C_per_C,
+    model: bad.model, model_caveat: bad.model_caveat });
+
+const good = await R.mcp('performance_check', { kind: 'mass_balance', taxon: 'Cupriavidus necator',
+  carbon_uptake_mol_per_day: { value: 1.0e-14, source: 'DESIGN INPUT: unchanged.' },
+  carbon_into_biomass_mol_per_day: { value: 5.5e-15, source: 'DESIGN INPUT, CORRECTED on the previous answer: a 55 percent yield, which is what is left once the respiration the design already conceded is paid for. The design did not get better; the claim got arithmetically possible.' },
+  carbon_respired_mol_per_day: { value: 4.0e-15, source: 'DESIGN INPUT: unchanged.' },
+}, { generation: 5, why: 'the same design with a claim that does not break conservation of mass' });
+await R.finding(5, 'performance_check (mass balance, corrected)', good.verdict,
+  good.reading + ' The correction is the loop doing its job: the first set of numbers was not pessimistic or optimistic, it was impossible, and the check said which atoms were missing rather than scoring the design badly.',
+  { carbon_in: good.carbon_in_mol_per_day, carbon_out: good.carbon_out_mol_per_day, yield: good.biomass_yield_C_per_C,
+    changed: 'carbon_into_biomass 8.0e-15 -> 5.5e-15 mol C/day', cannot_say: good.what_this_cannot_say });
+
+R.writeGen({ generation: 5, asked: 'does the carbon add up?',
+  phenotype: { taxon: 'Cupriavidus necator', counts, parameters: null, structures_requested: [], structures_refused: [], flight_structures_present: [],
+    metabolism: { first_claim: bad.verdict, corrected: good.verdict,
+      biomass_yield_C_per_C: good.biomass_yield_C_per_C, changed: 'carbon_into_biomass 8.0e-15 -> 5.5e-15 mol C/day' } },
+  genotype: { markers: R.markersOf(b1), cells_with_markers: b1.genome_sketch?.cells_with_markers ?? 0, note: 'unchanged: nothing here connects a gene to a flux, which is the mechanism gap the mass-balance check states rather than hides.' },
+  mesh: { glb: null, why: 'unchanged.' },
+  gates: { routing: spec5.routing?.performance_criteria?.length ? 'routed to performance_check' : 'unrouted',
+    'performance_check (first claim)': bad.verdict, 'performance_check (corrected)': good.verdict },
+  lean: {}, blueprint: 'gen/gen1.blueprint.json',
+  what_it_taught: 'The request is answerable at last. The first numbers the designer proposed claimed more carbon leaving as biomass and CO2 than entered, which conservation of mass forbids outright -- and the check said impossible rather than unlikely. Corrected, the balance holds at a 55 percent yield. What the check still cannot say is everything about whether the organism could do it: no transporter kinetics, no energy budget, and carbon fixation is expensive in ATP rather than in carbon.' });
+
+R.finish({ layers_exercised: ['blueprint', 'studio', 'lean', 'locomotion', 'ecology', 'routing', 'performance'],
+  headline: 'Asked for a bacterium, the blueprint tool used to build an animal. Asked to swim with a paddle, the locomotion layer returns impossible by theorem. Asked whether it could live somewhere, the ecology layer assembles real records and refuses to predict exclusion from them. And asked whether it eats carbon -- which is the whole request, and reached no check at all until this round -- the mass balance says the first numbers proposed were impossible, and says which atoms were missing.' });

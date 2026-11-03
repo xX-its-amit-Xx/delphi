@@ -1,9 +1,9 @@
 # runs/ — one question, put through the whole suite, and what it broke
 
-Each folder is a single design question driven end to end through the MCP surface: the front-door parser,
-`organism-design/blueprint.mjs`, the Design Studio, the Lean law check, the validation harness, and — since
-the second round — the locomotion and ecology layers. Every call goes through the tool registrations in
-`mcp/server.mjs`, so nothing a run does can work in a way an agent with the MCP server could not.
+Each folder is a single design question driven end to end through the MCP surface: the front-door parser
+and its routing, `organism-design/blueprint.mjs`, the Design Studio, the Lean law check, the validation
+harness, and the locomotion, ecology and performance layers. Every call goes through the tool registrations
+in `mcp/server.mjs`, so nothing a run does can work in a way an agent with the MCP server could not.
 
 ```
 node runs/<name>/run.mjs                               # the generations, logging everything
@@ -16,54 +16,78 @@ Watch any of them: **`dashboard/public/blueprint3d/studio-live.html`**, which po
 
 ## The runs
 
-| run | question | the answer, and the layer that gave it |
+| run | question | where it ends |
 |---|---|---|
-| [flying-mouse](flying-mouse/) | can a mouse grow wings that support its flight? | **No.** Uberon refuses `wing` and `patagium` for Glires; at 70 cm² and a jump launch lift reaches 0.39× the weight; powered flight is refused as a power question. |
-| [carbon-eating-bacterium](carbon-eating-bacterium/) | a bacterium that eats carbon — and could it live anywhere? | **Not as first designed, and probably not anywhere.** A paddle stroke is *impossible* by the scallop theorem; a flagellum is not contradicted; on the designer's own parameters it cannot invade against the resident autotroph guild. |
-| [long-lived-fruit-fly](long-lived-fruit-fly/) | a fruit fly that lives longer | **Unanswerable here.** Nothing in this repository models time-to-death: 12 scenarios, none about lifespan, no mortality rate and no senescence model for any clade. |
-| [xenobot](xenobot/) | a xenobot that sweeps particles into piles | **The subject is not representable.** Every layer that needs a taxon takes the donor frog's and carries on. The task — what the thing *does* — has no layer at all. |
+| [flying-mouse](flying-mouse/) | can a mouse grow wings that support its flight? | **No.** Uberon refuses `wing` and `patagium` for Glires; lift reaches 0.39× the weight at a jump launch; powered flight is refused as a power question. With the three quantities declared, `physics_check` runs on a mouse and the area check is **met** at a 4 m drop. |
+| [carbon-eating-bacterium](carbon-eating-bacterium/) | a bacterium that eats carbon — could it live anywhere? | A paddle is **impossible** by the scallop theorem; a flagellum is not contradicted; it is **outcompeted** on the designer's own parameters; and its first carbon numbers **violate conservation of mass**, which the corrected ones do not. |
+| [long-lived-fruit-fly](long-lived-fruit-fly/) | a fruit fly that lives longer | **2× in a vial, 1.09× in the wild.** Extrinsic mortality sets a ceiling of 12.5 days that nothing done inside the animal can reach past. |
+| [xenobot](xenobot/) | a xenobot that sweeps particles into piles | The subject is declared a **construct**, so the phenotype reference set refuses as one. It can move **one or two** particles, not the twenty first claimed. |
 
-## Why there are four
+## Why these four
 
 They were chosen to leave the animals, leave the shapes, and leave the organisms:
 
-- a **mouse** is an animal the engine has no parameters for — it tests clade generality
-- a **bacterium** is not an animal at all — it tests kingdom generality, and found that the anatomy
-  ontologies, the cell ontology and the law set are all animal artefacts even where the code is not
-- a **fruit fly living longer** is not a question about a shape — it tests whether the system notices a
-  dimension it has no layer for, instead of answering a nearby question it can do
-- a **xenobot** is not an organism — it tests what happens when the subject itself is the wrong kind of thing
+- a **mouse** is an animal the engine has no parameters for — clade generality
+- a **bacterium** is not an animal at all — kingdom generality, and it found that the anatomy ontologies,
+  the cell ontology and the law set are all animal artefacts even where the code is not
+- a **fruit fly living longer** is not a question about a shape — a dimension with no layer
+- a **xenobot** is not an organism — the subject itself is the wrong kind of thing
+
+## Every requirement now reaches a check
+
+The first round of these runs ended on refusals that were correct and useless: the thing being asked for was
+not expressible, so nothing could take it. Three layers and a routing block closed that.
+
+| what was asked | what takes it now |
+|---|---|
+| a shape, a structure | `blueprint.mjs` → `organism_from_blueprint` |
+| a law | `lean_check`, clade scope from the taxon |
+| a scenario criterion | `physics_check` |
+| **how it moves** | `locomotion_check` — a theorem, arithmetic, and regimes that never fail a design |
+| **how long it lives** | `performance_check { kind: "lifespan" }` |
+| **what it does to the world** | `performance_check { kind: "manipulation" }` |
+| **what it eats** | `performance_check { kind: "mass_balance" }` |
+| **whether the world has room** | `ecology_check` |
+
+`parse_design_text` returns a **`routing`** block naming the tool for each requirement, and for everything
+it could not read, whether a layer exists for it at all. "I do not understand these words" and "I understand
+them and nothing here answers them" are different facts and used to be indistinguishable.
+
+**36 of the 49 gates across the four runs now reach a verdict.** Of the 13 that do not, none is a missing
+layer: five are generation-0 baselines that a later generation closes, five are named data gaps (teleost-only
+reference sets, no powered flier in the functional registry with Aves held out), and three are the correct
+answer — a construct has no occurrence records, and powered flight is a power question an area check cannot
+take.
 
 ## What every run says about itself
 
-**Declared inputs.** Masses, areas, speeds, beat frequencies and all four competition parameters are
-*design inputs*, each carrying a source string that says so. Nobody has measured a winged mouse, a flagellated
-*Cupriavidus* strain at a stated speed, or a xenobot's beat frequency.
+**Declared inputs.** Masses, areas, speeds, beat frequencies, hazard rates, thrusts, carbon fluxes and all
+four competition parameters are *design inputs*, each carrying a source that says so. They enter STATE with
+kind `assumed`, so every `model_confidence` and weakest-input downstream carries the fact that a person
+stated them. You may declare an input; you may not declare an outcome.
 
 **No meshes.** No subject in any run has a surface mesh. `anatomy-model/parametric` is a parametric *teleost*
-builder and Blender is not installed on the machine these ran on. The 3D view is the ontology hierarchy —
-structure without shape. Every generation record carries `mesh.glb: null` with that reason.
+builder and Blender is not installed on the machine these ran on. The 3D view is the ontology hierarchy.
 
-**Nothing is recomputed for display.** Every verdict on the live page is the string the tool returned, with
-the numbers it returned, copied from the Design Studio session log.
+**Nothing is recomputed for display.** Every verdict on the live page is the string the tool returned.
 
 ## Defects these runs found
 
-Fourteen so far, none of them found by reading the code. The ones that would have produced a confident
-wrong answer rather than a crash:
+Twenty so far, none by reading the code. The ones that would have produced a confident wrong answer:
 
-- `physics_check` applied a stuffed flying fish's lift coefficient to any design it was handed
+- `physics_check` applied a stuffed flying fish's lift coefficient to any design handed to it
 - `parse_design_text` discarded every criterion in a clause naming an unknown organism — "a mouse that
   supports its flight" asked for nothing at all
-- `parse_design_text` read the `fly` in **fruit fly** as the verb, and added a glide requirement to a
-  request about lifespan
+- `parse_design_text` read the `fly` in **fruit fly** as the verb, adding a glide requirement to a question
+  about lifespan
 - `blueprint.mjs` silently defaulted an unrecognised organism to **Metazoa** and returned a generic animal,
   with organ systems, for "a bacterium that eats carbon"
 - `blueprint.mjs` substituted structures for a refused one without saying so
-- `closest_relative_phenotype` named a cichlid as a mouse's closest relative
-- the **ecology layer wrote held-out-clade records to its own cache**. The filter downstream was perfect and
-  every result was clean; the raw GBIF responses were being written to disk on the way past, so 28 bird
-  species sat in `sim-engine/validate/ecology/cache/` about to be committed. The screen now runs before the
-  cache write, and a test asserts the cache directory is clean.
+- `closest_relative_phenotype` named a cichlid as a mouse's closest relative, and a frog as a xenobot's
+- the **ecology layer wrote held-out-clade records to its own cache** — the filter downstream was perfect
+  and the raw GBIF responses went to disk on the way past, 28 bird species about to be committed
+- a taxon base **resolved no STATE at all**, so `organism_get` refused outright and everything built on a
+  STATE was unreachable for any organism outside the bundle — a capability gap reported as a fact about the
+  organism
 
 Each run's README lists its own.

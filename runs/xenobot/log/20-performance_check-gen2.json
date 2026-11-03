@@ -1,0 +1,155 @@
+{
+ "tool": "performance_check",
+ "generation": 2,
+ "why": "can it actually move what it was asked to move?",
+ "args": {
+  "kind": "manipulation",
+  "taxon": "Xenopus laevis",
+  "medium": "water",
+  "particle_radius_m": {
+   "min": 0.00001,
+   "max": 0.00005,
+   "source": "DESIGN INPUT, swept: 10-50 um particles, the size range the task names as \"loose particles\". Not measured here."
+  },
+  "transport_speed_m_s": {
+   "value": 0.0002,
+   "source": "DESIGN INPUT: the construct moves at 0.2 mm/s, so a particle it pushes moves with it. Stated, not measured."
+  },
+  "available_thrust_N": {
+   "value": 5e-10,
+   "source": "DESIGN INPUT: the thrust the ciliated surface is asked to deliver. No thrust for any swimmer is in this repository; this is the designer stating what the design needs to produce."
+  },
+  "particles_per_pile": {
+   "min": 1,
+   "max": 20,
+   "source": "DESIGN INPUT, swept: one particle at a time, up to twenty pushed together."
+  }
+ },
+ "ms": 0,
+ "result": {
+  "contract_version": "0.10.0",
+  "result": {
+   "tool": "performance_check",
+   "version": "0.1.0",
+   "kind": "manipulation",
+   "taxon": "Xenopus laevis",
+   "ran": true,
+   "verdict": "only-in-part-of-the-stated-range",
+   "drag_per_particle_N": [
+    3.777451006676368e-11,
+    1.888725503338184e-10
+   ],
+   "force_needed_N": [
+    3.777451006676368e-11,
+    3.777451006676368e-9
+   ],
+   "thrust_available_N": [
+    5e-10,
+    5e-10
+   ],
+   "margin": {
+    "worst": 0.13236439046232146,
+    "best": 13.236439046232146
+   },
+   "reading": "The answer changes inside the stated ranges: 0.132x the force needed at the worst corner and 13.236x at the best. Narrow an input and ask again.",
+   "inputs": {
+    "particle_radius_m": {
+     "min": 0.00001,
+     "max": 0.00005,
+     "unit": "m",
+     "kind": "assumed",
+     "source": "DESIGN INPUT, swept: 10-50 um particles, the size range the task names as \"loose particles\". Not measured here."
+    },
+    "transport_speed_m_s": {
+     "min": 0.0002,
+     "max": 0.0002,
+     "unit": "m/s",
+     "kind": "assumed",
+     "source": "DESIGN INPUT: the construct moves at 0.2 mm/s, so a particle it pushes moves with it. Stated, not measured."
+    },
+    "available_thrust_N": {
+     "min": 5e-10,
+     "max": 5e-10,
+     "unit": "N",
+     "kind": "assumed",
+     "source": "DESIGN INPUT: the thrust the ciliated surface is asked to deliver. No thrust for any swimmer is in this repository; this is the designer stating what the design needs to produce."
+    },
+    "particles_per_pile": {
+     "min": 1,
+     "max": 20,
+     "unit": "1",
+     "kind": "assumed",
+     "source": "DESIGN INPUT, swept: one particle at a time, up to twenty pushed together."
+    }
+   },
+   "medium": {
+    "key": "water",
+    "dynamic_viscosity_Pa_s": 0.001002,
+    "source": "standard reference value at 20 C (fresh water, seawater) or ISA sea level (air); the same values sim-engine/validate/locomotion/media.json carries, with the same caveat that mucus, biofilm and sediment pore water are far more viscous"
+   },
+   "model": "Stokes drag, F = 6*pi*mu*a*v. Exact for a sphere in the creeping limit.",
+   "model_caveat": "Drag on an isolated sphere in an unbounded fluid. A particle resting on a surface also has friction and adhesion, which are often LARGER than the drag and are not modelled here; particles in a pile shield one another, which this does not model either; and a non-spherical particle has a different coefficient. Treat the force here as a lower bound on what the task needs.",
+   "what_this_cannot_say": [
+    "whether the design can GET to the particle, aim at it, or hold on to it: there is no control model",
+    "whether a pile forms: moving particles and accumulating them are different problems, and the second is about where they are released",
+    "how long it would take, or whether the organism can pay for it"
+   ]
+  },
+  "provenance": [
+   {
+    "quantity": "particle_radius_m",
+    "value": [
+     0.00001,
+     0.00005
+    ],
+    "kind": "assumed",
+    "source": "DESIGN INPUT, swept: 10-50 um particles, the size range the task names as \"loose particles\". Not measured here."
+   },
+   {
+    "quantity": "transport_speed_m_s",
+    "value": [
+     0.0002,
+     0.0002
+    ],
+    "kind": "assumed",
+    "source": "DESIGN INPUT: the construct moves at 0.2 mm/s, so a particle it pushes moves with it. Stated, not measured."
+   },
+   {
+    "quantity": "available_thrust_N",
+    "value": [
+     5e-10,
+     5e-10
+    ],
+    "kind": "assumed",
+    "source": "DESIGN INPUT: the thrust the ciliated surface is asked to deliver. No thrust for any swimmer is in this repository; this is the designer stating what the design needs to produce."
+   },
+   {
+    "quantity": "particles_per_pile",
+    "value": [
+     1,
+     20
+    ],
+    "kind": "assumed",
+    "source": "DESIGN INPUT, swept: one particle at a time, up to twenty pushed together."
+   },
+   {
+    "quantity": "model",
+    "value": "Stokes drag, F = 6*pi*mu*a*v. Exact for a sphere in the creeping limit.",
+    "kind": "derived",
+    "source": "Drag on an isolated sphere in an unbounded fluid. A particle resting on a surface also has friction and adhesion, which are often LARGER than the drag and are not modelled here; particles in a pile shield one another, which this does not model either; and a non-spherical particle has a different coefficient. Treat the force here as a lower bound on what the task needs."
+   },
+   {
+    "quantity": "performance_check version",
+    "value": "0.1.0",
+    "kind": "derived",
+    "source": "sim-engine/validate/performance/index.mjs"
+   }
+  ],
+  "scope": "What the design accomplishes, as distinct from its shape or its gait. Three checks, each resting on something that cannot be argued with -- a constant-hazard expectation, Stokes drag, and conservation of mass -- evaluated over quantities the caller declares with sources. It models no mechanism: it does not say HOW the organism would live longer, exert a force or fix carbon, only whether the numbers a designer states are consistent with each other and with physics. A design this layer does not contradict has not been shown to work.",
+  "weakest_input": "assumed",
+  "counts": {
+   "assumed": 4,
+   "derived": 2
+  }
+ }
+}

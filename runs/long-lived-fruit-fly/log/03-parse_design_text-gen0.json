@@ -5,13 +5,22 @@
  "args": {
   "text": "I want a fruit fly that lives longer."
  },
- "ms": 67,
+ "ms": 68,
  "result": {
-  "contract_version": "0.9.0",
+  "contract_version": "0.10.0",
   "result": {
    "spec": {
     "start_from": [],
     "criteria": [],
+    "performance_criteria": [
+     {
+      "kind": "lifespan",
+      "op": "increase",
+      "asked": "lives longer",
+      "source_text": "I want a fruit fly that lives longer",
+      "tool": "performance_check"
+     }
+    ],
     "editable": [],
     "constraints": {
      "lean": "must-hold"
@@ -24,10 +33,6 @@
      "organism_not_in_bundle": "fruit fly",
      "of_clause": "I want a fruit fly that lives longer",
      "reason": "organism \"fruit fly\" has no reference parameter set in this engine (it holds measured parameters for: zebrafish, flying fish, winged zebrafish, wingless flying fish, TFF, the ff-zf chimera). It is not mapped to a \"close\" one, because the nearest fish is not this animal. A taxon-based design can still be built from it: see spec.taxon, organism_create {taxon} and organism_from_blueprint. The rest of this clause IS parsed: any criterion in it is on the spec, and will be judged once a parameter set for this clade exists."
-    },
-    {
-     "text": "I want a fruit fly that lives longer",
-     "reason": "no criterion, organism or edit recognised"
     }
    ],
    "refused": [],
@@ -61,6 +66,31 @@
     ],
     "what_is_missing": "a reference parameter set (body-plan quantities and a growth track) for this clade; without one the engine can name the organism and check its laws, but cannot resolve a STATE, run a scenario or score it"
    },
+   "routing": {
+    "scenario_criteria": [],
+    "performance_criteria": [
+     {
+      "requirement": "lives longer",
+      "kind": "lifespan",
+      "tool": "performance_check",
+      "how": "performance_check { kind: \"lifespan\", ... } -- the quantities it needs are the designer's to declare, with sources"
+     }
+    ],
+    "structures": "organism-design/blueprint.mjs reads the structures named in the text and resolves them to Uberon/CL terms for the taxon; organism_from_blueprint brings the result into the studio",
+    "laws": "lean_check decides clade scope from the taxon and reports every law as holds / violated / out-of-scope / cannot-evaluate",
+    "movement": "locomotion_check -- how it moves, which no part list can settle: the scallop theorem, the cycle arithmetic and the Reynolds/Froude regimes",
+    "world": "ecology_check -- where the clade is recorded, what else is there, and what is recorded eating it. It will not predict exclusion without declared population parameters.",
+    "unparsed": [
+     {
+      "text": "fruit fly",
+      "reason": "organism \"fruit fly\" has no reference parameter set in this engine (it holds measured parameters for: zebrafish, flying fish, winged zebrafish, wingless flying fish, TFF, the ff-zf chimera). It is not mapped to a \"close\" one, because the nearest fish is not this animal. A taxon-based design can still be built from it: see spec.taxon, organism_create {taxon} and organism_from_blueprint. The rest of this clause IS parsed: any criterion in it is on the spec, and will be judged once a parameter set for this clade exists.",
+      "a_layer_exists": true,
+      "tool": "performance_check { kind: \"lifespan\" }",
+      "verdict": "the organism has no reference parameter set; declare one with organism_create { taxon, declared }"
+     }
+    ],
+    "summary": "0 requirement(s) for physics_check, 1 for performance_check, 0 that no layer takes."
+   },
    "validation": {
     "ok": false,
     "errors": [
@@ -77,6 +107,15 @@
     "normalised_spec": {
      "start_from": [],
      "criteria": [],
+     "performance_criteria": [
+      {
+       "kind": "lifespan",
+       "op": "increase",
+       "asked": "lives longer",
+       "source_text": "I want a fruit fly that lives longer",
+       "tool": "performance_check"
+      }
+     ],
      "editable": [],
      "constraints": {
       "lean": "must-hold"

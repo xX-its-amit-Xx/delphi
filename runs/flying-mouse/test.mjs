@@ -57,10 +57,25 @@ await ok('a mouse does not get a flying fish lift curve', () => {
 await ok('a clade with no measurement gets no number at all', () => {
   const r = liftCoefficientFor('Homo sapiens');
   // Theria covers us, so this one resolves; the point is the clade OUTSIDE every entry.
-  const none = liftCoefficientFor('Drosophila melanogaster');
-  assert.equal(none.ok, false, 'an insect reaches neither entry and must be refused');
+  const none = liftCoefficientFor('Gastropoda');
+  assert.equal(none.ok, false, 'a clade with no entry must be refused');
   assert.match(none.reason, /no measured maximum lift coefficient|not in the clade table/);
   assert.ok(r.ok);
+});
+
+await ok('"nobody measured one" and "this is the wrong quantity" are different refusals', () => {
+  // An insect has no entry for a reason that is not a gap: Dickinson, Lehmann and Sane showed that an
+  // insect's lift comes substantially from rotational circulation and wake capture, which exist only
+  // because the wing reverses, and a steady coefficient represents neither. A caller acting on the two
+  // refusals would do different things -- find a measurement, or use a different model -- so they say
+  // different things.
+  const insect = liftCoefficientFor('Drosophila melanogaster');
+  assert.equal(insect.ok, false);
+  assert.match(insect.reason, /WRONG QUANTITY/);
+  assert.equal(insect.inapplicable.doi, '10.1126/science.284.5422.1954');
+  assert.ok(insect.inapplicable.what_a_right_check_would_need.length >= 2, 'a refusal of this kind must say what a right answer needs');
+  const unmeasured = liftCoefficientFor('Gastropoda');
+  assert.ok(!/WRONG QUANTITY/.test(unmeasured.reason), 'a clade with no entry must not be told it asked the wrong question');
 });
 
 await ok('an unplaceable taxon is refused as unplaceable, not as out of scope', () => {
@@ -201,27 +216,44 @@ await ok('every structure the tool recommends is a word the tool can read back',
 });
 
 console.log('\nthe run itself');
-await ok('all four generations are recorded, each with what it taught', () => {
+await ok('every generation is recorded, each with what it taught', () => {
   const s = JSON.parse(fs.readFileSync(path.join(HERE, 'summary.json'), 'utf8'));
-  assert.equal(s.generations.length, 4);
+  assert.ok(s.generations.length >= 4, 'expected at least the original four generations, got ' + s.generations.length);
   for (const g of s.generations) { assert.ok(g.what_it_taught, `generation ${g.generation} must say what it taught`); assert.ok(Object.keys(g.gates).length); }
 });
 
 await ok('no generation claims the animal flies', () => {
-  const gens = [0, 1, 2, 3].map(i => JSON.parse(fs.readFileSync(path.join(HERE, 'gen', `gen${i}.json`), 'utf8')));
+  const gens = fs.readdirSync(path.join(HERE, 'gen')).filter(f => /^gen[0-9]+[.]json$/.test(f))
+    .map(f => JSON.parse(fs.readFileSync(path.join(HERE, 'gen', f), 'utf8')));
   const verdicts = gens.flatMap(g => Object.values(g.gates));
   assert.ok(!verdicts.includes('carries'), `no gate may read plainly "carries": ${verdicts.join(', ')}`);
   assert.ok(gens.every(g => g.mesh.glb === null), 'and no generation may claim a mesh that was never built');
 });
 
 await ok('every declared quantity carries a source saying it is a design input', () => {
-  for (const i of [1, 2]) {
+  for (const i of [1, 2, 4]) {
     const g = JSON.parse(fs.readFileSync(path.join(HERE, 'gen', `gen${i}.json`), 'utf8'));
     for (const [k, v] of Object.entries(g.phenotype.declared ?? {})) {
       assert.ok(v.source && /DESIGN INPUT/.test(v.source), `gen ${i} ${k} must say it is a design input, not a measurement`);
       assert.equal(v.kind, 'assumed');
     }
   }
+});
+
+
+await ok('the declared path closes the refusals generation 0 recorded', () => {
+  // Generation 0 recorded organism_get and physics_check REFUSED, and the reason in both was the same: a
+  // taxon base resolved no STATE at all, so everything built on a STATE was unreachable for any organism
+  // outside the bundle. That is a capability gap, not a fact about mice, and generation 4 closes it by
+  // declaring the three quantities with their sources.
+  const g0 = JSON.parse(fs.readFileSync(path.join(HERE, 'gen', 'gen0.json'), 'utf8'));
+  const g4 = JSON.parse(fs.readFileSync(path.join(HERE, 'gen', 'gen4.json'), 'utf8'));
+  assert.equal(g0.gates.organism_get, 'refused');
+  assert.equal(g0.gates.physics_check, 'refused');
+  assert.equal(g4.gates.organism_get, 'ran', 'a declared parameter set must resolve a STATE');
+  assert.equal(g4.gates.physics_check, 'ran', 'and physics_check must then run rather than refuse outright');
+  assert.equal(g4.gates.lifting_area_supports_mass, 'met', 'and the aerodynamic check must reach a verdict through the full pipeline');
+  for (const v of Object.values(g4.phenotype.declared || {})) assert.equal(v.kind, 'assumed', 'a declared quantity is never a measurement');
 });
 
 console.log(`\n${pass} passed, ${fail} failed`);

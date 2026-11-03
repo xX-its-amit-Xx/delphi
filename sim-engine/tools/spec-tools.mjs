@@ -91,7 +91,47 @@ export async function parseDesignTextTool(args = {}) {
     if (first.placed) r.spec.taxon = first.key;
   }
 
-  return envelope({ ...r, ...(taxonInfo ? { taxon_resolution: taxonInfo } : {}),
+  // ROUTING. A request is a list of requirements and this engine is a list of layers, and until now
+  // nothing connected the two: a caller got a spec and had to know which tool took which part of it, and
+  // anything no tool took simply sat in `unparsed` looking like a parse failure when it was a capability
+  // gap. The two are different and the difference is the useful thing to report.
+  //
+  // Every requirement that was read is routed to the tool that can take it. Everything that was NOT read is
+  // listed with whether any layer COULD have taken it, so "I do not understand these words" is told apart
+  // from "I understand them and have nothing that answers them".
+  const routing = {
+    scenario_criteria: (r.spec.criteria ?? []).map(c => ({ requirement: c.source_text ?? c.scenario, scenario: c.scenario, metric: c.metric ?? null,
+      tool: 'physics_check', how: 'pass the whole spec as `spec`; it runs the scenario modules at every requested life stage' })),
+    performance_criteria: (r.spec.performance_criteria ?? []).map(c => ({ requirement: c.asked || c.source_text, kind: c.kind, tool: 'performance_check',
+      how: `performance_check { kind: "${c.kind}", ... } -- the quantities it needs are the designer's to declare, with sources`,
+      ...(c.ambiguous ? { ambiguous: c.ambiguous, note: c.note } : {}) })),
+    structures: 'organism-design/blueprint.mjs reads the structures named in the text and resolves them to Uberon/CL terms for the taxon; organism_from_blueprint brings the result into the studio',
+    laws: 'lean_check decides clade scope from the taxon and reports every law as holds / violated / out-of-scope / cannot-evaluate',
+    movement: (r.spec.criteria ?? []).some(c => c.scenario === 'glide') || /\b(swim|walk|run|fly|glide|crawl|cili)/i.test(String(args.text ?? ''))
+      ? 'locomotion_check -- how it moves, which no part list can settle: the scallop theorem, the cycle arithmetic and the Reynolds/Froude regimes'
+      : null,
+    world: 'ecology_check -- where the clade is recorded, what else is there, and what is recorded eating it. It will not predict exclusion without declared population parameters.',
+  };
+  const LAYERS = [
+    [/\b(live|lives|life|lifespan|longevity|ageing|aging|senescen)/i, 'performance_check { kind: "lifespan" }'],
+    [/\b(sweep|push|move|collect|gather|pile|herd|transport|clear)/i, 'performance_check { kind: "manipulation" }'],
+    [/\b(eat|consume|fix|degrade|metaboli)/i, 'performance_check { kind: "mass_balance" }'],
+    [/\b(swim|walk|run|fly|glide|crawl|cili|flagell|stroke|gait)/i, 'locomotion_check'],
+    [/\b(compete|outcompet|predator|prey|niche|habitat|symbio|mutualis)/i, 'ecology_check'],
+  ];
+  routing.unparsed = (r.unparsed ?? []).map(u => {
+    const text = String(u.of_clause ?? u.text ?? '');
+    const hit = LAYERS.find(([re]) => re.test(text));
+    return { text: u.text, reason: u.reason,
+      a_layer_exists: !!hit, tool: hit ? hit[1] : null,
+      verdict: u.organism_not_in_bundle ? 'the organism has no reference parameter set; declare one with organism_create { taxon, declared }'
+        : hit ? 'a layer exists for this; the parser did not turn these words into a requirement, which is a vocabulary gap and not a capability gap'
+          : 'NO LAYER TAKES THIS. Not a parse failure: nothing in this engine answers it.' };
+  });
+  routing.summary = `${routing.scenario_criteria.length} requirement(s) for physics_check, ${routing.performance_criteria.length} for performance_check, `
+    + `${routing.unparsed.filter(u => !u.a_layer_exists && !/organism/.test(u.verdict)).length} that no layer takes.`;
+
+  return envelope({ ...r, ...(taxonInfo ? { taxon_resolution: taxonInfo } : {}), routing,
     validation: { ok: v.ok, errors: v.errors, warnings: v.warnings, normalised_spec: v.spec }, engine: reg.sources },
     [p('parser', 'sim-engine/lib/parse-text.mjs', 'derived', 'Rule-based; no model, no network. The same text always gives the same spec.'),
      ...(taxonInfo ? [p('taxon placement', taxonInfo.taxon, taxonInfo.placed ? 'derived' : 'assumed',

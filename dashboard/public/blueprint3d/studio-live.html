@@ -221,6 +221,13 @@ function renderSide(){
     '<b>' + esc(k) + '</b>: ' + esc(typeof v === 'object' && v ? (v.verdict || JSON.stringify(v)) : v)
     + (v && v.reynolds ? ' <span style="color:var(--mute)">Re ' + Number(v.reynolds.max).toExponential(1) + '</span>' : '')).join('<br>'));
   if (p.ecology) html += row('ecology', Object.entries(p.ecology).map(([k, v]) => esc(k.replace(/_/g, ' ')) + ': <span class="num">' + esc(String(v)) + '</span>').join('<br>'));
+  const num = v => (typeof v === 'number' ? (Math.abs(v) >= 1000 || (Math.abs(v) < 0.01 && v !== 0) ? v.toExponential(2) : String(Math.round(v * 1000) / 1000)) : String(v));
+  if (p.lifespan) html += row('lifespan', Object.entries(p.lifespan).map(([k, v]) =>
+    esc(k.replace(/_/g, ' ')) + ': <span class="num">' + esc(num(v)) + '</span>').join('<br>')
+    + '<br><span style="color:var(--mute);font-size:.82em">Expected lifetime under a constant two-term hazard. The fold change the design BUYS is not the fold change it asks for.</span>');
+  if (p.metabolism) html += row('metabolism', Object.entries(p.metabolism).map(([k, v]) =>
+    esc(k.replace(/_/g, ' ')) + ': <span class="' + (/violat/.test(String(v)) ? 'rem' : /balanc/.test(String(v)) ? 'add' : '') + '">' + esc(Array.isArray(v) ? v.map(num).join(' - ') : num(v)) + '</span>').join('<br>')
+    + '<br><span style="color:var(--mute);font-size:.82em">Conservation of mass on the carbon: a design claiming more biomass carbon than it takes in is impossible, not optimistic.</span>');
   if (p.task) html += row('task asked for', esc(p.task.asked) + '<br><span class="' + (p.task.representable ? 'add' : 'rem') + '">' + (p.task.representable ? 'representable' : 'NOT representable') + '</span> &mdash; ' + esc(p.task.why));
   if (p.subject_note) html += row('whose phenotype is this?', '<span class="rem">' + esc(p.subject_note) + '</span>');
   if (d && d.gates_changed && d.gates_changed.length) html += row('gates that changed', d.gates_changed.map(esc).join('<br>'));

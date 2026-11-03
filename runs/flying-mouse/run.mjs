@@ -331,6 +331,59 @@ async function gen3() {
     what_it_taught: 'The question as asked is not answerable by this repository, and the system says so instead of answering a nearby question it can do. An area check cannot settle a power question; what is missing is a lift coefficient measured through a wingbeat and a flight-muscle power density for the clade.' });
 }
 
+// ===================================================================================================
+// GENERATION 4 -- stop asking one check in isolation. Put the declared design through the WHOLE pipeline.
+// ===================================================================================================
+async function gen4() {
+  const generation = 4;
+  await thinking(generation, 'Generations 1 to 3 asked flight_support_check directly, because physics_check refused outright: it runs scenario modules over a resolved STATE, a taxon base resolved no STATE at all, and that was the end of it for any organism outside the bundle. A design can now DECLARE the quantities it is willing to state, each with a source, and they enter STATE as kind "assumed". So declare them and run the real pipeline.');
+
+  const declared = { parameters: {
+    mass_kg: { value: 0.025, unit: 'kg', source: 'DESIGN INPUT: the mass the wings are asked to carry. Stated by the designer; no mouse was weighed for this.' },
+    lifting_area_m2: { value: 0.0070, unit: 'm2', source: 'DESIGN INPUT: 70 cm2 of membrane, the area this design proposes.' },
+    launch_airspeed_m_s: { value: 8.9, unit: 'm/s', source: 'DESIGN INPUT: sqrt(2gh) for the h = 4 m launch height Bishop 2006 used for Glaucomys volans, ignoring drag, so an upper bound on what a drop can give. Not a measured airspeed of anything.' },
+  }, life_stages: [{ key: 'adult', label: 'adult', ageDays: 60 }] };
+
+  const doc = await mcp('organism_create', { id: 'flying-mouse-declared', taxon: 'Mus musculus', overwrite: true, declared,
+    notes: 'the generation-1 animal with the three aerodynamic quantities declared, so the whole physics pipeline can be run on it' },
+    { generation, why: 'a taxon base WITH a declared parameter set' });
+  await finding(generation, 'organism_create (declared)', doc?.error ? 'refused' : 'pass',
+    doc?.error ? `refuses: ${String(doc.error).slice(0, 200)}`
+      : 'the document carries three declared quantities, each with a source saying the designer stated it. The caveat on the document says so too, and every value enters STATE as kind "assumed" so the weakest-input machinery and every model_confidence downstream carry it.',
+    { declared: Object.keys(declared.parameters), caveat: doc?.doc?.caveat ?? null });
+
+  const got = await mcp('organism_get', { organism: 'flying-mouse-declared' }, { generation, why: 'does a STATE resolve for a mouse now?' });
+  await finding(generation, 'organism_get', got?.error ? 'refused' : 'ran',
+    got?.error ? `still refuses: ${String(got.error).slice(0, 200)}`
+      : 'a STATE resolves for a mouse. Three fields have values because the design declared them; every other field is null with its reason. In generation 0 this tool refused outright, and that refusal blocked everything built on a STATE -- which is every scenario and every standing check.',
+    { declared_fields: Object.keys(declared.parameters) });
+
+  const pc = await mcp('physics_check', { organism: 'flying-mouse-declared' }, { generation, why: 'the whole physics pipeline, on a mouse' });
+  const standing = pc?.standing_checks ?? [];
+  const lift = standing.find(c => c.id === 'lifting_area_supports_mass');
+  await finding(generation, 'physics_check', pc?.ran === false ? 'refused' : 'ran',
+    pc?.ran === false ? `still refuses: ${String(pc.reason ?? '').slice(0, 220)}`
+      : `it runs. ${standing.length} standing checks, and each one that cannot answer now names the STATE field it wanted instead of the whole tool refusing: ${standing.map(c => `${c.id}=${c.status}`).join(', ')}.`,
+    { ran: pc?.ran, standing: standing.map(c => ({ id: c.id, status: c.status, limiting_factor: c.limiting_factor })) });
+
+  await finding(generation, 'physics_check/lifting_area_supports_mass', lift?.status ?? 'absent',
+    lift && lift.status !== 'no model'
+      ? `the aerodynamic verdict now comes out of the FULL pipeline rather than a check called by hand: ${lift.measured != null ? `${(lift.measured * 1e4).toFixed(1)} cm2 against the ${(lift.threshold * 1e4).toFixed(1)} cm2 needed` : 'see detail'}, with C_Lmax ${lift.detail?.C_Lmax} taken by clade and labelled ${lift.detail?.C_Lmax_kind}. Same number as generation 2 reached directly, by a different route, which is the point: the layers agree because they share one coefficient policy.`
+      : `could not be evaluated: ${lift?.limiting_factor ?? 'check absent'}`,
+    { status: lift?.status, measured_m2: lift?.measured, threshold_m2: lift?.threshold, detail: lift?.detail });
+
+  return writeGen({ generation, asked: 'the generation-1 animal with its three quantities declared, through the whole physics pipeline',
+    phenotype: { taxon: 'Mus musculus', counts: null, parameters: 'declared',
+      structures_requested: [], structures_refused: [], flight_structures_present: [],
+      declared: Object.fromEntries(Object.entries(declared.parameters).map(([k, v]) => [k, { min: v.value, max: v.value, unit: v.unit, kind: 'assumed', source: v.source }])) },
+    genotype: { markers: [], cells_with_markers: 0, note: 'unchanged: this generation declared quantities, not genes.' },
+    mesh: { glb: null, why: 'unchanged: no surface mesh exists for this animal.' },
+    gates: { organism_create: doc?.error ? 'refused' : 'pass', organism_get: got?.error ? 'refused' : 'ran',
+      physics_check: pc?.ran === false ? 'refused' : 'ran', lifting_area_supports_mass: lift?.status ?? 'absent' },
+    lean: {}, blueprint: 'gen/gen1.blueprint.json',
+    what_it_taught: `The refusals in generation 0 were not about the mouse. organism_get and physics_check refused because a taxon base resolved no STATE, and a design that declares its quantities -- with sources, as every other check in this repository already required -- resolves one. physics_check now runs on a mouse and each standing check that still cannot answer names the field it wanted. The aerodynamic verdict agrees with the one generation 2 got by calling the check directly.` });
+}
+
 // ---------------------------------------------------------------- run
 console.log(`\n=== ${QUESTION}\n`);
 if (!flag('no-session')) {
@@ -340,7 +393,7 @@ if (!flag('no-session')) {
   fs.writeFileSync(path.join(HERE, 'session.txt'), session + '\n');
 }
 
-const gens = [gen0, gen1, gen2, gen3];
+const gens = [gen0, gen1, gen2, gen3, gen4];
 for (let i = 0; i < gens.length; i++) { if (only != null && only !== i) continue; await gens[i](); }
 
 const summary = { question: QUESTION, built: new Date().toISOString(), session,

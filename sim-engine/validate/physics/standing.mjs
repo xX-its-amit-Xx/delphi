@@ -94,6 +94,14 @@ export function liftCoefficientFor(taxon) {
     const b = (e.borrowable_to || []).find(x => within.includes(x.clade));
     return b ? { clade: b.clade, via: b } : null;
   };
+  // Some clades have no entry because nobody measured one, and some have none because a steady coefficient
+  // is the WRONG QUANTITY for how they fly. Those are different answers and a caller acting on them would
+  // do different things: find a measurement, or use a different model. The second is recorded explicitly.
+  const na = (LIFT.inapplicable ?? []).find(x => within.includes(x.clade));
+  if (na) {
+    return { ok: false, taxon, key: place.key, clades: place.ancestors.slice(0, 6), inapplicable: na,
+      reason: `a steady maximum lift coefficient is the WRONG QUANTITY for ${place.key}, which the NCBI taxonomy places inside ${na.clade}. This is a decision, not a missing measurement: ${na.why} ${na.detail} A right answer needs ${(na.what_a_right_check_would_need ?? []).join('; ')}. Source: ${na.source} (doi ${na.doi}).` };
+  }
   const hits = LIFT.entries.map(e => ({ e, r: reach(e) })).filter(x => x.r);
   if (!hits.length) {
     return { ok: false, taxon, key: place.key, clades: place.ancestors.slice(0, 6),

@@ -10,9 +10,11 @@ Five generations. The first does not get as far as a design.
 |----|----|----|
 | 0 | a bacterium that eats carbon and swims | **refused**: no taxon recognised. `bacterium`, `eats` and `carbon` are all unreadable to the lexicon. |
 | 1 | *Cupriavidus necator* that fixes CO₂ and swims | **thin**: 2 organ systems, 6 organs, 1 tissue, 1 cell type. The query is fine; Uberon is an animal ontology. |
+| 1 | …with two quantities declared | `organism_get` **runs**: a STATE resolves for a bacterium, two fields with values and the rest null with their reasons. |
 | 2 | …swimming with a hinged paddle | **impossible**, by Purcell's scallop theorem. Not slow — zero net displacement per cycle, at any beat frequency. |
 | 3 | …swimming with a rotating flagellum | **not contradicted**. The theorem names its own escape and the design takes it. |
 | 4 | could it establish anywhere? | **outcompeted**, on the designer's own four parameters. |
+| 5 | does the carbon add up? | the first numbers **violate conservation of mass**; corrected, they **balance** at a 55 % yield. |
 
 ## The headline defect
 

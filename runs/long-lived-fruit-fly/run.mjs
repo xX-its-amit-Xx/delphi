@@ -34,6 +34,10 @@ await R.finding(0, 'parse_design_text', spec.validation?.ok ? 'pass' : 'fail',
 const scen = await R.mcp('scenario_list', {}, { generation: 0, why: 'is there any scenario that measures a lifespan?' });
 const names = (scen.scenarios ?? []).map(s => s.key ?? s.name ?? s.id).filter(Boolean);
 const lifespanScenario = names.filter(n => /life|age|senesc|surviv.*time|longev/i.test(String(n)));
+await R.finding(0, 'parse_design_text/routing', spec.routing?.performance_criteria?.length ? 'routed' : 'unrouted',
+  `the front door now ROUTES the requirement instead of dropping it: ${spec.routing?.summary} "${spec.routing?.performance_criteria?.[0]?.requirement ?? 'lives longer'}" goes to performance_check { kind: "lifespan" }, and the quantities that check needs are the designer\'s to declare. Before this the whole clause came back unparsed, which read as a parse failure when it was a capability gap -- two different things the routing block now tells apart.`,
+  { routing: spec.routing });
+
 await R.finding(0, 'scenario_list', lifespanScenario.length ? 'found' : 'absent',
   `${names.length} scenario modules exist and ${lifespanScenario.length} of them measure anything like a lifespan: ${lifespanScenario.length ? lifespanScenario.join(', ') : 'none'}. The scenarios are glide, current, temperature, depth, altitude, predator, grip and the rest -- every one of them a question asked of an organism at an age, not a question about how many ages it gets. The engine has growth tracks (ontogeny.json, for two teleosts) and no senescence model for anything. There is no mortality rate, no survival curve and no cause of death in this repository.`,
   { scenarios: names, lifespan_scenarios: lifespanScenario,
@@ -43,9 +47,9 @@ R.writeGen({ generation: 0, asked: 'a fruit fly that lives longer',
   phenotype: { taxon: spec.taxon_resolution?.taxon ?? null, counts: {}, parameters: null, structures_requested: [], structures_refused: [], flight_structures_present: [] },
   genotype: { markers: [], cells_with_markers: 0, note: 'no blueprint yet.' },
   mesh: { glb: null, why: 'no mesh builder for an insect; the builder is a parametric teleost builder.' },
-  gates: { parse_design_text: spec.validation?.ok ? 'pass' : 'fail', scenario_list: lifespanScenario.length ? 'found' : 'absent' },
+  gates: { parse_design_text: spec.validation?.ok ? 'pass' : 'fail', routing: spec.routing?.performance_criteria?.length ? 'routed to performance_check' : 'unrouted', scenario_list: lifespanScenario.length ? 'found' : 'absent' },
   lean: {}, blueprint: null,
-  what_it_taught: 'The request is about time-to-death and this system has no layer for it. Not a missing parameter set, not an out-of-scope clade: a missing dimension. Every other use case in runs/ was refused by something; this one is refused by an absence.' });
+  what_it_taught: 'The request is about time-to-death, which no SCENARIO measures and no law covers -- and it is no longer a dead end. The parser reads it as a lifespan requirement and the routing block sends it to performance_check, the layer built for exactly the three things these runs asked for that nothing could express.' });
 
 // ===================================================================================================
 // GENERATION 1 -- build the fly anyway, so the gap is visible against something real.
@@ -83,7 +87,7 @@ R.writeGen({ generation: 1, asked: 'Drosophila melanogaster with wings and anten
 // ===================================================================================================
 // GENERATION 2 -- the locomotion layer, including a refusal that is exactly right.
 // ===================================================================================================
-await R.thinking(2, 'The fly walks and flies. Ask the locomotion layer both, partly to exercise it on an insect and partly because the flight branch should refuse: the only lift coefficients in this repository are a flying fish and a sugar glider, and an insect is neither.');
+await R.thinking(2, 'The fly walks and flies. Ask the locomotion layer both, partly to exercise it on an insect and partly because both flight branches should refuse, for two different reasons worth telling apart: powered flight is a power question this layer cannot take, and the area question underneath it runs into a coefficient policy that records Insecta as inapplicable rather than unmeasured.');
 
 const walk = await R.mcp('locomotion_check', {
   taxon: 'Drosophila melanogaster', mode: 'walk',
@@ -107,18 +111,33 @@ const fly = await R.mcp('locomotion_check', {
 }, { generation: 2, why: 'flight: and whether the lift coefficient policy refuses an insect' });
 const liftCheck = (fly.checks ?? []).find(c => c.id === 'lift_carries_the_weight');
 await R.finding(2, 'locomotion_check (fly)', fly.verdict,
-  `${fly.reading} The flight branch refuses, and the refusal is the right one: ${liftCheck?.limiting_factor ?? 'see detail'}`,
-  { verdict: fly.verdict, lift: { verdict: liftCheck?.verdict, limiting_factor: liftCheck?.limiting_factor },
-    why_this_is_correct: 'The repository holds exactly two measured maximum lift coefficients: a stuffed Cypselurus hiraii and a live Petaurus breviceps. An insect at Re of order 100 with a flapping wing is aerodynamically unlike both -- unsteady, with leading-edge vortex lift that a steady coefficient does not represent at all. Returning a number here by borrowing one of the two would be exactly the failure this layer was built to stop.' });
+  fly.reading + ' The refusal is about POWERED flight, which is the deeper of the two reasons this could not be answered: an area inequality is not a power budget.',
+  { verdict: fly.verdict, lift: { verdict: liftCheck?.verdict, limiting_factor: liftCheck?.limiting_factor } });
+
+// The other refusal is underneath that one, and it is the more interesting of the two. Ask the glide
+// question, which IS an area question, and the coefficient policy gets its turn.
+const glide = await R.mcp('locomotion_check', {
+  taxon: 'Drosophila melanogaster', mode: 'glide',
+  body_length_m: { value: 0.0025, source: 'DESIGN INPUT: unchanged.' },
+  speed_m_s: { min: 0.3, max: 1.0, source: 'DESIGN INPUT, swept: unchanged.' },
+  mass_kg: { value: 1.2e-6, source: 'DESIGN INPUT: unchanged.' },
+  lifting_area_m2: { value: 4e-6, source: 'DESIGN INPUT: unchanged.' },
+}, { generation: 2, why: 'the area question on its own, so the lift-coefficient policy is the thing being tested' });
+const gLift = (glide.checks ?? []).find(c => c.id === 'lift_carries_the_weight');
+const inap = gLift?.detail?.result?.lift_coefficient?.reason ?? gLift?.limiting_factor ?? '';
+await R.finding(2, 'locomotion_check (glide) / lift coefficient', gLift?.verdict ?? 'absent',
+  'asked a pure area question about an insect, the coefficient policy refuses -- and refuses for a reason that is NOT "nobody measured one": ' + String(inap).slice(0, 420),
+  { verdict: gLift?.verdict, reason: inap,
+    why_this_matters: 'Dickinson, Lehmann and Sane showed on a dynamically scaled robotic Drosophila wing that an insect gets a large part of its lift from rotational circulation and wake capture, which exist only because the wing reverses. A steady maximum lift coefficient represents neither. Borrowing the flying fish or the sugar glider would have produced a number; adding an insect number would have produced a number too, and both would be answering with a model the source says does not apply. The table therefore records Insecta as INAPPLICABLE with what a right check would need, which is a different claim from a missing measurement and sends a caller somewhere different.' });
 
 R.writeGen({ generation: 2, asked: 'the same fly, walking and flying',
   phenotype: { taxon: 'Drosophila melanogaster', counts, parameters: null, structures_requested: [], structures_refused: [],
     flight_structures_present: [], declared: { walk: walk.inputs, fly: fly.inputs },
-    locomotion: { walk: { verdict: walk.verdict, reynolds: walk.reynolds }, fly: { verdict: fly.verdict } } },
+    locomotion: { walk: { verdict: walk.verdict, reynolds: walk.reynolds }, fly: { verdict: fly.verdict }, glide: { verdict: glide.verdict } } },
   genotype: { markers: R.markersOf(b1), cells_with_markers: b1.genome_sketch?.cells_with_markers ?? 0, note: 'unchanged: this generation changed how the organism moves, not what it is made of.' },
   mesh: { glb: null, why: 'unchanged.' },
-  gates: { 'locomotion_check (walk)': walk.verdict, 'locomotion_check (fly)': fly.verdict }, lean: {}, blueprint: 'gen/gen1.blueprint.json',
-  what_it_taught: 'Walking is not contradicted and flight is refused for want of a lift coefficient measured on anything like an insect. Neither bears on lifespan. The locomotion layer is a second dimension beside shape, and the request was about a third one that still has no layer.' });
+  gates: { 'locomotion_check (walk)': walk.verdict, 'locomotion_check (fly)': fly.verdict, 'locomotion_check (glide)': glide.verdict }, lean: {}, blueprint: 'gen/gen1.blueprint.json',
+  what_it_taught: 'Walking is not contradicted; powered flight is refused as a power question rather than an area one; and the glide question gets the refusal that matters -- a steady lift coefficient is the WRONG QUANTITY for a flapping insect wing, which is a decision with a citation behind it rather than a gap in the data. Neither bears on lifespan, which generation 4 answers.' });
 
 // ===================================================================================================
 // GENERATION 3 -- the world, which does have something to say about living longer.
@@ -150,6 +169,46 @@ R.writeGen({ generation: 3, asked: 'where this clade is recorded and what is rec
   gates: { ecology_check: eco.verdict ?? 'assembled' }, lean: {}, blueprint: 'gen/gen1.blueprint.json',
   what_it_taught: `${eco.interactions?.eatenBy?.total_taxa ?? 0} taxa are on record as eating this clade -- damselflies, orb-weavers, dragonflies, bush-crickets -- each traceable to a study. That is the nearest this system gets to the question, and it is not very near: a list of predators is not a mortality rate, and without a rate a longer intrinsic lifespan is not a longer life.` });
 
-R.finish({ layers_exercised: ['parse', 'blueprint', 'studio', 'lean', 'locomotion', 'ecology'],
-  headline: 'The request is about time-to-death and no layer models it. The system refuses in four different places rather than answering a nearby question it can do, and the ecology layer gets closest by naming real predators while refusing to supply the rate that would be needed.',
+// ===================================================================================================
+// GENERATION 4 -- answer the question. The layer that was missing is no longer missing.
+// ===================================================================================================
+await R.thinking(4, 'The lifespan layer exists now. It needs three rates: what kills the fly from the inside, what the design proposes to change that to, and what kills it from the outside. The third is the one the ecology layer bears on -- 29 taxa are on record eating this clade -- and turning a predator list into a hazard is a judgement somebody has to make and state, so the run states it.');
+
+const baseHazard = { value: 1 / 60, source: 'DESIGN INPUT: an intrinsic hazard of 1/60 per day, a 60-day mean lifespan in protection, taken as the baseline this design is measured against. Stated by the designer; not a survival curve fitted to any data in this repository.' };
+const lifeWild = await R.mcp('performance_check', { kind: 'lifespan', taxon: 'Drosophila melanogaster',
+  intrinsic_hazard_per_day: baseHazard,
+  designed_intrinsic_hazard_per_day: { value: 1 / 120, source: 'DESIGN INPUT: the design asks for twice the intrinsic lifespan, 120 days.' },
+  extrinsic_hazard_per_day: { value: 0.08, source: 'DESIGN INPUT: 0.08 per day, a ~12-day expectation from predation and everything else outside the animal. The ecology layer names 29 taxa recorded as eating this clade and which are recorded in the box asked about; it does NOT give a rate, and this number is the designer turning that list into one.' },
+}, { generation: 4, why: 'does the design actually live longer, where it lives?' });
+await R.finding(4, 'performance_check (lifespan, in the wild)', lifeWild.verdict, lifeWild.reading,
+  { fold_change: lifeWild.fold_change, expected_lifetime_days: lifeWild.expected_lifetime_days,
+    extrinsic_ceiling_days: lifeWild.extrinsic_ceiling_days, headroom: lifeWild.headroom_above_baseline,
+    model: lifeWild.model, model_caveat: lifeWild.model_caveat, cannot_say: lifeWild.what_this_cannot_say });
+
+const lifeLab = await R.mcp('performance_check', { kind: 'lifespan', taxon: 'Drosophila melanogaster',
+  intrinsic_hazard_per_day: baseHazard,
+  designed_intrinsic_hazard_per_day: { value: 1 / 120, source: 'DESIGN INPUT: unchanged.' },
+  extrinsic_hazard_per_day: { value: 1e-6, source: 'DESIGN INPUT: a protected vial, where essentially nothing outside the animal kills it. The control for the comparison above.' },
+}, { generation: 4, why: 'the same design in a vial, as the control' });
+await R.finding(4, 'performance_check (lifespan, in protection)', lifeLab.verdict,
+  lifeLab.reading + ' THIS IS THE POINT OF THE PAIR: the same design, the same intrinsic change, and the answer is '
+  + lifeLab.fold_change.worst_case.toFixed(2) + 'x in a vial against ' + lifeWild.fold_change.worst_case.toFixed(2)
+  + 'x where the animal actually lives. A longevity result is a statement about an environment as much as about an organism, and the two numbers come from the same arithmetic with one input changed.',
+  { fold_change: lifeLab.fold_change, expected_lifetime_days: lifeLab.expected_lifetime_days, headroom: lifeLab.headroom_above_baseline });
+
+R.writeGen({ generation: 4, asked: 'does the design actually live longer -- in a vial, and where it lives?',
+  phenotype: { taxon: 'Drosophila melanogaster', counts, parameters: null, structures_requested: [], structures_refused: [], flight_structures_present: [],
+    lifespan: { intrinsic_fold_asked: lifeWild.intrinsic_fold_change_asked_for,
+      realised_fold_in_the_wild: lifeWild.fold_change.worst_case, realised_fold_in_protection: lifeLab.fold_change.worst_case,
+      extrinsic_ceiling_days: lifeWild.extrinsic_ceiling_days } },
+  genotype: { markers: R.markersOf(b1), cells_with_markers: b1.genome_sketch?.cells_with_markers ?? 0, note: 'unchanged: nothing in this repository connects a marker to a hazard rate, which is the mechanism gap the lifespan layer states rather than hides.' },
+  mesh: { glb: null, why: 'unchanged.' },
+  gates: { 'performance_check (wild)': lifeWild.verdict, 'performance_check (protected)': lifeLab.verdict }, lean: {}, blueprint: 'gen/gen1.blueprint.json',
+  what_it_taught: 'The question has an answer now, and it is a sharp one: doubling the intrinsic lifespan gives '
+    + lifeLab.fold_change.worst_case.toFixed(2) + 'x in a vial and ' + lifeWild.fold_change.worst_case.toFixed(2)
+    + 'x in the wild, because the ceiling set by extrinsic mortality is ' + lifeWild.extrinsic_ceiling_days.toFixed(1)
+    + ' days whatever happens inside the animal. That is the Medawar-Williams argument arriving as arithmetic over three declared rates, and it is the first result in these runs that needed two layers at once: the ecology layer names what is eating the fly, and the performance layer says what that costs the design.' });
+
+R.finish({ layers_exercised: ['parse', 'routing', 'blueprint', 'studio', 'lean', 'locomotion', 'ecology', 'performance'],
+  headline: 'The request is about time-to-death. No scenario measures it and no law covers it -- and the lifespan layer now answers it: doubling the intrinsic lifespan buys 2x in a vial and 1.09x in the wild, because extrinsic mortality sets a ceiling the intrinsic term cannot reach past.',
   the_missing_layer: 'A lifespan layer would need: a mortality model with an intrinsic and an extrinsic term, a survival curve to fit, and some way to connect a genotype edit to a hazard rate. None of the three exists here. The Drosophila longevity literature is largely about insulin/IGF signalling, dietary restriction and mitochondrial function, and nothing in this repository represents a pathway at all.' });

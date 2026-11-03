@@ -1,0 +1,171 @@
+{
+ "tool": "locomotion_check",
+ "generation": 1,
+ "why": "the control: would the layer catch a reciprocal design at this size?",
+ "args": {
+  "taxon": "Xenopus laevis",
+  "mode": "ciliary",
+  "medium": "water",
+  "body_length_m": {
+   "min": 0.0005,
+   "max": 0.001,
+   "source": "DESIGN INPUT: unchanged."
+  },
+  "speed_m_s": {
+   "min": 0.0001,
+   "max": 0.0005,
+   "source": "DESIGN INPUT: unchanged."
+  },
+  "gait": {
+   "reciprocal": true,
+   "degrees_of_freedom": 1,
+   "description": "a single flap that extends and retracts along the same path, faster out than back",
+   "source": "DESIGN INPUT: the obvious simpler alternative, offered to see whether the layer catches it"
+  }
+ },
+ "ms": 0,
+ "result": {
+  "contract_version": "0.10.0",
+  "result": {
+   "tool": "locomotion_check",
+   "version": "0.1.0",
+   "taxon": "Xenopus laevis",
+   "mode": "ciliary",
+   "ran": true,
+   "checks": [
+    {
+     "id": "reynolds_regime",
+     "label": "Which physics the motion happens in",
+     "kind": "regime",
+     "verdict": "reported",
+     "measured": [
+      0.04981037924151696,
+      0.49810379241516967
+     ],
+     "unit": "1 (dimensionless)",
+     "limiting_factor": null,
+     "detail": {
+      "regime_low": "creeping (viscous forces dominate)",
+      "regime_high": "creeping (viscous forces dominate)",
+      "formula": "Re = rho v L / mu",
+      "medium": "fresh water at 20 C",
+      "density_kg_m3": 998.2,
+      "dynamic_viscosity_Pa_s": 0.001002,
+      "medium_source": "standard reference values for pure water at 20 C and 1 atm (CRC Handbook of Chemistry and Physics, fluid properties tables)",
+      "medium_caveat": "Pure water at 20 C. Culture medium, pond water, mucus, biofilm and cytoplasm are all more viscous, some by orders of magnitude, and a Reynolds number computed with this value is an UPPER bound on the real one for a swimmer in any of them.",
+      "boundaries": "There is no sharp boundary. Re = 1 is the conventional marker for where viscous forces dominate inertial ones and Re ~ 1000 for where inertia dominates; between them both matter and neither limit applies. The scallop theorem is a statement about the STOKES limit (Re -> 0), and applying it at Re = 0.9 rather than Re = 0.001 is a judgement, so the check reports the number and says how far into the limit the design actually is."
+     },
+     "reading": "Re runs from 0.05 to 0.498 across the stated ranges: creeping (viscous forces dominate) at one end, creeping (viscous forces dominate) at the other."
+    },
+    {
+     "id": "reciprocal_stroke_at_low_reynolds",
+     "label": "Purcell scallop theorem",
+     "kind": "theorem",
+     "verdict": "impossible",
+     "measured": null,
+     "unit": null,
+     "limiting_factor": "the stroke is time-reversible (declared reciprocal) and Re <= 0.498 everywhere in the stated ranges. In the Stokes limit the displacement over a cycle depends on the PATH through configuration space and not on the rate, so a path that retraces itself returns the body exactly where it started. Net displacement per cycle is zero, at any beat frequency.",
+     "detail": {
+      "reynolds_max": 0.49810379241516967,
+      "degrees_of_freedom": 1,
+      "declared_reciprocal": true,
+      "gait": "a single flap that extends and retracts along the same path, faster out than back",
+      "gait_source": "DESIGN INPUT: the obvious simpler alternative, offered to see whether the layer catches it",
+      "source": "Purcell EM 1977, Life at low Reynolds number, Am J Phys 45(1):3-11",
+      "doi": "10.1119/1.10903",
+      "what_would_fix_it": "break the time-reversal symmetry: a rotating helix, a travelling wave along a flagellum, or a cilium whose recovery stroke follows a different path from its power stroke. Two or more degrees of freedom moved out of phase trace a loop, and a loop encloses area, and enclosed area is displacement."
+     }
+    }
+   ],
+   "verdict": "impossible",
+   "medium": {
+    "key": "water",
+    "label": "fresh water at 20 C",
+    "density_kg_m3": 998.2,
+    "dynamic_viscosity_Pa_s": 0.001002,
+    "kind": "measured-secondhand",
+    "source": "standard reference values for pure water at 20 C and 1 atm (CRC Handbook of Chemistry and Physics, fluid properties tables)",
+    "caveat": "Pure water at 20 C. Culture medium, pond water, mucus, biofilm and cytoplasm are all more viscous, some by orders of magnitude, and a Reynolds number computed with this value is an UPPER bound on the real one for a swimmer in any of them."
+   },
+   "inputs": {
+    "body_length_m": {
+     "min": 0.0005,
+     "max": 0.001,
+     "unit": "m",
+     "kind": "assumed",
+     "source": "DESIGN INPUT: unchanged."
+    },
+    "speed_m_s": {
+     "min": 0.0001,
+     "max": 0.0005,
+     "unit": "m/s",
+     "kind": "assumed",
+     "source": "DESIGN INPUT: unchanged."
+    },
+    "gait": {
+     "reciprocal": true,
+     "degrees_of_freedom": 1,
+     "description": "a single flap that extends and retracts along the same path, faster out than back",
+     "source": "DESIGN INPUT: the obvious simpler alternative, offered to see whether the layer catches it"
+    }
+   },
+   "reynolds": {
+    "min": 0.04981037924151696,
+    "max": 0.49810379241516967
+   },
+   "flight": null,
+   "reading": "IMPOSSIBLE, by a theorem and not by a simulation: the stroke is time-reversible (declared reciprocal) and Re <= 0.498 everywhere in the stated ranges. In the Stokes limit the displacement over a cycle depends on the PATH through configuration space and not on the rate, so a path that retraces itself returns the body exactly where it started. Net displacement per cycle is zero, at any beat frequency.",
+   "what_this_layer_cannot_say": [
+    "whether the organism can generate the forces its gait requires: there is no muscle model and no actuator model",
+    "whether it can pay for the motion: no metabolic rate, no cost of transport, no energy budget",
+    "whether it can control the motion or stay the right way up: no stability model",
+    "whether the gait is one a nervous system could produce or a developmental program could build"
+   ]
+  },
+  "provenance": [
+   {
+    "quantity": "medium",
+    "value": "fresh water at 20 C",
+    "kind": "measured-secondhand",
+    "source": "standard reference values for pure water at 20 C and 1 atm (CRC Handbook of Chemistry and Physics, fluid properties tables)"
+   },
+   {
+    "quantity": "body length",
+    "value": [
+     0.0005,
+     0.001
+    ],
+    "kind": "assumed",
+    "source": "DESIGN INPUT: unchanged."
+   },
+   {
+    "quantity": "speed",
+    "value": [
+     0.0001,
+     0.0005
+    ],
+    "kind": "assumed",
+    "source": "DESIGN INPUT: unchanged."
+   },
+   {
+    "quantity": "scallop theorem",
+    "value": "impossible",
+    "kind": "derived",
+    "source": "Purcell EM 1977, Life at low Reynolds number, Am J Phys 45(1):3-11, doi 10.1119/1.10903. A theorem about the Stokes limit, not a measurement of any organism."
+   },
+   {
+    "quantity": "locomotion_check version",
+    "value": "0.1.0",
+    "kind": "derived",
+    "source": "sim-engine/validate/locomotion/index.mjs"
+   }
+  ],
+  "scope": "How a design moves, as distinct from what it is made of. One theorem (the scallop theorem, which can declare a design impossible), arithmetic over declared quantities, and empirical regime indicators that are reported and never fail anything. It models no muscle, no metabolism, no control and no energy budget: a design this layer does not contradict has not been shown to move, only shown not to be self-contradictory in the ways this layer can see.",
+  "weakest_input": "assumed",
+  "counts": {
+   "measured-secondhand": 1,
+   "assumed": 2,
+   "derived": 2
+  }
+ }
+}

@@ -1,0 +1,766 @@
+{
+ "tool": "physics_check",
+ "generation": 4,
+ "why": "the whole physics pipeline, on a mouse",
+ "args": {
+  "organism": "flying-mouse-declared"
+ },
+ "ms": 5,
+ "result": {
+  "contract_version": "0.10.0",
+  "result": {
+   "ran": true,
+   "version": "1.0.0",
+   "design": {
+    "id": "flying-mouse-declared",
+    "parents": [],
+    "n_edits": 0,
+    "species": "Mus musculus"
+   },
+   "target_function": {
+    "source": "inferred",
+    "inferred_function": "swim",
+    "why": "no flight intent is declared, so the function taken as desired is the one every fish here has: hold station in a current",
+    "inferred_from": "flying-mouse-declared | the generation-1 animal with the three aerodynamic quantities declared, so the whole physics pipeline can be run on it",
+    "n_criteria": 1,
+    "statement": "NO SPEC WAS GIVEN, so the target function was INFERRED from the design's declared intent (no flight intent is declared, so the function taken as desired is the one every fish here has: hold station in a current). It is what we chose to test, not what we were asked for. Pass opts.spec to test the real requirement."
+   },
+   "criteria": [
+    {
+     "id": "inferred-swim-1",
+     "scenario": "current",
+     "metric": null,
+     "op": "feasible",
+     "value": null,
+     "unit": null,
+     "stages": [
+      "adult"
+     ],
+     "hard": true,
+     "weight": 1,
+     "inferred": true,
+     "source_text": "inferred: hold station at 0.2 m/s, the current scenario's own default test speed",
+     "params": {
+      "current_m_s": 0.2
+     },
+     "status": "no model",
+     "stages_met": 0,
+     "stages_total": 1,
+     "per_stage": [
+      {
+       "stage": "adult",
+       "ageDays": 60,
+       "stage_label": "adult",
+       "SL_m": null,
+       "mass_kg": 0.025,
+       "status": "no model",
+       "measured": null,
+       "metric": "feasible",
+       "metric_kind": null,
+       "unit": null,
+       "threshold": true,
+       "op": "feasible",
+       "limiting_factor": "the scenario was not run: required STATE field(s) are null: SL_m. The scenario was not run; nothing was invented.",
+       "out_of_validity": null,
+       "dropped_params": null,
+       "ensemble": null,
+       "model_confidence": {
+        "validated": "circular-in-part",
+        "scenario": "current",
+        "model": "sim-engine/scenarios/current.mjs",
+        "equations": [
+         "Ucrit(T, age) = k(age) x SL x r(T); k = 15.5 SL/s for >= 28 dpf (Plaut 2000), 10.5 SL/s at 14 dpf (Umax 12.1 / 1.15), linear between; 0.03 m/s at 5 dpf, linear to 14 dpf",
+         "r(T) = Ucrit(T)/Ucrit(28 °C), measured (Wakamatsu 2019)",
+         "Umax = 1.15 Ucrit; feasible (hold station) = current <= Ucrit; survives = null",
+         "Re = rho U SL / mu; C_D = 1.33 Re^-0.5 (Re < 5e5) or 0.072 Re^-0.2, on wetted area",
+         "D = 0.5 rho C_D S_wet U^2 (lower bound); P_red = f_myo f_red m 134 x 1.88^((T-20)/10) W",
+         "U_bound: 0.5 rho C_D(U) S_wet U^3 = P_red (upper bound on sustained speed)"
+        ],
+        "sources": [
+         {
+          "cite": "Widrick JJ et al. (2018). An open source microcontroller based flume for evaluating swimming performance of larval, juvenile, and adult zebrafish. PLoS One 13:e0199712",
+          "doi_or_url": "https://doi.org/10.1371/journal.pone.0199712"
+         },
+         {
+          "cite": "Wakamatsu Y, Ogino K, Hirata H (2019). Sci Rep 9:16307 (Ucrit vs temperature, fin length)",
+          "doi_or_url": "https://doi.org/10.1038/s41598-019-52592-w"
+         },
+         {
+          "cite": "Li G et al. (2021). Fishes regulate tail-beat kinematics to minimize speed-specific cost of transport. Proc R Soc B 288:20211601",
+          "doi_or_url": "https://doi.org/10.1098/rspb.2021.1601"
+         },
+         {
+          "cite": "NIST Chemistry WebBook, Thermophysical Properties of Fluid Systems: water at 0.101325 MPa, 5-35 °C",
+          "doi_or_url": "https://webbook.nist.gov/chemistry/fluid/"
+         },
+         {
+          "cite": "Rome LC et al. (1992), scup red muscle power, via physiology/muscle.js (abstract)",
+          "doi_or_url": "physiology/sources.json id rome1992"
+         }
+        ],
+        "weakest_input_kind": null,
+        "circular": true,
+        "circular_inputs": [
+         "W1: in band; weakest input is assumed; AMENDMENT A1: the metric is an interpolation/fit of the target paper itself, so the pre-registered pass is not independent evidence",
+         "modelCard/Danio rerio adults (literature summary): https://doi.org/10.1371/journal.pone.0199712. PASS, but partly circular: the 15.5 SL/s comes from one of the cited studies (Plaut 2000)"
+        ],
+        "studio_tests": [
+         {
+          "id": "W1",
+          "name": "adult zebrafish Ucrit",
+          "status": "pass-rests-on-assumed",
+          "amended_status": "circular",
+          "effective": "circular",
+          "why": "in band; weakest input is assumed; AMENDMENT A1: the metric is an interpolation/fit of the target paper itself, so the pre-registered pass is not independent evidence"
+         },
+         {
+          "id": "W11",
+          "name": "sustained current sign (pre-registered: 0.20 m/s survive, 1.10 m/s not; A2 reads feasible)",
+          "status": "fail",
+          "amended_status": "pass",
+          "effective": "pass",
+          "why": "pre-registered reading (survives): not met, survives is null/null; A2 reading (feasible = can hold station): signs correct"
+         },
+         {
+          "id": "N7-current",
+          "name": "contract + determinism: current",
+          "status": "pass",
+          "amended_status": null,
+          "effective": "pass",
+          "why": "contract holds"
+         }
+        ],
+        "validated_against": [
+         {
+          "organism": "Danio rerio adults (literature summary)",
+          "observation": "Ucrit 40-55 cm/s in adults (Widrick 2018 Introduction, citing refs 10-13)",
+          "predicted": "46.5 cm/s for SL 30 mm at 28 °C",
+          "measured": "40-55 cm/s (second-hand)",
+          "source": "https://doi.org/10.1371/journal.pone.0199712. PASS, but partly circular: the 15.5 SL/s comes from one of the cited studies (Plaut 2000)"
+         },
+         {
+          "organism": "Danio rerio, long-finned pet-store (PET) strain, adults, 28 °C",
+          "observation": "Ucrit 23.8 ± 0.7 cm/s (males and females 22-24 cm/s)",
+          "predicted": "~46 cm/s for a 30 mm SL wild-type adult",
+          "measured": "22-24 cm/s",
+          "source": "Wakamatsu 2019 (https://doi.org/10.1038/s41598-019-52592-w). FAIL by about 2x. The paper shows long caudal fins and genetic background lower Ucrit; SL was not reported in the text, so the BL/s comparison could not be made exactly. A design with long fins will be over-predicted."
+         },
+         {
+          "organism": "Danio rerio adults",
+          "observation": "measured Ucrit must lie below the physical upper bound",
+          "predicted": "see test/scenarios-environment.mjs (bound computed for the fixture)",
+          "measured": "15.5 SL/s",
+          "source": "consistency check, not a test against an independent measurement"
+         }
+        ],
+        "independent_harness": "sim-engine/validation/studio-results.json, generated 2026-11-01T04:39:33.255Z",
+        "statement": "CIRCULAR IN PART: the comparison this model is scored against is not independent of its own inputs. independent harness W1 (adult zebrafish Ucrit) = circular: in band; weakest input is assumed; AMENDMENT A1: the metric is an interpolation/fit of the target paper itself, so the pre-registered pass is not independent evidence the scenario's own modelCard says so: Danio rerio adults (literature summary) - https://doi.org/10.1371/journal.pone.0199712. PASS, but partly circular: the 15.5 SL/s comes from one of the cited studies (Plaut 2000) Comparison(s) that did NOT set its inputs: Danio rerio, long-finned pet-store (PET) strain, adults, 28 °C: predicted ~46 cm/s for a 30 mm SL wild-type adult vs measured 22-24 cm/s -- Wakamatsu 2019 (https://doi.org/10.1038/s41598-019-52592-w). FAIL by about 2x. The paper shows long caudal fins and genetic background lower Ucrit; SL was not reported in the text, so the BL/s compari; Danio rerio adults: predicted see test/scenarios-environment.mjs (bound computed for the fixture) vs measured 15.5 SL/s -- consistency check, not a test against an independent measurement Validity stated by the model: Zebrafish from 5 dpf to adult and SL <= 45.1 mm (Linf), 12-36 °C (temperature curve), Re ~1e2-1e5. For other species, and for blended designs larger than a zebrafish, only the physical bound and drag are computed."
+       },
+       "statement": "no model"
+      }
+     ],
+     "limiting_factor": "adult: the scenario was not run: required STATE field(s) are null: SL_m. The scenario was not run; nothing was invented.",
+     "model_confidence": {
+      "validated": "circular-in-part",
+      "scenario": "current",
+      "model": "sim-engine/scenarios/current.mjs",
+      "equations": [
+       "Ucrit(T, age) = k(age) x SL x r(T); k = 15.5 SL/s for >= 28 dpf (Plaut 2000), 10.5 SL/s at 14 dpf (Umax 12.1 / 1.15), linear between; 0.03 m/s at 5 dpf, linear to 14 dpf",
+       "r(T) = Ucrit(T)/Ucrit(28 °C), measured (Wakamatsu 2019)",
+       "Umax = 1.15 Ucrit; feasible (hold station) = current <= Ucrit; survives = null",
+       "Re = rho U SL / mu; C_D = 1.33 Re^-0.5 (Re < 5e5) or 0.072 Re^-0.2, on wetted area",
+       "D = 0.5 rho C_D S_wet U^2 (lower bound); P_red = f_myo f_red m 134 x 1.88^((T-20)/10) W",
+       "U_bound: 0.5 rho C_D(U) S_wet U^3 = P_red (upper bound on sustained speed)"
+      ],
+      "sources": [
+       {
+        "cite": "Widrick JJ et al. (2018). An open source microcontroller based flume for evaluating swimming performance of larval, juvenile, and adult zebrafish. PLoS One 13:e0199712",
+        "doi_or_url": "https://doi.org/10.1371/journal.pone.0199712"
+       },
+       {
+        "cite": "Wakamatsu Y, Ogino K, Hirata H (2019). Sci Rep 9:16307 (Ucrit vs temperature, fin length)",
+        "doi_or_url": "https://doi.org/10.1038/s41598-019-52592-w"
+       },
+       {
+        "cite": "Li G et al. (2021). Fishes regulate tail-beat kinematics to minimize speed-specific cost of transport. Proc R Soc B 288:20211601",
+        "doi_or_url": "https://doi.org/10.1098/rspb.2021.1601"
+       },
+       {
+        "cite": "NIST Chemistry WebBook, Thermophysical Properties of Fluid Systems: water at 0.101325 MPa, 5-35 °C",
+        "doi_or_url": "https://webbook.nist.gov/chemistry/fluid/"
+       },
+       {
+        "cite": "Rome LC et al. (1992), scup red muscle power, via physiology/muscle.js (abstract)",
+        "doi_or_url": "physiology/sources.json id rome1992"
+       }
+      ],
+      "weakest_input_kind": null,
+      "circular": true,
+      "circular_inputs": [
+       "W1: in band; weakest input is assumed; AMENDMENT A1: the metric is an interpolation/fit of the target paper itself, so the pre-registered pass is not independent evidence",
+       "modelCard/Danio rerio adults (literature summary): https://doi.org/10.1371/journal.pone.0199712. PASS, but partly circular: the 15.5 SL/s comes from one of the cited studies (Plaut 2000)"
+      ],
+      "studio_tests": [
+       {
+        "id": "W1",
+        "name": "adult zebrafish Ucrit",
+        "status": "pass-rests-on-assumed",
+        "amended_status": "circular",
+        "effective": "circular",
+        "why": "in band; weakest input is assumed; AMENDMENT A1: the metric is an interpolation/fit of the target paper itself, so the pre-registered pass is not independent evidence"
+       },
+       {
+        "id": "W11",
+        "name": "sustained current sign (pre-registered: 0.20 m/s survive, 1.10 m/s not; A2 reads feasible)",
+        "status": "fail",
+        "amended_status": "pass",
+        "effective": "pass",
+        "why": "pre-registered reading (survives): not met, survives is null/null; A2 reading (feasible = can hold station): signs correct"
+       },
+       {
+        "id": "N7-current",
+        "name": "contract + determinism: current",
+        "status": "pass",
+        "amended_status": null,
+        "effective": "pass",
+        "why": "contract holds"
+       }
+      ],
+      "validated_against": [
+       {
+        "organism": "Danio rerio adults (literature summary)",
+        "observation": "Ucrit 40-55 cm/s in adults (Widrick 2018 Introduction, citing refs 10-13)",
+        "predicted": "46.5 cm/s for SL 30 mm at 28 °C",
+        "measured": "40-55 cm/s (second-hand)",
+        "source": "https://doi.org/10.1371/journal.pone.0199712. PASS, but partly circular: the 15.5 SL/s comes from one of the cited studies (Plaut 2000)"
+       },
+       {
+        "organism": "Danio rerio, long-finned pet-store (PET) strain, adults, 28 °C",
+        "observation": "Ucrit 23.8 ± 0.7 cm/s (males and females 22-24 cm/s)",
+        "predicted": "~46 cm/s for a 30 mm SL wild-type adult",
+        "measured": "22-24 cm/s",
+        "source": "Wakamatsu 2019 (https://doi.org/10.1038/s41598-019-52592-w). FAIL by about 2x. The paper shows long caudal fins and genetic background lower Ucrit; SL was not reported in the text, so the BL/s comparison could not be made exactly. A design with long fins will be over-predicted."
+       },
+       {
+        "organism": "Danio rerio adults",
+        "observation": "measured Ucrit must lie below the physical upper bound",
+        "predicted": "see test/scenarios-environment.mjs (bound computed for the fixture)",
+        "measured": "15.5 SL/s",
+        "source": "consistency check, not a test against an independent measurement"
+       }
+      ],
+      "independent_harness": "sim-engine/validation/studio-results.json, generated 2026-11-01T04:39:33.255Z",
+      "statement": "CIRCULAR IN PART: the comparison this model is scored against is not independent of its own inputs. independent harness W1 (adult zebrafish Ucrit) = circular: in band; weakest input is assumed; AMENDMENT A1: the metric is an interpolation/fit of the target paper itself, so the pre-registered pass is not independent evidence the scenario's own modelCard says so: Danio rerio adults (literature summary) - https://doi.org/10.1371/journal.pone.0199712. PASS, but partly circular: the 15.5 SL/s comes from one of the cited studies (Plaut 2000) Comparison(s) that did NOT set its inputs: Danio rerio, long-finned pet-store (PET) strain, adults, 28 °C: predicted ~46 cm/s for a 30 mm SL wild-type adult vs measured 22-24 cm/s -- Wakamatsu 2019 (https://doi.org/10.1038/s41598-019-52592-w). FAIL by about 2x. The paper shows long caudal fins and genetic background lower Ucrit; SL was not reported in the text, so the BL/s compari; Danio rerio adults: predicted see test/scenarios-environment.mjs (bound computed for the fixture) vs measured 15.5 SL/s -- consistency check, not a test against an independent measurement Validity stated by the model: Zebrafish from 5 dpf to adult and SL <= 45.1 mm (Linf), 12-36 °C (temperature curve), Re ~1e2-1e5. For other species, and for blended designs larger than a zebrafish, only the physical bound and drag are computed."
+     }
+    }
+   ],
+   "standing_checks": [
+    {
+     "stage": "adult",
+     "ageDays": 60,
+     "id": "reaches_minimum_flight_speed",
+     "label": "Reaches its own minimum lift-supported airspeed",
+     "status": "no model",
+     "measured": null,
+     "unit": "m/s",
+     "threshold": 8.563575680571127,
+     "op": ">=",
+     "limiting_factor": "no sourced leap or burst speed for this organism, so the question is not answerable from measurement: glide not evaluated: no measured leap or burst speed for Mus musculus",
+     "gating": false,
+     "model_confidence": {
+      "validated": "circular",
+      "scenario": "glide",
+      "model": "sim-engine/scenarios/glide.mjs",
+      "equations": [
+       "W = m g; v_min = sqrt(2 W / (rho S C_Lmax))",
+       "launch speed v0 = the organism's own: adult flying fish = taxi end speed 15 m/s (leap ~10 m/s then taxi; lower end of the measured 15-20 m/s); other flying-fish stages min(10 m/s, 30 BL/s x SL), no taxi; zebrafish Umax = 1.15 Ucrit; otherwise not evaluated",
+       "cannot glide if v0 < v_min: every range = 0, feasible = false",
+       "Lean-covered part: d_lean = h (L/D)max   (glide_range_le: d <= h (L/D)/(1 - delta))",
+       "kinetic phase (outside the theorem): x_A = (L/D)_eff (v0^2 - v_min^2)/(2g), (L/D)_eff = (L/D)max / f_ground(h/(b/2))",
+       "total = d_lean + x_A (labelled as not covered by the theorem)",
+       "P_req = W v_min / (L/D)max; P_aerobic <= eta E_O2 Q C_a(PO2)"
+      ],
+      "sources": [
+       {
+        "cite": "Park H, Choi H (2010). Aerodynamic characteristics of flying fish in gliding flight. J Exp Biol 213:3269-3279",
+        "doi_or_url": "https://doi.org/10.1242/jeb.046052"
+       },
+       {
+        "cite": "Makiguchi Y et al. (2013). Take-off performance of flying fish Cypselurus heterurus doederleini measured with miniature acceleration data loggers. Aquat Biol 18:105-111 (leap speed ~10 m/s, 20-30 BL/s, citing Davenport 1994; glide up to 50 m at 15-20 m/s citing Edgerton & Breder 1941)",
+        "doi_or_url": "https://doi.org/10.3354/ab00494"
+       },
+       {
+        "cite": "Deng J et al. (2019). Numerical prediction of aerodynamic performance for a flying fish during gliding flight. Bioinspir Biomim 14:046009 (maximum flight height 8 m; average taxiing length 9 m, second-hand)",
+        "doi_or_url": "https://doi.org/10.1088/1748-3190/ab23e6"
+       },
+       {
+        "cite": "Deng J, Wang S, Zhang L, Mao X (2019). Why does a flying fish taxi on sea surface before take-off? A hydrodynamic interpretation. bioRxiv 765560 (taxiing accelerates to 15-20 m/s, citing Davenport 1994)",
+        "doi_or_url": "https://doi.org/10.1101/765560"
+       },
+       {
+        "cite": "Durnford FPH, Porter ES, Gamperl AK (2026). Increased heart rate and blood oxygen extraction ... schoolmaster snapper. J Exp Biol",
+        "doi_or_url": "https://doi.org/10.1242/jeb.252059"
+       },
+       {
+        "cite": "Rummer JL, Brauner CJ (2015). Root effect haemoglobins in fish ... PLoS One 10:e0139477",
+        "doi_or_url": "https://doi.org/10.1371/journal.pone.0139477"
+       },
+       {
+        "cite": "Gerry SP, Ellerby DJ (2014). Resolving shifting patterns of muscle energy use in swimming fish. PLoS One 9:e106030",
+        "doi_or_url": "https://doi.org/10.1371/journal.pone.0106030"
+       }
+      ],
+      "weakest_input_kind": "assumed",
+      "circular": true,
+      "circular_inputs": [
+       "modelCard/Cypselurus hiraii (Park & Choi model L3): physics/results.json interpretation_B and interpretation_C",
+       "modelCard/Exocoetidae (several genera): makiguchi-2013 Introduction (https://doi.org/10.3354/ab00494). Inside the range, but PARTLY CIRCULAR: the 15 m/s take-off speed comes from the same body of observations (15-20 m/s) as the 50 m glide. ",
+       "modelCard/Cheilopogon (Cypselurus) heterurus doederleini: makiguchi-2013. Consistent; not a pass/fail test"
+      ],
+      "studio_tests": [
+       {
+        "id": "X1",
+        "name": "zebrafish LARVA glide (N1 covers only the adult)",
+        "status": "observation",
+        "amended_status": null,
+        "effective": "observation",
+        "why": "ok"
+       },
+       {
+        "id": "N7-glide",
+        "name": "contract + determinism: glide",
+        "status": "pass",
+        "amended_status": null,
+        "effective": "pass",
+        "why": "contract holds"
+       }
+      ],
+      "validated_against": [
+       {
+        "organism": "Cypselurus hiraii (Park & Choi model L3)",
+        "observation": "code regression against physics/results.json at rho 1.225",
+        "predicted": "v_min 9.854 m/s, P_req 1.327 W",
+        "measured": "physics/results.json: 9.854 m/s, 1.327 W (same equations: a code check, not a test against nature)",
+        "source": "physics/results.json interpretation_B and interpretation_C"
+       },
+       {
+        "organism": "Exocoetidae (several genera)",
+        "observation": "glides up to 50 m at 15-20 m/s airspeed after taxiing (stroboscopic film, Edgerton & Breder 1941, quoted second-hand)",
+        "predicted": "with the taxi end speed 15 m/s (L3 polar): ~33 m from 1 m (Lean part 4.37 m + kinetic phase ~29 m), ~64 m from the 8 m maximum height",
+        "measured": "up to 50 m",
+        "source": "makiguchi-2013 Introduction (https://doi.org/10.3354/ab00494). Inside the range, but PARTLY CIRCULAR: the 15 m/s take-off speed comes from the same body of observations (15-20 m/s) as the 50 m glide. Not independent evidence."
+       },
+       {
+        "organism": "Cheilopogon (Cypselurus) heterurus doederleini",
+        "observation": "leap speed about 10 m/s (Davenport 1994, stroboscopic, quoted by Makiguchi)",
+        "predicted": "v_min 9.85 m/s (L3): a fish leaving the water at 10 m/s is barely lift-supported, consistent with the taxiing seen before long glides",
+        "measured": "~10 m/s",
+        "source": "makiguchi-2013. Consistent; not a pass/fail test"
+       }
+      ],
+      "independent_harness": "sim-engine/validation/studio-results.json, generated 2026-11-01T04:39:33.255Z",
+      "statement": "CIRCULAR: the comparison this model is scored against is not independent of its own inputs. the scenario's own modelCard says so: Cypselurus hiraii (Park & Choi model L3) - physics/results.json interpretation_B and interpretation_C the scenario's own modelCard says so: Exocoetidae (several genera) - makiguchi-2013 Introduction (https://doi.org/10.3354/ab00494). Inside the range, but PARTLY CIRCULAR: the 15 m/s take-off speed comes from the same body of observations (15-20 m/s) as the 50 m glide. Not independent evidence. the scenario's own modelCard says so: Cheilopogon (Cypselurus) heterurus doederleini - makiguchi-2013. Consistent; not a pass/fail test Validity stated by the model: Flying-fish-sized gliders (0.02-0.4 kg), mean-chord Re 5e3-1e5, launch heights 0-10 m. The polar is from stuffed specimens at one wind speed (12 m/s; Park & Choi: Re ~1e4); a zebrafish-sized or larval animal is far outside it (inRange false), and cannot reach its v_min anyway."
+     }
+    },
+    {
+     "stage": "adult",
+     "ageDays": 60,
+     "id": "lifting_area_supports_mass",
+     "label": "Lifting area supports the mass at the reachable launch speed",
+     "status": "met",
+     "measured": 0.007,
+     "unit": "m2",
+     "threshold": 0.00341555430198639,
+     "op": ">=",
+     "limiting_factor": null,
+     "gating": false,
+     "taxon": "Mus musculus",
+     "detail": {
+      "wing_loading_N_m2": 35.03571428571429,
+      "wing_loading_limit_N_m2": 71.80386500000002,
+      "launch_airspeed_m_s": 8.9,
+      "launch_airspeed_from": "supplied in STATE (assumed: DECLARED by the design, not measured: DESIGN INPUT: sqrt(2gh) for the h = 4 m launch height Bishop 2006 used for Glaucomys volans, ignoring drag, so an upper bound on what a drop can give. Not a measured airspeed of anything.)",
+      "C_Lmax": 1.48,
+      "C_Lmax_sd": 0.18,
+      "C_Lmax_kind": "borrowed",
+      "C_Lmax_note": "C_Lmax 1.48 is BORROWED: it was measured on live Petaurus breviceps (sugar glider, a marsupial) in free glides, mean angle of attack 44.15 +/- 3.12 deg and is applied here to Mus musculus because the NCBI taxonomy places both inside Theria <mammals>. Measured in a marsupial glider and offered across Theria, which is marsupials and placentals together. For any taxon other than Petaurus breviceps this is a BORROW across a clade, and the check labels it so. It is the closest measurement in this repository to a gliding mammal; it is not a measurement of the animal being designed. Taxon Mus musculus, from stated on the design.",
+      "C_Lmax_caveat": "THIS IS A STALLED-MEMBRANE GLIDE COEFFICIENT, NOT A STEADY-FLIGHT MAXIMUM, and the source is explicit that it was not enough. In the same glides the animals accelerated downward at 1.0 +/- 0.5 m/s2 and forward at 2.1 +/- 0.6 m/s2: Bishop states that body weight was NOT fully supported by aerodynamic force and that some of the lift went into forward acceleration. The angles of attack are far above where an engineered wing stalls. Bishop KL 2006 (J Exp Biol 209:689-701, doi 10.1242/jeb.02062) reports the same for Glaucomys volans, gliding at 35.4-53.5 deg with the wings stalled and accelerating downward, and finds flying squirrels reach higher lift coefficients than sugar gliders -- so 1.48 is, if anything, generous for a mammal without a flying squirrel's specialisations.",
+      "C_Lmax_source": "Bishop KL 2007, Aerodynamic force generation, performance and control of body orientation during gliding in sugar gliders (Petaurus breviceps), J Exp Biol 210:2593-2606",
+      "C_Lmax_doi": "10.1242/jeb.002071",
+      "area_convention": "STATE lifting_area_m2 is pectoral + pelvic + caudal (mesh); the coefficient is referred to the whole outstretched body-and-membrane planform, as digitised from the gliding animal. The conventions differ and this check does not correct for it."
+     },
+     "model_confidence": {
+      "validated": "circular",
+      "scenario": "glide",
+      "model": "sim-engine/scenarios/glide.mjs",
+      "equations": [
+       "W = m g; v_min = sqrt(2 W / (rho S C_Lmax))",
+       "launch speed v0 = the organism's own: adult flying fish = taxi end speed 15 m/s (leap ~10 m/s then taxi; lower end of the measured 15-20 m/s); other flying-fish stages min(10 m/s, 30 BL/s x SL), no taxi; zebrafish Umax = 1.15 Ucrit; otherwise not evaluated",
+       "cannot glide if v0 < v_min: every range = 0, feasible = false",
+       "Lean-covered part: d_lean = h (L/D)max   (glide_range_le: d <= h (L/D)/(1 - delta))",
+       "kinetic phase (outside the theorem): x_A = (L/D)_eff (v0^2 - v_min^2)/(2g), (L/D)_eff = (L/D)max / f_ground(h/(b/2))",
+       "total = d_lean + x_A (labelled as not covered by the theorem)",
+       "P_req = W v_min / (L/D)max; P_aerobic <= eta E_O2 Q C_a(PO2)"
+      ],
+      "sources": [
+       {
+        "cite": "Park H, Choi H (2010). Aerodynamic characteristics of flying fish in gliding flight. J Exp Biol 213:3269-3279",
+        "doi_or_url": "https://doi.org/10.1242/jeb.046052"
+       },
+       {
+        "cite": "Makiguchi Y et al. (2013). Take-off performance of flying fish Cypselurus heterurus doederleini measured with miniature acceleration data loggers. Aquat Biol 18:105-111 (leap speed ~10 m/s, 20-30 BL/s, citing Davenport 1994; glide up to 50 m at 15-20 m/s citing Edgerton & Breder 1941)",
+        "doi_or_url": "https://doi.org/10.3354/ab00494"
+       },
+       {
+        "cite": "Deng J et al. (2019). Numerical prediction of aerodynamic performance for a flying fish during gliding flight. Bioinspir Biomim 14:046009 (maximum flight height 8 m; average taxiing length 9 m, second-hand)",
+        "doi_or_url": "https://doi.org/10.1088/1748-3190/ab23e6"
+       },
+       {
+        "cite": "Deng J, Wang S, Zhang L, Mao X (2019). Why does a flying fish taxi on sea surface before take-off? A hydrodynamic interpretation. bioRxiv 765560 (taxiing accelerates to 15-20 m/s, citing Davenport 1994)",
+        "doi_or_url": "https://doi.org/10.1101/765560"
+       },
+       {
+        "cite": "Durnford FPH, Porter ES, Gamperl AK (2026). Increased heart rate and blood oxygen extraction ... schoolmaster snapper. J Exp Biol",
+        "doi_or_url": "https://doi.org/10.1242/jeb.252059"
+       },
+       {
+        "cite": "Rummer JL, Brauner CJ (2015). Root effect haemoglobins in fish ... PLoS One 10:e0139477",
+        "doi_or_url": "https://doi.org/10.1371/journal.pone.0139477"
+       },
+       {
+        "cite": "Gerry SP, Ellerby DJ (2014). Resolving shifting patterns of muscle energy use in swimming fish. PLoS One 9:e106030",
+        "doi_or_url": "https://doi.org/10.1371/journal.pone.0106030"
+       }
+      ],
+      "weakest_input_kind": "assumed",
+      "circular": true,
+      "circular_inputs": [
+       "modelCard/Cypselurus hiraii (Park & Choi model L3): physics/results.json interpretation_B and interpretation_C",
+       "modelCard/Exocoetidae (several genera): makiguchi-2013 Introduction (https://doi.org/10.3354/ab00494). Inside the range, but PARTLY CIRCULAR: the 15 m/s take-off speed comes from the same body of observations (15-20 m/s) as the 50 m glide. ",
+       "modelCard/Cheilopogon (Cypselurus) heterurus doederleini: makiguchi-2013. Consistent; not a pass/fail test"
+      ],
+      "studio_tests": [
+       {
+        "id": "X1",
+        "name": "zebrafish LARVA glide (N1 covers only the adult)",
+        "status": "observation",
+        "amended_status": null,
+        "effective": "observation",
+        "why": "ok"
+       },
+       {
+        "id": "N7-glide",
+        "name": "contract + determinism: glide",
+        "status": "pass",
+        "amended_status": null,
+        "effective": "pass",
+        "why": "contract holds"
+       }
+      ],
+      "validated_against": [
+       {
+        "organism": "Cypselurus hiraii (Park & Choi model L3)",
+        "observation": "code regression against physics/results.json at rho 1.225",
+        "predicted": "v_min 9.854 m/s, P_req 1.327 W",
+        "measured": "physics/results.json: 9.854 m/s, 1.327 W (same equations: a code check, not a test against nature)",
+        "source": "physics/results.json interpretation_B and interpretation_C"
+       },
+       {
+        "organism": "Exocoetidae (several genera)",
+        "observation": "glides up to 50 m at 15-20 m/s airspeed after taxiing (stroboscopic film, Edgerton & Breder 1941, quoted second-hand)",
+        "predicted": "with the taxi end speed 15 m/s (L3 polar): ~33 m from 1 m (Lean part 4.37 m + kinetic phase ~29 m), ~64 m from the 8 m maximum height",
+        "measured": "up to 50 m",
+        "source": "makiguchi-2013 Introduction (https://doi.org/10.3354/ab00494). Inside the range, but PARTLY CIRCULAR: the 15 m/s take-off speed comes from the same body of observations (15-20 m/s) as the 50 m glide. Not independent evidence."
+       },
+       {
+        "organism": "Cheilopogon (Cypselurus) heterurus doederleini",
+        "observation": "leap speed about 10 m/s (Davenport 1994, stroboscopic, quoted by Makiguchi)",
+        "predicted": "v_min 9.85 m/s (L3): a fish leaving the water at 10 m/s is barely lift-supported, consistent with the taxiing seen before long glides",
+        "measured": "~10 m/s",
+        "source": "makiguchi-2013. Consistent; not a pass/fail test"
+       }
+      ],
+      "independent_harness": "sim-engine/validation/studio-results.json, generated 2026-11-01T04:39:33.255Z",
+      "statement": "CIRCULAR: the comparison this model is scored against is not independent of its own inputs. the scenario's own modelCard says so: Cypselurus hiraii (Park & Choi model L3) - physics/results.json interpretation_B and interpretation_C the scenario's own modelCard says so: Exocoetidae (several genera) - makiguchi-2013 Introduction (https://doi.org/10.3354/ab00494). Inside the range, but PARTLY CIRCULAR: the 15 m/s take-off speed comes from the same body of observations (15-20 m/s) as the 50 m glide. Not independent evidence. the scenario's own modelCard says so: Cheilopogon (Cypselurus) heterurus doederleini - makiguchi-2013. Consistent; not a pass/fail test Assumed inputs: C_Lmax 1.48 is BORROWED: it was measured on live Petaurus breviceps (sugar glider, a marsupial) in free glides, mean angle of attack 44.15 +/- 3.12 deg and is applied here to Mus musculus because the NCBI taxonomy places both inside Theria <mammals>. Measured in a marsupial glider and offered across Theria, which is marsupials and placentals together. For any taxon other than Petaurus breviceps this is a BORROW across a clade, and the check labels it so. It is the closest measurement in this repository to a gliding mammal; it is not a measurement of the animal being designed. Taxon Mus musculus, from stated on the design.; THIS IS A STALLED-MEMBRANE GLIDE COEFFICIENT, NOT A STEADY-FLIGHT MAXIMUM, and the source is explicit that it was not enough. In the same glides the animals accelerated downward at 1.0 +/- 0.5 m/s2 and forward at 2.1 +/- 0.6 m/s2: Bishop states that body weight was NOT fully supported by aerodynamic force and that some of the lift went into forward acceleration. The angles of attack are far above where an engineered wing stalls. Bishop KL 2006 (J Exp Biol 209:689-701, doi 10.1242/jeb.02062) reports the same for Glaucomys volans, gliding at 35.4-53.5 deg with the wings stalled and accelerating downward, and finds flying squirrels reach higher lift coefficients than sugar gliders -- so 1.48 is, if anything, generous for a mammal without a flying squirrel's specialisations.. Validity stated by the model: Flying-fish-sized gliders (0.02-0.4 kg), mean-chord Re 5e3-1e5, launch heights 0-10 m. The polar is from stuffed specimens at one wind speed (12 m/s; Park & Choi: Re ~1e4); a zebrafish-sized or larval animal is far outside it (inRange false), and cannot reach its v_min anyway."
+     }
+    },
+    {
+     "stage": "adult",
+     "ageDays": 60,
+     "id": "sustained_swimming_aerobic_ceiling",
+     "label": "Drag power at the test current fits inside the red-muscle aerobic ceiling",
+     "status": "no model",
+     "measured": null,
+     "unit": "W",
+     "threshold": null,
+     "op": null,
+     "limiting_factor": "required STATE field(s) are null: SL_m. The scenario was not run; nothing was invented.",
+     "gating": false,
+     "model_confidence": {
+      "validated": "circular-in-part",
+      "scenario": "current",
+      "model": "sim-engine/scenarios/current.mjs",
+      "equations": [
+       "Ucrit(T, age) = k(age) x SL x r(T); k = 15.5 SL/s for >= 28 dpf (Plaut 2000), 10.5 SL/s at 14 dpf (Umax 12.1 / 1.15), linear between; 0.03 m/s at 5 dpf, linear to 14 dpf",
+       "r(T) = Ucrit(T)/Ucrit(28 °C), measured (Wakamatsu 2019)",
+       "Umax = 1.15 Ucrit; feasible (hold station) = current <= Ucrit; survives = null",
+       "Re = rho U SL / mu; C_D = 1.33 Re^-0.5 (Re < 5e5) or 0.072 Re^-0.2, on wetted area",
+       "D = 0.5 rho C_D S_wet U^2 (lower bound); P_red = f_myo f_red m 134 x 1.88^((T-20)/10) W",
+       "U_bound: 0.5 rho C_D(U) S_wet U^3 = P_red (upper bound on sustained speed)"
+      ],
+      "sources": [
+       {
+        "cite": "Widrick JJ et al. (2018). An open source microcontroller based flume for evaluating swimming performance of larval, juvenile, and adult zebrafish. PLoS One 13:e0199712",
+        "doi_or_url": "https://doi.org/10.1371/journal.pone.0199712"
+       },
+       {
+        "cite": "Wakamatsu Y, Ogino K, Hirata H (2019). Sci Rep 9:16307 (Ucrit vs temperature, fin length)",
+        "doi_or_url": "https://doi.org/10.1038/s41598-019-52592-w"
+       },
+       {
+        "cite": "Li G et al. (2021). Fishes regulate tail-beat kinematics to minimize speed-specific cost of transport. Proc R Soc B 288:20211601",
+        "doi_or_url": "https://doi.org/10.1098/rspb.2021.1601"
+       },
+       {
+        "cite": "NIST Chemistry WebBook, Thermophysical Properties of Fluid Systems: water at 0.101325 MPa, 5-35 °C",
+        "doi_or_url": "https://webbook.nist.gov/chemistry/fluid/"
+       },
+       {
+        "cite": "Rome LC et al. (1992), scup red muscle power, via physiology/muscle.js (abstract)",
+        "doi_or_url": "physiology/sources.json id rome1992"
+       }
+      ],
+      "weakest_input_kind": "assumed",
+      "circular": true,
+      "circular_inputs": [
+       "W1: in band; weakest input is assumed; AMENDMENT A1: the metric is an interpolation/fit of the target paper itself, so the pre-registered pass is not independent evidence",
+       "modelCard/Danio rerio adults (literature summary): https://doi.org/10.1371/journal.pone.0199712. PASS, but partly circular: the 15.5 SL/s comes from one of the cited studies (Plaut 2000)"
+      ],
+      "studio_tests": [
+       {
+        "id": "W1",
+        "name": "adult zebrafish Ucrit",
+        "status": "pass-rests-on-assumed",
+        "amended_status": "circular",
+        "effective": "circular",
+        "why": "in band; weakest input is assumed; AMENDMENT A1: the metric is an interpolation/fit of the target paper itself, so the pre-registered pass is not independent evidence"
+       }
+      ],
+      "validated_against": [
+       {
+        "organism": "Danio rerio adults (literature summary)",
+        "observation": "Ucrit 40-55 cm/s in adults (Widrick 2018 Introduction, citing refs 10-13)",
+        "predicted": "46.5 cm/s for SL 30 mm at 28 °C",
+        "measured": "40-55 cm/s (second-hand)",
+        "source": "https://doi.org/10.1371/journal.pone.0199712. PASS, but partly circular: the 15.5 SL/s comes from one of the cited studies (Plaut 2000)"
+       },
+       {
+        "organism": "Danio rerio, long-finned pet-store (PET) strain, adults, 28 °C",
+        "observation": "Ucrit 23.8 ± 0.7 cm/s (males and females 22-24 cm/s)",
+        "predicted": "~46 cm/s for a 30 mm SL wild-type adult",
+        "measured": "22-24 cm/s",
+        "source": "Wakamatsu 2019 (https://doi.org/10.1038/s41598-019-52592-w). FAIL by about 2x. The paper shows long caudal fins and genetic background lower Ucrit; SL was not reported in the text, so the BL/s comparison could not be made exactly. A design with long fins will be over-predicted."
+       },
+       {
+        "organism": "Danio rerio adults",
+        "observation": "measured Ucrit must lie below the physical upper bound",
+        "predicted": "see test/scenarios-environment.mjs (bound computed for the fixture)",
+        "measured": "15.5 SL/s",
+        "source": "consistency check, not a test against an independent measurement"
+       }
+      ],
+      "independent_harness": "sim-engine/validation/studio-results.json, generated 2026-11-01T04:39:33.255Z",
+      "statement": "CIRCULAR IN PART: the comparison this model is scored against is not independent of its own inputs. independent harness W1 (adult zebrafish Ucrit) = circular: in band; weakest input is assumed; AMENDMENT A1: the metric is an interpolation/fit of the target paper itself, so the pre-registered pass is not independent evidence the scenario's own modelCard says so: Danio rerio adults (literature summary) - https://doi.org/10.1371/journal.pone.0199712. PASS, but partly circular: the 15.5 SL/s comes from one of the cited studies (Plaut 2000) Comparison(s) that did NOT set its inputs: Danio rerio, long-finned pet-store (PET) strain, adults, 28 °C: predicted ~46 cm/s for a 30 mm SL wild-type adult vs measured 22-24 cm/s -- Wakamatsu 2019 (https://doi.org/10.1038/s41598-019-52592-w). FAIL by about 2x. The paper shows long caudal fins and genetic background lower Ucrit; SL was not reported in the text, so the BL/s compari; Danio rerio adults: predicted see test/scenarios-environment.mjs (bound computed for the fixture) vs measured 15.5 SL/s -- consistency check, not a test against an independent measurement Assumed inputs: the myotomal muscle fraction is assumed; red-muscle mass-specific power 134 W/kg is scup red muscle, borrowed; drag is a rigid flat-plate LOWER bound, so the true power demand is higher and the margin reported here is optimistic. Validity stated by the model: Zebrafish from 5 dpf to adult and SL <= 45.1 mm (Linf), 12-36 °C (temperature curve), Re ~1e2-1e5. For other species, and for blended designs larger than a zebrafish, only the physical bound and drag are computed."
+     }
+    },
+    {
+     "stage": "adult",
+     "ageDays": 60,
+     "id": "organ_volume_fits_body",
+     "label": "Requested organ volume fits inside the body (flight muscle)",
+     "status": "no model",
+     "measured": null,
+     "unit": null,
+     "threshold": null,
+     "op": null,
+     "limiting_factor": "needs flight_muscle_fraction, mass, SL, body depth/SL and width/SL, or a mesh manifest for this organism",
+     "gating": false,
+     "model_confidence": {
+      "validated": "unvalidated",
+      "scenario": "validate/sanity.mjs FLIGHT_MUSCLE_CAPACITY, an analytic capacity per body envelope transferred from the two meshes in which the requested muscle did NOT fit",
+      "model": "validate/sanity.mjs FLIGHT_MUSCLE_CAPACITY, an analytic capacity per body envelope transferred from the two meshes in which the requested muscle did NOT fit",
+      "equations": null,
+      "sources": null,
+      "weakest_input_kind": "assumed",
+      "circular": false,
+      "circular_inputs": [],
+      "studio_tests": [],
+      "validated_against": [],
+      "independent_harness": "sim-engine/validation/studio-results.json, generated 2026-11-01T04:39:33.255Z",
+      "statement": "The scenario declares no validatedAgainst entry and the independent harness has no row for it: nothing says this model agrees with any measurement. Assumed inputs: flight_muscle_fraction ? is kind `assumed` in STATE (no fish value exists; the TFF's 0.16 is above the bat mean 0.0913); the capacity per body envelope is transferred from two clipped meshes: an ASSUMED transfer; the mesh geometry is schematic, so \"fits inside the skin\" is a statement about a generated shell, not about an animal."
+     }
+    },
+    {
+     "stage": "adult",
+     "ageDays": 60,
+     "id": "static_pitch_margin",
+     "label": "Statically stable in pitch (static margin from the pectoral MAC quarter-chord)",
+     "status": "no model",
+     "measured": null,
+     "unit": null,
+     "threshold": null,
+     "op": null,
+     "limiting_factor": "the engine has no geometry for it: STATE carries areas and a span but no longitudinal positions, and the mesh manifests carry only a per-object centre, which is neither a planform AREA CENTROID nor a CENTRE OF MASS. Estimating the margin from that object centre gives about -43 % MAC for the adult flying fish against the -7.7 % MEASURED by anatomy-model/print/balance_1to1.py on a real 1:1 flying-fish mesh, a factor of five on the one instance available, so no number is reported here.",
+     "gating": false,
+     "detail": {
+      "measured_elsewhere": {
+       "source": "anatomy-model/print/manifest.json (balance_1to1.py / ff_solid_ballast.py), measured on the shipped print meshes",
+       "rows": [
+        {
+         "object": "1:1 solid glider, empty as printed",
+         "static_margin_fraction_of_MAC": -0.0767,
+         "note": "CG aft of the estimated neutral point: unstable by this first-order estimate"
+        },
+        {
+         "object": "1:1 solid glider + 2.5 mm steel rod x 9 mm",
+         "static_margin_fraction_of_MAC": 0.1093,
+         "note": "stable; ballast costs about 0.85 m/s in v_min"
+        },
+        {
+         "object": "1:1 solid glider + M2.5 x 8 mm grub screw",
+         "static_margin_fraction_of_MAC": 0.0702,
+         "note": "stable"
+        },
+        {
+         "object": "whole-body 0.35-fin design, first-order",
+         "static_margin_fraction_of_MAC": -0.0557,
+         "note": "MAC 12.444 mm, neutral point 0.431 SL, CG 0.4489 SL, area centroid 0.5112 SL at SL 38.8 mm"
+        }
+       ],
+       "caveat": "FIRST-ORDER, FLAT-PLATE, PECTORAL-FINS-ONLY. It ignores the body, the median fins, the caudal fin, downwash, sweep and dihedral. No wind tunnel, no CFD, no free flight. anatomy-model/print/README.md: \"It tells you the stability question is live. It does not tell you the answer.\""
+      },
+      "what_would_be_needed": [
+       "snout x",
+       "pectoral planform area centroid x",
+       "centre of mass x",
+       "mean aerodynamic chord (not the mean chord)"
+      ]
+     },
+     "model_confidence": {
+      "validated": "no model",
+      "scenario": null,
+      "statement": "No model. The only static margins in this repository are first-order estimates measured on PRINT meshes (anatomy-model/print), not on the designed organism, and the print README says in so many words that they tell you the stability question is live, not the answer. Nothing here has been in a wind tunnel, a CFD run or a free flight.",
+      "studio_tests": [],
+      "validated_against": [],
+      "circular_inputs": [],
+      "weakest_input_kind": null,
+      "independent_harness": "2026-11-01T04:39:33.255Z"
+     }
+    }
+   ],
+   "unchecked_requirements": [
+    {
+     "criterion": "inferred-swim-1",
+     "scenario": "current",
+     "metric": "feasible",
+     "hard": true,
+     "stage": "adult",
+     "why": "the scenario was not run: required STATE field(s) are null: SL_m. The scenario was not run; nothing was invented."
+    }
+   ],
+   "function_achieved": false,
+   "physics_gate_failed": false,
+   "gate_status": "incomplete",
+   "gate": "INCOMPLETE: 1 of 1 hard criteria have NO MODEL and were NOT checked (current/feasible). The gate below does not cover them.",
+   "summary": {
+    "hard_criteria": 1,
+    "met": 0,
+    "not_met": 0,
+    "no_model": 1,
+    "standing_checks": 5,
+    "standing_failed": 0,
+    "standing_no_model": 4
+   },
+   "model_honesty": {
+    "circular_checks": [
+     {
+      "where": "criterion inferred-swim-1 (current/feasible)",
+      "why": [
+       "W1: in band; weakest input is assumed; AMENDMENT A1: the metric is an interpolation/fit of the target paper itself, so the pre-registered pass is not independent evidence",
+       "modelCard/Danio rerio adults (literature summary): https://doi.org/10.1371/journal.pone.0199712. PASS, but partly circular: the 15.5 SL/s comes from one of the cited studies (Plaut 2000)"
+      ]
+     },
+     {
+      "where": "standing check reaches_minimum_flight_speed@adult",
+      "why": [
+       "modelCard/Cypselurus hiraii (Park & Choi model L3): physics/results.json interpretation_B and interpretation_C",
+       "modelCard/Exocoetidae (several genera): makiguchi-2013 Introduction (https://doi.org/10.3354/ab00494). Inside the range, but PARTLY CIRCULAR: the 15 m/s take-off speed comes from the same body of observations (15-20 m/s) as the 50 m glide. ",
+       "modelCard/Cheilopogon (Cypselurus) heterurus doederleini: makiguchi-2013. Consistent; not a pass/fail test"
+      ]
+     },
+     {
+      "where": "standing check lifting_area_supports_mass@adult",
+      "why": [
+       "modelCard/Cypselurus hiraii (Park & Choi model L3): physics/results.json interpretation_B and interpretation_C",
+       "modelCard/Exocoetidae (several genera): makiguchi-2013 Introduction (https://doi.org/10.3354/ab00494). Inside the range, but PARTLY CIRCULAR: the 15 m/s take-off speed comes from the same body of observations (15-20 m/s) as the 50 m glide. ",
+       "modelCard/Cheilopogon (Cypselurus) heterurus doederleini: makiguchi-2013. Consistent; not a pass/fail test"
+      ]
+     },
+     {
+      "where": "standing check sustained_swimming_aerobic_ceiling@adult",
+      "why": [
+       "W1: in band; weakest input is assumed; AMENDMENT A1: the metric is an interpolation/fit of the target paper itself, so the pre-registered pass is not independent evidence",
+       "modelCard/Danio rerio adults (literature summary): https://doi.org/10.1371/journal.pone.0199712. PASS, but partly circular: the 15.5 SL/s comes from one of the cited studies (Plaut 2000)"
+      ]
+     }
+    ],
+    "rests_on_assumed": [],
+    "independent_harness": "sim-engine/validation/studio-results.json, generated 2026-11-01T04:39:33.255Z",
+    "statement": "STUDIO-FINDINGS.md's one honest sentence applies to everything above: every numeric wild-type value that lands in band is read straight from the paper it is scored against. The negative controls (a zebrafish that cannot glide, a wingless flying fish that cannot glide, a TFF that cannot pay for powered flight) are the part of this result that is NOT circular, because they turn on inequalities between independently sourced quantities rather than on a fitted number."
+   },
+   "scenario_errors": [],
+   "scope": "Whether the design DOES the function asked of it, measured by running the engine's own scenario modules. It is not a validity claim and it is not a statement that the design is biologically possible: lean_check says no law is broken (necessary, not sufficient) and this says the function is or is not achieved in the model. Every check carries the validation status of the model behind it, and a check whose model is `circular` -- scored against a number read back from the paper it is compared with -- is not evidence however green it looks. The ensemble is an UNCERTAINTY ILLUSTRATION over stated input distributions, most of whose shapes are assumed; it is not a measured distribution of real behaviour. Control, flapping, unsteady aerodynamics, take-off power, adhesion and whole-body stability are not modelled anywhere in this engine.",
+   "ms": 5
+  },
+  "provenance": [
+   {
+    "quantity": "scenario modules run",
+    "value": [
+     "current"
+    ],
+    "kind": "derived",
+    "source": "sim-engine/scenarios/*.mjs, run through scenarios/index.mjs runScenario on the resolved STATE"
+   },
+   {
+    "quantity": "target function",
+    "value": "inferred",
+    "kind": "assumed",
+    "source": "INFERRED from the design's declared intent: no flight intent is declared, so the function taken as desired is the one every fish here has: hold station in a current"
+   },
+   {
+    "quantity": "ensemble distributions",
+    "value": null,
+    "kind": "assumed",
+    "source": "dashboard/public/t/physics/sim/creatures.js DISTRIBUTIONS when present, else validate/physics/ensemble.mjs OWN_DISTRIBUTIONS: the launch-speed BAND is measured-secondhand, the lifting-area spread is measured on three stuffed specimens, the mass CV is borrowed, and the sea state, gusts and every distribution SHAPE are assumed"
+   },
+   {
+    "quantity": "model validation statuses",
+    "value": "sim-engine/validation/studio-results.json, generated 2026-11-01T04:39:33.255Z",
+    "kind": "derived",
+    "source": "sim-engine/validation/studio-results.json (the independent harness) and each scenario's own modelCard.validatedAgainst, read at call time"
+   },
+   {
+    "quantity": "physics_check version",
+    "value": "1.0.0",
+    "kind": "derived",
+    "source": "sim-engine/validate/physics/INTERFACE.md"
+   }
+  ],
+  "scope": "Whether the design DOES the function asked of it, measured by running the engine's own scenario modules. It is not a validity claim and it is not a statement that the design is biologically possible: lean_check says no law is broken (necessary, not sufficient) and this says the function is or is not achieved in the model. Every check carries the validation status of the model behind it, and a check whose model is `circular` -- scored against a number read back from the paper it is compared with -- is not evidence however green it looks. The ensemble is an UNCERTAINTY ILLUSTRATION over stated input distributions, most of whose shapes are assumed; it is not a measured distribution of real behaviour. Control, flapping, unsteady aerodynamics, take-off power, adhesion and whole-body stability are not modelled anywhere in this engine. This tool is a GATE and not a score: physics_gate_failed is true when a HARD criterion is not met, gate_status is \"incomplete\" when a hard criterion has NO MODEL, and nothing here moves the composite design score. 4 of the checks in this report rest on a model the independent harness calls circular; see model_honesty.",
+  "weakest_input": "assumed",
+  "counts": {
+   "derived": 3,
+   "assumed": 2
+  }
+ }
+}

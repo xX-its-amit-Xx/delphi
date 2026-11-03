@@ -16,6 +16,7 @@ import { PIPELINE_TOOLS } from "../sim-engine/tools/pipeline-tools.mjs";
 import { FUNCTIONAL_TOOLS } from "../sim-engine/tools/functional-tools.mjs";
 import { PHYSICS_TOOLS } from "../sim-engine/tools/physics-tools.mjs";
 import { LOCOMOTION_TOOLS } from "../sim-engine/tools/locomotion-tools.mjs";
+import { PERFORMANCE_TOOLS } from "../sim-engine/tools/performance-tools.mjs";
 import { EDITPLAN_TOOLS } from "../sim-engine/tools/editplan-tools.mjs";
 import { SPEC_TOOLS } from "../sim-engine/tools/spec-tools.mjs";
 import { OPENQ_TOOLS } from "../lean/registry/open-questions/openq-tools.mjs";
@@ -327,6 +328,11 @@ tool("flight_support_check", fsc.description, jsonShape(fsc.inputSchema), args =
 // is served hosted unchanged. It delegates its flight modes to flight_support_check above.
 const lc = LOCOMOTION_TOOLS[0];
 tool("locomotion_check", lc.description, jsonShape(lc.inputSchema), args => lc.handler(args));
+
+// The performance layer. Arithmetic over declared inputs against a hazard expectation, Stokes drag and
+// conservation of mass; no network, no writes, so it is served hosted unchanged.
+const pf = PERFORMANCE_TOOLS[0];
+tool("performance_check", pf.description, jsonShape(pf.inputSchema), args => pf.handler(args));
 
 // The components of the report, each callable alone.
 tool("validate_design", vt.validate_design.description, {

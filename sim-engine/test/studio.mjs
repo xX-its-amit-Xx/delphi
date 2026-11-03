@@ -699,5 +699,58 @@ await ok('a finding cannot carry edits, and is refused without a tool or a verdi
 });
 
 
+
+await ok('a taxon base with a DECLARED parameter set resolves a STATE', async () => {
+  // THE GAP: a taxon base resolved no STATE at all, so organism_get refused outright and everything built
+  // on a STATE -- every scenario, every standing check, the whole of physics_check -- was unreachable for
+  // any organism outside the bundle. Not a fact about the organism: a capability gap.
+  const ST = await import('../tools/studio.mjs');
+  const r = (await ST.organismCreate({ id: 'declared-state-test', taxon: 'Mus musculus', overwrite: true,
+    declared: { parameters: { mass_kg: { value: 0.025, unit: 'kg', source: 'test fixture: a declared mass' } },
+      life_stages: [{ key: 'adult', label: 'adult', ageDays: 60 }] } })).result;
+  assert.equal(r.taxon_base, true);
+  assert.ok(r.doc.base.declared, 'the declaration is stored on the document');
+  const g = (await ST.organismGet({ organism: 'declared-state-test' })).result;
+  assert.equal(g.state.values.mass_kg, 0.025);
+  assert.equal(g.state.values.stage, 'adult');
+  assert.equal(g.state.values.SL_m, null, 'a field nobody declared stays null');
+});
+
+await ok('a declared quantity is never a measurement, and needs a source', async () => {
+  const ST = await import('../tools/studio.mjs');
+  await assert.rejects(ST.organismCreate({ id: 'decl-nosrc', taxon: 'Mus musculus', overwrite: true,
+    declared: { parameters: { mass_kg: { value: 0.025 } } } }), /source/);
+  await assert.rejects(ST.organismCreate({ id: 'decl-unknown', taxon: 'Mus musculus', overwrite: true,
+    declared: { parameters: { body_mass_kg: { value: 0.025, source: 'x' } } } }).then(() =>
+      import('../tools/studio.mjs').then(m => m.organismGet({ organism: 'decl-unknown' }))), /not STATE fields/);
+  const g = (await ST.organismGet({ organism: 'declared-state-test' })).result;
+  const f = g.parameters ? null : null;
+  assert.match(g.doc.caveat, /DECLARED/, 'the document says its parameters were declared, not measured');
+});
+
+await ok('a CONSTRUCT is not an instance of its donor', async () => {
+  const ST = await import('../tools/studio.mjs');
+  const r = (await ST.organismCreate({ id: 'construct-test', taxon: 'Xenopus laevis', overwrite: true,
+    made_from: { taxon: 'Xenopus laevis', what: 'a ciliated spheroid of donor cells', source: 'test fixture',
+      inherits: ['the donor genome'], does_not_inherit: ['organ systems', 'a life cycle'] } })).result;
+  assert.ok(r.doc.base.made_from, 'the construct block is stored');
+  assert.match(r.doc.caveat, /CONSTRUCT/);
+  const V = await import('../tools/validate-tools.mjs');
+  const vt = Object.fromEntries(V.VALIDATE_TOOLS.map(t => [t.name, t]));
+  const ph = (await vt.closest_relative_phenotype.handler({ organism: 'construct-test' })).result;
+  assert.equal(ph.subject, 'construct', 'the phenotype reference set must refuse a construct as a construct');
+  assert.match(ph.reason, /not an organism/);
+  assert.ok(ph.what_IS_answerable, 'and must name what IS answerable: the genome is the donor-s, unedited');
+});
+
+await ok('made_from needs to say what the thing IS, not only what it came from', async () => {
+  const ST = await import('../tools/studio.mjs');
+  await assert.rejects(ST.organismCreate({ id: 'construct-bad', taxon: 'Xenopus laevis', overwrite: true,
+    made_from: { taxon: 'Xenopus laevis', source: 'x' } }), /what/);
+  await assert.rejects(ST.organismCreate({ id: 'construct-bad2', taxon: 'Xenopus laevis', overwrite: true,
+    made_from: { what: 'a spheroid', source: 'x' } }), /taxon/);
+});
+
+
 console.log(`\n${pass} passed, ${fail} failed${M ? ` (MUTATE=${M})` : ''}`);
 process.exit(fail ? 1 : 0);

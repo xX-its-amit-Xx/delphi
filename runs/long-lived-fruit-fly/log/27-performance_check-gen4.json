@@ -1,0 +1,129 @@
+{
+ "tool": "performance_check",
+ "generation": 4,
+ "why": "the same design in a vial, as the control",
+ "args": {
+  "kind": "lifespan",
+  "taxon": "Drosophila melanogaster",
+  "intrinsic_hazard_per_day": {
+   "value": 0.016666666666666666,
+   "source": "DESIGN INPUT: an intrinsic hazard of 1/60 per day, a 60-day mean lifespan in protection, taken as the baseline this design is measured against. Stated by the designer; not a survival curve fitted to any data in this repository."
+  },
+  "designed_intrinsic_hazard_per_day": {
+   "value": 0.008333333333333333,
+   "source": "DESIGN INPUT: unchanged."
+  },
+  "extrinsic_hazard_per_day": {
+   "value": 0.000001,
+   "source": "DESIGN INPUT: a protected vial, where essentially nothing outside the animal kills it. The control for the comparison above."
+  }
+ },
+ "ms": 0,
+ "result": {
+  "contract_version": "0.10.0",
+  "result": {
+   "tool": "performance_check",
+   "version": "0.1.0",
+   "kind": "lifespan",
+   "taxon": "Drosophila melanogaster",
+   "ran": true,
+   "verdict": "longer",
+   "expected_lifetime_days": {
+    "baseline": [
+     59.99640021598704,
+     59.99640021598704
+    ],
+    "designed": [
+     119.98560172779268,
+     119.98560172779268
+    ]
+   },
+   "fold_change": {
+    "worst_case": 1.9998800143982727,
+    "best_case": 1.9998800143982727
+   },
+   "intrinsic_fold_change_asked_for": 2,
+   "extrinsic_ceiling_days": 1000000,
+   "headroom_above_baseline": 16667.666666666668,
+   "reading": "The design changes the INTRINSIC hazard by a factor of 0.5 -- a 2x longer intrinsic lifespan. With the extrinsic hazard at 0.000001 /day, expected lifetime goes from 59.996-59.996 days to 119.986-119.986 days: a factor of 2 to 2. There is headroom: with intrinsic mortality abolished entirely the expectation would be 1.00e+6 days, 1.67e+4x the baseline, so the intrinsic term is worth working on in this environment.",
+   "inputs": {
+    "intrinsic_hazard_per_day": {
+     "min": 0.016666666666666666,
+     "max": 0.016666666666666666,
+     "unit": "1/day",
+     "kind": "assumed",
+     "source": "DESIGN INPUT: an intrinsic hazard of 1/60 per day, a 60-day mean lifespan in protection, taken as the baseline this design is measured against. Stated by the designer; not a survival curve fitted to any data in this repository."
+    },
+    "designed_intrinsic_hazard_per_day": {
+     "min": 0.008333333333333333,
+     "max": 0.008333333333333333,
+     "unit": "1/day",
+     "kind": "assumed",
+     "source": "DESIGN INPUT: unchanged."
+    },
+    "extrinsic_hazard_per_day": {
+     "min": 0.000001,
+     "max": 0.000001,
+     "unit": "1/day",
+     "kind": "assumed",
+     "source": "DESIGN INPUT: a protected vial, where essentially nothing outside the animal kills it. The control for the comparison above."
+    }
+   },
+   "model": "Constant two-term hazard, E[T] = 1/(h_intrinsic + h_extrinsic). Exact arithmetic over the declared rates.",
+   "model_caveat": "A CONSTANT hazard makes the lifetime exponential, and real survival curves are not: hazards rise with age, which is what senescence IS, and a Gompertz or Weibull form would capture that. Fitting one needs survival data this repository holds for no organism. So the shape here is assumed, not fitted, and the expectation is a first-order statement that is most wrong exactly where senescence matters most -- at the old end of the curve.",
+   "what_this_cannot_say": [
+    "HOW the design would live longer: no pathway, no gene, no mechanism is represented anywhere in this repository",
+    "whether the intrinsic hazard the design claims is achievable at all",
+    "what the change costs: life-history theory expects a longer-lived design to pay in fecundity or growth, and nothing here prices that",
+    "whether the extrinsic hazard stays put: an organism that lives longer is exposed longer, and may be exposed differently"
+   ]
+  },
+  "provenance": [
+   {
+    "quantity": "intrinsic_hazard_per_day",
+    "value": [
+     0.016666666666666666,
+     0.016666666666666666
+    ],
+    "kind": "assumed",
+    "source": "DESIGN INPUT: an intrinsic hazard of 1/60 per day, a 60-day mean lifespan in protection, taken as the baseline this design is measured against. Stated by the designer; not a survival curve fitted to any data in this repository."
+   },
+   {
+    "quantity": "designed_intrinsic_hazard_per_day",
+    "value": [
+     0.008333333333333333,
+     0.008333333333333333
+    ],
+    "kind": "assumed",
+    "source": "DESIGN INPUT: unchanged."
+   },
+   {
+    "quantity": "extrinsic_hazard_per_day",
+    "value": [
+     0.000001,
+     0.000001
+    ],
+    "kind": "assumed",
+    "source": "DESIGN INPUT: a protected vial, where essentially nothing outside the animal kills it. The control for the comparison above."
+   },
+   {
+    "quantity": "model",
+    "value": "Constant two-term hazard, E[T] = 1/(h_intrinsic + h_extrinsic). Exact arithmetic over the declared rates.",
+    "kind": "derived",
+    "source": "A CONSTANT hazard makes the lifetime exponential, and real survival curves are not: hazards rise with age, which is what senescence IS, and a Gompertz or Weibull form would capture that. Fitting one needs survival data this repository holds for no organism. So the shape here is assumed, not fitted, and the expectation is a first-order statement that is most wrong exactly where senescence matters most -- at the old end of the curve."
+   },
+   {
+    "quantity": "performance_check version",
+    "value": "0.1.0",
+    "kind": "derived",
+    "source": "sim-engine/validate/performance/index.mjs"
+   }
+  ],
+  "scope": "What the design accomplishes, as distinct from its shape or its gait. Three checks, each resting on something that cannot be argued with -- a constant-hazard expectation, Stokes drag, and conservation of mass -- evaluated over quantities the caller declares with sources. It models no mechanism: it does not say HOW the organism would live longer, exert a force or fix carbon, only whether the numbers a designer states are consistent with each other and with physics. A design this layer does not contradict has not been shown to work.",
+  "weakest_input": "assumed",
+  "counts": {
+   "assumed": 3,
+   "derived": 2
+  }
+ }
+}

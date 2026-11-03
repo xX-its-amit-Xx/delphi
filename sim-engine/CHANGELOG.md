@@ -5,6 +5,52 @@ the scenario interface. Its version is `CONTRACT_VERSION` in `lib/envelope.mjs`.
 as `contract_version`, and `contract.json` states it. The rule: anything may change, provided it is
 versioned here. While the major version is 0, a minor bump may break callers; each entry says what breaks.
 
+## 0.10.0 (2026-11-03)
+
+**Added** (1 tool; 61 -> 62. Two schema fields. Nothing removed, nothing renamed.)
+
+The four runs under `runs/` had each ended on a refusal that was CORRECT and USELESS: the thing being asked
+for was not expressible, so no check could take it, so the request reached nothing. Three of those refusals
+were about capability rather than about any organism, and this closes them.
+
+- **`performance_check`** (`tools/performance-tools.mjs`, `validate/performance/`). What the design
+  ACCOMPLISHES, as distinct from its shape or its gait. Three kinds, each resting on something that cannot
+  be argued with rather than on a declared outcome. `lifespan`: expected lifetime under a constant two-term
+  hazard, E[T] = 1/(h_int + h_ext) -- exact arithmetic, and it carries the life-history point that when
+  extrinsic mortality dominates, extending intrinsic lifespan buys almost nothing, with the number saying
+  how little. `manipulation`: declared thrust against Stokes drag, F = 6*pi*mu*a*v. `mass_balance`: carbon
+  uptake against biomass plus respiration, so a design claiming more biomass carbon than it takes in is
+  reported IMPOSSIBLE rather than optimistic. You may declare an uptake rate or a thrust; you may not
+  declare that the organism works. Served hosted.
+- **`declared` on a taxon base** (`organism_create`, `organism_from_blueprint`; schema widened). Quantities
+  the designer states, each with a source, which enter STATE with kind `assumed`. Before this a taxon base
+  resolved NO STATE AT ALL, so `organism_get` refused outright and everything built on a STATE -- every
+  scenario, every standing check, the whole of `physics_check` -- was unreachable for any organism outside
+  the bundle. That was a capability gap reported as if it were a fact about the organism. A field nobody
+  declares stays null with its reason and the checks needing it still refuse; an unknown field name is an
+  error rather than a silently ignored key. `physics_check` now runs on a mouse and each standing check
+  that cannot answer names the STATE field it wanted.
+- **`made_from` on a taxon base** (same two tools; schema widened). A CONSTRUCT: built from a taxon, not an
+  instance of it. `base.taxon` still carries the DONOR, because the cells are that taxon and the genome is
+  unedited, so sequence questions stay answerable; `closest_relative_phenotype` now refuses a construct as a
+  construct and names what IS answerable, instead of reporting the nearest real body to a frog.
+
+**Changed** (behaviour, no schema)
+
+- `parse_design_text` reads three requirement families it had no words for -- lifespan, a task, a substrate
+  -- into `spec.performance_criteria`, and returns a `routing` block saying which tool takes each
+  requirement and, for everything unread, whether a layer exists for it at all. "I do not understand these
+  words" and "I understand them and nothing here answers them" are different facts and were indistinguishable
+  before. The new families take a verb only WITH its object, because a bare verb robs the other families:
+  the first version read `transport` in "minimize cost of transport" and `digests` in "digests a meal within
+  12 hours", breaking both.
+- `lift-coefficients.json` gains `inapplicable`: clades where a steady maximum lift coefficient is the WRONG
+  QUANTITY rather than a missing measurement. Insecta is the first, with Dickinson, Lehmann and Sane 1999
+  (doi 10.1126/science.284.5422.1954) behind it -- an insect's lift comes substantially from rotational
+  circulation and wake capture, which exist only because the wing reverses, and a steady coefficient
+  represents neither. The refusal says what a right check would need. A caller acting on "nobody measured
+  one" and on "this is the wrong model" would do different things, so they are different answers.
+
 ## 0.9.0 (2026-11-03)
 
 **Added** (2 tools; 59 -> 61. Two new validation layers. Nothing removed, no existing schema changed.)

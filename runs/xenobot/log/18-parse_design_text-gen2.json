@@ -1,0 +1,147 @@
+{
+ "tool": "parse_design_text",
+ "generation": 2,
+ "why": "does the front door read the TASK now, and where does it route it?",
+ "args": {
+  "text": "a xenobot that sweeps loose particles into a pile"
+ },
+ "ms": 22,
+ "result": {
+  "contract_version": "0.10.0",
+  "result": {
+   "spec": {
+    "start_from": [],
+    "criteria": [],
+    "performance_criteria": [
+     {
+      "kind": "manipulation",
+      "op": "feasible",
+      "verb": "sweeps",
+      "object": "particles",
+      "destination": "pile",
+      "asked": "sweeps loose particles into a pile",
+      "source_text": "a xenobot that sweeps loose particles into a pile",
+      "tool": "performance_check"
+     }
+    ],
+    "editable": [],
+    "constraints": {
+     "lean": "must-hold"
+    }
+   },
+   "unparsed": [
+    {
+     "text": "xenobot",
+     "organism_not_in_bundle": "xenobot",
+     "of_clause": "a xenobot that sweeps loose particles into a pile",
+     "reason": "organism \"xenobot\" has no reference parameter set in this engine (it holds measured parameters for: zebrafish, flying fish, winged zebrafish, wingless flying fish, TFF, the ff-zf chimera). It is not mapped to a \"close\" one, because the nearest fish is not this animal. A taxon-based design can still be built from it: see spec.taxon, organism_create {taxon} and organism_from_blueprint. The rest of this clause IS parsed: any criterion in it is on the spec, and will be judged once a parameter set for this clade exists."
+    }
+   ],
+   "refused": [],
+   "assumptions": [
+    "no organism named: start_from is empty (validation will ask for one, e.g. \"a zebrafish ...\" or \"70% zebrafish 30% flying fish\")",
+    "no editable parameters stated: the optimizer has nothing to vary (say e.g. \"vary the pectoral fin area from 0.02 to 0.08\")",
+    "Lean constraints not mentioned: they hold anyway (constraints.lean is always \"must-hold\")"
+   ],
+   "taxon_resolution": {
+    "organisms_named": [
+     "xenobot"
+    ],
+    "taxon": null,
+    "taxid": null,
+    "clades": [],
+    "placed": false,
+    "reason": "\"xenobot\" is not in the clade table, so it cannot be placed in a clade and no law scope can be decided for it. Add it in lean/registry/build-taxonomy.mjs and rerun that builder.",
+    "next": [
+     "node lean/registry/build-taxonomy.mjs -- place the taxon first"
+    ],
+    "what_is_missing": "a reference parameter set (body-plan quantities and a growth track) for this clade; without one the engine can name the organism and check its laws, but cannot resolve a STATE, run a scenario or score it"
+   },
+   "routing": {
+    "scenario_criteria": [],
+    "performance_criteria": [
+     {
+      "requirement": "sweeps loose particles into a pile",
+      "kind": "manipulation",
+      "tool": "performance_check",
+      "how": "performance_check { kind: \"manipulation\", ... } -- the quantities it needs are the designer's to declare, with sources"
+     }
+    ],
+    "structures": "organism-design/blueprint.mjs reads the structures named in the text and resolves them to Uberon/CL terms for the taxon; organism_from_blueprint brings the result into the studio",
+    "laws": "lean_check decides clade scope from the taxon and reports every law as holds / violated / out-of-scope / cannot-evaluate",
+    "movement": null,
+    "world": "ecology_check -- where the clade is recorded, what else is there, and what is recorded eating it. It will not predict exclusion without declared population parameters.",
+    "unparsed": [
+     {
+      "text": "xenobot",
+      "reason": "organism \"xenobot\" has no reference parameter set in this engine (it holds measured parameters for: zebrafish, flying fish, winged zebrafish, wingless flying fish, TFF, the ff-zf chimera). It is not mapped to a \"close\" one, because the nearest fish is not this animal. A taxon-based design can still be built from it: see spec.taxon, organism_create {taxon} and organism_from_blueprint. The rest of this clause IS parsed: any criterion in it is on the spec, and will be judged once a parameter set for this clade exists.",
+      "a_layer_exists": true,
+      "tool": "performance_check { kind: \"manipulation\" }",
+      "verdict": "the organism has no reference parameter set; declare one with organism_create { taxon, declared }"
+     }
+    ],
+    "summary": "0 requirement(s) for physics_check, 1 for performance_check, 0 that no layer takes."
+   },
+   "validation": {
+    "ok": false,
+    "errors": [
+     {
+      "path": "start_from",
+      "message": "start_from needs at least one {organism, weight}"
+     },
+     {
+      "path": "criteria",
+      "message": "at least one criterion is needed"
+     }
+    ],
+    "warnings": [],
+    "normalised_spec": {
+     "start_from": [],
+     "criteria": [],
+     "performance_criteria": [
+      {
+       "kind": "manipulation",
+       "op": "feasible",
+       "verb": "sweeps",
+       "object": "particles",
+       "destination": "pile",
+       "asked": "sweeps loose particles into a pile",
+       "source_text": "a xenobot that sweeps loose particles into a pile",
+       "tool": "performance_check"
+      }
+     ],
+     "editable": [],
+     "constraints": {
+      "lean": "must-hold"
+     }
+    }
+   },
+   "engine": [
+    "scenarios/: altitude, current, daynight, digestion, glide, grip, predator, pressure, sleep, temperature, wind",
+    "lib/data-node.mjs bundle",
+    "lib/organism.mjs",
+    "lib/state.mjs"
+   ]
+  },
+  "provenance": [
+   {
+    "quantity": "parser",
+    "value": "sim-engine/lib/parse-text.mjs",
+    "kind": "derived",
+    "source": "Rule-based; no model, no network. The same text always gives the same spec."
+   },
+   {
+    "quantity": "taxon placement",
+    "value": null,
+    "kind": "assumed",
+    "source": "lib/lean-taxonomy.mjs, generated from the NCBI taxonomy via Ubergraph by lean/registry/build-taxonomy.mjs"
+   }
+  ],
+  "scope": "A parse of the words, not an understanding of the request. Anything the rules do not cover is in `unparsed` and was NOT turned into a criterion; defaults the parser applied are in `assumptions`. Validation checks names, units and ranges against the scenario modules; it says nothing about whether the design can meet the criteria. An organism outside the engine's bundle is named and placed in a clade under `taxon_resolution`, which is a placement and NOT a parameter set: nothing dimensional is known about it here.",
+  "weakest_input": "assumed",
+  "counts": {
+   "derived": 1,
+   "assumed": 1
+  }
+ }
+}
