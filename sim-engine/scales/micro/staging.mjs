@@ -149,20 +149,88 @@ export const STAGES = [
   { id: 'protruding-mouth', h: 72, period: 'hatching', el_mm: 3.5, hta_deg: 25, what: 'wide-open mouth protruding anterior to the eye; gill slits and filament buds; cleithrum. END OF EMBRYOGENESIS' },
 ];
 
-/** Why cells are not dividing in lockstep - stated by the staging paper itself, not by us. */
+/** Why cells are not dividing in lockstep. */
 export const ASYNCHRONY = {
-  headline: 'Cells stop dividing in step at the midblastula transition, and the staging paper says so in its own definitions.',
+  headline: 'Cells never divide in lockstep. Even the earliest cleavages travel as a WAVE across the blastodisc, and the spread between cells widens continuously from about the 4-cell stage onwards - it does not switch on at the midblastula transition.',
+
+  a_correction_to_our_own_first_version: {
+    what_we_wrote: 'that before h 2.25 a synchronous animation is CORRECT and a staggered one would be wrong.',
+    why_it_is_wrong:
+      'The staging paper itself calls the early cleavages METASYNCHRONOUS, not synchronous - "a wave crosses ' +
+      'the blastodisc at the end of each cell cycle. Cells near the animal pole enter the wave first, and the ' +
+      'marginal cells enter the wave last." Two independent modern measurements go further and find the ' +
+      'spread begins at the 4-cell stage and grows continuously. A synchronous early animation would ' +
+      'therefore be wrong from the second division onward, not right until h 2.25.',
+    what_replaced_it: 'the animation shows a wave at every cleavage, with the wave slowing and the spread widening round by round. Both are published quantities, below.',
+  },
+
   evidence: [
-    { at: 'cleavage period (h 0.75 to 2.25)', what: 'cell cycles 2 to 7 are "rapid and synchronous"', source: `${CITATION}, Table 1` },
-    { at: 'blastula period (from h 2.25)', what: '"rapid metasynchronous cycles 8, 9 give way to lengthened asynchronous ones at the midblastula transition"', source: `${CITATION}, Table 1` },
-    { at: '1k-cell (h 3)', what: '"slight cell-cycle asynchrony"', source: `${CITATION}, Table 2` },
-    { at: 'high (h 3.33)', what: '"substantial division asynchrony"', source: `${CITATION}, Table 2` },
+    { at: 'the early cleavages', what: 'they are metasynchronous rather than synchronous',
+      quote: 'More accurately, the cleavages during the early blastula period are "metasynchronous" because the mitoses do not all occur at quite the same time. Instead, a wave crosses the blastodisc at the end of each cell cycle. Cells near the animal pole enter the wave first, and the marginal cells enter the wave last.',
+      source: `${CITATION}, p. 264`, kind: 'measured, quoted' },
+    { at: '256-cell (h 2.5)', what: '"The ninth cleavage divisions are the last highly synchronous, or metasynchronous, ones to occur"', source: `${CITATION}`, kind: 'measured, quoted' },
+    { at: '1k-cell (h 3)', what: 'during this wave, "for the first time, many of the cells can be seen to be out of phase with their neighbors"', source: `${CITATION}`, kind: 'measured, quoted' },
+    { at: 'oblong (h 3.67)', what: '"The blastomeres are dividing highly asynchronously."', source: `${CITATION}`, kind: 'measured, quoted' },
+    { at: 'as early as the 4-cell stage', what: 'divisions already do not occur synchronously, and the delay between the first and last division of each cycle increases continuously through the cleavages',
+      source: 'Olivier et al. 2010, Science 329:967-971, doi 10.1126/science.1189428, PMID 20724640', kind: 'measured',
+      caveat: 'the rearing and imaging temperature is not stated in the main text, so these values cannot be placed on the same temperature axis as the others.' },
+    { at: 'cycle 8', what: 'the mitotic wave spans about 8 minutes from the first cell to the last', source: 'Olivier et al. 2010', kind: 'measured' },
   ],
-  consequence_for_the_animation:
-    'Before h 2.25 a synchronous animation is CORRECT and a staggered one would be wrong. After it, a ' +
-    'synchronous animation is wrong. The transition is a published event at a published time, so the ' +
-    'animation does not need a random number generator to look alive - and must not use one, because the ' +
-    'staggering would then be decoration rather than biology.',
+
+  the_wave_slows_and_the_spread_widens: {
+    source: 'Mishra, Li, Hannezo & Heisenberg 2026, Nature Physics 22:139-150, doi 10.1038/s41567-025-03122-1 (open access)',
+    temperature_C: 23.5,
+    division_timing_variance_min2: { at_round_4: 0.10, at_round_9: 3.43 },
+    mitotic_wave_velocity_um_per_min: [259, 233, 201, 155, 127, 103, 68, 41],
+    velocity_note: 'rounds 2 through 9, slowing about sixfold',
+    three_phases: 'synchronous rounds 1-3, metasynchronous 4-9, asynchronous after 9',
+    kind: 'measured',
+    why_this_is_what_drives_the_animation: 'a wave velocity and a variance are exactly the two numbers an animation needs. Nothing has to be invented, and no random number generator is required to make the scene look alive - which matters, because a random stagger would be decoration rather than biology.',
+  },
+
+  cycle_durations: {
+    source: 'Kane & Kimmel 1993, Development 119:447-456, PMID 8287796, doi 10.1242/dev.119.2.447, Table 1',
+    temperature_C: 28,
+    caveat: 'the full text is paywalled; Table 1 was read from a scan and the surrounding Results prose was never read. The staging series is normalised to 28.5 C and the Nature Physics work above was imaged at 23.5 C - DO NOT place their absolute minutes on one axis.',
+    rows: [
+      { cycle: 7, median_min: 14.2, ci90: [12.9, 15.0], n_embryos: 9 },
+      { cycle: 8, median_min: 14.5, ci90: [13.8, 15.5], n_embryos: 13 },
+      { cycle: 9, median_min: 15.0, ci90: [14.5, 15.9], n_embryos: 16 },
+      { cycle: 10, median_min: 17.0, ci90: [16.1, 18.0], n_embryos: 17 },
+      { cycle: 11, median_min: 22.5, ci90: [20.5, 27.8], n_embryos: 17 },
+      { cycle: 12, median_min: 33.5, ci90: [31.6, 36.7], n_embryos: 7 },
+    ],
+    the_loss_of_synchrony_is_in_the_statistics:
+      'the 90 % interval widens from 1.9 minutes at cycle 10 to 7.3 minutes at cycle 11. The spread between ' +
+      'cells is not an interpretation laid over the medians - it is in the published confidence limits.',
+    not_published: 'cycle 13 appears only as about 45 and about 58 minutes read off a figure for two embryos. No cycle 14 duration was found in either paper.',
+  },
+
+  the_midblastula_transition: {
+    when: 'cycle 10, the 512-cell stage, 2.75 hpf at 28.5 C',
+    quote: 'The zebrafish midblastula transition (MBT) begins at cycle 10. It is characterized by cell cycle lengthening, loss of cell synchrony, activation of transcription and appearance of cell motility.',
+    source: 'Kane & Kimmel 1993',
+    a_common_error: 'the MBT is often given at the 1000-cell stage. That is cycle 11 at 3.0 hpf, one cycle late. If a cycle number is printed beside a cell count, 512-cell is cycle 10 and 1k-cell is cycle 11.',
+    epiboly_is_not_simultaneous: 'epiboly begins at dome, 4.33 hpf - about an hour and a half AFTER the transition starts.',
+  },
+
+  a_live_disagreement_worth_showing: {
+    what: 'whether the change from synchrony to asynchrony is abrupt or gradual.',
+    one_side: 'the staging paper\'s language implies fairly abrupt transitions between named regimes.',
+    other_side: 'two independent modern measurements argue it is continuous. Mishra 2026: "the transition from synchrony to metasynchrony was gradual rather than abrupt, suggesting a progressive accumulation of delays rather than distinct switches." Olivier 2010: "Continuity and amplification of the process are the rule, rather than the classically described abrupt changes from synchrony to metasynchrony and asynchrony."',
+    which_we_draw: 'the continuous one, because it is the better quantified of the two and because the wave velocities and variances above are measurements rather than descriptions. The disagreement is shown rather than resolved.',
+  },
+
+  mechanism: {
+    nucleocytoplasmic_ratio: { what: 'cell-autonomous timing: clones lengthen their cycles independently of their neighbours but dependent on their own lineal ancestors, and after the transition cycle length correlates with the reciprocal of blastomere volume. An unequal division produces asymmetric lengthening based on each daughter\'s volume - which is why two sisters diverge immediately.', source: 'Kane & Kimmel 1993', kind: 'measured' },
+    but_contested_before_the_transition: { what: 'up to cycle 10 the nucleocytoplasmic ratio was judged unlikely to drive lengthening, because cell volume varied - including randomly between sisters - with no correlation to cycle duration.', source: 'Olivier et al. 2010', kind: 'measured', note: 'the sources genuinely disagree about the pre-transition cycles. Say so if it is displayed.' },
+    cdc25a_and_cdk1: { what: 'inhibition of Cdc25a and Cdk1 activity, but not Cdk2, is essential for cell cycle lengthening AND asynchrony between cycles 9 and 12 - the most direct citation for asynchrony specifically. Lengthening is not required for zygotic transcription to start.', source: 'Dalle Nogare, Pauerstein & Lane 2009, Dev Biol 326:131-142, doi 10.1016/j.ydbio.2008.11.002, PMID 19063878', kind: 'measured' },
+    two_things_not_to_put_on_screen: [
+      'that maternal cyclin or Cdc25 pools are DEPLETED - that result is from other organisms, not zebrafish. The zebrafish evidence concerns regulation of activity, not pool depletion.',
+      'a 1997 paper on transcription-dependent G1 induction as the citation for metasynchrony or division waves. It is about G1, not about waves.',
+    ],
+  },
+
   hatching_too: {
     what: 'hatching is asynchronous as well, and the paper is blunt about it: individuals of one clutch hatch sporadically through the whole third day, and "the time of hatching is not useful as a staging index for the zebrafish".',
     consequence: 'a scene showing a clutch hatching together would be wrong. Hatched and unhatched siblings are generally equally developed, so hatching must not be used to drive the clock.',

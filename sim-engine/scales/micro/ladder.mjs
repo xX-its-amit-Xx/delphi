@@ -39,11 +39,52 @@ export const WATER = {
 
 /** What a molecular-dynamics engine can actually reach. These are CEILINGS, not targets, and a run at the
  *  ceiling is a supercomputer campaign rather than something a workstation does.
- *  Each carries its sourcing state, because the verdicts below are computed from them. */
+ *
+ *  THE RULE THAT GOVERNS THIS BLOCK: size and time are different records, achieved by different runs, and
+ *  quoting them as one capability is the commonest overstatement in this field. Every entry therefore
+ *  carries BOTH numbers or says which one it is. */
 export const MD_CEILINGS = {
-  routine_workstation_atoms: { value: 1e6, kind: 'ORDER OF MAGNITUDE - PENDING SOURCE', why: 'a system a single modern GPU can integrate for a useful length of time. Being sourced against published engine benchmarks.' },
-  heroic_atoms: { value: 1e9, kind: 'ORDER OF MAGNITUDE - PENDING SOURCE', why: 'the scale of the largest published all-atom runs, achieved on leadership-class machines for very short simulated times. The "largest system" record and the "longest time" record are DIFFERENT runs and must never be quoted as one capability.' },
-  note: 'System size and simulated time trade against each other. A ceiling expressed in atoms alone is only half a statement, and every verdict below that uses one says so.',
+  routine_workstation_atoms: { value: 1e6, kind: 'order of magnitude, from published benchmarks',
+    why: 'a system one modern GPU integrates usefully. Anchor measured on this machine: a 9,549-atom water box ran at 21 ns/day on a CPU, and published GPU benchmarks put a ~90,000-atom system near 270 ns/day.' },
+
+  heroic_atoms: { value: 1.016813441e9, kind: 'MEASURED - the largest biomolecular MD ever published',
+    system: 'a respiratory aerosol containing a virion, in a box about 283 nm on a side',
+    simulated_time: '2.42 ns in total, INCLUDING heating and equilibration',
+    citation: 'Dommer et al. 2023, Int J High Perform Comput Appl 37:28-44, doi 10.1177/10943420221128233, PMID 36647365',
+    the_catch: 'a billion atoms bought two and a half nanoseconds. Nothing biological happens in 2.42 ns. This is the size record and it is NOT a time record.' },
+
+  best_size_times_time: { atoms: 6.4423983e7, simulated_time: '1.2 us', system: 'an HIV-1 capsid',
+    citation: 'Perilla & Schulten 2017, Nat Commun 8:15959, doi 10.1038/ncomms15959, PMID 28722007',
+    why_it_is_the_one_to_quote: 'the best product of size and duration ever published. When a single number is wanted for "what large-scale all-atom MD can do", this is the honest one - not the billion-atom run.' },
+
+  longest_trajectory_ever: { atoms: 'a 58-residue protein', simulated_time: '1.03 ms',
+    citation: 'Shaw et al. 2010, on purpose-built hardware',
+    the_catch: 'a millisecond, for a system about 10^14 times smaller than a cell. The time record and the size record are at opposite ends of the same trade.' },
+
+  the_only_atomic_cytoplasm_run: { atoms: 1.03708785e8, simulated_time: '20 ns',
+    covered: 'about one tenth of a small bacterial cell, with NO DNA, NO membrane and NO cytoskeleton, built from homology models',
+    citation: 'Yu et al. 2016, eLife, doi 10.7554/eLife.19274',
+    what_the_authors_observed: 'essentially nothing - "macromolecular diffusion was largely limited to motion within a local environment without enough time to trade places with other macromolecules", and tRNA binding, protein oligomerization and metabolite binding were none of them observed.' },
+
+  whole_cell_coarse_grained: { particles: 5.61e8, simulated_time: null,
+    what_happened: 'BUILT AND NEVER INTEGRATED. The paper titled as a molecular dynamics simulation of an entire cell states that performing an actual MD simulation "proved to be non-trivial", and that "on the scale of an entire cell, we will not be able to equilibrate our system".',
+    citation: 'Stevens et al. 2023, Front Chem, doi 10.3389/fchem.2023.1106495',
+    why_it_is_here: 'this is the single highest-risk overstatement available to this project. A model that was constructed is not a model that was run.' },
+
+  note: 'A ceiling expressed in atoms alone is half a statement. Every verdict computed below uses the size ceiling only, and therefore OVERSTATES what is reachable - because it ignores the fact that the size record bought 2.42 ns.',
+};
+
+/** Atoms per cubic metre of cytoplasm, including protein - not water alone.
+ *  Water: 0.70 volume fraction x 55.3 M x Avogadro x 3 atoms per molecule.
+ *  Protein: 230-310 mg/mL at roughly 5.8 Da per atom.
+ *  Together about 1e11 atoms per cubic micron, which is the figure the feasibility ratios use. */
+export const ATOMS_PER_M3_CYTOPLASM = {
+  value: 1e17,                      // 1e11 per cubic micron = 1e17 per cubic metre... see derivation
+  per_cubic_micron: 1e11,
+  derivation: 'water contributes about 7.0e10 atoms per cubic micron (0.70 x 55.3 M x Avogadro x 1e-15 L x 3 atoms); protein at 230-310 mg/mL contributes about 3e10. Total about 1e11.',
+  kind: 'DERIVED from cited inputs, not measured directly',
+  sources: 'cell water volume fraction about 70 %; protein concentration by cell type 160-310 mg/mL (Brown 1991, J Theor Biol 153:195-203, PMID 1787736); pure water 55.3 M at 25 C (IAPWS-95)',
+  do_not_say: 'that intracellular water is 55 M. That is PURE water. The measured intracellular quantity is the volume fraction (about 70 %), the molarity is derived (about 39 M), and 18-20 % of that water is hydration water with different physics.',
 };
 
 const sphereVolume = d => (4 / 3) * Math.PI * Math.pow(d / 2, 3);
@@ -73,19 +114,24 @@ export const LEVELS = [
     refusal: 'A classical force field holds covalent bonds as springs with fixed connectivity. It CANNOT break or form one, and it has no electrons to move. Showing a bond breaking on top of a classical trajectory would be an animation drawn over physics that does not contain the event. This level is therefore either computed by a quantum method on a handful of atoms, or it is explicitly drawn and labelled - never silently blended into the trajectory above it.' },
 ];
 
-/** How many water molecules, and how many atoms, fit in a level. */
+/** How many water molecules, and how many atoms in total, fit in a level. */
 export function occupancy(level, { crowded = true } = {}) {
   const V = level.volume_m3 ?? sphereVolume(level.size_m);
   const frac = crowded ? WATER.cytoplasm_volume_fraction.value : 1;
   const water = V * WATER.pure_per_m3 * frac;
+  const cubicMicrons = V * 1e18;
+  const totalAtoms = cubicMicrons * ATOMS_PER_M3_CYTOPLASM.per_cubic_micron;
   return {
     volume_m3: +V.toPrecision(3),
+    volume_cubic_microns: +cubicMicrons.toPrecision(3),
     water_molecules: +water.toPrecision(3),
     atoms_of_water: +(water * WATER.atoms_per_molecule).toPrecision(3),
+    atoms_total: +totalAtoms.toPrecision(3),
+    atoms_total_basis: ATOMS_PER_M3_CYTOPLASM.derivation,
     water_basis: crowded
       ? `${frac} of the volume taken as water (${WATER.cytoplasm_volume_fraction.kind})`
       : 'pure water, no macromolecular crowding',
-    note: 'water alone. Protein, lipid and nucleic acid atoms are additional, so every atom count here is a LOWER bound on what a full all-atom model would hold.',
+    note: 'atoms_total includes protein; atoms_of_water does not. The verdict below uses the total, because a model that simulated only the water would not be a model of a cell.',
   };
 }
 
@@ -93,7 +139,7 @@ export function occupancy(level, { crowded = true } = {}) {
 export function verdict(level) {
   if (level.engine === 'REFUSED-BY-CLASSICAL-MD') return { simulatable: false, reason: level.refusal, kind: 'refusal' };
   const occ = occupancy(level);
-  const atoms = occ.atoms_of_water;
+  const atoms = occ.atoms_total;
   const routine = MD_CEILINGS.routine_workstation_atoms.value;
   const heroic = MD_CEILINGS.heroic_atoms.value;
   if (atoms <= routine) return { simulatable: true, tier: 'routine', atoms, ratio_to_routine_ceiling: +(atoms / routine).toPrecision(3),

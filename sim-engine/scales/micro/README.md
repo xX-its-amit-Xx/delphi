@@ -120,8 +120,37 @@ Mesoscale Explorer (MIT, Mol* framework) reached the same split independently an
 in a browser. Its manifest format — a repeated entity plus a list of instance transforms — is worth reading
 before inventing one.
 
+## The ceilings are now sourced, and they are worse than the placeholders
+
+| record | value | the catch |
+|---|---|---|
+| largest biomolecular MD ever | **1,016,813,441 atoms** | bought **2.42 ns** total, including equilibration. Nothing biological happens in 2.42 ns. |
+| best size × time | 64,423,983 atoms for **1.2 µs** | the honest number to quote for "what large-scale MD can do" |
+| longest trajectory ever | **1.03 ms** | for a *58-residue protein* — a system ~10¹⁴× smaller than a cell |
+| only atomic cytoplasm run | 103,708,785 atoms, 20 ns | **one tenth** of a bacterium, no DNA, no membrane, no cytoskeleton |
+| largest whole-cell model | 561 million particles | **built and never integrated** — its paper says equilibrating it is not possible |
+
+Size and time are **different records held by different runs**. Quoting them as one capability is the
+commonest overstatement in this field, so every entry carries both or says which it is. With the real
+ceilings in, a single **mitochondrion is 52× the largest simulation ever run**, one cell is 3.5×10⁷×, and
+the embryo is 1.8×10¹⁰×.
+
+Atom counts now include protein, not just water (~10¹¹ atoms per µm³), because a model that simulated only
+the water would not be a model of a cell.
+
+## `refusals.mjs` — what the view may not claim
+
+Ten refusals, each naming a published limit and what would be needed instead. They don't stop the view
+showing anything; they constrain the **caption**. `checkCaption(level, text)` enforces it mechanically —
+and caught a bug in itself: the first version used `\b(simulat|…)\b`, where a trailing word boundary after
+`simulat` can never match "simulation", so it passed every caption it existed to catch.
+
+Seven specific numbers are barred from being rendered as measured, including the two most likely errors in
+any subcellular view: **water is not 55 M inside a cell** (that's pure water; the measured quantity is a
+~70% volume fraction) and **glucose is not 5 mM inside a cell** (that's blood — the measured intracellular
+value is ~0.1 mM, about 50× lower, and the abundant species is glucose-6-phosphate).
+
 ## Still pending
 
-`ladder.MD_CEILINGS` carries order-of-magnitude placeholders, marked in the code as `PENDING SOURCE`,
-until the cell-interior and simulation-limits research lands. Those two numbers set every verdict in the
-ladder, so they are the next thing to arrive, not an afterthought.
+Phase 1 proper: fetching the Shah tracks, reconstructing lineage from the `parent` chain, and baking the
+first embryo GLB. `datasets.mjs` records which sets may be used for what, and `permitted()` enforces it.
