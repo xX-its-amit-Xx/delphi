@@ -24,16 +24,26 @@ const byName = Object.fromEntries(TOOLS.map(([name, description, inputSchema, fn
 // builds the scale ladder, serves dashboard/public and opens the 3D view in live mode; after every
 // generation the ladder is rebuilt, and the open page redraws within a few seconds of the write.
 if (process.env.DELPHI_OPEN == null) process.env.DELPHI_OPEN = '1';
+// AND IT BUILDS THE ILLUSTRATION MESHES. Alongside DELPHI_OPEN, DELPHI_MESH=1 is the default for a run, so
+// every scale-ladder rebuild this harness triggers also builds (or reuses from cache) the Blender
+// illustration GLB for the body (sim-engine/scales/mesh/). DELPHI_MESH=0 turns it off. A headless
+// DELPHI_OPEN=0 run still rebuilds the ladder and its mesh after every generation (it only opens nothing), so
+// a run made without a browser leaves the same bundle and GLB a watched one would. The test suite never goes
+// through here.
+if (process.env.DELPHI_MESH == null) process.env.DELPHI_MESH = '1';
 const LIVE = () => process.env.DELPHI_OPEN !== '0';
+const MESH = () => process.env.DELPHI_MESH !== '0';
 
 export function makeRun({ dir, question, author, session: wantSession = true, only = null }) {
   const HERE = dir;
   const RUN_NAME = path.basename(dir);
   let rebuildLive = null;
+  // A Blender build of a whole frame takes seconds to a minute (cached: instant); 600 s leaves room for the
+  // slowest sculptor on a loaded machine. build.mjs with --meshes prunes only the frames it built.
   const relive = () => {
-    if (!LIVE()) return;
-    try { execFileSync(process.execPath, [path.join(ROOT, 'sim-engine', 'scales', 'build.mjs'), '--run', RUN_NAME, '--quiet'],
-      { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'], timeout: 180000 }); }
+    if (!LIVE() && !MESH()) return;
+    try { execFileSync(process.execPath, [path.join(ROOT, 'sim-engine', 'scales', 'build.mjs'), '--run', RUN_NAME, '--quiet', ...(MESH() ? ['--meshes'] : [])],
+      { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'], timeout: 600000 }); }
     catch (e) { if (!rebuildLive) console.log(`  (the live theatre could not be rebuilt: ${String(e?.stderr ?? e?.message ?? e).slice(0, 160)})`); rebuildLive = 'failed'; }
   };
   const LOG = path.join(HERE, 'log'), GEN = path.join(HERE, 'gen');

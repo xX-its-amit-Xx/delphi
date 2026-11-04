@@ -72,11 +72,17 @@ function openInBrowser(url) {
   catch (e) { return { opened: false, why: String(e?.message ?? e) }; }
 }
 
-/** Rebuild the ladder for one run, so the page shows what just happened rather than the last bake. */
-export function rebuild(run) {
+/**
+ * Rebuild the ladder for one run, so the page shows what just happened rather than the last bake.
+ * Illustration meshes are built too unless DELPHI_MESH=0 (or meshes: false): a launch is a person about
+ * to look at the body, and a cached GLB costs nothing. Blender is only ever started from here when the
+ * caller already asked for the theatre to open.
+ */
+export function rebuild(run, { meshes = process.env.DELPHI_MESH !== '0' } = {}) {
   try {
-    execFileSync(process.execPath, [BUILD, ...(run ? ['--run', run] : []), '--quiet'], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'], timeout: 180000 });
-    return { rebuilt: true, run: run ?? 'all' };
+    execFileSync(process.execPath, [BUILD, ...(run ? ['--run', run] : []), '--quiet', ...(meshes ? ['--meshes'] : [])],
+      { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'], timeout: 600000 });
+    return { rebuilt: true, run: run ?? 'all', meshes };
   } catch (e) { return { rebuilt: false, why: String(e?.stderr ?? e?.message ?? e).slice(0, 500) }; }
 }
 

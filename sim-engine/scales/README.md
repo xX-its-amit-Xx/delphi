@@ -10,12 +10,16 @@ node sim-engine/scales/build.mjs                # the scale ladder for every run
 node sim-engine/scales/serve.mjs                # serve dashboard/public; prints the theatre url
 node sim-engine/scales/shoot.mjs                # screenshots from the real page
 node sim-engine/scales/test/scales.mjs          # 43 tests
+node sim-engine/scales/build.mjs --meshes       # also build the Blender illustration meshes (DELPHI_MESH=1 does the same)
+node sim-engine/scales/mesh/preview.mjs --run <run> [--part <slot>]   # screenshots of the page in mesh mode, real clicks
+node sim-engine/scales/test/mesh.mjs            # 47 tests: mesh contract, budgets, holdout, depicts, notes, prune, no Blender unless asked
 ```
 
 **You do not normally run any of these.** Running a simulation opens the theatre for you:
 
-- `node runs/<name>/run.mjs` opens it on that run in live mode, and rebuilds the ladder after every
-  generation, so the open page redraws as the design is checked. `DELPHI_OPEN=0` runs headless.
+- `node runs/<name>/run.mjs` opens it on that run in live mode, and rebuilds the ladder and its illustration
+  mesh after every generation, so the open page redraws as the design is checked. `DELPHI_OPEN=0` runs
+  headless (the ladder and mesh are still rebuilt); `DELPHI_MESH=0` skips the mesh.
 - an agent calls the MCP tool **`studio_theatre { run }`**, or passes `run` to **`session_open`**.
 - `node mcp/cli.mjs tool session_open ...` at a terminal opens it too. A pipe or a CI job does not.
 
@@ -34,6 +38,48 @@ reports a url only if a server is already up, and otherwise has no side effects 
 | `serve.mjs`, `../tools/theatre.mjs` | the static server and the launcher |
 | `../../dashboard/public/blueprint3d/studio-live/theatre.{html,js}`, `drawings.js` | the page |
 | `../../runs/_chains/<run>.json` | the molecule-to-organ chains, each link quoted from a fetched document and adversarially re-verified |
+| `mesh/` | the Blender ILLUSTRATION meshes: spec + hash, the Blender driver, `lib.py`, one sculptor per frame, the preview. See `mesh/README.md`. |
+| `../../dashboard/public/blueprint3d/studio-live/meshes/` | the built GLBs and manifests, `<frame>-<hash>.{glb,json}` |
+
+## Meshes: illustrated mode
+
+The theatre draws the body two ways. **Illustrated** (the default when a GLB exists) is a Blender mesh
+sculpted from a textbook body plan, one per frame (insect, tetrapod, prokaryote, construct), with a separate
+form per declared life stage (egg / larva / pupa / adult; neonate / juvenile / adult; lag / growing /
+stationary), chosen by the declared stage NAME: nothing is interpolated between stages and development is not
+simulated. **Schematic** is the one-primitive-per-part view. The page says "illustration sculpted in Blender —
+shapes are not measured" whenever the mesh is on screen. Full contract: `mesh/README.md`.
+
+The mesh is an illustration, so it must never make a part look present that the blueprint lacks. Each slot
+node is styled from the ladder: **present** (solid) when a non-ghost part that can make the organ solid lands
+in that slot; **ghost** (translucent violet, labelled "literature only, not in this blueprint") when only the
+chain names it; **body** (neutral) for an envelope region (head, thorax, trunk, cell body) with no part of its
+own, where a click opens the body; **cells-only** (amber/green outline, labelled with the cell's name) when only
+cells or tissues land in an organ slot, so a mis-slotted cell never becomes a solid sculpted organ; **absent**
+(hidden) when nothing lands there, with a "show what this blueprint lacks" toggle that outlines and labels them.
+A piece that depicts one specific part carries `extras.requires` (ontology ids first, label regexes as a
+fallback) and follows THAT part's state, not its slot's: the xenobot's cilia and multiciliated cells are violet
+ghosts because `CL_0005012` is only in the literature chain; the mouse's gallbladder, aorta, great veins,
+parathyroid, adrenal and eyelids are hidden because its blueprint has none of them, although the liver, heart,
+endocrine, kidney and eye slots they hang from may be solid. Clicking a piece shows its
+`extras.illustration_note` (the drawing choices a viewer could mistake for data) under "about this drawing".
+
+The page opens on the LAST declared stage point when a GLB is available (`?age=<i>` overrides), keeps the
+tissue and cell beads off until asked, and places each bead relative to its own slot's node in the CURRENT
+stage form (a bead whose slot that form does not sculpt is not drawn, and the stage note says so).
+
+Every ladder carries `ladder.mesh` (glb, manifest, hash, frame, stages, stage_of_point, status, why, ...).
+`build.mjs` builds meshes only with `--meshes` or `DELPHI_MESH=1`; otherwise nothing launches Blender and the
+status is `not-requested` (an existing GLB for the same spec is still used). A launch through `studio_theatre` /
+`session_open`, every run under `runs/` built on `runs/_lib/studio-run.mjs`, and `runs/flying-mouse/run.mjs` turn
+meshes on unless `DELPHI_MESH=0`, also when `DELPHI_OPEN=0`. The GLB name is `<frame>-<hash>`: the hash covers
+frame, stage keys, drivers and a digest of `build_mesh.py`, `lib.py` and that frame's sculptor, so a cached GLB is
+reused instantly and a sculptor's edit rebuilds only its frame. With `--meshes`, unreferenced generated meshes are
+pruned only for the frames that invocation built, so building one run never deletes another run's GLB.
+Blender 4.2 is installed here (`C:/Temp/tools/blender/`); it is found from `DELPHI_BLENDER`, `PATH` or the usual
+install folders. If it is missing, or the sculpt fails, or the GLB cannot be loaded, the page falls back to the
+schematic and says which, naming the cause (`mesh not built: DELPHI_BLENDER points at a file that does not exist`,
+`mesh not built: Blender not found (set DELPHI_BLENDER)`, `mesh build failed: ...`, `mesh could not be loaded: ...`).
 
 ## Four colours, four kinds of statement
 

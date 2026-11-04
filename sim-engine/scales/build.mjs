@@ -4,12 +4,22 @@
 //   node sim-engine/scales/build.mjs                  # every run under runs/ with a summary.json
 //   node sim-engine/scales/build.mjs --run xenobot    # one run
 //   node sim-engine/scales/build.mjs --quiet
+//   node sim-engine/scales/build.mjs --meshes         # also build the illustration GLBs with Blender (or DELPHI_MESH=1)
+//   node sim-engine/scales/build.mjs --meshes --force-meshes   # rebuild them even when cached
 //
 // Writes:
 //   runs/<run>/scales/gen<N>.json                                   the ladder, one file per generation
 //   runs/<run>/scales/index.json                                    what this run has
 //   dashboard/public/blueprint3d/studio-live/scales/<run>.json      the same, bundled for the page
 //   dashboard/public/blueprint3d/studio-live/scales/index.json       the run selector
+//   dashboard/public/blueprint3d/studio-live/meshes/<frame>-<hash>.{glb,json}   only with --meshes / DELPHI_MESH=1
+//
+// MESHES. Every ladder gains `ladder.mesh` (sim-engine/scales/mesh/): the spec hash of its illustration
+// mesh and whether it was built. Without --meshes or DELPHI_MESH=1 nothing launches Blender: the hash is
+// still computed so the page can use a GLB an earlier build left, and the status says 'not-requested'.
+// With it, a missing GLB is built synchronously (a cached one is reused instantly), so the bundle and its
+// GLB appear together for a live page, and generated meshes OF THE FRAMES IT BUILT that no bundle on disk
+// references any more are pruned (other frames' files are never touched).
 //
 // Nothing is invented for a generation that has no blueprint. The bacterium's generation 0 is a refusal and
 // a refusal has no body, so it appears in the index with `body: false` and the page says so.
@@ -24,6 +34,7 @@ import { TOOLS } from '../../mcp/server.mjs';
 import { scaleLadder, loadScaleData, CONTRACT_VERSION } from '../lib/scales.mjs';
 import * as taxonomy from '../../lib/lean-taxonomy.mjs';
 import { liftCoefficientFor } from '../validate/physics/standing.mjs';
+import { meshField, wantMeshes, pruneMeshes, framesTouched } from './mesh/blender.mjs';
 
 const HERE = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
 const ROOT = path.resolve(HERE, '..', '..');
@@ -77,8 +88,29 @@ if (!runs.length) { console.error('no runs with a summary.json under runs/'); pr
 const BAKE = path.join(ROOT, 'dashboard', 'public', 'blueprint3d', 'studio-live', 'scales');
 fs.mkdirSync(BAKE, { recursive: true });
 const index = [];
+const MESHES = wantMeshes(process.argv, process.env);
+const FORCE_MESHES = process.argv.includes('--force-meshes');
+const BUILT = new Map();                       // one Blender build per spec per process
 
 for (const run of runs) await build(run);
+
+// Prune generated meshes no bundle references, but only when this build was asked to manage meshes (a plain
+// rebuild after a sculptor's edit must not delete the last GLB before anyone has rebuilt it), and only files of
+// the FRAMES this invocation built or reused. The keep set is read from every bundle on disk AFTER this
+// invocation's own were written. So `--run xenobot --meshes` can only ever remove construct files that no
+// bundle names, never a tetrapod GLB that another run's bundle (or one about to be rebuilt) still needs.
+if (MESHES) {
+  const keep = new Set();
+  for (const f of fs.readdirSync(BAKE).filter(x => x.endsWith('.json') && x !== 'index.json')) {
+    try {
+      const b = rd(path.join(BAKE, f));
+      for (const l of Object.values(b.ladders ?? {})) for (const k of ['glb', 'manifest']) if (l.mesh?.[k]) keep.add(path.basename(l.mesh[k]));
+    } catch {}
+  }
+  const frames = framesTouched(BUILT);
+  const removed = pruneMeshes(keep, { frames });
+  if (removed.length) say(`meshes: pruned ${removed.length} stale ${[...frames].join('/')} file(s): ${removed.join(', ')}`);
+}
 
 if (!only) {
   fs.writeFileSync(path.join(BAKE, 'index.json'), JSON.stringify({
@@ -153,6 +185,7 @@ async function build(run) {
     });
     if (stateNote) { ladder.timeline.note = stateNote; ladder.honesty.push(stateNote); }
     if (lawsMissing.length) ladder.honesty.push(`${lawsMissing.length} law(s) named in part-laws.json have no registry record in this deployment (${lawsMissing.join(', ')}), so their chips carry no proof link.`);
+    ladder.mesh = meshField(ladder, { want: MESHES, force: FORCE_MESHES, built: BUILT });
     ladder.taxon_audit = taxonAudit?.generations?.[g] ? { counts: taxonAudit.generations[g].counts, total: taxonAudit.generations[g].total,
       headline: taxonAudit.headline, what_it_shows: taxonAudit.what_it_shows, verdicts: taxonAudit.verdicts, built: taxonAudit.built }
       : { absent: 'no taxon audit for this generation: run node sim-engine/scales/audit-taxon.mjs' };
@@ -163,7 +196,8 @@ async function build(run) {
     made.push({ generation: g, asked: gen.asked, body: Boolean(blueprint),
       parts: ladder.counts.parts, unplaced: ladder.counts.unplaced, law_chips: ladder.counts.law_chips,
       law_status: ladder.counts.law_status, ladder: ladder.counts.ladder, ages: states.map(s => s.age_days),
-      frame: ladder.frame.name, chain_links: ladder.counts.chain_links });
+      frame: ladder.frame.name, chain_links: ladder.counts.chain_links,
+      mesh: { status: ladder.mesh.status, hash: ladder.mesh.hash, glb: ladder.mesh.glb ?? null } });
     say(`  ${run} gen${g}: ${ladder.counts.parts} parts (${ladder.counts.unplaced} unplaced), ${ladder.counts.law_chips} law chips, ${states.length} age(s), frame ${ladder.frame.name}`);
   }
 
@@ -210,6 +244,12 @@ async function build(run) {
     frames: [...new Set(made.map(m => m.frame))], chain: bundle.chain.present,
     chain_links: (chain?.links ?? []).length, parts_max: Math.max(0, ...made.map(m => m.parts)) });
   say(`${run}: ${made.length} generation(s) -> runs/${run}/scales/`);
+  // One line per run, always printed (even --quiet): a mesh that silently fell back is worth knowing about.
+  const byHash = new Map();
+  for (const m of made) { const k = `${m.mesh.status}|${m.mesh.glb ?? m.frame}`; byHash.set(k, [...(byHash.get(k) ?? []), m.generation]); }
+  const why = [...new Set(Object.values(bundle.ladders).map(l => l.mesh?.status === 'failed' || l.mesh?.status === 'no-blender' ? l.mesh.why : null).filter(Boolean))];
+  const parts = [...byHash].map(([k, g]) => { const [st, f] = k.split('|'); return `${path.basename(f)} ${st} (gen ${g.join(',')})`; });
+  console.log(`  mesh ${run}: ${parts.join('; ')}${why.length ? ` -- ${why[0].split(/\r?\n/)[0].slice(0, 200)}` : ''}`);
 }
 
 function lastBefore(map, g) {

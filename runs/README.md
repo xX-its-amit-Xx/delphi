@@ -75,8 +75,13 @@ four competition parameters are *design inputs*, each carrying a source that say
 kind `assumed`, so every `model_confidence` and weakest-input downstream carries the fact that a person
 stated them. You may declare an input; you may not declare an outcome.
 
-**No meshes.** No subject in any run has a surface mesh. `anatomy-model/parametric` is a parametric *teleost*
-builder and Blender is not installed on the machine these ran on. The 3D view is the ontology hierarchy.
+**No measured meshes.** No subject in any run has a measured surface mesh: `anatomy-model/parametric` is a
+parametric *teleost*-only builder, so it had nothing to build for these (Blender itself is installed on this
+machine; that was never the reason). The studio-live 3D view is the ontology hierarchy. The scale theatre now
+draws Blender **illustration** meshes for the insect, tetrapod, prokaryote and construct frames
+(`sim-engine/scales/mesh/`): sculpted from textbook body plans, labelled as not measured, and styled per
+ladder so a slot the blueprint lacks is ghosted or hidden rather than drawn as present. A run builds them by
+default (`DELPHI_MESH=1`, set by `runs/_lib/studio-run.mjs`); `DELPHI_MESH=0` turns that off.
 
 **Nothing is recomputed for display.** Every verdict on the live page is the string the tool returned.
 

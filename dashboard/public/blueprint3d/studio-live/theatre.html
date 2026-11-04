@@ -32,6 +32,8 @@ main{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:0;align-items:st
 #cv:active{cursor:grabbing}
 #hover{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:4px 8px;font-size:12px;box-shadow:var(--shadow);opacity:0;transition:opacity .1s}
 #stagefoot{position:absolute;left:12px;right:12px;bottom:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--mute)}
+/* On a phone the footer goes below the canvas instead of over the bottom half of the organism. */
+@media (max-width:980px){#stagefoot{position:static;padding:8px 12px 10px;border-top:1px solid var(--line);background:var(--panel)}}
 #ladder{display:flex;gap:4px;flex-wrap:wrap}
 .rung{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:2px 7px;cursor:pointer}
 .rung[aria-pressed="true"]{border-color:var(--accent);background:var(--soft);color:var(--accent)}
@@ -73,6 +75,31 @@ ul{margin:5px 0;padding-left:18px;font-size:12.5px} li{margin:2px 0}
 .warn{border-left:3px solid var(--warn);padding-left:9px}
 .err{border-left:3px solid var(--bad);padding-left:9px}
 .skip{position:absolute;left:-9999px}.skip:focus{left:8px;top:8px;background:var(--panel);padding:8px;z-index:50}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:6px 10px}
+.seg button+button{border-left:1px solid var(--line)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.badge.ill{color:var(--accent);border-color:var(--accent)}
+.badge.bad{color:var(--bad);border-color:var(--bad)}
+#meshbadge{max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+#labels .lab{position:absolute;left:0;top:0;font-size:11px;line-height:1.3;padding:2px 7px;border-radius:999px;white-space:nowrap;max-width:min(420px,calc(100% - 8px));overflow:hidden;text-overflow:ellipsis;
+ background:var(--panel);border:1px dashed var(--viol);color:var(--viol);box-shadow:var(--shadow);transition:opacity .15s}
+#labels .lab.absent{border-color:var(--line);color:var(--mute);font-size:10.5px;padding:1px 6px}
+#labels .lab.cells{border:1px solid var(--warn);color:var(--warn)}
+#labels .lab{margin:0}
+#leaders{position:absolute;left:0;top:0;overflow:visible}
+#leaders line{stroke:var(--viol);stroke-width:1;opacity:.75;fill:none}
+#leaders circle{fill:var(--viol);opacity:.85}
+#leaders .absent{stroke:var(--mute);fill:var(--mute);opacity:.5}
+#leaders .cells{stroke:var(--warn);fill:var(--warn)}
+
+#legend{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+#legend .k{display:inline-flex;align-items:center;gap:5px}
+#legend .sw{width:12px;height:12px;border-radius:3px;display:inline-block;border:1px solid var(--line)}
+#legend .sw.present{background:var(--accent)} #legend .sw.ghost{background:transparent;border:1px dashed var(--viol)}
+#legend .sw.body{background:var(--soft)} #legend .sw.absent{background:transparent;border:1px dotted var(--mute)}
+#legend .sw.cells{background:transparent;border:1px solid var(--warn)}
 </style>
 </head>
 <body>
@@ -82,21 +109,44 @@ ul{margin:5px 0;padding-left:18px;font-size:12.5px} li{margin:2px 0}
   <label class="note" for="run">Run</label><select id="run"></select>
   <label class="note" for="gen">Generation</label><select id="gen"></select>
   <span id="src" class="badge">loading</span>
+  <span class="seg" role="group" aria-label="how to draw the body"><button id="m-mesh" aria-pressed="true" title="the Blender illustration mesh">illustrated</button><button id="m-schem" aria-pressed="false" title="one primitive per part at its frame slot">schematic</button></span>
+  <button id="absent" aria-pressed="false" title="draw the slots this blueprint has no part in, as faint outlines" hidden>show what this blueprint lacks</button>
+  <span id="meshbadge" class="badge">loading</span>
   <button id="spin" aria-pressed="true" title="rotate the body">spin</button>
   <button id="theme" title="light or dark">◐</button>
 </header>
 <main>
   <div id="stage">
     <canvas id="cv"></canvas>
+    <div id="labels" aria-hidden="true"></div>
     <div id="hover"></div>
     <div id="stagefoot">
       <span>show</span><div id="ladder"></div>
+      <button id="fit" class="rung" title="zoom so this stage fills the view (or double-click the body). Stages are drawn to scale with each other, so a small one is small.">fit</button>
+      <div id="legend" hidden><span class="k"><span class="sw present"></span>in the blueprint</span><span class="k"><span class="sw ghost"></span>ghost: the literature names it, the blueprint lacks it</span><span class="k"><span class="sw cells"></span>only cells or tissue of the blueprint land here (no organ)</span><span class="k"><span class="sw body"></span>the body (no organ of its own here)</span><span class="k"><span class="sw absent"></span>not in this blueprint (hidden unless asked)</span></div>
     </div>
   </div>
   <aside id="panel"></aside>
 </main>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+<!-- three 0.160.0 as ES modules, plus the loaders the illustration needs. A module shim puts them on
+     window.THREE / window.THREE_ADDONS and only then starts the classic scripts, so drawings.js and theatre.js
+     keep working unchanged; if the CDN fails, theatre.js still starts and says "three.js did not load". -->
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+               "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
 <script src="drawings.js"></script>
-<script src="theatre.js"></script>
+<script type="module">
+try {
+  const THREE = await import('three');
+  const [{ GLTFLoader }, { DRACOLoader }, { RoomEnvironment }] = await Promise.all([
+    import('three/addons/loaders/GLTFLoader.js'), import('three/addons/loaders/DRACOLoader.js'), import('three/addons/environments/RoomEnvironment.js')]);
+  window.THREE = THREE;
+  window.THREE_ADDONS = { GLTFLoader, DRACOLoader, RoomEnvironment };
+} catch (e) { window.THREE_LOAD_ERROR = String(e?.message ?? e); }
+const add = src => new Promise(res => { const s = document.createElement('script'); s.src = src; s.onload = s.onerror = res; document.body.appendChild(s); });
+await add('theatre.look.js');
+await add('theatre.js');
+</script>
 </body>
 </html>

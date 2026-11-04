@@ -22,9 +22,10 @@
 //             arithmetic of lift against weight
 //   declared  the mass, the membrane area and the airspeed. These are design inputs with their sources
 //             saying so. Nobody has measured a winged mouse.
-//   absent    a surface mesh. The mesh builder is a parametric teleost builder and Blender is not installed
-//             on this machine, so there is no .glb for any generation of this animal. What the 3D view shows
-//             is the ontology hierarchy, which is a different thing and is labelled as one.
+//   absent    a MEASURED surface mesh. anatomy-model/parametric is a teleost-only builder (Blender itself is
+//             installed), so it builds no .glb for this animal. What the studio-live 3D view shows is the
+//             ontology hierarchy, which is a different thing and is labelled as one. The scale theatre draws a
+//             Blender ILLUSTRATION mesh of a generic small quadruped (sim-engine/scales/mesh/), not measured.
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -32,6 +33,7 @@ import { TOOLS } from '../../mcp/server.mjs';
 
 // Running this opens the 3D theatre on it, live. DELPHI_OPEN=0 runs headless. See runs/_lib/studio-run.mjs.
 if (process.env.DELPHI_OPEN == null) process.env.DELPHI_OPEN = '1';
+if (process.env.DELPHI_MESH == null) process.env.DELPHI_MESH = '1';   // and builds the illustration mesh, headless too; DELPHI_MESH=0 skips it
 
 const HERE = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
 const ROOT = path.resolve(HERE, '..', '..');
@@ -110,9 +112,9 @@ function writeGen(g) {
   const out = { ...g, question: QUESTION, diff_from_previous: diff };
   record.push(out);
   fs.writeFileSync(path.join(GEN, `gen${g.generation}.json`), JSON.stringify(out, null, 1));
-  // The live theatre: rebuild this run's scale ladder so an open page redraws. Off with DELPHI_OPEN=0.
-  if (process.env.DELPHI_OPEN !== '0') {
-    try { execFileSync(process.execPath, [path.join(ROOT, 'sim-engine', 'scales', 'build.mjs'), '--run', 'flying-mouse', '--quiet'], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'], timeout: 180000 }); } catch {}
+  // The live theatre: rebuild this run's ladder (and mesh) so an open page redraws. Off with DELPHI_OPEN=0 DELPHI_MESH=0.
+  if (process.env.DELPHI_OPEN !== '0' || process.env.DELPHI_MESH !== '0') {
+    try { execFileSync(process.execPath, [path.join(ROOT, 'sim-engine', 'scales', 'build.mjs'), '--run', 'flying-mouse', '--quiet', ...(process.env.DELPHI_MESH !== '0' ? ['--meshes'] : [])], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'], timeout: 600000 }); } catch {}
   }
   note({ type: 'generation', ...out });
   return out;
@@ -218,7 +220,7 @@ async function gen0() {
       flight_structures_present_note: 'These were NOT asked for. They are in the blueprint because the word "flight" was recognised and the ontology records them as capable of it for this taxon; the structure that WAS asked for was refused. See conflicts[].substitution_warning.' },
     genotype: { markers: markersOf(bp), by_cell: markerCellsOf(bp), cells_of: `${bp.genome_sketch?.cells_with_markers ?? 0} of ${bp.genome_sketch?.cells_total ?? 0} cell types`, cells_with_markers: bp.genome_sketch?.cells_with_markers ?? 0,
       note: 'marker gene products the Cell Ontology records for the chosen cell types. It is a sketch of what those cells express, not a genome and not a genotype anyone sequenced.' },
-    mesh: { glb: null, why: 'no surface mesh. anatomy-model/parametric is a teleost builder and Blender is absent on this machine; the 3D view is the ontology hierarchy, which is structure without shape.' },
+    mesh: { glb: null, why: 'no measured surface mesh. anatomy-model/parametric is a teleost-only builder (Blender is installed; that is not the reason); the studio-live 3D view is the ontology hierarchy, which is structure without shape. The scale theatre shows an illustration mesh from sim-engine/scales/mesh/, not a measurement.' },
     gates, lean: tally, blueprint: `gen/gen${generation}.blueprint.json`,
     what_it_taught: 'The request as posed cannot be built: Uberon asserts that a wing never occurs in Glires, so the blueprint of a winged mouse has no wing in it -- and TWO OTHER STRUCTURES IN ITS PLACE, promoted from the word "flight", which the first reading of this hierarchy missed entirely. The refusal is contradicted by the project inventory, which holds a gliding rodent inside that same clade. Separately, every harness tool refuses for want of a parameter set -- correctly, and by name.' });
 }

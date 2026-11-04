@@ -5,7 +5,65 @@ the scenario interface. Its version is `CONTRACT_VERSION` in `lib/envelope.mjs`.
 as `contract_version`, and `contract.json` states it. The rule: anything may change, provided it is
 versioned here. While the major version is 0, a minor bump may break callers; each entry says what breaks.
 
+## 0.11.0, unreleased addition: illustration meshes for the scale theatre (2026-11-03)
+
+**No tool schema changed, so `CONTRACT_VERSION` stays 0.11.0.** What changed is a build output and a page.
+
+- **`sim-engine/scales/mesh/`**: Blender ILLUSTRATION meshes, one sculptor per frame (insect, tetrapod,
+  prokaryote, construct), one GLB per spec with a root per declared life-stage form, Draco-compressed, with a
+  manifest beside it. Every GLB and manifest carries `geometry_basis: "schematic-illustration"` and
+  `THIS_IS_NOT_MORPHOMETRY`. Shapes are sculpted from textbook body plans; none is measured. `spec.mjs` keys
+  stage forms by keyword on the declared stage label; the GLB is named `<frame>-<hash>`, the hash covering
+  frame + stage keys + drivers + generator version, and the generator version includes a digest of
+  `build_mesh.py`, `lib.py` and the frame's sculptor. So generations that declare the same stages share a mesh,
+  a sculptor's edit rebuilds only its frame, and a cached GLB costs nothing.
+- **Every ladder gains `ladder.mesh`** (`glb`, `manifest`, `hash`, `frame`, `stages`, `stage_labels`,
+  `stage_of_point`, `generator_version`, `status` = cached | built | no-blender | failed | not-requested,
+  `exists`, `blender`, `why`). `scales/build.mjs` builds meshes only with `--meshes` or `DELPHI_MESH=1`; without
+  it nothing launches Blender and nothing is pruned. With it, unreferenced generated meshes are pruned **only
+  for the frames that invocation built or reused**, against every bundle on disk after its own were written, so
+  `--run <one run> --meshes` can no longer delete a GLB another run's bundle still needs.
+- **Runs build their mesh, headless too.** `tools/theatre.mjs` passes `--meshes` on a launch unless
+  `DELPHI_MESH=0`. `runs/_lib/studio-run.mjs` and `runs/flying-mouse/run.mjs` default `DELPHI_MESH=1` and, after
+  every generation, rebuild the ladder with `--meshes` even when `DELPHI_OPEN=0` (which now only stops the
+  browser); the rebuild timeout is 600 s (it was 180 s in `flying-mouse/run.mjs`).
+- **The theatre page** loads three 0.160.0 as ES modules (GLTFLoader, DRACOLoader, RoomEnvironment) with a shim
+  that keeps `window.THREE` for the classic scripts and the "three.js did not load" fallback. Illustrated mode
+  (the default when a GLB loads) styles every slot node from the ladder: **present** (solid), **ghost** (only
+  the literature chain names it: violet, labelled), **body** (an envelope region with no part of its own:
+  neutral, a click opens the body), **cells-only** (only cells or tissue land in an organ slot: an outline
+  labelled with the cell, never a solid organ) and **absent** (hidden; a toggle outlines and labels what the
+  blueprint lacks). It opens on the LAST declared stage point, keeps tissue/cell beads off until asked and places
+  them relative to their slot's node in the current stage form. `window.THEATRE` gains `mode()`, `meshState()`,
+  `stage()`, `absent()`, `pick()`, `fit()`, `nodeScreen()`, `view()`.
+- **`extras.requires`: pieces that depict one specific part** (`scales/mesh/depicts.mjs`, copied verbatim into
+  `theatre.js`). Such a piece follows that part's state, not its parent slot's: ontology ids first, label
+  regexes only when no id is in the ladder at all, body-level parts never count. The xenobot's cilia and
+  multiciliated cells (`CL_0005012`, only in the chain) are now violet ghosts instead of solid; the fly's ocelli
+  and pupal spiracles are hidden and its larval salivary glands present; the mouse's gallbladder, parathyroid,
+  aorta, great veins, adrenal (split out of the ureter piece, same geometry) and eyelids are hidden because its
+  blueprint has none of them, and its ureter (by id) and trachea (by label only) are present.
+- **Illustration notes reach the page.** Sculptors recorded drawing choices under different keys
+  (`illustration_note`, `note`, `schematic`, `shape_basis`, `beat`, `cells_drawn`); `build_mesh.py` folds them
+  into `extras.illustration_note` and the manifest's node (and stage) records, and the part card shows the
+  clicked piece's note under "about this drawing".
+- **Blender messages name the cause.** A `DELPHI_BLENDER` that points at a missing file (or a folder) now says
+  so, with the path, instead of "set DELPHI_BLENDER"; the page badge says the same.
+- **Contract tightened**: every deco hangs under a slot node of its own slot (no free `deco:body:*`); construct
+  and prokaryote stage roots are sculpted at their frame's slot radii, not normalised to x about [-1.6, 1.6], and
+  the test asserts what is true instead (each stage's extent contains its slot positions x 2).
+- **Corrected wording about Blender.** Earlier text said Blender is not installed on this machine. It is
+  (`C:/Temp/tools/blender/blender-4.2.23-windows-x64/`); the earlier generations had no surface mesh because
+  `anatomy-model/parametric` is a teleost-only builder. Corrected at the source in
+  `dashboard/public/blueprint3d/studio-live/gen.mjs`, `runs/README.md`, `runs/_lib/shoot.mjs` and
+  `runs/flying-mouse/run.mjs` (header and gen 0's `mesh.why`). Not yet corrected: `runs/carbon-eating-bacterium/run.mjs`
+  and `runs/long-lived-fruit-fly/run.mjs` still say "Blender is absent here", and the outputs those sources wrote
+  earlier (`runs/*/gen/*.json`, `journal.jsonl`, `fig/shots.json`, `studio-live/<run>.json`) keep the old words
+  until they are regenerated, because they are records of what a run said at the time.
+- Tests: `scales/test/mesh.mjs` (47), beside `scales/test/scales.mjs` (43).
+
 ## 0.11.0 (2026-11-03)
+
 
 **Added** (1 tool; 62 -> 63. Two schema fields, one STATE capability. Nothing removed, nothing renamed.)
 

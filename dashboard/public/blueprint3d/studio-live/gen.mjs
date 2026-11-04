@@ -89,7 +89,7 @@ const out = {
   sources: { session: `sim-engine/sessions/${sessionId}.jsonl`, generations: `runs/${run}/gen/gen*.json`, logs: `runs/${run}/log/`, journal: `runs/${run}/journal.jsonl` },
   entries, generations: gens, hierarchies,
   honesty: {
-    mesh: 'No generation of this animal has a surface mesh. anatomy-model/parametric is a parametric TELEOST builder and Blender is not installed on the machine this ran on, so no .glb was built and none is shown. The 3D view draws the ONTOLOGY HIERARCHY -- which structures the design has and what contains what -- and that is structure without shape: it cannot be flown, measured for area, or printed.',
+    mesh: 'No generation of this animal has a measured surface mesh. anatomy-model/parametric is a parametric TELEOST-only builder, so no .glb of this animal was built by it (Blender itself is installed; that was never the reason). The 3D view here draws the ONTOLOGY HIERARCHY -- which structures the design has and what contains what -- and that is structure without shape: it cannot be flown, measured for area, or printed. The scale theatre (studio-live/theatre.html) now shows a Blender ILLUSTRATION mesh from sim-engine/scales/mesh/, sculpted from a textbook body plan and not measured.',
     declared: 'The mass, membrane area and airspeed in generations 1-3 are DESIGN INPUTS. Each carries a source string saying so. Nobody has measured a winged mouse and nothing here pretends otherwise.',
     verdicts: 'Every verdict on this page is the string the tool itself returned, with the numbers it returned, copied from the session log. Nothing is recomputed here and nothing is rounded for display except where the page shows a fixed number of decimals.',
   },

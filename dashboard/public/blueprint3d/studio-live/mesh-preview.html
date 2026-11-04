@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mesh preview</title>
+<meta name="description" content="One illustration GLB from sim-engine/scales/mesh, rendered alone with the scale theatre's lighting, for sculptors.">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#14201f;--mute:#5a6b69;--line:#d9dfdb;--accent:#0e7c86;--soft:#eef2ef}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--soft:#192b29}}
+:root[data-theme="dark"]{--bg:#0d1514;--panel:#142120;--ink:#e7efec;--mute:#93a6a2;--line:#27403d;--accent:#38b6c1;--soft:#192b29}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+main{display:grid;grid-template-columns:minmax(0,1fr) 320px;min-height:100vh}
+@media (max-width:860px){main{grid-template-columns:1fr}}
+#stage{position:relative;background:radial-gradient(ellipse at 50% 40%,var(--soft),var(--bg));min-height:60vh}
+canvas{display:block;width:100%;height:100vh;touch-action:none;cursor:grab}
+@media (max-width:860px){canvas{height:60vh}}
+aside{padding:14px 16px;border-left:1px solid var(--line);background:var(--panel);overflow:auto;max-height:100vh}
+h1{font-size:15px;margin:0 0 6px}
+.note{font-size:12.5px;color:var(--mute);margin:6px 0}
+.badge{display:inline-block;font-size:12px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);background:var(--soft);color:var(--mute);margin:0 4px 4px 0}
+select,button{font:inherit;padding:5px 9px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
+label.n{display:flex;gap:6px;align-items:center;font-size:12.5px;padding:1px 0}
+#hover{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:7px;padding:3px 8px;font-size:12px;opacity:0}
+#warn{position:absolute;left:12px;top:12px;max-width:70%}
+</style>
+</head>
+<body>
+<main>
+  <div id="stage"><canvas id="cv"></canvas><div id="hover"></div><div id="warn"></div></div>
+  <aside>
+    <h1>Mesh preview</h1>
+    <p class="note"><span class="badge">illustration sculpted in Blender — shapes are not measured</span></p>
+    <p class="note mono" id="file"></p>
+    <p><label class="note" for="stg">stage</label> <select id="stg"></select> <button id="theme" title="light or dark">◐</button></p>
+    <p class="note" id="meta"></p>
+    <div id="nodes"></div>
+  </aside>
+</main>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+               "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+try {
+  const THREE = await import('three');
+  const [{ GLTFLoader }, { DRACOLoader }, { RoomEnvironment }] = await Promise.all([
+    import('three/addons/loaders/GLTFLoader.js'), import('three/addons/loaders/DRACOLoader.js'), import('three/addons/environments/RoomEnvironment.js')]);
+  window.THREE = THREE;
+  window.THREE_ADDONS = { GLTFLoader, DRACOLoader, RoomEnvironment };
+} catch (e) { window.THREE_LOAD_ERROR = String(e?.message ?? e); }
+await new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'theatre.look.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const qs = new URLSearchParams(location.search);
+const T = window.THREE;
+window.PREVIEW = { ready: false };
+if (!T) { $('#warn').innerHTML = `<p class="note"><b>three.js did not load</b>: ${esc(window.THREE_LOAD_ERROR)}</p>`; throw new Error('no three'); }
+const glb = qs.get('glb');
+$('#file').textContent = glb ?? 'pass ?glb=meshes/<frame>-<hash>.glb';
+const renderer = new T.WebGLRenderer({ canvas: $('#cv'), antialias: true, alpha: true });
+const scene = new T.Scene();
+window.THEATRE_LOOK.setup(T, renderer, scene);
+const camera = new T.PerspectiveCamera(36, 1, 0.02, 100);
+camera.position.set(0, 0.9, 5.2);
+const group = new T.Group(); scene.add(group);
+const shadow = window.THEATRE_LOOK.contactShadow(T, { radius: 2.2 }); scene.add(shadow);
+let yaw = 0.55, pitch = 0.2, drag = null, dist = 5.2;
+const target = new T.Vector3();
+const cv = $('#cv');
+cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY }; });
+addEventListener('pointerup', () => { drag = null; });
+addEventListener('pointermove', e => { if (!drag) return hover(e); yaw += (e.clientX - drag.x) * 0.008; pitch = Math.max(-1.3, Math.min(1.3, pitch + (e.clientY - drag.y) * 0.006)); drag = { x: e.clientX, y: e.clientY }; });
+cv.addEventListener('wheel', e => { e.preventDefault(); dist *= e.deltaY > 0 ? 1.08 : 0.93; }, { passive: false });
+$('#theme').onclick = () => { const d = document.documentElement; const cur = d.dataset.theme || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light'); d.dataset.theme = cur === 'dark' ? 'light' : 'dark'; };
+const ray = new T.Raycaster();
+function hover(e) {
+  const r = cv.getBoundingClientRect(), h = $('#hover');
+  ray.setFromCamera(new T.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
+  const hit = ray.intersectObjects(group.children, true).find(x => x.object.visible);
+  if (!hit) { h.style.opacity = 0; return; }
+  let o = hit.object; while (o && !o.userData?.node) o = o.parent;
+  h.textContent = o?.userData?.node ?? '?';
+  h.style.left = `${e.clientX - r.left + 12}px`; h.style.top = `${e.clientY - r.top + 12}px`; h.style.opacity = 1;
+}
+function resize() { const w = cv.clientWidth, h = cv.clientHeight; renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(w, h, false); camera.aspect = w / Math.max(1, h); camera.updateProjectionMatrix(); }
+addEventListener('resize', resize); resize();
+(function tick() { requestAnimationFrame(tick); camera.position.set(target.x + Math.sin(yaw) * Math.cos(pitch) * dist, target.y + Math.sin(pitch) * dist, target.z + Math.cos(yaw) * Math.cos(pitch) * dist); camera.lookAt(target); renderer.render(scene, camera); })();
+
+if (glb) {
+  const gltf = await new Promise((res, rej) => window.THEATRE_LOOK.loader().load(glb, res, undefined, rej)).catch(e => { $('#warn').innerHTML = `<p class="note"><b>could not load ${esc(glb)}</b>: ${esc(e?.message ?? e)}</p>`; return null; });
+  if (gltf) {
+    const root = gltf.scene; group.add(root);
+    const ex = root.userData ?? gltf.scene.userData ?? {};
+    const stages = root.children.filter(c => c.userData?.role === 'stage');
+    $('#stg').innerHTML = stages.map(s => `<option>${esc(s.userData.stage)}</option>`).join('');
+    const want = qs.get('stage');
+    const show = k => {
+      for (const s of stages) s.visible = s.userData.stage === k;
+      const cur = stages.find(s => s.userData.stage === k);
+      const nodes = []; cur?.traverse(o => { if (o.userData?.node && o !== cur) nodes.push(o); });
+      $('#nodes').innerHTML = `<p class="note">${nodes.length} nodes in stage <b>${esc(k)}</b>. Untick to hide.</p>` + nodes.map((o, i) =>
+        `<label class="n"><input type="checkbox" checked data-i="${i}"> <span class="mono">${esc(o.userData.node)}</span> <span class="note">${esc(o.userData.role ?? '')}</span></label>`).join('');
+      for (const c of document.querySelectorAll('#nodes input')) c.onchange = () => { nodes[Number(c.dataset.i)].visible = c.checked; };
+      const box = new T.Box3().setFromObject(cur); shadow.position.y = box.min.y - 0.02; box.getCenter(target);
+      // Fit the stage's bounding sphere into the NARROWER of the two fields of view, with a 12% margin, so a
+      // long egg with its dorsal appendages, or a portrait window, is never clipped.
+      const sph = box.getBoundingSphere(new T.Sphere());
+      const half = Math.min(T.MathUtils.degToRad(camera.fov) / 2, Math.atan(Math.tan(T.MathUtils.degToRad(camera.fov) / 2) * camera.aspect));
+      dist = (sph.radius / Math.sin(half)) * 1.12;
+      window.PREVIEW.stage = k; window.PREVIEW.nodes = nodes.map(o => o.userData.node);
+    };
+    $('#stg').onchange = () => show($('#stg').value);
+    const first = stages.some(s => s.userData.stage === want) ? want : stages[0]?.userData?.stage;
+    $('#stg').value = first; show(first);
+    $('#meta').innerHTML = `frame <b>${esc(ex.frame)}</b> · hash <span class="mono">${esc(ex.spec_hash)}</span> · generator <span class="mono">${esc(ex.generator_version)}</span><br>${esc(ex.THIS_IS_NOT_MORPHOMETRY ?? '')}`;
+    window.PREVIEW = { ...window.PREVIEW, ready: true, stages: stages.map(s => s.userData.stage), show, extras: ex,
+      view(y, p, d) { yaw = y; pitch = p; if (d) dist = d; } };
+  }
+}
+</script>
+</body>
+</html>

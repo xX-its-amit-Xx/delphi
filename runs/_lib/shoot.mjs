@@ -84,7 +84,7 @@ try {
     run, taken: new Date().toISOString(), viewport: '1480x1100 @2x, light',
     browser: 'Edge via playwright-core, ANGLE/SwiftShader software GL',
     console_errors: errors,
-    not_a_mesh: 'Every 3D frame here is the ONTOLOGY HIERARCHY of that generation, not a surface mesh. No .glb exists for any of these subjects: the mesh builder is a parametric teleost builder and Blender is not installed on this machine.',
+    not_a_mesh: 'Every 3D frame here is the ONTOLOGY HIERARCHY of that generation, not a surface mesh. These generations had no surface mesh because anatomy-model/parametric is a teleost-only builder (Blender itself IS installed on this machine). The scale theatre now draws Blender ILLUSTRATION meshes for the insect, tetrapod, prokaryote and construct frames (sim-engine/scales/mesh/); those are sculpted from textbook body plans, not measured.',
     shots,
   }, null, 1));
   if (errors.length) { console.log(`\n${errors.length} console error(s), recorded in fig/shots.json (the live-studio poll failing is expected when no studio server is running):`); for (const e of errors.slice(0, 4)) console.log('  ' + e.slice(0, 200)); }
