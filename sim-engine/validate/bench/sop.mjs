@@ -50,7 +50,52 @@ export const METHODS = {
   founder_screening: { what: 'prioritising founders by fin biopsy before setting up outcrosses', citation: 'Carrington et al. 2022, BMC Genomics 23:810, doi 10.1186/s12864-022-08971-1, PMID 36476416', why: 'measured 1-5 % germline transmission, and established lines by screening 12 or fewer fish per gene - this is the stage that decides how many tanks the experiment needs' },
   f0_multiguide: { what: 'multiple guides per gene to drive biallelic disruption in the injected generation', citation: 'Kroll et al. 2021, eLife 10:e59683, doi 10.7554/eLife.59683', why: 'the method the F0 cases in cases.mjs depend on; see conditions.mjs for what it measured' },
   amplicon_readout: { what: 'amplicon sequencing across the whole edited locus, both alleles', citation: 'Boel et al. 2018 (above)', why: 'Boel measured INTEGRATION OF DONOR FRAGMENTS at the cut site, so a correct base at the edited position does not mean a clean allele. A restriction digest or a read of the edited base alone will miss this.' },
+  tol2_mosaic_overexpression: { what: 'a Tol2 donor plasmid carrying ef1a:gene plus ef1a:DsRed in cis, co-injected with transposase mRNA into the one-cell zygote, producing mosaic expressing clones in fish raised to adulthood', citation: 'Perathoner et al. 2014, PLoS Genet 10(1):e1004080, doi 10.1371/journal.pgen.1004080 (method as used); Tol2 transgenesis after Kawakami 2007 and the Tol2kit, Kwan et al. 2007, Dev Dyn 236:3088-3099', why: 'the only published route in this program that produces fin ENLARGEMENT in the injected generation, with no cross and no point edit. Its inferential weight comes from two controls in the same design: a marker-only plasmid (0/240) and a conductance-dead channel variant (no overgrowth, n = 32).' },
 };
+
+/** Stages for mosaic overexpression from an injected Tol2 plasmid. Not an edit: no guide, no nuclease,
+ *  no genotyping of a locus - and a readout in adults, so the long pole is husbandry, not reagents. */
+export function overexpressionStages(ctx = {}) {
+  const arms = ctx.arms ?? [];
+  return [
+    { id: 'approval', day: null, what: 'institutional animal-care and biosafety approval in hand', follow: null,
+      gate: { must_hold: 'approval covers this line, these numbers and these endpoints', if_not: 'nothing below may start', cost_to_check: 'none' },
+      additional_for_this_route: 'this route creates animals carrying an integrated transgene and raises them to adulthood, which in many institutions is a different approval category from a transient injection experiment. Check that specifically rather than assuming the nuclease protocol covers it.' },
+    { id: 'obtain-constructs', day: -60, what: 'obtain or build THREE plasmids: ef1a:kcnk5b + ef1a:DsRed, the ef1a:DsRed-only control, and the non-conductive GFG->AAA variant',
+      follow: ['tol2_mosaic_overexpression'],
+      why: 'the constructs are not in a public repository. Either request them from the corresponding author of the source paper (free, on their timetable, usually under an MTA) or clone all three - and the controls are not optional, so it is three constructs either way.',
+      gate: { must_hold: 'all three plasmids are sequence-verified across the promoter-insert junction and the insert', if_not: 'nothing downstream is interpretable, and a silently wrong control is worse than no control', cost_to_check: 'Sanger reads per construct', falsifier: 'construct-wrong' },
+      this_is_the_long_pole_before_injection: true },
+    { id: 'transposase-mrna', day: -14, what: 'transcribe capped Tol2 transposase mRNA, or borrow an aliquot',
+      follow: ['tol2_mosaic_overexpression'],
+      note: 'the transcription kit is 25 reactions and one reaction makes far more than a session needs. Borrowing an aliquot removes the most expensive line in this route.',
+      gate: { must_hold: 'the mRNA is intact on a gel and the concentration is measured, not assumed', if_not: 'no transposition, no integration, and the injection looks like it worked', cost_to_check: 'one gel lane' } },
+    { id: 'order', day: -10, what: 'order the plasmid, transcription reagents and injection consumables', follow: null,
+      gate: { must_hold: 'the constructs are verified', if_not: 'do not order', cost_to_check: 'none' } },
+    { id: 'prepare-mixes', day: 0, what: `prepare one injection mix per arm (${arms.length || 'n'} arms), each plasmid + transposase mRNA + phenol red`,
+      parameters: { arms: arms.map(a => a.id) } },
+    { id: 'inject', day: 0, what: 'inject the one-cell zygote, one clutch split across arms where possible',
+      follow: ['tol2_mosaic_overexpression'],
+      parameters: { pressure: '275 Pa (40 psi)', duration: '100 ms', note: 'as published; rig-specific in practice' },
+      gate: { must_hold: 'the marker-only control and the conductance-dead control are injected in the SAME session from the SAME clutch', if_not: 'the overgrowth call has no reference rate and the experiment has not been run', cost_to_check: 'embryos and two more needles' } },
+    { id: 'survival', day: 1, what: 'score survival and gross morphology at 24 hpf per arm, and RECORD THE CURVE',
+      gate: { must_hold: 'survival is recorded per arm, whatever it is', if_not: 'the toxicity of this route stays unknown and the next session repeats the guess', cost_to_check: 'none, it is counting' },
+      why_record_rather_than_compare: 'the published stop rules in conditions.mjs were measured for nuclease injections. For a plasmid-plus-transposase mix they are borrowed, so this session is where a real number for this route starts to exist.' },
+    { id: 'enrich-transgene-positive', day: 4, what: 'screen larvae for DsRed and keep the positives',
+      why: 'it saves tank space, but it does NOT predict fin expression: the published denominator is fish showing DsRed in the FINS as adults, and larval expression elsewhere does not imply it.',
+      gate: { must_hold: 'the enrichment step is recorded as an enrichment, not as the transgene-positive rate', if_not: 'the final penetrance denominator is wrong', cost_to_check: 'none' } },
+    { id: 'raise-to-adult', day: 5, what: 'raise injected fish to adulthood', parameters: { months: 3.5, tanks: Math.max(arms.length, 1) },
+      note: 'THIS is the cost of the route. Four arms is four tanks for about four months, and no reagent line in the bill of materials comes close to it.' },
+    { id: 'score-overgrowth', day: 110, what: 'score local fin and barbel overgrowth, blind to arm, against DsRed signal in the fin mesenchyme',
+      gate: { must_hold: 'scoring is blind to arm AND the two control arms are scored in the same session by the same scorer', if_not: 'the result is not evidence', cost_to_check: 'none, it is a labelling discipline' },
+      note: 'a patchy local phenotype is a more subjective call than a normalised area ratio. Score twice, or have two people score, and record the disagreement rate.' },
+    { id: 'confirm-transgene', day: 110, what: 'PCR the transgene from overgrown tissue, including from overgrown fins with NO visible DsRed',
+      why: 'in the source, some overgrown fins had no detectable marker at all (W169L 2/26, wt 2/11), attributed to promoter variegation. The marker is evidence of expression, not of presence.',
+      gate: { must_hold: 'overgrowth is attributed by PCR, not by fluorescence alone', if_not: 'the association between the transgene and the phenotype is weaker than it looks', cost_to_check: 'one PCR per scored fin' } },
+    { id: 'analysis', day: null, what: 'compare the overgrowth rate against the marker-only and conductance-dead arms, and against the published 0/240 and n = 32',
+      gate: { must_hold: 'the comparison was powered before the embryos were injected', if_not: 'a null result is uninterpretable and the experiment answered nothing', cost_to_check: 'free, and for THIS route it is actually possible - see power.mjs, because both control rates are published' } },
+  ];
+}
 
 /** Stages for a knockout read out in the injected generation (the cheap case). */
 export function f0Stages(ctx = {}) {
@@ -111,8 +156,18 @@ export function knockinStages(ctx = {}) {
 
 /** Pick the stage list a case needs, and say why. */
 export function stagesFor(kase, ctx = {}) {
+  const overexpression = /tol2|transgenesis/i.test(kase?.edit?.kind ?? '');
   const f0 = kase?.scorable_in_injected_generation === true;
   const dominant = /dominant/i.test(kase?.why ?? '') || ctx.dominant === true;
+  if (overexpression) {
+    return {
+      route: 'overexpression',
+      why: 'the case is not an edit at all: a Tol2 donor plasmid is injected, so there is no guide to verify, no cut to confirm and no locus to genotype - but the readout is in adults, so no cross is needed and the experiment is still months long',
+      stages: overexpressionStages(ctx),
+      what_this_is: WHAT_THIS_IS,
+      approval: APPROVAL_GATE,
+    };
+  }
   return {
     route: f0 ? 'f0' : 'knockin',
     why: f0

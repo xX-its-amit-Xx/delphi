@@ -147,6 +147,33 @@ export const GUIDE_PLACEMENT = {
 };
 
 export function controlFor(kase) {
+  // The overexpression route injects a plasmid and transposase mRNA. Every control in CONTROLS is a
+  // CRISPR control: it proves that a NUCLEASE injection worked. Offering one here would prove something
+  // about an experiment the lab is not running, so the route gets its own answer instead.
+  if (/tol2|transgenesis/i.test(kase?.edit?.kind ?? '')) {
+    return {
+      injection_control: null,
+      readout_control: null,
+      why:
+        'NONE OF THE PUBLISHED CONTROLS IN THIS FILE TRANSFER. slc24a5 and tbx5a are CRISPR controls: they ' +
+        'show that a guide-and-nuclease injection cut and produced a phenotype. This route injects a Tol2 ' +
+        'donor plasmid with transposase mRNA and no nuclease at all, so a working slc24a5 crispant would ' +
+        'say nothing about whether this injection delivered a transgene.',
+      the_controls_are_in_the_design_instead: [
+        { id: 'control:dsred-only', proves: 'that overgrowth needs the channel, not the injection or the transgene machinery', published_result: '0/240' },
+        { id: 'control:non-conductive', proves: 'that overgrowth needs the channel to CONDUCT, which is the mechanism claim', published_result: 'no overgrowth, n = 32 fins with DsRed-positive tissue' },
+      ],
+      the_injection_control_this_route_actually_needs:
+        'the marker itself. DsRed expression IS the delivery control, which is why the construct carries it ' +
+        'in cis - but only as evidence of expression, not of presence: in the source, some overgrown fins ' +
+        'had no detectable DsRed (W169L 2/26, wt 2/11), so the plan gates on a PCR rather than on fluorescence.',
+      what_is_still_missing:
+        'a positive control for TRANSPOSITION itself - a construct known to integrate and express in fin ' +
+        'tissue in this facility. A lab new to Tol2 should run one before committing four months of tank ' +
+        'space, and no published candidate for it is recorded here.',
+      caveat: HOW_TO_USE_A_CONTROL.important_caveat,
+    };
+  }
   const fin = /fin/i.test(kase?.assay ?? '') || /fin/i.test(kase?.question ?? '');
   const injection = CONTROLS.find(c => c.id === 'slc24a5');
   const readout = fin ? CONTROLS.find(c => c.id === 'tbx5a') : null;

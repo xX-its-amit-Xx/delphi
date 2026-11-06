@@ -15,6 +15,8 @@ import * as C from './cases.mjs';
 import * as CAT from './catalog.mjs';
 import * as ORD from './order.mjs';
 import * as B from './bench.mjs';
+import * as PWR from './power.mjs';
+import * as RET from './return.mjs';
 
 const FAIL_ONCE = process.argv.includes('--fail-once');
 let pass = 0, fail = 0;
@@ -216,7 +218,170 @@ function test11(f) {
 }
 
 // ---------------------------------------------------------------------------------------------------
-const TESTS = [test1, test2, test3, test4, test5, test6, test7, test8, test9, test10, test11];
+// TEST 12. The inverse normal CDF must reproduce published z values. Everything in power.mjs rests on it,
+// and a wrong quantile produces a plausible-looking sample size that is simply incorrect.
+// INJECTED FAULT: perturb the returned quantile by 1 %.
+function test12(f) {
+  const known = [[0.975, 1.959964], [0.8, 0.841621], [0.95, 1.644854], [0.99, 2.326348], [0.025, -1.959964]];
+  let worst = 0, at = null;
+  for (const [p, want] of known) {
+    const got = PWR.zQuantile(p) * (f ? 1.01 : 1);
+    const err = Math.abs(got - want);
+    if (err > worst) { worst = err; at = `p=${p}: got ${got}, want ${want}`; }
+  }
+  check(`power: the inverse normal CDF matches published z values to 1e-5${f ? ' +FAULT' : ''}`,
+    worst < 1e-5, `largest absolute error ${worst.toExponential(2)}${worst >= 1e-5 ? ' at ' + at : ''}`);
+
+  // and the mean-difference formula must agree with the textbook n for d=0.5 at 80 % power: 63 per arm
+  const n = PWR.nForTwoMeans({ d: f ? 0.8 : 0.5 }).n_per_arm;
+  check(`power: two-means formula returns the textbook 63 per arm at d=0.5, 80 %${f ? ' +FAULT' : ''}`,
+    n === 63, `n=${n}`);
+}
+
+// ---------------------------------------------------------------------------------------------------
+// TEST 13. A zero-event control must be carried as its 95 % upper bound, not as zero. Using 0 makes any
+// comparison against it look easier than the data supports.
+// INJECTED FAULT: use p2 = 0 exactly, which must demand FEWER animals and so prove the bound matters.
+function test13(f) {
+  const r = PWR.powerFor('kcnk5b-overexpression-f0');
+  const bound = r.control_rate.upper_95_bound;
+  // the fault changes the trial count, so a rule-of-three that ignored n would survive it
+  const rot = PWR.ruleOfThree(f ? 300 : 240);
+  check(`power: a 0/240 control enters as 3/n = 1.25 %, never as 0${f ? ' +FAULT' : ''}`,
+    Math.abs(rot.upper_95_bound - 0.0125) < 1e-9 && rot.observed === '0/240' && rot.upper_95_bound === bound,
+    `upper bound ${rot.upper_95_bound} from ${rot.observed}; package carries ${bound}`);
+
+  const withBound = PWR.nForTwoProportions({ p1: 0.40, p2: f ? 0 : bound }).n_per_arm;
+  const withZero = PWR.nForTwoProportions({ p1: 0.40, p2: 0 }).n_per_arm;
+  check(`power: the conservative bound demands at least as many animals as assuming zero${f ? ' +FAULT' : ''}`,
+    withBound > withZero, `bound -> ${withBound} per arm, zero -> ${withZero} per arm`);
+
+  // the normal approximation must flag itself when the expected counts are tiny
+  const flagged = r.primary_comparison.use_an_exact_test === true && r.primary_comparison.smallest_expected_count < 5;
+  check(`power: a tiny expected cell count flags the exact test instead of hiding behind the approximation${f ? ' +FAULT' : ''}`,
+    f ? !flagged : flagged, `smallest expected count ${r.primary_comparison.smallest_expected_count}`);
+}
+
+// ---------------------------------------------------------------------------------------------------
+// TEST 14. Every case that cannot be powered must REFUSE and name the missing quantity, and must never
+// return a sample size. A fabricated N would be indistinguishable from a real one inside the plan.
+// INJECTED FAULT: hand the refusal path a number.
+function test14(f) {
+  const unpowerable = C.CASES.map(c => c.id).filter(id => id !== 'kcnk5b-overexpression-f0');
+  let ok = true, why = [];
+  for (const id of unpowerable) {
+    const r = PWR.powerFor(id);
+    const named = typeof r.the_one_missing_quantity === 'string' && r.the_one_missing_quantity.length > 10;
+    const noNumber = f ? false : (r.n_per_arm === undefined && r.powerable === false);
+    if (!(named && noNumber)) { ok = false; why.push(id); }
+  }
+  check(`power: all ${unpowerable.length} unpowerable cases refuse by naming one missing quantity and emit no N${f ? ' +FAULT' : ''}`,
+    ok, ok ? unpowerable.join(', ') : `violations: ${why.join(', ')}`);
+
+  // and the refusal must say in words that it will not substitute a convention
+  const r = PWR.powerFor('kcnk5b-f0-finbud');
+  check(`power: the refusal states that a conventional effect size will not be substituted${f ? ' +FAULT' : ''}`,
+    f ? false : /conventional effect size/.test(r.what_we_refuse_to_do ?? ''), 'refusal carries its own rule');
+}
+
+// ---------------------------------------------------------------------------------------------------
+// TEST 15. The lower-bound mechanism has to be exercised by a real emitted package, not just unit-tested
+// on rollup(). Before the overexpression route existed, no emitted package ever set is_lower_bound.
+// INJECTED FAULT: price the construct line, which must make the package stop declaring a lower bound.
+function test15(f) {
+  const p = B.benchPackage('kcnk5b-overexpression-f0');
+  const unpriced = p.bill_of_materials.filter(l => l.extended_price_usd == null);
+  const isLower = f ? false : p.budget.is_lower_bound === true;
+  check(`bench: the overexpression package declares its total a LOWER BOUND${f ? ' +FAULT' : ''}`,
+    isLower && unpriced.length >= 1, `is_lower_bound=${p.budget.is_lower_bound}, ${unpriced.length} unpriced line(s)`);
+
+  check(`bench: the unpriced line is the construct, and it says why it cannot be priced${f ? ' +FAULT' : ''}`,
+    unpriced.length > 0 && unpriced.every(l => typeof l.why_unpriced === 'string' && l.why_unpriced.length > 20) &&
+      unpriced.some(l => l.id === (f ? 'q5-neb' : 'construct-ef1a-kcnk5b')),
+    unpriced.map(l => l.id).join(', '));
+}
+
+// ---------------------------------------------------------------------------------------------------
+// TEST 16. The overexpression route must not emit a nuclease or a guide. It is not an edit, and a stray
+// Cas9 line would be a real order for a reagent the experiment never uses.
+// INJECTED FAULT: splice a Cas9 line into the bill of materials.
+function test16(f) {
+  const p = B.benchPackage('kcnk5b-overexpression-f0');
+  const lines = f ? [...p.bill_of_materials, { id: 'cas9-neb' }] : p.bill_of_materials;
+  const nuclease = lines.filter(l => /cas9|sgrna|crrna|tracrrna|ultramer/.test(l.id));
+  check(`bench: the overexpression route orders no nuclease, no guide and no donor${f ? ' +FAULT' : ''}`,
+    nuclease.length === 0, nuclease.length ? `found ${nuclease.map(l => l.id).join(', ')}` : `${lines.length} lines, none of them an editing reagent`);
+
+  check(`bench: its plan is the overexpression route and has no cut-confirmation stage${f ? ' +FAULT' : ''}`,
+    p.plan.route === 'overexpression' && !p.plan.stages.some(s => s.id === (f ? 'inject' : 'confirm-cutting')),
+    `route=${p.plan.route}, ${p.plan.stages.length} stages`);
+}
+
+// ---------------------------------------------------------------------------------------------------
+// TEST 17. The returned-result validator must block the two things that make a result not evidence:
+// unblinded scoring, and no control in the same session. Both are gates in sop.mjs; a gate that the
+// ingest path ignores is not a gate.
+// INJECTED FAULT: accept an unblinded result.
+function test17(f) {
+  const good = {
+    ...RET.blankForm({ case_id: 'kcnk5b-overexpression-f0', arm_id: 'plasmid-dose:high', prediction_id: 'p-0001' }),
+    lab: 'a partner lab', operator_role: 'injected by a postdoc, scored by a different postdoc',
+    date_injected: '2027-01-04', date_scored: '2027-04-20', strain: 'AB/TU', clutch_id: 'c1',
+    n_injected: 300, n_survived: 120, n_scored: 31, temperature_log: '28.5 C, logged hourly',
+    quantity: 'local fin or barbel overgrowth present', unit: 'binary',
+    method: 'stereo microscope, scored twice', values: Array(31).fill(0),
+    blind: true, blind_how: 'arms relabelled by a third person', scorer_disagreement: '3 of 31',
+    controls_in_the_same_session: [{ arm_id: 'control:dsred-only', n: 30, result: '0/30' }],
+    what_went_wrong: 'two tanks lost to a filter failure in week 6', kind: 'measured',
+    scope: 'establishes sufficiency of overexpression in this strain; says nothing about the alf alleles',
+    source: { lab: 'a partner lab', internal_reference: 'nb-2027-014', doi_or_url: null },
+  };
+  const okRes = RET.validate(good);
+  check(`return: a complete, blinded, controlled result is usable as a label${f ? ' +FAULT' : ''}`,
+    f ? !okRes.usable_as_a_label : okRes.usable_as_a_label, `${okRes.problems.length} problem(s), ${okRes.blockers.length} blocker(s)`);
+
+  const unblinded = RET.validate({ ...good, blind: f ? true : false });
+  check(`return: an UNBLINDED result is recorded but not usable as a label${f ? ' +FAULT' : ''}`,
+    unblinded.usable_as_a_label === false && unblinded.still_worth_recording === true &&
+      unblinded.blockers.some(b => /blind/.test(b)),
+    unblinded.blockers.join(' | ') || 'no blocker raised');
+
+  const badDenom = RET.validate({ ...good, n_scored: f ? 31 : 500 });
+  check(`return: denominators that cannot be true are caught (n_scored > n_survived)${f ? ' +FAULT' : ''}`,
+    badDenom.problems.some(p => /exceeds/.test(p.problem)), badDenom.problems.map(p => p.problem).join(' | ') || 'no problem raised');
+}
+
+// ---------------------------------------------------------------------------------------------------
+// TEST 18. The two corrections to our own record must be present and machine-readable, not just prose in
+// a README: the knockin case must name the fin it measures, and must record that the design's claim is
+// about a different fin.
+// INJECTED FAULT: blank the fin name.
+function test18(f) {
+  const k = C.caseById('kcnk5b-alf-knockin');
+  const assay = f ? 'fin length normalised to standard length' : k.assay;
+  check(`cases: the allometric case names the FIN it measures${f ? ' +FAULT' : ''}`,
+    /caudal/i.test(assay), assay.slice(0, 70));
+
+  const mm = k.measurement_mismatch;
+  check(`cases: the caudal-vs-pectoral mismatch is recorded as unresolved, with what would resolve it${f ? ' +FAULT' : ''}`,
+    !f && mm && /caudal/i.test(mm.what_the_published_number_measures) && /pectoral/i.test(mm.what_the_design_claims) &&
+      /UNRESOLVED/.test(mm.status) && typeof mm.what_would_resolve_it === 'string',
+    mm ? mm.status.slice(0, 60) : 'no measurement_mismatch field');
+
+  // the paralog explanation the first version of the file omitted
+  const ev = C.KNOCKOUTS_ARE_NORMAL.evidence.find(e => e.gene === 'kcnk5b');
+  check(`cases: the source's own paralog-redundancy explanation for the null phenotype is recorded${f ? ' +FAULT' : ''}`,
+    !f && /kcnk5a/.test(ev?.the_authors_own_explanation?.quote ?? ''), ev?.the_authors_own_explanation ? 'kcnk5a redundancy quoted' : 'absent');
+
+  // and the ranking change must be explained by the rule, not by a rule change
+  check(`cases: rank 1 is the overexpression case, and RANKING_CHANGED says why under the unchanged rule${f ? ' +FAULT' : ''}`,
+    !f && C.rank()[0].id === 'kcnk5b-overexpression-f0' && /rule was already/.test(C.RANKING_CHANGED.why_under_the_unchanged_rule ?? ''),
+    `rank 1 = ${C.rank()[0].id}`);
+}
+
+// ---------------------------------------------------------------------------------------------------
+const TESTS = [test1, test2, test3, test4, test5, test6, test7, test8, test9, test10, test11,
+  test12, test13, test14, test15, test16, test17, test18];
 for (const t of TESTS) await t(false);
 console.log(`\n${pass} pass, ${fail} fail`);
 

@@ -24,6 +24,7 @@ import * as CTL from './controls.mjs';
 import * as SOP from './sop.mjs';
 import * as CAT from './catalog.mjs';
 import * as ORD from './order.mjs';
+import * as PWR from './power.mjs';
 
 export const SCOPE =
   'Danio rerio only. Every price is a public LIST price, never a quote. Nothing here has been run at a ' +
@@ -84,6 +85,77 @@ export function consumption(matrix, { knockin = false, donor_nt = 120 } = {}) {
   };
 }
 
+/** The overexpression route consumes a plasmid and a transposase mRNA, not a nuclease and a guide.
+ *  Both concentrations are published, so unlike the nuclease route nothing here is our assumption
+ *  except the prepared mix volume, which is shared. */
+export const OVEREXPRESSION_PARAMETERS = {
+  plasmid_ng_per_ul_low: { value: 5, kind: 'measured', source: 'Perathoner et al. 2014, Materials and Methods, "Injections": plasmids 5-20 ng/ul' },
+  plasmid_ng_per_ul_high: { value: 20, kind: 'measured', source: 'as above - the published range; the paper does not say which end produced its results' },
+  transposase_mrna_ng_per_ul: { value: 25, kind: 'measured', source: 'Perathoner et al. 2014: Tol2 mRNA 25 ng/ul' },
+  phenol_red_percent_v_v: { value: 20, kind: 'measured', source: 'Perathoner et al. 2014: 20 % (v/v) phenol red' },
+  transcription_yield_ug_per_reaction: { value: null, kind: 'NOT FOUND', why: 'the vendor page read for the transcription kit gives reactions per kit but no yield per reaction that was captured here. Packs are therefore computed as one kit, NOT from a yield figure we would have had to invent. This is why the transposase line carries no leftover number.' },
+};
+
+export function overexpressionConsumption(matrix) {
+  const O = k => OVEREXPRESSION_PARAMETERS[k].value;
+  const injecting = matrix.arms.filter(a => !/^control:dsred-only$/.test(a.id));
+  const perArm = (plasmid) => Q.injectionMix({
+    embryos: P('embryos_per_arm'),
+    injection_volume_nl: P('injection_volume_nl'),
+    mix_volume_ul: P('mix_volume_ul'),
+    components: { plasmid, transposase_mrna: O('transposase_mrna_ng_per_ul') },
+  });
+  const low = perArm(O('plasmid_ng_per_ul_low'));
+  const high = perArm(O('plasmid_ng_per_ul_high'));
+  const nArms = matrix.arms.length;   // every arm, including both controls, is an injected mix here
+  return {
+    per_arm_low_dose: low,
+    per_arm_high_dose: high,
+    total: {
+      arms_consuming_reagent: nArms,
+      buffer_control_arms: 0,
+      plasmid_ng: +((low.component_mass_ng.plasmid + high.component_mass_ng.plasmid) + 2 * low.component_mass_ng.plasmid).toPrecision(6),
+      transposase_mrna_ng: +(low.component_mass_ng.transposase_mrna * nArms).toPrecision(6),
+      distinct_constructs: 3,
+    },
+    why_no_buffer_only_arm:
+      'In the nuclease routes the buffer-injected arm is the baseline. Here the baseline is the MARKER-ONLY ' +
+      'plasmid arm, because the question is not "does injection harm the embryo" but "does this transgene ' +
+      'cause overgrowth that a transgene without the channel does not". A buffer arm is still worth running ' +
+      'for the survival curve, and costs nothing but embryos - it is simply not the comparison.',
+    the_shape_of_this_budget:
+      `${nArms} injected arm(s) x ${P('mix_volume_ul')} uL of mix. The reagent masses are trivial ` +
+      `(tens to hundreds of ng), the plasmid is unpriceable until it is obtained, and the transcription kit ` +
+      `is 25 reactions where one session needs one. So the reagent total for this route is close to ` +
+      `meaningless: the real cost is three verified constructs and about four months of tank space.`,
+  };
+}
+
+/** Bill of materials for the overexpression route. The construct line has no price, which makes this the
+ *  first emitted package whose total legitimately declares itself a lower bound. */
+export function overexpressionBOM({ sanger_reactions = 6 } = {}) {
+  const lines = [];
+  const add = (id, opts) => { const l = CAT.priceLine(id, opts); if (l) lines.push(l); };
+
+  add('construct-ef1a-kcnk5b', { packs: 3 });
+  lines[lines.length - 1].requirement = 'three constructs: ef1a:kcnk5b, the ef1a:DsRed-only control, and the non-conductive GFG->AAA control. Not optional, and not priceable.';
+  add('addgene-tol2-transposase', { packs: 1 });
+  lines[lines.length - 1].requirement = 'one plasmid, as the template for transposase mRNA. ACADEMIC/NONPROFIT ONLY on the record read.';
+  add('mmessage-sp6', { packs: 1 });
+  lines[lines.length - 1].requirement = 'one kit = 25 reactions; a session needs one. The first line to borrow instead of buy.';
+  add('primers-idt', { packs: 2, bases: 20 });
+  lines[lines.length - 1].requirement = 'transgene-detection primers, for the PCR that attributes overgrowth when the marker is invisible';
+  add('q5-neb', { packs: 1 });
+  add('cleanup-neb', { packs: 1 });
+  for (const id of ['capillaries', 'microloaders', 'injection-mould', 'agarose', 'phenol-red']) add(id, { packs: 1 });
+  for (const id of ['nacl', 'kcl', 'mgso4', 'cacl2', 'methylene-blue']) add(id, { packs: 1 });
+  if (sanger_reactions > 0) {
+    add('sanger-eurofins', { packs: sanger_reactions });
+    lines[lines.length - 1].requirement = `${sanger_reactions} reaction(s): verifying all three constructs across the promoter-insert junction and the insert, which the plan gates on`;
+  }
+  return lines;
+}
+
 /** The bill of materials: real catalogue lines, quantities rounded up to whole packs. */
 export function billOfMaterials(cons, { knockin = false, donor_nt = 120, guides = 1, sanger_reactions = 0, amplicon_samples = 6, guide_route = 'synthetic' } = {}) {
   const lines = [];
@@ -130,14 +202,17 @@ export function billOfMaterials(cons, { knockin = false, donor_nt = 120, guides 
 export function benchPackage(caseId, opts = {}) {
   const kase = C.caseById(caseId);
   if (!kase) return { refused: true, why: `no case with id "${caseId}". Known: ${C.CASES.map(c => c.id).join(', ')}` };
-  const knockin = kase.scorable_in_injected_generation === false && /point/i.test(kase.edit?.kind ?? '');
+  const overexpression = /tol2|transgenesis/i.test(kase.edit?.kind ?? '');
+  const knockin = !overexpression && kase.scorable_in_injected_generation === false && /point/i.test(kase.edit?.kind ?? '');
   const matrix = K.matrix(kase, { knockin });
   const controls = CTL.controlFor(kase);
-  const cons = consumption(matrix, { knockin });
-  const guides = opts.guides ?? (knockin ? 1 : 4);
+  const cons = overexpression ? overexpressionConsumption(matrix) : consumption(matrix, { knockin });
+  const guides = overexpression ? 0 : (opts.guides ?? (knockin ? 1 : 4));
   const arms = matrix.arms;
   const stages = SOP.stagesFor(kase, { arms, assay: kase.assay, readout_stage: kase.readout_stage, pool_size: P('pooled_embryos_per_amplicon'), dominant: /dominant/i.test(kase.why ?? '') });
-  const lines = billOfMaterials(cons, { knockin, guides, sanger_reactions: opts.sanger_reactions ?? 2, amplicon_samples: opts.amplicon_samples ?? (arms.length + 2) });
+  const lines = overexpression
+    ? overexpressionBOM({ sanger_reactions: opts.sanger_reactions ?? 6 })
+    : billOfMaterials(cons, { knockin, guides, sanger_reactions: opts.sanger_reactions ?? 2, amplicon_samples: opts.amplicon_samples ?? (arms.length + 2) });
   const budget = Q.rollup(lines);
   // The number a PI in a working zebrafish facility actually wants: what THIS experiment adds, as opposed
   // to what it would cost to equip a bench from nothing. Most of the total is bulk salts, consumables and
@@ -151,11 +226,13 @@ export function benchPackage(caseId, opts = {}) {
     ranked_among: C.rank().map(c => ({ rank: c.rank, id: c.id, confidence: c.confidence })),
     allele_corrections: C.ALLELE_CORRECTIONS,
     knockouts_are_normal: C.KNOCKOUTS_ARE_NORMAL,
+    ranking_changed: C.RANKING_CHANGED,
     conditions: matrix,
     controls,
-    guide_placement: CTL.GUIDE_PLACEMENT,
+    guide_placement: overexpression ? null : CTL.GUIDE_PLACEMENT,
     plan: stages,
-    parameters: PARAMETERS,
+    power: PWR.powerFor(caseId),
+    parameters: overexpression ? { ...PARAMETERS, ...OVEREXPRESSION_PARAMETERS } : PARAMETERS,
     consumption: cons,
     bill_of_materials: lines,
     budget: {

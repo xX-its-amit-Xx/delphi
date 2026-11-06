@@ -179,6 +179,36 @@ export const CATALOG = [
     citation: 'Hwang et al. 2013, Nat Biotechnol 31:227-229, doi 10.1038/nbt.2501',
     note: 'Addgene\'s own record names it "DR274", NOT "pDR274" as the protocol literature writes it. Searching a portal for "pDR274" may return nothing.',
     only_needed_if: 'you are transcribing guides from a vector rather than from an annealed-oligo template or buying them synthetic.' },
+
+  // ---------------------------------------------------------------- the overexpression route (Tol2)
+  // Added 2026-11-06 with the kcnk5b-overexpression-f0 case. Prices read on that date, not on READ_ON.
+  { id: 'addgene-tol2-transposase', what: 'pCS2FA CO Tol2 TPase (codon-optimised Tol2 transposase; template for transposase mRNA)',
+    vendor: 'Addgene', catalogue_number: '133032', pack_size: 1, pack_unit: 'plasmid (agar stab)', uom: 'EA',
+    unit_price_usd: 94.00, read_on: '2026-11-06', sourced: true, url: 'https://www.addgene.org/133032/',
+    verified_against_the_record: true,
+    depositing_lab: 'Charles Nathan Hancock, University of South Carolina Aiken',
+    citation: 'Mackey et al. 2020, microPublication Biology',
+    availability: 'ACADEMICS AND NONPROFITS ONLY. The record states "Not Available to Industry", so a company cannot order this line at all and needs a different transposase source.',
+    note: 'This is NOT the pCS2FA-transposase of the Tol2kit (Kwan et al. 2007, Dev Dyn 236:3088-3099), which is distributed from the Tol2kit itself rather than under this number. A codon-optimised transposase is not the same reagent as the original clone, and a lab reproducing Perathoner 2014 exactly should obtain the clone that paper used.',
+    only_needed_if: 'you are making your own transposase mRNA. A lab with transposase mRNA in the freezer needs neither this nor the transcription kit.',
+    shipping: 'calculated at checkout from the destination and never published; stays to-be-determined.' },
+  { id: 'mmessage-sp6', what: 'mMESSAGE mMACHINE SP6 Transcription Kit (capped mRNA synthesis, for transposase mRNA)',
+    vendor: 'Thermo Fisher Scientific (Invitrogen)', catalogue_number: 'AM1340', pack_size: 25, pack_unit: 'reaction', uom: 'EA',
+    unit_price_usd: 578.00, read_on: '2026-11-06', sourced: true,
+    url: 'https://www.thermofisher.com/order/catalog/product/AM1340',
+    note: 'One kit is 25 reactions and a single reaction makes far more transposase mRNA than one injection session needs, so the leftover field will dominate this line. It is the single most expensive item in the overexpression route and the first thing to borrow rather than buy.',
+    stock_item: true,
+    stock_item_because: 'a kit of this kind is general molecular biology equipment in any lab that makes mRNA; it is not specific to this experiment.' },
+  { id: 'construct-ef1a-kcnk5b', what: 'ef1a:kcnk5b + ef1a:DsRed Tol2 donor plasmid (and the ef1a:DsRed-only control plasmid)',
+    vendor: null, catalogue_number: null, no_catalogue_number_because: 'not deposited in any repository that could be read',
+    pack_size: 1, pack_unit: 'plasmid', uom: 'EA', unit_price_usd: null, read_on: '2026-11-06', sourced: false,
+    why_unsourced:
+      'The construct is not in Addgene or any other searchable repository. In the source paper it was built from two gift plasmids ' +
+      '(Ale237 from A. Mongera and 587jk from J. Krauss) and the non-conductive variant was made by PCR mutagenesis. So this line is ' +
+      'either a request to the corresponding author of Perathoner et al. 2014 (free, but on their timetable and subject to an MTA), ' +
+      'or a cloning project of three constructs: wild-type, the DsRed-only control, and the GFG->AAA specificity control.',
+    consequence: 'ANY budget for this route is a LOWER BOUND until this line is resolved. It is the one line that cannot be priced and cannot be skipped.',
+    citation: 'Perathoner et al. 2014, Materials and Methods, "Cloning of overexpression vectors", doi 10.1371/journal.pgen.1004080' },
 ];
 
 /** Vendors that publish nothing, and sites that cannot be read. This is as much a deliverable as the

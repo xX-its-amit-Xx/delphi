@@ -151,9 +151,75 @@ export const PRECISION_NOTE =
   'Treat them as approximate to within a point or two. The panel also has no uninjected-control bar: 100 pg ' +
   'is the low comparator, not a control.';
 
+// ---------------------------------------------------------------------------------------------------
+// THE OVEREXPRESSION ROUTE (Tol2). A different experiment with different levers: there is no nuclease,
+// no guide and no dose-to-efficiency curve. What varies is plasmid dose, and what matters far more than
+// dose is that the two published controls are run in the same session, because the entire inferential
+// weight of the published result rests on them (0/240 and n=32).
+// ---------------------------------------------------------------------------------------------------
+export const OVEREXPRESSION_ARMS = [
+  { id: 'control:dsred-only', variable: null, level: 'dsred-only', value: 'ef1a:DsRed plasmid alone, same dose, same session',
+    why: 'THE control that makes the result mean anything: 0 of 240 injected fish showed overgrowth, despite DsRed-positive cells throughout the fin. Without it, a patchy overgrowth call in injected fish is uninterpretable.',
+    published_result: '0/240', citation: 'Perathoner et al. 2014, Results and Fig. S3' },
+  { id: 'control:non-conductive', variable: null, level: 'GFG->AAA', value: 'ef1a:kcnk5b(GFGAAA) + ef1a:DsRed, same dose',
+    why: 'the specificity control. The GFG selectivity filter mutated to AAA blocks K+ conductance (confirmed in oocytes), and gave no overgrowth in fins that did contain DsRed-positive tissue. It separates "the channel\'s conductance causes this" from "injecting a plasmid causes this".',
+    published_result: 'no overgrowth, n = 32 fins with DsRed-positive tissue', citation: 'Perathoner et al. 2014, Results and Fig. 6H, 6J' },
+  { id: 'plasmid-dose:low', variable: 'plasmid-dose', level: 'low', value: '5 ng/ul',
+    expect: 'fewer transgene-positive fish, less mosaic burden, lower toxicity',
+    why: 'the bottom of the published injection range. The paper gives a range (5-20 ng/ul) and does not report which end produced its numbers, so the range is the honest arm rather than a single number we would have had to invent.' },
+  { id: 'plasmid-dose:high', variable: 'plasmid-dose', level: 'high', value: '20 ng/ul',
+    expect: 'more transgene-positive fish per injection, at whatever toxicity cost the lab measures',
+    why: 'the top of the published range. Which end to standardise on is the one thing this matrix is actually for.' },
+];
+
+export const OVEREXPRESSION_FIXED = [
+  { id: 'promoter', fixed_at: 'ef1a (Xenopus laevis)', why_no_arm: 'chosen in the source because it was shown active in all major fin tissues. Changing it changes which cells express, which is a different experiment.' },
+  { id: 'transposase-mrna-dose', fixed_at: '25 ng/ul', why_no_arm: 'published, single value, and not the lever under test.' },
+  { id: 'injection-pressure-and-duration', fixed_at: '275 Pa (40 psi) for 100 ms', why_no_arm: 'published exactly. Rig-specific in practice, but there is no reason to vary it as an experimental arm.' },
+  { id: 'allele', fixed_at: 'wild-type kcnk5b', why_no_arm: 'the source shows WILD-TYPE overexpression is sufficient for overgrowth, so wild type is the cheaper and equally informative construct for a sufficiency test. Using W169L instead answers nothing extra about sufficiency and costs an extra construct.' },
+  { id: 'scoring-stage', fixed_at: 'adult', why_no_arm: 'the phenotype is an adult fin and barbel phenotype. There is no published earlier readout for this route.' },
+];
+
+export const OVEREXPRESSION_TRAPS = [
+  { id: 'the-40-percent-denominator',
+    the_number: 'about 40 % of injected fish showed local overgrowth',
+    the_trap: 'the denominator is injected fish THAT SHOW DsRed-POSITIVE CELLS IN THE FINS, not injected fish and not injected embryos. The fraction of injected embryos that reach adulthood with fin-expressing clones is not published.',
+    consequence: 'a lab budgeting embryos from 40 % will inject too few. Budget on embryos injected, and treat the transgene-positive fraction as something this session measures rather than inherits.' },
+  { id: 'borrowed-stop-rules',
+    the_trap: 'the published survival and lethality stop rules in GUARDRAILS were measured for NUCLEASE injections (protein or mRNA plus guide), not for plasmid plus transposase mRNA.',
+    consequence: 'they are carried into this route as a borrowed rule, not a measured one. A plasmid route has its own toxicity profile and the session should record its own survival curve rather than assume these thresholds transfer.' },
+  { id: 'mosaic-and-variegated',
+    the_trap: 'clones are mosaic and the promoter variegates: in the source, some overgrown fins had no detectable DsRed at all (W169L 2/26, wt 2/11).',
+    consequence: 'absence of the marker is not absence of the transgene. Scoring must allow for marker-negative overgrowth, and a PCR on the overgrown tissue is the arbiter, not the fluorescence.' },
+];
+
+export function overexpressionMatrix() {
+  return {
+    design: 'one-at-a-time over plasmid dose, with BOTH published controls in the same session',
+    design_rule: DESIGN_RULE,
+    route: 'overexpression',
+    arms: OVEREXPRESSION_ARMS,
+    n_arms: OVEREXPRESSION_ARMS.length,
+    varied: [{ id: 'plasmid-dose', why: 'the source publishes a 4-fold range and does not say which end its numbers came from' }],
+    deliberately_not_varied: OVEREXPRESSION_FIXED,
+    guardrails: GUARDRAILS,
+    guardrails_caveat: 'BORROWED. These stop rules were measured for nuclease injections; see OVEREXPRESSION_TRAPS.borrowed-stop-rules.',
+    traps: OVEREXPRESSION_TRAPS,
+    the_controls_are_not_optional:
+      'In the other cases a control proves the injection worked. Here the controls ARE the experiment: a ' +
+      'local, patchy overgrowth call in injected adults has no meaning except against the DsRed-only rate ' +
+      '(published 0/240) and the conductance-dead rate (published no overgrowth at n = 32). A session that ' +
+      'drops either control has not run this experiment, it has collected anecdotes.',
+    cost_note:
+      'Unlike the nuclease routes, the dominant cost here is not reagent but TIME: every arm must be raised ' +
+      'to adulthood before it can be scored. Four arms of injected embryos is four tanks for about four months.',
+  };
+}
+
 /** Build the arms for a case. Returns the arms AND the variables deliberately not varied, because a matrix
  *  that shows only what it varies hides the decisions that actually shaped it. */
 export function matrix(kase, { knockin = false } = {}) {
+  if (/tol2|transgenesis/i.test(kase?.edit?.kind ?? '')) return overexpressionMatrix();
   const applicable = VARIABLES.filter(v => !v.applies_to || (knockin && v.applies_to.startsWith('knock-in')));
   const armed = applicable.filter(v => v.arm);
   const fixed = applicable.filter(v => !v.arm);
