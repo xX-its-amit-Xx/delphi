@@ -95,6 +95,44 @@ export const CHANNELS = Object.freeze({
 });
 
 /**
+ * TWO AXES OF GEOMETRY PROVENANCE, which the first version of this spec collapsed into one and got wrong.
+ *
+ * The original `no_unstamped_mesh` rule gated on the provenance of the NUMBERS - the centre and radius of
+ * each cell. Building the exporter showed that is not sufficient, because a sphere is a depiction of SHAPE
+ * however good those numbers are: real blastomeres are flattened against their neighbours, and in a
+ * compacted morula the flat contact faces are most of the surface. So a stage with perfectly measured
+ * centres and radii still exports a drawing, and under the one-axis rule it would export unmarked.
+ *
+ *   numbers   where the centres, radii and areas came from    (the KINDS vocabulary)
+ *   shape     what shape model turned them into triangles     (almost always a depiction)
+ *
+ * The second axis is what makes the first honest. It also has a consequence worth stating plainly: a
+ * sphere-packed mesh has no contact faces, so every cell's exposed surface area comes out too large, and
+ * biased in the direction that makes inner cells look like outer ones - the one geometric quantity
+ * `CHANNELS.geometry.why_exposed_area` says lineage bias tracks. Any mesh export therefore CONTRADICTS a
+ * measured `exposed_surface_area` and must name the cells it contradicts rather than quietly overriding
+ * them.
+ */
+export const GEOMETRY_PROVENANCE_AXES = Object.freeze({
+  numbers: 'where the centre, radius and any measured areas came from. Uses the KINDS vocabulary.',
+  shape: 'the shape model that turned those numbers into a surface. A sphere per cell is a DEPICTION even ' +
+    'when every number is measured, because blastomeres are not spheres and compaction changes shape ' +
+    'without changing volume.',
+  why_both: 'gating on the numbers alone lets a mesh built from measured coordinates leave the file ' +
+    'unmarked, and it is still a drawing. The first version of this spec made exactly that mistake.',
+  consequence_for_exposed_area:
+    'a sphere packing has no contact faces, so exposed surface area is overestimated and biased towards ' +
+    'making inner cells resemble outer ones. An export that overrides a measured exposed_surface_area ' +
+    'must name the cells it contradicts.',
+  units_do_not_survive:
+    'binary STL has no unit field and most slicers assume millimetres, so a micrometre embryo is wrong by ' +
+    'a factor of 1000 without any complaint. The export states the units it dropped.',
+  header_must_not_begin_with_solid:
+    'an 80-byte binary header beginning "solid" makes several readers sniff the file as ASCII STL and ' +
+    'fail, so the format tag goes first.',
+});
+
+/**
  * Every stage must pin itself in time AND in condition, for the same reason .organism does: "morula" means
  * different things across species and across temperatures, and "E3.5 at 37 C" means one thing.
  */
@@ -137,6 +175,40 @@ export const REFUSALS = Object.freeze({
     'the genome and the phenotype must agree about which organism this is. A file whose edit list targets ' +
     'one reference and whose phenotype was measured on another is not a record, it is two records.',
 });
+
+/**
+ * GENOME COORDINATES must declare their convention, which v0.1.0 failed to require and which bites
+ * silently. An edit written `start: 1000` is a different base depending on whether the file means 1-based
+ * inclusive (VCF, GFF, and what organism-format/examples/winged-zebrafish.organism actually writes) or
+ * 0-based half-open (BED, and what most code assumes). A fetcher reading the wrong one returns flanks off
+ * by one base, and nothing downstream can detect it: the FASTA is well-formed, the aligner is happy, and
+ * the sequence is wrong at the join.
+ *
+ * So: declare it, and until a file does, an exporter must pass coordinates through verbatim and SAY that
+ * it did, rather than translating on a guess.
+ */
+export const COORDINATE_CONVENTIONS = Object.freeze({
+  '1-based-inclusive': 'VCF and GFF. The first base of a chromosome is 1 and `end` is included.',
+  '0-based-half-open': 'BED and most code. The first base is 0 and `end` is excluded.',
+  required: true,
+  why: 'an off-by-one in a flank is invisible in the output. The FASTA is well-formed, the aligner is ' +
+    'happy, and the sequence is wrong at the join.',
+  until_declared: 'pass coordinates to the fetcher verbatim and record coordinate_convention=as-given-in-the-file',
+});
+
+/**
+ * A nucleotide alphabet check cannot tell you that a sequence is DNA, and it is worth knowing why before
+ * relying on one. The IUPAC nucleotide and amino-acid alphabets share ELEVEN letters: A C G T N and the
+ * ambiguity codes R Y S W K M B D H V. Every one of those is also an amino acid, so `M` is a legal
+ * nucleotide (A or C) and the string MSWKRYVHDBN is at once a clean nucleotide sequence and a peptide.
+ *
+ * An alphabet check therefore catches a protein only if it happens to contain E, F, I, L, P, Q, X or Z.
+ * It is a typo check, not a type check.
+ */
+export const ALPHABET_CHECK_LIMIT =
+  'the IUPAC nucleotide and amino-acid alphabets share A C G T N R Y S W K M B D H V, so an alphabet ' +
+  'check is a typo check and not a type check: it catches a protein only if the protein contains one of ' +
+  'E F I L P Q X Z.';
 
 /** The minimum a .life must say about what it does not know. Carried from .organism. */
 export const NOT_ESTABLISHED_MINIMUM = Object.freeze([

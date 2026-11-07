@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>.life viewer</title>
+<style>
+  :root{
+    --bg:#0b0e13; --panel:#141922; --edge:#232c3a; --ink:#e7edf5; --dim:#8e9bb0;
+    --warn:#f0b429; --warn-bg:#3a2d08; --ok:#4ec9a0; --accent:#6aa9ff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+  #app{display:grid;grid-template-columns:1fr 340px;height:100%}
+  #stage{position:relative;min-width:0}
+  canvas{display:block;width:100%;height:100%}
+  #side{border-left:1px solid var(--edge);background:var(--panel);overflow-y:auto;padding:16px}
+  h1{font-size:15px;margin:0 0 2px;letter-spacing:.2px}
+  .sub{color:var(--dim);font-size:12px;margin-bottom:14px}
+  /* THE BANNER. A depiction must not be screenshottable as data. */
+  #prov{position:absolute;left:0;right:0;top:0;padding:9px 14px;font-size:12.5px;font-weight:600;
+    letter-spacing:.3px;background:var(--warn-bg);color:var(--warn);border-bottom:1px solid #5a4410;
+    display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+  #prov.measured{background:#07271d;color:var(--ok);border-bottom-color:#135c43}
+  #prov small{font-weight:400;opacity:.85}
+  #hud{position:absolute;left:14px;bottom:14px;font-variant-numeric:tabular-nums;
+    background:#0b0e13cc;border:1px solid var(--edge);border-radius:8px;padding:8px 12px;font-size:12.5px}
+  #hud b{font-size:15px}
+  .row{margin:14px 0}
+  label{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--dim);margin-bottom:6px}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  select,button{width:100%;background:#0e131b;color:var(--ink);border:1px solid var(--edge);
+    border-radius:6px;padding:7px 9px;font:inherit}
+  button{cursor:pointer}button:hover{border-color:var(--accent)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  td{padding:3px 0;vertical-align:top}
+  td:last-child{text-align:right;font-variant-numeric:tabular-nums;color:var(--dim)}
+  .tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:11px;border:1px solid var(--edge)}
+  .k-measured,.k-measured-secondhand{color:var(--ok);border-color:#135c43}
+  .k-assumed,.k-borrowed,.k-derived,.k-calibrated{color:var(--warn);border-color:#5a4410}
+  .k-depicted{color:#ff8e72;border-color:#6b2f1d}
+  .k-not-established{color:var(--dim)}
+  ul{margin:6px 0 0;padding-left:18px;color:var(--dim);font-size:12.5px}
+  li{margin:5px 0}
+  hr{border:0;border-top:1px solid var(--edge);margin:16px 0}
+  .legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:var(--dim)}
+  .sw{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:4px;vertical-align:-1px}
+  code{background:#0e131b;padding:1px 4px;border-radius:3px;font-size:12px}
+  @media(max-width:900px){#app{grid-template-columns:1fr;grid-template-rows:60vh 1fr}
+    #side{border-left:0;border-top:1px solid var(--edge)}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+"three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <div id="prov">loading…</div>
+    <div id="hud"></div>
+  </div>
+  <aside id="side">
+    <h1 id="title">.life viewer</h1>
+    <div class="sub" id="ident"></div>
+
+    <div class="row">
+      <label for="t">stage</label>
+      <input type="range" id="t" min="0" max="0" step="1" value="0">
+      <div id="tlabel" style="font-size:12.5px;color:var(--dim);margin-top:4px"></div>
+    </div>
+
+    <div class="row">
+      <label for="colour">colour cells by</label>
+      <select id="colour">
+        <option value="provenance">provenance of the geometry</option>
+        <option value="lineage">lineage (where labelled)</option>
+        <option value="radius">cell radius</option>
+      </select>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div class="row"><button id="play">play the trajectory</button></div>
+
+    <hr>
+    <label>provenance census — phenotype values</label>
+    <table id="census"></table>
+    <div class="sub" style="margin-top:8px" id="censusline"></div>
+
+    <hr>
+    <label>this stage</label>
+    <table id="stagetab"></table>
+
+    <hr>
+    <label>not established</label>
+    <ul id="ne"></ul>
+
+    <hr>
+    <label>what a mesh loses</label>
+    <ul>
+      <li>An STL has no units, no provenance, no cell identity and no channels. Export this and the
+        colouring, the stiffness ordinal and the fact that the geometry is a drawing are all gone.</li>
+      <li>A sphere is a depiction of a blastomere even when the centre is measured: real cells are
+        flattened against their neighbours, and compaction changes shape without changing volume.</li>
+    </ul>
+  </aside>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+
+const $ = id => document.getElementById(id);
+const PROV_COLOUR = {
+  'measured':0x4ec9a0,'measured-secondhand':0x3fb089,'derived':0xf0b429,'calibrated':0xf0b429,
+  'borrowed':0xd89b2a,'assumed':0xe08a4a,'depicted':0xff8e72,
+};
+const LINEAGE_COLOUR = {'trophectoderm':0x6aa9ff,'inner-cell-mass':0xffd166};
+
+// ---------------------------------------------------------------- scene
+const host = $('stage');
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+host.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b0e13);
+const camera = new THREE.PerspectiveCamera(45,1,0.1,5000);
+camera.position.set(0,60,190);
+const controls = new OrbitControls(camera,renderer.domElement);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xbcd4ff,0x14181f,1.05));
+const key = new THREE.DirectionalLight(0xffffff,1.1); key.position.set(80,120,90); scene.add(key);
+const group = new THREE.Group(); scene.add(group);
+
+function resize(){
+  const w = host.clientWidth, h = host.clientHeight;
+  renderer.setSize(w,h,false); camera.aspect = w/h; camera.updateProjectionMatrix();
+}
+addEventListener('resize',resize);
+
+// ---------------------------------------------------------------- load
+const params = new URLSearchParams(location.search);
+const SRC = params.get('src') ?? './mouse-preimplantation.life.json';
+let life = null, idx = 0;
+
+try{
+  const r = await fetch(SRC);
+  if(!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  life = await r.json();
+}catch(e){
+  $('prov').textContent = `could not load ${SRC}: ${e.message}`;
+  throw e;
+}
+
+const stages = life.timeline?.stages ?? [];
+$('title').textContent = life.identity?.label ?? '.life viewer';
+$('ident').innerHTML = `<code>${life.format}</code> &middot; ${life.identity?.species ?? ''} &middot;
+  ${stages.length} stages &middot; ${stages.reduce((a,s)=>a+(s.geometry?.cells?.length??0),0)} cells`;
+$('t').max = String(Math.max(0,stages.length-1));
+
+// the census, computed here rather than trusted from the file
+const census = {}; let nVals = 0;
+for(const s of stages) for(const v of Object.values(s.phenotype ?? {})){
+  nVals++; const k = v.unknown ? 'not-established' : v.kind;
+  census[k] = (census[k] ?? 0) + 1;
+}
+$('census').innerHTML = Object.entries(census).sort((a,b)=>b[1]-a[1])
+  .map(([k,n])=>`<tr><td><span class="tag k-${k}">${k}</span></td><td>${n}</td></tr>`).join('');
+const measured = (census['measured'] ?? 0);
+$('censusline').textContent = measured === 0
+  ? `${nVals} values, and none of them measured by us. Everything here is secondhand, assumed, or absent.`
+  : `${nVals} values, ${measured} measured firsthand.`;
+
+$('ne').innerHTML = (life.not_established ?? [])
+  .map(e=>`<li><b style="color:var(--ink)">${e.what ?? e}</b>${e.answer?` — ${e.answer}`:''}</li>`).join('');
+
+// ---------------------------------------------------------------- draw a stage
+const geo = new THREE.IcosahedronGeometry(1,3);
+let spin = false;
+
+function colourFor(cellObj, stage, mode){
+  if(mode === 'lineage'){
+    const f = cellObj.channels?.lineage?.fate;
+    return LINEAGE_COLOUR[f] ?? 0x5a6678;
+  }
+  if(mode === 'radius'){
+    const rs = stage.geometry.cells.map(c=>c.channels?.geometry?.radius ?? 0);
+    const lo = Math.min(...rs), hi = Math.max(...rs);
+    const t = hi>lo ? ((cellObj.channels?.geometry?.radius ?? lo)-lo)/(hi-lo) : 0.5;
+    return new THREE.Color().setHSL(0.58-0.5*t,0.65,0.55).getHex();
+  }
+  return PROV_COLOUR[stage.geometry?.provenance?.kind] ?? 0x8e9bb0;
+}
+
+function render(i){
+  idx = Math.max(0,Math.min(stages.length-1,i));
+  const s = stages[idx];
+  group.clear();
+
+  const kind = s.geometry?.provenance?.kind ?? 'unknown';
+  const isDrawing = kind === 'depicted' || kind === 'assumed';
+  const prov = $('prov');
+  prov.className = isDrawing ? '' : 'measured';
+  prov.innerHTML = isDrawing
+    ? `GEOMETRY IS ${kind === 'depicted' ? 'A DEPICTION' : 'ASSUMED'} — not a measurement of any embryo
+       <small>${s.geometry?.provenance?.note ?? ''}</small>`
+    : `geometry: ${kind} <small>${s.geometry?.provenance?.source ?? ''}</small>`;
+
+  const mode = $('colour').value;
+  const mat = new Map();
+  for(const c of s.geometry?.cells ?? []){
+    const g = c.channels?.geometry; if(!g) continue;
+    const col = colourFor(c,s,mode);
+    if(!mat.has(col)) mat.set(col, new THREE.MeshStandardMaterial({
+      color:col, roughness:.55, metalness:.05,
+      // a drawing is drawn differently, on purpose: translucent and wireframe-backed
+      transparent:isDrawing, opacity:isDrawing?0.62:1, flatShading:false,
+    }));
+    const m = new THREE.Mesh(geo, mat.get(col));
+    m.position.set(...g.centre); m.scale.setScalar(g.radius);
+    group.add(m);
+    if(isDrawing){
+      const w = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({color:col,wireframe:true,transparent:true,opacity:.22}));
+      w.position.copy(m.position); w.scale.setScalar(g.radius*1.002); group.add(w);
+    }
+  }
+
+  const t = `${s.time}`;
+  $('hud').innerHTML = `<b>${s.name}</b> &nbsp; ${s.time_unit} ${t} &nbsp; ${s.temperature_C}&deg;C
+    <br><span style="color:var(--dim)">${s.geometry?.cells?.length ?? 0} cells &middot; ${s.observed?'observed':'not observed by us'}</span>`;
+  $('tlabel').textContent = `${s.name} — ${s.time_unit} ${t}${s.note?` · ${s.note}`:''}`;
+
+  $('stagetab').innerHTML = Object.entries(s.phenotype ?? {}).map(([k,v])=>{
+    const kind = v.unknown ? 'not-established' : v.kind;
+    const shown = v.unknown ? '—' : `${v.v}${v.unit?` ${v.unit}`:''}`;
+    return `<tr><td>${k.replace(/_/g,' ')}<br><span class="tag k-${kind}">${kind}</span></td><td>${shown}</td></tr>`;
+  }).join('');
+
+  const legend = mode === 'lineage'
+    ? Object.entries(LINEAGE_COLOUR).map(([k,c])=>`<span><i class="sw" style="background:#${c.toString(16).padStart(6,'0')}"></i>${k}</span>`).join('')
+      + `<span><i class="sw" style="background:#5a6678"></i>unlabelled</span>`
+    : mode === 'radius' ? `<span>blue = smallest, warm = largest, within this stage</span>`
+    : `<span><i class="sw" style="background:#${(PROV_COLOUR[kind]??0x8e9bb0).toString(16).padStart(6,'0')}"></i>${kind}</span>`;
+  $('legend').innerHTML = legend;
+}
+
+$('t').addEventListener('input', e => render(+e.target.value));
+$('colour').addEventListener('change', () => render(idx));
+$('play').addEventListener('click', () => {
+  let i = 0; spin = true;
+  const step = () => {
+    if(!spin) return;
+    $('t').value = String(i); render(i);
+    i++;
+    if(i < stages.length) setTimeout(step, 900); else spin = false;
+  };
+  step();
+});
+
+resize(); render(0);
+(function loop(){ controls.update(); renderer.render(scene,camera); requestAnimationFrame(loop); })();
+</script>
+</body>
+</html>
