@@ -636,6 +636,68 @@ export const REGISTERS = Object.freeze({
       reading_level: 'technical-curious',
     },
   },
+
+  atlas: {
+    skim: {
+      headline: 'The deposited nucleosome does not match the textbook nucleosome',
+      bullets: [
+        'the DNA sweeps 1.81 superhelical turns, not the quoted 1.65 - 1.805 and 1.810 in two structures',
+        'rise per base pair is 3.341 A, not 3.4, which is 16 mm over a mouse genome',
+        'proteins sit 8.69 nm apart: the average gap is about one protein wide, so clear fluid is never right to draw',
+        'the stored two-cell embryo has its two cells 16.5 um apart with radii of 31.75 um',
+        '6 levels, 607 assertions, 0 survivors under fault injection',
+      ],
+      so_what:
+        'A zoomable viewer asserts a size, a count and a speed at every level and almost nobody checks ' +
+        'them, so here the positions are invented, everything else is sourced, and each is labelled.',
+      read_time_seconds: 40,
+    },
+    blog: {
+      title: 'The Cells Would Not Split',
+      hook:
+        'The request was simple: make the embryo animate so you can watch the cells divide. The file had ' +
+        'five stages, one cell becoming sixteen, with the volumes conserved to four decimal places. It ' +
+        'should have been an afternoon. The cells refused to split.',
+      body: [
+        'Cleavage is division without growth, so the two daughters must add up to the parent. That gives ' +
+        'an animation for free: let the two centres separate, and solve for the radius that keeps the ' +
+        'combined volume constant. Do it that way and the waist appears on its own, because two ' +
+        'overlapping spheres make one. No easing curve, no keyframes, just the constraint. It holds to ' +
+        'one part in a billion at every frame.',
+        'Then the division was drawn, and nothing pinched. In the stored file the two daughter cells sit ' +
+        '16.5 micrometres apart while each has a radius of 31.75 micrometres - they are very nearly ' +
+        'inside one another, and their combined outline is 31% smaller than the cell they came from. ' +
+        'Every pair at the four-cell stage overlaps. Drawn faithfully, a dividing cell just changes colour.',
+        'This looked like a bug in the file until the geometry was done properly. You cannot fit several ' +
+        'equal spheres of total volume V inside a sphere of volume V. Spheres cannot fill more than about ' +
+        '74% of space even in the best possible packing, and a handful of them inside a container do much ' +
+        'worse. So a drawing of cleavage has three options and must pick one: let the cells overlap, let ' +
+        'the embryo appear to grow, or stop drawing cells as spheres.',
+        'The third is what actually happens. Blastomeres flatten against one another, and in a mouse ' +
+        'embryo the eight-cell stage compacts - a change in shape and stickiness, not in volume. A file ' +
+        'that stores a centre and a radius cannot say it. The stage with the most interesting mechanics ' +
+        'in the whole sequence is the one the representation cannot draw, and no amount of imaging fixes ' +
+        'that, because it is a choice about the format rather than a gap in the data.',
+        'The viewer now offers the second option behind a button, with the price displayed: making the ' +
+        'cells touch expands the stages by between 2.5 and 3.8 times and inflates the embryo by 1.93. ' +
+        'Neither picture is right. One hides the cells inside each other and the other grows an embryo ' +
+        'that does not grow. The panel says so rather than picking quietly.',
+        'The same discipline, applied to the molecular end, kept finding things. The nucleosome is quoted ' +
+        'everywhere as wrapping 1.65 turns of DNA; integrating the azimuth in the deposited coordinates ' +
+        'of two separate crystals gives 1.81 and 1.805. Probably different definitions - the famous ' +
+        'figure likely describes the tightly bound core while the integral includes the flared ends - but ' +
+        'no sentence defining it was found, so both are recorded and neither is averaged away. The rise ' +
+        'per base pair is 3.341 angstroms rather than 3.4, which sounds like nothing and is 16 millimetres ' +
+        'of DNA once a mouse genome is laid end to end.',
+      ],
+      closing:
+        'The viewer draws invented positions at measured sizes, and labels which is which at every level. ' +
+        'That still leaves the hardest case open: when the textbook number and the coordinates it came ' +
+        'from disagree, and both are probably right about different things, what is a teaching tool ' +
+        'supposed to draw?',
+      reading_level: 'general',
+    },
+  },
 });
 
 /** Entry ids in ENTRIES with no register here. Empty is the goal; a non-empty list is the gap made visible. */

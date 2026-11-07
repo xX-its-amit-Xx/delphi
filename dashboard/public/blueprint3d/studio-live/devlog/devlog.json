@@ -996,6 +996,111 @@
      "reading_level": "technical-curious"
     }
    }
+  },
+  {
+   "id": "atlas",
+   "title": "The atlas — cells that split, and the geometry that says they cannot",
+   "status": "shipped",
+   "dna": [
+    "delphi",
+    "nous",
+    "aletheia"
+   ],
+   "why_fun": "Zooming from an embryo to a ribosome is the oldest trick in science communication and it still works, because the numbers are genuinely absurd: a metre of DNA in a nucleus you could fit sixty of across a full stop, machines that read it at twenty letters a second, and a cell so crowded that the average gap between two proteins is about one protein wide. The pleasure of building it is that every one of those numbers is checkable, and several of the famous ones turn out to be off.",
+   "why_science": "A zoomable viewer is a claim factory. Every level asserts a size, a count, a spacing and a speed, and almost all of them get asserted by eye because nobody will check. So the rule here is that the POSITIONS may be invented - there is no physics in this - but no size, count, rate or spacing may be, and every one carries a provenance chip saying which it is. What the drawing gets right is then separable from what it merely draws plausibly, which is the only thing that makes a teaching tool also an honest one.",
+   "open_questions": [
+    {
+     "q": "What should a viewer draw where the field does not agree?",
+     "why_data_will_not_settle_it": "the 30 nm chromatin fibre is in every textbook and its existence in living nuclei is disputed. Drawing a tidy solenoid teaches something that may not exist; drawing a disordered chain takes a side. The viewer marks it CONTESTED, which is a third option and not obviously the right one."
+    },
+    {
+     "q": "When a famous number disagrees with the coordinates it came from, which is the measurement?",
+     "why_data_will_not_settle_it": "the nucleosome is quoted at 1.65 superhelical turns; the deposited coordinates sweep 1.81. Both are probably right about different arcs of the same DNA, and no further experiment decides it, because the disagreement is about what the quantity MEANS."
+    },
+    {
+     "q": "Can a format that stores a centre and a radius ever depict development?",
+     "why_data_will_not_settle_it": "cleavage without growth cannot be drawn with non-overlapping spheres at constant envelope, for geometric reasons that hold regardless of data. The embryo solves it by changing cell shape. A representation choice, not a measurement, decides whether the picture can be right."
+    }
+   ],
+   "how_file_level": {
+    "path": "sim-engine/scales/micro/, sim-engine/scales/molecular/, sim-engine/scales/atlas/",
+    "files": [
+     [
+      "micro/division.mjs",
+      "cleavage as a constraint: lensVolume, unionVolume, radiusForUnion by bisection, pairDaughters, divisionFrame, packingCheck, THE_PACKING_IMPOSSIBILITY"
+     ],
+     [
+      "molecular/machines.mjs",
+      "ten machines with dimensions MEASURED FROM DEPOSITED COORDINATES, structures verified live against the PDB, copy numbers and catalytic rates with the organism named"
+     ],
+     [
+      "molecular/chromatin.mjs",
+      "seven packing levels from the double helix up, each with a firmness grade; the mouse assembly resolved live; contourLength() and the 30 nm dispute"
+     ],
+     [
+      "molecular/dynamics.mjs",
+      "replication, transcription and translation rates with methods; THE_ORIGIN_ARGUMENT; and the real-time factor each animation needs to be visible"
+     ],
+     [
+      "molecular/budget.mjs",
+      "the volume and crowding audit, and the depictions those numbers forbid"
+     ],
+     [
+      "molecular/provenance.mjs",
+      "the closed provenance vocabulary and a cite() that throws on an incomplete record"
+     ],
+     [
+      "atlas/build.mjs",
+      "assembles the bundle; absent modules are NAMED in the viewer rather than hidden"
+     ]
+    ],
+    "what_is_packed_in": "per level: the geometry to draw, the measured quantities that fix its scale, and a provenance kind per claim - MEASURED, DEPICTED, DERIVED, DATABASE_RECORD, CONTESTED or NOT_ESTABLISHED. The embryo level carries real tracked positions; everything inward carries invented positions at measured dimensions, and the header says so before anything is drawn.",
+    "the_detail_that_matters": "the cleavage animation solves for the radius rather than interpolating it, so union volume is constant to one part in 10^9 at every frame. The furrow is not drawn: it is what two overlapping spheres look like."
+   },
+   "real_numbers": [
+    "the nucleosome sweeps 1.81 superhelical turns in the deposited coordinates, not the textbook 1.65 - 1.805 and 1.810 across two structures, reproduced independently",
+    "rise per base pair is 3.341 A, not 3.4 - 1.8% low, which is 16 mm over a mouse genome",
+    "the mouse genome GRCm39 is 2,728,206,152 bp, which is 0.91 m of B-DNA haploid and 1.82 m diploid",
+    "a mid-sized protein is 4-6 nm across and its nearest neighbour is 8.69 nm away: the gap is about one protein wide",
+    "the eukaryotic ribosome measures 31 nm at its longest, the nuclear pore complex 160 nm",
+    "the stored two-cell embryo has centres 16.5 um apart with radii of 31.75 um, so its union is 31% smaller than the zygote",
+    "6 of 6 levels built; 550 assertions across the molecular modules and 57 on division, 0 survivors"
+   ],
+   "what_went_wrong": [
+    "THE VIEWER DREW A DEPICTION ITS OWN EVIDENCE MODULE FORBIDS. The cell level began as 1,500 sparse dots with clear space between them. budget.mjs states it plainly: there is no scale at which clear fluid is the right thing to draw between macromolecules. The sample is now dense, and labelled as generated.",
+    "The machines were all drawn the same size for a while, because the size extractor looked for a \"diameter\" key and the module stores max_extent_nm - it MEASURES the extents from deposited coordinates rather than quoting them. Reading the wrong key silently defeated the one thing that level exists for.",
+    "Four rendering defects that only looking could find: a sidebar whose title and subtitle ran together as inline spans; a camera framed on a constant that clipped the animation at its widest moment; fog with a fixed range that faded the entire scene to the background once the camera moved out; and a near plane of 0.01 against a far plane of 4000, which spent the depth buffer on the first few units and left the intersecting daughter cells z-fighting into speckle.",
+    "A test assertion of mine claimed the union-conserving animation would land on the stored two-cell radius. It does not, and cannot: the stored cells interpenetrate, so their union is smaller than the zygote. The assertion was rewritten to assert the discrepancy instead, which is the fact.",
+    "The 8-cell to 16-cell division cannot be animated as a lineage at all - nearest-centre pairing is not two-to-one there. The first version would have animated it anyway. It now cross-fades, and the plan exports a per-step flag so no caller can animate it by accident."
+   ],
+   "registers": {
+    "skim": {
+     "headline": "The deposited nucleosome does not match the textbook nucleosome",
+     "bullets": [
+      "the DNA sweeps 1.81 superhelical turns, not the quoted 1.65 - 1.805 and 1.810 in two structures",
+      "rise per base pair is 3.341 A, not 3.4, which is 16 mm over a mouse genome",
+      "proteins sit 8.69 nm apart: the average gap is about one protein wide, so clear fluid is never right to draw",
+      "the stored two-cell embryo has its two cells 16.5 um apart with radii of 31.75 um",
+      "6 levels, 607 assertions, 0 survivors under fault injection"
+     ],
+     "so_what": "A zoomable viewer asserts a size, a count and a speed at every level and almost nobody checks them, so here the positions are invented, everything else is sourced, and each is labelled.",
+     "read_time_seconds": 40
+    },
+    "blog": {
+     "title": "The Cells Would Not Split",
+     "hook": "The request was simple: make the embryo animate so you can watch the cells divide. The file had five stages, one cell becoming sixteen, with the volumes conserved to four decimal places. It should have been an afternoon. The cells refused to split.",
+     "body": [
+      "Cleavage is division without growth, so the two daughters must add up to the parent. That gives an animation for free: let the two centres separate, and solve for the radius that keeps the combined volume constant. Do it that way and the waist appears on its own, because two overlapping spheres make one. No easing curve, no keyframes, just the constraint. It holds to one part in a billion at every frame.",
+      "Then the division was drawn, and nothing pinched. In the stored file the two daughter cells sit 16.5 micrometres apart while each has a radius of 31.75 micrometres - they are very nearly inside one another, and their combined outline is 31% smaller than the cell they came from. Every pair at the four-cell stage overlaps. Drawn faithfully, a dividing cell just changes colour.",
+      "This looked like a bug in the file until the geometry was done properly. You cannot fit several equal spheres of total volume V inside a sphere of volume V. Spheres cannot fill more than about 74% of space even in the best possible packing, and a handful of them inside a container do much worse. So a drawing of cleavage has three options and must pick one: let the cells overlap, let the embryo appear to grow, or stop drawing cells as spheres.",
+      "The third is what actually happens. Blastomeres flatten against one another, and in a mouse embryo the eight-cell stage compacts - a change in shape and stickiness, not in volume. A file that stores a centre and a radius cannot say it. The stage with the most interesting mechanics in the whole sequence is the one the representation cannot draw, and no amount of imaging fixes that, because it is a choice about the format rather than a gap in the data.",
+      "The viewer now offers the second option behind a button, with the price displayed: making the cells touch expands the stages by between 2.5 and 3.8 times and inflates the embryo by 1.93. Neither picture is right. One hides the cells inside each other and the other grows an embryo that does not grow. The panel says so rather than picking quietly.",
+      "The same discipline, applied to the molecular end, kept finding things. The nucleosome is quoted everywhere as wrapping 1.65 turns of DNA; integrating the azimuth in the deposited coordinates of two separate crystals gives 1.81 and 1.805. Probably different definitions - the famous figure likely describes the tightly bound core while the integral includes the flared ends - but no sentence defining it was found, so both are recorded and neither is averaged away. The rise per base pair is 3.341 angstroms rather than 3.4, which sounds like nothing and is 16 millimetres of DNA once a mouse genome is laid end to end."
+     ],
+     "closing": "The viewer draws invented positions at measured sizes, and labels which is which at every level. That still leaves the hardest case open: when the textbook number and the coordinates it came from disagree, and both are probably right about different things, what is a teaching tool supposed to draw?",
+     "reading_level": "general"
+    }
+   }
   }
  ],
  "how_to_read_this": {
@@ -3150,10 +3255,16 @@
    "deep": true,
    "skim": true,
    "blog": true
+  },
+  {
+   "id": "atlas",
+   "deep": true,
+   "skim": true,
+   "blog": true
   }
  ],
  "modules_absent": [],
- "version": 4,
- "content_hash": "2740e1129eeb",
- "previous_version": 3
+ "version": 5,
+ "content_hash": "73a7a9cca82d",
+ "previous_version": 4
 }

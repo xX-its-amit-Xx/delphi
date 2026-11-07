@@ -147,6 +147,15 @@ const molecular = {
   animation_honesty: dynamics.ok ? (dynamics.mod.ANIMATION_HONESTY ?? null) : null,
   cell: budget.ok ? (budget.mod.CELL ?? null) : null,
   crowding: budget.ok ? (budget.mod.CROWDING ?? null) : null,
+  crowding_volume_fraction: budget.ok ? (budget.mod.CROWDING_AS_VOLUME_FRACTION ?? null) : null,
+  protein_spacing: budget.ok ? (budget.mod.PROTEIN_SPACING ?? null) : null,
+  // budget.mjs reports that the sourced cell volume and the sourced nuclear volume are not mutually
+  // consistent. A viewer that draws both without saying so is asserting a cell that does not add up.
+  cell_self_consistency: budget.ok && /NOT self-consistent/.test(String(budget.mod.worked?.() ?? ''))
+    ? 'The sourced cell volume and the sourced nuclear volume are NOT self-consistent with each other: '
+      + 'they come from different compilations, and the nucleus drawn here is the one the nuclear-volume '
+      + 'source implies, not one derived from the cell. budget.mjs flags this rather than reconciling it.'
+    : null,
   dna_in_the_nucleus: budget.ok ? (budget.mod.DNA_IN_THE_NUCLEUS ?? null) : null,
   what_this_rules_out: budget.ok ? (budget.mod.WHAT_THIS_RULES_OUT ?? null) : null,
   provenance_kinds: prov.ok ? (prov.mod.KINDS ?? null) : null,
