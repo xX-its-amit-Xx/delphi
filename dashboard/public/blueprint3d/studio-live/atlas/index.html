@@ -461,6 +461,26 @@ function buildMolecular(){
     strand.scale.set(1,Math.max(1,total/180),1);
   }
 }
+/** Read a dimension in NANOMETRES, honouring the units the module actually stored.
+ *  chromatin.mjs stores {value, lo, hi, units:'A'} - reading .value raw puts angstroms on a nm axis. */
+function dimNm(d){
+  if(d===null||d===undefined)return null;
+  if(typeof d==='number')return d;
+  if(typeof d!=='object')return num(d);
+  const v=num(d.value??d.nm??d.lo);
+  if(!Number.isFinite(v))return null;
+  const u=String(d.units??'nm').toLowerCase();
+  if(u==='a'||u==='A'||u.startsWith('ang'))return v/10;
+  if(u==='pm')return v/1000;
+  if(u==='um'||u==='µm')return v*1000;
+  return v;
+}
+/** Resolve a citation key against the module's own CITATIONS table. */
+function citeOf(key,table){
+  if(!key)return null;
+  if(typeof key==='object')return key;
+  return (table&&table[key])?{...table[key],key}:{key};
+}
 function num(x){ if(x===null||x===undefined)return null;
   if(typeof x==='number')return Number.isFinite(x)?x:null;
   if(typeof x==='object'){ for(const k of ['value','mean','median','nm','um','typical']) if(Number.isFinite(+x[k]))return +x[k];
@@ -671,8 +691,19 @@ function renderSidebar(id){
     if(!M.chromatin_levels) h=unavailable('chromatin.mjs');
     else{
       h+=sec('The packing hierarchy',`${M.chromatin_levels.length} levels`,'MEASURED',
-        M.chromatin_levels.map(l=>`<div class="fact"><span class="k">${esc(l.name??l.id)} ${l.firmness?chip(/contest/i.test(l.firmness)?'CONTESTED':'MEASURED',l.firmness):''}</span>
-          <span class="v">${esc(fmt(num(l.diameter_nm??l.dimension_nm??l.size_nm)))} <span class="u">nm</span></span></div>${doiLink(l.source)}`).join(''),true);
+        M.chromatin_levels.map(l=>{
+          const nm=dimNm(l.dimension??l.diameter_nm??l.dimension_nm??l.size_nm);
+          const c=citeOf(l.source,M.chromatin_citations);
+          // A null dimension here is not missing data: each one carries a reason, and several of the
+          // reasons are more informative than a number would be (a loop domain is defined by contact
+          // frequency, not by a diameter). Show the reason instead of an em dash.
+          const why=l.dimension&&l.dimension.value===null?l.dimension.null_reason:null;
+          const kind=why?'NOT_ESTABLISHED':(/contest/i.test(l.firmness||'')?'CONTESTED':'MEASURED');
+          return `<div class="fact"><span class="k">${esc(l.name??l.id)} ${l.firmness?chip(kind,l.firmness):''}</span>
+          <span class="v">${why?'no single value':`${esc(fmt(nm,nm&&nm<1?3:1))} <span class="u">nm</span>`}</span></div>
+          ${why?`<div class="src" style="color:#f3d79a">${esc(String(why).slice(0,260))}</div>`
+               :(l.dimension?.what?`<div class="src" style="color:var(--dim)">${esc(String(l.dimension.what).slice(0,220))}</div>`:'')}
+          ${doiLink(c)}`;}).join(''),true);
       if(M.thirty_nm_problem) h+=sec('The fibre that may not exist','in every textbook; contested in vivo','CONTESTED',
         `<div class="note warn">${esc(typeof M.thirty_nm_problem==='string'?M.thirty_nm_problem:(M.thirty_nm_problem.what_is_in_dispute??JSON.stringify(M.thirty_nm_problem).slice(0,700)))}</div>`);
     }

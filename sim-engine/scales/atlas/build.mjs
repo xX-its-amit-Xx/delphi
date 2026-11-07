@@ -139,6 +139,7 @@ const molecular = {
   size_ladder: machines.ok && machines.mod.sizeLadder ? machines.mod.sizeLadder() : null,
   what_a_depiction_cannot_show: machines.ok ? (machines.mod.WHAT_A_DEPICTION_CANNOT_SHOW ?? null) : null,
   chromatin_levels: chromatin.ok ? (chromatin.mod.LEVELS ?? null) : null,
+  chromatin_citations: chromatin.ok ? (chromatin.mod.CITATIONS ?? null) : null,
   genome: chromatin.ok ? (chromatin.mod.GENOME ?? null) : null,
   thirty_nm_problem: chromatin.ok ? (chromatin.mod.THE_THIRTY_NANOMETRE_PROBLEM ?? null) : null,
   rates: dynamics.ok ? (dynamics.mod.RATES ?? null) : null,
