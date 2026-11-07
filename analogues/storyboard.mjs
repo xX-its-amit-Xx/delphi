@@ -47,11 +47,14 @@ export const WHY_IT_CAN_FAIL = Object.freeze({
  */
 export async function buildCase(caseId, inject = null) {
   // inject lets a test supply module stand-ins, so the storyboard logic is testable without the modules
-  const cases = inject?.cases ?? await optional('cases.mjs');
-  const analogy = inject?.analogy ?? await optional('analogy.mjs');
-  const phylo = inject?.phylo ?? await optional('phylo.mjs');
-  const align = inject?.align ?? await optional('align.mjs');
-  const inventory = inject?.inventory ?? await optional('inventory.mjs');
+  // Key PRESENCE, not ?? - a test injecting {inventory: null} means absent, and ?? would fall
+  // through to the real module and silently stop testing the degraded path. This bit once.
+  const pick = async (k, file) => (inject && k in inject ? inject[k] : await optional(file));
+  const cases = await pick('cases', 'cases.mjs');
+  const analogy = await pick('analogy', 'analogy.mjs');
+  const phylo = await pick('phylo', 'phylo.mjs');
+  const align = await pick('align', 'align.mjs');
+  const inventory = await pick('inventory', 'inventory.mjs');
 
   const c = cases?.CASES?.find(x => x.id === caseId) ?? null;
   const missing = [];
@@ -128,7 +131,7 @@ export async function buildCase(caseId, inject = null) {
 
 /** Build every case, and assert the set as a whole still demonstrates failure. */
 export async function buildAll(inject = null) {
-  const cases = inject?.cases ?? await optional('cases.mjs');
+  const cases = inject && 'cases' in inject ? inject.cases : await optional('cases.mjs');
   const ids = cases?.CASES?.map(c => c.id) ?? [];
   const built = [];
   for (const id of ids) built.push(await buildCase(id, inject));

@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DELPHI dev log</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='5' y='6' width='22' height='20' rx='3' fill='none' stroke='%236aa9ff' stroke-width='2'/%3E%3Cpath d='M9 12h14M9 17h14M9 22h9' stroke='%234ec9a0' stroke-width='1.8'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#080b11; --panel:#0f141c; --card:#121824; --edge:#1f2836; --ink:#e9eff7; --dim:#8a97ac;
+    --ok:#4ec9a0; --warn:#f0b429; --bad:#ff7a66; --accent:#6aa9ff; --violet:#b48ef5;
+    --delphi:#6aa9ff; --nous:#b48ef5; --aletheia:#4ec9a0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.65 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+  a{color:var(--accent)}
+  #wrap{max-width:1080px;margin:0 auto;padding:0 22px 90px}
+
+  header{position:sticky;top:0;z-index:30;background:#080b11f2;backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--edge);margin:0 -22px 26px;padding:13px 22px}
+  .hrow{display:flex;gap:14px;align-items:center;flex-wrap:wrap;max-width:1080px;margin:0 auto}
+  h1{font-size:16px;margin:0;letter-spacing:.2px;white-space:nowrap}
+  .ver{font-size:11.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .views{display:flex;gap:0;margin-left:auto;border:1px solid var(--edge);border-radius:8px;overflow:hidden}
+  .views button{background:#0d121a;border:0;color:var(--dim);padding:7px 15px;font:inherit;font-size:13px;cursor:pointer}
+  .views button+button{border-left:1px solid var(--edge)}
+  .views button[aria-pressed=true]{background:#17243a;color:#fff}
+  select.verpick{background:#0d121a;color:var(--ink);border:1px solid var(--edge);border-radius:7px;
+    padding:6px 9px;font:inherit;font-size:12.5px}
+
+  h2{font-size:13px;letter-spacing:.9px;text-transform:uppercase;color:var(--dim);margin:34px 0 12px}
+  .lede{color:var(--dim);font-size:14.5px;max-width:74ch}
+
+  .goals{display:grid;grid-template-columns:repeat(auto-fit,minmax(286px,1fr));gap:12px}
+  .goal{background:var(--card);border:1px solid var(--edge);border-radius:11px;padding:15px;border-top-width:3px}
+  .goal h3{margin:0 0 4px;font-size:14.5px}
+  .goal .layer{font-size:10.5px;letter-spacing:.7px;text-transform:uppercase;font-weight:600}
+  .goal p{margin:8px 0 0;color:var(--dim);font-size:13px}
+
+  .tri{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+  .lay{background:var(--card);border:1px solid var(--edge);border-radius:11px;padding:15px}
+  .lay .nm{font-size:17px;font-weight:600;margin-bottom:2px}
+  .lay .gl{color:var(--dim);font-size:13px;font-style:italic;margin-bottom:9px}
+  .lay .fail{color:var(--bad);font-size:12.5px;margin-top:9px}
+  .lay .fail b{color:var(--bad);text-transform:uppercase;font-size:10px;letter-spacing:.7px;display:block}
+
+  details.entry{background:var(--card);border:1px solid var(--edge);border-radius:12px;margin:11px 0;overflow:hidden}
+  details.entry>summary{cursor:pointer;padding:15px 17px;list-style:none;display:flex;gap:12px;align-items:flex-start}
+  details.entry>summary::-webkit-details-marker{display:none}
+  details.entry>summary:hover{background:#151d2b}
+  .chev{color:var(--dim);transition:transform .16s;flex:none;margin-top:3px}
+  details[open]>summary .chev{transform:rotate(90deg)}
+  .etitle{font-weight:600;font-size:15.5px;flex:1;min-width:0}
+  .ehead{color:var(--dim);font-size:13px;font-weight:400;margin-top:3px}
+  .badges{display:flex;gap:5px;flex:none;flex-wrap:wrap;justify-content:flex-end}
+  .b{font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;padding:3px 7px;border-radius:5px;
+    border:1px solid var(--edge);color:var(--dim);font-weight:600}
+  .b.delphi{color:var(--delphi);border-color:#24456e}
+  .b.nous{color:var(--nous);border-color:#4a3a6b}
+  .b.aletheia{color:var(--aletheia);border-color:#1d5641}
+  .body{padding:0 17px 17px;border-top:1px solid var(--edge)}
+
+  .sec{margin:16px 0 0}
+  .sec>h4{margin:0 0 6px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim)}
+  .sec p{margin:0;font-size:14px}
+  ul{margin:7px 0 0;padding-left:19px}
+  li{margin:6px 0;font-size:14px}
+  .nums li{font-variant-numeric:tabular-nums;color:var(--ok)}
+  .wrong{background:#19100e;border:1px solid #58271d;border-radius:9px;padding:12px;margin-top:8px}
+  .wrong li{color:#ffb3a3}
+  .open{background:#0d1420;border:1px solid #223a5e;border-radius:9px;padding:12px;margin:8px 0}
+  .open .q{font-weight:600;font-size:14px;margin-bottom:4px}
+  .open .why{color:var(--dim);font-size:13px}
+  .files{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:12px}
+  .files td{padding:3px 10px 3px 0;vertical-align:top;color:var(--dim)}
+  .files td:first-child{color:var(--accent);white-space:nowrap}
+
+  .blog h3{font-size:21px;margin:4px 0 12px;line-height:1.25}
+  .blog p{font-size:15px;margin:0 0 14px;max-width:72ch}
+  .blog .hook{font-size:16.5px;color:var(--ink)}
+  .blog .closing{border-left:2px solid var(--accent);padding-left:14px;color:var(--dim)}
+
+  .skim .headline{font-size:17px;font-weight:600;margin-bottom:9px;line-height:1.35}
+  .skim .sowhat{color:var(--dim);font-size:13.5px;margin-top:9px;border-top:1px solid var(--edge);padding-top:9px}
+
+  /* glossary terms */
+  .gt{border-bottom:1px dotted #4a6b96;cursor:help;color:#cfe1f7}
+  .gt:hover{border-bottom-style:solid;color:#fff}
+  #pop{position:fixed;z-index:60;max-width:390px;background:#0d131c;border:1px solid #2b3a52;
+    border-radius:10px;padding:13px 15px;box-shadow:0 14px 40px #000a;display:none;font-size:13.5px}
+  #pop .t{font-weight:600;margin-bottom:5px;font-size:14.5px}
+  #pop .cat{font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--dim);margin-bottom:7px}
+  #pop .long{color:var(--dim);margin:7px 0}
+  #pop .ex{background:#070b11;border-left:2px solid var(--ok);padding:8px 10px;margin-top:8px;
+    font-size:12.5px;color:#bcd}
+  #pop .ex b{color:var(--ok);display:block;font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;margin-bottom:3px}
+
+  .sim{background:#070b11;border:1px solid var(--edge);border-radius:10px;padding:14px;margin:12px 0}
+  .sim h4{margin:0 0 4px;font-size:12.5px;color:var(--ink)}
+  .sim .hint{color:var(--dim);font-size:12px;margin-bottom:10px}
+  .sim label{display:block;font-size:11.5px;color:var(--dim);margin:8px 0 3px}
+  .sim input[type=range]{width:100%;accent-color:var(--accent)}
+  .sim .out{font-variant-numeric:tabular-nums;font-size:13.5px;margin-top:10px;padding-top:10px;border-top:1px solid var(--edge)}
+  .sim .out b{font-size:17px}
+  .win{color:var(--ok)}.lose{color:var(--bad)}
+
+  .missing{background:#1a1407;border:1px solid #574513;border-radius:9px;padding:12px;color:#f3d79a;font-size:13px}
+  footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--edge);color:var(--dim);font-size:12.5px}
+</style>
+</head>
+<body>
+<div id="pop"></div>
+<header><div class="hrow">
+  <h1>DELPHI dev log</h1>
+  <span class="ver" id="ver"></span>
+  <select class="verpick" id="verpick" title="earlier versions"></select>
+  <div class="views">
+    <button id="v-skim" aria-pressed="false">skim</button>
+    <button id="v-deep" aria-pressed="true">deep</button>
+    <button id="v-blog" aria-pressed="false">blog</button>
+  </div>
+</div></header>
+
+<div id="wrap">
+  <p class="lede" id="lede">loading…</p>
+  <div id="content"></div>
+  <footer id="foot"></footer>
+</div>
+
+<script type="module">
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+let D = null, VIEW = 'deep', GLOSS = [], INDEX = [];
+
+async function loadBundle(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+  return r.json();
+}
+
+try {
+  D = await loadBundle('./devlog.json');
+  GLOSS = (D.glossary ?? []).slice().sort((a, b) => (b.term?.length ?? 0) - (a.term?.length ?? 0));
+} catch (e) {
+  $('lede').textContent = `could not load devlog.json: ${e.message}. Build it with: node devlog/build.mjs`;
+}
+try { INDEX = (await loadBundle('./versions.json')).versions ?? []; } catch {}
+
+// ------------------------------------------------------------------ glossary annotation
+// Longest match first, never inside a word, never inside an already-wrapped span.
+const TERMS = [];
+function buildTerms() {
+  for (const g of GLOSS) for (const t of [g.term, ...(g.aliases ?? [])]) if (t) TERMS.push({ t, g });
+  TERMS.sort((a, b) => b.t.length - a.t.length);
+}
+function annotate(html) {
+  if (!TERMS.length) return html;
+  // operate on text only: split on tags so we never rewrite inside an attribute
+  return html.replace(/>([^<]+)</g, (m, text) => `>${annotateText(text)}<`);
+}
+function annotateText(text) {
+  const taken = new Array(text.length).fill(false);
+  const hits = [];
+  for (const { t, g } of TERMS) {
+    const re = new RegExp(`(?<![\\w-])${t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w-])`, 'gi');
+    let m;
+    while ((m = re.exec(text))) {
+      const s = m.index, e = s + m[0].length;
+      let free = true;
+      for (let i = s; i < e; i++) if (taken[i]) { free = false; break; }
+      if (!free) continue;
+      for (let i = s; i < e; i++) taken[i] = true;
+      hits.push({ s, e, g, raw: m[0] });
+    }
+  }
+  if (!hits.length) return text;
+  hits.sort((a, b) => a.s - b.s);
+  let out = '', last = 0;
+  for (const h of hits) {
+    out += esc(text.slice(last, h.s));
+    out += `<span class="gt" data-term="${esc(h.g.term)}">${esc(h.raw)}</span>`;
+    last = h.e;
+  }
+  return out + esc(text.slice(last));
+}
+const P = s => annotate(`<p>${esc(s)}</p>`);
+const LI = arr => annotate(`<ul>${(arr ?? []).map(x => `<li>${esc(typeof x === 'string' ? x : JSON.stringify(x))}</li>`).join('')}</ul>`);
+
+// ------------------------------------------------------------------ popover
+const pop = $('pop');
+document.addEventListener('mouseover', e => {
+  const el = e.target.closest?.('.gt'); if (!el) return;
+  const g = GLOSS.find(x => x.term === el.dataset.term); if (!g) return;
+  pop.innerHTML = `<div class="t">${esc(g.term)}</div>
+    ${g.category ? `<div class="cat">${esc(g.category)}</div>` : ''}
+    <div>${esc(g.short ?? '')}</div>
+    ${g.long ? `<div class="long">${esc(g.long)}</div>` : ''}
+    ${g.concrete_example ? `<div class="ex"><b>for example</b>${esc(g.concrete_example)}</div>` : ''}`;
+  pop.style.display = 'block';
+  const r = el.getBoundingClientRect(), pr = pop.getBoundingClientRect();
+  pop.style.left = `${Math.max(10, Math.min(innerWidth - pr.width - 10, r.left))}px`;
+  pop.style.top = `${r.bottom + 9 + pr.height > innerHeight ? r.top - pr.height - 9 : r.bottom + 9}px`;
+});
+document.addEventListener('mouseout', e => { if (e.target.closest?.('.gt')) pop.style.display = 'none'; });
+addEventListener('scroll', () => { pop.style.display = 'none'; }, true);
+
+// ------------------------------------------------------------------ embedded simulations
+// Small, real, and tied to a finding in the entry they sit under. Each recomputes the actual arithmetic
+// rather than replaying a recorded answer, so a reader can push it until it breaks.
+const SIMS = {
+  ecology: () => `<div class="sim" data-sim="rstar">
+    <h4>R* — who wins on one limiting resource</h4>
+    <div class="hint">R* = Ks·D/(μmax − D). The lower R* excludes the other. Push μmax up and watch it not help.</div>
+    <label>design μmax <span data-o="mu">0.50</span> /h</label><input type="range" id="s-mu" min="0.15" max="1.5" step="0.01" value="0.5">
+    <label>design Ks <span data-o="ks">1.00</span> mg/L</label><input type="range" id="s-ks" min="0.02" max="3" step="0.01" value="1">
+    <div class="out" id="s-out"></div></div>`,
+  benchmarks: () => `<div class="sim" data-sim="q">
+    <h4>Typicality — how far out is "unusual"?</h4>
+    <div class="hint">The scorer calls q &lt; 1 typical. Real fish average 0.876; samples from its own fitted model average 1.000. Drag to see where an animal lands.</div>
+    <label>q (Mahalanobis D²/d) <span data-o="q">0.92</span></label><input type="range" id="s-q" min="0" max="4" step="0.01" value="0.92">
+    <div class="out" id="q-out"></div></div>`,
+};
+function wireSims(root) {
+  const r = root.querySelector('[data-sim=rstar]');
+  if (r) {
+    const upd = () => {
+      const mu = +r.querySelector('#s-mu').value, ks = +r.querySelector('#s-ks').value, D = 0.1;
+      r.querySelector('[data-o=mu]').textContent = mu.toFixed(2);
+      r.querySelector('[data-o=ks]').textContent = ks.toFixed(2);
+      const inc = 0.1 * D / (0.3 - D); // incumbent: mu 0.3, Ks 0.1
+      const out = r.querySelector('#s-out');
+      if (mu <= D) { out.innerHTML = `<b class="lose">no growth</b> — μmax ≤ D, so the design washes out whatever its affinity.`; return; }
+      const rs = ks * D / (mu - D);
+      const win = rs < inc;
+      out.innerHTML = `design R* = <b class="${win ? 'win' : 'lose'}">${rs.toFixed(3)}</b> &nbsp; vs incumbent R* = <b>${inc.toFixed(3)}</b><br>
+        <span class="${win ? 'win' : 'lose'}">${win ? 'the design wins' : 'the design is excluded'}</span>
+        — it would need Ks below ${(inc * (mu - D) / D).toFixed(3)} at this μmax.`;
+    };
+    r.querySelectorAll('input').forEach(i => i.addEventListener('input', upd)); upd();
+  }
+  const q = root.querySelector('[data-sim=q]');
+  if (q) {
+    const upd = () => {
+      const v = +q.querySelector('#s-q').value;
+      q.querySelector('[data-o=q]').textContent = v.toFixed(2);
+      // the real held-out distribution: median 0.650, mean 0.876
+      const pct = v <= 0 ? 0 : Math.min(100, 100 * (1 - Math.exp(-v / 0.72)));
+      q.querySelector('#q-out').innerHTML =
+        `the scorer calls this <b class="${v < 1 ? 'win' : 'lose'}">${v < 1 ? 'TYPICAL' : 'atypical'}</b>
+         &nbsp;·&nbsp; roughly <b>${pct.toFixed(0)}%</b> of real fish score better<br>
+         <span style="color:var(--dim)">the impossible animal found by search sits at q = 0.347, which beats 87% of real specimens.</span>`;
+    };
+    q.querySelector('input').addEventListener('input', upd); upd();
+  }
+}
+
+// ------------------------------------------------------------------ renderers
+function renderFramework() {
+  const f = D.framework; if (!f) return '';
+  let h = `<h2>the frame</h2>`;
+  if (f.interpretation_is_mine) h += `<div class="missing">${esc(f.interpretation_is_mine)}</div>`;
+  h += `<div class="tri">` + ['delphi', 'nous', 'aletheia'].map(k => {
+    const l = f.dna?.[k]; if (!l) return '';
+    return `<div class="lay" style="border-top:3px solid var(--${k})">
+      <div class="nm" style="color:var(--${k})">${esc(l.name)}</div>
+      <div class="gl">${esc(l.gloss)}</div>
+      <div style="font-size:13.5px">${esc(l.what_it_does)}</div>
+      <div class="fail"><b>its characteristic failure</b>${esc(l.its_characteristic_failure)}</div>
+    </div>`;
+  }).join('') + `</div>`;
+  if (f.why_three) h += `<div class="open" style="margin-top:12px"><div class="q">why three</div>
+    <div class="why">${esc(f.why_three.the_argument)}</div>
+    <div class="why" style="margin-top:8px;color:#cfe1f7">${esc(f.why_three.the_worked_instance)}</div></div>`;
+
+  if (f.goals?.length) {
+    h += `<h2>what it is all for</h2><div class="goals">` + f.goals.map(g => `
+      <div class="goal" style="border-top-color:var(--${g.dominant_layer})">
+        <div class="layer" style="color:var(--${g.dominant_layer})">${esc(g.dominant_layer)}</div>
+        <h3>${esc(g.name)}</h3>
+        ${g.note ? `<p style="color:var(--warn)">${esc(g.note)}</p>` : ''}
+        <p>${esc(g.what_it_is)}</p>
+        <p style="color:#cfe1f7">${esc(g.why_it_sharpens_the_work)}</p>
+        <p><b style="color:var(--ink)">open:</b> ${esc(g.the_open_question)}</p>
+      </div>`).join('') + `</div>`;
+    if (f.how_goals_meet_the_triad) h += `<div class="open" style="margin-top:12px">
+      <div class="q">the uncomfortable implication</div>
+      <div class="why">${esc(f.how_goals_meet_the_triad.the_uncomfortable_implication)}</div></div>`;
+  }
+  return annotate(h);
+}
+
+function renderEntry(e) {
+  const reg = e.registers ?? {};
+  const badges = (e.dna ?? []).map(d => `<span class="b ${d}">${d}</span>`).join('');
+  let inner = '';
+
+  if (VIEW === 'skim') {
+    const s = reg.skim;
+    if (!s) inner = `<div class="missing">No skim register for this entry yet. Switch to <b>deep</b>.</div>`;
+    else inner = `<div class="skim">
+      <div class="headline">${annotateText(s.headline ?? '')}</div>
+      ${LI(s.bullets)}
+      ${s.so_what ? `<div class="sowhat">${annotateText(s.so_what)}</div>` : ''}
+    </div>`;
+  } else if (VIEW === 'blog') {
+    const b = reg.blog;
+    if (!b) inner = `<div class="missing">No blog register for this entry yet. Switch to <b>deep</b>.</div>`;
+    else inner = `<div class="blog">
+      <h3>${annotateText(b.title ?? '')}</h3>
+      <p class="hook">${annotateText(b.hook ?? '')}</p>
+      ${(b.body ?? []).map(p => `<p>${annotateText(p)}</p>`).join('')}
+      ${b.closing ? `<p class="closing">${annotateText(b.closing)}</p>` : ''}
+    </div>`;
+  } else {
+    const h = e.how_file_level ?? {};
+    inner = `
+      <div class="sec"><h4>why it is fun</h4>${P(e.why_fun)}</div>
+      <div class="sec"><h4>why it is science</h4>${P(e.why_science)}</div>
+      ${SIMS[e.id] ? SIMS[e.id]() : ''}
+      <div class="sec"><h4>open regardless of data</h4>
+        ${(e.open_questions ?? []).map(q => `<div class="open">
+          <div class="q">${annotateText(q.q)}</div>
+          <div class="why">${annotateText(q.why_data_will_not_settle_it)}</div></div>`).join('')}</div>
+      <div class="sec"><h4>how, at the file level &nbsp;<code style="color:var(--accent)">${esc(h.path ?? '')}</code></h4>
+        <table class="files">${(h.files ?? []).map(([f, d]) => `<tr><td>${esc(f)}</td><td>${esc(d)}</td></tr>`).join('')}</table>
+        ${h.what_is_packed_in ? `<div style="margin-top:10px">${P(h.what_is_packed_in)}</div>` : ''}
+        ${h.the_detail_that_matters ? `<div class="open" style="margin-top:8px"><div class="q">the detail that matters</div><div class="why">${annotateText(h.the_detail_that_matters)}</div></div>` : ''}
+      </div>
+      ${e.real_numbers?.length ? `<div class="sec"><h4>measured</h4><div class="nums">${LI(e.real_numbers)}</div></div>` : ''}
+      ${e.what_went_wrong?.length ? `<div class="sec"><h4>what went wrong</h4><div class="wrong">${LI(e.what_went_wrong)}</div></div>` : ''}`;
+  }
+
+  const head = VIEW === 'skim' && reg.skim?.headline ? reg.skim.headline
+    : VIEW === 'blog' && reg.blog?.title ? reg.blog.title : (e.status ?? '');
+  return `<details class="entry" ${VIEW === 'skim' ? 'open' : ''}>
+    <summary><span class="chev">›</span>
+      <span class="etitle">${esc(e.title)}<div class="ehead">${esc(head)}</div></span>
+      <span class="badges">${badges}</span></summary>
+    <div class="body">${inner}</div></details>`;
+}
+
+function renderLaws() {
+  const L = D.laws; if (!L) return '';
+  let h = `<h2>what a "law" actually is here</h2>`;
+  if (L.the_honest_shape) h += `<div class="open">${P(typeof L.the_honest_shape === 'string' ? L.the_honest_shape : (L.the_honest_shape.summary ?? JSON.stringify(L.the_honest_shape)))}</div>`;
+  if (L.domains) {
+    const rows = Array.isArray(L.domains) ? L.domains : Object.entries(L.domains).map(([k, v]) => ({ domain: k, ...v }));
+    h += `<table class="files" style="margin-top:10px">${rows.map(d =>
+      `<tr><td>${esc(d.domain ?? d.name)}</td><td>${esc(d.count ?? d.laws ?? '')} laws, ${esc(d.with_theorem ?? '?')} with a theorem — ${esc(d.what_it_covers ?? '')}</td></tr>`).join('')}</table>`;
+  }
+  (L.worked ?? []).slice(0, 6).forEach(w => {
+    h += `<details class="entry"><summary><span class="chev">›</span>
+      <span class="etitle">${esc(w.law_id ?? w.id ?? 'law')}<div class="ehead">${esc(w.plain_english ?? '')}</div></span></summary>
+      <div class="body">
+        ${w.the_lean_statement ? `<div class="sec"><h4>the Lean statement</h4><pre class="files" style="white-space:pre-wrap;color:var(--dim)">${esc(w.the_lean_statement)}</pre></div>` : ''}
+        ${w.a_concrete_instance ? `<div class="sec"><h4>a concrete instance</h4>${P(w.a_concrete_instance)}</div>` : ''}
+        ${w.what_it_does_NOT_say ? `<div class="sec"><h4>what it does NOT say</h4><div class="wrong">${P(w.what_it_does_NOT_say)}</div></div>` : ''}
+      </div></details>`;
+  });
+  return annotate(h);
+}
+
+function render() {
+  if (!D) return;
+  $('lede').innerHTML = annotateText(D.what_this_is ?? '') +
+    (D.views?.[VIEW] ? ` <b style="color:var(--ink)">This view:</b> ${esc(D.views[VIEW])}` : '');
+  const cov = D.coverage ?? [];
+  const have = cov.filter(c => c[VIEW]).length;
+  let h = renderFramework();
+  h += `<h2>features — ${have} of ${cov.length} written in this register</h2>`;
+  if (have < cov.length) h += `<div class="missing">${cov.length - have} entr${cov.length - have === 1 ? 'y has' : 'ies have'} no ${VIEW} register yet; they say so instead of showing an empty card.</div>`;
+  h += (D.entries ?? []).map(renderEntry).join('');
+  h += renderLaws();
+  $('content').innerHTML = h;
+  wireSims($('content'));
+
+  $('ver').textContent = `v${D.version ?? '?'} · ${D.content_hash ?? ''}`;
+  $('foot').innerHTML = annotateText(D.how_to_read_this?.the_open_questions_rule ?? '') +
+    (D.modules_absent?.length ? `<br><br>modules not yet built: ${D.modules_absent.map(m => esc(m.module)).join(', ')}` : '');
+}
+
+for (const v of ['skim', 'deep', 'blog']) {
+  $(`v-${v}`).addEventListener('click', () => {
+    VIEW = v;
+    for (const w of ['skim', 'deep', 'blog']) $(`v-${w}`).setAttribute('aria-pressed', String(w === v));
+    render(); scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+const vp = $('verpick');
+vp.innerHTML = `<option value="">current</option>` + INDEX.slice().reverse().map(v =>
+  `<option value="${v.version}">v${v.version} · ${String(v.cut_at ?? '').slice(0, 10)}</option>`).join('');
+vp.addEventListener('change', async () => {
+  try {
+    D = vp.value ? await loadBundle(`./v/${vp.value}.json`) : await loadBundle('./devlog.json');
+    GLOSS = (D.glossary ?? []).slice(); TERMS.length = 0; buildTerms(); render();
+  } catch (e) { $('lede').textContent = `could not load that version: ${e.message}`; }
+});
+
+buildTerms();
+render();
+</script>
+</body>
+</html>

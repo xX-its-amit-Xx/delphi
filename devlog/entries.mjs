@@ -1,0 +1,473 @@
+// The dev log. One entry per feature, each answering the same four questions.
+//
+// WHY  - the fun and the science, kept apart, because they are different reasons and a feature that only
+//        has the first is a toy while one that only has the second is a chore.
+// OPEN - the questions that stay open REGARDLESS OF DATA. Not "we haven't measured it yet" - those go
+//        under what_would_settle_it. These are the ones where more measurement is not the kind of thing
+//        that would help: definitional boundaries, modelling choices, category questions. They are the
+//        most interesting part of each feature and the part usually left out of a changelog.
+// HOW  - at the FILE level. What is actually on disk, how it is organised, what is packed into it.
+// DNA  - where it sits in Delphi / Nous / Aletheia (see framework.mjs, and note the reading is mine).
+
+export const ENTRIES = Object.freeze([
+  {
+    id: 'life-format',
+    title: '.life — an organism\'s whole trajectory, in time',
+    status: 'shipped',
+    dna: ['delphi', 'aletheia'],
+    why_fun:
+      'A file format is the most durable thing you can build. .stl outlived every program that made one, ' +
+      'because it was simple enough to be obvious and specific enough to be useful. The idea that a ' +
+      'designed organism could have an extension - that you could double-click a creature - is a good ' +
+      'enough idea on its own that it is worth seeing whether it survives contact with the biology.',
+    why_science:
+      'A .organism describes a design AT REST; stages are metadata. That is the wrong shape for the thing ' +
+      'actually being designed, which is a trajectory. And the difference is not cosmetic: A SNAPSHOT ' +
+      'CANNOT BE WRONG ABOUT A TRAJECTORY - it has nothing to be wrong with. Make time the primary axis ' +
+      'and the file starts making claims that can be FALSE - that this cell count follows that one, that ' +
+      'this stiffness falls as that lineage separates - which is what makes them worth storing.',
+    open_questions: [
+      {
+        q: 'When is a simulated organism "the same organism" as the design it came from?',
+        why_data_will_not_settle_it:
+          'identity over time is a definitional boundary, not a measurement. A trajectory that diverges ' +
+          'from its design at stage 4 is either a failed instance of that design or a different design, ' +
+          'and no amount of imaging decides which. The file has to pick a convention and say so.',
+      },
+      {
+        q: 'What is the right granularity for a stage?',
+        why_data_will_not_settle_it:
+          'development is continuous and staging is a human imposition on it. Carnegie stages are ' +
+          'defined by morphology precisely because age does not work, and the cost is that a stage is a ' +
+          'RANGE of days that overlaps its neighbours. Finer imaging gives you more frames, not a ' +
+          'principled stage boundary.',
+      },
+      {
+        q: 'Should a format be able to represent an organism that cannot exist?',
+        why_data_will_not_settle_it:
+          'this is a design choice with real consequences either way. Forbid it and you cannot write ' +
+          'down a hypothesis; allow it and the file cannot be trusted as a record. .life allows it and ' +
+          'requires it to be marked, which is a third answer and not obviously the right one.',
+      },
+    ],
+    how_file_level: {
+      path: 'organism-format/life/',
+      files: [
+        ['spec.mjs', 'the format: FORMAT tag, CHANNELS, STAGE_REQUIRED, TIME_UNITS, REFUSALS, the two geometry-provenance axes, COORDINATE_CONVENTIONS'],
+        ['write.mjs', 'the builder. Requires provenance AT CONSTRUCTION and throws without it - 12 refusals verified firing'],
+        ['read.mjs', 'the validator: refused / degraded / ok, plus channelCoverage and provenanceCensus'],
+        ['stl.mjs', 'binary STL export, provenance burned into the 80-byte header'],
+        ['fasta.mjs', 'genome export, provenance forced into every description line'],
+        ['compare.mjs', 'genetic and phenotypic distance, returned separately and never summed'],
+        ['atlas.mjs', 'the Carnegie-stage layer, ordinal and refusing arithmetic'],
+        ['examples/mouse-preimplantation.life', 'the worked example, 5 stages and 31 cells'],
+      ],
+      what_is_packed_in:
+        'A .life is JSON with four required blocks. `identity` says what animal this is. `genome` is an ' +
+        'EDIT-LIST against a named reference assembly - kilobytes rather than hundreds of megabytes, and ' +
+        'it states what the design IS rather than what it resembles. `timeline.stages[]` is the spine: ' +
+        'each stage pins itself with a time, a TIME UNIT and a TEMPERATURE (development rate is ' +
+        'temperature-dependent, so a stage time without one is not a stage), and carries `geometry` ' +
+        '(per-cell centre, radius, surface area, EXPOSED surface area, curvature) plus a `phenotype` map. ' +
+        'Each cell may carry channels: transcriptome (with an in_situ flag), mechanics, geometry, ' +
+        'lineage, signalling. And `not_established` is required - a file that lists nothing it does not ' +
+        'know is making the strongest possible claim by omission.',
+      the_detail_that_matters:
+        'EVERY VALUE CARRIES A KIND AND A SCOPE. The kinds are measured, measured-secondhand, borrowed, ' +
+        'derived, calibrated, assumed, depicted. An `unknown` carries no value at all - that rule exists ' +
+        'because a value of the shape {v: 0.31, unknown: true} slipped past every provenance check in ' +
+        'the .organism reader. The census line that falls out is the most useful line in the file: the ' +
+        'worked example is 10 measured-secondhand / 5 assumed / 5 depicted / 5 derived / 5 ' +
+        'not-established, and NONE measured by us.',
+    },
+    real_numbers: [
+      '5 stages, 31 cells, 25 phenotype values in the worked example',
+      'geometry present on 31 of 31 cells, MEASURED ON 0',
+      'transcriptome and mechanics present on 0 of 31 cells',
+      '226 tests across the format modules, 0 survive their own fault',
+    ],
+    what_went_wrong: [
+      'The spec required `elastic_modulus_Pa` as a field name, following an abstract that turned out to be a STALE v1 deposit. The authors had retreated to "relative compliance". A field name can impose a unit the measurement does not have - requiring pascals does not make the data a modulus, it makes the file lie in a way no reader can detect.',
+      'read.mjs stringified `{what, answer}` entries to "[object Object]", so it reported the example missing all four required disclosures while the example answered all four verbatim. A false negative in the honesty check is worse than no check.',
+    ],
+  },
+
+  {
+    id: 'benchmarks',
+    title: 'Benchmarks — the state of the system as measured, not as described',
+    status: 'shipped',
+    dna: ['aletheia'],
+    why_fun:
+      'There is a particular pleasure in finding out that something you built does not work, before ' +
+      'someone else does. It is also the only move in this whole field that is guaranteed to teach you ' +
+      'something: a benchmark that confirms what you believed is a wasted afternoon, and one that does ' +
+      'not is the best day of the month.',
+    why_science:
+      '"61 laws registered, 73 Lean-checked theorems" and "AUC 0.89" are PRODUCTIVITY figures. They ' +
+      'measure how much was built and they cannot come out badly. A benchmark has to be able to come out ' +
+      'badly, which means the answer has to come from somewhere the system does not control. Three of ' +
+      'the four here did come out badly, which is the point.',
+    open_questions: [
+      {
+        q: 'Does a plausibility score ever constitute evidence of viability?',
+        why_data_will_not_settle_it:
+          'this is a category question, not an empirical one. A Mahalanobis distance measures how unusual ' +
+          'a vector is under a fitted distribution. More data makes the distribution better estimated; it ' +
+          'does not turn "unusual" into "impossible". We demonstrated the gap - an animal whose dorsal ' +
+          'fin starts past its tail scores more typical than 87% of real fish - but the gap is structural ' +
+          'and would survive a perfect model.',
+      },
+      {
+        q: 'What should a benchmark do when the ground truth is itself a model?',
+        why_data_will_not_settle_it:
+          'CRISPRscan reaches rho 0.269 on data from the study that fitted it. That is an upper bound, ' +
+          'not an estimate, and the only fix is independent data - but "independent" is a judgement about ' +
+          'provenance and shared assumptions, not a quantity you can measure.',
+      },
+      {
+        q: 'Is soundness ever evidence of relevance?',
+        why_data_will_not_settle_it:
+          'the Lean layer proves things correctly. Whether the things proved are the things that matter ' +
+          'to a design is a question about the choice of formalisation, and no proof assistant has an ' +
+          'opinion about it.',
+      },
+    ],
+    how_file_level: {
+      path: 'benchmarks/',
+      files: [
+        ['README.md', 'the index: the four results, the five properties, and the two predictions that came out wrong'],
+        ['crispr-ontarget/', 'the guide score against 307 measured zebrafish sgRNAs; CRISPRscan reimplemented and verified'],
+        ['lean-mutation/', 'non-vacuity, and mutation testing with the three-way kill classification'],
+        ['design-hard-negatives/', 'the decoy ladder, the adversarial search, and laws.mjs deriving constraints from the registry'],
+        ['lean-open-problems/', '14 problems triaged on two axes'],
+      ],
+      what_is_packed_in:
+        'Each directory is self-contained: a module holding the method, a `run.mjs` producing a ' +
+        '`results.json`, a `test.mjs` taking `--fail-once`, and a README stating the result and what it ' +
+        'does NOT cover. `crispr-ontarget/SOURCES.md` rebuilds the ground truth in three curls; the ' +
+        'ground truth itself is copyrighted and is not redistributed.',
+      the_detail_that_matters:
+        'The `--fail-once` discipline: the harness injects ONE fault per assertion and requires that the ' +
+        'assertion notices. AN ASSERTION THAT SURVIVES ITS OWN FAULT IS REPORTED AS A FAILURE, because it ' +
+        'was not testing anything. Across every suite in this work: 0 survivors.',
+    },
+    real_numbers: [
+      'the guide score we rank by: rho = -0.037, CI [-0.149, 0.073] - includes zero',
+      'CRISPRscan layout DERIVED by reproducing 25 published scores exactly, max difference 0.0000',
+      'design AUC: 0.891 on shuffled decoys, 0.536 on real fish nudged a quarter of a standard deviation',
+      'an anatomically impossible animal at q = 0.347, more typical than 4,068 of 4,673 real fish',
+      '48/48 laws with a theorem carry a machine-checked non-vacuity witness',
+      'only 1 of 48 theorem-carrying laws is expressible on the ten trait ratios',
+    ],
+    what_went_wrong: [
+      'A first CRISPRscan alignment gave a plausible rho = 0.75 at the WRONG offset - pure misalignment artefact, because reverse-complementing a window flips its flanks with it. It would have shipped.',
+      'A written prediction that correlation-preserving decoys would score 0.5 "by construction" came out at 0.663, because the fitted Gaussian is OVERDISPERSED relative to real fish. The wrong prediction was more informative than the right one would have been.',
+    ],
+  },
+
+  {
+    id: 'controls',
+    title: 'The fifth property: a benchmark needs a control',
+    status: 'learned the hard way, twice',
+    dna: ['aletheia'],
+    why_fun:
+      'Every single control built this week caught MY work rather than the system\'s. That is a slightly ' +
+      'humbling pattern and a very reassuring one: it means the controls are load-bearing rather than ' +
+      'decorative, which is not true of most tests.',
+    why_science:
+      'A benchmark must take its answer from outside the system, be able to fail, state its scope, and be ' +
+      'reproducible. Those four are standard. The fifth is not, and it is the one that actually bit: ' +
+      'without a control you cannot distinguish "the system failed" from "my harness cannot tell".',
+    open_questions: [
+      {
+        q: 'How do you control a control?',
+        why_data_will_not_settle_it:
+          'the regress is real. The Lean control was a weakened mutant that must survive; it came back ' +
+          'UNPROVEN, revealing the harness was too weak. But that only worked because I knew independently ' +
+          'that the weakened statement was true. At some point a human judgement terminates the chain, ' +
+          'and no amount of automation removes that point - it only moves it.',
+      },
+      {
+        q: 'When a plausible constraint fails on real data, is the constraint wrong or the data?',
+        why_data_will_not_settle_it:
+          'one "preanal <= 1 SL" violator is almost certainly a measurement artefact. But overruling a ' +
+          'control because the violator looks wrong is exactly the move the control exists to prevent, ' +
+          'so it stands. Which way to resolve this is a methodological commitment, not a finding.',
+      },
+    ],
+    how_file_level: {
+      path: 'benchmarks/*/test*.mjs and the CONSTRAINTS/REJECTED exports',
+      files: [
+        ['design-hard-negatives/adversarial.mjs', 'REJECTED carries each failed candidate WITH its measured rate, so the mistake cannot be repeated quietly'],
+        ['design-hard-negatives/laws.mjs', 'verifyAgainstReal() returns counts, not booleans; cleared() admits only rate exactly 1.0'],
+        ['lean-mutation/mutants.mjs', 'is_control marks the mutant that MUST survive'],
+        ['sim-engine/validate/gate/containment.mjs', 'mayGate() refuses in code anything below 1.0 support'],
+      ],
+      what_is_packed_in:
+        'A rejected constraint is not deleted. It is kept with the share of real specimens that satisfy ' +
+        'it and a `why_not` - so the file records the near-miss rather than only the survivor.',
+      the_detail_that_matters:
+        'The rule is enforced in code, not in a comment: a constraint may gate ONLY when its recorded ' +
+        'support over a real sample is exactly 1. A gate that rejects real fish is worse than no gate.',
+    },
+    real_numbers: [
+      '"the pectoral fin sits behind the head" is FALSE for 39% of real fish - 4,673 specimens checked',
+      'the real-specimen control rejected 4 of 8 candidates in one module and 7 of 13 in another',
+      'a plausible-sounding anatomical containment is about as likely to be wrong as right',
+      'the gate refuses 0 of 4,673 real specimens, which is the only property that makes it deployable',
+    ],
+    what_went_wrong: [
+      'I ran the holdout leak gate and git commit in one && chain, so a flagged leak did not block the commit. A GATE CHAINED BEHIND THE ACTION IT GUARDS IS NOT A GATE.',
+      'A Lean mutant was aimed the wrong way: widening a disjunct WEAKENS a conclusion, so the "false" mutant stayed true. Lean said so precisely - the attempted counterexample was inside the measured band.',
+    ],
+  },
+
+  {
+    id: 'analogy',
+    title: 'Analogy mapping — homology is not function',
+    status: 'in progress',
+    dna: ['delphi', 'aletheia'],
+    why_fun:
+      'The question "is this the same thing as that?" is the oldest question in comparative biology and ' +
+      'it is still not mechanised. Watching agents fan out over twenty genomes to answer it, and then ' +
+      'watching most of the answers get thrown out, is the most honest demo this project has.',
+    why_science:
+      'DELPHI designs by borrowing a structure from one species into another, which requires deciding ' +
+      'when a gene in A is the FUNCTIONAL ANALOGUE of one in B. The pipeline treated orthology as if it ' +
+      'answered this. It does not. Homology is shared ancestry; analogy is shared function without it. An ' +
+      'ortholog can have diverged entirely, a one-to-many orthologue is not an equivalent of anything, ' +
+      'and the convergent cases a design programme most cares about have no orthology at all.',
+    open_questions: [
+      {
+        q: 'What makes two structures "the same structure"?',
+        why_data_will_not_settle_it:
+          'homology is a claim about history, and history is not directly observable. Sequence, position, ' +
+          'development and expression are all correlates, and they disagree - a structure can be ' +
+          'positionally homologous and developmentally novel. There is no measurement that returns ' +
+          '"same", only measurements that return "similar in this respect".',
+      },
+      {
+        q: 'How should incommensurable evidence kinds be weighed against each other?',
+        why_data_will_not_settle_it:
+          'rescue experiments, synteny, expression similarity and domain architecture are different kinds ' +
+          'of evidence, not different amounts of one kind. Collapsing them into a single confidence number ' +
+          'requires weights, and the weights are a modelling choice that propagates into every downstream ' +
+          'decision. More data makes each kind better measured and does not make them commensurable.',
+      },
+      {
+        q: 'Is "no orthologue found" ever evidence of absence?',
+        why_data_will_not_settle_it:
+          'searching one database is not searching. The strength of a negative depends on the coverage ' +
+          'and sensitivity of what was searched, which is a judgement about the search, not a result of it.',
+      },
+    ],
+    how_file_level: {
+      path: 'analogues/',
+      files: [
+        ['fetch.mjs', 'live NCBI Datasets v2, Ensembl REST and E-utilities, with on-disk caching to C:/Temp and real rate limiting'],
+        ['inventory.mjs', 'the curated species inventory, each entry stating WHY it is a reference and verified to resolve'],
+        ['analogy.mjs', 'EVIDENCE_KINDS, the classifier, and the refusals'],
+        ['align.mjs', 'real Gotoh affine-gap Needleman-Wunsch and Smith-Waterman, BLOSUM62, and the cassette layout'],
+        ['phylo.mjs', 'the tree, divergence ranges, and phenome correspondence classes'],
+        ['cases.mjs', 'the three worked requests'],
+        ['storyboard.mjs', 'assembles the animation data and degrades rather than failing'],
+      ],
+      what_is_packed_in:
+        'Nothing in here caches into the repository. Genome responses go to C:/Temp/delphi-genome-cache/ ' +
+        'keyed by a hash of the URL, because the repo already has a rule against committing large data ' +
+        'and a genome is the canonical violation of it. Every fetch distinguishes three outcomes that are ' +
+        'usually collapsed: the API said no, the API failed, and we did not ask.',
+      the_detail_that_matters:
+        'THE TELEOST PROBLEM. The teleost genome duplication means many zebrafish genes are duplicate ' +
+        'pairs that SPLIT the ancestral function, so a single mammalian gene maps to two fish genes each ' +
+        'doing part of the job. A mapping that picks one and calls it "the" orthologue is wrong in a way ' +
+        'that shows up as a failed experiment. We have a live instance: kcnk5b and its paralog kcnk5a.',
+    },
+    real_numbers: [
+      'percent identity has three defensible denominators - on one real alignment they give 100.0%, 75.0% and 60.0%. The module returns all three rather than picking',
+      'BLOSUM62 verified: 24x24, 0 of 576 entries asymmetric',
+      'hand-computed alignment case GATTACA/GATACA = 9, asserted exactly',
+      'the SpCas9 blunt cut is 3 bp 5\' of the PAM, asserted six ways - an off-by-one here designs a cassette that integrates in the wrong place',
+    ],
+    what_went_wrong: [],
+  },
+
+  {
+    id: 'cases',
+    title: 'Three requests that fail in three different ways',
+    status: 'in progress',
+    dna: ['delphi', 'aletheia'],
+    why_fun:
+      'A glowing fly, a higher-protein worm, and a cow that burps less. They sound like three versions of ' +
+      'the same request and they are not even the same KIND of request, which is the most useful thing ' +
+      'about the set.',
+    why_science:
+      'Only one of the three is a genome-editing problem in the shape the pipeline assumes. One is not a ' +
+      'mapping problem - the function is ADDED, not transferred, and no orthologue exists or is needed. ' +
+      'One is polygenic and not a single edit. And one is not about the named organism at all: enteric ' +
+      'methane is produced by rumen archaea, and the cow genome encodes no methanogenesis pathway. A ' +
+      'system that silently produced a cassette for all three would be wrong three times over.',
+    open_questions: [
+      {
+        q: 'Where does an organism end and its microbiome begin?',
+        why_data_will_not_settle_it:
+          'the methane case forces this. If the trait of interest is produced by an associated community, ' +
+          'is the "designed organism" the cow, the holobiont, or the archaea? Sequencing everything does ' +
+          'not answer it - the boundary is a choice about what counts as the unit being engineered.',
+      },
+      {
+        q: 'What does the person asking for a glowing fly actually want?',
+        why_data_will_not_settle_it:
+          'fluorescence needs excitation light, so a GFP fly does NOT glow in the dark; bioluminescence ' +
+          'needs a luciferase AND a substrate the fly cannot make. Which one was meant is a fact about ' +
+          'the asker, not about the fly, and it changes the entire design.',
+      },
+      {
+        q: 'Is "heritable" ever the same as "editable"?',
+        why_data_will_not_settle_it:
+          'methane yield has non-zero heritability through host effects on the rumen environment. That ' +
+          'makes it a selection target. Whether any identified locus is an EDIT target is a different ' +
+          'claim, and a heritability estimate - however precise - does not contain it.',
+      },
+    ],
+    how_file_level: {
+      path: 'analogues/cases.mjs and dashboard/public/blueprint3d/studio-live/analogues/',
+      files: [
+        ['cases.mjs', 'CASES[] with verdict, is_the_target_organism_the_right_one, CRISPR_RELEVANCE and real citations'],
+        ['storyboard.json', 'the generated animation data, one entry per case, eight stages each'],
+        ['index.html', 'the animation: canvas scene, stage rail, and refusals drawn across the whole frame'],
+      ],
+      what_is_packed_in:
+        'Each case carries the request as the lead phrased it, what is ACTUALLY being asked, the target ' +
+        'organism and whether it is the right one, the analogy class, what would have to be measured, a ' +
+        'verdict from a closed vocabulary, how it could fail, and sources with real DOIs - null and ' +
+        'flagged where unverified, because a fabricated DOI is worse than none.',
+      the_detail_that_matters:
+        'CRISPR_RELEVANCE asks, per case, whether a cassette is even the right tool. For the fly the ' +
+        'classic tool is transgenesis rather than knock-in; for the cow it is beside the point entirely. ' +
+        'A design system that answers "CRISPR cassette" to every request is a hammer.',
+    },
+    real_numbers: [
+      'the storyboard asserts at least one case refuses before reaching a cassette - a storyboard where everything succeeds is a bug in the storyboard',
+      'and asserts not everything refuses, since showing nothing working is the opposite failure',
+    ],
+    what_went_wrong: [],
+  },
+
+  {
+    id: 'ecology',
+    title: 'Ecology — the quantity that decides survival is not the one the design optimises',
+    status: 'shipped',
+    dna: ['delphi', 'aletheia'],
+    why_fun:
+      'The result is genuinely counterintuitive and takes two lines of arithmetic: a design that grows ' +
+      '67% faster still loses. You can show that to anyone in thirty seconds and it changes how they ' +
+      'think about what "better" means.',
+    why_science:
+      'A design is not released into an empty world. Tilman\'s R* rule says that with one limiting ' +
+      'resource at steady state, the species with the lowest R* = Ks*D/(mu_max - D) competitively ' +
+      'EXCLUDES the others - not "does better", excludes. R* turns on affinity at least as much as on ' +
+      'rate, and a design optimised for maximum growth rate is not thereby safe. It is often the ' +
+      'opposite, because the engineered pathway costs low-substrate performance.',
+    open_questions: [
+      {
+        q: 'Is R* the right frame for a release at all?',
+        why_data_will_not_settle_it:
+          'R* describes steady state in a well-mixed system. Soil is neither. The honest answer may be ' +
+          'that it is the BEST CASE for the design - if it loses here it loses everywhere - but whether ' +
+          'that framing is appropriate is a judgement about model applicability, not a measurement.',
+      },
+      {
+        q: 'If low-substrate affinity decides survival and we optimise rate, is the design objective wrong?',
+        why_data_will_not_settle_it:
+          'that is a question for whoever sets the objective. The model can say which quantity decides ' +
+          'the outcome; it cannot say which outcome you should want.',
+      },
+    ],
+    how_file_level: {
+      path: 'ecology/',
+      files: [
+        ['rstar.mjs', 'Monod growth, R*, compete(), assessDesign() and WHAT_R_STAR_IGNORES'],
+        ['coexist.mjs', 'two-resource theory: ZNGIs for essential and substitutable resources, consumption vectors, mutual invasibility'],
+      ],
+      what_is_packed_in:
+        'Three numbers per organism settle the single-resource question: mu_max, Ks, and the loss rate D ' +
+        'of the environment entered. The module REFUSES to assess any design lacking measured mu_max and ' +
+        'Ks, and returns the bar plus the three measurements that would settle it, because a competition ' +
+        'outcome computed from invented growth constants looks exactly like one computed from measurements.',
+      the_detail_that_matters:
+        'The two-resource module corrected the one-resource module. WHAT_R_STAR_IGNORES said two ' +
+        'resources make the single-resource conclusion "lapse entirely". It does not - it GENERALISES. A ' +
+        'species with the lower R* on both resources excludes the other outright at every supply point. ' +
+        'It lapses only where the isoclines cross, which is where there is a real trade-off.',
+    },
+    real_numbers: [
+      'design mu_max 0.5 / Ks 1.0 -> R* 0.25 LOSES to incumbent mu_max 0.3 / Ks 0.1 -> R* 0.05',
+      'the design grows 67% faster and would need to be 5x better to win',
+      'no designed organism in this repository has a measured mu_max or Ks, so every assessment refuses',
+      'reverse ONLY the consumption vectors, leave all four R* identical, and stable coexistence flips to founder-control',
+    ],
+    what_went_wrong: [],
+  },
+
+  {
+    id: 'holdout',
+    title: 'The holdout — a clade nobody is allowed to mention',
+    status: 'standing discipline',
+    dna: ['aletheia'],
+    why_fun:
+      'There is something genuinely strange about working on a comparative-biology project where one ' +
+      'entire class of animals is unspeakable. It shapes the code in visible ways: a tree-of-life module ' +
+      'has to actively avoid reaching for it, and a survey of registry laws had to redact two identifiers ' +
+      'and fill them in at runtime instead.',
+    why_science:
+      'A held-out evaluation set is only held out if nothing leaks into the work. Not the species names, ' +
+      'not the clade, not a claim id whose organisms all belong to it - because any of those tells a ' +
+      'later reader what the evaluation is about, and a system tuned against a leaked holdout has ' +
+      'measured itself.',
+    open_questions: [
+      {
+        q: 'How much can leak before a holdout stops being one?',
+        why_data_will_not_settle_it:
+          'there is no measurement of "how much information about the evaluation entered the design". ' +
+          'A leak check counts tokens; it cannot count influence. The honest position is that a leaked ' +
+          'holdout is compromised and you cannot quantify by how much.',
+      },
+    ],
+    how_file_level: {
+      path: 'holdout/ (owned by another thread) and every module that touches taxa',
+      files: [
+        ['holdout/check-leaks.mjs', 'scans a path for held-out taxa and for claim ids whose organisms are all held out'],
+        ['benchmarks/design-hard-negatives/laws.mjs', 'two registry rows take their law_id from the registry AT RUNTIME so the identifiers never appear in source'],
+        ['benchmarks/lean-open-problems/problems.mjs', 'one problem WITHDRAWN rather than written, with a comment saying why the count is 14 and not 15'],
+      ],
+      what_is_packed_in:
+        'The gate reports leaks and warnings separately and exits non-zero on a leak. The rule here is ' +
+        'that rulings belong to the holdout thread: a leak is fixed by REDACTION, never by adding an ' +
+        'allowlist entry, because allowlisting is a judgement about scope that is not mine to make.',
+      the_detail_that_matters:
+        'check-leaks does not scan .html or .glb files, so those are grepped by hand. A gate with a ' +
+        'documented blind spot is only as good as the habit that covers it.',
+    },
+    real_numbers: [
+      'two leaks reached a commit this week; both were redacted rather than allowlisted',
+      'one survey keeps all 62 registry rows while naming only 60 of them',
+    ],
+    what_went_wrong: [
+      'A `git add <directory>` swept in a half-written module from a running agent, and separately a leak gate chained with && behind the commit it guarded did not block it. Both are the same root cause: a broad command staging whatever happens to be there.',
+    ],
+  },
+]);
+
+export const HOW_TO_READ_THIS = Object.freeze({
+  the_four_questions: ['why it is fun', 'why it is science', 'what stays open regardless of data', 'what is actually on disk'],
+  the_open_questions_rule:
+    'an entry under open_questions must be one where MORE MEASUREMENT IS NOT THE KIND OF THING THAT ' +
+    'WOULD HELP. "We have not measured it yet" is not an open question in this sense, it is a task. The ' +
+    'ones listed are definitional boundaries, modelling choices and category questions - and they are ' +
+    'the part of the work most likely to still be interesting in ten years.',
+  what_went_wrong_is_not_optional:
+    'every entry carries its mistakes. A dev log that records only what worked is a changelog with ' +
+    'better typography, and the failures here were more instructive than the successes - a wrong ' +
+    'prediction about decoy AUC taught more than a right one would have.',
+});
