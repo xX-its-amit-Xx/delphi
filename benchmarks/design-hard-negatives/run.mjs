@@ -145,3 +145,31 @@ fs.writeFileSync(OUT, JSON.stringify(report, null, 1));
 console.log(`\n${report.the_headline}`);
 if (jitter) console.log(`jitter-real (a real fish nudged a quarter of a standard deviation): AUC ${jitter.auc.toFixed(4)}`);
 console.log(`\nwritten to ${path.relative(ROOT, OUT).replace(/\\/g, '/')}`);
+
+// ---------------------------------------------------------------- the constructed hard negative
+// Everything above draws negatives. A worst case has to be searched for, so this part optimises.
+{
+  const { CONSTRAINTS, REJECTED, NEAR_STRICT, impossibilityCurve, WHAT_THE_CURVE_MEANS } = await import('./adversarial.mjs');
+  const C = CONSTRAINTS[0];
+  const realOk = positives.filter(p => C.slack(p) >= 0).length;
+  console.log(`\nconstraint "${C.id}": holds on ${realOk}/${positives.length} real held-out specimens`);
+  if (realOk !== positives.length) {
+    console.log('  it does NOT hold on every real specimen, so it cannot label an impossibility. Not used.');
+  } else {
+    const curve = impossibilityCurve(P, C, posQ);
+    console.log('  margin = by how much snout+eye EXCEEDS the whole head, in standard lengths\n');
+    console.log('  margin   min q   typical?   real fish less typical than it');
+    for (const r of curve) {
+      console.log(`  ${String(r.margin).padEnd(8)}${r.min_q.toFixed(3).padStart(6)}   ${(r.called_typical_by_the_scorer ? 'YES' : 'no ').padEnd(9)}  ${(r.real_fish_less_typical_share * 100).toFixed(1).padStart(5)}%  (${r.real_fish_less_typical_than_it}/${posQ.length})`);
+    }
+    report.constructed_hard_negative = {
+      constraint: { id: C.id, statement: C.statement, why: C.why, holds_on_real: `${realOk}/${positives.length}` },
+      rejected_candidates: REJECTED, near_strict_not_used: NEAR_STRICT,
+      curve, what_it_means: WHAT_THE_CURVE_MEANS,
+      sampling_comparison: 'drawing 20,000 from the fitted model gave 88 violations and none inside q < 1; the search finds one at once',
+    };
+    fs.writeFileSync(OUT, JSON.stringify(report, null, 1));
+    const two = curve.find(r => r.margin === 0.02);
+    if (two) console.log(`\n  an animal whose snout and eye overhang the back of its head by 2% of its body length scores q=${two.min_q}, which the scorer calls ${two.called_typical_by_the_scorer ? 'TYPICAL' : 'atypical'}, and is more plausible by this measure than ${two.real_fish_less_typical_than_it} of ${posQ.length} real fish.`);
+  }
+}

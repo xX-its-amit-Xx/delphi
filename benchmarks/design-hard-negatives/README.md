@@ -71,14 +71,62 @@ atypical — it is unscoreable, and imputing a mean would make it look average.
 Family hold-out is supported (`pooled(block, [family])`) because a design's nearest real relatives are
 usually its own family. The headline numbers are pooled, which is the model's best case.
 
-31 tests pass; 31 fail under `--fail-once`; **0 survive their own fault.**
+42 tests pass; 42 fail under `--fail-once`; **0 survive their own fault.**
+
+## The hard negative that has to be constructed
+
+Everything above *draws* negatives. A worst case is not a sample — it has to be searched for. So:
+**what is the most typical anatomically impossible animal the model allows?** Minimise `q` subject to
+breaking a constraint no real animal breaks.
+
+The constraint has to be chosen by checking, not by intuition. Four that sound obviously true were
+rejected because **real fish break them**:
+
+| holds on real fish | constraint | verdict |
+|---:|---|---|
+| **100.00 %** | `preorbital + eye_diameter ≤ head_length` | **kept** — the eye lies in the head, behind the snout |
+| 99.98 % | every along-body distance ≤ 1 SL | near-strict, not used |
+| 99.91 % | `prepelvic ≤ preanal` | near-strict, not used |
+| 97.58 % | `predorsal ≤ preanal` | rejected — a tendency |
+| 69.66 % | `prepectoral ≤ prepelvic` | rejected |
+| **60.62 %** | `head_length ≤ prepectoral` | rejected — *"the pectoral fin sits behind the head"* is **false for 39 % of real fish** |
+
+Had that last one gone in unchecked, every hard negative built on it would have been a real fish
+mislabelled impossible, and this benchmark would have reported the scorer failing to detect animals that
+exist. **The check against real specimens is the control, and it is not optional.** What survives holds
+on 4,673 of 4,673 — while the benchmark's own `organ_containment` class, the right idea, has **three
+items**.
+
+### The result
+
+`margin` is by how much the snout plus the eye overhang the back of the head, in standard lengths.
+
+| margin | min q | called typical? | real fish *less* typical than it |
+|---:|---:|:--:|---:|
+| 0.001 | 0.800 | **yes** | 36.0 % (1,681/4,673) |
+| 0.01 | 0.857 | **yes** | 31.5 % (1,471/4,673) |
+| **0.02** | **0.918** | **yes** | **27.4 % (1,279/4,673)** |
+| 0.05 | 1.091 | no | 19.1 % (890/4,673) |
+| 0.10 | 1.351 | no | 12.0 % (560/4,673) |
+
+**An animal whose snout and eye overhang the back of its head by 2 % of its body length — leaving no room
+for braincase, jaw, gills or operculum — is called typical by the scorer, and ranks as more plausible than
+1,279 of 4,673 real fish.**
+
+**Sampling cannot find this.** 20,000 draws from the fitted model produced 88 violations and **not one**
+inside the typical radius `q < 1`. The search finds one immediately. The benchmark drew 12,606 negatives
+and never found it.
+
+This does not show the scorer is wrong. It measures distance to real fish and does that correctly. It
+shows that **distance to real fish does not bound anatomical possibility** — a design can be ordinary by
+this measure and still be an animal that cannot be built. The fix is not tuning: a containment check is a
+few lines of exact arithmetic, and it belongs *in front of* the scorer as a gate, not inside it as a term.
 
 ## What is not built
 
-- **A negative that is statistically typical *and* biologically impossible**, constructed from the law
-  layer rather than from the covariance. `jitter-real` approximates it from the statistical side only.
-  The registry holds 48 Lean theorems that could supply the biological side, and that is the benchmark
-  that would actually test the design system rather than its distance metric.
+- **Constraints from the law layer.** Only one geometric constraint is used. The registry holds 48 Lean
+  theorems that could supply mechanical and developmental ones, which is where this benchmark and the
+  Lean work meet.
 - **Family-held-out ladder numbers.** The machinery is there; only the pooled run is reported.
 - **The other block.** `fishshapes` (9 traits, 10,694 specimens) is untouched.
 - **The full scorer.** This measures the term that carries 0.88 of it, not the remaining components.

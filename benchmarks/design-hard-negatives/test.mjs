@@ -129,5 +129,55 @@ console.log('the decoy ladder');
     LADDER[0] === 'jitter-real'));
 }
 
+console.log('the constructed hard negative');
+{
+  const { CONSTRAINTS, REJECTED, mostTypicalViolator, impossibilityCurve } = await import('./adversarial.mjs');
+  const fsx = await import('node:fs');
+  const C = CONSTRAINTS[0];
+  const pos = [];
+  for (const l of fsx.readFileSync('sim-engine/validate/benchmark/heldout/items.jsonl', 'utf8').split('\n')) {
+    if (!l) continue;
+    const it = JSON.parse(l);
+    if (it.label !== 'positive') continue;
+    const p = it.params || {};
+    if (P.traits.every(t => typeof p[t] === 'number' && p[t] > 0)) pos.push(p);
+  }
+  // THE CONTROL. A constraint that any real animal breaks is not a constraint, and a hard negative built
+  // on one would be a real fish mislabelled impossible.
+  const posQ = pos.map(p => S.q(p)).filter(Number.isFinite);
+  const ok = pos.filter(p => C.slack(p) >= 0).length;
+  check('the constraint holds on EVERY real held-out specimen', f(ok === pos.length, ok === pos.length - 1), `${ok}/${pos.length}`);
+  check('the rejected candidates really do fail on real fish, which is why they were rejected', f(
+    REJECTED.every(r => r.holds_on_real < 0.99),
+    REJECTED.every(r => r.holds_on_real > 0.99)));
+  check('the worst rejected candidate is near chance, not near certainty', f(
+    Math.min(...REJECTED.map(r => r.holds_on_real)) < 0.7,
+    Math.min(...REJECTED.map(r => r.holds_on_real)) > 0.7));
+
+  const v = mostTypicalViolator(P, C, { margin: 0.02 });
+  check('the search returns a vector that actually VIOLATES the constraint', f(C.slack(v.params) < 0, C.slack(v.params) > 0), `slack ${C.slack(v.params).toExponential(1)}`);
+  check('it reaches the requested margin', f(v.reached_margin, !v.reached_margin), `violation ${v.violation.toFixed(4)} vs margin 0.02`);
+  check('the impossible animal is called TYPICAL by the scorer (q < 1)', f(v.q < 1, v.q > 1), `q=${v.q.toFixed(4)}`);
+  check('snout plus eye genuinely exceeds the whole head', f(v.snout_plus_eye > v.head_length, v.snout_plus_eye < v.head_length),
+    `${v.snout_plus_eye.toFixed(4)} vs ${v.head_length.toFixed(4)}`);
+  // the load-bearing claim: a SEARCH beats SAMPLING, which is why drawn negatives never found this
+  const { gaussianTypical } = await import('./decoys.mjs');
+  const drawn = gaussianTypical(P, S.L, mulberry32(5), 20000).filter(p => C.slack(p) < 0).map(p => S.q(p)).filter(Number.isFinite);
+  const bestDrawn = drawn.length ? Math.min(...drawn) : Infinity;
+  check('the search finds a MORE typical violator than 20,000 draws do, which is the point of constructing it',
+    f(v.q < bestDrawn, v.q > bestDrawn), `search ${v.q.toFixed(3)} vs best of ${drawn.length} draws ${bestDrawn === Infinity ? 'none' : bestDrawn.toFixed(3)}`);
+  check('no draw at all landed inside the typical radius', f(!drawn.some(q => q < 1), drawn.some(q => q < 1)),
+    `${drawn.filter(q => q < 1).length} of ${drawn.length} drawn violators had q<1`);
+
+  const curve = impossibilityCurve(P, C, posQ, [0.01, 0.05]);
+  check('a more impossible animal is harder to make typical (the curve rises)', f(
+    curve[1].min_q > curve[0].min_q, curve[1].min_q < curve[0].min_q),
+    `${curve[0].min_q} then ${curve[1].min_q}`);
+  check('the curve is reproducible without an RNG', (() => {
+    const again = impossibilityCurve(P, C, posQ, [0.01]);
+    return f(again[0].min_q === curve[0].min_q, again[0].min_q !== curve[0].min_q);
+  })());
+}
+
 console.log(`\n${pass} passed, ${fail} failed${FAULT ? '  (--fail-once: every assertion should FAIL here; any "ok" is a test that does not test)' : ''}`);
 process.exit(fail && !FAULT ? 1 : 0);
