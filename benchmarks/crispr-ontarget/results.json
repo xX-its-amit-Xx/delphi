@@ -1,0 +1,100 @@
+{
+ "what_this_is": "do the on-target scores this project ranks guides with predict measured zebrafish editing activity?",
+ "ground_truth": {
+  "citation": "Moreno-Mateos et al. 2015, Nat Methods 12:982-988, doi 10.1038/nmeth.3543",
+  "measure": "activity_norm_mut_ct_log_ran - normalised mutagenesis, measured in injected zebrafish embryos",
+  "n_in_source": 499,
+  "source_files": "Source Data to Fig. 4 (MOESM635), joined on sgRNA id",
+  "not_committed": "copyrighted supplementary material; SOURCES.md says how to rebuild it"
+ },
+ "genome": {
+  "assembly": "GRCz11",
+  "source": "https://ftp.ensembl.org/pub/current_fasta/danio_rerio/dna/Danio_rerio.GRCz11.dna.primary_assembly.fa.gz",
+  "built_at": "2026-11-01T06:11:49.625Z",
+  "sequences_scanned": 26,
+  "bp_scanned": 1345118429
+ },
+ "locating": {
+  "queried_with": "the 3'-most 20 nt, because a T7 oligo's added 5' G's are not genomic",
+  "unique": 307,
+  "multi_hit": 1,
+  "not_found": 191,
+  "context_unbuildable": 0,
+  "scored": 307
+ },
+ "refusals": {
+  "crisprscan": 0,
+  "doench": 0,
+  "heuristic": 0
+ },
+ "models": {
+  "crisprscan": {
+   "n": 307,
+   "rho": 0.2693,
+   "ci95": {
+    "lo": 0.1645,
+    "hi": 0.3637,
+    "n_resamples": 2000,
+    "seed": 20261107,
+    "deterministic": "seeded LCG; the same inputs and seed always give the same interval"
+   },
+   "distinct_scores": 307,
+   "what": "CRISPRscan, fitted ON zebrafish injections",
+   "citation": "Moreno-Mateos et al. 2015, Nat Methods 12:982-988, doi 10.1038/nmeth.3543; coefficients from Supplementary Table 3, \"Parameters of CRISPRscan model\"",
+   "status": "published model, reimplemented and verified against 25 published scores"
+  },
+  "doench2014": {
+   "n": 307,
+   "rho": -0.0374,
+   "ci95": {
+    "lo": -0.1486,
+    "hi": 0.0732,
+    "n_resamples": 2000,
+    "seed": 20261107,
+    "deterministic": "seeded LCG; the same inputs and seed always give the same interval"
+   },
+   "distinct_scores": 301,
+   "what": "Doench 2014 Rule Set 1, fitted on human and mouse cell lines",
+   "citation": "Doench et al. 2014, Nat Biotechnol 32:1262-1267, doi 10.1038/nbt.3026; coefficients from its Supplementary Table 9 (\"Feature weights from the final model used to score sgRNAs\"), page 15 of the Supplementary Text and Figures PDF",
+   "status": "published model, used here as a cross-species transfer"
+  },
+  "heuristic": {
+   "n": 307,
+   "rho": 0.0822,
+   "ci95": {
+    "lo": -0.024,
+    "hi": 0.1956,
+    "n_resamples": 2000,
+    "seed": 20261107,
+    "deterministic": "seeded LCG; the same inputs and seed always give the same interval"
+   },
+   "distinct_scores": 28,
+   "what": "editplan's own heuristic, weights chosen by us",
+   "citation": "none - see ON_TARGET_RULE",
+   "status": "not fitted to anything"
+  }
+ },
+ "caveats": {
+  "crisprscan_is_not_held_out": "CRISPRscan is being scored on data from the STUDY THAT FITTED IT: the 499 guides and the 92 coefficients come from the same paper. Its correlation here is therefore an UPPER BOUND on its advantage, not an estimate of it. Doench 2014 and our heuristic have never seen this data, so their numbers are honest held-out estimates. Read that way the finding is sharper rather than weaker: the model with home advantage reaches this, and the two actually in use reach zero.",
+  "what_would_fix_it": "an independent zebrafish guide-activity dataset. That is the obvious next piece of work and it is not done here.",
+  "cutting_is_not_phenotype": "this measures mutagenesis, not whether a phenotype appears. The bench package records that in the fin-size program the knockouts are phenotypically normal, and controls.mjs records Lin et al. 2025 measuring that cutting efficiency does not correlate with phenotype penetrance. A guide that scores well here may still test nothing.",
+  "the_unlocated_guides_are_a_selection": "guides that did not match GRCz11 exactly are not a random sample of the set, so every number here is a statement about the located subset.",
+  "one_assay_one_delivery": "the ground truth is one-cell-stage injection of Cas9 mRNA with T7-transcribed sgRNA. A lab using Cas9 protein RNP is using a different delivery, and nothing here measures that."
+ },
+ "generated": null,
+ "ranking": [
+  {
+   "model": "crisprscan",
+   "rho": 0.2693
+  },
+  {
+   "model": "heuristic",
+   "rho": 0.0822
+  },
+  {
+   "model": "doench2014",
+   "rho": -0.0374
+  }
+ ],
+ "the_finding": "crisprscan ranks these guides best (rho 0.2693); doench2014 is worst (rho -0.0374)."
+}
