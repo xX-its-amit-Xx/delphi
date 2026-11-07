@@ -232,7 +232,15 @@ export function checkTimelineOrder(timeline) {
  */
 export function checkIdentity(life) {
   const stages = stagesOf(life) ?? [];
-  const genomeAssembly = life?.genome?.assembly ?? life?.genome?.reference_assembly ?? null;
+  // All four spellings in use, because the committed example writes genome.reference.assembly while the
+  // .organism example writes a bare genome.assembly. Reading only one of them made this check report
+  // "unchecked" on our own worked example - and "nothing checked is not a pass" is the rule this very
+  // file states. A reader that silently fails to find the field it checks is worse than no reader.
+  const genomeAssembly = life?.genome?.assembly
+    ?? life?.genome?.reference_assembly
+    ?? life?.genome?.reference?.assembly
+    ?? life?.genome?.reference?.reference_assembly
+    ?? null;
 
   const claims = [];
   const push = (where, asm) => { if (asm) claims.push({ where, assembly: String(asm) }); };
