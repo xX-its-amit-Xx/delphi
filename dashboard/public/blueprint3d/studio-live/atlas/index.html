@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atlas</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='none' stroke='%234ec9a0' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='6' fill='none' stroke='%236aa9ff' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23b48ef5'/%3E%3C/svg%3E">
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+"three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+<style>
+  :root{--bg:#080b11;--panel:#0d131c;--card:#121824;--edge:#1f2836;--ink:#e9eff7;--dim:#8a97ac;--faint:#5d6a7e;
+    --ok:#4ec9a0;--warn:#f0b429;--bad:#ff7a66;--accent:#6aa9ff;--violet:#b48ef5;--s1:#3f82d6;--s2:#bf8410}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);overflow:hidden;
+    font:14px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+  a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+  #app{display:flex;height:100vh;width:100vw}
+  #stage{flex:1;position:relative;min-width:0}
+  canvas{display:block;width:100%;height:100%}
+  /* ---------- top bar ---------- */
+  #top{position:absolute;top:0;left:0;right:0;z-index:10;display:flex;gap:12px;align-items:center;
+    padding:10px 14px;background:linear-gradient(#080b11dd,#080b1100);pointer-events:none}
+  #top > *{pointer-events:auto}
+  #title{font-size:14px;font-weight:650;letter-spacing:.2px}
+  #title small{display:block;font-weight:400;color:var(--dim);font-size:11.5px;letter-spacing:0}
+  .nav{margin-left:auto;display:flex;gap:9px;font-size:12px;color:var(--dim)}
+  /* ---------- scale rail ---------- */
+  #rail{position:absolute;left:0;right:0;bottom:0;z-index:10;padding:10px 16px 14px;
+    background:linear-gradient(#080b1100,#080b11ee 38%)}
+  #railrow{display:flex;align-items:center;gap:10px;max-width:980px;margin:0 auto}
+  #zoom{flex:1;accent-color:var(--accent);height:3px}
+  .ticks{display:flex;justify-content:space-between;max-width:980px;margin:7px auto 0;gap:4px}
+  .tick{flex:1;text-align:center;font-size:10.5px;color:var(--faint);cursor:pointer;
+    padding:4px 2px;border-radius:6px;border:1px solid transparent;line-height:1.3}
+  .tick:hover{color:var(--ink);background:#141c28}
+  .tick[aria-current=true]{color:var(--ink);border-color:var(--edge);background:#141c28}
+  .tick b{display:block;font-size:11px;font-weight:600}
+  .tick.na{opacity:.4}
+  .btn{background:#121a26;border:1px solid var(--edge);color:var(--ink);border-radius:8px;
+    padding:6px 12px;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
+  .btn:hover{border-color:var(--accent)}
+  .btn[aria-pressed=true]{border-color:var(--accent);background:#17243a}
+  /* ---------- provenance chips ---------- */
+  .chip{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;letter-spacing:.5px;
+    text-transform:uppercase;font-weight:700;padding:2px 7px;border-radius:5px;
+    border:1px solid currentColor;white-space:nowrap;vertical-align:1px}
+  .chip.MEASURED{color:var(--ok)}
+  .chip.DEPICTED{color:var(--violet)}
+  .chip.DERIVED{color:var(--accent)}
+  .chip.DATABASE_RECORD{color:var(--s1)}
+  .chip.TOOL_OUTPUT{color:var(--s2)}
+  .chip.CONTESTED{color:var(--warn)}
+  .chip.NOT_ESTABLISHED{color:var(--bad)}
+  /* ---------- overlay card ---------- */
+  #now{position:absolute;top:56px;left:14px;z-index:9;max-width:330px;background:#0b1017e8;
+    border:1px solid var(--edge);border-radius:11px;padding:12px 14px;backdrop-filter:blur(6px)}
+  #now h2{margin:0;font-size:15px}
+  #now .scale{color:var(--faint);font-size:11.5px;font-variant-numeric:tabular-nums}
+  #now p{margin:7px 0 0;font-size:12.5px;color:var(--dim)}
+  /* ---------- sidebar ---------- */
+  #side{width:372px;flex:none;background:var(--panel);border-left:1px solid var(--edge);
+    display:flex;flex-direction:column;transition:margin-right .2s}
+  #side.closed{margin-right:-372px}
+  #sidehead{padding:12px 14px;border-bottom:1px solid var(--edge);display:flex;align-items:center;gap:9px}
+  #sidehead b{font-size:13px}
+  #sidebody{overflow-y:auto;padding:10px 12px 40px;flex:1}
+  #toggle{position:absolute;top:10px;right:10px;z-index:11}
+  details.sec{background:var(--card);border:1px solid var(--edge);border-radius:10px;margin:7px 0;overflow:hidden}
+  details.sec>summary{cursor:pointer;padding:9px 11px;list-style:none;display:flex;gap:9px;align-items:flex-start}
+  details.sec>summary::-webkit-details-marker{display:none}
+  details.sec>summary:hover{background:#151d2b}
+  .chev{color:var(--faint);transition:transform .15s;flex:none;font-size:11px;margin-top:3px}
+  details[open]>summary .chev{transform:rotate(90deg)}
+  .sechead{flex:1;min-width:0}
+  /* both must be block: as inline spans the title and its subtitle run together into one
+     unreadable string ("The animation is a constraintunion volume is held constant") */
+  .sechead .t{display:block;font-size:13px;font-weight:600;line-height:1.35}
+  .sechead .s{display:block;font-size:11.5px;color:var(--dim);margin-top:2px;line-height:1.35}
+  .secbody{padding:2px 11px 11px;border-top:1px solid var(--edge)}
+  .fact{display:flex;gap:9px;align-items:baseline;padding:6px 0;border-bottom:1px solid #151c27}
+  .fact:last-child{border-bottom:none}
+  .fact .k{color:var(--dim);font-size:11.5px;flex:1;min-width:0}
+  .fact .v{font-variant-numeric:tabular-nums;font-size:12.5px;font-weight:600;text-align:right;white-space:nowrap}
+  .fact .u{color:var(--faint);font-weight:400;font-size:11px}
+  .mini{width:100%;height:68px;display:block;margin:8px 0 2px;background:#0a0f16;
+    border:1px solid var(--edge);border-radius:8px}
+  .note{background:#0d1420;border:1px solid #223a5e;border-radius:8px;padding:9px 10px;margin:8px 0;font-size:12px;color:#c6d3e4}
+  .warn{background:#1a1507;border:1px solid #5d4a10;color:#f3d79a}
+  .bad{background:#19100e;border:1px solid #58271d;color:#ffb3a3}
+  .src{font-size:11px;color:var(--faint);margin-top:5px}
+  .src a{color:var(--s1)}
+  .na{color:var(--faint);font-size:12px;font-style:italic}
+  #legend{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 8px}
+  @media (max-width:880px){
+    #side{position:absolute;right:0;top:0;bottom:0;z-index:20;width:min(372px,92vw)}
+    #side.closed{margin-right:-100vw}
+    #now{max-width:min(330px,62vw)}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <div id="top">
+      <div id="title">Atlas<small id="sub">loading…</small></div>
+      <span class="nav"><a href="../retro/">retro</a> <a href="../devlog/">dev log</a> <a href="../scale/">scale</a> <a href="../life/">.life</a></span>
+    </div>
+    <div id="now"><h2>…</h2><div class="scale"></div><p></p></div>
+    <button class="btn" id="toggle" aria-pressed="true">panel</button>
+    <div id="rail">
+      <div id="railrow">
+        <button class="btn" id="play" aria-pressed="false">▶ play</button>
+        <button class="btn" id="touch" aria-pressed="true" title="Expand each stage so neighbouring cells touch instead of interpenetrating. The stored geometry overlaps heavily, so a division drawn from it barely pinches.">cells touch</button>
+        <input type="range" id="zoom" min="0" max="5" step="0.01" value="0">
+        <span class="scale" id="metres" style="min-width:86px;text-align:right"></span>
+      </div>
+      <div class="ticks" id="ticks"></div>
+    </div>
+  </div>
+  <aside id="side">
+    <div id="sidehead"><b>What you are looking at</b><span style="margin-left:auto;color:var(--faint);font-size:11px" id="provshare"></span></div>
+    <div id="sidebody">
+      <div id="legend"></div>
+      <div id="sections"></div>
+    </div>
+  </aside>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const fmt=(v,n=2)=>v===null||v===undefined||!Number.isFinite(+v)?'—':(+v).toLocaleString(undefined,{maximumFractionDigits:n});
+const metres=m=>{
+  if(!Number.isFinite(m))return '—';
+  const u=[[1e-9,'nm',1e9],[1e-6,'µm',1e6],[1e-3,'mm',1e3],[1,'m',1]];
+  for(const [lim,name,mul] of u) if(m<lim*1000) return `${(m*mul).toPrecision(3)} ${name}`;
+  return `${m.toPrecision(3)} m`;
+};
+
+let D=null;
+try{ D=await (await fetch('./atlas.json')).json(); }
+catch(e){ $('#sub').textContent=`could not load atlas.json: ${e.message}`; }
+
+// ---------------------------------------------------------------- scene
+const stage=$('#stage');
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+stage.appendChild(renderer.domElement);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x080b11);
+// Fog has to follow the camera. With a fixed range, framing a larger level pushes the camera past the
+// far plane and the whole scene fades to the background colour - which reads as "nothing rendered".
+scene.fog=new THREE.Fog(0x080b11,40,180);
+function setFog(dist){ scene.fog.near=dist*0.55; scene.fog.far=dist*2.6; }
+/* Depth precision. near=0.01 with far=4000 spends almost the entire depth buffer on the first few
+   units, so two intersecting spheres 70 units away z-fight into speckle. Tie the planes to the
+   framing distance and the fighting disappears. */
+function setClip(dist){ camera.near=Math.max(0.01,dist*0.08); camera.far=dist*5; camera.updateProjectionMatrix(); }
+const camera=new THREE.PerspectiveCamera(45,1,0.01,4000);
+camera.position.set(0,0,52);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true; controls.dampingFactor=.08; controls.enablePan=false;
+scene.add(new THREE.AmbientLight(0xcfe0ff,0.55));
+const key=new THREE.DirectionalLight(0xffffff,1.25); key.position.set(26,34,30); scene.add(key);
+const rim=new THREE.DirectionalLight(0x6aa9ff,0.5); rim.position.set(-30,-14,-22); scene.add(rim);
+
+function resize(){
+  const w=stage.clientWidth,h=stage.clientHeight;
+  renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix();
+}
+addEventListener('resize',resize);
+
+// one group per level; only the active one is visible
+const groups={};
+const LEVELS=(D?.levels??[]);
+for(const l of LEVELS){ const g=new THREE.Group(); g.visible=false; scene.add(g); groups[l.id]=g; }
+
+const MAT={
+  cell:new THREE.MeshStandardMaterial({color:0x4ec9a0,roughness:.45,metalness:.05,transparent:true,opacity:.92}),
+  cellB:new THREE.MeshStandardMaterial({color:0x6aa9ff,roughness:.45,metalness:.05,transparent:true,opacity:.92}),
+  nucleus:new THREE.MeshStandardMaterial({color:0xb48ef5,roughness:.5,transparent:true,opacity:.8}),
+  shell:new THREE.MeshStandardMaterial({color:0x6aa9ff,roughness:.9,transparent:true,opacity:.07,side:THREE.BackSide}),
+  dna:new THREE.MeshStandardMaterial({color:0x8a97ac,roughness:.6}),
+  depicted:new THREE.MeshStandardMaterial({color:0xb48ef5,roughness:.5}),
+};
+
+// ---------------------------------------------------------------- level: measured embryo
+let embryoPts=null, embryoIndex=null, embryoFrames=0;
+async function buildEmbryo(){
+  const M=D?.measured_embryo; if(!M||M.error) return;
+  const g=groups['embryo-measured'];
+  let buf;
+  try{ buf=await (await fetch(M.cloud_url)).arrayBuffer(); }
+  catch(e){ return; }
+  // float16 -> float32
+  const u16=new Uint16Array(buf);
+  const f32=new Float32Array(u16.length);
+  for(let i=0;i<u16.length;i++){
+    const h=u16[i], s=(h&0x8000)>>15, e=(h&0x7C00)>>10, m=h&0x03FF;
+    f32[i]= e===0 ? (s?-1:1)*Math.pow(2,-14)*(m/1024)
+          : e===0x1F ? (m?NaN:(s?-Infinity:Infinity))
+          : (s?-1:1)*Math.pow(2,e-15)*(1+m/1024);
+  }
+  embryoIndex=M.manifest.index; embryoFrames=M.manifest.frames;
+  const maxCount=Math.max(...embryoIndex.map(i=>i.count));
+  const geo=new THREE.BufferGeometry();
+  const pos=new Float32Array(maxCount*3);
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  geo.setDrawRange(0,0);
+  const mat=new THREE.PointsMaterial({color:0x4ec9a0,size:0.42,sizeAttenuation:true,transparent:true,opacity:.95});
+  embryoPts=new THREE.Points(geo,mat);
+  embryoPts.userData.src=f32;
+  g.add(embryoPts);
+  // a faint sphere for the embryo surface the cells sit on
+  const shell=new THREE.Mesh(new THREE.SphereGeometry(21,48,32),MAT.shell);
+  g.add(shell);
+  // measured division events, as rings that flash at their frame
+  for(const ev of (M.division_events??[])){
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(1.5,0.14,8,28),
+      new THREE.MeshBasicMaterial({color:0xf0b429,transparent:true,opacity:0}));
+    ring.position.set(ev.parent_xyz[0]*20,ev.parent_xyz[1]*20,ev.parent_xyz[2]*20);
+    ring.userData.frame=ev.frame;
+    g.add(ring); (g.userData.rings??=[]).push(ring);
+  }
+  setEmbryoFrame(0);
+}
+function setEmbryoFrame(fr){
+  if(!embryoPts||!embryoIndex)return;
+  const f=Math.max(0,Math.min(embryoFrames-1,Math.round(fr)));
+  const {offset,count}=embryoIndex[f];
+  const src=embryoPts.userData.src, dst=embryoPts.geometry.attributes.position.array;
+  for(let i=0;i<count;i++){
+    dst[i*3  ]=src[(offset+i)*3  ]*20;
+    dst[i*3+1]=src[(offset+i)*3+1]*20;
+    dst[i*3+2]=src[(offset+i)*3+2]*20;
+  }
+  embryoPts.geometry.attributes.position.needsUpdate=true;
+  embryoPts.geometry.setDrawRange(0,count);
+  for(const ring of (groups['embryo-measured'].userData.rings??[])){
+    const d=Math.abs(f-ring.userData.frame);
+    ring.material.opacity=d<6?(1-d/6)*0.95:0;
+    ring.lookAt(camera.position);
+  }
+  $('#metres').textContent=`frame ${f}/${embryoFrames-1} · ${(f*150/3600).toFixed(1)} h · ${embryoIndex[f].count} cells`;
+}
+
+// ---------------------------------------------------------------- level: cleavage (the splitting)
+// Constant union volume: solved here exactly as division.mjs does it, so the drawing obeys the
+// constraint rather than an easing curve. The two implementations are deliberately the same arithmetic.
+const sphereVol=r=>4/3*Math.PI*r**3;
+function lensVolume(r,d){ if(d>=2*r)return 0; return Math.PI/12*(4*r+d)*(2*r-d)**2; }
+function unionVolume(r,d){ return 2*sphereVol(r)-lensVolume(r,d); }
+function radiusForUnion(V,d){
+  let lo=Math.cbrt(3*(V/2)/(4*Math.PI)), hi=Math.cbrt(3*V/(4*Math.PI));
+  if(unionVolume(lo,d)>=V) return lo;
+  for(let i=0;i<80;i++){ const mid=(lo+hi)/2; if(unionVolume(mid,d)<V) lo=mid; else hi=mid; }
+  return (lo+hi)/2;
+}
+let cleaveMeshes=[], cleavePlan=null, cleaveScale=1, cleaveShell=null;
+// "Cells touch" mode. The stored cells do not merely overlap a little: at the two-cell stage the two
+// centres are 16.5 um apart while each radius is 31.75 um, so they are nearly concentric and a division
+// drawn from them barely pinches. Expanding every stage's centres by the factor that makes nearest
+// neighbours just touch produces a visible cleavage - and grows the envelope, which is the second of
+// the three options the packing impossibility leaves open. The factor is computed from the data here,
+// shown in the panel, and can be switched off.
+let touchMode=true, expandK=[];
+function computeExpansion(stages){
+  return stages.map(s=>{
+    const cs=s.cells; if(cs.length<2) return 1;
+    let minSep=Infinity;
+    for(let i=0;i<cs.length;i++)for(let j=i+1;j<cs.length;j++)
+      minSep=Math.min(minSep,Math.hypot(...[0,1,2].map(k=>cs[i].centre[k]-cs[j].centre[k])));
+    const needed=cs[0].radius*2;
+    return minSep>0?Math.max(1,needed/minSep):1;
+  });
+}
+const kOf=i=>touchMode?(expandK[i]??1):1;
+function sizeShell(){
+  if(!cleaveShell||!cleavePlan)return;
+  const R=envelopeRadius(cleavePlan.stages);
+  cleaveShell.scale.setScalar(R*cleaveScale*1.04);
+}
+function envelopeRadius(stages){
+  return Math.max(...stages.map((s,i)=>Math.max(...s.cells.map(c=>Math.hypot(...c.centre)*kOf(i)+c.radius))));
+}
+function buildCleavage(){
+  const C=D?.cleavage; if(!C)return;
+  cleavePlan=C;
+  expandK=computeExpansion(C.stages);
+  const r0=C.stages[0].cells[0].radius;
+  cleaveScale=16/r0;
+  const g=groups['cleavage'];
+  const geo=new THREE.SphereGeometry(1,40,28);
+  // 24, not 16: the 8 -> 16 cross-fade draws both stages at once
+  for(let i=0;i<24;i++){
+    const m=new THREE.Mesh(geo,(i%2?MAT.cellB:MAT.cell).clone());
+    m.visible=false; g.add(m); cleaveMeshes.push(m);
+  }
+  cleaveShell=new THREE.Mesh(new THREE.SphereGeometry(1,42,30),MAT.shell);
+  g.add(cleaveShell);
+  sizeShell();
+}
+/** tCl in [0, steps] — integer part picks the division, fraction animates it. */
+function setCleavage(tCl){
+  const C=cleavePlan; if(!C)return;
+  const steps=C.plan.steps.length;
+  const si=Math.max(0,Math.min(steps-1,Math.floor(tCl)));
+  const frac=Math.max(0,Math.min(1,tCl-si));
+  const step=C.plan.steps[si];
+  const from=C.stages[si], to=C.stages[si+1];
+  const ease=x=>x*x*(3-2*x);
+  const u=ease(frac);
+  let n=0;
+  const place=(centre,radius,opacity=1)=>{
+    const m=cleaveMeshes[n++]; if(!m)return;
+    m.visible=true;
+    m.position.set(centre[0]*cleaveScale,centre[1]*cleaveScale,centre[2]*cleaveScale);
+    m.scale.setScalar(radius*cleaveScale);
+    // Two dividing daughters INTERSECT, and intersecting transparent surfaces z-fight into speckle.
+    // Opaque is the correct default here; transparency is only needed for the one cross-fading step.
+    const solid=opacity>=0.99;
+    if(m.material.transparent===solid){ m.material.transparent=!solid; m.material.needsUpdate=true; }
+    m.material.depthWrite=true;
+    m.material.opacity=solid?1:opacity;
+  };
+  const kP=kOf(si), kD=kOf(si+1);
+  const ex=(c,k)=>[c[0]*k,c[1]*k,c[2]*k];
+  if(step.lineage_animatable && step.pairs){
+    for(const pr of step.pairs){
+      const parent=from.cells[pr.parent];
+      const a=to.cells[pr.daughters[0]], b=to.cells[pr.daughters[1]];
+      const pc=ex(parent.centre,kP), ac=ex(a.centre,kD), bc=ex(b.centre,kD);
+      const V=sphereVol(parent.radius);
+      const finalSep=Math.hypot(ac[0]-bc[0],ac[1]-bc[1],ac[2]-bc[2]);
+      const d=finalSep*u;
+      const r=radiusForUnion(V,d);
+      const mid=[0,1,2].map(i=>(ac[i]+bc[i])/2);
+      const axis=finalSep===0?[0,0,0]:[0,1,2].map(i=>(ac[i]-bc[i])/finalSep);
+      place([0,1,2].map(i=>pc[i]*(1-u)+(mid[i]+axis[i]*d/2)*u),r);
+      place([0,1,2].map(i=>pc[i]*(1-u)+(mid[i]-axis[i]*d/2)*u),r);
+    }
+  }else{
+    // 8 -> 16 cannot be animated as lineage: nearest-centre pairing is not two-to-one there, so the
+    // two stages genuinely CROSS-FADE rather than one cell being shown becoming two particular cells.
+    // Showing a lineage here would be inventing which cell became which, which is the one thing this
+    // level is not allowed to do.
+    for(const c of from.cells) place(ex(c.centre,kP),c.radius,0.92*(1-u));
+    for(const c of to.cells)   place(ex(c.centre,kD),c.radius,0.92*u);
+  }
+  for(let i=n;i<cleaveMeshes.length;i++) cleaveMeshes[i].visible=false;
+  const stageName=frac<0.02?from.name:(frac>0.98?to.name:`${from.name} → ${to.name}`);
+  // During a cross-fade both stages are on screen, so the mesh count is not the cell count.
+  const shown=step.lineage_animatable?n:(u<0.5?from.cells.length:to.cells.length);
+  $('#metres').textContent=`${stageName} · ${shown} cell${shown===1?'':'s'}${step.lineage_animatable?'':' · cross-fade, no lineage'}`;
+}
+
+// ---------------------------------------------------------------- molecular levels
+function sphereOfRadius(r,mat){ return new THREE.Mesh(new THREE.SphereGeometry(r,36,24),mat); }
+function buildMolecular(){
+  const M=D?.molecular??{};
+  // --- a single cell, sized from the sourced cell volume when available
+  if(M.cell){
+    const g=groups['cell'];
+    const rCell=14;
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(rCell,48,32),
+      new THREE.MeshStandardMaterial({color:0x4ec9a0,roughness:.5,transparent:true,opacity:.14,side:THREE.DoubleSide})));
+    const nucFrac=(()=>{ const n=num(M.cell.nuclear_volume), c=num(M.cell.volume);
+      return (n&&c)?Math.cbrt(n/c):0.42; })();
+    g.add(sphereOfRadius(rCell*nucFrac,MAT.nucleus));
+    // ribosomes at the measured count, scaled: draw a representative sample and say so
+    const rib=M.machines?.find?.(m=>/ribosome/i.test(m.id||m.name||''));
+    const shown=1500;
+    const geo=new THREE.BufferGeometry();
+    const pos=new Float32Array(shown*3);
+    for(let i=0;i<shown;i++){
+      let v; do{ v=[Math.random()*2-1,Math.random()*2-1,Math.random()*2-1]; }
+      while(v[0]**2+v[1]**2+v[2]**2>1 || v[0]**2+v[1]**2+v[2]**2<(nucFrac*1.05)**2);
+      pos[i*3]=v[0]*rCell; pos[i*3+1]=v[1]*rCell; pos[i*3+2]=v[2]*rCell;
+    }
+    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    g.add(new THREE.Points(geo,new THREE.PointsMaterial({color:0xbf8410,size:0.3,sizeAttenuation:true})));
+    g.userData.sample=shown;
+  }
+  // --- nucleus with chromosome territories
+  if(M.chromatin_levels){
+    const g=groups['nucleus'];
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(15,48,32),
+      new THREE.MeshStandardMaterial({color:0xb48ef5,roughness:.6,transparent:true,opacity:.1,side:THREE.DoubleSide})));
+    const nChr=num(M.genome?.chromosome_count)||20;
+    for(let i=0;i<nChr;i++){
+      const hue=0.55+0.35*(i/nChr);
+      const c=new THREE.Color().setHSL(hue%1,0.5,0.55);
+      const blob=new THREE.Mesh(new THREE.IcosahedronGeometry(2.6+Math.random()*1.3,1),
+        new THREE.MeshStandardMaterial({color:c,roughness:.7,transparent:true,opacity:.72,flatShading:true}));
+      const th=Math.acos(2*((i+0.5)/nChr)-1), ph=i*2.399963;
+      const rr=9.2*Math.cbrt(Math.random()*0.5+0.5);
+      blob.position.set(rr*Math.sin(th)*Math.cos(ph),rr*Math.sin(th)*Math.sin(ph),rr*Math.cos(th));
+      g.add(blob);
+    }
+  }
+  // --- the chromatin fibre: nucleosomes on DNA, at sourced dimensions
+  if(M.chromatin_levels){
+    const g=groups['fibre'];
+    const nuc=M.chromatin_levels.find?.(l=>/nucleosome/i.test(l.id||l.name||''));
+    const nucD=num(nuc?.diameter_nm)||11;      // nm
+    const linker=num(nuc?.linker_bp)||50;      // bp
+    const rise=0.34;                            // nm per bp, from chromatin.mjs when present
+    const S=1.1;                                // nm -> scene units
+    const beads=26;
+    const geoB=new THREE.CylinderGeometry(nucD/2*S,nucD/2*S,5.5*S,26);
+    let x=-((beads-1)*(nucD+linker*rise)*S)/2;
+    for(let i=0;i<beads;i++){
+      const m=new THREE.Mesh(geoB,new THREE.MeshStandardMaterial({color:i%2?0x6aa9ff:0x4ec9a0,roughness:.5}));
+      m.position.set(x,Math.sin(i*0.9)*1.4,Math.cos(i*0.75)*1.4);
+      m.rotation.set(Math.sin(i)*0.6,i*0.7,Math.cos(i)*0.5);
+      g.add(m);
+      if(i<beads-1){
+        const link=new THREE.Mesh(new THREE.CylinderGeometry(1.0*S/2,1.0*S/2,linker*rise*S,8),MAT.dna);
+        link.position.set(x+(nucD+linker*rise)*S/2,Math.sin(i*0.9)*0.7,Math.cos(i*0.75)*0.7);
+        link.rotation.z=Math.PI/2;
+        g.add(link);
+      }
+      x+=(nucD+linker*rise)*S;
+    }
+    g.userData.beads=beads;
+  }
+  // --- the machines, at measured sizes, on a strand of DNA
+  if(M.machines){
+    const g=groups['machines'];
+    const S=0.55;  // nm -> scene units
+    const strand=new THREE.Mesh(new THREE.CylinderGeometry(2.0*S/2,2.0*S/2,180,12),MAT.dna);
+    strand.rotation.z=Math.PI/2; g.add(strand);
+    const list=M.machines.slice(0,7);
+    list.forEach((m,i)=>{
+      const d=machineDiameterNm(m)||10;
+      const mesh=new THREE.Mesh(new THREE.IcosahedronGeometry(d/2*S,2),
+        new THREE.MeshStandardMaterial({color:[0x4ec9a0,0x6aa9ff,0xb48ef5,0xbf8410,0xff7a66,0x3f82d6,0xf0b429][i%7],
+          roughness:.42,flatShading:true}));
+      mesh.position.set(-70+i*24,d/2*S+2.0*S,0);
+      mesh.userData.machine=m; mesh.userData.spin=0.2+0.1*i;
+      g.add(mesh); (g.userData.machines??=[]).push(mesh);
+    });
+  }
+}
+function num(x){ if(x===null||x===undefined)return null;
+  if(typeof x==='number')return Number.isFinite(x)?x:null;
+  if(typeof x==='object'){ for(const k of ['value','mean','median','nm','um','typical']) if(Number.isFinite(+x[k]))return +x[k];
+    if(Array.isArray(x.range)&&x.range.length===2)return (+x.range[0]+ +x.range[1])/2; }
+  const n=parseFloat(x); return Number.isFinite(n)?n:null; }
+function machineDiameterNm(m){
+  const d=m.dimensions_nm??m.dimensions??m.size_nm;
+  if(d===null||d===undefined)return null;
+  if(typeof d==='number')return d;
+  if(Array.isArray(d))return Math.max(...d.map(Number).filter(Number.isFinite));
+  if(typeof d==='object'){
+    const vals=['diameter','x','y','z','max','longest'].map(k=>num(d[k])).filter(Number.isFinite);
+    if(vals.length)return Math.max(...vals);
+    return num(d);
+  }
+  return num(d);
+}
+
+// ---------------------------------------------------------------- level switching
+let level=0, playing=false, clock=new THREE.Clock(), tEmbryo=0, tCleave=0;
+function levelId(i){ return LEVELS[Math.max(0,Math.min(LEVELS.length-1,Math.round(i)))]?.id; }
+
+/**
+ * Frame the camera on what the level actually contains, rather than on a hand-tuned constant.
+ * The cleavage level needs the extra room: mid-division the solved radius is LARGER than either
+ * endpoint radius (that is what constant union volume means when the stored cells interpenetrate),
+ * so a camera framed on the stored stages clips the animation at its widest moment.
+ */
+const PAD={ 'cleavage':1.12, 'embryo-measured':1.18 };
+const camDist=new Map();
+function fitCamera(id){
+  if(camDist.has(id)) return camDist.get(id);
+  const g=groups[id];
+  const prev=g.visible; g.visible=true;
+  const box=new THREE.Box3().setFromObject(g);
+  g.visible=prev;
+  let R=16;
+  if(box.isEmpty()===false){
+    const sph=box.getBoundingSphere(new THREE.Sphere());
+    if(Number.isFinite(sph.radius)&&sph.radius>0) R=sph.radius;
+  }
+  const d=(R*(PAD[id]??1.25))/Math.sin(THREE.MathUtils.degToRad(camera.fov/2));
+  camDist.set(id,d);
+  return d;
+}
+function applyLevel(i){
+  level=i;
+  const id=levelId(i);
+  for(const l of LEVELS) groups[l.id].visible=(l.id===id);
+  const L=LEVELS.find(l=>l.id===id);
+  if(!L)return;
+  const dist=fitCamera(id);
+  camera.position.setLength(dist);
+  setFog(dist); setClip(dist);
+  controls.update();
+  $('#now').querySelector('h2').textContent=L.label;
+  $('#now').querySelector('.scale').innerHTML=`${metres(L.metres)} &middot; <span class="chip ${esc(L.kind)}">${esc(L.kind)}</span>`;
+  $('#now').querySelector('p').textContent=L.available?L.one_line:'this level is not built yet — the module it needs is absent';
+  document.querySelectorAll('.tick').forEach(t=>t.setAttribute('aria-current',String(t.dataset.id===id)));
+  renderSidebar(id);
+  if(id==='embryo-measured') setEmbryoFrame(tEmbryo);
+  if(id==='cleavage') setCleavage(tCleave);
+}
+
+// ---------------------------------------------------------------- sidebar
+function chip(kind,title){ return `<span class="chip ${esc(kind)}"${title?` title="${esc(title)}"`:''}>${esc(String(kind).replace(/_/g,' '))}</span>`; }
+function doiLink(s){
+  if(!s)return '';
+  const doi=s.doi??(typeof s==='string'&&/^10\./.test(s)?s:null);
+  const pmid=s.pmid;
+  const bits=[];
+  if(doi)bits.push(`<a href="https://doi.org/${esc(doi)}" target="_blank" rel="noopener">${esc(doi)}</a>`);
+  if(pmid)bits.push(`<a href="https://pubmed.ncbi.nlm.nih.gov/${esc(pmid)}/" target="_blank" rel="noopener">PMID ${esc(pmid)}</a>`);
+  if(s.accession)bits.push(esc(s.accession));
+  if(!bits.length&&typeof s==='string')bits.push(esc(s.slice(0,110)));
+  return bits.length?`<div class="src">${bits.join(' · ')}</div>`:'';
+}
+function fact(k,v,u,prov,src){
+  return `<div class="fact"><span class="k">${esc(k)}${prov?' '+chip(prov):''}</span>
+    <span class="v">${esc(v)}${u?` <span class="u">${esc(u)}</span>`:''}</span></div>${src?doiLink(src):''}`;
+}
+function sec(title,sub,kind,bodyHtml,open){
+  return `<details class="sec"${open?' open':''}><summary><span class="chev">›</span>
+    <span class="sechead"><span class="t">${esc(title)}</span><span class="s">${esc(sub)}</span></span>
+    ${kind?chip(kind):''}</summary><div class="secbody">${bodyHtml}</div></details>`;
+}
+
+function renderSidebar(id){
+  const M=D?.molecular??{};
+  let h='';
+  if(id==='embryo-measured'){
+    const E=D.measured_embryo;
+    if(!E||E.error){ h=`<div class="note bad">the measured embryo is unavailable: ${esc(E?.error??'no data')}</div>`; }
+    else{
+      const s=E.manifest.source;
+      h+=sec('Where this comes from',`${E.manifest.frames} frames, ${E.manifest.frame_interval_s} s apart`,'MEASURED',
+        `${fact('study',s.study?.split('-')[0]??'IDR','')}
+         ${fact('frames',fmt(E.manifest.frames,0),'')}
+         ${fact('interval',fmt(E.manifest.frame_interval_s,0),'s')}
+         ${fact('elapsed',fmt(E.manifest.covers?.this_file_elapsed_h,1),'h')}
+         ${fact('licence',s.licence??'—','')}
+         ${doiLink({doi:(s.citation||'').match(/10\.[^\s,]+/)?.[0],pmid:(s.citation||'').match(/PMID (\d+)/)?.[1]})}
+         <div class="note">${esc(E.manifest.coordinates.units_in_source)}</div>`,true);
+      h+=sec('Cells splitting, as data',`count rises ${E.count_growth.first} → ${E.count_growth.last}`,'MEASURED',
+        `<canvas class="mini" id="mini-counts"></canvas>
+         <div class="note">${esc(E.count_growth.note)}</div>
+         ${fact('drawable division events',fmt(E.division_events.length,0),'')}
+         <div class="note warn">${esc(E.division_events_note)}</div>`);
+      if(E.manifest.clock?.why_null) h+=sec('What the clock cannot say','absolute stage of frame 0','NOT_ESTABLISHED',
+        `<div class="note warn">${esc(E.manifest.clock.why_null)}</div>`);
+    }
+  }
+  if(id==='cleavage'){
+    const C=D.cleavage;
+    if(!C){ h=`<div class="note bad">cleavage unavailable: ${esc(D.cleavage_error??'no data')}</div>`; }
+    else{
+      h+=sec('The animation is a constraint','union volume is held constant, not eased','DERIVED',
+        `<div class="note">Cleavage divides without growing, so the two daughters must still add up to the parent at
+          every instant. The separation of the centres is the only free parameter; the radius is solved from it.
+          The furrow appears on its own, because two overlapping spheres make one.</div>
+         ${fact('stages',C.stages.length,'')}
+         ${fact('divisions',C.plan.steps.length,'')}
+         ${fact('volume conserved',C.plan.steps.every(s=>s.volume_conserved)?'yes':'no','')}`,true);
+      h+=sec('What is measured here','almost nothing, and that is the point','DEPICTED',
+        `${(C.provenance.measured_secondhand??[]).map(x=>`<div class="fact"><span class="k">${esc(x)}</span><span class="v">${chip('MEASURED')}</span></div>`).join('')}
+         ${(C.provenance.depicted??[]).map(x=>`<div class="fact"><span class="k">${esc(x)}</span><span class="v">${chip('DEPICTED')}</span></div>`).join('')}
+         <div class="note">${esc(C.provenance.the_sentence)}</div>`);
+      const bad=C.plan.steps.filter(s=>!s.lineage_animatable);
+      if(bad.length) h+=sec('One division we refuse to animate',bad.map(b=>`${b.from} → ${b.to}`).join(', '),'NOT_ESTABLISHED',
+        `<div class="note warn">${esc(bad[0].why_not)}</div>
+         <div class="note">So that transition cross-fades instead of inventing which cell became which.</div>`);
+      const storedEnv=Math.max(...C.stages.map(s=>Math.max(...s.cells.map(c=>Math.hypot(...c.centre)+c.radius))));
+      const drawnEnv=envelopeRadius(C.stages);
+      h+=sec(touchMode?'Cells moved apart to touch':'Cells drawn exactly as stored',
+        touchMode?`envelope grows ${(drawnEnv/storedEnv).toFixed(2)}×`:'the division barely pinches','DERIVED',
+        `<div class="note">The stored cells do not overlap a little, they overlap almost completely: at the
+          two-cell stage the centres are 16.5 µm apart while each radius is 31.75 µm. Drawn as stored, a
+          dividing cell never visibly pinches. <b>Cells touch</b> expands each stage's centres by the factor
+          that makes nearest neighbours just touch — which is the second of the three options below, and it
+          costs an embryo that appears to grow.</div>
+         ${C.stages.map((s,i)=>`<div class="fact"><span class="k">${esc(s.name??s.id)}</span>
+            <span class="v">×${fmt(expandK[i],2)}</span></div>`).join('')}
+         ${fact('envelope as stored',fmt(storedEnv,1),'µm')}
+         ${fact('envelope as drawn',fmt(drawnEnv,1),'µm')}
+         <div class="note warn">The real embryo does not grow during cleavage. Neither picture is right:
+           one hides the cells inside each other, the other inflates the embryo. The thing that is actually
+           true — the cells change shape — a sphere cannot draw.</div>`,true);
+      const P=C.packing_impossibility;
+      h+=sec('Why the cells overlap','n spheres of volume V cannot fit in a sphere of volume V','DERIVED',
+        `${fact('max packing fraction',fmt(P.max_packing_fraction,4),'')}
+         ${fact('envelope growth needed',fmt(P.envelope_growth_required,3),'×')}
+         <div class="src">${esc(P.source)}</div>
+         <ul style="margin:8px 0 0;padding-left:17px;color:var(--dim);font-size:12px">
+           ${P.options.map(o=>`<li style="margin:4px 0">${esc(o)}</li>`).join('')}</ul>
+         <div class="note warn">${esc(P.what_the_embryo_does)}</div>`);
+      h+=sec('What this does not model','four things, named','DEPICTED',
+        `<ul style="margin:4px 0 0;padding-left:17px;color:var(--dim);font-size:12px">
+          ${(C.not_modelled??[]).map(x=>`<li style="margin:5px 0">${esc(x)}</li>`).join('')}</ul>`);
+    }
+  }
+  if(id==='cell'){
+    if(!M.cell) h=unavailable('budget.mjs');
+    else{
+      h+=sec('The volume everything fits inside',M.cell.cell_type??'a reference mammalian cell','MEASURED',
+        factsFrom(M.cell),true);
+      if(M.crowding) h+=sec('Cytoplasm is not dilute','what most illustrations get wrong','MEASURED',
+        factsFrom(M.crowding)+`<div class="note">A drawing with visible gaps between machines is drawing a cell that could not work.</div>`);
+      if(M.what_this_rules_out) h+=sec('Depictions these numbers forbid',`${M.what_this_rules_out.length} of them`,'DERIVED',
+        `<ul style="margin:4px 0 0;padding-left:17px;color:var(--dim);font-size:12px">
+          ${M.what_this_rules_out.map(x=>`<li style="margin:5px 0">${esc(typeof x==='string'?x:JSON.stringify(x))}</li>`).join('')}</ul>`);
+      h+=`<div class="note">The dots in view are a <b>sample</b> of ${fmt(groups['cell'].userData.sample,0)} positions, not the real count, and their positions are invented. ${chip('DEPICTED')}</div>`;
+    }
+  }
+  if(id==='nucleus'){
+    if(!M.chromatin_levels) h=unavailable('chromatin.mjs');
+    else{
+      if(M.genome) h+=sec('The genome in this nucleus',M.genome.assembly??M.genome.name??'','DATABASE_RECORD',factsFrom(M.genome),true);
+      if(M.dna_in_the_nucleus) h+=sec('Two metres into six microns','computed, not quoted','DERIVED',factsFrom(M.dna_in_the_nucleus));
+      h+=`<div class="note">Chromosome territories are real; <b>these</b> territories are invented — size, shape and position. ${chip('DEPICTED')}</div>`;
+    }
+  }
+  if(id==='fibre'){
+    if(!M.chromatin_levels) h=unavailable('chromatin.mjs');
+    else{
+      h+=sec('The packing hierarchy',`${M.chromatin_levels.length} levels`,'MEASURED',
+        M.chromatin_levels.map(l=>`<div class="fact"><span class="k">${esc(l.name??l.id)} ${l.firmness?chip(/contest/i.test(l.firmness)?'CONTESTED':'MEASURED',l.firmness):''}</span>
+          <span class="v">${esc(fmt(num(l.diameter_nm??l.dimension_nm??l.size_nm)))} <span class="u">nm</span></span></div>${doiLink(l.source)}`).join(''),true);
+      if(M.thirty_nm_problem) h+=sec('The fibre that may not exist','in every textbook; contested in vivo','CONTESTED',
+        `<div class="note warn">${esc(typeof M.thirty_nm_problem==='string'?M.thirty_nm_problem:(M.thirty_nm_problem.what_is_in_dispute??JSON.stringify(M.thirty_nm_problem).slice(0,700)))}</div>`);
+    }
+  }
+  if(id==='machines'){
+    if(!M.machines) h=unavailable('machines.mjs');
+    else{
+      h+=sec('Drawn at measured sizes',`${M.machines.length} machines`,'MEASURED',
+        M.machines.map(m=>`<div class="fact"><span class="k">${esc(m.name??m.id)}</span>
+          <span class="v">${esc(fmt(machineDiameterNm(m),1))} <span class="u">nm</span></span></div>
+          ${m.what_it_does?`<div class="src">${esc(m.what_it_does)}</div>`:''}
+          ${doiLink(m.structure??m.source)}`).join(''),true);
+      if(M.rates) h+=sec('How fast they actually work','rates with units and organisms','MEASURED',factsFrom(M.rates));
+      if(M.animation_honesty) h+=sec('What this animation speeds up by','computed, not guessed','DERIVED',factsFrom(M.animation_honesty));
+      if(M.what_a_depiction_cannot_show) h+=sec('What a drawn machine gets wrong','necessarily','DEPICTED',
+        `<div class="note">${esc(typeof M.what_a_depiction_cannot_show==='string'?M.what_a_depiction_cannot_show:JSON.stringify(M.what_a_depiction_cannot_show).slice(0,800))}</div>`);
+    }
+  }
+  $('#sections').innerHTML=h||'<div class="na">nothing to show at this level yet</div>';
+  if(id==='embryo-measured') drawCounts();
+}
+function unavailable(mod){
+  const a=(D?.modules_absent??[]).find(x=>x.module.endsWith(mod));
+  return `<div class="note warn"><b>This level is not built yet.</b> It needs <code>${esc(mod)}</code>,
+    which is absent: ${esc(a?.why??'module not found')}.<br><br>It is listed here rather than hidden, so the
+    gap is visible in the same place as the content.</div>`;
+}
+function factsFrom(o){
+  if(!o)return '';
+  if(Array.isArray(o)) return o.map(x=>typeof x==='object'
+    ? `<div class="fact"><span class="k">${esc(x.name??x.id??x.what??'')}</span><span class="v">${esc(fmt(num(x)))} <span class="u">${esc(x.units??'')}</span></span></div>${doiLink(x.source)}`
+    : `<div class="fact"><span class="k">${esc(x)}</span></div>`).join('');
+  return Object.entries(o).filter(([k])=>!/^(verified_how|note|source|why|null_reason)$/.test(k)).map(([k,v])=>{
+    const n=num(v);
+    const units=(v&&typeof v==='object'&&v.units)?v.units:'';
+    const src=(v&&typeof v==='object')?v.source:null;
+    if(n!==null) return fact(k.replace(/_/g,' '),fmt(n,4),units,null,src);
+    if(typeof v==='string'&&v.length<120) return fact(k.replace(/_/g,' '),v,'',null,null);
+    if(v&&typeof v==='object'&&v.value===null&&v.null_reason)
+      return `<div class="fact"><span class="k">${esc(k.replace(/_/g,' '))} ${chip('NOT_ESTABLISHED')}</span><span class="v">—</span></div>
+              <div class="src">${esc(v.null_reason)}</div>`;
+    return '';
+  }).join('');
+}
+function drawCounts(){
+  const cv=document.getElementById('mini-counts'); if(!cv)return;
+  const counts=D.measured_embryo.per_frame_counts;
+  const w=cv.clientWidth||320,h=68; cv.width=w*2; cv.height=h*2;
+  const x=cv.getContext('2d'); x.scale(2,2); x.clearRect(0,0,w,h);
+  const max=Math.max(...counts);
+  x.strokeStyle='#4ec9a0'; x.lineWidth=1.6; x.beginPath();
+  counts.forEach((c,i)=>{ const px=i/(counts.length-1)*(w-8)+4, py=h-6-(c/max)*(h-16);
+    i?x.lineTo(px,py):x.moveTo(px,py); });
+  x.stroke();
+  x.fillStyle='#5d6a7e'; x.font='10px ui-sans-serif';
+  x.fillText(`${counts[0]} cells`,5,h-1); x.textAlign='right'; x.fillText(`${max} detected`,w-5,11);
+  const f=Math.round(tEmbryo);
+  x.strokeStyle='#f0b429'; x.lineWidth=1; x.beginPath();
+  const cx=f/(counts.length-1)*(w-8)+4; x.moveTo(cx,4); x.lineTo(cx,h-6); x.stroke();
+}
+
+// ---------------------------------------------------------------- controls
+$('#ticks').innerHTML=LEVELS.map((l,i)=>
+  `<button class="tick${l.available?'':' na'}" data-i="${i}" data-id="${esc(l.id)}" aria-current="false">
+     <b>${esc(l.label)}</b>${metres(l.metres)}</button>`).join('');
+document.querySelectorAll('.tick').forEach(t=>t.onclick=()=>{ $('#zoom').value=t.dataset.i; applyLevel(+t.dataset.i); });
+$('#zoom').max=String(Math.max(0,LEVELS.length-1));
+$('#zoom').oninput=e=>applyLevel(+e.target.value);
+$('#toggle').onclick=()=>{ const s=$('#side'); s.classList.toggle('closed');
+  $('#toggle').setAttribute('aria-pressed',String(!s.classList.contains('closed'))); setTimeout(resize,220); };
+$('#touch').onclick=()=>{
+  touchMode=!touchMode;
+  $('#touch').setAttribute('aria-pressed',String(touchMode));
+  $('#touch').textContent=touchMode?'cells touch':'as stored';
+  sizeShell(); camDist.delete('cleavage');
+  if(levelId(level)==='cleavage'){ const d=fitCamera('cleavage'); camera.position.setLength(d); setFog(d); setClip(d); setCleavage(tCleave); renderSidebar('cleavage'); }
+};
+$('#play').onclick=()=>{ playing=!playing; $('#play').setAttribute('aria-pressed',String(playing));
+  $('#play').textContent=playing?'❚❚ pause':'▶ play'; };
+addEventListener('keydown',e=>{
+  if(e.key===' '){ e.preventDefault(); $('#play').click(); }
+  if(e.key==='ArrowRight'){ $('#zoom').value=String(Math.min(LEVELS.length-1,Math.round(level)+1)); applyLevel(+$('#zoom').value); }
+  if(e.key==='ArrowLeft'){ $('#zoom').value=String(Math.max(0,Math.round(level)-1)); applyLevel(+$('#zoom').value); }
+});
+
+// ---------------------------------------------------------------- go
+if(D){
+  $('#sub').textContent=D.the_honest_header.slice(0,96)+'…';
+  $('#legend').innerHTML=['MEASURED','DEPICTED','DERIVED','CONTESTED','NOT_ESTABLISHED']
+    .map(k=>chip(k)).join(' ');
+  const avail=LEVELS.filter(l=>l.available).length;
+  $('#provshare').textContent=`${avail}/${LEVELS.length} levels built`;
+  await buildEmbryo();
+  buildCleavage();
+  buildMolecular();
+  resize();
+  applyLevel(0);
+}
+
+function tick(){
+  requestAnimationFrame(tick);
+  const dt=clock.getDelta();
+  const id=levelId(level);
+  if(playing){
+    if(id==='embryo-measured'){ tEmbryo=(tEmbryo+dt*18)%Math.max(1,embryoFrames); setEmbryoFrame(tEmbryo); drawCounts(); }
+    else if(id==='cleavage'&&cleavePlan){ tCleave=(tCleave+dt*0.55)%cleavePlan.plan.steps.length; setCleavage(tCleave); }
+  }
+  for(const m of (groups['machines']?.userData.machines??[])) m.rotation.y+=dt*m.userData.spin*0.35;
+  controls.update();
+  renderer.render(scene,camera);
+}
+tick();
+</script>
+</body>
+</html>
