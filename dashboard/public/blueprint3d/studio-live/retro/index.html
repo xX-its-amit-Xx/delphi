@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retro-validation</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 24L12 12l6 7 8-13' fill='none' stroke='%233f82d6' stroke-width='2.5' stroke-linejoin='round'/%3E%3Ccircle cx='26' cy='6' r='3' fill='%23bf8410'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#080b11;--panel:#0f141d;--card:#121824;--edge:#1f2836;--ink:#e9eff7;--dim:#8a97ac;--faint:#5d6a7e;
+    --ok:#4ec9a0;--warn:#f0b429;--bad:#ff7a66;--accent:#6aa9ff;--violet:#b48ef5;
+    /* data series: validated against surface #121824 in dark mode - L inside 0.48-0.67,
+       CVD deltaE 25.8 protan / 22.7 tritan, normal-vision 28.4, contrast >= 3:1 */
+    --s1:#3f82d6;--s2:#bf8410;--grid:#1a2230;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.65 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+  a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+  #wrap{max-width:1080px;margin:0 auto;padding:0 22px 90px}
+  /* a body child, so NO negative side margins: those would make the header wider than the viewport
+     and give the whole page a horizontal scrollbar. Full bleed comes from it being a body child. */
+  header{position:sticky;top:0;z-index:30;background:#080b11f2;backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--edge);margin:0 0 26px;padding:13px 22px}
+  .hrow{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;max-width:1080px;margin:0 auto}
+  h1{font-size:16px;margin:0}
+  .sub{color:var(--dim);font-size:12.5px}
+  .nav{margin-left:auto;display:flex;gap:10px;font-size:12.5px}
+  h2{font-size:12px;letter-spacing:.9px;text-transform:uppercase;color:var(--dim);margin:38px 0 12px}
+  h3{font-size:14.5px;margin:20px 0 6px}
+  p{max-width:78ch}
+  .lede{font-size:15.5px}
+  .hero{background:var(--card);border:1px solid var(--edge);border-radius:14px;padding:20px;margin:16px 0}
+  .big{font-size:44px;font-weight:650;line-height:1.1;letter-spacing:-1px}
+  .big span{font-size:17px;font-weight:400;color:var(--dim);letter-spacing:0}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:11px;margin:14px 0}
+  .tile{background:var(--card);border:1px solid var(--edge);border-radius:11px;padding:13px 14px}
+  .tile .v{font-size:25px;font-weight:620;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+  .tile .k{color:var(--dim);font-size:11.5px;letter-spacing:.4px;text-transform:uppercase;margin-top:3px}
+  .tile .n{color:var(--faint);font-size:12px;margin-top:5px}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
+  th{text-align:left;color:var(--dim);font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;
+    font-weight:600;padding:7px 9px;border-bottom:1px solid var(--edge)}
+  td{padding:7px 9px;border-bottom:1px solid #161d29;vertical-align:top}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr:hover td{background:#141b27}
+  .v-pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;letter-spacing:.5px;
+    text-transform:uppercase;font-weight:700;padding:3px 8px;border-radius:5px;border:1px solid currentColor;white-space:nowrap}
+  .v-REFUTED,.v-REFUTED_AS_WRITTEN{color:var(--bad)}
+  .v-SUPPORTED{color:var(--ok)}
+  .v-COULD_NOT_BE_TESTED_AS_WRITTEN,.v-COULD_NOT_BE_TESTED{color:var(--warn)}
+  .v-MIS-SPECIFIED{color:var(--violet)}
+  details{background:var(--card);border:1px solid var(--edge);border-radius:11px;margin:9px 0;overflow:hidden}
+  details>summary{cursor:pointer;padding:13px 15px;list-style:none;display:flex;gap:11px;align-items:flex-start}
+  details>summary::-webkit-details-marker{display:none}
+  details>summary:hover{background:#151d2b}
+  .chev{color:var(--faint);transition:transform .16s;flex:none;margin-top:2px}
+  details[open]>summary .chev{transform:rotate(90deg)}
+  .dbody{padding:0 15px 15px;border-top:1px solid var(--edge)}
+  figure{margin:14px 0;background:var(--card);border:1px solid var(--edge);border-radius:12px;padding:16px}
+  figcaption{color:var(--dim);font-size:12.5px;margin-top:10px;max-width:78ch}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--dim);margin-bottom:8px}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  svg{display:block;max-width:100%;overflow:visible}
+  svg text{font:11px ui-sans-serif,system-ui,sans-serif;fill:var(--dim)}
+  svg .ax{stroke:var(--edge);stroke-width:1}
+  svg .gl{stroke:var(--grid);stroke-width:1}
+  svg .ttl{fill:var(--ink);font-size:12.5px;font-weight:600}
+  .mark{cursor:pointer}
+  #tip{position:fixed;pointer-events:none;opacity:0;transition:opacity .09s;z-index:50;
+    background:#0b1017;border:1px solid var(--edge);border-radius:8px;padding:8px 11px;font-size:12.5px;
+    box-shadow:0 8px 28px #0009;max-width:300px}
+  #tip b{color:var(--ink)}#tip .r{color:var(--dim)}
+  .note{background:#0d1420;border:1px solid #223a5e;border-radius:9px;padding:13px;margin:13px 0;font-size:13.5px}
+  .wrong{background:#19100e;border:1px solid #58271d;border-radius:11px;padding:15px;margin:14px 0}
+  .wrong h3{margin:0 0 6px;font-size:13px;color:var(--bad);letter-spacing:.5px;text-transform:uppercase}
+  .wrong p{color:#ffb3a3;font-size:13.5px;margin:6px 0 0}
+  code{background:#0b1017;border:1px solid var(--edge);border-radius:4px;padding:1px 5px;font-size:12.5px}
+  .toggle{background:#0d121a;border:1px solid var(--edge);color:var(--dim);border-radius:999px;
+    padding:5px 12px;font:inherit;font-size:12px;cursor:pointer}
+  .toggle[aria-pressed=true]{border-color:var(--accent);background:#17243a;color:#fff}
+  footer{margin-top:46px;padding-top:18px;border-top:1px solid var(--edge);color:var(--dim);font-size:12.5px}
+  .bar{height:9px;border-radius:4px;background:var(--s1);display:block}
+  .barw{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:7px 0}
+  .track{flex:0 1 300px;min-width:110px}
+  .bn{font-variant-numeric:tabular-nums;width:26px;text-align:right;flex:none}
+  .bl{color:var(--dim);font-size:12.5px;flex:1 1 auto;min-width:0}
+  /* Narrow screens: tables scroll inside their own box rather than making the PAGE scroll
+     sideways, and a bar's caption drops to its own line instead of pushing the row wide. */
+  @media (max-width:760px){
+    table{display:block;max-width:100%;overflow-x:auto}
+    .bl{flex:1 1 100%}
+    .track{flex:1 1 100%}
+  }
+</style>
+</head>
+<body data-palette="#3f82d6,#bf8410">
+<header><div class="hrow">
+  <h1>Retro-validation</h1>
+  <span class="sub">predictions committed before the data &middot; <span id="hcommit"></span></span>
+  <span class="nav"><a href="../devlog/">dev log</a> <a href="../analogues/">analogues</a> <a href="../life/">.life</a> <a href="../scale/">scale</a> <a href="../outreach/">outreach</a></span>
+</div></header>
+<div id="wrap">
+  <p class="lede" id="lede">loading&hellip;</p>
+  <div id="hero"></div>
+  <div id="board"></div>
+  <div id="myo"></div>
+  <div id="ops"></div>
+  <div id="tx"></div>
+  <div id="sp"></div>
+  <div id="prs"></div>
+  <div id="tiers"></div>
+  <footer id="foot"></footer>
+</div>
+<div id="tip"></div>
+<script type="module">
+const $=i=>document.getElementById(i);
+const esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const fx=(v,n=2)=>v===null||v===undefined||!Number.isFinite(+v)?'—':(+v).toFixed(n);
+let D=null;
+try{ D=await (await fetch('./bundle.json')).json(); }
+catch(e){ $('lede').textContent=`could not load bundle.json: ${e.message}. Build it with: node benchmarks/retro-validation/build-page.mjs`; }
+
+// ---------------------------------------------------------------- tooltip
+const tip=$('tip');
+function showTip(ev,html){ tip.innerHTML=html; tip.style.opacity='1';
+  const r=tip.getBoundingClientRect();
+  tip.style.left=Math.min(ev.clientX+14,innerWidth-r.width-12)+'px';
+  tip.style.top=Math.max(10,ev.clientY-r.height-12)+'px'; }
+function hideTip(){ tip.style.opacity='0'; }
+function wire(root){ root.querySelectorAll('[data-tip]').forEach(el=>{
+  el.addEventListener('mousemove',e=>showTip(e,el.dataset.tip));
+  el.addEventListener('mouseleave',hideTip);
+  el.addEventListener('focus',e=>showTip({clientX:el.getBoundingClientRect().right,clientY:el.getBoundingClientRect().top},el.dataset.tip));
+  el.addEventListener('blur',hideTip); }); }
+
+if(D){
+  $('hcommit').textContent=`prereg ${D.prereg_commit} · scored ${D.scored_on}`;
+  $('lede').textContent=D.what_this_is;
+
+  // ------------------------------------------------------------ hero
+  const t=D.verdict_tally||{};
+  const wrong=(t.REFUTED||0)+(t.REFUTED_AS_WRITTEN||0);
+  $('hero').innerHTML=`<div class="hero">
+    <div class="big">${wrong} of ${D.verdicts.length} <span>pre-registered predictions refuted outright</span></div>
+    <p style="margin:10px 0 0;color:var(--dim)">Two were supported, one could not be tested at the sample size the record yields, and one was
+    mis-specified from the name of the quantity rather than its definition. Being wrong most of the time is the result —
+    and it is the only reason the two hits mean anything: when the benchmark author also writes the answer key, a good
+    score usually means the test was fitted to the system.</p></div>
+    <div class="tiles">
+      ${Object.entries(t).map(([k,n])=>`<div class="tile"><div class="v" style="color:${
+        /^REFUTED/.test(k)?'var(--bad)':k==='SUPPORTED'?'var(--ok)':k==='MIS-SPECIFIED'?'var(--violet)':'var(--warn)'}">${n}</div>
+        <div class="k">${esc(k.replace(/_/g,' ').toLowerCase())}</div></div>`).join('')}
+    </div>`;
+
+  // ------------------------------------------------------------ scoreboard
+  $('board').innerHTML=`<h2>The scoreboard</h2>`+D.verdicts.map(v=>`
+    <details><summary><span class="chev">›</span>
+      <span style="flex:1"><span class="v-pill v-${esc(v.verdict)}">${esc(v.verdict.replace(/_/g,' '))}</span>
+        <div style="margin-top:6px">${esc(v.predicted)}</div></span></summary>
+      <div class="dbody">
+        ${v.refuted_if?`<p style="font-size:13.5px;color:var(--dim);margin:12px 0 0"><b style="color:var(--ink)">refuted if</b> ${esc(v.refuted_if)}</p>`:''}
+        ${v.observed?`<p style="font-size:13.5px;margin:8px 0 0"><b>observed</b> ${esc(v.observed)}</p>`:''}
+        ${v.why?`<p style="font-size:13.5px;color:#f3d79a;margin:8px 0 0"><b>why</b> ${esc(v.why)}</p>`:''}
+        ${v.underpowered_result?`<p style="font-size:13px;color:var(--dim);margin:8px 0 0">underpowered: ${esc(v.underpowered_result)}</p>`:''}
+        ${v.exposed_subset_result?`<p style="font-size:13px;color:var(--dim);margin:8px 0 0">exposed subset: ${esc(v.exposed_subset_result)}</p>`:''}
+        ${v.secondary?`<p style="font-size:13px;color:var(--dim);margin:8px 0 0">also: ${esc(v.secondary)}</p>`:''}
+      </div></details>`).join('');
+
+  // ------------------------------------------------------------ the sign flip scatter
+  const M=D.myoglobin, reg=M.rows.filter(r=>r.in_regression);
+  const W=640,H=330,P={l:52,r:18,t:26,b:46};
+  const xs=[...reg.map(r=>r.z65),...reg.map(r=>r.z74)];
+  const xmin=Math.floor(Math.min(...xs))-.4, xmax=Math.ceil(Math.max(...xs))+.4;
+  const ymin=0, ymax=Math.ceil(Math.max(...reg.map(r=>Math.log10(r.minutes)))*10)/10+.1;
+  const X=v=>P.l+(v-xmin)/(xmax-xmin)*(W-P.l-P.r);
+  const Y=v=>H-P.b-(v-ymin)/(ymax-ymin)*(H-P.t-P.b);
+  const C=D.series_colors;
+  const pt=(r,key,col,label)=>{
+    const x=X(r[key]),y=Y(Math.log10(r.minutes));
+    return `<circle class="mark" tabindex="0" r="5.5" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" fill="${col}"
+      stroke="var(--card)" stroke-width="2" data-tip="<b>${esc(r.latin)}</b><br><span class='r'>${esc(r.common||'')}</span><br>
+      ${label} charge <b>${fx(r[key])}</b><br>max dive <b>${r.minutes} min</b><br>histidines <b>${r.his}</b><br><span class='r'>${esc(r.accession)}</span>"/>`;
+  };
+  const fit=(key)=>{ // least-squares line, drawn only to show direction
+    const x=reg.map(r=>r[key]), y=reg.map(r=>Math.log10(r.minutes));
+    const mx=x.reduce((a,b)=>a+b,0)/x.length, my=y.reduce((a,b)=>a+b,0)/y.length;
+    let num=0,den=0; x.forEach((v,i)=>{num+=(v-mx)*(y[i]-my);den+=(v-mx)**2});
+    const m=num/den, b=my-m*mx;
+    return {x1:X(xmin),y1:Y(m*xmin+b),x2:X(xmax),y2:Y(m*xmax+b)};
+  };
+  const f65=fit('z65'), f74=fit('z74');
+  const A=M.analyses;
+  $('myo').innerHTML=`<h2>Case 1 — myoglobin charge and maximum dive duration</h2>
+  <p>Mirceta and colleagues reported that myoglobin net surface charge tracks maximum dive duration in diving mammals.
+  We computed charge from sequence and checked. The published convention sums <b>all</b> ionisable groups at <b>pH 6.5</b>;
+  the pre-registration committed, wrongly, to pH 7.4.</p>
+  <figure>
+    <div class="legend">
+      <span><i style="background:${C.pH65}"></i>pH 6.5 — the published convention</span>
+      <span><i style="background:${C.pH74}"></i>pH 7.4 — what we pre-registered</span>
+      <span style="color:var(--faint)">${reg.length} species with a sourced species-maximum duration</span>
+    </div>
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Myoglobin net charge against log maximum dive duration, at two pH values">
+      <text class="ttl" x="${P.l}" y="14">Same nine species, two charge conventions, opposite slopes</text>
+      ${[0,.5,1,1.5,2].filter(v=>v<=ymax).map(v=>`<line class="gl" x1="${P.l}" y1="${Y(v)}" x2="${W-P.r}" y2="${Y(v)}"/>
+        <text x="${P.l-8}" y="${Y(v)+4}" text-anchor="end">${Math.round(10**v)}</text>`).join('')}
+      <line class="ax" x1="${P.l}" y1="${H-P.b}" x2="${W-P.r}" y2="${H-P.b}"/>
+      ${Array.from({length:Math.ceil(xmax)-Math.floor(xmin)+1},(_,i)=>Math.floor(xmin)+i).filter(v=>v>=xmin&&v<=xmax).map(v=>
+        `<text x="${X(v)}" y="${H-P.b+16}" text-anchor="middle">${v}</text>`).join('')}
+      <text x="${(P.l+W-P.r)/2}" y="${H-6}" text-anchor="middle">net charge (elementary charges)</text>
+      <text x="14" y="${(P.t+H-P.b)/2}" text-anchor="middle" transform="rotate(-90 14 ${(P.t+H-P.b)/2})">max dive duration (min, log scale)</text>
+      <!-- the fits are clipped to the plot area: an unclipped regression line leaves the panel and
+           runs across the caption, because a steep fit predicts values far outside the data range -->
+      <clipPath id="plot"><rect x="${P.l}" y="${P.t-4}" width="${W-P.l-P.r}" height="${H-P.t-P.b+4}"/></clipPath>
+      <g clip-path="url(#plot)">
+        <line x1="${f65.x1}" y1="${f65.y1}" x2="${f65.x2}" y2="${f65.y2}" stroke="${C.pH65}" stroke-width="2" stroke-dasharray="5 4" opacity=".75"/>
+        <line x1="${f74.x1}" y1="${f74.y1}" x2="${f74.x2}" y2="${f74.y2}" stroke="${C.pH74}" stroke-width="2" stroke-dasharray="5 4" opacity=".75"/>
+      </g>
+      ${reg.map(r=>pt(r,'z65',C.pH65,'pH 6.5')).join('')}
+      ${reg.map(r=>pt(r,'z74',C.pH74,'pH 7.4')).join('')}
+      ${(()=>{const d=reg.reduce((a,b)=>b.minutes>a.minutes?b:a);
+        return `<text x="${X(d.z65)+9}" y="${Y(Math.log10(d.minutes))+3}" fill="var(--dim)">${esc(d.common||d.latin)}</text>`;})()}
+      ${(()=>{const s=reg.reduce((a,b)=>b.minutes<a.minutes?b:a);
+        return `<text x="${X(s.z74)+9}" y="${Y(Math.log10(s.minutes))+3}" fill="var(--dim)">${esc(s.common||s.latin)}</text>`;})()}
+    </svg>
+    <figcaption>Dashed lines are least-squares fits, drawn to show direction only. Hover or tab to a point for the species,
+    its charge, its sourced maximum dive duration and its histidine count. The two conventions use the same sequences
+    and the same durations.</figcaption>
+  </figure>
+
+  <div class="wrong"><h3>Why the sign flips — measured, not asserted</h3>
+    <p><b>Pearson(histidine count, Z<sub>6.5</sub> − Z<sub>7.4</sub>) = ${fx(M.mechanism.pearson_his_vs_pH_difference,3)}.</b>
+    The entire difference between the two conventions <i>is</i> the histidine count. A histidine with a model pK<sub>a</sub>
+    near 6.0 is about a quarter protonated at pH 6.5 and almost neutral at 7.4.</p>
+    <p><b>Spearman(histidine count, log duration) = ${fx(M.mechanism.spearman_his_vs_log_duration,3)}</b> — histidine count
+    tracks dive duration, and myoglobin is histidine-rich: ${M.mechanism.histidine_count_range[0]} to ${M.mechanism.histidine_count_range[1]} in this set.</p>
+    <p><b>Spearman(Z<sub>6.5</sub>, Z<sub>7.4</sub>) across species = ${fx(M.mechanism.spearman_pH65_vs_pH74_charge,3)}</b> — the two
+    conventions are <i>orthogonal</i>. They are not two estimates of one quantity. &ldquo;Myoglobin net charge&rdquo; does not
+    name one number, and a pipeline that computes it without stating a pH and a pK<sub>a</sub> set can produce either sign
+    of this relationship without any bug.</p>
+  </div>
+  <div class="note">This does <b>not</b> contradict the published finding: at the published pH we recover the published
+  direction. It says the published treatment of histidine pK<sub>a</sub> — site-specific constants modelled onto the
+  tertiary structure — is load-bearing rather than decorative. n&nbsp;=&nbsp;${reg.length}, and every interval below is wide.</div>
+
+  <table><thead><tr><th>charge convention</th><th class="num">Spearman ρ</th><th class="num">95% CI</th>
+    <th class="num">perm <i>p</i> (ρ)</th><th class="num">Pearson (log)</th><th class="num">perm <i>p</i></th><th class="num">n</th></tr></thead><tbody>
+    ${Object.values(A).filter(a=>a.enough).map(a=>`<tr><td>${esc(a.label)}</td>
+      <td class="num" style="color:${a.spearman_vs_log10<0?'var(--bad)':'var(--ok)'}">${fx(a.spearman_vs_log10)}</td>
+      <td class="num" style="color:var(--dim)">${fx(a.spearman_ci95?.lo)} to ${fx(a.spearman_ci95?.hi)}</td>
+      <td class="num">${fx(a.permutation_p_on_spearman,3)}</td><td class="num">${fx(a.pearson_vs_log10)}</td>
+      <td class="num">${fx(a.permutation_p_on_pearson,3)}</td><td class="num">${a.n}</td></tr>`).join('')}
+  </tbody></table>
+
+  <details><summary><span class="chev">›</span><span><b>All ${M.rows.length} myoglobins, and the outlier that was not real</b>
+    <div class="sub" style="margin-top:3px">every accession resolved live, every structure sequence matched to its UniProt sequence</div></span></summary>
+    <div class="dbody">
+      <p style="font-size:13.5px">The first version of this analysis preferred <i>reviewed</i> UniProt entries, and one diving
+      mammal came out with more than double the charge of any other — the most eye-catching number in the table. That
+      reviewed entry is a protein-level record carrying <b>eleven X residues</b>, bounding its charge to an interval 22 units
+      wide. The complete, <b>unreviewed</b>, genome-derived entry puts that species in the middle of the divers.
+      <code>sequenceIsUsable()</code> now refuses any sequence whose charge interval is wider than the caller states it can
+      tolerate. <b>Reviewed means curated, not complete.</b></p>
+      <table><thead><tr><th>species</th><th>clade</th><th>habit</th><th class="num">Z 6.5</th><th class="num">Z 7.4</th>
+        <th class="num">Z int</th><th class="num">Z surf</th><th class="num">His</th><th class="num">max dive</th></tr></thead><tbody>
+        ${[...M.rows].sort((a,b)=>b.z65-a.z65).map(r=>`<tr><td>${esc(r.latin)}<div style="color:var(--faint);font-size:11.5px">${esc(r.common||'')}</div></td>
+          <td style="color:var(--dim)">${esc(r.clade)}</td><td style="color:var(--dim)">${esc(r.habit||'')}</td>
+          <td class="num">${fx(r.z65)}</td><td class="num">${fx(r.z74)}</td><td class="num">${r.zint}</td>
+          <td class="num">${r.zsurf===null?'—':r.zsurf}</td><td class="num">${r.his}</td>
+          <td class="num">${r.minutes===null?'<span style="color:var(--faint)">no sourced value</span>':r.minutes+' min'}</td></tr>`).join('')}
+      </tbody></table>
+    </div></details>`;
+
+  // ------------------------------------------------------------ opsin dumbbell
+  const O=D.opsin, OW=640, OH=26*O.rows.length+74, OP2={l:168,r:30,t:30,b:30};
+  const allnm=[...O.rows.map(r=>r.measured),...O.rows.map(r=>r.lo),...O.rows.map(r=>r.hi)];
+  const nmin=Math.floor(Math.min(...allnm)/5)*5-3, nmax=Math.ceil(Math.max(...allnm)/5)*5+3;
+  const NX=v=>OP2.l+(v-nmin)/(nmax-nmin)*(OW-OP2.l-OP2.r);
+  const sorted=[...O.rows].sort((a,b)=>a.measured-b.measured);
+  $('ops').innerHTML=`<h2>Case 2 — rod opsin λ<sub>max</sub> from tuning sites</h2>
+  <p>Predict the absorption maximum of a rod opsin by aligning it to the bovine reference, reading the residue at each
+  tuned site, and summing the published per-substitution shifts. I predicted a mean absolute error of 8 to 25 nm.</p>
+  <div class="tiles">
+    <div class="tile"><div class="v" style="color:var(--bad)">${fx(O.stats.mae_midpoint)} nm</div><div class="k">mean absolute error</div><div class="n">predicted 8–25 nm — refuted, the rules transfer better than expected</div></div>
+    <div class="tile"><div class="v" style="color:var(--ok)">${fx(O.stats.spearman,3)}</div><div class="k">rank correlation</div><div class="n">predicted &gt; 0.6 — the one clean hit</div></div>
+    <div class="tile"><div class="v" style="color:var(--warn)">${O.stats.worst_miss_nm} nm</div><div class="k">worst miss</div><div class="n">a deep-sea dragonfish, red-shifted where the rules expect blue</div></div>
+    <div class="tile"><div class="v">${O.stats.counts['inside-band']}/${O.stats.n}</div><div class="k">inside the predicted band</div><div class="n">bands are wide by construction — read the misses</div></div>
+  </div>
+  <figure>
+    <div class="legend"><span><i style="background:${C.pH65}"></i>predicted band</span>
+      <span><i style="background:${C.pH74};border-radius:50%"></i>measured λ<sub>max</sub></span></div>
+    <svg viewBox="0 0 ${OW} ${OH}" role="img" aria-label="Predicted band and measured lambda max for each opsin">
+      <text class="ttl" x="12" y="15">Predicted band against measured λmax, by species</text>
+      ${[480,490,500,510,520].filter(v=>v>=nmin&&v<=nmax).map(v=>`<line class="gl" x1="${NX(v)}" y1="${OP2.t-6}" x2="${NX(v)}" y2="${OH-OP2.b+4}"/>
+        <text x="${NX(v)}" y="${OH-OP2.b+18}" text-anchor="middle">${v}</text>`).join('')}
+      <text x="${(OP2.l+OW-OP2.r)/2}" y="${OH-2}" text-anchor="middle">λmax (nm)</text>
+      ${sorted.map((r,i)=>{const y=OP2.t+i*26+6;
+        const lo=NX(r.lo),hi=NX(r.hi),me=NX(r.measured);
+        const miss=Math.abs(r.signed)>=1;
+        return `<g class="mark" tabindex="0" data-tip="<b>${esc(r.organism)}</b><br><span class='r'>${esc(r.habitat||'')}</span><br>
+            measured <b>${r.measured} nm</b><br>predicted band <b>${r.lo}–${r.hi} nm</b><br>
+            midpoint error <b>${r.signed>0?'+':''}${fx(r.signed,1)} nm</b><br>verdict ${esc(r.verdict)}${r.subs.length?`<br>sites: ${esc(r.subs.join(', '))}`:'<br>no substitution at a tuned site'}">
+          <text x="${OP2.l-10}" y="${y+4}" text-anchor="end" fill="${miss?'var(--ink)':'var(--dim)'}">${esc(r.organism)}</text>
+          <rect x="${Math.min(lo,hi)}" y="${y-4}" width="${Math.max(3,Math.abs(hi-lo))}" height="8" rx="3" fill="${C.pH65}" opacity=".85"/>
+          <circle cx="${me}" cy="${y}" r="5" fill="${C.pH74}" stroke="var(--card)" stroke-width="2"/>
+          ${Math.abs(r.signed)>=6?`<text x="${Math.max(me,hi)+10}" y="${y+4}" fill="var(--bad)">${r.signed>0?'+':''}${fx(r.signed,0)} nm</text>`:''}
+        </g>`;}).join('')}
+    </svg>
+    <figcaption>${esc(O.stats.what_a_hit_does_not_show)}</figcaption>
+  </figure>
+  <div class="note"><b>I predicted the bias would run the other way.</b> Deep-sea rows were supposed to have their blue
+  shift <i>under</i>-predicted. They are predicted slightly bluer than measured, like the shallow rows — the same sign, not
+  the opposite. Wrong in sign, and wrong in expecting the groups to differ.</div>`;
+
+  // ------------------------------------------------------------ ttx
+  const T=D.ttx, top=T.groups.slice(0,6), maxn=Math.max(...T.groups.map(g=>g.n));
+  $('tx').innerHTML=`<h2>Case 3 — TTX resistance, and whether the record is commensurable at all</h2>
+  <p>This was the case I predicted would <b>fail to be retro-validatable</b>: fewer than six mutually comparable
+  IC<sub>50</sub> values — same numbering convention, same channel, same class of expression system — in the whole record.</p>
+  <figure>
+    <div class="legend"><span><i style="background:${C.pH65}"></i>mutually comparable values in one group</span>
+      <span style="color:var(--faint)">pre-registered ceiling: 6</span></div>
+    ${top.map(g=>`<div class="barw" data-tip="<b>${g.n} values</b><br>${esc(g.numbering)} · ${esc(g.channel_species)}<br>${esc(g.system)}<br>${esc(g.quantity)}, ${esc(g.level)}<br><span class='r'>${esc(g.subs.slice(0,8).join(', '))}${g.subs.length>8?' …':''}</span>" tabindex="0">
+      <span class="track"><span class="bar" style="width:${(g.n/maxn*100).toFixed(1)}%;background:${g.n>=6?C.pH65:'#2b3647'}"></span></span>
+      <span class="bn">${g.n}</span>
+      <span class="bl">${esc(g.numbering)} · ${esc(g.channel_species)} · ${esc(g.quantity)}</span></div>`).join('')}
+    <figcaption>Each bar is one mutually comparable group. The largest has ${T.groups[0].n} values, against my predicted
+    ceiling of six, so the prediction is refuted — and a 6&nbsp;px bar next to an 18&nbsp;px one is the whole argument.</figcaption>
+  </figure>
+  <div class="note"><b>But the concern behind the prediction survives in a sharper form.</b> Those ${T.groups[0].n} values are a
+  mutational scan of a <i>sensitive mammalian</i> channel — not measurements of the convergent natural variants. For the
+  lineages that actually evolved resistance, the comparable set is <b>three</b>. Two labs also disagree by <b>1.35×</b> about
+  the same unmutated channel, which is the size of many of the substitution effects being compared; and at the same locus in
+  a congener, channel genotype explains <b>23%</b> of whole-animal resistance. Channel-level fold-shifts do not sum to an animal.</div>
+  <p style="font-size:13.5px;color:var(--dim)">${T.summary.n_rows} rows · ${T.summary.n_with_a_measured_number} with a measured
+  number · ${T.summary.n_species} species · ${T.summary.n_convergence_sets} independent convergence sets ·
+  ${T.summary.n_refused_values} values refused rather than guessed · ${T.summary.n_discrepancies} recorded discrepancies between sources.</p>`;
+
+  // ------------------------------------------------------------ space
+  const S=D.space, frac=S.counts.n_admissible/S.counts.n_cells;
+  $('sp').innerHTML=`<h2>Case 4 — the design space</h2>
+  <div class="tiles">
+    <div class="tile"><div class="v">${S.counts.n_hosts} × ${S.counts.n_functions}</div><div class="k">hosts × capabilities</div><div class="n">${S.counts.n_cells} cells, each with a verdict and a reason</div></div>
+    <div class="tile"><div class="v" style="color:var(--bad)">${(100*frac).toFixed(1)}%</div><div class="k">admissible</div><div class="n">predicted under 40% — refuted by 0.2 points</div></div>
+    <div class="tile"><div class="v">${S.counts.n_refused}</div><div class="k">cells refused</div><div class="n">with the reason attached, so a refusal can be argued with</div></div>
+  </div>
+  <div class="note"><b>The module objects to my prediction, and it is right.</b> ${esc(S.caveat)}</div>`;
+
+  // ------------------------------------------------------------ pairs
+  const bandColor=b=>/strong/.test(b||'')?'var(--ok)':/moderate/.test(b||'')?'var(--accent)':/weak/.test(b||'')?'var(--warn)':'var(--bad)';
+  $('prs').innerHTML=`<h2>Ten new organism × function pairs, scored by the analogy module</h2>
+  <p>Each pair is a borrow someone might actually want: ethanolic anoxia tolerance into zebrafish, a convergent electric
+  organ, a restored pseudogene, a tardigrade chromatin shield. The module scores the <i>evidence that the mapping is
+  functional</i>, across seven kinds, and returns a band rather than a number.</p>
+  ${D.pairs.map(p=>`<details><summary><span class="chev">›</span>
+    <span style="flex:1"><b>${esc(p.a)}</b><div style="color:var(--dim);font-size:13px;margin:2px 0">↔ ${esc(p.b)}</div>
+      <div style="margin-top:5px"><span class="v-pill" style="color:${bandColor(p.band)}">${esc(p.band||'not banded')}</span>
+      <span style="color:var(--faint);font-size:12px;margin-left:8px">${p.present_n}/7 evidence kinds present${p.strongest?` · strongest: ${esc(p.strongest)}`:''}${p.homology_type?` · homology: ${esc(p.homology_type)}`:''}</span></div></span></summary>
+    <div class="dbody">
+      ${p.headline?`<p style="font-size:13.5px;margin:12px 0 0">${esc(p.headline)}</p>`:''}
+      ${p.note?`<p style="font-size:13px;color:var(--dim);margin:9px 0 0">${esc(p.note)}</p>`:''}
+      <p style="font-size:12.5px;color:var(--faint);margin:9px 0 0">present: ${p.present.length?esc(p.present.join(', ')):'none'} · claim: ${esc(p.claim)}</p>
+    </div></details>`).join('')}`;
+
+  // ------------------------------------------------------------ tiers
+  const TI=D.tiers;
+  $('tiers').innerHTML=`<h2>What makes a design validatable at all</h2>
+  <p>Seven axes, each asking a different question about whether we could be <i>shown to be wrong</i>, and a mapping to one
+  of four tiers. The mapping is proved total rather than asserted: all <b>${TI.n_answer_sets.toLocaleString()}</b> points of
+  the cartesian product of the vocabularies land on a named rule, and the three blocking axes cannot be outvoted anywhere
+  in it — which is the exported proof that it is not averaging in disguise.</p>
+  <table><thead><tr><th>axis</th><th>the question it asks</th></tr></thead><tbody>
+    ${TI.axes.map(a=>`<tr><td><code>${esc(a.id)}</code></td><td style="color:var(--dim)">${esc(a.question||'')}</td></tr>`).join('')}
+  </tbody></table>
+  <p style="font-size:13.5px;color:var(--dim)"><b>Tiers:</b> ${TI.tier_ids.map(t=>`<code>${esc(t)}</code>`).join(' · ')}</p>
+  <div class="wrong"><h3>The uncomfortable part, in the module's own words</h3>
+    <p>${esc(typeof TI.the_uncomfortable_part==='string'?TI.the_uncomfortable_part:JSON.stringify(TI.the_uncomfortable_part))}</p></div>`;
+
+  $('foot').innerHTML=`Pre-registration committed as <code>${esc(D.prereg_commit)}</code> before any data module existed; scored ${esc(D.scored_on)}.
+    Every accession was resolved live and the organism read back; every structure's residue sequence was checked against its
+    UniProt sequence; ${D.myoglobin.gate.usable} of ${D.myoglobin.gate.rows} sequences passed the ambiguity gate.
+    Reproduce with <code>node benchmarks/retro-validation/run-myoglobin.mjs</code>.<br><br>
+    <b>What this does not establish.</b> Nothing here validates the design pipeline. No organism was designed, no edit was
+    proposed, and no phenotype was predicted for an organism that does not exist. These are tests of whether this repo's
+    sequence→phenotype machinery can recover facts that are already known. That is the floor, not the ceiling.`;
+
+  wire(document);
+}
+</script>
+</body>
+</html>

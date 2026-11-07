@@ -429,6 +429,213 @@ export const REGISTERS = Object.freeze({
       reading_level: 'general',
     },
   },
+
+  'scale-ladder': {
+    skim: {
+      headline: 'Three of the five levels of biological organisation have no representation here at all',
+      bullets: [
+        'organelle, cell, tissue, organ, organism: 3 of 5 rungs carry any representation, 2 carry none',
+        'the organ rung is an identifier with nothing behind it',
+        'the cell rung is 31 real cells from the worked file, 31 of 31 with geometry and 0 of 31 measured',
+        'the span from an organelle to an organism is roughly 6 decades of length',
+      ],
+      so_what:
+        'The missing rungs are tissue and organ, which is exactly where the phenotypes a design pipeline ' +
+        'cares about actually live.',
+      read_time_seconds: 30,
+    },
+    blog: {
+      title: 'The Ladder With Two Missing Rungs',
+      hook:
+        'Every talk on multiscale biology opens with the same five boxes: organelle, cell, tissue, organ, ' +
+        'organism. The arrows between them do the work nobody has done. We built the ladder as a data ' +
+        'structure instead of a drawing, because a data structure cannot draw an arrow it does not have.',
+      body: [
+        'The question a ladder like this is supposed to answer is how a constraint at one level becomes a ' +
+        'constraint at another. A packing limit on cells and an aspect-ratio limit on a body are both ' +
+        'real; whether the first entails the second is the whole problem.',
+        'So each rung in the file carries three things: its length scale in metres, what in this project ' +
+        'actually represents it, and - where nothing does - an empty string rather than an aspiration. ' +
+        'Counted that way, 3 of 5 rungs carry any representation and 2 carry none. The organ rung has an ' +
+        'identifier and nothing behind it.',
+        'The one well-populated rung is the cell, and it is populated from the worked developmental file ' +
+        'rather than from a plausible-looking cloud: 31 real cells, all 31 carrying geometry, and 0 of 31 ' +
+        'measured. The page says so in those words. A rung populated by a drawing and a rung populated by ' +
+        'data must not look the same, or the ladder becomes a picture again.',
+        'The payoff is that another result in this project stops being mysterious. Only one of the ' +
+        'registry laws that carry a theorem speaks in a quantity our traits carry, and the ladder explains ' +
+        'why: the laws are about parts, the traits are about whole animals, and nothing here converts ' +
+        'between them. Building the ladder did not fix that. It located it.',
+      ],
+      closing:
+        'The two empty rungs are tissue and organ - which is where almost everything anyone wants to ' +
+        'design actually happens. So what is the smallest piece of a body plan that is worth representing ' +
+        'on its own terms, and is that a question about biology or about us?',
+      reading_level: 'general',
+    },
+  },
+
+  analogues: {
+    skim: {
+      headline: 'Ten borrowing proposals scored on evidence; only one reaches "strong"',
+      bullets: [
+        '10 pairs: 1 strong, 3 moderate, 2 weak, 2 no-support, 2 unbanded for want of any evidence',
+        'the only strong one is the only one where a cross-species rescue was actually performed',
+        'a deliberate negative control separated from its positive: moderate against no-support',
+        '437 assertions across the dossiers, 0 survivors under fault injection',
+        'Ensembl types the carp-into-zebrafish mapping as the literal string ortholog_many2many',
+      ],
+      so_what:
+        'Orthology is a claim about ancestry and these are claims about function, so the module reports a ' +
+        'band of words over seven evidence kinds rather than a number that would be read as a probability.',
+      read_time_seconds: 40,
+    },
+    blog: {
+      title: 'The Gene That Is Two Genes',
+      hook:
+        'A crucian carp survives months without oxygen by brewing ethanol in its own muscle. It does this ' +
+        'with a duplicated copy of a housekeeping enzyme subunit that was repurposed for the job. Moving ' +
+        'that trick into a zebrafish is exactly the kind of borrow this project exists to evaluate, and it ' +
+        'is where the evaluation broke.',
+      body: [
+        'The pipeline’s assumption is that you can name the host gene that corresponds to the donor gene. ' +
+        'Zebrafish has two copies where the question expects one. Ensembl Compara does not even call that ' +
+        'one-to-many: it types the relationship as the literal string ortholog_many2many, because the ' +
+        'human genes return the same two host genes from either direction.',
+        'That is the familiar problem and it is survivable. The unfamiliar one is worse. The donor’s ' +
+        'housekeeping copy - the one that kept making acetyl-CoA inside the intact complex - sits in the ' +
+        'same clade as the repurposed copy that makes acetaldehyde. So whichever host gene falls in that ' +
+        'clade is equally the nominal orthologue of both donor functions. Orthology cannot separate the ' +
+        'two things a borrow would have to tell apart, and the ambiguity is not about which host gene to ' +
+        'pick but about which job is being moved.',
+        'The source paper names neither host gene. It identifies the host copies by clade label, with no ' +
+        'symbol and no accession, so even the shape it does report cannot be turned into a mapping. And a ' +
+        'symbol search returned a third gene identifier that turned out to be an alternate-haplotype copy ' +
+        'of one of the two: counting it would have made a two-gene family look like three.',
+        'This is why the module scores evidence rather than orthology. Seven kinds - rescue, loss of ' +
+        'function, orthology, synteny, expression domain, domain architecture, positional correspondence - ' +
+        'each marked present with what, or absent with why. Across 10 pairs exactly 1 reaches strong, and ' +
+        'it is the mouse-into-pig thermogenesis case, where somebody actually performed the substitution ' +
+        'and measured the animal afterwards.',
+        'The control mattered as much as the result. One pair was included specifically to fail: a fish ' +
+        'embryonic arrest against an insect adult arrest, two different things at two different life ' +
+        'stages. It banded no-support while its genuine counterpart banded moderate. A scoring system that ' +
+        'cannot separate those is measuring enthusiasm.',
+      ],
+      closing:
+        'When one gene in one species corresponds to two in another, the phrase "the orthologue" does not ' +
+        'refer to anything. Sequencing more genomes makes that sharper rather than smaller - so what ' +
+        'should a design pipeline say when the question it was built to answer turns out not to be open?',
+      reading_level: 'technical-curious',
+    },
+  },
+
+  outreach: {
+    skim: {
+      headline: 'Twenty-four research profiles, and five of them say we have nothing they need',
+      bullets: [
+        '24 candidates, 56 verbatim quotes, 24 carrying a caution about why they might decline',
+        '23 of 24 have stated rather than inferred evidence that they collaborate',
+        '2 cited DOIs were rejected: one resolved to an unrelated paper, one to the wrong author list',
+        '5 of the 12 fish biologists state outright that they are not partners in this sense',
+        'the build aborts rather than warns if an email address appears anywhere in the bundle',
+      ],
+      so_what:
+        'A collaboration file that cannot say "they would be right to refuse" is a pitch deck, and the ' +
+        'reasons to refuse are the most useful thing in it.',
+      read_time_seconds: 35,
+    },
+    blog: {
+      title: 'Reasons They Would Be Right To Say No',
+      hook:
+        'Twenty-four labs, read closely enough to quote them accurately. The most useful section in every ' +
+        'profile turned out to be the one explaining why that person should probably decline.',
+      body: [
+        'Lab-in-the-loop is a nice phrase that means very little until you name the measurement someone ' +
+        'would actually make. So each of the 24 profiles ends with what we would have to bring, and for ' +
+        'several the honest answer is nothing they need. 5 of the 12 fish biologists are in that position ' +
+        'by their own published account of what their bottleneck is.',
+        'Every quote in the file is verbatim with a source, or it is not in the file. That rule cost more ' +
+        'than expected. Two cited identifiers were rejected outright - one resolved to an unrelated paper, ' +
+        'one to a paper whose author list did not include the person it was meant to support. Re-reading ' +
+        'five web quotes against raw page bytes, rather than a fetch that summarises, caught two more that ' +
+        'would otherwise have shipped.',
+        'One quote was refused on authorship grounds alone. The best available passage came from a jointly ' +
+        'authored essay with per-author sections, and we could not establish who wrote that paragraph. A ' +
+        'sentence attributed to the wrong real person is the worst thing a project like this can produce, ' +
+        'and there is no version of it that is nearly right.',
+        'The privacy rule is enforced rather than promised: the build refuses to write the file if an email ' +
+        'address appears anywhere in the serialised bundle. It aborts, it does not warn, because a check ' +
+        'that warns and continues is a check that gets ignored. It was also fired against a planted ' +
+        'address, so a pattern that silently stopped matching could not pass by matching nothing.',
+      ],
+      closing:
+        'The section about what we bring leads with our own worst numbers rather than our best. That is ' +
+        'either the most credible way to start a collaboration or the least persuasive - and which it is ' +
+        'stays open until somebody answers.',
+      reading_level: 'general',
+    },
+  },
+
+  'retro-validation': {
+    skim: {
+      headline: 'We wrote down eleven predictions, committed them, then looked: two were right',
+      bullets: [
+        '11 pre-registered predictions: 2 supported, 7 refuted, 1 untestable, 1 mis-specified',
+        'the same 9 species give +0.43 at one pH and -0.63 at another, from identical sequences',
+        'Pearson(histidine count, difference between the two charge conventions) = 1.000',
+        'opsin colour prediction missed by 4.67 nm against a predicted 8-25 nm band',
+        'the largest mutually comparable set of toxin-resistance values is 18, against a predicted 6',
+      ],
+      so_what:
+        'The answers were measured by people who never heard of this project, so for once a good score ' +
+        'could not come from fitting the test to the system - and mostly the score was bad.',
+      read_time_seconds: 40,
+    },
+    blog: {
+      title: 'Wrong, On The Record, Before Lunch',
+      hook:
+        'Every benchmark in this project was written by the same hands that built the thing it measures. ' +
+        'That is the weakest possible footing. So we picked four relationships that are already published, ' +
+        'wrote down what we expected, committed the predictions to version control, and then looked.',
+      body: [
+        'The first case is a known relationship between a muscle oxygen-storage protein and how long a ' +
+        'diving mammal can hold its breath. The proposal is that like charges keep the protein from ' +
+        'clumping at the very high concentrations found in diving muscle, so more charge should mean ' +
+        'longer dives. We computed the charge from sequence for 9 species with a sourced maximum dive ' +
+        'duration and checked.',
+        'The relationship came out positive at one pH and negative at another. Same 9 species, same ' +
+        'sequences, same durations: +0.43 at the pH the literature uses, -0.63 at the pH our ' +
+        'pre-registration had committed to. That is not noise, and it is not a bug. The entire difference ' +
+        'between the two conventions is the histidine count - the correlation between them is 1.000 - and ' +
+        'histidine is the one residue that changes its charge across that pH range.',
+        'So "net charge" does not name one number. Across these species the two conventions are ' +
+        'essentially uncorrelated with each other, which means a pipeline that computes a charge without ' +
+        'stating a pH and a set of ionisation constants can produce either sign of a published finding ' +
+        'without anything going wrong. Nothing here contradicts the original result: at the original pH we ' +
+        'recover the original direction. It says the careful part of their method was the load-bearing part.',
+        'The other three cases went against us too, in the opposite direction. We predicted that a rule for ' +
+        'predicting the colour an eye pigment absorbs would be good to 8-25 nm; it was good to 4.67 nm. We ' +
+        'predicted that toxin-resistance measurements across labs would be too incompatible to assemble ' +
+        'six comparable values; there are 18. Being wrong about how bad the literature is turns out to be ' +
+        'as common as being wrong about how good our code is.',
+        'The most instructive failure was neither. One prediction was mis-specified from the NAME of the ' +
+        'quantity: we reasoned at length about a "surface" charge needing structure, and the published ' +
+        'methods text defines it as a sum over all ionisable groups with no surface restriction at all. ' +
+        'The pre-registration is still in the repository, wrong, because the point of writing it first is ' +
+        'that you do not get to edit it afterwards.',
+        'And the most eye-catching number in our first draft was an artefact of our own fetching rule. ' +
+        'Preferring curated database entries gave one diving mammal double everyone else’s charge, ' +
+        'because that curated entry predates genome sequencing and has eleven unknown residues in it. The ' +
+        'complete, uncurated entry puts the species back in the middle. Curated does not mean complete.',
+      ],
+      closing:
+        'A relationship that reverses with a modelling convention is still somebody’s result - but whose? ' +
+        'No further measurement of those animals decides it, because the convention is a claim about what ' +
+        'the mechanism is rather than about what the animals are. That one stays open.',
+      reading_level: 'technical-curious',
+    },
+  },
 });
 
 /** Entry ids in ENTRIES with no register here. Empty is the goal; a non-empty list is the gap made visible. */

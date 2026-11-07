@@ -457,6 +457,244 @@ export const ENTRIES = Object.freeze([
       'A `git add <directory>` swept in a half-written module from a running agent, and separately a leak gate chained with && behind the commit it guarded did not block it. Both are the same root cause: a broad command staging whatever happens to be there.',
     ],
   },
+
+  {
+    id: 'scale-ladder',
+    title: 'The scale ladder — organelle to organism, and the two rungs with nothing on them',
+    status: 'shipped',
+    dna: ['delphi', 'aletheia'],
+    why_fun:
+      'Everyone draws this ladder. Organelle, cell, tissue, organ, organism, five tidy boxes with arrows ' +
+      'between them, and the arrows do the work that nobody has done. The fun of building it as a data ' +
+      'structure rather than a diagram is that the structure cannot draw an arrow it does not have.',
+    why_science:
+      'The gap between levels is not a drawing problem, it is the central unsolved problem of the field. ' +
+      'A fin ratio is a number about a FISH; a stiffness is a number about a TISSUE; nothing in this ' +
+      'project converts one into the other, and the honest way to say so is to show which rungs carry a ' +
+      'representation and which are an identifier with nothing behind it.',
+    open_questions: [
+      {
+        q: 'What is the smallest unit of a body plan that is worth representing separately?',
+        why_data_will_not_settle_it:
+          'this is a modelling decision dressed as an empirical one. More imaging gives finer structures, ' +
+          'not a principled boundary between "a tissue" and "a lot of cells arranged a certain way".',
+      },
+      {
+        q: 'Can a constraint discovered at one level ever be transported to another?',
+        why_data_will_not_settle_it:
+          'a packing limit on cells and an aspect-ratio limit on a body are both real, and whether the ' +
+          'first ENTAILS the second is a question about the modelling, not about either measurement.',
+      },
+    ],
+    how_file_level: {
+      path: 'sim-engine/scales/micro/',
+      files: [
+        ['represent.mjs', 'RUNGS (organelle, cell, tissue, organ, organism), CARRIER, THE_GAP, decadesBetween(), span(), coverage()'],
+        ['build-ladder.mjs', 'emits the bundle the /scale/ page reads, including the REAL cells from the worked .life example rather than a plausible cloud'],
+      ],
+      what_is_packed_in:
+        'each rung carries its length scale in metres, what in this repo actually represents it, and - ' +
+        'where nothing does - the empty string rather than an aspiration.',
+      the_detail_that_matters:
+        'the cell rung is drawn from 31 real cells in the worked example, and the page says out loud that ' +
+        'their geometry provenance is "depicted": a drawing, not a measurement. A rung populated by a ' +
+        'sketch and a rung populated by data must not look the same.',
+    },
+    real_numbers: [
+      'three of five rungs have any representation at all; organelle and tissue have none, organ is an identifier only',
+      'the cell rung is 31 real cells, 31 of 31 carrying geometry, 0 of 31 measured',
+    ],
+    what_went_wrong: [
+      'The ladder makes the 1-of-48 result legible from the other side: the laws that carry a theorem speak in quantities the traits do not carry, because the traits are about whole animals and the laws are about parts. Building the ladder did not fix that; it explained it.',
+    ],
+  },
+
+  {
+    id: 'analogues',
+    title: 'Mining genomes for functional analogues, and ten pairs that argue with each other',
+    status: 'shipped',
+    dna: ['delphi', 'nous'],
+    why_fun:
+      'The premise of borrowing is that some lineage solved a problem by a route your host does not have. ' +
+      'Antifreeze built twice from different ancestors in opposite oceans; an electric organ assembled ' +
+      'twice from the same muscle sodium channel; a fish that survives months without oxygen by brewing ' +
+      'ethanol in its own muscle. These are the interesting cases precisely because an orthology table ' +
+      'has nothing to say about most of them.',
+    why_science:
+      'Homology is a claim about ancestry and analogy is a claim about function, and the gap between them ' +
+      'is where design pipelines quietly fail. Half of 414 essential yeast genes could NOT be replaced by ' +
+      'their human orthologues. So the module does not score orthology: it enumerates seven kinds of ' +
+      'evidence that a mapping is functional, keeps them apart, and returns a band of words rather than a ' +
+      'number that would be read downstream as a probability.',
+    open_questions: [
+      {
+        q: 'When one gene in A corresponds to two in B, what does "the orthologue" even denote?',
+        why_data_will_not_settle_it:
+          'nothing. The phrase fails to refer, and picking one of the two is a category error rather than ' +
+          'an approximation. More sequencing makes the ambiguity sharper, not smaller.',
+      },
+      {
+        q: 'Is a convergent solution evidence that the problem has few solutions, or that one route is cheap?',
+        why_data_will_not_settle_it:
+          'both predict repeated convergence. Distinguishing them needs a claim about the space of routes ' +
+          'that were available and not taken, which is not a thing that leaves a fossil.',
+      },
+    ],
+    how_file_level: {
+      path: 'analogues/ and analogues/combos/',
+      files: [
+        ['analogy.mjs', 'EVIDENCE_KINDS (rescue, lof-phenotype, sequence-orthology, synteny, expression-domain, domain-architecture, positional-correspondence), BANDS, scoreAnalogy(), and the four refusals'],
+        ['combos/space.mjs', '14 hosts x 16 capabilities, every cell a verdict with a reason rather than a score'],
+        ['combos/validatability.mjs', 'seven axes asking whether a design could be SHOWN WRONG, and a tier mapping proved total over all 3645 answer sets'],
+        ['combos/pairs/*.mjs', 'ten dossiers, each evidence kind marked present or absent with a retrieved source or a stated gap'],
+      ],
+      what_is_packed_in:
+        'per pair: both sides with species and gene, the claim, the developmental context difference, the ' +
+        'databases actually searched, and each of the seven evidence kinds marked present (with what) or ' +
+        'absent (with why). An honest absent is worth more than a plausible present.',
+      the_detail_that_matters:
+        'only one pair of ten reaches "strong", and only because a real cross-species rescue was performed ' +
+        'in the host. A deliberate negative control was included and the module separated it from its ' +
+        'positive: killifish diapause against nematode dauer bands moderate, against fly diapause it bands ' +
+        'no-support.',
+    },
+    real_numbers: [
+      'ten pairs: 1 strong, 3 moderate, 2 weak, 2 no-support, 2 unbanded for want of any evidence kind',
+      '437 assertions across the pair dossiers, 0 survivors under --fail-once',
+      'Ensembl Compara types the carp-into-zebrafish relationship as the literal string ortholog_many2many',
+    ],
+    what_went_wrong: [
+      'The pair meant to be a clean one-to-many example turned out worse than that. The donor’s HOUSEKEEPING copy sits in the same clade as the neofunctionalised one, so orthology cannot separate the two donor FUNCTIONS a borrow would have to tell apart - not merely the two host genes. And the source paper names neither host gene, giving clade labels with no symbol and no accession, so even the shape it reports cannot be cashed into a mapping.',
+      'An Ensembl symbol search returned a third gene id that is an alternate-haplotype copy of one of the two. Counting it would have made a two-gene family look like three.',
+    ],
+  },
+
+  {
+    id: 'outreach',
+    title: 'Lab-in-the-loop candidates, and the five who would be right to say no',
+    status: 'shipped',
+    dna: ['nous', 'aletheia'],
+    why_fun:
+      'The nicest thing about reading twenty-four labs’ work closely is how specific everyone’s question ' +
+      'is. Nobody studies "fish". They study why a fin stops growing where it does, or how a notochord ' +
+      'holds pressure, and the specificity is the thing worth borrowing.',
+    why_science:
+      'Lab-in-the-loop only means anything if the loop closes on a measurement someone can actually make. ' +
+      'So each profile asks what WE would have to bring, and the answer is often "nothing they need". ' +
+      'Writing that down is not modesty; it is the difference between a collaboration proposal and a ' +
+      'request for free labour.',
+    open_questions: [
+      {
+        q: 'What is the smallest useful unit of exchange between a computational group and a wet lab?',
+        why_data_will_not_settle_it:
+          'it is a question about incentives and credit, not about biology. The answer differs per lab and ' +
+          'per career stage and no dataset arbitrates it.',
+      },
+    ],
+    how_file_level: {
+      path: 'outreach/',
+      files: [
+        ['fish-biologists.mjs', 'twelve profiles, each with verbatim sourced quotes, flagship papers with DOIs, a collaboration angle and a caution'],
+        ['adjacent-fields.mjs', 'twelve more across xenobots, the ortholog-conjecture dispute, biomechanics, theory and origins of life'],
+        ['build.mjs', 'merges both and ABORTS if an email address appears anywhere in the serialised bundle'],
+      ],
+      what_is_packed_in:
+        'only the public professional record: published papers, lab pages, public talks. No contact ' +
+        'details, no personal inferences, and every quote verbatim with a source or absent.',
+      the_detail_that_matters:
+        'the privacy gate aborts rather than warns. A privacy check that warns and continues is a privacy ' +
+        'check that gets ignored, and it was validated against a planted fixture so that a regex which ' +
+        'silently stopped matching could not pass by matching nothing.',
+    },
+    real_numbers: [
+      '24 candidates, 56 verbatim quotes, 24 carrying a caution, 23 with STATED rather than inferred openness',
+      'two cited DOIs were rejected: one resolved to an unrelated paper, one to a paper whose author list did not include the person it was meant to support',
+      'five of the twelve fish biologists state outright that they are not partners in this sense',
+    ],
+    what_went_wrong: [
+      'Re-reading five web quotes against raw page bytes rather than a summarising fetch caught two more that would otherwise have shipped. A fetch that summarises is not a source.',
+      'One quote was refused outright: the best available passage came from a jointly authored essay with per-author sections, and authorship of that passage could not be resolved. A quote attributed to the wrong real person would be the worst thing this project could produce.',
+    ],
+  },
+
+  {
+    id: 'retro-validation',
+    title: 'Retro-validation — being wrong nine times out of eleven, on the record',
+    status: 'shipped',
+    dna: ['aletheia', 'nous'],
+    why_fun:
+      'There is a particular pleasure in a test you cannot talk your way out of. Four relationships that ' +
+      'are already measured, by people who have never heard of this project, sitting in papers from the ' +
+      'nineties onward. We write down what we think the answer is, commit it to git, and then look. No ' +
+      'wet lab, no approvals, no reagents - just the chance to be publicly wrong by teatime.',
+    why_science:
+      'Every other benchmark in this repo was written by the same hands that built the thing being ' +
+      'measured, which is the weakest possible footing: a system can look good merely by being ' +
+      'well-matched to its own test. A retro-validation borrows an answer key nobody wrote for us. It is ' +
+      'a weaker test than a prospective experiment in exactly one way - the answers are findable - and ' +
+      'that is what the pre-registration commit is for.',
+    open_questions: [
+      {
+        q: 'When a published relationship depends on a modelling convention, whose result is it?',
+        why_data_will_not_settle_it:
+          'the myoglobin charge/dive relationship comes out positive at one pH and negative at another, ' +
+          'from the same sequences. No further measurement of those species decides which convention is ' +
+          'the right one, because the convention is a claim about what the mechanism IS.',
+      },
+      {
+        q: 'What does it mean to reproduce a result you cannot reproduce the method of?',
+        why_data_will_not_settle_it:
+          'the published method models site-specific ionisation constants onto a tertiary structure. We ' +
+          'used a uniform model pKa set. The direction agrees at the published pH; whether that counts as ' +
+          'a reproduction is a judgement about how much of a method is load-bearing.',
+      },
+      {
+        q: 'Is a number that no two labs measure the same way a quantity at all?',
+        why_data_will_not_settle_it:
+          'two labs disagree by 1.35x about the TTX sensitivity of the SAME unmutated channel, which is ' +
+          'the size of many of the substitution effects being compared. More measurements of that kind ' +
+          'add rows without adding comparability.',
+      },
+    ],
+    how_file_level: {
+      path: 'benchmarks/retro-validation/',
+      files: [
+        ['PREREGISTRATION.md', 'eleven predictions with refutation thresholds, committed in its own commit BEFORE the data modules, so git history is the timestamp'],
+        ['structure.mjs', 'Shrake-Rupley solvent accessibility, and the sequence quality gate that runs before any arithmetic'],
+        ['predict.mjs', 'the pure predictors: Henderson-Hasselbalch net charge, Needleman-Wunsch alignment to a reference, lambda-max from site shifts, Spearman/Pearson with Fisher CIs and a seeded permutation test. No network access anywhere in it.'],
+        ['data/myoglobin.mjs', '26 mammalian myoglobins, every accession resolved live and the organism read back, 11 with a sourced maximum dive duration and 15 honestly null'],
+        ['data/opsin.mjs', 'measured rod-opsin lambda-max with method and source, plus per-site spectral shifts and the bovine reference for numbering'],
+        ['data/ttx.mjs', '44 rows of sodium-channel TTX resistance across 5 numbering conventions, with the discrepancies between sources recorded rather than averaged'],
+        ['run-myoglobin.mjs', 'scores Case 1 against the pre-registered thresholds and writes the verdicts'],
+        ['RESULTS.md', 'the scoreboard, including the predictions that could not be tested and the one that was mis-specified'],
+      ],
+      what_is_packed_in:
+        'per row: the accession, the organism as READ BACK from the record rather than as requested, the ' +
+        'sequence, the measured value with its units, the kind of measurement it is, and a retrieved DOI ' +
+        'or PMID for that specific number. A value without an identifier is refused and replaced by a ' +
+        'null with a reason.',
+      the_detail_that_matters:
+        'the sequence gate refuses before the arithmetic runs. A sequence carrying ambiguity codes has a ' +
+        'charge INTERVAL, not a charge, and eleven unknown residues bound it 22 units wide - several ' +
+        'times the whole biological range being compared.',
+    },
+    real_numbers: [
+      'eleven pre-registered predictions: 2 supported, 7 refuted, 1 untestable at the sample size the record yields, 1 mis-specified',
+      'the myoglobin relationship comes out +0.43 at pH 6.5 and -0.63 at pH 7.4, from the same nine species',
+      'Pearson(histidine count, charge difference between the two pH values) = 1.000, and Spearman(pH 6.5 charge, pH 7.4 charge) across species = -0.008',
+      'opsin lambda-max MAE 4.67 nm against a predicted 8-25 nm, with a rank correlation of 0.911',
+      'the largest mutually comparable set of TTX values is 18, against a predicted ceiling of 6',
+      'two independent fetches of these myoglobins agree byte for byte on all 21 shared species',
+    ],
+    what_went_wrong: [
+      'I MIS-SPECIFIED A PRE-REGISTERED PREDICTION FROM THE NAME OF THE QUANTITY. The pre-registration argues at length that myoglobin net SURFACE charge must need structure, and that a sequence-only charge is therefore a weaker proxy. The published methods text says the quantity is the sum over ALL ionisable groups at pH 6.5, not an exposed subset. An agent retrieving the methods section caught it; I had reasoned from the word "surface".',
+      'THE MOST STRIKING NUMBER IN THE FIRST TABLE WAS AN ARTEFACT OF MY OWN FETCHING RULE. Preferring reviewed UniProt entries gave one diving mammal more than double everyone else’s charge, because that reviewed entry is a protein-level record with eleven unknown residues. The complete, unreviewed, genome-derived entry puts it mid-pack. Reviewed means curated, not complete.',
+      'The charge code could not have caught it. It was caught because a structure predictor refused the sequence and the structure-derived sequence came back short - a check written to catch a wrong accession, catching an ambiguous sequence instead.',
+      'A test assertion in the accessibility module claimed two coincident atoms come out fully buried. They do not: whether a sample point counts as occluded is decided by floating-point noise, so the area is arbitrary. The claim was mine, not the code’s, and the module now DETECTS duplicates instead.',
+      'The holdout scan in that same test guessed three roster paths, fell back to the largest JSON in the folder, extracted zero taxon names and so scanned for nothing - and passed. It survived its own inverted predicate under --fail-once, which is the only reason it was found.',
+      'A correlation was briefly run against minus infinity: rows carry a duration OBJECT whose value may be null, the filter tested the object rather than the value, and Math.log10(null) is -Infinity rather than an error. The statistics module refused it by name, which is why it is a corrected line and not a silent wrong number.',
+    ],
+  },
 ]);
 
 export const HOW_TO_READ_THIS = Object.freeze({
