@@ -17,6 +17,7 @@ the system does not control.
 | **Lean** | [`lean-mutation/`](lean-mutation/) — non-vacuity, and mutation testing | **48/48 witnesses machine-checked**; 1 mutant refuted, control behaves. **A pass.** |
 | **design** | [`design-hard-negatives/`](design-hard-negatives/) — AUC vs decoy difficulty | **0.891** on shuffles → **0.536** on real fish nudged ¼ sd — chance |
 | **design** | [`design-hard-negatives/`](design-hard-negatives/) — the *constructed* negative | an **anatomically impossible** animal at **q = 0.918**, which the scorer calls typical |
+| **Lean x design** | [`design-hard-negatives/laws.mjs`](design-hard-negatives/) — constraints derived from the law registry | **1 of 48** laws expressible; the worst violator sits at **q = 0.347**, more typical than **87.1 %** of real fish |
 
 **Two of the three levels come out at chance against external ground truth. One passes.**
 
@@ -46,6 +47,35 @@ overhang the back of its head by 2 % of its body length — no room for braincas
 model never found it; a search finds it at once. The scorer is a **plausibility model, not a viability
 model**, and that is a ceiling rather than a defect. The gate built in response lives at
 [`../sim-engine/validate/gate/`](../sim-engine/validate/gate/).
+
+### Where the Lean layer and the design layer meet
+
+`laws.mjs` derives constraints from the 62-law registry instead of guessing them. Two results.
+
+**Only 1 of the 48 theorem-carrying laws is expressible** on the ten trait ratios — a rate of **2.1 %**.
+The reason is structural rather than a shortfall: the ten traits are all *length ÷ standard length for one
+specimen*, and the registry is mostly about quantities that need **two sizes** (every allometry — a
+log-log exponent relates two specimens, and dividing by SL has already removed the size the law is
+written in), a **population**, **power or oxygen**, or a **genotype**. `scaling-area-law` is worse than
+unmeasurable: dividing an area by SL² *is* the law, so on normalised traits it is a tautology with
+nothing to forbid.
+
+The near miss is the instructive one. Law E5 bounds *pectoral fin **length** / SL* ∈ [0.406, 0.823]. The
+block carries `prepectoral_over_SL` — the snout-to-fin-**base** distance. **Two words apart, unrelated
+measurements.** Treated as the same quantity, a bound from 49 museum specimens would have been applied to
+a different number entirely.
+
+**And the strongest negative yet found.** `predorsal ≤ 1 SL` — the dorsal fin lies on the body — is broken
+at **q = 0.347**, by an animal whose dorsal fin begins **1.02 standard lengths from the snout, past the
+end of the fish**. The scorer ranks it more typical than **4,068 of 4,673 real specimens (87.1 %)**, well
+below the median real fish at q = 0.650. Real fish reach predorsal 0.9978; the fitted Gaussian is
+overdispersed, so 1.02 sits comfortably inside it. The hand-found eye-in-head case at q = 0.918 was the
+worst a guessed constraint could reach — a law-derived one finds an animal roughly **three times further
+inside the typical region**.
+
+The scorer does catch `head_length ≤ 1 SL` at q = 3.95: a head longer than the body is genuinely far from
+the cloud. **The failure is specific to constraints whose boundary lies just outside the observed
+marginal range** — which is where most anatomical impossibilities live.
 
 ## The four properties, and the fifth that was missing
 
