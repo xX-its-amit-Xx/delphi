@@ -655,7 +655,14 @@ export function read(input, { source = 'unknown' } = {}) {
   if (census.missing_source.length) degrade('(values)', `${census.missing_source.length} value(s) claim an origin outside this file and name no source`, ORGANISM.WHY_EACH_RULE.source_required_unless_assumed);
 
   // ---- not_established ---------------------------------------------------------------------------
-  const ne = Array.isArray(doc.not_established) ? doc.not_established.map(String) : [];
+  // A not_established entry may be a bare string OR a {what, answer} object - the worked example writes
+  // objects, and write.mjs reads `e.what ?? e`. Mapping with String() alone turned every object into
+  // "[object Object]", so coversClaim could never match and the reader reported the example as missing
+  // ALL FOUR minimum entries while it answered all four verbatim. A false negative in the honesty check
+  // is worse than no check: it trains a reader to ignore the one field that records what is not known.
+  const ne = Array.isArray(doc.not_established)
+    ? doc.not_established.map(e => (e && typeof e === 'object' ? `${e.what ?? ''} ${e.answer ?? ''}`.trim() : String(e)))
+    : [];
   const missingMin = SPEC.NOT_ESTABLISHED_MINIMUM.filter(m => !ne.some(x => coversClaim(x, m)));
   note('not_established covers SPEC.NOT_ESTABLISHED_MINIMUM', true, missingMin.length === 0);
   if (missingMin.length) {
