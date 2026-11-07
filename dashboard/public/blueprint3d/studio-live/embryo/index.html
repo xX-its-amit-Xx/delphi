@@ -1,0 +1,225 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Embryo, measured</title>
+<style>
+  :root { --bg:#0b0d10; --fg:#e8eaed; --mute:#9aa3ad; --line:#1e2329; --measured:#7fd4a2; --depicted:#d9a86c; --accent:#6ea8fe; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+  #c { position:fixed; inset:0; display:block; }
+  .panel { position:fixed; background:rgba(11,13,16,.88); border:1px solid var(--line); border-radius:8px; padding:12px 14px; backdrop-filter:blur(6px); }
+  #hud { top:12px; left:12px; max-width:min(420px, calc(100vw - 24px)); }
+  #legend { bottom:12px; left:12px; max-width:min(460px, calc(100vw - 24px)); font-size:12.5px; }
+  #err { top:12px; right:12px; max-width:min(380px, calc(100vw - 24px)); display:none; border-color:#6b2b2b; }
+  h1 { font-size:15px; margin:0 0 6px; letter-spacing:.2px; }
+  .mute { color:var(--mute); }
+  .row { display:flex; gap:10px; align-items:baseline; justify-content:space-between; }
+  .big { font-variant-numeric:tabular-nums; font-size:22px; font-weight:600; }
+  .k { color:var(--mute); font-size:12px; text-transform:uppercase; letter-spacing:.6px; }
+  .tag { display:inline-block; padding:1px 6px; border-radius:4px; font-size:11px; font-weight:600; letter-spacing:.3px; }
+  .m { background:rgba(127,212,162,.16); color:var(--measured); border:1px solid rgba(127,212,162,.35); }
+  .d { background:rgba(217,168,108,.16); color:var(--depicted); border:1px solid rgba(217,168,108,.35); }
+  input[type=range] { width:100%; accent-color:var(--accent); }
+  button { background:#171b21; color:var(--fg); border:1px solid var(--line); border-radius:6px; padding:5px 11px; font:inherit; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  .controls { display:flex; gap:8px; align-items:center; margin-top:8px; }
+  .warn { color:var(--depicted); }
+  a { color:var(--accent); }
+  dl { margin:8px 0 0; display:grid; grid-template-columns:auto 1fr; gap:2px 10px; }
+  dt { color:var(--mute); } dd { margin:0; }
+  @media (max-width:720px) { #legend { display:none; } }
+</style>
+
+<canvas id="c"></canvas>
+
+<div class="panel" id="hud">
+  <h1>Zebrafish endoderm, 17.5&nbsp;h of light&#8209;sheet recording</h1>
+  <div class="row"><span class="k">elapsed hours</span><span class="big" id="hpf">0.00</span></div>
+  <div class="row"><span class="k">nuclei this frame</span><span class="big" id="cells">&mdash;</span></div>
+  <div class="row"><span class="k">divisions this frame</span><span class="big" id="divs">&mdash;</span></div>
+  <input id="t" type="range" min="0" max="419" value="0" step="1">
+  <div class="controls">
+    <button id="play">Play</button>
+    <button id="tracksBtn">Tracks: on</button>
+    <span class="mute" id="frameno" style="font-variant-numeric:tabular-nums">frame 0 / 419</span>
+  </div>
+  <div id="artefact" class="warn" style="display:none;margin-top:6px;font-size:12px"></div>
+</div>
+
+<div class="panel" id="legend">
+  <div><span class="tag m">measured</span> every nucleus position, from 222,071 detections over 420 frames. And the paths of <b id="ntracks">&mdash;</b> cells &mdash; the only ones whose motion is a measurement.</div>
+  <div style="margin-top:6px"><span class="tag d">depicted</span> the motion of every other point. Consecutive frames are two independent measurements of the same embryo, <b>not a correspondence</b>: chaining the tracker's parent links gives 62,300 tracks whose mean length is 3.56 frames of 420, and 51&nbsp;% are a single frame. So the cloud may be shown changing, and no individual point may be called moving.</div>
+  <div style="margin-top:6px" class="mute">The tracked cells are a biased sample: a cell is in that set because the tracker kept hold of it, which correlates with being isolated, bright and slow&#8209;moving.</div>
+  <dl id="prov"></dl>
+</div>
+
+<div class="panel" id="err"></div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+               "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const $ = s => document.querySelector(s);
+const fail = (msg, detail) => {
+  const e = $('#err');
+  e.style.display = 'block';
+  e.innerHTML = `<h1>${msg}</h1><div class="mute">${detail ?? ''}</div>`;
+};
+
+// ---- load ----------------------------------------------------------------------------------------
+let manifest, cloud, tracks;
+try {
+  manifest = await (await fetch('embryo-manifest.json')).json();
+  const buf = await (await fetch('embryo-cloud.f16')).arrayBuffer();
+  cloud = new Uint16Array(buf);                     // float16 bits; converted below
+  tracks = (await (await fetch('embryo-tracks.json')).json()).tracks;
+} catch (e) {
+  fail('Could not load the embryo data', String(e));
+  throw e;
+}
+
+/** float16 -> float32. Written out rather than imported: it is eight lines and one dependency fewer. */
+function f16(h) {
+  const s = (h & 0x8000) >> 15, e = (h & 0x7c00) >> 10, f = h & 0x03ff;
+  if (e === 0) return (s ? -1 : 1) * Math.pow(2, -14) * (f / 1024);
+  if (e === 0x1f) return f ? NaN : (s ? -Infinity : Infinity);
+  return (s ? -1 : 1) * Math.pow(2, e - 15) * (1 + f / 1024);
+}
+
+const index = manifest.cloud.index;              // [{offset, count}] per frame, offset in POINTS
+const N_FRAMES = manifest.frames;
+const counts = manifest.per_frame.counts;
+const divisions = manifest.per_frame.divisions;
+const artefactFrames = new Set(manifest.per_frame.artefact_frames ?? []);
+const maxCount = Math.max(...counts);
+
+// decode once: positions as float32, frame-major, so scrubbing is a buffer copy and nothing else
+const pos = new Float32Array(cloud.length);
+for (let i = 0; i < cloud.length; i++) pos[i] = f16(cloud[i]);
+
+// ---- scene ---------------------------------------------------------------------------------------
+const renderer = new THREE.WebGLRenderer({ canvas: $('#c'), antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b0d10);
+const camera = new THREE.PerspectiveCamera(42, 1, 0.01, 100);
+camera.position.set(1.9, 1.1, 1.9);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.35;
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+
+// the cloud: one Points object whose attribute is rewritten per frame
+const geo = new THREE.BufferGeometry();
+geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(maxCount * 3), 3));
+const points = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0x8fb7ff, size: 0.012, sizeAttenuation: true, transparent: true, opacity: 0.85 }));
+scene.add(points);
+
+// the measured tracks: a sphere each, plus the path behind it
+const trackGroup = new THREE.Group();
+scene.add(trackGroup);
+const trackSpheres = [];
+const sphereGeo = new THREE.SphereGeometry(0.012, 10, 8);
+const sphereMat = new THREE.MeshBasicMaterial({ color: 0x7fd4a2 });
+const lineMat = new THREE.LineBasicMaterial({ color: 0x7fd4a2, transparent: true, opacity: 0.35 });
+for (const tr of tracks) {
+  const mesh = new THREE.Mesh(sphereGeo, sphereMat);
+  mesh.visible = false;
+  trackGroup.add(mesh);
+  const lineGeo = new THREE.BufferGeometry();
+  lineGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(tr.xyz.length * 3), 3));
+  const line = new THREE.Line(lineGeo, lineMat);
+  line.visible = false;
+  trackGroup.add(line);
+  trackSpheres.push({ tr, mesh, line, lineGeo, first: tr.frames[0], last: tr.frames[tr.frames.length - 1] });
+}
+
+// a faint sphere for the embryo's own extent, so the cloud has somewhere to sit
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.0, 32, 24),
+  new THREE.MeshBasicMaterial({ color: 0x1b2129, wireframe: true, transparent: true, opacity: 0.22 })));
+
+// ---- provenance, from the manifest rather than retyped -------------------------------------------
+$('#ntracks').textContent = tracks.length;
+$('#prov').innerHTML = [
+  ['source', `IDR ${manifest.source.study}, ${manifest.source.layer}`],
+  ['licence', manifest.source.licence],
+  ['citation', manifest.source.citation],
+  ['units', 'voxels &mdash; this study records no physical pixel size, so no micron scale is shown'],
+  ['clock', `elapsed only, at ${manifest.clock.frame_interval_s}&nbsp;s per frame. The absolute stage of frame&nbsp;0 is <b>not established</b>: the study describes imaging from 4&ndash;18&nbsp;hpf, which is 14&nbsp;h, while this file is 420 frames at 150&nbsp;s = 17.5&nbsp;h. So no hpf figure is shown.`],
+].map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+
+// ---- frame ---------------------------------------------------------------------------------------
+let frame = 0, playing = false, showTracks = true;
+
+function setFrame(f) {
+  frame = Math.max(0, Math.min(N_FRAMES - 1, f | 0));
+  const { offset, count } = index[frame];
+  const attr = geo.getAttribute('position');
+  attr.array.set(pos.subarray(offset * 3, (offset + count) * 3));
+  attr.needsUpdate = true;
+  geo.setDrawRange(0, count);
+
+  for (const t of trackSpheres) {
+    const i = t.tr.frames.indexOf(frame);
+    const alive = showTracks && i >= 0;
+    t.mesh.visible = alive;
+    if (alive) t.mesh.position.set(...t.tr.xyz[i]);
+    // the path, up to the current frame only: a trail that does not show the future
+    const upto = showTracks ? t.tr.frames.filter(ff => ff <= frame).length : 0;
+    t.line.visible = upto > 1;
+    if (upto > 1) {
+      const a = t.lineGeo.getAttribute('position');
+      for (let k = 0; k < upto; k++) a.array.set(t.tr.xyz[k], k * 3);
+      a.needsUpdate = true;
+      t.lineGeo.setDrawRange(0, upto);
+    }
+  }
+
+  $('#hpf').textContent = (frame * manifest.clock.frame_interval_s / 3600).toFixed(2);
+  $('#cells').textContent = counts[frame].toLocaleString();
+  $('#divs').textContent = divisions[frame];
+  $('#frameno').textContent = `frame ${frame} / ${N_FRAMES - 1}`;
+  $('#t').value = String(frame);
+  const a = $('#artefact');
+  if (artefactFrames.has(frame)) {
+    a.style.display = 'block';
+    a.textContent = `${divisions[frame]} divisions reported here — ${(200 * divisions[frame] / counts[frame]).toFixed(0)} % of this frame's cells newly born in 150 s. That is a tracking artefact, not mitosis, and it is shown rather than hidden.`;
+  } else a.style.display = 'none';
+}
+
+$('#t').addEventListener('input', e => { playing = false; $('#play').textContent = 'Play'; setFrame(+e.target.value); });
+$('#play').addEventListener('click', () => {
+  playing = !playing;
+  $('#play').textContent = playing ? 'Pause' : 'Play';
+});
+$('#tracksBtn').addEventListener('click', () => {
+  showTracks = !showTracks;
+  $('#tracksBtn').textContent = `Tracks: ${showTracks ? 'on' : 'off'}`;
+  setFrame(frame);
+});
+
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+resize();
+setFrame(0);
+
+let acc = 0, last = performance.now();
+renderer.setAnimationLoop(() => {
+  const now = performance.now();
+  acc += now - last; last = now;
+  if (playing && acc > 70) { acc = 0; setFrame(frame >= N_FRAMES - 1 ? 0 : frame + 1); }
+  controls.update();
+  renderer.render(scene, camera);
+});
+</script>

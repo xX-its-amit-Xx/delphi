@@ -96,9 +96,37 @@ export const PRIOR_ART = [
 ];
 
 /** Route a level to a pipeline, from its instance count and whether it moves. */
-export function route({ instances, moves_per_frame = false, frames = 1, authored = false }) {
+/** `identity` was added in Phase 1 and defaults to true, which preserves every earlier answer.
+ *
+ *  It exists because the first real dataset broke an assumption this rule did not know it was making. A
+ *  TRS keyframe track asserts that the thing it animates is the SAME THING across frames. The measured
+ *  embryo cloud is 222,071 nucleus positions in which the correspondence between frames mostly does not
+ *  exist - 51 % of reconstructed tracks are a single frame long. At 939 moving objects over 420 frames
+ *  the size arithmetic happily returned "GLB keyframes, 6.4 MB", and that answer was impossible, not
+ *  merely expensive: there is nothing to keyframe.
+ *
+ *  So identity is now an input, and when it is absent the route is a buffer regardless of size. This is
+ *  the only correct kind of fix for a rule that gave a confident wrong answer: give it the missing
+ *  variable rather than special-case the caller. */
+export function route({ instances, moves_per_frame = false, frames = 1, authored = false, identity = true }) {
   const EXPORT_CEILING = MEASURED.gltf_export_of_geometry_nodes_instances.practical_ceiling;
   const ANIM_BYTES = MEASURED.per_object_animation.bytes_per_object_frame;
+
+  if (moves_per_frame && identity === false) {
+    return {
+      pipeline: 'raw-buffer-and-shader',
+      instances, frames,
+      estimated_bytes: Math.round(instances * frames * 12),
+      estimated_bytes_float16: Math.round(instances * frames * 6),
+      why:
+        'the data has NO IDENTITY ACROSS FRAMES, so there is nothing a keyframe track could animate. A ' +
+        'TRS track asserts "this object, over time"; a per-frame point cloud without correspondence is ' +
+        'a sequence of independent measurements. The buffer route is the only one that does not invent ' +
+        'the correspondence.',
+      not_a_size_decision: `the size arithmetic would have allowed glTF animation here (${(instances * frames * ANIM_BYTES / 1e6).toFixed(1)} MB), and it would still have been wrong.`,
+      caption_the_viewer_must_carry: 'positions are measured; motion of any individual point is not.',
+    };
+  }
 
   if (moves_per_frame && instances > 1) {
     const glbBytes = instances * frames * ANIM_BYTES;

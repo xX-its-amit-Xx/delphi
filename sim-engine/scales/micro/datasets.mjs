@@ -41,21 +41,63 @@ export const DATASETS = [
     role: 'PRIMARY - drives the animation',
     what: 'tracked nuclei as point centroids, split into endoderm, epiblast and mesendoderm layers, 420 frames each',
     covers_hpf: [4, 18],
+    covers_hpf_is_the_studys_claim_not_this_files_span: {
+      what: 'the study describes imaging "from 4-18 hpf" and an acquisition "every 150 s", both verified in its full text. But this tracking file has 420 frames, and 420 x 150 s is 17.5 h against the window’s 14 h.',
+      consequence: 'the absolute stage of frame 0 cannot be derived from these two numbers, and an animation that labels frame 419 as "21.5 hpf" - which is what assuming a 4 hpf start produces - is mislabelled.',
+      what_phase_1_does: 'shows ELAPSED time only and records the inconsistency. See sim-engine/scales/micro/embryo.mjs CLOCK.',
+      how_it_surfaced: 'the viewer printed the derived figure on screen, where 21.46 hpf for a gastrulation dataset is wrong at a glance.',
+    },
     frame_interval_s: 150,
     lineage: true,
     lineage_how: 'chain the parent attribute, which indexes into the PREVIOUS frame\'s node list. Divisions are two nodes sharing a parent.',
-    lineage_gotcha: 'the "lineage" attribute is NOT a stable cross-frame identifier in these files - it equals the node id in every frame. Using it as a track id would silently produce nonsense.',
+    lineage_gotcha: 'the "lineage" attribute is NOT a stable cross-frame identifier in these files. Using it as a track id would silently produce nonsense.',
+    lineage_gotcha_the_reason_corrected: {
+      what_this_record_said_first: 'that lineage "equals the node id in every frame".',
+      why_that_reason_is_false: 'measured over all 420 frames in Phase 1: lineage equals id for 5,940 of 222,071 detections, which is 2.7 %, not every frame.',
+      why_the_CONCLUSION_still_holds:
+        'because the cheap tests all make lineage look like an excellent track id and the expensive one ' +
+        'settles it. Cheap: 1,041 distinct values, 1,039 of them spanning more than one frame, median ' +
+        'span 232 frames of 420, and ZERO cases of one value appearing twice in a single frame - which is ' +
+        'exactly the signature of a valid per-frame-unique persistent id. Expensive: for the same lineage ' +
+        'value between consecutive frames the position moves a MEDIAN OF 307 VOXELS on an embryo about ' +
+        '650 voxels across, 94.9 % of steps exceed 50 voxels, the maximum step is 812, and only 2 of ' +
+        '1,041 values are contiguous in time. A nucleus is about 7 voxels. The value teleports.',
+      the_lesson:
+        'the conclusion was right and the justification was wrong, and checking only the justification ' +
+        'would have reversed a correct decision. A conclusion defended by a false reason is one good ' +
+        'counter-example away from being discarded along with the reason.',
+      how_to_re_derive: 'parse all frames, group positions by the lineage attribute, and take the median Euclidean step between consecutive frames for each value.',
+    },
     measured_by_us: {
       layer_analysed: 'endoderm',
       detections: 222_071, mean_nuclei_per_frame: 529, max_nuclei_per_frame: 939,
       divisions: 1_634, illegal_parents_with_3_or_more_children: 0,
-      frames_containing_a_division: '346 of 419, at 0 to 9 per frame',
+      frames_containing_a_division: '346 of 419, at 0 to 14 per frame in the clean series',
+      per_frame_range_corrected: 'this record first said "0 to 9 per frame". Re-measured in Phase 1: the histogram runs contiguously 0 to 14 and then jumps to four outliers, and 27 of 419 frames exceed 9.',
+      the_artefact_tail: 'frames 416-419 report 61, 64, 65 and 84 divisions - 21 to 30 % of the cells in those frames newly born in one 150 s interval, which cannot be mitosis at any stage. They carry 274 of the 1,634 divisions. Excluding them leaves 1,360 divisions over 415 intervals, 342 of which contain one, with a maximum of 14.',
       detections_with_unusable_parent_refs: '27 % - track fragmentation, which is normal for automated tracking and must not be hidden',
     },
-    qc_verdict: 'PASSES. 1,634 divisions among about 529 cells at a 150 s interval implies a cell cycle near 5.6 h, which is right for gastrula and segmentation stages. And divisions land on 346 different frames - that IS the asynchrony, measured rather than asserted.',
+    qc_verdict: 'PASSES. Divisions land on 342 of 415 clean frames with a modal count of one per frame - that IS the asynchrony, measured rather than asserted.',
+    qc_verdict_number_corrected: 'this record first implied a cell cycle near 5.6 h from all 1,634 divisions. The artefact-free count of 1,360 over 17.3 h with a mean population of 529 implies 6.7 h, and 6.7 h is the number to quote. Both are plausible for gastrula and segmentation stages, so the verdict is unchanged - but 5.6 h was computed over four frames that cannot be mitosis.',
+    trackability_measured_in_phase_1: 'the number that decides what can be animated, and it is not in the paper. Chaining the parent attribute over all 420 frames yields 62,300 tracks from 222,071 detections: mean length 3.56 frames, 31,814 of them a SINGLE frame (51 %), 150 lasting 50 frames or more, 142 after rejecting those with a step over 50 voxels, and 11 lasting 100 frames or more. Those 142 cover a mean of 4.9 % of the cells visible in a frame. So this dataset supports a measured per-frame point cloud and 142 measured paths - not a continuous whole-embryo tracking animation.',
     modality: 'four-lens SPIM light-sheet, a 300 um spherical shell every 150 s',
     citation: 'Shah et al. 2019, Nat Commun, doi 10.1038/s41467-019-13625-0, PMID 31848345',
     access: 'EBI FTP, IDR study idr0068; endoderm.zip is 96,312,189 bytes, with epiblast and mesendoderm larger. Tracking XML only.',
+    url: {
+      study_tree: 'https://ftp.ebi.ac.uk/pub/databases/IDR/idr0068-shah-zebrafishlightsheet/',
+      tracking_release: 'https://ftp.ebi.ac.uk/pub/databases/IDR/idr0068-shah-zebrafishlightsheet/20211129-ftp/',
+      zip: 'https://ftp.ebi.ac.uk/pub/databases/IDR/idr0068-shah-zebrafishlightsheet/20211129-ftp/endoderm.zip',
+      unzipped_frames: 'https://ftp.ebi.ac.uk/pub/databases/IDR/idr0068-shah-zebrafishlightsheet/20211129-ftp/endoderm/GMEMfinalResult_frame%04d.xml  (0000..0419, 420 files, listed and counted on 2026-11-07)',
+      note:
+        'the FTP tree holds six releases and only ONE of them has the tracking XML: 20211129-ftp. The ' +
+        '20190913-ftp and 20191030-converted releases are TIFF image trees, 20211117-ometiff is a single ' +
+        'OME-TIFF, and 20191001-ftp is a sample subtree. A reader who goes to the study root and takes the ' +
+        'newest-looking directory gets images, not tracks.',
+      why_this_was_added:
+        'the first version of this record named the study and the byte count but no URL, so re-fetching ' +
+        'the data meant re-deriving the path by listing the tree. Recording the bytes without the address ' +
+        'is a provenance note that cannot be acted on.',
+    },
     bytes: { endoderm: 96_312_189, epiblast: 805_376_869, mesendoderm: 876_562_885 },
     separable_from_images: 'YES, completely - the image set is a separate FTP tree of about 0.17 TB',
     licence: 'CC BY 4.0',
