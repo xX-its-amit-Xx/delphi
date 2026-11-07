@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab-in-the-loop candidates</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='11' cy='11' r='5' fill='none' stroke='%234ec9a0' stroke-width='2'/%3E%3Ccircle cx='21' cy='21' r='5' fill='none' stroke='%236aa9ff' stroke-width='2'/%3E%3Cpath d='M14.5 14.5l3 3' stroke='%23b48ef5' stroke-width='2'/%3E%3C/svg%3E">
+<style>
+  :root{--bg:#080b11;--panel:#0f141d;--card:#121824;--edge:#1f2836;--ink:#e9eff7;--dim:#8a97ac;
+    --ok:#4ec9a0;--warn:#f0b429;--bad:#ff7a66;--accent:#6aa9ff;--violet:#b48ef5}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.65 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+  a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+  #wrap{max-width:1060px;margin:0 auto;padding:0 22px 80px}
+  header{position:sticky;top:0;z-index:20;background:#080b11f2;backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--edge);margin:0 -22px 24px;padding:14px 22px}
+  .hrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;max-width:1060px;margin:0 auto}
+  h1{font-size:16px;margin:0}
+  .filters{display:flex;gap:7px;margin-left:auto;flex-wrap:wrap}
+  .filters button{background:#0d121a;border:1px solid var(--edge);color:var(--dim);border-radius:999px;
+    padding:6px 13px;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
+  .filters button[aria-pressed=true]{border-color:var(--accent);background:#17243a;color:#fff}
+  .lede{color:var(--dim);font-size:14px;max-width:76ch}
+  .rule{background:#0d1420;border:1px solid #223a5e;border-radius:9px;padding:12px;margin:14px 0;font-size:13.5px}
+  h2{font-size:12px;letter-spacing:.9px;text-transform:uppercase;color:var(--dim);margin:30px 0 10px}
+  .honest{background:#19100e;border:1px solid #58271d;border-radius:10px;padding:15px;margin:12px 0}
+  .honest h3{margin:0 0 7px;font-size:13px;color:var(--bad);letter-spacing:.5px;text-transform:uppercase}
+  .honest li{color:#ffb3a3;font-size:13.5px}
+  details.p{background:var(--card);border:1px solid var(--edge);border-radius:12px;margin:10px 0;overflow:hidden}
+  details.p>summary{cursor:pointer;padding:15px 17px;list-style:none;display:flex;gap:13px;align-items:flex-start}
+  details.p>summary::-webkit-details-marker{display:none}
+  details.p>summary:hover{background:#151d2b}
+  .chev{color:var(--dim);transition:transform .16s;flex:none;margin-top:4px}
+  details[open]>summary .chev{transform:rotate(90deg)}
+  .nm{font-weight:600;font-size:16px}
+  .inst{color:var(--dim);font-size:13px}
+  .fld{color:var(--accent);font-size:12.5px;margin-top:3px}
+  .tags{margin-left:auto;display:flex;gap:5px;flex:none;flex-wrap:wrap;justify-content:flex-end}
+  .tag{font-size:9.5px;letter-spacing:.5px;text-transform:uppercase;padding:3px 7px;border-radius:5px;
+    border:1px solid var(--edge);color:var(--dim);font-weight:600}
+  .tag.fish{color:var(--ok);border-color:#1d5641}
+  .tag.q{color:var(--violet);border-color:#4a3a6b}
+  .tag.stated{color:var(--accent);border-color:#24456e}
+  .body{padding:0 17px 17px;border-top:1px solid var(--edge)}
+  .sec{margin-top:15px}
+  .sec h4{margin:0 0 6px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim)}
+  .sec p{margin:0;font-size:14px}
+  blockquote{margin:9px 0;padding:11px 14px;background:#0a0f16;border-left:3px solid var(--violet);
+    border-radius:0 8px 8px 0;font-size:14px}
+  blockquote .src{display:block;margin-top:7px;color:var(--dim);font-size:12px}
+  .paper{background:#0a0f16;border:1px solid var(--edge);border-radius:8px;padding:10px 12px;margin:7px 0;font-size:13.5px}
+  .paper .t{font-weight:600}
+  .paper .m{color:var(--dim);font-size:12.5px;margin-top:2px}
+  .paper .w{color:#c6d3e4;font-size:13px;margin-top:5px}
+  .caution{background:#1a1507;border:1px solid #5d4a10;border-radius:9px;padding:12px;margin-top:9px}
+  .caution h4{color:var(--warn)}
+  .caution p{color:#f3d79a;font-size:13.5px}
+  ul{margin:6px 0 0;padding-left:18px}li{margin:5px 0;font-size:13.5px;color:var(--dim)}
+  .ev{font-size:9.5px;letter-spacing:.5px;text-transform:uppercase;padding:1px 5px;border-radius:4px;
+    border:1px solid currentColor;margin-right:6px}
+  .ev.stated{color:var(--ok)}.ev.inferred{color:var(--warn)}
+  footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--edge);color:var(--dim);font-size:12.5px}
+</style>
+</head>
+<body>
+<header><div class="hrow">
+  <h1>Lab-in-the-loop candidates</h1>
+  <div class="filters" id="filters"></div>
+</div></header>
+<div id="wrap">
+  <p class="lede" id="lede">loading…</p>
+  <div class="rule" id="rule"></div>
+  <div id="honest"></div>
+  <div id="list"></div>
+  <footer id="foot"></footer>
+</div>
+<script type="module">
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let D=null, GROUP='all';
+try{ D=await (await fetch('./profiles.json')).json(); }
+catch(e){ $('lede').textContent=`could not load profiles.json: ${e.message}. Build it with: node outreach/build.mjs`; }
+
+function card(c){
+  const quotes=c.real_quotes??[], papers=c.flagship_papers??[], ev=c.openness_evidence??[];
+  const stated=ev.some(e=>/stated/.test(JSON.stringify(e)));
+  return `<details class="p">
+    <summary><span class="chev">›</span>
+      <span><span class="nm">${esc(c.name)}</span>
+        <div class="inst">${esc(c.institution)}${c.lab_url?` · <a href="${esc(c.lab_url)}" target="_blank" rel="noopener">lab</a>`:''}</div>
+        <div class="fld">${esc(c.field)}</div></span>
+      <span class="tags">
+        ${c.priority?'<span class="tag fish">fish biology</span>':''}
+        ${quotes.length?`<span class="tag q">${quotes.length} quote${quotes.length>1?'s':''}</span>`:''}
+        ${stated?'<span class="tag stated">stated openness</span>':''}
+      </span></summary>
+    <div class="body">
+      <div class="sec"><h4>why relevant</h4><p>${esc(c.why_relevant_to_delphi)}</p></div>
+      ${c.key_figures_or_findings?`<div class="sec"><h4>known for</h4><p>${esc(typeof c.key_figures_or_findings==='string'?c.key_figures_or_findings:JSON.stringify(c.key_figures_or_findings))}</p></div>`:''}
+      ${quotes.length?`<div class="sec"><h4>in their own words — verbatim and sourced</h4>
+        ${quotes.map(q=>`<blockquote>“${esc(q.quote)}”
+          <span class="src">${esc(q.source_title)}${q.doi_or_url?` · <a href="${esc(q.doi_or_url.startsWith('http')?q.doi_or_url:'https://doi.org/'+q.doi_or_url)}" target="_blank" rel="noopener">source</a>`:''}${q.context?` — ${esc(q.context)}`:''}</span>
+        </blockquote>`).join('')}</div>`:''}
+      ${papers.length?`<div class="sec"><h4>flagship papers</h4>
+        ${papers.map(p=>`<div class="paper"><div class="t">${esc(p.title)}</div>
+          <div class="m">${esc(p.journal??'')} ${esc(p.year??'')}${p.doi?` · <a href="https://doi.org/${esc(p.doi)}" target="_blank" rel="noopener">${esc(p.doi)}</a>`:''}</div>
+          ${p.why_it_matters?`<div class="w">${esc(p.why_it_matters)}</div>`:''}</div>`).join('')}</div>`:''}
+      <div class="sec"><h4>collaboration angle — and what we would have to bring</h4><p>${esc(c.collaboration_angle)}</p></div>
+      ${ev.length?`<div class="sec"><h4>evidence they collaborate</h4><ul>${ev.map(e=>{
+        const t=typeof e==='string'?e:(e.evidence??e.what??JSON.stringify(e));
+        const k=/stated/.test(JSON.stringify(e))?'stated':'inferred';
+        return `<li><span class="ev ${k}">${k}</span>${esc(t)}</li>`;}).join('')}</ul></div>`:''}
+      ${c.caution?`<div class="caution"><h4>caution</h4><p>${esc(c.caution)}</p></div>`:''}
+    </div></details>`;
+}
+
+function render(){
+  if(!D)return;
+  $('lede').textContent=D.what_this_is;
+  $('rule').innerHTML=`<b>On quotes.</b> ${esc(D.the_rule_on_quotes)}`;
+  const groups=['all',...Object.keys(D.by_group??{})];
+  $('filters').innerHTML=groups.map(g=>`<button data-g="${esc(g)}" aria-pressed="${g===GROUP}">${esc(g.replace(/-/g,' '))}${g!=='all'?` ${D.by_group[g]}`:''}</button>`).join('');
+  $('filters').querySelectorAll('button').forEach(b=>b.onclick=()=>{GROUP=b.dataset.g;render();});
+
+  let h='';
+  if(D.what_we_bring_honestly){
+    const w=D.what_we_bring_honestly;
+    const items=Array.isArray(w)?w:Object.values(w).filter(v=>typeof v==='string');
+    h+=`<div class="honest"><h3>What we bring, unflatteringly</h3>
+      <p style="color:#ffb3a3;font-size:13.5px;margin:0 0 6px">These are reasons a careful scientist might say no. They are stated here rather than hidden.</p>
+      <ul>${items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`;
+  }
+  if(D.what_we_would_be_asking){
+    const a=D.what_we_would_be_asking;
+    const items=Array.isArray(a)?a:Object.values(a).filter(v=>typeof v==='string');
+    h+=`<div class="rule"><b>What we would be asking of them.</b><ul>${items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul></div>`;
+  }
+  $('honest').innerHTML=h;
+
+  const list=(D.candidates??[]).filter(c=>GROUP==='all'||c.group===GROUP);
+  $('list').innerHTML=`<h2>${list.length} candidate${list.length===1?'':'s'}</h2>`+list.map(card).join('');
+
+  const c=D.counts??{};
+  $('foot').innerHTML=`${c.candidates} profiles · ${c.quotes} verbatim quotes on ${c.with_quotes} of them · ${c.with_caution} carry a caution · ${c.stated_openness} have stated rather than inferred openness.<br><br>
+    Built only from the public professional record. No contact details are stored: the build refuses to write the file if an email address appears anywhere in it.
+    ${D.quote_attrition?`<br><br>Quotes were dropped rather than approximated where a source was paywalled or authorship could not be resolved.`:''}`;
+}
+render();
+</script>
+</body>
+</html>
