@@ -17,6 +17,7 @@ import * as ORD from './order.mjs';
 import * as B from './bench.mjs';
 import * as PWR from './power.mjs';
 import * as RET from './return.mjs';
+import * as BRF from './brief.mjs';
 
 const FAIL_ONCE = process.argv.includes('--fail-once');
 let pass = 0, fail = 0;
@@ -380,8 +381,56 @@ function test18(f) {
 }
 
 // ---------------------------------------------------------------------------------------------------
+// TEST 19. The partner brief. It is the only artefact here a stranger reads without context, so the
+// check between "generated" and "published" is where a bad sentence must not get through.
+// INJECTED FAULT: plant a forbidden claim in the brief.
+function test19(f) {
+  const base = BRF.brief('kcnk5b-overexpression-f0');
+  const text = f ? `${base}\nThis package is turnkey and the experiment will work.` : base;
+  const chk = BRF.checkBrief(text);
+  check(`brief: every case's brief passes its own forbidden-claim check${f ? ' +FAULT' : ''}`,
+    chk.ok === true, chk.ok ? `${C.CASES.length} cases, clean` : chk.violations.map(v => v.why.slice(0, 44)).join(' | '));
+
+  // the checker must not fire on the honest disclaimers, which is what the first version did
+  const negated = BRF.checkBrief('Not a protocol, not a quote, not evidence that the experiment will work. No price here is a quote.');
+  check(`brief: a NEGATED forbidden phrase is not a violation${f ? ' +FAULT' : ''}`,
+    !f && negated.violations.length === 0,
+    negated.violations.length ? `fired on a denial: ${negated.violations[0].why.slice(0, 40)}` : 'denials pass, as they must');
+
+  // and it must still catch the affirmative form
+  const planted = ['This package is turnkey.', 'The quoted price includes shipping.', 'Follow the protocol enclosed.', 'We guarantee the result.'];
+  const caught = planted.filter(s => !BRF.checkBrief(`${base}\n${s}`).ok).length;
+  check(`brief: all 4 affirmative claim shapes are caught${f ? ' +FAULT' : ''}`,
+    !f && caught === planted.length, `${caught}/${planted.length} caught`);
+
+  // a missing disclaimer is as much a defect as a forbidden phrase
+  const stripped = base.replace(/Not a protocol, not a quote[^\n]*/, '(removed)');
+  check(`brief: a brief with the disclaimer removed is refused${f ? ' +FAULT' : ''}`,
+    !f && BRF.checkBrief(stripped).ok === false && BRF.checkBrief(stripped).disclaimer_present === false,
+    'disclaimer is required, not optional');
+}
+
+// ---------------------------------------------------------------------------------------------------
+// TEST 20. The brief must carry the numbers that argue AGAINST running it, or it is an advertisement.
+// INJECTED FAULT: read a case whose brief has no refusal in it.
+function test20(f) {
+  const unpowerable = BRF.brief(f ? 'kcnk5b-overexpression-f0' : 'kcnk5b-f0-finbud');
+  check(`brief: an unpowerable case says so and names the one missing quantity${f ? ' +FAULT' : ''}`,
+    /cannot be powered yet/.test(unpowerable) && /missing:/.test(unpowerable),
+    /cannot be powered yet/.test(unpowerable) ? 'refusal present with the missing quantity' : 'no refusal in the brief');
+
+  const powered = BRF.brief('kcnk5b-overexpression-f0');
+  check(`brief: a powerable case states N and what N counts${f ? ' +FAULT' : ''}`,
+    !f && /30 per arm/.test(powered) && /SCORABLE ADULTS/.test(powered), 'N and its denominator both stated');
+
+  check(`brief: every brief leads with the knockouts-are-normal finding${f ? ' +FAULT' : ''}`,
+    !f && C.CASES.every(c => /loss of function does not change fin size/.test(BRF.brief(c.id))),
+    `${C.CASES.length} briefs carry the finding that argues against the cheap experiment`);
+}
+
+// ---------------------------------------------------------------------------------------------------
 const TESTS = [test1, test2, test3, test4, test5, test6, test7, test8, test9, test10, test11,
-  test12, test13, test14, test15, test16, test17, test18];
+  test12, test13, test14, test15, test16, test17, test18, test19, test20];
 for (const t of TESTS) await t(false);
 console.log(`\n${pass} pass, ${fail} fail`);
 

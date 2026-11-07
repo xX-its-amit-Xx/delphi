@@ -48,6 +48,8 @@ reproduces.
 | `order.mjs` | the two export artefacts and why there must be two. |
 | `power.mjs` | how many animals, and a refusal naming the one missing quantity where that cannot be computed. |
 | `return.mjs` | the data-return contract: what a partner lab must send back for a result to be evidence. |
+| `brief.mjs` | the one-page partner brief, generated from the package so it cannot drift, with a check on what it may not claim. |
+| `publish-briefs.mjs` | renders every case's brief to the dashboard and REFUSES to publish one that fails its check. |
 | `bench.mjs` | assembles all of it. |
 
 ## The audit, 2026-11-06: four corrections to this package and one route it was missing
@@ -118,6 +120,25 @@ per-comparison values from Jiang et al. 2024's S4 Data and would then become the
 experiment in the set. The refusals state in words that a conventional effect size will not be substituted:
 a sample size derived from convention rather than from this system's own numbers would look identical to a
 real one inside the plan, and would be the most dangerous number in it.
+
+## The partner brief
+
+`node sim-engine/validate/bench/cli.mjs --case <id> --brief`, and all five rendered at
+`/blueprint3d/studio-live/brief/` on the dashboard.
+
+It is **generated**, not written: a hand-written brief drifts from the package within a week, and every
+figure in it is re-derived from `benchPackage()` at render time. The order is the argument — what this is
+*not*, then the approval gate, then the finding that argues against running it, then how many animals or
+an honest refusal, then the marginal cost, then what we are asking for, which is criticism before it is
+bench time.
+
+`checkBrief()` enforces four forbidden claim shapes and one **required** sentence, and `publish-briefs.mjs`
+refuses to write a brief that fails. The checker took two goes to get right, both times in the same
+direction: its first version matched the bare words `quote` and `will work`, and so fired on the package's
+own disclaimer — *"Not a protocol, not a quote, not evidence that the experiment will work"* — and on the
+catalogue's *"No price here is a quote"*. **A checker that forbids the honest disclaimers and permits
+everything else has its sign backwards**, and the obvious fix would have been to delete the sentences. It
+now matches affirmative forms only and skips any match preceded by a negation in the same clause.
 
 ## What comes back from a lab
 

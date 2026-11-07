@@ -36,6 +36,20 @@ const pkg = B.benchPackage(val('case'), {});
 if (pkg.refused) { console.error(pkg.why); process.exit(2); }
 if (argv.includes('--json')) { console.log(JSON.stringify(pkg, null, 1)); process.exit(0); }
 
+if (argv.includes('--brief')) {
+  const BR = await import('./brief.mjs');
+  const md = BR.brief(val('case'));
+  const chk = BR.checkBrief(md);
+  if (!chk.ok) {
+    console.error('this brief does not pass its own check and is not printed:');
+    if (!chk.disclaimer_present) console.error(`  ${chk.disclaimer_missing_why}`);
+    for (const v of chk.violations) console.error(`  ${v.pattern}\n    ${v.why}`);
+    process.exit(3);
+  }
+  console.log(md);
+  process.exit(0);
+}
+
 const bar = '='.repeat(100);
 console.log(`\n${bar}\n BENCH PACKAGE: ${pkg.case.id}\n ${pkg.case.question}\n${bar}`);
 console.log(`\n${pkg.scope}\n`);
