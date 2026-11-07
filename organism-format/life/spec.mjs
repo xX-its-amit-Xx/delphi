@@ -20,7 +20,12 @@
 //
 //   1. a GENOME, as FASTA                  -> fasta.mjs    sequence comparison, tree search
 //   2. a MESH per stage, as binary STL     -> stl.mjs       rendering, simulation input, 3D printing
-//   3. a PHENOTYPE VECTOR per stage        -> compare.mjs   phenotypic comparison
+//   3. a PHENOTYPE MAP per stage           -> compare.mjs   phenotypic comparison
+//      (this said "vector" in v0.1.0 and that overstated it. A .life phenotype map is NOT numeric: the
+//      worked example carries total_volume_conserved: true and utmm_coverage: "transcriptome only"
+//      beside its cell counts. Those are excluded from a distance and counted, never coerced, because
+//      `true - false = 1` is a number with no units. A distance over the categorical entries would need
+//      its own weight against the numeric one, which is no_single_number_distance again.)
 //   4. PROVENANCE for every number         -> this file     so none of the above is mistaken for a measurement
 //
 // The fourth is the one that makes the other three safe. An STL is a triangle soup with no idea whether it
