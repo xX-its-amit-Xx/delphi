@@ -91,7 +91,16 @@ const rows = usable.map(g => {
       structure_source: surf.structure_source, duplicate_atoms: surf.duplicate_atoms,
       struct_seq_matches_uniprot: surf.struct_seq === r.sequence,
     } : null,
-    duration: d ? { value: d.value, units: d.units, kind: d.kind, use_for_regression: MB.DURATION_KINDS[d.kind]?.use_for_regression === true } : null,
+    // A row can carry a max_dive_duration OBJECT whose value is null - the honest representation of
+    // "no sourced duration". Testing the object rather than the value let those rows through, and
+    // Math.log10(null) is -Infinity rather than an error, so the first version of this ran a
+    // correlation against minus infinity. predict.mjs refused it by name, which is why this is a
+    // corrected line and not a silent wrong number.
+    duration: (d && Number.isFinite(d.value) && d.value > 0)
+      ? { value: d.value, units: d.units, kind: d.kind, use_for_regression: MB.DURATION_KINDS[d.kind]?.use_for_regression === true }
+      : null,
+    duration_absent_reason: (d && !(Number.isFinite(d.value) && d.value > 0))
+      ? (d.value === null ? 'no sourced duration' : `duration value ${d.value} is not a positive finite number`) : null,
   };
 });
 
@@ -107,14 +116,19 @@ function analyse(set, pick, label) {
   const rs = P.spearman(x, yLog);
   const rpLog = P.pearson(x, yLog);
   const rpRaw = P.pearson(x, yRaw);
-  const perm = P.permutationTest(x, yLog, { iters: 20000, seed: 20261107 });
+  // predict.mjs defaults its permutation statistic to PEARSON. A p value reported next to a Spearman
+  // rho, but computed on Pearson, is a p value for a different number - so both are computed and each
+  // is labelled with the statistic it belongs to.
+  const permP = P.permutationTest(x, yLog, { iters: 20000, seed: 20261107, statistic: 'pearson' });
+  const permS = P.permutationTest(x, yLog, { iters: 20000, seed: 20261107, statistic: 'spearman' });
   return {
     label, n: set.length, enough: true,
     spearman_vs_log10: +rs.toFixed(4),
     spearman_ci95: P.ciFisher(rs, set.length),
     pearson_vs_log10: +rpLog.toFixed(4),
     pearson_vs_raw_minutes: +rpRaw.toFixed(4),
-    permutation_p_two_sided: perm.p ?? perm,
+    permutation_p_on_pearson: permP.p ?? permP,
+    permutation_p_on_spearman: permS.p ?? permS,
     permutation_iters: 20000, permutation_seed: 20261107,
     duration_range_min: [Math.min(...yRaw), Math.max(...yRaw)],
     species: set.map(r => r.latin),
@@ -129,6 +143,34 @@ const A = {
 };
 const surfSet = regression.filter(r => r.surface);
 if (surfSet.length >= 3) A.surface_exposed_speciesmax = analyse(surfSet, r => r.surface.z_surface, 'exposed-residue integer charge from structures, species maxima only');
+
+// ---------------------------------------------------------------- 3b. WHY THE SIGN FLIPS
+//
+// The pH 6.5 sum and the pH 7.4 sum of the SAME sequences give opposite-signed relationships with
+// dive duration. That is not a bug, and it is not noise: it is histidine. Between pH 6.5 and 7.4,
+// with a model histidine pKa near 6.0, the protonated fraction falls from roughly a quarter to a few
+// per cent, so a sequence's histidine count is almost exactly the difference between the two sums.
+// Myoglobin is unusually histidine-rich (7 to 14 in this set), and the count is not flat across the
+// clades being compared. This block MEASURES that explanation rather than asserting it.
+function mechanism(set) {
+  if (set.length < 3) return { n: set.length, enough: false };
+  const seqOf = (r) => MB.ROWS.find(x => x.uniprot.accession === r.accession).sequence;
+  const his = set.map(r => (seqOf(r).match(/H/g) ?? []).length);
+  const delta = set.map(r => r.charge.published_pH65 - r.charge.prereg_pH74);
+  const y = set.map(r => Math.log10(r.duration.value));
+  return {
+    n: set.length, enough: true,
+    histidine_count_range: [Math.min(...his), Math.max(...his)],
+    pearson_his_vs_pH_difference: +P.pearson(his, delta).toFixed(4),
+    spearman_his_vs_log_duration: +P.spearman(his, y).toFixed(4),
+    spearman_pH65_vs_pH74_charge: +P.spearman(set.map(r => r.charge.published_pH65), set.map(r => r.charge.prereg_pH74)).toFixed(4),
+    reading:
+      'if pearson_his_vs_pH_difference is 1, the whole difference between the two charge conventions ' +
+      'IS the histidine count; if spearman_pH65_vs_pH74_charge is near zero, the two conventions are ' +
+      'not two estimates of one quantity but two different quantities that happen to share a name.',
+  };
+}
+const MECH = mechanism(regression);
 
 // ---------------------------------------------------------------- 4. the anchors (prediction 4)
 const anchors = rows.filter(r => MB.TERRESTRIAL_ANCHORS.includes(r.latin));
@@ -162,7 +204,7 @@ const verdicts = [
     observed: P1.enough ? `rho = ${P1.spearman_vs_log10}, p = ${P1.permutation_p_two_sided}, n = ${P1.n}` : 'not analysable',
     verdict: 'COULD_NOT_BE_TESTED_AS_WRITTEN',
     why: `the pre-registered n >= 12 is not reachable from the sourced record: ${regression.length} rows carry a species-maximum duration and ${withDur.length} carry any sourced duration. The result at n = ${P1.n} is shown and is underpowered, not a pass or a fail of the prediction as written.`,
-    underpowered_result: P1.enough ? (P1.spearman_vs_log10 >= 0.40 && P1.permutation_p_two_sided < 0.05 ? 'would have been inside the band' : 'would have been outside the band') : null,
+    underpowered_result: P1.enough ? (P1.spearman_vs_log10 >= 0.40 && P1.permutation_p_on_spearman < 0.05 ? 'would have been inside the band' : 'would have been outside the band') : null,
   },
   {
     id: 'case1-rank-beats-linear', predicted: 'Spearman(charge, log duration) exceeds Pearson(charge, raw minutes)',
@@ -197,6 +239,7 @@ const out = {
   gate: { rows: MB.ROWS.length, usable: usable.length, refused: refused.map(g => ({ latin: g.row.latin, why: g.gate.why })) },
   zmb_convention: P.ZMB_CONVENTION,
   analyses: A,
+  why_the_sign_flips: MECH,
   anchors: anchorTest,
   verdicts,
   rows,
@@ -215,7 +258,19 @@ for (const r of [...rows].sort((a, b) => b.charge.prereg_pH74 - a.charge.prereg_
 say(`\n--- correlations ---`);
 for (const [k, a] of Object.entries(A)) {
   if (!a.enough) { say(`${k}: n = ${a.n}, too few rows`); continue; }
-  say(`${a.label}\n  n = ${a.n}  Spearman(log10 min) = ${a.spearman_vs_log10}  CI95 ${JSON.stringify(a.spearman_ci95.lo !== undefined ? [a.spearman_ci95.lo, a.spearman_ci95.hi] : a.spearman_ci95)}\n  Pearson(log10) = ${a.pearson_vs_log10}  Pearson(raw min) = ${a.pearson_vs_raw_minutes}  permutation p = ${a.permutation_p_two_sided}`);
+  const ci = a.spearman_ci95?.lo !== undefined ? [+a.spearman_ci95.lo.toFixed(3), +a.spearman_ci95.hi.toFixed(3)] : a.spearman_ci95;
+  const pS = Number(a.permutation_p_on_spearman), pP = Number(a.permutation_p_on_pearson);
+  say(`${a.label}`);
+  say(`  n = ${a.n}  Spearman(log10 min) = ${a.spearman_vs_log10}  CI95 ${JSON.stringify(ci)}  perm p on Spearman = ${Number.isFinite(pS) ? pS.toFixed(4) : 'n/a'}`);
+  say(`  Pearson(log10) = ${a.pearson_vs_log10}  Pearson(raw min) = ${a.pearson_vs_raw_minutes}  perm p on Pearson = ${Number.isFinite(pP) ? pP.toFixed(4) : 'n/a'}`);
+}
+
+if (MECH.enough) {
+  say(`\n--- why the two conventions disagree ---`);
+  say(`  histidines per myoglobin in the regression set: ${MECH.histidine_count_range[0]} to ${MECH.histidine_count_range[1]}`);
+  say(`  Pearson(histidine count, Z(6.5) - Z(7.4))  = ${MECH.pearson_his_vs_pH_difference}`);
+  say(`  Spearman(histidine count, log10 duration)  = ${MECH.spearman_his_vs_log_duration}`);
+  say(`  Spearman(Z(6.5), Z(7.4)) across species    = ${MECH.spearman_pH65_vs_pH74_charge}`);
 }
 
 say(`\n--- the pre-registered predictions ---`);
