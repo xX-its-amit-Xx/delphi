@@ -55,11 +55,15 @@ function packCells(n, stageId) {
  * indistinguishable from a measured one once it left the file.
  */
 const STAGES = [
-  { id: 'zygote', name: 'zygote', E: 0.5, cells: 1, lineages: null },
-  { id: 'two-cell', name: '2-cell', E: 1.5, cells: 2, lineages: null, stiffness_rank: 1 },
-  { id: 'four-cell', name: '4-cell', E: 2.0, cells: 4, lineages: null, stiffness_rank: 2 },
-  { id: 'eight-cell', name: '8-cell', E: 2.5, cells: 8, lineages: null, stiffness_rank: 3, note: 'compaction occurs around here; cell shape changes without a change in volume, which the sphere depiction cannot show' },
-  { id: 'morula', name: 'morula', E: 3.0, cells: 16, lineages: ['trophectoderm', 'inner-cell-mass'], stiffness_rank: 4 },
+  {
+    id: 'zygote', name: 'zygote', E: 0.5, cells: 1, lineages: null,
+    utmm_covers: false,
+    note: 'UTMM does NOT cover this stage. Both of its abstracts say "from the zygote", but every reported cohort starts at late 2-cell (transcriptome) or 4-cell (mechanics), and no zygote transcriptome, mechanics value or cell count appears in the accessible text. This row carries standard embryology only.',
+  },
+  { id: 'two-cell', name: 'late 2-cell', E: 1.5, cells: 2, lineages: null, utmm_covers: 'transcriptome only', note: 'the first stage UTMM measures, and only by 3DISS (n = 6 embryos). No mechanics here: passive microrheology starts at 4-cell.' },
+  { id: 'four-cell', name: '4-cell', E: 2.0, cells: 4, lineages: null, utmm_covers: true, stiffness_rank: 1, bead_G_Pa: 35 },
+  { id: 'eight-cell', name: '8-cell', E: 2.5, cells: 8, lineages: null, utmm_covers: true, stiffness_rank: 2, bead_G_Pa: 10, note: 'compaction begins around the late 8-cell stage; cell shape changes without a change in volume, which the sphere depiction cannot show. E2.5 is anchored by UTMM itself: >80% of its PEG control embryos had reached compacted 8-cell at E2.5.' },
+  { id: 'morula', name: 'morula', E: 3.0, cells: 16, lineages: ['trophectoderm', 'inner-cell-mass'], utmm_covers: true, stiffness_rank: 3, note: 'UTMM strata: early morula 9-16 cells, mid-late 17-32. Its 3DISS span ends at E3.25.' },
 ];
 
 const stages = STAGES.map((s, idx) => {
@@ -90,24 +94,41 @@ const stages = STAGES.map((s, idx) => {
   const phenotype = {
     cell_count: value({ v: s.cells, unit: 'cells', kind: 'measured-secondhand', source: EMBRYOLOGY, scope: 'mouse preimplantation embryo at this stage', note: 'the cleavage series is not in dispute' }),
     total_volume_conserved: value({ v: true, kind: 'assumed', scope: 'this depiction', note: 'the zona pellucida holds volume roughly constant through cleavage. Assumed here so the drawing is consistent; not measured on any embryo.' }),
-    cytoplasmic_stiffness_Pa: unknown({
-      why: 'UTMM reports a gradual softening from the 2-cell through morula stages, and the direction is citable; no modulus in pascals is available to us',
-      searched: UTMM,
-      what_would_resolve_it: 'the UTMM data, or the figure values. It is in-house work, so asking is cheap',
+    // NO per-cell modulus is written, at any stage, and the reason is a correction rather than a gap.
+    // The PubMed/PMC abstract says "high-frequency elastic modulus"; that deposit is a STALE VERSION.
+    // bioRxiv v2 says "intracellular mechanical compliance" and "a RELATIVE readout", and the per-cell
+    // channel is reported only as RMSD0 and dRMSD - displacements, no nm values, no conversion to Pa.
+    cytoplasmic_compliance: unknown({
+      why: 'UTMM\'s per-cell mechanics channel is a RELATIVE compliance reported as RMSD0 and dRMSD, with no values in nm in the accessible text and no published conversion to stress. There is no per-cell number to carry, and inventing a modulus would make the file lie in a way no reader could detect.',
+      searched: `${UTMM} (bioRxiv v2, 2026-10-23; the PMC deposit is the older v1 and still says "elastic modulus")`,
+      what_would_resolve_it: 'the supplementary PDF, which holds the Methods and presumably the RMSD values; or the data. It is in-house work, so asking is cheap',
       scope: 'cytoplasm of a blastomere at this stage',
     }),
     ...(s.stiffness_rank ? {
-      stiffness_ordinal_rank: value({
-        v: s.stiffness_rank, unit: 'rank (1 = stiffest observed, higher = softer)', kind: 'measured-secondhand', source: UTMM,
-        scope: 'mouse blastomeres, 2-cell through morula, high-frequency elastic modulus',
-        note: 'an ORDINAL standing in for a modulus. UTMM reports monotonic softening across these stages; this records the ordering, which is what can be cited, and deliberately not a number of pascals.',
+      compliance_ordinal_rank: value({
+        v: s.stiffness_rank, unit: 'rank (1 = stiffest measured, higher = softer)', kind: 'measured-secondhand', source: UTMM,
+        scope: 'mouse blastomeres, 4-cell through morula - the stages UTMM actually measured mechanically',
+        note: 'an ORDINAL, deliberately not a number of pascals. UTMM reports monotonic softening across these stages and the ORDERING is what can be cited. Passive microrheology was run on 4-cell, 8-cell and morula only, so the 2-cell and zygote rows carry no rank.',
       }),
     } : {}),
+    // The pascal values that DO exist are from a different experiment on different objects, and are
+    // carried separately so they can never be mistaken for the per-cell channel.
+    ...(s.bead_G_Pa ? {
+      shear_modulus_from_bead_validation_Pa: value({
+        v: s.bead_G_Pa, unit: 'Pa', kind: 'measured-secondhand', source: UTMM,
+        scope: 'ENDOCYTOSED BEADS in a separate optical-tweezers validation at 1 Hz, NOT the per-cell channel registered to the transcriptome',
+        note: 'rounded in the source ("~35", "~10"). Carried only so the magnitude is on record; it is a measurement of beads in cytoplasm under active driving, not of the cells UTMM maps, and the two must not be merged.',
+      }),
+    } : {}),
+    utmm_coverage: value({
+      v: s.utmm_covers === false ? 'none' : String(s.utmm_covers), kind: 'derived', scope: 'which UTMM channels cover this stage',
+      source: UTMM, note: 'derived by reading which cohorts the paper reports, not from any summary of it',
+    }),
   };
 
   return stage({
     id: s.id, name: s.name, time: s.E, time_unit: 'E', temperature_C: 37,
-    cells, geometry_provenance: { kind: 'depicted', source: null, note: GEOM_NOTE },
+    cells, geometry_provenance: { kind: 'depicted', source: null, scope: 'the drawn arrangement of blastomeres at this stage; not any specimen', note: GEOM_NOTE },
     phenotype, observed: false,
     note: s.note ?? null,
   });
@@ -142,7 +163,11 @@ const doc = life({
     { what: 'whether the geometry is a measurement, a reconstruction, or a drawing', answer: 'a drawing. Spheres of conserved total volume in a fixed shell.' },
     { what: 'what the file cannot be used to simulate', answer: 'anything mechanical. There is no modulus, no adhesion, no cortical tension and no zona. It can be rendered and it can be compared stage-for-stage on cell count; it cannot be used to predict a fate decision.' },
     { what: 'exposed surface area, the quantity lineage bias tracks', answer: 'not established, and not derivable from this packing.' },
-    { what: 'the transcriptome', answer: 'absent. UTMM measures it per cell in situ; we have the paper, not the data.' },
+    { what: 'the transcriptome', answer: 'absent. UTMM measures it per cell in situ (150-gene targeted panel, 742 cells across 69 embryos); we have the paper, not the data.' },
+    { what: 'anything at all about the zygote, from UTMM', answer: 'UTMM does not cover it. Both abstracts say "from the zygote" and every reported cohort starts at late 2-cell (3DISS) or 4-cell (mechanics). The zygote row here is standard embryology only.' },
+    { what: 'a per-cell modulus in pascals', answer: "does not exist. UTMM's per-cell channel is a RELATIVE compliance (RMSD0, dRMSD) with no nm values published and no conversion to stress. The pascal figures in the paper are from a separate optical-tweezers validation on endocytosed beads and are carried under their own name." },
+    { what: 'why Hippo/YAP is not mentioned anywhere in this file', answer: "because it is not UTMM's result. The line about positional geometry rather than cell shape predicting Hippo/YAP cites prior work (Royer et al. 2020, Development, doi:10.1242/dev.189449). UTMM never measures YAP; its own claim is that geometry separates transcriptionally defined states." },
+    { what: 'hours post-hCG for any stage', answer: "not carried. Only the 2-cell figure (42-44 h) is measured in the literature; the rest would be arithmetic on a 10 h doubling time, and UTMM's own embryos were cultured from 4-cell in KSOM, which runs slower than in vivo." },
   ],
 });
 

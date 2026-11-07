@@ -44,13 +44,30 @@
 // with lineage bias aligning to mechanical difference, and progression impeded when the softening is
 // delayed mechanically. None of that is expressible as a per-organism phenotype value.
 //
-// A note on scope, kept because it is a real uncertainty rather than a tidy one: a companion "UTGM" was
-// named alongside UTMM in the request and has no published footprint I can find. Judging by UTMM's own
-// geometry panels - cells coloured by surface area, exposed surface area and curvature, with positional
-// geometry rather than cell shape predicting Hippo/YAP and trophectoderm profile - the obvious reading is
-// a geometry counterpart to the mechanics map. The channel list below is open for that reason: `geometry`
-// is a first-class channel beside `mechanics`, so whichever it turns out to be, it fits without a version
-// bump. If it is something else, this comment is the record of the guess.
+// THREE CORRECTIONS TO THE PARAGRAPH ABOVE, found by reading the paper rather than its abstract. They are
+// kept here rather than silently applied, because each one is a way a format can be wrong that is hard to
+// see afterwards.
+//
+// 1. "high-frequency elastic modulus" comes from the PubMed/PMC abstract, and THAT DEPOSIT IS STALE.
+//    bioRxiv v2 (2026-10-23) says "high-frequency intracellular mechanical compliance" and "a RELATIVE,
+//    non-invasive readout". The per-cell channel is reported only as RMSD0 and dRMSD - displacements -
+//    with no values in nm and no published conversion to Pa. The pascal figures that do exist (~35 Pa at
+//    2/4-cell, ~10 Pa at 8-cell) are from a SEPARATE optical-tweezers validation on endocytosed beads,
+//    which is not the channel registered per cell. See CHANNELS.mechanics.
+// 2. UTMM's measured series starts at LATE 2-CELL (transcriptome) or 4-CELL (mechanics), not the zygote,
+//    although both abstracts say "from the zygote". No zygote transcriptome, mechanics value or cell
+//    count appears in the accessible text. A zygote row in a .life may carry standard embryology and
+//    must not carry a UTMM-derived field.
+// 3. "positional geometry rather than cell shape predicts Hippo/YAP" IS NOT UTMM'S RESULT. It is a
+//    citation to prior work - Royer et al. 2020, Development, doi:10.1242/dev.189449, which identified
+//    exposed surface area as the best correlate of nuclear YAP. UTMM NEVER MEASURES YAP. Its own claim is
+//    the different and weaker one: that geometry separates TRANSCRIPTIONALLY defined states.
+//
+// And the answer to the open question: "UTGM" returns zero hits in PubMed, bioRxiv and web search.
+// Geometry is module 2 INSIDE UTMM - the Discussion calls the product "a unified map of transcriptomic,
+// morphological and molecular cell states". So `geometry` being a first-class channel beside `mechanics`
+// is right, and it is one map rather than two. (The paper is also inconsistent about its own name:
+// "Mechanics Map" in the title, "Mechanical Map" in the Introduction.)
 
 export const FORMAT = 'life/0.1.0';
 export const EXTENSION = '.life';
@@ -74,9 +91,31 @@ export const CHANNELS = Object.freeze({
     carries: ['panel', 'counts_or_reference', 'in_situ'],
   },
   mechanics: {
-    what: 'per-cell stiffness, as a high-frequency elastic modulus in Pa',
-    method_matters: 'an inferred modulus and an AFM modulus are not the same number, so the method is required',
-    carries: ['elastic_modulus_Pa', 'method', 'frequency_Hz'],
+    what: 'per-cell mechanical state. USUALLY NOT A MODULUS - see below - so the channel carries either a ' +
+      'relative compliance readout or an absolute modulus, and must say which.',
+    method_matters: 'an inferred readout and an AFM modulus are not the same number, so the method is required',
+    carries: ['readout_kind', 'readout_value', 'unit', 'method', 'frequency_Hz', 'is_relative'],
+    readout_kinds: {
+      'relative-compliance': 'a displacement-based readout with no conversion to stress. Comparable WITHIN ' +
+        'a study and not across studies. UTMM\'s per-cell channel is this.',
+      'shear-modulus': 'an absolute |G*| in Pa, from active microrheology. UTMM has these only from a ' +
+        'SEPARATE optical-tweezers validation on endocytosed beads, which is not the channel registered ' +
+        'per cell to the transcriptome.',
+      'youngs-modulus': 'an absolute modulus from indentation, e.g. AFM.',
+    },
+    the_correction_that_produced_this:
+      'v0.1.0 of this spec specified `elastic_modulus_Pa` outright, following the PubMed/PMC abstract, ' +
+      'which says "cytoplasmic stiffness (high-frequency elastic modulus)". THAT DEPOSIT IS A STALE ' +
+      'VERSION. bioRxiv v2 (2026-10-23) rewrites it to "high-frequency intracellular mechanical ' +
+      'compliance" and "a relative, non-invasive readout of cell-level viscoelastic compliance in situ". ' +
+      'The authors deliberately retreated from calling the passive readout a modulus, and the accessible ' +
+      'text reports it only as RMSD0 and dRMSD - displacements, with no values in nm and no published ' +
+      'conversion to Pa. A format that had required pascals would have forced everyone filling it in to ' +
+      'invent them.',
+    why_this_matters_beyond_this_paper:
+      'the general lesson is that a field name can impose a unit the measurement does not have. Requiring ' +
+      '`elastic_modulus_Pa` does not make the data a modulus; it makes the file lie in a way no reader ' +
+      'can detect. Hence readout_kind and is_relative, which let a displacement stay a displacement.',
   },
   geometry: {
     what: 'per-cell shape and position: surface area, exposed surface area, curvature, centre, radius',
@@ -90,7 +129,10 @@ export const CHANNELS = Object.freeze({
   },
   signalling: {
     what: 'pathway activity where it was measured, e.g. nuclear/cytoplasmic ratio for a transcription factor',
-    carries: ['pathway', 'readout', 'value'],
+    carries: ['pathway', 'readout', 'readout_value'],
+    why_not_just_value: 'a bare `value` key inside a channel that also carries a provenance stamp is ' +
+      'indistinguishable, to a generic walker, from a stamped value node - the reader found exactly that ' +
+      'collision on the mechanics channel. Channel payloads use a qualified name.',
   },
 });
 
