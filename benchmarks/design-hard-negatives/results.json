@@ -1,0 +1,121 @@
+{
+ "what_this_measures": "the design scorer AUC as a function of how much of the real trait correlation structure the negatives keep. Reported accuracy is a property of the scorer AND the decoy generator, and this separates them.",
+ "joint_model": {
+  "n": 7100,
+  "families": 311,
+  "traits": [
+   "body_depth_over_SL",
+   "caudal_fin_aspect_ratio",
+   "caudal_fin_height_over_SL",
+   "eye_diameter_over_SL",
+   "head_length_over_SL",
+   "preanal_over_SL",
+   "predorsal_over_SL",
+   "preorbital_over_SL",
+   "prepectoral_over_SL",
+   "prepelvic_over_SL"
+  ],
+  "source": "benchmark/dev/items.jsonl positives only (heldout/ never read)",
+  "built": "2026-11-01T05:00:39.234Z"
+ },
+ "heldout_used": {
+  "positives": 4673,
+  "note": "the model was fitted on dev positives only, so these are genuinely held out"
+ },
+ "generated_per_kind": 2000,
+ "seed": 20261107,
+ "ladder": [
+  {
+   "kind": "extreme-corner",
+   "source": "existing in benchmark/heldout",
+   "n": 2,
+   "preserves": "nothing: each trait is drawn independently from an extreme percentile, so both the marginals and the correlation are wrong",
+   "expectation": "high AUC",
+   "auc": 0.9999,
+   "auc_ci": [
+    0.9996,
+    1
+   ],
+   "median_q_positives": 0.65,
+   "median_q_decoys": 42.002
+  },
+  {
+   "kind": "shuffle-all",
+   "source": "existing in benchmark/heldout",
+   "n": 2701,
+   "preserves": "the marginals exactly (each trait is a permutation of real values); the correlation is destroyed",
+   "expectation": "high AUC",
+   "auc": 0.8915,
+   "auc_ci": [
+    0.8839,
+    0.8993
+   ],
+   "median_q_positives": 0.65,
+   "median_q_decoys": 2.302
+  },
+  {
+   "kind": "independent-marginal",
+   "source": "generated here",
+   "n": 2000,
+   "preserves": "the marginals, as fitted Gaussians; the correlation is exactly zero",
+   "expectation": "high AUC",
+   "auc": 0.9302,
+   "auc_ci": [
+    0.9234,
+    0.9368
+   ],
+   "median_q_positives": 0.65,
+   "median_q_decoys": 2.654
+  },
+  {
+   "kind": "gaussian-typical",
+   "source": "generated here",
+   "n": 2000,
+   "preserves": "the marginals AND the full correlation structure, exactly, by sampling the fitted model",
+   "expectation": "AUC ~ 0.5 by construction - a check on the harness, not a result",
+   "auc": 0.6627,
+   "auc_ci": [
+    0.6492,
+    0.6758
+   ],
+   "median_q_positives": 0.65,
+   "median_q_decoys": 0.928
+  },
+  {
+   "kind": "jitter-real",
+   "source": "generated here",
+   "n": 2000,
+   "preserves": "everything local to a real specimen: a real held-out fish moved a short way along the covariance",
+   "expectation": "AUC ~ 0.5, and above it only in so far as real fish sit slightly off the Gaussian",
+   "auc": 0.5363,
+   "auc_ci": [
+    0.521,
+    0.5516
+   ],
+   "median_q_positives": 0.65,
+   "median_q_decoys": 0.705
+  }
+ ],
+ "the_headline": "shuffled negatives give AUC 0.891; negatives that are real fish moved a quarter of a standard deviation give 0.536, which is chance. The gap of 0.355 is carried by the decoy generator, not by the model, and 12,152 of the 12,606 heldout negatives are shuffles.",
+ "the_prediction_that_was_wrong": "this benchmark predicted, in writing and before running, that gaussian-typical would come out at ~0.5 by construction, since a model cannot separate samples from its own distribution. It came out at 0.6627. The prediction was wrong, and the reason is the more interesting result: the fitted Gaussian is OVERDISPERSED relative to real fish, so the scorer can tell real specimens from its own typical samples. See misspecification below. jitter-real, which starts from real fish rather than from the model, is the honest hard-negative figure at 0.5363.",
+ "misspecification": {
+  "expected_mean_q_for_a_gaussian": 1,
+  "mean_q_of_samples_from_the_fitted_model": 0.995,
+  "mean_q_of_real_heldout_specimens": 0.876,
+  "share_of_real_fish_inside_q_lt_1": 0.771,
+  "share_of_gaussian_samples_inside_q_lt_1": 0.567,
+  "what_it_means": "the sampler and the scorer agree to within 0.004 of the theoretical 1.0, so the model is reconstructed faithfully. Real fish are more concentrated than the fitted Gaussian says they are, because a covariance pooled over 311 families absorbs between-family variation and comes out wider and flatter than the real cloud. The scorer therefore separates real fish from its OWN typical samples - it is detecting that its model is misspecified, not that a decoy is implausible.",
+  "the_practical_consequence": "a design placed at the mode of the fitted model scores as LESS typical than an ordinary fish, and a design placed where real fish actually sit is indistinguishable from one (jitter-real)."
+ },
+ "what_it_bounds": "a statistically typical trait vector passes this scorer whether or not it is an animal that can exist. The scorer is a plausibility model, not a viability model, and tuning cannot change that - only a different kind of evidence can.",
+ "the_negatives_in_the_repository": {
+  "note": "of 12,606 heldout negatives, 12,152 are shuffles - exactly the perturbation a Mahalanobis distance is built to detect.",
+  "counts": {
+   "chimera_extreme_corner": 2,
+   "decoy_shuffle_all": 2701,
+   "decoy_shuffle_one": 2701,
+   "out_of_range_extrapolation": 180
+  }
+ },
+ "not_done": "a negative that is statistically typical AND biologically impossible, built from the law layer rather than from the covariance. The registry holds 48 Lean theorems that could supply one. jitter-real approximates it from the statistical side only."
+}
