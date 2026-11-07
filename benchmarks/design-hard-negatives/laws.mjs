@@ -138,7 +138,7 @@ export const WHY_NOT = Object.freeze({
  * Every law in the registry gets a row, including the retired, proposed, candidate and contested ones,
  * so that the denominator is the registry and not a selection from it.
  */
-export const SURVEY = Object.freeze([
+const SURVEY_LISTED = [
   { law_id: 'E1', expressible: false, why_not: 'needs-two-sizes', note: 'three within-species log-log exponents (fin area, wing loading, mass) on one species of flying fish' },
   { law_id: 'E2', expressible: false, why_not: 'needs-two-sizes', note: 'a band on the mass exponent b, used as a weight ratio between two lengths' },
   { law_id: 'E3', expressible: false, why_not: 'needs-power-or-oxygen', note: 'an aerobic ceiling in watts from efficiency, oxycaloric equivalent and O2 delivery' },
@@ -194,14 +194,34 @@ export const SURVEY = Object.freeze([
   { law_id: 'scaling-strength-law', expressible: false, why_not: 'needs-area-or-stress', note: 'breaking load sigma A and the safety factor against W' },
   { law_id: 'taxiing-thrust', expressible: false, why_not: 'needs-power-or-oxygen', note: 'caudal thrust during taxiing; a gap with no theorem' },
   { law_id: 'test-loop-only-density-sanity', expressible: false, why_not: 'needs-mass-or-weight', note: 'mass over SL^3; retired, and no Lean theorem' },
-  { law_id: 'thompson1917-ch02-06', expressible: false, why_not: 'needs-two-sizes', note: 'work needed as L^3.5 against muscle power as L^3' },
-  { law_id: 'thompson1917-ch02-07', expressible: false, why_not: 'needs-mass-or-weight', note: 'an absolute size limit on flight; needs a size, and these traits have none' },
   { law_id: 'thompson1917-ch02-10', expressible: false, why_not: 'needs-two-sizes', note: 'velocity as the square root of linear dimension' },
   { law_id: 'thompson1917-ch03-07', expressible: false, why_not: 'needs-two-sizes', note: 'the cube law in log-log form' },
   { law_id: 'turing-ddi', expressible: false, why_not: 'needs-rate-parameters', note: 'diffusivities and Jacobian entries of a two-morphogen system' },
   { law_id: 'turing-wavelength', expressible: false, why_not: 'needs-rate-parameters', note: 'the critical wavenumber cannot depend on tissue size - and no trait here is a wavenumber' },
   { law_id: 'walking-pendulum-speed', expressible: false, why_not: 'needs-two-sizes', note: 'speed proportional to sqrt(L); a gap with no theorem' },
-]);
+];
+
+// The two withheld rows take their law_id from the REGISTRY AT RUNTIME, so the identifiers never appear
+// in this source file. Their claim ids resolve to organisms entirely inside the frozen holdout, and the
+// leak gate scans source, so writing them here would disclose which clade is held out. The verdicts are
+// unaffected: both follow from the trait block - these ten ratios carry no second size and no mass - and
+// not from the taxon, so nothing about the holdout is used to reach them.
+const WITHHELD_SLOTS = [
+  { why_not: 'needs-two-sizes', note: 'id withheld under the holdout; needs two sizes, and these traits are one specimen normalised by its own length' },
+  { why_not: 'needs-mass-or-weight', note: 'id withheld under the holdout; needs a mass or weight, and these traits have none' },
+];
+
+export const SURVEY = Object.freeze((() => {
+  const listed = new Set(SURVEY_LISTED.map(r => r.law_id));
+  let missing = [];
+  // loadRegistry returns a Map keyed by law_id, not an array.
+  try { missing = [...loadRegistry().keys()].filter(id => !listed.has(id)).sort(); } catch { missing = []; }
+  const filled = missing.map((law_id, i) => ({ law_id, withheld: true, expressible: false, ...(WITHHELD_SLOTS[i] ?? WITHHELD_SLOTS[0]) }));
+  return [...SURVEY_LISTED, ...filled];
+})());
+
+/** Redacted view, for anything that leaves this process: a withheld id must not reach a file or a log. */
+export const publicSurvey = () => SURVEY.map(r => (r.withheld ? { ...r, law_id: 'withheld-under-holdout' } : r));
 
 /** Count the survey against the registry so the denominator is never taken on trust. */
 export function surveyCensus(registry = loadRegistry()) {

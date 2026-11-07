@@ -133,7 +133,7 @@ export function compete(organisms, { D, resource = 'the limiting resource' } = {
 }
 
 export const WHAT_R_STAR_IGNORES = Object.freeze([
-  'more than one limiting resource - two species coexist stably on two resources and the single-resource conclusion lapses entirely',
+  'more than one limiting resource - two species coexist stably on two. CORRECTED by ecology/coexist.mjs: the single-resource conclusion does not lapse ENTIRELY, it generalises. A species with the lower R* on BOTH resources excludes the other outright at every supply point and for all 49 consumption-vector pairs the test sweeps, because uncrossed isoclines admit no coexistence equilibrium. It lapses only where the isoclines CROSS, i.e. where there is a real trade-off.',
   'spatial structure, biofilms and aggregates; R* assumes a well-mixed system',
   'predation, phage and grazing, which routinely stop the best competitor dominating',
   'cross-feeding, where the loser lives on the winner\'s waste',
