@@ -108,6 +108,30 @@ export const CHANNELS = Object.freeze({
         'per cell to the transcriptome.',
       'youngs-modulus': 'an absolute modulus from indentation, e.g. AFM.',
     },
+    confirmed_by_the_methods:
+      'the v2 Methods were reached (back matter of the v2 full PDF, pages 57-71; they do not exist in v1 at ' +
+      'all, which is why the PMC deposit lacks them). They define RMSD(tau) = <|r(t) - r(t+tau)|^2>^(1/2) ' +
+      'with RMSD0 at tau = 12 ms, and declare it only PROPORTIONAL TO mechanical compliance at thermal ' +
+      'equilibrium - no constant, no equation, no conversion to Pa. The pascal route is explicitly ' +
+      'separate: a generalized Stokes-Einstein G = k/3*pi*a applied ONLY to optical-tweezers data on ' +
+      '0.5 um endocytosed beads, never to RMSD0. So readout_kind: relative-compliance is right, and a ' +
+      'format that had demanded pascals would have had no honest way to be filled in.',
+    the_acquisition_rate_is_CONTESTED:
+      'three incompatible values in one paper. The Methods say every 12 ms for 8 s (about 83 Hz, about ' +
+      '667 frames); a figure legend says 100 Hz, 16.6 s, 1667 frames; Fig. 4a says 10 ms per frame. ' +
+      'Anything written into frequency_Hz for this dataset must carry which of the three it came from, ' +
+      'and the format cannot resolve it.',
+    three_methods_pages_are_missing_from_the_public_record:
+      'printed pages 54-56, about 140 numbered lines, are absent from the deposited PDF AND from the ' +
+      'independently generated JATS XML - exactly where mouse strain, superovulation and hCG timing, ' +
+      'embryo collection and the gene-panel design would sit. Not an extraction artefact: the surviving ' +
+      'text refers to probe subpools "described above" and there is no above. The deposited Methods also ' +
+      'carry a literal unfilled placeholder - zona dissolved by treating embryos "with X for Y minutes". ' +
+      'So the protocol cannot be reproduced from the public record, by us or by anyone.',
+    cite_v2:
+      'v2 (2026-10-23) is the citable version and the only one with Methods. The neural-stem-cell extension ' +
+      'is v2-only, and a cell state was renamed pPrE -> ICM-2 between versions. Not published in a journal ' +
+      'as of 2026-11-06, and the code URL in Data Availability resolves to a user with no public repos.',
     the_correction_that_produced_this:
       'v0.1.0 of this spec specified `elastic_modulus_Pa` outright, following the PubMed/PMC abstract, ' +
       'which says "cytoplasmic stiffness (high-frequency elastic modulus)". THAT DEPOSIT IS A STALE ' +

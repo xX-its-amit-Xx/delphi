@@ -40,7 +40,7 @@ const geomChannel = kind => ({
 // this reader caught the stale fixture immediately, which is the behaviour we want from it.
 const mechChannel = kind => ({
   readout_kind: 'relative-compliance', readout_value: 1.14, unit: 'dimensionless (dRMSD relative to stage median)',
-  is_relative: true, method: 'organelle-fluctuation inference, high-frequency', frequency_Hz: 100,
+  is_relative: true, method: 'organelle-fluctuation inference, high-frequency', frequency_Hz: 83, // the Methods' 12 ms sampling; the paper also prints 100 Hz and 10 ms/frame elsewhere
   provenance: stamp(kind),
 });
 const lineageChannel = kind => ({
