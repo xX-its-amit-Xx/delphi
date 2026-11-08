@@ -698,6 +698,75 @@ export const REGISTERS = Object.freeze({
       reading_level: 'general',
     },
   },
+  counting: {
+    skim: {
+      headline: 'A hundred million measured cells cannot count the machines in one of them',
+      bullets: [
+        'P(all twelve Pol II subunits detected in one cell) is 3.6e-15, so 0.000 countable cells in 56,449',
+        'the fitted 2.51e9 proteins per cell predicts 4.93 million ribosomes, inside the measured 3.3-9.5 million',
+        'the proteasome lands at 998,982 against a literature 800,000, and was never fitted',
+        'the measured embryo now gives 1,360 drawable divisions where the old export gave 4',
+        '169 new assertions, 891 across the suite, 0 survivors under fault injection',
+      ],
+      so_what:
+        'Counts in a cell drawing are usually asserted by eye, so here one free parameter is fitted to ' +
+        'a single immunoblot and then judged by two measurements it was never shown.',
+      read_time_seconds: 40,
+    },
+    blog: {
+      title: 'The Table That Passed Every Test By Having No Range',
+      hook:
+        'Drawing the inside of a cell means committing to a number of ribosomes. Pick it by eye and the ' +
+        'picture is a guess with good lighting. So the number had to be measured, and measuring it meant ' +
+        'choosing between three abundance tables that disagree.',
+      body: [
+        'The obvious place to look was the largest dataset available: a hundred million single-cell ' +
+        'transcriptomes, released openly, covering fifty cancer cell lines under eleven hundred drugs. ' +
+        'Ask each cell how many complete RNA polymerases its messages could build, and the answer is ' +
+        'zero. Not for most cells. For every cell, and for every machine tried.',
+        'That is arithmetic rather than biology. A polymerase needs twelve different subunits, and the ' +
+        'median cell in that library detects about a thousand genes out of sixty-two thousand. The ' +
+        'chance of catching all twelve in one cell is a product of twelve smallish numbers and comes to ' +
+        'about 3.6 in a thousand trillion, so the expected number of countable cells among fifty-six ' +
+        'thousand is zero to three decimal places. Sequencing deeper moves that threshold without ' +
+        'crossing it. The refusal is not a sample-size problem, and it is not blanket either: cohesin, ' +
+        'with five abundant subunits, should turn up complete in about 138 of the same cells.',
+        'So the counts had to come from protein measurements, and those ship as relative abundance - ' +
+        'parts per million of the proteome. Turning that into copies per cell needs one more number, the ' +
+        'total protein molecules in a cell, and published values for it differ by a factor of four. ' +
+        'Rather than pick one, it was fitted, which turns the whole thing into a testable claim: one ' +
+        'free parameter, several independent constraints, and residuals that say whether a single scale ' +
+        'factor exists at all.',
+        'First the table had to be chosen, and that is where the interesting mistake happened. The test ' +
+        'written for it was the elegant one: a complex with one copy of each subunit must show its ' +
+        'subunits at the same level, so the spread across them measures accuracy directly, with no ' +
+        'anchor and no literature value - only the stoichiometry. One table scored almost perfectly on ' +
+        'it. That table turned out to have been compressed to a total dynamic range of twenty-seven ' +
+        'fold, top to bottom, across the entire proteome. Its subunits came out level because ' +
+        'everything in it does. A spread test rewards flatness, and it is only worth anything after a ' +
+        'range test has run first.',
+        'With the right table, fitting to all seven available absolute counts gave a threefold residual ' +
+        'and missed both checks by about tenfold - because two careful measurements, taken twenty-six ' +
+        'years apart on the same cell line, disagree by an order of magnitude about how much polymerase ' +
+        'there is relative to the factors that help it start. One scale factor cannot satisfy both. ' +
+        'Fitting to the polymerase alone gives 2.51 billion protein molecules per cell, which then ' +
+        'predicts 4.93 million ribosomes - inside the 3.3 to 9.5 million measured twice in the primary ' +
+        'literature - and a million proteasomes against a published figure near eight hundred thousand. ' +
+        'Neither of those was used to fit anything.',
+        'Which leaves the drawing. Showing a sample of the population inside a whole cell would depict a ' +
+        'cell that is ninety-nine percent empty, and the crowding numbers in this project forbid exactly ' +
+        'that: proteins sit about 8.7 nanometres apart, roughly one protein wide. So the same fraction ' +
+        'is taken of the volume as of each population, and what you move through is a 2.70 micrometre ' +
+        'cube of cytoplasm holding every machine that belongs in it, at the density that was measured.',
+      ],
+      closing:
+        'Six machines are drawn and six are listed and not drawn, because a count without a measured ' +
+        'size would have to be drawn at an invented one. That boundary is the honest one, and it leaves ' +
+        'the harder question open: when two careful measurements disagree about a ratio by tenfold, ' +
+        'what is a picture supposed to show?',
+      reading_level: 'general',
+    },
+  },
 });
 
 /** Entry ids in ENTRIES with no register here. Empty is the goal; a non-empty list is the gap made visible. */

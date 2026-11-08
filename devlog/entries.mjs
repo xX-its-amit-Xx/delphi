@@ -775,6 +775,89 @@ export const ENTRIES = Object.freeze([
       'The 8-cell to 16-cell division cannot be animated as a lineage at all - nearest-centre pairing is not two-to-one there. The first version would have animated it anyway. It now cross-fades, and the plan exports a per-step flag so no caller can animate it by accident.',
     ],
   },
+  {
+    id: 'counting',
+    title: 'Counting the machines in a cell, and the three tables that would not agree',
+    status: 'shipped',
+    dna: ['delphi', 'aletheia', 'nous'],
+    why_fun:
+      'There is a particular pleasure in asking a database a question it looks perfectly equipped to ' +
+      'answer and watching it decline. Arc released a hundred million measured single-cell ' +
+      'transcriptomes; ask any one of those cells how many ribosomes it has and the answer is zero, for ' +
+      'every cell and every machine, because a complex needs all its subunits detected and the median ' +
+      'cell detects a thousand genes of sixty-two thousand. The number that finally worked came from ' +
+      'immunoblots run in 1999.',
+    why_science:
+      'A picture of a cell interior asserts a count whether or not anyone measured one, and the counts ' +
+      'are where these pictures are usually wrong - too few ribosomes, too much empty space, machines ' +
+      'all drawn at the same size. Fixing it needs an absolute scale, and an abundance table does not ' +
+      'carry one: it gives relative abundance and leaves the conversion to copies per cell as a single ' +
+      'free parameter. That parameter can be fitted, and once fitted it PREDICTS quantities it was not ' +
+      'fitted to, which is the only thing that makes it a measurement rather than a choice.',
+    open_questions: [
+      {
+        q: 'When two careful measurements disagree about a ratio by tenfold, what does a drawing do?',
+        why_data_will_not_settle_it:
+          'quantitative immunoblotting puts RNA polymerase II at 10 to 30 times the general transcription ' +
+          'factors; the mass-spectrometry abundance table puts them near 1. Both were done carefully, ' +
+          'twenty-six years apart, on the same cell line. One scale factor cannot satisfy both, so a ' +
+          'viewer must either pick one and say so, or refuse to draw the relative sizes of the two pools.',
+      },
+      {
+        q: 'Is a quantity that cannot be measured per cell a property of the cell at all?',
+        why_data_will_not_settle_it:
+          'the number of assembled ribosomes in one particular cell is a real number about a real object, ' +
+          'and no single-cell method measures it. Pseudobulk recovers a population average that no ' +
+          'individual cell need have. Deeper sequencing moves the threshold without crossing it; the ' +
+          'quantity and the instrument are mismatched in kind.',
+      },
+      {
+        q: 'What is the honest default when an accuracy test can be passed by having no dynamic range?',
+        why_data_will_not_settle_it:
+          'a test that checks whether the subunits of an equimolar complex come out level is passed ' +
+          'perfectly by a table that reports everything as the same number. Every spread-based quality ' +
+          'measure has this shape. Which companion test is required, and in what order, is a judgement ' +
+          'about what a measurement is for.',
+      },
+    ],
+    how_file_level: {
+      path: 'sim-engine/scales/atlas/',
+      files: [
+        ['counts.mjs', 'the inventory and the drawing contract: copiesPerCell, drawingSpec, instancesFor with a downsampling label that names the ratio, transcriptShare, and six refusals that each carry a number'],
+        ['counts.json', 'the derived artefact - table tests, anchor selection, held-out checks, twelve machines in copies per cell. The raw tables are not committed; this is'],
+        ['embryo-divisions.mjs', 'the re-export: parseFrame over 420 GMEM frames, sdRadius via det(nu*W)^(-1/6), divisionsBetween, divisionGeometry, buildTracks with no length filter, and measureFloor'],
+        ['holdout-html-scan.mjs', 'the leak scan for the .html and .json files the project gate does not read, with a named roster path and a refusal on an empty one'],
+        ['build.mjs', 'assembles the bundle and computes the slab: the cube of cytoplasm that holds a sample at its measured density'],
+      ],
+      what_is_packed_in:
+        'three independent HeLa proteomes, scored on dynamic range, on a known large ratio and on the ' +
+        'spread across subunits of complexes that are equimolar by construction; one free parameter ' +
+        'fitted to a single immunoblot count; and two held-out measurements that decide which anchor to ' +
+        'use. Plus two shards of Arc\'s Tahoe-100M, used for the perturbation axis and for nothing else.',
+      the_detail_that_matters:
+        'the anchor is chosen by what it predicts, not by which measurement looks better. Fitting all ' +
+        'seven available counts misses both held-out checks tenfold; fitting the polymerase alone lands ' +
+        'inside both. The transcription-factor disagreement is then recorded per factor rather than averaged.',
+    },
+    real_numbers: [
+      'P(all twelve Pol II subunits detected in one cell) = 3.6e-15, so 0.000 countable cells expected in 56,449 - but cohesin is expected in 138, so the refusal is per machine',
+      'the fitted total is 2.51e9 protein molecules per HeLa cell, inside a range of 2.0e9 to 8.2e9 compiled from eight independent studies',
+      'it predicts 4.93 million ribosomes, inside the 3.3 to 9.5 million measured twice in the primary literature, and 998,982 proteasomes against a literature figure near 800,000',
+      'the rejected abundance table spans 27-fold in total; the one used spans 1.75e8-fold, and the rejected one scored BETTER on the elegant test',
+      'replication-dependent histones come in at 375 UMI per gene against 11,233 for the polyadenylated variants, 29.9x, a prediction made before looking',
+      'the measured embryo gives 1,360 drawable division events where the earlier export gave 4, and the division count matches another thread\'s parse bin for bin at 1,634',
+      '60,001 machines drawn in a 2.70 um cube standing for 7,377,460 in one cell, occupying at most 2.63% against 8.6-19.1% for all mammalian protein',
+      '169 assertions across the two new modules, 891 across the suite, 0 survivors under --fail-once',
+    ],
+    what_went_wrong: [
+      'THE ELEGANT TEST PICKED THE WRONG TABLE. A spread test over complexes that are equimolar by construction needs no anchor, no literature count and no scale factor - only the stoichiometry - and it scored a near-perfect 1.3-fold on a table whose entire dynamic range is 27-fold, because everything in it comes out level. A spread test rewards flatness. It is only meaningful after a range test, and the order had to be learned by being caught.',
+      'A pseudogene filter written as .*P\\d*$ deleted twenty-one real nucleoporins, because in NUP107 the P is followed by digits. A filter that removes two thirds of the nuclear pore to remove five pseudogenes is worse than no filter.',
+      'The scarcest-subunit estimator was set by a gene that does not belong to the complex three times running: ribosomal pseudogenes, then RPL10L, then NUP210L. That is why every count is now a median over subunits, and why the estimator reports the gene that set it - a value alone would have hidden all three.',
+      'A suspect-frame rule written as "more than 15% of the population" flagged nothing, while the four frames another thread had already identified as a tracker artefact sit at exactly 15.0%. A threshold chosen for how it reads is not a threshold; the replacement is relative to the median frame.',
+      'The holdout scanner took the roster as the first array it found, matched a five-sentence `rule` field, and printed a confident pass over ZERO held-out rows. Then the fixed version carried a hand-written list of the words it was hunting for, which made it the only file in the repo breaking the rule it enforces - and the project gate said so.',
+      'The first volume result read as a clean refutation: daughters add up to twice the parent, over 1,360 events. It is the tracker\'s regularisation floor. Where no axis is free the ratio is 1.999998, and it walks away from 2 as axes come free. The verdict is UNTESTABLE, and the only reason it is not sitting in the repo as a refutation is that a quartile happened to equal a minimum.',
+    ],
+  },
 ]);
 
 export const HOW_TO_READ_THIS = Object.freeze({
