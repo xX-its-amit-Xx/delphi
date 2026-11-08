@@ -79,6 +79,24 @@
   .sechead .t{display:block;font-size:13px;font-weight:600;line-height:1.35}
   .sechead .s{display:block;font-size:11.5px;color:var(--dim);margin-top:2px;line-height:1.35}
   .secbody{padding:2px 11px 11px;border-top:1px solid var(--edge)}
+  /* Skim-first sections. The glyph and the headline number are what a reader takes in without opening
+     anything; the body is for the one section in ten they actually want. */
+  .glyph{flex:none;width:34px;height:34px;border-radius:7px;background:#0b111a;border:1px solid var(--edge);
+    display:grid;place-items:center;margin-top:1px}
+  .glyph svg{width:22px;height:22px;display:block}
+  .big{font-variant-numeric:tabular-nums;font-size:15px;font-weight:650;letter-spacing:-.2px}
+  .big .un{font-size:11px;font-weight:400;color:var(--faint);margin-left:3px}
+  .sechead .s .big{font-size:12.5px}
+  .bars{margin:6px 0 2px}
+  .bar{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;padding:3px 0;font-size:11.5px}
+  .bar .lab{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+  .bar .n{font-variant-numeric:tabular-nums;font-weight:600;font-size:11.5px}
+  .bar .track{grid-column:1/-1;height:4px;border-radius:3px;background:#121a26;overflow:hidden}
+  .bar .fill{height:100%;border-radius:3px;background:#3f82d6}
+  .bar.alt .fill{background:#bf8410}
+  .more{margin-top:8px;font-size:11.5px;color:var(--faint)}
+  .more a{color:#7fb0ef}
   .fact{display:flex;gap:9px;align-items:baseline;padding:6px 0;border-bottom:1px solid #151c27}
   .fact:last-child{border-bottom:none}
   .fact .k{color:var(--dim);font-size:11.5px;flex:1;min-width:0}
@@ -164,6 +182,7 @@ function setFog(dist){ scene.fog.near=dist*0.55; scene.fog.far=dist*2.6; }
    units, so two intersecting spheres 70 units away z-fight into speckle. Tie the planes to the
    framing distance and the fighting disappears. */
 function setClip(dist){ camera.near=Math.max(0.01,dist*0.08); camera.far=dist*5; camera.updateProjectionMatrix(); }
+const ORIGIN=new THREE.Vector3(0,0,0);
 const camera=new THREE.PerspectiveCamera(45,1,0.01,4000);
 camera.position.set(0,0,52);
 const controls=new OrbitControls(camera,renderer.domElement);
@@ -362,6 +381,110 @@ function setCleavage(tCl){
   $('#metres').textContent=`${stageName} · ${shown} cell${shown===1?'':'s'}${step.lineage_animatable?'':' · cross-fade, no lineage'}`;
 }
 
+// ---------------------------------------------------------------- level: measured divisions
+/* 1,360 real parent-and-two-daughter configurations from the tracking archive.
+ *
+ * What is measured here is POSITION, and only position: three centres, from which the separation
+ * follows. The radii are the tracker's regularised covariance and sit on a floor for most detections,
+ * which is why the volume ratio comes out at 1.999998 where no axis is free - see the sidebar. So the
+ * spheres are drawn at the measured radius and the sidebar says what that radius is worth.
+ *
+ * The whole cloud of events is drawn faintly at once, which is itself the picture: where in the embryo
+ * and when in the recording cells were dividing. One event at a time is drawn large.
+ */
+let divEvents=null, divMeshes=null, divCloud=null, divIdx=0;
+const divTarget=new THREE.Vector3();
+async function buildDivisions(){
+  const V=D?.measured_divisions; if(!V) return;
+  const g=groups['divisions-measured']; if(!g) return;
+  let J;
+  try{ J=await (await fetch('../embryo/embryo-divisions.json')).json(); }
+  catch(e){ return; }
+  divEvents=J.events??[];
+  if(!divEvents.length) return;
+  const S=26; // the normalised cloud is a unit ball; scale it to the same world size the embryo uses
+
+  // every event's parent position at once, as a faint cloud
+  const pos=new Float32Array(divEvents.length*3);
+  for(let i=0;i<divEvents.length;i++){ pos[i*3]=divEvents[i].p[0]*S; pos[i*3+1]=divEvents[i].p[1]*S; pos[i*3+2]=divEvents[i].p[2]*S; }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  divCloud=new THREE.Points(geo,new THREE.PointsMaterial({color:0x7fb0ef,size:0.26,sizeAttenuation:true,transparent:true,opacity:0.55}));
+  g.add(divCloud);
+
+  // one highlighted event: parent, then the two daughters
+  const matP=new THREE.MeshStandardMaterial({color:0x8a97ac,roughness:.55,transparent:true,opacity:.35});
+  const matA=new THREE.MeshStandardMaterial({color:0x4ec9a0,roughness:.45});
+  const matB=new THREE.MeshStandardMaterial({color:0x6aa9ff,roughness:.45});
+  divMeshes={
+    p:new THREE.Mesh(new THREE.SphereGeometry(1,32,20),matP),
+    a:new THREE.Mesh(new THREE.SphereGeometry(1,32,20),matA),
+    b:new THREE.Mesh(new THREE.SphereGeometry(1,32,20),matB),
+    link:new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]),
+      new THREE.LineBasicMaterial({color:0xbf8410,transparent:true,opacity:.8})),
+  };
+  for(const m of Object.values(divMeshes)) g.add(m);
+  setDivisionEvent(0);
+}
+function setDivisionEvent(i){
+  if(!divEvents||!divEvents.length||!divMeshes) return;
+  divIdx=((Math.round(i)%divEvents.length)+divEvents.length)%divEvents.length;
+  const e=divEvents[divIdx], S=26;
+  // The radii are tiny next to the embryo, so they are drawn at a stated exaggeration. The sidebar
+  // carries the factor; a silent exaggeration would make the daughters look like they touch.
+  const K=6;
+  const put=(mesh,c,r)=>{ mesh.position.set(c[0]*S,c[1]*S,c[2]*S); mesh.scale.setScalar(Math.max(0.02,r*S*K)); };
+  put(divMeshes.p,e.p,e.rp); put(divMeshes.a,e.a,e.ra); put(divMeshes.b,e.b,e.rb);
+  divMeshes.link.geometry.setFromPoints([
+    new THREE.Vector3(e.a[0]*S,e.a[1]*S,e.a[2]*S),
+    new THREE.Vector3(e.b[0]*S,e.b[1]*S,e.b[2]*S)]);
+  // Centre the view on the event being shown. The cloud of all 1,360 stays around it, so the reader
+  // sees both the one division and where in the embryo it happened.
+  divTarget.set((e.p[0]+e.a[0]+e.b[0])/3*S,(e.p[1]+e.a[1]+e.b[1])/3*S,(e.p[2]+e.a[2]+e.b[2])/3*S);
+  const sep=Math.hypot(e.a[0]-e.b[0],e.a[1]-e.b[1],e.a[2]-e.b[2])*(D.measured_divisions.normalisation?.radius_voxels??1);
+  const el=document.getElementById('divreadout');
+  if(el) el.innerHTML=`event ${divIdx+1} of ${divEvents.length} &middot; frame ${e.f} of 420 &middot; `
+    +`separation ${sep.toFixed(1)} voxels &middot; sizes ${e.m?'fitted':'at the regularisation floor'}`;
+}
+
+// ---------------------------------------------------------------- level: the counted crowd
+/* The slab. Every machine that has both a measured count and a measured size, at full measured
+ * density, inside a cube that is the same fraction of the cell as the sample is of the population.
+ * That way no density in the picture is invented - which is the thing budget.mjs forbids. */
+/* One colour per machine, shared between the scene and the sidebar key so a reader can match a dot to
+   a row. Validated against the dark surface by the palette check used elsewhere in this project. */
+const SLABCOL={ribosome:'#4ec9a0',rna_polymerase_ii:'#bf8410',dna_polymerase_delta:'#ef6a6a',
+  dna_polymerase_epsilon:'#f09bd0',chaperonin_tric:'#6aa9ff',spliceosome_sm_core:'#b48ef5'};
+function buildCrowd(){
+  const S=D?.slab; if(!S||!S.members?.length) return;
+  const g=groups['crowd']; if(!g) return;
+  // world units: draw the cube 24 units across, so 1 um = 24/side_um
+  const W=24, perUm=W/S.side_um;
+  const COLOUR=Object.fromEntries(Object.entries(SLABCOL).map(([k,v])=>[k,new THREE.Color(v).getHex()]));
+  // a reproducible pseudo-random fill: the positions are depicted, but they should at least be the
+  // same depiction every time the page loads, so a reader comparing two visits sees one picture.
+  let seed=20261108;
+  const rnd=()=>{ seed=(seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff; };
+  const m4=new THREE.Matrix4();
+  for(const mem of S.members){
+    const rUm=(mem.diameter_nm/2)/1000;
+    const geo=new THREE.SphereGeometry(rUm*perUm,8,6);
+    const mat=new THREE.MeshStandardMaterial({color:COLOUR[mem.machine]??0x8a97ac,roughness:.5,metalness:.03});
+    const inst=new THREE.InstancedMesh(geo,mat,mem.instances);
+    inst.name=mem.machine;
+    for(let i=0;i<mem.instances;i++){
+      m4.makeTranslation((rnd()-0.5)*W,(rnd()-0.5)*W,(rnd()-0.5)*W);
+      inst.setMatrixAt(i,m4);
+    }
+    inst.instanceMatrix.needsUpdate=true;
+    g.add(inst);
+  }
+  // the cube itself, so the reader can see they are inside a box and not a cell
+  const box=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(W,W,W)),
+    new THREE.LineBasicMaterial({color:0x3b485c,transparent:true,opacity:.75}));
+  g.add(box);
+}
+
 // ---------------------------------------------------------------- molecular levels
 function sphereOfRadius(r,mat){ return new THREE.Mesh(new THREE.SphereGeometry(r,36,24),mat); }
 function buildMolecular(){
@@ -516,7 +639,7 @@ function machineStructureId(m){
 }
 
 // ---------------------------------------------------------------- level switching
-let level=0, playing=false, clock=new THREE.Clock(), tEmbryo=0, tCleave=0;
+let level=0, playing=false, clock=new THREE.Clock(), tEmbryo=0, tCleave=0, tDiv=0;
 function levelId(i){ return LEVELS[Math.max(0,Math.min(LEVELS.length-1,Math.round(i)))]?.id; }
 
 /**
@@ -525,7 +648,11 @@ function levelId(i){ return LEVELS[Math.max(0,Math.min(LEVELS.length-1,Math.roun
  * endpoint radius (that is what constant union volume means when the stored cells interpenetrate),
  * so a camera framed on the stored stages clips the animation at its widest moment.
  */
-const PAD={ 'cleavage':1.12, 'embryo-measured':1.18 };
+/* 'crowd' is under 1 on purpose: the point of that level is to be INSIDE the cytoplasm, close enough
+   that a 31 nm ribosome and a 16.7 nm polymerase are visibly different objects. Framed from outside
+   it is a solid green block, which is true and useless. 'divisions-measured' is tightened too, since
+   the camera is pointed at one event rather than at the whole cloud. */
+const PAD={ 'cleavage':1.12, 'embryo-measured':1.18, 'crowd':0.30, 'divisions-measured':0.55 };
 const camDist=new Map();
 function fitCamera(id){
   if(camDist.has(id)) return camDist.get(id);
@@ -561,6 +688,7 @@ function applyLevel(i){
   renderSidebar(id);
   if(id==='embryo-measured') setEmbryoFrame(tEmbryo);
   if(id==='cleavage') setCleavage(tCleave);
+  if(id==='divisions-measured') setDivisionEvent(tDiv);
 }
 
 // ---------------------------------------------------------------- sidebar
@@ -581,9 +709,52 @@ function fact(k,v,u,prov,src){
   return `<div class="fact${long?' long':''}"><span class="k">${esc(k)}${prov?' '+chip(prov):''}</span>
     <span class="v">${esc(v)}${u?` <span class="u">${esc(u)}</span>`:''}</span></div>${src?doiLink(src):''}`;
 }
-function sec(title,sub,kind,bodyHtml,open){
+/* GLYPHS. A small drawing per section, so the panel can be skimmed by shape rather than read.
+   Inline SVG rather than image files: no extra request, no asset to keep in step with the text, and
+   currentColor means they follow the theme. Each one depicts the thing the section is about. */
+const G={
+  track:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 18C6 18 7 6 11 6s5 12 10 12"/><circle cx="3" cy="18" r="1.6" fill="currentColor"/><circle cx="11" cy="6" r="1.6" fill="currentColor"/><circle cx="21" cy="18" r="1.6" fill="currentColor"/></svg>',
+  split:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8.5" cy="12" r="5.5"/><circle cx="15.5" cy="12" r="5.5"/></svg>',
+  cell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.6" fill="currentColor" fill-opacity=".25"/></svg>',
+  coil:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7c4 0 4 10 8 10s4-10 8-10"/><path d="M4 13c4 0 4 6 8 6"/></svg>',
+  beads:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 12h20"/><circle cx="6" cy="12" r="3" fill="currentColor" fill-opacity=".3"/><circle cx="13" cy="12" r="3" fill="currentColor" fill-opacity=".3"/><circle cx="20" cy="12" r="3" fill="currentColor" fill-opacity=".3"/></svg>',
+  crowd:'<svg viewBox="0 0 24 24" fill="currentColor" fill-opacity=".55"><circle cx="5" cy="5" r="2.4"/><circle cx="12" cy="4" r="1.5"/><circle cx="19" cy="6" r="2.1"/><circle cx="4" cy="12" r="1.6"/><circle cx="11" cy="12" r="2.6"/><circle cx="19" cy="13" r="1.7"/><circle cx="6" cy="19" r="2.2"/><circle cx="13" cy="19" r="1.5"/><circle cx="20" cy="19" r="2.3"/></svg>',
+  ruler:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="9" width="20" height="6" rx="1.5"/><path d="M7 9v3M12 9v4M17 9v3"/></svg>',
+  scale:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v16M5 19h14M12 7l-6 4h12z"/></svg>',
+  warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 4 2.5 20h19z"/><path d="M12 10v4.5"/><circle cx="12" cy="17.3" r=".9" fill="currentColor"/></svg>',
+  book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5A1.5 1.5 0 0 0 20 18.5z"/></svg>',
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3.2 2"/></svg>',
+  flask:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 3h6M10.5 3v6L5 19a1.6 1.6 0 0 0 1.4 2.3h11.2A1.6 1.6 0 0 0 19 19l-5.5-10V3"/><path d="M7.6 15h8.8"/></svg>',
+  dna:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3c0 6 8 6 8 12s-8 6-8 6"/><path d="M16 3c0 6-8 6-8 12s8 6 8 6"/><path d="M9.2 7h5.6M9.2 12h5.6M9.2 17h5.6"/></svg>',
+  floor:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 17h18"/><path d="M6 17v-3M10 17v-6M14 17v-3M18 17v-8"/><path d="M3 20h18" stroke-dasharray="2 2"/></svg>',
+};
+function glyph(name){ return `<span class="glyph">${G[name]??G.book}</span>`; }
+function big(v,unit){ return `<span class="big">${esc(v)}${unit?`<span class="un">${esc(unit)}</span>`:''}</span>`; }
+/** A horizontal bar row. Percentage widths, so it cannot overflow a narrow panel. */
+function barRow(label,n,frac,alt){
+  return `<div class="bar${alt?' alt':''}"><span class="lab">${esc(label)}</span><span class="n">${esc(n)}</span>
+    <span class="track"><span class="fill" style="width:${Math.max(0.6,Math.min(100,frac*100)).toFixed(2)}%"></span></span></div>`;
+}
+/* Every section gets a glyph. Rather than thread an icon argument through thirty call sites, the
+   glyph is resolved from the section's own title, with a fallback keyed on the provenance kind - so a
+   section added later is never iconless, and the fallback already says something true about it. */
+const ICON_BY_TITLE={
+  'Where this comes from':'book', 'Cells splitting, as data':'track',
+  'What the clock cannot say':'clock', 'The animation is a constraint':'split',
+  'What is measured here':'warn', 'One division we refuse to animate':'warn',
+  'Cells drawn exactly as stored':'split', 'Cells moved apart to touch':'split',
+  'Why the cells overlap':'scale', 'What this does not model':'warn',
+  'The volume everything fits inside':'cell', 'Cytoplasm is not dilute':'crowd',
+  'Depictions these numbers forbid':'warn', 'How close everything actually is':'ruler',
+};
+const ICON_BY_KIND={MEASURED:'ruler',DEPICTED:'cell',DERIVED:'scale',CONTESTED:'warn',NOT_ESTABLISHED:'warn'};
+/* sec() takes a glyph and a HEADLINE, so the closed state already carries the number. The body is
+   where the prose lives, and it stays closed unless asked for: the panel is a place to skim. */
+function sec(title,sub,kind,bodyHtml,open,icon){
+  icon=icon??ICON_BY_TITLE[title]??ICON_BY_KIND[kind]??'book';
   return `<details class="sec"${open?' open':''}><summary><span class="chev">›</span>
-    <span class="sechead"><span class="t">${esc(title)}</span><span class="s">${esc(sub)}</span></span>
+    ${icon?glyph(icon):''}
+    <span class="sechead"><span class="t">${esc(title)}</span><span class="s">${sub??''}</span></span>
     ${kind?chip(kind):''}</summary><div class="secbody">${bodyHtml}</div></details>`;
 }
 
@@ -610,6 +781,185 @@ function renderSidebar(id){
          <div class="note warn">${esc(E.division_events_note)}</div>`);
       if(E.manifest.clock?.why_null) h+=sec('What the clock cannot say','absolute stage of frame 0','NOT_ESTABLISHED',
         `<div class="note warn">${esc(E.manifest.clock.why_null)}</div>`);
+    }
+  }
+  if(id==='divisions-measured'){
+    const V=D.measured_divisions;
+    if(!V){ h=`<div class="note bad">the measured divisions are not built</div>`; }
+    else{
+      const R=V.result, GA=V.geometry.all_usable_events;
+      h+=`<div id="divreadout" class="note">…</div>`;
+      h+=sec('Real divisions, not an easing curve',
+        big(fmt(V.events,0))+' events, each a parent and two daughters','MEASURED',
+        `<div class="note">Three detections in two consecutive frames: a parent in frame t−1 with exactly
+          two children in frame t. Nothing is interpolated — each event is a separate observation.</div>
+         ${fact('usable events',fmt(V.events,0),'')}
+         ${fact('found in total',fmt(V.events_total,0),'')}
+         ${fact('rejected as re-segmentation',fmt(V.events_suspect,0),'')}
+         ${fact('the earlier export could draw',fmt(V.what_the_old_export_could_draw,0),'')}
+         <div class="note warn">${esc(V.what_the_old_export_could_draw_why)}</div>`,true,'split');
+
+      h+=sec('What the separations say',
+        big(fmt(GA.separation_voxels.median,1),'voxels')+' median, between the two daughters','MEASURED',
+        `${fact('median separation',fmt(GA.separation_voxels.median,1),'voxels')}
+         ${fact('interquartile',`${fmt(GA.separation_voxels.q25,1)} – ${fmt(GA.separation_voxels.q75,1)}`,'voxels')}
+         ${fact('as parent radii',fmt(GA.separation_over_parent_drawn_radius.median,2),'×')}
+         ${fact('size asymmetry, median',fmt(100*GA.size_asymmetry.median,1),'%')}
+         ${fact('daughters drawn overlapping',fmt(100*GA.share_with_overlapping_daughters,1),'%')}
+         <div class="note">Separation is a difference of two means, and means are not floored, so this is
+           the part of the geometry that is genuinely measured.</div>`,false,'ruler');
+
+      if(R) h+=sec('The volume test, and why it is untestable',
+        big(fmt(R.naive_answer,3))+' naive ratio — which is the regulariser, not the nucleus','NOT_ESTABLISHED',
+        `<div class="note">Taken at face value the daughters add up to twice the parent, over
+          ${fmt(R.naive_answer_n,0)} events: a flat refutation of division without growth. Partition the
+          events by how many principal axes escape the tracker's floor and the number walks away from 2.</div>
+         <div class="bars">${R.partition.map(p=>barRow(
+            `${p.axes_off_floor} free ${p.axes_off_floor===1?'axis':'axes'} · ${fmt(p.events,0)} events`,
+            fmt(p.median_ratio,4), p.median_ratio/2.2, p.axes_off_floor===0)).join('')}</div>
+         <div class="note">A quantity that lands on its arithmetic artefact precisely where the measurement
+           is least free is not measuring the specimen. Verdict: ${esc(R.verdict)}.</div>
+         ${fact('what is delivered instead',R.what_is_delivered_instead,'')}`,false,'scale');
+
+      h+=sec('The size floor',
+        big(fmt(V.regularisation_floor.sd_voxels,4),'voxels')+' — no axis is allowed below it','DERIVED',
+        `${fact('precision cap',fmt(V.regularisation_floor.precision_cap,6),'')}
+         ${fact('implied sd floor',fmt(V.regularisation_floor.sd_voxels,4),'voxels')}
+         ${fact('posterior equals prior',fmt(100*V.posterior_equals_prior.share,3),'% of detections')}
+         <div class="note">${esc(V.regularisation_floor.what_it_means)}</div>
+         <div class="note">${esc(V.posterior_equals_prior.what_it_means)}</div>`,false,'floor');
+
+      h+=sec('How big to draw them',
+        big(fmt(V.sigma_for_drawing,1),'σ')+' — and the data says that is conservative','DEPICTED',
+        `<div class="note">A Gaussian has no boundary, so turning one into a sphere needs a multiple of the
+          standard deviation, and nothing in the deposit says which. So it is measured instead: the
+          multiple at which the median pair of neighbours would just touch.</div>
+         ${fact('σ used for drawing',fmt(V.sigma_for_drawing,1),'')}
+         ${fact('σ at which neighbours touch',fmt(V.calibration.sigma_at_which_median_pair_touches,2),'')}
+         ${fact('median nearest neighbour',fmt(V.calibration.median_nearest_neighbour_voxels,1),'voxels')}
+         <div class="note">${esc(V.calibration.verdict)}</div>
+         <div class="note warn">In the scene the radii are drawn 6× larger again, or they would be
+           sub-pixel next to the whole embryo. The separations are not exaggerated.</div>`,false,'ruler');
+
+      h+=sec('Where this comes from',
+        `${esc(V.source.study.split('-')[0].toUpperCase())} · ${esc(V.source.licence)}`,'MEASURED',
+        `${fact('study',V.source.study,'')}
+         ${fact('frames',fmt(V.source.frames,0),'')}
+         ${fact('interval',fmt(V.source.frame_interval_s,0),'s')}
+         ${fact('archive',fmt(V.source.bytes/1e6,1),'MB')}
+         ${fact('sha256',V.source.sha256.slice(0,16)+'…','')}
+         ${doiLink({doi:'10.1038/s41467-019-13625-0',pmid:'31848345'})}
+         ${doiLink({doi:'10.1038/nmeth.3036'})}
+         <div class="note">${esc(V.scale.why_null)}</div>`,false,'book');
+
+      if(V.not_modelled) h+=sec('What this is not',
+        `${V.not_modelled.length} things the data does not contain`,'NOT_ESTABLISHED',
+        `<ul class="note" style="margin:0;padding-left:16px">${V.not_modelled.map(s=>`<li style="margin:5px 0">${esc(s)}</li>`).join('')}</ul>`,
+        false,'warn');
+    }
+  }
+  if(id==='crowd'){
+    const S=D.slab, INV=D.inventory;
+    if(!S){ h=`<div class="note bad">the inventory is not built</div>`; }
+    else{
+      const maxN=Math.max(...S.members.map(m=>m.instances));
+      h+=sec('You are inside a cube, not a cell',
+        big(fmt(S.side_um,2),'µm')+` cube · ${fmt(100*S.fraction_of_a_cell,2)}% of a cell`,'MEASURED',
+        `<div class="note">${esc(S.why_a_cube_and_not_a_cell)}</div>
+         ${fact('cube side',fmt(S.side_um,3),'µm')}
+         ${fact('volume',fmt(S.volume_um3,2),'µm³')}
+         ${fact('cell volume',fmt(S.cell_volume_um3,0),'µm³')}
+         ${fact('machines drawn',fmt(S.instances,0),'')}
+         ${fact('population represented',fmt(S.measured_population_represented,0),'')}`,true,'crowd');
+
+      h+=sec('The population, counted',
+        big(fmt(S.measured_population_represented,0))+' machines in one cell','MEASURED',
+        `<div class="bars">${S.members.map(m=>`<div class="bar"><span class="lab">
+            <span class="sw" style="background:${SLABCOL[m.machine]??'#8a97ac'}"></span>${esc(m.name??m.machine)} ·
+            ${fmt(m.diameter_nm,1)} nm</span><span class="n">${esc(fmt(m.measured_total,0))}</span>
+            <span class="track"><span class="fill" style="width:${(100*m.instances/maxN).toFixed(2)}%;background:${SLABCOL[m.machine]??'#8a97ac'}"></span></span></div>`).join('')}</div>
+         <div class="note">Two thirds of everything drawn is a ribosome, which is why the cube is mostly
+           one colour. That is the measurement, not a rendering choice.</div>
+         <div class="note">Counts are a median over the measured subunits of each complex; sizes are
+           measured from deposited coordinates. The bars are drawn instances, the numbers are the
+           measured totals.</div>
+         ${S.members.map(m=>m.caveat?`<div class="note warn">${esc(m.name??m.machine)}: ${esc(m.caveat)}</div>`:'').join('')}`,
+        false,'beads');
+
+      h+=sec('How much room they take',
+        big(fmt(100*S.occupied_volume_fraction,2),'%')+' of the cube, at most','DERIVED',
+        `${fact('occupied, upper bound',fmt(100*S.occupied_volume_fraction,2),'%')}
+         ${fact('all mammalian protein',`${fmt(100*(S.occupied_fraction_check?.all_protein_fraction?.mammalian_protein_only?.lo??0),1)} – ${fmt(100*(S.occupied_fraction_check?.all_protein_fraction?.mammalian_protein_only?.hi??0),1)}`,'%')}
+         <div class="note">${esc(S.occupied_volume_is_an_overestimate)}</div>
+         <div class="note">${esc(S.occupied_fraction_check?.what_the_comparison_means??'')}</div>`,false,'cell');
+
+      if(INV) h+=sec('Where the counts came from',
+        big(fmt(INV.calibration.total_protein_molecules_per_cell/1e9,2),'×10⁹')+' protein molecules per cell, fitted','DERIVED',
+        `<div class="note">An abundance table gives relative abundance. Absolute copies need one more
+          number — the total protein molecules in a cell — and it was fitted to a single measured count
+          and then checked against two it was not fitted to.</div>
+         ${fact('fitted total',fmt(INV.calibration.total_protein_molecules_per_cell/1e9,3),'×10⁹')}
+         ${fact('95% interval',`${fmt(INV.calibration.interval_95[0]/1e9,2)} – ${fmt(INV.calibration.interval_95[1]/1e9,2)}`,'×10⁹')}
+         ${fact('anchor',INV.anchor_selection.chosen,'')}
+         ${fact('held out: total protein',INV.held_out.H1_total_protein.inside_range?'inside the compiled range':'outside','')}
+         ${fact('held out: ribosomes',`${fmt(INV.held_out.H2_ribosomes.predicted/1e6,2)} million`,INV.held_out.H2_ribosomes.inside_range?'— inside':'— outside')}
+         ${doiLink({doi:'10.1128/MCB.19.8.5383',pmid:'10409729'})}
+         ${doiLink({pmid:'22068331'})}
+         <div class="note">${esc(INV.anchor_selection.problem)}</div>`,false,'scale');
+
+      if(INV) h+=sec('Choosing the table, and the test that failed',
+        `3 tables, 3 tests — and the elegant test picked the wrong one`,'DERIVED',
+        `<div class="note">${esc(INV.table_tests.order_matters)}</div>
+         <div class="bars">${Object.entries(INV.table_tests.results).map(([k,v])=>
+            v.T1_dynamic_range_fold===undefined?'':barRow(
+              `${k} · range ${v.T1_dynamic_range_fold.toExponential(1)}×`,
+              `${v.verdict==='USABLE'?'used':'rejected'}`,
+              Math.min(1,Math.log10(v.T1_dynamic_range_fold)/8), v.verdict!=='USABLE')).join('')}</div>
+         ${fact('chosen',INV.table_tests.results[D.inventory.table_chosen??'nagaraj_2011_cpc']?'nagaraj 2011 cpc':'—','')}
+         ${fact('spread of the rejected table',fmt(INV.table_tests.results.nagaraj_2011_iBAQ?.T3_median_equimolar_spread_fold,1),'× (better!)')}
+         ${fact('spread of the chosen table',fmt(INV.table_tests.results.nagaraj_2011_cpc?.T3_median_equimolar_spread_fold,1),'×')}
+         <div class="note warn">A spread test rewards flatness. The log-compressed table scored best on it
+           and cannot carry a ratio at all.</div>`,false,'flask');
+
+      if(INV?.transcriptome) h+=sec('What 100 million cells cannot say',
+        big('0')+' countable machines in any single cell','NOT_ESTABLISHED',
+        `<div class="note">Arc's Tahoe-100M is the largest single-cell perturbation atlas there is, and it
+          cannot count a molecular machine. A complex needs every subunit detected, and the median cell
+          detects ${fmt(INV.transcriptome.scanned.median_genes_detected_per_cell,0)} of
+          ${fmt(INV.transcriptome.scanned.genes_in_vocabulary,0)} genes.</div>
+         ${fact('cells scanned',fmt(INV.transcriptome.scanned.cells,0),'')}
+         ${fact('conditions',fmt(INV.transcriptome.scanned.conditions,0),'')}
+         ${fact('P(all 12 Pol II subunits in one cell)',INV.transcriptome.per_cell_counts_refused.per_machine.rna_polymerase_ii.probability_all_subunits_detected_if_independent.toExponential(1),'')}
+         ${fact('expected countable cells',fmt(INV.transcriptome.per_cell_counts_refused.per_machine.rna_polymerase_ii.expected_cells_with_all_subunits_of_56k,3),'')}
+         ${fact('but cohesin is expected in',fmt(INV.transcriptome.per_cell_counts_refused.per_machine.cohesin.expected_cells_with_all_subunits_of_56k,0),'cells')}
+         <div class="note">The refusal is per machine, not blanket.</div>
+         ${doiLink({doi:'10.1101/2025.02.20.639398'})}`,false,'warn');
+
+      if(INV?.transcriptome?.histone_capture_test) h+=sec('A prediction made before looking',
+        big(fmt(INV.transcriptome.histone_capture_test.ratio_umi_per_gene_variant_over_replication_dependent,1),'×')+' — '+esc(INV.transcriptome.histone_capture_test.verdict),'MEASURED',
+        `<div class="note">${esc(INV.transcriptome.histone_capture_test.claim_under_test)}</div>
+         ${fact('replication-dependent histones',fmt(INV.transcriptome.histone_capture_test.replication_dependent.umi_per_gene,0),'UMI per gene')}
+         ${fact('polyadenylated variants',fmt(INV.transcriptome.histone_capture_test.polyadenylated_variants.umi_per_gene,0),'UMI per gene')}
+         ${fact('ratio',fmt(INV.transcriptome.histone_capture_test.ratio_umi_per_gene_variant_over_replication_dependent,1),'×')}
+         <div class="note">Which rules out deriving a nucleosome count from this source, and is why the
+           nucleosome is drawn at the chromatin level from structures and not counted here.</div>`,false,'dna');
+
+      if(S.not_drawn?.length) h+=sec('Counted, and not drawn',
+        `${S.not_drawn.length} machines have a count but no measured size`,'NOT_ESTABLISHED',
+        `<div class="bars">${S.not_drawn.map(x=>barRow(x.machine,fmt(x.copies_per_cell,0),
+            x.copies_per_cell/Math.max(...S.not_drawn.map(y=>y.copies_per_cell)),true)).join('')}</div>
+         <div class="note">${esc(S.not_drawn[0].why)}</div>`,false,'warn');
+
+      h+=sec('What the positions are',
+        'random, with no physics','DEPICTED',
+        `<div class="note warn">${esc(S.positions)}</div>
+         <div class="note">The counts, the sizes and therefore the local density are measured. Where any
+           individual machine sits is not, and no two of them are kept from overlapping.</div>`,false,'warn');
+
+      if(INV?.refusals) h+=sec('What this level refuses to claim',
+        `${INV.refusals.length} refusals, each with a number`,'NOT_ESTABLISHED',
+        `${INV.refusals.map(r=>`<div class="fact long"><span class="k">${esc(r.refused)}</span>
+            <span class="v">${esc(r.why)}</span></div>`).join('')}`,false,'warn');
     }
   }
   if(id==='cleavage'){
@@ -800,7 +1150,9 @@ if(D){
   const avail=LEVELS.filter(l=>l.available).length;
   $('#provshare').textContent=`${avail}/${LEVELS.length} levels built`;
   await buildEmbryo();
+  await buildDivisions();
   buildCleavage();
+  buildCrowd();
   buildMolecular();
   resize();
   applyLevel(0);
@@ -813,8 +1165,16 @@ function tick(){
   if(playing){
     if(id==='embryo-measured'){ tEmbryo=(tEmbryo+dt*18)%Math.max(1,embryoFrames); setEmbryoFrame(tEmbryo); drawCounts(); }
     else if(id==='cleavage'&&cleavePlan){ tCleave=(tCleave+dt*0.55)%cleavePlan.plan.steps.length; setCleavage(tCleave); }
+    // walk the measured events at a readable pace. These do not interpolate: each one is a separate
+    // observation 150 s apart somewhere else in the embryo, and easing between two of them would
+    // draw a cell travelling a path nobody recorded.
+    else if(id==='divisions-measured'&&divEvents){ tDiv+=dt*1.6; setDivisionEvent(tDiv); }
   }
   for(const m of (groups['machines']?.userData.machines??[])) m.rotation.y+=dt*m.userData.spin*0.35;
+  // ease the orbit target onto the active division, and back to the origin everywhere else, so the
+  // camera is never left pointing at a cell it has stopped showing
+  if(id==='divisions-measured'&&divEvents) controls.target.lerp(divTarget,Math.min(1,dt*2.4));
+  else if(controls.target.lengthSq()>1e-6) controls.target.lerp(ORIGIN,Math.min(1,dt*3));
   controls.update();
   renderer.render(scene,camera);
 }
