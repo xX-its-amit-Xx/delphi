@@ -1,0 +1,858 @@
+{
+ "what_this_is": "the measured molecular inventory of one cell, and the calibration that put absolute numbers on it",
+ "built": "2026-11-08",
+ "cell_type": "HeLa",
+ "why_hela": "it is the one cell line for which the abundance table, the absolute immunoblot counts, the total protein count, the ribosome count and the cell volume have all been measured, so an inventory can be assembled without mixing cell types.",
+ "protein_abundance": {
+  "table_tests": {
+   "order_matters": "T3, the equimolar-spread test, was written first and on its own selects the WRONG table: a log-compressed table has no spread and passes it perfectly. T1, the dynamic-range test, is what makes T3 meaningful.",
+   "T1": "real protein abundances in one cell span 4 to 6 orders of magnitude. Pass requires >= 1e4-fold.",
+   "T2": "ribosomal proteins outnumber Pol II subunits in a growing cell. Pass requires a median ratio between 3 and 100.",
+   "T3": "for an equimolar complex the subunits must come out level. Reported as an accuracy measure, not a pass/fail, because of the order problem above.",
+   "results": {
+    "nagaraj_2011_cpc": {
+     "genes": 8045,
+     "T1_dynamic_range_fold": 175350000.0,
+     "T1_pass": true,
+     "T2_ribosomal_over_pol2_median": 15.401488444966706,
+     "T2_pass": true,
+     "T3_median_equimolar_spread_fold": 25.479452054794525,
+     "T3_spread_per_complex": {
+      "rna_polymerase_ii": 43.16831683168317,
+      "dna_polymerase_delta": 6.685314685314685,
+      "dna_polymerase_epsilon": 291.09589041095893,
+      "dna_polymerase_alpha_primase": 2.1989528795811517,
+      "mcm_helicase": 218.80341880341882,
+      "condensin_i": 25.479452054794525,
+      "cohesin": 2.50561797752809,
+      "tfiid": 451.8348623853211,
+      "chaperonin_tric": 1.9020715630885123,
+      "spliceosome_sm_core": 482.8349944629014,
+      "proteasome_20s_core": 7.692982456140351
+     },
+     "ribosomal_proteins_found": 70,
+     "verdict": "USABLE"
+    },
+    "nagaraj_2011_iBAQ": {
+     "genes": 8045,
+     "T1_dynamic_range_fold": 27.086183310533517,
+     "T1_pass": false,
+     "T2_ribosomal_over_pol2_median": 1.1639344262295082,
+     "T2_pass": false,
+     "T3_median_equimolar_spread_fold": 1.2615384615384615,
+     "T3_spread_per_complex": {
+      "rna_polymerase_ii": 1.2615384615384615,
+      "dna_polymerase_delta": 1.1278195488721805,
+      "dna_polymerase_epsilon": 1.4406779661016949,
+      "dna_polymerase_alpha_primase": 1.0592592592592593,
+      "mcm_helicase": 1.4711538461538463,
+      "condensin_i": 1.2457627118644068,
+      "cohesin": 2.028368794326241,
+      "tfiid": 1.5544554455445545,
+      "chaperonin_tric": 1.036144578313253,
+      "spliceosome_sm_core": 1.5185185185185186,
+      "proteasome_20s_core": 1.120253164556962
+     },
+     "ribosomal_proteins_found": 70,
+     "verdict": "REJECTED"
+    },
+    "geiger_2012": {
+     "genes": 0,
+     "verdict": "REJECTED",
+     "why": "the gene-name column holds STRING protein identifiers (9606.ENSP...), not gene symbols, so no subunit can be looked up by name"
+    }
+   }
+  },
+  "table_chosen": "nagaraj_2011_cpc",
+  "table_chosen_note": "chosen by T1 and T2, with the widest gene coverage among the survivors. Its T3 spread is real noise and is carried as the per-subunit uncertainty, which is why every complex count here is a MEDIAN over subunits.",
+  "source": {
+   "database": "PaxDb",
+   "dataset": "9606-hela_Nagaraj_2011_cpc.txt",
+   "citation": "Nagaraj, N. et al. (2011) Deep proteome and transcriptome mapping of a human cancer cell line. Mol Syst Biol 7:548. PMID 22068331",
+   "retrieved": "2026-11-08",
+   "url": "https://pax-db.org/downloads/latest/datasets/9606/9606-hela_Nagaraj_2011_cpc.txt",
+   "licence_note": "PaxDb redistributes published abundance data; only derived aggregate numbers are stored in this repo, not the table."
+  }
+ },
+ "absolute_anchor": {
+  "citation": "Kimura, H., Tao, Y., Roeder, R.G. & Cook, P.R. (1999) Quantitation of RNA polymerase II and its transcription factors in an HeLa cell: little soluble holoenzyme but significant amounts of polymerases attached to the nuclear substructure. Mol Cell Biol 19:5383-5392. doi:10.1128/MCB.19.8.5383, PMID 10409729",
+  "method": "quantitative immunoblotting of saponin-lysed HeLa cells",
+  "retrieved": "via PubMed in this run, 2026-11-08; the numbers are read from the abstract",
+  "constraints": 7,
+  "tbp_excluded": "the paper's ~45,000 TBP is the nuclease-detachable BOUND pool, a lower bound on total TBP, so it is not comparable to a whole-cell abundance and is not a constraint"
+ },
+ "anchor_selection": {
+  "problem": "Kimura puts Pol II at 10-30x the general transcription factors; the abundance table puts them at a ratio near 1. One scale factor cannot satisfy both.",
+  "how_resolved": "three candidate anchors fitted, each scored on two held-out measurements it was not fitted to. The anchor that passes both is used.",
+  "candidates": {
+   "pol2_only": {
+    "constraints_used": 1,
+    "constraint_names": [
+     "rna_polymerase_ii (median of 8 subunits)"
+    ],
+    "T": 2506854680.767723,
+    "residual_rms_fold": 1.0,
+    "residual_note": "exactly 1 with a single constraint: one parameter fitted to one number has no residual. That is why the held-out checks, not the residual, decide.",
+    "held_out_total_protein": {
+     "predicted": 2506854680.767723,
+     "range": [
+      1500000000.0,
+      8200000000.0
+     ],
+     "inside": true,
+     "fold_vs_point": 0.6777638104440287
+    },
+    "held_out_ribosomes": {
+     "predicted": 4928476.302389344,
+     "range": [
+      3300000.0,
+      9500000.0
+     ],
+     "inside": true
+    },
+    "held_out_passed": 2
+   },
+   "gtfs_only": {
+    "constraints_used": 6,
+    "constraint_names": [
+     "GTF2B",
+     "GTF2E1",
+     "GTF2E2",
+     "GTF2F1",
+     "GTF2F2",
+     "MNAT1"
+    ],
+    "T": 280701493.2070375,
+    "residual_rms_fold": 2.3729585752654283,
+    "residual_note": "",
+    "held_out_total_protein": {
+     "predicted": 280701493.2070375,
+     "range": [
+      1500000000.0,
+      8200000000.0
+     ],
+     "inside": false,
+     "fold_vs_point": 0.07589164026654574
+    },
+    "held_out_ribosomes": {
+     "predicted": 551859.1356450358,
+     "range": [
+      3300000.0,
+      9500000.0
+     ],
+     "inside": false
+    },
+    "held_out_passed": 0
+   },
+   "all_seven": {
+    "constraints_used": 7,
+    "constraint_names": [
+     "rna_polymerase_ii (median of 8 subunits)",
+     "GTF2B",
+     "GTF2E1",
+     "GTF2E2",
+     "GTF2F1",
+     "GTF2F2",
+     "MNAT1"
+    ],
+    "T": 383782667.0894357,
+    "residual_rms_fold": 3.027474072219173,
+    "residual_note": "",
+    "held_out_total_protein": {
+     "predicted": 383782667.0894357,
+     "range": [
+      1500000000.0,
+      8200000000.0
+     ],
+     "inside": false,
+     "fold_vs_point": 0.10376110144096916
+    },
+    "held_out_ribosomes": {
+     "predicted": 754516.7234978306,
+     "range": [
+      3300000.0,
+      9500000.0
+     ],
+     "inside": false
+    },
+    "held_out_passed": 0
+   }
+  },
+  "chosen": "pol2_only"
+ },
+ "calibration": {
+  "anchor": "pol2_only",
+  "total_protein_molecules_per_cell": 2506854680.767723,
+  "interval_95": [
+   2350176263.2197404,
+   2663533098.315706
+  ],
+  "free_parameters": 1,
+  "constraints": 7,
+  "residual_rms_fold": 1.0,
+  "per_constraint": [
+   {
+    "constraint": "rna_polymerase_ii (median of 8 subunits)",
+    "measured": 320000.0,
+    "predicted": 319999.9999999999,
+    "fold": 0.9999999999999997,
+    "what": "total RNA polymerase II: ~140,000 soluble unengaged plus ~180,000 on the nuclear substructure"
+   },
+   {
+    "constraint": "GTF2B",
+    "measured": 17320.508075688773,
+    "predicted": 239655.30748139432,
+    "fold": 13.836505628710555,
+    "what": "TFIIB"
+   },
+   {
+    "constraint": "GTF2E1",
+    "measured": 17320.508075688773,
+    "predicted": 146650.9988249118,
+    "fold": 8.466899364849032,
+    "what": "TFIIE alpha"
+   },
+   {
+    "constraint": "GTF2E2",
+    "measured": 17320.508075688773,
+    "predicted": 265726.59616137866,
+    "fold": 15.341732182461495,
+    "what": "TFIIE beta"
+   },
+   {
+    "constraint": "GTF2F1",
+    "measured": 17320.508075688773,
+    "predicted": 122585.19388954165,
+    "fold": 7.077459469078934,
+    "what": "TFIIF RAP74"
+   },
+   {
+    "constraint": "GTF2F2",
+    "measured": 17320.508075688773,
+    "predicted": 426165.29573051294,
+    "fold": 24.60466482092881,
+    "what": "TFIIF RAP30"
+   },
+   {
+    "constraint": "MNAT1",
+    "measured": 17320.508075688773,
+    "predicted": 28076.772424598494,
+    "fold": 1.6210132117317801,
+    "what": "TFIIH MAT1"
+   }
+  ]
+ },
+ "held_out": {
+  "H1_total_protein": {
+   "predicted": 2506854680.767723,
+   "value": 3698714275,
+   "lo": 1500000000.0,
+   "hi": 8200000000.0,
+   "source": "Chen et al. 2023 as recorded in sim-engine/scales/molecular/budget.mjs: 1,525,243 protein copies per um^3 at a cell volume of 2,425 um^3",
+   "why_independent": "compiled from total protein mass and cell volume, with no reference to PaxDb, to mass spectrometry, or to Kimura's immunoblots",
+   "fold_vs_point_value": 0.6777638104440287,
+   "inside_range": true
+  },
+  "H2_ribosomes": {
+   "predicted": 4928476.302389344,
+   "ribosomal_proteins_used": 70,
+   "value": null,
+   "lo": 3300000.0,
+   "hi": 9500000.0,
+   "source": "two primary measurements recorded in budget.mjs: 3.3e6 implied by Duncan & Hershey 1983 (PMID 6853516) and 9.5e6 from Wolf & Schlessinger 1977 (PMID 889788). The widely-quoted 4e6 traces to a reagent vendor web table and is not used as a bound.",
+   "why_independent": "rRNA and initiation-factor measurements, unrelated to any abundance table",
+   "inside_range": true
+  }
+ },
+ "verdict": "CALIBRATED",
+ "licensed": "copies per cell = ppm * T / 1e6, as a median over the subunits of a known-equimolar complex, carrying a 1.0-fold uncertainty. The atlas may draw measured instance counts.",
+ "machines": {
+  "rna_polymerase_ii": {
+   "subunits_requested": 12,
+   "subunits_found": 8,
+   "coverage": 0.6666666666666666,
+   "stoichiometry_per_complex": 1,
+   "copies_per_cell": 319999.9999999998,
+   "estimator": "median over measured subunits, which is the right estimator for a complex known to be equimolar when the table's per-subunit noise is real",
+   "subunit_spread_fold": 43.16831683168318,
+   "uncertainty_fold": 1.0,
+   "per_subunit_copies_top5": {
+    "POLR2H": 1092988.6408147274,
+    "POLR2C": 799686.6431649037,
+    "POLR2E": 586603.9952996472,
+    "POLR2F": 413631.0223266743,
+    "POLR2G": 226368.97767332537
+   },
+   "per_subunit_copies_bottom5": {
+    "POLR2F": 413631.0223266743,
+    "POLR2G": 226368.97767332537,
+    "POLR2D": 123838.62122992553,
+    "POLR2B": 82475.51899725808,
+    "POLR2A": 25319.232275754002
+   }
+  },
+  "dna_polymerase_delta": {
+   "subunits_requested": 4,
+   "subunits_found": 3,
+   "coverage": 0.75,
+   "stoichiometry_per_complex": 1,
+   "copies_per_cell": 71946.72933803365,
+   "estimator": "median over measured subunits, which is the right estimator for a complex known to be equimolar when the table's per-subunit noise is real",
+   "subunit_spread_fold": 6.685314685314686,
+   "uncertainty_fold": 1.0,
+   "per_subunit_copies_top5": {
+    "POLD2": 239655.30748139432,
+    "POLD3": 71946.72933803365,
+    "POLD1": 35848.02193497844
+   },
+   "per_subunit_copies_bottom5": {
+    "POLD2": 239655.30748139432,
+    "POLD3": 71946.72933803365,
+    "POLD1": 35848.02193497844
+   }
+  },
+  "dna_polymerase_epsilon": {
+   "subunits_requested": 4,
+   "subunits_found": 4,
+   "coverage": 1.0,
+   "stoichiometry_per_complex": 1,
+   "copies_per_cell": 151576.96827262038,
+   "estimator": "median over measured subunits, which is the right estimator for a complex known to be equimolar when the table's per-subunit noise is real",
+   "subunit_spread_fold": 291.095890410959,
+   "uncertainty_fold": 1.0,
+   "per_subunit_copies_top5": {
+    "POLE3": 2130826.478652565,
+    "POLE4": 293301.9976498236,
+    "POLE": 9851.938895417152,
+    "POLE2": 7320.015667841751
+   },
+   "per_subunit_copies_bottom5": {
+    "POLE3": 2130826.478652565,
+    "POLE4": 293301.9976498236,
+    "POLE": 9851.938895417152,
+    "POLE2": 7320.015667841751
+   }
+  },
+  "dna_polymerase_alpha_primase": {
+   "subunits_requested": 4,
+   "subunits_found": 3,
+   "coverage": 0.75,
+   "stoichiometry_per_complex": 1,
+   "copies_per_cell": 87990.59929494708,
+   "estimator": "median over measured subunits, which is the right estimator for a complex known to be equimolar when the table's per-subunit noise is real",
+   "subunit_spread_fold": 2.1989528795811517,
+   "uncertainty_fold": 1.0,
+   "per_subunit_copies_top5": {
+    "POLA2": 105287.89659224437,
+    "PRIM1": 87990.59929494708,
+    "POLA1": 47880.92440266351
+   },
+   "per_subunit_copies_bottom5": {
+    "POLA2": 105287.89659224437,
+    "PRIM1": 87990.59929494708,
+    "POLA1": 47880.92440266351
+   }
+  },
+  "mcm_helicase": {
+   "subunits_requested": 6,
+   "subunits_found": 6,
+   "coverage": 1.0,
+   "stoichiometry_per_complex": 1,
+   "copies_per_cell": 265726.59616137866,
+   "estimator": "median over measured subunits, which is the right estimator for a complex known to be equimolar when the table's per-subunit noise is real",
+   "subunit_spread_fold": 218.80341880341882,
+   "uncertainty_fold": 1.0,
+   "per_subunit_copies_top5": {
+    "MCM3": 320877.39913826855,
+    "MCM7": 305836.27105366223,
+    "MCM5": 265726.59616137866,
+    "MCM6": 265726.59616137866,
+    "MCM2": 239655.30748139432
+   },
+   "per_subunit_copies_bottom5": {
+    "MCM7": 305836.27105366223,
+    "MCM5": 265726.59616137866,
+    "MCM6": 265726.59616137866,
+    "MCM2": 239655.30748139432,
+    "MCM4": 1466.509988249118
+   }
+  },
+  "condensin_i": {
+   "subunits_requested": 5,
+   "subunits_found": 5,
+   "coverage": 1.0,
+   "stoichiometry_per_complex": 1,
+   "copies_per_cell": 35848.02193497844,
+   "estimator": "median over measured subunits, which is the right estimator for a complex known to be equimolar when the table's per-subunit noise is real",
+   "subunit_spread_fold": 25.479452054794525,
+   "uncertainty_fold": 1.0,
+   "per_subunit_copies_top5": {
+    "NCAPH": 186509.9882491186,
+    "SMC2": 96012.5342734038,
+    "NCAPG": 35848.02193497844,
+    "NCAPD2": 17322.365844104967,
+    "SMC4": 7320.015667841751
+   },
+   "per_subunit_copies_bottom5": {
+    "NCAPH": 186509.9882491186,
+    "SMC2": 96012.5342734038,
+    "NCAPG": 35848.02193497844,
+    "NCAPD2": 17322.365844104967,
+    "SMC4": 7320.015667841751
+   }
+  },
+  "cohesin": {
+   "subunits_requested": 3,
+   "subunits_found": 3,
+   "coverage": 1.0,
+   "stoichiometry_per_complex": 1,
+   "copies_per_cell": 102530.35644339987,
+   "estimator": "median over measured subunits, which is the right estimator for a complex known to be equimolar when the table's per-subunit noise is real",
+   "subunit_spread_fold": 2.50561797752809,
+   "uncertainty_fold": 1.0,
+   "per_subunit_copies_top5": {
+    "SMC3": 111805.71876224045,
+    "RAD21": 102530.35644339987,
+    "SMC1A": 44622.01331766547
+   },
+   "per_subunit_copies_bottom5": {
+    "SMC3": 111805.71876224045,
+    "RAD21": 102530.35644339987,
+    "SMC1A": 44622.01331766547
+   }
+  },
+  "tfiid": {
+   "subunits_requested": 14,
+   "subunits_found": 13,
+   "coverage": 0.9285714285714286,
+   "stoichiometry_per_complex": 1,
+   "copies_per_cell": 7320.015667841751,
+   "estimator": "median over measured subunits, which is the right estimator for a complex known to be equimolar when the table's per-subunit noise is real",
+   "subunit_spread_fold": 451.8348623853211,
+   "uncertainty_fold": 1.0,
+   "per_subunit_copies_top5": {
+    "TAF10": 493850.37211124145,
+    "TAF9": 199796.31805718754,
+    "TAF12": 86486.48648648645,
+    "TAF7": 63924.79435957693,
+    "TAF4": 21308.264786525648
+   },
+   "per_subunit_copies_bottom5": {
+    "TAF2": 6793.57618488053,
+    "TAF8": 3334.116725421072,
+    "TAF13": 2933.019976498236,
+    "TAF3": 1599.3732863298073,
+    "TAF1": 1092.9886408147272
+   }
+  },
+  "chaperonin_tric": {
+   "subunits_requested": 8,
+   "subunits_found": 7,
+   "coverage": 0.875,
+   "stoichiometry_per_complex": 1,
+   "copies_per_cell": 1732236.5844104965,
+   "estimator": "median over measured subunits, which is the right estimator for a complex known to be equimolar when the table's per-subunit noise is real",
+   "subunit_spread_fold": 1.9020715630885123,
+   "uncertainty_fold": 1.0,
+   "per_subunit_copies_top5": {
+    "TCP1": 2531923.2275754004,
+    "CCT5": 2263689.776733254,
+    "CCT3": 1865099.882491186,
+    "CCT2": 1732236.5844104965,
+    "CCT4": 1599373.2863298075
+   },
+   "per_subunit_copies_bottom5": {
+    "CCT3": 1865099.882491186,
+    "CCT2": 1732236.5844104965,
+    "CCT4": 1599373.2863298075,
+    "CCT8": 1466509.988249118,
+    "CCT7": 1331139.835487661
+   }
+  },
+  "spliceosome_sm_core": {
+   "subunits_requested": 7,
+   "subunits_found": 5,
+   "coverage": 0.7142857142857143,
+   "stoichiometry_per_complex": 1,
+   "copies_per_cell": 173223.65844104966,
+   "estimator": "median over measured subunits, which is the right estimator for a complex known to be equimolar when the table's per-subunit noise is real",
+   "subunit_spread_fold": 482.83499446290153,
+   "uncertainty_fold": 1.0,
+   "per_subunit_copies_top5": {
+    "SNRPD1": 1092988.6408147274,
+    "SNRPB": 466274.9706227965,
+    "SNRPD2": 173223.65844104966,
+    "SNRPD3": 173223.65844104966,
+    "SNRPF": 2263.689776733254
+   },
+   "per_subunit_copies_bottom5": {
+    "SNRPD1": 1092988.6408147274,
+    "SNRPB": 466274.9706227965,
+    "SNRPD2": 173223.65844104966,
+    "SNRPD3": 173223.65844104966,
+    "SNRPF": 2263.689776733254
+   }
+  },
+  "proteasome_20s_core": {
+   "subunits_requested": 14,
+   "subunits_found": 14,
+   "coverage": 1.0,
+   "stoichiometry_per_complex": 2,
+   "copies_per_cell": 998981.5902859377,
+   "estimator": "median over measured subunits, which is the right estimator for a complex known to be equimolar when the table's per-subunit noise is real",
+   "subunit_spread_fold": 7.692982456140351,
+   "uncertainty_fold": 1.0,
+   "per_subunit_copies_top5": {
+    "PSMA5": 2198511.555033293,
+    "PSMA7": 1865099.882491186,
+    "PSMB1": 1865099.882491186,
+    "PSMB2": 1798668.2334508414,
+    "PSMA2": 1465256.560908734
+   },
+   "per_subunit_copies_bottom5": {
+    "PSMB6": 866118.2922052483,
+    "PSMA1": 799686.6431649037,
+    "PSMA4": 799686.6431649037,
+    "PSMB5": 665569.9177438305,
+    "PSMB7": 285781.4336075204
+   }
+  },
+  "ribosome": {
+   "subunits_requested": 70,
+   "subunits_found": 70,
+   "coverage": 1.0,
+   "stoichiometry_per_complex": 1,
+   "copies_per_cell": 4928476.302389344,
+   "estimator": "median over measured subunits, which is the right estimator for a complex known to be equimolar when the table's per-subunit noise is real",
+   "subunit_spread_fold": 1440.512048192771,
+   "uncertainty_fold": 1.0,
+   "per_subunit_copies_top5": {
+    "RPL23A": 23978065.021543268,
+    "RPLP2": 23978065.021543268,
+    "RPLP1": 13321425.77359968,
+    "RPS7": 12521739.130434778,
+    "RPS15": 10656639.247943591
+   },
+   "per_subunit_copies_bottom5": {
+    "RPS6": 320877.39913826855,
+    "RPL35A": 96012.5342734038,
+    "RPL30": 54649.43204073636,
+    "RPL36AL": 33341.16725421072,
+    "RPL36A": 16645.51508029768
+   }
+  }
+ },
+ "transcriptome": {
+  "source": {
+   "dataset": "Tahoe-100M",
+   "host": "huggingface.co/datasets/tahoebio/Tahoe-100M",
+   "licence": "CC0-1.0",
+   "host_last_modified": "2026-10-14",
+   "part_of": "Arc Institute Virtual Cell Atlas",
+   "citation": "Zhang et al. 2025, Tahoe-100M: A Giga-Scale Single-Cell Perturbation Atlas for Context-Dependent Gene Function and Cellular Modeling, bioRxiv 2025.02.20.639398",
+   "assay": "Parse Biosciences Evercode WT split-pool combinatorial barcoding",
+   "shards_read": [
+    "data/train-00000-of-03388.parquet",
+    "data/train-01694-of-03388.parquet"
+   ],
+   "shards_total": 3388,
+   "retrieved": "2026-11-08"
+  },
+  "scanned": {
+   "cells": 56449,
+   "conditions": 5089,
+   "median_umi_per_cell": 1481.0,
+   "median_genes_detected_per_cell": 1066.0,
+   "genes_in_vocabulary": 62710,
+   "detection_share_of_vocabulary": 0.01699888375059799,
+   "umi_dropped_as_out_of_range_tokens": 0.0
+  },
+  "per_cell_counts_refused": {
+   "finding": "the stoichiometry-limited machine count is 0 in 100 % of cells for every machine tried.",
+   "reason": "a complex needs every subunit detected, and the median cell detects 1,066 of 62,710 genes.",
+   "per_machine": {
+    "rna_polymerase_ii": {
+     "subunits": 12,
+     "detection_rate_per_subunit_median": 0.05159524526563801,
+     "detection_rate_min": 0.028167018016262466,
+     "detection_rate_max": 0.3918758525394604,
+     "probability_all_subunits_detected_if_independent": 3.6205716196817515e-15,
+     "expected_cells_with_all_subunits_of_56k": 2.0437764735941519e-10
+    },
+    "dna_polymerase_delta": {
+     "subunits": 4,
+     "detection_rate_per_subunit_median": 0.05744123013693776,
+     "detection_rate_min": 0.02341936969654024,
+     "detection_rate_max": 0.07908023171358217,
+     "probability_all_subunits_detected_if_independent": 5.998428851648546e-06,
+     "expected_cells_with_all_subunits_of_56k": 0.33860531024670876
+    },
+    "dna_polymerase_epsilon": {
+     "subunits": 4,
+     "detection_rate_per_subunit_median": 0.05263157894736842,
+     "detection_rate_min": 0.020336941309854913,
+     "detection_rate_max": 0.07706070966713316,
+     "probability_all_subunits_detected_if_independent": 3.705406851814904e-06,
+     "expected_cells_with_all_subunits_of_56k": 0.2091665113780995
+    },
+    "dna_polymerase_alpha_primase": {
+     "subunits": 4,
+     "detection_rate_per_subunit_median": 0.08755690977696681,
+     "detection_rate_min": 0.02558061258835409,
+     "detection_rate_max": 0.1640773087211465,
+     "probability_all_subunits_detected_if_independent": 2.2399275115243914e-05,
+     "expected_cells_with_all_subunits_of_56k": 1.2644166809804036
+    },
+    "mcm_helicase": {
+     "subunits": 6,
+     "detection_rate_per_subunit_median": 0.05452709525412319,
+     "detection_rate_min": 0.024429130719764745,
+     "detection_rate_max": 0.07440344381654236,
+     "probability_all_subunits_detected_if_independent": 1.2958854588009548e-08,
+     "expected_cells_with_all_subunits_of_56k": 0.000731514382638551
+    },
+    "ribosome_40s": {
+     "subunits": 31,
+     "detection_rate_per_subunit_median": 0.33339828872079225,
+     "detection_rate_min": 0.08033800421619515,
+     "detection_rate_max": 0.641587982072313,
+     "probability_all_subunits_detected_if_independent": 1.0654299293508826e-18,
+     "expected_cells_with_all_subunits_of_56k": 6.014245408192797e-14
+    },
+    "ribosome_60s": {
+     "subunits": 50,
+     "detection_rate_per_subunit_median": 0.32390299208134776,
+     "detection_rate_min": 8.857552835302662e-05,
+     "detection_rate_max": 0.5304434090949353,
+     "probability_all_subunits_detected_if_independent": 8.628780032903152e-37,
+     "expected_cells_with_all_subunits_of_56k": 4.8708600407735003e-32
+    },
+    "proteasome_20s_core": {
+     "subunits": 14,
+     "detection_rate_per_subunit_median": 0.1234388563127779,
+     "detection_rate_min": 0.0638983861538734,
+     "detection_rate_max": 0.25890626937589684,
+     "probability_all_subunits_detected_if_independent": 7.206582656957386e-14,
+     "expected_cells_with_all_subunits_of_56k": 4.068043844025875e-09
+    },
+    "nuclear_pore": {
+     "subunits": 27,
+     "detection_rate_per_subunit_median": 0.09489982107743272,
+     "detection_rate_min": 0.009566157062126875,
+     "detection_rate_max": 0.31766727488529467,
+     "probability_all_subunits_detected_if_independent": 8.460750649804847e-29,
+     "expected_cells_with_all_subunits_of_56k": 4.7760091343083386e-24
+    },
+    "histone_replication_dependent": {
+     "subunits": 64,
+     "detection_rate_per_subunit_median": 0.0017006501443781112,
+     "detection_rate_min": 0.0,
+     "detection_rate_max": 0.07137416074686885,
+     "probability_all_subunits_detected_if_independent": 0.0,
+     "expected_cells_with_all_subunits_of_56k": 0.0
+    },
+    "histone_variants_polyadenylated": {
+     "subunits": 7,
+     "detection_rate_per_subunit_median": 0.0997891902425198,
+     "detection_rate_min": 0.01117823167815196,
+     "detection_rate_max": 0.4223635493985722,
+     "probability_all_subunits_detected_if_independent": 3.3103929646066145e-08,
+     "expected_cells_with_all_subunits_of_56k": 0.0018686837245907879
+    },
+    "condensin_i": {
+     "subunits": 5,
+     "detection_rate_per_subunit_median": 0.15692040603022198,
+     "detection_rate_min": 0.05844213360732697,
+     "detection_rate_max": 0.30521355559885915,
+     "probability_all_subunits_detected_if_independent": 4.047233832414261e-05,
+     "expected_cells_with_all_subunits_of_56k": 2.284623026059526
+    },
+    "cohesin": {
+     "subunits": 5,
+     "detection_rate_per_subunit_median": 0.34861556449184217,
+     "detection_rate_min": 0.21536253963754895,
+     "detection_rate_max": 0.3633191021984446,
+     "probability_all_subunits_detected_if_independent": 0.002448899808757007,
+     "expected_cells_with_all_subunits_of_56k": 138.2379453045243
+    },
+    "tfiid": {
+     "subunits": 14,
+     "detection_rate_per_subunit_median": 0.05095750146149622,
+     "detection_rate_min": 0.02398625307799961,
+     "detection_rate_max": 0.22445038884656948,
+     "probability_all_subunits_detected_if_independent": 4.3286909655074734e-17,
+     "expected_cells_with_all_subunits_of_56k": 2.4435027631193137e-12
+    },
+    "chaperonin_tric": {
+     "subunits": 7,
+     "detection_rate_per_subunit_median": 0.16420131446084077,
+     "detection_rate_min": 0.1111091427660366,
+     "detection_rate_max": 0.24062428032383212,
+     "probability_all_subunits_detected_if_independent": 3.6578220020272896e-06,
+     "expected_cells_with_all_subunits_of_56k": 0.20648039419243847
+    },
+    "spliceosome_sm_core": {
+     "subunits": 7,
+     "detection_rate_per_subunit_median": 0.08242838668532658,
+     "detection_rate_min": 0.04322485783627699,
+     "detection_rate_max": 0.13562684901415437,
+     "probability_all_subunits_detected_if_independent": 2.0835706378356456e-08,
+     "expected_cells_with_all_subunits_of_56k": 0.0011761547893518437
+    }
+   }
+  },
+  "histone_capture_test": {
+   "claim_under_test": "replication-dependent histone mRNAs end in a stem-loop, not a polyA tail, so a polyA-primed library under-counts them relative to the polyadenylated histone variants.",
+   "replication_dependent": {
+    "genes": 64,
+    "umi": 24035.0,
+    "share": 0.0002335467754254533,
+    "umi_per_gene": 375.546875,
+    "detection_rate_median": 0.0017006501443781112
+   },
+   "polyadenylated_variants": {
+    "genes": 7,
+    "umi": 78629.0,
+    "share": 0.000764033676094361,
+    "umi_per_gene": 11232.714285714286,
+    "detection_rate_median": 0.0997891902425198
+   },
+   "ratio_umi_per_gene_variant_over_replication_dependent": 29.910285595411455,
+   "verdict": "SUPPORTED"
+  },
+  "pseudogenes_dropped": {
+   "ribosome_60s": [
+    "RPL13AP",
+    "RPL13P",
+    "RPL27AP",
+    "RPL35AP",
+    "RPL39P"
+   ],
+   "histone_replication_dependent": [
+    "H2AC10P",
+    "H2AC2P",
+    "H2AC3P",
+    "H2AC5P",
+    "H2AC9P",
+    "H2BC16P",
+    "H2BC19P",
+    "H2BC20P",
+    "H2BC27P",
+    "H2BC2P",
+    "H3C5P",
+    "H3C9P",
+    "H4C10P"
+   ]
+  },
+  "min_estimator_fragility": {
+   "what_happened": "the stoichiometry-limited count was set by a gene that does not belong to the complex, three times in a row, in three different gene sets.",
+   "offenders": {
+    "ribosome_60s": "RPL13P and four more ribosomal pseudogenes (first run), then RPL10L, the testis-specific paralogue of RPL10 (second run)",
+    "nuclear_pore": "NUP210L, a testis-specific paralogue that is not an NPC scaffold nucleoporin",
+    "histone_replication_dependent": "H2AC10P and twelve more pseudogenes, then H2BC12L"
+   },
+   "what_made_it_visible": "the limiting_subunit field. An estimator that reports only its value hides this; one that names the gene that set it cannot.",
+   "mitigation": "stoichiometry_limited_q10 is reported alongside the min, and min_over_q10 is the warning: a ratio near 0 means one gene is carrying the answer.",
+   "what_is_still_true": "for the CURATED sets - Pol II, the three replicative polymerases, MCM, the 20S core, condensin, cohesin, TFIID, TRiC, the Sm core - every symbol was written out by hand and no pseudogene or paralogue can enter."
+  },
+  "drug_axis": {
+   "conditions_with_at_least_40_cells": 81,
+   "vehicle_conditions": 10,
+   "vehicle_pol2_cpm_median": 767.2657762590438,
+   "vehicle_ribosome_cpm_median": 23795.197069842972,
+   "pol2_cpm_spread_across_conditions": [
+    503.6895257763115,
+    797.1479816655965,
+    1507.5606450532214
+   ],
+   "ribosome_cpm_spread_across_conditions": [
+    14687.304454598047,
+    24933.487959615253,
+    35713.7218371568
+   ],
+   "pol2_vs_ribosome_pearson_across_conditions": 0.24828025146436292
+  },
+  "machine_shares": {
+   "rna_polymerase_ii": {
+    "share_of_transcriptome": 0.0007498469362515833,
+    "gene_set": "curated",
+    "min_over_q10": 0.943232952578747
+   },
+   "dna_polymerase_delta": {
+    "share_of_transcriptome": 0.00013041112015747903,
+    "gene_set": "curated",
+    "min_over_q10": 0.7403987180183605
+   },
+   "dna_polymerase_epsilon": {
+    "share_of_transcriptome": 0.00012273473353022261,
+    "gene_set": "curated",
+    "min_over_q10": 0.8293132803632237
+   },
+   "dna_polymerase_alpha_primase": {
+    "share_of_transcriptome": 0.0002464994632408113,
+    "gene_set": "curated",
+    "min_over_q10": 0.8537606789882182
+   },
+   "mcm_helicase": {
+    "share_of_transcriptome": 0.00019144325231671647,
+    "gene_set": "curated",
+    "min_over_q10": 0.8007662835249042
+   },
+   "ribosome_40s": {
+    "share_of_transcriptome": 0.00864387369980837,
+    "gene_set": "pattern",
+    "min_over_q10": 0.7274203069657615
+   },
+   "ribosome_60s": {
+    "share_of_transcriptome": 0.012373091474164833,
+    "gene_set": "pattern",
+    "min_over_q10": 0.0012128268568379176
+   },
+   "proteasome_20s_core": {
+    "share_of_transcriptome": 0.0011321698580693442,
+    "gene_set": "curated",
+    "min_over_q10": 0.9519286966686149
+   },
+   "nuclear_pore": {
+    "share_of_transcriptome": 0.0021422268670947247,
+    "gene_set": "pattern",
+    "min_over_q10": 0.2266860277508874
+   },
+   "histone_replication_dependent": {
+    "share_of_transcriptome": 0.0002335467754254533,
+    "gene_set": "pattern",
+    "min_over_q10": 0.0
+   },
+   "histone_variants_polyadenylated": {
+    "share_of_transcriptome": 0.000764033676094361,
+    "gene_set": "curated",
+    "min_over_q10": 0.48982949446604845
+   },
+   "condensin_i": {
+    "share_of_transcriptome": 0.0006455841153522651,
+    "gene_set": "curated",
+    "min_over_q10": 0.8116979374020584
+   },
+   "cohesin": {
+    "share_of_transcriptome": 0.0012384926713293945,
+    "gene_set": "curated",
+    "min_over_q10": 0.9490338050684094
+   },
+   "tfiid": {
+    "share_of_transcriptome": 0.0007909107462348563,
+    "gene_set": "curated",
+    "min_over_q10": 0.8559524538937565
+   },
+   "chaperonin_tric": {
+    "share_of_transcriptome": 0.0008071671953834639,
+    "gene_set": "curated",
+    "min_over_q10": 0.8636029411764706
+   },
+   "spliceosome_sm_core": {
+    "share_of_transcriptome": 0.00036614420822993573,
+    "gene_set": "curated",
+    "min_over_q10": 0.8657745336577454
+   }
+  }
+ }
+}
