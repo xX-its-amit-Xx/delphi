@@ -595,6 +595,135 @@ export function run({ dir, out }) {
   return summary;
 }
 
+/* ============================== NUCLEI, NOT POINTS ==============================
+ * The existing embryo artefact is a float16 cloud of positions with no size: the viewer draws it as
+ * GL points, which is why the embryo reads as a dust cloud rather than as cells. Every detection has a
+ * measured extent - that is what the covariance is - so this exports it.
+ *
+ * Written as a SEPARATE file under a new name rather than by extending embryo-cloud.f16, because that
+ * artefact and its manifest belong to another thread's module and this one has no business changing
+ * the bytes it describes.
+ *
+ * Layout: float16 little-endian, FOUR per detection (x, y, z, r), frames concatenated in order. The
+ * normalisation is the one already in embryo-manifest.json, so the two overlay without a second
+ * transform. r is the drawn radius - SIGMA_FOR_DRAWING standard deviations - divided by the same
+ * normalising radius as the positions, so it is in the same units as x, y, z.
+ */
+export function exportNuclei({ dir, out }) {
+  const frames = readArchive(dir);
+  measureFloor(frames);
+  const C = [354.55, 284.98, 298.83], R = 543.84;
+  const total = frames.reduce((a, f) => a + f.length, 0);
+  const buf = new Uint16Array(total * 4);
+  const index = [];
+  let w = 0, offset = 0;
+  let atFloor = 0, rMin = Infinity, rMax = -Infinity, rSum = 0;
+  for (const f of frames) {
+    index.push({ offset, count: f.length });
+    offset += f.length;
+    for (const d of f) {
+      const sd = sdRadius(d.nu, d.W);
+      const r = sd === null ? FLOOR.sd_voxels : sd;
+      if (Math.abs(r - FLOOR.sd_voxels) < 1e-6) atFloor++;
+      rMin = Math.min(rMin, r); rMax = Math.max(rMax, r); rSum += r;
+      buf[w++] = f32to16((d.x - C[0]) / R);
+      buf[w++] = f32to16((d.y - C[1]) / R);
+      buf[w++] = f32to16((d.z - C[2]) / R);
+      buf[w++] = f32to16((SIGMA_FOR_DRAWING * r) / R);
+    }
+  }
+  mkdirSync(out, { recursive: true });
+  writeFileSync(join(out, 'embryo-nuclei.f16'), Buffer.from(buf.buffer));
+  const manifest = {
+    what_this_is: 'every detection in idr0068 as a nucleus with a measured radius, not a dimensionless point',
+    why_a_new_file: 'embryo-cloud.f16 and its manifest are another thread\'s artefacts. This neither replaces nor rewrites them.',
+    source: SOURCE,
+    scale: SCALE,
+    layout: 'float16 little-endian, 4 per detection (x y z r), frames concatenated in order',
+    detections: total,
+    frames: frames.length,
+    bytes: buf.byteLength,
+    normalisation: { centroid_voxels: C, radius_voxels: R,
+      note: 'identical to embryo-manifest.json, so the two overlay without a second transform' },
+    radius: {
+      what_it_is: `SIGMA_FOR_DRAWING (${SIGMA_FOR_DRAWING}) standard deviations, divided by the normalising radius, so it is in the same units as x y z`,
+      sigma_for_drawing: SIGMA_FOR_DRAWING,
+      sd_voxels: { min: rMin, max: rMax, mean: rSum / total },
+      drawn_normalised: { min: SIGMA_FOR_DRAWING * rMin / R, max: SIGMA_FOR_DRAWING * rMax / R },
+      share_exactly_at_the_regularisation_floor: atFloor / total,
+      floor: { ...FLOOR },
+      honesty:
+        'the radius is bounded below by the tracker, not by the specimen. See the regularisation floor. '
+        + 'It is a real per-nucleus number - most detections are NOT at the floor on all three axes - but '
+        + 'it is not a free measurement of a nuclear envelope.',
+    },
+    index,
+  };
+  writeFileSync(join(out, 'embryo-nuclei.json'), JSON.stringify(manifest, null, 1));
+  return { detections: total, frames: frames.length, bytes: buf.byteLength,
+    radius_sd_voxels: { min: rMin, max: rMax, mean: rSum / total },
+    share_at_floor: atFloor / total };
+}
+
+/** double -> float16 bit pattern. Uses Float16Array, which is the reference implementation.
+ *
+ *  ============================== TWO BUGS IN A HAND-ROLLED CONVERTER ==============================
+ *  This was written by hand first, on the reasoning that the encoding should not depend on the Node
+ *  version that happens to run the export. It was wrong twice, and the second one is the interesting
+ *  one because no round-trip test can see it.
+ *
+ *  BUG ONE: the comment said round-to-nearest-EVEN and the code did round-half-UP. Over 50,012 values
+ *  it disagreed with Float16Array on 4, every one an exact tie, every one off by a single unit in the
+ *  last place. The comment was right and the code was wrong.
+ *
+ *  BUG TWO, after the tie-break was fixed: still 15 mismatches in 220,016, now in BOTH directions.
+ *  The cause is DOUBLE ROUNDING. JavaScript numbers are float64; the hand-rolled path wrote the value
+ *  into a Float32Array first and converted float32 -> float16, so every value was rounded twice.
+ *  Float16Array converts float64 -> float16 in one step. A double sitting just below a float16 tie
+ *  rounds UP to float32, landing exactly on the tie, and the tie-break then sends it up - where a
+ *  single correct rounding would have sent it down.
+ *
+ *  A round-trip test cannot catch this: decode the float16 and compare, and the answer is within half
+ *  an ulp either way. It takes a reference implementation, and there is one.
+ *
+ *  So Float16Array is used. The hand-rolled path is kept as `f32to16Manual` for runtimes without it,
+ *  and the test asserts they agree where both exist - which is the assertion that found both bugs. */
+const _f16 = typeof Float16Array !== 'undefined' ? new Float16Array(1) : null;
+const _f16bits = _f16 ? new Uint16Array(_f16.buffer) : null;
+export const F16_REFERENCE_AVAILABLE = !!_f16;
+
+export function f32to16(v) {
+  if (_f16) { _f16[0] = v; return _f16bits[0]; }
+  return f32to16Manual(v);
+}
+
+/** The hand-rolled fallback. Correct to within one ulp on ties, for runtimes with no Float16Array. */
+export function f32to16Manual(v) {
+  const f = new Float32Array(1); const i = new Uint32Array(f.buffer);
+  f[0] = v;
+  const x = i[0];
+  const sign = (x >>> 16) & 0x8000;
+  let exp = (x >>> 23) & 0xff;
+  let man = x & 0x7fffff;
+  if (exp === 0xff) return sign | 0x7c00 | (man ? 0x200 : 0); // inf / nan
+  let e = exp - 127 + 15;
+  if (e >= 0x1f) return sign | 0x7c00;                         // overflow -> inf
+  if (e <= 0) {
+    if (e < -10) return sign;                                  // underflow -> zero
+    man |= 0x800000;
+    const shift = 14 - e;
+    const lsb = (man >>> shift) & 1;
+    const half = (man + ((1 << (shift - 1)) - 1) + lsb) >>> shift;
+    return sign | half;
+  }
+  // round to nearest, ties to even: add half-an-ulp minus one, plus the kept mantissa's low bit
+  const lsb = (man >>> 13) & 1;
+  const rounded = man + 0x0fff + lsb;
+  if (rounded & 0x800000) { e += 1; man = 0; if (e >= 0x1f) return sign | 0x7c00; }
+  else man = rounded;
+  return sign | (e << 10) | (man >>> 13);
+}
+
 export const WHAT_THIS_DOES_NOT_MODEL = Object.freeze([
   'a cell boundary. These are nuclei. Nothing in this recording images a plasma membrane, so every "cell" word in the viewer that points at this data is pointing at a nucleus.',
   'a cleavage furrow. The parent is present in frame t-1 and absent in frame t; the intervening 150 s contains the entire mechanical event and was not sampled.',

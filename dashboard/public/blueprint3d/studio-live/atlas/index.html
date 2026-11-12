@@ -455,29 +455,91 @@ function setDivisionEvent(i){
    a row. Validated against the dark surface by the palette check used elsewhere in this project. */
 const SLABCOL={ribosome:'#4ec9a0',rna_polymerase_ii:'#bf8410',dna_polymerase_delta:'#ef6a6a',
   dna_polymerase_epsilon:'#f09bd0',chaperonin_tric:'#6aa9ff',spliceosome_sm_core:'#b48ef5'};
+
+/* mulberry32: a 32-bit generator that is actually uniform in JavaScript. See the comment at its use. */
+function mulberry32(seed){
+  let a=seed|0;
+  return function(){
+    a=(a+0x6D2B79F5)|0;
+    let t=Math.imul(a^(a>>>15),1|a);
+    t=(t+Math.imul(t^(t>>>7),61|t))^t;
+    return ((t^(t>>>14))>>>0)/4294967296;
+  };
+}
+/* Box-Muller. A uniform step would give the wrong displacement distribution: the mean square
+   displacement is what this animation is asserting, so the shape of the step matters. */
+function gauss2(rnd){
+  let u=0,v=0;
+  while(u===0)u=rnd();
+  while(v===0)v=rnd();
+  const r=Math.sqrt(-2*Math.log(u));
+  return [r*Math.cos(2*Math.PI*v),r*Math.sin(2*Math.PI*v)];
+}
+let crowdSim=null;
+const crowdRnd=mulberry32(987654321);
+
+/* ONE BROWNIAN STEP for every machine in the slab.
+ *
+ * Each instance takes an independent Gaussian step with per-axis sigma = sqrt(2 D dt) at the SLOWED
+ * dt, which is shared across all six machines so their relative speeds stay true. A fixed share of
+ * each population - the measured immobile fraction - is skipped entirely.
+ *
+ * Reflecting walls: a machine that would leave the cube is reflected back. The cube is a window onto
+ * a larger cell, so the honest boundary would be periodic or open; reflection keeps the population
+ * constant, which is what the density claim needs. The panel says so. */
+function stepCrowd(){
+  if(!crowdSim) return;
+  const W=24, half=W/2;
+  for(const s of crowdSim){
+    if(!(s.sigma>0)) continue;
+    for(let i=s.immobile;i<s.n;i++){
+      const [a,b]=gauss2(crowdRnd), [c]=gauss2(crowdRnd);
+      let x=s.pos[i*3]+a*s.sigma, y=s.pos[i*3+1]+b*s.sigma, z=s.pos[i*3+2]+c*s.sigma;
+      if(x>half)x=W-x; else if(x<-half)x=-W-x;
+      if(y>half)y=W-y; else if(y<-half)y=-W-y;
+      if(z>half)z=W-z; else if(z<-half)z=-W-z;
+      s.pos[i*3]=x; s.pos[i*3+1]=y; s.pos[i*3+2]=z;
+      s.m4.makeTranslation(x,y,z);
+      s.inst.setMatrixAt(i,s.m4);
+    }
+    s.inst.instanceMatrix.needsUpdate=true;
+  }
+}
 function buildCrowd(){
   const S=D?.slab; if(!S||!S.members?.length) return;
   const g=groups['crowd']; if(!g) return;
   // world units: draw the cube 24 units across, so 1 um = 24/side_um
   const W=24, perUm=W/S.side_um;
   const COLOUR=Object.fromEntries(Object.entries(SLABCOL).map(([k,v])=>[k,new THREE.Color(v).getHex()]));
-  // a reproducible pseudo-random fill: the positions are depicted, but they should at least be the
-  // same depiction every time the page loads, so a reader comparing two visits sees one picture.
-  let seed=20261108;
-  const rnd=()=>{ seed=(seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff; };
+  /* A reproducible uniform generator. The first version here was the textbook LCG
+     s=(s*1103515245+12345)&0x7fffffff, which is BROKEN in JavaScript: s*1103515245 reaches about 2^61
+     and float64 holds 53 bits of integer, so the low bits are lost before the mask runs. The bias was
+     caught by a statistical assertion in test-motion.mjs, not by reading the code - a biased generator
+     looks perfectly random in a still frame. mulberry32 keeps everything in 32-bit via Math.imul. */
+  const rnd=mulberry32(20261108);
   const m4=new THREE.Matrix4();
+  crowdSim=[];
   for(const mem of S.members){
     const rUm=(mem.diameter_nm/2)/1000;
     const geo=new THREE.SphereGeometry(rUm*perUm,8,6);
     const mat=new THREE.MeshStandardMaterial({color:COLOUR[mem.machine]??0x8a97ac,roughness:.5,metalness:.03});
     const inst=new THREE.InstancedMesh(geo,mat,mem.instances);
     inst.name=mem.machine;
+    // positions are kept in a flat array so the walk can step them without reading matrices back
+    const pos=new Float32Array(mem.instances*3);
     for(let i=0;i<mem.instances;i++){
-      m4.makeTranslation((rnd()-0.5)*W,(rnd()-0.5)*W,(rnd()-0.5)*W);
+      const x=(rnd()-0.5)*W, y=(rnd()-0.5)*W, z=(rnd()-0.5)*W;
+      pos[i*3]=x; pos[i*3+1]=y; pos[i*3+2]=z;
+      m4.makeTranslation(x,y,z);
       inst.setMatrixAt(i,m4);
     }
     inst.instanceMatrix.needsUpdate=true;
     g.add(inst);
+    // the measured per-frame step for this machine, converted from microns into world units
+    const plan=S.motion?.plan?.members?.find(p=>p.machine===mem.machine);
+    // the measured immobile fraction: a share of each population does not move at all
+    const immobile=Math.round(mem.instances*(S.motion?.what_the_viewer_draws?.immobile_fraction?.value??0));
+    crowdSim.push({inst,pos,n:mem.instances,sigma:(plan?.step_sigma_um??0)*perUm,immobile,m4:new THREE.Matrix4()});
   }
   // the cube itself, so the reader can see they are inside a box and not a cell
   const box=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(W,W,W)),
@@ -950,11 +1012,70 @@ function renderSidebar(id){
             x.copies_per_cell/Math.max(...S.not_drawn.map(y=>y.copies_per_cell)),true)).join('')}</div>
          <div class="note">${esc(S.not_drawn[0].why)}</div>`,false,'warn');
 
+      if(S.motion){
+        const MO=S.motion, P=MO.plan;
+        h+=sec('Why it cannot run in real time',
+          big(Math.round(P.time_slowdown_factor).toLocaleString('en-GB'),'× slower')
+          +` · one second here is ${fmt(P.one_second_of_animation_is_s_of_real_time*1e6,0)} µs of cell time`,'DERIVED',
+          `<div class="note">At its real diffusion coefficient a ribosome moves about
+            ${fmt(P.members.find(m=>m.machine==='ribosome')?.rms_per_frame_um*P.time_slowdown_factor**0.5,2)} µm
+            in a sixtieth of a second — a third of the way across this cube, every frame. Real-time
+            Brownian motion is not a picture of anything, so the clock is slowed.</div>
+           ${fact('time slowdown',Math.round(P.time_slowdown_factor).toLocaleString('en-GB'),'×')}
+           ${fact('set by',P.set_by,'')}
+           ${fact('one second on screen',fmt(P.one_second_of_animation_is_s_of_real_time*1e6,0),'µs')}
+           <div class="note">${esc(P.why_set_by_the_fastest)}</div>
+           <div class="note">${esc(P.what_this_preserves)}</div>
+           <div class="bars">${P.members.map(m=>barRow(
+              `${m.machine} · D ≤ ${fmt(m.D_um2_s,1)} µm²/s`,
+              `${fmt(m.speed_relative_to_slowest,2)}×`,
+              m.speed_relative_to_slowest/Math.max(...P.members.map(q=>q.speed_relative_to_slowest)))).join('')}</div>`,
+          false,'clock');
+
+        h+=sec('The speed is an upper bound',
+          'and the error points one way','CONTESTED',
+          `<div class="note">${esc(MO.upper_bound.why_only_a_bound)}</div>
+           ${fact('GFP in saline',fmt(MO.measured.gfp_diffusion_in_saline.value,0),'µm²/s')}
+           ${fact('cytoplasm, by translation',fmt(MO.measured.cytoplasmic_slowdown_translational.value,1),'× slower')}
+           ${fact('cytoplasm, by rotation',fmt(MO.measured.cytoplasmic_slowdown_rotational.value,1),'× slower')}
+           <div class="note warn">${esc(MO.measured.cytoplasmic_slowdown_rotational.why_it_matters)}</div>
+           ${doiLink({doi:'10.1016/S0006-3495(97)78835-0',pmid:'9083693'})}
+           <div class="note">${esc(MO.measured.size_specificity_of_crowding.what_it_rules_out)}</div>
+           ${doiLink({doi:'10.1016/j.cell.2018.05.042',pmid:'29937223'})}
+           ${fact('direction of the error',MO.upper_bound.direction,'')}
+           <div class="note">${esc(MO.measured.subdiffusion.direction_of_the_error)}</div>
+           ${doiLink({doi:'10.1529/biophysj.104.044263',pmid:'15339818'})}
+           ${fact('what would settle it',MO.upper_bound.what_would_replace_it,'')}`,false,'warn');
+
+        h+=sec('What is drawn as measured',
+          `${fmt(100*MO.what_the_viewer_draws.immobile_fraction.value,0)}% held still, and a 5.1 s clustering clock`,'MEASURED',
+          `${fact('immobile fraction',fmt(100*MO.what_the_viewer_draws.immobile_fraction.value,0),'%')}
+           <div class="note">${esc(MO.what_the_viewer_draws.immobile_fraction.source)}. ${esc(MO.what_the_viewer_draws.immobile_fraction.honesty)}</div>
+           ${fact('Pol II cluster lifetime',fmt(MO.measured.pol2_cluster_lifetime.value,1),'s')}
+           <div class="note">${esc(MO.measured.pol2_cluster_lifetime.what_it_refutes)}.</div>
+           ${doiLink({doi:'10.1126/science.1239053',pmid:'23828889'})}
+           <div class="note">${esc(MO.what_the_viewer_draws.brownian_step)}</div>`,false,'ruler');
+
+        h+=sec('The temperature nobody wrote down',
+          `GFP's radius moves ${fmt(MO.gfp_radius_nm[1].radius_nm/MO.gfp_radius_nm[0].radius_nm,2)}× between the two candidates`,'NOT_ESTABLISHED',
+          `<div class="note">${esc(MO.temperature.why)}</div>
+           ${MO.gfp_radius_nm.map(g=>fact(g.label,fmt(g.radius_nm,2),'nm')).join('')}
+           <div class="note">Both are computed and neither is picked; the body-temperature value is used
+             for the bound, and changing it moves every speed on this page together.</div>`,false,'flask');
+
+        h+=sec('What the motion does not model',
+          `${MO.not_modelled.length} things, the first of which is the biggest`,'NOT_ESTABLISHED',
+          `<ul class="note" style="margin:0;padding-left:16px">${MO.not_modelled.map(s=>`<li style="margin:5px 0">${esc(s)}</li>`).join('')}</ul>
+           <div class="note warn">${esc(MO.what_the_viewer_draws.no_collisions)}</div>`,false,'warn');
+      }
+
       h+=sec('What the positions are',
-        'random, with no physics','DEPICTED',
+        'random start, measured walk','DEPICTED',
         `<div class="note warn">${esc(S.positions)}</div>
          <div class="note">The counts, the sizes and therefore the local density are measured. Where any
-           individual machine sits is not, and no two of them are kept from overlapping.</div>`,false,'warn');
+           individual machine starts is not, and no two of them are kept from overlapping. The walls
+           reflect, which keeps the population constant — a real cube of cytoplasm would exchange
+           machines with its surroundings.</div>`,false,'warn');
 
       if(INV?.refusals) h+=sec('What this level refuses to claim',
         `${INV.refusals.length} refusals, each with a number`,'NOT_ESTABLISHED',
@@ -1169,6 +1290,7 @@ function tick(){
     // observation 150 s apart somewhere else in the embryo, and easing between two of them would
     // draw a cell travelling a path nobody recorded.
     else if(id==='divisions-measured'&&divEvents){ tDiv+=dt*1.6; setDivisionEvent(tDiv); }
+    else if(id==='crowd') stepCrowd();
   }
   for(const m of (groups['machines']?.userData.machines??[])) m.rotation.y+=dt*m.userData.spin*0.35;
   // ease the orbit target onto the active division, and back to the origin everywhere else, so the

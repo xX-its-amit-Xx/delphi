@@ -32,12 +32,13 @@ const prov = await optional('../molecular/provenance.mjs');
 // the inventory that puts measured counts on the atomistic levels, and the measured cleavage events
 const counts = await optional('./counts.mjs');
 const divisions = await optional('./embryo-divisions.mjs');
+const motion = await optional('./motion.mjs');
 
 const absent = [];
 for (const [name, m] of Object.entries({ machines, chromatin, dynamics, budget, provenance: prov })) {
   if (!m.ok) absent.push({ module: `sim-engine/scales/molecular/${name}.mjs`, why: m.why });
 }
-for (const [name, m] of Object.entries({ counts, 'embryo-divisions': divisions })) {
+for (const [name, m] of Object.entries({ counts, 'embryo-divisions': divisions, motion })) {
   if (!m.ok) absent.push({ module: `sim-engine/scales/atlas/${name}.mjs`, why: m.why });
 }
 
@@ -191,8 +192,28 @@ if (inventory) {
     not_drawn: inventory.drawn.filter((d) => !d.size).map((d) => ({
       machine: d.machine, copies_per_cell: d.spec.copies_per_cell, why: d.size_absent_reason,
     })),
-    positions: 'DEPICTED. Positions are random within the cube with no overlap rejection and no physics. Only the counts, the sizes and therefore the density are measured.',
+    positions: 'DEPICTED. Starting positions are random within the cube with no overlap rejection. The MOTION from there is a Brownian walk at a diffusion coefficient derived from measurement - see `motion`. Counts, sizes and therefore density are measured.',
   };
+
+  // ---------------------------------------------------------------- how fast they move
+  if (motion.ok) {
+    const mem = members.map((m) => {
+      const r = motion.mod.equivalentRadiusNm(m.extents_nm) ?? m.diameter_nm / 2;
+      return { machine: m.machine, radius_nm: r, D_um2_s: motion.mod.diffusionUpperBound(r).D_cytoplasm_um2_s };
+    });
+    const plan = motion.mod.sceneAnimationPlan(mem, { box_um: side, fps: 60 });
+    slab.motion = {
+      plan,
+      measured: motion.mod.MEASURED,
+      upper_bound: motion.mod.UPPER_BOUND,
+      temperature: motion.mod.TEMPERATURE,
+      gfp_radius_nm: motion.mod.gfpRadiusNm(),
+      what_the_viewer_draws: motion.mod.WHAT_THE_VIEWER_DRAWS,
+      not_modelled: motion.mod.WHAT_THIS_DOES_NOT_MODEL,
+      citations: motion.mod.CITATIONS,
+      worked: motion.mod.worked(),
+    };
+  }
 }
 
 // ---------------------------------------------------------------- the measured divisions
