@@ -213,6 +213,7 @@ const MAT={
 
 // ---------------------------------------------------------------- level: measured embryo
 let embryoPts=null, embryoIndex=null, embryoFrames=0;
+let embryoHi=null;
 async function buildEmbryo(){
   const M=D?.measured_embryo; if(!M||M.error) return;
   const g=groups['embryo-measured'];
@@ -238,6 +239,20 @@ async function buildEmbryo(){
   embryoPts=new THREE.Points(geo,mat);
   embryoPts.userData.src=f32;
   g.add(embryoPts);
+  /* Nuclei as shaded spheres at their measured radii, in place of the dots. The renderer is a
+     separate module (see its header for who wrote it and how it was reviewed). The point cloud stays
+     as the fallback: if the nuclei file or the module fails to load, the level still draws. */
+  try{
+    const [{createEmbryo},nb,nm]=await Promise.all([
+      import('./embryo-render.mjs'),
+      fetch('../embryo/embryo-nuclei.f16').then(r=>{ if(!r.ok) throw new Error(r.status); return r.arrayBuffer(); }),
+      fetch('../embryo/embryo-nuclei.json').then(r=>{ if(!r.ok) throw new Error(r.status); return r.json(); }),
+    ]);
+    embryoHi=createEmbryo(THREE,{nuclei:nb,manifest:nm,scale:20});
+    g.add(embryoHi.group);
+    embryoPts.visible=false;
+    g.userData.nucleiManifest=nm;
+  }catch(e){ console.warn('nuclei renderer unavailable, drawing points:',e.message); }
   // a faint sphere for the embryo surface the cells sit on
   const shell=new THREE.Mesh(new THREE.SphereGeometry(21,48,32),MAT.shell);
   g.add(shell);
@@ -263,6 +278,7 @@ function setEmbryoFrame(fr){
   }
   embryoPts.geometry.attributes.position.needsUpdate=true;
   embryoPts.geometry.setDrawRange(0,count);
+  if(embryoHi) embryoHi.setFrame(f);
   for(const ring of (groups['embryo-measured'].userData.rings??[])){
     const d=Math.abs(f-ring.userData.frame);
     ring.material.opacity=d<6?(1-d/6)*0.95:0;
@@ -714,7 +730,10 @@ function levelId(i){ return LEVELS[Math.max(0,Math.min(LEVELS.length-1,Math.roun
    that a 31 nm ribosome and a 16.7 nm polymerase are visibly different objects. Framed from outside
    it is a solid green block, which is true and useless. 'divisions-measured' is tightened too, since
    the camera is pointed at one event rather than at the whole cloud. */
-const PAD={ 'cleavage':1.12, 'embryo-measured':1.18, 'crowd':0.30, 'divisions-measured':0.55 };
+/* 'embryo-measured' dropped from 1.18 to 0.52 when the nuclei became spheres at their measured radii:
+   at true scale a nucleus is about 1 % of the embryo's width, so a camera framed on the whole embryo
+   draws them as specks and throws away the shading that makes them read as bodies. */
+const PAD={ 'cleavage':1.12, 'embryo-measured':0.52, 'crowd':0.30, 'divisions-measured':0.55 };
 const camDist=new Map();
 function fitCamera(id){
   if(camDist.has(id)) return camDist.get(id);

@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Six Tracks</title>
+<style>
+  :root{--bg:#080b11;--panel:#0d1219;--card:#111823;--edge:#1e2836;--ink:#e6edf6;--dim:#9fb0c5;--faint:#6b7b90;
+    --blue:#3f82d6;--amber:#bf8410;--green:#4ec9a0;--purple:#b48ef5;--red:#ef6a6a}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Segoe UI",system-ui,sans-serif}
+  a{color:#7fb0ef;text-decoration:none} a:hover{text-decoration:underline}
+  .wrap{max-width:1180px;margin:0 auto;padding:22px 16px 80px}
+  header h1{font-size:22px;margin:0 0 4px;letter-spacing:-.2px}
+  header p{margin:0;color:var(--dim);max-width:820px}
+  .nav{margin:10px 0 0;font-size:12.5px;color:var(--faint)} .nav a{margin-right:12px}
+  h2{font-size:15px;margin:34px 0 10px;letter-spacing:.2px}
+  h2 small{font-weight:400;color:var(--faint);margin-left:8px;font-size:12px}
+  .strategies{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}
+  .strat{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:13px 15px}
+  .strat b{font-size:13px} .strat p{margin:4px 0 0;color:var(--dim);font-size:12.5px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .card{background:var(--card);border:1px solid var(--edge);border-radius:12px;padding:13px 14px;cursor:pointer;
+    display:flex;flex-direction:column;gap:8px;min-width:0}
+  .card:hover{border-color:#2c3a4e} .card[aria-current=true]{border-color:var(--blue);background:#131c2a}
+  .card .n{font-size:11px;color:var(--faint);letter-spacing:.6px;text-transform:uppercase}
+  .card .t{font-size:14px;font-weight:650;line-height:1.3}
+  .card .pick{font-size:12.5px;color:var(--dim);line-height:1.4}
+  .steps{display:flex;flex-wrap:wrap;gap:4px} .step{font-size:10.5px;padding:2px 7px;border-radius:20px;background:#0b111a;border:1px solid var(--edge);color:var(--dim)}
+  .chip{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.4px;padding:2px 7px;border-radius:5px;border:1px solid;text-transform:uppercase;white-space:nowrap}
+  .chip.paper{color:var(--blue);border-color:var(--blue)} .chip.contract{color:var(--amber);border-color:var(--amber)}
+  .chip.existing{color:var(--purple);border-color:var(--purple)}
+  .chip.ok{color:var(--green);border-color:var(--green)} .chip.warn{color:var(--amber);border-color:var(--amber)}
+  .chip.bad{color:var(--red);border-color:var(--red)} .chip.mute{color:var(--faint);border-color:var(--edge)}
+  .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  #detail{margin-top:14px;background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:16px 18px}
+  #detail h3{margin:0 0 4px;font-size:17px} #detail .lead{color:var(--dim);margin:0 0 12px;max-width:900px}
+  details{background:var(--card);border:1px solid var(--edge);border-radius:10px;margin:8px 0;overflow:hidden}
+  details>summary{cursor:pointer;padding:10px 12px;list-style:none;display:flex;gap:10px;align-items:baseline}
+  details>summary::-webkit-details-marker{display:none}
+  details>summary:hover{background:#151d2b}
+  details>summary .h{font-weight:600;font-size:13.5px} details>summary .s{color:var(--dim);font-size:12.5px;flex:1;min-width:0}
+  .body{padding:4px 14px 14px;border-top:1px solid var(--edge);font-size:13px}
+  .body p{margin:9px 0;color:#c9d5e5;max-width:900px}
+  .pred{border-left:3px solid var(--blue);padding:7px 11px;margin:8px 0;background:#0c121b;border-radius:0 8px 8px 0}
+  .pred b{font-size:12px;color:var(--faint);letter-spacing:.4px} .pred .ref{color:var(--amber);font-size:12.5px;margin-top:4px}
+  .law{padding:8px 0;border-bottom:1px solid #151c27} .law:last-child{border-bottom:none}
+  .law code{font:12px ui-monospace,Consolas,monospace;color:var(--green);word-break:break-all}
+  .law .f{font-size:11.5px;color:var(--faint)}
+  .tbl{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+  .tbl th{text-align:left;color:var(--faint);font-weight:500;padding:5px 8px;border-bottom:1px solid var(--edge);font-size:11.5px}
+  .tbl td{padding:6px 8px;border-bottom:1px solid #151c27;vertical-align:top}
+  .scroll{overflow-x:auto}
+  .cite{font-size:12.5px;padding:5px 0;border-bottom:1px solid #151c27;color:#c9d5e5}
+  .note{font-size:12.5px;color:var(--dim);background:#0b111a;border:1px solid var(--edge);border-radius:8px;padding:8px 11px;margin:8px 0}
+  .note.warn{border-color:#4a3a12;background:#15120a;color:#e0c98a}
+  .bars{display:grid;grid-template-columns:repeat(2,1fr);gap:2px 22px}
+  .bar{display:grid;grid-template-columns:1fr auto;gap:6px;font-size:12px;padding:3px 0;cursor:pointer}
+  .bar .lab{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .bar .v{font-variant-numeric:tabular-nums;font-weight:600}
+  .bar .tr{grid-column:1/-1;height:4px;background:#121a26;border-radius:3px;overflow:hidden} .bar .fi{display:block;height:100%;background:var(--blue);border-radius:3px}
+  .bar[aria-pressed=true] .lab{color:var(--ink)} .bar[aria-pressed=true] .fi{background:var(--amber)}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+  .filters input,.filters select{background:#0b111a;border:1px solid var(--edge);color:var(--ink);border-radius:8px;padding:6px 9px;font:inherit;font-size:13px}
+  .filters input{flex:1;min-width:180px}
+  .paper{padding:9px 0;border-bottom:1px solid #151c27}
+  .paper .ti{font-weight:600;font-size:13.5px} .paper .me{font-size:12px;color:var(--faint);margin:2px 0}
+  .paper .wh{font-size:12.5px;color:#c9d5e5} .paper .q{font-size:12.5px;color:var(--dim);border-left:2px solid var(--edge);padding-left:9px;margin-top:4px;font-style:italic}
+  .stat{display:flex;gap:22px;flex-wrap:wrap;margin:8px 0 2px} .stat div{font-size:12px;color:var(--faint)} .stat b{display:block;font-size:19px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .ask li{margin:6px 0;color:#e0c98a}
+  @media (max-width:860px){.grid{grid-template-columns:1fr}.strategies{grid-template-columns:1fr}.bars{grid-template-columns:1fr}
+    .tbl{display:block;overflow-x:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Six tracks</h1>
+  <p id="lede">loading…</p>
+  <div class="nav"><a href="../atlas/">atlas</a><a href="../retro/">retro-validation</a><a href="../devlog/">dev log</a><span id="built"></span></div>
+</header>
+
+<div class="strategies">
+  <div class="strat"><span class="chip paper">strategy 1 · the paper</span>
+    <p>With Markus Buehler and Lee Marom. Four candidate routes, one per level of biological organisation; each runs the same loop — compose a model, freeze a prediction, test it.</p></div>
+  <div class="strat"><span class="chip contract">strategy 2 · contracting</span>
+    <p>A new biomaterial whose design space is narrowed by machine-checked laws, printed on a Formlabs machine as a proof of concept for an architecture practice.</p></div>
+</div>
+
+<h2>The tracks <small>select one</small></h2>
+<div class="grid" id="cards"></div>
+<div id="detail"></div>
+
+<h2>The biomaterials side <small>chemistry, physics, the printer, the partner</small></h2>
+<div id="specs"></div>
+
+<h2 id="corpus-h">The Buehler corpus</h2>
+<div id="corpus"></div>
+
+<h2>Open for Amit</h2>
+<ul class="ask" id="ask"></ul>
+</div>
+
+<script type="module">
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=n=>Number(n??0).toLocaleString('en-GB');
+let D=null;
+try{ D=await (await fetch('./tracks.json')).json(); }catch(e){ $('#lede').textContent='could not load tracks.json: '+e.message; }
+
+function idLink(s){
+  const v=String(s??'').trim(); if(!v) return '';
+  if(/^10\./.test(v)) return `<a href="https://doi.org/${esc(v)}" target="_blank" rel="noopener">${esc(v)}</a>`;
+  const ax=v.match(/(\d{4}\.\d{4,5})/); if(/arxiv/i.test(v)&&ax) return `<a href="https://arxiv.org/abs/${ax[1]}" target="_blank" rel="noopener">arXiv:${ax[1]}</a>`;
+  if(/^https?:/.test(v)) return `<a href="${esc(v)}" target="_blank" rel="noopener">${esc(v.replace(/^https?:\/\//,'').slice(0,60))}</a>`;
+  return esc(v);
+}
+/* A citation is shown as verified only when the independent resolver confirmed it. The agent's own
+   flag is shown for what it is: a claim. */
+function citeBadge(c){
+  if(c.resolved?.ok===true) return '<span class="chip ok" title="resolved independently, title matched">resolved</span>';
+  if(c.resolved&&c.resolved.ok===false) return `<span class="chip bad" title="${esc(c.resolved.why??'did not resolve')}">did not resolve</span>`;
+  return c.agent_says_verified?'<span class="chip warn" title="the agent reports fetching it; not yet re-checked here">agent-reported</span>'
+    :'<span class="chip mute">unverified</span>';
+}
+function cites(list){
+  if(!list?.length) return '<div class="note">no citations returned</div>';
+  return list.map(c=>`<div class="cite">${citeBadge(c)} ${esc(c.authors)} (${esc(c.year)}). ${esc(c.title)}. <i>${esc(c.venue??'')}</i> ${idLink(c.doi_or_arxiv)}
+    ${c.used_for?`<div style="color:var(--faint);font-size:12px;margin-top:2px">used for: ${esc(c.used_for)}</div>`:''}</div>`).join('');
+}
+const sec=(h,s,body,open)=>`<details${open?' open':''}><summary><span class="h">${esc(h)}</span><span class="s">${s??''}</span></summary><div class="body">${body}</div></details>`;
+const statusChip=s=>({designed:'ok',scouted:'warn','laws mapped':'warn',pending:'mute'}[s]??'mute');
+
+function renderCards(){
+  $('#cards').innerHTML=D.tracks.map(t=>`<div class="card" data-n="${t.n}" role="button" tabindex="0">
+    <div class="row"><span class="n">track ${t.n} · ${esc(t.level)}</span></div>
+    <div class="t">${esc(t.title)}</div>
+    <div class="row"><span class="chip ${esc(t.route)}">${esc(t.route)}</span><span class="chip ${statusChip(t.status)}">${esc(t.status)}</span>
+      ${D.corpus?.per_track?`<span class="chip mute" title="Buehler papers tagged to this track">${fmt(D.corpus.per_track[t.n])} papers</span>`:''}</div>
+    <div class="pick">${esc(t.design?.chosen??t.scout?.recommended??'agents still working')}</div>
+    <div class="steps">${t.loop.map(s=>`<span class="step">${esc(s)}</span>`).join('')}</div></div>`).join('');
+  document.querySelectorAll('.card').forEach(c=>{ c.onclick=()=>show(+c.dataset.n);
+    c.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); show(+c.dataset.n); } }; });
+}
+
+function show(n){
+  const t=D.tracks.find(x=>x.n===n); if(!t) return;
+  document.querySelectorAll('.card').forEach(c=>c.setAttribute('aria-current',String(+c.dataset.n===n)));
+  const d=t.design, s=t.scout, L=t.laws;
+  const syn=(D.synthesis?.tracks??[]).find(x=>x.n===n);
+  let h=`<h3>Track ${t.n}: ${esc(t.title)}</h3><p class="lead">${esc(syn?.verdict??d?.one_paragraph??s?.summary??'The agents assigned to this track have not reported yet.')}</p>`;
+  if(syn?.next) h+=`<div class="note"><b>Next:</b> ${esc(syn.next)}</div>`;
+  if(d){
+    h+=sec('What is frozen, and what would refute it',`${d.frozen_predictions?.length??0} predictions`,
+      `<p>${esc(d.what_is_frozen_and_when??'')}</p>`+(d.frozen_predictions??[]).map(p=>`<div class="pred"><b>${esc(p.id)}</b>
+        <div>${esc(p.statement)}${p.number?` <span style="color:var(--green)">${esc(p.number)}</span>`:''}</div>
+        <div class="ref">refuted if: ${esc(p.refuted_if)}</div>
+        <div style="color:var(--faint);font-size:12px;margin-top:3px">tested by: ${esc(p.data_or_measurement)}</div></div>`).join(''),true);
+    h+=sec('The model',esc((d.model??'').slice(0,90))+'…',`<p style="white-space:pre-wrap">${esc(d.model)}</p>`);
+    h+=sec('Steps, and the first week',`${d.steps?.length??0} steps`,
+      `<ol>${(d.steps??[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ol><p><b>First week</b></p><ul>${(d.first_week??[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+       ${d.compute_needed?`<p><b>Compute:</b> ${esc(d.compute_needed)}</p>`:''}${d.physical_build?`<p><b>Physical build:</b> ${esc(d.physical_build)}</p>`:''}`);
+    h+=sec('What would make it a paper, and the risks',`${d.risks?.length??0} risks`,
+      `<p>${esc(d.what_would_make_this_a_paper??'')}</p><ul>${(d.risks??[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`);
+  }
+  if(s){
+    h+=sec('Candidates the scout found',`${s.candidates?.length??0} ranked`,
+      `<div class="scroll"><table class="tbl"><tr><th>score</th><th>candidate</th><th>phenotype measured</th><th>the test</th><th>public data</th><th>biggest risk</th></tr>
+      ${(s.candidates??[]).slice().sort((a,b)=>b.score-a.score).map(c=>`<tr><td><b>${esc(c.score)}</b></td><td><b>${esc(c.name)}</b><br><span style="color:var(--faint)">${esc(c.system)}</span></td>
+        <td>${esc(c.phenotype_measured)}</td><td>${esc(c.the_test)}</td>
+        <td>${(c.public_data??[]).map(p=>`${p.fetched_ok?'<span class="chip ok">fetched</span>':'<span class="chip mute">not fetched</span>'} ${idLink(p.url)}<br><span style="color:var(--faint)">${esc(p.what)}</span>`).join('<br>')}</td>
+        <td>${esc(c.biggest_risk)}</td></tr>`).join('')}</table></div>
+      ${s.could_not_find?.length?`<div class="note warn"><b>Could not find:</b><ul style="margin:4px 0 0;padding-left:18px">${s.could_not_find.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}`);
+    if(s.measured_numbers?.length) h+=sec('Measured numbers',`${s.measured_numbers.length} with sources`,
+      `<div class="scroll"><table class="tbl"><tr><th>quantity</th><th>value</th><th>source</th></tr>${s.measured_numbers.map(m=>`<tr><td>${esc(m.quantity)}</td><td><b>${esc(m.value)}</b></td><td>${idLink(m.source)}</td></tr>`).join('')}</table></div>`);
+    h+=sec('Citations',`${s.citations?.length??0}`,cites(s.citations));
+  }
+  if(L){
+    h+=sec('Laws already machine-checked that constrain this track',`${L.existing?.length??0} in law set ${esc(L.lawset_version??D.lawset??'?')}`,
+      (L.existing??[]).map(e=>`<div class="law"><code>${esc(e.theorem_or_def)}</code> <span class="f">${esc(e.file)}${e.registry_id?` · ${esc(e.registry_id)}`:''}${e.status?` · ${esc(e.status)}`:''}</span>
+        <div>${esc(e.statement_plain)}</div><div style="color:var(--dim);font-size:12.5px">→ ${esc(e.how_it_constrains_this_track)}</div>
+        ${e.assumptions_outside_kernel?`<div style="color:var(--faint);font-size:12px">outside the kernel: ${esc(e.assumptions_outside_kernel)}</div>`:''}</div>`).join('')
+      +(L.sorry_or_axiom_flags?.length?`<div class="note${L.sorry_or_axiom_flags.some(x=>!/none/i.test(x))?' warn':''}"><b>sorry / axiom scan:</b> ${L.sorry_or_axiom_flags.map(esc).join(' · ')}</div>`:''));
+    h+=sec('Laws that would have to be formalised',`${L.missing?.length??0} missing`,
+      (L.missing??[]).map(m=>`<div class="law"><b>${esc(m.law)}</b> <span class="chip ${/easy/i.test(m.difficulty)?'ok':/hard/i.test(m.difficulty)?'bad':'warn'}">${esc((m.difficulty??'').split(/[\s:(—-]/)[0])}</span>
+        <div><code>${esc(m.statement_math)}</code></div><div style="color:var(--dim);font-size:12.5px">${esc(m.why_needed)}</div>
+        ${m.source?`<div class="f">${idLink(m.source)}</div>`:''}</div>`).join(''));
+    if(L.elimination_pattern) h+=sec('How an elimination certificate is written','the reusable pattern',`<p style="white-space:pre-wrap">${esc(L.elimination_pattern)}</p>`
+      +(L.changes_since_october?.length?`<p><b>New since October</b></p><ul>${L.changes_since_october.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''));
+  }
+  $('#detail').innerHTML=h;
+}
+
+function renderSpecs(){
+  const S=D.specialists??[];
+  if(!S.length){ $('#specs').innerHTML='<div class="note">the specialists have not reported yet</div>'; return; }
+  $('#specs').innerHTML=(D.synthesis?.biomaterial?`<div class="note"><b>Proposal:</b> ${esc(D.synthesis.biomaterial.one_line)}</div>`:'')
+   +S.map(s=>s.error?'':sec(s.topic??s.slug,`${s.findings?.length??0} findings · ${s.citations?.length??0} citations`,
+    `<p>${esc(s.summary)}</p>
+     ${s.recommendations?.length?`<p><b>Recommendations</b></p><ul>${s.recommendations.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
+     ${s.table?.length?`<div class="scroll"><table class="tbl"><tr><th>name</th><th>properties</th><th>source</th></tr>${s.table.map(r=>`<tr><td><b>${esc(r.name)}</b></td><td>${esc(r.fields)}</td><td>${idLink(r.source)}</td></tr>`).join('')}</table></div>`:''}
+     <div class="scroll"><table class="tbl"><tr><th>finding</th><th>value</th><th>confidence</th><th>source</th></tr>${(s.findings??[]).map(f=>`<tr><td>${esc(f.claim)}</td><td><b>${esc(f.value??'')}</b></td>
+       <td><span class="chip ${/high/i.test(f.confidence)?'ok':/low/i.test(f.confidence)?'bad':'warn'}">${esc(f.confidence)}</span></td><td>${idLink(f.source_url_or_path)}</td></tr>`).join('')}</table></div>
+     ${s.could_not_find?.length?`<div class="note warn"><b>Could not find:</b><ul style="margin:4px 0 0;padding-left:18px">${s.could_not_find.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}
+     <p><b>Citations</b></p>${cites(s.citations)}`)).join('');
+}
+
+let fTrack=0,fTheme='',fText='',fMin=1;
+function renderCorpus(){
+  const C=D.corpus; if(!C||C.error){ $('#corpus').innerHTML=`<div class="note warn">${esc(C?.error??'no corpus')}</div>`; return; }
+  $('#corpus-h').innerHTML=`The Buehler corpus <small>${fmt(C.source.works_fetched)} works fetched · ${fmt(C.relevant)} relevant</small>`;
+  const top=C.themes.slice(0,16), max=Math.max(...top.map(t=>t.count));
+  const works=C.works.filter(w=>(!fTrack||w.tracks.includes(fTrack))&&(!fTheme||w.theme===fTheme)&&w.relevance>=fMin
+    &&(!fText||(w.title+' '+w.why+' '+w.theme+' '+(w.authors??[]).join(' ')).toLowerCase().includes(fText)));
+  $('#corpus').innerHTML=`
+   <div class="stat"><div><b>${fmt(C.source.works_fetched)}</b>works fetched</div><div><b>${fmt(C.works_read_by_agents)}</b>read by ${C.batches} agents</div>
+     <div><b>${fmt(C.relevant)}</b>relevant to a track</div><div><b>${fmt(C.quotes_checked-C.quotes_failed)}/${fmt(C.quotes_checked)}</b>quotes found in their abstract</div>
+     <div><b>${fmt(C.rejected)}</b>entries rejected</div></div>
+   <div class="note">${esc(C.source.coverage_note)} Every entry below was joined back to the record fetched before any agent ran: it is shown only if its identifier and title match, and a quote only if it is a substring of the stored abstract.</div>
+   <div class="bars">${top.map(t=>`<div class="bar" data-theme="${esc(t.theme)}" aria-pressed="${fTheme===t.theme}"><span class="lab">${esc(t.theme)}</span><span class="v">${t.count}</span><span class="tr"><span class="fi" style="width:${(100*t.count/max).toFixed(1)}%"></span></span></div>`).join('')}</div>
+   <div class="filters"><input id="q" placeholder="search titles, themes, authors" value="${esc(fText)}">
+     <select id="ft"><option value="0">all tracks</option>${D.tracks.map(t=>`<option value="${t.n}"${fTrack===t.n?' selected':''}>track ${t.n}: ${esc(t.slug)} (${C.per_track[t.n]})</option>`).join('')}</select>
+     <select id="fm">${[1,3,4,5].map(n=>`<option value="${n}"${fMin===n?' selected':''}>relevance ≥ ${n}</option>`).join('')}</select>
+     <span style="color:var(--faint);font-size:12.5px">${fmt(works.length)} shown${fTheme?` · theme: ${esc(fTheme)} <a href="#" id="clr">clear</a>`:''}</span></div>
+   ${works.slice(0,120).map(w=>`<div class="paper"><div class="ti">${esc(w.title)}</div>
+     <div class="me">${esc((w.authors??[]).slice(0,4).join(', '))}${(w.n_authors??0)>4?' et al.':''} · ${esc(w.year)} · <i>${esc(w.venue??'')}</i> · ${w.doi?idLink(w.doi):'no DOI'} · cited ${fmt(w.cited_by)}
+       · ${w.tracks.map(n=>`<span class="chip mute">T${n}</span>`).join(' ')} <span class="chip ${w.relevance>=5?'ok':w.relevance>=4?'warn':'mute'}">${w.relevance}/5</span> <span class="chip mute">${esc(w.theme)}</span></div>
+     <div class="wh">${esc(w.why)}</div>${w.quote?`<div class="q">“${esc(w.quote)}”</div>`:''}</div>`).join('')}
+   ${works.length>120?`<div class="note">${fmt(works.length-120)} more match; narrow the filter. The full list is in ${esc(D.corpus_full_in_repo)}.</div>`:''}`;
+  $('#q').oninput=e=>{ fText=e.target.value.toLowerCase(); const p=e.target.selectionStart; renderCorpus(); const q=$('#q'); q.focus(); q.setSelectionRange(p,p); };
+  $('#ft').onchange=e=>{ fTrack=+e.target.value; renderCorpus(); };
+  $('#fm').onchange=e=>{ fMin=+e.target.value; renderCorpus(); };
+  document.querySelectorAll('.bar').forEach(b=>b.onclick=()=>{ fTheme=fTheme===b.dataset.theme?'':b.dataset.theme; renderCorpus(); });
+  const c=$('#clr'); if(c) c.onclick=e=>{ e.preventDefault(); fTheme=''; renderCorpus(); };
+}
+
+if(D){
+  const done=D.tracks.filter(t=>t.status==='designed').length;
+  $('#lede').textContent=`Four candidate routes for the paper, one contracting route, and the existing flying-fish framework. ${done} of ${D.tracks.length} tracks have a frozen-prediction design; law set ${D.lawset??'—'}.`;
+  const c=D.citations;
+  $('#built').textContent=`built ${D.built} · ${fmt(c.total)} citations from the track agents, ${fmt(c.independently_resolved)} resolved independently, ${fmt(c.failed_to_resolve)} failed, ${fmt(c.not_yet_checked)} unchecked`;
+  renderCards(); renderSpecs(); renderCorpus();
+  $('#ask').innerHTML=(D.open_for_amit??[]).map(x=>`<li>${esc(x)}</li>`).join('');
+  show(D.tracks.find(t=>t.design)?.n??5);
+}
+</script>
+</body>
+</html>
