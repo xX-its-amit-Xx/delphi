@@ -103,6 +103,18 @@
 <script type="module">
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* A schema said "string" and an agent returned an object anyway: one design's `model` came back as a
+   structured block, and `.slice` on it threw at render time. Rather than coerce silently with String()
+   (which prints "[object Object]"), an object is laid out as its own key/value lines, so the content
+   survives and the shape is visible. */
+function asText(v){
+  if(v==null) return '';
+  if(typeof v==='string') return v;
+  const NL = String.fromCharCode(10);
+  if(Array.isArray(v)) return v.map(asText).join(NL);
+  if(typeof v==='object') return Object.entries(v).map(([k,x])=>`${k}: ${typeof x==='object'?JSON.stringify(x):x}`).join(NL);
+  return String(v);
+}
 const fmt=n=>Number(n??0).toLocaleString('en-GB');
 let D=null;
 try{ D=await (await fetch('./tracks.json')).json(); }catch(e){ $('#lede').textContent='could not load tracks.json: '+e.message; }
@@ -147,15 +159,17 @@ function show(n){
   document.querySelectorAll('.card').forEach(c=>c.setAttribute('aria-current',String(+c.dataset.n===n)));
   const d=t.design, s=t.scout, L=t.laws;
   const syn=(D.synthesis?.tracks??[]).find(x=>x.n===n);
-  let h=`<h3>Track ${t.n}: ${esc(t.title)}</h3><p class="lead">${esc(syn?.verdict??d?.one_paragraph??s?.summary??'The agents assigned to this track have not reported yet.')}</p>`;
-  if(syn?.next) h+=`<div class="note"><b>Next:</b> ${esc(syn.next)}</div>`;
+  let h=`<h3>Track ${t.n}: ${esc(t.title)}</h3><p class="lead">${esc(asText(syn?.verdict??d?.one_paragraph??s?.summary??'The agents assigned to this track have not reported yet.'))}</p>`;
+  if(syn?.why_it_matters) h+=`<div class="note">${esc(asText(syn.why_it_matters))}</div>`;
+  if(syn?.next) h+=`<div class="note"><b>Next:</b> ${esc(asText(syn.next))}</div>`;
   if(d){
     h+=sec('What is frozen, and what would refute it',`${d.frozen_predictions?.length??0} predictions`,
       `<p>${esc(d.what_is_frozen_and_when??'')}</p>`+(d.frozen_predictions??[]).map(p=>`<div class="pred"><b>${esc(p.id)}</b>
         <div>${esc(p.statement)}${p.number?` <span style="color:var(--green)">${esc(p.number)}</span>`:''}</div>
         <div class="ref">refuted if: ${esc(p.refuted_if)}</div>
         <div style="color:var(--faint);font-size:12px;margin-top:3px">tested by: ${esc(p.data_or_measurement)}</div></div>`).join(''),true);
-    h+=sec('The model',esc((d.model??'').slice(0,90))+'…',`<p style="white-space:pre-wrap">${esc(d.model)}</p>`);
+    const modelText=asText(d.model);
+    h+=sec('The model',esc(modelText.slice(0,90))+(modelText.length>90?'…':''),`<p style="white-space:pre-wrap">${esc(modelText)}</p>`);
     h+=sec('Steps, and the first week',`${d.steps?.length??0} steps`,
       `<ol>${(d.steps??[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ol><p><b>First week</b></p><ul>${(d.first_week??[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
        ${d.compute_needed?`<p><b>Compute:</b> ${esc(d.compute_needed)}</p>`:''}${d.physical_build?`<p><b>Physical build:</b> ${esc(d.physical_build)}</p>`:''}`);

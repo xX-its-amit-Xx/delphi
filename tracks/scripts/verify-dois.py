@@ -33,7 +33,11 @@ def norm(s):
 
 
 def key_of(raw):
-    return re.sub(r"^https?://(dx\.)?doi\.org/", "", str(raw or "").strip().lower())
+    """One identifier per citation. Where an agent packed two into one field ("10.x/y ; arxiv:1234.5678")
+    the DOI is taken, since it names the version of record."""
+    v = re.sub(r"^https?://(dx\.)?doi\.org/", "", str(raw or "").strip().lower())
+    m = re.search(r"10\.\d{4,9}/[^\s;,]+", v)
+    return m.group(0).rstrip(".") if m else v
 
 
 def titles_agree(a, b):
@@ -65,11 +69,32 @@ def resolve(raw, title):
             return {"ok": ok, "registry": "arXiv", "registry_title": got[:200],
                     "why": None if ok else "identifier resolves but to a different title"}
         if k.startswith("10."):
-            d = json.loads(fetch("https://api.crossref.org/works/" + urllib.parse.quote(k, safe="/")))
-            got = " ".join((d["message"].get("title") or [""])[0].split())
+            # CROSSREF IS NOT THE ONLY REGISTRY. The first version asked Crossref about every DOI and
+            # recorded a 404 as "no such identifier". Five of its ten failures were dataset DOIs minted
+            # by DataCite (Zenodo, figshare, an ETH research collection), which Crossref has never
+            # heard of. The registry said no because it was the wrong registry. DataCite is asked next,
+            # and only a miss in BOTH is a failure.
+            got, year, registry = None, None, None
+            try:
+                d = json.loads(fetch("https://api.crossref.org/works/" + urllib.parse.quote(k, safe="/")))
+                got = " ".join((d["message"].get("title") or [""])[0].split())
+                year = (d["message"].get("issued", {}).get("date-parts") or [[None]])[0][0]
+                registry = "Crossref"
+            except urllib.error.HTTPError as e:
+                if e.code != 404:
+                    raise
+                d = json.loads(fetch("https://api.datacite.org/dois/" + urllib.parse.quote(k, safe="/")))
+                at = d["data"]["attributes"]
+                got = " ".join(((at.get("titles") or [{}])[0].get("title") or "").split())
+                year = at.get("publicationYear")
+                registry = "DataCite"
+            if not norm(title):
+                # no title was attached, so there is nothing to compare. The identifier is real; whether
+                # it is the paper the agent meant cannot be said, and that is its own status.
+                return {"ok": None, "resolves_untitled": True, "registry": registry, "registry_title": got[:200],
+                        "year": year, "why": "resolves, but the agent attached no title to compare against"}
             ok = titles_agree(title, got)
-            return {"ok": ok, "registry": "Crossref", "registry_title": got[:200],
-                    "year": (d["message"].get("issued", {}).get("date-parts") or [[None]])[0][0],
+            return {"ok": ok, "registry": registry, "registry_title": got[:200], "year": year,
                     "why": None if ok else "identifier resolves but to a different title"}
         return {"ok": False, "why": "not a DOI or an arXiv id", "registry": None}
     except urllib.error.HTTPError as e:
@@ -95,11 +120,12 @@ def main():
         for c in d.get("citations", []) or []:
             cites.append((os.path.basename(f), c))
     todo = [(f, c) for f, c in cites if key_of(c.get("doi_or_arxiv")) and
-            (key_of(c.get("doi_or_arxiv")) not in cache or cache[key_of(c.get("doi_or_arxiv"))].get("unreachable"))]
+            (key_of(c.get("doi_or_arxiv")) not in cache or cache[key_of(c.get("doi_or_arxiv"))].get("unreachable")
+             or cache[key_of(c.get("doi_or_arxiv"))].get("ok") is False)]
     print(f"{len(cites)} citations in {AGENTS}; {len(todo)} to resolve, {len(cites) - len(todo)} cached or blank")
     for i, (f, c) in enumerate(todo):
         k = key_of(c["doi_or_arxiv"])
-        r = resolve(c["doi_or_arxiv"], c.get("title"))
+        r = resolve(k, c.get("title"))
         r["agent_title"] = (c.get("title") or "")[:200]
         r["agent_said_verified"] = bool(c.get("verified"))
         r["from"] = f
@@ -114,6 +140,7 @@ def main():
         "resolved_with_matching_title": sum(1 for v in vals if v.get("ok") is True),
         "failed": sum(1 for v in vals if v.get("ok") is False),
         "unreachable": sum(1 for v in vals if v.get("unreachable")),
+        "resolves_but_no_title_to_compare": sum(1 for v in vals if v.get("resolves_untitled")),
         "agent_said_verified_but_failed": sum(1 for v in vals if v.get("ok") is False and v.get("agent_said_verified")),
     }
     json.dump({"rule": "resolved AND the registry title agrees with the title the agent attached",
