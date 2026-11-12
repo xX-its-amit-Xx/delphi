@@ -31,9 +31,16 @@ Six tracks: 1 reporter response · 2 spatial patterns · 3 lumen geometry · 4 p
 - Holdout: `node holdout/check-leaks.mjs <path>` on every .mjs/.md; `node sim-engine/scales/atlas/holdout-html-scan.mjs` for the .html/.json the gate skips.
 - Deploy: `node dashboard/predeploy.mjs` then `cd dashboard && npx wrangler deploy`. Live: https://delphi-mission-control.ashenoy000.workers.dev/blueprint3d/studio-live/{atlas,tracks}/
 
+## Done 2026-11-12 (workflow wf_42562527-bc5, 39 agents, finished; registry claim removed)
+- Live: https://delphi-mission-control.ashenoy000.workers.dev/blueprint3d/studio-live/tracks/
+- All six tracks designed with frozen predictions; synthesis in `tracks/synthesis.json`; agent outputs in `D:/Users/ashenoy00000/delphi-work/agents/` (not committed).
+- Citations: 217 of 221 resolve with matching titles (`tracks/scripts/verify-dois.py`: Crossref, then DataCite, then arXiv). Corpus: 544 relevant, 357/357 quotes verbatim.
+- KNOWN GAP: the law-mapping agents read leanbio at law set 1.6.0; this repo is 1.8.1, so six laws are missing from their maps (`python tracks/scripts/lawset-diff.py 1.6.0 1.8.1`). The four new candidates have no sorry/axiom in code (the grep hits are the docstring words "not an axiom"), but each is a NAMED HYPOTHESIS its theorem is conditional on. 14 of 59 pinned laws have no Lean theorem at all.
+- Proposed Lean, UNCHECKED (Mathlib not built here): `tracks/lean/HygromorphCeiling.lean`. Hand to session 31; do not write into lean/.
+- Embryo drawn as nuclei at measured radii (Gemini-written `atlas/embryo-render.mjs`, reviewed).
+
 ## What is running
-- Workflow `delphi-six-tracks`, run `wf_42562527-bc5`, 39 agents. Resume with the scriptPath in the session's `workflows/scripts/`. Claimed in `C:\Temp\claude-mailbox\registry-claims.md`; remove the row when it finishes (`python tracks/scripts/registry-claim.py remove delphi-six-tracks`).
-- No cluster jobs. Explorer/Discovery still decline the SSH key (since 2026-11-07).
+- Nothing. No workflows, no cluster jobs, no GPUs. Explorer/Discovery still decline the SSH key (since 2026-11-07).
 
 ## Standing constraints
 - Frozen holdout: nothing from the held-out clade (roster in holdout/split.json) in any file, mesh, manifest or log. Never add allowlist entries.
@@ -45,4 +52,5 @@ Six tracks: 1 reporter response · 2 spatial patterns · 3 lumen geometry · 4 p
 1. "Senty" — nothing by that name found. What is it and how is it reached?
 2. "The paper is in repo" — no manuscript on any fetched branch. Which repo and path?
 3. "Mobile Money" in the brief is read as Mamou-Mani — confirm.
-4. Standing: revoke the GitHub token (repo/admin:org/admin:enterprise), rotate the Frontier token, Nebius key, cluster SSH key.
+4. Anthropic Lean token grant: the 14 pinned laws with no theorem, or the 17 laws the biomaterial track needs? (my pick: the 14)
+5. Standing: revoke the GitHub token (repo/admin:org/admin:enterprise), rotate the Frontier token, Nebius key, cluster SSH key.
