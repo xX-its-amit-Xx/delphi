@@ -47,9 +47,14 @@ Six tracks: 1 reporter response · 2 spatial patterns · 3 lumen geometry · 4 p
 - Citations: 529 of 1,021 resolved independently, 0 failed, 484 not yet checked (no DOI/arXiv id, or not in the resolver run).
 - `tracks/lean/check.sh` now makes relative paths absolute (it runs from lean/). A deliberate negative control, `bm-lean-materials-laws__NegativeControl.lean`, MUST fail (it does).
 
+## Done 2026-11-12/13: phase 2 (verify + explain), live and pushed (fork commit 9bc802cac)
+- 298 key claims re-checked: 185 supported, 105 partly, 5 not fetchable, 3 not checkable. Results: `tracks/research/phase2/` (extract with `tracks/scripts/extract-journal.py <journal> <dir>`, then scrub, then `node tracks/build.mjs`).
+- Explainers: measured grade 3.5-4.5, but no-context readers rate them 3-4 of 5 even after a revision round. NOT yet layperson-ready; do not claim it.
+- `node tracks/reproduce.mjs --online`: 19 passed, 0 failed, 0 skipped. The online DOI row reads the cached resolution file first.
+
 ## What is running
-- Background: `complete-corpus-when-ready.sh` waiting for the OpenAlex budget (resets 00:00 UTC) to fill 97 missing Buehler works. No cluster jobs, no GPUs. Explorer/Discovery still decline the SSH key (since 2026-11-07).
-- Not started: phase 2 (layperson explainers + no-context reader check + claim verifiers).
+- No background jobs. Corpus top-up ran: 799 of 892 works, 93 still missing (OpenAlex returned only 4); the 4 new ones are unread by agents. No cluster jobs, no GPUs. Explorer/Discovery still decline the SSH key (since 2026-11-07).
+- Nothing else. Phase 2 and its revision round are finished (workflows wf_add95fb8-427, wf_871015f9-839).
 
 ## Standing constraints
 - Frozen holdout: nothing from the held-out clade (roster in holdout/split.json) in any file, mesh, manifest or log. Never add allowlist entries.
