@@ -159,7 +159,7 @@ export function loadSpecialists(agentsDir = AGENTS, verified = {}) {
 // reproducible from the repo alone. Groups come from the file-name prefix.
 const FLEET_DIR = path.join(HERE, 'research', 'agents');
 const GROUPS = { bm: 'biomaterials', pp: 'people-funding-clients', q1: 'leanbio-enhancers', q2: 'leanbio-binding',
-  t1: 'track-1', t2: 'track-2', t3: 'track-3', t4: 'track-4', t6: 'track-6' };
+  lf: 'fire-coatings', t1: 'track-1', t2: 'track-2', t3: 'track-3', t4: 'track-4', t6: 'track-6' };
 export function loadFleet(verified = {}) {
   if (!fs.existsSync(FLEET_DIR)) return [];
   return fs.readdirSync(FLEET_DIR).filter((f) => f.endsWith('.json')).sort().map((f) => {

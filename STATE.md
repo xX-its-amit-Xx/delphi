@@ -54,6 +54,11 @@ Six tracks: 1 reporter response · 2 spatial patterns · 3 lumen geometry · 4 p
 
 - Issues POSTED 2026-11-13 to fractastical/delphi: #17-#41 (25 issues; labels not on repo, named in each body's first line). Re-running file-issues.py will not duplicate. Sentry is #36, paper location #37. The Delphi bot posts daily updates there; check those issues for replies.
 
+## Lead 2026-11-13: green fire-retardant coatings (brief: tracks/BRIEF-2026-11-13-green-fire-coatings.md; issue #42)
+- 3 agents (lf-mogas, lf-fire-regs, lf-lean-fire) in tracks/research/agents/, group `fire-coatings`. FireCoatingCertificate.lean: 16 theorems, passes check.sh (I re-ran it); negative control fails. Worked-example limits are PLACEHOLDERS.
+- GAPS: ISO/ASTM/BSI pages 403, so standard editions and pass numbers mostly unconfirmed; no evidence of her own fire-coating work; the shortage claim is Amit's seminar account only. These 3 agents have NOT had a verifier pass.
+- Versions checked 2026-11-13: Lean v4.35.0 is the latest release; Mathlib pinned at tag v4.35.0 (do not bump; lean/ is session 31's); leanbio law set 1.6.0 vs app repo 1.8.1.
+
 ## What is running
 - No background jobs. Corpus top-up ran: 799 of 892 works, 93 still missing (OpenAlex returned only 4); the 4 new ones are unread by agents. No cluster jobs, no GPUs. Explorer/Discovery still decline the SSH key (since 2026-11-07).
 - Nothing else. Phase 2 and its revision round are finished (workflows wf_add95fb8-427, wf_871015f9-839).

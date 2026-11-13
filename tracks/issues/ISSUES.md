@@ -192,3 +192,16 @@ The note reads "AI SaaS -- travel planning / woolly mammoth connection". No read
 labels: dashboard, graphics
 
 The embryo is now drawn as shaded nuclei at measured radii. Google Flow was named in the request and not used. Cell motion in the embryo level is the measured tracked positions (not interpolated); molecular motion in the crowd level is a Brownian walk at a speed labelled an upper bound. Decision: is a Flow-generated rendering wanted, and if so as a still, a loop, or a replacement for the live view?
+
+## Green fire-retardant coatings and the fire-test bottleneck: a Lean-for-bio design lead (biomaterials)
+labels: biomaterial, lead, lean
+
+Lead from a seminar on 2026-11-13: the speaker (a Penn design-school biomaterials researcher whose public page is https://www.design.upenn.edu/people/laia-mogas-soldevila) raised green coatings for fire requirements, and the difficulty of finding people to test materials against regulations. The same bottleneck applies to Track 5. Idea: use Lean-for-bio to say in advance which candidate coatings a regulation test would reject, so scarce test slots go to survivors.
+
+What was checked on 2026-11-13 (all drafts; sources and fetch dates in `tracks/research/agents/lf-*.json`, shown on the tracks dashboard):
+- **Kernel-checked:** `tracks/research/lean/FireCoatingCertificate.lean` has 16 theorems (series thermal resistance and a back-face temperature bound, char as added resistance, thermal penetration depth, a lumped transient, thin and thick ignition time against a critical heat flux, an energy bound on peak heat release). `bash tracks/lean/check.sh` reports no errors and no `sorryAx`; the negative control `FireCoatingNegativeControl.lean` fails as required. The law registry had no heat-conduction or ignition law, so all seven are new there.
+- **Limit:** a certificate can only ELIMINATE a candidate; a regulation test also measures flaming, smoke, spread and delamination. The 400 K limit and 800 K fire-side temperature in the worked example are placeholders, not from any regulation. The ignition formulas rest on a search snippet, not a text that was opened.
+- **Her public work** is printed bio-based materials (chitosan, cellulose, silk, food-waste composites) with water-based fabrication. No public fire-coating work or fire-test-shortage evidence was found; the shortage claim rests only on the seminar account. Whether she or her group would want to collaborate is unknown; nobody has been contacted.
+- **Regulations:** ISO, ASTM and BSI pages returned 403, so most standard editions and pass numbers are NOT confirmed. Read: Euroclass table, ASTM E84 classes, UL 94 V ratings, the UK Approved Document B page, the ICC 2027 cycle notice. Found: one UK lab's statement that accredited capacity is short, and a USD 0.5 to 1M mass-timber fire-test cost.
+
+Needed: confirm the lead is worth pursuing; get the current edition and pass criteria for the standards that matter (someone with standards access); decide whether any outreach should happen and who makes it.

@@ -1,0 +1,288 @@
+{
+ "label": "lf-lean-fire",
+ "topic": "Can Lean elimination certificates on 1-D heat laws help design bio-based fire-retardant coatings and cut physical fire tests?",
+ "summary": "Yes, narrowly. Seven simple laws (series resistance and back-face bound, char as added resistance, thermal penetration depth, lumped transient, thin/thick ignition time with critical flux, energy-balance bound on peak HRR) were proved in one Lean file with 16 theorems, all using only the three standard axioms; check.sh passed (0 errors, 0 sorryAx) and a negative control failed as required. Each certificate eliminates a candidate whose best case, inside a declared envelope of thickness, conductivity, thermal inertia and time constant, already breaks a stated limit. It can never approve one: real regulation tests also measure flaming, smoke, flame spread and delamination, which these laws do not model. The registry (upstream/leanbio) has no heat-conduction law, only a diffusive time scale h^2/D and a note that Fick is used as a definition. The saving in tests depends on how many candidates fail on one thermal criterion alone, which is unknown until material data exist; the main risk is a wrong envelope or lumped time constant, which cheap property measurements (not fire tests) can settle.",
+ "lay_summary": [
+  "A fire test asks, among other things, whether the back of a coated board gets too hot too fast.",
+  "Simple physics can sometimes say in advance that a coating is too thin or too conductive to ever pass that one question.",
+  "We wrote that physics in Lean, a proof checker, so the claim that a candidate cannot pass is checked by machine.",
+  "This only works as a way to skip hopeless candidates; it never says a coating is safe.",
+  "Fire, smoke, flame spread and peeling are not covered, so every survivor still needs a real test."
+ ],
+ "findings": [
+  {
+   "claim": "Series thermal resistance: layer resistance is thickness/(k A) and series resistances add.",
+   "value": "R_tot = d/k + Rs + Ra",
+   "source": "https://en.wikipedia.org/wiki/Thermal_resistance (fetched 2026-11-13)",
+   "evidence_quote": "When resistances are in series, the total resistance is the sum of the resistances",
+   "confidence": "high (standard law; textbooks Quintiere/Drysdale cited by DOI but not opened)"
+  },
+  {
+   "claim": "Proved in Lean: the steady back-face rise DT*Ra/(d/k+Rs+Ra) is at most DT, falls with thickness, and has a lower bound from dmax and kmin; a candidate whose best case exceeds the limit is eliminated (steady state only).",
+   "value": "backRise_le_ΔT, backRise_antitone_thickness, backRise_lower, steady_eliminates",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents3/scripts/lf-lean-fire/FireCoatingCertificate.lean",
+   "evidence_quote": "check.sh: errors=0 sorryAx=0 axiom-lines=16/16",
+   "confidence": "high for the algebra; the 1-D constant-k model is an assumption"
+  },
+  {
+   "claim": "Steady state is an upper bound on a finite-time heating, so a steady bound alone cannot eliminate at a finite test time. A one-node response with time constant at most tau_max is stated as a hypothesis and used.",
+   "value": "relax_ode, relax_lower, transient_eliminates",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents3/scripts/lf-lean-fire/FireCoatingCertificate.lean",
+   "evidence_quote": "passed check.sh",
+   "confidence": "high for the proof; medium for physical validity (no PDE comparison theorem was proved)"
+  },
+  {
+   "claim": "A char layer as an added series resistance can only lower the steady rise; elimination with envelope on char thickness and conductivity is proved.",
+   "value": "char_lowers_rise, char_eliminates",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents3/scripts/lf-lean-fire/FireCoatingCertificate.lean; Wang et al. 2012 10.1002/fam.2137",
+   "evidence_quote": "a thermal conductivity model for the fully expanded intumescent coating char, which was assumed to depend on the expansion thickness and the bubble size and distribution (Crossref abstract)",
+   "confidence": "high for algebra; real char conductivity depends on temperature and morphology so kc_min must be justified"
+  },
+  {
+   "claim": "A slab is thermally thick while the penetration depth c*sqrt(alpha t) <= d, equivalently t <= d^2/(c^2 alpha), for any convention constant c>0.",
+   "value": "thick_iff_time",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents3/scripts/lf-lean-fire/FireCoatingCertificate.lean",
+   "evidence_quote": "passed check.sh",
+   "confidence": "high"
+  },
+  {
+   "claim": "Thin solid with surface loss h never ignites below the critical flux h(Tig-T0) and reaches Tig above it at an explicit time; thick and thin ignition times give elimination given upper bounds on thermal inertia or heat capacity.",
+   "value": "thin_never_ignites, thin_reaches_Tig, thick_ignition_eliminates, thin_ignition_eliminates",
+   "source": "SFPE Engineering Guide: Piloted Ignition of Solid Materials Under Radiant Exposure (https://www.globalspec.com/reference/76862/203279/thermally-thick, search snippet only); Mikkola and Wichman 1989, 10.1002/fam.810140303 (Crossref-verified, not opened)",
+   "evidence_quote": "An approximate solution to the time to ignition is derived using the first term of the series expansion and substituting the ignition temperature for the surface temperature. (search snippet)",
+   "confidence": "medium: t=(pi/4) k rho c (Tig-T0)^2/q^2 is the standard first-term form but I did not read it in a fetched text; the Lean statement is conditional on that definition"
+  },
+  {
+   "claim": "Energy balance gives a lower bound on peak HRR: if all fuel burns in n windows of dt, peak >= E/(n dt) >= chi_min m_min dH_min/(n dt). Energy alone gives no upper bound on peak HRR.",
+   "value": "peak_ge_mean, hrr_eliminates",
+   "source": "D:/Users/ashenoy00000/delphi-work/agents3/scripts/lf-lean-fire/FireCoatingCertificate.lean",
+   "evidence_quote": "passed check.sh",
+   "confidence": "high for the proof; the all-fuel-in-window assumption is strong"
+  },
+  {
+   "claim": "Registry check: upstream/leanbio has no heat-conduction, thermal-resistance, ignition or HRR law. Near misses: diffusiveTime h^2/D and diffusiveRate (ThompsonLaws/Hygromorphs.lean), Turing no_instability_of_equal_diffusivity, a Q10 thermal performance curve (Delphi/Perturb.lean), Fick used as a definition (docs/physlib-overlap.md). All seven laws in the table are new to it.",
+   "value": "7 new laws",
+   "source": "D:/Users/ashenoy00000/delphi-work/upstream/leanbio (read only, grep of lean/ and docs/)",
+   "evidence_quote": "Fick | Not a theorem. ... Nothing. No diffusion law and no oxygen-delivery identity. (docs/physlib-overlap.md)",
+   "confidence": "high for the grep; Mathlib and physlib were not searched for heat laws"
+  },
+  {
+   "claim": "The lead's profile page does not mention fire or coatings; it describes bio-fabricated material systems and bio-based architecture.",
+   "value": "no fire content on page",
+   "source": "https://www.design.upenn.edu/people/laia-mogas-soldevila (fetched 2026-11-13)",
+   "evidence_quote": "bio-fabricated material systems for design; bio-based architecture; architectural bio-composite applications from protein and polysaccharide binders",
+   "confidence": "high (the fire-coating link rests on Amit's brief, not on the page)"
+  }
+ ],
+ "key_claims": [
+  "Elimination certificates on 1-D conduction, char resistance, lumped transient, ignition time and fuel-load energy are provable in Lean/Mathlib today with explicit hypotheses and no new axioms.",
+  "They can only reject candidates that break a limit even in their best case inside a stated envelope; they cannot approve any.",
+  "The saving in fire tests is bounded by how many candidates fail one thermal criterion; unknown until measured material data exist.",
+  "The hypotheses (envelopes, lumped time constant, burn window) carry the real risk; a wrong envelope makes a certificate wrong."
+ ],
+ "table": [
+  {
+   "name": "steady series resistance and back-face rise",
+   "fields": "d, k, Rs, Ra, DT; backRise = DT*Ra/(d/k+Rs+Ra)",
+   "source": "Wikipedia Thermal resistance; Quintiere 2006 and Drysdale 2011 (cited, not opened); NEW to registry"
+  },
+  {
+   "name": "char layer as added resistance",
+   "fields": "xc, kc; backRiseChar",
+   "source": "Wang et al. 2012 10.1002/fam.2137 (abstract); NEW"
+  },
+  {
+   "name": "thermal penetration depth, thick or thin",
+   "fields": "c, alpha, t, d; pdepth = c*sqrt(alpha t)",
+   "source": "SFPE guide (snippet) and textbooks; NEW (nearest registry item: diffusiveTime h^2/D)"
+  },
+  {
+   "name": "lumped first-order transient",
+   "fields": "Tss, tau, t; relax = Tss(1-exp(-t/tau)), solves tau T' = Tss - T",
+   "source": "standard ODE; NEW"
+  },
+  {
+   "name": "thin solid ignition with loss, critical flux",
+   "fields": "T0, Tig, q, h, C=rho c d; q_cr = h(Tig-T0)",
+   "source": "SFPE guide (snippet); NEW"
+  },
+  {
+   "name": "thick and thin ignition time",
+   "fields": "I=k rho c, DTig, q; t=(pi/4) I DTig^2/q^2 ; t=C DTig/q",
+   "source": "SFPE guide; Mikkola and Wichman 1989; Spearpoint and Quintiere 2001; NEW"
+  },
+  {
+   "name": "energy-balance bound on peak HRR",
+   "fields": "n, dt, E, chi, m, dH",
+   "source": "own derivation (mean <= max); NEW"
+  }
+ ],
+ "recommendations": [
+  "Use the certificate only as a pre-screen, after measuring k, density, c and char conductivity of each candidate on small bench samples; those inputs make the envelopes honest.",
+  "Pick one concrete regulation criterion, fetch its text, and restate the limit and fire-side temperature curve; I fetched no regulation, so 400 K and 800 K in the worked example are placeholders.",
+  "Prove a PDE-level comparison theorem for a layered slab so the lumped time-constant hypothesis can go; not done here.",
+  "Make each elimination print its hypotheses so a lab can falsify the envelope cheaply.",
+  "Never present survivors as compliant; budget real tests for all of them."
+ ],
+ "reproduce": [
+  {
+   "what": "Check the main file",
+   "command_or_url": "cd D:/Users/ashenoy00000/.antigravity-ide/ScienceClaw/delphisci && bash tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents3/scripts/lf-lean-fire/FireCoatingCertificate.lean",
+   "expected": "errors=0 sorryAx=0 axiom-lines=16/16; ALL CHECKED (about 3 minutes)"
+  },
+  {
+   "what": "Negative control must fail",
+   "command_or_url": "bash tracks/lean/check.sh D:/Users/ashenoy00000/delphi-work/agents3/scripts/lf-lean-fire/FireCoatingNegativeControl.lean",
+   "expected": "errors=1, sorryAx=1, FAILED, exit 1"
+  },
+  {
+   "what": "Worked-example arithmetic",
+   "command_or_url": "python D:/Users/ashenoy00000/delphi-work/agents3/scripts/lf-lean-fire/arithmetic.py",
+   "expected": "steady rise 490.8 K; best-case lower bound 447.6 K; transient bound 282.9 K"
+  },
+  {
+   "what": "Verify a DOI",
+   "command_or_url": "curl https://api.crossref.org/works/10.1002/fam.810140303",
+   "expected": "title: On the thermal ignition of combustible materials"
+  }
+ ],
+ "citations": [
+  {
+   "authors": "Quintiere, J. G.",
+   "year": 2006,
+   "title": "Fundamentals of Fire Phenomena",
+   "venue": "Wiley",
+   "doi_or_arxiv": "10.1002/0470091150",
+   "verified": true,
+   "how_verified": "Crossref metadata fetched 2026-11-13 (book not opened)",
+   "used_for": "textbook reference for ignition and conduction laws"
+  },
+  {
+   "authors": "Drysdale, D.",
+   "year": 2011,
+   "title": "An Introduction to Fire Dynamics (3rd ed.)",
+   "venue": "Wiley",
+   "doi_or_arxiv": "10.1002/9781119975465",
+   "verified": true,
+   "how_verified": "Crossref metadata fetched (book not opened)",
+   "used_for": "textbook reference"
+  },
+  {
+   "authors": "SFPE",
+   "year": 2016,
+   "title": "SFPE Handbook of Fire Protection Engineering (5th ed.)",
+   "venue": "Springer",
+   "doi_or_arxiv": "10.1007/978-1-4939-2565-0",
+   "verified": true,
+   "how_verified": "Crossref metadata fetched (not opened)",
+   "used_for": "handbook reference"
+  },
+  {
+   "authors": "Mikkola, E.; Wichman, I. S.",
+   "year": 1989,
+   "title": "On the thermal ignition of combustible materials",
+   "venue": "Fire and Materials",
+   "doi_or_arxiv": "10.1002/fam.810140303",
+   "verified": true,
+   "how_verified": "Crossref metadata fetched; doi.org returned 403 to curl (publisher blocks bots); abstract seen only as a search snippet",
+   "used_for": "thick/thin ignition time formulas"
+  },
+  {
+   "authors": "Spearpoint, M. J.; Quintiere, J. G.",
+   "year": 2001,
+   "title": "Predicting the piloted ignition of wood in the cone calorimeter using an integral model",
+   "venue": "Fire Safety Journal",
+   "doi_or_arxiv": "10.1016/s0379-7112(00)00055-2",
+   "verified": true,
+   "how_verified": "Crossref metadata fetched; doi.org returned 200 (not read)",
+   "used_for": "ignition model context"
+  },
+  {
+   "authors": "Gong, J.; Delichatsios, M.",
+   "year": 2023,
+   "title": "Asymptotic and approximate solutions for piloted ignition of thermally thick solids under power-law heat flux",
+   "venue": "Fire Safety Journal",
+   "doi_or_arxiv": "10.1016/j.firesaf.2023.103956",
+   "verified": true,
+   "how_verified": "Crossref metadata; doi.org returned 200 (not read)",
+   "used_for": "thick-solid ignition solutions are still being refined"
+  },
+  {
+   "authors": "Wang, Z.; Wang, L.; Yuan, G.; Li, G.",
+   "year": 2012,
+   "title": "Thermal conductivity of intumescent coating char after accelerated aging",
+   "venue": "Fire and Materials",
+   "doi_or_arxiv": "10.1002/fam.2137",
+   "verified": true,
+   "how_verified": "Crossref metadata and abstract fetched; doi.org returned 403 to curl",
+   "used_for": "char conductivity depends on morphology"
+  },
+  {
+   "authors": "Li, G.-Q.; Han, J.; Lou, G.-B.; Wang, Y.",
+   "year": 2016,
+   "title": "Predicting intumescent coating protected steel temperature in fire using constant thermal conductivity",
+   "venue": "Thin-Walled Structures",
+   "doi_or_arxiv": "10.1016/j.tws.2015.03.008",
+   "verified": true,
+   "how_verified": "Crossref metadata; doi.org returned 200 (not read)",
+   "used_for": "effective constant-k modelling of intumescent coatings"
+  },
+  {
+   "authors": "Wikipedia contributors",
+   "year": 2026,
+   "title": "Thermal resistance",
+   "venue": "Wikipedia",
+   "doi_or_arxiv": "https://en.wikipedia.org/wiki/Thermal_resistance",
+   "verified": true,
+   "how_verified": "fetched 2026-11-13 and quoted",
+   "used_for": "series resistance statement"
+  },
+  {
+   "authors": "SFPE Engineering Guide",
+   "year": null,
+   "title": "Piloted Ignition of Solid Materials Under Radiant Exposure",
+   "venue": "SFPE",
+   "doi_or_arxiv": "https://www.globalspec.com/reference/76862/203279/thermally-thick",
+   "verified": false,
+   "how_verified": "URL appeared in web-search results; page not opened by me",
+   "used_for": "thick/thin ignition methodology"
+  },
+  {
+   "authors": "Mogas-Soldevila, L. (profile page)",
+   "year": 2026,
+   "title": "Faculty profile",
+   "venue": "UPenn Weitzman School of Design",
+   "doi_or_arxiv": "https://www.design.upenn.edu/people/laia-mogas-soldevila",
+   "verified": true,
+   "how_verified": "fetched 2026-11-13",
+   "used_for": "context of the brief"
+  }
+ ],
+ "glossary": {
+  "certificate": "a proved theorem: under stated hypotheses a candidate must break a stated limit",
+  "elimination": "rejecting before testing; never approval",
+  "thermally_thick": "front-face heating pulse has not reached the back face",
+  "char": "insulating carbonised layer formed on heating, modelled as extra resistance",
+  "HRR": "heat release rate",
+  "critical_heat_flux": "flux below which a solid never reaches ignition temperature",
+  "lumped_model": "one-temperature model with a single time constant tau",
+  "envelope": "declared bounds on thickness, conductivity and so on under which a certificate holds"
+ },
+ "could_not_find": [
+  "No regulation text was fetched: actual criteria, exposure curves and limits are not stated; worked-example numbers are placeholders with my own arithmetic (arithmetic.py).",
+  "No fetched primary text of Quintiere, Drysdale or the SFPE ignition guide with the formulas; the ignition formulas rest on search snippets and standard form, so the ignition time is a definition in Lean, not a derivation from the heat equation.",
+  "No PDE-level proof (maximum principle, layered-slab bounds); the finite-time certificate relies on a lumped time-constant hypothesis.",
+  "Did not search Mathlib or physlib for existing heat-equation results.",
+  "No bio-based coating material data (k, rho, c, Tig) were collected, so no real candidate was eliminated.",
+  "check.sh prints a blank Mathlib revision (its grep fails); revision taken from lean/lake-manifest.json."
+ ],
+ "scripts_written": [
+  "D:/Users/ashenoy00000/delphi-work/agents3/scripts/lf-lean-fire/FireCoatingCertificate.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents3/scripts/lf-lean-fire/FireCoatingNegativeControl.lean",
+  "D:/Users/ashenoy00000/delphi-work/agents3/scripts/lf-lean-fire/arithmetic.py",
+  "D:/Users/ashenoy00000/delphi-work/agents3/scripts/lf-lean-fire/make_json.py",
+  "D:/Users/ashenoy00000/delphi-work/agents3/scripts/lf-lean-fire/negcontrol.out",
+  "D:/Users/ashenoy00000/delphi-work/agents3/scripts/lf-lean-fire/main_raw.out"
+ ],
+ "check_output": "toolchain: leanprover/lean4:v4.35.0   mathlib: (check.sh prints blank; rev from lean/lake-manifest.json: 56a005855ea17e0b0958f73ec801ae140b0a1679, inputRev v4.35.0)\nFireCoatingCertificate.lean  errors=0 sorryAx=0 axiom-lines=16/16\nALL CHECKED: no errors, no sorryAx\n\nRaw #print axioms (lake env lean), every one is [propext, Classical.choice, Quot.sound]: backRise_le_ΔT, backRise_antitone_thickness, steady_eliminates, char_lowers_rise, char_eliminates, thick_iff_time, relax_ode, transient_eliminates, thin_never_ignites, thin_reaches_Tig, tigThick_antitone_flux, thick_ignition_eliminates, thin_ignition_eliminates, peak_ge_mean, hrr_eliminates, worked_example. Only warnings (unused hypotheses, push_neg deprecation).\n\nNEGATIVE CONTROL (FireCoatingNegativeControl.lean), real output:\nFireCoatingNegativeControl.lean  errors=1 sorryAx=1 axiom-lines=1/1\n...FireCoatingNegativeControl.lean:21:2: error: linarith failed to find a contradiction\n'FireCoatingNeg.thicker_raises_rise' depends on axioms: [propext, sorryAx, Classical.choice, Quot.sound]\nFAILED   (exit=1)"
+}
