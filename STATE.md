@@ -52,6 +52,8 @@ Six tracks: 1 reporter response · 2 spatial patterns · 3 lumen geometry · 4 p
 - Explainers: measured grade 3.5-4.5, but no-context readers rate them 3-4 of 5 even after a revision round. NOT yet layperson-ready; do not claim it.
 - `node tracks/reproduce.mjs --online`: 19 passed, 0 failed, 0 skipped. The online DOI row reads the cached resolution file first.
 
+- Issues POSTED 2026-11-13 to fractastical/delphi: #17-#41 (25 issues; labels not on repo, named in each body's first line). Re-running file-issues.py will not duplicate. Sentry is #36, paper location #37. The Delphi bot posts daily updates there; check those issues for replies.
+
 ## What is running
 - No background jobs. Corpus top-up ran: 799 of 892 works, 93 still missing (OpenAlex returned only 4); the 4 new ones are unread by agents. No cluster jobs, no GPUs. Explorer/Discovery still decline the SSH key (since 2026-11-07).
 - Nothing else. Phase 2 and its revision round are finished (workflows wf_add95fb8-427, wf_871015f9-839).
@@ -63,7 +65,7 @@ Six tracks: 1 reporter response · 2 spatial patterns · 3 lumen geometry · 4 p
 - Email ashenoy000@gmail.com with the live link when a feature ships.
 
 ## Open decisions for Amit
-1. "Senty" — nothing by that name found. What is it and how is it reached?
+1. "Senty" — nothing by that name found; asked as issue #36 on fractastical/delphi for the other agents.
 2. "The paper is in repo" — no manuscript on any fetched branch. Which repo and path?
 3. "Mobile Money" in the brief is read as Mamou-Mani — confirm.
 4. Anthropic Lean token grant: the 14 pinned laws with no theorem, or the 17 laws the biomaterial track needs? (my pick: the 14)

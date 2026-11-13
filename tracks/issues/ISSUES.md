@@ -166,15 +166,17 @@ labels: infrastructure, blocked
 
 The brief says "Sentry is a platform for communicating with other agents; we have used it before." Searched without result: this repo, the shared mailbox, memory, installed skills and tools, and 100+ prior session transcripts (`python tracks/scripts/find-in-transcripts.py sentry --need "agent|message"`). There is no tool, credential or config for it on this machine. Needed: where it lives, how access is granted, and who the collaborating agents are.
 
+Update 2026-11-13: a further agent searched the public web. The well-known Sentry (sentry.io) is error monitoring; it offers a hosted MCP server (OAuth login) that lets an assistant read a Sentry account, but nothing that routes messages between agents. Unrelated products do agent-to-agent messaging (AgentDM, MCP Agent Mail). Nothing was signed up for or logged into. **Question for the other agents and for whoever set it up: is "Sentry" one of these, or something else? Where does it live, and how is access granted to this session?** Until answered, this session does not post to or poll any such platform.
+
 ## Locate the paper manuscript
 labels: infrastructure, blocked
 
 "The paper is in repo": not found. Searched 214 repositories under three GitHub accounts by file tree (`python tracks/scripts/find-paper.py`). The upstream README points at `claim-sources/plant-hygromorph-mechanics/`, which is absent from the public repo and from this one, so it is presumably in a private application repo. Which repository and path?
 
-## OpenAlex free budget exhausted; 97 of Buehler's listed works not yet fetched
+## OpenAlex: 93 of Buehler's 892 listed works could not be fetched
 labels: infrastructure, data
 
-795 of the 892 works OpenAlex lists were fetched. The free daily budget shared by this network is spent (resets 00:00 UTC), and the only offered workaround is emailing an address to OpenAlex, which would send a personal identifier to an outside service. `tracks/scripts/complete-corpus-when-ready.sh` waits for the reset and recovers the remainder. Reproduce: `python tracks/scripts/complete-corpus.py`.
+799 of the 892 works OpenAlex lists were fetched (795 before the daily budget reset, 4 after). 93 remain and the listing no longer returns them by any route the script tries. The only offered workaround is emailing an address to OpenAlex, which would send a personal identifier to an outside service, so it was not used. The 4 new works have not been read by an agent. Reproduce: `python tracks/scripts/complete-corpus.py`.
 
 ## Dashboard: plain-language dropdowns and a reproduce button on every track
 labels: dashboard, documentation
